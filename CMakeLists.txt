@@ -24,6 +24,16 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
 endif()
 
 ###
+# Build Parameters
+
+# Define the default arguments to use with 'lit', and an option for the user to
+# override.
+set(LIT_ARGS_DEFAULT "-sv")
+if (MSVC OR XCODE)
+  set(LIT_ARGS_DEFAULT "${LIT_ARGS_DEFAULT} --no-progress-bar")
+endif()
+set(LLBUILD_LIT_ARGS "${LIT_ARGS_DEFAULT}" CACHE STRING "Default options for lit")
+
 ###
 # Common Macros
 
@@ -34,6 +44,13 @@ set(LLBUILD_OBJ_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(LLBUILD_EXECUTABLE_OUTPUT_INTDIR ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/bin)
 set(LLBUILD_LIBRARY_OUTPUT_INTDIR ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/lib)
 
+###
+# Requires Support Tools
+
+find_package(Lit REQUIRED)
+find_package(FileCheck REQUIRED)
+
+###
 # Setup compiler and project build settings
 
 # Find includes in the source directory.
@@ -106,3 +123,4 @@ append_if(CXX_SUPPORTS_OVERLOADED_VIRTUAL "-Woverloaded-virtual" CMAKE_CXX_FLAGS
 # Process CMakeLists files for our subdirectories.
 add_subdirectory(lib)
 add_subdirectory(tools)
+add_subdirectory(tests)
