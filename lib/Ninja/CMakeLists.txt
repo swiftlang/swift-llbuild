@@ -1,3 +1,3 @@
-add_library(llbuildNinja
+add_llbuild_library(llbuildNinja
   Lexer.cpp
   )

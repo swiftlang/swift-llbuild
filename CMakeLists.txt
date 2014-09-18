@@ -24,6 +24,16 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
 endif()
 
 ###
+###
+# Common Macros
+
+set(LLBUILD_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(LLBUILD_OBJ_DIR ${CMAKE_CURRENT_BINARY_DIR})
+
+# Shared output directories for executables and libraries.
+set(LLBUILD_EXECUTABLE_OUTPUT_INTDIR ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/bin)
+set(LLBUILD_LIBRARY_OUTPUT_INTDIR ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/lib)
+
 # Setup compiler and project build settings
 
 # Find includes in the source directory.
