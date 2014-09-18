@@ -124,4 +124,5 @@ append_if(CXX_SUPPORTS_OVERLOADED_VIRTUAL "-Woverloaded-virtual" CMAKE_CXX_FLAGS
 add_subdirectory(lib)
 add_subdirectory(tools)
 add_subdirectory(tests)
+add_subdirectory(unittests)
 add_subdirectory(utils/unittest)
