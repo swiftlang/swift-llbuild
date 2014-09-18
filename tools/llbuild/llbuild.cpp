@@ -16,9 +16,32 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <iostream>
+#include <iomanip>
+#include <sstream>
 
 using namespace llbuild;
 
+static char hexdigit(unsigned Input) {
+  return (Input < 10) ? '0' + Input : 'A' + Input;
+}
+
+static std::string escapedString(const char *Start, unsigned Length) {
+  std::stringstream Result;
+  for (unsigned i = 0; i != Length; ++i) {
+    char c = Start[i];
+    if (isprint(c)) {
+      Result << c;
+    } else if (c == '\n') {
+      Result << "\\n";
+    } else {
+      Result << "\\x"
+             << hexdigit(((unsigned char) c >> 4) & 0xF)
+             << hexdigit((unsigned char) c & 0xF);
+    }
+  }
+  return Result.str();
+}
 int main(int argc, const char **argv) {
     // Print the version and exit.
     printf("%s\n", getLLBuildFullVersion().c_str());
@@ -55,10 +78,16 @@ int main(int argc, const char **argv) {
             argv[1]);
     ninja::Lexer Lexer(Data.get(), Size);
     ninja::Token Tok;
-    while (Lexer.lex(Tok).TokenKind != ninja::Token::Kind::EndOfFile) {
-      Tok.dump();
-    }
-    Tok.dump();
+    do {
+      // Get the next token.
+      Lexer.lex(Tok);
+
+      std::cerr << "(Token \"" << Tok.getKindName() << "\""
+                << " String:\"" << escapedString(Tok.Start, Tok.Length) << "\""
+                << " Length:" << Tok.Length
+                << " Line:" << Tok.Line
+                << " Column:" << Tok.Column << ")\n";
+    } while (Tok.TokenKind != ninja::Token::Kind::EndOfFile);
 
     return 0;
 }

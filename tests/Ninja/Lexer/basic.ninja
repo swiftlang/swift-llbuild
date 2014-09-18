@@ -1,0 +1,18 @@
+# Check basic lexing functionality.
+#
+# RUN: %{llbuild} %s 2> %t.err
+# RUN: %{FileCheck} < %t.err %s
+
+# CHECK: (Token "Comment" String:{{.*}} Length:58 Line:[[@LINE+1]] Column:0)
+# This is a 58 character comment (including the newline).
+
+# CHECK: (Token "Colon" String:":" Length:1 Line:[[@LINE+1]] Column:0)
+:
+
+# CHECK: (Token "Pipe" String:"|" Length:1 Line:[[@LINE+1]] Column:0)
+|
+
+# CHECK: (Token "PipePipe" String:"||" Length:2 Line:[[@LINE+1]] Column:0)
+||
+
+# CHECK: (Token "EndOfFile" String:{{.*}} Length:0 Line:[[@LINE+1]] Column:0)
