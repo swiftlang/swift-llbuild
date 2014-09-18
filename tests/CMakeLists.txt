@@ -13,6 +13,9 @@ string(REPLACE ${CMAKE_CFG_INTDIR} ${LLBUILD_BUILD_MODE} LLBUILD_LIBS_DIR  ${LLB
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/lit.site.cfg.in
   ${CMAKE_CURRENT_BINARY_DIR}/lit.site.cfg)
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/Unit/lit.site.cfg.in
+  ${CMAKE_CURRENT_BINARY_DIR}/Unit/lit.site.cfg)
 
 include(FindPythonInterp)
 if(PYTHONINTERP_FOUND)
@@ -30,7 +33,7 @@ if(PYTHONINTERP_FOUND)
     --param build_mode=${build_mode})
 
   set(test_target_dependencies
-    llbuild)
+    llbuild UnitTests)
 
   add_custom_target(test-llbuild
     COMMAND ${lit_command} ${CMAKE_CURRENT_BINARY_DIR}
