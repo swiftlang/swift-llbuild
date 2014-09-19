@@ -30,7 +30,7 @@ const char *Token::getKindName() const {
     CASE(Comment);
     CASE(EndOfFile);
     CASE(Equals);
-    CASE(Indention);
+    CASE(Indentation);
     CASE(Identifier);
     CASE(KWBuild);
     CASE(KWDefault);
@@ -110,13 +110,27 @@ static bool isNonNewlineSpace(int Char) {
 }
 
 Token &Lexer::lex(Token &Result) {
-  Result.TokenKind = Token::Kind::Unknown;
-  Result.Length = 0;
-  Result.Start = BufferPos;
-  
-  // Skip whitespace.
-  while (isNonNewlineSpace(peekNextChar()))
-    getNextChar();
+  // Check if we are positioned at whitespace.
+  if (isNonNewlineSpace(peekNextChar())) {
+    // If we are at the start of a line, then any leading whitespace should be
+    // parsed as an indentation token.
+    if (ColumnNumber == 0) {
+      Result.Start = BufferPos;
+      Result.Line = LineNumber;
+      Result.Column = ColumnNumber;
+
+      do {
+        getNextChar();
+      } while (isNonNewlineSpace(peekNextChar()));
+
+      return setTokenKind(Result, Token::Kind::Indentation);
+    }
+
+    // Otherwise, skip whitespace.
+    do {
+      getNextChar();
+    } while (isNonNewlineSpace(peekNextChar()));
+  }
 
   Result.Start = BufferPos;
   Result.Line = LineNumber;

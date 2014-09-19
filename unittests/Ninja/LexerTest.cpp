@@ -82,4 +82,55 @@ TEST(LexerTest, Basic) {
   EXPECT_EQ(ninja::Token::Kind::EndOfFile, Tok.TokenKind);
 }
 
+TEST(LexerTest, Indentation) {
+  char Input[] = "\
+|\n\
+ | |";
+  size_t InputSize = strlen(Input);
+  ninja::Lexer Lexer(Input, InputSize);
+
+  // Check that we get an indentation token for whitespace, but only at the
+  // start of a line.
+  ninja::Token Tok;
+  Lexer.lex(Tok);
+
+  // Check first token.
+  EXPECT_EQ(ninja::Token::Kind::Pipe, Tok.TokenKind);
+  EXPECT_EQ(1U, Tok.Length);
+  EXPECT_EQ(1U, Tok.Line);
+  EXPECT_EQ(0U, Tok.Column);
+
+  // Check second token (the newline).
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::Newline, Tok.TokenKind);
+  EXPECT_EQ(1U, Tok.Length);
+  EXPECT_EQ(1U, Tok.Line);
+  EXPECT_EQ(1U, Tok.Column);
+
+  // Check third token (our indentation token).
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::Indentation, Tok.TokenKind);
+  EXPECT_EQ(1U, Tok.Length);
+  EXPECT_EQ(2U, Tok.Line);
+  EXPECT_EQ(0U, Tok.Column);
+
+  // Check fourth token (the pipe following indentation).
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::Pipe, Tok.TokenKind);
+  EXPECT_EQ(1U, Tok.Length);
+  EXPECT_EQ(2U, Tok.Line);
+  EXPECT_EQ(1U, Tok.Column);
+
+  // Check fifth token (skipping whitespace).
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::Pipe, Tok.TokenKind);
+  EXPECT_EQ(1U, Tok.Length);
+  EXPECT_EQ(2U, Tok.Line);
+  EXPECT_EQ(3U, Tok.Column);
+
+  // Check final token.
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::EndOfFile, Tok.TokenKind);
+}
+
 }

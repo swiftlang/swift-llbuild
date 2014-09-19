@@ -24,7 +24,7 @@ struct Token {
     Comment,                  ///< '# ...'
     EndOfFile,                ///< <end of file>
     Equals,                   ///< '='
-    Indention,                ///< Leading whitespace
+    Indentation,              ///< Leading whitespace
     Identifier,               ///< "Identifiers", really everything else
     KWBuild,                  ///< 'build' keyword
     KWDefault,                ///< 'default' keyword
