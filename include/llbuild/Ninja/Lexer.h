@@ -78,7 +78,14 @@ class Lexer {
 
   /// Set the token Kind and Length based on the current lexer position, and
   /// return the input.
-  Token &setTokenKind(Token &Result, Token::Kind Kind);
+  Token &setTokenKind(Token &Result, Token::Kind Kind) const;
+
+  /// Set the token Kind assuming the token is an identifier or keyword, and
+  /// return the input.
+  Token &setIdentifierTokenKind(Token &Result) const;
+
+  /// Lex a token, assuming the current position is the start of an identifier.
+  Token &lexIdentifier(Token &Result);
 
 public:
   explicit Lexer(const char *Data, uint64_t Length);

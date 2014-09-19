@@ -88,7 +88,7 @@ int Lexer::getNextChar() {
   return Result;
 }
 
-Token &Lexer::setTokenKind(Token &Result, Token::Kind Kind) {
+Token &Lexer::setTokenKind(Token &Result, Token::Kind Kind) const {
   Result.TokenKind = Kind;
   Result.Length = BufferPos - Result.Start;
   return Result;
@@ -103,6 +103,59 @@ void Lexer::skipToEndOfLine() {
       break;
     getNextChar();
   }
+}
+
+Token &Lexer::setIdentifierTokenKind(Token &Result) const {
+  unsigned Length = BufferPos - Result.Start;
+  switch (Length) {
+  case 4:
+    if (memcmp("rule", Result.Start, 4) == 0)
+      return setTokenKind(Result, Token::Kind::KWRule);
+    if (memcmp("pool", Result.Start, 4) == 0)
+      return setTokenKind(Result, Token::Kind::KWPool);
+    break;
+
+  case 5:
+    if (memcmp("build", Result.Start, 5) == 0)
+      return setTokenKind(Result, Token::Kind::KWBuild);
+    break;
+
+  case 7:
+    if (memcmp("default", Result.Start, 7) == 0)
+      return setTokenKind(Result, Token::Kind::KWDefault);
+    if (memcmp("include", Result.Start, 7) == 0)
+      return setTokenKind(Result, Token::Kind::KWInclude);
+    break;
+
+  case 8:
+    if (memcmp("subninja", Result.Start, 7) == 0)
+      return setTokenKind(Result, Token::Kind::KWSubninja);
+    break;
+  }
+
+  return setTokenKind(Result, Token::Kind::Identifier);
+}
+
+Token &Lexer::lexIdentifier(Token &Result) {
+  while (true) {
+    int Char = peekNextChar();
+
+    // If this is an escape character, skip the next character.
+    if (Char == '$') {
+      getNextChar(); // Consume the actual '$'.
+      getNextChar(); // Consume the next character.
+      continue;
+    }
+
+    // Otherwise, continue only if this is not whitespace or EOF.
+    if (Char == -1 | isspace(Char))
+      break;
+
+    getNextChar();
+  }
+
+  // Recognize keywords specially.
+  return setIdentifierTokenKind(Result);
 }
 
 static bool isNonNewlineSpace(int Char) {
@@ -155,6 +208,7 @@ Token &Lexer::lex(Token &Result) {
   }
 
   default:
-    return setTokenKind(Result, Token::Kind::Unknown);
+    // Otherwise, parse as an identifier.
+    return lexIdentifier(Result);
   }
 }
