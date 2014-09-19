@@ -19,7 +19,7 @@ using namespace llbuild;
 namespace {
 
 TEST(LexerTest, Basic) {
-  char Input[] = "| : || # Comment";
+  char Input[] = "| : || # Comment\n";
   size_t InputSize = strlen(Input);
   ninja::Lexer Lexer(Input, InputSize);
 
@@ -61,13 +61,21 @@ TEST(LexerTest, Basic) {
   EXPECT_EQ(1U, Tok.Line);
   EXPECT_EQ(7U, Tok.Column);
 
+  // Check fifth token.
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::Newline, Tok.TokenKind);
+  EXPECT_EQ(&Input[16], Tok.Start);
+  EXPECT_EQ(1U, Tok.Length);
+  EXPECT_EQ(1U, Tok.Line);
+  EXPECT_EQ(16U, Tok.Column);
+
   // Check final token.
   Lexer.lex(Tok);
   EXPECT_EQ(ninja::Token::Kind::EndOfFile, Tok.TokenKind);
   EXPECT_EQ(&Input[strlen(Input)], Tok.Start);
   EXPECT_EQ(0U, Tok.Length);
-  EXPECT_EQ(1U, Tok.Line);
-  EXPECT_EQ(InputSize, Tok.Column);
+  EXPECT_EQ(2U, Tok.Line);
+  EXPECT_EQ(0, Tok.Column);
 
   // Check we continue to get EOF.
   Lexer.lex(Tok);

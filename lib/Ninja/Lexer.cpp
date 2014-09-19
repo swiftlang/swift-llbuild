@@ -95,11 +95,18 @@ Token &Lexer::setTokenKind(Token &Result, Token::Kind Kind) {
 }
 
 void Lexer::skipToEndOfLine() {
+  // Skip to the end of the line, but not past the actual newline character
+  // (which we want to generate a Newline token).
   for (;;) {
-    int Char = getNextChar();
+    int Char = peekNextChar();
     if (Char == -1 || Char == '\n')
       break;
+    getNextChar();
   }
+}
+
+static bool isNonNewlineSpace(int Char) {
+  return isspace(Char) && Char != '\n';
 }
 
 Token &Lexer::lex(Token &Result) {
@@ -108,7 +115,7 @@ Token &Lexer::lex(Token &Result) {
   Result.Start = BufferPos;
   
   // Skip whitespace.
-  while (isspace(peekNextChar()))
+  while (isNonNewlineSpace(peekNextChar()))
     getNextChar();
 
   Result.Start = BufferPos;
@@ -120,6 +127,7 @@ Token &Lexer::lex(Token &Result) {
     
   case ':': return setTokenKind(Result, Token::Kind::Colon);
   case '=': return setTokenKind(Result, Token::Kind::Equals);
+  case '\n': return setTokenKind(Result, Token::Kind::Newline);
 
   case '#': {
     skipToEndOfLine();

@@ -3,8 +3,8 @@
 # RUN: %{llbuild} %s 2> %t.err
 # RUN: %{FileCheck} < %t.err %s
 
-# CHECK: (Token "Comment" String:{{.*}} Length:58 Line:[[@LINE+1]] Column:0)
-# This is a 58 character comment (including the newline).
+# CHECK: (Token "Comment" String:{{.*}} Length:70 Line:[[@LINE+1]] Column:0)
+# This is a 70 character comment (which does not include the newline).
 
 # CHECK: (Token "Colon" String:":" Length:1 Line:[[@LINE+1]] Column:0)
 :
