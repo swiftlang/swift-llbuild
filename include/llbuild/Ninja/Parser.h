@@ -17,10 +17,13 @@
 
 #include <cstdint>
 #include <string>
+#include <utility>
 
 namespace llbuild {
 namespace ninja {
 
+class ParserImpl;
+  
 /// Delegate interface for parser behavior.
 class ParseActions {
 public:
@@ -32,12 +35,10 @@ public:
 
 /// Interface for parsing a Ninja build manifest.
 class Parser {
-  Lexer Lexer;
-  ParseActions &Actions;
+  std::unique_ptr<ParserImpl> Impl;
 
 public:
-  explicit Parser(const char* Data, uint64_t Length,
-                  ParseActions &Actions);
+  Parser(const char* Data, uint64_t Length, ParseActions &Actions);
   ~Parser();
 
   void Parse();

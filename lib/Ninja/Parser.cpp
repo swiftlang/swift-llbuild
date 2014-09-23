@@ -22,11 +22,34 @@ using namespace llbuild::ninja;
 ParseActions::~ParseActions() {
 }
 
+#pragma mark - Parser Implementation
+
+class ninja::ParserImpl {
+  Lexer Lexer;
+  ParseActions &Actions;
+
+public:
+  ParserImpl(const char* Data, uint64_t Length,
+             ParseActions &Actions);
+
+  void Parse();
+};
+
+ParserImpl::ParserImpl(const char* Data, uint64_t Length, ParseActions &Actions)
+  : Lexer(Data, Length), Actions(Actions)
+{
+}
+
+void ParserImpl::Parse() {
+  Actions.ActOnBeginManifest("<main>");
+  Actions.ActOnEndManifest();
+}
+
 #pragma mark - Parser
 
 Parser::Parser(const char* Data, uint64_t Length,
                ParseActions &Actions)
-  : Lexer(Data, Length), Actions(Actions)
+  : Impl(new ParserImpl(Data, Length, Actions))
 {
 }
 
@@ -34,6 +57,6 @@ Parser::~Parser() {
 }
 
 void Parser::Parse() {
-  Actions.ActOnBeginManifest("<main>");
-  Actions.ActOnEndManifest();
+  Impl->Parse();
 }
+
