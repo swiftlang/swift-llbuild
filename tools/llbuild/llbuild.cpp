@@ -12,82 +12,47 @@
 
 #include "llbuild/Basic/Version.h"
 
-#include "llbuild/Ninja/Lexer.h"
+#include "llbuild/Commands/Commands.h"
 
 #include <cstdio>
 #include <cstdlib>
-#include <iostream>
-#include <iomanip>
-#include <sstream>
 
 using namespace llbuild;
+using namespace llbuild::commands;
 
-static char hexdigit(unsigned Input) {
-  return (Input < 10) ? '0' + Input : 'A' + Input;
+static void usage() {
+  fprintf(stderr, "Usage: %s [--version] [--help] <command> [<args>]\n",
+          getprogname());
+  fprintf(stderr, "\n");
+  fprintf(stderr, "Available commands:\n");
+  fprintf(stderr, "  ninja -- Run the Ninja subtool\n");
+  fprintf(stderr, "\n");
+  exit(1);
 }
 
-static std::string escapedString(const char *Start, unsigned Length) {
-  std::stringstream Result;
-  for (unsigned i = 0; i != Length; ++i) {
-    char c = Start[i];
-    if (isprint(c)) {
-      Result << c;
-    } else if (c == '\n') {
-      Result << "\\n";
-    } else {
-      Result << "\\x"
-             << hexdigit(((unsigned char) c >> 4) & 0xF)
-             << hexdigit((unsigned char) c & 0xF);
-    }
-  }
-  return Result.str();
-}
 int main(int argc, const char **argv) {
+  // Expect the first argument to be the name of a subtool to delegate to.
+  if (argc == 1 || std::string(argv[1]) == "--help")
+    usage();
+
+  if (std::string(argv[1]) == "--version") {
     // Print the version and exit.
     printf("%s\n", getLLBuildFullVersion().c_str());
-
-    // Check the Ninja lexer, for now.
-    if (argc != 2) {
-      fprintf(stderr, "error: %s: invalid number of arguments\n",
-              getprogname());
-      return 1;
-    }
-
-    // Open the input buffer and compute its size.
-    FILE *fp = fopen(argv[1], "rb");
-    fseek(fp, 0, SEEK_END);
-    uint64_t Size = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-
-    // Read the file contents.
-    std::unique_ptr<char[]> Data(new char[Size]);
-    uint64_t Pos = 0;
-    while (Pos < Size) {
-      // Read data into the buffer.
-      size_t Result = fread(Data.get() + Pos, 1, Size - Pos, fp);
-      if (Result <= 0) {
-        fprintf(stderr, "error: %s: unable to read input\n", getprogname());
-        return 1;
-      }
-
-      Pos += Result;
-    }
-
-    // Create a Ninja lexer.
-    fprintf(stderr, "note: %s: reading tokens from %s\n", getprogname(),
-            argv[1]);
-    ninja::Lexer Lexer(Data.get(), Size);
-    ninja::Token Tok;
-    do {
-      // Get the next token.
-      Lexer.lex(Tok);
-
-      std::cerr << "(Token \"" << Tok.getKindName() << "\""
-                << " String:\"" << escapedString(Tok.Start, Tok.Length) << "\""
-                << " Length:" << Tok.Length
-                << " Line:" << Tok.Line
-                << " Column:" << Tok.Column << ")\n";
-    } while (Tok.TokenKind != ninja::Token::Kind::EndOfFile);
-
     return 0;
+  }
+
+  // Otherwise, expect a command name.
+  std::string Command(argv[1]);
+  std::vector<std::string> Args;
+  for (int i = 2; i != argc; ++i) {
+    Args.push_back(argv[i]);
+  }
+
+  if (Command == "ninja") {
+    return ExecuteNinjaCommand(Args);
+  } else {
+    fprintf(stderr, "error: %s: unknown command '%s'\n", getprogname(),
+            Command.c_str());
+    return 1;
+  }
 }
