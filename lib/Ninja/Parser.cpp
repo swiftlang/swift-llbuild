@@ -28,11 +28,51 @@ class ninja::ParserImpl {
   Lexer Lexer;
   ParseActions &Actions;
 
+  /// The currently lexed token.
+  Token Tok;
+
+  /// @name Diagnostics Support
+  /// @{
+
+  void error(std::string Message, const Token &At) {
+    Actions.error(Message, At);
+  }
+
+  void error(std::string Message) {
+    error(Message, Tok);
+  }
+
+  /// @}
+
+  void getNextNonCommentToken() {
+    do {
+      Lexer.lex(Tok);
+    } while (Tok.TokenKind == Token::Kind::Comment);
+  }
+
+  /// Consume the current 'peek token' and lex the next one.
+  void consumeToken() {
+    getNextNonCommentToken();
+  }
+
+  /// Consume tokens until past the next newline (or end of file).
+  void skipPastEOL() {
+    while (Tok.TokenKind != Token::Kind::Newline &&
+           Tok.TokenKind != Token::Kind::EndOfFile)
+      Lexer.lex(Tok);
+
+    // Always consume at least one token.
+    Lexer.lex(Tok);
+  }
+
+  /// Parse a top-level declaration.
+  void ParseDecl();
+
 public:
   ParserImpl(const char* Data, uint64_t Length,
              ParseActions &Actions);
 
-  void Parse();
+  void parse();
 };
 
 ParserImpl::ParserImpl(const char* Data, uint64_t Length, ParseActions &Actions)
@@ -40,9 +80,25 @@ ParserImpl::ParserImpl(const char* Data, uint64_t Length, ParseActions &Actions)
 {
 }
 
-void ParserImpl::Parse() {
-  Actions.ActOnBeginManifest("<main>");
-  Actions.ActOnEndManifest();
+/// Parse the file.
+void ParserImpl::parse() {
+  // Initialize the Lexer.
+  getNextNonCommentToken();
+
+  Actions.actOnBeginManifest("<main>");
+  while (Tok.TokenKind != Token::Kind::EndOfFile) {
+    ParseDecl();
+  }
+  Actions.actOnEndManifest();
+}
+
+/// Parse a declaration.
+void ParserImpl::ParseDecl() {
+  switch (Tok.TokenKind) {
+  default:
+    error("unexpected token");
+    skipPastEOL();
+  }
 }
 
 #pragma mark - Parser
@@ -56,7 +112,8 @@ Parser::Parser(const char* Data, uint64_t Length,
 Parser::~Parser() {
 }
 
-void Parser::Parse() {
-  Impl->Parse();
+void Parser::parse() {
+  Impl->parse();
+}
 }
 

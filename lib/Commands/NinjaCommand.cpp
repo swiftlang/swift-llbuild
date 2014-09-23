@@ -126,11 +126,27 @@ static int ExecuteLexCommand(const std::vector<std::string> &Args) {
 namespace {
 
 class ParseCommandActions : public ninja::ParseActions {
-  virtual void ActOnBeginManifest(std::string Name) override {
+  std::string Filename;
+  unsigned NumErrors = 0;
+  unsigned MaxErrors = 20;
+
+public:
+  ParseCommandActions(std::string Filename) : Filename(Filename) {}
+
+private:
+  virtual void error(std::string Message, const ninja::Token &At) override {
+    if (NumErrors++ >= MaxErrors)
+      return;
+
+    std::cerr << Filename << ":" << At.Line << ":" << At.Column
+              << ": error: " << Message << "\n";
+  }
+
+  virtual void actOnBeginManifest(std::string Name) override {
     std::cerr << __FUNCTION__ << "(\"" << Name << "\")\n";
   }
 
-  virtual void ActOnEndManifest() override {
+  virtual void actOnEndManifest() override {
     std::cerr << __FUNCTION__ << "()\n";
   }
 };
@@ -149,9 +165,9 @@ static int ExecuteParseCommand(const std::vector<std::string> &Args) {
   std::unique_ptr<char[]> Data = ReadFileContents(Args[0], &Size);
 
   // Run the parser.
-  ParseCommandActions Actions;
+  ParseCommandActions Actions(Args[0]);
   ninja::Parser Parser(Data.get(), Size, Actions);
-  Parser.Parse();
+  Parser.parse();
 
   return 0;
 }

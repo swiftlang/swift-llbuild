@@ -22,6 +22,7 @@
 namespace llbuild {
 namespace ninja {
 
+class Token;
 class ParserImpl;
   
 /// Delegate interface for parser behavior.
@@ -29,8 +30,13 @@ class ParseActions {
 public:
   virtual ~ParseActions();
 
-  virtual void ActOnBeginManifest(std::string Name) = 0;
-  virtual void ActOnEndManifest() = 0;
+  virtual void error(std::string Message, const Token &At) = 0;
+
+  /// Called at the beginning of parsing, to register the parser.
+  virtual void initialize(Parser* Parser) = 0;
+
+  virtual void actOnBeginManifest(std::string Name) = 0;
+  virtual void actOnEndManifest() = 0;
 };
 
 /// Interface for parsing a Ninja build manifest.
@@ -41,7 +47,7 @@ public:
   Parser(const char* Data, uint64_t Length, ParseActions &Actions);
   ~Parser();
 
-  void Parse();
+  void parse();
 };
 
 }
