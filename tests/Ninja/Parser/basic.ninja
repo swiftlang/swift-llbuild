@@ -1,0 +1,13 @@
+# Check basic parsing functionality.
+#
+# RUN: %{llbuild} ninja parse %s 2> %t.err
+# RUN: %{FileCheck} < %t.err %s
+
+# CHECK: actOnBeginManifest("<main>")
+
+# CHECK: actOnIncludeDecl(/*IsInclude=*/true, "t2.ninja") 
+include t2.ninja
+# CHECK: actOnIncludeDecl(/*IsInclude=*/false, "t3.ninja") 
+subninja t3.ninja
+
+# CHECK: actOnEndManifest()

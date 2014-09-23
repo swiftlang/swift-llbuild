@@ -17,13 +17,11 @@
 
 #include <cstdint>
 #include <string>
-#include <utility>
 
 namespace llbuild {
 namespace ninja {
 
 class Token;
-class ParserImpl;
 class Parser;
   
 /// Delegate interface for parser behavior.
@@ -36,13 +34,23 @@ public:
   /// Called at the beginning of parsing, to register the parser.
   virtual void initialize(Parser* Parser) = 0;
 
+  /// Called at the beginning of parsing a particular manifest.
   virtual void actOnBeginManifest(std::string Name) = 0;
+  /// Called at the end of parsing the current manifest.
   virtual void actOnEndManifest() = 0;
+
+  /// Called on an include or subninja declaration.
+  ///
+  /// \param IsInclude Whether this is an include (as opposed to a subninja)
+  /// declaration.
+  ///
+  /// \param Path The identifier token for the path of the file to include.
+  virtual void actOnIncludeDecl(bool IsInclude, const Token &Path) = 0;
 };
 
 /// Interface for parsing a Ninja build manifest.
 class Parser {
-  std::unique_ptr<ParserImpl> Impl;
+  void *Impl;
 
 public:
   Parser(const char* Data, uint64_t Length, ParseActions &Actions);

@@ -188,6 +188,13 @@ private:
   virtual void actOnEndManifest() override {
     std::cerr << __FUNCTION__ << "()\n";
   }
+
+  virtual void actOnIncludeDecl(bool IsInclude,
+                                const ninja::Token &Path) override {
+    std::cerr << __FUNCTION__ << "(/*IsInclude=*/"
+              << (IsInclude ? "true" : "false") << ", "
+              << "\"" << escapedString(Path.Start, Path.Length) << "\")\n";
+  }
 };
 
 }
