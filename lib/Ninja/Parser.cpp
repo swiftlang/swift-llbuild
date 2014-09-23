@@ -57,10 +57,13 @@ class ParserImpl {
     getNextNonCommentToken();
   }
 
-  /// Check that the current token is of the expected kind and consume it.
-  void consumeExpectedToken(Token::Kind Kind) {
+  /// Check that the current token is of the expected kind and consume it,
+  /// returning the token.
+  Token consumeExpectedToken(Token::Kind Kind) {
     assert(Tok.TokenKind == Kind && "Unexpected token!");
+    Token Result = Tok;
     getNextNonCommentToken();
+    return Result;
   }
 
   /// Consume the current token if it matches the given kind, returning whether
@@ -81,7 +84,7 @@ class ParserImpl {
       Lexer.lex(Tok);
 
     // Always consume at least one token.
-    Lexer.lex(Tok);
+    consumeToken();
   }
 
   /// Parse a top-level declaration.
@@ -162,9 +165,27 @@ void ParserImpl::parseBindingDecl() {
 
 /// default-decl ::= "default" identifier-list '\n'
 void ParserImpl::parseDefaultDecl() {
-  // FIXME: Implement.
-  error("FIXME: implement default decl");
-  skipPastEOL();
+  consumeExpectedToken(Token::Kind::KWDefault);
+
+  // Check we have at least one identifier.
+  if (Tok.TokenKind != Token::Kind::Identifier) {
+    error("expected identifier token");
+    return skipPastEOL();
+  }
+
+  // Consume all the identifiers.
+  std::vector<Token> Names;
+  do {
+    Names.push_back(consumeExpectedToken(Token::Kind::Identifier));
+  } while (Tok.TokenKind == Token::Kind::Identifier);
+
+  // The list should be terminated by a newline.
+  if (!consumeIfToken(Token::Kind::Newline)) {
+    error("expected newline token");
+    return skipPastEOL();
+  }
+
+  Actions.actOnDefaultDecl(Names);
 }
 
 /// include-decl ::= ( "include" | "subninja" ) identifier '\n'
@@ -178,8 +199,7 @@ void ParserImpl::parseIncludeDecl() {
     return skipPastEOL();
   }
 
-  Token Path = Tok;
-  consumeExpectedToken(Token::Kind::Identifier);
+  Token Path = consumeExpectedToken(Token::Kind::Identifier);
 
   if (!consumeIfToken(Token::Kind::Newline)) {
     error("expected newline token");

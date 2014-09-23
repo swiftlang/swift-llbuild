@@ -15,8 +15,8 @@
 
 #include "llbuild/Ninja/Lexer.h"
 
-#include <cstdint>
 #include <string>
+#include <vector>
 
 namespace llbuild {
 namespace ninja {
@@ -29,7 +29,7 @@ class ParseActions {
 public:
   virtual ~ParseActions();
 
-  virtual void error(std::string Message, const Token &At) = 0;
+  virtual void error(std::string Message, const Token& At) = 0;
 
   /// Called at the beginning of parsing, to register the parser.
   virtual void initialize(Parser* Parser) = 0;
@@ -39,13 +39,18 @@ public:
   /// Called at the end of parsing the current manifest.
   virtual void actOnEndManifest() = 0;
 
+  /// Called on a default declaration.
+  ///
+  /// \param Names The identifier tokens for each of the names.
+  virtual void actOnDefaultDecl(const std::vector<Token> &Names) = 0;
+
   /// Called on an include or subninja declaration.
   ///
   /// \param IsInclude Whether this is an include (as opposed to a subninja)
   /// declaration.
   ///
   /// \param Path The identifier token for the path of the file to include.
-  virtual void actOnIncludeDecl(bool IsInclude, const Token &Path) = 0;
+  virtual void actOnIncludeDecl(bool IsInclude, const Token& Path) = 0;
 };
 
 /// Interface for parsing a Ninja build manifest.
@@ -53,7 +58,7 @@ class Parser {
   void *Impl;
 
 public:
-  Parser(const char* Data, uint64_t Length, ParseActions &Actions);
+  Parser(const char* Data, uint64_t Length, ParseActions& Actions);
   ~Parser();
 
   void parse();

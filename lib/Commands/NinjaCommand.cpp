@@ -146,9 +146,8 @@ private:
     std::cerr << Filename << ":" << At.Line << ":" << At.Column
               << ": error: " << Message << "\n";
 
-    // Skip carat diagnostics on newline or EOF token.
-    if (At.TokenKind == ninja::Token::Kind::Newline ||
-        At.TokenKind == ninja::Token::Kind::EndOfFile)
+    // Skip carat diagnostics on EOF token.
+    if (At.TokenKind == ninja::Token::Kind::EndOfFile)
       return;
 
     // Simple caret style diagnostics.
@@ -189,8 +188,20 @@ private:
     std::cerr << __FUNCTION__ << "()\n";
   }
 
+  virtual void actOnDefaultDecl(const std::vector<ninja::Token>& Names) {
+    std::cerr << __FUNCTION__ << "([";
+    bool First = true;
+    for (auto Name: Names) {
+      if (!First)
+        std::cerr << ", ";
+      std::cerr << "\"" << escapedString(Name.Start, Name.Length) << "\"";
+      First = false;
+    }
+    std::cerr << "])\n";
+  }
+
   virtual void actOnIncludeDecl(bool IsInclude,
-                                const ninja::Token &Path) override {
+                                const ninja::Token& Path) override {
     std::cerr << __FUNCTION__ << "(/*IsInclude=*/"
               << (IsInclude ? "true" : "false") << ", "
               << "\"" << escapedString(Path.Start, Path.Length) << "\")\n";
