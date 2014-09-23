@@ -43,8 +43,17 @@ static std::string escapedString(const char *Start, unsigned Length) {
   return Result.str();
 }
 
-int commands::ExecuteNinjaCommand(const std::vector<std::string> &Args) {
-    // Check the Ninja lexer, for now.
+static void usage() {
+  fprintf(stderr, "Usage: %s ninja [--help] <command> [<args>]\n",
+          getprogname());
+  fprintf(stderr, "\n");
+  fprintf(stderr, "Available commands:\n");
+  fprintf(stderr, "  lex -- Run the Ninja lexer\n");
+  fprintf(stderr, "\n");
+  exit(1);
+}
+
+static int ExecuteLexCommand(const std::vector<std::string> &Args) {
   if (Args.size() != 1) {
     fprintf(stderr, "error: %s: invalid number of arguments\n",
             getprogname());
@@ -88,4 +97,19 @@ int commands::ExecuteNinjaCommand(const std::vector<std::string> &Args) {
   } while (Tok.TokenKind != ninja::Token::Kind::EndOfFile);
 
   return 0;
+}
+
+int commands::ExecuteNinjaCommand(const std::vector<std::string> &Args) {
+  // Expect the first argument to be the name of another subtool to delegate to.
+  if (Args.empty() || Args[0] == "--help")
+    usage();
+
+  if (Args[0] == "lex") {
+    return ExecuteLexCommand(std::vector<std::string>(Args.begin()+1,
+                                                      Args.end()));
+  } else {
+    fprintf(stderr, "error: %s: unknown command '%s'\n", getprogname(),
+            Args[0].c_str());
+    return 1;
+  }
 }
