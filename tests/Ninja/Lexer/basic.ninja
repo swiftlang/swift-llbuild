@@ -1,6 +1,6 @@
 # Check basic lexing functionality.
 #
-# RUN: %{llbuild} ninja %s 2> %t.err
+# RUN: %{llbuild} ninja lex %s 2> %t.err
 # RUN: %{FileCheck} < %t.err %s
 
 # CHECK: (Token "Comment" String:{{.*}} Length:70 Line:[[@LINE+1]] Column:0)
