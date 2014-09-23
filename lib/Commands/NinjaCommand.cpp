@@ -129,17 +129,56 @@ class ParseCommandActions : public ninja::ParseActions {
   std::string Filename;
   unsigned NumErrors = 0;
   unsigned MaxErrors = 20;
+  ninja::Parser *Parser = 0;
 
 public:
   ParseCommandActions(std::string Filename) : Filename(Filename) {}
 
 private:
+  virtual void initialize(ninja::Parser *Parser) {
+    this->Parser = Parser;
+  }
+
   virtual void error(std::string Message, const ninja::Token &At) override {
     if (NumErrors++ >= MaxErrors)
       return;
 
     std::cerr << Filename << ":" << At.Line << ":" << At.Column
               << ": error: " << Message << "\n";
+
+    // Skip carat diagnostics on newline or EOF token.
+    if (At.TokenKind == ninja::Token::Kind::Newline ||
+        At.TokenKind == ninja::Token::Kind::EndOfFile)
+      return;
+
+    // Simple caret style diagnostics.
+    const char *LineBegin = At.Start, *LineEnd = At.Start,
+      *BufferBegin = Parser->getLexer().getBufferStart(),
+      *BufferEnd = Parser->getLexer().getBufferEnd();
+
+    // Run line pointers forward and back.
+    while (LineBegin > BufferBegin &&
+           LineBegin[-1] != '\r' && LineBegin[-1] != '\n')
+      --LineBegin;
+    while (LineEnd < BufferEnd &&
+           LineEnd[0] != '\r' && LineEnd[0] != '\n')
+      ++LineEnd;
+
+    // Show the line, indented by 2.
+    std::cerr << "  " << std::string(LineBegin, LineEnd) << "\n";
+
+    // Show the caret or squiggly, making sure to print back spaces the
+    // same.
+    std::cerr << "  ";
+    for (const char* S = LineBegin; S != At.Start; ++S)
+      std::cerr << (isspace(*S) ? *S : ' ');
+    if (At.Length > 1) {
+      for (unsigned i = 0; i != At.Length; ++i)
+        std::cerr << '~';
+    } else {
+      std::cerr << '^';
+    }
+    std::cerr << '\n';
   }
 
   virtual void actOnBeginManifest(std::string Name) override {

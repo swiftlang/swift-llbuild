@@ -73,6 +73,9 @@ public:
              ParseActions &Actions);
 
   void parse();
+
+  ParseActions& getActions() { return Actions; }
+  const class Lexer& getLexer() const { return Lexer; }
 };
 
 ParserImpl::ParserImpl(const char* Data, uint64_t Length, ParseActions &Actions)
@@ -113,7 +116,13 @@ Parser::~Parser() {
 }
 
 void Parser::parse() {
+  // Initialize the actions.
+  Impl->getActions().initialize(this);
+
   Impl->parse();
 }
+
+const Lexer& Parser::getLexer() const {
+  return Impl->getLexer();
 }
 

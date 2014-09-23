@@ -24,6 +24,7 @@ namespace ninja {
 
 class Token;
 class ParserImpl;
+class Parser;
   
 /// Delegate interface for parser behavior.
 class ParseActions {
@@ -48,6 +49,9 @@ public:
   ~Parser();
 
   void parse();
+
+  /// Get the current lexer object.
+  const Lexer& getLexer() const;
 };
 
 }

@@ -52,7 +52,8 @@ void Token::dump() {
 ///
 
 Lexer::Lexer(const char* Data, uint64_t Length)
-  : BufferPos(Data), BufferEnd(Data + Length), LineNumber(1), ColumnNumber(0)
+  : BufferStart(Data), BufferPos(Data), BufferEnd(Data + Length),
+    LineNumber(1), ColumnNumber(0)
 {
 }
 

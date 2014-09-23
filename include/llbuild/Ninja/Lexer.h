@@ -61,10 +61,11 @@ struct Token {
 
 /// Interface for lexing tokens from a Ninja build manifest.
 class Lexer {
-  const char* BufferPos;      /// The current lexer position.
-  const char* BufferEnd;      /// The buffer end position.
-  unsigned    LineNumber;     /// The current line.
-  unsigned    ColumnNumber;   /// The current column.
+  const char* BufferStart;    ///< The buffer end position.
+  const char* BufferPos;      ///< The current lexer position.
+  const char* BufferEnd;      ///< The buffer end position.
+  unsigned    LineNumber;     ///< The current line.
+  unsigned    ColumnNumber;   ///< The current column.
 
   /// Eat a character or -1 from the stream.
   int getNextChar();
@@ -95,6 +96,12 @@ public:
   /// when the end of the file is reached. The input argument is
   /// used as the result, for convenience.
   Token &lex(Token &Result);
+
+  /// Get the buffer start pointer.
+  const char* getBufferStart() const { return BufferStart; }
+
+  /// Get the buffer end pointer.
+  const char* getBufferEnd() const { return BufferEnd; }
 };
 
 }
