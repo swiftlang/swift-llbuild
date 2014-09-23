@@ -13,6 +13,7 @@
 #include "llbuild/Commands/Commands.h"
 
 #include "llbuild/Ninja/Lexer.h"
+#include "llbuild/Ninja/Parser.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -49,21 +50,24 @@ static void usage() {
   fprintf(stderr, "\n");
   fprintf(stderr, "Available commands:\n");
   fprintf(stderr, "  lex -- Run the Ninja lexer\n");
+  fprintf(stderr, "  parse -- Run the Ninja parser\n");
   fprintf(stderr, "\n");
   exit(1);
 }
 
-static int ExecuteLexCommand(const std::vector<std::string> &Args) {
-  if (Args.size() != 1) {
-    fprintf(stderr, "error: %s: invalid number of arguments\n",
-            getprogname());
-    return 1;
-  }
+static std::unique_ptr<char[]> ReadFileContents(std::string Path,
+                                                uint64_t* Size_Out) {
 
   // Open the input buffer and compute its size.
-  FILE *fp = fopen(Args[0].c_str(), "rb");
+  FILE* fp = fopen(Path.c_str(), "rb");
+  if (!fp) {
+    fprintf(stderr, "error: %s: unable to open input: %s\n", getprogname(),
+            Path.c_str());
+    exit(1);
+  }
+
   fseek(fp, 0, SEEK_END);
-  uint64_t Size = ftell(fp);
+  uint64_t Size = *Size_Out = ftell(fp);
   fseek(fp, 0, SEEK_SET);
 
   // Read the file contents.
@@ -73,12 +77,30 @@ static int ExecuteLexCommand(const std::vector<std::string> &Args) {
     // Read data into the buffer.
     size_t Result = fread(Data.get() + Pos, 1, Size - Pos, fp);
     if (Result <= 0) {
-      fprintf(stderr, "error: %s: unable to read input\n", getprogname());
-      return 1;
+      fprintf(stderr, "error: %s: unable to read input: %s\n", getprogname(),
+              Path.c_str());
+      exit(1);
     }
 
     Pos += Result;
   }
+
+  return Data;
+}
+
+#pragma mark - Lex Command
+
+static int ExecuteLexCommand(const std::vector<std::string> &Args) {
+
+  if (Args.size() != 1) {
+    fprintf(stderr, "error: %s: invalid number of arguments\n",
+            getprogname());
+    return 1;
+  }
+
+  // Read the input.
+  uint64_t Size;
+  std::unique_ptr<char[]> Data = ReadFileContents(Args[0], &Size);
 
   // Create a Ninja lexer.
   fprintf(stderr, "note: %s: reading tokens from %s\n", getprogname(),
@@ -99,6 +121,43 @@ static int ExecuteLexCommand(const std::vector<std::string> &Args) {
   return 0;
 }
 
+#pragma mark - Parse Command
+
+namespace {
+
+class ParseCommandActions : public ninja::ParseActions {
+  virtual void ActOnBeginManifest(std::string Name) override {
+    std::cerr << __FUNCTION__ << "(\"" << Name << "\")\n";
+  }
+
+  virtual void ActOnEndManifest() override {
+    std::cerr << __FUNCTION__ << "()\n";
+  }
+};
+
+}
+
+static int ExecuteParseCommand(const std::vector<std::string> &Args) {
+  if (Args.size() != 1) {
+    fprintf(stderr, "error: %s: invalid number of arguments\n",
+            getprogname());
+    return 1;
+  }
+
+  // Read the input.
+  uint64_t Size;
+  std::unique_ptr<char[]> Data = ReadFileContents(Args[0], &Size);
+
+  // Run the parser.
+  ParseCommandActions Actions;
+  ninja::Parser Parser(Data.get(), Size, Actions);
+  Parser.Parse();
+
+  return 0;
+}
+
+#pragma mark - Ninja Top-Level Command
+
 int commands::ExecuteNinjaCommand(const std::vector<std::string> &Args) {
   // Expect the first argument to be the name of another subtool to delegate to.
   if (Args.empty() || Args[0] == "--help")
@@ -107,6 +166,9 @@ int commands::ExecuteNinjaCommand(const std::vector<std::string> &Args) {
   if (Args[0] == "lex") {
     return ExecuteLexCommand(std::vector<std::string>(Args.begin()+1,
                                                       Args.end()));
+  } else if (Args[0] == "parse") {
+    return ExecuteParseCommand(std::vector<std::string>(Args.begin()+1,
+                                                        Args.end()));
   } else {
     fprintf(stderr, "error: %s: unknown command '%s'\n", getprogname(),
             Args[0].c_str());
