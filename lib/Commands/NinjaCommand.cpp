@@ -216,6 +216,59 @@ private:
               << "/*Path=*/\"" << escapedString(Path.Start, Path.Length)
               << "\")\n";
   }
+
+  virtual BuildResult
+  actOnBeginBuildDecl(const std::vector<ninja::Token> &Outputs,
+                      const std::vector<ninja::Token> &Inputs,
+                      unsigned NumExplicitInputs,
+                      unsigned NumImplicitInputs) override {
+    std::cerr << __FUNCTION__ << "(/*Outputs=*/[";
+    bool First = true;
+    for (auto Name: Outputs) {
+      if (!First)
+        std::cerr << ", ";
+      std::cerr << "\"" << escapedString(Name.Start, Name.Length) << "\"";
+      First = false;
+    }
+    std::cerr << "], /*Inputs=*/[";
+    First = true;
+    for (auto Name: Inputs) {
+      if (!First)
+        std::cerr << ", ";
+      std::cerr << "\"" << escapedString(Name.Start, Name.Length) << "\"";
+      First = false;
+    }
+    std::cerr << "], /*NumExplicitInputs=*/" << NumExplicitInputs << ", "
+              << ", /*NumImplicitInputs=*/"  << NumImplicitInputs << ")\n";
+    return 0;
+  }
+
+  virtual void actOnEndBuildDecl(PoolResult Decl) override {
+    std::cerr << __FUNCTION__ << "(/*Decl=*/"
+              << static_cast<void*>(Decl) << ")\n";
+  }
+
+  virtual PoolResult actOnBeginPoolDecl(const ninja::Token& Name) override {
+    std::cerr << __FUNCTION__ << "(/*Name=*/"
+              << "\"" << escapedString(Name.Start, Name.Length) << "\")\n";
+    return 0;
+  }
+
+  virtual void actOnEndPoolDecl(PoolResult Decl) override {
+    std::cerr << __FUNCTION__ << "(/*Decl=*/"
+              << static_cast<void*>(Decl) << ")\n";
+  }
+
+  virtual RuleResult actOnBeginRuleDecl(const ninja::Token& Name) override {
+    std::cerr << __FUNCTION__ << "(/*Name=*/"
+              << "\"" << escapedString(Name.Start, Name.Length) << "\")\n";
+    return 0;
+  }
+
+  virtual void actOnEndRuleDecl(PoolResult Decl) override {
+    std::cerr << __FUNCTION__ << "(/*Decl=*/"
+              << static_cast<void*>(Decl) << ")\n";
+  }
 };
 
 }

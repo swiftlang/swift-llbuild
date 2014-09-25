@@ -30,4 +30,16 @@ subninja t3.ninja
 # CHECK: basic.ninja:[[@LINE+1]]:17: error: expected newline token
 include t4.ninja bad
 
+# Check "pool" parsing.
+# CHECK: actOnBeginPoolDecl(/*Name=*/"linkpool"
+pool linkpool
+  variable = value
+# CHECK: actOnEndPoolDecl(/*Decl=*/{{.*}})
+
+# Check "rule" parsing.
+# CHECK: actOnBeginRuleDecl(/*Name=*/"link"
+rule link
+  variable = value
+# CHECK: actOnEndRuleDecl(/*Decl=*/{{.*}})
+
 # CHECK: actOnEndManifest()

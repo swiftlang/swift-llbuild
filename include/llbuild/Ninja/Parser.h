@@ -27,6 +27,10 @@ class Parser;
 /// Delegate interface for parser behavior.
 class ParseActions {
 public:
+  typedef void* BuildResult;
+  typedef void* PoolResult;
+  typedef void* RuleResult;
+
   virtual ~ParseActions();
 
   virtual void error(std::string Message, const Token& At) = 0;
@@ -49,7 +53,7 @@ public:
   /// Called on a default declaration.
   ///
   /// \param Names The identifier tokens for each of the names.
-  virtual void actOnDefaultDecl(const std::vector<Token> &Names) = 0;
+  virtual void actOnDefaultDecl(const std::vector<Token>& Names) = 0;
 
   /// Called on an include or subninja declaration.
   ///
@@ -58,6 +62,65 @@ public:
   ///
   /// \param Path The identifier token for the path of the file to include.
   virtual void actOnIncludeDecl(bool IsInclude, const Token& Path) = 0;
+
+  /// @name Parameterized Decls
+  /// @{
+
+  /// Called on a "build" declaration.
+  ///
+  /// \param Outputs The identifier tokens for the outputs of this decl.
+  ///
+  /// \param Inputs The identifier tokens for all of the outputs of this decl.
+  ///
+  /// \param NumExplicitInputs The number of explicit inputs, listed at the
+  /// beginning of the \see Inputs array.
+  ///
+  /// \param NumImplicitInputs The number of implicit inputs, listed immediately
+  /// following the explicit inputs in the \see Inputs array. All of the
+  /// remaining inputs past the implicit inputs are "order-only" inputs.
+  ///
+  /// \returns A result object to represent this decl, which will be passed
+  /// later to \see actOnEndBuildDecl().
+  virtual BuildResult actOnBeginBuildDecl(const std::vector<Token> &Outputs,
+                                          const std::vector<Token> &Inputs,
+                                          unsigned NumExplicitInputs,
+                                          unsigned NumImplicitInputs) = 0;
+
+  /// Called at the end of a "build" decl.
+  ///
+  /// \param Decl The object returned to the parser from the opening \see
+  /// actOnBeginBuildDecl().
+  virtual void actOnEndBuildDecl(BuildResult Decl) = 0;
+
+  /// Called on a "pool" declaration.
+  ///
+  /// \param Name The name of the pool being defined.
+  ///
+  /// \returns A result object to represent this decl, which will be passed
+  /// later to \see actOnEndPoolDecl().
+  virtual PoolResult actOnBeginPoolDecl(const Token& Name) = 0;
+
+  /// Called at the end of a "pool" decl.
+  ///
+  /// \param Decl The object returned to the parser from the opening \see
+  /// actOnBeginPoolDecl().
+  virtual void actOnEndPoolDecl(PoolResult Decl) = 0;
+
+  /// Called on a "rule" declaration.
+  ///
+  /// \param Name The name of the rule being defined.
+  ///
+  /// \returns A result object to represent this decl, which will be passed
+  /// later to \see actOnEndRuleDecl().
+  virtual RuleResult actOnBeginRuleDecl(const Token& Name) = 0;
+
+  /// Called at the end of a "rule" decl.
+  ///
+  /// \param Decl The object returned to the parser from the opening \see
+  /// actOnBeginRuleDecl().
+  virtual void actOnEndRuleDecl(RuleResult Decl) = 0;
+
+  /// @}
 };
 
 /// Interface for parsing a Ninja build manifest.
