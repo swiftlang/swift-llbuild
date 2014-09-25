@@ -5,20 +5,27 @@
 
 # CHECK: actOnBeginManifest("<main>")
 
+# Check binding parsing.
+#
+# CHECK: basic.ninja:[[@LINE+1]]:8: error: expected '=' token
+variable
+# CHECK: actOnBindingDecl(/*Name=*/"variable", /*Value=*/"value")
+variable = value
+
 # Check "default" parsing.
 #
 # CHECK: basic.ninja:[[@LINE+1]]:7: error: expected identifier token
 default
-# CHECK: actOnDefaultDecl(["a", "b", "c"])
+# CHECK: actOnDefaultDecl(/*Names=*/["a", "b", "c"])
 default a b c
 # CHECK: basic.ninja:[[@LINE+1]]:10: error: expected newline token
 default a :
 
 # Check "include" and "subninja" parsing.
 #
-# CHECK: actOnIncludeDecl(/*IsInclude=*/true, "t2.ninja") 
+# CHECK: actOnIncludeDecl(/*IsInclude=*/true, /*Path=*/"t2.ninja")
 include t2.ninja
-# CHECK: actOnIncludeDecl(/*IsInclude=*/false, "t3.ninja") 
+# CHECK: actOnIncludeDecl(/*IsInclude=*/false, /*Path=*/"t3.ninja")
 subninja t3.ninja
 # CHECK: basic.ninja:[[@LINE+1]]:17: error: expected newline token
 include t4.ninja bad

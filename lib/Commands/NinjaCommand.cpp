@@ -188,8 +188,17 @@ private:
     std::cerr << __FUNCTION__ << "()\n";
   }
 
-  virtual void actOnDefaultDecl(const std::vector<ninja::Token>& Names) {
-    std::cerr << __FUNCTION__ << "([";
+  virtual void actOnBindingDecl(const ninja::Token& Name,
+                                const ninja::Token& Value) override {
+    std::cerr << __FUNCTION__ << "(/*Name=*/"
+              << "\"" << escapedString(Name.Start, Name.Length) << "\", "
+              << "/*Value=*/\"" << escapedString(Value.Start,
+                                                 Value.Length) << "\")\n";
+  }
+
+  virtual void actOnDefaultDecl(const std::vector<ninja::Token>&
+                                    Names) override {
+    std::cerr << __FUNCTION__ << "(/*Names=*/[";
     bool First = true;
     for (auto Name: Names) {
       if (!First)
@@ -204,7 +213,8 @@ private:
                                 const ninja::Token& Path) override {
     std::cerr << __FUNCTION__ << "(/*IsInclude=*/"
               << (IsInclude ? "true" : "false") << ", "
-              << "\"" << escapedString(Path.Start, Path.Length) << "\")\n";
+              << "/*Path=*/\"" << escapedString(Path.Start, Path.Length)
+              << "\")\n";
   }
 };
 

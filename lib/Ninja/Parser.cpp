@@ -158,9 +158,33 @@ void ParserImpl::parseDecl() {
 
 /// binding-decl ::= identifier '=' var-expr-list '\n'
 void ParserImpl::parseBindingDecl() {
-  // FIXME: Implement.
-  error("FIXME: implement binding decl");
-  skipPastEOL();
+  Token Name = consumeExpectedToken(Token::Kind::Identifier);
+
+  // Expect a binding to be followed by '='.
+  if (!consumeIfToken(Token::Kind::Equals)) {
+    error("expected '=' token");
+    return skipPastEOL();
+  }
+
+  // Consume the RHS.
+  //
+  // FIXME: We need to put the lexer in a different mode, where it accepts
+  // everything until the end of a line as an expression string. Also, empty
+  // bindings are allowed.
+  if (Tok.TokenKind != Token::Kind::Identifier) {
+    error("expected variable value");
+    return skipPastEOL();
+  }
+
+  Token Value = consumeExpectedToken(Token::Kind::Identifier);
+
+  // The binding should be terminated by a newline.
+  if (!consumeIfToken(Token::Kind::Newline)) {
+    error("expected newline token");
+    return skipPastEOL();
+  }
+  
+  Actions.actOnBindingDecl(Name, Value);
 }
 
 /// default-decl ::= "default" identifier-list '\n'

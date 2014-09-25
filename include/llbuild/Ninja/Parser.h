@@ -39,6 +39,13 @@ public:
   /// Called at the end of parsing the current manifest.
   virtual void actOnEndManifest() = 0;
 
+  /// Called on a variable binding declaration.
+  ///
+  /// \param Name The identifier token for the variable name.
+  ///
+  /// \param Value The identifier token for the variable value.
+  virtual void actOnBindingDecl(const Token& Name, const Token& Value) = 0;
+
   /// Called on a default declaration.
   ///
   /// \param Names The identifier tokens for each of the names.
