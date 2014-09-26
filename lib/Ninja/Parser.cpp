@@ -262,8 +262,10 @@ void ParserImpl::parseParameterizedDecl() {
   // If parsing the specifier failed, skip forward until we reach a non-indented
   // line.
   if (!Success) {
-    while (Tok.TokenKind == Token::Kind::Indentation)
+    do {
       skipPastEOL();
+    } while (Tok.TokenKind == Token::Kind::Indentation);
+
     return;
   }
 
@@ -291,10 +293,65 @@ void ParserImpl::parseParameterizedDecl() {
 /// build-spec ::= "build" identifier-list ":" identifier identifier-list
 ///                [ "|" identifier-list ] [ "||" identifier-list" ] '\n'
 bool ParserImpl::parseBuildSpecifier(void **Decl_Out) {
-  // FIXME: Implement.
-  error("FIXME: implement build specifier decl");
-  skipPastEOL();
-  return false;
+  consumeExpectedToken(Token::Kind::KWBuild);
+
+  // Parse the output list.
+  //
+  // FIXME: This also needs to put the lexer into a special mode, '=' characters
+  // are allowed as identifiers here.
+  if (Tok.TokenKind != Token::Kind::Identifier) {
+    error("expected identifier token");
+    return false;
+  }
+  std::vector<Token> Outputs;
+  do {
+    Outputs.push_back(consumeExpectedToken(Token::Kind::Identifier));
+  } while (Tok.TokenKind == Token::Kind::Identifier);
+
+  // Expect the identifier list to be terminated by a colon.
+  if (!consumeIfToken(Token::Kind::Colon)) {
+    error("expected ':' token");
+    return false;
+  }
+
+  // Parse the rule name.
+  if (Tok.TokenKind != Token::Kind::Identifier) {
+    error("expected identifier token");
+    return false;
+  }
+  Token Name = consumeExpectedToken(Token::Kind::Identifier);
+
+  // Parse the explicit inputs.
+  std::vector<Token> Inputs;
+  while (Tok.TokenKind == Token::Kind::Identifier) {
+    Inputs.push_back(consumeExpectedToken(Token::Kind::Identifier));
+  }
+  unsigned NumExplicitInputs = Inputs.size();
+
+  // Parse the implicit inputs, if present.
+  if (consumeIfToken(Token::Kind::Pipe)) {
+    while (Tok.TokenKind == Token::Kind::Identifier) {
+      Inputs.push_back(consumeExpectedToken(Token::Kind::Identifier));
+    }
+  }
+  unsigned NumImplicitInputs = Inputs.size() - NumExplicitInputs;
+
+  // Parse the order-only inputs, if present.
+  if (consumeIfToken(Token::Kind::PipePipe)) {
+    while (Tok.TokenKind == Token::Kind::Identifier) {
+      Inputs.push_back(consumeExpectedToken(Token::Kind::Identifier));
+    }
+  }
+
+  if (!consumeIfToken(Token::Kind::Newline)) {
+    error("expected newline token");
+    return false;
+  }
+
+  Actions.actOnBeginBuildDecl(Name, Outputs, Inputs, NumExplicitInputs,
+                              NumImplicitInputs);
+
+  return true;
 }
 
 /// pool-spec ::= "pool" identifier '\n'

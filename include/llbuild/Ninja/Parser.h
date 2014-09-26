@@ -81,7 +81,8 @@ public:
   ///
   /// \returns A result object to represent this decl, which will be passed
   /// later to \see actOnEndBuildDecl().
-  virtual BuildResult actOnBeginBuildDecl(const std::vector<Token> &Outputs,
+  virtual BuildResult actOnBeginBuildDecl(const Token& Name,
+                                          const std::vector<Token> &Outputs,
                                           const std::vector<Token> &Inputs,
                                           unsigned NumExplicitInputs,
                                           unsigned NumImplicitInputs) = 0;

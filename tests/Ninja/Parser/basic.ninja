@@ -30,6 +30,21 @@ subninja t3.ninja
 # CHECK: basic.ninja:[[@LINE+1]]:17: error: expected newline token
 include t4.ninja bad
 
+# Check "build" parsing.
+# CHECK: actOnBeginBuildDecl(/*Name=*/"cc", /*Outputs=*/["a.o"], /*Inputs=*/["b.o"], /*NumExplicitInputs=*/1, /*NumImplicitInputs=*/0)
+build a.o: cc b.o
+# CHECK: actOnEndBuildDecl(/*Decl=*/{{.*}})
+
+# Check "build" implicit and order-only parsing.
+# CHECK: actOnBeginBuildDecl(/*Name=*/"cc", /*Outputs=*/["a.o"], /*Inputs=*/["b.o"], /*NumExplicitInputs=*/0, /*NumImplicitInputs=*/0)
+build a.o: cc | || b.o
+# CHECK: actOnBeginBuildDecl(/*Name=*/"cc", /*Outputs=*/["a.o"], /*Inputs=*/["b.o", "c.o"], /*NumExplicitInputs=*/1, /*NumImplicitInputs=*/0)
+build a.o: cc b.o | || c.o
+# CHECK: actOnBeginBuildDecl(/*Name=*/"cc", /*Outputs=*/["a.o"], /*Inputs=*/["b.o", "c.o", "d.o"], /*NumExplicitInputs=*/1, /*NumImplicitInputs=*/1)
+build a.o: cc b.o | c.o || d.o
+# CHECK: basic.ninja:[[@LINE+1]]:14: error: expected newline token
+build a.o: cc :
+
 # Check "pool" parsing.
 # CHECK: actOnBeginPoolDecl(/*Name=*/"linkpool"
 pool linkpool

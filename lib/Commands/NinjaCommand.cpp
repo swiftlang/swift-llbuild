@@ -218,11 +218,14 @@ private:
   }
 
   virtual BuildResult
-  actOnBeginBuildDecl(const std::vector<ninja::Token> &Outputs,
+  actOnBeginBuildDecl(const ninja::Token& Name,
+                      const std::vector<ninja::Token> &Outputs,
                       const std::vector<ninja::Token> &Inputs,
                       unsigned NumExplicitInputs,
                       unsigned NumImplicitInputs) override {
-    std::cerr << __FUNCTION__ << "(/*Outputs=*/[";
+    std::cerr << __FUNCTION__ << "(/*Name=*/"
+              << "\"" << escapedString(Name.Start, Name.Length) << "\""
+              << ", /*Outputs=*/[";
     bool First = true;
     for (auto Name: Outputs) {
       if (!First)
@@ -238,7 +241,7 @@ private:
       std::cerr << "\"" << escapedString(Name.Start, Name.Length) << "\"";
       First = false;
     }
-    std::cerr << "], /*NumExplicitInputs=*/" << NumExplicitInputs << ", "
+    std::cerr << "], /*NumExplicitInputs=*/" << NumExplicitInputs
               << ", /*NumImplicitInputs=*/"  << NumImplicitInputs << ")\n";
     return 0;
   }
