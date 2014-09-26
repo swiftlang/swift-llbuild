@@ -148,8 +148,9 @@ Token &Lexer::lexIdentifier(Token &Result) {
       continue;
     }
 
-    // Otherwise, continue only if this is not whitespace or EOF.
-    if (Char == -1 || isspace(Char))
+    // Otherwise, continue only if this is not whitespace or EOF or a special
+    // character.
+    if (Char == -1 || isspace(Char) || Char == ':' || Char == '=')
       break;
 
     getNextChar();

@@ -15,4 +15,14 @@
 # CHECK: (Token "PipePipe" String:"||" Length:2 Line:[[@LINE+1]] Column:0)
 ||
 
+# CHECK: (Token "Identifier" String:"a" Length:1 Line:[[@LINE+3]] Column:0)
+# CHECK: (Token "Equals" String:"=" Length:1 Line:[[@LINE+2]] Column:1)
+# CHECK: (Token "Identifier" String:"b" Length:1 Line:[[@LINE+1]] Column:3)
+a= b
+
+# CHECK: (Token "Identifier" String:"a" Length:1 Line:[[@LINE+3]] Column:0)
+# CHECK: (Token "Colon" String:":" Length:1 Line:[[@LINE+2]] Column:1)
+# CHECK: (Token "Identifier" String:"b" Length:1 Line:[[@LINE+1]] Column:3)
+a: b
+
 # CHECK: (Token "EndOfFile" String:{{.*}} Length:0 Line:[[@LINE+1]] Column:0)
