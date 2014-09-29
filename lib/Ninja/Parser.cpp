@@ -198,7 +198,17 @@ bool ParserImpl::parseBindingInternal(Token* Name_Out, Token* Value_Out) {
   consumeExpectedToken(Token::Kind::Equals);
   Lexer.setStringMode(Lexer::StringMode::None);
 
-  // Check that the RHS is a string.  
+  // If the RHS is a newline, we have an empty binding which we handle as a
+  // special case.
+  if (Tok.TokenKind == Token::Kind::Newline) {
+    // Derive an empty string token from the newline.
+    *Value_Out = consumeExpectedToken(Token::Kind::Newline);
+    Value_Out->TokenKind = Token::Kind::String;
+    Value_Out->Length = 0;
+    return true;
+  }
+
+  // Otherwise, check that the RHS is a string.
   if (Tok.TokenKind != Token::Kind::String) {
     error("expected variable value");
     skipPastEOL();

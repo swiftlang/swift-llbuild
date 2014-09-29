@@ -28,3 +28,8 @@ a$ line
 #
 # CHECK: string-parsing.ninja:[[@LINE+1]]:2: error: expected '=' token
 a4
+
+# Check that we allow empty assignments.
+#
+# CHECK: actOnBindingDecl(/*Name=*/"a5", /*Value=*/"")
+a5 =
