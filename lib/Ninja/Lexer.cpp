@@ -236,16 +236,31 @@ Token &Lexer::lex(Token &Result) {
     } while (isNonNewlineSpace(peekNextChar()));
   }
 
+  // Initialize the token position.
   Result.Start = BufferPos;
   Result.Line = LineNumber;
   Result.Column = ColumnNumber;
+
+  // Check if we are at a string mode independent token.
   int Char = getNextChar();
+  if (Char == '\n')
+    return setTokenKind(Result, Token::Kind::Newline);
+  if (Char == -1)
+    return setTokenKind(Result, Token::Kind::EndOfFile);
+
+  // If we are in string lexing mode, delegate immediately if appropriate.
+  if (Mode == StringMode::Variable)
+    return lexVariableString(Result);
+  if (Mode == StringMode::Path) {
+    // Only delegate for characters not special to path lexing.
+    if (Char != ':' && Char != '|')
+      return lexPathString(Result);
+  }
+
+  // Otherwise, lex from the regular token set.
   switch (Char) {
-  case -1:  return setTokenKind(Result, Token::Kind::EndOfFile);
-    
   case ':': return setTokenKind(Result, Token::Kind::Colon);
   case '=': return setTokenKind(Result, Token::Kind::Equals);
-  case '\n': return setTokenKind(Result, Token::Kind::Newline);
 
   case '#': {
     skipToEndOfLine();
@@ -259,14 +274,6 @@ Token &Lexer::lex(Token &Result) {
   }
 
   default:
-    // Otherwise, parse according to the current string mode.
-    switch (Mode) {
-    case StringMode::None:
-        return lexIdentifier(Result);
-    case StringMode::Path:
-        return lexPathString(Result);
-    case StringMode::Variable:
-        return lexVariableString(Result);
-    }
+    return lexIdentifier(Result);
   }
 }

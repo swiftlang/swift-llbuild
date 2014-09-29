@@ -198,7 +198,9 @@ pool rule subninja";
 }
 
 TEST(LexerTest, PathStrings) {
-  char Input[] = "this is: a| path$ str$:ing$\ncontext";
+  char Input[] = "this is: a| path$ str$:ing$\ncontext\n\
+#hash-is-ok\n\
+=equal-is-too\n";
   size_t InputSize = strlen(Input);
   ninja::Lexer Lexer(Input, InputSize);
   ninja::Token Tok;
@@ -227,6 +229,21 @@ TEST(LexerTest, PathStrings) {
   Lexer.lex(Tok);
   EXPECT_EQ(ninja::Token::Kind::String, Tok.TokenKind);
   EXPECT_EQ(0, memcmp(Tok.Start, "path$ str$:ing$\ncontext", Tok.Length));
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::Newline, Tok.TokenKind);
+
+  // Check that we allow '#' and '=' in path strings.
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::String, Tok.TokenKind);
+  EXPECT_EQ(0, memcmp(Tok.Start, "#hash-is-ok", Tok.Length));
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::Newline, Tok.TokenKind);
+
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::String, Tok.TokenKind);
+  EXPECT_EQ(0, memcmp(Tok.Start, "=equal-is-too", Tok.Length));
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::Newline, Tok.TokenKind);
 
   // Check final token.
   Lexer.lex(Tok);
@@ -236,7 +253,9 @@ TEST(LexerTest, PathStrings) {
 TEST(LexerTest, VariableStrings) {
   char Input[] = "\
 this is one string\n\
-this string crosses a $\nnewline\n";
+this string crosses a $\nnewline\n\
+:\n\
+|\n";
   size_t InputSize = strlen(Input);
   ninja::Lexer Lexer(Input, InputSize);
   ninja::Token Tok;
@@ -256,6 +275,19 @@ this string crosses a $\nnewline\n";
   EXPECT_EQ(ninja::Token::Kind::String, Tok.TokenKind);
   EXPECT_EQ(0, memcmp(Tok.Start, "this string crosses a $\nnewline",
                       Tok.Length));
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::Newline, Tok.TokenKind);
+
+  // Check that we respect special characters at the start of the token.
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::String, Tok.TokenKind);
+  EXPECT_EQ(0, memcmp(Tok.Start, ":", Tok.Length));
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::Newline, Tok.TokenKind);
+
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::String, Tok.TokenKind);
+  EXPECT_EQ(0, memcmp(Tok.Start, "|", Tok.Length));
   Lexer.lex(Tok);
   EXPECT_EQ(ninja::Token::Kind::Newline, Tok.TokenKind);
 
