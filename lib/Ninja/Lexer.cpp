@@ -24,23 +24,27 @@ using namespace llbuild::ninja;
 const char *Token::getKindName() const {
 #define CASE(name) case Kind::name: return #name
   switch (TokenKind) {
-  default:
-    CASE(Unknown);
     CASE(Colon);
     CASE(Comment);
     CASE(EndOfFile);
     CASE(Equals);
-    CASE(Indentation);
     CASE(Identifier);
+    CASE(Indentation);
     CASE(KWBuild);
     CASE(KWDefault);
+    CASE(KWInclude);
     CASE(KWPool);
     CASE(KWRule);
+    CASE(KWSubninja);
     CASE(Newline);
     CASE(Pipe);
     CASE(PipePipe);
+    CASE(String);
+    CASE(Unknown);
   }
 #undef CASE
+
+  return "<invalid token kind>";
 }
 
 void Token::dump() {
@@ -53,7 +57,7 @@ void Token::dump() {
 
 Lexer::Lexer(const char* Data, uint64_t Length)
   : BufferStart(Data), BufferPos(Data), BufferEnd(Data + Length),
-    LineNumber(1), ColumnNumber(0)
+    LineNumber(1), ColumnNumber(0), Mode(StringMode::None)
 {
 }
 
@@ -160,6 +164,51 @@ Token &Lexer::lexIdentifier(Token &Result) {
   return setIdentifierTokenKind(Result);
 }
 
+Token &Lexer::lexPathString(Token &Result) {
+  // String tokens in path contexts consume until a space, ':', or '|'
+  // character.
+  while (true) {
+    int Char = peekNextChar();
+
+    // If this is an escape character, skip the next character.
+    if (Char == '$') {
+      getNextChar(); // Consume the actual '$'.
+      getNextChar(); // Consume the next character.
+      continue;
+    }
+
+    // Otherwise, continue only if this is not the EOL or EOF.
+    if (isspace(Char) || Char == ':' || Char == '|' || Char == -1)
+      break;
+
+    getNextChar();
+  }
+
+  return setTokenKind(Result, Token::Kind::String);
+}
+
+Token &Lexer::lexVariableString(Token &Result) {
+  // String tokens in variable assignments consume until the end of the line.
+  while (true) {
+    int Char = peekNextChar();
+
+    // If this is an escape character, skip the next character.
+    if (Char == '$') {
+      getNextChar(); // Consume the actual '$'.
+      getNextChar(); // Consume the next character.
+      continue;
+    }
+
+    // Otherwise, continue only if this is not the EOL or EOF.
+    if (Char == '\n' || Char == -1)
+      break;
+
+    getNextChar();
+  }
+
+  return setTokenKind(Result, Token::Kind::String);
+}
+
 static bool isNonNewlineSpace(int Char) {
   return isspace(Char) && Char != '\n';
 }
@@ -210,7 +259,14 @@ Token &Lexer::lex(Token &Result) {
   }
 
   default:
-    // Otherwise, parse as an identifier.
-    return lexIdentifier(Result);
+    // Otherwise, parse according to the current string mode.
+    switch (Mode) {
+    case StringMode::None:
+        return lexIdentifier(Result);
+    case StringMode::Path:
+        return lexPathString(Result);
+    case StringMode::Variable:
+        return lexVariableString(Result);
+    }
   }
 }

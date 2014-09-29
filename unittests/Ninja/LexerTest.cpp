@@ -197,4 +197,71 @@ pool rule subninja";
   EXPECT_EQ(ninja::Token::Kind::EndOfFile, Tok.TokenKind);
 }
 
+TEST(LexerTest, PathStrings) {
+  char Input[] = "this is: a| path$ str$:ing$\ncontext";
+  size_t InputSize = strlen(Input);
+  ninja::Lexer Lexer(Input, InputSize);
+  ninja::Token Tok;
+
+  // Put the lexer into "path" string mode.
+  Lexer.setStringMode(ninja::Lexer::StringMode::Path);
+
+  // Check we still split on spaces.
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::String, Tok.TokenKind);
+  EXPECT_EQ(0, memcmp(Tok.Start, "this", Tok.Length));
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::String, Tok.TokenKind);
+  EXPECT_EQ(0, memcmp(Tok.Start, "is", Tok.Length));
+
+  // Check that we recognized the other tokens.
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::Colon, Tok.TokenKind);
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::String, Tok.TokenKind);
+  EXPECT_EQ(0, memcmp(Tok.Start, "a", Tok.Length));
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::Pipe, Tok.TokenKind);
+
+  // Check that we honor escape sequences.
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::String, Tok.TokenKind);
+  EXPECT_EQ(0, memcmp(Tok.Start, "path$ str$:ing$\ncontext", Tok.Length));
+
+  // Check final token.
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::EndOfFile, Tok.TokenKind);
+}
+
+TEST(LexerTest, VariableStrings) {
+  char Input[] = "\
+this is one string\n\
+this string crosses a $\nnewline\n";
+  size_t InputSize = strlen(Input);
+  ninja::Lexer Lexer(Input, InputSize);
+  ninja::Token Tok;
+
+  // Put the lexer into "variable" string mode.
+  Lexer.setStringMode(ninja::Lexer::StringMode::Variable);
+
+  // Check we consume spaces in strings.
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::String, Tok.TokenKind);
+  EXPECT_EQ(0, memcmp(Tok.Start, "this is one string", Tok.Length));
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::Newline, Tok.TokenKind);
+
+  // Check that we honor the newline escape.
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::String, Tok.TokenKind);
+  EXPECT_EQ(0, memcmp(Tok.Start, "this string crosses a $\nnewline",
+                      Tok.Length));
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::Newline, Tok.TokenKind);
+
+  // Check final token.
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::EndOfFile, Tok.TokenKind);
+}
+
 }

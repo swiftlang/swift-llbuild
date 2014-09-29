@@ -35,6 +35,7 @@ struct Token {
     Newline,                  ///< The end of a line.
     Pipe,                     ///< '|'
     PipePipe,                 ///< '||'
+    String,                   ///< Strings, only lexed in string mode.
     Unknown,                  ///< <other>
 
     KWKindFirst = KWBuild,
@@ -60,12 +61,26 @@ struct Token {
 };
 
 /// Interface for lexing tokens from a Ninja build manifest.
+///
+/// The Ninja manifest language unfortunately has no real string token, rather,
+/// the lexing is done in a context sensitive fashion and string tokens are only
+/// recognized when the lexer is in a specific mode. See \see Lexer::StringMode
+/// and \see Lexer::setStringMode().
 class Lexer {
+public:
+  enum class StringMode {
+    None,     ///< No string tokens will be recognized.
+    Path,     ///< Strings will be lexed as expected for path references.
+    Variable, ///< Strings will be lexed as expected for variable assignents.
+  };
+
+private:
   const char* BufferStart;    ///< The buffer end position.
   const char* BufferPos;      ///< The current lexer position.
   const char* BufferEnd;      ///< The buffer end position.
   unsigned    LineNumber;     ///< The current line.
   unsigned    ColumnNumber;   ///< The current column.
+  StringMode  Mode;           ///< The current string lexing mode.
 
   /// Eat a character or -1 from the stream.
   int getNextChar();
@@ -88,6 +103,14 @@ class Lexer {
   /// Lex a token, assuming the current position is the start of an identifier.
   Token &lexIdentifier(Token &Result);
 
+  /// Lex a token, assuming the current position is the start of a string and
+  /// the lexer is in the "path" string mode.
+  Token &lexPathString(Token &Result);
+
+  /// Lex a token, assuming the current position is the start of a string and
+  /// the lexer is in the "variable" string mode.
+  Token &lexVariableString(Token &Result);
+
 public:
   explicit Lexer(const char *Data, uint64_t Length);
   ~Lexer();
@@ -102,6 +125,12 @@ public:
 
   /// Get the buffer end pointer.
   const char* getBufferEnd() const { return BufferEnd; }
+
+  /// Get the current string lexing mode.
+  StringMode getStringMode() const { return Mode; }
+
+  /// Set the current string lexing mode.
+  void setStringMode(StringMode Value) { Mode = Value; }
 };
 
 }
