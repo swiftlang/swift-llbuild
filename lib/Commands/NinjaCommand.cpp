@@ -90,7 +90,8 @@ static std::unique_ptr<char[]> ReadFileContents(std::string Path,
 
 #pragma mark - Lex Command
 
-static int ExecuteLexCommand(const std::vector<std::string> &Args) {
+static int ExecuteLexCommand(const std::vector<std::string> &Args,
+                             bool LexOnly) {
 
   if (Args.size() != 1) {
     fprintf(stderr, "error: %s: invalid number of arguments\n",
@@ -103,19 +104,24 @@ static int ExecuteLexCommand(const std::vector<std::string> &Args) {
   std::unique_ptr<char[]> Data = ReadFileContents(Args[0], &Size);
 
   // Create a Ninja lexer.
-  fprintf(stderr, "note: %s: reading tokens from %s\n", getprogname(),
-          Args[0].c_str());
+  if (!LexOnly) {
+      fprintf(stderr, "note: %s: reading tokens from %s\n", getprogname(),
+              Args[0].c_str());
+  }
   ninja::Lexer Lexer(Data.get(), Size);
   ninja::Token Tok;
   do {
     // Get the next token.
     Lexer.lex(Tok);
 
-    std::cerr << "(Token \"" << Tok.getKindName() << "\""
-              << " String:\"" << escapedString(Tok.Start, Tok.Length) << "\""
-              << " Length:" << Tok.Length
-              << " Line:" << Tok.Line
-              << " Column:" << Tok.Column << ")\n";
+    if (!LexOnly) {
+        std::cerr << "(Token \"" << Tok.getKindName() << "\""
+                  << " String:\"" << escapedString(Tok.Start,
+                                                   Tok.Length) << "\""
+                  << " Length:" << Tok.Length
+                  << " Line:" << Tok.Line
+                  << " Column:" << Tok.Column << ")\n";
+    }
   } while (Tok.TokenKind != ninja::Token::Kind::EndOfFile);
 
   return 0;
@@ -422,7 +428,12 @@ int commands::ExecuteNinjaCommand(const std::vector<std::string> &Args) {
 
   if (Args[0] == "lex") {
     return ExecuteLexCommand(std::vector<std::string>(Args.begin()+1,
-                                                      Args.end()));
+                                                      Args.end()),
+                             /*LexOnly=*/false);
+  } else if (Args[0] == "lex-only") {
+    return ExecuteLexCommand(std::vector<std::string>(Args.begin()+1,
+                                                      Args.end()),
+                             /*LexOnly=*/true);
   } else if (Args[0] == "parse") {
     return ExecuteParseCommand(std::vector<std::string>(Args.begin()+1,
                                                         Args.end()),
