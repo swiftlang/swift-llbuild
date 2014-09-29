@@ -90,6 +90,18 @@ class ParserImpl {
   /// Parse a top-level declaration.
   void parseDecl();
 
+  /// Parse a variable binding.
+  ///
+  /// \param Name_Out [out] On success, the identifier token for the binding
+  /// name.
+  ///
+  /// \param Value_Out [out] On success, the identifier token for the binding
+  /// value.
+  ///
+  /// \returns True on success. On failure, the lexer will be advanced past the
+  /// next newline (see \see skipPastEOL()).
+  bool parseBindingInternal(Token* Name_Out, Token* Value_Out);
+
   void parseBindingDecl();
   void parseDefaultDecl();
   void parseIncludeDecl();
@@ -160,14 +172,21 @@ void ParserImpl::parseDecl() {
   }
 }
 
-/// binding-decl ::= identifier '=' var-expr-list '\n'
-void ParserImpl::parseBindingDecl() {
-  Token Name = consumeExpectedToken(Token::Kind::Identifier);
+bool ParserImpl::parseBindingInternal(Token* Name_Out, Token* Value_Out) {
+  // The leading token should be an identifier.
+  if (Tok.TokenKind != Token::Kind::Identifier) {
+    error("expected identifier token");
+    skipPastEOL();
+    return false;
+  }
 
-  // Expect a binding to be followed by '='.
+  *Name_Out = consumeExpectedToken(Token::Kind::Identifier);
+
+  // Expect the variable name to be followed by '='.
   if (!consumeIfToken(Token::Kind::Equals)) {
     error("expected '=' token");
-    return skipPastEOL();
+    skipPastEOL();
+    return false;
   }
 
   // Consume the RHS.
@@ -177,18 +196,27 @@ void ParserImpl::parseBindingDecl() {
   // bindings are allowed.
   if (Tok.TokenKind != Token::Kind::Identifier) {
     error("expected variable value");
-    return skipPastEOL();
+    skipPastEOL();
+    return false;
   }
 
-  Token Value = consumeExpectedToken(Token::Kind::Identifier);
+  *Value_Out = consumeExpectedToken(Token::Kind::Identifier);
 
   // The binding should be terminated by a newline.
   if (!consumeIfToken(Token::Kind::Newline)) {
     error("expected newline token");
-    return skipPastEOL();
+    skipPastEOL();
+    return false;
   }
-  
-  Actions.actOnBindingDecl(Name, Value);
+
+  return true;
+}
+
+/// binding-decl ::= identifier '=' var-expr-list '\n'
+void ParserImpl::parseBindingDecl() {
+  Token Name, Value;
+  if (parseBindingInternal(&Name, &Value))
+    Actions.actOnBindingDecl(Name, Value);
 }
 
 /// default-decl ::= "default" identifier-list '\n'
@@ -274,57 +302,22 @@ void ParserImpl::parseParameterizedDecl() {
   }
 
   // Otherwise, parse the set of indented bindings.
-  //
-  // NOTE: This is similar to parseBindingDecl(), and should be kept in sync.
   while (consumeIfToken(Token::Kind::Indentation)) {
-    // The leading token should be an identifier.
-    if (Tok.TokenKind != Token::Kind::Identifier) {
-      error("expected identifier token");
-      skipPastEOL();
-      continue;
-    }
-
-    Token Name = consumeExpectedToken(Token::Kind::Identifier);
-
-    // Expect a binding to be followed by '='.
-    if (!consumeIfToken(Token::Kind::Equals)) {
-      error("expected '=' token");
-      skipPastEOL();
-      continue;
-    }
-
-    // Consume the RHS.
-    //
-    // FIXME: We need to put the lexer in a different mode, where it accepts
-    // everything until the end of a line as an expression string. Also, empty
-    // bindings are allowed.
-    if (Tok.TokenKind != Token::Kind::Identifier) {
-      error("expected variable value");
-      skipPastEOL();
-      continue;
-    }
-
-    Token Value = consumeExpectedToken(Token::Kind::Identifier);
-
-    // The binding should be terminated by a newline.
-    if (!consumeIfToken(Token::Kind::Newline)) {
-      error("expected newline token");
-      skipPastEOL();
-      continue;
-    }
-
-    // Dispatch to the appropriate parser action.
-    switch (Kind) {
-    case Token::Kind::KWBuild:
-      Actions.actOnBuildBindingDecl(Decl.AsBuild, Name, Value);
-      break;
-    case Token::Kind::KWPool:
-      Actions.actOnPoolBindingDecl(Decl.AsPool, Name, Value);
-      break;
-    default:
-      assert(Kind == Token::Kind::KWRule);
-      Actions.actOnRuleBindingDecl(Decl.AsRule, Name, Value);
-      break;
+    Token Name, Value;
+    if (parseBindingInternal(&Name, &Value)) {
+      // Dispatch to the appropriate parser action.
+      switch (Kind) {
+      case Token::Kind::KWBuild:
+        Actions.actOnBuildBindingDecl(Decl.AsBuild, Name, Value);
+        break;
+      case Token::Kind::KWPool:
+        Actions.actOnPoolBindingDecl(Decl.AsPool, Name, Value);
+        break;
+      default:
+        assert(Kind == Token::Kind::KWRule);
+        Actions.actOnRuleBindingDecl(Decl.AsRule, Name, Value);
+        break;
+      }
     }
   }
 
