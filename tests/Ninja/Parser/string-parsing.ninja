@@ -1,0 +1,30 @@
+# Check string specific parsing functionality.
+#
+# RUN: %{llbuild} ninja parse %s 2> %t.err
+# RUN: %{FileCheck} < %t.err %s
+
+# Check that we accept and preserve spaces in variable bindings.
+#
+# CHECK: actOnBindingDecl(/*Name=*/"a0", /*Value=*/"b0  c0")
+a0 = b0  c0
+
+# Check that we strip leading space.
+#
+# CHECK: actOnBindingDecl(/*Name=*/"a1", /*Value=*/"b1  c1")
+a1 =     b1  c1
+
+# Check that we accept "special" characters in this context.
+#
+# CHECK: actOnBindingDecl(/*Name=*/"a2", /*Value=*/"this is a : followed by a |")
+a2 = this is a : followed by a |
+
+# Check that we don't stop on escapes.
+#
+# CHECK: actOnBindingDecl(/*Name=*/"a3", /*Value=*/"this spans$\na$ line")
+a3 = this spans$
+a$ line
+
+# Check that we diagnose missing '=' properly.
+#
+# CHECK: string-parsing.ninja:[[@LINE+1]]:2: error: expected '=' token
+a4

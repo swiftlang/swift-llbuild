@@ -183,24 +183,29 @@ bool ParserImpl::parseBindingInternal(Token* Name_Out, Token* Value_Out) {
   *Name_Out = consumeExpectedToken(Token::Kind::Identifier);
 
   // Expect the variable name to be followed by '='.
-  if (!consumeIfToken(Token::Kind::Equals)) {
+  if (Tok.TokenKind != Token::Kind::Equals) {
     error("expected '=' token");
     skipPastEOL();
     return false;
   }
 
-  // Consume the RHS.
+  // Consume the '=' and the RHS.
   //
-  // FIXME: We need to put the lexer in a different mode, where it accepts
-  // everything until the end of a line as an expression string. Also, empty
-  // bindings are allowed.
-  if (Tok.TokenKind != Token::Kind::Identifier) {
+  // We must consume the RHS in variable lexing mode, so given our lookahead
+  // design we switch modes, consume the equals (which will advance the lexer),
+  // and then immediately switch back.
+  Lexer.setStringMode(Lexer::StringMode::Variable);
+  consumeExpectedToken(Token::Kind::Equals);
+  Lexer.setStringMode(Lexer::StringMode::None);
+
+  // Check that the RHS is a string.  
+  if (Tok.TokenKind != Token::Kind::String) {
     error("expected variable value");
     skipPastEOL();
     return false;
   }
 
-  *Value_Out = consumeExpectedToken(Token::Kind::Identifier);
+  *Value_Out = consumeExpectedToken(Token::Kind::String);
 
   // The binding should be terminated by a newline.
   if (!consumeIfToken(Token::Kind::Newline)) {
