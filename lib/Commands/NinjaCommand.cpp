@@ -322,6 +322,97 @@ static int ExecuteParseCommand(const std::vector<std::string> &Args) {
   return 0;
 }
 
+#pragma mark - Parse Only Command
+
+namespace {
+
+class ParseOnlyCommandActions : public ninja::ParseActions {
+  ninja::Parser *Parser = 0;
+
+public:
+  ParseOnlyCommandActions() {}
+
+private:
+  virtual void initialize(ninja::Parser *Parser) {
+    this->Parser = Parser;
+  }
+
+  virtual void error(std::string Message, const ninja::Token &At) override { }
+
+  virtual void actOnBeginManifest(std::string Name) override { }
+
+  virtual void actOnEndManifest() override { }
+
+  virtual void actOnBindingDecl(const ninja::Token& Name,
+                                const ninja::Token& Value) override { }
+
+  virtual void actOnDefaultDecl(const std::vector<ninja::Token>&
+                                    Names) override { }
+
+  virtual void actOnIncludeDecl(bool IsInclude,
+                                const ninja::Token& Path) override { }
+
+  virtual BuildResult
+  actOnBeginBuildDecl(const ninja::Token& Name,
+                      const std::vector<ninja::Token> &Outputs,
+                      const std::vector<ninja::Token> &Inputs,
+                      unsigned NumExplicitInputs,
+                      unsigned NumImplicitInputs) override {
+    return 0;
+  }
+
+  virtual void actOnBuildBindingDecl(BuildResult Decl, const ninja::Token& Name,
+                                     const ninja::Token& Value) override { }
+
+  virtual void actOnEndBuildDecl(PoolResult Decl) override { }
+
+  virtual PoolResult actOnBeginPoolDecl(const ninja::Token& Name) override {
+    return 0;
+  }
+
+  virtual void actOnPoolBindingDecl(PoolResult Decl, const ninja::Token& Name,
+                                    const ninja::Token& Value) override { }
+
+  virtual void actOnEndPoolDecl(PoolResult Decl) override { }
+
+  virtual RuleResult actOnBeginRuleDecl(const ninja::Token& Name) override {
+    return 0;
+  }
+
+  virtual void actOnRuleBindingDecl(RuleResult Decl, const ninja::Token& Name,
+                                    const ninja::Token& Value) override { }
+
+  virtual void actOnEndRuleDecl(PoolResult Decl) override { }
+};
+
+}
+
+static int ExecuteParseCommand(const std::vector<std::string> &Args,
+                               bool ParseOnly) {
+  if (Args.size() != 1) {
+    fprintf(stderr, "error: %s: invalid number of arguments\n",
+            getprogname());
+    return 1;
+  }
+
+  // Read the input.
+  uint64_t Size;
+  std::unique_ptr<char[]> Data = ReadFileContents(Args[0], &Size);
+
+  // Run the parser.
+  if (ParseOnly) {
+      ParseOnlyCommandActions Actions;
+      ninja::Parser Parser(Data.get(), Size, Actions);
+      Parser.parse();
+  } else {
+      ParseCommandActions Actions(Args[0]);
+      ninja::Parser Parser(Data.get(), Size, Actions);
+      Parser.parse();
+  }
+
+  return 0;
+}
+
 #pragma mark - Ninja Top-Level Command
 
 int commands::ExecuteNinjaCommand(const std::vector<std::string> &Args) {
@@ -334,7 +425,12 @@ int commands::ExecuteNinjaCommand(const std::vector<std::string> &Args) {
                                                       Args.end()));
   } else if (Args[0] == "parse") {
     return ExecuteParseCommand(std::vector<std::string>(Args.begin()+1,
-                                                        Args.end()));
+                                                        Args.end()),
+                               /*ParseOnly=*/false);
+  } else if (Args[0] == "parse-only") {
+    return ExecuteParseCommand(std::vector<std::string>(Args.begin()+1,
+                                                        Args.end()),
+                               /*ParseOnly=*/true);
   } else {
     fprintf(stderr, "error: %s: unknown command '%s'\n", getprogname(),
             Args[0].c_str());
