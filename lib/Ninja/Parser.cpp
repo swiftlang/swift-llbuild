@@ -95,9 +95,9 @@ class ParserImpl {
   void parseIncludeDecl();
   void parseParameterizedDecl();
 
-  bool parseBuildSpecifier(void **Decl_Out);
-  bool parseRuleSpecifier(void **Decl_Out);
-  bool parsePoolSpecifier(void **Decl_Out);
+  bool parseBuildSpecifier(ParseActions::BuildResult *Decl_Out);
+  bool parsePoolSpecifier(ParseActions::PoolResult *Decl_Out);
+  bool parseRuleSpecifier(ParseActions::RuleResult *Decl_Out);
 
 public:
   ParserImpl(const char* Data, uint64_t Length,
@@ -243,19 +243,23 @@ void ParserImpl::parseIncludeDecl() {
 /// parameterized-specifier ::= build-spec | pool-spec | rule-spec
 void ParserImpl::parseParameterizedDecl() {
   // Begin by parsing the specifier.
-  void *Decl;
+  union {
+    ParseActions::BuildResult AsBuild;
+    ParseActions::PoolResult AsPool;
+    ParseActions::RuleResult AsRule;
+  } Decl;
   bool Success;
   Token::Kind Kind = Tok.TokenKind;
   switch (Kind) {
   case Token::Kind::KWBuild:
-    Success = parseBuildSpecifier(&Decl);
+    Success = parseBuildSpecifier(&Decl.AsBuild);
     break;
   case Token::Kind::KWPool:
-    Success = parsePoolSpecifier(&Decl);
+    Success = parsePoolSpecifier(&Decl.AsPool);
     break;
   default:
     assert(Kind == Token::Kind::KWRule);
-    Success = parseRuleSpecifier(&Decl);
+    Success = parseRuleSpecifier(&Decl.AsRule);
     break;
   }
 
@@ -277,22 +281,21 @@ void ParserImpl::parseParameterizedDecl() {
 
   switch (Kind) {
   case Token::Kind::KWBuild:
-    Actions.actOnEndBuildDecl(static_cast<ParseActions::BuildResult>(Decl));
+    Actions.actOnEndBuildDecl(Decl.AsBuild);
     break;
   case Token::Kind::KWPool:
-    assert(Kind == Token::Kind::KWPool);
-    Actions.actOnEndPoolDecl(static_cast<ParseActions::PoolResult>(Decl));
+    Actions.actOnEndPoolDecl(Decl.AsPool);
     break;
   default:
     assert(Kind == Token::Kind::KWRule);
-    Actions.actOnEndRuleDecl(static_cast<ParseActions::RuleResult>(Decl));
+    Actions.actOnEndRuleDecl(Decl.AsRule);
     break;
   }
 }
 
 /// build-spec ::= "build" identifier-list ":" identifier identifier-list
 ///                [ "|" identifier-list ] [ "||" identifier-list" ] '\n'
-bool ParserImpl::parseBuildSpecifier(void **Decl_Out) {
+bool ParserImpl::parseBuildSpecifier(ParseActions::BuildResult *Decl_Out) {
   consumeExpectedToken(Token::Kind::KWBuild);
 
   // Parse the output list.
@@ -348,14 +351,14 @@ bool ParserImpl::parseBuildSpecifier(void **Decl_Out) {
     return false;
   }
 
-  Actions.actOnBeginBuildDecl(Name, Outputs, Inputs, NumExplicitInputs,
-                              NumImplicitInputs);
+  *Decl_Out = Actions.actOnBeginBuildDecl(Name, Outputs, Inputs,
+                                          NumExplicitInputs, NumImplicitInputs);
 
   return true;
 }
 
 /// pool-spec ::= "pool" identifier '\n'
-bool ParserImpl::parsePoolSpecifier(void **Decl_Out) {
+bool ParserImpl::parsePoolSpecifier(ParseActions::PoolResult *Decl_Out) {
   consumeExpectedToken(Token::Kind::KWPool);
 
   if (Tok.TokenKind != Token::Kind::Identifier) {
@@ -370,14 +373,13 @@ bool ParserImpl::parsePoolSpecifier(void **Decl_Out) {
     return false;
   }
 
-  ParseActions::PoolResult Result = Actions.actOnBeginPoolDecl(Name);
-  *Decl_Out = static_cast<void*>(Result);
+  *Decl_Out = Actions.actOnBeginPoolDecl(Name);
 
   return true;
 }
 
 /// rule-spec ::= "rule" identifier '\n'
-bool ParserImpl::parseRuleSpecifier(void **Decl_Out) {
+bool ParserImpl::parseRuleSpecifier(ParseActions::RuleResult *Decl_Out) {
   consumeExpectedToken(Token::Kind::KWRule);
 
   if (Tok.TokenKind != Token::Kind::Identifier) {
@@ -392,8 +394,7 @@ bool ParserImpl::parseRuleSpecifier(void **Decl_Out) {
     return false;
   }
 
-  ParseActions::RuleResult Result = Actions.actOnBeginRuleDecl(Name);
-  *Decl_Out = static_cast<void*>(Result);
+  *Decl_Out = Actions.actOnBeginRuleDecl(Name);
 
   return true;
 }
