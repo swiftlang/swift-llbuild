@@ -32,7 +32,9 @@ include t4.ninja bad
 
 # Check "build" parsing.
 # CHECK: actOnBeginBuildDecl(/*Name=*/"cc", /*Outputs=*/["a.o"], /*Inputs=*/["b.o"], /*NumExplicitInputs=*/1, /*NumImplicitInputs=*/0)
+# CHECK: actOnBuildBindingDecl({{.*}}, /*Name=*/"name", /*Value=*/"value")
 build a.o: cc b.o
+   name = value
 # CHECK: actOnEndBuildDecl(/*Decl=*/{{.*}})
 
 # Check "build" implicit and order-only parsing.
@@ -47,12 +49,14 @@ build a.o: cc :
 
 # Check "pool" parsing.
 # CHECK: actOnBeginPoolDecl(/*Name=*/"linkpool"
+# CHECK: actOnPoolBindingDecl({{.*}}, /*Name=*/"variable", /*Value=*/"value")
 pool linkpool
   variable = value
 # CHECK: actOnEndPoolDecl(/*Decl=*/{{.*}})
 
 # Check "rule" parsing.
 # CHECK: actOnBeginRuleDecl(/*Name=*/"link"
+# CHECK: actOnRuleBindingDecl({{.*}}, /*Name=*/"variable", /*Value=*/"value")
 rule link
   variable = value
 # CHECK: actOnEndRuleDecl(/*Decl=*/{{.*}})

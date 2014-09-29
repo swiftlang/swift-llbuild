@@ -246,6 +246,15 @@ private:
     return 0;
   }
 
+  virtual void actOnBuildBindingDecl(BuildResult Decl, const ninja::Token& Name,
+                                     const ninja::Token& Value) override {
+    std::cerr << __FUNCTION__ << "(/*Decl=*/"
+              << static_cast<void*>(Decl) << ", /*Name=*/"
+              << "\"" << escapedString(Name.Start, Name.Length) << "\", "
+              << "/*Value=*/\"" << escapedString(Value.Start,
+                                                 Value.Length) << "\")\n";
+  }
+
   virtual void actOnEndBuildDecl(PoolResult Decl) override {
     std::cerr << __FUNCTION__ << "(/*Decl=*/"
               << static_cast<void*>(Decl) << ")\n";
@@ -257,6 +266,15 @@ private:
     return 0;
   }
 
+  virtual void actOnPoolBindingDecl(PoolResult Decl, const ninja::Token& Name,
+                                     const ninja::Token& Value) override {
+    std::cerr << __FUNCTION__ << "(/*Decl=*/"
+              << static_cast<void*>(Decl) << ", /*Name=*/"
+              << "\"" << escapedString(Name.Start, Name.Length) << "\", "
+              << "/*Value=*/\"" << escapedString(Value.Start,
+                                                 Value.Length) << "\")\n";
+  }
+
   virtual void actOnEndPoolDecl(PoolResult Decl) override {
     std::cerr << __FUNCTION__ << "(/*Decl=*/"
               << static_cast<void*>(Decl) << ")\n";
@@ -266,6 +284,15 @@ private:
     std::cerr << __FUNCTION__ << "(/*Name=*/"
               << "\"" << escapedString(Name.Start, Name.Length) << "\")\n";
     return 0;
+  }
+
+  virtual void actOnRuleBindingDecl(RuleResult Decl, const ninja::Token& Name,
+                                     const ninja::Token& Value) override {
+    std::cerr << __FUNCTION__ << "(/*Decl=*/"
+              << static_cast<void*>(Decl) << ", /*Name=*/"
+              << "\"" << escapedString(Name.Start, Name.Length) << "\", "
+              << "/*Value=*/\"" << escapedString(Value.Start,
+                                                 Value.Length) << "\")\n";
   }
 
   virtual void actOnEndRuleDecl(PoolResult Decl) override {

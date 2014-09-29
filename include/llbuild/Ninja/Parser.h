@@ -87,6 +87,16 @@ public:
                                           unsigned NumExplicitInputs,
                                           unsigned NumImplicitInputs) = 0;
 
+  /// Called on a variable binding within a "build" declaration.
+  ///
+  /// \param Decl The declaration the binding is present within.
+  ///
+  /// \param Name The identifier token for the variable name.
+  ///
+  /// \param Value The identifier token for the variable value.
+  virtual void actOnBuildBindingDecl(BuildResult Decl, const Token& Name,
+                                     const Token& Value) = 0;
+
   /// Called at the end of a "build" decl.
   ///
   /// \param Decl The object returned to the parser from the opening \see
@@ -101,6 +111,16 @@ public:
   /// later to \see actOnEndPoolDecl().
   virtual PoolResult actOnBeginPoolDecl(const Token& Name) = 0;
 
+  /// Called on a variable binding within a "pool" declaration.
+  ///
+  /// \param Decl The declaration the binding is present within.
+  ///
+  /// \param Name The identifier token for the variable name.
+  ///
+  /// \param Value The identifier token for the variable value.
+  virtual void actOnPoolBindingDecl(PoolResult Decl, const Token& Name,
+                                    const Token& Value) = 0;
+
   /// Called at the end of a "pool" decl.
   ///
   /// \param Decl The object returned to the parser from the opening \see
@@ -114,6 +134,16 @@ public:
   /// \returns A result object to represent this decl, which will be passed
   /// later to \see actOnEndRuleDecl().
   virtual RuleResult actOnBeginRuleDecl(const Token& Name) = 0;
+
+  /// Called on a variable binding within a "rule" declaration.
+  ///
+  /// \param Decl The declaration the binding is present within.
+  ///
+  /// \param Name The identifier token for the variable name.
+  ///
+  /// \param Value The identifier token for the variable value.
+  virtual void actOnRuleBindingDecl(RuleResult Decl, const Token& Name,
+                                    const Token& Value) = 0;
 
   /// Called at the end of a "rule" decl.
   ///

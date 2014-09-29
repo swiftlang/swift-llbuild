@@ -274,10 +274,62 @@ void ParserImpl::parseParameterizedDecl() {
   }
 
   // Otherwise, parse the set of indented bindings.
+  //
+  // NOTE: This is similar to parseBindingDecl(), and should be kept in sync.
+  while (Tok.TokenKind == Token::Kind::Indentation) {
+    // Parse the variable binding.
+    consumeExpectedToken(Token::Kind::Indentation);
 
-  // FIXME: Implement.
-  error("FIXME: implement parameterized decl");
-  skipPastEOL();
+    // The leading token should be an identifier.
+    if (Tok.TokenKind != Token::Kind::Identifier) {
+      error("expected identifier token");
+      skipPastEOL();
+      continue;
+    }
+
+    Token Name = consumeExpectedToken(Token::Kind::Identifier);
+
+    // Expect a binding to be followed by '='.
+    if (!consumeIfToken(Token::Kind::Equals)) {
+      error("expected '=' token");
+      skipPastEOL();
+      continue;
+    }
+
+    // Consume the RHS.
+    //
+    // FIXME: We need to put the lexer in a different mode, where it accepts
+    // everything until the end of a line as an expression string. Also, empty
+    // bindings are allowed.
+    if (Tok.TokenKind != Token::Kind::Identifier) {
+      error("expected variable value");
+      skipPastEOL();
+      continue;
+    }
+
+    Token Value = consumeExpectedToken(Token::Kind::Identifier);
+
+    // The binding should be terminated by a newline.
+    if (!consumeIfToken(Token::Kind::Newline)) {
+      error("expected newline token");
+      skipPastEOL();
+      continue;
+    }
+
+    // Dispatch to the appropriate parser action.
+    switch (Kind) {
+    case Token::Kind::KWBuild:
+      Actions.actOnBuildBindingDecl(Decl.AsBuild, Name, Value);
+      break;
+    case Token::Kind::KWPool:
+      Actions.actOnPoolBindingDecl(Decl.AsPool, Name, Value);
+      break;
+    default:
+      assert(Kind == Token::Kind::KWRule);
+      Actions.actOnRuleBindingDecl(Decl.AsRule, Name, Value);
+      break;
+    }
+  }
 
   switch (Kind) {
   case Token::Kind::KWBuild:
