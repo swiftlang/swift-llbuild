@@ -276,10 +276,7 @@ void ParserImpl::parseParameterizedDecl() {
   // Otherwise, parse the set of indented bindings.
   //
   // NOTE: This is similar to parseBindingDecl(), and should be kept in sync.
-  while (Tok.TokenKind == Token::Kind::Indentation) {
-    // Parse the variable binding.
-    consumeExpectedToken(Token::Kind::Indentation);
-
+  while (consumeIfToken(Token::Kind::Indentation)) {
     // The leading token should be an identifier.
     if (Tok.TokenKind != Token::Kind::Identifier) {
       error("expected identifier token");
