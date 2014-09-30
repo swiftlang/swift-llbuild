@@ -13,6 +13,8 @@
 #include "llbuild/Commands/Commands.h"
 
 #include "llbuild/Ninja/Lexer.h"
+#include "llbuild/Ninja/Manifest.h"
+#include "llbuild/Ninja/ManifestLoader.h"
 #include "llbuild/Ninja/Parser.h"
 
 #include <cstdio>
@@ -49,8 +51,9 @@ static void usage() {
           getprogname());
   fprintf(stderr, "\n");
   fprintf(stderr, "Available commands:\n");
-  fprintf(stderr, "  lex -- Run the Ninja lexer\n");
-  fprintf(stderr, "  parse -- Run the Ninja parser\n");
+  fprintf(stderr, "  lex           -- Run the Ninja lexer\n");
+  fprintf(stderr, "  parse         -- Run the Ninja parser\n");
+  fprintf(stderr, "  load-manifest -- Load a Ninja manifest file\n");
   fprintf(stderr, "\n");
   exit(1);
 }
@@ -419,6 +422,46 @@ static int ExecuteParseCommand(const std::vector<std::string> &Args,
   return 0;
 }
 
+#pragma mark - Load Manifest Command
+
+namespace {
+
+class LoadManifestActions : public ninja::ManifestLoaderActions {
+private:
+  virtual void error(std::string Filename, std::string Message,
+                     const ninja::Token &At) override {
+  }
+
+  virtual bool readFileContents(std::string Filename,
+                                const ninja::Token* ForToken,
+                                std::unique_ptr<char[]> *Data_Out,
+                                uint64_t *Length_Out) override {
+    // FIXME: Error handling.
+    *Data_Out = ReadFileContents(Filename, Length_Out);
+
+    return true;
+  };
+
+};
+
+}
+
+static int ExecuteLoadManifestCommand(const std::vector<std::string> &Args) {
+  if (Args.size() != 1) {
+    fprintf(stderr, "error: %s: invalid number of arguments\n",
+            getprogname());
+    return 1;
+  }
+
+  LoadManifestActions Actions;
+  ninja::ManifestLoader Loader(Args[0], Actions);
+  std::unique_ptr<ninja::Manifest> Manifest = Loader.load();
+
+  // FIXME: Dump the manifest.
+
+  return 0;
+}
+
 #pragma mark - Ninja Top-Level Command
 
 int commands::ExecuteNinjaCommand(const std::vector<std::string> &Args) {
@@ -442,6 +485,9 @@ int commands::ExecuteNinjaCommand(const std::vector<std::string> &Args) {
     return ExecuteParseCommand(std::vector<std::string>(Args.begin()+1,
                                                         Args.end()),
                                /*ParseOnly=*/true);
+  } else if (Args[0] == "load-manifest") {
+    return ExecuteLoadManifestCommand(std::vector<std::string>(Args.begin()+1,
+                                                               Args.end()));
   } else {
     fprintf(stderr, "error: %s: unknown command '%s'\n", getprogname(),
             Args[0].c_str());
