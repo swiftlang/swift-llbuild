@@ -1,0 +1,18 @@
+# Check basic parsing functionality.
+#
+# RUN: %{llbuild} ninja parse %s 2> %t.err
+# RUN: %{FileCheck} < %t.err %s
+
+# Check for invalid characters in variable names.
+#
+# CHECK: identifier-names.ninja:[[@LINE+1]]:1: error: expected '=' token
+a*b = 12
+# CHECK: identifier-names.ninja:[[@LINE+1]]:1: error: expected '=' token
+a:b = 12
+# CHECK: identifier-names.ninja:[[@LINE+1]]:0: error: unexpected token
+*b = 12
+
+# Check for other valid characters in variable names.
+#
+# CHECK: actOnBindingDecl(/*Name=*/"abcxyz0189_-.", /*Value=*/"12")
+abcxyz0189_-. = 12

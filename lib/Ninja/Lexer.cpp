@@ -141,6 +141,13 @@ Token &Lexer::setIdentifierTokenKind(Token &Result) const {
   return setTokenKind(Result, Token::Kind::Identifier);
 }
 
+static bool isIdentifierChar(int Char) {
+  return (Char >= 'a' && Char <= 'z') ||
+    (Char >= 'A' && Char <= 'A') ||
+    (Char >= '0' && Char <= '9') ||
+    Char == '_' || Char == '.' || Char == '-';
+}
+
 Token &Lexer::lexIdentifier(Token &Result) {
   while (true) {
     int Char = peekNextChar();
@@ -152,9 +159,8 @@ Token &Lexer::lexIdentifier(Token &Result) {
       continue;
     }
 
-    // Otherwise, continue only if this is not whitespace or EOF or a special
-    // character.
-    if (Char == -1 || isspace(Char) || Char == ':' || Char == '=')
+    // Otherwise, continue only if this is an identifier character.
+    if (!isIdentifierChar(Char))
       break;
 
     getNextChar();
@@ -274,6 +280,9 @@ Token &Lexer::lex(Token &Result) {
   }
 
   default:
-    return lexIdentifier(Result);
+    if (isIdentifierChar(Char))
+      return lexIdentifier(Result);
+
+    return setTokenKind(Result, Token::Kind::Unknown);
   }
 }
