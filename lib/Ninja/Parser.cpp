@@ -179,7 +179,7 @@ void ParserImpl::parseDecl() {
 bool ParserImpl::parseBindingInternal(Token* Name_Out, Token* Value_Out) {
   // The leading token should be an identifier.
   if (Tok.TokenKind != Token::Kind::Identifier) {
-    error("expected identifier token");
+    error("expected variable name");
     skipPastEOL();
     return false;
   }
@@ -255,7 +255,7 @@ void ParserImpl::parseDefaultDecl() {
 
   // Verify we have at least one name.
   if (Names.empty()) {
-    error("expected identifier token");
+    error("expected target path string");
     return skipPastEOL();
   }
 
@@ -278,7 +278,7 @@ void ParserImpl::parseIncludeDecl() {
   Lexer.setStringMode(Lexer::StringMode::None);
 
   if (Tok.TokenKind != Token::Kind::String) {
-    error("expected identifier token");
+    error("expected path string");
     return skipPastEOL();
   }
 
@@ -372,7 +372,7 @@ bool ParserImpl::parseBuildSpecifier(ParseActions::BuildResult *Decl_Out) {
 
   // Parse the output list.
   if (Tok.TokenKind != Token::Kind::String) {
-    error("expected identifier token");
+    error("expected output path string");
     Lexer.setStringMode(Lexer::StringMode::None);
     return false;
   }
@@ -390,7 +390,7 @@ bool ParserImpl::parseBuildSpecifier(ParseActions::BuildResult *Decl_Out) {
 
   // Parse the rule name.
   if (Tok.TokenKind != Token::Kind::String) {
-    error("expected identifier token");
+    error("expected rule name string");
     Lexer.setStringMode(Lexer::StringMode::None);
     return false;
   }
@@ -440,7 +440,7 @@ bool ParserImpl::parsePoolSpecifier(ParseActions::PoolResult *Decl_Out) {
   Lexer.setStringMode(Lexer::StringMode::None);
 
   if (Tok.TokenKind != Token::Kind::String) {
-    error("expected identifier token");
+    error("expected pool name string");
     return false;
   }
 
@@ -464,7 +464,7 @@ bool ParserImpl::parseRuleSpecifier(ParseActions::RuleResult *Decl_Out) {
   Lexer.setStringMode(Lexer::StringMode::None);
 
   if (Tok.TokenKind != Token::Kind::String) {
-    error("expected identifier token");
+    error("expected rule name string");
     return false;
   }
 

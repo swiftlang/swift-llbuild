@@ -14,7 +14,7 @@ variable = value
 
 # Check "default" parsing.
 #
-# CHECK: basic.ninja:[[@LINE+1]]:7: error: expected identifier token
+# CHECK: basic.ninja:[[@LINE+1]]:7: error: expected target path string
 default
 # CHECK: actOnDefaultDecl(/*Names=*/["a", "b", "c"])
 default a b c
@@ -31,6 +31,13 @@ subninja t3.ninja
 include t4.ninja bad
 
 # Check "build" parsing.
+#
+# CHECK: basic.ninja:[[@LINE+1]]:5: error: expected output path string
+build
+# CHECK: basic.ninja:[[@LINE+1]]:9: error: expected ':' token
+build foo
+# CHECK: basic.ninja:[[@LINE+1]]:10: error: expected rule name string
+build foo:
 # CHECK: actOnBeginBuildDecl(/*Name=*/"cc", /*Outputs=*/["a.o"], /*Inputs=*/["b.o"], /*NumExplicitInputs=*/1, /*NumImplicitInputs=*/0)
 # CHECK: actOnBuildBindingDecl({{.*}}, /*Name=*/"name", /*Value=*/"value")
 build a.o: cc b.o
@@ -38,6 +45,7 @@ build a.o: cc b.o
 # CHECK: actOnEndBuildDecl(/*Decl=*/{{.*}})
 
 # Check "build" implicit and order-only parsing.
+#
 # CHECK: actOnBeginBuildDecl(/*Name=*/"cc", /*Outputs=*/["a.o"], /*Inputs=*/["b.o"], /*NumExplicitInputs=*/0, /*NumImplicitInputs=*/0)
 build a.o: cc | || b.o
 # CHECK: actOnBeginBuildDecl(/*Name=*/"cc", /*Outputs=*/["a.o"], /*Inputs=*/["b.o", "c.o"], /*NumExplicitInputs=*/1, /*NumImplicitInputs=*/0)
@@ -48,6 +56,9 @@ build a.o: cc b.o | c.o || d.o
 build a.o: cc :
 
 # Check "pool" parsing.
+#
+# CHECK: basic.ninja:[[@LINE+1]]:4: error: expected pool name string
+pool
 # CHECK: actOnBeginPoolDecl(/*Name=*/"linkpool"
 # CHECK: actOnPoolBindingDecl({{.*}}, /*Name=*/"variable", /*Value=*/"value")
 pool linkpool
@@ -55,6 +66,9 @@ pool linkpool
 # CHECK: actOnEndPoolDecl(/*Decl=*/{{.*}})
 
 # Check "rule" parsing.
+#
+# CHECK: basic.ninja:[[@LINE+1]]:4: error: expected rule name string
+rule
 # CHECK: actOnBeginRuleDecl(/*Name=*/"link"
 # CHECK: actOnRuleBindingDecl({{.*}}, /*Name=*/"variable", /*Value=*/"value")
 rule link
