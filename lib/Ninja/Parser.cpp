@@ -95,7 +95,7 @@ class ParserImpl {
   /// \param Name_Out [out] On success, the identifier token for the binding
   /// name.
   ///
-  /// \param Value_Out [out] On success, the identifier token for the binding
+  /// \param Value_Out [out] On success, the string token for the binding
   /// value.
   ///
   /// \returns True on success. On failure, the lexer will be advanced past the
@@ -133,6 +133,9 @@ void ParserImpl::parse() {
 
   Actions.actOnBeginManifest("<main>");
   while (Tok.TokenKind != Token::Kind::EndOfFile) {
+    // Check that no one accidentally left the lexer in the wrong mode.
+    assert(Lexer.getStringMode() == Lexer::StringMode::None);
+
     parseDecl();
   }
   Actions.actOnEndManifest();
@@ -172,6 +175,7 @@ void ParserImpl::parseDecl() {
   }
 }
 
+/// binding-decl ::= identifier '=' var-string '\n'
 bool ParserImpl::parseBindingInternal(Token* Name_Out, Token* Value_Out) {
   // The leading token should be an identifier.
   if (Tok.TokenKind != Token::Kind::Identifier) {
@@ -227,28 +231,33 @@ bool ParserImpl::parseBindingInternal(Token* Name_Out, Token* Value_Out) {
   return true;
 }
 
-/// binding-decl ::= identifier '=' var-expr-list '\n'
+/// binding-decl ::= identifier '=' var-string '\n'
 void ParserImpl::parseBindingDecl() {
   Token Name, Value;
   if (parseBindingInternal(&Name, &Value))
     Actions.actOnBindingDecl(Name, Value);
 }
 
-/// default-decl ::= "default" identifier-list '\n'
+/// default-decl ::= "default" path-string-list '\n'
 void ParserImpl::parseDefaultDecl() {
+  // Put the lexer in path string mode.
+  Lexer.setStringMode(Lexer::StringMode::Path);
   consumeExpectedToken(Token::Kind::KWDefault);
 
-  // Check we have at least one identifier.
-  if (Tok.TokenKind != Token::Kind::Identifier) {
+  // Consume all the strings.
+  std::vector<Token> Names;
+  while (Tok.TokenKind == Token::Kind::String) {
+    Names.push_back(consumeExpectedToken(Token::Kind::String));
+  }
+
+  // Reset the string mode.
+  Lexer.setStringMode(Lexer::StringMode::None);
+
+  // Verify we have at least one name.
+  if (Names.empty()) {
     error("expected identifier token");
     return skipPastEOL();
   }
-
-  // Consume all the identifiers.
-  std::vector<Token> Names;
-  do {
-    Names.push_back(consumeExpectedToken(Token::Kind::Identifier));
-  } while (Tok.TokenKind == Token::Kind::Identifier);
 
   // The list should be terminated by a newline.
   if (!consumeIfToken(Token::Kind::Newline)) {
@@ -259,18 +268,21 @@ void ParserImpl::parseDefaultDecl() {
   Actions.actOnDefaultDecl(Names);
 }
 
-/// include-decl ::= ( "include" | "subninja" ) identifier '\n'
+/// include-decl ::= ( "include" | "subninja" ) path-string '\n'
 void ParserImpl::parseIncludeDecl() {
+  // Put the lexer in path string mode for one token.
+  Lexer.setStringMode(Lexer::StringMode::Path);
   bool IsInclude = Tok.TokenKind == Token::Kind::KWInclude;
   consumeExpectedToken(IsInclude ? Token::Kind::KWInclude :
                        Token::Kind::KWSubninja);
+  Lexer.setStringMode(Lexer::StringMode::None);
 
-  if (Tok.TokenKind != Token::Kind::Identifier) {
+  if (Tok.TokenKind != Token::Kind::String) {
     error("expected identifier token");
     return skipPastEOL();
   }
 
-  Token Path = consumeExpectedToken(Token::Kind::Identifier);
+  Token Path = consumeExpectedToken(Token::Kind::String);
 
   if (!consumeIfToken(Token::Kind::Newline)) {
     error("expected newline token");
@@ -284,6 +296,7 @@ void ParserImpl::parseIncludeDecl() {
 ///
 /// parameterized-decl ::= parameterized-specifier indented-binding*
 /// parameterized-specifier ::= build-spec | pool-spec | rule-spec
+/// indented-binding := indention binding-decl
 void ParserImpl::parseParameterizedDecl() {
   // Begin by parsing the specifier.
   union {
@@ -350,58 +363,63 @@ void ParserImpl::parseParameterizedDecl() {
   }
 }
 
-/// build-spec ::= "build" identifier-list ":" identifier identifier-list
-///                [ "|" identifier-list ] [ "||" identifier-list" ] '\n'
+/// build-spec ::= "build" path-string-list ":" path-string path-string-list
+///                [ "|" path-string-list ] [ "||" path-string-list" ] '\n'
 bool ParserImpl::parseBuildSpecifier(ParseActions::BuildResult *Decl_Out) {
+  // Put the lexer in path string mode for the entire specifier parsing.
+  Lexer.setStringMode(Lexer::StringMode::Path);
   consumeExpectedToken(Token::Kind::KWBuild);
 
   // Parse the output list.
-  //
-  // FIXME: This also needs to put the lexer into a special mode, '=' characters
-  // are allowed as identifiers here.
-  if (Tok.TokenKind != Token::Kind::Identifier) {
+  if (Tok.TokenKind != Token::Kind::String) {
     error("expected identifier token");
+    Lexer.setStringMode(Lexer::StringMode::None);
     return false;
   }
   std::vector<Token> Outputs;
   do {
-    Outputs.push_back(consumeExpectedToken(Token::Kind::Identifier));
-  } while (Tok.TokenKind == Token::Kind::Identifier);
+    Outputs.push_back(consumeExpectedToken(Token::Kind::String));
+  } while (Tok.TokenKind == Token::Kind::String);
 
-  // Expect the identifier list to be terminated by a colon.
+  // Expect the string list to be terminated by a colon.
   if (!consumeIfToken(Token::Kind::Colon)) {
     error("expected ':' token");
+    Lexer.setStringMode(Lexer::StringMode::None);
     return false;
   }
 
   // Parse the rule name.
-  if (Tok.TokenKind != Token::Kind::Identifier) {
+  if (Tok.TokenKind != Token::Kind::String) {
     error("expected identifier token");
+    Lexer.setStringMode(Lexer::StringMode::None);
     return false;
   }
-  Token Name = consumeExpectedToken(Token::Kind::Identifier);
+  Token Name = consumeExpectedToken(Token::Kind::String);
 
   // Parse the explicit inputs.
   std::vector<Token> Inputs;
-  while (Tok.TokenKind == Token::Kind::Identifier) {
-    Inputs.push_back(consumeExpectedToken(Token::Kind::Identifier));
+  while (Tok.TokenKind == Token::Kind::String) {
+    Inputs.push_back(consumeExpectedToken(Token::Kind::String));
   }
   unsigned NumExplicitInputs = Inputs.size();
 
   // Parse the implicit inputs, if present.
   if (consumeIfToken(Token::Kind::Pipe)) {
-    while (Tok.TokenKind == Token::Kind::Identifier) {
-      Inputs.push_back(consumeExpectedToken(Token::Kind::Identifier));
+    while (Tok.TokenKind == Token::Kind::String) {
+      Inputs.push_back(consumeExpectedToken(Token::Kind::String));
     }
   }
   unsigned NumImplicitInputs = Inputs.size() - NumExplicitInputs;
 
   // Parse the order-only inputs, if present.
   if (consumeIfToken(Token::Kind::PipePipe)) {
-    while (Tok.TokenKind == Token::Kind::Identifier) {
-      Inputs.push_back(consumeExpectedToken(Token::Kind::Identifier));
+    while (Tok.TokenKind == Token::Kind::String) {
+      Inputs.push_back(consumeExpectedToken(Token::Kind::String));
     }
   }
+
+  // Reset the lexer mode.
+  Lexer.setStringMode(Lexer::StringMode::None);
 
   if (!consumeIfToken(Token::Kind::Newline)) {
     error("expected newline token");
@@ -414,16 +432,19 @@ bool ParserImpl::parseBuildSpecifier(ParseActions::BuildResult *Decl_Out) {
   return true;
 }
 
-/// pool-spec ::= "pool" identifier '\n'
+/// pool-spec ::= "pool" path-string '\n'
 bool ParserImpl::parsePoolSpecifier(ParseActions::PoolResult *Decl_Out) {
+  // Put the lexer in path string mode for one token.
+  Lexer.setStringMode(Lexer::StringMode::Path);
   consumeExpectedToken(Token::Kind::KWPool);
+  Lexer.setStringMode(Lexer::StringMode::None);
 
-  if (Tok.TokenKind != Token::Kind::Identifier) {
+  if (Tok.TokenKind != Token::Kind::String) {
     error("expected identifier token");
     return false;
   }
 
-  Token Name = consumeExpectedToken(Token::Kind::Identifier);
+  Token Name = consumeExpectedToken(Token::Kind::String);
 
   if (!consumeIfToken(Token::Kind::Newline)) {
     error("expected newline token");
@@ -435,16 +456,19 @@ bool ParserImpl::parsePoolSpecifier(ParseActions::PoolResult *Decl_Out) {
   return true;
 }
 
-/// rule-spec ::= "rule" identifier '\n'
+/// rule-spec ::= "rule" path-string '\n'
 bool ParserImpl::parseRuleSpecifier(ParseActions::RuleResult *Decl_Out) {
+  // Put the lexer in path string mode for one token.
+  Lexer.setStringMode(Lexer::StringMode::Path);
   consumeExpectedToken(Token::Kind::KWRule);
+  Lexer.setStringMode(Lexer::StringMode::None);
 
-  if (Tok.TokenKind != Token::Kind::Identifier) {
+  if (Tok.TokenKind != Token::Kind::String) {
     error("expected identifier token");
     return false;
   }
 
-  Token Name = consumeExpectedToken(Token::Kind::Identifier);
+  Token Name = consumeExpectedToken(Token::Kind::String);
 
   if (!consumeIfToken(Token::Kind::Newline)) {
     error("expected newline token");

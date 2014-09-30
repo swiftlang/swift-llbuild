@@ -1,0 +1,29 @@
+# Check string specific parsing functionality.
+#
+# RUN: %{llbuild} ninja parse %s 2> %t.err
+# RUN: %{FileCheck} < %t.err %s
+
+# Check that we recognize special characters for path strings in rule decls.
+#
+# actOnBeginRuleDecl(/*Name=*/"this#is#a#path")
+rule this#is#a#path
+
+# Check that we recognize path strings in build decls.
+#
+# CHECK: actOnBeginBuildDecl(/*Name=*/"this#is#a#path", /*Outputs=*/["some#file"], /*Inputs=*/["and#another", "and#yet#another", "one#more"], /*NumExplicitInputs=*/1, /*NumImplicitInputs=*/1)
+build some#file:this#is#a#path and#another|and#yet#another||one#more
+
+# Check that we recognize path strings in pool decls.
+#
+# CHECK: actOnBeginPoolDecl(/*Name=*/"this#is#a#path")
+pool this#is#a#path
+
+# Check that we recognize path strings in include decls.
+#
+# CHECK: actOnIncludeDecl(/*IsInclude=*/true, /*Path=*/"this#is#a#path")
+include this#is#a#path
+
+# Check that we recognize path strings in default decls.
+#
+# CHECK: actOnDefaultDecl(/*Names=*/["this#is#a#path"])
+default this#is#a#path
