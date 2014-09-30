@@ -432,19 +432,16 @@ bool ParserImpl::parseBuildSpecifier(ParseActions::BuildResult *Decl_Out) {
   return true;
 }
 
-/// pool-spec ::= "pool" path-string '\n'
+/// pool-spec ::= "pool" identifier '\n'
 bool ParserImpl::parsePoolSpecifier(ParseActions::PoolResult *Decl_Out) {
-  // Put the lexer in path string mode for one token.
-  Lexer.setStringMode(Lexer::StringMode::Path);
   consumeExpectedToken(Token::Kind::KWPool);
-  Lexer.setStringMode(Lexer::StringMode::None);
 
-  if (Tok.TokenKind != Token::Kind::String) {
-    error("expected pool name string");
+  if (Tok.TokenKind != Token::Kind::Identifier) {
+    error("expected pool name identifier");
     return false;
   }
 
-  Token Name = consumeExpectedToken(Token::Kind::String);
+  Token Name = consumeExpectedToken(Token::Kind::Identifier);
 
   if (!consumeIfToken(Token::Kind::Newline)) {
     error("expected newline token");
@@ -456,19 +453,16 @@ bool ParserImpl::parsePoolSpecifier(ParseActions::PoolResult *Decl_Out) {
   return true;
 }
 
-/// rule-spec ::= "rule" path-string '\n'
+/// rule-spec ::= "rule" identifier '\n'
 bool ParserImpl::parseRuleSpecifier(ParseActions::RuleResult *Decl_Out) {
-  // Put the lexer in path string mode for one token.
-  Lexer.setStringMode(Lexer::StringMode::Path);
   consumeExpectedToken(Token::Kind::KWRule);
-  Lexer.setStringMode(Lexer::StringMode::None);
 
-  if (Tok.TokenKind != Token::Kind::String) {
-    error("expected rule name string");
+  if (Tok.TokenKind != Token::Kind::Identifier) {
+    error("expected rule name identifier");
     return false;
   }
 
-  Token Name = consumeExpectedToken(Token::Kind::String);
+  Token Name = consumeExpectedToken(Token::Kind::Identifier);
 
   if (!consumeIfToken(Token::Kind::Newline)) {
     error("expected newline token");

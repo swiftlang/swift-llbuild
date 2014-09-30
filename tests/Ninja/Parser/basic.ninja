@@ -57,7 +57,7 @@ build a.o: cc :
 
 # Check "pool" parsing.
 #
-# CHECK: basic.ninja:[[@LINE+1]]:4: error: expected pool name string
+# CHECK: basic.ninja:[[@LINE+1]]:4: error: expected pool name identifier
 pool
 # CHECK: actOnBeginPoolDecl(/*Name=*/"linkpool"
 # CHECK: actOnPoolBindingDecl({{.*}}, /*Name=*/"variable", /*Value=*/"value")
@@ -67,7 +67,7 @@ pool linkpool
 
 # Check "rule" parsing.
 #
-# CHECK: basic.ninja:[[@LINE+1]]:4: error: expected rule name string
+# CHECK: basic.ninja:[[@LINE+1]]:4: error: expected rule name identifier
 rule
 # CHECK: actOnBeginRuleDecl(/*Name=*/"link"
 # CHECK: actOnRuleBindingDecl({{.*}}, /*Name=*/"variable", /*Value=*/"value")
