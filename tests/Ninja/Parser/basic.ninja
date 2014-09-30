@@ -36,7 +36,7 @@ include t4.ninja bad
 build
 # CHECK: basic.ninja:[[@LINE+1]]:9: error: expected ':' token
 build foo
-# CHECK: basic.ninja:[[@LINE+1]]:10: error: expected rule name string
+# CHECK: basic.ninja:[[@LINE+1]]:10: error: expected rule name identifier
 build foo:
 # CHECK: actOnBeginBuildDecl(/*Name=*/"cc", /*Outputs=*/["a.o"], /*Inputs=*/["b.o"], /*NumExplicitInputs=*/1, /*NumImplicitInputs=*/0)
 # CHECK: actOnBuildBindingDecl({{.*}}, /*Name=*/"name", /*Value=*/"value")

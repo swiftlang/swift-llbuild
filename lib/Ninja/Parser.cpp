@@ -382,19 +382,24 @@ bool ParserImpl::parseBuildSpecifier(ParseActions::BuildResult *Decl_Out) {
   } while (Tok.TokenKind == Token::Kind::String);
 
   // Expect the string list to be terminated by a colon.
-  if (!consumeIfToken(Token::Kind::Colon)) {
+  if (Tok.TokenKind != Token::Kind::Colon) {
     error("expected ':' token");
     Lexer.setStringMode(Lexer::StringMode::None);
     return false;
   }
 
-  // Parse the rule name.
-  if (Tok.TokenKind != Token::Kind::String) {
-    error("expected rule name string");
+  // Parse the rule name identifier, switching out of path string mode for this
+  // one lex.
+  Lexer.setStringMode(Lexer::StringMode::None);
+  consumeExpectedToken(Token::Kind::Colon);
+  Lexer.setStringMode(Lexer::StringMode::Path);
+
+  if (Tok.TokenKind != Token::Kind::Identifier) {
+    error("expected rule name identifier");
     Lexer.setStringMode(Lexer::StringMode::None);
     return false;
   }
-  Token Name = consumeExpectedToken(Token::Kind::String);
+  Token Name = consumeExpectedToken(Token::Kind::Identifier);
 
   // Parse the explicit inputs.
   std::vector<Token> Inputs;

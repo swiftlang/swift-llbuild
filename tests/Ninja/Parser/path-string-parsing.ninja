@@ -5,7 +5,7 @@
 
 # Check that we recognize special characters for path strings in build decls.
 #
-# CHECK: actOnBeginBuildDecl(/*Name=*/"this#is#a#path", /*Outputs=*/["some#file"], /*Inputs=*/["and#another", "and#yet#another", "one#more"], /*NumExplicitInputs=*/1, /*NumImplicitInputs=*/1)
+# CHECK: actOnBeginBuildDecl(/*Name=*/"this", /*Outputs=*/["some#file"], /*Inputs=*/["#is#a#path", "and#another", "and#yet#another", "one#more"], /*NumExplicitInputs=*/2, /*NumImplicitInputs=*/1)
 build some#file:this#is#a#path and#another|and#yet#another||one#more
 
 # Check that we do not recognize path strings in rule decls.
