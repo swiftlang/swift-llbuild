@@ -478,10 +478,10 @@ static int ExecuteLoadManifestCommand(const std::vector<std::string> &Args) {
 
   // Dump the top-level bindings, in lexicographic order.
   std::cout << "# Top-Level Bindings\n";
-  assert(Manifest->Bindings.ParentScope == nullptr);
+  assert(Manifest->getBindings().getParentScope() == nullptr);
   std::vector<std::pair<std::string, std::string>>
-    Entries(Manifest->Bindings.Bindings.begin(),
-            Manifest->Bindings.Bindings.end());
+    Entries(Manifest->getBindings().getEntries().begin(),
+            Manifest->getBindings().getEntries().end());
   std::sort(Entries.begin(), Entries.end());
   for (auto Entry: Entries) {
     // FIXME: We should escape things.

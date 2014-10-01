@@ -193,9 +193,9 @@ public:
     std::string Name(NameTok.Start, NameTok.Length);
 
     // Evaluate the value string with the current top-level bindings.
-    std::string Value(evalString(ValueTok, TheManifest->Bindings));
+    std::string Value(evalString(ValueTok, TheManifest->getBindings()));
 
-    TheManifest->Bindings.Bindings.insert(std::make_pair(Name, Value));
+    TheManifest->getBindings().insert(Name, Value);
   }
 
   virtual void actOnDefaultDecl(const std::vector<Token>& Names) override { }

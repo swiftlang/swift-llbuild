@@ -20,19 +20,35 @@ namespace ninja {
 
 /// This class represents a set of name to value variable bindings.
 class BindingSet {
-public:
   /// The parent binding scope, if any.
-  BindingSet *ParentScope = 0;
+  const BindingSet *ParentScope = 0;
 
   /// The actual bindings, mapping from Name to Value.
-  std::unordered_map<std::string, std::string> Bindings;
+  std::unordered_map<std::string, std::string> Entries;
 
 public:
+  BindingSet(const BindingSet* ParentScope = 0) : ParentScope(ParentScope) {}
+
+  /// Get the parent scope.
+  const BindingSet* getParentScope() const {
+    return ParentScope;
+  }
+
+  /// Get the map of bindings.
+  const std::unordered_map<std::string, std::string>& getEntries() const {
+    return Entries;
+  }
+
+  /// Insert a binding into the set.
+  void insert(const std::string& Name, const std::string& Value) {
+    Entries.insert(std::make_pair(Name, Value));
+  }
+
   /// Look up the given variable name in the binding set, returning its value or
   /// the empty string if not found.
   std::string lookup(const std::string& Name) const {
-    auto it = Bindings.find(Name);
-    if (it != Bindings.end())
+    auto it = Entries.find(Name);
+    if (it != Entries.end())
       return it->second;
 
     if (ParentScope)
@@ -45,9 +61,14 @@ public:
 /// A manifest represents the complete set of rules and commands used to perform
 /// a build.
 class Manifest {
-public:
   /// The top level variable bindings.
   BindingSet Bindings;
+
+public:
+  /// Get the final set of top level variable bindings.
+  BindingSet& getBindings() { return Bindings; }
+  /// Get the final set of top level variable bindings.
+  const BindingSet& getBindings() const { return Bindings; }
 };
 
 }
