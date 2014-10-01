@@ -489,12 +489,17 @@ static int ExecuteLoadManifestCommand(const std::vector<std::string> &Args) {
       return a->getName() < b->getName();
     });
   for (auto Rule: Rules) {
+    // Write the rule entry.
     std::cout << "rule " << Rule->getName() << "\n";
-    if (!Rule->getCommandExpr().empty()) {
-      std::cout << "  command = \""
-                << escapedString(Rule->getCommandExpr()) << "\"\n";
-      std::cout << "\n";
+    // Write the parameters.
+    std::vector<std::pair<std::string, std::string>>
+      Parameters(Rule->getParameters().begin(), Rule->getParameters().end());
+    std::sort(Parameters.begin(), Parameters.end());
+    for (auto& Entry: Parameters) {
+      std::cout << "  " << Entry.first << " = \""
+                << escapedString(Entry.second) << "\"\n";
     }
+    std::cout << "\n";
   }
 
   return 0;

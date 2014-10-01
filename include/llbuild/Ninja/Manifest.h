@@ -15,6 +15,7 @@
 
 #include <string>
 #include <unordered_map>
+
 namespace llbuild {
 namespace ninja {
 
@@ -63,17 +64,28 @@ public:
 class Rule {
   /// The name of the rule.
   std::string Name;
-  /// The unexpanded command template string.
-  std::string CommandExpr;
-  // FIXME: Add other supported attributes here.
+
+  /// The rule parameters, which are all unexpanded string exprs.
+  //
+  // FIXME: It would be nice to optimize this more, and the common case is that
+  // we have a fixed set of values which are never dynamically expanded for most
+  // parameters *other* than the command.
+  std::unordered_map<std::string, std::string> Parameters;
 
 public:
   explicit Rule(const std::string& Name) : Name(Name) {}
 
   const std::string& getName() const { return Name; }
 
-  const std::string& getCommandExpr() const { return CommandExpr; }
-  void setCommandExpr(std::string Value) { CommandExpr = Value; }
+  std::unordered_map<std::string, std::string>& getParameters() {
+    return Parameters;
+  }
+  const std::unordered_map<std::string, std::string>& getParameters() const {
+    return Parameters;
+  }
+
+  /// Check whether the given string is a valid rule parameter.
+  static bool isValidParameterName(const std::string& Name);
 };
 
 

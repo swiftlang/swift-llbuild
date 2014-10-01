@@ -252,8 +252,11 @@ public:
     Rule* Decl = static_cast<Rule*>(AbstractDecl);
 
     std::string Name(NameTok.Start, NameTok.Length);
-    if (Name == "command") {
-      Decl->setCommandExpr(std::string(ValueTok.Start, ValueTok.Length));
+    // FIXME: It probably should be an error to assign to the same parameter
+    // multiple times, but Ninja doesn't diagnose this.
+    if (Rule::isValidParameterName(Name)) {
+      Decl->getParameters()[Name] = std::string(ValueTok.Start,
+                                                ValueTok.Length);
     } else {
       error("unexpected variable", NameTok);
     }
@@ -263,7 +266,7 @@ public:
                                 const Token& StartTok) override {
     Rule* Decl = static_cast<Rule*>(AbstractDecl);
 
-    if (Decl->getCommandExpr().empty()) {
+    if (!Decl->getParameters().count("command")) {
       error("missing 'command' variable assignment", StartTok);
     }
   }
