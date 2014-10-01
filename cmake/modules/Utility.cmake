@@ -51,6 +51,14 @@ macro(add_llbuild_library name)
 
   # Add headers to generated project files.
   if(MSVC_IDE OR XCODE)
+    # Add internal headers.
+
+    file(GLOB internal_headers *.h)
+    if(internal_headers)
+      set_source_files_properties(${internal_headers} PROPERTIES HEADER_FILE_ONLY ON)
+      list(APPEND ALL_FILES ${internal_headers})
+    endif()
+
     # Add public headers.
 
     # Find the library name by finding its relative path.
