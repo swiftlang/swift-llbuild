@@ -70,6 +70,9 @@ public:
     return std::move(TheManifest);
   }
 
+  ManifestLoaderActions& getActions() { return Actions; }
+  const Parser* getCurrentParser() const { return CurrentParser.get(); }
+
   /// Given a string template token, evaluate it against the given \arg Bindings
   /// and return the resulting string.
   std::string evalString(const Token& Value, const BindingSet& Bindings) {
@@ -130,7 +133,7 @@ public:
         while (true) {
           // If we reached the end of the string, this is an error.
           if (Pos == End) {
-            error("invalid variable reference string (missing trailing '}')",
+            error("invalid variable reference in string (missing trailing '}')",
                   Value);
             break;
           }
@@ -174,7 +177,9 @@ public:
 
   virtual void initialize(ninja::Parser *Parser) override { }
 
-  virtual void error(std::string Message, const Token &At) override { }
+  virtual void error(std::string Message, const Token &At) override {
+    Actions.error(MainFilename, Message, At);
+  }
 
   virtual void actOnBeginManifest(std::string Name) override { }
 
@@ -246,5 +251,13 @@ ManifestLoader::~ManifestLoader() {
 }
 
 std::unique_ptr<Manifest> ManifestLoader::load() {
+  // Initialize the actions.
+  static_cast<ManifestLoaderImpl*>(Impl)->getActions().initialize(this);
+
   return static_cast<ManifestLoaderImpl*>(Impl)->load();
 }
+
+const Parser* ManifestLoader::getCurrentParser() const {
+  return static_cast<const ManifestLoaderImpl*>(Impl)->getCurrentParser();
+}
+

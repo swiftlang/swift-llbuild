@@ -435,9 +435,16 @@ static int ExecuteParseCommand(const std::vector<std::string> &Args,
 namespace {
 
 class LoadManifestActions : public ninja::ManifestLoaderActions {
+  ninja::ManifestLoader *Loader = 0;
+
 private:
+  virtual void initialize(ninja::ManifestLoader *Loader) {
+    this->Loader = Loader;
+  }
+
   virtual void error(std::string Filename, std::string Message,
                      const ninja::Token &At) override {
+    emitError(Filename, Message, At, Loader->getCurrentParser());
   }
 
   virtual bool readFileContents(std::string Filename,
@@ -466,11 +473,11 @@ static int ExecuteLoadManifestCommand(const std::vector<std::string> &Args) {
   std::unique_ptr<ninja::Manifest> Manifest = Loader.load();
 
   // Dump the manifest.
-  std::cerr << "# Loaded Manifest: \"" << Args[0] << "\"\n";
-  std::cerr << "\n";
+  std::cout << "# Loaded Manifest: \"" << Args[0] << "\"\n";
+  std::cout << "\n";
 
   // Dump the top-level bindings, in lexicographic order.
-  std::cerr << "# Top-Level Bindings\n";
+  std::cout << "# Top-Level Bindings\n";
   assert(Manifest->Bindings.ParentScope == nullptr);
   std::vector<std::pair<std::string, std::string>>
     Entries(Manifest->Bindings.Bindings.begin(),
@@ -478,7 +485,7 @@ static int ExecuteLoadManifestCommand(const std::vector<std::string> &Args) {
   std::sort(Entries.begin(), Entries.end());
   for (auto Entry: Entries) {
     // FIXME: We should escape things.
-    std::cerr << Entry.first << " = " << Entry.second << "\n";
+    std::cout << Entry.first << " = " << Entry.second << "\n";
   }
 
   return 0;

@@ -22,12 +22,17 @@ namespace llbuild {
 namespace ninja {
 
 class Manifest;
+class ManifestLoader;
+class Parser;
 class Token;
 
 /// Delegate interface for loader behavior.
 class ManifestLoaderActions {
 public:
   virtual ~ManifestLoaderActions();
+
+  /// Called at the beginning of loading, to register the manifest loader.
+  virtual void initialize(ManifestLoader* Loader) = 0;
 
   virtual void error(std::string Filename, std::string Message,
                      const Token& At) = 0;
@@ -61,6 +66,9 @@ public:
 
   /// Load the manifest.
   std::unique_ptr<Manifest> load();
+
+  /// Get the current underlying manifest parser.
+  const Parser* getCurrentParser() const;
 };
 
 }

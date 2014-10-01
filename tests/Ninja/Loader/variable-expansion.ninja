@@ -1,7 +1,8 @@
 # Check variable expansion.
 #
-# RUN: %{llbuild} ninja load-manifest %s 2> %t.err
-# RUN: %{FileCheck} < %t.err %s
+# RUN: %{llbuild} ninja load-manifest %s > %t 2> %t.err
+# RUN: %{FileCheck} < %t %s
+# RUN: %{FileCheck} --check-prefix=CHECK-ERR < %t.err %s
 
 # CHECK: Top-Level Bindings
 
@@ -12,20 +13,31 @@ a2      =      value2
 
 # Check escape handling.
 #
-# CHECK: a3 = x: x
-a3 = x$:$ x
+# CHECK: a3 = x: $x
+a3 = x$:$ $$x
 # CHECK: a4 = xx
 a4 = x$
 x
 
 # Check expansion.
-a5_sub = value
-# CHECK: a5 = xvaluex
-a5 = x${a5_sub}x
-# CHECK: a6 = x!value!x
-a6 = x!$a5_sub!x
+a5_sub_1 = value
+a5_sub_2 = nextvalue
+# CHECK: a5 = xvaluenextvaluex
+a5 = x${a5_sub_1}${a5_sub_2}x
+# CHECK: a6 = x!valuenextvalue!x
+a6 = x!$a5_sub_1$a5_sub_2!x
 
 # Check full range of expansion characters in simple variable references.
 a7_azAZ09_- = value
 # CHECK: a7 = x.value.x
 a7 = x.$a7_azAZ09_-.x
+
+# Check errors in escape handling.
+#
+# FIXME: Still need a test for '$' at the end of a string, which we can't hit in
+# this context.
+#
+# CHECK-ERR: error: invalid '$'-escape (literal '$' should be written as '$$')
+a8 = x$!x
+# CHECK-ERR: error: invalid variable reference
+a9 = x${foo
