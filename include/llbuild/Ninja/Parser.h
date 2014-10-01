@@ -21,8 +21,8 @@
 namespace llbuild {
 namespace ninja {
 
-class Token;
 class Parser;
+struct Token;
   
 /// Delegate interface for parser behavior.
 class ParseActions {

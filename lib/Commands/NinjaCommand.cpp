@@ -326,25 +326,6 @@ private:
 
 }
 
-static int ExecuteParseCommand(const std::vector<std::string> &Args) {
-  if (Args.size() != 1) {
-    fprintf(stderr, "error: %s: invalid number of arguments\n",
-            getprogname());
-    return 1;
-  }
-
-  // Read the input.
-  uint64_t Size;
-  std::unique_ptr<char[]> Data = ReadFileContents(Args[0], &Size);
-
-  // Run the parser.
-  ParseCommandActions Actions(Args[0]);
-  ninja::Parser Parser(Data.get(), Size, Actions);
-  Parser.parse();
-
-  return 0;
-}
-
 #pragma mark - Parse Only Command
 
 namespace {

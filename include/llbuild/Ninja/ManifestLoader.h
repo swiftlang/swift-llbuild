@@ -24,7 +24,7 @@ namespace ninja {
 class Manifest;
 class ManifestLoader;
 class Parser;
-class Token;
+struct Token;
 
 /// Delegate interface for loader behavior.
 class ManifestLoaderActions {

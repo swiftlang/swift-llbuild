@@ -101,6 +101,8 @@ else ()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++ -fno-rtti -fno-exceptions")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -stdlib=libc++")
+  # Enable additional Clang warnings.
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wmost")
 endif ()
 
 # Add additional warnings.
