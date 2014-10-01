@@ -131,6 +131,47 @@ static int ExecuteLexCommand(const std::vector<std::string> &Args,
   return 0;
 }
 
+#pragma mark - Command Utilities
+
+static void emitError(const std::string& Filename, const std::string& Message,
+                      const ninja::Token& At, const ninja::Parser* Parser) {
+  std::cerr << Filename << ":" << At.Line << ":" << At.Column
+            << ": error: " << Message << "\n";
+
+  // Skip carat diagnostics on EOF token.
+  if (At.TokenKind == ninja::Token::Kind::EndOfFile)
+    return;
+
+  // Simple caret style diagnostics.
+  const char *LineBegin = At.Start, *LineEnd = At.Start,
+    *BufferBegin = Parser->getLexer().getBufferStart(),
+    *BufferEnd = Parser->getLexer().getBufferEnd();
+
+  // Run line pointers forward and back.
+  while (LineBegin > BufferBegin &&
+         LineBegin[-1] != '\r' && LineBegin[-1] != '\n')
+    --LineBegin;
+  while (LineEnd < BufferEnd &&
+         LineEnd[0] != '\r' && LineEnd[0] != '\n')
+    ++LineEnd;
+
+  // Show the line, indented by 2.
+  std::cerr << "  " << std::string(LineBegin, LineEnd) << "\n";
+
+  // Show the caret or squiggly, making sure to print back spaces the
+  // same.
+  std::cerr << "  ";
+  for (const char* S = LineBegin; S != At.Start; ++S)
+    std::cerr << (isspace(*S) ? *S : ' ');
+  if (At.Length > 1) {
+    for (unsigned i = 0; i != At.Length; ++i)
+      std::cerr << '~';
+  } else {
+    std::cerr << '^';
+  }
+  std::cerr << '\n';
+}
+
 #pragma mark - Parse Command
 
 namespace {
@@ -153,41 +194,7 @@ private:
     if (NumErrors++ >= MaxErrors)
       return;
 
-    std::cerr << Filename << ":" << At.Line << ":" << At.Column
-              << ": error: " << Message << "\n";
-
-    // Skip carat diagnostics on EOF token.
-    if (At.TokenKind == ninja::Token::Kind::EndOfFile)
-      return;
-
-    // Simple caret style diagnostics.
-    const char *LineBegin = At.Start, *LineEnd = At.Start,
-      *BufferBegin = Parser->getLexer().getBufferStart(),
-      *BufferEnd = Parser->getLexer().getBufferEnd();
-
-    // Run line pointers forward and back.
-    while (LineBegin > BufferBegin &&
-           LineBegin[-1] != '\r' && LineBegin[-1] != '\n')
-      --LineBegin;
-    while (LineEnd < BufferEnd &&
-           LineEnd[0] != '\r' && LineEnd[0] != '\n')
-      ++LineEnd;
-
-    // Show the line, indented by 2.
-    std::cerr << "  " << std::string(LineBegin, LineEnd) << "\n";
-
-    // Show the caret or squiggly, making sure to print back spaces the
-    // same.
-    std::cerr << "  ";
-    for (const char* S = LineBegin; S != At.Start; ++S)
-      std::cerr << (isspace(*S) ? *S : ' ');
-    if (At.Length > 1) {
-      for (unsigned i = 0; i != At.Length; ++i)
-        std::cerr << '~';
-    } else {
-      std::cerr << '^';
-    }
-    std::cerr << '\n';
+    emitError(Filename, Message, At, Parser);
   }
 
   virtual void actOnBeginManifest(std::string Name) override {
