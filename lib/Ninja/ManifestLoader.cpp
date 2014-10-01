@@ -12,6 +12,8 @@
 
 #include "llbuild/Ninja/ManifestLoader.h"
 
+#include "llbuild/Ninja/Parser.h"
+
 using namespace llbuild;
 using namespace llbuild::ninja;
 
@@ -24,19 +26,91 @@ ManifestLoaderActions::~ManifestLoaderActions() {
 
 namespace {
 
-class ManifestLoaderImpl {
+/// Manifest loader implementation.
+///
+/// For simplicity, we just directly implement the parser actions interface.
+class ManifestLoaderImpl: public ParseActions {
   std::string MainFilename;
   ManifestLoaderActions &Actions;
+  std::unique_ptr<Manifest> TheManifest;
+  std::unique_ptr<Parser> CurrentParser;
 
 public:
   ManifestLoaderImpl(std::string MainFilename, ManifestLoaderActions &Actions)
-    : MainFilename(MainFilename), Actions(Actions)
+    : MainFilename(MainFilename), Actions(Actions), TheManifest(nullptr),
+      CurrentParser(nullptr)
   {
   }
 
   std::unique_ptr<Manifest> load() {
-    return nullptr;
+    // Create the manifest.
+    TheManifest.reset(new Manifest);
+
+    // Load the main file data.
+    std::unique_ptr<char[]> Data;
+    uint64_t Length;
+    if (!Actions.readFileContents(MainFilename, nullptr, &Data, &Length))
+      return nullptr;
+
+    // Create the parser for the data.
+    CurrentParser.reset(new Parser(Data.get(), Length, *this));
+    CurrentParser->parse();
+
+    return std::move(TheManifest);
   }
+
+  /// @name Parse Actions Interfaces
+  /// @{
+
+  virtual void initialize(ninja::Parser *Parser) override { }
+
+  virtual void error(std::string Message, const Token &At) override { }
+
+  virtual void actOnBeginManifest(std::string Name) override { }
+
+  virtual void actOnEndManifest() override { }
+
+  virtual void actOnBindingDecl(const Token& Name,
+                                const Token& Value) override { }
+
+  virtual void actOnDefaultDecl(const std::vector<Token>& Names) override { }
+
+  virtual void actOnIncludeDecl(bool IsInclude,
+                                const Token& Path) override { }
+
+  virtual BuildResult
+  actOnBeginBuildDecl(const Token& Name,
+                      const std::vector<Token> &Outputs,
+                      const std::vector<Token> &Inputs,
+                      unsigned NumExplicitInputs,
+                      unsigned NumImplicitInputs) override {
+    return 0;
+  }
+
+  virtual void actOnBuildBindingDecl(BuildResult Decl, const Token& Name,
+                                     const Token& Value) override { }
+
+  virtual void actOnEndBuildDecl(PoolResult Decl) override { }
+
+  virtual PoolResult actOnBeginPoolDecl(const Token& Name) override {
+    return 0;
+  }
+
+  virtual void actOnPoolBindingDecl(PoolResult Decl, const Token& Name,
+                                    const Token& Value) override { }
+
+  virtual void actOnEndPoolDecl(PoolResult Decl) override { }
+
+  virtual RuleResult actOnBeginRuleDecl(const Token& Name) override {
+    return 0;
+  }
+
+  virtual void actOnRuleBindingDecl(RuleResult Decl, const Token& Name,
+                                    const Token& Value) override { }
+
+  virtual void actOnEndRuleDecl(PoolResult Decl) override { }
+
+  /// @}
 };
 
 }
