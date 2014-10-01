@@ -263,7 +263,9 @@ public:
                                 const Token& StartTok) override {
     Rule* Decl = static_cast<Rule*>(AbstractDecl);
 
-    // FIXME: Check error conditions.
+    if (Decl->getCommandExpr().empty()) {
+      error("missing 'command' variable assignment", StartTok);
+    }
   }
 
   /// @}

@@ -17,3 +17,6 @@ rule rule2
 # CHECK-ERR: rules.ninja:[[@LINE+2]]:5: error: unexpected variable
 rule rule3
      unknown_variable = value
+
+# CHECK-ERR: rules.ninja:[[@LINE+1]]:0: error: missing 'command' variable assignment
+rule rule4
