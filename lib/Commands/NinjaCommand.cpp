@@ -220,7 +220,7 @@ private:
                                     Names) override {
     std::cerr << __FUNCTION__ << "(/*Names=*/[";
     bool First = true;
-    for (auto Name: Names) {
+    for (auto& Name: Names) {
       if (!First)
         std::cerr << ", ";
       std::cerr << "\"" << escapedString(Name.Start, Name.Length) << "\"";
@@ -247,7 +247,7 @@ private:
               << "\"" << escapedString(Name.Start, Name.Length) << "\""
               << ", /*Outputs=*/[";
     bool First = true;
-    for (auto Name: Outputs) {
+    for (auto& Name: Outputs) {
       if (!First)
         std::cerr << ", ";
       std::cerr << "\"" << escapedString(Name.Start, Name.Length) << "\"";
@@ -255,7 +255,7 @@ private:
     }
     std::cerr << "], /*Inputs=*/[";
     First = true;
-    for (auto Name: Inputs) {
+    for (auto& Name: Inputs) {
       if (!First)
         std::cerr << ", ";
       std::cerr << "\"" << escapedString(Name.Start, Name.Length) << "\"";
@@ -483,12 +483,31 @@ static int ExecuteLoadManifestCommand(const std::vector<std::string> &Args) {
   std::cout << "# Top-Level Bindings\n";
   assert(Manifest->getBindings().getParentScope() == nullptr);
   std::vector<std::pair<std::string, std::string>>
-    Entries(Manifest->getBindings().getEntries().begin(),
-            Manifest->getBindings().getEntries().end());
-  std::sort(Entries.begin(), Entries.end());
-  for (auto Entry: Entries) {
+    Bindings(Manifest->getBindings().getEntries().begin(),
+             Manifest->getBindings().getEntries().end());
+  std::sort(Bindings.begin(), Bindings.end());
+  for (auto& Entry: Bindings) {
     std::cout << Entry.first << " = \""
               << escapedString(Entry.second) << "\"\n";
+  }
+  std::cout << "\n";
+
+  // Dump the rules.
+  std::cout << "# Rules\n";
+  std::vector<ninja::Rule*> Rules;
+  for (auto& Entry: Manifest->getRules()) {
+    Rules.push_back(Entry.second.get());
+  }
+  std::sort(Rules.begin(), Rules.end(), [] (ninja::Rule* a, ninja::Rule* b) {
+      return a->getName() < b->getName();
+    });
+  for (auto Rule: Rules) {
+    std::cout << "rule " << Rule->getName() << "\n";
+    if (!Rule->getCommandExpr().empty()) {
+      std::cout << "  command = \""
+                << escapedString(Rule->getCommandExpr()) << "\"\n";
+      std::cout << "\n";
+    }
   }
 
   return 0;

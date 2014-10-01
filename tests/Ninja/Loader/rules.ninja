@@ -1,0 +1,19 @@
+# Check rule loading.
+#
+# RUN: %{llbuild} ninja load-manifest %s > %t 2> %t.err
+# RUN: %{FileCheck} < %t %s
+# RUN: %{FileCheck} --check-prefix=CHECK-ERR < %t.err %s
+
+# CHECK: rule rule1
+# CHECK: command = "command ${expr} arg $\narg2"
+rule rule1
+     command = command ${expr} arg $
+arg2
+
+# CHECK-ERR: rules.ninja:[[@LINE+2]]:5: error: duplicate rule
+rule rule2
+rule rule2
+
+# CHECK-ERR: rules.ninja:[[@LINE+2]]:5: error: unexpected variable
+rule rule3
+     unknown_variable = value

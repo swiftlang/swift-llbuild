@@ -58,17 +58,50 @@ public:
   }
 };
 
+/// A rule represents a template which can be expanded to produce a particular
+/// command.
+class Rule {
+  /// The name of the rule.
+  std::string Name;
+  /// The unexpanded command template string.
+  std::string CommandExpr;
+  // FIXME: Add other supported attributes here.
+
+public:
+  explicit Rule(const std::string& Name) : Name(Name) {}
+
+  const std::string& getName() const { return Name; }
+
+  const std::string& getCommandExpr() const { return CommandExpr; }
+  void setCommandExpr(std::string Value) { CommandExpr = Value; }
+};
+
+
 /// A manifest represents the complete set of rules and commands used to perform
 /// a build.
 class Manifest {
   /// The top level variable bindings.
   BindingSet Bindings;
 
+  /// The rules in the manifest, stored as a map on the rule name.
+  //
+  // FIXME: This is an inefficent map, given that the string is contained
+  // inside the rule.
+  typedef std::unordered_map<std::string, std::unique_ptr<Rule>> rule_set;
+  rule_set Rules;
+
 public:
   /// Get the final set of top level variable bindings.
   BindingSet& getBindings() { return Bindings; }
   /// Get the final set of top level variable bindings.
   const BindingSet& getBindings() const { return Bindings; }
+
+  rule_set& getRules() {
+    return Rules;
+  }
+  const rule_set& getRules() const {
+    return Rules;
+  }
 };
 
 }

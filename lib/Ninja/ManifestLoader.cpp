@@ -226,14 +226,42 @@ public:
 
   virtual void actOnEndPoolDecl(PoolResult Decl) override { }
 
-  virtual RuleResult actOnBeginRuleDecl(const Token& Name) override {
-    return 0;
+  virtual RuleResult actOnBeginRuleDecl(const Token& NameTok) override {
+    std::string Name(NameTok.Start, NameTok.Length);
+
+    // Find the hash slot.
+    auto& Result = TheManifest->getRules()[Name];
+
+    // Diagnose if the rule already exists (we still create a new one).
+    if (Result.get()) {
+      // The rule already exists.
+      error("duplicate rule", NameTok);
+    }
+
+    // Insert the new rule.
+    Rule* Decl = new Rule(Name);
+    Result.reset(Decl);
+    return static_cast<RuleResult>(Decl);
   }
 
-  virtual void actOnRuleBindingDecl(RuleResult Decl, const Token& Name,
-                                    const Token& Value) override { }
+  virtual void actOnRuleBindingDecl(RuleResult AbstractDecl,
+                                    const Token& NameTok,
+                                    const Token& ValueTok) override {
+    Rule* Decl = static_cast<Rule*>(AbstractDecl);
 
-  virtual void actOnEndRuleDecl(PoolResult Decl) override { }
+    std::string Name(NameTok.Start, NameTok.Length);
+    if (Name == "command") {
+      Decl->setCommandExpr(std::string(ValueTok.Start, ValueTok.Length));
+    } else {
+      error("unexpected variable", NameTok);
+    }
+  }
+
+  virtual void actOnEndRuleDecl(RuleResult AbstractDecl) override {
+    Rule* Decl = static_cast<Rule*>(AbstractDecl);
+
+    // FIXME: Check error conditions.
+  }
 
   /// @}
 };
