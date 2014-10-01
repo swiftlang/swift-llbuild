@@ -1,4 +1,4 @@
-# Check basic parsing functionality.
+# Check handling of identifier names.
 #
 # RUN: %{llbuild} ninja parse %s 2> %t.err
 # RUN: %{FileCheck} < %t.err %s
@@ -14,5 +14,5 @@ a:b = 12
 
 # Check for other valid characters in variable names.
 #
-# CHECK: actOnBindingDecl(/*Name=*/"abcxyz0189_-.", /*Value=*/"12")
-abcxyz0189_-. = 12
+# CHECK: actOnBindingDecl(/*Name=*/"abcxyzAZ0189_-.", /*Value=*/"12")
+abcxyzAZ0189_-. = 12

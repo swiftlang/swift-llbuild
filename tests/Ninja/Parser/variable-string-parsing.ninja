@@ -1,4 +1,4 @@
-# Check string specific parsing functionality.
+# Check variable string specific parsing functionality.
 #
 # RUN: %{llbuild} ninja parse %s 2> %t.err
 # RUN: %{FileCheck} < %t.err %s

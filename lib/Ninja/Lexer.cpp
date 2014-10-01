@@ -143,7 +143,7 @@ Token &Lexer::setIdentifierTokenKind(Token &Result) const {
 
 static bool isIdentifierChar(int Char) {
   return (Char >= 'a' && Char <= 'z') ||
-    (Char >= 'A' && Char <= 'A') ||
+    (Char >= 'A' && Char <= 'Z') ||
     (Char >= '0' && Char <= '9') ||
     Char == '_' || Char == '.' || Char == '-';
 }
