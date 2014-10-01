@@ -47,7 +47,29 @@ macro(add_llbuild_executable name)
 endmacro()
 
 macro(add_llbuild_library name)
-  add_library(${name} ${ARGN})
+  set(ALL_FILES ${ARGN})
+
+  # Add headers to generated project files.
+  if(MSVC_IDE OR XCODE)
+    # Add public headers.
+
+    # Find the library name by finding its relative path.
+    file(RELATIVE_PATH lib_path
+      ${LLBUILD_SRC_DIR}/lib/
+      ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+
+    if(NOT lib_path MATCHES "^[.][.]")
+      file( GLOB_RECURSE headers
+        ${LLBUILD_SRC_DIR}/include/llbuild/${lib_path}/*.h
+      )
+      set_source_files_properties(${headers} PROPERTIES HEADER_FILE_ONLY ON)
+
+      list(APPEND ALL_FILES ${headers})
+    endif()
+  endif(MSVC_IDE OR XCODE)
+
+  add_library(${name} ${ALL_FILES})
 
   set_output_directory(${name} ${LLBUILD_EXECUTABLE_OUTPUT_INTDIR} ${LLBUILD_LIBRARY_OUTPUT_INTDIR})
 endmacro()
