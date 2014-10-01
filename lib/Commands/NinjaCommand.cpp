@@ -19,6 +19,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <algorithm>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -458,15 +459,19 @@ static int ExecuteLoadManifestCommand(const std::vector<std::string> &Args) {
   std::unique_ptr<ninja::Manifest> Manifest = Loader.load();
 
   // Dump the manifest.
-  std::cout << "# Loaded Manifest: \"" << Args[0] << "\"\n";
-  std::cout << "\n";
+  std::cerr << "# Loaded Manifest: \"" << Args[0] << "\"\n";
+  std::cerr << "\n";
 
-  // Dump the top-level bindings.
+  // Dump the top-level bindings, in lexicographic order.
+  std::cerr << "# Top-Level Bindings\n";
   assert(Manifest->Bindings.ParentScope == nullptr);
-  std::cout << "# Top-Level Bindings\n";
-  for (auto Entry: Manifest->Bindings.Bindings) {
+  std::vector<std::pair<std::string, std::string>>
+    Entries(Manifest->Bindings.Bindings.begin(),
+            Manifest->Bindings.Bindings.end());
+  std::sort(Entries.begin(), Entries.end());
+  for (auto Entry: Entries) {
     // FIXME: We should escape things.
-    std::cout << Entry.first << " = " << Entry.second << "\n";
+    std::cerr << Entry.first << " = " << Entry.second << "\n";
   }
 
   return 0;
