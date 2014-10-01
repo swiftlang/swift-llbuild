@@ -43,3 +43,10 @@ a8 = x$!x
 a9 = x${foo
 # CHECK-ERR: error: invalid variable name in reference
 a10 = x${foo+bar}
+
+
+# Check that bindings overwrite prior ones.
+b1_sub = first
+b1_sub = second
+# CHECK: b1 = "x.second.x"
+b1 = x.${b1_sub}.x

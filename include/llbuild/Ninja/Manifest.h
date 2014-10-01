@@ -42,7 +42,7 @@ public:
 
   /// Insert a binding into the set.
   void insert(const std::string& Name, const std::string& Value) {
-    Entries.insert(std::make_pair(Name, Value));
+    Entries[Name] = Value;
   }
 
   /// Look up the given variable name in the binding set, returning its value or
