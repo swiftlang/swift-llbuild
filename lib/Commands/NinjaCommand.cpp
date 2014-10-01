@@ -457,7 +457,17 @@ static int ExecuteLoadManifestCommand(const std::vector<std::string> &Args) {
   ninja::ManifestLoader Loader(Args[0], Actions);
   std::unique_ptr<ninja::Manifest> Manifest = Loader.load();
 
-  // FIXME: Dump the manifest.
+  // Dump the manifest.
+  std::cout << "# Loaded Manifest: \"" << Args[0] << "\"\n";
+  std::cout << "\n";
+
+  // Dump the top-level bindings.
+  assert(Manifest->Bindings.ParentScope == nullptr);
+  std::cout << "# Top-Level Bindings\n";
+  for (auto Entry: Manifest->Bindings.Bindings) {
+    // FIXME: We should escape things.
+    std::cout << Entry.first << " = " << Entry.second << "\n";
+  }
 
   return 0;
 }

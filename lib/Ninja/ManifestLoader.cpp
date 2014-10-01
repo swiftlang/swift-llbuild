@@ -59,6 +59,16 @@ public:
     return std::move(TheManifest);
   }
 
+  /// Given a string template token, evaluate it against the given \arg Bindings
+  /// and return the resulting string.
+  std::string evalString(const Token& Value, const BindingSet& Bindings) {
+    assert(Value.TokenKind == Token::Kind::String && "invalid token kind");
+
+    // FIXME: Implement binding resolution.
+
+    return std::string(Value.Start, Value.Length);
+  }
+
   /// @name Parse Actions Interfaces
   /// @{
 
@@ -70,8 +80,16 @@ public:
 
   virtual void actOnEndManifest() override { }
 
-  virtual void actOnBindingDecl(const Token& Name,
-                                const Token& Value) override { }
+  virtual void actOnBindingDecl(const Token& NameTok,
+                                const Token& ValueTok) override {
+    // Extract the name string.
+    std::string Name(NameTok.Start, NameTok.Length);
+
+    // Evaluate the value string with the current top-level bindings.
+    std::string Value(evalString(ValueTok, TheManifest->Bindings));
+
+    TheManifest->Bindings.Bindings.insert(std::make_pair(Name, Value));
+  }
 
   virtual void actOnDefaultDecl(const std::vector<Token>& Names) override { }
 
