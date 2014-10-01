@@ -305,6 +305,7 @@ void ParserImpl::parseParameterizedDecl() {
     ParseActions::RuleResult AsRule;
   } Decl;
   bool Success;
+  Token StartTok = Tok;
   Token::Kind Kind = Tok.TokenKind;
   switch (Kind) {
   case Token::Kind::KWBuild:
@@ -351,14 +352,14 @@ void ParserImpl::parseParameterizedDecl() {
 
   switch (Kind) {
   case Token::Kind::KWBuild:
-    Actions.actOnEndBuildDecl(Decl.AsBuild);
+    Actions.actOnEndBuildDecl(Decl.AsBuild, StartTok);
     break;
   case Token::Kind::KWPool:
-    Actions.actOnEndPoolDecl(Decl.AsPool);
+    Actions.actOnEndPoolDecl(Decl.AsPool, StartTok);
     break;
   default:
     assert(Kind == Token::Kind::KWRule);
-    Actions.actOnEndRuleDecl(Decl.AsRule);
+    Actions.actOnEndRuleDecl(Decl.AsRule, StartTok);
     break;
   }
 }

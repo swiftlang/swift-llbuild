@@ -215,7 +215,8 @@ public:
   virtual void actOnBuildBindingDecl(BuildResult Decl, const Token& Name,
                                      const Token& Value) override { }
 
-  virtual void actOnEndBuildDecl(PoolResult Decl) override { }
+  virtual void actOnEndBuildDecl(PoolResult Decl,
+                                const Token& StartTok) override { }
 
   virtual PoolResult actOnBeginPoolDecl(const Token& Name) override {
     return 0;
@@ -224,7 +225,8 @@ public:
   virtual void actOnPoolBindingDecl(PoolResult Decl, const Token& Name,
                                     const Token& Value) override { }
 
-  virtual void actOnEndPoolDecl(PoolResult Decl) override { }
+  virtual void actOnEndPoolDecl(PoolResult Decl,
+                                const Token& StartTok) override { }
 
   virtual RuleResult actOnBeginRuleDecl(const Token& NameTok) override {
     std::string Name(NameTok.Start, NameTok.Length);
@@ -257,7 +259,8 @@ public:
     }
   }
 
-  virtual void actOnEndRuleDecl(RuleResult AbstractDecl) override {
+  virtual void actOnEndRuleDecl(RuleResult AbstractDecl,
+                                const Token& StartTok) override {
     Rule* Decl = static_cast<Rule*>(AbstractDecl);
 
     // FIXME: Check error conditions.

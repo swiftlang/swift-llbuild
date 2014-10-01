@@ -275,7 +275,8 @@ private:
                                                  Value.Length) << "\")\n";
   }
 
-  virtual void actOnEndBuildDecl(PoolResult Decl) override {
+  virtual void actOnEndBuildDecl(BuildResult Decl,
+                                 const ninja::Token& Start) override {
     std::cerr << __FUNCTION__ << "(/*Decl=*/"
               << static_cast<void*>(Decl) << ")\n";
   }
@@ -295,7 +296,8 @@ private:
                                                  Value.Length) << "\")\n";
   }
 
-  virtual void actOnEndPoolDecl(PoolResult Decl) override {
+  virtual void actOnEndPoolDecl(PoolResult Decl,
+                                const ninja::Token& Start) override {
     std::cerr << __FUNCTION__ << "(/*Decl=*/"
               << static_cast<void*>(Decl) << ")\n";
   }
@@ -315,7 +317,8 @@ private:
                                                  Value.Length) << "\")\n";
   }
 
-  virtual void actOnEndRuleDecl(PoolResult Decl) override {
+  virtual void actOnEndRuleDecl(RuleResult Decl,
+                                const ninja::Token& Start) override {
     std::cerr << __FUNCTION__ << "(/*Decl=*/"
               << static_cast<void*>(Decl) << ")\n";
   }
@@ -384,7 +387,8 @@ private:
   virtual void actOnBuildBindingDecl(BuildResult Decl, const ninja::Token& Name,
                                      const ninja::Token& Value) override { }
 
-  virtual void actOnEndBuildDecl(PoolResult Decl) override { }
+  virtual void actOnEndBuildDecl(BuildResult Decl,
+                                 const ninja::Token& Start) override { }
 
   virtual PoolResult actOnBeginPoolDecl(const ninja::Token& Name) override {
     return 0;
@@ -393,7 +397,8 @@ private:
   virtual void actOnPoolBindingDecl(PoolResult Decl, const ninja::Token& Name,
                                     const ninja::Token& Value) override { }
 
-  virtual void actOnEndPoolDecl(PoolResult Decl) override { }
+  virtual void actOnEndPoolDecl(PoolResult Decl,
+                                const ninja::Token& Start) override { }
 
   virtual RuleResult actOnBeginRuleDecl(const ninja::Token& Name) override {
     return 0;
@@ -402,7 +407,8 @@ private:
   virtual void actOnRuleBindingDecl(RuleResult Decl, const ninja::Token& Name,
                                     const ninja::Token& Value) override { }
 
-  virtual void actOnEndRuleDecl(PoolResult Decl) override { }
+  virtual void actOnEndRuleDecl(RuleResult Decl,
+                                 const ninja::Token& Start) override { }
 };
 
 }

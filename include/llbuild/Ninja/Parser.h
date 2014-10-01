@@ -101,7 +101,9 @@ public:
   ///
   /// \param Decl The object returned to the parser from the opening \see
   /// actOnBeginBuildDecl().
-  virtual void actOnEndBuildDecl(BuildResult Decl) = 0;
+  ///
+  /// \param Start The token from the decl start, for use in diagnostics.
+  virtual void actOnEndBuildDecl(BuildResult Decl, const Token& Start) = 0;
 
   /// Called on a "pool" declaration.
   ///
@@ -125,7 +127,9 @@ public:
   ///
   /// \param Decl The object returned to the parser from the opening \see
   /// actOnBeginPoolDecl().
-  virtual void actOnEndPoolDecl(PoolResult Decl) = 0;
+  ///
+  /// \param Start The token from the decl start, for use in diagnostics.
+  virtual void actOnEndPoolDecl(PoolResult Decl, const Token& Start) = 0;
 
   /// Called on a "rule" declaration.
   ///
@@ -149,7 +153,9 @@ public:
   ///
   /// \param Decl The object returned to the parser from the opening \see
   /// actOnBeginRuleDecl().
-  virtual void actOnEndRuleDecl(RuleResult Decl) = 0;
+  ///
+  /// \param Start The token from the decl start, for use in diagnostics.
+  virtual void actOnEndRuleDecl(RuleResult Decl, const Token& Start) = 0;
 
   /// @}
 };
