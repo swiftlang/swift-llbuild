@@ -32,7 +32,7 @@ a7_azAZ09_- = value
 # CHECK: a7 = x.value.x
 a7 = x.$a7_azAZ09_-.x
 
-# Check errors in escape handling.
+# Check error handling for escapes and substitution
 #
 # FIXME: Still need a test for '$' at the end of a string, which we can't hit in
 # this context.
@@ -41,3 +41,5 @@ a7 = x.$a7_azAZ09_-.x
 a8 = x$!x
 # CHECK-ERR: error: invalid variable reference
 a9 = x${foo
+# CHECK-ERR: error: invalid variable name in reference
+a10 = x${foo+bar}

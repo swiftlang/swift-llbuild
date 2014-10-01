@@ -141,13 +141,6 @@ Token &Lexer::setIdentifierTokenKind(Token &Result) const {
   return setTokenKind(Result, Token::Kind::Identifier);
 }
 
-static bool isIdentifierChar(int Char) {
-  return (Char >= 'a' && Char <= 'z') ||
-    (Char >= 'A' && Char <= 'Z') ||
-    (Char >= '0' && Char <= '9') ||
-    Char == '_' || Char == '.' || Char == '-';
-}
-
 Token &Lexer::lexIdentifier(Token &Result) {
   while (true) {
     int Char = peekNextChar();
@@ -160,7 +153,7 @@ Token &Lexer::lexIdentifier(Token &Result) {
     }
 
     // Otherwise, continue only if this is an identifier character.
-    if (!isIdentifierChar(Char))
+    if (!Lexer::isIdentifierChar(Char))
       break;
 
     getNextChar();
@@ -280,7 +273,7 @@ Token &Lexer::lex(Token &Result) {
   }
 
   default:
-    if (isIdentifierChar(Char))
+    if (Lexer::isIdentifierChar(Char))
       return lexIdentifier(Result);
 
     return setTokenKind(Result, Token::Kind::Unknown);

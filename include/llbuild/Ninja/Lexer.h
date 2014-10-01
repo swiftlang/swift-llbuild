@@ -131,6 +131,28 @@ public:
 
   /// Set the current string lexing mode.
   void setStringMode(StringMode Value) { Mode = Value; }
+
+  /// @name Utility Methods
+  /// @{
+
+  /// Check whether the given \arg Char is valid in an identifier.
+  static bool isIdentifierChar(char Char) {
+    return (Char >= 'a' && Char <= 'z') ||
+      (Char >= 'A' && Char <= 'Z') ||
+      (Char >= '0' && Char <= '9') ||
+      Char == '_' || Char == '.' || Char == '-';
+  }
+
+  /// Check whether the given \arg Char is valid in a simple identifier (one
+  /// which can appear in the middle of an expression string outside braces).
+  static bool isSimpleIdentifierChar(char Char) {
+    return (Char >= 'a' && Char <= 'z') ||
+      (Char >= 'A' && Char <= 'Z') ||
+      (Char >= '0' && Char <= '9') ||
+      Char == '_' || Char == '-';
+  }
+
+  /// @}
 };
 
 }

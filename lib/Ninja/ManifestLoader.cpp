@@ -12,6 +12,7 @@
 
 #include "llbuild/Ninja/ManifestLoader.h"
 
+#include "llbuild/Ninja/Lexer.h"
 #include "llbuild/Ninja/Parser.h"
 
 #include <sstream>
@@ -27,15 +28,6 @@ ManifestLoaderActions::~ManifestLoaderActions() {
 #pragma mark - ManifestLoader Implementation
 
 namespace {
-
-/// Check if the given \arg Char is valid as a "simple" (non braced) variable
-/// identifier name.
-static bool isSimpleIdentifierChar(int Char) {
-  return (Char >= 'a' && Char <= 'z') ||
-    (Char >= 'A' && Char <= 'Z') ||
-    (Char >= '0' && Char <= '9') ||
-    Char == '_' || Char == '-';
-}
 
 /// Manifest loader implementation.
 ///
@@ -127,6 +119,8 @@ public:
 
       // If this is a braced variable reference, expand it.
       if (Char == '{') {
+        // Scan until the end of the reference, checking validity of the
+        // identifier name as we go.
         ++Pos;
         const char* VarStart = Pos;
         bool IsValid = true;
@@ -139,13 +133,21 @@ public:
           }
 
           // If we found the end of the reference, resolve it.
-          if (*Pos == '}') {
-            // FIXME: We also should check that this is a valid identifier
-            // name here.
-            Result << Bindings.lookup(std::string(VarStart, Pos - VarStart));
+          char Char = *Pos;
+          if (Char == '}') {
+            // If this identifier isn't valid, emit an error.
+            if (!IsValid) {
+              error("invalid variable name in reference", Value);
+            } else {
+              Result << Bindings.lookup(std::string(VarStart, Pos - VarStart));
+            }
             ++Pos;
             break;
           }
+
+          // Track whether this is a valid identifier.
+          if (!Lexer::isIdentifierChar(Char))
+            IsValid = false;
 
           ++Pos;
         }
@@ -153,11 +155,11 @@ public:
       }
 
       // If this is a simple variable reference, expand it.
-      if (isSimpleIdentifierChar(Char)) {
+      if (Lexer::isSimpleIdentifierChar(Char)) {
         const char* VarStart = Pos;
         // Scan until the end of the simple identifier.
         ++Pos;
-        while (Pos != End && isSimpleIdentifierChar(*Pos))
+        while (Pos != End && Lexer::isSimpleIdentifierChar(*Pos))
           ++Pos;
         Result << Bindings.lookup(std::string(VarStart, Pos-VarStart));
         continue;
