@@ -14,6 +14,8 @@
 
 #include "llbuild/Ninja/Parser.h"
 
+#include <sstream>
+
 using namespace llbuild;
 using namespace llbuild::ninja;
 
@@ -25,6 +27,15 @@ ManifestLoaderActions::~ManifestLoaderActions() {
 #pragma mark - ManifestLoader Implementation
 
 namespace {
+
+/// Check if the given \arg Char is valid as a "simple" (non braced) variable
+/// identifier name.
+static bool isSimpleIdentifierChar(int Char) {
+  return (Char >= 'a' && Char <= 'z') ||
+    (Char >= 'A' && Char <= 'Z') ||
+    (Char >= '0' && Char <= '9') ||
+    Char == '_' || Char == '-';
+}
 
 /// Manifest loader implementation.
 ///
@@ -64,9 +75,98 @@ public:
   std::string evalString(const Token& Value, const BindingSet& Bindings) {
     assert(Value.TokenKind == Token::Kind::String && "invalid token kind");
 
-    // FIXME: Implement binding resolution.
+    // Scan the string for escape sequences or variable references, accumulating
+    // output pieces as we go.
+    //
+    // FIXME: Rewrite this with StringRef once we have it, and make efficient.
+    std::stringstream Result;
+    const char* Start = Value.Start;
+    const char* End = Value.Start + Value.Length;
+    const char* Pos = Start;
+    while (Pos != End) {
+      // Find the next '$'.
+      const char* PieceStart = Pos;
+      for (; Pos != End; ++Pos) {
+        if (*Pos == '$')
+          break;
+      }
 
-    return std::string(Value.Start, Value.Length);
+      // Add the current piece, if non-empty.
+      if (Pos != PieceStart)
+        Result << std::string(PieceStart, Pos);
+
+      // If we are at the end, we are done.
+      if (Pos == End)
+        break;
+
+      // Otherwise, we have a '$' character to handle.
+      ++Pos;
+      if (Pos == End) {
+        error("invalid '$'-escape at end of string", Value);
+        break;
+      }
+
+      // If this is a newline continuation, skip it and all leading space.
+      char Char = *Pos;
+      if (Char == '\n') {
+        ++Pos;
+        while (Pos != End && isspace(*Pos))
+          ++Pos;
+        continue;
+      }
+
+      // If this is single character escape, honor it.
+      if (Char == ' ' || Char == ':' || Char == '$') {
+        Result << Char;
+        ++Pos;
+        continue;
+      }
+
+      // If this is a braced variable reference, expand it.
+      if (Char == '{') {
+        ++Pos;
+        const char* VarStart = Pos;
+        bool IsValid = true;
+        while (true) {
+          // If we reached the end of the string, this is an error.
+          if (Pos == End) {
+            error("invalid variable reference string (missing trailing '}')",
+                  Value);
+            break;
+          }
+
+          // If we found the end of the reference, resolve it.
+          if (*Pos == '}') {
+            // FIXME: We also should check that this is a valid identifier
+            // name here.
+            Result << Bindings.lookup(std::string(VarStart, Pos - VarStart));
+            ++Pos;
+            break;
+          }
+
+          ++Pos;
+        }
+        continue;
+      }
+
+      // If this is a simple variable reference, expand it.
+      if (isSimpleIdentifierChar(Char)) {
+        const char* VarStart = Pos;
+        // Scan until the end of the simple identifier.
+        ++Pos;
+        while (Pos != End && isSimpleIdentifierChar(*Pos))
+          ++Pos;
+        Result << Bindings.lookup(std::string(VarStart, Pos-VarStart));
+        continue;
+      }
+
+      // Otherwise, we have an invalid '$' escape.
+      error("invalid '$'-escape (literal '$' should be written as '$$')",
+            Value);
+      break;
+    }
+
+    return Result.str();
   }
 
   /// @name Parse Actions Interfaces

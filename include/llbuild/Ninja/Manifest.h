@@ -22,10 +22,24 @@ namespace ninja {
 class BindingSet {
 public:
   /// The parent binding scope, if any.
-  BindingSet *ParentScope;
+  BindingSet *ParentScope = 0;
 
   /// The actual bindings, mapping from Name to Value.
   std::unordered_map<std::string, std::string> Bindings;
+
+public:
+  /// Look up the given variable name in the binding set, returning its value or
+  /// the empty string if not found.
+  std::string lookup(const std::string& Name) const {
+    auto it = Bindings.find(Name);
+    if (it != Bindings.end())
+      return it->second;
+
+    if (ParentScope)
+      return ParentScope->lookup(Name);
+
+    return "";
+  }
 };
 
 /// A manifest represents the complete set of rules and commands used to perform

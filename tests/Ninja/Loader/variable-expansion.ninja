@@ -1,0 +1,31 @@
+# Check variable expansion.
+#
+# RUN: %{llbuild} ninja load-manifest %s 2> %t.err
+# RUN: %{FileCheck} < %t.err %s
+
+# CHECK: Top-Level Bindings
+
+# CHECK: a1 = value1
+a1 = value1
+# CHECK: a2 = value2
+a2      =      value2
+
+# Check escape handling.
+#
+# CHECK: a3 = x: x
+a3 = x$:$ x
+# CHECK: a4 = xx
+a4 = x$
+x
+
+# Check expansion.
+a5_sub = value
+# CHECK: a5 = xvaluex
+a5 = x${a5_sub}x
+# CHECK: a6 = x!value!x
+a6 = x!$a5_sub!x
+
+# Check full range of expansion characters in simple variable references.
+a7_azAZ09_- = value
+# CHECK: a7 = x.value.x
+a7 = x.$a7_azAZ09_-.x
