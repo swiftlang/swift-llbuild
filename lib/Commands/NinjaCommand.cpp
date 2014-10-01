@@ -46,6 +46,9 @@ static std::string escapedString(const char *Start, unsigned Length) {
   }
   return Result.str();
 }
+static std::string escapedString(const std::string& String) {
+  return escapedString(String.data(), String.size());
+}
 
 static void usage() {
   fprintf(stderr, "Usage: %s ninja [--help] <command> [<args>]\n",
@@ -476,7 +479,7 @@ static int ExecuteLoadManifestCommand(const std::vector<std::string> &Args) {
   std::cout << "# Loaded Manifest: \"" << Args[0] << "\"\n";
   std::cout << "\n";
 
-  // Dump the top-level bindings, in lexicographic order.
+  // Dump the top-level bindings.
   std::cout << "# Top-Level Bindings\n";
   assert(Manifest->getBindings().getParentScope() == nullptr);
   std::vector<std::pair<std::string, std::string>>
@@ -484,8 +487,8 @@ static int ExecuteLoadManifestCommand(const std::vector<std::string> &Args) {
             Manifest->getBindings().getEntries().end());
   std::sort(Entries.begin(), Entries.end());
   for (auto Entry: Entries) {
-    // FIXME: We should escape things.
-    std::cout << Entry.first << " = " << Entry.second << "\n";
+    std::cout << Entry.first << " = \""
+              << escapedString(Entry.second) << "\"\n";
   }
 
   return 0;
