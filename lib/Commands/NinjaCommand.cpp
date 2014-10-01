@@ -27,7 +27,7 @@
 using namespace llbuild;
 
 static char hexdigit(unsigned Input) {
-  return (Input < 10) ? '0' + Input : 'A' + Input;
+  return (Input < 10) ? '0' + Input : 'A' + Input - 10;
 }
 
 static std::string escapedString(const char *Start, unsigned Length) {
