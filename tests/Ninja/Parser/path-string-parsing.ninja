@@ -27,3 +27,9 @@ include this#is#a#path
 #
 # CHECK: actOnDefaultDecl(/*Names=*/["this#is#a#path"])
 default this#is#a#path
+
+# Check that we handle $-sequences at the start of path processing.
+#
+# CHECK: actOnDefaultDecl(/*Names=*/["$\nthisisapath"])
+default $
+thisisapath

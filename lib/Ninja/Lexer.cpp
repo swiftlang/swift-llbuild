@@ -229,9 +229,11 @@ Token &Lexer::lex(Token &Result) {
   Result.Column = ColumnNumber;
 
   // Check if we are at a string mode independent token.
-  int Char = getNextChar();
-  if (Char == '\n')
+  int Char = peekNextChar();
+  if (Char == '\n') {
+    getNextChar();
     return setTokenKind(Result, Token::Kind::Newline);
+  }
   if (Char == -1)
     return setTokenKind(Result, Token::Kind::EndOfFile);
 
@@ -244,7 +246,8 @@ Token &Lexer::lex(Token &Result) {
       return lexPathString(Result);
   }
 
-  // Otherwise, lex from the regular token set.
+  // Otherwise, consume the character and lex from the regular token set.
+  getNextChar();
   switch (Char) {
   case ':': return setTokenKind(Result, Token::Kind::Colon);
   case '=': return setTokenKind(Result, Token::Kind::Equals);

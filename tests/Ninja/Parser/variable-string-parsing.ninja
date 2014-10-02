@@ -33,3 +33,9 @@ a4
 #
 # CHECK: actOnBindingDecl(/*Name=*/"a5", /*Value=*/"")
 a5 =
+
+# Check that we handle escapes at the beginning of the variable string parsing.
+#
+# CHECK: actOnBindingDecl(/*Name=*/"a6", /*Value=*/"$\nvalue")
+a6 =$
+value
