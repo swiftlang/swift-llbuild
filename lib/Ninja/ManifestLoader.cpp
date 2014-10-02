@@ -264,9 +264,16 @@ public:
     Command* Decl = static_cast<Command*>(AbstractDecl);
 
     std::string Name(NameTok.Start, NameTok.Length);
+
     // FIXME: It probably should be an error to assign to the same parameter
     // multiple times, but Ninja doesn't diagnose this.
-    Decl->getParameters()[Name] = std::string(ValueTok.Start, ValueTok.Length);
+
+    // The value in a build decl is always evaluated immediately, but only in
+    // the context of the top-level bindings.
+    //
+    // FIXME: This needs to be the inherited bindings, once we support includes.
+    Decl->getParameters()[Name] = evalString(ValueTok,
+                                             TheManifest->getBindings());
   }
 
   virtual void actOnEndBuildDecl(PoolResult Decl,
