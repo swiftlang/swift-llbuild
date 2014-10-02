@@ -117,6 +117,7 @@ static int ExecuteLexCommand(const std::vector<std::string> &Args,
   }
   ninja::Lexer Lexer(Data.get(), Size);
   ninja::Token Tok;
+
   do {
     // Get the next token.
     Lexer.lex(Tok);
@@ -457,7 +458,8 @@ private:
 
 }
 
-static int ExecuteLoadManifestCommand(const std::vector<std::string> &Args) {
+static int ExecuteLoadManifestCommand(const std::vector<std::string> &Args,
+                                      bool LoadOnly) {
   if (Args.size() != 1) {
     fprintf(stderr, "error: %s: invalid number of arguments\n",
             getprogname());
@@ -467,6 +469,10 @@ static int ExecuteLoadManifestCommand(const std::vector<std::string> &Args) {
   LoadManifestActions Actions;
   ninja::ManifestLoader Loader(Args[0], Actions);
   std::unique_ptr<ninja::Manifest> Manifest = Loader.load();
+
+  // If only loading, we are done.
+  if (LoadOnly)
+    return 0;
 
   // Dump the manifest.
   std::cout << "# Loaded Manifest: \"" << Args[0] << "\"\n";
@@ -620,7 +626,12 @@ int commands::ExecuteNinjaCommand(const std::vector<std::string> &Args) {
                                /*ParseOnly=*/true);
   } else if (Args[0] == "load-manifest") {
     return ExecuteLoadManifestCommand(std::vector<std::string>(Args.begin()+1,
-                                                               Args.end()));
+                                                               Args.end()),
+                                      /*LoadOnly=*/false);
+  } else if (Args[0] == "load-manifest-only") {
+    return ExecuteLoadManifestCommand(std::vector<std::string>(Args.begin()+1,
+                                                               Args.end()),
+                                      /*LoadOnly=*/true);
   } else {
     fprintf(stderr, "error: %s: unknown command '%s'\n", getprogname(),
             Args[0].c_str());

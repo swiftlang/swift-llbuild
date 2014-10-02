@@ -331,10 +331,20 @@ void ParserImpl::parseParameterizedDecl() {
   }
 
   // Otherwise, parse the set of indented bindings.
-  while (consumeIfToken(Token::Kind::Indentation)) {
+  while (Tok.TokenKind == Token::Kind::Indentation) {
+    // Put the lexer in identifier specific mode for the binding. It will
+    // automatically be taken out by parseBindingInternal switching for the
+    // value.
+    Lexer.setMode(Lexer::LexingMode::IdentifierSpecific);
+    consumeExpectedToken(Token::Kind::Indentation);
+
     // Allow blank lines in parameterized decls.
-    if (consumeIfToken(Token::Kind::Newline))
+    if (Tok.TokenKind == Token::Kind::Newline) {
+      // Ensure we switch out of identifier specific mode.
+      Lexer.setMode(Lexer::LexingMode::None);
+      consumeExpectedToken(Token::Kind::Newline);
       continue;
+    }
 
     Token Name, Value;
     if (parseBindingInternal(&Name, &Value)) {
@@ -395,7 +405,7 @@ bool ParserImpl::parseBuildSpecifier(ParseActions::BuildResult *Decl_Out) {
 
   // Parse the rule name identifier, switching out of path string mode for this
   // one lex.
-  Lexer.setMode(Lexer::LexingMode::None);
+  Lexer.setMode(Lexer::LexingMode::IdentifierSpecific);
   consumeExpectedToken(Token::Kind::Colon);
   Lexer.setMode(Lexer::LexingMode::PathString);
 
@@ -444,7 +454,10 @@ bool ParserImpl::parseBuildSpecifier(ParseActions::BuildResult *Decl_Out) {
 
 /// pool-spec ::= "pool" identifier '\n'
 bool ParserImpl::parsePoolSpecifier(ParseActions::PoolResult *Decl_Out) {
+  // Put the lexer in identifier specific mode for the name.
+  Lexer.setMode(Lexer::LexingMode::IdentifierSpecific);
   consumeExpectedToken(Token::Kind::KWPool);
+  Lexer.setMode(Lexer::LexingMode::None);
 
   if (Tok.TokenKind != Token::Kind::Identifier) {
     error("expected pool name identifier");
@@ -465,7 +478,10 @@ bool ParserImpl::parsePoolSpecifier(ParseActions::PoolResult *Decl_Out) {
 
 /// rule-spec ::= "rule" identifier '\n'
 bool ParserImpl::parseRuleSpecifier(ParseActions::RuleResult *Decl_Out) {
+  // Put the lexer in identifier specific mode for the name.
+  Lexer.setMode(Lexer::LexingMode::IdentifierSpecific);
   consumeExpectedToken(Token::Kind::KWRule);
+  Lexer.setMode(Lexer::LexingMode::None);
 
   if (Tok.TokenKind != Token::Kind::Identifier) {
     error("expected rule name identifier");
