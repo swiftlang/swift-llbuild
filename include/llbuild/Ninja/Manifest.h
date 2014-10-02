@@ -13,6 +13,7 @@
 #ifndef LLBUILD_NINJA_MANIFEST_H
 #define LLBUILD_NINJA_MANIFEST_H
 
+#include <cassert>
 #include <cstdint>
 #include <string>
 #include <unordered_map>
@@ -20,6 +21,8 @@
 
 namespace llbuild {
 namespace ninja {
+
+class Rule;
 
 /// This class represents a set of name to value variable bindings.
 class BindingSet {
@@ -94,6 +97,66 @@ public:
   }
 };
 
+/// A command represents something which can be executed to produce certain
+/// outputs from certain inputs.
+///
+class Command {
+  /// The rule used to derive the command properties.
+  Rule *Rule;
+
+  /// The outputs of the command.
+  std::vector<Node*> Outputs;
+
+  /// The list of all inputs to the command, include explicit as well as
+  /// implicit and order-only inputs (which are determined by their position in
+  /// the array and the \see NumExplicitInputs and \see NumImplicitInputs
+  /// variables).
+  std::vector<Node*> Inputs;
+
+  /// The number of explicit inputs, at the start of the \see Inputs array.
+  unsigned NumExplicitInputs;
+
+  /// The number of implicit inputs, immediately following the explicit inputs
+  /// in the \see Inputs array. The remaining inputs are the order-only ones.
+  unsigned NumImplicitInputs;
+
+  /// The command parameters, which are used to evaluate the rule template.
+  //
+  // FIXME: It might be substantially better to evaluate all of these in the
+  // context of the rule up-front (during loading).
+  std::unordered_map<std::string, std::string> Parameters;
+
+public:
+  explicit Command(class Rule *Rule, std::vector<Node*> Outputs,
+                   std::vector<Node*> Inputs, unsigned NumExplicitInputs,
+                   unsigned NumImplicitInputs)
+    : Rule(Rule), Outputs(Outputs), Inputs(Inputs),
+      NumExplicitInputs(NumExplicitInputs),
+      NumImplicitInputs(NumImplicitInputs)
+  {
+    assert(NumExplicitInputs + NumImplicitInputs <= Inputs.size());
+  }
+
+  const class Rule* getRule() const { return Rule; }
+
+  const std::vector<Node*>& getOutputs() const { return Outputs; }
+
+  const std::vector<Node*>& getInputs() const { return Inputs; }
+
+  unsigned getNumExplicitInputs() const { return NumExplicitInputs; }
+  unsigned getNumImplicitInputs() const { return NumImplicitInputs; }
+  unsigned getNumOrderOnlyInputs() const {
+    return Inputs.size() - getNumExplicitInputs() - getNumImplicitInputs();
+  }
+
+  std::unordered_map<std::string, std::string>& getParameters() {
+    return Parameters;
+  }
+  const std::unordered_map<std::string, std::string>& getParameters() const {
+    return Parameters;
+  }
+};
+
 /// A rule represents a template which can be expanded to produce a particular
 /// command.
 class Rule {
@@ -136,6 +199,9 @@ class Manifest {
   typedef std::unordered_map<std::string, std::unique_ptr<Node>> node_set;
   node_set Nodes;
 
+  /// The commands in the manifest.
+  std::vector<std::unique_ptr<Command>> Commands;
+
   /// The pools in the manifest, stored as a map on the pool name.
   //
   // FIXME: This is an inefficent map, given that the string is contained
@@ -164,6 +230,13 @@ public:
   }
   const node_set& getNodes() const {
     return Nodes;
+  }
+
+  std::vector<std::unique_ptr<Command>>& getCommands() {
+    return Commands;
+  }
+  const std::vector<std::unique_ptr<Command>>& getCommands() const {
+    return Commands;
   }
 
   pool_set& getPools() {

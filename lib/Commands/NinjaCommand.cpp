@@ -511,9 +511,55 @@ static int ExecuteLoadManifestCommand(const std::vector<std::string> &Args) {
   for (auto Rule: Rules) {
     // Write the rule entry.
     std::cout << "rule " << Rule->getName() << "\n";
+
     // Write the parameters.
     std::vector<std::pair<std::string, std::string>>
       Parameters(Rule->getParameters().begin(), Rule->getParameters().end());
+    std::sort(Parameters.begin(), Parameters.end());
+    for (auto& Entry: Parameters) {
+      std::cout << "  " << Entry.first << " = \""
+                << escapedString(Entry.second) << "\"\n";
+    }
+    std::cout << "\n";
+  }
+
+  // Dump the commands.
+  std::vector<ninja::Command*> Commands;
+  for (auto& Entry: Manifest->getCommands()) {
+    Commands.push_back(Entry.get());
+  }
+  std::sort(Commands.begin(), Commands.end(),
+            [] (ninja::Command* a, ninja::Command* b) {
+              // Commands can not have duplicate outputs, so comparing based
+              // only on the first still provides a total ordering.
+              return a->getOutputs()[0]->getPath() <
+                b->getOutputs()[0]->getPath();
+            });
+  std::cout << "# Commands\n";
+  for (auto Command: Commands) {
+    // Write the command entry.
+    std::cout << "build";
+    for (auto Node: Command->getOutputs()) {
+      std::cout << " \"" << escapedString(Node->getPath()) << "\"";
+    }
+    std::cout << ":" << Command->getRule()->getName();
+    unsigned Count = 0;
+    for (auto Node: Command->getInputs()) {
+      std::cout << " ";
+      if (Count == Command->getNumExplicitInputs()) {
+        std::cout << "| ";
+      } else if (Count == (Command->getNumExplicitInputs() +
+                           Command->getNumImplicitInputs())) {
+        std::cout << "|| ";
+      }
+      std::cout << " \"" << escapedString(Node->getPath()) << "\"";
+      ++Count;
+    }
+
+    // Write the parameters.
+    std::vector<std::pair<std::string, std::string>>
+      Parameters(Command->getParameters().begin(),
+                 Command->getParameters().end());
     std::sort(Parameters.begin(), Parameters.end());
     for (auto& Entry: Parameters) {
       std::cout << "  " << Entry.first << " = \""
