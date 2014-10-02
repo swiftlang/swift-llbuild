@@ -142,20 +142,8 @@ Token &Lexer::setIdentifierTokenKind(Token &Result) const {
 }
 
 Token &Lexer::lexIdentifier(Token &Result) {
-  while (true) {
-    int Char = peekNextChar();
-
-    // If this is an escape character, skip the next character.
-    if (Char == '$') {
-      getNextChar(); // Consume the actual '$'.
-      getNextChar(); // Consume the next character.
-      continue;
-    }
-
-    // Otherwise, continue only if this is an identifier character.
-    if (!Lexer::isIdentifierChar(Char))
-      break;
-
+  // Consume characters as long as we are in an identifier.
+  while (Lexer::isIdentifierChar(peekNextChar())) {
     getNextChar();
   }
 

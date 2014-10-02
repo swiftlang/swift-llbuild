@@ -134,7 +134,7 @@ TEST(LexerTest, Indentation) {
 }
 
 TEST(LexerTest, BasicIdentifierHandling) {
-  char Input[] = "a b$ c";
+  char Input[] = "a b$c";
   size_t InputSize = strlen(Input);
   ninja::Lexer Lexer(Input, InputSize);
   ninja::Token Tok;
@@ -151,9 +151,25 @@ TEST(LexerTest, BasicIdentifierHandling) {
   Lexer.lex(Tok);
   EXPECT_EQ(ninja::Token::Kind::Identifier, Tok.TokenKind);
   EXPECT_EQ(&Input[2], Tok.Start);
-  EXPECT_EQ(4U, Tok.Length);
+  EXPECT_EQ(1U, Tok.Length);
   EXPECT_EQ(1U, Tok.Line);
   EXPECT_EQ(2U, Tok.Column);
+
+  // Check third token.
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::Unknown, Tok.TokenKind);
+  EXPECT_EQ(&Input[3], Tok.Start);
+  EXPECT_EQ(1U, Tok.Length);
+  EXPECT_EQ(1U, Tok.Line);
+  EXPECT_EQ(3U, Tok.Column);
+
+  // Check fourth token.
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::Identifier, Tok.TokenKind);
+  EXPECT_EQ(&Input[4], Tok.Start);
+  EXPECT_EQ(1U, Tok.Length);
+  EXPECT_EQ(1U, Tok.Line);
+  EXPECT_EQ(4U, Tok.Column);
 
   // Check final token.
   Lexer.lex(Tok);
