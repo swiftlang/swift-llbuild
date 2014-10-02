@@ -24,6 +24,8 @@
 #include <iomanip>
 #include <sstream>
 
+#include <unistd.h>
+
 using namespace llbuild;
 
 static char hexdigit(unsigned Input) {
@@ -492,8 +494,21 @@ static int ExecuteLoadManifestCommand(const std::vector<std::string> &Args,
     return 1;
   }
 
+  // Change to the directory containing the input file, so include references
+  // can be relative.
+  //
+  // FIXME: Need llvm::sys::fs.
+  std::string Filename = Args[0];
+  size_t Pos = Args[0].find_last_of('/');
+  if (Pos != std::string::npos) {
+    if (::chdir(std::string(Args[0].substr(0, Pos)).c_str()) < 0) {
+      fprintf(stderr, "error: %s: unable to chdir(): %s",
+              getprogname(), strerror(errno));
+    }
+  }
+
   LoadManifestActions Actions;
-  ninja::ManifestLoader Loader(Args[0], Actions);
+  ninja::ManifestLoader Loader(Filename, Actions);
   std::unique_ptr<ninja::Manifest> Manifest = Loader.load();
 
   // If only loading, we are done.
