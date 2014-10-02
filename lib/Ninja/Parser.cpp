@@ -332,6 +332,10 @@ void ParserImpl::parseParameterizedDecl() {
 
   // Otherwise, parse the set of indented bindings.
   while (consumeIfToken(Token::Kind::Indentation)) {
+    // Allow blank lines in parameterized decls.
+    if (consumeIfToken(Token::Kind::Newline))
+      continue;
+
     Token Name, Value;
     if (parseBindingInternal(&Name, &Value)) {
       // Dispatch to the appropriate parser action.

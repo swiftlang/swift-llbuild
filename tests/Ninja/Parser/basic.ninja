@@ -75,4 +75,12 @@ rule link
   variable = value
 # CHECK: actOnEndRuleDecl(/*Decl=*/{{.*}})
 
+# Check for blank lines in parameterized decls.
+# CHECK: actOnBeginRuleDecl(/*Name=*/"testrule"
+# CHECK-NOT: error:
+# CHECK: actOnRuleBindingDecl({{.*}}, /*Name=*/"command", /*Value=*/"value")
+rule testrule
+  # empty line
+  command = value
+
 # CHECK: actOnEndManifest()
