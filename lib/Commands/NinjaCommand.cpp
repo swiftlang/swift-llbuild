@@ -194,8 +194,9 @@ private:
   }
 
   virtual void error(std::string Message, const ninja::Token &At) override {
-    if (NumErrors++ >= MaxErrors)
+    if (NumErrors++ >= MaxErrors) {
       return;
+    }
 
     emitError(Filename, Message, At, Parser);
   }
@@ -426,6 +427,8 @@ namespace {
 
 class LoadManifestActions : public ninja::ManifestLoaderActions {
   ninja::ManifestLoader *Loader = 0;
+  unsigned NumErrors = 0;
+  unsigned MaxErrors = 20;
 
 private:
   virtual void initialize(ninja::ManifestLoader *Loader) {
@@ -434,6 +437,9 @@ private:
 
   virtual void error(std::string Filename, std::string Message,
                      const ninja::Token &At) override {
+    if (NumErrors++ >= MaxErrors)
+      return;
+
     emitError(Filename, Message, At, Loader->getCurrentParser());
   }
 
