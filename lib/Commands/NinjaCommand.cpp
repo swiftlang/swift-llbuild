@@ -64,15 +64,16 @@ static void usage() {
   exit(1);
 }
 
-static std::unique_ptr<char[]> ReadFileContents(std::string Path,
-                                                uint64_t* Size_Out) {
-
+static bool ReadFileContents(std::string Path,
+                             std::unique_ptr<char[]> *Data_Out,
+                             uint64_t* Size_Out,
+                             std::string* Error_Out) {
   // Open the input buffer and compute its size.
   FILE* fp = fopen(Path.c_str(), "rb");
   if (!fp) {
-    fprintf(stderr, "error: %s: unable to open input: %s\n", getprogname(),
-            Path.c_str());
-    exit(1);
+    *Error_Out = std::string("unable to open input: \"") +
+      escapedString(Path) + "\"";
+    return false;
   }
 
   fseek(fp, 0, SEEK_END);
@@ -86,15 +87,15 @@ static std::unique_ptr<char[]> ReadFileContents(std::string Path,
     // Read data into the buffer.
     size_t Result = fread(Data.get() + Pos, 1, Size - Pos, fp);
     if (Result <= 0) {
-      fprintf(stderr, "error: %s: unable to read input: %s\n", getprogname(),
-              Path.c_str());
-      exit(1);
+      *Error_Out = std::string("unable to read input: ") + Path;
+      return false;
     }
 
     Pos += Result;
   }
 
-  return Data;
+  *Data_Out = std::move(Data);
+  return true;
 }
 
 #pragma mark - Lex Command
@@ -110,7 +111,12 @@ static int ExecuteLexCommand(const std::vector<std::string> &Args,
 
   // Read the input.
   uint64_t Size;
-  std::unique_ptr<char[]> Data = ReadFileContents(Args[0], &Size);
+  std::unique_ptr<char[]> Data;
+  std::string Error;
+  if (!ReadFileContents(Args[0], &Data, &Size, &Error)) {
+    fprintf(stderr, "error: %s: %s\n", getprogname(), Error.c_str());
+    exit(1);
+  }
 
   // Create a Ninja lexer.
   if (!LexOnly) {
@@ -408,7 +414,12 @@ static int ExecuteParseCommand(const std::vector<std::string> &Args,
 
   // Read the input.
   uint64_t Size;
-  std::unique_ptr<char[]> Data = ReadFileContents(Args[0], &Size);
+  std::unique_ptr<char[]> Data;
+  std::string Error;
+  if (!ReadFileContents(Args[0], &Data, &Size, &Error)) {
+    fprintf(stderr, "error: %s: %s\n", getprogname(), Error.c_str());
+    exit(1);
+  }
 
   // Run the parser.
   if (ParseOnly) {
@@ -451,10 +462,22 @@ private:
                                 const ninja::Token* ForToken,
                                 std::unique_ptr<char[]> *Data_Out,
                                 uint64_t *Length_Out) override {
-    // FIXME: Error handling.
-    *Data_Out = ReadFileContents(Filename, Length_Out);
+    // Load the file contents and return if successful.
+    std::string Error;
+    if (ReadFileContents(Filename, Data_Out, Length_Out, &Error))
+      return true;
 
-    return true;
+    // Otherwise, emit the error.
+    if (ForToken) {
+      emitError(FromFilename, Error, *ForToken,
+                Loader->getCurrentParser());
+    } else {
+      // We were unable to open the main file.
+      fprintf(stderr, "error: %s: %s\n", getprogname(), Error.c_str());
+      exit(1);
+    }
+
+    return false;
   };
 
 };
