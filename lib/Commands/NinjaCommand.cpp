@@ -446,7 +446,8 @@ private:
     emitError(Filename, Message, At, Loader->getCurrentParser());
   }
 
-  virtual bool readFileContents(std::string Filename,
+  virtual bool readFileContents(const std::string& FromFilename,
+                                const std::string& Filename,
                                 const ninja::Token* ForToken,
                                 std::unique_ptr<char[]> *Data_Out,
                                 uint64_t *Length_Out) override {

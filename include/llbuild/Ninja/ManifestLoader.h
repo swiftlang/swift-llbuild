@@ -50,7 +50,8 @@ public:
   ///
   /// \returns True on success. On failure, the action is assumed to have
   /// produced an appropriate error.
-  virtual bool readFileContents(std::string Filename,
+  virtual bool readFileContents(const std::string& FromFilename,
+                                const std::string& Filename,
                                 const Token* ForToken,
                                 std::unique_ptr<char[]> *Data_Out,
                                 uint64_t *Length_Out) = 0;

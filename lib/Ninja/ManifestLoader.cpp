@@ -76,11 +76,15 @@ public:
     return std::move(TheManifest);
   }
 
-  bool enterFile(const std::string& Filename) {
+  bool enterFile(const std::string& Filename,
+                 const Token* ForToken = nullptr) {
     // Load the file data.
     std::unique_ptr<char[]> Data;
     uint64_t Length;
-    if (!Actions.readFileContents(Filename, nullptr, &Data, &Length))
+    std::string FromFilename = IncludeStack.empty() ? Filename :
+      getCurrentFilename();
+    if (!Actions.readFileContents(FromFilename, Filename, ForToken, &Data,
+                                  &Length))
       return false;
 
     // Push a new entry onto the include stack.
