@@ -147,6 +147,10 @@ Token &Lexer::lexIdentifier(Token &Result) {
     getNextChar();
   }
 
+  // If we are in identifier specific mode, ignore keywords.
+  if (Mode == Lexer::LexingMode::IdentifierSpecific)
+    return setTokenKind(Result, Token::Kind::Identifier);
+
   // Recognize keywords specially.
   return setIdentifierTokenKind(Result);
 }

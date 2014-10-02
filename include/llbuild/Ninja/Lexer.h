@@ -64,14 +64,20 @@ struct Token {
 ///
 /// The Ninja manifest language unfortunately has no real string token, rather,
 /// the lexing is done in a context sensitive fashion and string tokens are only
-/// recognized when the lexer is in a specific mode. See \see Lexer::LexingMode
-/// and \see Lexer::setMode().
+/// recognized when the lexer is in a specific mode. Identifier tokens also
+/// behave slightly different when in lexed in a context where only an
+/// identifier is expected. See \see Lexer::LexingMode and \see
+/// Lexer::setMode().
 class Lexer {
 public:
   enum class LexingMode {
     /// No string tokens will be recognized, identifier tokens will follow usual
     /// rules.
     None,
+
+    /// No string tokens will be recognized, identifier tokens will be lexed
+    /// follow specific rules.
+    IdentifierSpecific,
 
     /// Strings will be lexed as expected for path references.
     PathString,

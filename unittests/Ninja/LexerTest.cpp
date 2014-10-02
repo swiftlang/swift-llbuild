@@ -312,4 +312,41 @@ this string crosses a $\nnewline\n\
   EXPECT_EQ(ninja::Token::Kind::EndOfFile, Tok.TokenKind);
 }
 
+TEST(LexerTest, IdentifierSpecific) {
+  char Input[] = "rule pool build default include subninja random";
+  size_t InputSize = strlen(Input);
+  ninja::Lexer Lexer(Input, InputSize);
+  ninja::Token Tok;
+
+  // Put the lexer into "identifier specific" string mode.
+  Lexer.setMode(ninja::Lexer::LexingMode::IdentifierSpecific);
+
+  // Check we recognize all of the keywords as identifiers.
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::Identifier, Tok.TokenKind);
+  EXPECT_EQ(0, memcmp(Tok.Start, "rule", Tok.Length));
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::Identifier, Tok.TokenKind);
+  EXPECT_EQ(0, memcmp(Tok.Start, "pool", Tok.Length));
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::Identifier, Tok.TokenKind);
+  EXPECT_EQ(0, memcmp(Tok.Start, "build", Tok.Length));
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::Identifier, Tok.TokenKind);
+  EXPECT_EQ(0, memcmp(Tok.Start, "default", Tok.Length));
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::Identifier, Tok.TokenKind);
+  EXPECT_EQ(0, memcmp(Tok.Start, "include", Tok.Length));
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::Identifier, Tok.TokenKind);
+  EXPECT_EQ(0, memcmp(Tok.Start, "subninja", Tok.Length));
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::Identifier, Tok.TokenKind);
+  EXPECT_EQ(0, memcmp(Tok.Start, "random", Tok.Length));
+
+  // Check final token.
+  Lexer.lex(Tok);
+  EXPECT_EQ(ninja::Token::Kind::EndOfFile, Tok.TokenKind);
+}
+
 }
