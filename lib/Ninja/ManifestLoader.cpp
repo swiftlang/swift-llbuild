@@ -17,6 +17,7 @@
 
 #include <cstdlib>
 #include <sstream>
+#include <vector>
 
 using namespace llbuild;
 using namespace llbuild::ninja;
@@ -34,15 +35,28 @@ namespace {
 ///
 /// For simplicity, we just directly implement the parser actions interface.
 class ManifestLoaderImpl: public ParseActions {
+  struct IncludeEntry {
+    /// The file that is being processed.
+    std::string Filename;
+    /// An owning reference to the data consumed by the parser.
+    std::unique_ptr<char[]> Data;
+    /// The parser for the file.
+    std::unique_ptr<Parser> Parser;
+
+    IncludeEntry(const std::string& Filename,
+                 std::unique_ptr<char[]> Data,
+                 std::unique_ptr<class Parser> Parser)
+      : Filename(Filename), Data(std::move(Data)), Parser(std::move(Parser)) {}
+  };
+
   std::string MainFilename;
   ManifestLoaderActions &Actions;
   std::unique_ptr<Manifest> TheManifest;
-  std::unique_ptr<Parser> CurrentParser;
+  std::vector<IncludeEntry> IncludeStack;
 
 public:
   ManifestLoaderImpl(std::string MainFilename, ManifestLoaderActions &Actions)
-    : MainFilename(MainFilename), Actions(Actions), TheManifest(nullptr),
-      CurrentParser(nullptr)
+    : MainFilename(MainFilename), Actions(Actions), TheManifest(nullptr)
   {
   }
 
@@ -50,21 +64,46 @@ public:
     // Create the manifest.
     TheManifest.reset(new Manifest);
 
-    // Load the main file data.
-    std::unique_ptr<char[]> Data;
-    uint64_t Length;
-    if (!Actions.readFileContents(MainFilename, nullptr, &Data, &Length))
+    // Enter the main file.
+    if (!enterFile(MainFilename))
       return nullptr;
 
-    // Create the parser for the data.
-    CurrentParser.reset(new Parser(Data.get(), Length, *this));
-    CurrentParser->parse();
+    // Run the parser.
+    assert(IncludeStack.size() == 1);
+    getCurrentParser()->parse();
+    assert(IncludeStack.size() == 0);
 
     return std::move(TheManifest);
   }
 
+  bool enterFile(const std::string& Filename) {
+    // Load the file data.
+    std::unique_ptr<char[]> Data;
+    uint64_t Length;
+    if (!Actions.readFileContents(Filename, nullptr, &Data, &Length))
+      return false;
+
+    // Push a new entry onto the include stack.
+    std::unique_ptr<Parser> FileParser(new Parser(Data.get(), Length, *this));
+    IncludeStack.push_back(IncludeEntry(Filename, std::move(Data),
+                                        std::move(FileParser)));
+
+    return true;
+  }
+
+  void exitCurrentFile() {
+    IncludeStack.pop_back();
+  }
+
   ManifestLoaderActions& getActions() { return Actions; }
-  const Parser* getCurrentParser() const { return CurrentParser.get(); }
+  Parser* getCurrentParser() const {
+    assert(!IncludeStack.empty());
+    return IncludeStack.back().Parser.get();
+  }
+  const std::string& getCurrentFilename() const {
+    assert(!IncludeStack.empty());
+    return IncludeStack.back().Filename;
+  }
 
   /// Given a string template token, evaluate it against the given \arg Bindings
   /// and return the resulting string.
@@ -181,12 +220,14 @@ public:
   virtual void initialize(ninja::Parser *Parser) override { }
 
   virtual void error(std::string Message, const Token &At) override {
-    Actions.error(MainFilename, Message, At);
+    Actions.error(getCurrentFilename(), Message, At);
   }
 
   virtual void actOnBeginManifest(std::string Name) override { }
 
-  virtual void actOnEndManifest() override { }
+  virtual void actOnEndManifest() override {
+    exitCurrentFile();
+  }
 
   virtual void actOnBindingDecl(const Token& NameTok,
                                 const Token& ValueTok) override {
