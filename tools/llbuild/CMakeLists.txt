@@ -3,6 +3,7 @@ add_llbuild_executable(llbuild
 
 target_link_libraries(llbuild
   llbuildBasic
+  llbuildCore
   llbuildNinja
   llbuildCommands
   )
