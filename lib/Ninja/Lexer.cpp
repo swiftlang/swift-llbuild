@@ -210,10 +210,15 @@ Token &Lexer::lexVariableString(Token &Result) {
 }
 
 Token &Lexer::lex(Token &Result) {
-  // Check if we are positioned at whitespace.
-  if (isNonNewlineSpace(peekNextChar())) {
+  // Check if we need to emit an indentation token.
+  int Char = peekNextChar();
+  if (isNonNewlineSpace(Char) && ColumnNumber == 0) {
     // If we are at the start of a line, then any leading whitespace should be
     // parsed as an indentation token.
+    //
+    // We do not need to handle "$\n" sequences here because they will be
+    // consumed next, and the exact length of the indentation token is never
+    // used.
     if (ColumnNumber == 0) {
       Result.Start = BufferPos;
       Result.Line = LineNumber;
@@ -225,11 +230,28 @@ Token &Lexer::lex(Token &Result) {
 
       return setTokenKind(Result, Token::Kind::Indentation);
     }
+  }
 
-    // Otherwise, skip whitespace.
-    do {
+  // Otherwise, consume any leading whitespace or "$\n" escape sequences (except
+  // at the start of lines, which Ninja does not recognize).
+  while (true) {
+    // Check for escape sequences.
+    if (Char == '$' && ColumnNumber != 0) {
+      // If this is a newline escape, consume it.
+      if (BufferPos + 1 != BufferEnd && BufferPos[1] == '\n') {
+        getNextChar();
+        getNextChar();
+      } else {
+        // Otherwise, break out and lex normally.
+        break;
+      }
+    } else if (isNonNewlineSpace(Char)) {
       getNextChar();
-    } while (isNonNewlineSpace(peekNextChar()));
+    } else {
+      break;
+    }
+    
+    Char = peekNextChar();
   }
 
   // Initialize the token position.
@@ -238,7 +260,6 @@ Token &Lexer::lex(Token &Result) {
   Result.Column = ColumnNumber;
 
   // Check if we are at a string mode independent token.
-  int Char = peekNextChar();
   if (Char == '\n') {
     getNextChar();
     return setTokenKind(Result, Token::Kind::Newline);
