@@ -134,7 +134,7 @@ void ParserImpl::parse() {
   Actions.actOnBeginManifest("<main>");
   while (Tok.TokenKind != Token::Kind::EndOfFile) {
     // Check that no one accidentally left the lexer in the wrong mode.
-    assert(Lexer.getStringMode() == Lexer::StringMode::None);
+    assert(Lexer.getMode() == Lexer::LexingMode::None);
 
     parseDecl();
   }
@@ -198,9 +198,9 @@ bool ParserImpl::parseBindingInternal(Token* Name_Out, Token* Value_Out) {
   // We must consume the RHS in variable lexing mode, so given our lookahead
   // design we switch modes, consume the equals (which will advance the lexer),
   // and then immediately switch back.
-  Lexer.setStringMode(Lexer::StringMode::Variable);
+  Lexer.setMode(Lexer::LexingMode::VariableString);
   consumeExpectedToken(Token::Kind::Equals);
-  Lexer.setStringMode(Lexer::StringMode::None);
+  Lexer.setMode(Lexer::LexingMode::None);
 
   // If the RHS is a newline, we have an empty binding which we handle as a
   // special case.
@@ -241,7 +241,7 @@ void ParserImpl::parseBindingDecl() {
 /// default-decl ::= "default" path-string-list '\n'
 void ParserImpl::parseDefaultDecl() {
   // Put the lexer in path string mode.
-  Lexer.setStringMode(Lexer::StringMode::Path);
+  Lexer.setMode(Lexer::LexingMode::PathString);
   consumeExpectedToken(Token::Kind::KWDefault);
 
   // Consume all the strings.
@@ -251,7 +251,7 @@ void ParserImpl::parseDefaultDecl() {
   }
 
   // Reset the string mode.
-  Lexer.setStringMode(Lexer::StringMode::None);
+  Lexer.setMode(Lexer::LexingMode::None);
 
   // Verify we have at least one name.
   if (Names.empty()) {
@@ -271,11 +271,11 @@ void ParserImpl::parseDefaultDecl() {
 /// include-decl ::= ( "include" | "subninja" ) path-string '\n'
 void ParserImpl::parseIncludeDecl() {
   // Put the lexer in path string mode for one token.
-  Lexer.setStringMode(Lexer::StringMode::Path);
+  Lexer.setMode(Lexer::LexingMode::PathString);
   bool IsInclude = Tok.TokenKind == Token::Kind::KWInclude;
   consumeExpectedToken(IsInclude ? Token::Kind::KWInclude :
                        Token::Kind::KWSubninja);
-  Lexer.setStringMode(Lexer::StringMode::None);
+  Lexer.setMode(Lexer::LexingMode::None);
 
   if (Tok.TokenKind != Token::Kind::String) {
     error("expected path string");
@@ -368,13 +368,13 @@ void ParserImpl::parseParameterizedDecl() {
 ///                [ "|" path-string-list ] [ "||" path-string-list" ] '\n'
 bool ParserImpl::parseBuildSpecifier(ParseActions::BuildResult *Decl_Out) {
   // Put the lexer in path string mode for the entire specifier parsing.
-  Lexer.setStringMode(Lexer::StringMode::Path);
+  Lexer.setMode(Lexer::LexingMode::PathString);
   consumeExpectedToken(Token::Kind::KWBuild);
 
   // Parse the output list.
   if (Tok.TokenKind != Token::Kind::String) {
     error("expected output path string");
-    Lexer.setStringMode(Lexer::StringMode::None);
+    Lexer.setMode(Lexer::LexingMode::None);
     return false;
   }
   std::vector<Token> Outputs;
@@ -385,19 +385,19 @@ bool ParserImpl::parseBuildSpecifier(ParseActions::BuildResult *Decl_Out) {
   // Expect the string list to be terminated by a colon.
   if (Tok.TokenKind != Token::Kind::Colon) {
     error("expected ':' token");
-    Lexer.setStringMode(Lexer::StringMode::None);
+    Lexer.setMode(Lexer::LexingMode::None);
     return false;
   }
 
   // Parse the rule name identifier, switching out of path string mode for this
   // one lex.
-  Lexer.setStringMode(Lexer::StringMode::None);
+  Lexer.setMode(Lexer::LexingMode::None);
   consumeExpectedToken(Token::Kind::Colon);
-  Lexer.setStringMode(Lexer::StringMode::Path);
+  Lexer.setMode(Lexer::LexingMode::PathString);
 
   if (Tok.TokenKind != Token::Kind::Identifier) {
     error("expected rule name identifier");
-    Lexer.setStringMode(Lexer::StringMode::None);
+    Lexer.setMode(Lexer::LexingMode::None);
     return false;
   }
   Token Name = consumeExpectedToken(Token::Kind::Identifier);
@@ -425,7 +425,7 @@ bool ParserImpl::parseBuildSpecifier(ParseActions::BuildResult *Decl_Out) {
   }
 
   // Reset the lexer mode.
-  Lexer.setStringMode(Lexer::StringMode::None);
+  Lexer.setMode(Lexer::LexingMode::None);
 
   if (!consumeIfToken(Token::Kind::Newline)) {
     error("expected newline token");

@@ -57,7 +57,7 @@ void Token::dump() {
 
 Lexer::Lexer(const char* Data, uint64_t Length)
   : BufferStart(Data), BufferPos(Data), BufferEnd(Data + Length),
-    LineNumber(1), ColumnNumber(0), Mode(StringMode::None)
+    LineNumber(1), ColumnNumber(0), Mode(LexingMode::None)
 {
 }
 
@@ -247,9 +247,9 @@ Token &Lexer::lex(Token &Result) {
     return setTokenKind(Result, Token::Kind::EndOfFile);
 
   // If we are in string lexing mode, delegate immediately if appropriate.
-  if (Mode == StringMode::Variable)
+  if (Mode == LexingMode::VariableString)
     return lexVariableString(Result);
-  if (Mode == StringMode::Path) {
+  if (Mode == LexingMode::PathString) {
     // Only delegate for characters not special to path lexing.
     if (Char != ':' && Char != '|')
       return lexPathString(Result);

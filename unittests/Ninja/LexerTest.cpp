@@ -222,7 +222,7 @@ TEST(LexerTest, PathStrings) {
   ninja::Token Tok;
 
   // Put the lexer into "path" string mode.
-  Lexer.setStringMode(ninja::Lexer::StringMode::Path);
+  Lexer.setMode(ninja::Lexer::LexingMode::PathString);
 
   // Check we still split on spaces.
   Lexer.lex(Tok);
@@ -277,7 +277,7 @@ this string crosses a $\nnewline\n\
   ninja::Token Tok;
 
   // Put the lexer into "variable" string mode.
-  Lexer.setStringMode(ninja::Lexer::StringMode::Variable);
+  Lexer.setMode(ninja::Lexer::LexingMode::VariableString);
 
   // Check we consume spaces in strings.
   Lexer.lex(Tok);

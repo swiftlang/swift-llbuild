@@ -64,14 +64,20 @@ struct Token {
 ///
 /// The Ninja manifest language unfortunately has no real string token, rather,
 /// the lexing is done in a context sensitive fashion and string tokens are only
-/// recognized when the lexer is in a specific mode. See \see Lexer::StringMode
-/// and \see Lexer::setStringMode().
+/// recognized when the lexer is in a specific mode. See \see Lexer::LexingMode
+/// and \see Lexer::setMode().
 class Lexer {
 public:
-  enum class StringMode {
-    None,     ///< No string tokens will be recognized.
-    Path,     ///< Strings will be lexed as expected for path references.
-    Variable, ///< Strings will be lexed as expected for variable assignents.
+  enum class LexingMode {
+    /// No string tokens will be recognized, identifier tokens will follow usual
+    /// rules.
+    None,
+
+    /// Strings will be lexed as expected for path references.
+    PathString,
+
+    /// Strings will be lexed as expected for variable assignents.
+    VariableString,
   };
 
 private:
@@ -80,7 +86,7 @@ private:
   const char* BufferEnd;      ///< The buffer end position.
   unsigned    LineNumber;     ///< The current line.
   unsigned    ColumnNumber;   ///< The current column.
-  StringMode  Mode;           ///< The current string lexing mode.
+  LexingMode  Mode;           ///< The current lexing mode.
 
   /// Eat a character or -1 from the stream.
   int getNextChar();
@@ -126,11 +132,11 @@ public:
   /// Get the buffer end pointer.
   const char* getBufferEnd() const { return BufferEnd; }
 
-  /// Get the current string lexing mode.
-  StringMode getStringMode() const { return Mode; }
+  /// Get the current lexing mode.
+  LexingMode getMode() const { return Mode; }
 
-  /// Set the current string lexing mode.
-  void setStringMode(StringMode Value) { Mode = Value; }
+  /// Set the current lexing mode.
+  void setMode(LexingMode Value) { Mode = Value; }
 
   /// @name Utility Methods
   /// @{
