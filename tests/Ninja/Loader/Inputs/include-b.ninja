@@ -1,0 +1,4 @@
+rule testrule
+     command = echo $in
+
+input2_var = input2

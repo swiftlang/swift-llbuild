@@ -260,7 +260,17 @@ public:
   }
 
   virtual void actOnIncludeDecl(bool IsInclude,
-                                const Token& Path) override { }
+                                const Token& PathTok) override {
+    std::string Path = evalString(PathTok, TheManifest->getBindings());
+
+    // Enter the new file.
+    //
+    // FIXME: Need to handle proper changes to the binding scope.
+    if (enterFile(Path, &PathTok)) {
+      // Run the parser for the included file.
+      getCurrentParser()->parse();
+    }
+  }
 
   virtual BuildResult
   actOnBeginBuildDecl(const Token& NameTok,

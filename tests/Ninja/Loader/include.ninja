@@ -1,0 +1,23 @@
+# Check basic include processing.
+#
+# RUN: %{llbuild} ninja load-manifest %s > %t 2> %t.err
+# RUN: %{FileCheck} < %t %s
+# RUN: %{FileCheck} --check-prefix=CHECK-ERR < %t.err %s
+
+include Inputs/include-b.ninja
+
+build input input2: phony
+# CHECK: build "foo": testrule "input" "input2"
+build foo: testrule input ${input2_var}
+
+# Check that we diagnose broken includes.
+#
+# CHECK-ERR: include.ninja:[[@LINE+1]]:8: error: unable to open input
+include Inputs/include-does-not-exist.ninja
+
+
+# Check that we report errors in include files appropriately.
+#
+# CHECK-ERR: include-with-error.ninja:1:2: error: expected '=' token
+# CHECK-ERR-NEXT: I have an error on line 1
+include Inputs/include-with-error.ninja
