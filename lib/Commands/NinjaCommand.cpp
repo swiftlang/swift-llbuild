@@ -542,7 +542,7 @@ static int ExecuteLoadManifestCommand(const std::vector<std::string> &Args) {
     for (auto Node: Command->getOutputs()) {
       std::cout << " \"" << escapedString(Node->getPath()) << "\"";
     }
-    std::cout << ":" << Command->getRule()->getName();
+    std::cout << ": " << Command->getRule()->getName();
     unsigned Count = 0;
     for (auto Node: Command->getInputs()) {
       std::cout << " ";
@@ -555,6 +555,7 @@ static int ExecuteLoadManifestCommand(const std::vector<std::string> &Args) {
       std::cout << " \"" << escapedString(Node->getPath()) << "\"";
       ++Count;
     }
+    std::cout << "\n";
 
     // Write the parameters.
     std::vector<std::pair<std::string, std::string>>

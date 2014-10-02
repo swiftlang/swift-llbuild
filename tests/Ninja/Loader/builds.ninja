@@ -1,0 +1,21 @@
+# Check build decl loading.
+#
+# RUN: %{llbuild} ninja load-manifest %s > %t 2> %t.err
+# RUN: %{FileCheck} < %t %s
+# RUN: %{FileCheck} --check-prefix=CHECK-ERR < %t.err %s
+
+# CHECK: build "target1": phony
+build target1: phony
+
+# CHECK: build "target2": phony "explicit-a" "explicit-b" | "implicit-a" "implicit-b" || "order-a" "order-b"
+build target2: phony explicit-a explicit-b | implicit-a implicit-b || order-a order-b
+
+# CHECK-ERR: builds.ninja:[[@LINE+1]]:15: error: unknown rule
+build target3: no-rule
+
+# CHECK: build "target4": phony
+# CHECK-NEXT: binding-a = "value1"
+# CHECK-NEXT: binding-b = "value2"
+build target4: phony
+      binding-a = value1
+      binding-b = value2

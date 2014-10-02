@@ -205,16 +205,56 @@ public:
                                 const Token& Path) override { }
 
   virtual BuildResult
-  actOnBeginBuildDecl(const Token& Name,
-                      const std::vector<Token> &Outputs,
-                      const std::vector<Token> &Inputs,
+  actOnBeginBuildDecl(const Token& NameTok,
+                      const std::vector<Token> &OutputTokens,
+                      const std::vector<Token> &InputTokens,
                       unsigned NumExplicitInputs,
                       unsigned NumImplicitInputs) override {
-    return 0;
+    std::string Name(NameTok.Start, NameTok.Length);
+
+    // Resolve the rule.
+    auto it = TheManifest->getRules().find(Name);
+    Rule *Rule;
+    if (it == TheManifest->getRules().end()) {
+      error("unknown rule", NameTok);
+
+      // Ensure we always have a rule for each command.
+      Rule = TheManifest->getPhonyRule();
+    } else {
+      Rule = it->second.get();
+    }
+
+    // Resolve all of the inputs and outputs.
+    std::vector<Node*> Outputs;
+    std::vector<Node*> Inputs;
+    for (auto& Token: OutputTokens) {
+      // Evaluate the token string.
+      std::string Path = evalString(Token, TheManifest->getBindings());
+      Outputs.push_back(TheManifest->getOrCreateNode(Path));
+    }
+    for (auto& Token: InputTokens) {
+      // Evaluate the token string.
+      std::string Path = evalString(Token, TheManifest->getBindings());
+      Inputs.push_back(TheManifest->getOrCreateNode(Path));
+    }
+
+    Command *Decl = new Command(Rule, Outputs, Inputs, NumExplicitInputs,
+                                   NumImplicitInputs);
+    TheManifest->getCommands().push_back(std::unique_ptr<Command>(Decl));
+
+    return Decl;
   }
 
-  virtual void actOnBuildBindingDecl(BuildResult Decl, const Token& Name,
-                                     const Token& Value) override { }
+  virtual void actOnBuildBindingDecl(BuildResult AbstractDecl,
+                                     const Token& NameTok,
+                                     const Token& ValueTok) override {
+    Command* Decl = static_cast<Command*>(AbstractDecl);
+
+    std::string Name(NameTok.Start, NameTok.Length);
+    // FIXME: It probably should be an error to assign to the same parameter
+    // multiple times, but Ninja doesn't diagnose this.
+    Decl->getParameters()[Name] = std::string(ValueTok.Start, ValueTok.Length);
+  }
 
   virtual void actOnEndBuildDecl(PoolResult Decl,
                                 const Token& StartTok) override { }

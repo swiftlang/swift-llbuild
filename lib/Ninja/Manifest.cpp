@@ -32,3 +32,14 @@ Manifest::Manifest() {
   PhonyRule = new Rule("phony");
   Rules["phony"].reset(PhonyRule);
 }
+
+Node* Manifest::getOrCreateNode(const std::string& Path) {
+  // If we have an existing node for this path, return it.
+  auto it = Nodes.find(Path);
+  if (it != Nodes.end())
+    return it->second.get();
+
+  Node *Result = new Node(Path);
+  Nodes[Path].reset(Result);
+  return Result;
+}

@@ -134,6 +134,7 @@ public:
       NumExplicitInputs(NumExplicitInputs),
       NumImplicitInputs(NumImplicitInputs)
   {
+    assert(Outputs.size() > 0);
     assert(NumExplicitInputs + NumImplicitInputs <= Inputs.size());
   }
 
@@ -236,6 +237,9 @@ public:
   const node_set& getNodes() const {
     return Nodes;
   }
+
+  /// Get or create the unique node for the given path.
+  Node* getOrCreateNode(const std::string& Path);
 
   std::vector<std::unique_ptr<Command>>& getCommands() {
     return Commands;
