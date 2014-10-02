@@ -20,3 +20,7 @@ rule rule3
 
 # CHECK-ERR: rules.ninja:[[@LINE+1]]:0: error: missing 'command' variable assignment
 rule rule4
+
+# Ensure we diagnose attempts to define a new phony rule.
+# CHECK-ERR: rules.ninja:[[@LINE+1]]:5: error: duplicate rule
+rule phony

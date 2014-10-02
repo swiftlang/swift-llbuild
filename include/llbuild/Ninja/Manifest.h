@@ -219,7 +219,12 @@ class Manifest {
   /// The default targets, if specified.
   std::vector<Node*> DefaultTargets;
 
+  /// The built-in phony rule.
+  Rule *PhonyRule;
+
 public:
+  explicit Manifest();
+
   /// Get the final set of top level variable bindings.
   BindingSet& getBindings() { return Bindings; }
   /// Get the final set of top level variable bindings.
@@ -258,6 +263,10 @@ public:
   }
   const std::vector<Node*>& getDefaultTargets() const {
     return DefaultTargets;
+  }
+
+  Rule* getPhonyRule() const {
+    return PhonyRule;
   }
 };
 

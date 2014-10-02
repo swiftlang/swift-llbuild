@@ -27,3 +27,8 @@ bool Rule::isValidParameterName(const std::string& Name) {
     Name == "rspfile_content";
 }
 
+Manifest::Manifest() {
+  // Create the built-in phony rule, and add it to the rule map.
+  PhonyRule = new Rule("phony");
+  Rules["phony"].reset(PhonyRule);
+}
