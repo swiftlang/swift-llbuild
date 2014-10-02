@@ -522,6 +522,23 @@ static int ExecuteLoadManifestCommand(const std::vector<std::string> &Args) {
     std::cout << "\n";
   }
 
+  // Dump the default targets, if specified.
+  if (!Manifest->getDefaultTargets().empty()) {
+    std::cout << "# Default Targets\n";
+    std::vector<ninja::Node*> DefaultTargets = Manifest->getDefaultTargets();
+    std::sort(DefaultTargets.begin(), DefaultTargets.end(),
+              [] (ninja::Node* a, ninja::Node* b) {
+        return a->getPath() < b->getPath();
+      });
+    std::cout << "default ";
+    for (auto Node: DefaultTargets) {
+      if (Node != DefaultTargets[0])
+        std::cout << " ";
+      std::cout << "\"" << Node->getPath() << "\"";
+    }
+    std::cout << "\n\n";
+  }
+
   return 0;
 }
 

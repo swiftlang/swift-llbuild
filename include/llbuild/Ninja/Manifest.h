@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace llbuild {
 namespace ninja {
@@ -58,6 +59,18 @@ public:
 
     return "";
   }
+};
+
+/// A node represents a unique path as present in the manifest.
+//
+// FIXME: Figure out what the deal is with normalization.
+class Node {
+  std::string Path;
+
+public:
+  explicit Node(const std::string& Path) : Path(Path) {}
+
+  const std::string& getPath() const { return Path; }
 };
 
 /// A pool represents a generic bucket for organizing commands.
@@ -116,10 +129,17 @@ class Manifest {
   /// The top level variable bindings.
   BindingSet Bindings;
 
+  /// The nodes in the manifest, stored as a map on the node name.
+  //
+  // FIXME: This is an inefficent map, given that the string is contained
+  // inside the node.
+  typedef std::unordered_map<std::string, std::unique_ptr<Node>> node_set;
+  node_set Nodes;
+
   /// The pools in the manifest, stored as a map on the pool name.
   //
   // FIXME: This is an inefficent map, given that the string is contained
-  // inside the rule.
+  // inside the pool.
   typedef std::unordered_map<std::string, std::unique_ptr<Pool>> pool_set;
   pool_set Pools;
 
@@ -130,11 +150,21 @@ class Manifest {
   typedef std::unordered_map<std::string, std::unique_ptr<Rule>> rule_set;
   rule_set Rules;
 
+  /// The default targets, if specified.
+  std::vector<Node*> DefaultTargets;
+
 public:
   /// Get the final set of top level variable bindings.
   BindingSet& getBindings() { return Bindings; }
   /// Get the final set of top level variable bindings.
   const BindingSet& getBindings() const { return Bindings; }
+
+  node_set& getNodes() {
+    return Nodes;
+  }
+  const node_set& getNodes() const {
+    return Nodes;
+  }
 
   pool_set& getPools() {
     return Pools;
@@ -148,6 +178,13 @@ public:
   }
   const rule_set& getRules() const {
     return Rules;
+  }
+
+  std::vector<Node*>& getDefaultTargets() {
+    return DefaultTargets;
+  }
+  const std::vector<Node*>& getDefaultTargets() const {
+    return DefaultTargets;
   }
 };
 
