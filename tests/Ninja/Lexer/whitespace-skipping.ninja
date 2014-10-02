@@ -1,0 +1,21 @@
+# Check whitespace skipping "$\n" handling.
+#
+# RUN: %{llbuild} ninja lex %s 2> %t.err
+# RUN: %{FileCheck} < %t.err %s
+
+# Ninja does *not* recognize '$\n' on a leading line.
+# CHECK: (Token "Unknown" String:"$" Length:1 Line:[[@LINE+1]] Column:0)
+$
+
+# Check '$\n' in other contexts.
+#
+# CHECK: (Token "Identifier" String:"a" Length:1 Line:[[@LINE+2]] Column:0)
+# CHECK-NEXT: (Token "Equals" String:"=" Length:1 Line:[[@LINE+2]] Column:0)
+a$
+= b
+
+# CHECK: (Token "Identifier" String:"a" Length:1 Line:[[@LINE+2]] Column:0)
+# CHECK-NEXT: (Token "Equals" String:"=" Length:1 Line:[[@LINE+3]] Column:0)
+a $
+    $
+= b
