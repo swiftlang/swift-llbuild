@@ -34,7 +34,9 @@ static std::string escapedString(const char *Start, unsigned Length) {
   std::stringstream Result;
   for (unsigned i = 0; i != Length; ++i) {
     char c = Start[i];
-    if (isprint(c)) {
+    if (c == '"') {
+      Result << "\\\"";
+    } else if (isprint(c)) {
       Result << c;
     } else if (c == '\n') {
       Result << "\\n";
