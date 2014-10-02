@@ -29,6 +29,7 @@ DependencyNode::DependencyNode(Number number, std::string name)
     : _number(number), _name(name)
 {
     std::cout << __PRETTY_FUNCTION__ << std::endl;
+    std::cout << "(node number: " << number << ")" << std::endl;
 }
 
 DependencyNode::~DependencyNode()

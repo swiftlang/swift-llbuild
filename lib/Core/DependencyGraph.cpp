@@ -55,7 +55,7 @@ DependencyNode * DependencyGraph::makeNode(std::string name)
         // Create a new node, giving it the next available number.  Note that
         // 'result' is a reference, so assigning the new node pointer to it
         // puts it into the table.
-        result = new DependencyNode(_nodes.size(), name);
+        result = new DependencyNode(1 + _nodes.size(), name);
         
         // Add the pointer to the 'nodes' vector, which is what owns it.
         _nodes.push_back(result);
@@ -73,7 +73,7 @@ DependencyNode * DependencyGraph::findNode(std::string name)
 DependencyCommand * DependencyGraph::makeCommand(const std::function<void(void)> & func)
 {
     // Create a new command, giving it the next available number.
-    DependencyCommand * result = new DependencyCommand(_commands.size(), func);
+    DependencyCommand * result = new DependencyCommand(1 + _commands.size(), func);
     
     // Add the pointer to the 'command' vector, which is what owns it.
     _commands.push_back(result);

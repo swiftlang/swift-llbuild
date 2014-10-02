@@ -30,6 +30,7 @@ DependencyCommand::DependencyCommand(Number number, const std::function<void(voi
     : _number(number), _function(func)
 {
     std::cout << __PRETTY_FUNCTION__ << std::endl;
+    std::cout << "(command number: " << number << ")" << std::endl;
 }
 
 DependencyCommand::~DependencyCommand()
