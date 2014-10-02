@@ -151,6 +151,10 @@ Token &Lexer::lexIdentifier(Token &Result) {
   return setIdentifierTokenKind(Result);
 }
 
+static bool isNonNewlineSpace(int Char) {
+  return isspace(Char) && Char != '\n';
+}
+
 Token &Lexer::lexPathString(Token &Result) {
   // String tokens in path contexts consume until a space, ':', or '|'
   // character.
@@ -160,7 +164,16 @@ Token &Lexer::lexPathString(Token &Result) {
     // If this is an escape character, skip the next character.
     if (Char == '$') {
       getNextChar(); // Consume the actual '$'.
-      getNextChar(); // Consume the next character.
+
+      // Consume the next character.
+      Char = getNextChar();
+
+      // If the character was a newline, consume any leading spaces.
+      if (Char == '\n') {
+        while (isNonNewlineSpace(peekNextChar()))
+          getNextChar();
+      }
+
       continue;
     }
 
@@ -194,10 +207,6 @@ Token &Lexer::lexVariableString(Token &Result) {
   }
 
   return setTokenKind(Result, Token::Kind::String);
-}
-
-static bool isNonNewlineSpace(int Char) {
-  return isspace(Char) && Char != '\n';
 }
 
 Token &Lexer::lex(Token &Result) {

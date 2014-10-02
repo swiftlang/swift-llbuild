@@ -33,3 +33,11 @@ default this#is#a#path
 # CHECK: actOnDefaultDecl(/*Names=*/["$\nthisisapath"])
 default $
 thisisapath
+
+
+# Check that we handle spaces following $\n sequences.
+#
+# CHECK: actOnDefaultDecl(/*Names=*/["this$\n  isapath"])
+default this$
+  isapath
+
