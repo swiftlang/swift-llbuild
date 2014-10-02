@@ -199,7 +199,20 @@ public:
     TheManifest->getBindings().insert(Name, Value);
   }
 
-  virtual void actOnDefaultDecl(const std::vector<Token>& Names) override { }
+  virtual void actOnDefaultDecl(const std::vector<Token>& NameToks) override {
+    // Resolve all of the inputs and outputs.
+    for (auto& NameTok: NameToks) {
+      std::string Name(NameTok.Start, NameTok.Length);
+
+      auto it = TheManifest->getNodes().find(Name);
+      if (it == TheManifest->getNodes().end()) {
+        error("unknown target name", NameTok);
+        continue;
+      }
+
+      TheManifest->getDefaultTargets().push_back(it->second.get());
+    }
+  }
 
   virtual void actOnIncludeDecl(bool IsInclude,
                                 const Token& Path) override { }

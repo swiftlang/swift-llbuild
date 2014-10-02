@@ -1,0 +1,15 @@
+# Check rule loading.
+#
+# RUN: %{llbuild} ninja load-manifest %s > %t 2> %t.err
+# RUN: %{FileCheck} < %t %s
+# RUN: %{FileCheck} --check-prefix=CHECK-ERR < %t.err %s
+
+build target-a: phony
+build target-b: phony
+
+# CHECK: # Default Targets
+# CHECK: default "target-a" "target-b"
+default target-a target-b
+
+# CHECK-ERR: default.ninja:[[@LINE+1]]:8: error: unknown target
+default target-c
