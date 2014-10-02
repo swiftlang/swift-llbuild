@@ -15,6 +15,7 @@
 #include "llbuild/Ninja/Lexer.h"
 #include "llbuild/Ninja/Parser.h"
 
+#include <cstdlib>
 #include <sstream>
 
 using namespace llbuild;
@@ -218,12 +219,47 @@ public:
   virtual void actOnEndBuildDecl(PoolResult Decl,
                                 const Token& StartTok) override { }
 
-  virtual PoolResult actOnBeginPoolDecl(const Token& Name) override {
-    return 0;
+  virtual PoolResult actOnBeginPoolDecl(const Token& NameTok) override {
+    std::string Name(NameTok.Start, NameTok.Length);
+
+    // Find the hash slot.
+    auto& Result = TheManifest->getPools()[Name];
+
+    // Diagnose if the pool already exists (we still create a new one).
+    if (Result.get()) {
+      // The ppol already exists.
+      error("duplicate pool", NameTok);
+    }
+
+    // Insert the new pool.
+    Pool* Decl = new Pool(Name);
+    Result.reset(Decl);
+    return static_cast<PoolResult>(Decl);
   }
 
-  virtual void actOnPoolBindingDecl(PoolResult Decl, const Token& Name,
-                                    const Token& Value) override { }
+  virtual void actOnPoolBindingDecl(PoolResult AbstractDecl,
+                                    const Token& NameTok,
+                                    const Token& ValueTok) override {
+    Pool* Decl = static_cast<Pool*>(AbstractDecl);
+
+    std::string Name(NameTok.Start, NameTok.Length);
+
+    // Evaluate the value string with the current top-level bindings.
+    std::string Value(evalString(ValueTok, TheManifest->getBindings()));
+
+    if (Name == "depth") {
+      const char* Start = Value.c_str();
+      char* End;
+      long IntValue = ::strtol(Start, &End, 10);
+      if (*End != '\0' || IntValue <= 0) {
+        error("invalid depth", ValueTok);
+      } else {
+        Decl->setDepth(static_cast<uint32_t>(IntValue));
+      }
+    } else {
+      error("unexpected variable", NameTok);
+    }
+  }
 
   virtual void actOnEndPoolDecl(PoolResult Decl,
                                 const Token& StartTok) override { }

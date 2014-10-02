@@ -1,0 +1,27 @@
+# Check pool loading.
+#
+# RUN: %{llbuild} ninja load-manifest %s > %t 2> %t.err
+# RUN: %{FileCheck} < %t %s
+# RUN: %{FileCheck} --check-prefix=CHECK-ERR < %t.err %s
+
+# CHECK: pool pool1
+# CHECK: depth = 1
+mydepth=1
+pool pool1
+     depth = ${mydepth}
+
+# CHECK-ERR: pools.ninja:[[@LINE+2]]:5: error: duplicate pool
+pool pool2
+pool pool2
+
+# CHECK-ERR: pools.ninja:[[@LINE+2]]:5: error: unexpected variable
+pool pool3
+     unknown_variable = value
+
+# CHECK-ERR: pools.ninja:[[@LINE+2]]:13: error: invalid depth
+pool pool4
+     depth = 0
+
+# CHECK-ERR: pools.ninja:[[@LINE+2]]:13: error: invalid depth
+pool pool5
+     depth = 12x

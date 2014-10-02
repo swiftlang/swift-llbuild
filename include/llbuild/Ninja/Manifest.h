@@ -13,6 +13,7 @@
 #ifndef LLBUILD_NINJA_MANIFEST_H
 #define LLBUILD_NINJA_MANIFEST_H
 
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 
@@ -59,6 +60,27 @@ public:
   }
 };
 
+/// A pool represents a generic bucket for organizing commands.
+class Pool {
+  /// The name of the pool.
+  std::string Name;
+
+  /// The pool depth, or 0 if unspecified.
+  uint32_t Depth = 0;
+
+public:
+  explicit Pool(const std::string& Name) : Name(Name) {}
+
+  const std::string& getName() const { return Name; }
+
+  uint32_t getDepth() const {
+    return Depth;
+  }
+  void setDepth(uint32_t Value) {
+    Depth = Value;
+  }
+};
+
 /// A rule represents a template which can be expanded to produce a particular
 /// command.
 class Rule {
@@ -88,12 +110,18 @@ public:
   static bool isValidParameterName(const std::string& Name);
 };
 
-
 /// A manifest represents the complete set of rules and commands used to perform
 /// a build.
 class Manifest {
   /// The top level variable bindings.
   BindingSet Bindings;
+
+  /// The pools in the manifest, stored as a map on the pool name.
+  //
+  // FIXME: This is an inefficent map, given that the string is contained
+  // inside the rule.
+  typedef std::unordered_map<std::string, std::unique_ptr<Pool>> pool_set;
+  pool_set Pools;
 
   /// The rules in the manifest, stored as a map on the rule name.
   //
@@ -107,6 +135,13 @@ public:
   BindingSet& getBindings() { return Bindings; }
   /// Get the final set of top level variable bindings.
   const BindingSet& getBindings() const { return Bindings; }
+
+  pool_set& getPools() {
+    return Pools;
+  }
+  const pool_set& getPools() const {
+    return Pools;
+  }
 
   rule_set& getRules() {
     return Rules;

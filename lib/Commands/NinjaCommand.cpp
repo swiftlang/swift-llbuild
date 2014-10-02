@@ -479,6 +479,26 @@ static int ExecuteLoadManifestCommand(const std::vector<std::string> &Args) {
   }
   std::cout << "\n";
 
+  // Dump the pools, if present.
+  if (!Manifest->getPools().empty()) {
+    std::cout << "# Pools\n";
+    std::vector<ninja::Pool*> Pools;
+    for (auto& Entry: Manifest->getPools()) {
+      Pools.push_back(Entry.second.get());
+    }
+    std::sort(Pools.begin(), Pools.end(), [] (ninja::Pool* a, ninja::Pool* b) {
+        return a->getName() < b->getName();
+      });
+    for (auto Pool: Pools) {
+      // Write the rule entry.
+      std::cout << "pool " << Pool->getName() << "\n";
+      if (uint32_t Depth = Pool->getDepth()) {
+        std::cout << "  depth = " << Depth << "\n";
+      }
+      std::cout << "\n";
+    }
+  }
+
   // Dump the rules.
   std::cout << "# Rules\n";
   std::vector<ninja::Rule*> Rules;
