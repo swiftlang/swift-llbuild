@@ -42,11 +42,15 @@ class ManifestLoaderImpl: public ParseActions {
     std::unique_ptr<char[]> Data;
     /// The parser for the file.
     std::unique_ptr<Parser> Parser;
+    /// The active binding set.
+    BindingSet &Bindings;
 
     IncludeEntry(const std::string& Filename,
                  std::unique_ptr<char[]> Data,
-                 std::unique_ptr<class Parser> Parser)
-      : Filename(Filename), Data(std::move(Data)), Parser(std::move(Parser)) {}
+                 std::unique_ptr<class Parser> Parser,
+                 BindingSet &Bindings)
+      : Filename(Filename), Data(std::move(Data)), Parser(std::move(Parser)),
+        Bindings(Bindings) {}
   };
 
   std::string MainFilename;
@@ -65,7 +69,7 @@ public:
     TheManifest.reset(new Manifest);
 
     // Enter the main file.
-    if (!enterFile(MainFilename))
+    if (!enterFile(MainFilename, TheManifest->getBindings()))
       return nullptr;
 
     // Run the parser.
@@ -76,7 +80,7 @@ public:
     return std::move(TheManifest);
   }
 
-  bool enterFile(const std::string& Filename,
+  bool enterFile(const std::string& Filename, BindingSet& Bindings,
                  const Token* ForToken = nullptr) {
     // Load the file data.
     std::unique_ptr<char[]> Data;
@@ -90,7 +94,8 @@ public:
     // Push a new entry onto the include stack.
     std::unique_ptr<Parser> FileParser(new Parser(Data.get(), Length, *this));
     IncludeStack.push_back(IncludeEntry(Filename, std::move(Data),
-                                        std::move(FileParser)));
+                                        std::move(FileParser),
+                                        Bindings));
 
     return true;
   }
@@ -107,6 +112,10 @@ public:
   const std::string& getCurrentFilename() const {
     assert(!IncludeStack.empty());
     return IncludeStack.back().Filename;
+  }
+  BindingSet& getCurrentBindings() const {
+    assert(!IncludeStack.empty());
+    return IncludeStack.back().Bindings;
   }
 
   /// Given a string template token, evaluate it against the given \arg Bindings
@@ -239,9 +248,9 @@ public:
     std::string Name(NameTok.Start, NameTok.Length);
 
     // Evaluate the value string with the current top-level bindings.
-    std::string Value(evalString(ValueTok, TheManifest->getBindings()));
+    std::string Value(evalString(ValueTok, getCurrentBindings()));
 
-    TheManifest->getBindings().insert(Name, Value);
+    getCurrentBindings().insert(Name, Value);
   }
 
   virtual void actOnDefaultDecl(const std::vector<Token>& NameToks) override {
@@ -261,12 +270,12 @@ public:
 
   virtual void actOnIncludeDecl(bool IsInclude,
                                 const Token& PathTok) override {
-    std::string Path = evalString(PathTok, TheManifest->getBindings());
+    std::string Path = evalString(PathTok, getCurrentBindings());
 
     // Enter the new file.
     //
     // FIXME: Need to handle proper changes to the binding scope.
-    if (enterFile(Path, &PathTok)) {
+    if (enterFile(Path, getCurrentBindings(), &PathTok)) {
       // Run the parser for the included file.
       getCurrentParser()->parse();
     }
@@ -297,12 +306,12 @@ public:
     std::vector<Node*> Inputs;
     for (auto& Token: OutputTokens) {
       // Evaluate the token string.
-      std::string Path = evalString(Token, TheManifest->getBindings());
+      std::string Path = evalString(Token, getCurrentBindings());
       Outputs.push_back(TheManifest->getOrCreateNode(Path));
     }
     for (auto& Token: InputTokens) {
       // Evaluate the token string.
-      std::string Path = evalString(Token, TheManifest->getBindings());
+      std::string Path = evalString(Token, getCurrentBindings());
       Inputs.push_back(TheManifest->getOrCreateNode(Path));
     }
 
@@ -328,7 +337,7 @@ public:
     //
     // FIXME: This needs to be the inherited bindings, once we support includes.
     Decl->getParameters()[Name] = evalString(ValueTok,
-                                             TheManifest->getBindings());
+                                             getCurrentBindings());
   }
 
   virtual void actOnEndBuildDecl(PoolResult Decl,
@@ -360,7 +369,7 @@ public:
     std::string Name(NameTok.Start, NameTok.Length);
 
     // Evaluate the value string with the current top-level bindings.
-    std::string Value(evalString(ValueTok, TheManifest->getBindings()));
+    std::string Value(evalString(ValueTok, getCurrentBindings()));
 
     if (Name == "depth") {
       const char* Start = Value.c_str();
