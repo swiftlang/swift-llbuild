@@ -71,15 +71,16 @@ static bool ReadFileContents(std::string Path,
                              uint64_t* Size_Out,
                              std::string* Error_Out) {
   // Open the input buffer and compute its size.
-  FILE* fp = fopen(Path.c_str(), "rb");
+  FILE* fp = ::fopen(Path.c_str(), "rb");
   if (!fp) {
+    int ErrorNumber = errno;
     *Error_Out = std::string("unable to open input: \"") +
-      escapedString(Path) + "\"";
+      escapedString(Path) + "\" (" + ::strerror(ErrorNumber) + ")";
     return false;
   }
 
   fseek(fp, 0, SEEK_END);
-  uint64_t Size = *Size_Out = ftell(fp);
+  uint64_t Size = *Size_Out = ::ftell(fp);
   fseek(fp, 0, SEEK_SET);
 
   // Read the file contents.
@@ -87,7 +88,7 @@ static bool ReadFileContents(std::string Path,
   uint64_t Pos = 0;
   while (Pos < Size) {
     // Read data into the buffer.
-    size_t Result = fread(Data.get() + Pos, 1, Size - Pos, fp);
+    size_t Result = ::fread(Data.get() + Pos, 1, Size - Pos, fp);
     if (Result <= 0) {
       *Error_Out = std::string("unable to read input: ") + Path;
       return false;
@@ -95,6 +96,9 @@ static bool ReadFileContents(std::string Path,
 
     Pos += Result;
   }
+
+  // Close the file.
+  ::fclose(fp);
 
   *Data_Out = std::move(Data);
   return true;
@@ -502,8 +506,9 @@ static int ExecuteLoadManifestCommand(const std::vector<std::string> &Args,
   size_t Pos = Filename.find_last_of('/');
   if (Pos != std::string::npos) {
     if (::chdir(std::string(Filename.substr(0, Pos)).c_str()) < 0) {
-      fprintf(stderr, "error: %s: unable to chdir(): %s",
+      fprintf(stderr, "error: %s: unable to chdir(): %s\n",
               getprogname(), strerror(errno));
+      return 1;
     }
     Filename = Filename.substr(Pos+1);
   }
