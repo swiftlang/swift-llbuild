@@ -376,8 +376,15 @@ public:
     }
   }
 
-  virtual void actOnEndPoolDecl(PoolResult Decl,
-                                const Token& StartTok) override { }
+  virtual void actOnEndPoolDecl(PoolResult AbstractDecl,
+                                const Token& StartTok) override {
+    Pool* Decl = static_cast<Pool*>(AbstractDecl);
+
+    // It is an error to not specify the pool depth.
+    if (Decl->getDepth() == 0) {
+      error("missing 'depth' variable assignment", StartTok);
+    }
+  }
 
   virtual RuleResult actOnBeginRuleDecl(const Token& NameTok) override {
     std::string Name(NameTok.Start, NameTok.Length);

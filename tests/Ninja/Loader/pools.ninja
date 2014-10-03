@@ -25,3 +25,8 @@ pool pool4
 # CHECK-ERR: pools.ninja:[[@LINE+2]]:13: error: invalid depth
 pool pool5
      depth = 12x
+
+# It is an error to not specify the depth.
+#
+# CHECK-ERR: pools.ninja:[[@LINE+1]]:0: error: missing 'depth' variable assignment
+pool pool6
