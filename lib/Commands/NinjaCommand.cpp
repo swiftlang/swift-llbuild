@@ -499,12 +499,13 @@ static int ExecuteLoadManifestCommand(const std::vector<std::string> &Args,
   //
   // FIXME: Need llvm::sys::fs.
   std::string Filename = Args[0];
-  size_t Pos = Args[0].find_last_of('/');
+  size_t Pos = Filename.find_last_of('/');
   if (Pos != std::string::npos) {
-    if (::chdir(std::string(Args[0].substr(0, Pos)).c_str()) < 0) {
+    if (::chdir(std::string(Filename.substr(0, Pos)).c_str()) < 0) {
       fprintf(stderr, "error: %s: unable to chdir(): %s",
               getprogname(), strerror(errno));
     }
+    Filename = Filename.substr(Pos+1);
   }
 
   LoadManifestActions Actions;
