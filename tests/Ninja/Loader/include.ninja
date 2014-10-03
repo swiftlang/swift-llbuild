@@ -6,9 +6,21 @@
 
 include Inputs/include-b.ninja
 
-build input input2: phony
-# CHECK: build "foo": testrule "input" "input2"
-build foo: testrule input ${input2_var}
+# Check that subninja establishes a new bindings context; this will also create
+# a new command using ${parent_var} so we can check the parent scope worked
+# properly.
+#
+# CHECK: Top-Level Bindings
+# CHECK: should_be_empty = ""
+#
+# CHECK: build "b1-parent_scope_check": phony
+parent_var = b1-parent_scope_check
+subninja Inputs/include-b-2.ninja
+should_be_empty = ${input3_var}
+
+build input input2 xxxx: phony
+# CHECK: build "b2": testrule "input" "input2" "xxxx"
+build b2: testrule input ${input2_var} xx${should_be_empty}xx
 
 # Check that we diagnose broken includes.
 #

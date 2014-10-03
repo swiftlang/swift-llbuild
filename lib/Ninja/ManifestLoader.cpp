@@ -272,12 +272,28 @@ public:
                                 const Token& PathTok) override {
     std::string Path = evalString(PathTok, getCurrentBindings());
 
-    // Enter the new file.
-    //
-    // FIXME: Need to handle proper changes to the binding scope.
-    if (enterFile(Path, getCurrentBindings(), &PathTok)) {
-      // Run the parser for the included file.
-      getCurrentParser()->parse();
+    // Enter the new file, with a new binding scope if this is a "subninja"
+    // decl.
+    if (IsInclude) {
+      if (enterFile(Path, getCurrentBindings(), &PathTok)) {
+        // Run the parser for the included file.
+        getCurrentParser()->parse();
+      }
+    } else {
+      // Establish a local binding set and use that to contain the bindings for
+      // the subninja.
+      //
+      // FIXME: This binding set will disappear once the parsing is done, so we
+      // can never store a reference to it. That will be a problem if we want to
+      // postpone build decl binding expansion until after parsing (by giving
+      // the rule a reference to its binding set). However we might end up just
+      // binding up front so holding off on extending the lifetime of this until
+      // then...
+      BindingSet SubninjaBindings(&getCurrentBindings());
+      if (enterFile(Path, SubninjaBindings, &PathTok)) {
+        // Run the parser for the included file.
+        getCurrentParser()->parse();
+      }
     }
   }
 
@@ -316,7 +332,7 @@ public:
     }
 
     Command *Decl = new Command(Rule, Outputs, Inputs, NumExplicitInputs,
-                                   NumImplicitInputs);
+                                NumImplicitInputs);
     TheManifest->getCommands().push_back(std::unique_ptr<Command>(Decl));
 
     return Decl;
@@ -351,7 +367,7 @@ public:
 
     // Diagnose if the pool already exists (we still create a new one).
     if (Result.get()) {
-      // The ppol already exists.
+      // The pool already exists.
       error("duplicate pool", NameTok);
     }
 

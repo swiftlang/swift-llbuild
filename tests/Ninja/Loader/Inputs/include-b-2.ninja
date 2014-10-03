@@ -1,0 +1,4 @@
+input3_var = thisisonlylocal
+input3_var_2 = ${parent_var}
+
+build ${input3_var_2}: phony
