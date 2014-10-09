@@ -1,4 +1,5 @@
 add_llbuild_unittest(CoreTests
+  BuildEngineTest.cpp
   DependencyGraphTest.cpp
   )
 
