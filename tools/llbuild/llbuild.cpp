@@ -26,6 +26,7 @@ static void usage() {
   fprintf(stderr, "\n");
   fprintf(stderr, "Available commands:\n");
   fprintf(stderr, "  ninja -- Run the Ninja subtool\n");
+  fprintf(stderr, "  buildengine -- Run the build engine subtool\n");
   fprintf(stderr, "\n");
   exit(1);
 }
@@ -50,6 +51,8 @@ int main(int argc, const char **argv) {
 
   if (Command == "ninja") {
     return ExecuteNinjaCommand(Args);
+  } else if (Command == "buildengine") {
+    return ExecuteBuildEngineCommand(Args);
   } else {
     fprintf(stderr, "error: %s: unknown command '%s'\n", getprogname(),
             Command.c_str());
