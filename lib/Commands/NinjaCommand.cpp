@@ -611,7 +611,7 @@ static int ExecuteLoadManifestCommand(const std::vector<std::string> &Args,
                            Command->getNumImplicitInputs())) {
         std::cout << "|| ";
       }
-      std::cout << " \"" << escapedString(Node->getPath()) << "\"";
+      std::cout << "\"" << escapedString(Node->getPath()) << "\"";
       ++Count;
     }
     std::cout << "\n";

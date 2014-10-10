@@ -323,11 +323,17 @@ public:
     for (auto& Token: OutputTokens) {
       // Evaluate the token string.
       std::string Path = evalString(Token, getCurrentBindings());
+      if (Path.empty()) {
+        error("empty output path", Token);
+      }
       Outputs.push_back(TheManifest->getOrCreateNode(Path));
     }
     for (auto& Token: InputTokens) {
       // Evaluate the token string.
       std::string Path = evalString(Token, getCurrentBindings());
+      if (Path.empty()) {
+        error("empty input path", Token);
+      }
       Inputs.push_back(TheManifest->getOrCreateNode(Path));
     }
 

@@ -31,3 +31,10 @@ build target5: phony
       target5_varA = B
       target5_varA = ${target5_varA} C
       target5_varC = END
+
+# Check that we diagnose empty paths in build statements.
+#
+# CHECK-ERR: builds.ninja:[[@LINE+3]]:14: error: empty output path
+# CHECK-ERR: builds.ninja:[[@LINE+2]]:36: error: empty input path
+target6_var =
+build target6 ${target6_var}: phony ${target6_var}
