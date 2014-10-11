@@ -12,12 +12,15 @@
 
 #include "NinjaBuildCommand.h"
 
+#include "llbuild/Core/BuildEngine.h"
 #include "llbuild/Ninja/ManifestLoader.h"
 
 #include "CommandUtil.h"
 
 #include <cerrno>
 #include <cstdlib>
+#include <iostream>
+#include <unordered_set>
 
 #include <unistd.h>
 
@@ -77,6 +80,62 @@ public:
   unsigned getNumErrors() const { return NumErrors; }
 };
 
+unsigned NumBuiltInputs = 0;
+unsigned NumBuiltCommands = 0;
+
+core::Task* BuildCommand(core::BuildEngine& Engine, ninja::Node* Output,
+                         ninja::Command* Command, ninja::Manifest* Manifest) {
+  struct NinjaCommandTask : core::Task {
+    ninja::Node* Output;
+    ninja::Command* Command;
+
+    NinjaCommandTask(ninja::Node* Output, ninja::Command* Command)
+      : Task("ninja-command"), Output(Output), Command(Command) { }
+
+    virtual void provideValue(core::BuildEngine& engine, uintptr_t InputID,
+                              core::ValueType Value) override {
+    }
+
+    virtual void start(core::BuildEngine& engine) override {
+      // Request all of the input values.
+      for (auto& Input: Command->getInputs()) {
+        engine.taskNeedsInput(this, Input->getPath(), 0);
+      }
+    }
+
+    virtual core::ValueType finish() override {
+      std::cerr << "building command \""
+                << util::EscapedString(Output->getPath()) << "\"\n";
+      ++NumBuiltCommands;
+      return 0;
+    }
+  };
+
+  return Engine.registerTask(new NinjaCommandTask(Output, Command));
+}
+
+core::Task* BuildInput(core::BuildEngine& Engine, ninja::Node* Input) {
+  struct NinjaInputTask : core::Task {
+    ninja::Node* Node;
+
+    NinjaInputTask(ninja::Node* Node) : Task("ninja-input"), Node(Node) { }
+
+    virtual void provideValue(core::BuildEngine& engine, uintptr_t InputID,
+                              core::ValueType Value) override { }
+
+    virtual void start(core::BuildEngine& engine) override { }
+
+    virtual core::ValueType finish() override {
+      std::cerr << "building input \""
+                << util::EscapedString(Node->getPath()) << "\"\n";
+      ++NumBuiltInputs;
+      return 0;
+    }
+  };
+
+  return Engine.registerTask(new NinjaInputTask(Input));
+}
+
 }
 
 int commands::ExecuteNinjaBuildCommand(const std::vector<std::string> &Args) {
@@ -116,6 +175,43 @@ int commands::ExecuteNinjaBuildCommand(const std::vector<std::string> &Args) {
   }
 
   // Otherwise, run the build.
+
+  // Create the build engine.
+  core::BuildEngine Engine;
+
+  // Create rules for all of the build commands.
+  //
+  // FIXME: This is already a place where we could do lazy rule construction,
+  // which starts to beg the question of why does the engine need to have a Rule
+  // at all?
+  std::unordered_set<ninja::Node*> VisitedNodes;
+  for (auto& Command: Manifest->getCommands()) {
+    for (auto& Output: Command->getOutputs()) {
+      Engine.addRule({ Output->getPath(), [&] (core::BuildEngine& Engine) {
+            return BuildCommand(Engine, Output, Command.get(), Manifest.get());
+          } });
+      VisitedNodes.insert(Output);
+    }
+  }
+
+  // Add dummy rules for all of the nodes that are not outputs (source files).
+  for (auto& Entry: Manifest->getNodes()) {
+    ninja::Node* Node = Entry.second.get();
+    if (!VisitedNodes.count(Node)) {
+      Engine.addRule({ Node->getPath(), [Node] (core::BuildEngine& Engine) {
+            return BuildInput(Engine, Node);
+          } });
+    }
+  }
+
+  // Build the default targets.
+  for (auto& Name: Manifest->getDefaultTargets()) {
+    std::cerr << "building default target \""
+              << util::EscapedString(Name->getPath()) << "\"...\n";
+    Engine.build(Name->getPath());
+  }
+  std::cerr << "... built using " << NumBuiltInputs << " inputs\n";
+  std::cerr << "... built using " << NumBuiltCommands << " commands\n";
 
   return 0;
 }
