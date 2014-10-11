@@ -18,6 +18,7 @@
 #include "llbuild/Ninja/Parser.h"
 
 #include "CommandUtil.h"
+#include "NinjaBuildCommand.h"
 
 #include <cstdio>
 #include <algorithm>
@@ -34,6 +35,7 @@ static void usage() {
           getprogname());
   fprintf(stderr, "\n");
   fprintf(stderr, "Available commands:\n");
+  fprintf(stderr, "  build         -- Build using Ninja manifests\n");
   fprintf(stderr, "  lex           -- Run the Ninja lexer\n");
   fprintf(stderr, "  parse         -- Run the Ninja parser\n");
   fprintf(stderr, "  load-manifest -- Load a Ninja manifest file\n");
@@ -577,6 +579,9 @@ int commands::ExecuteNinjaCommand(const std::vector<std::string> &Args) {
     return ExecuteLoadManifestCommand(std::vector<std::string>(Args.begin()+1,
                                                                Args.end()),
                                       /*LoadOnly=*/true);
+  } else if (Args[0] == "build") {
+    return ExecuteNinjaBuildCommand(std::vector<std::string>(Args.begin()+1,
+                                                             Args.end()));
   } else {
     fprintf(stderr, "error: %s: unknown command '%s'\n", getprogname(),
             Args[0].c_str());
