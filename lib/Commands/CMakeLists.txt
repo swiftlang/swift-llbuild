@@ -1,4 +1,5 @@
 add_llbuild_library(llbuildCommands
-  NinjaCommand.cpp
   BuildEngineCommand.cpp
+  CommandUtil.cpp
+  NinjaCommand.cpp
   )
