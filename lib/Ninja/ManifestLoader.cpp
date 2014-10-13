@@ -282,13 +282,6 @@ public:
     } else {
       // Establish a local binding set and use that to contain the bindings for
       // the subninja.
-      //
-      // FIXME: This binding set will disappear once the parsing is done, so we
-      // can never store a reference to it. That will be a problem if we want to
-      // postpone build decl binding expansion until after parsing (by giving
-      // the rule a reference to its binding set). However we might end up just
-      // binding up front so holding off on extending the lifetime of this until
-      // then...
       BindingSet SubninjaBindings(&getCurrentBindings());
       if (enterFile(Path, SubninjaBindings, &PathTok)) {
         // Run the parser for the included file.
@@ -356,14 +349,97 @@ public:
 
     // The value in a build decl is always evaluated immediately, but only in
     // the context of the top-level bindings.
-    //
-    // FIXME: This needs to be the inherited bindings, once we support includes.
-    Decl->getParameters()[Name] = evalString(ValueTok,
-                                             getCurrentBindings());
+    Decl->getParameters()[Name] = evalString(ValueTok, getCurrentBindings());
   }
 
-  virtual void actOnEndBuildDecl(PoolResult Decl,
-                                const Token& StartTok) override { }
+  virtual void actOnEndBuildDecl(BuildResult AbstractDecl,
+                                const Token& StartTok) override {
+    Command* Decl = static_cast<Command*>(AbstractDecl);
+
+    // Resolve the build decl parameters by evaluating in the context of the
+    // rule and parameter overrides.
+    //
+    // FIXME: Eventually, we should evaluate whether it would be more efficient
+    // to lazily bind all of these by only storing the parameters for the
+    // commands. This would let us delay the computation of all of the "command"
+    // strings until right before the command is run, which would then be
+    // parallelized and could also be more memory efficient. However, that would
+    // also requires us to expose more of the string evaluation machinery, as
+    // well as ensure that the recursive binding sets used by "subninja" decls
+    // are properly stored.
+
+    // FIXME: There is no need to store the parameters in the build decl anymore
+    // once this is all complete.
+
+    // Create the appropriate binding context.
+    //
+    // FIXME: Make this efficient.
+    auto Lookup = [this, Decl](const std::string& Name) -> std::string {
+      auto it = Decl->getParameters().find(Name);
+      if (it != Decl->getParameters().end())
+        return it->second;
+      auto it2 = Decl->getRule()->getParameters().find(Name);
+      if (it2 != Decl->getRule()->getParameters().end()) {
+        // FIXME: If we found the binding in the rule, then we need to expand it
+        // in the appropriate context, which may in turn need to use this lookup
+        // function recursively.
+        return it2->second;
+      }
+      return getCurrentBindings().lookup(Name);
+    };
+
+    // Evaluate the build parameters.
+    Decl->setCommandString(Lookup("command"));
+    Decl->setDescription(Lookup("description"));
+
+    // Set the dependency style.
+    std::string DepsStyleName = Lookup("deps");
+    std::string Depfile = Lookup("depfile");
+    Command::DepsStyleKind DepsStyle = Command::DepsStyleKind::None;
+    if (DepsStyleName == "") {
+      if (!Depfile.empty())
+        DepsStyle = Command::DepsStyleKind::GCC;
+    } else if (DepsStyleName == "gcc") {
+      DepsStyle = Command::DepsStyleKind::GCC;
+    } else if (DepsStyleName == "msvc") {
+      DepsStyle = Command::DepsStyleKind::MSVC;
+    } else {
+      error("invalid 'deps' style '" + DepsStyleName + "'", StartTok);
+    }
+    Decl->setDepsStyle(DepsStyle);
+
+    if (!Depfile.empty()) {
+      if (DepsStyle != Command::DepsStyleKind::GCC) {
+        error("invalid 'depfile' attribute with selected 'deps' style",
+              StartTok);
+      } else {
+        Decl->setDepsFile(Depfile);
+      }
+    } else {
+      if (DepsStyle == Command::DepsStyleKind::GCC) {
+        error("missing 'depfile' attribute with selected 'deps' style",
+              StartTok);
+      }
+    }
+
+    std::string PoolName = Lookup("pool");
+    if (!PoolName.empty()) {
+      const auto& it = TheManifest->getPools().find(PoolName);
+      if (it == TheManifest->getPools().end()) {
+        error("unknown pool '" + PoolName + "'", StartTok);
+      } else {
+        Decl->setExecutionPool(it->second.get());
+      }
+    }
+
+    std::string Generator = Lookup("generator");
+    Decl->setGeneratorFlag(!Generator.empty());
+
+    std::string Restat = Lookup("restat");
+    Decl->setRestatFlag(!Restat.empty());
+
+    // FIXME: Handle rspfile attributes.
+  }
 
   virtual PoolResult actOnBeginPoolDecl(const Token& NameTok) override {
     std::string Name(NameTok.Start, NameTok.Length);

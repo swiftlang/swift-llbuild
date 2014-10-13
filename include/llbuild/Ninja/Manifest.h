@@ -22,6 +22,7 @@
 namespace llbuild {
 namespace ninja {
 
+class Pool;
 class Rule;
 
 /// This class represents a set of name to value variable bindings.
@@ -101,6 +102,22 @@ public:
 /// outputs from certain inputs.
 ///
 class Command {
+public:
+  enum class DepsStyleKind {
+    /// The command doesn't use implicit dependencies.
+    None = 0,
+
+    /// The command should use GCC style implicit dependencies, where the
+    /// DepsFile attribute specifies the name of a file in which the tool will
+    /// write out implicit dependencies in the Makefile format.
+    GCC = 1,
+
+    /// The command should use MSVC style implicit dependencies, in which they
+    /// are parsed as part of the output of the compiler.
+    MSVC = 2
+  };
+  
+private:
   /// The rule used to derive the command properties.
   Rule *Rule;
 
@@ -126,13 +143,25 @@ class Command {
   // context of the rule up-front (during loading).
   std::unordered_map<std::string, std::string> Parameters;
 
+  Pool *ExecutionPool;
+
+  std::string CommandString;
+  std::string Description;
+  std::string DepsFile;
+
+  unsigned DepsStyle: 2;
+  unsigned IsGenerator: 1;
+  unsigned ShouldRestat: 1;
+
 public:
   explicit Command(class Rule *Rule, std::vector<Node*> Outputs,
                    std::vector<Node*> Inputs, unsigned NumExplicitInputs,
                    unsigned NumImplicitInputs)
     : Rule(Rule), Outputs(Outputs), Inputs(Inputs),
       NumExplicitInputs(NumExplicitInputs),
-      NumImplicitInputs(NumImplicitInputs)
+      NumImplicitInputs(NumImplicitInputs),
+      ExecutionPool(nullptr), DepsStyle(unsigned(DepsStyleKind::None)),
+      IsGenerator(0), ShouldRestat(0)
   {
     assert(Outputs.size() > 0);
     assert(NumExplicitInputs + NumImplicitInputs <= Inputs.size());
@@ -156,6 +185,70 @@ public:
   const std::unordered_map<std::string, std::string>& getParameters() const {
     return Parameters;
   }
+
+  /// @name Attributes
+  /// @{
+
+  /// Get the shell command to execute to run this command.
+  const std::string& getCommandString() const {
+    return CommandString;
+  }
+  void setCommandString(const std::string& Value) {
+    CommandString = Value;
+  }
+
+  /// Get the description to use when running this command.
+  const std::string& getDescription() const {
+    return Description;
+  }
+  void setDescription(const std::string& Value) {
+    Description = Value;
+  }
+
+  /// Get the style of implicit dependencies used by this command.
+  DepsStyleKind getDepsStyle() const {
+    return DepsStyleKind(DepsStyle);
+  }
+  void setDepsStyle(DepsStyleKind Value) {
+    DepsStyle = unsigned(Value);
+    assert(DepsStyle == unsigned(Value));
+  }
+
+  /// Get the dependency output file to use, for some implicit dependencies
+  /// styles.
+  const std::string& getDepsFile() const {
+    return DepsFile;
+  }
+  void setDepsFile(const std::string& Value) {
+    DepsFile = Value;
+  }
+
+  /// Check whether this command should be treated as a generator command.
+  bool hasGeneratorFlag() const {
+    return IsGenerator;
+  }
+  void setGeneratorFlag(bool Value) {
+    IsGenerator = Value;
+  }
+
+  /// Check whether this command should restat outputs after execution to
+  /// determine if downstream commands still need to run.
+  bool hasRestatFlag() const {
+    return ShouldRestat;
+  }
+  void setRestatFlag(bool Value) {
+    ShouldRestat = Value;
+  }
+
+  /// Get the pool to use when running this command.
+  Pool* getExecutionPool() const {
+    return ExecutionPool;
+  }
+  void setExecutionPool(class Pool* Value) {
+    ExecutionPool = Value;
+  }
+
+  /// @}
 };
 
 /// A rule represents a template which can be expanded to produce a particular

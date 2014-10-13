@@ -516,15 +516,34 @@ static int ExecuteLoadManifestCommand(const std::vector<std::string> &Args,
     }
     std::cout << "\n";
 
-    // Write the parameters.
-    std::vector<std::pair<std::string, std::string>>
-      Parameters(Command->getParameters().begin(),
-                 Command->getParameters().end());
-    std::sort(Parameters.begin(), Parameters.end());
-    for (auto& Entry: Parameters) {
-      std::cout << "  " << Entry.first << " = \""
-                << util::EscapedString(Entry.second) << "\"\n";
+    // Write out the attributes.
+    std::cout << "  command = \""
+              << util::EscapedString(Command->getCommandString()) << "\"\n";
+    std::cout << "  description = \""
+              << util::EscapedString(Command->getDescription()) << "\"\n";
+
+    switch (Command->getDepsStyle()) {
+    case ninja::Command::DepsStyleKind::None:
+      break;
+    case ninja::Command::DepsStyleKind::GCC:
+      std::cout << "  deps = gcc\n";
+      std::cout << "  depfile = \""
+                << util::EscapedString(Command->getDepsFile()) << "\"\n";
+      break;
+    case ninja::Command::DepsStyleKind::MSVC:
+      std::cout << "  deps = msvc\n";
+      break;
     }
+  
+    if (Command->hasGeneratorFlag())
+      std::cout << "  generator = 1\n";
+    if (Command->hasRestatFlag())
+      std::cout << "  restat = 1\n";
+
+    if (ninja::Pool* ExecutionPool = Command->getExecutionPool()) {
+      std::cout << "  pool = " << ExecutionPool->getName() << "\n";
+    }
+
     std::cout << "\n";
   }
 
