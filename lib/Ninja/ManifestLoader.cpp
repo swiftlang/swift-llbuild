@@ -118,18 +118,14 @@ public:
     return IncludeStack.back().Bindings;
   }
 
-  /// Given a string template token, evaluate it against the given \arg Bindings
-  /// and return the resulting string.
-  std::string evalString(const Token& Value, const BindingSet& Bindings) {
-    assert(Value.TokenKind == Token::Kind::String && "invalid token kind");
-
+  std::string evalString(const char* Start, const char* End,
+                         std::function<std::string(const std::string&)> Lookup,
+                         std::function<void(const std::string&)> Error) {
     // Scan the string for escape sequences or variable references, accumulating
     // output pieces as we go.
     //
     // FIXME: Rewrite this with StringRef once we have it, and make efficient.
     std::stringstream Result;
-    const char* Start = Value.Start;
-    const char* End = Value.Start + Value.Length;
     const char* Pos = Start;
     while (Pos != End) {
       // Find the next '$'.
@@ -150,7 +146,7 @@ public:
       // Otherwise, we have a '$' character to handle.
       ++Pos;
       if (Pos == End) {
-        error("invalid '$'-escape at end of string", Value);
+        Error("invalid '$'-escape at end of string");
         break;
       }
 
@@ -180,8 +176,7 @@ public:
         while (true) {
           // If we reached the end of the string, this is an error.
           if (Pos == End) {
-            error("invalid variable reference in string (missing trailing '}')",
-                  Value);
+            Error("invalid variable reference in string (missing trailing '}')");
             break;
           }
 
@@ -190,9 +185,9 @@ public:
           if (Char == '}') {
             // If this identifier isn't valid, emit an error.
             if (!IsValid) {
-              error("invalid variable name in reference", Value);
+              Error("invalid variable name in reference");
             } else {
-              Result << Bindings.lookup(std::string(VarStart, Pos - VarStart));
+              Result << Lookup(std::string(VarStart, Pos - VarStart));
             }
             ++Pos;
             break;
@@ -214,17 +209,29 @@ public:
         ++Pos;
         while (Pos != End && Lexer::isSimpleIdentifierChar(*Pos))
           ++Pos;
-        Result << Bindings.lookup(std::string(VarStart, Pos-VarStart));
+        Result << Lookup(std::string(VarStart, Pos-VarStart));
         continue;
       }
 
       // Otherwise, we have an invalid '$' escape.
-      error("invalid '$'-escape (literal '$' should be written as '$$')",
-            Value);
+      Error("invalid '$'-escape (literal '$' should be written as '$$')");
       break;
     }
 
     return Result.str();
+  }
+
+  /// Given a string template token, evaluate it against the given \arg Bindings
+  /// and return the resulting string.
+  std::string evalString(const Token& Value, const BindingSet& Bindings) {
+    assert(Value.TokenKind == Token::Kind::String && "invalid token kind");
+
+    return evalString(Value.Start, Value.Start + Value.Length,
+                      /*Lookup=*/ [&](const std::string& Name) {
+                        return Bindings.lookup(Name); },
+                      /*Error=*/ [this, &Value](const std::string& Msg) {
+                        error(Msg, Value);
+                      });
   }
 
   /// @name Parse Actions Interfaces
