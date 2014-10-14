@@ -74,3 +74,14 @@ build target9: phony
 # CHECK-ERR: builds.ninja:[[@LINE+1]]:0: error: unknown pool
 build target8: phony
       pool = thisisnotapool
+
+# Check deferred evaluation of rule parameters.
+# CHECK: build "target9": target9_rule
+# CHECK-NEXT: command = "command"
+# CHECK-NEXT: description = "build var and global var and command"
+target9_global = global
+rule target9_rule
+     command = command
+     description = ${target9_build_var} and ${command}
+build target9: target9_rule
+      target9_build_var = build var and ${target9_global} var

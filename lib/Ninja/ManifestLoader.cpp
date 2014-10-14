@@ -381,16 +381,24 @@ public:
     // Create the appropriate binding context.
     //
     // FIXME: Make this efficient.
-    auto Lookup = [this, Decl](const std::string& Name) -> std::string {
+    std::function<std::string(const std::string&)> Lookup;
+    Lookup = [&](const std::string& Name) -> std::string {
+      // FIXME: Support ${in} and ${out}.
       auto it = Decl->getParameters().find(Name);
       if (it != Decl->getParameters().end())
         return it->second;
       auto it2 = Decl->getRule()->getParameters().find(Name);
       if (it2 != Decl->getRule()->getParameters().end()) {
-        // FIXME: If we found the binding in the rule, then we need to expand it
-        // in the appropriate context, which may in turn need to use this lookup
-        // function recursively.
-        return it2->second;
+        auto& Value = it2->second;
+        return evalString(Value.data(), Value.data() + Value.size(),
+                          /*Lookup=*/ [&](const std::string& Name) {
+                            // FIXME: Mange recursive lookup? Ninja crashes on
+                            // it.
+                            return Lookup(Name); },
+                          /*Error=*/ [&](const std::string& Msg) {
+                            error(Msg + " during evaluation of '" + Name + "'",
+                                  StartTok);
+                          });
       }
       return getCurrentBindings().lookup(Name);
     };
