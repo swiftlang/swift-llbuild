@@ -22,10 +22,15 @@
 #include <iostream>
 #include <unordered_set>
 
+#include <spawn.h>
 #include <unistd.h>
 
 using namespace llbuild;
 using namespace llbuild::commands;
+
+extern "C" {
+  char **environ;
+}
 
 static void usage() {
   fprintf(stderr, "Usage: %s ninja build [--help] <manifest> [<targets>]\n",
@@ -104,8 +109,34 @@ core::Task* BuildCommand(core::BuildEngine& Engine, ninja::Node* Output,
     }
 
     virtual core::ValueType finish() override {
-      std::cerr << "building command \""
-                << util::EscapedString(Output->getPath()) << "\"\n";
+      std::cerr << "[" << NumBuiltCommands+1 << "] "
+                << Command->getDescription() << "\n";
+
+      // Spawn the command.
+      const char* Args[4];
+      Args[0] = "/bin/sh";
+      Args[1] = "-c";
+      Args[2] = Command->getCommandString().c_str();
+      Args[3] = nullptr;
+      int PID;
+      if (posix_spawn(&PID, Args[0], /*file_actions=*/0, /*attrp=*/0,
+                      const_cast<char**>(Args), ::environ) != 0) {
+        fprintf(stderr, "error: %s: unable to spawn process (%s)\n",
+                getprogname(), strerror(errno));
+        exit(1);
+      }
+
+      // Wait for the command to complete.
+      int Status, Result = waitpid(PID, &Status, 0);
+      if (Result == -1) {
+        fprintf(stderr, "error: %s: unable to wait for process (%s)\n",
+                getprogname(), strerror(errno));
+        exit(1);
+      }
+      if (Status != 0) {
+        std::cerr << "  ... process returned error status: " << Status << "\n";
+      }
+
       ++NumBuiltCommands;
       return 0;
     }
@@ -126,8 +157,6 @@ core::Task* BuildInput(core::BuildEngine& Engine, ninja::Node* Input) {
     virtual void start(core::BuildEngine& engine) override { }
 
     virtual core::ValueType finish() override {
-      std::cerr << "building input \""
-                << util::EscapedString(Node->getPath()) << "\"\n";
       ++NumBuiltInputs;
       return 0;
     }
