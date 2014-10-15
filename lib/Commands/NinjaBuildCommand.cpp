@@ -28,7 +28,7 @@ using namespace llbuild;
 using namespace llbuild::commands;
 
 static void usage() {
-  fprintf(stderr, "Usage: %s ninja build [--help] <manifest> [<args>]\n",
+  fprintf(stderr, "Usage: %s ninja build [--help] <manifest> [<targets>]\n",
           ::getprogname());
   ::exit(1);
 }
@@ -142,17 +142,23 @@ int commands::ExecuteNinjaBuildCommand(const std::vector<std::string> &Args) {
   if (Args.empty() || Args[0] == "--help")
     usage();
 
-  if (Args.size() != 1) {
+  if (Args.size() < 1) {
     fprintf(stderr, "\error: %s: invalid number of arguments\n\n",
             ::getprogname());
     usage();
+  }
+
+  // Parse the arguments.
+  std::string Filename = Args[0];
+  std::vector<std::string> TargetsToBuild;
+  for (unsigned i = 1, ie = Args.size(); i < ie; ++i) {
+      TargetsToBuild.push_back(Args[i]);
   }
 
   // Change to the directory containing the input file, so include references
   // can be relative.
   //
   // FIXME: Need llvm::sys::fs.
-  std::string Filename = Args[0];
   size_t Pos = Filename.find_last_of('/');
   if (Pos != std::string::npos) {
     if (::chdir(std::string(Filename.substr(0, Pos)).c_str()) < 0) {
@@ -204,11 +210,16 @@ int commands::ExecuteNinjaBuildCommand(const std::vector<std::string> &Args) {
     }
   }
 
-  // Build the default targets.
-  for (auto& Name: Manifest->getDefaultTargets()) {
-    std::cerr << "building default target \""
-              << util::EscapedString(Name->getPath()) << "\"...\n";
-    Engine.build(Name->getPath());
+  // If no explicit targets were named, build the default targets.
+  if (TargetsToBuild.empty()) {
+    for (auto& Target: Manifest->getDefaultTargets())
+      TargetsToBuild.push_back(Target->getPath());
+  }
+
+  // Build the requested targets.
+  for (auto& Name: TargetsToBuild) {
+    std::cerr << "building target \"" << util::EscapedString(Name) << "\"...\n";
+    Engine.build(Name);
   }
   std::cerr << "... built using " << NumBuiltInputs << " inputs\n";
   std::cerr << "... built using " << NumBuiltCommands << " commands\n";
