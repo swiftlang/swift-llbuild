@@ -4,50 +4,50 @@
 # RUN: %{FileCheck} < %t %s
 # RUN: %{FileCheck} --check-prefix=CHECK-ERR < %t.err %s
 
-# CHECK: build "target1": phony
-build target1: phony
+# CHECK: build "target01": phony
+build target01: phony
 
-# CHECK: build "target2": phony "explicit-a" "explicit-b" | "implicit-a" "implicit-b" || "order-a" "order-b"
-build target2: phony explicit-a explicit-b | implicit-a implicit-b || order-a order-b
+# CHECK: build "target02": phony "explicit-a" "explicit-b" | "implicit-a" "implicit-b" || "order-a" "order-b"
+build target02: phony explicit-a explicit-b | implicit-a implicit-b || order-a order-b
 
-# CHECK-ERR: builds.ninja:[[@LINE+1]]:15: error: unknown rule
-build target3: no-rule
+# CHECK-ERR: builds.ninja:[[@LINE+1]]:16: error: unknown rule
+build target03: no-rule
 
-# CHECK: build "target4": phony
+# CHECK: build "target04": phony
 # CHECK-NEXT: command = "value1"
 # CHECK-NEXT: description = "value2"
-build target4: phony
+build target04: phony
       command = value1
       description = value2
 
 # Check that we properly evaluate values in bindings (which do not use prior
 # bindings in the decl).
 #
-# CHECK: build "target5": phony
+# CHECK: build "target05": phony
 # CHECK-NEXT: command = "A C"
-target5_varA = A
-build target5: phony
-      target5_varA = B
-      command = ${target5_varA} C
+target05_varA = A
+build target05: phony
+      target05_varA = B
+      command = ${target05_varA} C
 
 # Check that we diagnose empty paths in build statements.
 #
-# CHECK-ERR: builds.ninja:[[@LINE+3]]:14: error: empty output path
-# CHECK-ERR: builds.ninja:[[@LINE+2]]:36: error: empty input path
-target6_var =
-build target6 ${target6_var}: phony ${target6_var}
+# CHECK-ERR: builds.ninja:[[@LINE+3]]:15: error: empty output path
+# CHECK-ERR: builds.ninja:[[@LINE+2]]:38: error: empty input path
+target06_var =
+build target06 ${target06_var}: phony ${target06_var}
 
 # Check all the attributes that can be assigned.
 pool poolA
      depth = 12
-# CHECK: build "target7": phony
+# CHECK: build "target07": phony
 # CHECK: command = "thecommand"
 # CHECK: deps = gcc
 # CHECK: depfile = "thedepfile"
 # CHECK: generator = 1
 # CHECK: restat = 1
 # CHECK: pool = poolA
-build target7: phony
+build target07: phony
       command = thecommand
       description = thedescription
       deps = gcc
@@ -59,29 +59,39 @@ build target7: phony
 # Check error handling of deps statements.
 #
 # CHECK-ERR: builds.ninja:[[@LINE+1]]:0: error: invalid 'deps' style
-build target8: phony
+build target08: phony
       deps = unknown
 # CHECK-ERR: builds.ninja:[[@LINE+1]]:0: error: missing 'depfile' attribute
-build target9: phony
+build target09: phony
       deps = gcc
 # CHECK-ERR: builds.ninja:[[@LINE+1]]:0: error: invalid 'depfile' attribute
-build target9: phony
+build target09: phony
       deps = msvc
       depfile = foobar
 
 # Check error handling of pool statement.
 #
 # CHECK-ERR: builds.ninja:[[@LINE+1]]:0: error: unknown pool
-build target8: phony
+build target08: phony
       pool = thisisnotapool
 
 # Check deferred evaluation of rule parameters.
-# CHECK: build "target9": target9_rule
+# CHECK: build "target09": target09_rule
 # CHECK-NEXT: command = "command"
 # CHECK-NEXT: description = "build var and global var and command"
-target9_global = global
-rule target9_rule
+target09_global = global
+rule target09_rule
      command = command
-     description = ${target9_build_var} and ${command}
-build target9: target9_rule
-      target9_build_var = build var and ${target9_global} var
+     description = ${target09_build_var} and ${command}
+build target09: target09_rule
+      target09_build_var = build var and ${target09_global} var
+
+# Check expansion of ${in} and ${out}.
+#
+# CHECK: build "target10": target10_rule
+# CHECK-NEXT: command = "target10 target10_inputA -o target10"
+# CHECK-NEXT: description = "this is empty: \"\" here"
+rule target10_rule
+     command = target10 ${in} -o ${out}
+build target10: target10_rule target10_inputA | target10_inputB
+     description = this is empty: "${out}" here

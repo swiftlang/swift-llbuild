@@ -383,7 +383,25 @@ public:
     // FIXME: Make this efficient.
     std::function<std::string(const std::string&)> Lookup;
     Lookup = [&](const std::string& Name) -> std::string {
-      // FIXME: Support ${in} and ${out}.
+      // Support "in" and "out".
+      if (Name == "in") {
+        std::stringstream Result;
+        for (unsigned i = 0, ie = Decl->getNumExplicitInputs(); i != ie; ++i) {
+          if (i != 0)
+            Result << " ";
+          Result << Decl->getInputs()[i]->getPath();
+        }
+        return Result.str();
+      } else if (Name == "out") {
+        std::stringstream Result;
+        for (unsigned i = 0, ie = Decl->getOutputs().size(); i != ie; ++i) {
+          if (i != 0)
+            Result << " ";
+          Result << Decl->getOutputs()[i]->getPath();
+        }
+        return Result.str();
+      }
+
       auto it = Decl->getParameters().find(Name);
       if (it != Decl->getParameters().end())
         return it->second;
