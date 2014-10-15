@@ -62,10 +62,10 @@ build target07: phony
 build target08: phony
       deps = unknown
 # CHECK-ERR: builds.ninja:[[@LINE+1]]:0: error: missing 'depfile' attribute
-build target09: phony
+build target09_A: phony
       deps = gcc
 # CHECK-ERR: builds.ninja:[[@LINE+1]]:0: error: invalid 'depfile' attribute
-build target09: phony
+build target09_B: phony
       deps = msvc
       depfile = foobar
 
@@ -76,22 +76,22 @@ build target08: phony
       pool = thisisnotapool
 
 # Check deferred evaluation of rule parameters.
-# CHECK: build "target09": target09_rule
+# CHECK: build "target10": target10_rule
 # CHECK-NEXT: command = "command"
 # CHECK-NEXT: description = "build var and global var and command"
-target09_global = global
-rule target09_rule
+target10_global = global
+rule target10_rule
      command = command
-     description = ${target09_build_var} and ${command}
-build target09: target09_rule
-      target09_build_var = build var and ${target09_global} var
+     description = ${target10_build_var} and ${command}
+build target10: target10_rule
+      target10_build_var = build var and ${target10_global} var
 
 # Check expansion of ${in} and ${out}.
 #
-# CHECK: build "target10": target10_rule
-# CHECK-NEXT: command = "target10 target10_inputA -o target10"
+# CHECK: build "target11": target11_rule
+# CHECK-NEXT: command = "target11 target11_inputA -o target11"
 # CHECK-NEXT: description = "this is empty: \"\" here"
-rule target10_rule
-     command = target10 ${in} -o ${out}
-build target10: target10_rule target10_inputA | target10_inputB
+rule target11_rule
+     command = target11 ${in} -o ${out}
+build target11: target11_rule target11_inputA | target11_inputB
      description = this is empty: "${out}" here
