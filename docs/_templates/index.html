@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+{% set title = project %}
+{% block body %}
+<h1>{{project}}</h1>
+
+<h2>Documentation</h2>
+<table class="contentstable" align="center" style="margin-left: 30px">
+  <tr>
+    <td width="50%">
+      <p class="biglink"><a class="biglink" href="{{ pathto("contents") }}">
+          Contents</a><br/>
+        <span class="linkdescr">for a complete overview</span></p>
+      <p class="biglink"><a class="biglink" href="{{ pathto("search") }}">
+          Search page</a><br/>
+        <span class="linkdescr">search the documentation</span></p>
+    </td><td width="50%">
+      <p class="biglink"><a class="biglink" href="{{ pathto("genindex") }}">
+          General Index</a><br/>
+        <span class="linkdescr">all functions, classes, terms</span></p>
+  </td></tr>
+</table>
+
+{% endblock %}
