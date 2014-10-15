@@ -34,7 +34,7 @@ static uint64_t ack(int m, int n) {
   ack_internal = [&] (int m, int n) {
     assert(m >= 0 && n >= 0);
     auto& MemoRow = MemoTable[m];
-    if (n >= MemoRow.size())
+    if (size_t(n) >= MemoRow.size())
         MemoRow.resize(n + 1);
     if (MemoRow[n] != 0)
       return MemoRow[n];

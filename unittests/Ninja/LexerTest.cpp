@@ -75,7 +75,7 @@ TEST(LexerTest, Basic) {
   EXPECT_EQ(&Input[strlen(Input)], Tok.Start);
   EXPECT_EQ(0U, Tok.Length);
   EXPECT_EQ(2U, Tok.Line);
-  EXPECT_EQ(0, Tok.Column);
+  EXPECT_EQ(0U, Tok.Column);
 
   // Check we continue to get EOF.
   Lexer.lex(Tok);

@@ -81,7 +81,7 @@ TEST(BuildEngineTest, Basic) {
       "result",
       simpleAction({"value-A", "value-B"},
                    [] (const std::vector<ValueType>& Inputs) {
-                     EXPECT_EQ(2, Inputs.size());
+                     EXPECT_EQ(2U, Inputs.size());
                      EXPECT_EQ(10, Inputs[0]);
                      EXPECT_EQ(20, Inputs[1]);
                      return Inputs[0] + Inputs[1];
