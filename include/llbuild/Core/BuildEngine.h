@@ -112,6 +112,11 @@ public:
   /// Build the result for a particular key.
   ValueType build(KeyType Key);
 
+  /// Enable tracing into the given output file.
+  ///
+  /// \returns True on success.
+  bool enableTracing(const std::string& Path, std::string* Error_Out);
+
   /// @}
 
   /// @name Task Management APIs

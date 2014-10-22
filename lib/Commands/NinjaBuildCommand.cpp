@@ -33,8 +33,16 @@ extern "C" {
 }
 
 static void usage() {
-  fprintf(stderr, "Usage: %s ninja build [--help] <manifest> [<targets>]\n",
+  int OptionWidth = 20;
+  fprintf(stderr, "Usage: %s ninja build [options] <manifest> [<targets>]\n",
           ::getprogname());
+  fprintf(stderr, "\nOptions:\n");
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--help",
+          "show this help message and exit");
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--no-execute",
+          "don't execute commands");
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--trace <PATH>",
+          "trace build engine operation to PATH");
   ::exit(1);
 }
 
@@ -173,6 +181,8 @@ core::Task* BuildInput(core::BuildEngine& Engine, ninja::Node* Input) {
 }
 
 int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
+  std::string TraceFilename;
+
   if (Args.empty() || Args[0] == "--help")
     usage();
 
@@ -185,6 +195,14 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
 
     if (Option == "--no-execute") {
       NoExecute = true;
+    } else if (Option == "--trace") {
+      if (Args.empty()) {
+        fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
+                ::getprogname(), Option.c_str());
+        usage();
+      }
+      TraceFilename = Args[0];
+      Args.erase(Args.begin());
     } else {
       fprintf(stderr, "\error: %s: invalid option: '%s'\n\n",
               ::getprogname(), Option.c_str());
@@ -234,6 +252,16 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
 
   // Create the build engine.
   core::BuildEngine Engine;
+
+  // Enable tracing, if requested.
+  if (!TraceFilename.empty()) {
+    std::string Error;
+    if (!Engine.enableTracing(TraceFilename, &Error)) {
+      fprintf(stderr, "error: %s: unable to enable tracing: %s\n",
+              getprogname(), Error.c_str());
+      return 1;
+    }
+  }
 
   // Create rules for all of the build commands.
   //

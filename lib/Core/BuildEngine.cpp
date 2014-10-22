@@ -12,6 +12,8 @@
 
 #include "llbuild/Core/BuildEngine.h"
 
+#include "BuildEngineTrace.h"
+
 #include <cassert>
 #include <iostream>
 #include <unordered_map>
@@ -20,24 +22,7 @@
 using namespace llbuild;
 using namespace llbuild::core;
 
-// FIXME: Rip this out or move elsewhere.
-#ifdef DEBUG
-std::ostream &dbgs() {
-  return std::cerr;
-}
-#else
-struct nullstream {
-  template<typename T>
-  nullstream operator<<(T Input) { return nullstream(); };
-};
-nullstream dbgs() {
-  return nullstream();
-}
-#endif
-
-Task::~Task() {
-  dbgs() << "    build: deleting task (\"" << Name << "\")\n";
-}
+Task::~Task() {}
 
 #pragma mark - BuildEngine Implementation
 
@@ -84,15 +69,14 @@ class BuildEngineImpl {
   /// The queue of tasks ready to be finalized.
   std::vector<TaskInfo*> ReadyTaskInfos;
 
+  std::unique_ptr<BuildEngineTrace> Trace;
+
 private:
   /// @name Build Execution
   /// @{
 
   void beginRule(RuleInfo& RuleInfo) {
     assert(RuleInfo.PendingTaskInfo == nullptr && "rule already started");
-
-    dbgs() << "    build: creating task for rule \""
-           << RuleInfo.Rule.Key << "\"\n";
 
     // Create the task for this rule.
     Task* Task = RuleInfo.Rule.Action(BuildEngine);
@@ -105,8 +89,8 @@ private:
     RuleInfo.PendingTaskInfo = TaskInfo;
     TaskInfo->ForRuleInfo = &RuleInfo;
 
-    dbgs() << "    build: ... created task "
-           << TaskInfo->Task.get() << "(\"" << TaskInfo->Task->Name << "\")\n";
+    if (Trace)
+      Trace->createdTaskForRule(TaskInfo->Task.get(), &RuleInfo.Rule);
 
     // Inform the task it should start.
     Task->start(BuildEngine);
@@ -129,30 +113,30 @@ private:
         auto Request = InputRequests.back();
         InputRequests.pop_back();
 
-        dbgs() << "    build: processing pending input request by task "
-               << Request.TaskInfo->Task.get() << "(\""
-               << Request.TaskInfo->Task->Name
-               << "\") for rule \"" << Request.RuleInfo->Rule.Key
-               << "\"\n";
+        if (Trace)
+          Trace->handlingTaskInputRequest(Request.TaskInfo->Task.get(),
+                                          &Request.RuleInfo->Rule);
 
         // If the rule is complete, enqueue the finalize request.
         if (Request.RuleInfo->IsComplete) {
-          dbgs() << "    build: ... moved it to finished input queue\n";
+          if (Trace)
+            Trace->readyingTaskInputRequest(Request.TaskInfo->Task.get(),
+                                            &Request.RuleInfo->Rule);
           FinishedInputRequests.push_back(Request);
           continue;
         }
 
         // Start the rule, if necessary.
         if (!Request.RuleInfo->PendingTaskInfo) {
-          dbgs() << "    build: ... starting its input\n";
           beginRule(*Request.RuleInfo);
         }
 
         // Record the pending input request.
         assert(Request.RuleInfo->PendingTaskInfo != nullptr);
         Request.RuleInfo->PendingTaskInfo->RequestedBy.push_back(Request);
-        dbgs() << "    build: ... added it to the pending queue for "
-               << Request.RuleInfo->Rule.Key << "\n";
+        if (Trace)
+          Trace->addedRulePendingTask(&Request.RuleInfo->Rule,
+                                      Request.TaskInfo->Task.get());
       }
 
       // Process all of the finished inputs.
@@ -160,11 +144,9 @@ private:
         auto Request = FinishedInputRequests.back();
         FinishedInputRequests.pop_back();
 
-        dbgs() << "    build: processing completed input request by task "
-               << Request.TaskInfo->Task.get() << "(\""
-               << Request.TaskInfo->Task->Name
-               << "\") for rule \"" << Request.RuleInfo->Rule.Key
-               << "\"\n";
+        if (Trace)
+          Trace->completedTaskInputRequest(Request.TaskInfo->Task.get(),
+                                           &Request.RuleInfo->Rule);
 
         // Provide the requesting task with the input.
         assert(Request.RuleInfo->IsComplete);
@@ -173,12 +155,12 @@ private:
 
         // Decrement the wait count, and move to finish queue if necessary.
         --Request.TaskInfo->WaitCount;
-        dbgs() << "    build: ... this task is now waiting on "
-               << Request.TaskInfo->WaitCount
-               << " remaining inputs\n";
+        if (Trace)
+          Trace->updatedTaskWaitCount(Request.TaskInfo->Task.get(),
+                                      Request.TaskInfo->WaitCount);
         if (Request.TaskInfo->WaitCount == 0) {
-          dbgs() << "    build: ... unblocked, scheduling finalize for task "
-                 << Request.TaskInfo->Task->Name << "\n";
+          if (Trace)
+            Trace->unblockedTask(Request.TaskInfo->Task.get());
           ReadyTaskInfos.push_back(Request.TaskInfo);
         }
       }
@@ -191,9 +173,8 @@ private:
         RuleInfo* RuleInfo = TaskInfo->ForRuleInfo;
         assert(TaskInfo == RuleInfo->PendingTaskInfo);
 
-        dbgs() << "    build: processing finished task \""
-               << TaskInfo->Task->Name
-               << "\" computing rule \"" << RuleInfo->Rule.Key << "\"\n";
+        if (Trace)
+            Trace->finishedTask(TaskInfo->Task.get(), &RuleInfo->Rule);
 
         // Inform the task it should finish.
         ValueType Result = TaskInfo->Task->finish();
@@ -204,6 +185,12 @@ private:
         RuleInfo->PendingTaskInfo = nullptr;
 
         // Push all pending input requests onto the work queue.
+        if (Trace) {
+          for (auto& Request: TaskInfo->RequestedBy) {
+            Trace->readyingTaskInputRequest(Request.TaskInfo->Task.get(),
+                                            &Request.RuleInfo->Rule);
+          }
+        }
         FinishedInputRequests.insert(FinishedInputRequests.end(),
                                      TaskInfo->RequestedBy.begin(),
                                      TaskInfo->RequestedBy.end());
@@ -221,6 +208,14 @@ private:
 
 public:
   BuildEngineImpl(class BuildEngine& BuildEngine) : BuildEngine(BuildEngine) {}
+
+  ~BuildEngineImpl() {
+      // If tracing is enabled, close it.
+      if (Trace) {
+          std::string Error;
+          Trace->close(&Error);
+      }
+  }
 
   /// @name Rule Definition
   /// @{
@@ -266,6 +261,16 @@ public:
     return RuleInfo.Result;
   }
 
+  bool enableTracing(const std::string& Filename, std::string* Error_Out) {
+    std::unique_ptr<BuildEngineTrace> Trace(new BuildEngineTrace());
+
+    if (!Trace->open(Filename, Error_Out))
+      return false;
+
+    this->Trace = std::move(Trace);
+    return true;
+  }
+
   /// @}
 
   /// @name Task Management Client APIs
@@ -295,6 +300,8 @@ public:
     InputRequests.push_back({ TaskInfo, RuleInfo, InputID });
     TaskInfo->WaitCount++;
   }
+
+  /// @}
 };
 
 }
@@ -314,6 +321,11 @@ void BuildEngine::addRule(Rule &&Rule) {
 
 ValueType BuildEngine::build(KeyType Key) {
   return static_cast<BuildEngineImpl*>(Impl)->build(Key);
+}
+
+bool BuildEngine::enableTracing(const std::string& Path,
+                                std::string* Error_Out) {
+  return static_cast<BuildEngineImpl*>(Impl)->enableTracing(Path, Error_Out);
 }
 
 Task* BuildEngine::registerTask(Task* Task) {

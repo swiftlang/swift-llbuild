@@ -3,4 +3,5 @@ add_llbuild_library(llbuildCore
   DependencyNode.cpp
   DependencyCommand.cpp
   BuildEngine.cpp
+  BuildEngineTrace.cpp
 )
