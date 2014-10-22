@@ -14,6 +14,7 @@
 #define LLBUILD_CORE_BUILDENGINETRACE_H
 
 #include <string>
+#include <unordered_map>
 
 namespace llbuild {
 namespace core {
@@ -25,10 +26,19 @@ class Task;
 /// external log file, suitable for ex post facto debugging and analysis.
 class BuildEngineTrace {
     /// The output file pointer.
-    void* OutputPtr;
+    void* OutputPtr = nullptr;
 
     /// Whether the trace has been opened.
-    bool IsOpen;
+    bool IsOpen = false;
+
+    unsigned NumNamedTasks = 0;
+    std::unordered_map<const Task*, std::string> TaskNames;
+    unsigned NumNamedRules = 0;
+    std::unordered_map<const Rule*, std::string> RuleNames;
+
+private:
+    const char* getTaskName(const Task*);
+    const char* getRuleName(const Rule*);
 
 public:
     BuildEngineTrace();
