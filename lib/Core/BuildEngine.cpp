@@ -188,10 +188,6 @@ private:
         TaskInfo* TaskInfo = ReadyTaskInfos.back();
         ReadyTaskInfos.pop_back();
 
-        // If this is the dummy task, do nothing.
-        if (!TaskInfo->ForRuleInfo)
-          break;
-
         RuleInfo* RuleInfo = TaskInfo->ForRuleInfo;
         assert(TaskInfo == RuleInfo->PendingTaskInfo);
 
