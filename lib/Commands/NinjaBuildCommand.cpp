@@ -40,6 +40,8 @@ static void usage() {
 
 namespace {
 
+static bool NoExecute = false;
+
 class BuildManifestActions : public ninja::ManifestLoaderActions {
   ninja::ManifestLoader *Loader = 0;
   unsigned NumErrors = 0;
@@ -109,8 +111,12 @@ core::Task* BuildCommand(core::BuildEngine& Engine, ninja::Node* Output,
     }
 
     virtual core::ValueType finish() override {
-      std::cerr << "[" << NumBuiltCommands+1 << "] "
+      ++NumBuiltCommands;
+      std::cerr << "[" << NumBuiltCommands << "] "
                 << Command->getDescription() << "\n";
+
+      if (NoExecute)
+          return 0;
 
       // Spawn the command.
       const char* Args[4];
@@ -137,7 +143,6 @@ core::Task* BuildCommand(core::BuildEngine& Engine, ninja::Node* Output,
         std::cerr << "  ... process returned error status: " << Status << "\n";
       }
 
-      ++NumBuiltCommands;
       return 0;
     }
   };
@@ -167,9 +172,25 @@ core::Task* BuildInput(core::BuildEngine& Engine, ninja::Node* Input) {
 
 }
 
-int commands::ExecuteNinjaBuildCommand(const std::vector<std::string> &Args) {
+int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   if (Args.empty() || Args[0] == "--help")
     usage();
+
+  while (!Args.empty() && Args[0][0] == '-') {
+    const std::string Option = Args[0];
+    Args.erase(Args.begin());
+
+    if (Option == "--")
+      break;
+
+    if (Option == "--no-execute") {
+      NoExecute = true;
+    } else {
+      fprintf(stderr, "\error: %s: invalid option: '%s'\n\n",
+              ::getprogname(), Option.c_str());
+      usage();
+    }
+  }
 
   if (Args.size() < 1) {
     fprintf(stderr, "\error: %s: invalid number of arguments\n\n",
