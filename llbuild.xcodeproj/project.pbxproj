@@ -230,7 +230,6 @@
 		E1A2242E19F997050059043E /* libllbuildCommands.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libllbuildCommands.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1A2243619F9970D0059043E /* libllbuildNinja.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libllbuildNinja.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1A2243E19F997150059043E /* libllbuildCore.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libllbuildCore.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E1A2245019F997D40059043E /* Compiler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Compiler.h; sourceTree = "<group>"; };
 		E1A2245119F997D40059043E /* Version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Version.h; sourceTree = "<group>"; };
 		E1A2245519F997E80059043E /* Commands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Commands.h; sourceTree = "<group>"; };
 		E1A2245819F997FE0059043E /* BuildEngine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuildEngine.h; sourceTree = "<group>"; };
@@ -239,7 +238,6 @@
 		E1A2245B19F997FE0059043E /* DependencyNode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DependencyNode.h; sourceTree = "<group>"; };
 		E1A2246119F9980B0059043E /* Lexer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Lexer.h; sourceTree = "<group>"; };
 		E1A2246219F9980B0059043E /* Manifest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Manifest.h; sourceTree = "<group>"; };
-		E1A2246319F9980B0059043E /* Manifest.h.old */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Manifest.h.old; sourceTree = "<group>"; };
 		E1A2246419F9980B0059043E /* ManifestLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ManifestLoader.h; sourceTree = "<group>"; };
 		E1A2246519F9980B0059043E /* Parser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Parser.h; sourceTree = "<group>"; };
 		E1A2246C19F998C30059043E /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
@@ -510,7 +508,6 @@
 		E1A2244F19F997D40059043E /* Headers */ = {
 			isa = PBXGroup;
 			children = (
-				E1A2245019F997D40059043E /* Compiler.h */,
 				E1A2245119F997D40059043E /* Version.h */,
 			);
 			name = Headers;
@@ -543,7 +540,6 @@
 			children = (
 				E1A2246119F9980B0059043E /* Lexer.h */,
 				E1A2246219F9980B0059043E /* Manifest.h */,
-				E1A2246319F9980B0059043E /* Manifest.h.old */,
 				E1A2246419F9980B0059043E /* ManifestLoader.h */,
 				E1A2246519F9980B0059043E /* Parser.h */,
 			);
