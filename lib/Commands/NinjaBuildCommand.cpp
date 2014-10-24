@@ -119,6 +119,12 @@ core::Task* BuildCommand(core::BuildEngine& Engine, ninja::Node* Output,
     }
 
     virtual core::ValueType finish() override {
+      // Ignore phony commands.
+      //
+      // FIXME: Make efficient.
+      if (Command->getRule()->getName() == "phony")
+        return 0;
+
       ++NumBuiltCommands;
       std::cerr << "[" << NumBuiltCommands << "] "
                 << Command->getDescription() << "\n";
