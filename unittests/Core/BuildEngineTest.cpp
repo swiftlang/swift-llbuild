@@ -75,24 +75,24 @@ TEST(BuildEngineTest, Basic) {
   Engine.addRule({
       "value-A", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
           BuiltKeys.push_back("value-A");
-          return 10; }) });
+          return 2; }) });
   Engine.addRule({
       "value-B", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
           BuiltKeys.push_back("value-B");
-          return 20; }) });
+          return 3; }) });
   Engine.addRule({
       "result",
       simpleAction({"value-A", "value-B"},
                    [&] (const std::vector<ValueType>& Inputs) {
                      EXPECT_EQ(2U, Inputs.size());
-                     EXPECT_EQ(10, Inputs[0]);
-                     EXPECT_EQ(20, Inputs[1]);
+                     EXPECT_EQ(2, Inputs[0]);
+                     EXPECT_EQ(3, Inputs[1]);
                      BuiltKeys.push_back("result");
-                     return Inputs[0] + Inputs[1];
+                     return Inputs[0] * Inputs[1] * 5;
                    }) });
 
   // Build the result.
-  EXPECT_EQ(30, Engine.build("result"));
+  EXPECT_EQ(2 * 3 * 5, Engine.build("result"));
   EXPECT_EQ(3U, BuiltKeys.size());
   EXPECT_EQ("value-A", BuiltKeys[0]);
   EXPECT_EQ("value-B", BuiltKeys[1]);
@@ -101,11 +101,57 @@ TEST(BuildEngineTest, Basic) {
   // Check that we can get results for already built nodes, without building
   // anything.
   BuiltKeys.clear();
-  EXPECT_EQ(10, Engine.build("value-A"));
+  EXPECT_EQ(2, Engine.build("value-A"));
   EXPECT_TRUE(BuiltKeys.empty());
   BuiltKeys.clear();
-  EXPECT_EQ(20, Engine.build("value-B"));
+  EXPECT_EQ(3, Engine.build("value-B"));
   EXPECT_TRUE(BuiltKeys.empty());
+}
+
+TEST(BuildEngineTest, BasicWithSharedInput) {
+  // Check a build graph with a input key shared by multiple rules.
+  //
+  // Dependencies:
+  //   value-C: (value-A, value-B)
+  //   value-R: (value-A, value-C)
+  std::vector<std::string> BuiltKeys;
+  core::BuildEngine Engine;
+  Engine.addRule({
+      "value-A", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
+          BuiltKeys.push_back("value-A");
+          return 2; }) });
+  Engine.addRule({
+      "value-B", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
+          BuiltKeys.push_back("value-B");
+          return 3; }) });
+  Engine.addRule({
+      "value-C",
+      simpleAction({"value-A", "value-B"},
+                   [&] (const std::vector<ValueType>& Inputs) {
+                     EXPECT_EQ(2U, Inputs.size());
+                     EXPECT_EQ(2, Inputs[0]);
+                     EXPECT_EQ(3, Inputs[1]);
+                     BuiltKeys.push_back("value-C");
+                     return Inputs[0] * Inputs[1] * 5;
+                   }) });
+  Engine.addRule({
+      "value-R",
+      simpleAction({"value-A", "value-C"},
+                   [&] (const std::vector<ValueType>& Inputs) {
+                     EXPECT_EQ(2U, Inputs.size());
+                     EXPECT_EQ(2, Inputs[0]);
+                     EXPECT_EQ(2 * 3 * 5, Inputs[1]);
+                     BuiltKeys.push_back("value-R");
+                     return Inputs[0] * Inputs[1] * 7;
+                   }) });
+
+  // Build the result.
+  EXPECT_EQ(2 * 2 * 3 * 5 * 7, Engine.build("value-R"));
+  EXPECT_EQ(4U, BuiltKeys.size());
+  EXPECT_EQ("value-A", BuiltKeys[0]);
+  EXPECT_EQ("value-B", BuiltKeys[1]);
+  EXPECT_EQ("value-C", BuiltKeys[2]);
+  EXPECT_EQ("value-R", BuiltKeys[3]);
 }
 
 }
