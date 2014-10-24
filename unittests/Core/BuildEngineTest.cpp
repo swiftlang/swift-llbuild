@@ -69,27 +69,43 @@ static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
 }
 
 TEST(BuildEngineTest, Basic) {
-  /// Check a trivial build graph.
+  // Check a trivial build graph.
+  std::vector<std::string> BuiltKeys;
   core::BuildEngine Engine;
   Engine.addRule({
-      "value-A", simpleAction({}, [] (const std::vector<ValueType>& Inputs) {
+      "value-A", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
+          BuiltKeys.push_back("value-A");
           return 10; }) });
   Engine.addRule({
-      "value-B", simpleAction({}, [] (const std::vector<ValueType>& Inputs) {
+      "value-B", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
+          BuiltKeys.push_back("value-B");
           return 20; }) });
   Engine.addRule({
       "result",
       simpleAction({"value-A", "value-B"},
-                   [] (const std::vector<ValueType>& Inputs) {
+                   [&] (const std::vector<ValueType>& Inputs) {
                      EXPECT_EQ(2U, Inputs.size());
                      EXPECT_EQ(10, Inputs[0]);
                      EXPECT_EQ(20, Inputs[1]);
+                     BuiltKeys.push_back("result");
                      return Inputs[0] + Inputs[1];
                    }) });
 
+  // Build the result.
   EXPECT_EQ(30, Engine.build("result"));
+  EXPECT_EQ(3U, BuiltKeys.size());
+  EXPECT_EQ("value-A", BuiltKeys[0]);
+  EXPECT_EQ("value-B", BuiltKeys[1]);
+  EXPECT_EQ("result", BuiltKeys[2]);
+
+  // Check that we can get results for already built nodes, without building
+  // anything.
+  BuiltKeys.clear();
   EXPECT_EQ(10, Engine.build("value-A"));
+  EXPECT_TRUE(BuiltKeys.empty());
+  BuiltKeys.clear();
   EXPECT_EQ(20, Engine.build("value-B"));
+  EXPECT_TRUE(BuiltKeys.empty());
 }
 
 }
