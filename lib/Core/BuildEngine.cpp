@@ -43,6 +43,7 @@ class BuildEngineImpl {
     RuleInfo(Rule &&Rule) : Rule(Rule) {}
 
     Rule Rule;
+    /// The task computing this rule, if in progress.
     TaskInfo* PendingTaskInfo = 0;
     // FIXME: Needs to move to database.
     Result Result = {};
@@ -86,9 +87,21 @@ private:
   /// @name Build Execution
   /// @{
 
-  void beginRule(RuleInfo& RuleInfo) {
-    assert(!RuleInfo.isComplete(this) && "attempt to start complete rule");
-    assert(RuleInfo.PendingTaskInfo == nullptr && "rule already started");
+  /// Request the construction of the key specified by the given rule.
+  ///
+  /// \returns True if the rule is already available, otherwise the rule will be
+  /// enqueue for processing.
+  bool demandRule(RuleInfo& RuleInfo) {
+    // If the rule is complete, we are done.
+    if (RuleInfo.isComplete(this))
+      return true;
+
+    // If the rule isn't complete, but it already has a pending task, we don't
+    // need to do anything.
+    if (RuleInfo.PendingTaskInfo)
+      return false;
+
+    // Otherwise, we need to initiate the processing of this rule.
 
     // Create the task for this rule.
     Task* Task = RuleInfo.Rule.Action(BuildEngine);
@@ -111,8 +124,9 @@ private:
     if (!TaskInfo->WaitCount) {
       ReadyTaskInfos.push_back(TaskInfo);
     }
-  }
 
+    return false;
+  }
 
   void executeTasks() {
     std::vector<TaskInputRequest> FinishedInputRequests;
@@ -129,26 +143,23 @@ private:
           Trace->handlingTaskInputRequest(Request.TaskInfo->Task.get(),
                                           &Request.RuleInfo->Rule);
 
-        // If the rule is complete, enqueue the finalize request.
-        if (Request.RuleInfo->isComplete(this)) {
+        // Request the rule be computed.
+        bool IsAvailable = demandRule(*Request.RuleInfo);
+
+        // If the rule is already available, enqueue the finalize request.
+        if (IsAvailable) {
           if (Trace)
             Trace->readyingTaskInputRequest(Request.TaskInfo->Task.get(),
                                             &Request.RuleInfo->Rule);
           FinishedInputRequests.push_back(Request);
-          continue;
+        } else {
+          // Otherwise, record the pending input request.
+          assert(Request.RuleInfo->PendingTaskInfo != nullptr);
+          Request.RuleInfo->PendingTaskInfo->RequestedBy.push_back(Request);
+          if (Trace)
+            Trace->addedRulePendingTask(&Request.RuleInfo->Rule,
+                                        Request.TaskInfo->Task.get());
         }
-
-        // Start the rule, if necessary.
-        if (!Request.RuleInfo->PendingTaskInfo) {
-          beginRule(*Request.RuleInfo);
-        }
-
-        // Record the pending input request.
-        assert(Request.RuleInfo->PendingTaskInfo != nullptr);
-        Request.RuleInfo->PendingTaskInfo->RequestedBy.push_back(Request);
-        if (Trace)
-          Trace->addedRulePendingTask(&Request.RuleInfo->Rule,
-                                      Request.TaskInfo->Task.get());
       }
 
       // Process all of the finished inputs.
@@ -279,19 +290,14 @@ public:
     }
     auto& RuleInfo = it->second;
 
-    // If we have already computed the result of this key, we are done.
-    if (RuleInfo.isComplete(this))
-      return RuleInfo.Result.Value;
+    // Demand the result for this rule.
+    demandRule(RuleInfo);
 
-    // Otherwise, start the task for this rule.
-    beginRule(RuleInfo);
-
-    // Run the build engine.
+    // Run the build engine, to process any necessary tasks.
     executeTasks();
 
-    // The task should now be complete.
-    assert(TaskInfos.empty() && RuleInfo.PendingTaskInfo == nullptr &&
-           RuleInfo.isComplete(this));
+    // The task queue should be empty and the rule complete.
+    assert(TaskInfos.empty() && RuleInfo.isComplete(this));
     return RuleInfo.Result.Value;
   }
 
