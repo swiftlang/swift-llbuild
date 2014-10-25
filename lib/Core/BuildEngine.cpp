@@ -47,6 +47,11 @@ class BuildEngineImpl {
     // FIXME: Needs to move to database.
     Result Result = {};
     bool IsComplete = false;
+
+  public:
+    bool isComplete(const BuildEngineImpl* Engine) {
+      return IsComplete;
+    }
   };
   std::unordered_map<KeyType, RuleInfo> RuleInfos;
 
@@ -82,7 +87,7 @@ private:
   /// @{
 
   void beginRule(RuleInfo& RuleInfo) {
-    assert(!RuleInfo.IsComplete && "attempt to start complete rule");
+    assert(!RuleInfo.isComplete(this) && "attempt to start complete rule");
     assert(RuleInfo.PendingTaskInfo == nullptr && "rule already started");
 
     // Create the task for this rule.
@@ -125,7 +130,7 @@ private:
                                           &Request.RuleInfo->Rule);
 
         // If the rule is complete, enqueue the finalize request.
-        if (Request.RuleInfo->IsComplete) {
+        if (Request.RuleInfo->isComplete(this)) {
           if (Trace)
             Trace->readyingTaskInputRequest(Request.TaskInfo->Task.get(),
                                             &Request.RuleInfo->Rule);
@@ -173,7 +178,7 @@ private:
         //
         // FIXME: Should we provide the input key here? We have it available
         // cheaply.
-        assert(Request.RuleInfo->IsComplete);
+        assert(Request.RuleInfo->isComplete(this));
         Request.TaskInfo->Task->provideValue(BuildEngine, Request.InputID,
                                              Request.RuleInfo->Result.Value);
 
@@ -275,7 +280,7 @@ public:
     auto& RuleInfo = it->second;
 
     // If we have already computed the result of this key, we are done.
-    if (RuleInfo.IsComplete)
+    if (RuleInfo.isComplete(this))
       return RuleInfo.Result.Value;
 
     // Otherwise, start the task for this rule.
@@ -286,7 +291,7 @@ public:
 
     // The task should now be complete.
     assert(TaskInfos.empty() && RuleInfo.PendingTaskInfo == nullptr &&
-           RuleInfo.IsComplete);
+           RuleInfo.isComplete(this));
     return RuleInfo.Result.Value;
   }
 
