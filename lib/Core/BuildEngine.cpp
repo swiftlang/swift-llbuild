@@ -47,11 +47,10 @@ class BuildEngineImpl {
     TaskInfo* PendingTaskInfo = 0;
     // FIXME: Needs to move to database.
     Result Result = {};
-    bool IsComplete = false;
 
   public:
     bool isComplete(const BuildEngineImpl* Engine) {
-      return IsComplete;
+      return Result.BuiltAt == Engine->getCurrentTimestamp();
     }
   };
   std::unordered_map<KeyType, RuleInfo> RuleInfos;
@@ -87,6 +86,45 @@ private:
   /// @name Build Execution
   /// @{
 
+  /// Check whether the given rule needs to be run in the current environment.
+  bool ruleNeedsToRun(RuleInfo& RuleInfo) {
+    // If the rule has never been run, it needs to run.
+    if (RuleInfo.Result.BuiltAt == 0)
+      return true;
+
+    // Otherwise, if the last time the rule was built is earlier than the time
+    // any of its inputs were computed, then it needs to run.
+    for (auto& InputKey: RuleInfo.Result.Dependencies) {
+      auto it = RuleInfos.find(InputKey);
+      if (it == RuleInfos.end()) {
+        // FIXME: What do we do here?
+        assert(0 && "prior input dependency no longer exists");
+        abort();
+      }
+      auto& InputRuleInfo = it->second;
+      assert(InputRuleInfo.Result.ComputedAt != 0);
+
+      // Demand the input.
+      //
+      // FIXME: Eliminate this unbounded recursion here.
+      //
+      // FIXME: There is possibility for a cycle here. We need more state bits,
+      // I think.
+      bool IsAvailable = demandRule(InputRuleInfo);
+
+      // If the input wasn't already available, it needs to run.
+      if (!IsAvailable)
+        return true;
+
+      // If the input has been computed since the last time this rule was built,
+      // it needs to run.
+      if (RuleInfo.Result.BuiltAt < InputRuleInfo.Result.ComputedAt)
+        return true;
+    }
+
+    return false;
+  }
+
   /// Request the construction of the key specified by the given rule.
   ///
   /// \returns True if the rule is already available, otherwise the rule will be
@@ -101,7 +139,14 @@ private:
     if (RuleInfo.PendingTaskInfo)
       return false;
 
-    // Otherwise, we need to initiate the processing of this rule.
+    // If the rule isn't marked complete, but doesn't need to actually run, then
+    // just update it.
+    if (!ruleNeedsToRun(RuleInfo)) {
+      RuleInfo.Result.BuiltAt = CurrentTimestamp;
+      return true;
+    }
+
+    // Otherwise, we actually need to initiate the processing of this rule.
 
     // Create the task for this rule.
     Task* Task = RuleInfo.Rule.Action(BuildEngine);
@@ -223,7 +268,6 @@ private:
         RuleInfo->Result.Value = Value;
         RuleInfo->Result.ComputedAt = CurrentTimestamp;
         RuleInfo->Result.BuiltAt = CurrentTimestamp;
-        RuleInfo->IsComplete = true;
         RuleInfo->PendingTaskInfo = nullptr;
 
         // Push all pending input requests onto the work queue.
@@ -341,6 +385,13 @@ public:
     InputRequests.push_back({ TaskInfo, RuleInfo, InputID });
     TaskInfo->WaitCount++;
   }
+
+  /// @}
+
+  /// @name Internal APIs
+  /// @{
+
+  uint64_t getCurrentTimestamp() const { return CurrentTimestamp; }
 
   /// @}
 };
