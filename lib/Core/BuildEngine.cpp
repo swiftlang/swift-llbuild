@@ -87,9 +87,21 @@ private:
   /// @{
 
   /// Check whether the given rule needs to be run in the current environment.
+  //
+  // FIXME: This function can end doing an unbounded amount of work (scanning
+  // the entire dependency graph), which means it will block the execution loop
+  // from doing other tasks while it is proceeding. We might want to break it
+  // down into small individual blocks of work that we queue and evaluate as
+  // part of the normal execution loop.
   bool ruleNeedsToRun(RuleInfo& RuleInfo) {
     // If the rule has never been run, it needs to run.
     if (RuleInfo.Result.BuiltAt == 0)
+      return true;
+
+    // If the rule indicates it's computed value is out of date, it needs to
+    // run.
+    if (RuleInfo.Rule.IsResultValid &&
+        RuleInfo.Rule.IsResultValid(RuleInfo.Rule, RuleInfo.Result.Value))
       return true;
 
     // Otherwise, if the last time the rule was built is earlier than the time

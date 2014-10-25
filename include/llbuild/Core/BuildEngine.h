@@ -117,6 +117,7 @@ class Rule {
 public:
   KeyType Key;
   std::function<Task*(BuildEngine&)> Action;
+  std::function<bool(const Rule&, const ValueType)> IsResultValid;
 };
 
 class BuildEngine {
