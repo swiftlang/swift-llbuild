@@ -16,6 +16,7 @@
 #include <functional>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace llbuild {
 namespace core {
@@ -26,6 +27,34 @@ typedef std::string KeyType;
 typedef int ValueType;
 
 class BuildEngine;
+
+/// This object contains the result of executing a task to produce the value for
+/// a key.
+struct Result {
+  /// The last value that resulted from executing the task.
+  ValueType Value = {};
+
+  /// The build timestamp during which the result \see Value was computed.
+  uint64_t ComputedAt = 0;
+
+  /// The build timestamp at which this result was last checked to be
+  /// up-to-date.
+  ///
+  /// \invariant BuiltAt >= ComputedAt
+  //
+  // FIXME: Think about this representation more. The problem with storing this
+  // field here in this fashion is that every build will result in bringing all
+  // of the BuiltAt fields up to date. That is unfortunate from a persistence
+  // perspective, where it would be ideal if we didn't touch any disk state for
+  // null builds.
+  uint64_t BuiltAt = 0;
+
+  /// The explicit dependencies required by the generation.
+  //
+  // FIXME: At some point, figure out the optimal representation for this field,
+  // which is likely to be a lot of the resident memory size.
+  std::vector<KeyType> Dependencies;
+};
 
 /// A task object represents an abstract in progress computation in the build
 /// engine.

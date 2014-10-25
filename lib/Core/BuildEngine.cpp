@@ -33,13 +33,19 @@ class BuildEngineImpl {
 
   BuildEngine &BuildEngine;
 
+  /// The current build iteration, use to sequentially timestamp build results.
+  //
+  // FIXME: Needs to move to database.
+  uint64_t CurrentTimestamp = 0;
+
   /// The map of rule information.
   struct RuleInfo {
     RuleInfo(Rule &&Rule) : Rule(Rule) {}
 
     Rule Rule;
     TaskInfo* PendingTaskInfo = 0;
-    ValueType Result = {};
+    // FIXME: Needs to move to database.
+    Result Result = {};
     bool IsComplete = false;
   };
   std::unordered_map<KeyType, RuleInfo> RuleInfos;
@@ -76,6 +82,7 @@ private:
   /// @{
 
   void beginRule(RuleInfo& RuleInfo) {
+    assert(!RuleInfo.IsComplete && "attempt to start complete rule");
     assert(RuleInfo.PendingTaskInfo == nullptr && "rule already started");
 
     // Create the task for this rule.
@@ -148,10 +155,27 @@ private:
           Trace->completedTaskInputRequest(Request.TaskInfo->Task.get(),
                                            &Request.RuleInfo->Rule);
 
+        // Update the recorded dependencies of this task.
+        //
+        // FIXME: This is very performance critical and should be highly
+        // optimized. By itself, this addition added about 25% user time to the
+        // "ack 3 16" experiment.
+        //
+        // FIXME: Think about where the best place to record this is. Our
+        // options are:
+        // * Record at the time it is requested.
+        // * Record at the time it is popped off the input request queue.
+        // * Record at the time the input is supplied (here).
+        Request.TaskInfo->ForRuleInfo->Result.Dependencies.push_back(
+          Request.RuleInfo->Rule.Key);
+
         // Provide the requesting task with the input.
+        //
+        // FIXME: Should we provide the input key here? We have it available
+        // cheaply.
         assert(Request.RuleInfo->IsComplete);
         Request.TaskInfo->Task->provideValue(BuildEngine, Request.InputID,
-                                             Request.RuleInfo->Result);
+                                             Request.RuleInfo->Result.Value);
 
         // Decrement the wait count, and move to finish queue if necessary.
         --Request.TaskInfo->WaitCount;
@@ -177,10 +201,12 @@ private:
             Trace->finishedTask(TaskInfo->Task.get(), &RuleInfo->Rule);
 
         // Inform the task it should finish.
-        ValueType Result = TaskInfo->Task->finish();
+        ValueType Value = TaskInfo->Task->finish();
 
         // Complete the rule.
-        RuleInfo->Result = Result;
+        RuleInfo->Result.Value = Value;
+        RuleInfo->Result.ComputedAt = CurrentTimestamp;
+        RuleInfo->Result.BuiltAt = CurrentTimestamp;
         RuleInfo->IsComplete = true;
         RuleInfo->PendingTaskInfo = nullptr;
 
@@ -236,6 +262,9 @@ public:
   /// @{
 
   ValueType build(KeyType Key) {
+    // Increment our running iteration count.
+    ++CurrentTimestamp;
+
     // Find the rule.
     auto it = RuleInfos.find(Key);
     if (it == RuleInfos.end()) {
@@ -247,7 +276,7 @@ public:
 
     // If we have already computed the result of this key, we are done.
     if (RuleInfo.IsComplete)
-      return RuleInfo.Result;
+      return RuleInfo.Result.Value;
 
     // Otherwise, start the task for this rule.
     beginRule(RuleInfo);
@@ -258,7 +287,7 @@ public:
     // The task should now be complete.
     assert(TaskInfos.empty() && RuleInfo.PendingTaskInfo == nullptr &&
            RuleInfo.IsComplete);
-    return RuleInfo.Result;
+    return RuleInfo.Result.Value;
   }
 
   bool enableTracing(const std::string& Filename, std::string* Error_Out) {
@@ -279,6 +308,7 @@ public:
   Task* registerTask(Task* Task) {
     auto Result = TaskInfos.emplace(Task, TaskInfo(Task));
     assert(Result.second && "task already registered");
+    (void)Result;
     return Task;
   }
 
