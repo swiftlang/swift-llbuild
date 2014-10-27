@@ -24,6 +24,7 @@
 
 #include <spawn.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 using namespace llbuild;
 using namespace llbuild::commands;
@@ -164,6 +165,24 @@ core::Task* BuildCommand(core::BuildEngine& Engine, ninja::Node* Output,
   return Engine.registerTask(new NinjaCommandTask(Output, Command));
 }
 
+static core::ValueType GetValueForInput(const ninja::Node* Node) {
+  struct ::stat Buf;
+  if (::stat(Node->getPath().c_str(), &Buf) != 0) {
+    // FIXME: What now.
+    return 0;
+  }
+
+  // Hash the stat information.
+  auto Hash = std::hash<uint64_t>();
+  auto Result = Hash(Buf.st_dev) ^ Hash(Buf.st_ino) ^
+    Hash(Buf.st_mtimespec.tv_sec) ^ Hash(Buf.st_mtimespec.tv_nsec);
+
+  // Ensure there is never a collision between a valid stat result and an error.
+  Result |= 1;
+
+  return Result;
+}
+
 core::Task* BuildInput(core::BuildEngine& Engine, ninja::Node* Input) {
   struct NinjaInputTask : core::Task {
     ninja::Node* Node;
@@ -177,11 +196,21 @@ core::Task* BuildInput(core::BuildEngine& Engine, ninja::Node* Input) {
 
     virtual core::ValueType finish() override {
       ++NumBuiltInputs;
-      return 0;
+      return GetValueForInput(Node);
     }
   };
 
   return Engine.registerTask(new NinjaInputTask(Input));
+}
+
+static bool BuildInputIsResultValid(ninja::Node *Node,
+                                    const core::ValueType Value) {
+  // FIXME: This is inefficient, we will end up doing the stat twice, once when
+  // we check the value for up to dateness, and once when we "build" the output.
+  //
+  // We can solve this by caching ourselves but I wonder if it is something the
+  // engine should support more naturally.
+  return GetValueForInput(Node) != Value;
 }
 
 }
@@ -288,9 +317,14 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   for (auto& Entry: Manifest->getNodes()) {
     ninja::Node* Node = Entry.second.get();
     if (!VisitedNodes.count(Node)) {
-      Engine.addRule({ Node->getPath(), [Node] (core::BuildEngine& Engine) {
-            return BuildInput(Engine, Node);
-          } });
+      Engine.addRule({
+              Node->getPath(),
+              [Node] (core::BuildEngine& Engine) {
+                return BuildInput(Engine, Node);
+              },
+              [Node] (const core::Rule& Rule, const core::ValueType Value) {
+                return BuildInputIsResultValid(Node, Value);
+              } });
     }
   }
 
