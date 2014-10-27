@@ -19,5 +19,8 @@
 # Commonly used name for build products, at the top level.
 /build
 
+# Ignore Sphinx build products.
+docs/_build
+
 # Don't check in Xcode user data.
 xcuserdata
