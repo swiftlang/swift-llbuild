@@ -101,7 +101,7 @@ private:
     // If the rule indicates it's computed value is out of date, it needs to
     // run.
     if (RuleInfo.Rule.IsResultValid &&
-        RuleInfo.Rule.IsResultValid(RuleInfo.Rule, RuleInfo.Result.Value))
+        !RuleInfo.Rule.IsResultValid(RuleInfo.Rule, RuleInfo.Result.Value))
       return true;
 
     // Otherwise, if the last time the rule was built is earlier than the time

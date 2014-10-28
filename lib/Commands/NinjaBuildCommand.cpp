@@ -210,7 +210,7 @@ static bool BuildInputIsResultValid(ninja::Node *Node,
   //
   // We can solve this by caching ourselves but I wonder if it is something the
   // engine should support more naturally.
-  return GetValueForInput(Node) != Value;
+  return GetValueForInput(Node) == Value;
 }
 
 }

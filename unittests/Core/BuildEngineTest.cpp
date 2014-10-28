@@ -180,7 +180,7 @@ TEST(BuildEngineTest, BasicIncremental) {
           // FIXME: Once we have custom ValueType objects, we would like to have
           // timestamps on the value and just compare to a timestamp (similar to
           // what we would do for a file).
-          return ValueA != Value;
+          return ValueA == Value;
       } });
   Engine.addRule({
       "value-B", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
@@ -190,7 +190,7 @@ TEST(BuildEngineTest, BasicIncremental) {
           // FIXME: Once we have custom ValueType objects, we would like to have
           // timestamps on the value and just compare to a timestamp (similar to
           // what we would do for a file).
-          return ValueB != Value;
+          return ValueB == Value;
       } });
   Engine.addRule({
       "value-C",
