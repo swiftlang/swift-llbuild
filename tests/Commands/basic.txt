@@ -1,0 +1,11 @@
+# RUN: %{llbuild} --version > %t.out
+# RUN: %{FileCheck} --check-prefix=CHECK-VERSION < %t.out %s
+#
+# CHECK-VERSION: LLBuild version
+
+
+# RUN: %{llbuild} --help 2> %t.err
+# RUN: %{FileCheck} --check-prefix=CHECK-USAGE < %t.err %s
+#
+# CHECK-USAGE: Usage: llbuild
+

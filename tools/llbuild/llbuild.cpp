@@ -28,7 +28,7 @@ static void usage() {
   fprintf(stderr, "  ninja -- Run the Ninja subtool\n");
   fprintf(stderr, "  buildengine -- Run the build engine subtool\n");
   fprintf(stderr, "\n");
-  exit(1);
+  exit(0);
 }
 
 int main(int argc, const char **argv) {

@@ -1,0 +1,5 @@
+# RUN: %{llbuild} buildengine ack 2 2 > %t.out
+# RUN: %{FileCheck} < %t.out %s
+#
+# CHECK: ack(2, 2) = 7
+# CHECK: ... computed using 77 rules

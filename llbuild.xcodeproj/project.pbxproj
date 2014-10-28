@@ -282,6 +282,11 @@
 		E10D5CE319FEF3BD00211ED4 /* Python.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Python.framework; path = System/Library/Frameworks/Python.framework; sourceTree = SDKROOT; };
 		E10D5CE519FEF40100211ED4 /* LitTests.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = LitTests.py; sourceTree = "<group>"; };
 		E18043391A00129400662FE7 /* install-user-lit.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "install-user-lit.sh"; sourceTree = "<group>"; };
+		E19D549B1A00496900772777 /* basic.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = basic.ninja; sourceTree = "<group>"; };
+		E19D549D1A00497300772777 /* basic.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = basic.txt; sourceTree = "<group>"; };
+		E19D549E1A00497300772777 /* buildengine-ack.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "buildengine-ack.txt"; sourceTree = "<group>"; };
+		E19D549F1A00497300772777 /* lit.local.cfg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = lit.local.cfg; sourceTree = "<group>"; };
+		E19D54A21A004EC900772777 /* tracing.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tracing.ninja; sourceTree = "<group>"; };
 		E1A223FB19F990E60059043E /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1A223FC19F990E60059043E /* README.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.txt; sourceTree = "<group>"; };
 		E1A2240019F991350059043E /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
@@ -507,6 +512,25 @@
 				E10D5CE319FEF3BD00211ED4 /* Python.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		E19D549A1A00496900772777 /* Build */ = {
+			isa = PBXGroup;
+			children = (
+				E19D549B1A00496900772777 /* basic.ninja */,
+				E19D54A21A004EC900772777 /* tracing.ninja */,
+			);
+			path = Build;
+			sourceTree = "<group>";
+		};
+		E19D549C1A00497300772777 /* Commands */ = {
+			isa = PBXGroup;
+			children = (
+				E19D549D1A00497300772777 /* basic.txt */,
+				E19D549E1A00497300772777 /* buildengine-ack.txt */,
+				E19D549F1A00497300772777 /* lit.local.cfg */,
+			);
+			path = Commands;
 			sourceTree = "<group>";
 		};
 		E1A223E819F98F1C0059043E = {
@@ -797,6 +821,7 @@
 		E1A2252319F9A0310059043E /* tests */ = {
 			isa = PBXGroup;
 			children = (
+				E19D549C1A00497300772777 /* Commands */,
 				E1A2252519F9A0310059043E /* Ninja */,
 				E1A2253D19F9A0310059043E /* Unit */,
 				E1A2252419F9A0310059043E /* CMakeLists.txt */,
@@ -809,6 +834,7 @@
 		E1A2252519F9A0310059043E /* Ninja */ = {
 			isa = PBXGroup;
 			children = (
+				E19D549A1A00496900772777 /* Build */,
 				E1A2252619F9A0310059043E /* Lexer */,
 				E1A2252919F9A0310059043E /* Loader */,
 				E1A2253619F9A0310059043E /* Parser */,

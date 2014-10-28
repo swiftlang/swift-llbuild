@@ -1,0 +1,47 @@
+# Check build engine tracing on a trivial example.
+
+# We run the build in a sandbox in the temp directory to ensure we don't
+# interact with the source dirs.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: %{llbuild} ninja build --trace %t.trace-out %t.build/build.ninja
+# RUN: %{FileCheck} < %t.trace-out %s
+
+# The first task we see is for the "dummy" rule...
+#
+# CHECK: { "new-task", "T1" },
+# CHECK: { "new-rule", "R1", "dummy" },
+# CHECK: { "created-task-for-rule", "T1", "R1" },
+
+# ... which then asks for the input from the "dummy-A" rule, which triggers the
+# creation of its task (and registers the pending task T1 with that rule).
+#
+# CHECK: { "new-rule", "R2", "dummy-A" },
+# CHECK: { "handling-task-input-request", "T1", "R2" },
+# CHECK: { "new-task", "T2" },
+# CHECK: { "created-task-for-rule", "T2", "R2" },
+# CHECK: { "added-rule-pending-task", "R2", "T1" },
+
+# The task for "dummy-A" has no inputs, so it then completes and pushes its
+# finished input request...
+#
+# CHECK: { "finished-task", "T2", "R2" },
+# CHECK: { "readying-task-input-request", "T1", "R2" },
+# CHECK: { "completed-task-input-request", "T1", "R2" },
+# CHECK: { "updated-task-wait-count", "T1", 0 },
+
+# That unblocks T1, which then finishes...
+#
+# CHECK: { "unblocked-task", "T1" },
+# CHECK: { "finished-task", "T1", "R1" },
+
+build dummy-A: phony
+build dummy: phony dummy-A
+
+default dummy
+
+
+
+
