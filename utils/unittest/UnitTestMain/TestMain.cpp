@@ -1,9 +1,6 @@
 //===--- utils/unittest/UnitTestMain/TestMain.cpp -------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Copyright (c) 2014 Apple Inc. All rights reserved.
 //
 //===----------------------------------------------------------------------===//
 

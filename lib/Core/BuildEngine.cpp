@@ -73,7 +73,7 @@ class BuildEngineImpl {
     std::unique_ptr<Task> Task;
     std::vector<TaskInputRequest> RequestedBy;
     unsigned WaitCount = 0;
-    RuleInfo *ForRuleInfo = nullptr;
+    RuleInfo* ForRuleInfo = nullptr;
   };
   std::unordered_map<Task*, TaskInfo> TaskInfos;
 
