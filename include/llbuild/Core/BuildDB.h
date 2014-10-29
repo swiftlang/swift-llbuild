@@ -14,6 +14,8 @@
 #define LLBUILD_CORE_BUILDDB_H
 
 #include <cstdint>
+#include <memory>
+#include <string>
 
 namespace llbuild {
 namespace core {
@@ -51,6 +53,9 @@ public:
   /// should be written.
   virtual void buildComplete() = 0;
 };
+
+std::unique_ptr<BuildDB> CreateSQLiteBuildDB(const std::string& Path,
+                                             std::string* Error_Out);
 
 }
 }

@@ -6,4 +6,5 @@ target_link_libraries(llbuild
   llbuildCore
   llbuildNinja
   llbuildCommands
+  sqlite3
   )

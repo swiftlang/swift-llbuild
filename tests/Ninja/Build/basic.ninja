@@ -31,7 +31,3 @@ build dummy-B: B
 build dummy: C dummy-A dummy-B
 
 default dummy
-
-
-
-

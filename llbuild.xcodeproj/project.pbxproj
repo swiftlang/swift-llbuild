@@ -73,6 +73,7 @@
 		E1A2251919F99ECB0059043E /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
 		E1A2251A19F99ECD0059043E /* libllbuildNinja.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243619F9970D0059043E /* libllbuildNinja.a */; };
 		E1E221071A00689C00957481 /* BuildDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E221051A0067F800957481 /* BuildDB.cpp */; };
+		E1E221091A00B82100957481 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -402,6 +403,8 @@
 		E1A2255119F9A74B0059043E /* execute-lit-tests.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "execute-lit-tests.sh"; sourceTree = "<group>"; };
 		E1E221041A0067EF00957481 /* BuildDB.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuildDB.h; sourceTree = "<group>"; };
 		E1E221051A0067F800957481 /* BuildDB.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildDB.cpp; sourceTree = "<group>"; };
+		E1E221081A00B82100957481 /* libsqlite3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsqlite3.dylib; path = usr/lib/libsqlite3.dylib; sourceTree = SDKROOT; };
+		E1E2210A1A00BEE500957481 /* incremental.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = incremental.ninja; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -445,6 +448,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1E221091A00B82100957481 /* libsqlite3.dylib in Frameworks */,
 				E1A224D519F99A2D0059043E /* libllbuildBasic.a in Frameworks */,
 				E1A224D619F99A300059043E /* libllbuildCommands.a in Frameworks */,
 				E1A224D719F99A320059043E /* libllbuildNinja.a in Frameworks */,
@@ -512,6 +516,7 @@
 		E13B5E411A00395300EA0405 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				E1E221081A00B82100957481 /* libsqlite3.dylib */,
 				E10D5CE319FEF3BD00211ED4 /* Python.framework */,
 			);
 			name = Frameworks;
@@ -521,6 +526,7 @@
 			isa = PBXGroup;
 			children = (
 				E19D549B1A00496900772777 /* basic.ninja */,
+				E1E2210A1A00BEE500957481 /* incremental.ninja */,
 				E19D54A21A004EC900772777 /* tracing.ninja */,
 			);
 			path = Build;

@@ -12,6 +12,7 @@
 
 #include "NinjaBuildCommand.h"
 
+#include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/BuildEngine.h"
 #include "llbuild/Ninja/ManifestLoader.h"
 
@@ -42,6 +43,8 @@ static void usage() {
           "show this help message and exit");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--no-execute",
           "don't execute commands");
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--db <PATH>",
+          "persist build results at PATH");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--trace <PATH>",
           "trace build engine operation to PATH");
   ::exit(1);
@@ -175,10 +178,12 @@ static core::ValueType GetValueForInput(const ninja::Node* Node) {
   // Hash the stat information.
   auto Hash = std::hash<uint64_t>();
   auto Result = Hash(Buf.st_dev) ^ Hash(Buf.st_ino) ^
-    Hash(Buf.st_mtimespec.tv_sec) ^ Hash(Buf.st_mtimespec.tv_nsec);
+    Hash(Buf.st_mtimespec.tv_sec) ^ Hash(Buf.st_mtimespec.tv_nsec) ^
+    Hash(Buf.st_size);
 
   // Ensure there is never a collision between a valid stat result and an error.
-  Result |= 1;
+  if (Result == 0)
+      Result = 1;
 
   return Result;
 }
@@ -216,7 +221,7 @@ static bool BuildInputIsResultValid(ninja::Node *Node,
 }
 
 int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
-  std::string TraceFilename;
+  std::string DBFilename, TraceFilename;
 
   if (Args.empty() || Args[0] == "--help")
     usage();
@@ -230,6 +235,14 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
 
     if (Option == "--no-execute") {
       NoExecute = true;
+    } else if (Option == "--db") {
+      if (Args.empty()) {
+        fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
+                ::getprogname(), Option.c_str());
+        usage();
+      }
+      DBFilename = Args[0];
+      Args.erase(Args.begin());
     } else if (Option == "--trace") {
       if (Args.empty()) {
         fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
@@ -287,6 +300,19 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
 
   // Create the build engine.
   core::BuildEngine Engine;
+
+  // Attach the database, if requested.
+  if (!DBFilename.empty()) {
+    std::string Error;
+    std::unique_ptr<core::BuildDB> DB(
+      core::CreateSQLiteBuildDB(DBFilename, &Error));
+    if (!DB) {
+      fprintf(stderr, "error: %s: unable to open build database: %s\n",
+              getprogname(), Error.c_str());
+      return 1;
+    }
+    Engine.attachDB(std::move(DB));
+  }
 
   // Enable tracing, if requested.
   if (!TraceFilename.empty()) {
