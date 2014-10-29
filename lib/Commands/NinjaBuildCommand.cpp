@@ -152,6 +152,8 @@ core::Task* BuildCommand(core::BuildEngine& Engine, ninja::Node* Output,
 
       // Wait for the command to complete.
       int Status, Result = waitpid(PID, &Status, 0);
+      while (Result == -1 && errno == EINTR)
+          Result = waitpid(PID, &Status, 0);
       if (Result == -1) {
         fprintf(stderr, "error: %s: unable to wait for process (%s)\n",
                 getprogname(), strerror(errno));
