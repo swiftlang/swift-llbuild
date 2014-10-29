@@ -26,6 +26,7 @@ typedef std::string KeyType;
 // FIXME: Need to abstract ValueType;
 typedef int ValueType;
 
+class BuildDB;
 class BuildEngine;
 
 /// This object contains the result of executing a task to produce the value for
@@ -141,6 +142,13 @@ public:
 
   /// Build the result for a particular key.
   ValueType build(KeyType Key);
+
+  /// Attach a database for persisting build state.
+  ///
+  /// A database should only be attached immediately after creating the engine,
+  /// it is an error to attach a database after adding rules or initiating any
+  /// builds, or to attempt to attach multiple databases.
+  void attachDB(std::unique_ptr<BuildDB> Database);
 
   /// Enable tracing into the given output file.
   ///

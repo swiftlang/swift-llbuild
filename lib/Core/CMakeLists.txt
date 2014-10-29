@@ -1,7 +1,8 @@
 add_llbuild_library(llbuildCore
-  DependencyGraph.cpp
-  DependencyNode.cpp
-  DependencyCommand.cpp
+  BuildDB.cpp
   BuildEngine.cpp
   BuildEngineTrace.cpp
+  DependencyCommand.cpp
+  DependencyGraph.cpp
+  DependencyNode.cpp
 )

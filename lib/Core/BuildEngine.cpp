@@ -12,6 +12,8 @@
 
 #include "llbuild/Core/BuildEngine.h"
 
+#include "llbuild/Core/BuildDB.h"
+
 #include "BuildEngineTrace.h"
 
 #include <cassert>
@@ -33,9 +35,14 @@ class BuildEngineImpl {
 
   BuildEngine &BuildEngine;
 
-  /// The current build iteration, use to sequentially timestamp build results.
-  //
-  // FIXME: Needs to move to database.
+
+  /// The build database, if attached.
+  std::unique_ptr<BuildDB> DB;
+
+  /// The tracing implementation, if enabled.
+  std::unique_ptr<BuildEngineTrace> Trace;
+
+  /// The current build iteration, used to sequentially timestamp build results.
   uint64_t CurrentTimestamp = 0;
 
   /// The map of rule information.
@@ -79,8 +86,6 @@ class BuildEngineImpl {
 
   /// The queue of tasks ready to be finalized.
   std::vector<TaskInfo*> ReadyTaskInfos;
-
-  std::unique_ptr<BuildEngineTrace> Trace;
 
 private:
   /// @name Build Execution
@@ -155,6 +160,13 @@ private:
     // just update it.
     if (!ruleNeedsToRun(RuleInfo)) {
       RuleInfo.Result.BuiltAt = CurrentTimestamp;
+
+      // FIXME: We don't actually tell the DB to update the entry here, because
+      // it is essentially just a mark of up-to-dateness, and we will increment
+      // it every time. What we should be doing is using a separate flag to
+      // track this, instead of abusing BuiltAt for it (see also the FIXME in
+      // the declaration of Result::BuiltAt).
+
       return true;
     }
 
@@ -282,6 +294,10 @@ private:
         RuleInfo->Result.BuiltAt = CurrentTimestamp;
         RuleInfo->PendingTaskInfo = nullptr;
 
+        // Update the database record, if attached.
+        if (DB)
+            DB->setRuleResult(RuleInfo->Rule, RuleInfo->Result);
+
         // Push all pending input requests onto the work queue.
         if (Trace) {
           for (auto& Request: TaskInfo->RequestedBy) {
@@ -326,6 +342,16 @@ public:
                 << Rule.Key << "\"\n";
       exit(1);
     }
+
+    // If we have a database attached, retrieve any stored result.
+    //
+    // FIXME: Investigate retrieving this result lazily. If the DB is
+    // particularly efficient, it may be best to retrieve this only when we need
+    // it and never duplicate it.
+    if (DB) {
+        RuleInfo& RuleInfo = Result.first->second;
+        DB->lookupRuleResult(RuleInfo.Rule, &RuleInfo.Result);
+    }
   }
 
   /// @}
@@ -352,9 +378,25 @@ public:
     // Run the build engine, to process any necessary tasks.
     executeTasks();
 
+    // Update the build database, if attached.
+    if (DB) {
+      DB->setCurrentIteration(CurrentTimestamp);
+      DB->buildComplete();
+    }
+
     // The task queue should be empty and the rule complete.
     assert(TaskInfos.empty() && RuleInfo.isComplete(this));
     return RuleInfo.Result.Value;
+  }
+
+  void attachDB(std::unique_ptr<BuildDB> Database) {
+    assert(!DB && "invalid attachDB() call");
+    assert(CurrentTimestamp == 0 && "invalid attachDB() call");
+    assert(RuleInfos.empty() && "invalid attachDB() call");
+    DB = std::move(Database);
+
+    // Load our initial state from the database.
+    CurrentTimestamp = DB->getCurrentIteration();
   }
 
   bool enableTracing(const std::string& Filename, std::string* Error_Out) {
@@ -425,6 +467,10 @@ void BuildEngine::addRule(Rule &&Rule) {
 
 ValueType BuildEngine::build(KeyType Key) {
   return static_cast<BuildEngineImpl*>(Impl)->build(Key);
+}
+
+void BuildEngine::attachDB(std::unique_ptr<BuildDB> Database) {
+  return static_cast<BuildEngineImpl*>(Impl)->attachDB(std::move(Database));
 }
 
 bool BuildEngine::enableTracing(const std::string& Path,
