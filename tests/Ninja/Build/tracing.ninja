@@ -11,8 +11,10 @@
 
 # The first task we see is for the "dummy" rule...
 #
-# CHECK: { "new-task", "T1" },
 # CHECK: { "new-rule", "R1", "dummy" },
+# CHECK: { "checking-rule-needs-to-run", "R1" },
+# CHECK: { "rule-needs-to-run", "R1", "never-built" },
+# CHECK: { "new-task", "T1" },
 # CHECK: { "created-task-for-rule", "T1", "R1" },
 
 # ... which then asks for the input from the "dummy-A" rule, which triggers the
@@ -41,7 +43,3 @@ build dummy-A: phony
 build dummy: phony dummy-A
 
 default dummy
-
-
-
-

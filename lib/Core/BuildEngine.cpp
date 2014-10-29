@@ -99,15 +99,24 @@ private:
   // down into small individual blocks of work that we queue and evaluate as
   // part of the normal execution loop.
   bool ruleNeedsToRun(RuleInfo& RuleInfo) {
+    if (Trace)
+      Trace->checkingRuleNeedsToRun(&RuleInfo.Rule);
+
     // If the rule has never been run, it needs to run.
-    if (RuleInfo.Result.BuiltAt == 0)
+    if (RuleInfo.Result.BuiltAt == 0) {
+      if (Trace)
+        Trace->ruleNeedsToRunBecauseNeverBuilt(&RuleInfo.Rule);
       return true;
+    }
 
     // If the rule indicates it's computed value is out of date, it needs to
     // run.
     if (RuleInfo.Rule.IsResultValid &&
-        !RuleInfo.Rule.IsResultValid(RuleInfo.Rule, RuleInfo.Result.Value))
+        !RuleInfo.Rule.IsResultValid(RuleInfo.Rule, RuleInfo.Result.Value)) {
+      if (Trace)
+        Trace->ruleNeedsToRunBecauseInvalidValue(&RuleInfo.Rule);
       return true;
+    }
 
     // Otherwise, if the last time the rule was built is earlier than the time
     // any of its inputs were computed, then it needs to run.
@@ -129,15 +138,30 @@ private:
       bool IsAvailable = demandRule(InputRuleInfo);
 
       // If the input wasn't already available, it needs to run.
-      if (!IsAvailable)
+      if (!IsAvailable) {
+        // FIXME: This is just wrong, just because we haven't run the task yet
+        // doesn't necessarily mean that this rule needs to run, if running the
+        // task results in an output that hasn't changed (and so ComputedAt
+        // isn't updated). This case doesn't come up until we support BuiltAt !=
+        // ComputedAt, though.
+        if (Trace)
+          Trace->ruleNeedsToRunBecauseInputUnavailable(
+            &RuleInfo.Rule, &InputRuleInfo.Rule);
         return true;
+      }
 
       // If the input has been computed since the last time this rule was built,
       // it needs to run.
-      if (RuleInfo.Result.BuiltAt < InputRuleInfo.Result.ComputedAt)
+      if (RuleInfo.Result.BuiltAt < InputRuleInfo.Result.ComputedAt) {
+        if (Trace)
+          Trace->ruleNeedsToRunBecauseInputRebuilt(
+            &RuleInfo.Rule, &InputRuleInfo.Rule);
         return true;
+      }
     }
 
+    if (Trace)
+      Trace->ruleDoesNotNeedToRun(&RuleInfo.Rule);
     return false;
   }
 
@@ -159,6 +183,7 @@ private:
     // just update it.
     if (!ruleNeedsToRun(RuleInfo)) {
       RuleInfo.Result.BuiltAt = CurrentTimestamp;
+      assert(RuleInfo.isComplete(this));
 
       // FIXME: We don't actually tell the DB to update the entry here, because
       // it is essentially just a mark of up-to-dateness, and we will increment

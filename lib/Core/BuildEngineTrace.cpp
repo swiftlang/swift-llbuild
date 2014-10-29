@@ -169,3 +169,53 @@ void BuildEngineTrace::finishedTask(const Task* Task, const Rule* Rule) {
   // Delete the task entry, as it could be reused.
   TaskNames.erase(TaskNames.find(Task));
 }
+
+
+void BuildEngineTrace::checkingRuleNeedsToRun(const Rule* ForRule) {
+  FILE *FP = static_cast<FILE*>(OutputPtr);
+
+  fprintf(FP, "{ \"checking-rule-needs-to-run\", \"%s\" },\n",
+          getRuleName(ForRule));
+}
+
+void BuildEngineTrace::ruleNeedsToRunBecauseNeverBuilt(const Rule* ForRule) {
+  FILE *FP = static_cast<FILE*>(OutputPtr);
+
+  fprintf(FP, "{ \"rule-needs-to-run\", \"%s\", \"never-built\" },\n",
+          getRuleName(ForRule));
+}
+
+void BuildEngineTrace::ruleNeedsToRunBecauseInvalidValue(const Rule* ForRule) {
+  FILE *FP = static_cast<FILE*>(OutputPtr);
+
+  fprintf(FP, "{ \"rule-needs-to-run\", \"%s\", \"invalid-value\" },\n",
+          getRuleName(ForRule));
+}
+
+void
+BuildEngineTrace::ruleNeedsToRunBecauseInputUnavailable(const Rule* ForRule,
+                                                        const Rule* InputRule) {
+  FILE *FP = static_cast<FILE*>(OutputPtr);
+
+  fprintf(FP, ("{ \"rule-needs-to-run\", \"%s\", "
+               "\"input-unavailable\", \"%s\" },\n"),
+          getRuleName(ForRule), getRuleName(InputRule));
+}
+
+void
+BuildEngineTrace::ruleNeedsToRunBecauseInputRebuilt(const Rule* ForRule,
+                                                    const Rule* InputRule) {
+  FILE *FP = static_cast<FILE*>(OutputPtr);
+
+  fprintf(FP, ("{ \"rule-needs-to-run\", \"%s\", "
+               "\"input-rebuilt\", \"%s\" },\n"),
+          getRuleName(ForRule), getRuleName(InputRule));
+}
+
+void BuildEngineTrace::ruleDoesNotNeedToRun(const Rule* ForRule) {
+  FILE *FP = static_cast<FILE*>(OutputPtr);
+
+  fprintf(FP, "{ \"rule-does-not-need-to-run\", \"%s\" },\n",
+          getRuleName(ForRule));
+}
+

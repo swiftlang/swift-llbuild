@@ -61,6 +61,9 @@ public:
     /// @name Trace Recording APIs
     /// @{
 
+    /// @name Core Engine Operation
+    /// @{
+
     void createdTaskForRule(const Task* Task, const Rule* Rule);
     void handlingTaskInputRequest(const Task* Task, const Rule* Rule);
     void readyingTaskInputRequest(const Task* Task, const Rule* Rule);
@@ -69,6 +72,22 @@ public:
     void updatedTaskWaitCount(const Task* Task, unsigned WaitCount);
     void unblockedTask(const Task* Task);
     void finishedTask(const Task* Task, const Rule* Rule);
+
+    /// @}
+
+    /// @name Dependency Checking
+    /// @{
+
+    void checkingRuleNeedsToRun(const Rule* ForRule);
+    void ruleNeedsToRunBecauseNeverBuilt(const Rule* ForRule);
+    void ruleNeedsToRunBecauseInvalidValue(const Rule* ForRule);
+    void ruleNeedsToRunBecauseInputUnavailable(const Rule* ForRule,
+                                               const Rule* InputRule);
+    void ruleNeedsToRunBecauseInputRebuilt(const Rule* ForRule,
+                                           const Rule* InputRule);
+    void ruleDoesNotNeedToRun(const Rule* ForRule);
+
+    /// @}
 
     /// @}
 };
