@@ -74,6 +74,7 @@
 		E1A2251A19F99ECD0059043E /* libllbuildNinja.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243619F9970D0059043E /* libllbuildNinja.a */; };
 		E1E221071A00689C00957481 /* BuildDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E221051A0067F800957481 /* BuildDB.cpp */; };
 		E1E221091A00B82100957481 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
+		E1E2210C1A015B9E00957481 /* SQLiteBuildDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E2210B1A015B9E00957481 /* SQLiteBuildDB.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -405,6 +406,7 @@
 		E1E221051A0067F800957481 /* BuildDB.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildDB.cpp; sourceTree = "<group>"; };
 		E1E221081A00B82100957481 /* libsqlite3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsqlite3.dylib; path = usr/lib/libsqlite3.dylib; sourceTree = SDKROOT; };
 		E1E2210A1A00BEE500957481 /* incremental.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = incremental.ninja; sourceTree = "<group>"; };
+		E1E2210B1A015B9E00957481 /* SQLiteBuildDB.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SQLiteBuildDB.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -641,6 +643,7 @@
 				E1A2241619F991530059043E /* DependencyCommand.cpp */,
 				E1A2241719F991530059043E /* DependencyGraph.cpp */,
 				E1A2241819F991530059043E /* DependencyNode.cpp */,
+				E1E2210B1A015B9E00957481 /* SQLiteBuildDB.cpp */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -1333,6 +1336,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1E2210C1A015B9E00957481 /* SQLiteBuildDB.cpp in Sources */,
 				E1A2244A19F997530059043E /* DependencyNode.cpp in Sources */,
 				E1A2244619F9974A0059043E /* BuildEngine.cpp in Sources */,
 				E1E221071A00689C00957481 /* BuildDB.cpp in Sources */,

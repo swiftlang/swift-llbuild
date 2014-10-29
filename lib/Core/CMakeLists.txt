@@ -5,4 +5,5 @@ add_llbuild_library(llbuildCore
   DependencyCommand.cpp
   DependencyGraph.cpp
   DependencyNode.cpp
+  SQLiteBuildDB.cpp
 )
