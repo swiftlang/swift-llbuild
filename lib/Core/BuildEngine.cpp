@@ -119,7 +119,6 @@ private:
         abort();
       }
       auto& InputRuleInfo = it->second;
-      assert(InputRuleInfo.Result.ComputedAt != 0);
 
       // Demand the input.
       //
@@ -185,6 +184,15 @@ private:
 
     if (Trace)
       Trace->createdTaskForRule(TaskInfo->Task.get(), &RuleInfo.Rule);
+
+    // Reset the Rule result state. The only field we must reset here is the
+    // Dependencies, which we just append to during processing, but we reset the
+    // others to ensure no one ever inadvertently uses them during an invalid
+    // state.
+    RuleInfo.Result.Value = ValueType();
+    RuleInfo.Result.BuiltAt = 0;
+    RuleInfo.Result.ComputedAt = 0;
+    RuleInfo.Result.Dependencies.clear();
 
     // Inform the task it should start.
     Task->start(BuildEngine);

@@ -173,6 +173,9 @@ public:
   /// The result, when available, will be provided to the task via \see
   /// Task::provideValue(), supplying the provided \arg InputID to allow the
   /// task to identify the particular input.
+  ///
+  /// NOTE: It is an unchecked error for a task to request the same input value
+  /// multiple times.
   void taskNeedsInput(Task* Task, KeyType Key, uintptr_t InputID);
   
   /// @}

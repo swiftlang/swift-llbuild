@@ -12,8 +12,11 @@
 
 #include "llbuild/Core/BuildEngine.h"
 
+#include "llbuild/Core/BuildDB.h"
+
 #include "gtest/gtest.h"
 
+#include <unordered_map>
 #include <vector>
 
 using namespace llbuild;
@@ -290,6 +293,73 @@ TEST(BuildEngineTest, BasicIncremental) {
   EXPECT_EQ(ValueA * ValueA * ValueB * 5 * 7 * 11 * 13,
             Engine.build("value-R2"));
   EXPECT_EQ(0U, BuiltKeys.size());
+}
+
+TEST(BuildEngineTest, IncrementalDependency) {
+  // Check that the engine properly clears the individual result dependencies
+  // when a rule is rerun.
+  //
+  // Dependencies:
+  //   value-R: (value-A)
+  //
+  // FIXME: This test is rather cumbersome for all it is trying to check, maybe
+  // we need a logging BuildDB implementation or something that would be easier
+  // to test against (or just update the trace to track it).
+
+  core::BuildEngine Engine;
+
+  // Attach a custom database, used to get the results.
+  class CustomDB : public BuildDB {
+  public:
+    std::unordered_map<core::KeyType, Result> RuleResults;
+
+    virtual uint64_t getCurrentIteration() override {
+      return 0;
+    }
+    virtual void setCurrentIteration(uint64_t Value) override {}
+    virtual bool lookupRuleResult(const Rule& Rule,
+                                  Result* Result_Out) override {
+      return false;
+    }
+    virtual void setRuleResult(const Rule& Rule,
+                               const Result& Result) override {
+      RuleResults[Rule.Key] = Result;
+    }
+    virtual void buildComplete() override {}
+  };
+  CustomDB *DB = new CustomDB();
+  Engine.attachDB(std::unique_ptr<CustomDB>(DB));
+
+  int ValueA = 2;
+  Engine.addRule({
+      "value-A", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
+          return ValueA; }),
+      [&](const Rule& rule, const ValueType Value) {
+          // FIXME: Once we have custom ValueType objects, we would like to have
+          // timestamps on the value and just compare to a timestamp (similar to
+          // what we would do for a file).
+          return ValueA == Value;
+      } });
+  Engine.addRule({
+      "value-R",
+      simpleAction({"value-A"},
+                   [&] (const std::vector<ValueType>& Inputs) {
+                     EXPECT_EQ(1U, Inputs.size());
+                     EXPECT_EQ(ValueA, Inputs[0]);
+                     return Inputs[0] * 3;
+                   }) });
+
+  // Build the first result.
+  EXPECT_EQ(ValueA * 3, Engine.build("value-R"));
+
+  // Mark value-A as having changed, then rebuild.
+  ValueA = 5;
+  EXPECT_EQ(ValueA * 3, Engine.build("value-R"));
+
+  // Check the rule results.
+  const Result& ValueRResult = DB->RuleResults["value-R"];
+  EXPECT_EQ(ValueA * 3, ValueRResult.Value);
+  EXPECT_EQ(1U, ValueRResult.Dependencies.size());
 }
 
 }
