@@ -53,6 +53,7 @@ static void usage() {
 namespace {
 
 static bool NoExecute = false;
+static bool Quiet = false;
 
 class BuildManifestActions : public ninja::ManifestLoaderActions {
   ninja::ManifestLoader *Loader = 0;
@@ -130,8 +131,10 @@ core::Task* BuildCommand(core::BuildEngine& Engine, ninja::Node* Output,
         return 0;
 
       ++NumBuiltCommands;
-      std::cerr << "[" << NumBuiltCommands << "] "
-                << Command->getDescription() << "\n";
+      if (!Quiet) {
+        std::cerr << "[" << NumBuiltCommands << "] "
+                  << Command->getDescription() << "\n";
+      }
 
       if (NoExecute)
           return 0;
@@ -237,6 +240,8 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
 
     if (Option == "--no-execute") {
       NoExecute = true;
+    } else if (Option == "--quiet") {
+      Quiet = true;
     } else if (Option == "--db") {
       if (Args.empty()) {
         fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
