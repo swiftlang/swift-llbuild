@@ -24,3 +24,18 @@ rule rule4
 # Ensure we diagnose attempts to define a new phony rule.
 # CHECK-ERR: rules.ninja:[[@LINE+1]]:5: error: duplicate rule
 rule phony
+
+# Check all the valid rule variables.
+# CHECK-ERR-NOT: unexpected variable
+pool somepool
+     depth = 5
+rule rule5
+     command = command
+     description = description
+     deps = gcc
+     depfile = depfile
+     generator = true
+     pool = somepool
+     restat = true
+     rspfile = rspfile
+     rspfile_content = rspfile_content
