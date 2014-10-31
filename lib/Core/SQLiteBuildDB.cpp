@@ -134,6 +134,24 @@ public:
                "FOREIGN KEY(rule_id) REFERENCES rule_info(id));"),
           nullptr, nullptr, &CError);
       }
+
+      // Create the indices on the rule tables.
+      if (Result == SQLITE_OK) {
+        // Create an index to be used for efficiently looking up rule
+        // information from a key.
+        Result = sqlite3_exec(
+          DB, "CREATE UNIQUE INDEX rule_results_idx ON rule_results (key);",
+          nullptr, nullptr, &CError);
+      }
+      if (Result == SQLITE_OK) {
+        // Create an index to be used for efficiently finding the dependencies
+        // for a rule. This is a covering index.
+        Result = sqlite3_exec(
+          DB, ("CREATE INDEX rule_dependencies_idx ON "
+               "rule_dependencies (rule_id, key);"),
+          nullptr, nullptr, &CError);
+      }
+        
       if (Result != SQLITE_OK) {
         *Error_Out = (std::string("unable to initialize database (") + CError
                       + ")");
