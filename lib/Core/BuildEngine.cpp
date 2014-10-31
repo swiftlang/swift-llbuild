@@ -393,6 +393,9 @@ public:
   /// @{
 
   ValueType build(KeyType Key) {
+    if (DB)
+      DB->buildStarted();
+
     // Increment our running iteration count.
     ++CurrentTimestamp;
 
@@ -412,6 +415,8 @@ public:
     executeTasks();
 
     // Update the build database, if attached.
+    //
+    // FIXME: Is it correct to do this here, or earlier?
     if (DB) {
       DB->setCurrentIteration(CurrentTimestamp);
       DB->buildComplete();

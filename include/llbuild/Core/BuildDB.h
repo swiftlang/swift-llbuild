@@ -49,6 +49,13 @@ public:
   /// Update the stored result for a rule.
   virtual void setRuleResult(const Rule& Rule, const Result& Result) = 0;
 
+  /// Called by the build engine to indicate that a build has started.
+  ///
+  /// The engine guarantees that all mutation operations (e.g., \see
+  /// setCurrentIteration() and \see setRuleResult()) are only called between
+  /// build paired \see buildStarted() and \see buildComplete() calls.
+  virtual void buildStarted() = 0;
+
   /// Called by the build engine to indicate a build has finished, and results
   /// should be written.
   virtual void buildComplete() = 0;

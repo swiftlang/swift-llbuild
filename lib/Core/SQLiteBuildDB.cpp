@@ -228,7 +228,9 @@ public:
 
   virtual void setRuleResult(const Rule& Rule,
                              const Result& RuleResult) override {
-
+    int Result = SQLITE_OK;
+    assert(Result == SQLITE_OK);
+ 
     // Find the existing rule id, if present.
     //
     // We rely on SQLite3 not using 0 as a valid rule ID.
@@ -238,7 +240,7 @@ public:
        "WHERE key == '%q' LIMIT 1;"),
       Rule.Key.c_str());
     uint64_t RuleID = 0;
-    int Result = sqlite3_exec(DB, RuleIDQuery,
+    Result = sqlite3_exec(DB, RuleIDQuery,
                               SQLiteGetSingleUInt64, &RuleID, &CError);
     assert(Result == SQLITE_OK);
 
@@ -281,9 +283,24 @@ public:
       assert(Result == SQLITE_OK);
       free(Query);
     }
+
+    assert(Result == SQLITE_OK);
+  }
+
+  virtual void buildStarted() override {
+    // Execute the entire build inside a single transaction.
+    //
+    // FIXME: We should revist this, as we probably wouldn't want a crash in the
+    // build system to totally lose all build results.
+    int Result = sqlite3_exec(DB, "BEGIN IMMEDIATE;", nullptr, nullptr,
+        nullptr);
+    assert(Result == SQLITE_OK);
   }
 
   virtual void buildComplete() override {
+    int Result = sqlite3_exec(DB, "END;", nullptr, nullptr, nullptr);
+    assert(Result == SQLITE_OK);
+
     // Sync changes to disk.
     close();
   }

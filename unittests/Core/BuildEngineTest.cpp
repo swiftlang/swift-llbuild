@@ -325,6 +325,7 @@ TEST(BuildEngineTest, IncrementalDependency) {
                                const Result& Result) override {
       RuleResults[Rule.Key] = Result;
     }
+    virtual void buildStarted() override {}
     virtual void buildComplete() override {}
   };
   CustomDB *DB = new CustomDB();
