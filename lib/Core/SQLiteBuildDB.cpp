@@ -15,8 +15,10 @@
 #include "llbuild/Core/BuildEngine.h"
 
 #include <cassert>
+#include <cerrno>
 
 #include <sqlite3.h>
+#include <unistd.h>
 
 using namespace llbuild;
 using namespace llbuild::core;
@@ -88,18 +90,24 @@ public:
     Result = sqlite3_exec(DB, "SELECT version FROM info LIMIT 1",
                           SQLiteGetSingleUInt64, &Version, &CError);
     if (Result != SQLITE_OK || int(Version) != CurrentSchemaVersion) {
-      // Drop any existing tables, ignoring errors.
-      Result = sqlite3_exec(DB, "DROP TABLE info;", nullptr, nullptr, &CError);
-      if (Result != SQLITE_OK)
-        ::free(CError);
-      Result = sqlite3_exec(DB, "DROP TABLE rule_results;", nullptr, nullptr,
-                            &CError);
-      if (Result != SQLITE_OK)
-        ::free(CError);
-      Result = sqlite3_exec(DB, "DROP TABLE rule_dependencies;", nullptr,
-                            nullptr, &CError);
-      if (Result != SQLITE_OK)
-        ::free(CError);
+      // Always recreate the database from scratch when the schema changes.
+      Result = unlink(Path.c_str());
+      if (Result == -1) {
+        if (errno != ENOENT) {
+          *Error_Out = std::string("unable to unlink existing database: ") +
+            ::strerror(errno);
+          sqlite3_close(DB);
+          return false;
+        }
+      } else {
+        // If the remove was successful, reopen the database.
+        int Result = sqlite3_open(Path.c_str(), &DB);
+        if (Result != SQLITE_OK) {
+          // FIXME: Provide better error messages.
+          *Error_Out = "unable to open database";
+          return false;
+        }
+      }
 
       // Create the info table.
       Result = sqlite3_exec(
