@@ -72,6 +72,12 @@
 		E1A2251819F99EC80059043E /* libgtest_main.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A224E619F99C580059043E /* libgtest_main.a */; };
 		E1A2251919F99ECB0059043E /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
 		E1A2251A19F99ECD0059043E /* libllbuildNinja.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243619F9970D0059043E /* libllbuildNinja.a */; };
+		E1C404B11A0308F3003392BA /* NinjaPerfTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = E1C404B01A0308F3003392BA /* NinjaPerfTests.mm */; };
+		E1C404B91A030A1D003392BA /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
+		E1C404BA1A030A1D003392BA /* libllbuildCommands.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242E19F997050059043E /* libllbuildCommands.a */; };
+		E1C404BB1A030A1D003392BA /* libllbuildCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243E19F997150059043E /* libllbuildCore.a */; };
+		E1C404BC1A030A1D003392BA /* libllbuildNinja.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243619F9970D0059043E /* libllbuildNinja.a */; };
+		E1C404BD1A030A23003392BA /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
 		E1E221071A00689C00957481 /* BuildDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E221051A0067F800957481 /* BuildDB.cpp */; };
 		E1E221091A00B82100957481 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
 		E1E2210C1A015B9E00957481 /* SQLiteBuildDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E2210B1A015B9E00957481 /* SQLiteBuildDB.cpp */; };
@@ -402,6 +408,10 @@
 		E1A2254F19F9A74B0059043E /* README.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.txt; sourceTree = "<group>"; };
 		E1A2255019F9A74B0059043E /* create-lit-site-cfg.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "create-lit-site-cfg.sh"; sourceTree = "<group>"; };
 		E1A2255119F9A74B0059043E /* execute-lit-tests.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "execute-lit-tests.sh"; sourceTree = "<group>"; };
+		E1C404AC1A0308F3003392BA /* NinjaPerfTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NinjaPerfTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E1C404AF1A0308F3003392BA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		E1C404B01A0308F3003392BA /* NinjaPerfTests.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = NinjaPerfTests.mm; sourceTree = "<group>"; };
+		E1C404B71A03090D003392BA /* llvm-only.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "llvm-only.ninja"; sourceTree = "<group>"; };
 		E1E221041A0067EF00957481 /* BuildDB.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuildDB.h; sourceTree = "<group>"; };
 		E1E221051A0067F800957481 /* BuildDB.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildDB.cpp; sourceTree = "<group>"; };
 		E1E221081A00B82100957481 /* libsqlite3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsqlite3.dylib; path = usr/lib/libsqlite3.dylib; sourceTree = SDKROOT; };
@@ -494,6 +504,18 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E1C404A91A0308F3003392BA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E1C404B91A030A1D003392BA /* libllbuildBasic.a in Frameworks */,
+				E1C404BA1A030A1D003392BA /* libllbuildCommands.a in Frameworks */,
+				E1C404BB1A030A1D003392BA /* libllbuildCore.a in Frameworks */,
+				E1C404BC1A030A1D003392BA /* libllbuildNinja.a in Frameworks */,
+				E1C404BD1A030A23003392BA /* libsqlite3.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -550,6 +572,7 @@
 				E1A223FD19F990F10059043E /* tools */,
 				E1A2240419F991530059043E /* lib */,
 				E1A2252319F9A0310059043E /* tests */,
+				E1C404B51A03090D003392BA /* perftests */,
 				E1A224B219F998D40059043E /* unittests */,
 				E1A2246A19F998C30059043E /* utils */,
 				E1A223FB19F990E60059043E /* CMakeLists.txt */,
@@ -572,6 +595,7 @@
 				E1A224EF19F99D880059043E /* CoreTests */,
 				E1A2250119F99DFD0059043E /* NinjaTests */,
 				E10D5CDA19FEBF6A00211ED4 /* LitXCTestAdaptor.xctest */,
+				E1C404AC1A0308F3003392BA /* NinjaPerfTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -923,6 +947,48 @@
 			path = Xcode;
 			sourceTree = "<group>";
 		};
+		E1C404AD1A0308F3003392BA /* NinjaPerfTests */ = {
+			isa = PBXGroup;
+			children = (
+				E1C404AE1A0308F3003392BA /* Supporting Files */,
+				E1C404B01A0308F3003392BA /* NinjaPerfTests.mm */,
+			);
+			path = NinjaPerfTests;
+			sourceTree = "<group>";
+		};
+		E1C404AE1A0308F3003392BA /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				E1C404AF1A0308F3003392BA /* Info.plist */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		E1C404B51A03090D003392BA /* perftests */ = {
+			isa = PBXGroup;
+			children = (
+				E1C404B61A03090D003392BA /* Inputs */,
+				E1C404B81A03090D003392BA /* Xcode */,
+			);
+			path = perftests;
+			sourceTree = "<group>";
+		};
+		E1C404B61A03090D003392BA /* Inputs */ = {
+			isa = PBXGroup;
+			children = (
+				E1C404B71A03090D003392BA /* llvm-only.ninja */,
+			);
+			path = Inputs;
+			sourceTree = "<group>";
+		};
+		E1C404B81A03090D003392BA /* Xcode */ = {
+			isa = PBXGroup;
+			children = (
+				E1C404AD1A0308F3003392BA /* NinjaPerfTests */,
+			);
+			path = Xcode;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -1161,6 +1227,23 @@
 			productReference = E1A2250119F99DFD0059043E /* NinjaTests */;
 			productType = "com.apple.product-type.tool";
 		};
+		E1C404AB1A0308F3003392BA /* NinjaPerfTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E1C404B41A0308F3003392BA /* Build configuration list for PBXNativeTarget "NinjaPerfTests" */;
+			buildPhases = (
+				E1C404A81A0308F3003392BA /* Sources */,
+				E1C404A91A0308F3003392BA /* Frameworks */,
+				E1C404AA1A0308F3003392BA /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NinjaPerfTests;
+			productName = NinjaPerfTests;
+			productReference = E1C404AC1A0308F3003392BA /* NinjaPerfTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1203,6 +1286,9 @@
 					E1A2254219F9A20D0059043E = {
 						CreatedOnToolsVersion = 6.3;
 					};
+					E1C404AB1A0308F3003392BA = {
+						CreatedOnToolsVersion = 6.3;
+					};
 				};
 			};
 			buildConfigurationList = E1A223EC19F98F1C0059043E /* Build configuration list for PBXProject "llbuild" */;
@@ -1230,6 +1316,7 @@
 				E180432F1A00122900662FE7 /* Lit-Tests-Setup */,
 				E1A2254219F9A20D0059043E /* test */,
 				E10D5CD919FEBF6A00211ED4 /* LitXCTestAdaptor */,
+				E1C404AB1A0308F3003392BA /* NinjaPerfTests */,
 			);
 		};
 /* End PBXProject section */
@@ -1240,6 +1327,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				E10D5CE619FEF40100211ED4 /* LitTests.py in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E1C404AA1A0308F3003392BA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1384,6 +1478,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				E1A2250219F99E1C0059043E /* LexerTest.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E1C404A81A0308F3003392BA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E1C404B11A0308F3003392BA /* NinjaPerfTests.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1839,6 +1941,40 @@
 			};
 			name = Release;
 		};
+		E1C404B21A0308F3003392BA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+					"$(inherited)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"SRCROOT=\\\"$(SRCROOT)\\\"",
+					"TEST_TEMPS_PATH=\\\"$(CONFIGURATION_TEMP_DIR)/test-temps\\\"",
+				);
+				INFOPLIST_FILE = perftests/Xcode/NinjaPerfTests/Info.plist;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		E1C404B31A0308F3003392BA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+					"$(inherited)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"SRCROOT=\\\"$(SRCROOT)\\\"",
+					"TEST_TEMPS_PATH=\\\"$(CONFIGURATION_TEMP_DIR)/test-temps\\\"",
+				);
+				INFOPLIST_FILE = perftests/Xcode/NinjaPerfTests/Info.plist;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1958,6 +2094,14 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		E1C404B41A0308F3003392BA /* Build configuration list for PBXNativeTarget "NinjaPerfTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E1C404B21A0308F3003392BA /* Debug */,
+				E1C404B31A0308F3003392BA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 /* End XCConfigurationList section */
 	};

@@ -24,3 +24,6 @@ docs/_build
 
 # Don't check in Xcode user data.
 xcuserdata
+
+# Don't check in Xcode performance baselines, for now.
+xcshareddata/xcbaselines

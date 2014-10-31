@@ -45,7 +45,7 @@ Swift conventions.
   llbuild
     The implementation of the command line ``llbuild`` tool.
 
-* There are two kinds of tests include in the project:
+* There are two kinds of correctness tests include in the project:
 
   LLVM-Style Functional Tests
     These tests are located under ``tests/`` and then layed out according to
@@ -60,6 +60,12 @@ Swift conventions.
     <https://code.google.com/p/googletest/>`_ framework.
 
   All of the tests are run by default (by `Lit`) during the build.
+
+* There are also additional performance tests:
+
+  Xcode Performance Tests
+    These tests are located under ``perftests/Xcode``. They use the Xcode XCTest
+    based testing infrastructure to run performance tests.
 
 * Header includes are placed in the directory structure according to their
   purpose:
