@@ -269,13 +269,8 @@ public:
     assert(Result == SQLITE_OK);
     free(Query);
 
-    // Find the rule ID.
-    //
-    // FIXME: Avoid this duplicate lookup.
-    Result = sqlite3_exec(DB, RuleIDQuery,
-                          SQLiteGetSingleUInt64, &RuleID, &CError);
-    assert(Result == SQLITE_OK);
-    free(RuleIDQuery);
+    // Get the rule ID.
+    RuleID = sqlite3_last_insert_rowid(DB);
 
     // Insert all the dependencies.
     for (auto& Dependency: RuleResult.Dependencies) {
