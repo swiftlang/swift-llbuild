@@ -24,6 +24,34 @@ static void ExecuteShellCommand(const char *String) {
 
 @implementation NinjaPerfTests
 
+- (void)testChromiumFakeManifestLoading {
+  // Test the Ninja parsing/loading time for the Chromium fake manifest.
+  
+  // Create a sandbox to run the test in.
+  NSString *inputsDir = [@(SRCROOT)
+                            stringByAppendingPathComponent:@"perftests/Inputs"];
+  NSString *sandboxDir = [@(TEST_TEMPS_PATH)
+                             stringByAppendingPathComponent:@"ChromiumFakeManifestLoading"];
+  NSLog(@"executing test using inputs: %@", inputsDir);
+  NSLog(@"executing test using sandbox: %@", sandboxDir);
+  ExecuteShellCommand([NSString stringWithFormat:@"rm -rf \"%@\"",
+                                sandboxDir].UTF8String);
+  ExecuteShellCommand([NSString stringWithFormat:@"mkdir -p \"%@\"",
+                                sandboxDir].UTF8String);
+  NSString *ninjaPath = [sandboxDir stringByAppendingPathComponent:@"build.ninja"];
+  ExecuteShellCommand([NSString
+                       stringWithFormat:@"cp \"%@\"/chromium-fake-manifest.ninja.gz \"%@.gz\"",
+                       inputsDir, ninjaPath].UTF8String);
+  ExecuteShellCommand([NSString
+                       stringWithFormat:@"gzip -d \"%@.gz\"", ninjaPath].UTF8String);
+  
+  printf("performing load-manifest-only test...\n");
+  [self measureBlock:^{
+          llbuild::commands::ExecuteNinjaCommand({
+                  "load-manifest-only", ninjaPath.UTF8String });
+      }];
+}
+
 - (void)testLLVMOnlyNoExecuteInitialBuild {
   // Test the build of the llvm-only test file, with --no-execute.
   //
@@ -37,7 +65,7 @@ static void ExecuteShellCommand(const char *String) {
   NSString *inputsDir = [@(SRCROOT)
                             stringByAppendingPathComponent:@"perftests/Inputs"];
   NSString *sandboxDir = [@(TEST_TEMPS_PATH)
-                             stringByAppendingPathComponent:@"initial-build"];
+                             stringByAppendingPathComponent:@"LLVMOnlyNoExecuteInitialBuild"];
   NSLog(@"executing test using inputs: %@", inputsDir);
   NSLog(@"executing test using sandbox: %@", sandboxDir);
   ExecuteShellCommand([NSString stringWithFormat:@"rm -rf \"%@\"",
@@ -76,7 +104,7 @@ static void ExecuteShellCommand(const char *String) {
   NSString *inputsDir = [@(SRCROOT)
                             stringByAppendingPathComponent:@"perftests/Inputs"];
   NSString *sandboxDir = [@(TEST_TEMPS_PATH)
-                             stringByAppendingPathComponent:@"initial-build"];
+                             stringByAppendingPathComponent:@"LLVMOnlyNoExecuteNullBuild"];
   NSLog(@"executing test using inputs: %@", inputsDir);
   NSLog(@"executing test using sandbox: %@", sandboxDir);
   ExecuteShellCommand([NSString stringWithFormat:@"rm -rf \"%@\"",
