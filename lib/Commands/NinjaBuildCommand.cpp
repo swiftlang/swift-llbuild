@@ -123,12 +123,14 @@ core::Task* BuildCommand(core::BuildEngine& Engine, ninja::Node* Output,
       }
     }
 
-    virtual core::ValueType finish() override {
+    virtual void inputsAvailable(core::BuildEngine& engine) override {
       // Ignore phony commands.
       //
       // FIXME: Make efficient.
-      if (Command->getRule()->getName() == "phony")
-        return 0;
+      if (Command->getRule()->getName() == "phony") {
+        engine.taskIsComplete(this, 0);
+        return;
+      }
 
       ++NumBuiltCommands;
       if (!Quiet) {
@@ -136,8 +138,10 @@ core::Task* BuildCommand(core::BuildEngine& Engine, ninja::Node* Output,
                   << Command->getDescription() << "\n";
       }
 
-      if (NoExecute)
-          return 0;
+      if (NoExecute) {
+        engine.taskIsComplete(this, 0);
+        return;
+      }
 
       // Spawn the command.
       const char* Args[4];
@@ -166,7 +170,7 @@ core::Task* BuildCommand(core::BuildEngine& Engine, ninja::Node* Output,
         std::cerr << "  ... process returned error status: " << Status << "\n";
       }
 
-      return 0;
+      engine.taskIsComplete(this, 0);
     }
   };
 
@@ -204,9 +208,9 @@ core::Task* BuildInput(core::BuildEngine& Engine, ninja::Node* Input) {
 
     virtual void start(core::BuildEngine& engine) override { }
 
-    virtual core::ValueType finish() override {
+    virtual void inputsAvailable(core::BuildEngine& engine) override {
       ++NumBuiltInputs;
-      return GetValueForInput(Node);
+      engine.taskIsComplete(this, GetValueForInput(Node));
     }
   };
 

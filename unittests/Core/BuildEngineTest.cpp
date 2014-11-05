@@ -56,9 +56,8 @@ public:
     InputValues[InputID] = Value;
   }
 
-  virtual ValueType finish() override {
-    // Compute the result.
-    return Compute(InputValues);
+  virtual void inputsAvailable(core::BuildEngine& Engine) override {
+    Engine.taskIsComplete(this, Compute(InputValues));
   }
 };
 

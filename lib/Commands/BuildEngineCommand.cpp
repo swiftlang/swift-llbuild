@@ -96,14 +96,20 @@ static core::Task* BuildAck(core::BuildEngine& engine, int M, int N) {
       }
     }
 
-    virtual core::ValueType finish() override {
-      if (M == 0)
-        return N + 1;
+    virtual void inputsAvailable(core::BuildEngine& engine) override {
+      if (M == 0) {
+        engine.taskIsComplete(this, N + 1);
+        return;
+      }
+
       assert(RecursiveResultA != 0);
-      if (N == 0)
-        return RecursiveResultA;
+      if (N == 0) {
+        engine.taskIsComplete(this, RecursiveResultA);
+        return;
+      }
+
       assert(RecursiveResultB != 0);
-      return RecursiveResultB;
+      engine.taskIsComplete(this, RecursiveResultB);
     }
   };
 

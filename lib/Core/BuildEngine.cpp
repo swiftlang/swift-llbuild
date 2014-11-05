@@ -87,6 +87,9 @@ class BuildEngineImpl {
   /// The queue of tasks ready to be finalized.
   std::vector<TaskInfo*> ReadyTaskInfos;
 
+  /// The queue of tasks which are complete.
+  std::vector<TaskInfo*> FinishedTaskInfos;
+
 private:
   /// @name Build Execution
   /// @{
@@ -312,7 +315,7 @@ private:
         }
       }
 
-      // Process all of the finished tasks.
+      // Process all of the ready to run tasks.
       while (!ReadyTaskInfos.empty()) {
         DidWork = true;
 
@@ -323,13 +326,30 @@ private:
         assert(TaskInfo == RuleInfo->PendingTaskInfo);
 
         if (Trace)
+            Trace->readiedTask(TaskInfo->Task.get(), &RuleInfo->Rule);
+
+        // Inform the task its inputs are ready and it should finish.
+        //
+        // FIXME: We need to track this state, and generate an error if this
+        // task ever requests additional inputs.
+        TaskInfo->Task->inputsAvailable(BuildEngine);
+      }
+
+      // Process all of the finished tasks.
+      while (!FinishedTaskInfos.empty()) {
+        DidWork = true;
+
+        TaskInfo *TaskInfo = FinishedTaskInfos.back();
+        FinishedTaskInfos.pop_back();
+
+        RuleInfo* RuleInfo = TaskInfo->ForRuleInfo;
+        assert(TaskInfo == RuleInfo->PendingTaskInfo);
+
+        if (Trace)
             Trace->finishedTask(TaskInfo->Task.get(), &RuleInfo->Rule);
 
-        // Inform the task it should finish.
-        ValueType Value = TaskInfo->Task->finish();
-
-        // Complete the rule.
-        RuleInfo->Result.Value = Value;
+        // Complete the rule (the value itself is stored in the taskIsFinished
+        // call).
         RuleInfo->Result.ComputedAt = CurrentTimestamp;
         RuleInfo->Result.BuiltAt = CurrentTimestamp;
         RuleInfo->PendingTaskInfo = nullptr;
@@ -368,11 +388,11 @@ public:
   BuildEngineImpl(class BuildEngine& BuildEngine) : BuildEngine(BuildEngine) {}
 
   ~BuildEngineImpl() {
-      // If tracing is enabled, close it.
-      if (Trace) {
-          std::string Error;
-          Trace->close(&Error);
-      }
+    // If tracing is enabled, close it.
+    if (Trace) {
+      std::string Error;
+      Trace->close(&Error);
+    }
   }
 
   /// @name Rule Definition
@@ -393,8 +413,8 @@ public:
     // particularly efficient, it may be best to retrieve this only when we need
     // it and never duplicate it.
     if (DB) {
-        RuleInfo& RuleInfo = Result.first->second;
-        DB->lookupRuleResult(RuleInfo.Rule, &RuleInfo.Result);
+      RuleInfo& RuleInfo = Result.first->second;
+      DB->lookupRuleResult(RuleInfo.Rule, &RuleInfo.Result);
     }
   }
 
@@ -489,6 +509,22 @@ public:
     TaskInfo->WaitCount++;
   }
 
+  void taskIsComplete(Task* Task, ValueType Value) {
+    auto taskinfo_it = TaskInfos.find(Task);
+    assert(taskinfo_it != TaskInfos.end() &&
+           "cannot request inputs for an unknown task");
+    TaskInfo* TaskInfo = &taskinfo_it->second;
+
+    RuleInfo *RuleInfo = TaskInfo->ForRuleInfo;
+    assert(TaskInfo == RuleInfo->PendingTaskInfo);
+
+    // Update the stored result value, and enqueue the finished task processing.
+    RuleInfo->Result.Value = Value;
+
+    // Enqueue the finished task 
+    FinishedTaskInfos.push_back(TaskInfo);
+  }
+
   /// @}
 
   /// @name Internal APIs
@@ -536,3 +572,6 @@ void BuildEngine::taskNeedsInput(Task* Task, KeyType Key, uintptr_t InputID) {
                                                              InputID);
 }
 
+void BuildEngine::taskIsComplete(Task* Task, ValueType Value) {
+  return static_cast<BuildEngineImpl*>(Impl)->taskIsComplete(Task, Value);
+}

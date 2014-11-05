@@ -18,8 +18,8 @@
 
 # Check the first build.
 #
-# CHECK-INITIAL: [1] "cp input-1 output-1"
-# CHECK-INITIAL: [2] "cp input-2 output-2"
+# CHECK-INITIAL: [1] "cp input-2 output-2"
+# CHECK-INITIAL: [2] "cp input-1 output-1"
 # CHECK-INITIAL: [3] "cat output-1 output-2 > output"
 
 # Check the second build.

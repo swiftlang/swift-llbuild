@@ -76,8 +76,10 @@ struct Result {
 /// Task::provideValue().
 ///
 /// After all inputs requested by the Task have been delivered, the BuildEngine
-/// will invoke \see Task::finish() to instruct the Task to complete its
-/// computation and provide the output.
+/// will invoke \see Task::inputsAvailable() to instruct the Task it should
+/// complete its computation and provide the output. The Task is responsible for
+/// providing the engine with the computed value when ready using \see
+/// BuildEngine::taskIsComplete().
 //
 // FIXME: Define parallel execution semantics.
 class Task {
@@ -106,12 +108,15 @@ public:
   virtual void provideValue(BuildEngine&, uintptr_t InputID,
                              ValueType Value) = 0;
 
-  /// Executed by the build engine to retrieve the task output, after all inputs
-  /// have been provided.
-  //
-  // FIXME: Is it ever useful to provide the build engine here? It would be more
-  // symmetric.
-  virtual ValueType finish() = 0;
+  /// Executed by the build engine to indicate that all inputs have been
+  /// provided, and the task should begin its computation.
+  ///
+  /// The task is expected to call \see BuildEngine::taskIsComplete() when it is
+  /// done with its computation.
+  ///
+  /// It is an error for any client to request an additional input for a task
+  /// after the last requested input has been provided by the build engine.
+  virtual void inputsAvailable(BuildEngine&) = 0;
 };
 
 class Rule {
@@ -177,6 +182,9 @@ public:
   /// NOTE: It is an unchecked error for a task to request the same input value
   /// multiple times.
   void taskNeedsInput(Task* Task, KeyType Key, uintptr_t InputID);
+
+  /// Called by a task to indicate it has completed and to provide its value.
+  void taskIsComplete(Task* Task, ValueType Value);
   
   /// @}
 };

@@ -160,6 +160,13 @@ void BuildEngineTrace::unblockedTask(const Task* Task) {
   fprintf(FP, "{ \"unblocked-task\", \"%s\" },\n", getTaskName(Task));
 }
 
+void BuildEngineTrace::readiedTask(const Task* Task, const Rule* Rule) {
+  FILE *FP = static_cast<FILE*>(OutputPtr);
+
+  fprintf(FP, "{ \"readied-task\", \"%s\", \"%s\" },\n",
+          getTaskName(Task), getRuleName(Rule));
+}
+
 void BuildEngineTrace::finishedTask(const Task* Task, const Rule* Rule) {
   FILE *FP = static_cast<FILE*>(OutputPtr);
 
