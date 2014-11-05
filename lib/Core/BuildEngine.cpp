@@ -234,10 +234,13 @@ private:
     std::vector<TaskInputRequest> FinishedInputRequests;
 
     // Process requests as long as we have work to do.
-    while (!InputRequests.empty() || !FinishedInputRequests.empty() ||
-           !ReadyTaskInfos.empty()) {
+    while (true) {
+      bool DidWork = false;
+
       // Process all of the pending input requests.
       while (!InputRequests.empty()) {
+        DidWork = true;
+
         auto Request = InputRequests.back();
         InputRequests.pop_back();
 
@@ -266,6 +269,8 @@ private:
 
       // Process all of the finished inputs.
       while (!FinishedInputRequests.empty()) {
+        DidWork = true;
+
         auto Request = FinishedInputRequests.back();
         FinishedInputRequests.pop_back();
 
@@ -309,6 +314,8 @@ private:
 
       // Process all of the finished tasks.
       while (!ReadyTaskInfos.empty()) {
+        DidWork = true;
+
         TaskInfo* TaskInfo = ReadyTaskInfos.back();
         ReadyTaskInfos.pop_back();
 
@@ -347,6 +354,10 @@ private:
         assert(it != TaskInfos.end());
         TaskInfos.erase(it);
       }
+
+      // If we didn't do any work, we are done.
+      if (!DidWork)
+        break;
     }
 
     // FIXME: If there was no work to do, but we still have running tasks, then
