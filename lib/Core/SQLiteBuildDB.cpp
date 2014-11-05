@@ -190,6 +190,7 @@ public:
     int Result = sqlite3_exec(DB, "SELECT iteration FROM info LIMIT 1",
                               SQLiteGetSingleUInt64, &Iteration, &CError);
     assert(Result == SQLITE_OK);
+    (void)Result;
 
     return Iteration;
   }
@@ -201,6 +202,7 @@ public:
       Value);
     int Result = sqlite3_exec(DB, Query, nullptr, nullptr, &CError);
     assert(Result == SQLITE_OK);
+    (void)Result;
     free(Query);
   }
 
@@ -303,11 +305,13 @@ public:
     int Result = sqlite3_exec(DB, "BEGIN IMMEDIATE;", nullptr, nullptr,
         nullptr);
     assert(Result == SQLITE_OK);
+    (void)Result;
   }
 
   virtual void buildComplete() override {
     int Result = sqlite3_exec(DB, "END;", nullptr, nullptr, nullptr);
     assert(Result == SQLITE_OK);
+    (void)Result;
 
     // Sync changes to disk.
     close();
