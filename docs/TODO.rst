@@ -77,6 +77,12 @@ Build Database
 Ninja Specific
 ==============
 
+* Buffer command output.
+
+* Investigate using pselect mechanisms vs blocked threads.
+
+* Support proper handling of missing outputs (and outdated)?.
+
 * Performance
 
   * Need to optimize the evalString() stuff. A good performance test for this is

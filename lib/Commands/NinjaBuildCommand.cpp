@@ -27,6 +27,8 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+#include <dispatch/dispatch.h>
+
 using namespace llbuild;
 using namespace llbuild::commands;
 
@@ -45,6 +47,8 @@ static void usage() {
           "don't execute commands");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--db <PATH>",
           "persist build results at PATH");
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--jobs <NUM>",
+          "maximum number of parallel jobs to use [default=1]");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--trace <PATH>",
           "trace build engine operation to PATH");
   ::exit(1);
@@ -52,8 +56,40 @@ static void usage() {
 
 namespace {
 
+/// A simple queue for concurrent task work.
+struct ConcurrentLimitedQueue {
+  /// Semaphore used to implement our task limit.
+  dispatch_semaphore_t LimitSemaphore;
+
+  /// The queue we should execute on.
+  dispatch_queue_t Queue;
+
+public:
+  ConcurrentLimitedQueue(unsigned JobLimit)
+    : LimitSemaphore(dispatch_semaphore_create(JobLimit)),
+      Queue(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT,
+                                      /*flags=*/0)) { }
+  ~ConcurrentLimitedQueue() {
+    dispatch_release(LimitSemaphore);
+  }
+
+  void addJob(std::function<void(void)> Job) {
+    dispatch_async(Queue, ^() {
+        // Acquire the semaphore.
+        dispatch_semaphore_wait(LimitSemaphore, DISPATCH_TIME_FOREVER);
+
+        // Execute the job.
+        Job();
+
+        // Release the semaphore.
+        dispatch_semaphore_signal(LimitSemaphore);
+      });
+  }
+};
+
 /// Wrapper for information used during a single build.
-struct BuildContext {
+class BuildContext {
+public:
   /// The engine in use.
   core::BuildEngine Engine;
 
@@ -66,6 +102,22 @@ struct BuildContext {
   unsigned NumBuiltInputs = 0;
   /// The number of commands executed during the build
   unsigned NumBuiltCommands = 0;
+  /// The number of output commands written, for numbering purposes.
+  unsigned NumOutputDescriptions = 0;
+
+  /// The serial queue we used to order output consistently.
+  dispatch_queue_t OutputQueue;
+
+  /// The limited queue we use to execute parallel jobs.
+  std::unique_ptr<ConcurrentLimitedQueue> JobQueue;
+
+public:
+  BuildContext()
+    : OutputQueue(dispatch_queue_create("output-queue",
+                                        /*attr=*/DISPATCH_QUEUE_SERIAL)) {}
+  ~BuildContext() {
+    dispatch_release(OutputQueue);
+  }
 };
 
 class BuildManifestActions : public ninja::ManifestLoaderActions {
@@ -146,17 +198,35 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       }
 
       ++Context.NumBuiltCommands;
-      if (!Context.Quiet) {
-        std::cerr << "[" << Context.NumBuiltCommands << "] "
-                  << Command->getDescription() << "\n";
-      }
 
+      // If we aren't executing, just print the description and complete.
       if (Context.NoExecute) {
-        engine.taskIsComplete(this, 0);
+        if (!Context.Quiet)
+          writeDescription();
+        Context.Engine.taskIsComplete(this, 0);
         return;
       }
 
+      // Otherwise, enqueue the job to run later.
+      Context.JobQueue->addJob([&] () { executeCommand(); });
+    }
+
+    void writeDescription() {
+      std::cerr << "[" << ++Context.NumOutputDescriptions << "] "
+                << Command->getDescription() << "\n";
+    }
+
+    void executeCommand() {
+      if (!Context.Quiet) {
+        dispatch_async(Context.OutputQueue, ^() {
+            writeDescription();
+          });
+      }
+
       // Spawn the command.
+      //
+      // FIXME: We would like to buffer the command output, in the same manner
+      // as Ninja.
       const char* Args[4];
       Args[0] = "/bin/sh";
       Args[1] = "-c";
@@ -183,7 +253,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
         std::cerr << "  ... process returned error status: " << Status << "\n";
       }
 
-      engine.taskIsComplete(this, 0);
+      Context.Engine.taskIsComplete(this, 0);
     }
   };
 
@@ -253,6 +323,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
 
   // Create a context for the build.
   BuildContext Context;
+  unsigned NumJobs = 1;
 
   while (!Args.empty() && Args[0][0] == '-') {
     const std::string Option = Args[0];
@@ -272,6 +343,20 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
         usage();
       }
       DBFilename = Args[0];
+      Args.erase(Args.begin());
+    } else if (Option == "--jobs") {
+      if (Args.empty()) {
+        fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
+                ::getprogname(), Option.c_str());
+        usage();
+      }
+      char *End;
+      NumJobs = ::strtol(Args[0].c_str(), &End, 10);
+      if (*End != '\0') {
+        fprintf(stderr, "\error: %s: invalid argument to '%s'\n\n",
+                ::getprogname(), Option.c_str());
+        usage();
+      }
       Args.erase(Args.begin());
     } else if (Option == "--trace") {
       if (Args.empty()) {
@@ -327,6 +412,9 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   }
 
   // Otherwise, run the build.
+
+  // Create the job queue to use.
+  Context.JobQueue.reset(new ConcurrentLimitedQueue(NumJobs));
 
   // Attach the database, if requested.
   if (!DBFilename.empty()) {
