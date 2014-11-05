@@ -184,6 +184,8 @@ public:
   void taskNeedsInput(Task* Task, KeyType Key, uintptr_t InputID);
 
   /// Called by a task to indicate it has completed and to provide its value.
+  ///
+  /// It is legal to call this method from any thread.
   void taskIsComplete(Task* Task, ValueType Value);
   
   /// @}

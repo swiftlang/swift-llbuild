@@ -18,6 +18,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -87,8 +88,19 @@ class BuildEngineImpl {
   /// The queue of tasks ready to be finalized.
   std::vector<TaskInfo*> ReadyTaskInfos;
 
-  /// The queue of tasks which are complete.
+  /// The number tasks which have been readied but not yet finished.
+  unsigned NumOutstandingUnfinishedTasks = 0;
+
+  /// The queue of tasks which are complete, accesses to this member variable
+  /// must be protected via \see FinishedTaskInfosMutex.
   std::vector<TaskInfo*> FinishedTaskInfos;
+
+  /// The mutex that protects finished task infos.
+  std::mutex FinishedTaskInfosMutex;
+
+  /// This variable is used to signal when additional work is added to the
+  /// FinishedTaskInfos queue, which the engine may need to wait on.
+  std::condition_variable FinishedTaskInfosCondition;
 
 private:
   /// @name Build Execution
@@ -333,14 +345,26 @@ private:
         // FIXME: We need to track this state, and generate an error if this
         // task ever requests additional inputs.
         TaskInfo->Task->inputsAvailable(BuildEngine);
+
+        // Increment our count of outstanding tasks.
+        ++NumOutstandingUnfinishedTasks;
       }
 
       // Process all of the finished tasks.
-      while (!FinishedTaskInfos.empty()) {
-        DidWork = true;
+      while (true) {
+        // Try to take a task from the finished queue.
+        TaskInfo* TaskInfo = nullptr;
+        {
+          std::lock_guard<std::mutex> Guard(FinishedTaskInfosMutex);
+          if (!FinishedTaskInfos.empty()) {
+            TaskInfo = FinishedTaskInfos.back();
+            FinishedTaskInfos.pop_back();
+          }
+        }
+        if (!TaskInfo)
+          break;
 
-        TaskInfo *TaskInfo = FinishedTaskInfos.back();
-        FinishedTaskInfos.pop_back();
+        DidWork = true;
 
         RuleInfo* RuleInfo = TaskInfo->ForRuleInfo;
         assert(TaskInfo == RuleInfo->PendingTaskInfo);
@@ -369,10 +393,29 @@ private:
                                      TaskInfo->RequestedBy.begin(),
                                      TaskInfo->RequestedBy.end());
 
+        // Decrement our count of outstanding tasks.
+        --NumOutstandingUnfinishedTasks;
+
         // Delete the pending task.
         auto it = TaskInfos.find(TaskInfo->Task.get());
         assert(it != TaskInfos.end());
         TaskInfos.erase(it);
+      }
+
+      // If we haven't done any other work at this point but we have pending
+      // tasks, we need to wait for a task to complete.
+      if (!DidWork && NumOutstandingUnfinishedTasks != 0) {
+        // Wait for our condition variable.
+        std::unique_lock<std::mutex> Lock(FinishedTaskInfosMutex);
+
+        // Ensure we still don't have enqueued operations under the protection
+        // of the mutex, if one has been added then we may have already missed
+        // the condition notification and cannot safely wait.
+        if (FinishedTaskInfos.empty()) {
+            FinishedTaskInfosCondition.wait(Lock);
+        }
+
+        DidWork = true;
       }
 
       // If we didn't do any work, we are done.
@@ -522,7 +565,13 @@ public:
     RuleInfo->Result.Value = Value;
 
     // Enqueue the finished task 
-    FinishedTaskInfos.push_back(TaskInfo);
+    {
+      std::lock_guard<std::mutex> Guard(FinishedTaskInfosMutex);
+      FinishedTaskInfos.push_back(TaskInfo);
+    }
+
+    // Notify the engine to wake up, if necessary.
+    FinishedTaskInfosCondition.notify_one();
   }
 
   /// @}
