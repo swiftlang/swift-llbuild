@@ -52,8 +52,21 @@ static void usage() {
 
 namespace {
 
-static bool NoExecute = false;
-static bool Quiet = false;
+/// Wrapper for information used during a single build.
+struct BuildContext {
+  /// The engine in use.
+  core::BuildEngine Engine;
+
+  /// Whether commands should actually be run.
+  bool NoExecute = false;
+  /// Whether commands should print status information.
+  bool Quiet = false;
+
+  /// The number of inputs used during the build.
+  unsigned NumBuiltInputs = 0;
+  /// The number of commands executed during the build
+  unsigned NumBuiltCommands = 0;
+};
 
 class BuildManifestActions : public ninja::ManifestLoaderActions {
   ninja::ManifestLoader *Loader = 0;
@@ -100,17 +113,17 @@ public:
   unsigned getNumErrors() const { return NumErrors; }
 };
 
-unsigned NumBuiltInputs = 0;
-unsigned NumBuiltCommands = 0;
-
-core::Task* BuildCommand(core::BuildEngine& Engine, ninja::Node* Output,
+core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
                          ninja::Command* Command, ninja::Manifest* Manifest) {
   struct NinjaCommandTask : core::Task {
+    BuildContext& Context;
     ninja::Node* Output;
     ninja::Command* Command;
 
-    NinjaCommandTask(ninja::Node* Output, ninja::Command* Command)
-      : Task("ninja-command"), Output(Output), Command(Command) { }
+    NinjaCommandTask(BuildContext& Context, ninja::Node* Output,
+                     ninja::Command* Command)
+      : Task("ninja-command"), Context(Context), Output(Output),
+        Command(Command) { }
 
     virtual void provideValue(core::BuildEngine& engine, uintptr_t InputID,
                               core::ValueType Value) override {
@@ -132,13 +145,13 @@ core::Task* BuildCommand(core::BuildEngine& Engine, ninja::Node* Output,
         return;
       }
 
-      ++NumBuiltCommands;
-      if (!Quiet) {
-        std::cerr << "[" << NumBuiltCommands << "] "
+      ++Context.NumBuiltCommands;
+      if (!Context.Quiet) {
+        std::cerr << "[" << Context.NumBuiltCommands << "] "
                   << Command->getDescription() << "\n";
       }
 
-      if (NoExecute) {
+      if (Context.NoExecute) {
         engine.taskIsComplete(this, 0);
         return;
       }
@@ -174,7 +187,8 @@ core::Task* BuildCommand(core::BuildEngine& Engine, ninja::Node* Output,
     }
   };
 
-  return Engine.registerTask(new NinjaCommandTask(Output, Command));
+  return Context.Engine.registerTask(new NinjaCommandTask(Context, Output,
+                                                          Command));
 }
 
 static core::ValueType GetValueForInput(const ninja::Node* Node) {
@@ -197,11 +211,13 @@ static core::ValueType GetValueForInput(const ninja::Node* Node) {
   return Result;
 }
 
-core::Task* BuildInput(core::BuildEngine& Engine, ninja::Node* Input) {
+core::Task* BuildInput(BuildContext& Context, ninja::Node* Input) {
   struct NinjaInputTask : core::Task {
+    BuildContext& Context;
     ninja::Node* Node;
 
-    NinjaInputTask(ninja::Node* Node) : Task("ninja-input"), Node(Node) { }
+    NinjaInputTask(BuildContext& Context, ninja::Node* Node)
+      : Task("ninja-input"), Context(Context), Node(Node) { }
 
     virtual void provideValue(core::BuildEngine& engine, uintptr_t InputID,
                               core::ValueType Value) override { }
@@ -209,12 +225,12 @@ core::Task* BuildInput(core::BuildEngine& Engine, ninja::Node* Input) {
     virtual void start(core::BuildEngine& engine) override { }
 
     virtual void inputsAvailable(core::BuildEngine& engine) override {
-      ++NumBuiltInputs;
+      ++Context.NumBuiltInputs;
       engine.taskIsComplete(this, GetValueForInput(Node));
     }
   };
 
-  return Engine.registerTask(new NinjaInputTask(Input));
+  return Context.Engine.registerTask(new NinjaInputTask(Context, Input));
 }
 
 static bool BuildInputIsResultValid(ninja::Node *Node,
@@ -235,6 +251,9 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   if (Args.empty() || Args[0] == "--help")
     usage();
 
+  // Create a context for the build.
+  BuildContext Context;
+
   while (!Args.empty() && Args[0][0] == '-') {
     const std::string Option = Args[0];
     Args.erase(Args.begin());
@@ -243,9 +262,9 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       break;
 
     if (Option == "--no-execute") {
-      NoExecute = true;
+      Context.NoExecute = true;
     } else if (Option == "--quiet") {
-      Quiet = true;
+      Context.Quiet = true;
     } else if (Option == "--db") {
       if (Args.empty()) {
         fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
@@ -309,9 +328,6 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
 
   // Otherwise, run the build.
 
-  // Create the build engine.
-  core::BuildEngine Engine;
-
   // Attach the database, if requested.
   if (!DBFilename.empty()) {
     std::string Error;
@@ -322,13 +338,13 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
               getprogname(), Error.c_str());
       return 1;
     }
-    Engine.attachDB(std::move(DB));
+    Context.Engine.attachDB(std::move(DB));
   }
 
   // Enable tracing, if requested.
   if (!TraceFilename.empty()) {
     std::string Error;
-    if (!Engine.enableTracing(TraceFilename, &Error)) {
+    if (!Context.Engine.enableTracing(TraceFilename, &Error)) {
       fprintf(stderr, "error: %s: unable to enable tracing: %s\n",
               getprogname(), Error.c_str());
       return 1;
@@ -343,8 +359,10 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   std::unordered_set<ninja::Node*> VisitedNodes;
   for (auto& Command: Manifest->getCommands()) {
     for (auto& Output: Command->getOutputs()) {
-      Engine.addRule({ Output->getPath(), [&] (core::BuildEngine& Engine) {
-            return BuildCommand(Engine, Output, Command.get(), Manifest.get());
+      Context.Engine.addRule({
+          Output->getPath(),
+          [&] (core::BuildEngine& Engine) {
+            return BuildCommand(Context, Output, Command.get(), Manifest.get());
           } });
       VisitedNodes.insert(Output);
     }
@@ -354,14 +372,14 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   for (auto& Entry: Manifest->getNodes()) {
     ninja::Node* Node = Entry.second.get();
     if (!VisitedNodes.count(Node)) {
-      Engine.addRule({
-              Node->getPath(),
-              [Node] (core::BuildEngine& Engine) {
-                return BuildInput(Engine, Node);
-              },
-              [Node] (const core::Rule& Rule, const core::ValueType Value) {
-                return BuildInputIsResultValid(Node, Value);
-              } });
+      Context.Engine.addRule({
+          Node->getPath(),
+          [&, Node] (core::BuildEngine& Engine) {
+            return BuildInput(Context, Node);
+          },
+          [Node] (const core::Rule& Rule, const core::ValueType Value) {
+            return BuildInputIsResultValid(Node, Value);
+          } });
     }
   }
 
@@ -374,10 +392,10 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   // Build the requested targets.
   for (auto& Name: TargetsToBuild) {
     std::cerr << "building target \"" << util::EscapedString(Name) << "\"...\n";
-    Engine.build(Name);
+    Context.Engine.build(Name);
   }
-  std::cerr << "... built using " << NumBuiltInputs << " inputs\n";
-  std::cerr << "... built using " << NumBuiltCommands << " commands\n";
+  std::cerr << "... built using " << Context.NumBuiltInputs << " inputs\n";
+  std::cerr << "... built using " << Context.NumBuiltCommands << " commands\n";
 
   return 0;
 }
