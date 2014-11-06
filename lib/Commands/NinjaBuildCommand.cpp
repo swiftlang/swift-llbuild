@@ -212,8 +212,12 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
     }
 
     void writeDescription() {
-      std::cerr << "[" << ++Context.NumOutputDescriptions << "] "
-                << Command->getDescription() << "\n";
+      std::cerr << "[" << ++Context.NumOutputDescriptions << "] ";
+      if (Command->getDescription().empty()) {
+        std::cerr << Command->getCommandString() << "\n";
+      } else {
+        std::cerr << Command->getDescription() << "\n";
+      }
     }
 
     void executeCommand() {
