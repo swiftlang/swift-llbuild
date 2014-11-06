@@ -1,0 +1,25 @@
+#!/bin/sh
+
+if [ "$#" -ne 1 ]; then
+   echo "usage: $0 <file>"
+   exit 1
+fi
+
+FILE="$1"
+
+echo "note: $0: waiting for file '${FILE}'"
+
+# Spin-wait for up to ~one second for the file to appear.
+START_TIME=$(date +%s)
+END_TIME=$(expr "${START_TIME}" + 2)
+while [ "$(date +%s)" -lt "${END_TIME}"  ]; do
+  if [ -f "${FILE}" ]; then
+    echo "note: file exists, exiting"
+    exit 0
+  fi
+done
+
+# If we never saw the file, exit with an error.
+echo "error: never saw file appear"
+exit 1
+

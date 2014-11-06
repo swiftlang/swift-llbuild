@@ -1,0 +1,25 @@
+# Verify that we build in parallel correctly. We do this by running two tasks,
+# each of which requires the other to have run before it is willing to complete.
+#
+#
+# The wait-for-file script will exit after ~1s, so if both commands aren't
+# started within that time period then the build will fail.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: cp %S/Inputs/wait-for-file %t.build
+# RUN: %{llbuild} ninja build --jobs 2 %t.build/build.ninja
+
+rule CUSTOM
+  command = ${COMMAND}
+
+build cleanup: CUSTOM
+  command = rm -f node-{A,B}-semaphore
+build node-A: CUSTOM cleanup
+  command = touch node-B-semaphore && ./wait-for-file node-A-semaphore
+build node-B: CUSTOM cleanup
+  command = touch node-A-semaphore && ./wait-for-file node-B-semaphore
+
+build both: phony node-A node-B
+default both
