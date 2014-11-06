@@ -26,4 +26,4 @@ docs/_build
 xcuserdata
 
 # Don't check in Xcode performance baselines, for now.
-xcshareddata/xcbaselines
+xcbaselines
