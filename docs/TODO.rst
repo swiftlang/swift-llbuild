@@ -77,6 +77,8 @@ Build Database
 Ninja Specific
 ==============
 
+* Return proper error status from top-level command.
+
 * Buffer command output.
 
 * Investigate using pselect mechanisms vs blocked threads.

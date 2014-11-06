@@ -165,6 +165,26 @@ public:
   unsigned getNumErrors() const { return NumErrors; }
 };
 
+static core::ValueType GetStatHashForNode(const ninja::Node* Node) {
+  struct ::stat Buf;
+  if (::stat(Node->getPath().c_str(), &Buf) != 0) {
+    // FIXME: What now.
+    return 0;
+  }
+
+  // Hash the stat information.
+  auto Hash = std::hash<uint64_t>();
+  auto Result = Hash(Buf.st_dev) ^ Hash(Buf.st_ino) ^
+    Hash(Buf.st_mtimespec.tv_sec) ^ Hash(Buf.st_mtimespec.tv_nsec) ^
+    Hash(Buf.st_size);
+
+  // Ensure there is never a collision between a valid stat result and an error.
+  if (Result == 0)
+      Result = 1;
+
+  return Result;
+}
+
 core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
                          ninja::Command* Command, ninja::Manifest* Manifest) {
   struct NinjaCommandTask : core::Task {
@@ -265,26 +285,6 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
                                                           Command));
 }
 
-static core::ValueType GetValueForInput(const ninja::Node* Node) {
-  struct ::stat Buf;
-  if (::stat(Node->getPath().c_str(), &Buf) != 0) {
-    // FIXME: What now.
-    return 0;
-  }
-
-  // Hash the stat information.
-  auto Hash = std::hash<uint64_t>();
-  auto Result = Hash(Buf.st_dev) ^ Hash(Buf.st_ino) ^
-    Hash(Buf.st_mtimespec.tv_sec) ^ Hash(Buf.st_mtimespec.tv_nsec) ^
-    Hash(Buf.st_size);
-
-  // Ensure there is never a collision between a valid stat result and an error.
-  if (Result == 0)
-      Result = 1;
-
-  return Result;
-}
-
 core::Task* BuildInput(BuildContext& Context, ninja::Node* Input) {
   struct NinjaInputTask : core::Task {
     BuildContext& Context;
@@ -300,7 +300,7 @@ core::Task* BuildInput(BuildContext& Context, ninja::Node* Input) {
 
     virtual void inputsAvailable(core::BuildEngine& engine) override {
       ++Context.NumBuiltInputs;
-      engine.taskIsComplete(this, GetValueForInput(Node));
+      engine.taskIsComplete(this, GetStatHashForNode(Node));
     }
   };
 
@@ -314,7 +314,7 @@ static bool BuildInputIsResultValid(ninja::Node *Node,
   //
   // We can solve this by caching ourselves but I wonder if it is something the
   // engine should support more naturally.
-  return GetValueForInput(Node) == Value;
+  return GetStatHashForNode(Node) == Value;
 }
 
 }
@@ -455,6 +455,13 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
           Output->getPath(),
           [&] (core::BuildEngine& Engine) {
             return BuildCommand(Context, Output, Command.get(), Manifest.get());
+          },
+          [&] (const core::Rule& Rule, const core::ValueType Value) {
+            // Always rebuild if the output is missing.
+            if (GetStatHashForNode(Output) == 0)
+              return false;
+
+            return true;
           } });
       VisitedNodes.insert(Output);
     }

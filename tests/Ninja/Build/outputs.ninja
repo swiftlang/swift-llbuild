@@ -1,0 +1,25 @@
+# Check the handling of output files.
+#
+# We run the build in a sandbox in the temp directory to ensure we don't
+# interact with the source dirs.
+
+# Check that we always run commands that don't produce output files.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: %{llbuild} ninja build --db %t.build/build.db %t.build/build.ninja no-output &> %t.out
+# RUN: %{FileCheck} --check-prefix=CHECK-FIRST < %t.out %s
+# RUN: %{llbuild} ninja build --db %t.build/build.db %t.build/build.ninja no-output &> %t.out
+# RUN: %{FileCheck} --check-prefix=CHECK-SECOND < %t.out %s
+
+# CHECK-FIRST: [1] echo "built no-output"
+# CHECK-FIRST: built no-output
+# CHECK-SECOND: [1] echo "built no-output"
+# CHECK-SECOND: built no-output
+
+rule CUSTOM
+  command = ${COMMAND}
+
+build no-output: CUSTOM
+  command = echo "built no-output"
