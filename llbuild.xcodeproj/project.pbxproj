@@ -408,7 +408,7 @@
 		E1A2254F19F9A74B0059043E /* README.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.txt; sourceTree = "<group>"; };
 		E1A2255019F9A74B0059043E /* create-lit-site-cfg.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "create-lit-site-cfg.sh"; sourceTree = "<group>"; };
 		E1A2255119F9A74B0059043E /* execute-lit-tests.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "execute-lit-tests.sh"; sourceTree = "<group>"; };
-		E1C404AC1A0308F3003392BA /* NinjaPerfTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NinjaPerfTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E1C404AC1A0308F3003392BA /* PerfTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PerfTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1C404AF1A0308F3003392BA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E1C404B01A0308F3003392BA /* NinjaPerfTests.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = NinjaPerfTests.mm; sourceTree = "<group>"; };
 		E1C404B71A03090D003392BA /* llvm-only.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "llvm-only.ninja"; sourceTree = "<group>"; };
@@ -595,7 +595,7 @@
 				E1A224EF19F99D880059043E /* CoreTests */,
 				E1A2250119F99DFD0059043E /* NinjaTests */,
 				E10D5CDA19FEBF6A00211ED4 /* LitXCTestAdaptor.xctest */,
-				E1C404AC1A0308F3003392BA /* NinjaPerfTests.xctest */,
+				E1C404AC1A0308F3003392BA /* PerfTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -947,13 +947,13 @@
 			path = Xcode;
 			sourceTree = "<group>";
 		};
-		E1C404AD1A0308F3003392BA /* NinjaPerfTests */ = {
+		E1C404AD1A0308F3003392BA /* PerfTests */ = {
 			isa = PBXGroup;
 			children = (
 				E1C404AE1A0308F3003392BA /* Supporting Files */,
 				E1C404B01A0308F3003392BA /* NinjaPerfTests.mm */,
 			);
-			path = NinjaPerfTests;
+			path = PerfTests;
 			sourceTree = "<group>";
 		};
 		E1C404AE1A0308F3003392BA /* Supporting Files */ = {
@@ -984,7 +984,7 @@
 		E1C404B81A03090D003392BA /* Xcode */ = {
 			isa = PBXGroup;
 			children = (
-				E1C404AD1A0308F3003392BA /* NinjaPerfTests */,
+				E1C404AD1A0308F3003392BA /* PerfTests */,
 			);
 			path = Xcode;
 			sourceTree = "<group>";
@@ -1223,13 +1223,13 @@
 				E1A2251E19F99ED10059043E /* PBXTargetDependency */,
 			);
 			name = NinjaTests;
-			productName = CoreTests;
+			productName = NinjaTests;
 			productReference = E1A2250119F99DFD0059043E /* NinjaTests */;
 			productType = "com.apple.product-type.tool";
 		};
-		E1C404AB1A0308F3003392BA /* NinjaPerfTests */ = {
+		E1C404AB1A0308F3003392BA /* PerfTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = E1C404B41A0308F3003392BA /* Build configuration list for PBXNativeTarget "NinjaPerfTests" */;
+			buildConfigurationList = E1C404B41A0308F3003392BA /* Build configuration list for PBXNativeTarget "PerfTests" */;
 			buildPhases = (
 				E1C404A81A0308F3003392BA /* Sources */,
 				E1C404A91A0308F3003392BA /* Frameworks */,
@@ -1239,9 +1239,9 @@
 			);
 			dependencies = (
 			);
-			name = NinjaPerfTests;
-			productName = NinjaPerfTests;
-			productReference = E1C404AC1A0308F3003392BA /* NinjaPerfTests.xctest */;
+			name = PerfTests;
+			productName = PerfTests;
+			productReference = E1C404AC1A0308F3003392BA /* PerfTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
@@ -1316,7 +1316,7 @@
 				E180432F1A00122900662FE7 /* Lit-Tests-Setup */,
 				E1A2254219F9A20D0059043E /* test */,
 				E10D5CD919FEBF6A00211ED4 /* LitXCTestAdaptor */,
-				E1C404AB1A0308F3003392BA /* NinjaPerfTests */,
+				E1C404AB1A0308F3003392BA /* PerfTests */,
 			);
 		};
 /* End PBXProject section */
@@ -1953,7 +1953,7 @@
 					"SRCROOT=\\\"$(SRCROOT)\\\"",
 					"TEST_TEMPS_PATH=\\\"$(CONFIGURATION_TEMP_DIR)/test-temps\\\"",
 				);
-				INFOPLIST_FILE = perftests/Xcode/NinjaPerfTests/Info.plist;
+				INFOPLIST_FILE = perftests/Xcode/PerfTests/Info.plist;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -1970,7 +1970,7 @@
 					"SRCROOT=\\\"$(SRCROOT)\\\"",
 					"TEST_TEMPS_PATH=\\\"$(CONFIGURATION_TEMP_DIR)/test-temps\\\"",
 				);
-				INFOPLIST_FILE = perftests/Xcode/NinjaPerfTests/Info.plist;
+				INFOPLIST_FILE = perftests/Xcode/PerfTests/Info.plist;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -2095,13 +2095,14 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		E1C404B41A0308F3003392BA /* Build configuration list for PBXNativeTarget "NinjaPerfTests" */ = {
+		E1C404B41A0308F3003392BA /* Build configuration list for PBXNativeTarget "PerfTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				E1C404B21A0308F3003392BA /* Debug */,
 				E1C404B31A0308F3003392BA /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
