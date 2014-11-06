@@ -65,12 +65,11 @@ struct ConcurrentLimitedQueue {
   dispatch_queue_t Queue;
 
 public:
-  ConcurrentLimitedQueue(unsigned JobLimit)
-    : LimitSemaphore(dispatch_semaphore_create(JobLimit)),
-      Queue(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT,
-                                      /*flags=*/0)) { }
+  ConcurrentLimitedQueue(unsigned JobLimit, dispatch_queue_t Queue)
+    : LimitSemaphore(dispatch_semaphore_create(JobLimit)), Queue(Queue) { }
   ~ConcurrentLimitedQueue() {
     dispatch_release(LimitSemaphore);
+    dispatch_release(Queue);
   }
 
   void addJob(std::function<void(void)> Job) {
@@ -418,7 +417,18 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   // Otherwise, run the build.
 
   // Create the job queue to use.
-  Context.JobQueue.reset(new ConcurrentLimitedQueue(NumJobs));
+  //
+  // If we are only executing with a single job, we take care to use a serial
+  // queue to ensure deterministic execution.
+  dispatch_queue_t TaskQueue;
+  if (NumJobs == 1) {
+    TaskQueue = dispatch_queue_create("task-queue", DISPATCH_QUEUE_SERIAL);
+  } else {
+    TaskQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT,
+                                          /*flags=*/0);
+    dispatch_retain(TaskQueue);
+  }
+  Context.JobQueue.reset(new ConcurrentLimitedQueue(NumJobs, TaskQueue));
 
   // Attach the database, if requested.
   if (!DBFilename.empty()) {
