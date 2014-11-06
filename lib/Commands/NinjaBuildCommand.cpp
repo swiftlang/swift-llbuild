@@ -103,6 +103,8 @@ public:
   unsigned NumBuiltCommands = 0;
   /// The number of output commands written, for numbering purposes.
   unsigned NumOutputDescriptions = 0;
+  /// The number of failed commands.
+  unsigned NumFailedCommands = 0;
 
   /// The serial queue we used to order output consistently.
   dispatch_queue_t OutputQueue;
@@ -274,6 +276,9 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       }
       if (Status != 0) {
         std::cerr << "  ... process returned error status: " << Status << "\n";
+        dispatch_async(Context.OutputQueue, ^() {
+            ++Context.NumFailedCommands;
+          });
       }
 
       Context.Engine.taskIsComplete(this, 0);
@@ -506,5 +511,13 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   std::cerr << "... built using " << Context.NumBuiltInputs << " inputs\n";
   std::cerr << "... built using " << Context.NumBuiltCommands << " commands\n";
 
+  // If there were command failures, return an error status.
+  if (Context.NumFailedCommands) {
+    fprintf(stderr, "error: %s: build had %d command failures\n",
+            getprogname(), Context.NumFailedCommands);
+    return 1;
+  }
+
+  // Return an appropriate exit statu
   return 0;
 }

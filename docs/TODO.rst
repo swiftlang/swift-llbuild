@@ -59,6 +59,9 @@ Build Engine
 
   * We need to avoid the duplicate stating we currently do of input files.
 
+  * Implement an efficient shared queue for FinishedTaskInfos, if we stay with
+    the current design.
+
 Build Database
 ==============
 
@@ -76,8 +79,6 @@ Build Database
 
 Ninja Specific
 ==============
-
-* Return proper error status from top-level command.
 
 * Buffer command output.
 

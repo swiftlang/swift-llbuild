@@ -1,0 +1,16 @@
+# Verify that we exit with an appropriate code when there are build failures.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: /bin/sh -c "%{llbuild} ninja build --db %t.build/build.db %t.build/build.ninja; echo \"exit code: $?\"" > %t.out
+# RUN: %{FileCheck} < %t.out %s
+# CHECK: exit code: 1
+
+rule CUSTOM
+  command = ${COMMAND}
+
+build command-that-fails: CUSTOM
+  command = false
+
+default command-that-fails
