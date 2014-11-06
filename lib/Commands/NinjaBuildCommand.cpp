@@ -43,8 +43,8 @@ static void usage() {
   fprintf(stderr, "\nOptions:\n");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--help",
           "show this help message and exit");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--no-execute",
-          "don't execute commands");
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--simulate",
+          "simulate the build, assuming commands succeed");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--db <PATH>",
           "persist build results at PATH");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--jobs <NUM>",
@@ -92,8 +92,9 @@ public:
   /// The engine in use.
   core::BuildEngine Engine;
 
-  /// Whether commands should actually be run.
-  bool NoExecute = false;
+  /// Whether the build is being "simulated", in which case commands won't be
+  /// run and inputs will be assumed to exist.
+  bool Simulate = false;
   /// Whether commands should print status information.
   bool Quiet = false;
 
@@ -220,8 +221,9 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
 
       ++Context.NumBuiltCommands;
 
-      // If we aren't executing, just print the description and complete.
-      if (Context.NoExecute) {
+      // If we are simulating the build, just print the description and
+      // complete.
+      if (Context.Simulate) {
         if (!Context.Quiet)
           writeDescription();
         Context.Engine.taskIsComplete(this, 0);
@@ -304,6 +306,12 @@ core::Task* BuildInput(BuildContext& Context, ninja::Node* Input) {
 
     virtual void inputsAvailable(core::BuildEngine& engine) override {
       ++Context.NumBuiltInputs;
+
+      if (Context.Simulate) {
+        engine.taskIsComplete(this, 0);
+        return;
+      }
+
       engine.taskIsComplete(this, GetStatHashForNode(Node));
     }
   };
@@ -340,8 +348,8 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
     if (Option == "--")
       break;
 
-    if (Option == "--no-execute") {
-      Context.NoExecute = true;
+    if (Option == "--simulate") {
+      Context.Simulate = true;
     } else if (Option == "--quiet") {
       Context.Quiet = true;
     } else if (Option == "--db") {
@@ -472,6 +480,10 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
             return BuildCommand(Context, Output, Command.get(), Manifest.get());
           },
           [&] (const core::Rule& Rule, const core::ValueType Value) {
+            // If simulating, assume cached results are valid.
+            if (Context.Simulate)
+              return true;
+
             // Always rebuild if the output is missing.
             if (GetStatHashForNode(Output) == 0)
               return false;
@@ -491,7 +503,11 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
           [&, Node] (core::BuildEngine& Engine) {
             return BuildInput(Context, Node);
           },
-          [Node] (const core::Rule& Rule, const core::ValueType Value) {
+          [&, Node] (const core::Rule& Rule, const core::ValueType Value) {
+            // If simulating, assume cached results are valid.
+            if (Context.Simulate)
+              return true;
+
             return BuildInputIsResultValid(Node, Value);
           } });
     }
