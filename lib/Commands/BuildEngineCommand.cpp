@@ -117,7 +117,7 @@ static core::Task* BuildAck(core::BuildEngine& engine, int M, int N) {
   return engine.registerTask(new AckermannTask(M, N));
 }
 
-static void RunAckermannBuild(int M, int N) {
+static void RunAckermannBuild(int M, int N, int RecomputeCount) {
   // Compute the value of ackermann(M, N) using the build system.
   assert(M >= 0 && M < 4);
   assert(N >= 0);
@@ -155,12 +155,60 @@ static void RunAckermannBuild(int M, int N) {
 #endif
   }
   std::cout << "... computed using " << NumRules << " rules\n";
+
+  // Recompute the result as many times as requested.
+  for (int i = 0; i != RecomputeCount; ++i) {
+    core::ValueType RecomputedResult = engine.build(Key);
+    if (RecomputedResult != Result)
+      abort();
+  }
 }
 
-static int ExecuteAckermannCommand(const std::vector<std::string> &Args) {
+static void AckermannUsage() {
+  int OptionWidth = 20;
+  fprintf(stderr, "Usage: %s buildengine ack [options] <M> <N>\n",
+          ::getprogname());
+  fprintf(stderr, "\nOptions:\n");
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--help",
+          "show this help message and exit");
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--recompute <N>",
+          "recompute the result N times, to stress dependency checking");
+  ::exit(1);
+}
+
+static int ExecuteAckermannCommand(std::vector<std::string> Args) {
+  int RecomputeCount = 0;
+  while (!Args.empty() && Args[0][0] == '-') {
+    const std::string Option = Args[0];
+    Args.erase(Args.begin());
+
+    if (Option == "--")
+      break;
+
+    if (Option == "--recompute") {
+      if (Args.empty()) {
+        fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
+                ::getprogname(), Option.c_str());
+        AckermannUsage();
+      }
+      char *End;
+      RecomputeCount = ::strtol(Args[0].c_str(), &End, 10);
+      if (*End != '\0') {
+        fprintf(stderr, "\error: %s: invalid argument to '%s'\n\n",
+                ::getprogname(), Option.c_str());
+        AckermannUsage();
+      }
+      Args.erase(Args.begin());
+    } else {
+      fprintf(stderr, "\error: %s: invalid option: '%s'\n\n",
+              ::getprogname(), Option.c_str());
+      AckermannUsage();
+    }
+  }
+
   if (Args.size() != 2) {
     fprintf(stderr, "error: %s: invalid number of arguments\n", getprogname());
-    return 1;
+    AckermannUsage();
   }
 
   const char *Str = Args[0].c_str();
@@ -189,8 +237,8 @@ static int ExecuteAckermannCommand(const std::vector<std::string> &Args) {
             getprogname(), N);
     return 1;
   }
-    
-  RunAckermannBuild(M, N);
+
+  RunAckermannBuild(M, N, RecomputeCount);
   return 0;
 }
 
