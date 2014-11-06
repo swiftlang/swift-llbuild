@@ -36,7 +36,6 @@ class BuildEngineImpl {
 
   BuildEngine &BuildEngine;
 
-
   /// The build database, if attached.
   std::unique_ptr<BuildDB> DB;
 
@@ -53,7 +52,7 @@ class BuildEngineImpl {
     Rule Rule;
     /// The task computing this rule, if in progress.
     TaskInfo* PendingTaskInfo = 0;
-    // FIXME: Needs to move to database.
+    /// The most recent rule result.
     Result Result = {};
 
   public:
@@ -68,7 +67,7 @@ class BuildEngineImpl {
     /// The task making the request.
     TaskInfo* TaskInfo;
     /// The rule for the input which was requested.
-    RuleInfo* RuleInfo;
+    RuleInfo* InputRuleInfo;
     /// The task provided input ID, for its own use in identifying the input.
     uint64_t InputID;
   };
@@ -79,9 +78,18 @@ class BuildEngineImpl {
     TaskInfo(Task* Task) : Task(Task) {}
 
     std::unique_ptr<Task> Task;
+    /// The list of input requests that are waiting on this task, which will be
+    /// fulfilled once the task is complete.
+    //
+    // FIXME: Note that this structure is redundant here, as
+    // (TaskInputRequest::TaskInfo == this) for all items, but we reuse the
+    // existing structure for simplicity.
     std::vector<TaskInputRequest> RequestedBy;
-    unsigned WaitCount = 0;
+    /// The rule that this task is computing.
     RuleInfo* ForRuleInfo = nullptr;
+    /// The number of outstanding inputs that this task is waiting on to be
+    /// provided.
+    unsigned WaitCount = 0;
   };
   std::unordered_map<Task*, TaskInfo> TaskInfos;
 
@@ -183,7 +191,7 @@ private:
   /// Request the construction of the key specified by the given rule.
   ///
   /// \returns True if the rule is already available, otherwise the rule will be
-  /// enqueue for processing.
+  /// enqueued for processing.
   bool demandRule(RuleInfo& RuleInfo) {
     // If the rule is complete, we are done.
     if (RuleInfo.isComplete(this))
@@ -261,24 +269,25 @@ private:
 
         if (Trace)
           Trace->handlingTaskInputRequest(Request.TaskInfo->Task.get(),
-                                          &Request.RuleInfo->Rule);
+                                          &Request.InputRuleInfo->Rule);
 
-        // Request the rule be computed.
-        bool IsAvailable = demandRule(*Request.RuleInfo);
+        // Request the input rule be computed.
+        bool IsAvailable = demandRule(*Request.InputRuleInfo);
 
         // If the rule is already available, enqueue the finalize request.
         if (IsAvailable) {
           if (Trace)
             Trace->readyingTaskInputRequest(Request.TaskInfo->Task.get(),
-                                            &Request.RuleInfo->Rule);
+                                            &Request.InputRuleInfo->Rule);
           FinishedInputRequests.push_back(Request);
         } else {
           // Otherwise, record the pending input request.
-          assert(Request.RuleInfo->PendingTaskInfo != nullptr);
-          Request.RuleInfo->PendingTaskInfo->RequestedBy.push_back(Request);
+          assert(Request.InputRuleInfo->PendingTaskInfo != nullptr);
           if (Trace)
-            Trace->addedRulePendingTask(&Request.RuleInfo->Rule,
+            Trace->addedRulePendingTask(&Request.InputRuleInfo->Rule,
                                         Request.TaskInfo->Task.get());
+          Request.InputRuleInfo->PendingTaskInfo->RequestedBy.push_back(
+            Request);
         }
       }
 
@@ -291,7 +300,7 @@ private:
 
         if (Trace)
           Trace->completedTaskInputRequest(Request.TaskInfo->Task.get(),
-                                           &Request.RuleInfo->Rule);
+                                           &Request.InputRuleInfo->Rule);
 
         // Update the recorded dependencies of this task.
         //
@@ -305,15 +314,15 @@ private:
         // * Record at the time it is popped off the input request queue.
         // * Record at the time the input is supplied (here).
         Request.TaskInfo->ForRuleInfo->Result.Dependencies.push_back(
-          Request.RuleInfo->Rule.Key);
+          Request.InputRuleInfo->Rule.Key);
 
         // Provide the requesting task with the input.
         //
         // FIXME: Should we provide the input key here? We have it available
         // cheaply.
-        assert(Request.RuleInfo->isComplete(this));
-        Request.TaskInfo->Task->provideValue(BuildEngine, Request.InputID,
-                                             Request.RuleInfo->Result.Value);
+        assert(Request.InputRuleInfo->isComplete(this));
+        Request.TaskInfo->Task->provideValue(
+          BuildEngine, Request.InputID, Request.InputRuleInfo->Result.Value);
 
         // Decrement the wait count, and move to finish queue if necessary.
         --Request.TaskInfo->WaitCount;
@@ -386,7 +395,7 @@ private:
         if (Trace) {
           for (auto& Request: TaskInfo->RequestedBy) {
             Trace->readyingTaskInputRequest(Request.TaskInfo->Task.get(),
-                                            &Request.RuleInfo->Rule);
+                                            &Request.InputRuleInfo->Rule);
           }
         }
         FinishedInputRequests.insert(FinishedInputRequests.end(),
