@@ -47,6 +47,24 @@ class BuildEngineImpl {
 
   /// The map of rule information.
   struct RuleInfo {
+    enum class StateKind {
+      /// The initial rule state.
+      Incomplete = 0,
+
+      /// The rule is in progress, but is waiting on additional inputs.
+      InProgressWaiting,
+
+      /// The rule is in progress, and is computing its result.
+      InProgressComputing,
+
+      /// The rule is complete, with an available result.
+      ///
+      /// Note that as an optimization, when the build timestamp is incremented
+      /// we do not immediately reset the state, rather we do it lazily as part
+      /// of \see demandRule() in conjunction with the Result::BuiltAt field.
+      Complete
+    };
+
     RuleInfo(Rule &&Rule) : Rule(Rule) {}
 
     Rule Rule;
@@ -54,10 +72,30 @@ class BuildEngineImpl {
     TaskInfo* PendingTaskInfo = 0;
     /// The most recent rule result.
     Result Result = {};
+    /// The current state of the rule.
+    StateKind State = StateKind::Incomplete;
 
   public:
-    bool isComplete(const BuildEngineImpl* Engine) {
-      return Result.BuiltAt == Engine->getCurrentTimestamp();
+    bool isInProgress() const {
+      return State == StateKind::InProgressWaiting ||
+        State == StateKind::InProgressComputing;
+    }
+
+    bool isComplete(const BuildEngineImpl* Engine) const {
+      return State == StateKind::Complete &&
+        Result.BuiltAt == Engine->getCurrentTimestamp();
+    }
+
+    void setComplete(const BuildEngineImpl* Engine) {
+      State = StateKind::Complete;
+      // Note we do not push this change to the database. This is essentially a
+      // mark we maintain to allow a lazy transition to Incomplete when the
+      // timestamp is incremented.
+      //
+      // FIXME: This is a bit dubious, and wouldn't work anymore if we moved the
+      // Result to being totally managed by the database. However, it is just a
+      // matter of keeping an extra timestamp outside the Result to fix.
+      Result.BuiltAt = Engine->getCurrentTimestamp();
     }
   };
   std::unordered_map<KeyType, RuleInfo> RuleInfos;
@@ -197,23 +235,14 @@ private:
     if (RuleInfo.isComplete(this))
       return true;
 
-    // If the rule isn't complete, but it already has a pending task, we don't
-    // need to do anything.
-    if (RuleInfo.PendingTaskInfo)
+    // If the rule is in progress, we don't need to do anything.
+    if (RuleInfo.isInProgress())
       return false;
 
     // If the rule isn't marked complete, but doesn't need to actually run, then
     // just update it.
     if (!ruleNeedsToRun(RuleInfo)) {
-      RuleInfo.Result.BuiltAt = CurrentTimestamp;
-      assert(RuleInfo.isComplete(this));
-
-      // FIXME: We don't actually tell the DB to update the entry here, because
-      // it is essentially just a mark of up-to-dateness, and we will increment
-      // it every time. What we should be doing is using a separate flag to
-      // track this, instead of abusing BuiltAt for it (see also the FIXME in
-      // the declaration of Result::BuiltAt).
-
+      RuleInfo.setComplete(this);
       return true;
     }
 
@@ -232,6 +261,9 @@ private:
 
     if (Trace)
       Trace->createdTaskForRule(TaskInfo->Task.get(), &RuleInfo.Rule);
+
+    // Transition the rule state.
+    RuleInfo.State = RuleInfo::StateKind::InProgressWaiting;
 
     // Reset the Rule result state. The only field we must reset here is the
     // Dependencies, which we just append to during processing, but we reset the
@@ -349,6 +381,10 @@ private:
         if (Trace)
             Trace->readiedTask(TaskInfo->Task.get(), &RuleInfo->Rule);
 
+        // Transition the rule state.
+        assert(RuleInfo->State == RuleInfo::StateKind::InProgressWaiting);
+        RuleInfo->State = RuleInfo::StateKind::InProgressComputing;
+
         // Inform the task its inputs are ready and it should finish.
         //
         // FIXME: We need to track this state, and generate an error if this
@@ -380,6 +416,10 @@ private:
 
         if (Trace)
             Trace->finishedTask(TaskInfo->Task.get(), &RuleInfo->Rule);
+
+        // Transition the rule state.
+        assert(RuleInfo->State == RuleInfo::StateKind::InProgressComputing);
+        RuleInfo->State = RuleInfo::StateKind::Complete;
 
         // Complete the rule (the value itself is stored in the taskIsFinished
         // call).
@@ -480,6 +520,13 @@ public:
       DB->buildStarted();
 
     // Increment our running iteration count.
+    //
+    // At this point, we should conceptually mark each complete rule as
+    // incomplete. However, instead of doing all that work immediately, we
+    // perform it lazily by reusing the Result::BuiltAt field for each rule as
+    // an additional mark. When a rule is demanded, if its BuiltAt index isn't
+    // up-to-date then we lazily reset it to be Incomplete, \see demandRule()
+    // and \see RuleInfo::isComplete().
     ++CurrentTimestamp;
 
     // Find the rule.
@@ -547,6 +594,13 @@ public:
     assert(taskinfo_it != TaskInfos.end() &&
            "cannot request inputs for an unknown task");
     TaskInfo* TaskInfo = &taskinfo_it->second;
+
+    // Validate that the task is in a valid state to request inputs.
+    if (TaskInfo->ForRuleInfo->State !=
+          RuleInfo::StateKind::InProgressWaiting) {
+      // FIXME: Error handling.
+      abort();
+    }
 
     // Lookup the rule for this task.
     auto ruleinfo_it = RuleInfos.find(Key);
