@@ -17,6 +17,7 @@
 #include "BuildEngineTrace.h"
 
 #include <cassert>
+#include <cstdio>
 #include <iostream>
 #include <thread>
 #include <unordered_map>
@@ -577,6 +578,47 @@ public:
     return true;
   }
 
+  /// Dump the build state to a file in Graphviz DOT format.
+  void dumpGraphToFile(const std::string &Path) {
+    FILE* FP = ::fopen(Path.c_str(), "w");
+    if (!FP) {
+      // FIXME: Error handling.
+      std::cerr << "error: unable to open graph output path \""
+                << Path << "\"\n";
+      exit(1);
+    }
+
+    // Write the graph header.
+    fprintf(FP, "digraph llbuild {\n");
+    fprintf(FP, "rankdir=\"LR\"\n");
+    fprintf(FP, "node [fontsize=10, shape=box, height=0.25]\n");
+    fprintf(FP, "edge [fontsize=10]\n");
+    fprintf(FP, "\n");
+
+    // Create a canonical node ordering.
+    std::vector<RuleInfo*> OrderedRuleInfos;
+    for (auto& Entry: RuleInfos)
+      OrderedRuleInfos.push_back(&Entry.second);
+    std::sort(OrderedRuleInfos.begin(), OrderedRuleInfos.end(),
+              [] (RuleInfo* a, RuleInfo* b) {
+        return a->Rule.Key < b->Rule.Key;
+      });
+
+    // Write out all of the rules.
+    for (auto RuleInfo: OrderedRuleInfos) {
+      fprintf(FP, "\"%s\"\n", RuleInfo->Rule.Key.c_str());
+      for (auto& Input: RuleInfo->Result.Dependencies) {
+        fprintf(FP, "\"%s\" -> \"%s\"\n", RuleInfo->Rule.Key.c_str(),
+                Input.c_str());
+      }
+      fprintf(FP, "\n");
+    }
+
+    // Write the footer and close.
+    fprintf(FP, "}\n");
+    fclose(FP);
+  }
+
   /// @}
 
   /// @name Task Management Client APIs
@@ -664,6 +706,10 @@ void BuildEngine::addRule(Rule &&Rule) {
 
 ValueType BuildEngine::build(KeyType Key) {
   return static_cast<BuildEngineImpl*>(Impl)->build(Key);
+}
+
+void BuildEngine::dumpGraphToFile(const std::string& Path) {
+  return static_cast<BuildEngineImpl*>(Impl)->dumpGraphToFile(Path);
 }
 
 void BuildEngine::attachDB(std::unique_ptr<BuildDB> Database) {

@@ -47,6 +47,8 @@ static void usage() {
           "simulate the build, assuming commands succeed");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--db <PATH>",
           "persist build results at PATH");
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--dump-graph <PATH>",
+          "dump build graph to PATH in Graphviz DOT format");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--jobs <NUM>",
           "maximum number of parallel jobs to use [default=1]");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--trace <PATH>",
@@ -332,7 +334,7 @@ static bool BuildInputIsResultValid(ninja::Node *Node,
 }
 
 int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
-  std::string DBFilename, TraceFilename;
+  std::string DBFilename, DumpGraphPath, TraceFilename;
 
   if (Args.empty() || Args[0] == "--help")
     usage();
@@ -359,6 +361,14 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
         usage();
       }
       DBFilename = Args[0];
+      Args.erase(Args.begin());
+    } else if (Option == "--dump-graph") {
+      if (Args.empty()) {
+        fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
+                ::getprogname(), Option.c_str());
+        usage();
+      }
+      DumpGraphPath = Args[0];
       Args.erase(Args.begin());
     } else if (Option == "--jobs") {
       if (Args.empty()) {
@@ -526,6 +536,10 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   }
   std::cerr << "... built using " << Context.NumBuiltInputs << " inputs\n";
   std::cerr << "... built using " << Context.NumBuiltCommands << " commands\n";
+
+  if (!DumpGraphPath.empty()) {
+    Context.Engine.dumpGraphToFile(DumpGraphPath);
+  }
 
   // If there were command failures, return an error status.
   if (Context.NumFailedCommands) {

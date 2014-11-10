@@ -160,6 +160,9 @@ public:
   /// \returns True on success.
   bool enableTracing(const std::string& Path, std::string* Error_Out);
 
+  /// Dump the build state to a file in Graphviz DOT format.
+  void dumpGraphToFile(const std::string &Path);
+
   /// @}
 
   /// @name Task Management APIs
