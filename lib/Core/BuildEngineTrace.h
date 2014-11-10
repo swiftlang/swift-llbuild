@@ -64,6 +64,7 @@ public:
     /// @name Core Engine Operation
     /// @{
 
+    void buildStarted(const Rule* Rule);
     void createdTaskForRule(const Task* Task, const Rule* Rule);
     void handlingTaskInputRequest(const Task* Task, const Rule* Rule);
     void readyingTaskInputRequest(const Task* Task, const Rule* Rule);
@@ -73,6 +74,7 @@ public:
     void unblockedTask(const Task* Task);
     void readiedTask(const Task* Task, const Rule* Rule);
     void finishedTask(const Task* Task, const Rule* Rule);
+    void buildEnded();
 
     /// @}
 

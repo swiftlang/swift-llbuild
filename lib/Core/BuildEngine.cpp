@@ -539,6 +539,9 @@ public:
     }
     auto& RuleInfo = it->second;
 
+    if (Trace)
+      Trace->buildStarted(&RuleInfo.Rule);
+
     // Demand the result for this rule.
     demandRule(RuleInfo);
 
@@ -552,6 +555,9 @@ public:
       DB->setCurrentIteration(CurrentTimestamp);
       DB->buildComplete();
     }
+
+    if (Trace)
+      Trace->buildEnded();
 
     // The task queue should be empty and the rule complete.
     assert(TaskInfos.empty() && RuleInfo.isComplete(this));

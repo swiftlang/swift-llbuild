@@ -106,6 +106,13 @@ const char* BuildEngineTrace::getRuleName(const Rule* Rule) {
   return Result.first->second.c_str();
 }
 
+void BuildEngineTrace::buildStarted(const Rule* Rule) {
+  FILE *FP = static_cast<FILE*>(OutputPtr);
+
+  fprintf(FP, "{ \"build-started-for-rule\", \"%s\" },\n",
+          getRuleName(Rule));
+}
+
 void BuildEngineTrace::createdTaskForRule(const Task* Task,
                                           const Rule* Rule) {
   FILE *FP = static_cast<FILE*>(OutputPtr);
@@ -177,6 +184,13 @@ void BuildEngineTrace::finishedTask(const Task* Task, const Rule* Rule) {
   TaskNames.erase(TaskNames.find(Task));
 }
 
+void BuildEngineTrace::buildEnded() {
+  FILE *FP = static_cast<FILE*>(OutputPtr);
+
+  fprintf(FP, "{ \"build-ended\" },\n");
+}
+
+#pragma mark - Dependency Scanning Tracing APIs
 
 void BuildEngineTrace::checkingRuleNeedsToRun(const Rule* ForRule) {
   FILE *FP = static_cast<FILE*>(OutputPtr);
