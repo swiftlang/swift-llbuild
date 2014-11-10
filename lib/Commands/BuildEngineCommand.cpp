@@ -117,13 +117,25 @@ static core::Task* BuildAck(core::BuildEngine& engine, int M, int N) {
   return engine.registerTask(new AckermannTask(M, N));
 }
 
-static void RunAckermannBuild(int M, int N, int RecomputeCount) {
+static int RunAckermannBuild(int M, int N, int RecomputeCount,
+                             const std::string& TraceFilename) {
   // Compute the value of ackermann(M, N) using the build system.
   assert(M >= 0 && M < 4);
   assert(N >= 0);
 
   // First, create rules for each of the necessary results.
   core::BuildEngine engine;
+
+  // Enable tracing, if requested.
+  if (!TraceFilename.empty()) {
+    std::string Error;
+    if (!engine.enableTracing(TraceFilename, &Error)) {
+      fprintf(stderr, "error: %s: unable to enable tracing: %s\n",
+              getprogname(), Error.c_str());
+      return 1;
+    }
+  }
+
   int NumRules = 0;
   for (int i = 0; i <= M; ++i) {
     int UpperBound;
@@ -162,6 +174,8 @@ static void RunAckermannBuild(int M, int N, int RecomputeCount) {
     if (RecomputedResult != Result)
       abort();
   }
+
+  return 0;
 }
 
 static void AckermannUsage() {
@@ -173,11 +187,14 @@ static void AckermannUsage() {
           "show this help message and exit");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--recompute <N>",
           "recompute the result N times, to stress dependency checking");
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--trace <PATH>",
+          "trace build engine operation to PATH");
   ::exit(1);
 }
 
 static int ExecuteAckermannCommand(std::vector<std::string> Args) {
   int RecomputeCount = 0;
+  std::string TraceFilename;
   while (!Args.empty() && Args[0][0] == '-') {
     const std::string Option = Args[0];
     Args.erase(Args.begin());
@@ -198,6 +215,14 @@ static int ExecuteAckermannCommand(std::vector<std::string> Args) {
                 ::getprogname(), Option.c_str());
         AckermannUsage();
       }
+      Args.erase(Args.begin());
+    } else if (Option == "--trace") {
+      if (Args.empty()) {
+        fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
+                ::getprogname(), Option.c_str());
+        AckermannUsage();
+      }
+      TraceFilename = Args[0];
       Args.erase(Args.begin());
     } else {
       fprintf(stderr, "\error: %s: invalid option: '%s'\n\n",
@@ -238,8 +263,7 @@ static int ExecuteAckermannCommand(std::vector<std::string> Args) {
     return 1;
   }
 
-  RunAckermannBuild(M, N, RecomputeCount);
-  return 0;
+  return RunAckermannBuild(M, N, RecomputeCount, TraceFilename);
 }
 
 }
