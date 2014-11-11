@@ -106,10 +106,16 @@ const char* BuildEngineTrace::getRuleName(const Rule* Rule) {
   return Result.first->second.c_str();
 }
 
-void BuildEngineTrace::buildStarted(const Rule* Rule) {
+void BuildEngineTrace::buildStarted() {
   FILE *FP = static_cast<FILE*>(OutputPtr);
 
-  fprintf(FP, "{ \"build-started-for-rule\", \"%s\" },\n",
+  fprintf(FP, "{ \"build-started\" },\n");
+}
+
+void BuildEngineTrace::handlingBuildInputRequest(const Rule* Rule) {
+  FILE *FP = static_cast<FILE*>(OutputPtr);
+
+  fprintf(FP, "{ \"handling-build-input-request\", \"%s\" },\n",
           getRuleName(Rule));
 }
 

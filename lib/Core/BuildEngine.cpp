@@ -300,12 +300,21 @@ private:
         auto Request = InputRequests.back();
         InputRequests.pop_back();
 
-        if (Trace)
-          Trace->handlingTaskInputRequest(Request.TaskInfo->Task.get(),
-                                          &Request.InputRuleInfo->Rule);
+        if (Trace) {
+          if (Request.TaskInfo) {
+            Trace->handlingTaskInputRequest(Request.TaskInfo->Task.get(),
+                                            &Request.InputRuleInfo->Rule);
+          } else {
+            Trace->handlingBuildInputRequest(&Request.InputRuleInfo->Rule);
+          }
+        }
 
         // Request the input rule be computed.
         bool IsAvailable = demandRule(*Request.InputRuleInfo);
+
+        // If this is a dummy input request, we are done.
+        if (!Request.TaskInfo)
+          continue;
 
         // If the rule is already available, enqueue the finalize request.
         if (IsAvailable) {
@@ -540,10 +549,10 @@ public:
     auto& RuleInfo = it->second;
 
     if (Trace)
-      Trace->buildStarted(&RuleInfo.Rule);
+      Trace->buildStarted();
 
-    // Demand the result for this rule.
-    demandRule(RuleInfo);
+    // Push a dummy input request for this rule.
+    InputRequests.push_back({ nullptr, &RuleInfo });
 
     // Run the build engine, to process any necessary tasks.
     executeTasks();

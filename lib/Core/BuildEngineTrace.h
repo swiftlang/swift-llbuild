@@ -64,7 +64,8 @@ public:
     /// @name Core Engine Operation
     /// @{
 
-    void buildStarted(const Rule* Rule);
+    void buildStarted();
+    void handlingBuildInputRequest(const Rule* Rule);
     void createdTaskForRule(const Task* Task, const Rule* Rule);
     void handlingTaskInputRequest(const Task* Task, const Rule* Rule);
     void readyingTaskInputRequest(const Task* Task, const Rule* Rule);
