@@ -156,6 +156,68 @@ TEST(BuildEngineTest, BasicWithSharedInput) {
   EXPECT_EQ("value-R", BuiltKeys[3]);
 }
 
+TEST(BuildEngineTest, VeryBasicIncremental) {
+  // Check a trivial build graph responds to incremental changes appropriately.
+  //
+  // Dependencies:
+  //   value-R: (value-A, value-B)
+  std::vector<std::string> BuiltKeys;
+  core::BuildEngine Engine;
+  int ValueA = 2;
+  int ValueB = 3;
+  Engine.addRule({
+      "value-A", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
+          BuiltKeys.push_back("value-A");
+          return ValueA; }),
+      [&](const Rule& rule, const ValueType Value) {
+          // FIXME: Once we have custom ValueType objects, we would like to have
+          // timestamps on the value and just compare to a timestamp (similar to
+          // what we would do for a file).
+          return ValueA == Value;
+      } });
+  Engine.addRule({
+      "value-B", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
+          BuiltKeys.push_back("value-B");
+          return ValueB; }),
+      [&](const Rule& rule, const ValueType Value) {
+          // FIXME: Once we have custom ValueType objects, we would like to have
+          // timestamps on the value and just compare to a timestamp (similar to
+          // what we would do for a file).
+          return ValueB == Value;
+      } });
+  Engine.addRule({
+      "value-R",
+      simpleAction({"value-A", "value-B"},
+                   [&] (const std::vector<ValueType>& Inputs) {
+                     EXPECT_EQ(2U, Inputs.size());
+                     EXPECT_EQ(ValueA, Inputs[0]);
+                     EXPECT_EQ(ValueB, Inputs[1]);
+                     BuiltKeys.push_back("value-R");
+                     return Inputs[0] * Inputs[1] * 5;
+                   }) });
+
+  // Build the first result.
+  BuiltKeys.clear();
+  EXPECT_EQ(ValueA * ValueB * 5, Engine.build("value-R"));
+  EXPECT_EQ(3U, BuiltKeys.size());
+  EXPECT_EQ("value-A", BuiltKeys[0]);
+  EXPECT_EQ("value-B", BuiltKeys[1]);
+  EXPECT_EQ("value-R", BuiltKeys[2]);
+
+  // Mark value-A as having changed, then rebuild and sanity check.
+  ValueA = 7;
+  BuiltKeys.clear();
+  EXPECT_EQ(ValueA * ValueB * 5, Engine.build("value-R"));
+  EXPECT_EQ(2U, BuiltKeys.size());
+  EXPECT_EQ("value-A", BuiltKeys[0]);
+  EXPECT_EQ("value-R", BuiltKeys[2]);
+
+  // Check that a subsequent build is null.
+  BuiltKeys.clear();
+  EXPECT_EQ(ValueA * ValueB * 5, Engine.build("value-R"));
+  EXPECT_EQ(0U, BuiltKeys.size());
+}
+
 TEST(BuildEngineTest, BasicIncremental) {
   // Check a build graph responds to incremental changes appropriately.
   //
