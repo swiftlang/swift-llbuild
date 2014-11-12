@@ -33,6 +33,7 @@ Task::~Task() {}
 namespace {
 
 class BuildEngineImpl {
+  struct RuleInfo;
   struct TaskInfo;
 
   BuildEngine &BuildEngine;
@@ -46,11 +47,46 @@ class BuildEngineImpl {
   /// The current build iteration, used to sequentially timestamp build results.
   uint64_t CurrentTimestamp = 0;
 
+  /// The queue of input requests to process.
+  struct TaskInputRequest {
+    /// The task making the request.
+    TaskInfo* TaskInfo;
+    /// The rule for the input which was requested.
+    RuleInfo* InputRuleInfo;
+    /// The task provided input ID, for its own use in identifying the input.
+    uint64_t InputID;
+  };
+  std::vector<TaskInputRequest> InputRequests;
+
+  /// The queue of rules being scanned.
+  struct RuleScanRequest {
+    /// The rule making the request.
+    RuleInfo* RuleInfo;
+    /// The input index being considered.
+    unsigned InputIndex;
+    /// The input being considered, if already looked up.
+    ///
+    /// This is used when a scan request is deferred waiting on its input to be
+    /// scanned, to avoid a redundant hash lookup.
+    struct RuleInfo* InputRuleInfo;
+  };
+  std::vector<RuleScanRequest> RuleInfosToScan;
+
   /// The map of rule information.
   struct RuleInfo {
     enum class StateKind {
       /// The initial rule state.
       Incomplete = 0,
+
+      /// The rule is being scanned to determine if it needs to run.
+      IsScanning,
+
+      /// The rule needs to run, but has not yet been started.
+      NeedsToRun,
+
+      /// The rule does not need to run, but has not yet been marked as
+      /// complete.
+      DoesNotNeedToRun,
 
       /// The rule is in progress, but is waiting on additional inputs.
       InProgressWaiting,
@@ -75,8 +111,30 @@ class BuildEngineImpl {
     Result Result = {};
     /// The current state of the rule.
     StateKind State = StateKind::Incomplete;
+    /// The vector of paused input requests, waiting for the dependency scan on
+    /// this rule to complete.
+    //
+    // FIXME: Eliminate this, it shouldn't be something we need to keep around
+    // except when a rule is actively having its dependencies scanned. We can
+    // probably reuse the PendingTaskInfo field for this (in fact, maybe we can
+    // even use a real task info for this).
+    std::vector<TaskInputRequest> PausedInputRequests;
+    /// The vector of deferred scan requests, for rules which are waiting on
+    /// this one to be scanned.
+    //
+    // FIXME: As above, eliminate this.
+    std::vector<RuleScanRequest> DeferredScanRequests;
 
   public:
+    bool isScanned(const BuildEngineImpl* Engine) const {
+      // If the rule is marked as complete, just check that state.
+      if (State == StateKind::Complete)
+        return isComplete(Engine);
+
+      // Otherwise, the rule is scanned if it has passed the scanning state.
+      return int(State) > int(StateKind::IsScanning);
+    }
+
     bool isInProgress() const {
       return State == StateKind::InProgressWaiting ||
         State == StateKind::InProgressComputing;
@@ -99,18 +157,10 @@ class BuildEngineImpl {
       Result.BuiltAt = Engine->getCurrentTimestamp();
     }
   };
+  // FIXME: The code currently assumes all rules are allocated up front, and
+  // uses RuleInfo*s assuming they are stable. We will need to change this and
+  // heap allocate (or something) if we allow lazy rule construction.
   std::unordered_map<KeyType, RuleInfo> RuleInfos;
-
-  /// The queue of input requests to process.
-  struct TaskInputRequest {
-    /// The task making the request.
-    TaskInfo* TaskInfo;
-    /// The rule for the input which was requested.
-    RuleInfo* InputRuleInfo;
-    /// The task provided input ID, for its own use in identifying the input.
-    uint64_t InputID;
-  };
-  std::vector<TaskInputRequest> InputRequests;
 
   /// The set of pending tasks.
   struct TaskInfo {
@@ -153,14 +203,21 @@ private:
   /// @name Build Execution
   /// @{
 
-  /// Check whether the given rule needs to be run in the current environment.
-  //
-  // FIXME: This function can end doing an unbounded amount of work (scanning
-  // the entire dependency graph), which means it will block the execution loop
-  // from doing other tasks while it is proceeding. We might want to break it
-  // down into small individual blocks of work that we queue and evaluate as
-  // part of the normal execution loop.
-  bool ruleNeedsToRun(RuleInfo& RuleInfo) {
+  /// Request the scanning of the given rule to determine if it needs to run in
+  /// the current environment.
+  ///
+  /// \returns True if the rule is already scanned, otherwise the rule will be
+  /// enqueued for processing.
+  bool scanRule(RuleInfo& RuleInfo) {
+    // If the rule is already scanned, we are done.
+    if (RuleInfo.isScanned(this))
+      return true;
+
+    // If the rule is being scanned, we don't need to do anything.
+    if (RuleInfo.State == RuleInfo::StateKind::IsScanning)
+      return false;
+
+    // Otherwise, start scanning the rule.
     if (Trace)
       Trace->checkingRuleNeedsToRun(&RuleInfo.Rule);
 
@@ -168,62 +225,38 @@ private:
     if (RuleInfo.Result.BuiltAt == 0) {
       if (Trace)
         Trace->ruleNeedsToRunBecauseNeverBuilt(&RuleInfo.Rule);
+      RuleInfo.State = RuleInfo::StateKind::NeedsToRun;
       return true;
     }
 
-    // If the rule indicates it's computed value is out of date, it needs to
-    // run.
+    // If the rule indicates its computed value is out of date, it needs to run.
     if (RuleInfo.Rule.IsResultValid &&
         !RuleInfo.Rule.IsResultValid(RuleInfo.Rule, RuleInfo.Result.Value)) {
       if (Trace)
         Trace->ruleNeedsToRunBecauseInvalidValue(&RuleInfo.Rule);
+      RuleInfo.State = RuleInfo::StateKind::NeedsToRun;
       return true;
     }
 
-    // Otherwise, if the last time the rule was built is earlier than the time
-    // any of its inputs were computed, then it needs to run.
-    for (auto& InputKey: RuleInfo.Result.Dependencies) {
-      auto it = RuleInfos.find(InputKey);
-      if (it == RuleInfos.end()) {
-        // FIXME: What do we do here?
-        assert(0 && "prior input dependency no longer exists");
-        abort();
-      }
-      auto& InputRuleInfo = it->second;
-
-      // Demand the input.
-      //
-      // FIXME: Eliminate this unbounded recursion here.
-      //
-      // FIXME: There is possibility for a cycle here. We need more state bits,
-      // I think.
-      bool IsAvailable = demandRule(InputRuleInfo);
-
-      // If the input wasn't already available, it needs to run.
-      if (!IsAvailable) {
-        // FIXME: This is just wrong, just because we haven't run the task yet
-        // doesn't necessarily mean that this rule needs to run, if running the
-        // task results in an output that hasn't changed (and so ComputedAt
-        // isn't updated). This case doesn't come up until we support BuiltAt !=
-        // ComputedAt, though.
-        if (Trace)
-          Trace->ruleNeedsToRunBecauseInputUnavailable(
-            &RuleInfo.Rule, &InputRuleInfo.Rule);
-        return true;
-      }
-
-      // If the input has been computed since the last time this rule was built,
-      // it needs to run.
-      if (RuleInfo.Result.BuiltAt < InputRuleInfo.Result.ComputedAt) {
-        if (Trace)
-          Trace->ruleNeedsToRunBecauseInputRebuilt(
-            &RuleInfo.Rule, &InputRuleInfo.Rule);
-        return true;
-      }
+    // If the rule has no dependencies, then it is ready to run.
+    if (RuleInfo.Result.Dependencies.empty()) {
+      if (Trace)
+        Trace->ruleDoesNotNeedToRun(&RuleInfo.Rule);
+      RuleInfo.State = RuleInfo::StateKind::DoesNotNeedToRun;
+      return true;
     }
 
+    // Otherwise, we need to do a recursive scan of the inputs so enqueue this
+    // rule for scanning.
+    //
+    // We could also take an approach where we enqueue each of the individual
+    // inputs, but in my experiments with that approach it has always performed
+    // significantly worse.
     if (Trace)
-      Trace->ruleDoesNotNeedToRun(&RuleInfo.Rule);
+      Trace->ruleScheduledForScanning(&RuleInfo.Rule);
+    RuleInfo.State = RuleInfo::StateKind::IsScanning;
+    RuleInfosToScan.push_back({ &RuleInfo, /*InputIndex=*/0, nullptr });
+
     return false;
   }
 
@@ -232,6 +265,9 @@ private:
   /// \returns True if the rule is already available, otherwise the rule will be
   /// enqueued for processing.
   bool demandRule(RuleInfo& RuleInfo) {
+    // The rule must have already been scanned.
+    assert(RuleInfo.isScanned(this));
+
     // If the rule is complete, we are done.
     if (RuleInfo.isComplete(this))
       return true;
@@ -242,12 +278,13 @@ private:
 
     // If the rule isn't marked complete, but doesn't need to actually run, then
     // just update it.
-    if (!ruleNeedsToRun(RuleInfo)) {
+    if (RuleInfo.State == RuleInfo::StateKind::DoesNotNeedToRun) {
       RuleInfo.setComplete(this);
       return true;
     }
 
     // Otherwise, we actually need to initiate the processing of this rule.
+    assert(RuleInfo.State == RuleInfo::StateKind::NeedsToRun);
 
     // Create the task for this rule.
     Task* Task = RuleInfo.Rule.Action(BuildEngine);
@@ -286,12 +323,122 @@ private:
     return false;
   }
 
+  /// Process an individual scan request.
+  ///
+  /// This will process all of the inputs required by the requesting rule, in
+  /// order, unless the scan needs to be deferred waiting for an input.
+  void processRuleScanRequest(RuleScanRequest Request) {
+    auto& RuleInfo = *Request.RuleInfo;
+
+    assert(RuleInfo.State == RuleInfo::StateKind::IsScanning);
+
+    // Process each of the remaining inputs.
+    do {
+      // Look up the input rule info, if not yet cached.
+      if (!Request.InputRuleInfo) {
+        auto it = RuleInfos.find(
+          RuleInfo.Result.Dependencies[Request.InputIndex]);
+        if (it == RuleInfos.end()) {
+          // FIXME: What do we do here? Probably just rebuild.
+          assert(0 && "prior input dependency no longer exists");
+          abort();
+        }
+        Request.InputRuleInfo = &it->second;
+      }
+      auto& InputRuleInfo = *Request.InputRuleInfo;
+
+      // Scan the input.
+      bool IsScanned = scanRule(InputRuleInfo);
+
+      // If the input isn't scanned yet, enqueue this input scan request.
+      if (!IsScanned) {
+        assert(InputRuleInfo.State == RuleInfo::StateKind::IsScanning);
+        if (Trace)
+          Trace->ruleScanningDeferredOnInput(&RuleInfo.Rule,
+                                             &InputRuleInfo.Rule);
+        InputRuleInfo.DeferredScanRequests.push_back(Request);
+        return;
+      }
+
+      if (Trace)
+        Trace->ruleScanningNextInput(&RuleInfo.Rule, &InputRuleInfo.Rule);
+
+      // Demand the input.
+      bool IsAvailable = demandRule(InputRuleInfo);
+
+      // If the input wasn't already available, it needs to run.
+      if (!IsAvailable) {
+        // FIXME: This is just wrong, just because we haven't run the task yet
+        // doesn't necessarily mean that this rule needs to run, if running
+        // the task results in an output that hasn't changed (and so
+        // ComputedAt isn't updated). This case doesn't come up until we
+        // support BuiltAt != ComputedAt, though.
+        if (Trace)
+          Trace->ruleNeedsToRunBecauseInputUnavailable(
+            &RuleInfo.Rule, &InputRuleInfo.Rule);
+        RuleInfo.State = RuleInfo::StateKind::NeedsToRun;
+        finishScanRequest(&RuleInfo);
+        return;
+      }
+
+      // If the input has been computed since the last time this rule was
+      // built, it needs to run.
+      if (RuleInfo.Result.BuiltAt < InputRuleInfo.Result.ComputedAt) {
+        if (Trace)
+          Trace->ruleNeedsToRunBecauseInputRebuilt(
+            &RuleInfo.Rule, &InputRuleInfo.Rule);
+        RuleInfo.State = RuleInfo::StateKind::NeedsToRun;
+        finishScanRequest(&RuleInfo);
+        return;
+      }
+
+      // Otherwise, increment the scan index.
+      ++Request.InputIndex;
+      Request.InputRuleInfo = nullptr;
+    } while (Request.InputIndex != RuleInfo.Result.Dependencies.size());
+
+    // If we reached the end of the inputs, the rule does not need to run.
+    if (Trace)
+      Trace->ruleDoesNotNeedToRun(&RuleInfo.Rule);
+    RuleInfo.State = RuleInfo::StateKind::DoesNotNeedToRun;
+    finishScanRequest(&RuleInfo);
+  }
+
+  void finishScanRequest(RuleInfo* InputRuleInfo) {
+    assert(InputRuleInfo->isScanned(this));
+
+    // Wake up all of the pending scan requests.
+    for (const auto& Request: InputRuleInfo->DeferredScanRequests) {
+      RuleInfosToScan.push_back(Request);
+    }
+    InputRuleInfo->DeferredScanRequests.clear();
+
+    // Wake up all of the input requests on this rule.
+    for (const auto& Request: InputRuleInfo->PausedInputRequests) {
+      InputRequests.push_back(Request);
+    }
+    InputRuleInfo->PausedInputRequests.clear();
+  }
+
   void executeTasks() {
     std::vector<TaskInputRequest> FinishedInputRequests;
 
     // Process requests as long as we have work to do.
     while (true) {
       bool DidWork = false;
+
+      // Process all of the pending rule scan requests.
+      //
+      // FIXME: We don't want to process all of these requests, this amounts to
+      // doing all of the dependency scanning up-front.
+      while (!RuleInfosToScan.empty()) {
+        DidWork = true;
+
+        auto Request = RuleInfosToScan.back();
+        RuleInfosToScan.pop_back();
+
+        processRuleScanRequest(Request);
+      }
 
       // Process all of the pending input requests.
       while (!InputRequests.empty()) {
@@ -307,6 +454,18 @@ private:
           } else {
             Trace->handlingBuildInputRequest(&Request.InputRuleInfo->Rule);
           }
+        }
+
+        // Request the input rule be scanned.
+        bool IsScanned = scanRule(*Request.InputRuleInfo);
+
+        // If the rule is not yet scanned, suspend this input request.
+        if (!IsScanned) {
+          if (Trace)
+            Trace->pausedInputRequestForRuleScan(
+              &Request.InputRuleInfo->Rule);
+          Request.InputRuleInfo->PausedInputRequests.push_back(Request);
+          continue;
         }
 
         // Request the input rule be computed.
@@ -684,7 +843,7 @@ public:
     // Update the stored result value, and enqueue the finished task processing.
     RuleInfo->Result.Value = Value;
 
-    // Enqueue the finished task 
+    // Enqueue the finished task.
     {
       std::lock_guard<std::mutex> Guard(FinishedTaskInfosMutex);
       FinishedTaskInfos.push_back(TaskInfo);

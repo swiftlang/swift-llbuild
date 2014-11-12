@@ -83,7 +83,7 @@ const char* BuildEngineTrace::getTaskName(const Task* Task) {
 
   // Report the newly seen rule.
   fprintf(FP, "{ \"new-task\", \"%s\" },\n", Name);
-  
+
   return Result.first->second.c_str();
 }
 
@@ -102,7 +102,7 @@ const char* BuildEngineTrace::getRuleName(const Rule* Rule) {
 
   // Report the newly seen rule.
   fprintf(FP, "{ \"new-rule\", \"%s\", \"%s\" },\n", Name, Rule->Key.c_str());
-  
+
   return Result.first->second.c_str();
 }
 
@@ -133,6 +133,13 @@ void BuildEngineTrace::handlingTaskInputRequest(const Task* Task,
 
   fprintf(FP, "{ \"handling-task-input-request\", \"%s\", \"%s\" },\n",
           getTaskName(Task), getRuleName(Rule));
+}
+
+void BuildEngineTrace::pausedInputRequestForRuleScan(const Rule* Rule) {
+  FILE *FP = static_cast<FILE*>(OutputPtr);
+
+  fprintf(FP, "{ \"paused-input-request-for-rule-scan\", \"%s\" },\n",
+          getRuleName(Rule));
 }
 
 void BuildEngineTrace::readyingTaskInputRequest(const Task* Task,
@@ -203,6 +210,30 @@ void BuildEngineTrace::checkingRuleNeedsToRun(const Rule* ForRule) {
 
   fprintf(FP, "{ \"checking-rule-needs-to-run\", \"%s\" },\n",
           getRuleName(ForRule));
+}
+
+void BuildEngineTrace::ruleScheduledForScanning(const Rule* ForRule) {
+  FILE *FP = static_cast<FILE*>(OutputPtr);
+
+  fprintf(FP, ("{ \"rule-scheduled-for-scanning\", \"%s\"},\n"),
+          getRuleName(ForRule));
+}
+
+void BuildEngineTrace::ruleScanningNextInput(const Rule* ForRule,
+                                             const Rule* InputRule) {
+  FILE *FP = static_cast<FILE*>(OutputPtr);
+
+  fprintf(FP, ("{ \"rule-scanning-next-input\", \"%s\", \"%s\" },\n"),
+          getRuleName(ForRule), getRuleName(InputRule));
+}
+
+void
+BuildEngineTrace::ruleScanningDeferredOnInput(const Rule* ForRule,
+                                              const Rule* InputRule) {
+  FILE *FP = static_cast<FILE*>(OutputPtr);
+
+  fprintf(FP, ("{ \"rule-scanning-deferred-on-input\", \"%s\", \"%s\" },\n"),
+          getRuleName(ForRule), getRuleName(InputRule));
 }
 
 void BuildEngineTrace::ruleNeedsToRunBecauseNeverBuilt(const Rule* ForRule) {

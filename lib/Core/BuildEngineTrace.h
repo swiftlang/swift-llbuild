@@ -68,6 +68,7 @@ public:
     void handlingBuildInputRequest(const Rule* Rule);
     void createdTaskForRule(const Task* Task, const Rule* Rule);
     void handlingTaskInputRequest(const Task* Task, const Rule* Rule);
+    void pausedInputRequestForRuleScan(const Rule* Rule);
     void readyingTaskInputRequest(const Task* Task, const Rule* Rule);
     void addedRulePendingTask(const Rule* Rule, const Task* Task);
     void completedTaskInputRequest(const Task* Task, const Rule* Rule);
@@ -83,6 +84,10 @@ public:
     /// @{
 
     void checkingRuleNeedsToRun(const Rule* ForRule);
+    void ruleScheduledForScanning(const Rule* ForRule);
+    void ruleScanningNextInput(const Rule* ForRule, const Rule* InputRule);
+    void ruleScanningDeferredOnInput(const Rule* ForRule,
+                                     const Rule* InputRule);
     void ruleNeedsToRunBecauseNeverBuilt(const Rule* ForRule);
     void ruleNeedsToRunBecauseInvalidValue(const Rule* ForRule);
     void ruleNeedsToRunBecauseInputUnavailable(const Rule* ForRule,

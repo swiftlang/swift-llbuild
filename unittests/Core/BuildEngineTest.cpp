@@ -424,4 +424,53 @@ TEST(BuildEngineTest, IncrementalDependency) {
   EXPECT_EQ(1U, ValueRResult.Dependencies.size());
 }
 
+TEST(BuildEngineTest, DeepDependencyScanningStack) {
+  // Check that the engine can handle dependency scanning of a very deep stack,
+  // which would probably crash blowing the stack if the engine used naive
+  // recursion.
+  //
+  // FIXME: It would be nice to run this on a thread with a small stack to
+  // guarantee this, and to be able to make the depth small so the test runs
+  // faster.
+  int Depth = 10000;
+
+  core::BuildEngine Engine;
+  int LastInputValue = 0;
+  for (int i = 0; i != Depth; ++i) {
+    char Name[32];
+    sprintf(Name, "input-%d", i);
+    if (i != Depth-1) {
+      char InputName[32];
+      sprintf(InputName, "input-%d", i+1);
+      Engine.addRule({
+          Name, simpleAction({ InputName },
+                             [] (const std::vector<ValueType>& Inputs) {
+                               return Inputs[0]; }) });
+    } else {
+      Engine.addRule({
+          Name,
+          simpleAction({},
+                       [&] (const std::vector<ValueType>& Inputs) {
+                         return LastInputValue; }),
+          [&](const Rule& rule, const ValueType Value) {
+            // FIXME: Once we have custom ValueType objects, we would like to
+            // have timestamps on the value and just compare to a timestamp
+            // (similar to what we would do for a file).
+            return LastInputValue == Value;
+          } });
+    }
+  }
+
+  // Build the first result.
+  LastInputValue = 42;
+  EXPECT_EQ(LastInputValue, Engine.build("input-0"));
+
+  // Perform a null build on the result.
+  EXPECT_EQ(LastInputValue, Engine.build("input-0"));
+
+  // Perform a full rebuild on the result.
+  LastInputValue = 52;
+  EXPECT_EQ(LastInputValue, Engine.build("input-0"));
+}
+
 }
