@@ -1,0 +1,87 @@
+From 33ef59b3c5827d408288eda8b7299e95d754233a Mon Sep 17 00:00:00 2001
+From: Daniel Dunbar <daniel_dunbar@apple.com>
+Date: Wed, 12 Nov 2014 13:51:14 -0800
+Subject: [PATCH] [Core/BuildEngine] Add hackish but trivial support for
+ concurrent input scanning.
+
+ - This patch is just a simple hack which changes the dependency scanning to be
+   concurrent, by adding hacked up versions of the deferred scan requests and
+   then continuing to process subsequent inputs. It is here (in addition to the
+   cleaner version) because it has much less of a performance degredation than
+   the clean version, and is something of an intermediate step which may help in
+   analysing the performance of this change.
+
+ - The performance impact on dependency scanning is roughly::
+   o CorePerf: +41.16%
+   o LinearChain: (unchanged)
+   o NaryTree: -1%
+   o 2DMatrix: +4%
+
+---
+ lib/Core/BuildEngine.cpp | 22 +++++++++++++++++++++-
+ 1 file changed, 21 insertions(+), 1 deletion(-)
+
+diff --git a/lib/Core/BuildEngine.cpp b/lib/Core/BuildEngine.cpp
+index 90cba50..0d8cf8a 100644
+--- a/lib/Core/BuildEngine.cpp
++++ b/lib/Core/BuildEngine.cpp
+@@ -73,6 +73,9 @@ class BuildEngineImpl {
+     /// The vector of deferred scan requests, for rules which are waiting on
+     /// this one to be scanned.
+     std::vector<RuleScanRequest> DeferredScanRequests;
++    /// The number of deferred scan requests for the rule scanned with this
++    /// record.
++    unsigned ScanWaitCount = 0;
+   };
+ 
+   /// The map of rule information.
+@@ -406,6 +409,9 @@ private:
+   void processRuleScanRequest(RuleScanRequest Request) {
+     auto& RuleInfo = *Request.RuleInfo;
+ 
++    if (RuleInfo.State != RuleInfo::StateKind::IsScanning)
++      return;
++
+     assert(RuleInfo.isScanning());
+ 
+     // Process each of the remaining inputs.
+@@ -434,7 +440,16 @@ private:
+                                              &InputRuleInfo.Rule);
+         InputRuleInfo.getPendingScanRecord()
+           ->DeferredScanRequests.push_back(Request);
+-        return;
++
++        // Hack the input index to avoid redundant scanning.
++        InputRuleInfo.getPendingScanRecord()
++          ->DeferredScanRequests.back().InputIndex = RuleInfo.Result.Dependencies.size() - 1;
++        RuleInfo.getPendingScanRecord()->ScanWaitCount++;
++
++        ++Request.InputIndex;
++        Request.InputRuleInfo = nullptr;
++
++        continue;
+       }
+ 
+       if (Trace)
+@@ -472,6 +487,10 @@ private:
+       Request.InputRuleInfo = nullptr;
+     } while (Request.InputIndex != RuleInfo.Result.Dependencies.size());
+ 
++    // If we have deferred scan requests, wait to be reprocessed.
++    if (RuleInfo.getPendingScanRecord()->ScanWaitCount != 0)
++      return;
++
+     // If we reached the end of the inputs, the rule does not need to run.
+     if (Trace)
+       Trace->ruleDoesNotNeedToRun(&RuleInfo.Rule);
+@@ -486,6 +505,7 @@ private:
+     // Wake up all of the pending scan requests.
+     for (const auto& Request: ScanRecord->DeferredScanRequests) {
+       RuleInfosToScan.push_back(Request);
++      Request.RuleInfo->getPendingScanRecord()->ScanWaitCount--;
+     }
+ 
+     // Wake up all of the input requests on this rule.
+-- 
+2.1.1 (Apple Git-51)
+

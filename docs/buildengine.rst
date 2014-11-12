@@ -66,3 +66,7 @@ we scan the rule initially, any request that needs to be deferred just defers
 the scan of that individual input. This drastically simplifies the
 ``RuleScanRequest`` and ``DeferredScanRequests`` data structures, which both
 become just a ``RuleInfo*``.
+
+The ``misc/patches`` directory currently has two patches that demonstrate an
+implementation of the alternative approach, but both of them degrade the overall
+dependency scanning performance severely.
