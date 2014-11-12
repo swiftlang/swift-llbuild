@@ -72,6 +72,15 @@ class BuildEngineImpl {
   };
   std::vector<RuleScanRequest> RuleInfosToScan;
 
+  struct RuleScanRecord {
+    /// The vector of paused input requests, waiting for the dependency scan on
+    /// this rule to complete.
+    std::vector<TaskInputRequest> PausedInputRequests;
+    /// The vector of deferred scan requests, for rules which are waiting on
+    /// this one to be scanned.
+    std::vector<RuleScanRequest> DeferredScanRequests;
+  };
+
   /// The map of rule information.
   struct RuleInfo {
     enum class StateKind {
@@ -105,25 +114,15 @@ class BuildEngineImpl {
     RuleInfo(Rule &&Rule) : Rule(Rule) {}
 
     Rule Rule;
-    /// The task computing this rule, if in progress.
-    TaskInfo* PendingTaskInfo = 0;
+    /// The state dependent record for in-progress information.
+    union {
+      RuleScanRecord* PendingScanRecord;
+      TaskInfo* PendingTaskInfo;
+    } InProgressInfo = { nullptr };
     /// The most recent rule result.
     Result Result = {};
     /// The current state of the rule.
     StateKind State = StateKind::Incomplete;
-    /// The vector of paused input requests, waiting for the dependency scan on
-    /// this rule to complete.
-    //
-    // FIXME: Eliminate this, it shouldn't be something we need to keep around
-    // except when a rule is actively having its dependencies scanned. We can
-    // probably reuse the PendingTaskInfo field for this (in fact, maybe we can
-    // even use a real task info for this).
-    std::vector<TaskInputRequest> PausedInputRequests;
-    /// The vector of deferred scan requests, for rules which are waiting on
-    /// this one to be scanned.
-    //
-    // FIXME: As above, eliminate this.
-    std::vector<RuleScanRequest> DeferredScanRequests;
 
   public:
     bool isScanning() const {
@@ -159,6 +158,23 @@ class BuildEngineImpl {
       // Result to being totally managed by the database. However, it is just a
       // matter of keeping an extra timestamp outside the Result to fix.
       Result.BuiltAt = Engine->getCurrentTimestamp();
+    }
+
+    RuleScanRecord* getPendingScanRecord() {
+      assert(isScanning());
+      return InProgressInfo.PendingScanRecord;
+    }
+    void setPendingScanRecord(RuleScanRecord* Value) {
+      InProgressInfo.PendingScanRecord = Value;
+    }
+
+    TaskInfo* getPendingTaskInfo() {
+      assert(isInProgress());
+      return InProgressInfo.PendingTaskInfo;
+    }
+    void setPendingTaskInfo(TaskInfo* Value) {
+      assert(isInProgress());
+      InProgressInfo.PendingTaskInfo = Value;
     }
   };
   // FIXME: The code currently assumes all rules are allocated up front, and
@@ -204,6 +220,67 @@ class BuildEngineImpl {
   std::condition_variable FinishedTaskInfosCondition;
 
 private:
+  /// @name RuleScanRecord Allocation
+  ///
+  /// The execution of a single build may use a substantial amount of
+  /// additional memory in recording the bookkeeping information used to do
+  /// dependency scanning. While we could keep this information adjacent to
+  /// every \see RuleInfo, that adds up to a substantial check of memory which
+  /// is wasted except during dependency scanning.
+  ///
+  /// Instead, we allocate \see RuleScanRecord objects for each rule only as it
+  /// is being scanned, and use a custom allocator for the objects to try and
+  /// make this efficient. Currently we use a bounded free-list backed by a slab
+  /// allocator.
+  ///
+  /// Note that this still has a fairly large impact on dependency scanning
+  /// performance, in the worst case a deep linear graph takes ~50% longer to
+  /// scan, but it also provides an overall 15-20% memory savings on resident
+  /// engine size.
+  ///
+  /// @{
+
+  // FIXME: This should be abstracted into a helper class.
+
+  /// A free-list of RuleScanRecord objects.
+  std::vector<RuleScanRecord*> FreeRuleScanRecords;
+  /// The maximum number of free-list items to keep.
+  const size_t MaximumFreeRuleScanRecords = 8096;
+  /// The list of blocks (of size \see NumScanRecordsPerBlock) we have
+  /// allocated.
+  std::vector<RuleScanRecord*> RuleScanRecordBlocks;
+  /// The number of records to allocate per block.
+  const size_t NumScanRecordsPerBlock = 4096;
+  /// The buffer positions of the current block.
+  RuleScanRecord* CurrentBlockPos = nullptr, * CurrentBlockEnd = nullptr;
+
+  RuleScanRecord* newRuleScanRecord() {
+    // If we have an item on the free list, return it.
+    if (!FreeRuleScanRecords.empty()) {
+      auto Result = FreeRuleScanRecords.back();
+      FreeRuleScanRecords.pop_back();
+      return Result;
+    }
+
+    // If we are at the end of a block, allocate a new one.
+    if (CurrentBlockPos == CurrentBlockEnd) {
+      CurrentBlockPos = new RuleScanRecord[NumScanRecordsPerBlock];
+      RuleScanRecordBlocks.push_back(CurrentBlockPos);
+      CurrentBlockEnd = CurrentBlockPos + NumScanRecordsPerBlock;
+    }
+    return CurrentBlockPos++;
+  }
+
+  void freeRuleScanRecord(RuleScanRecord* ScanRecord) {
+    if (FreeRuleScanRecords.size() < MaximumFreeRuleScanRecords) {
+      ScanRecord->PausedInputRequests.clear();
+      ScanRecord->DeferredScanRequests.clear();
+      FreeRuleScanRecords.push_back(ScanRecord);
+    }
+  }
+
+  /// @}
+
   /// @name Build Execution
   /// @{
 
@@ -259,6 +336,7 @@ private:
     if (Trace)
       Trace->ruleScheduledForScanning(&RuleInfo.Rule);
     RuleInfo.State = RuleInfo::StateKind::IsScanning;
+    RuleInfo.setPendingScanRecord(newRuleScanRecord());
     RuleInfosToScan.push_back({ &RuleInfo, /*InputIndex=*/0, nullptr });
 
     return false;
@@ -298,7 +376,6 @@ private:
     assert(it != TaskInfos.end() &&
            "rule action returned an unregistered task");
     TaskInfo* TaskInfo = &it->second;
-    RuleInfo.PendingTaskInfo = TaskInfo;
     TaskInfo->ForRuleInfo = &RuleInfo;
 
     if (Trace)
@@ -306,6 +383,7 @@ private:
 
     // Transition the rule state.
     RuleInfo.State = RuleInfo::StateKind::InProgressWaiting;
+    RuleInfo.setPendingTaskInfo(TaskInfo);
 
     // Reset the Rule result state. The only field we must reset here is the
     // Dependencies, which we just append to during processing, but we reset the
@@ -360,7 +438,8 @@ private:
         if (Trace)
           Trace->ruleScanningDeferredOnInput(&RuleInfo.Rule,
                                              &InputRuleInfo.Rule);
-        InputRuleInfo.DeferredScanRequests.push_back(Request);
+        InputRuleInfo.getPendingScanRecord()
+          ->DeferredScanRequests.push_back(Request);
         return;
       }
 
@@ -380,8 +459,7 @@ private:
         if (Trace)
           Trace->ruleNeedsToRunBecauseInputUnavailable(
             &RuleInfo.Rule, &InputRuleInfo.Rule);
-        RuleInfo.State = RuleInfo::StateKind::NeedsToRun;
-        finishScanRequest(&RuleInfo);
+        finishScanRequest(RuleInfo, RuleInfo::StateKind::NeedsToRun);
         return;
       }
 
@@ -391,8 +469,7 @@ private:
         if (Trace)
           Trace->ruleNeedsToRunBecauseInputRebuilt(
             &RuleInfo.Rule, &InputRuleInfo.Rule);
-        RuleInfo.State = RuleInfo::StateKind::NeedsToRun;
-        finishScanRequest(&RuleInfo);
+        finishScanRequest(RuleInfo, RuleInfo::StateKind::NeedsToRun);
         return;
       }
 
@@ -404,24 +481,28 @@ private:
     // If we reached the end of the inputs, the rule does not need to run.
     if (Trace)
       Trace->ruleDoesNotNeedToRun(&RuleInfo.Rule);
-    RuleInfo.State = RuleInfo::StateKind::DoesNotNeedToRun;
-    finishScanRequest(&RuleInfo);
+    finishScanRequest(RuleInfo, RuleInfo::StateKind::DoesNotNeedToRun);
   }
 
-  void finishScanRequest(RuleInfo* InputRuleInfo) {
-    assert(InputRuleInfo->isScanned(this));
+  void finishScanRequest(RuleInfo& InputRuleInfo,
+                         RuleInfo::StateKind NewState) {
+    assert(InputRuleInfo.isScanning());
+    auto ScanRecord = InputRuleInfo.getPendingScanRecord();
 
     // Wake up all of the pending scan requests.
-    for (const auto& Request: InputRuleInfo->DeferredScanRequests) {
+    for (const auto& Request: ScanRecord->DeferredScanRequests) {
       RuleInfosToScan.push_back(Request);
     }
-    InputRuleInfo->DeferredScanRequests.clear();
 
     // Wake up all of the input requests on this rule.
-    for (const auto& Request: InputRuleInfo->PausedInputRequests) {
+    for (const auto& Request: ScanRecord->PausedInputRequests) {
       InputRequests.push_back(Request);
     }
-    InputRuleInfo->PausedInputRequests.clear();
+
+    // Update the rule state.
+    freeRuleScanRecord(ScanRecord);
+    InputRuleInfo.setPendingScanRecord(nullptr);
+    InputRuleInfo.State = NewState;
   }
 
   void executeTasks() {
@@ -469,7 +550,8 @@ private:
           if (Trace)
             Trace->pausedInputRequestForRuleScan(
               &Request.InputRuleInfo->Rule);
-          Request.InputRuleInfo->PausedInputRequests.push_back(Request);
+          Request.InputRuleInfo->getPendingScanRecord()
+            ->PausedInputRequests.push_back(Request);
           continue;
         }
 
@@ -488,11 +570,11 @@ private:
           FinishedInputRequests.push_back(Request);
         } else {
           // Otherwise, record the pending input request.
-          assert(Request.InputRuleInfo->PendingTaskInfo != nullptr);
+          assert(Request.InputRuleInfo->getPendingTaskInfo());
           if (Trace)
             Trace->addedRulePendingTask(&Request.InputRuleInfo->Rule,
                                         Request.TaskInfo->Task.get());
-          Request.InputRuleInfo->PendingTaskInfo->RequestedBy.push_back(
+          Request.InputRuleInfo->getPendingTaskInfo()->RequestedBy.push_back(
             Request);
         }
       }
@@ -550,7 +632,7 @@ private:
         ReadyTaskInfos.pop_back();
 
         RuleInfo* RuleInfo = TaskInfo->ForRuleInfo;
-        assert(TaskInfo == RuleInfo->PendingTaskInfo);
+        assert(TaskInfo == RuleInfo->getPendingTaskInfo());
 
         if (Trace)
             Trace->readiedTask(TaskInfo->Task.get(), &RuleInfo->Rule);
@@ -586,20 +668,20 @@ private:
         DidWork = true;
 
         RuleInfo* RuleInfo = TaskInfo->ForRuleInfo;
-        assert(TaskInfo == RuleInfo->PendingTaskInfo);
+        assert(TaskInfo == RuleInfo->getPendingTaskInfo());
 
         if (Trace)
             Trace->finishedTask(TaskInfo->Task.get(), &RuleInfo->Rule);
 
         // Transition the rule state.
         assert(RuleInfo->State == RuleInfo::StateKind::InProgressComputing);
+        RuleInfo->setPendingTaskInfo(nullptr);
         RuleInfo->State = RuleInfo::StateKind::Complete;
 
         // Complete the rule (the value itself is stored in the taskIsFinished
         // call).
         RuleInfo->Result.ComputedAt = CurrentTimestamp;
         RuleInfo->Result.BuiltAt = CurrentTimestamp;
-        RuleInfo->PendingTaskInfo = nullptr;
 
         // Update the database record, if attached.
         if (DB)
@@ -732,6 +814,15 @@ public:
     if (Trace)
       Trace->buildEnded();
 
+    // Clear the rule scan free-lists.
+    //
+    // FIXME: Introduce a per-build context object to hold this.
+    for (auto Block: RuleScanRecordBlocks)
+      delete[] Block;
+    CurrentBlockPos = CurrentBlockEnd = nullptr;
+    FreeRuleScanRecords.clear();
+    RuleScanRecordBlocks.clear();
+
     // The task queue should be empty and the rule complete.
     assert(TaskInfos.empty() && RuleInfo.isComplete(this));
     return RuleInfo.Result.Value;
@@ -843,7 +934,7 @@ public:
     TaskInfo* TaskInfo = &taskinfo_it->second;
 
     RuleInfo *RuleInfo = TaskInfo->ForRuleInfo;
-    assert(TaskInfo == RuleInfo->PendingTaskInfo);
+    assert(TaskInfo == RuleInfo->getPendingTaskInfo());
 
     // Update the stored result value, and enqueue the finished task processing.
     RuleInfo->Result.Value = Value;
