@@ -109,11 +109,7 @@ static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
   // Test the scanning performance on a deep linear build graph of M nodes::
   //
   //   i1 -> i2 -> ... -> iM
-  //
-  // FIXME: We would like to drive this number higher, but can't do so until the
-  // process becomes non-recursive, this is close to the max we can get to
-  // before crashing.
-  int M = 50000;
+  int M = 1000000; // Use a graph of 1 million nodes.
 
   // Set up the build rules.
   __block core::BuildEngine Engine;
