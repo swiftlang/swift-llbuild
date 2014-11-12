@@ -126,6 +126,10 @@ class BuildEngineImpl {
     std::vector<RuleScanRequest> DeferredScanRequests;
 
   public:
+    bool isScanning() const {
+      return State == StateKind::IsScanning;
+    }
+
     bool isScanned(const BuildEngineImpl* Engine) const {
       // If the rule is marked as complete, just check that state.
       if (State == StateKind::Complete)
@@ -214,7 +218,7 @@ private:
       return true;
 
     // If the rule is being scanned, we don't need to do anything.
-    if (RuleInfo.State == RuleInfo::StateKind::IsScanning)
+    if (RuleInfo.isScanning())
       return false;
 
     // Otherwise, start scanning the rule.
@@ -330,7 +334,7 @@ private:
   void processRuleScanRequest(RuleScanRequest Request) {
     auto& RuleInfo = *Request.RuleInfo;
 
-    assert(RuleInfo.State == RuleInfo::StateKind::IsScanning);
+    assert(RuleInfo.isScanning());
 
     // Process each of the remaining inputs.
     do {
@@ -352,7 +356,7 @@ private:
 
       // If the input isn't scanned yet, enqueue this input scan request.
       if (!IsScanned) {
-        assert(InputRuleInfo.State == RuleInfo::StateKind::IsScanning);
+        assert(InputRuleInfo.isScanning());
         if (Trace)
           Trace->ruleScanningDeferredOnInput(&RuleInfo.Rule,
                                              &InputRuleInfo.Rule);
@@ -461,6 +465,7 @@ private:
 
         // If the rule is not yet scanned, suspend this input request.
         if (!IsScanned) {
+          assert(Request.InputRuleInfo->isScanning());
           if (Trace)
             Trace->pausedInputRequestForRuleScan(
               &Request.InputRuleInfo->Rule);
