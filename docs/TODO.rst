@@ -80,7 +80,26 @@ Build Database
 Ninja Specific
 ==============
 
+Tasks for Usable Tool
+---------------------
+
+* Don't run commands downstream of failing ones.
+
+* Support compiler supplied implicit dependencies.
+
+* Support order only dependencies properly.
+
+* Rework command line tool towards production use vs testing tool.
+
+  * This mean factoring out a separate llbuild-test testing tool which has the
+    interface that is useful for testing, with none of the other stuff.
+
+  * Automatically set up appropriate jobs, DB, etc.
+
 * Buffer command output.
+
+Random Tasks
+------------
 
 * Investigate using pselect mechanisms vs blocked threads.
 
