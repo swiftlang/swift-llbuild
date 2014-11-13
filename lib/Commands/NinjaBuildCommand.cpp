@@ -206,9 +206,20 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
     }
 
     virtual void start(core::BuildEngine& engine) override {
-      // Request all of the input values.
-      for (auto& Input: Command->getInputs()) {
-        engine.taskNeedsInput(this, Input->getPath(), 0);
+      // Request all of the explicit and input values.
+      for (auto it = Command->explicitInputs_begin(),
+             ie = Command->explicitInputs_end(); it != ie; ++it) {
+        engine.taskNeedsInput(this, (*it)->getPath(), 0);
+      }
+      for (auto it = Command->implicitInputs_begin(),
+             ie = Command->implicitInputs_end(); it != ie; ++it) {
+        engine.taskNeedsInput(this, (*it)->getPath(), 0);
+      }
+
+      // Request all of the order-only inputs.
+      for (auto it = Command->orderOnlyInputs_begin(),
+             ie = Command->orderOnlyInputs_end(); it != ie; ++it) {
+        engine.taskMustFollow(this, (*it)->getPath());
       }
     }
 

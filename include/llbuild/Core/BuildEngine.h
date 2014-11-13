@@ -176,6 +176,9 @@ public:
   /// \returns The provided task, for the convenience of the client.
   Task* registerTask(Task* Task);
 
+  /// The maximum allowed input ID.
+  static const uintptr_t kMaximumInputID = ~(uintptr_t)0xFF;
+
   /// Specify the given \arg Task depends upon the result of computing \arg Key.
   ///
   /// The result, when available, will be provided to the task via \see
@@ -184,7 +187,21 @@ public:
   ///
   /// NOTE: It is an unchecked error for a task to request the same input value
   /// multiple times.
+  ///
+  /// \param InputID An arbitrary value that may be provided by the client to
+  /// use in efficiently associating this input. The range of this parameter is
+  /// intentionally chosen to allow a pointer to be provided, but note that all
+  /// input IDs greater than \see kMaximumInputID are reserved for internal use
+  /// by the engine.
   void taskNeedsInput(Task* Task, KeyType Key, uintptr_t InputID);
+
+  /// Specify that the given \arg Task must be built subsequent to the
+  /// computation of \arg Key.
+  ///
+  /// The value of the computation of \arg Key is not available to the task, and
+  /// the only guarantee the engine provides is that if \arg Key is computed
+  /// during a build, then \arg Task will not be computed until after it.
+  void taskMustFollow(Task* Task, KeyType Key);
 
   /// Called by a task to indicate it has completed and to provide its value.
   ///

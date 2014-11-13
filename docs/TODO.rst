@@ -27,8 +27,6 @@ Build Engine
 
 * Support parallelism.
 
-* Support Ninja order-only and implicit dependencies properly.
-
 * Support active scheduling (?).
 
 * Figure out if Rule should be subclassed, with virtual methods for action
@@ -87,7 +85,7 @@ Tasks for Usable Tool
 
 * Support compiler supplied implicit dependencies.
 
-* Support order only dependencies properly.
+* Support manifest supplied implicit dependencies.
 
 * Rework command line tool towards production use vs testing tool.
 
@@ -95,6 +93,8 @@ Tasks for Usable Tool
     interface that is useful for testing, with none of the other stuff.
 
   * Automatically set up appropriate jobs, DB, etc.
+
+* Support multiple inputs on the command line.
 
 * Buffer command output.
 

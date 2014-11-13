@@ -1,0 +1,57 @@
+# Test the behavior of order-only dependencies.
+
+# We run the build in a sandbox in the temp directory to ensure we don't
+# interact with the source dirs.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: echo "input-1" > %t.build/input-1
+# RUN: echo "input-2" > %t.build/input-2
+# RUN: echo "input-3" > %t.build/input-3
+# RUN: %{llbuild} ninja build --db %t.build/build.db \
+# RUN:   %t.build/build.ninja &> %t1.out
+# RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file=%t1.out %s
+# RUN: %{FileCheck} --check-prefix=CHECK-INITIAL-OUTPUT --input-file=%t.build/output %s
+
+# Verify that the first build builds output-2 after output-1 and output-3.
+#
+# CHECK-INITIAL: [1] "cp input-1 output-1"
+# CHECK-INITIAL: [2] "cp input-3 output-3"
+# CHECK-INITIAL: [3] "cp input-2 output-2"
+# CHECK-INITIAL: [4] "cat output-1 output-2 output-3 > output"
+#
+# Verify the output matches expectations.
+#
+# CHECK-INITIAL-OUTPUT: input-1
+# CHECK-INITIAL-OUTPUT-NEXT: input-2
+# CHECK-INITIAL-OUTPUT-NEXT: input-3
+
+
+# Run a second build, after modifying "input-1". Only output-1 and the final
+# output should rebuild, since the dependencies are order only.
+#
+# RUN: echo "input-1-mod" >> %t.build/input-1
+# RUN: %{llbuild} ninja build --db %t.build/build.db \
+# RUN:   %t.build/build.ninja &> %t2.out
+# RUN: %{FileCheck} --check-prefix=CHECK-AFTER-MOD --input-file=%t2.out %s
+
+# Check the second build.
+#
+# CHECK-AFTER-MOD: [1] "cp input-1 output-1"
+# CHECK-AFTER-MOD: [2] "cat output-1 output-2 output-3 > output"
+
+
+rule CP
+     command = cp ${in} ${out}
+     description = "${command}"
+rule CAT
+     command = cat ${in} > ${out}
+     description = "${command}"
+
+build output-1: CP input-1
+build output-2: CP input-2 || output-1 output-3
+build output-3: CP input-3 || output-1
+build output: CAT output-1 output-2 output-3
+
+default output

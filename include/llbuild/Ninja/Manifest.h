@@ -173,6 +173,27 @@ public:
 
   const std::vector<Node*>& getInputs() const { return Inputs; }
 
+  const std::vector<Node*>::const_iterator explicitInputs_begin() const {
+    return Inputs.begin();
+  }
+  const std::vector<Node*>::const_iterator explicitInputs_end() const {
+    return explicitInputs_begin() + getNumExplicitInputs();
+  }
+
+  const std::vector<Node*>::const_iterator implicitInputs_begin() const {
+    return explicitInputs_end();
+  }
+  const std::vector<Node*>::const_iterator implicitInputs_end() const {
+    return implicitInputs_begin() + getNumImplicitInputs();
+  }
+
+  const std::vector<Node*>::const_iterator orderOnlyInputs_begin() const {
+    return implicitInputs_end();
+  }
+  const std::vector<Node*>::const_iterator orderOnlyInputs_end() const {
+    return Inputs.end();
+  }
+
   unsigned getNumExplicitInputs() const { return NumExplicitInputs; }
   unsigned getNumImplicitInputs() const { return NumImplicitInputs; }
   unsigned getNumOrderOnlyInputs() const {

@@ -2,6 +2,21 @@
  Build Engine
 ==============
 
+Order-only Dependencies
+=======================
+
+The build engine supports "order-only" dependencies (in the style of Ninja)
+through a "must-follow" input request or barrier. Internally, this is treated
+much the same as a normal input request, in that the task is responsible for
+calling ``taskMustFollow()`` on the engine during its preparation phase.
+
+However, these input requests do not need to be scanned or persisted. This is
+because the dependency is only relevant when the dependee is executing, and in
+those cases the task will be responsible for dynamically supplying the
+barrier. Thus, the implementation can piggy-back on the existing mechanisms for
+ensuring input requests are available prior to executing the task, and simply
+discard the order-only input request once satisfied.
+
 Parallelism
 ===========
 

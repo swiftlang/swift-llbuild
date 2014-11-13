@@ -36,6 +36,11 @@ class BuildEngineImpl {
   struct RuleInfo;
   struct TaskInfo;
 
+  /// Reserved input IDs.
+  enum: uintptr_t {
+    kMustFollowInputID = ~(uintptr_t)0
+  };
+
   BuildEngine &BuildEngine;
 
   /// The build database, if attached.
@@ -54,7 +59,7 @@ class BuildEngineImpl {
     /// The rule for the input which was requested.
     RuleInfo* InputRuleInfo;
     /// The task provided input ID, for its own use in identifying the input.
-    uint64_t InputID;
+    uintptr_t InputID;
   };
   std::vector<TaskInputRequest> InputRequests;
 
@@ -505,6 +510,20 @@ private:
     InputRuleInfo.State = NewState;
   }
 
+  /// Decrement the task's wait count, and move it to the ready queue if
+  /// necessary.
+  void decrementTaskWaitCount(TaskInfo* TaskInfo) {
+    --TaskInfo->WaitCount;
+    if (Trace)
+      Trace->updatedTaskWaitCount(TaskInfo->Task.get(), TaskInfo->WaitCount);
+    if (TaskInfo->WaitCount == 0) {
+      if (Trace)
+        Trace->unblockedTask(TaskInfo->Task.get());
+      ReadyTaskInfos.push_back(TaskInfo);
+    }
+  }
+
+  /// Execute all of the work pending in the engine queues until they are empty.
   void executeTasks() {
     std::vector<TaskInputRequest> FinishedInputRequests;
 
@@ -590,6 +609,19 @@ private:
           Trace->completedTaskInputRequest(Request.TaskInfo->Task.get(),
                                            &Request.InputRuleInfo->Rule);
 
+        // If this is a must follow input, we simply decrement the task wait
+        // count.
+        //
+        // This works because must follow inputs do not need to be recorded or
+        // scanned -- they are only relevant if the task is executing, in which
+        // case it is responsible for having supplied the request.
+        if (Request.InputID == kMustFollowInputID) {
+          decrementTaskWaitCount(Request.TaskInfo);
+          continue;
+        }
+
+        // Otherwise, we are processing a regular input dependency.
+
         // Update the recorded dependencies of this task.
         //
         // FIXME: This is very performance critical and should be highly
@@ -613,15 +645,7 @@ private:
           BuildEngine, Request.InputID, Request.InputRuleInfo->Result.Value);
 
         // Decrement the wait count, and move to finish queue if necessary.
-        --Request.TaskInfo->WaitCount;
-        if (Trace)
-          Trace->updatedTaskWaitCount(Request.TaskInfo->Task.get(),
-                                      Request.TaskInfo->WaitCount);
-        if (Request.TaskInfo->WaitCount == 0) {
-          if (Trace)
-            Trace->unblockedTask(Request.TaskInfo->Task.get());
-          ReadyTaskInfos.push_back(Request.TaskInfo);
-        }
+        decrementTaskWaitCount(Request.TaskInfo);
       }
 
       // Process all of the ready to run tasks.
@@ -889,19 +913,7 @@ public:
     fclose(FP);
   }
 
-  /// @}
-
-  /// @name Task Management Client APIs
-  /// @{
-
-  Task* registerTask(Task* Task) {
-    auto Result = TaskInfos.emplace(Task, TaskInfo(Task));
-    assert(Result.second && "task already registered");
-    (void)Result;
-    return Task;
-  }
-
-  void taskNeedsInput(Task* Task, KeyType Key, uint32_t InputID) {
+  void addTaskInputRequest(Task* Task, KeyType Key, uintptr_t InputID) {
     auto taskinfo_it = TaskInfos.find(Task);
     assert(taskinfo_it != TaskInfos.end() &&
            "cannot request inputs for an unknown task");
@@ -925,6 +937,33 @@ public:
 
     InputRequests.push_back({ TaskInfo, RuleInfo, InputID });
     TaskInfo->WaitCount++;
+  }
+
+  /// @}
+
+  /// @name Task Management Client APIs
+  /// @{
+
+  Task* registerTask(Task* Task) {
+    auto Result = TaskInfos.emplace(Task, TaskInfo(Task));
+    assert(Result.second && "task already registered");
+    (void)Result;
+    return Task;
+  }
+
+  void taskNeedsInput(Task* Task, KeyType Key, uintptr_t InputID) {
+    // Validate the InputID.
+    if (InputID > BuildEngine::kMaximumInputID) {
+      // FIXME: Error handling.
+      std::cerr << "error: attempt to use reserved input ID\n";
+      exit(1);
+    }
+
+    addTaskInputRequest(Task, Key, InputID);
+  }
+
+  void taskMustFollow(Task* Task, KeyType Key) {
+    addTaskInputRequest(Task, Key, kMustFollowInputID);
   }
 
   void taskIsComplete(Task* Task, ValueType Value) {
@@ -998,6 +1037,10 @@ Task* BuildEngine::registerTask(Task* Task) {
 void BuildEngine::taskNeedsInput(Task* Task, KeyType Key, uintptr_t InputID) {
   return static_cast<BuildEngineImpl*>(Impl)->taskNeedsInput(Task, Key,
                                                              InputID);
+}
+
+void BuildEngine::taskMustFollow(Task* Task, KeyType Key) {
+  return static_cast<BuildEngineImpl*>(Impl)->taskMustFollow(Task, Key);
 }
 
 void BuildEngine::taskIsComplete(Task* Task, ValueType Value) {
