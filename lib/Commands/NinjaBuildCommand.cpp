@@ -23,6 +23,7 @@
 #include <iostream>
 #include <unordered_set>
 
+#include <signal.h>
 #include <spawn.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -263,6 +264,28 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
           });
       }
 
+      // Initialize the spawn attributes.
+      //
+      // FIXME: We need to audit this to be robust about resetting everything
+      // that is important, in particular we aren't handling file descriptors
+      // yet.
+      posix_spawnattr_t Attributes;
+      posix_spawnattr_init(&Attributes);
+
+      // Unmask all signals
+      sigset_t NoSignals;
+      sigemptyset(&NoSignals);
+      posix_spawnattr_setsigmask(&Attributes, &NoSignals);
+
+      // Reset all signals to default behavior.
+      sigset_t AllSignals;
+      sigfillset(&AllSignals);
+      posix_spawnattr_setsigdefault(&Attributes, &AllSignals);
+
+      // Set the attribute flags.
+      posix_spawnattr_setflags(&Attributes, (POSIX_SPAWN_SETSIGMASK |
+                                             POSIX_SPAWN_SETSIGDEF));
+
       // Spawn the command.
       //
       // FIXME: We would like to buffer the command output, in the same manner
@@ -273,12 +296,14 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       Args[2] = Command->getCommandString().c_str();
       Args[3] = nullptr;
       int PID;
-      if (posix_spawn(&PID, Args[0], /*file_actions=*/0, /*attrp=*/0,
+      if (posix_spawn(&PID, Args[0], /*file_actions=*/0, /*attrp=*/&Attributes,
                       const_cast<char**>(Args), ::environ) != 0) {
         fprintf(stderr, "error: %s: unable to spawn process (%s)\n",
                 getprogname(), strerror(errno));
         exit(1);
       }
+
+      posix_spawnattr_destroy(&Attributes);
 
       // Wait for the command to complete.
       int Status, Result = waitpid(PID, &Status, 0);

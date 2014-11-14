@@ -106,10 +106,10 @@ Tasks for Usable Tool
 * Implement support for automatic running of the rule that generates the
   manifest itself (rerun on CMake changes). Also, look into related problems:
 
-  * CMake seems to hang when invoked by llbuild, for unknown reasons.
-
   * If CMake is killed while running, then llbuild will never run it again (even
-    if the CMakeLists.txt files are touched).
+    if the CMakeLists.txt files are touched). This is actually just a concrete
+    instance of our output file handling behavior not being finished, as the
+    generator file has phony edges on all of the CMake inputs.
 
 Random Tasks
 ------------
