@@ -95,7 +95,7 @@ static void LexWord(const char*& Cur, const char* End) {
       // If this is a line continuation, it ends the word.
       if (Cur + 1 != End && Cur[1] == '\n')
         break;
->
+
       // Otherwise, skip the escaped character.
       ++Cur;
       continue;
@@ -134,7 +134,7 @@ void MakefileDepsParser::parse() {
       SkipToEndOfLine(Cur, End);
       continue;
     }
-    
+
     // Skip the colon.
     ++Cur;
 
