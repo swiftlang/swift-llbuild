@@ -576,7 +576,7 @@
 		E1A223E819F98F1C0059043E = {
 			isa = PBXGroup;
 			children = (
-				E1A223FD19F990F10059043E /* tools */,
+				E1A223FD19F990F10059043E /* products */,
 				E1A2240419F991530059043E /* lib */,
 				E1A2252319F9A0310059043E /* tests */,
 				E1C404B51A03090D003392BA /* perftests */,
@@ -607,13 +607,13 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		E1A223FD19F990F10059043E /* tools */ = {
+		E1A223FD19F990F10059043E /* products */ = {
 			isa = PBXGroup;
 			children = (
 				E1A2240119F991350059043E /* llbuild */,
 				E1A2240019F991350059043E /* CMakeLists.txt */,
 			);
-			path = tools;
+			path = products;
 			sourceTree = "<group>";
 		};
 		E1A2240119F991350059043E /* llbuild */ = {

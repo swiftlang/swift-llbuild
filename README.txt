@@ -39,8 +39,8 @@ Swift conventions.
   Code in libraries in the lower layers is **forbidden** from using code in the
   higher layers.
 
-* Public facing tools and libraries are organized under ``tools/`` (this follows
-  the LLVM naming convention, but is a misnomer). Currently the only tool is:
+* Public facing products (tools and libraries) are organized under
+  ``products/``. Currently the only product is:
 
   llbuild
     The implementation of the command line ``llbuild`` tool.
