@@ -41,6 +41,8 @@
 		E10D5CE419FEF3BD00211ED4 /* Python.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E10D5CE319FEF3BD00211ED4 /* Python.framework */; };
 		E10D5CE619FEF40100211ED4 /* LitTests.py in Resources */ = {isa = PBXBuildFile; fileRef = E10D5CE519FEF40100211ED4 /* LitTests.py */; };
 		E171538D1A0BF702004CD598 /* CorePerfTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = E171538C1A0BF702004CD598 /* CorePerfTests.mm */; };
+		E19D79921A15D9E6002604FB /* MakefileDepsParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */; };
+		E19D79951A15DA06002604FB /* MakefileDepsParserTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E19D79941A15DA06002604FB /* MakefileDepsParserTest.cpp */; };
 		E1A2244219F9973F0059043E /* BuildEngineCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240A19F991530059043E /* BuildEngineCommand.cpp */; };
 		E1A2244319F997410059043E /* CommandUtil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240C19F991530059043E /* CommandUtil.cpp */; };
 		E1A2244419F997450059043E /* NinjaBuildCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240E19F991530059043E /* NinjaBuildCommand.cpp */; };
@@ -298,6 +300,9 @@
 		E19D549E1A00497300772777 /* buildengine-ack.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "buildengine-ack.txt"; sourceTree = "<group>"; };
 		E19D549F1A00497300772777 /* lit.local.cfg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = lit.local.cfg; sourceTree = "<group>"; };
 		E19D54A21A004EC900772777 /* tracing.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tracing.ninja; sourceTree = "<group>"; };
+		E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MakefileDepsParser.cpp; sourceTree = "<group>"; };
+		E19D79931A15D9F5002604FB /* MakefileDepsParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MakefileDepsParser.h; sourceTree = "<group>"; };
+		E19D79941A15DA06002604FB /* MakefileDepsParserTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MakefileDepsParserTest.cpp; sourceTree = "<group>"; };
 		E1A223FB19F990E60059043E /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1A223FC19F990E60059043E /* README.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.txt; sourceTree = "<group>"; };
 		E1A2240019F991350059043E /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
@@ -669,6 +674,7 @@
 				E1A2241619F991530059043E /* DependencyCommand.cpp */,
 				E1A2241719F991530059043E /* DependencyGraph.cpp */,
 				E1A2241819F991530059043E /* DependencyNode.cpp */,
+				E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */,
 				E1E2210B1A015B9E00957481 /* SQLiteBuildDB.cpp */,
 			);
 			path = Core;
@@ -714,6 +720,7 @@
 				E1A2245919F997FE0059043E /* DependencyCommand.h */,
 				E1A2245A19F997FE0059043E /* DependencyGraph.h */,
 				E1A2245B19F997FE0059043E /* DependencyNode.h */,
+				E19D79931A15D9F5002604FB /* MakefileDepsParser.h */,
 			);
 			name = Headers;
 			path = include/llbuild/Core;
@@ -845,6 +852,7 @@
 				E1A224B619F998D40059043E /* CMakeLists.txt */,
 				E1A224B519F998D40059043E /* BuildEngineTest.cpp */,
 				E1A224B719F998D40059043E /* DependencyGraphTest.cpp */,
+				E19D79941A15DA06002604FB /* MakefileDepsParserTest.cpp */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -1439,6 +1447,7 @@
 				E1E221071A00689C00957481 /* BuildDB.cpp in Sources */,
 				E1A2244719F9974D0059043E /* BuildEngineTrace.cpp in Sources */,
 				E1A2244819F9974F0059043E /* DependencyCommand.cpp in Sources */,
+				E19D79921A15D9E6002604FB /* MakefileDepsParser.cpp in Sources */,
 				E1A2244919F997510059043E /* DependencyGraph.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1471,6 +1480,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E19D79951A15DA06002604FB /* MakefileDepsParserTest.cpp in Sources */,
 				E1A224F619F99D940059043E /* BuildEngineTest.cpp in Sources */,
 				E1A224F719F99D9A0059043E /* DependencyGraphTest.cpp in Sources */,
 			);

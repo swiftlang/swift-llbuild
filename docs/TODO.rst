@@ -85,8 +85,6 @@ Tasks for Usable Tool
 
 * Support compiler supplied implicit dependencies.
 
-* Support manifest supplied implicit dependencies.
-
 * Rework command line tool towards production use vs testing tool.
 
   * This mean factoring out a separate llbuild-test testing tool which has the
@@ -96,7 +94,22 @@ Tasks for Usable Tool
 
 * Support multiple inputs on the command line.
 
+* Support finding root targets when no default is set.
+
 * Buffer command output.
+
+* Support "restat" feature.
+
+* Implement path normalization (for Nodes as well as things like imported
+  dependencies from compiler output).
+
+* Implement support for automatic running of the rule that generates the
+  manifest itself (rerun on CMake changes). Also, look into related problems:
+
+  * CMake seems to hang when invoked by llbuild, for unknown reasons.
+
+  * If CMake is killed while running, then llbuild will never run it again (even
+    if the CMakeLists.txt files are touched).
 
 Random Tasks
 ------------
