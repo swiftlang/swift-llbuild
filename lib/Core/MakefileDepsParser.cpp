@@ -116,6 +116,10 @@ void MakefileDepsParser::parse() {
     // Skip leading whitespace and comments.
     SkipWhitespaceAndComments(Cur, End);
 
+    // If we have reached the end of the input, we are done.
+    if (Cur == End)
+      break;
+    
     // The next token should be a word.
     const char* WordStart = Cur;
     LexWord(Cur, End);

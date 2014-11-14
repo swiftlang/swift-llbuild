@@ -79,6 +79,16 @@ TEST(MakefileDepsParserTest, Basic) {
   EXPECT_EQ(RuleRecord("one", { "two", "three" }),
             Actions.Records[1]);
 
+  // Check a valid input with a trailing newline.
+  Input = "out: \\\n  in1\n";
+  Actions.Errors.clear();
+  Actions.Records.clear();
+  MakefileDepsParser(Input.data(), Input.size(), Actions).parse();
+  EXPECT_EQ(0U, Actions.Errors.size());
+  EXPECT_EQ(1U, Actions.Records.size());
+  EXPECT_EQ(RuleRecord("out", { "in1" }),
+            Actions.Records[0]);
+
   // Check error case if leading garbage.
   Actions.Errors.clear();
   Actions.Records.clear();
