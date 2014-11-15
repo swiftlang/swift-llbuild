@@ -143,9 +143,16 @@ class BuildEngineImpl {
       return int(State) > int(StateKind::IsScanning);
     }
 
+    bool isInProgressWaiting() const {
+      return State == StateKind::InProgressWaiting;
+    }
+
+    bool isInProgressComputing() const {
+      return State == StateKind::InProgressComputing;
+    }
+
     bool isInProgress() const {
-      return State == StateKind::InProgressWaiting ||
-        State == StateKind::InProgressComputing;
+      return isInProgressWaiting() || isInProgressComputing();
     }
 
     bool isComplete(const BuildEngineImpl* Engine) const {
@@ -204,6 +211,8 @@ class BuildEngineImpl {
     /// The number of outstanding inputs that this task is waiting on to be
     /// provided.
     unsigned WaitCount = 0;
+    /// The list of discovered dependencies found during execution of the task.
+    std::vector<KeyType> DiscoveredDependencies;
   };
   std::unordered_map<Task*, TaskInfo> TaskInfos;
 
@@ -668,7 +677,7 @@ private:
             Trace->readiedTask(TaskInfo->Task.get(), &RuleInfo->Rule);
 
         // Transition the rule state.
-        assert(RuleInfo->State == RuleInfo::StateKind::InProgressWaiting);
+        assert(RuleInfo->isInProgressWaiting());
         RuleInfo->State = RuleInfo::StateKind::InProgressComputing;
 
         // Inform the task its inputs are ready and it should finish.
@@ -712,6 +721,16 @@ private:
         // call).
         RuleInfo->Result.ComputedAt = CurrentTimestamp;
         RuleInfo->Result.BuiltAt = CurrentTimestamp;
+
+        // Add all of the task's discovered dependencies.
+        //
+        // FIXME: We could audit these dependencies at this point to verify that
+        // they are not keys for rules which have not been run, which would
+        // indicate an underspecified build (e.g., a generated header).
+        RuleInfo->Result.Dependencies.insert(
+          RuleInfo->Result.Dependencies.begin(),
+          TaskInfo->DiscoveredDependencies.begin(),
+          TaskInfo->DiscoveredDependencies.end());
 
         // Update the database record, if attached.
         if (DB)
@@ -926,8 +945,7 @@ public:
     TaskInfo* TaskInfo = &taskinfo_it->second;
 
     // Validate that the task is in a valid state to request inputs.
-    if (TaskInfo->ForRuleInfo->State !=
-          RuleInfo::StateKind::InProgressWaiting) {
+    if (!TaskInfo->ForRuleInfo->isInProgressWaiting()) {
       // FIXME: Error handling.
       abort();
     }
@@ -972,11 +990,39 @@ public:
     addTaskInputRequest(Task, Key, kMustFollowInputID);
   }
 
-  void taskIsComplete(Task* Task, ValueType Value) {
+  void taskDiscoveredDependency(Task* Task, KeyType Key) {
+    // Find the task info.
+    //
+    // FIXME: This is not safe.
     auto taskinfo_it = TaskInfos.find(Task);
     assert(taskinfo_it != TaskInfos.end() &&
            "cannot request inputs for an unknown task");
     TaskInfo* TaskInfo = &taskinfo_it->second;
+
+    if (!TaskInfo->ForRuleInfo->isInProgressComputing()) {
+      // FIXME: Error handling.
+      std::cerr << "error: invalid state for adding discovered dependency\n";
+      exit(1);
+    }
+
+    TaskInfo->DiscoveredDependencies.push_back(Key);
+  }
+
+  void taskIsComplete(Task* Task, ValueType Value) {
+    // FIXME: We should flag the task to ensure this is only called once, and
+    // that no other API calls are made once complete.
+
+    // FIXME: This is not safe.
+    auto taskinfo_it = TaskInfos.find(Task);
+    assert(taskinfo_it != TaskInfos.end() &&
+           "cannot request inputs for an unknown task");
+    TaskInfo* TaskInfo = &taskinfo_it->second;
+
+    if (!TaskInfo->ForRuleInfo->isInProgressComputing()) {
+      // FIXME: Error handling.
+      std::cerr << "error: invalid state for marking task complete\n";
+      exit(1);
+    }
 
     RuleInfo *RuleInfo = TaskInfo->ForRuleInfo;
     assert(TaskInfo == RuleInfo->getPendingTaskInfo());
@@ -1043,6 +1089,11 @@ Task* BuildEngine::registerTask(Task* Task) {
 void BuildEngine::taskNeedsInput(Task* Task, KeyType Key, uintptr_t InputID) {
   return static_cast<BuildEngineImpl*>(Impl)->taskNeedsInput(Task, Key,
                                                              InputID);
+}
+
+void BuildEngine::taskDiscoveredDependency(Task* Task, KeyType Key) {
+  return static_cast<BuildEngineImpl*>(Impl)->taskDiscoveredDependency(
+    Task, Key);
 }
 
 void BuildEngine::taskMustFollow(Task* Task, KeyType Key) {

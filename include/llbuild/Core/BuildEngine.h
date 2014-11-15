@@ -203,6 +203,28 @@ public:
   /// during a build, then \arg Task will not be computed until after it.
   void taskMustFollow(Task* Task, KeyType Key);
 
+  /// Inform the engine of an input dependency that was discovered by the task
+  /// during its execution, a la compiler generated dependency files.
+  ///
+  /// This call may only be made after a task has received all of its inputs;
+  /// inputs discovered prior to that point should simply be requested as normal
+  /// input dependencies.
+  ///
+  /// Such a dependency is not used to provide additional input to the task,
+  /// rather it is a way for the task to report an additional input which should
+  /// be considered the next time the rule is evaluated. The expected use case
+  /// for a discovered dependency is is when a processing task cannot predict
+  /// all of its inputs prior to being run, but can presume that any unknown
+  /// inputs already exist. In such cases, the task can go ahead and run and can
+  /// report the all of the discovered inputs as it executes. Once the task is
+  /// complete, these inputs will be recorded as being dependencies of the task
+  /// so that it will be recomputed when any of the inputs change.
+  ///
+  /// It is legal to call this method from any thread, but the caller is
+  /// responsible for ensuring that it is never called concurrently for the same
+  /// task.
+  void taskDiscoveredDependency(Task* Task, KeyType Key);
+
   /// Called by a task to indicate it has completed and to provide its value.
   ///
   /// It is legal to call this method from any thread.

@@ -473,4 +473,67 @@ TEST(BuildEngineTest, DeepDependencyScanningStack) {
   EXPECT_EQ(LastInputValue, Engine.build("input-0"));
 }
 
+TEST(BuildEngineTest, DiscoveredDependencies) {
+  // Check basic support for tasks to report discovered dependencies.
+
+  // This models a task which has some out-of-band way to read the input.
+  class TaskWithDiscoveredDependency : public Task {
+    int& ValueB;
+    int ComputedInputValue = -1;
+
+  public:
+    TaskWithDiscoveredDependency(int& ValueB)
+      : Task("TaskWithDiscoveredDependency"), ValueB(ValueB) { }
+
+    virtual void start(BuildEngine& Engine) override {
+      // Request the known input.
+      Engine.taskNeedsInput(this, "value-A", 0);
+    }
+
+    virtual void provideValue(BuildEngine&, uintptr_t InputID,
+                              ValueType Value) override {
+      assert(InputID == 0);
+      ComputedInputValue = Value;
+    }
+
+    virtual void inputsAvailable(core::BuildEngine& Engine) override {
+      // Report the discovered dependency.
+      Engine.taskDiscoveredDependency(this, "value-B");
+      Engine.taskIsComplete(this, ComputedInputValue * ValueB * 5);
+    }
+  };
+
+  core::BuildEngine Engine;
+  int ValueA = 2;
+  int ValueB = 3;
+  Engine.addRule({
+      "value-A",
+      simpleAction({ },
+                   [&] (const std::vector<ValueType>& Inputs) {
+                     return ValueA; }),
+      [&](const Rule& rule, const ValueType Value) {
+        return ValueA == Value;
+      } });
+  Engine.addRule({
+      "value-B",
+      simpleAction({ },
+                   [&] (const std::vector<ValueType>& Inputs) {
+                     return ValueB; }),
+      [&](const Rule& rule, const ValueType Value) {
+        return ValueB == Value;
+      } });
+  Engine.addRule({
+      "output",
+      [&ValueB] (BuildEngine& Engine) {
+        return Engine.registerTask(new TaskWithDiscoveredDependency(ValueB));
+      } });
+
+  // Build the first result.
+  EXPECT_EQ(ValueA * ValueB * 5, Engine.build("output"));
+
+  // Verify that the build depends on ValueB.
+  ValueB = 7;
+  EXPECT_EQ(ValueA * ValueB * 5, Engine.build("output"));
+}
+
 }
