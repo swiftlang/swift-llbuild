@@ -1,0 +1,34 @@
+# Check the handling during dependency scanning of keys which have been removed.
+#
+# FIXME: This test will probably need to be rethought or updated once dynamic
+# rule generation is supported, since we would presumably just dynamically make
+# an input rule during scanning, then we would notice the input disappeared and
+# trigger the re-exec. However, this does raise the question of whether the
+# scanning logic should rerun if a different "class" of rule is found from when
+# the rule was first run.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: echo input-1 > %t.build/input-1
+# RUN: echo input-2 > %t.build/input-2
+# RUN: echo "build output: CAT input-1 input-2" > %t.build/output-rule.ninja
+# RUN: %{llbuild} ninja build --db %t.build/build.db %t.build/build.ninja &> %t.out
+# RUN: %{FileCheck} --check-prefix=CHECK-FIRST < %t.out %s
+
+# Change the manifest and rebuild.
+#
+# RUN: echo "build output: CAT input-1" > %t.build/output-rule.ninja
+# RUN: %{llbuild} ninja build --db %t.build/build.db %t.build/build.ninja &> %t.out
+# RUN: %{FileCheck} --check-prefix=CHECK-SECOND < %t.out %s
+
+# CHECK-FIRST: [1] cat input-1 input-2 > output
+
+# CHECK-SECOND: [1] cat input-1 > output
+
+rule CAT
+  command = cat ${in} > ${out}
+
+include output-rule.ninja
+
+default output

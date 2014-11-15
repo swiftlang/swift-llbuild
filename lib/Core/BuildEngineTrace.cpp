@@ -251,6 +251,13 @@ void BuildEngineTrace::ruleNeedsToRunBecauseInvalidValue(const Rule* ForRule) {
 }
 
 void
+BuildEngineTrace::ruleNeedsToRunBecauseInputMissing(const Rule* ForRule) {
+  FILE *FP = static_cast<FILE*>(OutputPtr);
+
+  fprintf(FP, ("{ \"rule-needs-to-run\", \"%s\" },\n"), getRuleName(ForRule));
+}
+
+void
 BuildEngineTrace::ruleNeedsToRunBecauseInputUnavailable(const Rule* ForRule,
                                                         const Rule* InputRule) {
   FILE *FP = static_cast<FILE*>(OutputPtr);

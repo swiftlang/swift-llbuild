@@ -90,6 +90,7 @@ public:
                                      const Rule* InputRule);
     void ruleNeedsToRunBecauseNeverBuilt(const Rule* ForRule);
     void ruleNeedsToRunBecauseInvalidValue(const Rule* ForRule);
+    void ruleNeedsToRunBecauseInputMissing(const Rule* ForRule);
     void ruleNeedsToRunBecauseInputUnavailable(const Rule* ForRule,
                                                const Rule* InputRule);
     void ruleNeedsToRunBecauseInputRebuilt(const Rule* ForRule,
