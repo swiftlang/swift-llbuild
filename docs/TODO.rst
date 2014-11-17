@@ -60,6 +60,9 @@ Build Engine
   * Implement an efficient shared queue for FinishedTaskInfos, if we stay with
     the current design.
 
+  * Figure out if we should change the Rule interface so that the engine can
+    manage a free-list of allocated Tasks.
+
 Build Database
 ==============
 

@@ -254,7 +254,8 @@ void
 BuildEngineTrace::ruleNeedsToRunBecauseInputMissing(const Rule* ForRule) {
   FILE *FP = static_cast<FILE*>(OutputPtr);
 
-  fprintf(FP, ("{ \"rule-needs-to-run\", \"%s\" },\n"), getRuleName(ForRule));
+  fprintf(FP, "{ \"rule-needs-to-run\", \"%s\", \"input-missing\" },\n",
+          getRuleName(ForRule));
 }
 
 void
