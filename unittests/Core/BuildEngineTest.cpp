@@ -503,6 +503,7 @@ TEST(BuildEngineTest, DiscoveredDependencies) {
     }
   };
 
+  std::vector<std::string> BuiltKeys;
   core::BuildEngine Engine;
   int ValueA = 2;
   int ValueB = 3;
@@ -510,7 +511,9 @@ TEST(BuildEngineTest, DiscoveredDependencies) {
       "value-A",
       simpleAction({ },
                    [&] (const std::vector<ValueType>& Inputs) {
-                     return ValueA; }),
+                     BuiltKeys.push_back("value-A");
+                     return ValueA;
+                   }),
       [&](const Rule& rule, const ValueType Value) {
         return ValueA == Value;
       } });
@@ -518,22 +521,42 @@ TEST(BuildEngineTest, DiscoveredDependencies) {
       "value-B",
       simpleAction({ },
                    [&] (const std::vector<ValueType>& Inputs) {
-                     return ValueB; }),
+                     BuiltKeys.push_back("value-B");
+                     return ValueB;
+                   }),
       [&](const Rule& rule, const ValueType Value) {
         return ValueB == Value;
       } });
   Engine.addRule({
       "output",
-      [&ValueB] (BuildEngine& Engine) {
+      [&ValueB, &BuiltKeys] (BuildEngine& Engine) {
+        BuiltKeys.push_back("output");
         return Engine.registerTask(new TaskWithDiscoveredDependency(ValueB));
       } });
 
   // Build the first result.
+  BuiltKeys.clear();
   EXPECT_EQ(ValueA * ValueB * 5, Engine.build("output"));
+  EXPECT_EQ(std::vector<std::string>({ "output", "value-A", "value-B" }),
+            BuiltKeys);
+
+  // Verify that the next build is a null build.
+  BuiltKeys.clear();
+  EXPECT_EQ(ValueA * ValueB * 5, Engine.build("output"));
+  EXPECT_EQ(std::vector<std::string>(), BuiltKeys);
 
   // Verify that the build depends on ValueB.
   ValueB = 7;
+  BuiltKeys.clear();
   EXPECT_EQ(ValueA * ValueB * 5, Engine.build("output"));
+  EXPECT_EQ(std::vector<std::string>({ "output", "value-B" }),
+            BuiltKeys);
+
+
+  // Verify again that the next build is a null build.
+  BuiltKeys.clear();
+  EXPECT_EQ(ValueA * ValueB * 5, Engine.build("output"));
+  EXPECT_EQ(std::vector<std::string>(), BuiltKeys);
 }
 
 }

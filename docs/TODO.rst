@@ -29,6 +29,10 @@ Build Engine
 
 * Support active scheduling (?).
 
+* Figure out when taskNeedsInput() should be allowed, and if
+  taskDiscoveredDependency() should be eliminated in favor of loosened rules
+  about when it can be invoked.
+
 * Figure out if Rule should be subclassed, with virtual methods for action
   generation and input checking.
 

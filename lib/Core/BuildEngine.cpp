@@ -732,6 +732,26 @@ private:
           TaskInfo->DiscoveredDependencies.begin(),
           TaskInfo->DiscoveredDependencies.end());
 
+        // Push back dummy input requests for any discovered dependencies, which
+        // must be at least built in order to be brought up-to-date.
+        //
+        // FIXME: The need to do this makes it questionable that we use this
+        // approach for discovered dependencies instead of just providing
+        // support for taskNeedsInput() even after the task has started
+        // computing and from parallel contexts.
+        for (const auto& InputKey: TaskInfo->DiscoveredDependencies) {
+          auto it = RuleInfos.find(InputKey);
+          if (it == RuleInfos.end()) {
+            // FIXME: Error handling.
+            std::cerr << "error: attempt to build unknown rule \""
+                      << InputKey << "\"\n";
+            exit(1);
+          }
+          auto& RuleInfo = it->second;
+
+          InputRequests.push_back({ nullptr, &RuleInfo });
+        }
+
         // Update the database record, if attached.
         if (DB)
             DB->setRuleResult(RuleInfo->Rule, RuleInfo->Result);
