@@ -28,6 +28,8 @@ using namespace llbuild::core;
 
 Task::~Task() {}
 
+BuildEngineDelegate::~BuildEngineDelegate() {}
+
 #pragma mark - BuildEngine Implementation
 
 namespace {
@@ -41,7 +43,9 @@ class BuildEngineImpl {
     kMustFollowInputID = ~(uintptr_t)0
   };
 
-  BuildEngine &BuildEngine;
+  BuildEngine& BuildEngine;
+
+  BuildEngineDelegate& Delegate;
 
   /// The build database, if attached.
   std::unique_ptr<BuildDB> DB;
@@ -802,7 +806,9 @@ private:
   }
 
 public:
-  BuildEngineImpl(class BuildEngine& BuildEngine) : BuildEngine(BuildEngine) {}
+  BuildEngineImpl(class BuildEngine& BuildEngine,
+                  BuildEngineDelegate& Delegate)
+    : BuildEngine(BuildEngine), Delegate(Delegate) {}
 
   ~BuildEngineImpl() {
     // If tracing is enabled, close it.
@@ -1074,7 +1080,9 @@ public:
 
 #pragma mark - BuildEngine
 
-BuildEngine::BuildEngine() : Impl(new BuildEngineImpl(*this)) {
+BuildEngine::BuildEngine(BuildEngineDelegate& Delegate)
+  : Impl(new BuildEngineImpl(*this, Delegate)) 
+{
 }
 
 BuildEngine::~BuildEngine() {

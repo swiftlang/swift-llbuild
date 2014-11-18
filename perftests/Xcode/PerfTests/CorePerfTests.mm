@@ -112,7 +112,16 @@ static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
   int M = 1000000; // Use a graph of 1 million nodes.
 
   // Set up the build rules.
-  __block core::BuildEngine Engine;
+  struct LinearDelegate : public BuildEngineDelegate {
+    virtual core::Rule lookupRule(core::KeyType Key) override {
+      // We never expect dynamic rule lookup.
+      fprintf(stderr, "error: %s: unexpected rule lookup for \"%s\"\n",
+              getprogname(), Key.c_str());
+      abort();
+      return core::Rule();
+    }
+  } Delegate;
+  __block core::BuildEngine Engine(Delegate);
   int LastInputValue = 0;
   for (int i = 1; i <= M; ++i) {
     char Name[32];
@@ -174,7 +183,16 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
          N, M, NumTotalNodes);
 
   // Set up the build rules.
-  __block core::BuildEngine Engine;
+  struct NaryTreeDelegate : public BuildEngineDelegate {
+    virtual core::Rule lookupRule(core::KeyType Key) override {
+      // We never expect dynamic rule lookup.
+      fprintf(stderr, "error: %s: unexpected rule lookup for \"%s\"\n",
+              getprogname(), Key.c_str());
+      abort();
+      return core::Rule();
+    }
+  } Delegate;
+  __block core::BuildEngine Engine(Delegate);
   int LastInputValue = 0;
   for (int i = 1; i <= M; ++i) {
     // Compute the total number of groups at this depth.
@@ -240,7 +258,16 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
   int M = 1000, N = 1000; // Use a graph of 1 million nodes.
 
   // Set up the build rules.
-  __block core::BuildEngine Engine;
+  struct MatrixDelegate : public BuildEngineDelegate {
+    virtual core::Rule lookupRule(core::KeyType Key) override {
+      // We never expect dynamic rule lookup.
+      fprintf(stderr, "error: %s: unexpected rule lookup for \"%s\"\n",
+              getprogname(), Key.c_str());
+      abort();
+      return core::Rule();
+    }
+  } Delegate;
+  __block core::BuildEngine Engine(Delegate);
   int LastInputValue = 0;
   for (int i = 1; i <= M; ++i) {
     for (int j = 1; j <= N; ++j) {

@@ -89,9 +89,22 @@ public:
   }
 };
 
+class NinjaBuildEngineDelegate : public core::BuildEngineDelegate {
+  virtual core::Rule lookupRule(core::KeyType Key) override {
+    // We never expect dynamic rule lookup.
+    fprintf(stderr, "error: %s: unexpected rule lookup for \"%s\"\n",
+            getprogname(), Key.c_str());
+    abort();
+    return core::Rule();
+  }
+};
+
 /// Wrapper for information used during a single build.
 class BuildContext {
 public:
+  /// The build engine delegate.
+  NinjaBuildEngineDelegate Delegate;
+
   /// The engine in use.
   core::BuildEngine Engine;
 
@@ -118,7 +131,8 @@ public:
 
 public:
   BuildContext()
-    : OutputQueue(dispatch_queue_create("output-queue",
+    : Engine(Delegate),
+      OutputQueue(dispatch_queue_create("output-queue",
                                         /*attr=*/DISPATCH_QUEUE_SERIAL)) {}
   ~BuildContext() {
     dispatch_release(OutputQueue);

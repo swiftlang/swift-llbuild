@@ -126,12 +126,48 @@ public:
   std::function<bool(const Rule&, const ValueType)> IsResultValid;
 };
 
+/// Delegate interface for use with the build engine.
+class BuildEngineDelegate {
+public:
+  virtual ~BuildEngineDelegate();  
+
+  /// Get the rule to use for the given Key.
+  ///
+  /// The delegate *must* provide a rule for any possible key that can be
+  /// requested (either by a client, through \see BuildEngine::build(), or via a
+  /// Task through mechanisms such as \see BuildEngine::taskNeedsInput()). If a
+  /// requested Key cannot be supplied, the delegate should provide a dummy rule
+  /// that the client can translate into an error.
+  virtual Rule lookupRule(KeyType Key) = 0;
+};
+
+/// A build engine supports fast, incremental, persistent, and parallel
+/// execution of computational graphs.
+///
+/// Computational elements in the graph are modeled by \see Rule objects, which
+/// are assocated with a specific \see KeyType, and which can be executed to
+/// produce an output \see ValueType for that key.
+///
+/// Rule objects are evaluated by first invoking their action to produce a \see
+/// Task object which is responsible for the live execution of the
+/// computation. The Task object can interact with the BuildEngine to request
+/// inputs or to notify the engine of its completion, and receives various
+/// callbacks from the engine as the computation progresses.
+///
+/// The engine itself executes using a deterministic, serial operation, but it
+/// supports parallel computation by allowing the individual Task objects to
+/// defer their own computation to signal the BuildEngine of its completion on
+/// alternate threads.
+///
+/// To support persistence, the engine allows attaching a database (\see
+/// attachDB()) which can be used to record the prior results of evaluating Rule
+/// instances.
 class BuildEngine {
   void *Impl;
 
 public:
-  /// Create a build engine using a particular database delegate.
-  explicit BuildEngine();
+  /// Create a build engine with the given delegate.
+  explicit BuildEngine(BuildEngineDelegate& Delegate);
   ~BuildEngine();
 
   /// @name Rule Definition

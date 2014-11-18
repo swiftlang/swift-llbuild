@@ -124,7 +124,18 @@ static int RunAckermannBuild(int M, int N, int RecomputeCount,
   assert(N >= 0);
 
   // First, create rules for each of the necessary results.
-  core::BuildEngine engine;
+  class AckermannDelegate : public core::BuildEngineDelegate {
+  public:
+    virtual core::Rule lookupRule(core::KeyType Key) override {
+      // We never expect dynamic rule lookup.
+      fprintf(stderr, "error: %s: unexpected rule lookup for \"%s\"\n",
+              getprogname(), Key.c_str());
+      abort();
+      return core::Rule();
+    }
+  };
+  AckermannDelegate delegate;
+  core::BuildEngine engine(delegate);
 
   // Enable tracing, if requested.
   if (!TraceFilename.empty()) {

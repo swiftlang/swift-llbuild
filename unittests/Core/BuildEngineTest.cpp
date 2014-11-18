@@ -24,6 +24,16 @@ using namespace llbuild::core;
 
 namespace {
 
+class SimpleBuildEngineDelegate : public core::BuildEngineDelegate {
+  virtual core::Rule lookupRule(core::KeyType Key) override {
+    // We never expect dynamic rule lookup.
+    fprintf(stderr, "error: %s: unexpected rule lookup for \"%s\"\n",
+            getprogname(), Key.c_str());
+    abort();
+    return core::Rule();
+  }
+};
+
 // Simple task implementation which takes a fixed set of dependencies, evaluates
 // them all, and then provides the output.
 class SimpleTask : public Task {
@@ -73,7 +83,8 @@ static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
 TEST(BuildEngineTest, Basic) {
   // Check a trivial build graph.
   std::vector<std::string> BuiltKeys;
-  core::BuildEngine Engine;
+  SimpleBuildEngineDelegate Delegate;
+  core::BuildEngine Engine(Delegate);
   Engine.addRule({
       "value-A", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
           BuiltKeys.push_back("value-A");
@@ -117,7 +128,8 @@ TEST(BuildEngineTest, BasicWithSharedInput) {
   //   value-C: (value-A, value-B)
   //   value-R: (value-A, value-C)
   std::vector<std::string> BuiltKeys;
-  core::BuildEngine Engine;
+  SimpleBuildEngineDelegate Delegate;
+  core::BuildEngine Engine(Delegate);
   Engine.addRule({
       "value-A", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
           BuiltKeys.push_back("value-A");
@@ -162,7 +174,8 @@ TEST(BuildEngineTest, VeryBasicIncremental) {
   // Dependencies:
   //   value-R: (value-A, value-B)
   std::vector<std::string> BuiltKeys;
-  core::BuildEngine Engine;
+  SimpleBuildEngineDelegate Delegate;
+  core::BuildEngine Engine(Delegate);
   int ValueA = 2;
   int ValueB = 3;
   Engine.addRule({
@@ -233,7 +246,8 @@ TEST(BuildEngineTest, BasicIncremental) {
   // If value-R2 is built, then value-B changes and value-R is built, then when
   // value-R2 is built again only value-D and value-R2 are rebuilt.
   std::vector<std::string> BuiltKeys;
-  core::BuildEngine Engine;
+  SimpleBuildEngineDelegate Delegate;
+  core::BuildEngine Engine(Delegate);
   int ValueA = 2;
   int ValueB = 3;
   Engine.addRule({
@@ -367,7 +381,8 @@ TEST(BuildEngineTest, IncrementalDependency) {
   // we need a logging BuildDB implementation or something that would be easier
   // to test against (or just update the trace to track it).
 
-  core::BuildEngine Engine;
+  SimpleBuildEngineDelegate Delegate;
+  core::BuildEngine Engine(Delegate);
 
   // Attach a custom database, used to get the results.
   class CustomDB : public BuildDB {
@@ -434,7 +449,8 @@ TEST(BuildEngineTest, DeepDependencyScanningStack) {
   // faster.
   int Depth = 10000;
 
-  core::BuildEngine Engine;
+  SimpleBuildEngineDelegate Delegate;
+  core::BuildEngine Engine(Delegate);
   int LastInputValue = 0;
   for (int i = 0; i != Depth; ++i) {
     char Name[32];
@@ -504,7 +520,8 @@ TEST(BuildEngineTest, DiscoveredDependencies) {
   };
 
   std::vector<std::string> BuiltKeys;
-  core::BuildEngine Engine;
+  SimpleBuildEngineDelegate Delegate;
+  core::BuildEngine Engine(Delegate);
   int ValueA = 2;
   int ValueB = 3;
   Engine.addRule({
