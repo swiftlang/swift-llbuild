@@ -84,6 +84,14 @@ Tasks for Usable Tool
 
 * Don't run commands downstream of failing ones.
 
+* Implement support for automatic running of the rule that generates the
+  manifest itself (rerun on CMake changes). Also, look into related problems:
+
+  * If CMake is killed while running, then llbuild will never run it again (even
+    if the CMakeLists.txt files are touched). This is actually just a concrete
+    instance of our output file handling behavior not being finished, as the
+    generator file has phony edges on all of the CMake inputs.
+
 * Rework command line tool towards production use vs testing tool.
 
   * This mean factoring out a separate llbuild-test testing tool which has the
@@ -101,14 +109,6 @@ Tasks for Usable Tool
 
 * Implement path normalization (for Nodes as well as things like imported
   dependencies from compiler output).
-
-* Implement support for automatic running of the rule that generates the
-  manifest itself (rerun on CMake changes). Also, look into related problems:
-
-  * If CMake is killed while running, then llbuild will never run it again (even
-    if the CMakeLists.txt files are touched). This is actually just a concrete
-    instance of our output file handling behavior not being finished, as the
-    generator file has phony edges on all of the CMake inputs.
 
 * Implement support for rerunning commands which have changed.
 
