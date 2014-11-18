@@ -17,7 +17,11 @@
 namespace llbuild {
 
 std::string getLLBuildFullVersion() {
+#ifdef LLBUILD_VERSION_STRING
+    return "LLBuild version 0.1 (" + std::string(LLBUILD_VERSION_STRING) + ")";
+#else
     return "LLBuild version 0.1";
+#endif
 }
 
 }
