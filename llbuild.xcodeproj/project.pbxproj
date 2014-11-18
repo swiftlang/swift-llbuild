@@ -7,6 +7,17 @@
 	objects = {
 
 /* Begin PBXAggregateTarget section */
+		E178FCC11A1BF3270039F8B5 /* B&I */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = E178FCC41A1BF3270039F8B5 /* Build configuration list for PBXAggregateTarget "B&I" */;
+			buildPhases = (
+			);
+			dependencies = (
+				E178FCC61A1BF32F0039F8B5 /* PBXTargetDependency */,
+			);
+			name = "B&I";
+			productName = "B&I";
+		};
 		E180432F1A00122900662FE7 /* Lit-Tests-Setup */ = {
 			isa = PBXAggregateTarget;
 			buildConfigurationList = E18043321A00122900662FE7 /* Build configuration list for PBXAggregateTarget "Lit-Tests-Setup" */;
@@ -87,6 +98,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		E178FCC51A1BF32F0039F8B5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1A224C219F999B80059043E;
+			remoteInfo = "llbuild Tool";
+		};
 		E18043331A00123600662FE7 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
@@ -1267,6 +1285,9 @@
 					E10D5CD919FEBF6A00211ED4 = {
 						CreatedOnToolsVersion = 6.3;
 					};
+					E178FCC11A1BF3270039F8B5 = {
+						CreatedOnToolsVersion = 6.3;
+					};
 					E180432F1A00122900662FE7 = {
 						CreatedOnToolsVersion = 6.3;
 					};
@@ -1315,6 +1336,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				E178FCC11A1BF3270039F8B5 /* B&I */,
 				E1A224C219F999B80059043E /* llbuild Tool */,
 				E1A2242419F991B40059043E /* llbuildBasic */,
 				E1A2242D19F997050059043E /* llbuildCommands */,
@@ -1506,6 +1528,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		E178FCC61A1BF32F0039F8B5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1A224C219F999B80059043E /* llbuild Tool */;
+			targetProxy = E178FCC51A1BF32F0039F8B5 /* PBXContainerItemProxy */;
+		};
 		E18043341A00123600662FE7 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = E180432F1A00122900662FE7 /* Lit-Tests-Setup */;
@@ -1667,6 +1694,18 @@
 			};
 			name = Release;
 		};
+		E178FCC21A1BF3270039F8B5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		E178FCC31A1BF3270039F8B5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Release;
+		};
 		E18043301A00122900662FE7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1704,12 +1743,13 @@
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
 				);
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
@@ -1719,6 +1759,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include";
 				USE_HEADERMAP = NO;
 			};
@@ -1748,6 +1789,8 @@
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
@@ -1756,6 +1799,7 @@
 				HEADER_SEARCH_PATHS = "";
 				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include";
 				USE_HEADERMAP = NO;
 			};
@@ -1828,14 +1872,18 @@
 		E1A224C819F999B80059043E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/bin";
 				PRODUCT_NAME = llbuild;
+				SKIP_INSTALL = NO;
 			};
 			name = Debug;
 		};
 		E1A224C919F999B80059043E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/bin";
 				PRODUCT_NAME = llbuild;
+				SKIP_INSTALL = NO;
 			};
 			name = Release;
 		};
@@ -2008,6 +2056,14 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		E178FCC41A1BF3270039F8B5 /* Build configuration list for PBXAggregateTarget "B&I" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E178FCC21A1BF3270039F8B5 /* Debug */,
+				E178FCC31A1BF3270039F8B5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 		E18043321A00122900662FE7 /* Build configuration list for PBXAggregateTarget "Lit-Tests-Setup" */ = {
 			isa = XCConfigurationList;
