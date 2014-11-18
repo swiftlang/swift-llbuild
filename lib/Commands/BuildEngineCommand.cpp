@@ -123,15 +123,30 @@ static int RunAckermannBuild(int M, int N, int RecomputeCount,
   assert(M >= 0 && M < 4);
   assert(N >= 0);
 
-  // First, create rules for each of the necessary results.
+  // Define the delegate which will dynamically construct rules of the form
+  // "ack(M,N)".
   class AckermannDelegate : public core::BuildEngineDelegate {
   public:
+    int NumRules = 0;
+
     virtual core::Rule lookupRule(core::KeyType Key) override {
-      // We never expect dynamic rule lookup.
-      fprintf(stderr, "error: %s: unexpected rule lookup for \"%s\"\n",
-              getprogname(), Key.c_str());
-      abort();
-      return core::Rule();
+      // Extract the Ackermann parameters.
+      //
+      // FIXME: Need generalized key type.
+      assert(Key[0] == 'a' && Key[1] == 'c' && Key[2] == 'k' &&
+             Key[3] == '(');
+      const char* MStart = &Key[4];
+      const char* MEnd = strchr(MStart, ',');
+      assert(MEnd != nullptr && MEnd[0] == ',');
+      const char* NStart = &MEnd[1];
+      int M = strtol(MStart, nullptr, 10);
+      int N = strtol(NStart, nullptr, 10);
+      assert(M >= 0 && M < 4);
+      assert(N >= 0);
+
+      ++NumRules;
+      return core::Rule{Key, [M, N] (core::BuildEngine& engine) {
+          return BuildAck(engine, M, N); } };
     }
   };
   AckermannDelegate delegate;
@@ -147,26 +162,6 @@ static int RunAckermannBuild(int M, int N, int RecomputeCount,
     }
   }
 
-  int NumRules = 0;
-  for (int i = 0; i <= M; ++i) {
-    int UpperBound;
-    if (i == 0 || i == 1) {
-      UpperBound = int(pow(2, N+3) - 3) + 1;
-    } else if (i == 2) {
-      UpperBound = int(pow(2, N+3 - 1) - 3) + 1;
-    } else {
-      assert(i == M);
-      UpperBound = N + 1;
-    }
-    for (int j = 0; j <= UpperBound; ++j) {
-      char Name[32];
-      sprintf(Name, "ack(%d,%d)", i, j);
-      engine.addRule({ Name, [i, j] (core::BuildEngine& engine) {
-            return BuildAck(engine, i, j); } });
-      ++NumRules;
-    }
-  }
-
   char Key[32];
   sprintf(Key, "ack(%d,%d)", M, N);
   core::ValueType Result = engine.build(Key);
@@ -177,7 +172,7 @@ static int RunAckermannBuild(int M, int N, int RecomputeCount,
     assert(Result == Expected);
 #endif
   }
-  std::cout << "... computed using " << NumRules << " rules\n";
+  std::cout << "... computed using " << delegate.NumRules << " rules\n";
 
   // Recompute the result as many times as requested.
   for (int i = 0; i != RecomputeCount; ++i) {

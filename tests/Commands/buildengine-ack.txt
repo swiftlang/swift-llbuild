@@ -2,4 +2,4 @@
 # RUN: %{FileCheck} < %t.out %s
 #
 # CHECK: ack(2, 2) = 7
-# CHECK: ... computed using 77 rules
+# CHECK: ... computed using 15 rules
