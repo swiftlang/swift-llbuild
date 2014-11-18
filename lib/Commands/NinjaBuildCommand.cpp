@@ -260,7 +260,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       // complete.
       if (Context.Simulate) {
         if (!Context.Quiet)
-          writeDescription();
+          writeDescription(Context, Command);
         Context.Engine.taskIsComplete(this, 0);
         return;
       }
@@ -269,7 +269,8 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       Context.JobQueue->addJob([&] () { executeCommand(); });
     }
 
-    void writeDescription() {
+    static void writeDescription(BuildContext& Context,
+                                 ninja::Command* Command) {
       std::cerr << "[" << ++Context.NumOutputDescriptions << "] ";
       if (Command->getDescription().empty()) {
         std::cerr << Command->getCommandString() << "\n";
@@ -279,9 +280,12 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
     }
 
     void executeCommand() {
+      // Write the description on the output queue, taking care to not rely on
+      // the ``this`` object, which may disappear before the queue executes this
+      // block.
       if (!Context.Quiet) {
         dispatch_async(Context.OutputQueue, ^() {
-            writeDescription();
+            writeDescription(Context, Command);
           });
       }
 
