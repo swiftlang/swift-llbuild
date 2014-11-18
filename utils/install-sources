@@ -1,0 +1,39 @@
+#!/bin/sh
+
+set -e
+
+if [ "$#" -ne 1 ]; then
+    echo "$0: error: usage: $0 <tree-ish>"
+    exit 1
+fi
+
+
+SRCROOT="$(realpath $(pwd))"
+TREEISH="${1}"
+
+# Form the destination path.
+if (expr "${TREEISH}" : "llbuild.*"); then
+    DSTNAME="${TREEISH}"
+else
+    DSTNAME="llbuild-${TREEISH}"
+fi
+DST="/tmp/${DSTNAME}"
+
+# The destination path must not exist...
+echo "note: installing sources from '${SRCROOT}' to '${DST}'"
+if [ -e "${DST}" ]; then
+    echo "$0: error: destination directory ('${DST}') already exists"
+    exit 1
+fi
+
+# Exclude SCM, temporary files, and any large test inputs.
+mkdir "${DST}"
+rsync -arv "${SRCROOT}/" "${DST}/" \
+    --exclude .git \
+    --exclude "*~" \
+    --exclude "*.pyc" \
+    --exclude build \
+    --exclude docs/_build \
+    --exclude experiments \
+    --exclude utils/Xcode/FileCheck \
+    --exclude perftests/Inputs

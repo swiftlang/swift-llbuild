@@ -1697,12 +1697,14 @@
 		E178FCC21A1BF3270039F8B5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
 		E178FCC31A1BF3270039F8B5 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
@@ -2064,6 +2066,7 @@
 				E178FCC31A1BF3270039F8B5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		E18043321A00122900662FE7 /* Build configuration list for PBXAggregateTarget "Lit-Tests-Setup" */ = {
 			isa = XCConfigurationList;
