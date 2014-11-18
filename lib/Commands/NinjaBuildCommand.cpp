@@ -89,14 +89,10 @@ public:
   }
 };
 
-class NinjaBuildEngineDelegate : public core::BuildEngineDelegate {
-  virtual core::Rule lookupRule(core::KeyType Key) override {
-    // We never expect dynamic rule lookup.
-    fprintf(stderr, "error: %s: unexpected rule lookup for \"%s\"\n",
-            getprogname(), Key.c_str());
-    abort();
-    return core::Rule();
-  }
+struct NinjaBuildEngineDelegate : public core::BuildEngineDelegate {
+  class BuildContext* Context = nullptr;
+
+  virtual core::Rule lookupRule(core::KeyType Key) override;
 };
 
 /// Wrapper for information used during a single build.
@@ -107,6 +103,9 @@ public:
 
   /// The engine in use.
   core::BuildEngine Engine;
+
+  /// The Ninja manifest we are operating on.
+  std::unique_ptr<ninja::Manifest> Manifest;
 
   /// Whether the build is being "simulated", in which case commands won't be
   /// run and inputs will be assumed to exist.
@@ -133,7 +132,12 @@ public:
   BuildContext()
     : Engine(Delegate),
       OutputQueue(dispatch_queue_create("output-queue",
-                                        /*attr=*/DISPATCH_QUEUE_SERIAL)) {}
+                                        /*attr=*/DISPATCH_QUEUE_SERIAL))
+  {
+    // Register the context with the delegate.
+    Delegate.Context = this;
+  }
+
   ~BuildContext() {
     dispatch_release(OutputQueue);
   }
@@ -205,7 +209,7 @@ static core::ValueType GetStatHashForNode(const ninja::Node* Node) {
 }
 
 core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
-                         ninja::Command* Command, ninja::Manifest* Manifest) {
+                         ninja::Command* Command) {
   struct NinjaCommandTask : core::Task {
     BuildContext& Context;
     ninja::Node* Output;
@@ -381,6 +385,31 @@ static bool BuildInputIsResultValid(ninja::Node *Node,
   return GetStatHashForNode(Node) == Value;
 }
 
+core::Rule NinjaBuildEngineDelegate::lookupRule(core::KeyType Key) {
+  // We created rules for all of the commands up front, so if we are asked for a
+  // rule here it is because we are looking for an input.
+
+  // Get the node for this input.
+  //
+  // FIXME: This is frequently a redundant lookup, given that the caller might
+  // well have had the Node* available. This is something that would be nice
+  // to avoid when we support generic key types.
+  ninja::Node* Node = Context->Manifest->getOrCreateNode(Key);
+
+  return core::Rule{
+    Node->getPath(),
+      [&, Node] (core::BuildEngine& Engine) {
+      return BuildInput(*Context, Node);
+    },
+    [&, Node] (const core::Rule& Rule, const core::ValueType Value) {
+      // If simulating, assume cached results are valid.
+      if (Context->Simulate)
+        return true;
+
+      return BuildInputIsResultValid(Node, Value);
+    } };
+}
+
 }
 
 int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
@@ -479,7 +508,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   // Load the manifest.
   BuildManifestActions Actions;
   ninja::ManifestLoader Loader(Filename, Actions);
-  std::unique_ptr<ninja::Manifest> Manifest = Loader.load();
+  Context.Manifest = Loader.load();
 
   // If there were errors loading, we are done.
   if (unsigned NumErrors = Actions.getNumErrors()) {
@@ -526,18 +555,15 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
     }
   }
 
-  // Create rules for all of the build commands.
+  // Create rules for all of the build commands up front.
   //
-  // FIXME: This is already a place where we could do lazy rule construction,
-  // which starts to beg the question of why does the engine need to have a Rule
-  // at all?
-  std::unordered_set<ninja::Node*> VisitedNodes;
-  for (auto& Command: Manifest->getCommands()) {
+  // FIXME: We should probably also move this to be dynamic.
+  for (auto& Command: Context.Manifest->getCommands()) {
     for (auto& Output: Command->getOutputs()) {
       Context.Engine.addRule({
           Output->getPath(),
           [&] (core::BuildEngine& Engine) {
-            return BuildCommand(Context, Output, Command.get(), Manifest.get());
+            return BuildCommand(Context, Output, Command.get());
           },
           [&] (const core::Rule& Rule, const core::ValueType Value) {
             // If simulating, assume cached results are valid.
@@ -550,32 +576,12 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
 
             return true;
           } });
-      VisitedNodes.insert(Output);
-    }
-  }
-
-  // Add dummy rules for all of the nodes that are not outputs (source files).
-  for (auto& Entry: Manifest->getNodes()) {
-    ninja::Node* Node = Entry.second.get();
-    if (!VisitedNodes.count(Node)) {
-      Context.Engine.addRule({
-          Node->getPath(),
-          [&, Node] (core::BuildEngine& Engine) {
-            return BuildInput(Context, Node);
-          },
-          [&, Node] (const core::Rule& Rule, const core::ValueType Value) {
-            // If simulating, assume cached results are valid.
-            if (Context.Simulate)
-              return true;
-
-            return BuildInputIsResultValid(Node, Value);
-          } });
     }
   }
 
   // If no explicit targets were named, build the default targets.
   if (TargetsToBuild.empty()) {
-    for (auto& Target: Manifest->getDefaultTargets())
+    for (auto& Target: Context.Manifest->getDefaultTargets())
       TargetsToBuild.push_back(Target->getPath());
   }
 

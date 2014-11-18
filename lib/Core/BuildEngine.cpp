@@ -441,19 +441,7 @@ private:
       // Look up the input rule info, if not yet cached.
       if (!Request.InputRuleInfo) {
         auto InputKey = RuleInfo.Result.Dependencies[Request.InputIndex];
-        auto it = RuleInfos.find(InputKey);
-        if (it == RuleInfos.end()) {
-          // If there is no such rule, the rule should rerun.
-          //
-          // FIXME: Reevaluate what the right behavior here is in the face of
-          // dynamic rule construction. What if we have a different class of
-          // rule?
-          if (Trace)
-            Trace->ruleNeedsToRunBecauseInputMissing(&RuleInfo.Rule);
-          finishScanRequest(RuleInfo, RuleInfo::StateKind::NeedsToRun);
-          return;
-        }
-        Request.InputRuleInfo = &it->second;
+        Request.InputRuleInfo = &getRuleInfoForKey(InputKey);
       }
       auto& InputRuleInfo = *Request.InputRuleInfo;
 

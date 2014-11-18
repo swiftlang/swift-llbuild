@@ -116,6 +116,8 @@ Tasks for Usable Tool
     instance of our output file handling behavior not being finished, as the
     generator file has phony edges on all of the CMake inputs.
 
+* Implement support for rerunning commands which have changed.
+
 Random Tasks
 ------------
 
