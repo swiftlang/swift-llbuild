@@ -138,7 +138,7 @@ public:
   /// Task through mechanisms such as \see BuildEngine::taskNeedsInput()). If a
   /// requested Key cannot be supplied, the delegate should provide a dummy rule
   /// that the client can translate into an error.
-  virtual Rule lookupRule(KeyType Key) = 0;
+  virtual Rule lookupRule(const KeyType& Key) = 0;
 };
 
 /// A build engine supports fast, incremental, persistent, and parallel
@@ -182,7 +182,7 @@ public:
   /// @{
 
   /// Build the result for a particular key.
-  ValueType build(KeyType Key);
+  ValueType build(const KeyType& Key);
 
   /// Attach a database for persisting build state.
   ///
@@ -229,7 +229,7 @@ public:
   /// intentionally chosen to allow a pointer to be provided, but note that all
   /// input IDs greater than \see kMaximumInputID are reserved for internal use
   /// by the engine.
-  void taskNeedsInput(Task* Task, KeyType Key, uintptr_t InputID);
+  void taskNeedsInput(Task* Task, const KeyType& Key, uintptr_t InputID);
 
   /// Specify that the given \arg Task must be built subsequent to the
   /// computation of \arg Key.
@@ -237,7 +237,7 @@ public:
   /// The value of the computation of \arg Key is not available to the task, and
   /// the only guarantee the engine provides is that if \arg Key is computed
   /// during a build, then \arg Task will not be computed until after it.
-  void taskMustFollow(Task* Task, KeyType Key);
+  void taskMustFollow(Task* Task, const KeyType& Key);
 
   /// Inform the engine of an input dependency that was discovered by the task
   /// during its execution, a la compiler generated dependency files.
@@ -259,7 +259,7 @@ public:
   /// It is legal to call this method from any thread, but the caller is
   /// responsible for ensuring that it is never called concurrently for the same
   /// task.
-  void taskDiscoveredDependency(Task* Task, KeyType Key);
+  void taskDiscoveredDependency(Task* Task, const KeyType& Key);
 
   /// Called by a task to indicate it has completed and to provide its value.
   ///

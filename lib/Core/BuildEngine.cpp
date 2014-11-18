@@ -440,7 +440,7 @@ private:
     do {
       // Look up the input rule info, if not yet cached.
       if (!Request.InputRuleInfo) {
-        auto InputKey = RuleInfo.Result.Dependencies[Request.InputIndex];
+        const auto& InputKey = RuleInfo.Result.Dependencies[Request.InputIndex];
         Request.InputRuleInfo = &getRuleInfoForKey(InputKey);
       }
       auto& InputRuleInfo = *Request.InputRuleInfo;
@@ -841,7 +841,7 @@ public:
   /// @name Client API
   /// @{
 
-  ValueType build(KeyType Key) {
+  ValueType build(const KeyType& Key) {
     if (DB)
       DB->buildStarted();
 
@@ -953,7 +953,7 @@ public:
     fclose(FP);
   }
 
-  void addTaskInputRequest(Task* Task, KeyType Key, uintptr_t InputID) {
+  void addTaskInputRequest(Task* Task, const KeyType& Key, uintptr_t InputID) {
     auto taskinfo_it = TaskInfos.find(Task);
     assert(taskinfo_it != TaskInfos.end() &&
            "cannot request inputs for an unknown task");
@@ -984,7 +984,7 @@ public:
     return Task;
   }
 
-  void taskNeedsInput(Task* Task, KeyType Key, uintptr_t InputID) {
+  void taskNeedsInput(Task* Task, const KeyType& Key, uintptr_t InputID) {
     // Validate the InputID.
     if (InputID > BuildEngine::kMaximumInputID) {
       // FIXME: Error handling.
@@ -995,11 +995,11 @@ public:
     addTaskInputRequest(Task, Key, InputID);
   }
 
-  void taskMustFollow(Task* Task, KeyType Key) {
+  void taskMustFollow(Task* Task, const KeyType& Key) {
     addTaskInputRequest(Task, Key, kMustFollowInputID);
   }
 
-  void taskDiscoveredDependency(Task* Task, KeyType Key) {
+  void taskDiscoveredDependency(Task* Task, const KeyType& Key) {
     // Find the task info.
     //
     // FIXME: This is not safe.
@@ -1076,7 +1076,7 @@ void BuildEngine::addRule(Rule &&Rule) {
   static_cast<BuildEngineImpl*>(Impl)->addRule(std::move(Rule));
 }
 
-ValueType BuildEngine::build(KeyType Key) {
+ValueType BuildEngine::build(const KeyType& Key) {
   return static_cast<BuildEngineImpl*>(Impl)->build(Key);
 }
 
@@ -1097,15 +1097,16 @@ Task* BuildEngine::registerTask(Task* Task) {
   return static_cast<BuildEngineImpl*>(Impl)->registerTask(Task);
 }
 
-void BuildEngine::taskNeedsInput(Task* Task, KeyType Key, uintptr_t InputID) {
+void BuildEngine::taskNeedsInput(Task* Task, const KeyType& Key,
+                                 uintptr_t InputID) {
   static_cast<BuildEngineImpl*>(Impl)->taskNeedsInput(Task, Key, InputID);
 }
 
-void BuildEngine::taskDiscoveredDependency(Task* Task, KeyType Key) {
+void BuildEngine::taskDiscoveredDependency(Task* Task, const KeyType& Key) {
   static_cast<BuildEngineImpl*>(Impl)->taskDiscoveredDependency(Task, Key);
 }
 
-void BuildEngine::taskMustFollow(Task* Task, KeyType Key) {
+void BuildEngine::taskMustFollow(Task* Task, const KeyType& Key) {
   static_cast<BuildEngineImpl*>(Impl)->taskMustFollow(Task, Key);
 }
 

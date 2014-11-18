@@ -129,7 +129,7 @@ static int RunAckermannBuild(int M, int N, int RecomputeCount,
   public:
     int NumRules = 0;
 
-    virtual core::Rule lookupRule(core::KeyType Key) override {
+    virtual core::Rule lookupRule(const core::KeyType& Key) override {
       // Extract the Ackermann parameters.
       //
       // FIXME: Need generalized key type.

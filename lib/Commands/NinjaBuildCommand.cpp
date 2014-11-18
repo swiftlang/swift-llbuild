@@ -93,7 +93,7 @@ public:
 struct NinjaBuildEngineDelegate : public core::BuildEngineDelegate {
   class BuildContext* Context = nullptr;
 
-  virtual core::Rule lookupRule(core::KeyType Key) override;
+  virtual core::Rule lookupRule(const core::KeyType& Key) override;
 };
 
 /// Wrapper for information used during a single build.
@@ -456,7 +456,7 @@ static bool BuildInputIsResultValid(ninja::Node *Node,
   return GetStatHashForNode(Node) == Value;
 }
 
-core::Rule NinjaBuildEngineDelegate::lookupRule(core::KeyType Key) {
+core::Rule NinjaBuildEngineDelegate::lookupRule(const core::KeyType& Key) {
   // We created rules for all of the commands up front, so if we are asked for a
   // rule here it is because we are looking for an input.
 

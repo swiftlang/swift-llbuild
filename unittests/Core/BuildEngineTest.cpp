@@ -25,7 +25,7 @@ using namespace llbuild::core;
 namespace {
 
 class SimpleBuildEngineDelegate : public core::BuildEngineDelegate {
-  virtual core::Rule lookupRule(core::KeyType Key) override {
+  virtual core::Rule lookupRule(const core::KeyType& Key) override {
     // We never expect dynamic rule lookup.
     fprintf(stderr, "error: %s: unexpected rule lookup for \"%s\"\n",
             getprogname(), Key.c_str());

@@ -113,7 +113,7 @@ static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
 
   // Set up the build rules.
   struct LinearDelegate : public BuildEngineDelegate {
-    virtual core::Rule lookupRule(core::KeyType Key) override {
+    virtual core::Rule lookupRule(const core::KeyType& Key) override {
       // We never expect dynamic rule lookup.
       fprintf(stderr, "error: %s: unexpected rule lookup for \"%s\"\n",
               getprogname(), Key.c_str());
@@ -184,7 +184,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
 
   // Set up the build rules.
   struct NaryTreeDelegate : public BuildEngineDelegate {
-    virtual core::Rule lookupRule(core::KeyType Key) override {
+    virtual core::Rule lookupRule(const core::KeyType& Key) override {
       // We never expect dynamic rule lookup.
       fprintf(stderr, "error: %s: unexpected rule lookup for \"%s\"\n",
               getprogname(), Key.c_str());
@@ -259,7 +259,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
 
   // Set up the build rules.
   struct MatrixDelegate : public BuildEngineDelegate {
-    virtual core::Rule lookupRule(core::KeyType Key) override {
+    virtual core::Rule lookupRule(const core::KeyType& Key) override {
       // We never expect dynamic rule lookup.
       fprintf(stderr, "error: %s: unexpected rule lookup for \"%s\"\n",
               getprogname(), Key.c_str());
