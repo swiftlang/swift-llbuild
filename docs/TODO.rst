@@ -19,8 +19,6 @@ Build Engine
 
 * Generalize value type.
 
-* Support dynamic rule selection (?).
-
 * Support reading compiler implicit deps.
 
 * Support multiple outputs.

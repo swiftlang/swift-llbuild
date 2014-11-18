@@ -90,7 +90,7 @@ class BuildEngineImpl {
     std::vector<RuleScanRequest> DeferredScanRequests;
   };
 
-  /// The map of rule information.
+  /// Wrapper for information specific to a single rule.
   struct RuleInfo {
     enum class StateKind {
       /// The initial rule state.
@@ -193,9 +193,13 @@ class BuildEngineImpl {
       InProgressInfo.PendingTaskInfo = Value;
     }
   };
-  // FIXME: The code currently assumes all rules are allocated up front, and
-  // uses RuleInfo*s assuming they are stable. We will need to change this and
-  // heap allocate (or something) if we allow lazy rule construction.
+
+  // The map of registered rules.
+  //
+  // NOTE: We currently rely on the unordered_map behavior that ensures that
+  // references to elements are not invalidated by insertion. We will need to
+  // move to an alternate allocation strategy if we switch to DenseMap style
+  // table.
   std::unordered_map<KeyType, RuleInfo> RuleInfos;
 
   /// The set of pending tasks.
@@ -744,16 +748,7 @@ private:
         // support for taskNeedsInput() even after the task has started
         // computing and from parallel contexts.
         for (const auto& InputKey: TaskInfo->DiscoveredDependencies) {
-          auto it = RuleInfos.find(InputKey);
-          if (it == RuleInfos.end()) {
-            // FIXME: Error handling.
-            std::cerr << "error: attempt to build unknown rule \""
-                      << InputKey << "\"\n";
-            exit(1);
-          }
-          auto& RuleInfo = it->second;
-
-          InputRequests.push_back({ nullptr, &RuleInfo });
+          InputRequests.push_back({ nullptr, &getRuleInfoForKey(InputKey) });
         }
 
         // Update the database record, if attached.
@@ -818,10 +813,20 @@ public:
     }
   }
 
+  RuleInfo& getRuleInfoForKey(const KeyType& Key) {
+    // Check if we have already found the rule.
+    auto it = RuleInfos.find(Key);
+    if (it != RuleInfos.end())
+      return it->second;
+
+    // Otherwise, request it from the delegate and add it.
+    return addRule(Delegate.lookupRule(Key));
+  }
+
   /// @name Rule Definition
   /// @{
 
-  void addRule(Rule &&Rule) {
+  RuleInfo& addRule(Rule &&Rule) {
     auto Result = RuleInfos.emplace(Rule.Key, RuleInfo(std::move(Rule)));
     if (!Result.second) {
       // FIXME: Error handling.
@@ -835,10 +840,12 @@ public:
     // FIXME: Investigate retrieving this result lazily. If the DB is
     // particularly efficient, it may be best to retrieve this only when we need
     // it and never duplicate it.
+    RuleInfo& RuleInfo = Result.first->second;
     if (DB) {
-      RuleInfo& RuleInfo = Result.first->second;
       DB->lookupRuleResult(RuleInfo.Rule, &RuleInfo.Result);
     }
+
+    return RuleInfo;
   }
 
   /// @}
@@ -861,13 +868,7 @@ public:
     ++CurrentTimestamp;
 
     // Find the rule.
-    auto it = RuleInfos.find(Key);
-    if (it == RuleInfos.end()) {
-      // FIXME: Error handling.
-      std::cerr << "error: attempt to build unknown rule \"" << Key << "\"\n";
-      exit(1);
-    }
-    auto& RuleInfo = it->second;
+    auto& RuleInfo = getRuleInfoForKey(Key);
 
     if (Trace)
       Trace->buildStarted();
@@ -977,14 +978,8 @@ public:
     }
 
     // Lookup the rule for this task.
-    auto ruleinfo_it = RuleInfos.find(Key);
-    if (ruleinfo_it == RuleInfos.end()) {
-      // FIXME: Error handling.
-      std::cerr << "error: attempt to build unknown rule \"" << Key << "\"\n";
-      exit(1);
-    }
-    RuleInfo* RuleInfo = &ruleinfo_it->second;
-
+    RuleInfo* RuleInfo = &getRuleInfoForKey(Key);
+    
     InputRequests.push_back({ TaskInfo, RuleInfo, InputID });
     TaskInfo->WaitCount++;
   }
@@ -1090,7 +1085,7 @@ BuildEngine::~BuildEngine() {
 }
 
 void BuildEngine::addRule(Rule &&Rule) {
-  return static_cast<BuildEngineImpl*>(Impl)->addRule(std::move(Rule));
+  static_cast<BuildEngineImpl*>(Impl)->addRule(std::move(Rule));
 }
 
 ValueType BuildEngine::build(KeyType Key) {
@@ -1098,11 +1093,11 @@ ValueType BuildEngine::build(KeyType Key) {
 }
 
 void BuildEngine::dumpGraphToFile(const std::string& Path) {
-  return static_cast<BuildEngineImpl*>(Impl)->dumpGraphToFile(Path);
+  static_cast<BuildEngineImpl*>(Impl)->dumpGraphToFile(Path);
 }
 
 void BuildEngine::attachDB(std::unique_ptr<BuildDB> Database) {
-  return static_cast<BuildEngineImpl*>(Impl)->attachDB(std::move(Database));
+  static_cast<BuildEngineImpl*>(Impl)->attachDB(std::move(Database));
 }
 
 bool BuildEngine::enableTracing(const std::string& Path,
@@ -1115,19 +1110,17 @@ Task* BuildEngine::registerTask(Task* Task) {
 }
 
 void BuildEngine::taskNeedsInput(Task* Task, KeyType Key, uintptr_t InputID) {
-  return static_cast<BuildEngineImpl*>(Impl)->taskNeedsInput(Task, Key,
-                                                             InputID);
+  static_cast<BuildEngineImpl*>(Impl)->taskNeedsInput(Task, Key, InputID);
 }
 
 void BuildEngine::taskDiscoveredDependency(Task* Task, KeyType Key) {
-  return static_cast<BuildEngineImpl*>(Impl)->taskDiscoveredDependency(
-    Task, Key);
+  static_cast<BuildEngineImpl*>(Impl)->taskDiscoveredDependency(Task, Key);
 }
 
 void BuildEngine::taskMustFollow(Task* Task, KeyType Key) {
-  return static_cast<BuildEngineImpl*>(Impl)->taskMustFollow(Task, Key);
+  static_cast<BuildEngineImpl*>(Impl)->taskMustFollow(Task, Key);
 }
 
 void BuildEngine::taskIsComplete(Task* Task, ValueType Value) {
-  return static_cast<BuildEngineImpl*>(Impl)->taskIsComplete(Task, Value);
+  static_cast<BuildEngineImpl*>(Impl)->taskIsComplete(Task, Value);
 }
