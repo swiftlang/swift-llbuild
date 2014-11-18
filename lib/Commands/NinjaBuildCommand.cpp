@@ -665,6 +665,9 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
     std::cerr << "building target \"" << util::EscapedString(Name) << "\"...\n";
     Context.Engine.build(Name);
   }
+  // Ensure the output queue is finished.
+  dispatch_sync(Context.OutputQueue, ^() {});
+
   std::cerr << "... built using " << Context.NumBuiltInputs << " inputs\n";
   std::cerr << "... built using " << Context.NumBuiltCommands << " commands\n";
 
@@ -679,6 +682,6 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
     return 1;
   }
 
-  // Return an appropriate exit statu
+  // Return an appropriate exit status.
   return 0;
 }
