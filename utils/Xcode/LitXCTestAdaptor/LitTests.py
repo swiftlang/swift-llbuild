@@ -10,7 +10,7 @@ import lit.discovery
 # Ensure we have the appropriate environment variables
 built_products_dir = os.environ.get("BUILT_PRODUCTS_DIR")
 if not built_products_dir or not os.path.exists(built_products_dir):
-   raise RuntimeError("invalid BUILT_PRODUCTS_DIR: '%r'" % (built_products_dir,))
+   raise RuntimeError("invalid BUILT_PRODUCTS_DIR: %r" % (built_products_dir,))
 
 # Load the Lit test suite using the unittest style discovery.
 test_suite = lit.discovery.load_test_suite([os.path.join(built_products_dir,

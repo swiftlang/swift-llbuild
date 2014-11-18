@@ -17,6 +17,9 @@
 @implementation LitTests
 
 + (XCTestSuite*)defaultTestSuite {
+    // Inject the BUILT_PRODUCTS_DIR we were built with into the environment.
+    setenv("BUILT_PRODUCTS_DIR", BUILT_PRODUCTS_DIR, /*overwrite=*/1);
+    
     // Initialize Python.
     Py_Initialize();
 
