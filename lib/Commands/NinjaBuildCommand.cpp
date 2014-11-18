@@ -284,8 +284,10 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       // the ``this`` object, which may disappear before the queue executes this
       // block.
       if (!Context.Quiet) {
+        BuildContext& LocalContext(Context);
+        ninja::Command* LocalCommand(Command);
         dispatch_async(Context.OutputQueue, ^() {
-            writeDescription(Context, Command);
+            writeDescription(LocalContext, LocalCommand);
           });
       }
 
