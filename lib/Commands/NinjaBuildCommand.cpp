@@ -14,6 +14,7 @@
 
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/BuildEngine.h"
+#include "llbuild/Core/MakefileDepsParser.h"
 #include "llbuild/Ninja/ManifestLoader.h"
 
 #include "CommandUtil.h"
@@ -225,7 +226,9 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
     }
 
     virtual void start(core::BuildEngine& engine) override {
-      // Request all of the explicit and input values.
+      // Request all of the explicit and implicit inputs (the only difference
+      // between them is that implicit inputs do not appear in ${in} during
+      // variable expansion, but that has already been performed).
       for (auto it = Command->explicitInputs_begin(),
              ie = Command->explicitInputs_end(); it != ie; ++it) {
         engine.taskNeedsInput(this, (*it)->getPath(), 0);
@@ -328,6 +331,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       while (Result == -1 && errno == EINTR)
           Result = waitpid(PID, &Status, 0);
       if (Result == -1) {
+        // FIXME: Error handling.
         fprintf(stderr, "error: %s: unable to wait for process (%s)\n",
                 getprogname(), strerror(errno));
         exit(1);
@@ -339,7 +343,74 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
           });
       }
 
+      // If the command succeeded, process the dependencies.
+      if (Status == 0) {
+        processDiscoveredDependencies();
+      }
+
       Context.Engine.taskIsComplete(this, 0);
+    }
+
+    void processDiscoveredDependencies() {
+      // Process the discovered dependencies, if used.
+      switch (Command->getDepsStyle()) {
+      case ninja::Command::DepsStyleKind::None:
+        break;
+      case ninja::Command::DepsStyleKind::MSVC: {
+        fprintf(stderr, "error: %s: MSVC style dependencies are unsupported\n",
+                getprogname());
+        exit(1);
+        break;
+      }
+      case ninja::Command::DepsStyleKind::GCC: {
+        // Read the dependencies file.
+        std::string Error;
+        std::unique_ptr<char[]> Data;
+        uint64_t Length;
+        if (!util::ReadFileContents(Command->getDepsFile(), &Data, &Length,
+                                    &Error)) {
+          // FIXME: Error handling.
+          fprintf(stderr,
+                  "error: %s: unable to read dependency file: %s (%s)\n",
+                  getprogname(), Command->getDepsFile().c_str(), Error.c_str());
+          exit(1);
+        }
+
+        // Parse the output.
+        //
+        // We just ignore the rule, and add any dependency that we encounter in
+        // the file.
+        struct DepsActions : public core::MakefileDepsParser::ParseActions {
+          BuildContext& Context;
+          NinjaCommandTask* Task;
+          const std::string& Path;
+          
+          DepsActions(BuildContext& Context, NinjaCommandTask* Task,
+                      const std::string& Path)
+            : Context(Context), Task(Task), Path(Path) {}
+
+          virtual void error(const char* Message, uint64_t Length) override {
+            // FIXME: Error handling.
+            fprintf(stderr, ("error: %s: error reading dependency file: "
+                             "%s (%s) at offset %u\n"),
+                    getprogname(), Path.c_str(), Message, unsigned(Length));
+          }
+          
+          virtual void actOnRuleDependency(const char* Dependency,
+                                           uint64_t Length) override {
+            Context.Engine.taskDiscoveredDependency(
+              Task, std::string(Dependency, Dependency+Length));
+          }
+          
+          virtual void actOnRuleStart(const char* Name,
+                                      uint64_t Length) override {}
+          virtual void actOnRuleEnd() override {}
+        };
+        DepsActions Actions(Context, this, Command->getDepsFile());
+        core::MakefileDepsParser(Data.get(), Length, Actions).parse();
+        break;
+      }
+      }
     }
   };
 

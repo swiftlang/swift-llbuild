@@ -19,11 +19,7 @@ Build Engine
 
 * Generalize value type.
 
-* Support reading compiler implicit deps.
-
 * Support multiple outputs.
-
-* Support parallelism.
 
 * Support active scheduling (?).
 
@@ -87,8 +83,6 @@ Tasks for Usable Tool
 ---------------------
 
 * Don't run commands downstream of failing ones.
-
-* Support compiler supplied implicit dependencies.
 
 * Rework command line tool towards production use vs testing tool.
 

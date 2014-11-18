@@ -1,0 +1,41 @@
+# Basic test for support of compiler generated dependencies.
+
+# We test with a simple command that just writes a fake .d file which lists an
+# input dependency on "header-1".
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: touch %t.build/header-1
+# RUN: %{llbuild} ninja build --db %t.build/build.db \
+# RUN:   %t.build/build.ninja &> %t1.out
+# RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file=%t1.out %s
+
+# RUN: echo "mod" >> %t.build/header-1
+# RUN: %{llbuild} ninja build --db %t.build/build.db \
+# RUN:   %t.build/build.ninja &> %t2.out
+# RUN: %{FileCheck} --check-prefix=CHECK-AFTER-MOD --input-file=%t2.out %s
+
+# Check the first build.
+#
+# CHECK-INITIAL: [1] "CC output-1"
+# CHECK-INITIAL: [2] "cat output-1 > output"
+
+# Check the second build.
+# CHECK-AFTER-MOD: [1] "CC output-1"
+# CHECK-AFTER-MOD: [2] "cat output-1 > output"
+
+rule CC
+     deps = gcc
+     depfile = ${in}.d
+     command = echo "${out}: ${in} header-1" > ${depfile} && touch ${out}
+     description = "CC ${out}"
+
+rule CAT
+     command = cat ${in} > ${out}
+     description = "${command}"
+
+build output-1: CC input-1
+build output: CAT output-1
+
+default output
