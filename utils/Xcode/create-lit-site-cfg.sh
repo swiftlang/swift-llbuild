@@ -6,7 +6,7 @@ set -e
 FILECHECK="${SRCROOT}/utils/Xcode/FileCheck"
 if [ ! -f "${FILECHECK}" ]; then
     # If not, look in the path.
-    FILECHECK="$(which FileCheck)"
+    FILECHECK="$(which FileCheck || true)"
     if [ -z "${FILECHECK}" ]; then
         echo "$0: error: unable to find 'FileCheck' testing utility in path"
         exit 1
