@@ -14,9 +14,23 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "E1A2254219F9A20D0059043E"
-               BuildableName = "test"
-               BlueprintName = "test"
+               BlueprintIdentifier = "E10D5CD919FEBF6A00211ED4"
+               BuildableName = "LitXCTestAdaptor.xctest"
+               BlueprintName = "LitXCTestAdaptor"
+               ReferencedContainer = "container:llbuild.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "E1C404AB1A0308F3003392BA"
+               BuildableName = "PerfTests.xctest"
+               BlueprintName = "PerfTests"
                ReferencedContainer = "container:llbuild.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -26,16 +40,45 @@
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES"
-      buildConfiguration = "Debug">
+      buildConfiguration = "Release">
       <Testables>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "E10D5CD919FEBF6A00211ED4"
+               BuildableName = "LitXCTestAdaptor.xctest"
+               BlueprintName = "LitXCTestAdaptor"
+               ReferencedContainer = "container:llbuild.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "E1C404AB1A0308F3003392BA"
+               BuildableName = "PerfTests.xctest"
+               BlueprintName = "PerfTests"
+               ReferencedContainer = "container:llbuild.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
+      <MacroExpansion>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "E10D5CD919FEBF6A00211ED4"
+            BuildableName = "LitXCTestAdaptor.xctest"
+            BlueprintName = "LitXCTestAdaptor"
+            ReferencedContainer = "container:llbuild.xcodeproj">
+         </BuildableReference>
+      </MacroExpansion>
    </TestAction>
    <LaunchAction
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "NO"
-      buildConfiguration = "Debug"
+      buildConfiguration = "Release"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -43,9 +86,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "E1A2254219F9A20D0059043E"
-            BuildableName = "test"
-            BlueprintName = "test"
+            BlueprintIdentifier = "E10D5CD919FEBF6A00211ED4"
+            BuildableName = "LitXCTestAdaptor.xctest"
+            BlueprintName = "LitXCTestAdaptor"
             ReferencedContainer = "container:llbuild.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -61,9 +104,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "E1A2254219F9A20D0059043E"
-            BuildableName = "test"
-            BlueprintName = "test"
+            BlueprintIdentifier = "E10D5CD919FEBF6A00211ED4"
+            BuildableName = "LitXCTestAdaptor.xctest"
+            BlueprintName = "LitXCTestAdaptor"
             ReferencedContainer = "container:llbuild.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
