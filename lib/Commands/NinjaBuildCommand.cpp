@@ -222,7 +222,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
         Command(Command) { }
 
     virtual void provideValue(core::BuildEngine& engine, uintptr_t InputID,
-                              core::ValueType Value) override {
+                              const core::ValueType& Value) override {
     }
 
     virtual void start(core::BuildEngine& engine) override {
@@ -433,7 +433,7 @@ core::Task* BuildInput(BuildContext& Context, ninja::Node* Input) {
       : Task("ninja-input"), Context(Context), Node(Node) { }
 
     virtual void provideValue(core::BuildEngine& engine, uintptr_t InputID,
-                              core::ValueType Value) override { }
+                              const core::ValueType& Value) override { }
 
     virtual void start(core::BuildEngine& engine) override { }
 
@@ -453,7 +453,7 @@ core::Task* BuildInput(BuildContext& Context, ninja::Node* Input) {
 }
 
 static bool BuildInputIsResultValid(ninja::Node *Node,
-                                    const core::ValueType Value) {
+                                    const core::ValueType& Value) {
   // FIXME: This is inefficient, we will end up doing the stat twice, once when
   // we check the value for up to dateness, and once when we "build" the output.
   //
@@ -478,7 +478,7 @@ core::Rule NinjaBuildEngineDelegate::lookupRule(const core::KeyType& Key) {
       [&, Node] (core::BuildEngine& Engine) {
       return BuildInput(*Context, Node);
     },
-    [&, Node] (const core::Rule& Rule, const core::ValueType Value) {
+    [&, Node] (const core::Rule& Rule, const core::ValueType& Value) {
       // If simulating, assume cached results are valid.
       if (Context->Simulate)
         return true;

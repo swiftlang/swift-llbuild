@@ -411,6 +411,9 @@ private:
     // Dependencies, which we just append to during processing, but we reset the
     // others to ensure no one ever inadvertently uses them during an invalid
     // state.
+    //
+    // FIXME: Eliminate the clearing of Value here, which might have a
+    // performance cost.
     RuleInfo.Result.Value = ValueType();
     RuleInfo.Result.BuiltAt = 0;
     RuleInfo.Result.ComputedAt = 0;
@@ -841,7 +844,7 @@ public:
   /// @name Client API
   /// @{
 
-  ValueType build(const KeyType& Key) {
+  const ValueType& build(const KeyType& Key) {
     if (DB)
       DB->buildStarted();
 
@@ -1017,7 +1020,7 @@ public:
     TaskInfo->DiscoveredDependencies.push_back(Key);
   }
 
-  void taskIsComplete(Task* Task, ValueType Value) {
+  void taskIsComplete(Task* Task, ValueType&& Value) {
     // FIXME: We should flag the task to ensure this is only called once, and
     // that no other API calls are made once complete.
 
@@ -1037,7 +1040,7 @@ public:
     assert(TaskInfo == RuleInfo->getPendingTaskInfo());
 
     // Update the stored result value, and enqueue the finished task processing.
-    RuleInfo->Result.Value = Value;
+    RuleInfo->Result.Value = std::move(Value);
 
     // Enqueue the finished task.
     {
@@ -1076,7 +1079,7 @@ void BuildEngine::addRule(Rule &&Rule) {
   static_cast<BuildEngineImpl*>(Impl)->addRule(std::move(Rule));
 }
 
-ValueType BuildEngine::build(const KeyType& Key) {
+const ValueType& BuildEngine::build(const KeyType& Key) {
   return static_cast<BuildEngineImpl*>(Impl)->build(Key);
 }
 
@@ -1110,6 +1113,6 @@ void BuildEngine::taskMustFollow(Task* Task, const KeyType& Key) {
   static_cast<BuildEngineImpl*>(Impl)->taskMustFollow(Task, Key);
 }
 
-void BuildEngine::taskIsComplete(Task* Task, ValueType Value) {
-  static_cast<BuildEngineImpl*>(Impl)->taskIsComplete(Task, Value);
+void BuildEngine::taskIsComplete(Task* Task, ValueType&& Value) {
+  static_cast<BuildEngineImpl*>(Impl)->taskIsComplete(Task, std::move(Value));
 }

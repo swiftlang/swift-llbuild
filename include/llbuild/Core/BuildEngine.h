@@ -106,7 +106,7 @@ public:
   ///
   /// \param Value The computed value for the given input.
   virtual void provideValue(BuildEngine&, uintptr_t InputID,
-                             ValueType Value) = 0;
+                            const ValueType& Value) = 0;
 
   /// Executed by the build engine to indicate that all inputs have been
   /// provided, and the task should begin its computation.
@@ -123,7 +123,7 @@ class Rule {
 public:
   KeyType Key;
   std::function<Task*(BuildEngine&)> Action;
-  std::function<bool(const Rule&, const ValueType)> IsResultValid;
+  std::function<bool(const Rule&, const ValueType&)> IsResultValid;
 };
 
 /// Delegate interface for use with the build engine.
@@ -182,7 +182,7 @@ public:
   /// @{
 
   /// Build the result for a particular key.
-  ValueType build(const KeyType& Key);
+  const ValueType& build(const KeyType& Key);
 
   /// Attach a database for persisting build state.
   ///
@@ -264,7 +264,7 @@ public:
   /// Called by a task to indicate it has completed and to provide its value.
   ///
   /// It is legal to call this method from any thread.
-  void taskIsComplete(Task* Task, ValueType Value);
+  void taskIsComplete(Task* Task, ValueType&& Value);
   
   /// @}
 };

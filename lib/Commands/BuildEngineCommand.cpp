@@ -65,7 +65,7 @@ static core::Task* BuildAck(core::BuildEngine& engine, int M, int N) {
     AckermannTask(int M, int N) : Task("ack()"), M(M), N(N) { }
 
     virtual void provideValue(core::BuildEngine& engine, uintptr_t InputID,
-                              core::ValueType Value) override {
+                              const core::ValueType& Value) override {
       if (InputID == 0) {
         RecursiveResultA = Value;
 
@@ -104,12 +104,12 @@ static core::Task* BuildAck(core::BuildEngine& engine, int M, int N) {
 
       assert(RecursiveResultA != 0);
       if (N == 0) {
-        engine.taskIsComplete(this, RecursiveResultA);
+        engine.taskIsComplete(this, int(RecursiveResultA));
         return;
       }
 
       assert(RecursiveResultB != 0);
-      engine.taskIsComplete(this, RecursiveResultB);
+      engine.taskIsComplete(this, int(RecursiveResultB));
     }
   };
 

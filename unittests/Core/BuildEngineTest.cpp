@@ -60,7 +60,7 @@ public:
   }
 
   virtual void provideValue(BuildEngine&, uintptr_t InputID,
-                            ValueType Value) override {
+                            const ValueType& Value) override {
     // Update the input values.
     assert(InputID < InputValues.size());
     InputValues[InputID] = Value;
@@ -192,7 +192,7 @@ TEST(BuildEngineTest, VeryBasicIncremental) {
       "value-B", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
           BuiltKeys.push_back("value-B");
           return ValueB; }),
-      [&](const Rule& rule, const ValueType Value) {
+      [&](const Rule& rule, const ValueType& Value) {
           // FIXME: Once we have custom ValueType objects, we would like to have
           // timestamps on the value and just compare to a timestamp (similar to
           // what we would do for a file).
@@ -254,7 +254,7 @@ TEST(BuildEngineTest, BasicIncremental) {
       "value-A", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
           BuiltKeys.push_back("value-A");
           return ValueA; }),
-      [&](const Rule& rule, const ValueType Value) {
+      [&](const Rule& rule, const ValueType& Value) {
           // FIXME: Once we have custom ValueType objects, we would like to have
           // timestamps on the value and just compare to a timestamp (similar to
           // what we would do for a file).
@@ -264,7 +264,7 @@ TEST(BuildEngineTest, BasicIncremental) {
       "value-B", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
           BuiltKeys.push_back("value-B");
           return ValueB; }),
-      [&](const Rule& rule, const ValueType Value) {
+      [&](const Rule& rule, const ValueType& Value) {
           // FIXME: Once we have custom ValueType objects, we would like to have
           // timestamps on the value and just compare to a timestamp (similar to
           // what we would do for a file).
@@ -411,7 +411,7 @@ TEST(BuildEngineTest, IncrementalDependency) {
   Engine.addRule({
       "value-A", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
           return ValueA; }),
-      [&](const Rule& rule, const ValueType Value) {
+      [&](const Rule& rule, const ValueType& Value) {
           // FIXME: Once we have custom ValueType objects, we would like to have
           // timestamps on the value and just compare to a timestamp (similar to
           // what we would do for a file).
@@ -468,7 +468,7 @@ TEST(BuildEngineTest, DeepDependencyScanningStack) {
           simpleAction({},
                        [&] (const std::vector<ValueType>& Inputs) {
                          return LastInputValue; }),
-          [&](const Rule& rule, const ValueType Value) {
+          [&](const Rule& rule, const ValueType& Value) {
             // FIXME: Once we have custom ValueType objects, we would like to
             // have timestamps on the value and just compare to a timestamp
             // (similar to what we would do for a file).
@@ -507,7 +507,7 @@ TEST(BuildEngineTest, DiscoveredDependencies) {
     }
 
     virtual void provideValue(BuildEngine&, uintptr_t InputID,
-                              ValueType Value) override {
+                              const ValueType& Value) override {
       assert(InputID == 0);
       ComputedInputValue = Value;
     }
@@ -531,7 +531,7 @@ TEST(BuildEngineTest, DiscoveredDependencies) {
                      BuiltKeys.push_back("value-A");
                      return ValueA;
                    }),
-      [&](const Rule& rule, const ValueType Value) {
+      [&](const Rule& rule, const ValueType& Value) {
         return ValueA == Value;
       } });
   Engine.addRule({
@@ -541,7 +541,7 @@ TEST(BuildEngineTest, DiscoveredDependencies) {
                      BuiltKeys.push_back("value-B");
                      return ValueB;
                    }),
-      [&](const Rule& rule, const ValueType Value) {
+      [&](const Rule& rule, const ValueType& Value) {
         return ValueB == Value;
       } });
   Engine.addRule({
