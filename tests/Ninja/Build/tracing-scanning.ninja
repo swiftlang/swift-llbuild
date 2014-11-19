@@ -1,0 +1,37 @@
+# Check build engine tracing of scanning events.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: touch %t.build/input-1
+# RUN: touch %t.build/input-2
+# RUN: %{llbuild} ninja build --db %t.build/build.db --trace %t.trace-out %t.build/build.ninja
+
+# Check dependency scanning on rebuild.
+#
+# RUN: echo "mod" >> %t.build/input-2
+# RUN: %{llbuild} ninja build --db %t.build/build.db --trace %t.trace-out %t.build/build.ninja
+# RUN: %{FileCheck} < %t.trace-out %s
+#
+# We scan "output", which pauses, then "input-1" (which doesn't need to run),
+# then "input-2" (which does need to run), and then return to "output", which
+# needs to run because of "input-2".
+#
+# CHECK: { "new-rule", "R1", "output" },
+# CHECK: { "checking-rule-needs-to-run", "R1" },
+# CHECK: { "paused-input-request-for-rule-scan", "R1" },
+# CHECK: { "new-rule", "R2", "input-1" },
+# CHECK: { "checking-rule-needs-to-run", "R2" },
+# CHECK: { "rule-does-not-need-to-run", "R2" },
+# CHECK: { "rule-scanning-next-input", "R1", "R2" },
+# CHECK: { "new-rule", "R3", "input-2" },
+# CHECK: { "checking-rule-needs-to-run", "R3" },
+# CHECK: { "rule-needs-to-run", "R3", "invalid-value" },
+# CHECK: { "rule-needs-to-run", "R1", "input-unavailable", "R3" },
+
+rule CAT
+     command = cat ${in} > $out
+
+build output: CAT input-1 input-2
+
+default output
