@@ -2,8 +2,16 @@
 
 set -e
 
-# Compute the FileCheck path, to our included copy.
-FILECHECK=${SRCROOT}/utils/Xcode/FileCheck
+# If we have an included copy of FileCheck, use that.
+FILECHECK="${SRCROOT}/utils/Xcode/FileCheck"
+if [ ! -f "${FILECHECK}" ]; then
+    # If not, look in the path.
+    FILECHECK="$(which FileCheck)"
+    if [ -z "${FILECHECK}" ]; then
+        echo "$0: error: unable to find 'FileCheck' testing utility in path"
+        exit 1
+    fi
+fi
 
 mkdir -p ${BUILT_PRODUCTS_DIR}/tests/Unit
 
