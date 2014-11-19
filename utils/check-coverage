@@ -1,0 +1,24 @@
+#!/bin/sh
+
+set -e
+
+SRCROOT="$(realpath $(pwd))"
+OBJROOT="/tmp/llbuild-cov.obj"
+
+# Run a build and test cycle with --coverage enabled to generate the .gcda data.
+echo "note: building with xcodebuild into '${OBJROOT}'..."
+time xcodebuild \
+    -scheme test \
+    OBJROOT="${OBJROOT}" \
+    SYMROOT="${OBJROOT}/sym" \
+    DSTROOT="${OBJROOT}/dst" \
+    CCHROOT="${OBJROOT}/cch" \
+    OTHER_CFLAGS="--coverage" OTHER_LDFLAGS="--coverage" &> /tmp/llbuild-cov.log
+
+# Use zcov to generate a coverage report.
+rm -rf build/llbuild.zcov build/llbuild-cov
+mkdir -p build/llbuild-cov
+zcov scan build/llbuild.zcov "${OBJROOT}"
+zcov summarize --root "${SRCROOT}" --prune "/utils/" build/llbuild.zcov
+zcov genhtml --root "${SRCROOT}" --prune "/utils/" build/llbuild.zcov build/llbuild-cov
+
