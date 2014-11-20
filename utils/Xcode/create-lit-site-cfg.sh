@@ -3,7 +3,7 @@
 set -e
 
 # If we have an included copy of FileCheck, use that.
-FILECHECK="${SRCROOT}/utils/Xcode/FileCheck"
+FILECHECK="${SRCROOT}/llbuild-test-tools/utils/Xcode/FileCheck"
 if [ ! -f "${FILECHECK}" ]; then
     # If not, look in the path.
     FILECHECK="$(which FileCheck || true)"
