@@ -311,6 +311,7 @@
 		E10D5CDE19FEBF6A00211ED4 /* LitTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LitTests.m; sourceTree = "<group>"; };
 		E10D5CE319FEF3BD00211ED4 /* Python.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Python.framework; path = System/Library/Frameworks/Python.framework; sourceTree = SDKROOT; };
 		E10D5CE519FEF40100211ED4 /* LitTests.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = LitTests.py; sourceTree = "<group>"; };
+		E153EBBA1A1E94CD00F93337 /* llbuild-test-tools */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "llbuild-test-tools"; sourceTree = "<group>"; };
 		E171538C1A0BF702004CD598 /* CorePerfTests.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = CorePerfTests.mm; sourceTree = "<group>"; };
 		E18043391A00129400662FE7 /* install-user-lit.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "install-user-lit.sh"; sourceTree = "<group>"; };
 		E19D549B1A00496900772777 /* basic.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = basic.ninja; sourceTree = "<group>"; };
@@ -594,6 +595,7 @@
 		E1A223E819F98F1C0059043E = {
 			isa = PBXGroup;
 			children = (
+				E153EBBA1A1E94CD00F93337 /* llbuild-test-tools */,
 				E1A223FD19F990F10059043E /* products */,
 				E1A2240419F991530059043E /* lib */,
 				E1A2252319F9A0310059043E /* tests */,
