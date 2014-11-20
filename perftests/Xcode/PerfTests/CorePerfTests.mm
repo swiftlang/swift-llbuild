@@ -53,7 +53,7 @@ public:
   }
 
   virtual void provideValue(BuildEngine&, uintptr_t InputID,
-                            ValueType Value) override {
+                            const ValueType& Value) override {
     // Update the input values.
     assert(InputID < InputValues.size());
     InputValues[InputID] = Value;
@@ -139,10 +139,7 @@ static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
           simpleAction({},
                        [&] (const std::vector<ValueType>& Inputs) {
                          return LastInputValue; }),
-          [&](const Rule& rule, const ValueType Value) {
-            // FIXME: Once we have custom ValueType objects, we would like to
-            // have timestamps on the value and just compare to a timestamp
-            // (similar to what we would do for a file).
+          [&](const Rule& rule, const ValueType& Value) {
             return LastInputValue == Value;
           } });
     }
@@ -216,10 +213,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
             simpleAction({},
                          [&] (const std::vector<ValueType>& Inputs) {
                            return LastInputValue; }),
-            [&](const Rule& rule, const ValueType Value) {
-              // FIXME: Once we have custom ValueType objects, we would like to
-              // have timestamps on the value and just compare to a timestamp
-              // (similar to what we would do for a file).
+            [&](const Rule& rule, const ValueType& Value) {
               return LastInputValue == Value;
             } });
       }
@@ -309,10 +303,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
             simpleAction({},
                          [&] (const std::vector<ValueType>& Inputs) {
                            return LastInputValue; }),
-            [&](const Rule& rule, const ValueType Value) {
-              // FIXME: Once we have custom ValueType objects, we would like to
-              // have timestamps on the value and just compare to a timestamp
-              // (similar to what we would do for a file).
+            [&](const Rule& rule, const ValueType& Value) {
               return LastInputValue == Value;
             } });
       }
