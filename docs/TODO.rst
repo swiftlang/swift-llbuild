@@ -92,13 +92,6 @@ Tasks for Usable Tool
     instance of our output file handling behavior not being finished, as the
     generator file has phony edges on all of the CMake inputs.
 
-* Rework command line tool towards production use vs testing tool.
-
-  * This mean factoring out a separate llbuild-test testing tool which has the
-    interface that is useful for testing, with none of the other stuff.
-
-  * Automatically set up appropriate jobs, DB, etc.
-
 * Support multiple inputs on the command line.
 
 * Support finding root targets when no default is set.

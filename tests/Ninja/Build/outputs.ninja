@@ -8,9 +8,9 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
-# RUN: %{llbuild} ninja build --chdir %t.build %t.build/build.ninja no-output &> %t.out
+# RUN: %{llbuild} ninja build --chdir %t.build no-output &> %t.out
 # RUN: %{FileCheck} --check-prefix=CHECK-FIRST < %t.out %s
-# RUN: %{llbuild} ninja build --chdir %t.build %t.build/build.ninja no-output &> %t.out
+# RUN: %{llbuild} ninja build --chdir %t.build no-output &> %t.out
 # RUN: %{FileCheck} --check-prefix=CHECK-SECOND < %t.out %s
 
 # CHECK-FIRST: [1] echo "built no-output"

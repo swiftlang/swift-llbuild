@@ -87,7 +87,7 @@ static void ExecuteShellCommand(const char *String) {
       
       llbuild::commands::ExecuteNinjaCommand({
           "build", "--quiet", "--simulate",
-            "--db", dbPath.UTF8String, ninjaPath.UTF8String, TargetName });
+            "--db", dbPath.UTF8String, "-f", ninjaPath.UTF8String, TargetName });
     }];
 }
 
@@ -125,7 +125,7 @@ static void ExecuteShellCommand(const char *String) {
                                 dbPath].UTF8String);
   llbuild::commands::ExecuteNinjaCommand({
       "build", "--quiet", "--simulate",
-      "--db", dbPath.UTF8String, ninjaPath.UTF8String, TargetName });
+      "--db", dbPath.UTF8String, "-f", ninjaPath.UTF8String, TargetName });
     
   // Test the null build performance, each run of which will reuse the initial
   // database, but should not modify it other than to bump the iteration count.
@@ -133,7 +133,7 @@ static void ExecuteShellCommand(const char *String) {
   [self measureBlock:^{
       llbuild::commands::ExecuteNinjaCommand({
           "build", "--quiet", "--simulate",
-          "--db", dbPath.UTF8String, ninjaPath.UTF8String, TargetName });
+          "--db", dbPath.UTF8String, "-f", ninjaPath.UTF8String, TargetName });
     }];
 }
 

@@ -6,7 +6,7 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
-# RUN: %{llbuild} ninja build --chdir %t.build --no-db --trace %t.trace-out %t.build/build.ninja
+# RUN: %{llbuild} ninja build --chdir %t.build --no-db --trace %t.trace-out
 # RUN: %{FileCheck} < %t.trace-out %s
 
 # The first task we see is for the "dummy" rule...

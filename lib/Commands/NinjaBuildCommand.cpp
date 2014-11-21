@@ -38,9 +38,9 @@ extern "C" {
   char **environ;
 }
 
-static void usage() {
+static void usage(int ExitCode=1) {
   int OptionWidth = 20;
-  fprintf(stderr, "Usage: %s ninja build [options] <manifest> [<targets>]\n",
+  fprintf(stderr, "Usage: %s ninja build [options] [<targets>...]\n",
           ::getprogname());
   fprintf(stderr, "\nOptions:\n");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--help",
@@ -53,13 +53,15 @@ static void usage() {
           "do not persist build results");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--db <PATH>",
           "persist build results at PATH [default='build.db']");
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "-f <PATH>",
+          "load the manifest at PATH [default='build.ninja']");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--dump-graph <PATH>",
           "dump build graph to PATH in Graphviz DOT format");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--jobs <NUM>",
           "maximum number of parallel jobs to use [default=1]");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--trace <PATH>",
           "trace build engine operation to PATH");
-  ::exit(1);
+  ::exit(ExitCode);
 }
 
 namespace {
@@ -496,10 +498,8 @@ core::Rule NinjaBuildEngineDelegate::lookupRule(const core::KeyType& Key) {
 int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   std::string ChdirPath = "";
   std::string DBFilename = "build.db";
+  std::string ManifestFilename = "build.ninja";
   std::string DumpGraphPath, TraceFilename;
-
-  if (Args.empty() || Args[0] == "--help")
-    usage();
 
   // Create a context for the build.
   BuildContext Context;
@@ -512,7 +512,9 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
     if (Option == "--")
       break;
 
-    if (Option == "--simulate") {
+    if (Option == "--help") {
+      usage(/*ExitCode=*/0);
+    } else if (Option == "--simulate") {
       Context.Simulate = true;
     } else if (Option == "--quiet") {
       Context.Quiet = true;
@@ -541,6 +543,14 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
         usage();
       }
       DumpGraphPath = Args[0];
+      Args.erase(Args.begin());
+    } else if (Option == "-f") {
+      if (Args.empty()) {
+        fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
+                ::getprogname(), Option.c_str());
+        usage();
+      }
+      ManifestFilename = Args[0];
       Args.erase(Args.begin());
     } else if (Option == "--jobs") {
       if (Args.empty()) {
@@ -571,18 +581,8 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
     }
   }
 
-  if (Args.size() < 1) {
-    fprintf(stderr, "error: %s: invalid number of arguments\n\n",
-            ::getprogname());
-    usage();
-  }
-
-  // Parse the arguments.
-  std::string Filename = Args[0];
-  std::vector<std::string> TargetsToBuild;
-  for (unsigned i = 1, ie = Args.size(); i < ie; ++i) {
-      TargetsToBuild.push_back(Args[i]);
-  }
+  // Parse the positional arguments.
+  std::vector<std::string> TargetsToBuild(Args);
 
   // Honor the --chdir option, if used.
   if (!ChdirPath.empty()) {
@@ -593,18 +593,9 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
     }
   }
 
-  // Change to the directory containing the input file, so include references
-  // can be relative.
-  //
-  // FIXME: Need llvm::sys::fs.
-  size_t Pos = Filename.find_last_of('/');
-  if (Pos != std::string::npos) {
-    Filename = Filename.substr(Pos+1);
-  }
-
   // Load the manifest.
   BuildManifestActions Actions;
-  ninja::ManifestLoader Loader(Filename, Actions);
+  ninja::ManifestLoader Loader(ManifestFilename, Actions);
   Context.Manifest = Loader.load();
 
   // If there were errors loading, we are done.

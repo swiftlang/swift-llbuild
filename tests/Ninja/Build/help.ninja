@@ -1,0 +1,8 @@
+# Check that we honor --help
+#
+# RUN: %{llbuild} ninja build --help 2> %t.err
+# RUN: %{FileCheck} %s < %t.err
+# 
+# CHECK-NOT: error:
+# CHECK: Usage: {{.*}}ninja build [options] [<targets>...]
+# CHECK: -f <PATH>   load the manifest

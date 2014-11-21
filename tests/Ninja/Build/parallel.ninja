@@ -9,7 +9,7 @@
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
 # RUN: cp %S/Inputs/wait-for-file %t.build
-# RUN: %{llbuild} ninja build --chdir %t.build --no-db --jobs 2 %t.build/build.ninja
+# RUN: %{llbuild} ninja build --chdir %t.build --no-db --jobs 2
 
 rule CUSTOM
   command = ${COMMAND}
