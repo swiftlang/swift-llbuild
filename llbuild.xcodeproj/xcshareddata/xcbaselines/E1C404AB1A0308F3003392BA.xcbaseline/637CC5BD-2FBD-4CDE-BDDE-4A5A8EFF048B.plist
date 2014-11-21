@@ -84,9 +84,9 @@
 				<key>com.apple.XCTPerformanceMetric_WallClockTime</key>
 				<dict>
 					<key>baselineAverage</key>
-					<real>0.17</real>
+					<real>0.13</real>
 					<key>baselineIntegrationDisplayName</key>
-					<string>Nov 12, 2014, 9:38:46 AM</string>
+					<string>Local Baseline</string>
 				</dict>
 			</dict>
 			<key>testLLVMOnlyNoExecuteNullBuild</key>
@@ -94,9 +94,9 @@
 				<key>com.apple.XCTPerformanceMetric_WallClockTime</key>
 				<dict>
 					<key>baselineAverage</key>
-					<real>0.165</real>
+					<real>0.1</real>
 					<key>baselineIntegrationDisplayName</key>
-					<string>Nov 12, 2014, 9:38:46 AM</string>
+					<string>Local Baseline</string>
 				</dict>
 			</dict>
 		</dict>

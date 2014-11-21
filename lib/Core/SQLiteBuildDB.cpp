@@ -25,44 +25,10 @@ using namespace llbuild::core;
 
 // SQLite BuildDB Implementation
 
+// FIXME: This entire implementation needs to be updated for good error
+// handling.
+
 namespace {
-
-static int SQLiteGetSingleUInt64(void *Context, int ArgC, char **ArgV,
-                                 char **Column) {
-  uint64_t *Result_Out = (uint64_t*)Context;
-  assert(ArgC == 1);
-  char *End;
-  *Result_Out = strtoll(ArgV[0], &End, 10);
-  assert(*End == '\0');
-  return SQLITE_OK;
-}
-
-struct RuleLookupResult {
-  uint64_t RuleID;
-  Result *Result;
-};
-static int SQLiteGetRuleResult(void *Context, int ArgC, char **ArgV,
-                               char **Column) {
-  RuleLookupResult *Info = (RuleLookupResult*)Context;
-  assert(ArgC == 4);
-  char *End;
-  Info->RuleID = strtoll(ArgV[0], &End, 10);
-  assert(*End == '\0');
-  Info->Result->Value = strtoll(ArgV[1], &End, 10);
-  assert(*End == '\0');
-  Info->Result->BuiltAt = strtoll(ArgV[2], &End, 10);
-  assert(*End == '\0');
-  Info->Result->ComputedAt = strtoll(ArgV[3], &End, 10);
-  assert(*End == '\0');
-  return SQLITE_OK;
-}
-static int SQLiteAppendRuleResultDependency(void *Context, int ArgC,
-                                            char **ArgV, char **Column) {
-  RuleLookupResult *Info = (RuleLookupResult*)Context;
-  assert(ArgC == 1);
-  Info->Result->Dependencies.push_back(std::string(ArgV[0]));
-  return SQLITE_OK;
-}
 
 class SQLiteBuildDB : public BuildDB {
   const int CurrentSchemaVersion = 1;
@@ -86,10 +52,29 @@ public:
 
     // Create the database schema, if necessary.
     char *CError;
-    uint64_t Version;
-    Result = sqlite3_exec(DB, "SELECT version FROM info LIMIT 1",
-                          SQLiteGetSingleUInt64, &Version, &CError);
-    if (Result != SQLITE_OK || int(Version) != CurrentSchemaVersion) {
+    int Version;
+    sqlite3_stmt* Stmt;
+    Result = sqlite3_prepare_v2(
+      DB, "SELECT version FROM info LIMIT 1",
+      -1, &Stmt, nullptr);
+    if (Result == SQLITE_ERROR) {
+      Version = -1;
+    } else {
+      assert(Result == SQLITE_OK);
+
+      Result = sqlite3_step(Stmt);
+      if (Result == SQLITE_DONE) {
+        Version = -1;
+      } else if (Result == SQLITE_ROW) {
+        assert(sqlite3_column_count(Stmt) == 1);
+        Version = sqlite3_column_int(Stmt, 0);
+      } else {
+        abort();
+      }
+      sqlite3_finalize(Stmt);
+    }
+
+    if (Version != CurrentSchemaVersion) {
       // Always recreate the database from scratch when the schema changes.
       Result = unlink(Path.c_str());
       if (Result == -1) {
@@ -185,116 +170,197 @@ public:
     assert(DB);
 
     // Fetch the iteration from the info table.
-    char *CError;
-    uint64_t Iteration;
-    int Result = sqlite3_exec(DB, "SELECT iteration FROM info LIMIT 1",
-                              SQLiteGetSingleUInt64, &Iteration, &CError);
+    sqlite3_stmt* Stmt;
+    int Result;
+    Result = sqlite3_prepare_v2(
+      DB, "SELECT iteration FROM info LIMIT 1",
+      -1, &Stmt, nullptr);
     assert(Result == SQLITE_OK);
-    (void)Result;
+
+    // This statement should always succeed.
+    Result = sqlite3_step(Stmt);
+    if (Result != SQLITE_ROW)
+      abort();
+
+    assert(sqlite3_column_count(Stmt) == 1);
+    uint64_t Iteration = sqlite3_column_int64(Stmt, 0);
+
+    sqlite3_finalize(Stmt);
 
     return Iteration;
   }
 
   virtual void setCurrentIteration(uint64_t Value) override {
-    char *CError;
-    char* Query = sqlite3_mprintf(
-      "UPDATE info SET iteration = %lld WHERE id == 0;",
-      Value);
-    int Result = sqlite3_exec(DB, Query, nullptr, nullptr, &CError);
+    sqlite3_stmt* Stmt;
+    int Result;
+    Result = sqlite3_prepare_v2(
+      DB, "UPDATE info SET iteration = ? WHERE id == 0;",
+      -1, &Stmt, nullptr);
     assert(Result == SQLITE_OK);
-    (void)Result;
-    free(Query);
+    Result = sqlite3_bind_int64(Stmt, /*index=*/1, Value);
+    assert(Result == SQLITE_OK);
+
+    // This statement should always succeed.
+    Result = sqlite3_step(Stmt);
+    if (Result != SQLITE_DONE)
+      abort();
+
+    sqlite3_finalize(Stmt);
   }
 
   virtual bool lookupRuleResult(const Rule& Rule, Result* Result_Out) override {
-    // Fetch the basic rule information.
     assert(Result_Out->BuiltAt == 0);
-    char *CError;
-    char* Query = sqlite3_mprintf(
-      ("SELECT id, value, built_at, computed_at FROM rule_results "
-       "WHERE key == '%q' LIMIT 1;"),
-      Rule.Key.c_str());
-    RuleLookupResult RuleInfo = { 0, Result_Out };
-    int Result = sqlite3_exec(DB, Query, SQLiteGetRuleResult, &RuleInfo,
-                              &CError);
+
+    // Fetch the basic rule information.
+    sqlite3_stmt* Stmt;
+    int Result;
+    Result = sqlite3_prepare_v2(
+      DB, ("SELECT id, value, built_at, computed_at FROM rule_results "
+           "WHERE key == ? LIMIT 1;"),
+      -1, &Stmt, nullptr);
     assert(Result == SQLITE_OK);
-    free(Query);
+    Result = sqlite3_bind_text(Stmt, /*index=*/1, Rule.Key.c_str(), -1,
+                               SQLITE_STATIC);
+    assert(Result == SQLITE_OK);
 
     // If the rule wasn't found, we are done.
-    if (RuleInfo.RuleID == 0)
+    Result = sqlite3_step(Stmt);
+    if (Result == SQLITE_DONE) {
+      sqlite3_finalize(Stmt);
       return false;
+    }
+    if (Result != SQLITE_ROW)
+      abort();
+    
+    // Otherwise, read the result contents from the row.
+    assert(sqlite3_column_count(Stmt) == 4);
+    uint64_t RuleID = sqlite3_column_int64(Stmt, 0);
+    Result_Out->Value = sqlite3_column_int(Stmt, 1);
+    Result_Out->BuiltAt = sqlite3_column_int64(Stmt, 2);
+    Result_Out->ComputedAt = sqlite3_column_int64(Stmt, 3);
+    sqlite3_finalize(Stmt);
 
-    // Otherwise, look up all the rule dependencies.
-    Query = sqlite3_mprintf(("SELECT key FROM rule_dependencies "
-                             "WHERE rule_id == %lld;"),
-                            RuleInfo.RuleID);
-    Result = sqlite3_exec(DB, Query, SQLiteAppendRuleResultDependency,
-                          &RuleInfo, &CError);
+    // Look up all the rule dependencies.
+    Result = sqlite3_prepare_v2(DB, ("SELECT key FROM rule_dependencies "
+                                     "WHERE rule_id == ?;"),
+                                -1, &Stmt, nullptr);
     assert(Result == SQLITE_OK);
-    free(Query);
+    Result = sqlite3_bind_int64(Stmt, /*index=*/1, RuleID);
+    assert(Result == SQLITE_OK);
+    
+    while (true) {
+      Result = sqlite3_step(Stmt);
+      if (Result == SQLITE_DONE)
+        break;
+      assert(Result == SQLITE_ROW);
+      if (Result != SQLITE_ROW) {
+        abort();
+      }
+      assert(sqlite3_column_count(Stmt) == 1);
+      Result_Out->Dependencies.push_back(
+        (const char*)sqlite3_column_text(Stmt, 0));
+    }
+    sqlite3_finalize(Stmt);
 
     return true;
   }
 
   virtual void setRuleResult(const Rule& Rule,
                              const Result& RuleResult) override {
-    int Result = SQLITE_OK;
-    assert(Result == SQLITE_OK);
+    sqlite3_stmt* Stmt;
+    int Result;
  
     // Find the existing rule id, if present.
     //
     // We rely on SQLite3 not using 0 as a valid rule ID.
-    char *CError;
-    char* RuleIDQuery = sqlite3_mprintf(
-      ("SELECT id FROM rule_results "
-       "WHERE key == '%q' LIMIT 1;"),
-      Rule.Key.c_str());
-    uint64_t RuleID = 0;
-    Result = sqlite3_exec(DB, RuleIDQuery,
-                              SQLiteGetSingleUInt64, &RuleID, &CError);
+    Result = sqlite3_prepare_v2(
+      DB, ("SELECT id FROM rule_results "
+           "WHERE key == ? LIMIT 1;"),
+      -1, &Stmt, nullptr);
     assert(Result == SQLITE_OK);
+    Result = sqlite3_bind_text(Stmt, /*index=*/1, Rule.Key.c_str(), -1,
+                               SQLITE_STATIC);
+    assert(Result == SQLITE_OK);
+
+    uint64_t RuleID = 0;
+    Result = sqlite3_step(Stmt);
+    if (Result == SQLITE_DONE) {
+      RuleID = 0;
+    } else if (Result == SQLITE_ROW) {
+      assert(sqlite3_column_count(Stmt) == 1);
+      RuleID = sqlite3_column_int64(Stmt, 0);
+    } else {
+      abort();
+    }
+    sqlite3_finalize(Stmt);
 
     // If there is an existing entry, delete it first.
     //
     // FIXME: This is inefficient, we should just perform an update.
     if (RuleID != 0) {
-      char* Query = sqlite3_mprintf(
-        "DELETE FROM rule_dependencies WHERE rule_id == %lld",
-        RuleID);
-      Result = sqlite3_exec(DB, Query, nullptr, nullptr, &CError);
+      // Delete all of the rule dependencies.
+      Result = sqlite3_prepare_v2(
+        DB, "DELETE FROM rule_dependencies WHERE rule_id == ?",
+        -1, &Stmt, nullptr);
       assert(Result == SQLITE_OK);
-      free(Query);
+      Result = sqlite3_bind_int64(Stmt, /*index=*/1, RuleID);
+      assert(Result == SQLITE_OK);
+      Result = sqlite3_step(Stmt);
+      if (Result != SQLITE_DONE)
+        abort();
+      sqlite3_finalize(Stmt);
 
-      Query = sqlite3_mprintf(
-        "DELETE FROM rule_results WHERE id == %lld",
-        RuleID);
-      Result = sqlite3_exec(DB, Query, nullptr, nullptr, &CError);
+      // Delete the rule result.
+      Result = sqlite3_prepare_v2(
+        DB, "DELETE FROM rule_results WHERE id == ?",
+        -1, &Stmt, nullptr);
       assert(Result == SQLITE_OK);
-      free(Query);
+      Result = sqlite3_bind_int64(Stmt, /*index=*/1, RuleID);
+      assert(Result == SQLITE_OK);
+      Result = sqlite3_step(Stmt);
+      if (Result != SQLITE_DONE)
+        abort();
+      sqlite3_finalize(Stmt);
     }
 
-    char* Query = sqlite3_mprintf(
-      ("INSERT INTO rule_results VALUES (NULL, '%q', %d, %d, %d);"),
-      Rule.Key.c_str(), RuleResult.Value, RuleResult.BuiltAt,
-      RuleResult.ComputedAt);
-    Result = sqlite3_exec(DB, Query, nullptr, nullptr, &CError);
+    // Insert the actual rule result.
+    Result = sqlite3_prepare_v2(
+      DB, "INSERT INTO rule_results VALUES (NULL, ?, ?, ?, ?);",
+      -1, &Stmt, nullptr);
     assert(Result == SQLITE_OK);
-    free(Query);
+    Result = sqlite3_bind_text(Stmt, /*index=*/1, Rule.Key.c_str(), -1,
+                               SQLITE_STATIC);
+    assert(Result == SQLITE_OK);
+    Result = sqlite3_bind_int64(Stmt, /*index=*/2, RuleResult.Value);
+    assert(Result == SQLITE_OK);
+    Result = sqlite3_bind_int64(Stmt, /*index=*/3, RuleResult.BuiltAt);
+    assert(Result == SQLITE_OK);
+    Result = sqlite3_bind_int64(Stmt, /*index=*/4, RuleResult.ComputedAt);
+    assert(Result == SQLITE_OK);
+    Result = sqlite3_step(Stmt);
+    if (Result != SQLITE_DONE)
+      abort();
+    sqlite3_finalize(Stmt);
 
     // Get the rule ID.
     RuleID = sqlite3_last_insert_rowid(DB);
 
     // Insert all the dependencies.
     for (auto& Dependency: RuleResult.Dependencies) {
-      char* Query = sqlite3_mprintf(
-        ("INSERT INTO rule_dependencies VALUES (NULL, %lld, '%q');"),
-        RuleID, Dependency.c_str());
-      Result = sqlite3_exec(DB, Query, nullptr, nullptr, &CError);
+      Result = sqlite3_prepare_v2(
+        DB, "INSERT INTO rule_dependencies VALUES (NULL, ?, ?);",
+        -1, &Stmt, nullptr);
       assert(Result == SQLITE_OK);
-      free(Query);
+      Result = sqlite3_bind_int64(Stmt, /*index=*/1, RuleID);
+      assert(Result == SQLITE_OK);
+      Result = sqlite3_bind_text(Stmt, /*index=*/2, Dependency.c_str(), -1,
+                                 SQLITE_STATIC);
+      assert(Result == SQLITE_OK);
+      Result = sqlite3_step(Stmt);
+      if (Result != SQLITE_DONE)
+        abort();
+      sqlite3_finalize(Stmt);
     }
-
-    assert(Result == SQLITE_OK);
   }
 
   virtual void buildStarted() override {

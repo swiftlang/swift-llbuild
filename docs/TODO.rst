@@ -76,6 +76,12 @@ Build Database
     BuildEngine always has to go to the DB for it. That model might be slower,
     but more scalable.
 
+  * Investigate using DB entirely on demand, per above comment. Very scalable.
+
+  * Normalize key and dependency node types to a unique entry to reduce
+    duplication of large key values.
+
+
 Ninja Specific
 ==============
 
