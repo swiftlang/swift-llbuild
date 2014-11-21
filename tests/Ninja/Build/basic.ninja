@@ -6,7 +6,7 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
-# RUN: %{llbuild} ninja build --no-db --chdir %t.build &> %t.out
+# RUN: %{llbuild} ninja build --no-parallel --no-db --chdir %t.build &> %t.out
 # RUN: %{FileCheck} < %t.out %s
 
 # CHECK: [1] "A"

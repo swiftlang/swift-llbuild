@@ -55,6 +55,10 @@ static void usage(int ExitCode=1) {
           "persist build results at PATH [default='build.db']");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "-f <PATH>",
           "load the manifest at PATH [default='build.ninja']");
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--no-parallel",
+          "build commands serially");
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--parallel",
+          "build commands in parallel [default]");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--dump-graph <PATH>",
           "dump build graph to PATH in Graphviz DOT format");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--jobs <NUM>",
@@ -503,7 +507,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
 
   // Create a context for the build.
   BuildContext Context;
-  unsigned NumJobs = 1;
+  bool UseParallelBuild = true;
 
   while (!Args.empty() && Args[0][0] == '-') {
     const std::string Option = Args[0];
@@ -520,7 +524,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       Context.Quiet = true;
     } else if (Option == "--chdir") {
       if (Args.empty()) {
-        fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
+        fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
                 ::getprogname(), Option.c_str());
         usage();
       }
@@ -530,7 +534,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       DBFilename = "";
     } else if (Option == "--db") {
       if (Args.empty()) {
-        fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
+        fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
                 ::getprogname(), Option.c_str());
         usage();
       }
@@ -538,7 +542,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       Args.erase(Args.begin());
     } else if (Option == "--dump-graph") {
       if (Args.empty()) {
-        fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
+        fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
                 ::getprogname(), Option.c_str());
         usage();
       }
@@ -546,36 +550,26 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       Args.erase(Args.begin());
     } else if (Option == "-f") {
       if (Args.empty()) {
-        fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
+        fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
                 ::getprogname(), Option.c_str());
         usage();
       }
       ManifestFilename = Args[0];
       Args.erase(Args.begin());
-    } else if (Option == "--jobs") {
-      if (Args.empty()) {
-        fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
-                ::getprogname(), Option.c_str());
-        usage();
-      }
-      char *End;
-      NumJobs = ::strtol(Args[0].c_str(), &End, 10);
-      if (*End != '\0') {
-        fprintf(stderr, "\error: %s: invalid argument to '%s'\n\n",
-                ::getprogname(), Option.c_str());
-        usage();
-      }
-      Args.erase(Args.begin());
+    } else if (Option == "--no-parallel") {
+      UseParallelBuild = false;
+    } else if (Option == "--parallel") {
+      UseParallelBuild = true;
     } else if (Option == "--trace") {
       if (Args.empty()) {
-        fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
+        fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
                 ::getprogname(), Option.c_str());
         usage();
       }
       TraceFilename = Args[0];
       Args.erase(Args.begin());
     } else {
-      fprintf(stderr, "\error: %s: invalid option: '%s'\n\n",
+      fprintf(stderr, "error: %s: invalid option: '%s'\n\n",
               ::getprogname(), Option.c_str());
       usage();
     }
@@ -611,9 +605,19 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   // If we are only executing with a single job, we take care to use a serial
   // queue to ensure deterministic execution.
   dispatch_queue_t TaskQueue;
-  if (NumJobs == 1) {
+  unsigned NumJobs;
+  if (!UseParallelBuild) {
     TaskQueue = dispatch_queue_create("task-queue", DISPATCH_QUEUE_SERIAL);
+    NumJobs = 1;
   } else {
+    long NumCPUs = sysconf(_SC_NPROCESSORS_ONLN);
+    if (NumCPUs < 0) {
+      fprintf(stderr, "error: %s: unable to detect number of CPUs: %s\n",
+              getprogname(), strerror(errno));
+      return 1;
+    }
+
+    NumJobs = NumCPUs + 2;
     TaskQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT,
                                           /*flags=*/0);
     dispatch_retain(TaskQueue);

@@ -6,7 +6,7 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
-# RUN: %{llbuild} ninja build --chdir %t.build --no-db --simulate --dump-graph %t.dot
+# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build --no-db --simulate --dump-graph %t.dot
 # RUN: %{FileCheck} < %t.dot %s
 #
 # CHECK: digraph {{.*}} {

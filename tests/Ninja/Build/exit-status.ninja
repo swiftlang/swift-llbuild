@@ -3,7 +3,7 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
-# RUN: /bin/sh -c "%{llbuild} ninja build --chdir %t.build; echo \"exit code: $?\"" > %t.out
+# RUN: /bin/sh -c "%{llbuild} ninja build --no-parallel --chdir %t.build; echo \"exit code: $?\"" > %t.out
 # RUN: %{FileCheck} < %t.out %s
 # CHECK: exit code: 1
 
