@@ -118,7 +118,8 @@ static core::Task* BuildAck(core::BuildEngine& engine, int M, int N) {
 }
 
 static int RunAckermannBuild(int M, int N, int RecomputeCount,
-                             const std::string& TraceFilename) {
+                             const std::string& TraceFilename,
+                             const std::string& DumpGraphPath) {
   // Compute the value of ackermann(M, N) using the build system.
   assert(M >= 0 && M < 4);
   assert(N >= 0);
@@ -174,6 +175,10 @@ static int RunAckermannBuild(int M, int N, int RecomputeCount,
   }
   std::cout << "... computed using " << delegate.NumRules << " rules\n";
 
+  if (!DumpGraphPath.empty()) {
+    engine.dumpGraphToFile(DumpGraphPath);
+  }
+
   // Recompute the result as many times as requested.
   for (int i = 0; i != RecomputeCount; ++i) {
     core::ValueType RecomputedResult = engine.build(Key);
@@ -191,6 +196,8 @@ static void AckermannUsage() {
   fprintf(stderr, "\nOptions:\n");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--help",
           "show this help message and exit");
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--dump-graph <PATH>",
+          "dump build graph to PATH in Graphviz DOT format");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--recompute <N>",
           "recompute the result N times, to stress dependency checking");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--trace <PATH>",
@@ -200,7 +207,7 @@ static void AckermannUsage() {
 
 static int ExecuteAckermannCommand(std::vector<std::string> Args) {
   int RecomputeCount = 0;
-  std::string TraceFilename;
+  std::string DumpGraphPath, TraceFilename;
   while (!Args.empty() && Args[0][0] == '-') {
     const std::string Option = Args[0];
     Args.erase(Args.begin());
@@ -208,7 +215,9 @@ static int ExecuteAckermannCommand(std::vector<std::string> Args) {
     if (Option == "--")
       break;
 
-    if (Option == "--recompute") {
+    if (Option == "--help") {
+      AckermannUsage();
+    } else if (Option == "--recompute") {
       if (Args.empty()) {
         fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
                 ::getprogname(), Option.c_str());
@@ -221,6 +230,14 @@ static int ExecuteAckermannCommand(std::vector<std::string> Args) {
                 ::getprogname(), Option.c_str());
         AckermannUsage();
       }
+      Args.erase(Args.begin());
+    } else if (Option == "--dump-graph") {
+      if (Args.empty()) {
+        fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
+                ::getprogname(), Option.c_str());
+        AckermannUsage();
+      }
+      DumpGraphPath = Args[0];
       Args.erase(Args.begin());
     } else if (Option == "--trace") {
       if (Args.empty()) {
@@ -269,7 +286,7 @@ static int ExecuteAckermannCommand(std::vector<std::string> Args) {
     return 1;
   }
 
-  return RunAckermannBuild(M, N, RecomputeCount, TraceFilename);
+  return RunAckermannBuild(M, N, RecomputeCount, TraceFilename, DumpGraphPath);
 }
 
 }
