@@ -47,6 +47,8 @@ static void usage() {
           "show this help message and exit");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--simulate",
           "simulate the build, assuming commands succeed");
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--no-db",
+          "do not persist build results");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--db <PATH>",
           "persist build results at PATH");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--dump-graph <PATH>",
@@ -510,6 +512,8 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       Context.Simulate = true;
     } else if (Option == "--quiet") {
       Context.Quiet = true;
+    } else if (Option == "--no-db") {
+      DBFilename = "";
     } else if (Option == "--db") {
       if (Args.empty()) {
         fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",

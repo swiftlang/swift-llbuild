@@ -1,0 +1,9 @@
+# Check that we honor --no-db.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: %{llbuild} ninja build --no-db %t.build/build.ninja
+# RUN: test ! -f %t.build/build.db
+
+build output: phony
