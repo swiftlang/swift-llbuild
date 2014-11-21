@@ -144,7 +144,7 @@ public:
                "rule_dependencies (rule_id, key);"),
           nullptr, nullptr, &CError);
       }
-        
+
       if (Result != SQLITE_OK) {
         *Error_Out = (std::string("unable to initialize database (") + CError
                       + ")");
@@ -154,11 +154,45 @@ public:
       }
     }
 
+    // Initialize prepared statements.
+    Result = sqlite3_prepare_v2(
+      DB, FindIDForKeyInRuleResultsStmtSQL,
+      -1, &FindIDForKeyInRuleResultsStmt, nullptr);
+    assert(Result == SQLITE_OK);
+
+    Result = sqlite3_prepare_v2(
+      DB, InsertIntoRuleResultsStmtSQL,
+      -1, &InsertIntoRuleResultsStmt, nullptr);
+    assert(Result == SQLITE_OK);
+
+    Result = sqlite3_prepare_v2(
+      DB, InsertIntoRuleDependenciesStmtSQL,
+      -1, &InsertIntoRuleDependenciesStmt, nullptr);
+    assert(Result == SQLITE_OK);
+
+    Result = sqlite3_prepare_v2(
+      DB, DeleteFromRuleResultsStmtSQL,
+      -1, &DeleteFromRuleResultsStmt, nullptr);
+    assert(Result == SQLITE_OK);
+
+    Result = sqlite3_prepare_v2(
+      DB, DeleteFromRuleDependenciesStmtSQL,
+      -1, &DeleteFromRuleDependenciesStmt, nullptr);
+    assert(Result == SQLITE_OK);
+
     return true;
   }
 
   void close() {
     assert(DB);
+
+    // Destroy prepared statements.
+    sqlite3_finalize(DeleteFromRuleDependenciesStmt);
+    sqlite3_finalize(DeleteFromRuleResultsStmt);
+    sqlite3_finalize(InsertIntoRuleDependenciesStmt);
+    sqlite3_finalize(InsertIntoRuleResultsStmt);
+    sqlite3_finalize(FindIDForKeyInRuleResultsStmt);
+
     sqlite3_close(DB);
     DB = nullptr;
   }
@@ -231,7 +265,7 @@ public:
     }
     if (Result != SQLITE_ROW)
       abort();
-    
+
     // Otherwise, read the result contents from the row.
     assert(sqlite3_column_count(Stmt) == 4);
     uint64_t RuleID = sqlite3_column_int64(Stmt, 0);
@@ -247,7 +281,7 @@ public:
     assert(Result == SQLITE_OK);
     Result = sqlite3_bind_int64(Stmt, /*index=*/1, RuleID);
     assert(Result == SQLITE_OK);
-    
+
     while (true) {
       Result = sqlite3_step(Stmt);
       if (Result == SQLITE_DONE)
@@ -265,101 +299,124 @@ public:
     return true;
   }
 
+  static constexpr const char *FindIDForKeyInRuleResultsStmtSQL =
+    "SELECT id FROM rule_results "
+    "WHERE key == ? LIMIT 1;";
+  sqlite3_stmt* FindIDForKeyInRuleResultsStmt = nullptr;
+
+  static constexpr const char *InsertIntoRuleResultsStmtSQL =
+    "INSERT INTO rule_results VALUES (NULL, ?, ?, ?, ?);";
+  sqlite3_stmt* InsertIntoRuleResultsStmt = nullptr;
+
+  static constexpr const char *InsertIntoRuleDependenciesStmtSQL =
+    "INSERT INTO rule_dependencies VALUES (NULL, ?, ?);";
+  sqlite3_stmt* InsertIntoRuleDependenciesStmt = nullptr;
+
+  static constexpr const char *DeleteFromRuleResultsStmtSQL =
+    "DELETE FROM rule_results WHERE id == ?;";
+  sqlite3_stmt* DeleteFromRuleResultsStmt = nullptr;
+
+  static constexpr const char *DeleteFromRuleDependenciesStmtSQL =
+    "DELETE FROM rule_dependencies WHERE rule_id == ?;";
+  sqlite3_stmt* DeleteFromRuleDependenciesStmt = nullptr;
+
   virtual void setRuleResult(const Rule& Rule,
                              const Result& RuleResult) override {
-    sqlite3_stmt* Stmt;
     int Result;
- 
+
     // Find the existing rule id, if present.
     //
     // We rely on SQLite3 not using 0 as a valid rule ID.
-    Result = sqlite3_prepare_v2(
-      DB, ("SELECT id FROM rule_results "
-           "WHERE key == ? LIMIT 1;"),
-      -1, &Stmt, nullptr);
+    Result = sqlite3_reset(FindIDForKeyInRuleResultsStmt);
     assert(Result == SQLITE_OK);
-    Result = sqlite3_bind_text(Stmt, /*index=*/1, Rule.Key.c_str(), -1,
+    Result = sqlite3_clear_bindings(FindIDForKeyInRuleResultsStmt);
+    assert(Result == SQLITE_OK);
+    Result = sqlite3_bind_text(FindIDForKeyInRuleResultsStmt,
+                               /*index=*/1, Rule.Key.c_str(), -1,
                                SQLITE_STATIC);
     assert(Result == SQLITE_OK);
 
     uint64_t RuleID = 0;
-    Result = sqlite3_step(Stmt);
+    Result = sqlite3_step(FindIDForKeyInRuleResultsStmt);
     if (Result == SQLITE_DONE) {
       RuleID = 0;
     } else if (Result == SQLITE_ROW) {
-      assert(sqlite3_column_count(Stmt) == 1);
-      RuleID = sqlite3_column_int64(Stmt, 0);
+      assert(sqlite3_column_count(FindIDForKeyInRuleResultsStmt) == 1);
+      RuleID = sqlite3_column_int64(FindIDForKeyInRuleResultsStmt, 0);
     } else {
       abort();
     }
-    sqlite3_finalize(Stmt);
 
     // If there is an existing entry, delete it first.
     //
     // FIXME: This is inefficient, we should just perform an update.
     if (RuleID != 0) {
       // Delete all of the rule dependencies.
-      Result = sqlite3_prepare_v2(
-        DB, "DELETE FROM rule_dependencies WHERE rule_id == ?",
-        -1, &Stmt, nullptr);
+      Result = sqlite3_reset(DeleteFromRuleDependenciesStmt);
       assert(Result == SQLITE_OK);
-      Result = sqlite3_bind_int64(Stmt, /*index=*/1, RuleID);
+      Result = sqlite3_clear_bindings(DeleteFromRuleDependenciesStmt);
       assert(Result == SQLITE_OK);
-      Result = sqlite3_step(Stmt);
+      Result = sqlite3_bind_int64(DeleteFromRuleDependenciesStmt, /*index=*/1,
+                                  RuleID);
+      assert(Result == SQLITE_OK);
+      Result = sqlite3_step(DeleteFromRuleDependenciesStmt);
       if (Result != SQLITE_DONE)
         abort();
-      sqlite3_finalize(Stmt);
 
       // Delete the rule result.
-      Result = sqlite3_prepare_v2(
-        DB, "DELETE FROM rule_results WHERE id == ?",
-        -1, &Stmt, nullptr);
+      Result = sqlite3_reset(DeleteFromRuleResultsStmt);
       assert(Result == SQLITE_OK);
-      Result = sqlite3_bind_int64(Stmt, /*index=*/1, RuleID);
+      Result = sqlite3_clear_bindings(DeleteFromRuleResultsStmt);
       assert(Result == SQLITE_OK);
-      Result = sqlite3_step(Stmt);
+      Result = sqlite3_bind_int64(DeleteFromRuleResultsStmt, /*index=*/1,
+                                  RuleID);
+      assert(Result == SQLITE_OK);
+      Result = sqlite3_step(DeleteFromRuleResultsStmt);
       if (Result != SQLITE_DONE)
         abort();
-      sqlite3_finalize(Stmt);
     }
 
     // Insert the actual rule result.
-    Result = sqlite3_prepare_v2(
-      DB, "INSERT INTO rule_results VALUES (NULL, ?, ?, ?, ?);",
-      -1, &Stmt, nullptr);
+    Result = sqlite3_reset(InsertIntoRuleResultsStmt);
     assert(Result == SQLITE_OK);
-    Result = sqlite3_bind_text(Stmt, /*index=*/1, Rule.Key.c_str(), -1,
+    Result = sqlite3_clear_bindings(InsertIntoRuleResultsStmt);
+    assert(Result == SQLITE_OK);
+    Result = sqlite3_bind_text(InsertIntoRuleResultsStmt, /*index=*/1,
+                               Rule.Key.c_str(), -1,
                                SQLITE_STATIC);
     assert(Result == SQLITE_OK);
-    Result = sqlite3_bind_int64(Stmt, /*index=*/2, RuleResult.Value);
+    Result = sqlite3_bind_int64(InsertIntoRuleResultsStmt, /*index=*/2,
+                                RuleResult.Value);
     assert(Result == SQLITE_OK);
-    Result = sqlite3_bind_int64(Stmt, /*index=*/3, RuleResult.BuiltAt);
+    Result = sqlite3_bind_int64(InsertIntoRuleResultsStmt, /*index=*/3,
+                                RuleResult.BuiltAt);
     assert(Result == SQLITE_OK);
-    Result = sqlite3_bind_int64(Stmt, /*index=*/4, RuleResult.ComputedAt);
+    Result = sqlite3_bind_int64(InsertIntoRuleResultsStmt, /*index=*/4,
+                                RuleResult.ComputedAt);
     assert(Result == SQLITE_OK);
-    Result = sqlite3_step(Stmt);
+    Result = sqlite3_step(InsertIntoRuleResultsStmt);
     if (Result != SQLITE_DONE)
       abort();
-    sqlite3_finalize(Stmt);
 
     // Get the rule ID.
     RuleID = sqlite3_last_insert_rowid(DB);
 
     // Insert all the dependencies.
     for (auto& Dependency: RuleResult.Dependencies) {
-      Result = sqlite3_prepare_v2(
-        DB, "INSERT INTO rule_dependencies VALUES (NULL, ?, ?);",
-        -1, &Stmt, nullptr);
+      Result = sqlite3_reset(InsertIntoRuleDependenciesStmt);
       assert(Result == SQLITE_OK);
-      Result = sqlite3_bind_int64(Stmt, /*index=*/1, RuleID);
+      Result = sqlite3_clear_bindings(InsertIntoRuleDependenciesStmt);
       assert(Result == SQLITE_OK);
-      Result = sqlite3_bind_text(Stmt, /*index=*/2, Dependency.c_str(), -1,
+      Result = sqlite3_bind_int64(InsertIntoRuleDependenciesStmt, /*index=*/1,
+                                  RuleID);
+      assert(Result == SQLITE_OK);
+      Result = sqlite3_bind_text(InsertIntoRuleDependenciesStmt, /*index=*/2,
+                                 Dependency.c_str(), -1,
                                  SQLITE_STATIC);
       assert(Result == SQLITE_OK);
-      Result = sqlite3_step(Stmt);
+      Result = sqlite3_step(InsertIntoRuleDependenciesStmt);
       if (Result != SQLITE_DONE)
         abort();
-      sqlite3_finalize(Stmt);
     }
   }
 
