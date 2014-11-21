@@ -50,7 +50,7 @@ static void usage() {
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--no-db",
           "do not persist build results");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--db <PATH>",
-          "persist build results at PATH");
+          "persist build results at PATH [default='build.db']");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--dump-graph <PATH>",
           "dump build graph to PATH in Graphviz DOT format");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--jobs <NUM>",
@@ -492,7 +492,8 @@ core::Rule NinjaBuildEngineDelegate::lookupRule(const core::KeyType& Key) {
 }
 
 int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
-  std::string DBFilename, DumpGraphPath, TraceFilename;
+  std::string DBFilename = "build.db";
+  std::string DumpGraphPath, TraceFilename;
 
   if (Args.empty() || Args[0] == "--help")
     usage();
@@ -560,7 +561,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   }
 
   if (Args.size() < 1) {
-    fprintf(stderr, "\error: %s: invalid number of arguments\n\n",
+    fprintf(stderr, "error: %s: invalid number of arguments\n\n",
             ::getprogname());
     usage();
   }

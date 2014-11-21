@@ -6,7 +6,7 @@
 # RUN: echo input-1 > %t.build/input-1
 # RUN: echo input-2 > %t.build/input-2
 # RUN: echo "build output: CAT input-1 input-2" > %t.build/output-rule.ninja
-# RUN: %{llbuild} ninja build --db %t.build/build.db %t.build/build.ninja &> %t.out
+# RUN: %{llbuild} ninja build %t.build/build.ninja &> %t.out
 # RUN: %{FileCheck} --check-prefix=CHECK-FIRST < %t.out %s
 #
 # XFAIL: *
@@ -14,7 +14,7 @@
 # Change the manifest and rebuild.
 #
 # RUN: echo "build output: CAT input-1" > %t.build/output-rule.ninja
-# RUN: %{llbuild} ninja build --db %t.build/build.db %t.build/build.ninja &> %t.out
+# RUN: %{llbuild} ninja build %t.build/build.ninja &> %t.out
 # RUN: %{FileCheck} --check-prefix=CHECK-SECOND < %t.out %s
 
 # CHECK-FIRST: [1] cat input-1 input-2 > output

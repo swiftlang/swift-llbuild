@@ -7,13 +7,11 @@
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
 # RUN: touch %t.build/header-1
-# RUN: %{llbuild} ninja build --db %t.build/build.db \
-# RUN:   %t.build/build.ninja &> %t1.out
+# RUN: %{llbuild} ninja build %t.build/build.ninja &> %t1.out
 # RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file=%t1.out %s
 
 # RUN: echo "mod" >> %t.build/header-1
-# RUN: %{llbuild} ninja build --db %t.build/build.db \
-# RUN:   %t.build/build.ninja &> %t2.out
+# RUN: %{llbuild} ninja build %t.build/build.ninja &> %t2.out
 # RUN: %{FileCheck} --check-prefix=CHECK-AFTER-MOD --input-file=%t2.out %s
 
 # Check the first build.
