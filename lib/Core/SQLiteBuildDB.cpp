@@ -180,6 +180,16 @@ public:
       -1, &DeleteFromRuleDependenciesStmt, nullptr);
     assert(Result == SQLITE_OK);
 
+    Result = sqlite3_prepare_v2(
+      DB, FindRuleResultStmtSQL,
+      -1, &FindRuleResultStmt, nullptr);
+    assert(Result == SQLITE_OK);
+
+    Result = sqlite3_prepare_v2(
+      DB, FindRuleDependenciesStmtSQL,
+      -1, &FindRuleDependenciesStmt, nullptr);
+    assert(Result == SQLITE_OK);
+
     return true;
   }
 
@@ -187,6 +197,8 @@ public:
     assert(DB);
 
     // Destroy prepared statements.
+    sqlite3_finalize(FindRuleDependenciesStmt);
+    sqlite3_finalize(FindRuleResultStmt);
     sqlite3_finalize(DeleteFromRuleDependenciesStmt);
     sqlite3_finalize(DeleteFromRuleResultsStmt);
     sqlite3_finalize(InsertIntoRuleDependenciesStmt);
@@ -242,59 +254,65 @@ public:
     sqlite3_finalize(Stmt);
   }
 
+  static constexpr const char *FindRuleResultStmtSQL =
+    "SELECT id, value, built_at, computed_at FROM rule_results "
+    "WHERE key == ? LIMIT 1;";
+  sqlite3_stmt* FindRuleResultStmt = nullptr;
+
+  static constexpr const char *FindRuleDependenciesStmtSQL =
+    "SELECT key FROM rule_dependencies "
+    "WHERE rule_id == ?;";
+  sqlite3_stmt* FindRuleDependenciesStmt = nullptr;
+
   virtual bool lookupRuleResult(const Rule& Rule, Result* Result_Out) override {
     assert(Result_Out->BuiltAt == 0);
 
     // Fetch the basic rule information.
-    sqlite3_stmt* Stmt;
     int Result;
-    Result = sqlite3_prepare_v2(
-      DB, ("SELECT id, value, built_at, computed_at FROM rule_results "
-           "WHERE key == ? LIMIT 1;"),
-      -1, &Stmt, nullptr);
+    Result = sqlite3_reset(FindRuleResultStmt);
     assert(Result == SQLITE_OK);
-    Result = sqlite3_bind_text(Stmt, /*index=*/1, Rule.Key.c_str(), -1,
+    Result = sqlite3_clear_bindings(FindRuleResultStmt);
+    assert(Result == SQLITE_OK);
+    Result = sqlite3_bind_text(FindRuleResultStmt, /*index=*/1,
+                               Rule.Key.c_str(), -1,
                                SQLITE_STATIC);
     assert(Result == SQLITE_OK);
 
     // If the rule wasn't found, we are done.
-    Result = sqlite3_step(Stmt);
-    if (Result == SQLITE_DONE) {
-      sqlite3_finalize(Stmt);
+    Result = sqlite3_step(FindRuleResultStmt);
+    if (Result == SQLITE_DONE)
       return false;
-    }
     if (Result != SQLITE_ROW)
       abort();
 
     // Otherwise, read the result contents from the row.
-    assert(sqlite3_column_count(Stmt) == 4);
-    uint64_t RuleID = sqlite3_column_int64(Stmt, 0);
-    Result_Out->Value = sqlite3_column_int(Stmt, 1);
-    Result_Out->BuiltAt = sqlite3_column_int64(Stmt, 2);
-    Result_Out->ComputedAt = sqlite3_column_int64(Stmt, 3);
-    sqlite3_finalize(Stmt);
+    assert(sqlite3_column_count(FindRuleResultStmt) == 4);
+    uint64_t RuleID = sqlite3_column_int64(FindRuleResultStmt, 0);
+    Result_Out->Value = sqlite3_column_int(FindRuleResultStmt, 1);
+    Result_Out->BuiltAt = sqlite3_column_int64(FindRuleResultStmt, 2);
+    Result_Out->ComputedAt = sqlite3_column_int64(FindRuleResultStmt, 3);
 
     // Look up all the rule dependencies.
-    Result = sqlite3_prepare_v2(DB, ("SELECT key FROM rule_dependencies "
-                                     "WHERE rule_id == ?;"),
-                                -1, &Stmt, nullptr);
+    Result = sqlite3_reset(FindRuleDependenciesStmt);
     assert(Result == SQLITE_OK);
-    Result = sqlite3_bind_int64(Stmt, /*index=*/1, RuleID);
+    Result = sqlite3_clear_bindings(FindRuleDependenciesStmt);
+    assert(Result == SQLITE_OK);
+    Result = sqlite3_bind_int64(FindRuleDependenciesStmt, /*index=*/1,
+                                RuleID);
     assert(Result == SQLITE_OK);
 
     while (true) {
-      Result = sqlite3_step(Stmt);
+      Result = sqlite3_step(FindRuleDependenciesStmt);
       if (Result == SQLITE_DONE)
         break;
       assert(Result == SQLITE_ROW);
       if (Result != SQLITE_ROW) {
         abort();
       }
-      assert(sqlite3_column_count(Stmt) == 1);
+      assert(sqlite3_column_count(FindRuleDependenciesStmt) == 1);
       Result_Out->Dependencies.push_back(
-        (const char*)sqlite3_column_text(Stmt, 0));
+        (const char*)sqlite3_column_text(FindRuleDependenciesStmt, 0));
     }
-    sqlite3_finalize(Stmt);
 
     return true;
   }
