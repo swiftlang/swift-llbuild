@@ -47,6 +47,8 @@ static void usage() {
           "show this help message and exit");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--simulate",
           "simulate the build, assuming commands succeed");
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--chdir <PATH>",
+          "change directory to PATH before anything else");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--no-db",
           "do not persist build results");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--db <PATH>",
@@ -492,6 +494,7 @@ core::Rule NinjaBuildEngineDelegate::lookupRule(const core::KeyType& Key) {
 }
 
 int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
+  std::string ChdirPath = "";
   std::string DBFilename = "build.db";
   std::string DumpGraphPath, TraceFilename;
 
@@ -513,6 +516,14 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       Context.Simulate = true;
     } else if (Option == "--quiet") {
       Context.Quiet = true;
+    } else if (Option == "--chdir") {
+      if (Args.empty()) {
+        fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
+                ::getprogname(), Option.c_str());
+        usage();
+      }
+      ChdirPath = Args[0];
+      Args.erase(Args.begin());
     } else if (Option == "--no-db") {
       DBFilename = "";
     } else if (Option == "--db") {
@@ -573,17 +584,21 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       TargetsToBuild.push_back(Args[i]);
   }
 
+  // Honor the --chdir option, if used.
+  if (!ChdirPath.empty()) {
+    if (::chdir(ChdirPath.c_str()) < 0) {
+      fprintf(stderr, "error: %s: unable to honor --chdir: %s\n",
+              getprogname(), strerror(errno));
+      return 1;
+    }
+  }
+
   // Change to the directory containing the input file, so include references
   // can be relative.
   //
   // FIXME: Need llvm::sys::fs.
   size_t Pos = Filename.find_last_of('/');
   if (Pos != std::string::npos) {
-    if (::chdir(std::string(Filename.substr(0, Pos)).c_str()) < 0) {
-      fprintf(stderr, "error: %s: unable to chdir(): %s\n",
-              getprogname(), strerror(errno));
-      return 1;
-    }
     Filename = Filename.substr(Pos+1);
   }
 

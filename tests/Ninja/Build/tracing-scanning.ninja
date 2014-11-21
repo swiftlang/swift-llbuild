@@ -5,12 +5,12 @@
 # RUN: cp %s %t.build/build.ninja
 # RUN: touch %t.build/input-1
 # RUN: touch %t.build/input-2
-# RUN: %{llbuild} ninja build --trace %t.trace-out %t.build/build.ninja
+# RUN: %{llbuild} ninja build --chdir %t.build --trace %t.trace-out %t.build/build.ninja
 
 # Check dependency scanning on rebuild.
 #
 # RUN: echo "mod" >> %t.build/input-2
-# RUN: %{llbuild} ninja build --trace %t.trace-out %t.build/build.ninja
+# RUN: %{llbuild} ninja build --chdir %t.build --trace %t.trace-out %t.build/build.ninja
 # RUN: %{FileCheck} < %t.trace-out %s
 #
 # We scan "output", which pauses, then "input-1" (which doesn't need to run),
