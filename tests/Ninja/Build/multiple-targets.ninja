@@ -1,0 +1,16 @@
+# Check building of multiple targets.
+
+# FIXME: For now, this just checks we don't crash. It should eventually check we
+# don't run build the command multiple times.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build dummy dummy &> %t.out
+
+rule ECHO
+     command = echo "rule ${out}"
+
+build dummy: ECHO
+
+default dummy

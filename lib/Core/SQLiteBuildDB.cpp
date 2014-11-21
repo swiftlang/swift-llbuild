@@ -375,12 +375,10 @@ public:
   }
 
   virtual void buildComplete() override {
+    // Sync changes to disk.
     int Result = sqlite3_exec(DB, "END;", nullptr, nullptr, nullptr);
     assert(Result == SQLITE_OK);
     (void)Result;
-
-    // Sync changes to disk.
-    close();
   }
 
   /// @}
