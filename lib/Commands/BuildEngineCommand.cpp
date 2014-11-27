@@ -56,6 +56,22 @@ static uint64_t ack(int m, int n) {
 }
 #endif
 
+static int32_t IntFromValue(const core::ValueType& Value) {
+  assert(Value.size() == 4);
+  return ((Value[0] << 0) |
+          (Value[1] << 8) |
+          (Value[2] << 16) |
+          (Value[3] << 24));
+}
+static core::ValueType IntToValue(int32_t Value) {
+  std::vector<uint8_t> Result(4);
+  Result[0] = (Value >> 0) & 0xFF;
+  Result[1] = (Value >> 8) & 0xFF;
+  Result[2] = (Value >> 16) & 0xFF;
+  Result[3] = (Value >> 24) & 0xFF;
+  return Result;
+}
+
 static core::Task* BuildAck(core::BuildEngine& engine, int M, int N) {
   struct AckermannTask : core::Task {
     int M, N;
@@ -67,7 +83,7 @@ static core::Task* BuildAck(core::BuildEngine& engine, int M, int N) {
     virtual void provideValue(core::BuildEngine& engine, uintptr_t InputID,
                               const core::ValueType& Value) override {
       if (InputID == 0) {
-        RecursiveResultA = Value;
+        RecursiveResultA = IntFromValue(Value);
 
         // Request the second recursive result, if needed.
         if (M != 0 && N != 0) {
@@ -77,7 +93,7 @@ static core::Task* BuildAck(core::BuildEngine& engine, int M, int N) {
         }
       } else {
         assert(InputID == 1 && "invalid input ID");
-        RecursiveResultB = Value;
+        RecursiveResultB = IntFromValue(Value);
       }
     }
 
@@ -98,18 +114,18 @@ static core::Task* BuildAck(core::BuildEngine& engine, int M, int N) {
 
     virtual void inputsAvailable(core::BuildEngine& engine) override {
       if (M == 0) {
-        engine.taskIsComplete(this, N + 1);
+        engine.taskIsComplete(this, IntToValue(N + 1));
         return;
       }
 
       assert(RecursiveResultA != 0);
       if (N == 0) {
-        engine.taskIsComplete(this, int(RecursiveResultA));
+        engine.taskIsComplete(this, IntToValue(RecursiveResultA));
         return;
       }
 
       assert(RecursiveResultB != 0);
-      engine.taskIsComplete(this, int(RecursiveResultB));
+      engine.taskIsComplete(this, IntToValue(RecursiveResultB));
     }
   };
 
@@ -165,11 +181,11 @@ static int RunAckermannBuild(int M, int N, int RecomputeCount,
 
   char Key[32];
   sprintf(Key, "ack(%d,%d)", M, N);
-  core::ValueType Result = engine.build(Key);
+  int Result = IntFromValue(engine.build(Key));
   std::cout << "ack(" << M << ", " << N << ") = " << Result << "\n";
   if (N < 10) {
 #ifndef NDEBUG
-    core::ValueType Expected = ack(M, N);
+    int Expected = ack(M, N);
     assert(Result == Expected);
 #endif
   }
@@ -181,7 +197,7 @@ static int RunAckermannBuild(int M, int N, int RecomputeCount,
 
   // Recompute the result as many times as requested.
   for (int i = 0; i != RecomputeCount; ++i) {
-    core::ValueType RecomputedResult = engine.build(Key);
+    int RecomputedResult = IntFromValue(engine.build(Key));
     if (RecomputedResult != Result)
       abort();
   }

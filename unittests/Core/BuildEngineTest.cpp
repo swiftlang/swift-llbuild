@@ -34,15 +34,31 @@ class SimpleBuildEngineDelegate : public core::BuildEngineDelegate {
   }
 };
 
+static int32_t IntFromValue(const core::ValueType& Value) {
+  assert(Value.size() == 4);
+  return ((Value[0] << 0) |
+          (Value[1] << 8) |
+          (Value[2] << 16) |
+          (Value[3] << 24));
+}
+static core::ValueType IntToValue(int32_t Value) {
+  std::vector<uint8_t> Result(4);
+  Result[0] = (Value >> 0) & 0xFF;
+  Result[1] = (Value >> 8) & 0xFF;
+  Result[2] = (Value >> 16) & 0xFF;
+  Result[3] = (Value >> 24) & 0xFF;
+  return Result;
+}
+
 // Simple task implementation which takes a fixed set of dependencies, evaluates
 // them all, and then provides the output.
 class SimpleTask : public Task {
 public:
-  typedef std::function<ValueType(const std::vector<ValueType>&)> ComputeFnType;
+  typedef std::function<int(const std::vector<int>&)> ComputeFnType;
 
 private:
   std::vector<KeyType> Inputs;
-  std::vector<ValueType> InputValues;
+  std::vector<int> InputValues;
   ComputeFnType Compute;
 
 public:
@@ -63,11 +79,11 @@ public:
                             const ValueType& Value) override {
     // Update the input values.
     assert(InputID < InputValues.size());
-    InputValues[InputID] = Value;
+    InputValues[InputID] = IntFromValue(Value);
   }
 
   virtual void inputsAvailable(core::BuildEngine& Engine) override {
-    Engine.taskIsComplete(this, Compute(InputValues));
+    Engine.taskIsComplete(this, IntToValue(Compute(InputValues)));
   }
 };
 
@@ -86,17 +102,17 @@ TEST(BuildEngineTest, Basic) {
   SimpleBuildEngineDelegate Delegate;
   core::BuildEngine Engine(Delegate);
   Engine.addRule({
-      "value-A", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
+      "value-A", simpleAction({}, [&] (const std::vector<int>& Inputs) {
           BuiltKeys.push_back("value-A");
           return 2; }) });
   Engine.addRule({
-      "value-B", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
+      "value-B", simpleAction({}, [&] (const std::vector<int>& Inputs) {
           BuiltKeys.push_back("value-B");
           return 3; }) });
   Engine.addRule({
       "result",
       simpleAction({"value-A", "value-B"},
-                   [&] (const std::vector<ValueType>& Inputs) {
+                   [&] (const std::vector<int>& Inputs) {
                      EXPECT_EQ(2U, Inputs.size());
                      EXPECT_EQ(2, Inputs[0]);
                      EXPECT_EQ(3, Inputs[1]);
@@ -105,7 +121,7 @@ TEST(BuildEngineTest, Basic) {
                    }) });
 
   // Build the result.
-  EXPECT_EQ(2 * 3 * 5, Engine.build("result"));
+  EXPECT_EQ(2 * 3 * 5, IntFromValue(Engine.build("result")));
   EXPECT_EQ(3U, BuiltKeys.size());
   EXPECT_EQ("value-A", BuiltKeys[0]);
   EXPECT_EQ("value-B", BuiltKeys[1]);
@@ -114,10 +130,10 @@ TEST(BuildEngineTest, Basic) {
   // Check that we can get results for already built nodes, without building
   // anything.
   BuiltKeys.clear();
-  EXPECT_EQ(2, Engine.build("value-A"));
+  EXPECT_EQ(2, IntFromValue(Engine.build("value-A")));
   EXPECT_TRUE(BuiltKeys.empty());
   BuiltKeys.clear();
-  EXPECT_EQ(3, Engine.build("value-B"));
+  EXPECT_EQ(3, IntFromValue(Engine.build("value-B")));
   EXPECT_TRUE(BuiltKeys.empty());
 }
 
@@ -131,17 +147,17 @@ TEST(BuildEngineTest, BasicWithSharedInput) {
   SimpleBuildEngineDelegate Delegate;
   core::BuildEngine Engine(Delegate);
   Engine.addRule({
-      "value-A", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
+      "value-A", simpleAction({}, [&] (const std::vector<int>& Inputs) {
           BuiltKeys.push_back("value-A");
           return 2; }) });
   Engine.addRule({
-      "value-B", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
+      "value-B", simpleAction({}, [&] (const std::vector<int>& Inputs) {
           BuiltKeys.push_back("value-B");
           return 3; }) });
   Engine.addRule({
       "value-C",
       simpleAction({"value-A", "value-B"},
-                   [&] (const std::vector<ValueType>& Inputs) {
+                   [&] (const std::vector<int>& Inputs) {
                      EXPECT_EQ(2U, Inputs.size());
                      EXPECT_EQ(2, Inputs[0]);
                      EXPECT_EQ(3, Inputs[1]);
@@ -151,7 +167,7 @@ TEST(BuildEngineTest, BasicWithSharedInput) {
   Engine.addRule({
       "value-R",
       simpleAction({"value-A", "value-C"},
-                   [&] (const std::vector<ValueType>& Inputs) {
+                   [&] (const std::vector<int>& Inputs) {
                      EXPECT_EQ(2U, Inputs.size());
                      EXPECT_EQ(2, Inputs[0]);
                      EXPECT_EQ(2 * 3 * 5, Inputs[1]);
@@ -160,7 +176,7 @@ TEST(BuildEngineTest, BasicWithSharedInput) {
                    }) });
 
   // Build the result.
-  EXPECT_EQ(2 * 2 * 3 * 5 * 7, Engine.build("value-R"));
+  EXPECT_EQ(2 * 2 * 3 * 5 * 7, IntFromValue(Engine.build("value-R")));
   EXPECT_EQ(4U, BuiltKeys.size());
   EXPECT_EQ("value-A", BuiltKeys[0]);
   EXPECT_EQ("value-B", BuiltKeys[1]);
@@ -179,29 +195,23 @@ TEST(BuildEngineTest, VeryBasicIncremental) {
   int ValueA = 2;
   int ValueB = 3;
   Engine.addRule({
-      "value-A", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
+      "value-A", simpleAction({}, [&] (const std::vector<int>& Inputs) {
           BuiltKeys.push_back("value-A");
           return ValueA; }),
       [&](const Rule& rule, const ValueType Value) {
-          // FIXME: Once we have custom ValueType objects, we would like to have
-          // timestamps on the value and just compare to a timestamp (similar to
-          // what we would do for a file).
-          return ValueA == Value;
+        return ValueA == IntFromValue(Value);
       } });
   Engine.addRule({
-      "value-B", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
+      "value-B", simpleAction({}, [&] (const std::vector<int>& Inputs) {
           BuiltKeys.push_back("value-B");
           return ValueB; }),
       [&](const Rule& rule, const ValueType& Value) {
-          // FIXME: Once we have custom ValueType objects, we would like to have
-          // timestamps on the value and just compare to a timestamp (similar to
-          // what we would do for a file).
-          return ValueB == Value;
+        return ValueB == IntFromValue(Value);
       } });
   Engine.addRule({
       "value-R",
       simpleAction({"value-A", "value-B"},
-                   [&] (const std::vector<ValueType>& Inputs) {
+                   [&] (const std::vector<int>& Inputs) {
                      EXPECT_EQ(2U, Inputs.size());
                      EXPECT_EQ(ValueA, Inputs[0]);
                      EXPECT_EQ(ValueB, Inputs[1]);
@@ -211,7 +221,7 @@ TEST(BuildEngineTest, VeryBasicIncremental) {
 
   // Build the first result.
   BuiltKeys.clear();
-  EXPECT_EQ(ValueA * ValueB * 5, Engine.build("value-R"));
+  EXPECT_EQ(ValueA * ValueB * 5, IntFromValue(Engine.build("value-R")));
   EXPECT_EQ(3U, BuiltKeys.size());
   EXPECT_EQ("value-A", BuiltKeys[0]);
   EXPECT_EQ("value-B", BuiltKeys[1]);
@@ -220,14 +230,14 @@ TEST(BuildEngineTest, VeryBasicIncremental) {
   // Mark value-A as having changed, then rebuild and sanity check.
   ValueA = 7;
   BuiltKeys.clear();
-  EXPECT_EQ(ValueA * ValueB * 5, Engine.build("value-R"));
+  EXPECT_EQ(ValueA * ValueB * 5, IntFromValue(Engine.build("value-R")));
   EXPECT_EQ(2U, BuiltKeys.size());
   EXPECT_EQ("value-A", BuiltKeys[0]);
   EXPECT_EQ("value-R", BuiltKeys[2]);
 
   // Check that a subsequent build is null.
   BuiltKeys.clear();
-  EXPECT_EQ(ValueA * ValueB * 5, Engine.build("value-R"));
+  EXPECT_EQ(ValueA * ValueB * 5, IntFromValue(Engine.build("value-R")));
   EXPECT_EQ(0U, BuiltKeys.size());
 }
 
@@ -251,29 +261,23 @@ TEST(BuildEngineTest, BasicIncremental) {
   int ValueA = 2;
   int ValueB = 3;
   Engine.addRule({
-      "value-A", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
+      "value-A", simpleAction({}, [&] (const std::vector<int>& Inputs) {
           BuiltKeys.push_back("value-A");
           return ValueA; }),
       [&](const Rule& rule, const ValueType& Value) {
-          // FIXME: Once we have custom ValueType objects, we would like to have
-          // timestamps on the value and just compare to a timestamp (similar to
-          // what we would do for a file).
-          return ValueA == Value;
+        return ValueA == IntFromValue(Value);
       } });
   Engine.addRule({
-      "value-B", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
+      "value-B", simpleAction({}, [&] (const std::vector<int>& Inputs) {
           BuiltKeys.push_back("value-B");
           return ValueB; }),
       [&](const Rule& rule, const ValueType& Value) {
-          // FIXME: Once we have custom ValueType objects, we would like to have
-          // timestamps on the value and just compare to a timestamp (similar to
-          // what we would do for a file).
-          return ValueB == Value;
+        return ValueB == IntFromValue(Value);
       } });
   Engine.addRule({
       "value-C",
       simpleAction({"value-A", "value-B"},
-                   [&] (const std::vector<ValueType>& Inputs) {
+                   [&] (const std::vector<int>& Inputs) {
                      EXPECT_EQ(2U, Inputs.size());
                      EXPECT_EQ(ValueA, Inputs[0]);
                      EXPECT_EQ(ValueB, Inputs[1]);
@@ -283,7 +287,7 @@ TEST(BuildEngineTest, BasicIncremental) {
   Engine.addRule({
       "value-R",
       simpleAction({"value-A", "value-C"},
-                   [&] (const std::vector<ValueType>& Inputs) {
+                   [&] (const std::vector<int>& Inputs) {
                      EXPECT_EQ(2U, Inputs.size());
                      EXPECT_EQ(ValueA, Inputs[0]);
                      EXPECT_EQ(ValueA * ValueB * 5, Inputs[1]);
@@ -293,7 +297,7 @@ TEST(BuildEngineTest, BasicIncremental) {
   Engine.addRule({
       "value-D",
       simpleAction({"value-R"},
-                   [&] (const std::vector<ValueType>& Inputs) {
+                   [&] (const std::vector<int>& Inputs) {
                      EXPECT_EQ(1U, Inputs.size());
                      EXPECT_EQ(ValueA * ValueA * ValueB * 5 * 7,
                                Inputs[0]);
@@ -303,7 +307,7 @@ TEST(BuildEngineTest, BasicIncremental) {
   Engine.addRule({
       "value-R2",
       simpleAction({"value-D"},
-                   [&] (const std::vector<ValueType>& Inputs) {
+                   [&] (const std::vector<int>& Inputs) {
                      EXPECT_EQ(1U, Inputs.size());
                      EXPECT_EQ(ValueA * ValueA * ValueB * 5 * 7 * 11,
                                Inputs[0]);
@@ -313,7 +317,7 @@ TEST(BuildEngineTest, BasicIncremental) {
 
   // Build the first result.
   BuiltKeys.clear();
-  EXPECT_EQ(ValueA * ValueA * ValueB * 5 * 7, Engine.build("value-R"));
+  EXPECT_EQ(ValueA * ValueA * ValueB * 5 * 7, IntFromValue(Engine.build("value-R")));
   EXPECT_EQ(4U, BuiltKeys.size());
   EXPECT_EQ("value-A", BuiltKeys[0]);
   EXPECT_EQ("value-B", BuiltKeys[1]);
@@ -323,7 +327,7 @@ TEST(BuildEngineTest, BasicIncremental) {
   // Mark value-A as having changed, then rebuild and sanity check.
   ValueA = 17;
   BuiltKeys.clear();
-  EXPECT_EQ(ValueA * ValueA * ValueB * 5 * 7, Engine.build("value-R"));
+  EXPECT_EQ(ValueA * ValueA * ValueB * 5 * 7, IntFromValue(Engine.build("value-R")));
   EXPECT_EQ(3U, BuiltKeys.size());
   EXPECT_EQ("value-A", BuiltKeys[0]);
   EXPECT_EQ("value-C", BuiltKeys[1]);
@@ -332,7 +336,7 @@ TEST(BuildEngineTest, BasicIncremental) {
   // Mark value-B as having changed, then rebuild and sanity check.
   ValueB = 19;
   BuiltKeys.clear();
-  EXPECT_EQ(ValueA * ValueA * ValueB * 5 * 7, Engine.build("value-R"));
+  EXPECT_EQ(ValueA * ValueA * ValueB * 5 * 7, IntFromValue(Engine.build("value-R")));
   EXPECT_EQ(3U, BuiltKeys.size());
   EXPECT_EQ("value-B", BuiltKeys[0]);
   EXPECT_EQ("value-C", BuiltKeys[1]);
@@ -341,7 +345,7 @@ TEST(BuildEngineTest, BasicIncremental) {
   // Build value-R2 for the first time.
   BuiltKeys.clear();
   EXPECT_EQ(ValueA * ValueA * ValueB * 5 * 7 * 11 * 13,
-            Engine.build("value-R2"));
+            IntFromValue(Engine.build("value-R2")));
   EXPECT_EQ(2U, BuiltKeys.size());
   EXPECT_EQ("value-D", BuiltKeys[0]);
   EXPECT_EQ("value-R2", BuiltKeys[1]);
@@ -350,23 +354,23 @@ TEST(BuildEngineTest, BasicIncremental) {
   // value-R2 and sanity check.
   ValueB = 23;
   BuiltKeys.clear();
-  EXPECT_EQ(ValueA * ValueA * ValueB * 5 * 7, Engine.build("value-R"));
+  EXPECT_EQ(ValueA * ValueA * ValueB * 5 * 7, IntFromValue(Engine.build("value-R")));
   EXPECT_EQ(3U, BuiltKeys.size());
   EXPECT_EQ("value-B", BuiltKeys[0]);
   EXPECT_EQ("value-C", BuiltKeys[1]);
   EXPECT_EQ("value-R", BuiltKeys[2]);
   BuiltKeys.clear();
   EXPECT_EQ(ValueA * ValueA * ValueB * 5 * 7 * 11 * 13,
-            Engine.build("value-R2"));
+            IntFromValue(Engine.build("value-R2")));
   EXPECT_EQ(2U, BuiltKeys.size());
   EXPECT_EQ("value-D", BuiltKeys[0]);
   EXPECT_EQ("value-R2", BuiltKeys[1]);
 
   // Final sanity check.
   BuiltKeys.clear();
-  EXPECT_EQ(ValueA * ValueA * ValueB * 5 * 7, Engine.build("value-R"));
+  EXPECT_EQ(ValueA * ValueA * ValueB * 5 * 7, IntFromValue(Engine.build("value-R")));
   EXPECT_EQ(ValueA * ValueA * ValueB * 5 * 7 * 11 * 13,
-            Engine.build("value-R2"));
+            IntFromValue(Engine.build("value-R2")));
   EXPECT_EQ(0U, BuiltKeys.size());
 }
 
@@ -409,33 +413,30 @@ TEST(BuildEngineTest, IncrementalDependency) {
 
   int ValueA = 2;
   Engine.addRule({
-      "value-A", simpleAction({}, [&] (const std::vector<ValueType>& Inputs) {
+      "value-A", simpleAction({}, [&] (const std::vector<int>& Inputs) {
           return ValueA; }),
       [&](const Rule& rule, const ValueType& Value) {
-          // FIXME: Once we have custom ValueType objects, we would like to have
-          // timestamps on the value and just compare to a timestamp (similar to
-          // what we would do for a file).
-          return ValueA == Value;
+        return ValueA == IntFromValue(Value);
       } });
   Engine.addRule({
       "value-R",
       simpleAction({"value-A"},
-                   [&] (const std::vector<ValueType>& Inputs) {
+                   [&] (const std::vector<int>& Inputs) {
                      EXPECT_EQ(1U, Inputs.size());
                      EXPECT_EQ(ValueA, Inputs[0]);
                      return Inputs[0] * 3;
                    }) });
 
   // Build the first result.
-  EXPECT_EQ(ValueA * 3, Engine.build("value-R"));
+  EXPECT_EQ(ValueA * 3, IntFromValue(Engine.build("value-R")));
 
   // Mark value-A as having changed, then rebuild.
   ValueA = 5;
-  EXPECT_EQ(ValueA * 3, Engine.build("value-R"));
+  EXPECT_EQ(ValueA * 3, IntFromValue(Engine.build("value-R")));
 
   // Check the rule results.
   const Result& ValueRResult = DB->RuleResults["value-R"];
-  EXPECT_EQ(ValueA * 3, ValueRResult.Value);
+  EXPECT_EQ(ValueA * 3, IntFromValue(ValueRResult.Value));
   EXPECT_EQ(1U, ValueRResult.Dependencies.size());
 }
 
@@ -460,33 +461,33 @@ TEST(BuildEngineTest, DeepDependencyScanningStack) {
       sprintf(InputName, "input-%d", i+1);
       Engine.addRule({
           Name, simpleAction({ InputName },
-                             [] (const std::vector<ValueType>& Inputs) {
+                             [] (const std::vector<int>& Inputs) {
                                return Inputs[0]; }) });
     } else {
       Engine.addRule({
           Name,
           simpleAction({},
-                       [&] (const std::vector<ValueType>& Inputs) {
+                       [&] (const std::vector<int>& Inputs) {
                          return LastInputValue; }),
           [&](const Rule& rule, const ValueType& Value) {
             // FIXME: Once we have custom ValueType objects, we would like to
             // have timestamps on the value and just compare to a timestamp
             // (similar to what we would do for a file).
-            return LastInputValue == Value;
+            return LastInputValue == IntFromValue(Value);
           } });
     }
   }
 
   // Build the first result.
   LastInputValue = 42;
-  EXPECT_EQ(LastInputValue, Engine.build("input-0"));
+  EXPECT_EQ(LastInputValue, IntFromValue(Engine.build("input-0")));
 
   // Perform a null build on the result.
-  EXPECT_EQ(LastInputValue, Engine.build("input-0"));
+  EXPECT_EQ(LastInputValue, IntFromValue(Engine.build("input-0")));
 
   // Perform a full rebuild on the result.
   LastInputValue = 52;
-  EXPECT_EQ(LastInputValue, Engine.build("input-0"));
+  EXPECT_EQ(LastInputValue, IntFromValue(Engine.build("input-0")));
 }
 
 TEST(BuildEngineTest, DiscoveredDependencies) {
@@ -509,13 +510,13 @@ TEST(BuildEngineTest, DiscoveredDependencies) {
     virtual void provideValue(BuildEngine&, uintptr_t InputID,
                               const ValueType& Value) override {
       assert(InputID == 0);
-      ComputedInputValue = Value;
+      ComputedInputValue = IntFromValue(Value);
     }
 
     virtual void inputsAvailable(core::BuildEngine& Engine) override {
       // Report the discovered dependency.
       Engine.taskDiscoveredDependency(this, "value-B");
-      Engine.taskIsComplete(this, ComputedInputValue * ValueB * 5);
+      Engine.taskIsComplete(this, IntToValue(ComputedInputValue * ValueB * 5));
     }
   };
 
@@ -527,22 +528,22 @@ TEST(BuildEngineTest, DiscoveredDependencies) {
   Engine.addRule({
       "value-A",
       simpleAction({ },
-                   [&] (const std::vector<ValueType>& Inputs) {
+                   [&] (const std::vector<int>& Inputs) {
                      BuiltKeys.push_back("value-A");
                      return ValueA;
                    }),
       [&](const Rule& rule, const ValueType& Value) {
-        return ValueA == Value;
+        return ValueA == IntFromValue(Value);
       } });
   Engine.addRule({
       "value-B",
       simpleAction({ },
-                   [&] (const std::vector<ValueType>& Inputs) {
+                   [&] (const std::vector<int>& Inputs) {
                      BuiltKeys.push_back("value-B");
                      return ValueB;
                    }),
       [&](const Rule& rule, const ValueType& Value) {
-        return ValueB == Value;
+        return ValueB == IntFromValue(Value);
       } });
   Engine.addRule({
       "output",
@@ -553,26 +554,26 @@ TEST(BuildEngineTest, DiscoveredDependencies) {
 
   // Build the first result.
   BuiltKeys.clear();
-  EXPECT_EQ(ValueA * ValueB * 5, Engine.build("output"));
+  EXPECT_EQ(ValueA * ValueB * 5, IntFromValue(Engine.build("output")));
   EXPECT_EQ(std::vector<std::string>({ "output", "value-A", "value-B" }),
             BuiltKeys);
 
   // Verify that the next build is a null build.
   BuiltKeys.clear();
-  EXPECT_EQ(ValueA * ValueB * 5, Engine.build("output"));
+  EXPECT_EQ(ValueA * ValueB * 5, IntFromValue(Engine.build("output")));
   EXPECT_EQ(std::vector<std::string>(), BuiltKeys);
 
   // Verify that the build depends on ValueB.
   ValueB = 7;
   BuiltKeys.clear();
-  EXPECT_EQ(ValueA * ValueB * 5, Engine.build("output"));
+  EXPECT_EQ(ValueA * ValueB * 5, IntFromValue(Engine.build("output")));
   EXPECT_EQ(std::vector<std::string>({ "output", "value-B" }),
             BuiltKeys);
 
 
   // Verify again that the next build is a null build.
   BuiltKeys.clear();
-  EXPECT_EQ(ValueA * ValueB * 5, Engine.build("output"));
+  EXPECT_EQ(ValueA * ValueB * 5, IntFromValue(Engine.build("output")));
   EXPECT_EQ(std::vector<std::string>(), BuiltKeys);
 }
 

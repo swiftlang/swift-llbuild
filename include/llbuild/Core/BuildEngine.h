@@ -13,6 +13,7 @@
 #ifndef LLBUILD_CORE_BUILDENGINE_H
 #define LLBUILD_CORE_BUILDENGINE_H
 
+#include <cstdint>
 #include <functional>
 #include <string>
 #include <utility>
@@ -23,8 +24,7 @@ namespace core {
 
 // FIXME: Need to abstract KeyType;
 typedef std::string KeyType;
-// FIXME: Need to abstract ValueType;
-typedef int ValueType;
+typedef std::vector<uint8_t> ValueType;
 
 class BuildDB;
 class BuildEngine;

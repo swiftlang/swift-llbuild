@@ -17,7 +17,7 @@ Build Engine
 
 * Generalize key type.
 
-* Generalize value type.
+* Generalize value type (cleanly, current solution is gross).
 
 * Support multiple outputs.
 

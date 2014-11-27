@@ -100,6 +100,22 @@ public:
   }
 };
 
+static int32_t IntFromValue(const core::ValueType& Value) {
+  assert(Value.size() == 4);
+  return ((Value[0] << 0) |
+          (Value[1] << 8) |
+          (Value[2] << 16) |
+          (Value[3] << 24));
+}
+static core::ValueType IntToValue(int32_t Value) {
+  std::vector<uint8_t> Result(4);
+  Result[0] = (Value >> 0) & 0xFF;
+  Result[1] = (Value >> 8) & 0xFF;
+  Result[2] = (Value >> 16) & 0xFF;
+  Result[3] = (Value >> 24) & 0xFF;
+  return Result;
+}
+
 struct NinjaBuildEngineDelegate : public core::BuildEngineDelegate {
   class BuildContext* Context = nullptr;
 
@@ -199,7 +215,7 @@ public:
   unsigned getNumErrors() const { return NumErrors; }
 };
 
-static core::ValueType GetStatHashForNode(const ninja::Node* Node) {
+static int32_t GetStatHashForNode(const ninja::Node* Node) {
   struct ::stat Buf;
   if (::stat(Node->getPath().c_str(), &Buf) != 0) {
     // FIXME: What now.
@@ -260,7 +276,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       //
       // FIXME: Make efficient.
       if (Command->getRule()->getName() == "phony") {
-        engine.taskIsComplete(this, 0);
+        engine.taskIsComplete(this, IntToValue(0));
         return;
       }
 
@@ -271,7 +287,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       if (Context.Simulate) {
         if (!Context.Quiet)
           writeDescription(Context, Command);
-        Context.Engine.taskIsComplete(this, 0);
+        Context.Engine.taskIsComplete(this, IntToValue(0));
         return;
       }
 
@@ -364,7 +380,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
         processDiscoveredDependencies();
       }
 
-      Context.Engine.taskIsComplete(this, 0);
+      Context.Engine.taskIsComplete(this, IntToValue(0));
     }
 
     void processDiscoveredDependencies() {
@@ -451,11 +467,11 @@ core::Task* BuildInput(BuildContext& Context, ninja::Node* Input) {
       ++Context.NumBuiltInputs;
 
       if (Context.Simulate) {
-        engine.taskIsComplete(this, 0);
+        engine.taskIsComplete(this, IntToValue(0));
         return;
       }
 
-      engine.taskIsComplete(this, GetStatHashForNode(Node));
+      engine.taskIsComplete(this, IntToValue(GetStatHashForNode(Node)));
     }
   };
 
@@ -469,7 +485,7 @@ static bool BuildInputIsResultValid(ninja::Node *Node,
   //
   // We can solve this by caching ourselves but I wonder if it is something the
   // engine should support more naturally.
-  return GetStatHashForNode(Node) == Value;
+  return GetStatHashForNode(Node) == IntFromValue(Value);
 }
 
 core::Rule NinjaBuildEngineDelegate::lookupRule(const core::KeyType& Key) {

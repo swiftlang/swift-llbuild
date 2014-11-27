@@ -31,7 +31,7 @@ using namespace llbuild::core;
 namespace {
 
 class SQLiteBuildDB : public BuildDB {
-  const int CurrentSchemaVersion = 1;
+  const int CurrentSchemaVersion = 2;
 
   sqlite3 *DB = nullptr;
 
@@ -113,7 +113,7 @@ public:
           DB, ("CREATE TABLE rule_results ("
                "id INTEGER PRIMARY KEY, "
                "key STRING, "
-               "value INTEGER, "
+               "value BLOB, "
                "built_at INTEGER, "
                "computed_at INTEGER);"),
           nullptr, nullptr, &CError);
@@ -288,7 +288,11 @@ public:
     // Otherwise, read the result contents from the row.
     assert(sqlite3_column_count(FindRuleResultStmt) == 4);
     uint64_t RuleID = sqlite3_column_int64(FindRuleResultStmt, 0);
-    Result_Out->Value = sqlite3_column_int(FindRuleResultStmt, 1);
+    int NumValueBytes = sqlite3_column_bytes(FindRuleResultStmt, 1);
+    Result_Out->Value.resize(NumValueBytes);
+    memcpy(Result_Out->Value.data(),
+           sqlite3_column_blob(FindRuleResultStmt, 1),
+           NumValueBytes);
     Result_Out->BuiltAt = sqlite3_column_int64(FindRuleResultStmt, 2);
     Result_Out->ComputedAt = sqlite3_column_int64(FindRuleResultStmt, 3);
 
@@ -403,8 +407,10 @@ public:
                                Rule.Key.c_str(), -1,
                                SQLITE_STATIC);
     assert(Result == SQLITE_OK);
-    Result = sqlite3_bind_int64(InsertIntoRuleResultsStmt, /*index=*/2,
-                                RuleResult.Value);
+    Result = sqlite3_bind_blob(InsertIntoRuleResultsStmt, /*index=*/2,
+                               RuleResult.Value.data(),
+                               RuleResult.Value.size(),
+                               SQLITE_STATIC);
     assert(Result == SQLITE_OK);
     Result = sqlite3_bind_int64(InsertIntoRuleResultsStmt, /*index=*/3,
                                 RuleResult.BuiltAt);
