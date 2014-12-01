@@ -23,6 +23,22 @@ using namespace llbuild::core;
 
 namespace {
 
+static int32_t IntFromValue(const core::ValueType& Value) {
+  assert(Value.size() == 4);
+  return ((Value[0] << 0) |
+          (Value[1] << 8) |
+          (Value[2] << 16) |
+          (Value[3] << 24));
+}
+static core::ValueType IntToValue(int32_t Value) {
+  std::vector<uint8_t> Result(4);
+  Result[0] = (Value >> 0) & 0xFF;
+  Result[1] = (Value >> 8) & 0xFF;
+  Result[2] = (Value >> 16) & 0xFF;
+  Result[3] = (Value >> 24) & 0xFF;
+  return Result;
+}
+
 // Simple task implementation which takes a fixed set of dependencies, evaluates
 // them all, and then provides the output.
 //
@@ -31,11 +47,11 @@ namespace {
 // point.
 class SimpleTask : public Task {
 public:
-  typedef std::function<ValueType(const std::vector<ValueType>&)> ComputeFnType;
+  typedef std::function<int(const std::vector<int>&)> ComputeFnType;
 
 private:
   std::vector<KeyType> Inputs;
-  std::vector<ValueType> InputValues;
+  std::vector<int> InputValues;
   ComputeFnType Compute;
 
 public:
@@ -56,11 +72,11 @@ public:
                             const ValueType& Value) override {
     // Update the input values.
     assert(InputID < InputValues.size());
-    InputValues[InputID] = Value;
+    InputValues[InputID] = IntFromValue(Value);
   }
 
   virtual void inputsAvailable(core::BuildEngine& Engine) override {
-    Engine.taskIsComplete(this, Compute(InputValues));
+      Engine.taskIsComplete(this, IntToValue(Compute(InputValues)));
   }
 };
 
@@ -131,23 +147,23 @@ static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
       sprintf(InputName, "i%d", i+1);
       Engine.addRule({
           Name, simpleAction({ InputName },
-                             [] (const std::vector<ValueType>& Inputs) {
+                             [] (const std::vector<int>& Inputs) {
                                return Inputs[0]; }) });
     } else {
       Engine.addRule({
           Name,
           simpleAction({},
-                       [&] (const std::vector<ValueType>& Inputs) {
+                       [&] (const std::vector<int>& Inputs) {
                          return LastInputValue; }),
           [&](const Rule& rule, const ValueType& Value) {
-            return LastInputValue == Value;
+            return LastInputValue == IntFromValue(Value);
           } });
     }
   }
 
   // Build the first result.
   LastInputValue = 42;
-  auto Result = Engine.build("i1");
+  auto Result = IntFromValue(Engine.build("i1"));
   assert(Result == LastInputValue);
 
   // Run a single initial null build to try and warm the timings below.
@@ -155,7 +171,7 @@ static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
 
   // Measure the null build time.
   [self measureBlock:^{
-      auto Result = Engine.build("i1");
+      auto Result = IntFromValue(Engine.build("i1"));
       assert(Result == LastInputValue);
     }];
 }
@@ -205,16 +221,16 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
           Inputs.push_back(InputName);
         }
         Engine.addRule({
-            Name, simpleAction(Inputs, [] (const std::vector<ValueType>& Inputs) {
+            Name, simpleAction(Inputs, [] (const std::vector<int>& Inputs) {
                 return Inputs[0]; }) });
       } else {
         Engine.addRule({
             Name,
             simpleAction({},
-                         [&] (const std::vector<ValueType>& Inputs) {
+                         [&] (const std::vector<int>& Inputs) {
                            return LastInputValue; }),
             [&](const Rule& rule, const ValueType& Value) {
-              return LastInputValue == Value;
+              return LastInputValue == IntFromValue(Value);
             } });
       }
     }
@@ -222,7 +238,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
 
   // Build the first result.
   LastInputValue = 42;
-  auto Result = Engine.build("i1,1");
+  auto Result = IntFromValue(Engine.build("i1,1"));
   assert(Result == LastInputValue);
 
   // Run a single initial null build to try and warm the timings below.
@@ -230,7 +246,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
 
   // Measure the null build time.
   [self measureBlock:^{
-      auto Result = Engine.build("i1,1");
+      auto Result = IntFromValue(Engine.build("i1,1"));
       assert(Result == LastInputValue);
     }];
 }
@@ -275,7 +291,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
         sprintf(InputBName, "i%d,%d", i, j+1);
         Engine.addRule({
             Name, simpleAction({ InputAName, InputBName },
-                               [] (const std::vector<ValueType>& Inputs) {
+                               [] (const std::vector<int>& Inputs) {
                                  return Inputs[0]; }) });
       } else if (i != M) {
         // Top edge.
@@ -284,7 +300,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
         sprintf(InputName, "i%d,%d", i+1, j);
         Engine.addRule({
             Name, simpleAction({ InputName },
-                               [] (const std::vector<ValueType>& Inputs) {
+                               [] (const std::vector<int>& Inputs) {
                                  return Inputs[0]; }) });
       } else if (j != N) {
         // Right edge.
@@ -293,7 +309,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
         sprintf(InputName, "i%d,%d", i, j+1);
         Engine.addRule({
             Name, simpleAction({ InputName },
-                               [] (const std::vector<ValueType>& Inputs) {
+                               [] (const std::vector<int>& Inputs) {
                                  return Inputs[0]; }) });
       } else {
         // Top-right corner node.
@@ -301,10 +317,10 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
         Engine.addRule({
             Name,
             simpleAction({},
-                         [&] (const std::vector<ValueType>& Inputs) {
+                         [&] (const std::vector<int>& Inputs) {
                            return LastInputValue; }),
             [&](const Rule& rule, const ValueType& Value) {
-              return LastInputValue == Value;
+              return LastInputValue == IntFromValue(Value);
             } });
       }
     }
@@ -312,7 +328,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
 
   // Build the first result.
   LastInputValue = 42;
-  auto Result = Engine.build("i1,1");
+  auto Result = IntFromValue(Engine.build("i1,1"));
   assert(Result == LastInputValue);
 
   // Run a single initial null build to try and warm the timings below.
@@ -320,7 +336,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
 
   // Measure the null build time.
   [self measureBlock:^{
-      auto Result = Engine.build("i1,1");
+      auto Result = IntFromValue(Engine.build("i1,1"));
       assert(Result == LastInputValue);
     }];
 }
