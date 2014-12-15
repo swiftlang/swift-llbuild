@@ -100,21 +100,84 @@ public:
   }
 };
 
-static int32_t IntFromValue(const core::ValueType& Value) {
-  assert(Value.size() == 4);
-  return ((Value[0] << 0) |
-          (Value[1] << 8) |
-          (Value[2] << 16) |
-          (Value[3] << 24));
-}
-static core::ValueType IntToValue(int32_t Value) {
-  std::vector<uint8_t> Result(4);
-  Result[0] = (Value >> 0) & 0xFF;
-  Result[1] = (Value >> 8) & 0xFF;
-  Result[2] = (Value >> 16) & 0xFF;
-  Result[3] = (Value >> 24) & 0xFF;
-  return Result;
-}
+/// Result value that is computed by the rules for input and command files.
+class BuildValue {
+public:
+  static const int CurrentSchemaVersion = 1;
+
+private:
+  enum class BuildValueKind : uint32_t {
+    /// A value produced by a existing input file.
+    ExistingInput = 0,
+
+    /// A value produced by a missing input file.
+    MissingInput,
+
+    /// A value produced by a successful command.
+    SuccessfulCommand,
+
+    /// A value produced by a failing command.
+    FailedCommand,
+
+    /// A value produced by a command that was not run.  
+    SkippedCommand,
+  };
+
+  /// The kind of value.
+  BuildValueKind Kind;
+
+  /// A hash of the state computed by the rule.
+  uint64_t Hash;
+
+private:
+  BuildValue() {}
+  BuildValue(BuildValueKind Kind, uint64_t Hash) : Kind(Kind), Hash(Hash) {}
+
+public:
+  static BuildValue makeExistingInput(uint64_t Hash) {
+    return BuildValue(BuildValueKind::ExistingInput, Hash);
+  }
+  static BuildValue makeMissingInput() {
+    return BuildValue(BuildValueKind::MissingInput, 0);
+  }
+  static BuildValue makeSuccessfulCommand(uint64_t Hash) {
+    return BuildValue(BuildValueKind::SuccessfulCommand, Hash);
+  }
+  static BuildValue makeFailedCommand() {
+    return BuildValue(BuildValueKind::FailedCommand, 0);
+  }
+  static BuildValue makeSkippedCommand() {
+    return BuildValue(BuildValueKind::SkippedCommand, 0);
+  }
+
+  bool isExistingInput() const { return Kind == BuildValueKind::ExistingInput; }
+  bool isMissingInput() const { return Kind == BuildValueKind::MissingInput; }
+  bool isSuccessfulCommand() const {
+    return Kind == BuildValueKind::FailedCommand;
+  }
+  bool isFailedCommand() const { return Kind == BuildValueKind::FailedCommand; }
+  bool isSkippedCommand() const {
+    return Kind == BuildValueKind::SkippedCommand;
+  }
+
+  uint64_t getHash() const {
+    assert((isExistingInput() || isSuccessfulCommand()) &&
+           "invalid call for value kind");
+    return Hash;
+  }
+
+  static BuildValue fromValue(const core::ValueType& Value) {
+    BuildValue Result;
+    memcpy(&Result, Value.data(), sizeof(Result));
+    return Result;
+  }
+  
+  core::ValueType toValue() {
+    std::vector<uint8_t> Result(sizeof(*this));
+    memcpy(Result.data(), this, sizeof(*this));
+    return Result;
+  }
+};
 
 struct NinjaBuildEngineDelegate : public core::BuildEngineDelegate {
   class BuildContext* Context = nullptr;
@@ -215,24 +278,24 @@ public:
   unsigned getNumErrors() const { return NumErrors; }
 };
 
-static int32_t GetStatHashForNode(const ninja::Node* Node) {
+/// Get a hash to represent the state of the given node in the file system.
+///
+/// \param Hash_Out [out] On success, a hash of the important path information.
+/// \returns True if information on the path was found.
+static bool GetStatHashForNode(const ninja::Node* Node, uint64_t *Hash_Out) {
   struct ::stat Buf;
   if (::stat(Node->getPath().c_str(), &Buf) != 0) {
+    *Hash_Out = 0;
     // FIXME: What now.
-    return 0;
+    return false;
   }
 
   // Hash the stat information.
   auto Hash = std::hash<uint64_t>();
-  auto Result = Hash(Buf.st_dev) ^ Hash(Buf.st_ino) ^
+  *Hash_Out = Hash(Buf.st_dev) ^ Hash(Buf.st_ino) ^
     Hash(Buf.st_mtimespec.tv_sec) ^ Hash(Buf.st_mtimespec.tv_nsec) ^
     Hash(Buf.st_size);
-
-  // Ensure there is never a collision between a valid stat result and an error.
-  if (Result == 0)
-      Result = 1;
-
-  return Result;
+  return true;
 }
 
 core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
@@ -276,7 +339,8 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       //
       // FIXME: Make efficient.
       if (Command->getRule()->getName() == "phony") {
-        engine.taskIsComplete(this, IntToValue(0));
+        engine.taskIsComplete(
+          this, BuildValue::makeSuccessfulCommand(0).toValue());
         return;
       }
 
@@ -287,7 +351,8 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       if (Context.Simulate) {
         if (!Context.Quiet)
           writeDescription(Context, Command);
-        Context.Engine.taskIsComplete(this, IntToValue(0));
+        Context.Engine.taskIsComplete(
+          this, BuildValue::makeSkippedCommand().toValue());
         return;
       }
 
@@ -374,14 +439,19 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
             std::cerr << "  ... process returned error status: "
                       << Status << "\n";
           });
+
+        // Complete the task with a failing value.
+        Context.Engine.taskIsComplete(
+          this, BuildValue::makeFailedCommand().toValue());
+        return;
       }
 
-      // If the command succeeded, process the dependencies.
-      if (Status == 0) {
-        processDiscoveredDependencies();
-      }
+      // Otherwise, the command succeeded so process the dependencies.
+      processDiscoveredDependencies();
 
-      Context.Engine.taskIsComplete(this, IntToValue(0));
+      // Complete the task with a successful value.
+      Context.Engine.taskIsComplete(
+        this, BuildValue::makeSuccessfulCommand(0).toValue());
     }
 
     void processDiscoveredDependencies() {
@@ -468,11 +538,18 @@ core::Task* BuildInput(BuildContext& Context, ninja::Node* Input) {
       ++Context.NumBuiltInputs;
 
       if (Context.Simulate) {
-        engine.taskIsComplete(this, IntToValue(0));
+        engine.taskIsComplete(this, BuildValue::makeExistingInput(0).toValue());
         return;
       }
 
-      engine.taskIsComplete(this, IntToValue(GetStatHashForNode(Node)));
+      uint64_t Hash;
+      if (!GetStatHashForNode(Node, &Hash)) {
+        engine.taskIsComplete(this, BuildValue::makeMissingInput().toValue());
+        return;
+      }
+        
+      engine.taskIsComplete(
+        this, BuildValue::makeExistingInput(Hash).toValue());
     }
   };
 
@@ -480,13 +557,26 @@ core::Task* BuildInput(BuildContext& Context, ninja::Node* Input) {
 }
 
 static bool BuildInputIsResultValid(ninja::Node *Node,
-                                    const core::ValueType& Value) {
+                                    const core::ValueType& ValueData) {
+  BuildValue Value = BuildValue::fromValue(ValueData);
+
+  // If the prior value wasn't for an existing input, recompute.
+  if (!Value.isExistingInput())
+    return false;
+
+  // Otherwise, the result is valid if the path exists and the hash has not
+  // changed.
+  //
   // FIXME: This is inefficient, we will end up doing the stat twice, once when
   // we check the value for up to dateness, and once when we "build" the output.
   //
   // We can solve this by caching ourselves but I wonder if it is something the
   // engine should support more naturally.
-  return GetStatHashForNode(Node) == IntFromValue(Value);
+  uint64_t Hash;
+  if (!GetStatHashForNode(Node, &Hash))
+    return false;
+
+  return Value.getHash() == Hash;
 }
 
 core::Rule NinjaBuildEngineDelegate::lookupRule(const core::KeyType& Key) {
@@ -645,7 +735,8 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   if (!DBFilename.empty()) {
     std::string Error;
     std::unique_ptr<core::BuildDB> DB(
-      core::CreateSQLiteBuildDB(DBFilename, 0, &Error));
+      core::CreateSQLiteBuildDB(DBFilename, BuildValue::CurrentSchemaVersion,
+                                &Error));
     if (!DB) {
       fprintf(stderr, "error: %s: unable to open build database: %s\n",
               getprogname(), Error.c_str());
@@ -680,9 +771,11 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
               return true;
 
             // Always rebuild if the output is missing.
-            if (GetStatHashForNode(Output) == 0)
+            uint64_t Hash;
+            if (!GetStatHashForNode(Output, &Hash))
               return false;
 
+            // Otherwise, we ignore the actual output hash for now.
             return true;
           } });
     }
