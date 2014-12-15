@@ -54,7 +54,7 @@ public:
     // Create the database schema, if necessary.
     char *CError;
     int Version;
-    uint32_t ClientVersion;
+    uint32_t ClientVersion = 0;
     sqlite3_stmt* Stmt;
     Result = sqlite3_prepare_v2(
       DB, "SELECT version,client_version FROM info LIMIT 1",
