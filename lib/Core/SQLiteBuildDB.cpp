@@ -31,7 +31,7 @@ using namespace llbuild::core;
 namespace {
 
 class SQLiteBuildDB : public BuildDB {
-  const int CurrentSchemaVersion = 2;
+  static const int CurrentSchemaVersion = 3;
 
   sqlite3 *DB = nullptr;
 
@@ -41,7 +41,8 @@ public:
       close();
   }
 
-  bool open(const std::string& Path, std::string *Error_Out) {
+  bool open(const std::string& Path, uint32_t ClientSchemaVersion,
+            std::string *Error_Out) {
     assert(!DB);
     int Result = sqlite3_open(Path.c_str(), &DB);
     if (Result != SQLITE_OK) {
@@ -53,9 +54,10 @@ public:
     // Create the database schema, if necessary.
     char *CError;
     int Version;
+    uint32_t ClientVersion;
     sqlite3_stmt* Stmt;
     Result = sqlite3_prepare_v2(
-      DB, "SELECT version FROM info LIMIT 1",
+      DB, "SELECT version,client_version FROM info LIMIT 1",
       -1, &Stmt, nullptr);
     if (Result == SQLITE_ERROR) {
       Version = -1;
@@ -66,15 +68,17 @@ public:
       if (Result == SQLITE_DONE) {
         Version = -1;
       } else if (Result == SQLITE_ROW) {
-        assert(sqlite3_column_count(Stmt) == 1);
+        assert(sqlite3_column_count(Stmt) == 2);
         Version = sqlite3_column_int(Stmt, 0);
+        ClientVersion = sqlite3_column_int(Stmt, 1);
       } else {
         abort();
       }
       sqlite3_finalize(Stmt);
     }
 
-    if (Version != CurrentSchemaVersion) {
+    if (Version != CurrentSchemaVersion ||
+        ClientVersion != ClientSchemaVersion) {
       // Always recreate the database from scratch when the schema changes.
       Result = unlink(Path.c_str());
       if (Result == -1) {
@@ -99,12 +103,13 @@ public:
         DB, ("CREATE TABLE info ("
              "id INTEGER PRIMARY KEY, "
              "version INTEGER, "
+             "client_version INTEGER, "
              "iteration INTEGER);"),
         nullptr, nullptr, &CError);
       if (Result == SQLITE_OK) {
         char* Query = sqlite3_mprintf(
-          "INSERT INTO info VALUES (0, %d, 0);",
-          CurrentSchemaVersion);
+          "INSERT INTO info VALUES (0, %d, %d, 0);",
+          CurrentSchemaVersion, ClientSchemaVersion);
         Result = sqlite3_exec(DB, Query, nullptr, nullptr, &CError);
         free(Query);
       }
@@ -468,9 +473,10 @@ public:
 }
 
 std::unique_ptr<BuildDB> core::CreateSQLiteBuildDB(const std::string& Path,
+                                                   uint32_t ClientSchemaVersion,
                                                    std::string* Error_Out) {
   std::unique_ptr<SQLiteBuildDB> DB(new SQLiteBuildDB);
-  if (!DB->open(Path, Error_Out))
+  if (!DB->open(Path, ClientSchemaVersion, Error_Out))
     return nullptr;
 
   return std::move(DB);

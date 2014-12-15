@@ -644,7 +644,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   if (!DBFilename.empty()) {
     std::string Error;
     std::unique_ptr<core::BuildDB> DB(
-      core::CreateSQLiteBuildDB(DBFilename, &Error));
+      core::CreateSQLiteBuildDB(DBFilename, 0, &Error));
     if (!DB) {
       fprintf(stderr, "error: %s: unable to open build database: %s\n",
               getprogname(), Error.c_str());

@@ -61,7 +61,14 @@ public:
   virtual void buildComplete() = 0;
 };
 
+/// Create a BuildDB instance backed by a SQLite3 database.
+///
+/// \param ClientSchemaVersion An uninterpreted version number for use by the
+/// client to allow batch changes to the stored build results; if the stored
+/// schema does not match the provided version the database will be cleared upon
+/// opening.
 std::unique_ptr<BuildDB> CreateSQLiteBuildDB(const std::string& Path,
+                                             uint32_t ClientSchemaVersion,
                                              std::string* Error_Out);
 
 }
