@@ -153,7 +153,7 @@ public:
   bool isExistingInput() const { return Kind == BuildValueKind::ExistingInput; }
   bool isMissingInput() const { return Kind == BuildValueKind::MissingInput; }
   bool isSuccessfulCommand() const {
-    return Kind == BuildValueKind::FailedCommand;
+    return Kind == BuildValueKind::SuccessfulCommand;
   }
   bool isFailedCommand() const { return Kind == BuildValueKind::FailedCommand; }
   bool isSkippedCommand() const {
@@ -304,6 +304,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
     BuildContext& Context;
     ninja::Node* Output;
     ninja::Command* Command;
+    bool ShouldSkip = false;
 
     NinjaCommandTask(BuildContext& Context, ninja::Node* Output,
                      ninja::Command* Command)
@@ -311,7 +312,15 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
         Command(Command) { }
 
     virtual void provideValue(core::BuildEngine& engine, uintptr_t InputID,
-                              const core::ValueType& Value) override {
+                              const core::ValueType& ValueData) override {
+      // Process the input value to see if we should skip this command.
+      BuildValue Value = BuildValue::fromValue(ValueData);
+
+      // If the value is not an existing input or a successful command, then we
+      // shouldn't run this command.
+      if (!Value.isExistingInput() && !Value.isSuccessfulCommand()) {
+        ShouldSkip = true;
+      }
     }
 
     virtual void start(core::BuildEngine& engine) override {
@@ -351,6 +360,14 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       if (Context.Simulate) {
         if (!Context.Quiet)
           writeDescription(Context, Command);
+        Context.Engine.taskIsComplete(
+          this, BuildValue::makeSkippedCommand().toValue());
+        return;
+      }
+
+      // If not simulating, but this command should be skipped, then do nothing.
+      if (ShouldSkip) {
+        ++Context.NumFailedCommands;
         Context.Engine.taskIsComplete(
           this, BuildValue::makeSkippedCommand().toValue());
         return;
@@ -534,6 +551,11 @@ core::Task* BuildInput(BuildContext& Context, ninja::Node* Input) {
 
     virtual void start(core::BuildEngine& engine) override { }
 
+    static void reportMissingInput(const ninja::Node* Node) {
+      fprintf(stderr, "error: missing input '%s' and no rule to build it\n",
+              Node->getPath().c_str());
+    }
+
     virtual void inputsAvailable(core::BuildEngine& engine) override {
       ++Context.NumBuiltInputs;
 
@@ -544,6 +566,14 @@ core::Task* BuildInput(BuildContext& Context, ninja::Node* Input) {
 
       uint64_t Hash;
       if (!GetStatHashForNode(Node, &Hash)) {
+        // Report the missing input on the output queue, taking care to not rely
+        // on the ``this`` object, which may disappear before the queue executes
+        // this block.
+        const ninja::Node* LocalNode(Node);
+        dispatch_async(Context.OutputQueue, ^() {
+            reportMissingInput(LocalNode);
+          });
+
         engine.taskIsComplete(this, BuildValue::makeMissingInput().toValue());
         return;
       }

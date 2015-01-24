@@ -88,7 +88,8 @@ Ninja Specific
 Tasks for Usable Tool
 ---------------------
 
-* Don't run commands downstream of failing ones.
+* Stop build completely when a command fails (and report status better, vs just
+  reporting everything downstream as a failure).
 
 * Implement support for automatic running of the rule that generates the
   manifest itself (rerun on CMake changes). Also, look into related problems:

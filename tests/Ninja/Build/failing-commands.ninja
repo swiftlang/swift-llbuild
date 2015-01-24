@@ -1,0 +1,25 @@
+# Check the handling of failed commands.
+
+# Check that we don't build a command downstream of a failing one.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build --no-db &> %t1.out || true
+# RUN: %{FileCheck} < %t1.out %s
+#
+# CHECK: [1] "false"
+# CHECK-NEXT: process returned error status
+# CHECK-NOT: [2] "cp output-1 output"
+# CHECK: ... built using 2 commands
+
+rule CP
+     command = cp ${in} ${out}
+     description = "${command}"
+rule FALSE
+     command = false
+     description = "${command}"
+
+build output-1: FALSE
+build output: CP output-1
+default output
