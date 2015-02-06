@@ -102,7 +102,7 @@ public:
   ParseCommandActions(std::string Filename) : Filename(Filename) {}
 
 private:
-  virtual void initialize(ninja::Parser *Parser) {
+  virtual void initialize(ninja::Parser *Parser) override {
     this->Parser = Parser;
   }
 
@@ -253,7 +253,7 @@ public:
   ParseOnlyCommandActions() {}
 
 private:
-  virtual void initialize(ninja::Parser *Parser) {
+  virtual void initialize(ninja::Parser *Parser) override {
     this->Parser = Parser;
   }
 
@@ -351,7 +351,7 @@ class LoadManifestActions : public ninja::ManifestLoaderActions {
   unsigned MaxErrors = 20;
 
 private:
-  virtual void initialize(ninja::ManifestLoader *Loader) {
+  virtual void initialize(ninja::ManifestLoader *Loader) override {
     this->Loader = Loader;
   }
 

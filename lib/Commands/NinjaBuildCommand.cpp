@@ -239,7 +239,7 @@ class BuildManifestActions : public ninja::ManifestLoaderActions {
   unsigned MaxErrors = 20;
 
 private:
-  virtual void initialize(ninja::ManifestLoader *Loader) {
+  virtual void initialize(ninja::ManifestLoader *Loader) override {
     this->Loader = Loader;
   }
 
