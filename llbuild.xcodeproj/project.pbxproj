@@ -86,12 +86,16 @@
 		E1A2251819F99EC80059043E /* libgtest_main.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A224E619F99C580059043E /* libgtest_main.a */; };
 		E1A2251919F99ECB0059043E /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
 		E1A2251A19F99ECD0059043E /* libllbuildNinja.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243619F9970D0059043E /* libllbuildNinja.a */; };
+		E1ADC23E1A85938C00D5387C /* C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1ADC2311A85922F00D5387C /* C-API.cpp */; };
+		E1ADC23F1A8593AD00D5387C /* llbuild.h in Headers */ = {isa = PBXBuildFile; fileRef = E1ADC2351A8592AA00D5387C /* llbuild.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		E1C404B11A0308F3003392BA /* NinjaPerfTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = E1C404B01A0308F3003392BA /* NinjaPerfTests.mm */; };
 		E1C404B91A030A1D003392BA /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
 		E1C404BA1A030A1D003392BA /* libllbuildCommands.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242E19F997050059043E /* libllbuildCommands.a */; };
 		E1C404BB1A030A1D003392BA /* libllbuildCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243E19F997150059043E /* libllbuildCore.a */; };
 		E1C404BC1A030A1D003392BA /* libllbuildNinja.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243619F9970D0059043E /* libllbuildNinja.a */; };
 		E1C404BD1A030A23003392BA /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
+		E1DB70221A85978100891F4D /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
+		E1DB70231A85978900891F4D /* libllbuildCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243E19F997150059043E /* libllbuildCore.a */; };
 		E1E221071A00689C00957481 /* BuildDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E221051A0067F800957481 /* BuildDB.cpp */; };
 		E1E221091A00B82100957481 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
 		E1E2210C1A015B9E00957481 /* SQLiteBuildDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E2210B1A015B9E00957481 /* SQLiteBuildDB.cpp */; };
@@ -273,6 +277,20 @@
 			remoteGlobalIDString = E1A224F819F99DFD0059043E;
 			remoteInfo = NinjaTests;
 		};
+		E1E15C521A859732002CD50D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1A2242419F991B40059043E;
+			remoteInfo = llbuildBasic;
+		};
+		E1E15C561A859735002CD50D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1A2243D19F997150059043E;
+			remoteInfo = llbuildCore;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -434,6 +452,11 @@
 		E1A2254F19F9A74B0059043E /* README.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.txt; sourceTree = "<group>"; };
 		E1A2255019F9A74B0059043E /* create-lit-site-cfg.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "create-lit-site-cfg.sh"; sourceTree = "<group>"; };
 		E1A2255119F9A74B0059043E /* execute-lit-tests.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "execute-lit-tests.sh"; sourceTree = "<group>"; };
+		E1ADC2301A85922F00D5387C /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
+		E1ADC2311A85922F00D5387C /* C-API.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "C-API.cpp"; sourceTree = "<group>"; };
+		E1ADC2341A85928100D5387C /* README.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.txt; sourceTree = "<group>"; };
+		E1ADC2351A8592AA00D5387C /* llbuild.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = llbuild.h; sourceTree = "<group>"; };
+		E1ADC23A1A85936400D5387C /* libllbuild.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libllbuild.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1C404AC1A0308F3003392BA /* PerfTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PerfTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1C404AF1A0308F3003392BA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E1C404B01A0308F3003392BA /* NinjaPerfTests.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = NinjaPerfTests.mm; sourceTree = "<group>"; };
@@ -530,6 +553,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E1ADC2371A85936400D5387C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E1DB70221A85978100891F4D /* libllbuildBasic.a in Frameworks */,
+				E1DB70231A85978900891F4D /* libllbuildCore.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E1C404A91A0308F3003392BA /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -623,6 +655,7 @@
 				E1A2250119F99DFD0059043E /* NinjaTests */,
 				E10D5CDA19FEBF6A00211ED4 /* LitXCTestAdaptor.xctest */,
 				E1C404AC1A0308F3003392BA /* PerfTests.xctest */,
+				E1ADC23A1A85936400D5387C /* libllbuild.dylib */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -631,6 +664,7 @@
 			isa = PBXGroup;
 			children = (
 				E1A2240119F991350059043E /* llbuild */,
+				E1ADC22F1A8591F600D5387C /* libllbuild */,
 				E1A2240019F991350059043E /* CMakeLists.txt */,
 			);
 			path = products;
@@ -977,6 +1011,34 @@
 			path = Xcode;
 			sourceTree = "<group>";
 		};
+		E1ADC22F1A8591F600D5387C /* libllbuild */ = {
+			isa = PBXGroup;
+			children = (
+				E1ADC2321A85923800D5387C /* Public API */,
+				E1ADC2301A85922F00D5387C /* CMakeLists.txt */,
+				E1ADC2311A85922F00D5387C /* C-API.cpp */,
+			);
+			path = libllbuild;
+			sourceTree = "<group>";
+		};
+		E1ADC2321A85923800D5387C /* Public API */ = {
+			isa = PBXGroup;
+			children = (
+				E1ADC2331A85925800D5387C /* llbuild */,
+				E1ADC2341A85928100D5387C /* README.txt */,
+			);
+			name = "Public API";
+			path = "public-api";
+			sourceTree = "<group>";
+		};
+		E1ADC2331A85925800D5387C /* llbuild */ = {
+			isa = PBXGroup;
+			children = (
+				E1ADC2351A8592AA00D5387C /* llbuild.h */,
+			);
+			path = llbuild;
+			sourceTree = "<group>";
+		};
 		E1C404AD1A0308F3003392BA /* PerfTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -1062,6 +1124,14 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E1ADC2381A85936400D5387C /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E1ADC23F1A8593AD00D5387C /* llbuild.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1258,6 +1328,25 @@
 			productReference = E1A2250119F99DFD0059043E /* NinjaTests */;
 			productType = "com.apple.product-type.tool";
 		};
+		E1ADC2391A85936400D5387C /* libllbuild */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E1ADC23B1A85936400D5387C /* Build configuration list for PBXNativeTarget "libllbuild" */;
+			buildPhases = (
+				E1ADC2361A85936400D5387C /* Sources */,
+				E1ADC2381A85936400D5387C /* Headers */,
+				E1ADC2371A85936400D5387C /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E1E15C531A859732002CD50D /* PBXTargetDependency */,
+				E1E15C571A859735002CD50D /* PBXTargetDependency */,
+			);
+			name = libllbuild;
+			productName = libllbuild;
+			productReference = E1ADC23A1A85936400D5387C /* libllbuild.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
 		E1C404AB1A0308F3003392BA /* PerfTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = E1C404B41A0308F3003392BA /* Build configuration list for PBXNativeTarget "PerfTests" */;
@@ -1320,6 +1409,9 @@
 					E1A2254219F9A20D0059043E = {
 						CreatedOnToolsVersion = 6.3;
 					};
+					E1ADC2391A85936400D5387C = {
+						CreatedOnToolsVersion = 7.0;
+					};
 					E1C404AB1A0308F3003392BA = {
 						CreatedOnToolsVersion = 6.3;
 					};
@@ -1340,6 +1432,7 @@
 			targets = (
 				E178FCC11A1BF3270039F8B5 /* B&I */,
 				E1A224C219F999B80059043E /* llbuild Tool */,
+				E1ADC2391A85936400D5387C /* libllbuild */,
 				E1A2242419F991B40059043E /* llbuildBasic */,
 				E1A2242D19F997050059043E /* llbuildCommands */,
 				E1A2243D19F997150059043E /* llbuildCore */,
@@ -1518,6 +1611,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E1ADC2361A85936400D5387C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E1ADC23E1A85938C00D5387C /* C-API.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E1C404A81A0308F3003392BA /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1654,6 +1755,16 @@
 			isa = PBXTargetDependency;
 			target = E1A224F819F99DFD0059043E /* NinjaTests */;
 			targetProxy = E1A2254A19F9A2190059043E /* PBXContainerItemProxy */;
+		};
+		E1E15C531A859732002CD50D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1A2242419F991B40059043E /* llbuildBasic */;
+			targetProxy = E1E15C521A859732002CD50D /* PBXContainerItemProxy */;
+		};
+		E1E15C571A859735002CD50D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1A2243D19F997150059043E /* llbuildCore */;
+			targetProxy = E1E15C561A859735002CD50D /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -2035,6 +2146,48 @@
 			};
 			name = Release;
 		};
+		E1ADC23C1A85936400D5387C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
+				EXECUTABLE_PREFIX = lib;
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/public-api";
+				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/lib";
+				ISEMPTY_ = empty;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				PRODUCT_NAME = llbuild;
+				PROJECT_SOURCE_VERSION = "$(PROJECT_SOURCE_VERSION_$(ISEMPTY_$(RC_ProjectSourceVersion)))";
+				PROJECT_SOURCE_VERSION_ = "$(RC_ProjectSourceVersion)";
+				PROJECT_SOURCE_VERSION_empty = 9999.99;
+				PUBLIC_HEADERS_FOLDER_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/include/llbuild";
+				SKIP_INSTALL = NO;
+			};
+			name = Debug;
+		};
+		E1ADC23D1A85936400D5387C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
+				EXECUTABLE_PREFIX = lib;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/public-api";
+				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/lib";
+				ISEMPTY_ = empty;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				PRODUCT_NAME = llbuild;
+				PROJECT_SOURCE_VERSION = "$(PROJECT_SOURCE_VERSION_$(ISEMPTY_$(RC_ProjectSourceVersion)))";
+				PROJECT_SOURCE_VERSION_ = "$(RC_ProjectSourceVersion)";
+				PROJECT_SOURCE_VERSION_empty = 9999.99;
+				PUBLIC_HEADERS_FOLDER_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/include/llbuild";
+				SKIP_INSTALL = NO;
+			};
+			name = Release;
+		};
 		E1C404B21A0308F3003392BA /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -2194,6 +2347,15 @@
 			buildConfigurations = (
 				E1A2254419F9A20D0059043E /* Debug */,
 				E1A2254519F9A20D0059043E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E1ADC23B1A85936400D5387C /* Build configuration list for PBXNativeTarget "libllbuild" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E1ADC23C1A85936400D5387C /* Debug */,
+				E1ADC23D1A85936400D5387C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

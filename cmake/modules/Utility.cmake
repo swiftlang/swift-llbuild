@@ -47,7 +47,10 @@ macro(add_llbuild_executable name)
 endmacro()
 
 macro(add_llbuild_library name)
-  set(ALL_FILES ${ARGN})
+  cmake_parse_arguments(ARG
+    "SHARED" "OUTPUT_NAME" ""
+    ${ARGN})
+  set(ALL_FILES ${ARG_UNPARSED_ARGUMENTS})
 
   # Add headers to generated project files.
   if(MSVC_IDE OR XCODE)
@@ -77,9 +80,19 @@ macro(add_llbuild_library name)
     endif()
   endif(MSVC_IDE OR XCODE)
 
-  add_library(${name} ${ALL_FILES})
+  if (ARG_SHARED)
+    add_library(${name} SHARED ${ALL_FILES})
+  else()
+    add_library(${name} ${ALL_FILES})
+  endif()
 
   set_output_directory(${name} ${LLBUILD_EXECUTABLE_OUTPUT_INTDIR} ${LLBUILD_LIBRARY_OUTPUT_INTDIR})
+
+  if(ARG_OUTPUT_NAME)
+    set_target_properties(${name}
+      PROPERTIES
+      OUTPUT_NAME ${ARG_OUTPUT_NAME})
+  endif()
 endmacro()
 
 # Generic support for adding a unittest.
