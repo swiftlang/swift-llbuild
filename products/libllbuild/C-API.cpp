@@ -132,6 +132,33 @@ llb_task_t* llb_buildengine_register_task(llb_buildengine_t* engine_p,
   return task;
 }
 
+void llb_buildengine_task_needs_input(llb_buildengine_t* engine_p,
+                                      llb_task_t* task,
+                                      const llb_data_t* key,
+                                      uintptr_t input_id) {
+  BuildEngine* Engine = (BuildEngine*) engine_p;
+  Engine->taskNeedsInput((Task*)task,
+                         KeyType((const char*)key->data, key->length),
+                         input_id);
+}
+
+void llb_buildengine_task_must_follow(llb_buildengine_t* engine_p,
+                                      llb_task_t* task,
+                                      const llb_data_t* key) {
+  BuildEngine* Engine = (BuildEngine*) engine_p;
+  Engine->taskMustFollow((Task*)task,
+                         KeyType((const char*)key->data, key->length));
+}
+
+void llb_buildengine_task_discovered_dependency(llb_buildengine_t* engine_p,
+                                                llb_task_t* task,
+                                                const llb_data_t* key) {
+  BuildEngine* Engine = (BuildEngine*) engine_p;
+  Engine->taskDiscoveredDependency((Task*)task,
+                                   KeyType((const char*)key->data,
+                                           key->length));
+}
+
 void llb_buildengine_task_is_complete(llb_buildengine_t* engine_p,
                                       llb_task_t* task,
                                       const llb_data_t* value) {

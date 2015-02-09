@@ -112,6 +112,58 @@ llb_buildengine_build(llb_buildengine_t* engine, const llb_data_t* key,
 LLBUILD_EXPORT llb_task_t*
 llb_buildengine_register_task(llb_buildengine_t* engine, llb_task_t* task);
 
+/// Specify the given \arg Task depends upon the result of computing \arg Key.
+///
+/// The result, when available, will be provided to the task via \see
+/// Task::provideValue(), supplying the provided \arg InputID to allow the
+/// task to identify the particular input.
+///
+/// NOTE: It is an unchecked error for a task to request the same input value
+/// multiple times.
+///
+/// \param input_id An arbitrary value that may be provided by the client to use
+/// in efficiently associating this input. The range of this parameter is
+/// intentionally chosen to allow a pointer to be provided, but note that all
+/// input IDs greater than \see kMaximumInputID are reserved for internal use by
+/// the engine.
+LLBUILD_EXPORT void
+llb_buildengine_task_needs_input(llb_buildengine_t* engine, llb_task_t* task,
+                                 const llb_data_t* key, uintptr_t input_id);
+
+/// Specify that the given \arg task must be built subsequent to the
+/// computation of \arg key.
+///
+/// The value of the computation of \arg key is not available to the task, and
+/// the only guarantee the engine provides is that if \arg key is computed
+/// during a build, then \arg task will not be computed until after it.
+LLBUILD_EXPORT void
+llb_buildengine_task_must_follow(llb_buildengine_t* engine, llb_task_t* task,
+                                 const llb_data_t* key);
+
+/// Inform the engine of an input dependency that was discovered by the task
+/// during its execution, a la compiler generated dependency files.
+///
+/// This call may only be made after a task has received all of its inputs;
+/// inputs discovered prior to that point should simply be requested as normal
+/// input dependencies.
+///
+/// Such a dependency is not used to provide additional input to the task,
+/// rather it is a way for the task to report an additional input which should
+/// be considered the next time the rule is evaluated. The expected use case
+/// for a discovered dependency is is when a processing task cannot predict
+/// all of its inputs prior to being run, but can presume that any unknown
+/// inputs already exist. In such cases, the task can go ahead and run and can
+/// report the all of the discovered inputs as it executes. Once the task is
+/// complete, these inputs will be recorded as being dependencies of the task
+/// so that it will be recomputed when any of the inputs change.
+///
+/// It is legal to call this method from any thread, but the caller is
+/// responsible for ensuring that it is never called concurrently for the same
+/// task.
+LLBUILD_EXPORT void
+llb_buildengine_task_discovered_dependency(llb_buildengine_t* engine,
+                                           llb_task_t* task,
+                                           const llb_data_t* key);
 
 /// Called by a task to indicate it has completed and to provide its value.
 ///
