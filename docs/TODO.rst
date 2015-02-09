@@ -23,6 +23,13 @@ Build Engine
 
 * Support active scheduling (?).
 
+* Consider moving the task model to one where the build engine just invokes
+  callbacks on the delegate (probably using task IDs, and maybe kind IDs for the
+  use of clients which want to follow class-based dispatch models). This has two
+  advantages, (1) it maps more neatly to an obvious C API, and (2) it should
+  make it easier to cleanly generalize the value type because only the engine
+  and delegate need to be templated, and neither support subclassing.
+
 * Figure out when taskNeedsInput() should be allowed, and if
   taskDiscoveredDependency() should be eliminated in favor of loosened rules
   about when it can be invoked.
