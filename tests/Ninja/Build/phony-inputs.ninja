@@ -1,0 +1,71 @@
+# Check the handling of inputs that also have phony edges.
+
+# Check that we handle phony rules for actual input files properly, and rebuild
+# targets that depend on them if the input actually exists and it changes.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+
+
+# Check that the initial build creates 'output' properly, even though 'input'
+# does not exist.
+#
+# RUN: /bin/sh -c "%{llbuild} ninja build --no-parallel --chdir %t.build" &> %t1.out
+# RUN: %{FileCheck} --check-prefix=CHECK-INITIAL < %t1.out %s
+# RUN: %{FileCheck} --check-prefix=CHECK-OUTPUT-INITIAL < %t.build/output %s
+#
+# CHECK-INITIAL: SIZING input TO output
+# CHECK-INITIAL: built using 1 command
+# CHECK-OUTPUT-INITIAL: input does not exist
+
+
+# Check that a rebuild continues to run the output rule.
+#
+# RUN: /bin/sh -c "%{llbuild} ninja build --no-parallel --chdir %t.build" &> %t1.out
+# RUN: %{FileCheck} --check-prefix=CHECK-NEXT < %t1.out %s
+# RUN: %{FileCheck} --check-prefix=CHECK-OUTPUT-NEXT < %t.build/output %s
+#
+# CHECK-NEXT: SIZING input TO output
+# CHECK-NEXT: built using 1 command
+# CHECK-OUTPUT-NEXT: input does not exist
+
+
+# Check that the output rule gets rebuilt when we create 'input'.
+#
+# RUN: touch %t.build/input
+# RUN: /bin/sh -c "%{llbuild} ninja build --no-parallel --chdir %t.build" &> %t1.out
+# RUN: %{FileCheck} --check-prefix=CHECK-WITH-INPUT < %t1.out %s
+# RUN: %{FileCheck} --check-prefix=CHECK-OUTPUT-WITH-INPUT < %t.build/output %s
+#
+# CHECK-WITH-INPUT: SIZING input TO output
+# CHECK-WITH-INPUT: built using 1 command
+# CHECK-OUTPUT-WITH-INPUT: input size: 0
+
+
+# Check that the output rule no longer gets rebuilt ever build.
+#
+# RUN: /bin/sh -c "%{llbuild} ninja build --no-parallel --chdir %t.build" &> %t1.out
+# RUN: %{FileCheck} --check-prefix=CHECK-NEXT-WITH-INPUT < %t1.out %s
+#
+# CHECK-NEXT-WITH-INPUT: built using 0 commands
+
+
+# Check that the output rule does get rebuilt if input changes.
+#
+# RUN: echo -n "X" > %t.build/input
+# RUN: /bin/sh -c "%{llbuild} ninja build --no-parallel --chdir %t.build" &> %t1.out
+# RUN: %{FileCheck} --check-prefix=CHECK-WITH-NEW-INPUT < %t1.out %s
+# RUN: %{FileCheck} --check-prefix=CHECK-OUTPUT-WITH-NEW-INPUT < %t.build/output %s
+#
+# CHECK-WITH-NEW-INPUT: SIZING input TO output
+# CHECK-WITH-NEW-NEXT: built using 1 command
+# CHECK-OUTPUT-WITH-NEW-INPUT: input size: 1
+
+rule GETSIZE
+     command = if [ -f $in ]; then echo "input size: $$(stat -f '%z' $in)"; else echo "input does not exist"; fi > $out
+     description = SIZING $in TO $out
+
+build input: phony
+build output: GETSIZE input
+default output

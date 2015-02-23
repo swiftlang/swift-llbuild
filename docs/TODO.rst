@@ -98,17 +98,11 @@ Tasks for Usable Tool
 * Stop build completely when a command fails (and report status better, vs just
   reporting everything downstream as a failure).
 
-* Implement support for automatic running of the rule that generates the
-  manifest itself (rerun on CMake changes). Also, look into related problems:
-
-  * If CMake is killed while running, then llbuild will never run it again (even
-    if the CMakeLists.txt files are touched). This is actually just a concrete
-    instance of our output file handling behavior not being finished, as the
-    generator file has phony edges on all of the CMake inputs.
-
 * Support multiple inputs on the command line.
 
 * Support finding root targets when no default is set.
+
+* Implement support for automatically check build.ninja rule.
 
 * Buffer command output.
 
@@ -127,7 +121,8 @@ Random Tasks
 
 * Investigate using pselect mechanisms vs blocked threads.
 
-* Support proper handling of missing outputs (and outdated)?.
+* Support traditional style handling of updated outputs (in which consumer
+  commands are rerun but not the producer itself).
 
 * Performance
 

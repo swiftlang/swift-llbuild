@@ -348,8 +348,11 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       //
       // FIXME: Make efficient.
       if (Command->getRule()->getName() == "phony") {
+        // Get the output hash, ignoring missing outputs.
+        uint64_t Hash;
+        GetStatHashForNode(Output, &Hash);
         engine.taskIsComplete(
-          this, BuildValue::makeSuccessfulCommand(0).toValue());
+          this, BuildValue::makeSuccessfulCommand(Hash).toValue());
         return;
       }
 
@@ -466,9 +469,13 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       // Otherwise, the command succeeded so process the dependencies.
       processDiscoveredDependencies();
 
+      // Get the output hash, ignoring missing outputs.
+      uint64_t Hash;
+      GetStatHashForNode(Output, &Hash);
+
       // Complete the task with a successful value.
       Context.Engine.taskIsComplete(
-        this, BuildValue::makeSuccessfulCommand(0).toValue());
+        this, BuildValue::makeSuccessfulCommand(Hash).toValue());
     }
 
     void processDiscoveredDependencies() {
@@ -586,7 +593,7 @@ core::Task* BuildInput(BuildContext& Context, ninja::Node* Input) {
   return Context.Engine.registerTask(new NinjaInputTask(Context, Input));
 }
 
-static bool BuildInputIsResultValid(ninja::Node *Node,
+static bool BuildInputIsResultValid(ninja::Node* Node,
                                     const core::ValueType& ValueData) {
   BuildValue Value = BuildValue::fromValue(ValueData);
 
@@ -606,6 +613,32 @@ static bool BuildInputIsResultValid(ninja::Node *Node,
   if (!GetStatHashForNode(Node, &Hash))
     return false;
 
+  return Value.getHash() == Hash;
+}
+
+static bool BuildCommandIsResultValid(ninja::Command* Command,
+                                      ninja::Node* Node,
+                                      const core::ValueType& ValueData) {
+  BuildValue Value = BuildValue::fromValue(ValueData);
+
+  // If the prior value wasn't for a successful command, recompute.
+  if (!Value.isSuccessfulCommand())
+    return false;
+
+  // Always rebuild if the output is missing.
+  uint64_t Hash;
+  if (!GetStatHashForNode(Node, &Hash))
+    return false;
+
+  // Otherwise, the result is valid if the output exists and the hash has not
+  // changed.
+  //
+  // FIXME: While this is reasonable in a strictly functional view of the build
+  // system, a common behavior is that the *producer* of the output is not
+  // considered out of date if the output has been modified outside the build
+  // system, but *consumers* are. This is occasionally useful when doing things
+  // like manually reissuing compilation commands, for example. We do not yet
+  // support that model, and will rebuild outputs if anyone tampers with them.
   return Value.getHash() == Hash;
 }
 
@@ -800,13 +833,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
             if (Context.Simulate)
               return true;
 
-            // Always rebuild if the output is missing.
-            uint64_t Hash;
-            if (!GetStatHashForNode(Output, &Hash))
-              return false;
-
-            // Otherwise, we ignore the actual output hash for now.
-            return true;
+            return BuildCommandIsResultValid(Command.get(), Output, Value);
           } });
     }
   }
