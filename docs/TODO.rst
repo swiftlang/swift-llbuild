@@ -98,8 +98,6 @@ Tasks for Usable Tool
 * Stop build completely when a command fails (and report status better, vs just
   reporting everything downstream as a failure).
 
-* Support multiple inputs on the command line.
-
 * Support finding root targets when no default is set.
 
 * Implement support for automatically check build.ninja rule.
@@ -116,8 +114,13 @@ Tasks for Usable Tool
 
 * Implement support for rerunning commands which have changed.
 
+* Implement Ninja failure semantics for order-only dependencies, which block the
+  downstream command.
+
 Random Tasks
 ------------
+
+* Add support for cleaning up output files (deleting them on failed tasks)?
 
 * Investigate using pselect mechanisms vs blocked threads.
 

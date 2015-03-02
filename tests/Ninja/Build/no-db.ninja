@@ -7,3 +7,4 @@
 # RUN: test ! -f %t.build/build.db
 
 build output: phony
+default output

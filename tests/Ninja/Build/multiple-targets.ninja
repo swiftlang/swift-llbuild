@@ -1,16 +1,26 @@
 # Check building of multiple targets.
 
-# FIXME: For now, this just checks we don't crash. It should eventually check we
-# don't run build the command multiple times.
+# This checks that we build multiple targets concurrently (using the same lock
+# trick as the parallel test), and that we don't build them more than once.
 
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
-# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build dummy dummy &> %t.out
+# RUN: cp %S/Inputs/wait-for-file %t.build
+# RUN: %{llbuild} ninja build --parallel --chdir %t.build node-A node-B node-A node-B &> %t.out
+# RUN: %{FileCheck} < %t.out %s
+#
+# CHECK: [1] rm -f node-{A,B}-semaphore
+# CHECK: [2] touch node-{{.}}-semaphore
+# CHECK: [3] touch node-{{.}}-semaphore
+# CHECK-NOT: [4]
 
-rule ECHO
-     command = echo "rule ${out}"
+rule CUSTOM
+  command = ${COMMAND}
 
-build dummy: ECHO
-
-default dummy
+build cleanup: CUSTOM
+  command = rm -f node-{A,B}-semaphore
+build node-A: CUSTOM cleanup
+  command = touch node-B-semaphore && ./wait-for-file node-A-semaphore
+build node-B: CUSTOM cleanup
+  command = touch node-A-semaphore && ./wait-for-file node-B-semaphore

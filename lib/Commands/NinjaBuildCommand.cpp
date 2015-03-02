@@ -593,6 +593,37 @@ core::Task* BuildInput(BuildContext& Context, ninja::Node* Input) {
   return Context.Engine.registerTask(new NinjaInputTask(Context, Input));
 }
 
+core::Task* BuildTargets(BuildContext& Context,
+                         const std::vector<std::string> &TargetsToBuild) {
+  struct TargetsTask : core::Task {
+    BuildContext& Context;
+    std::vector<std::string> TargetsToBuild;
+
+    TargetsTask(BuildContext& Context,
+                const std::vector<std::string> &TargetsToBuild)
+      : Task("targets"), Context(Context), TargetsToBuild(TargetsToBuild) { }
+
+    virtual void provideValue(core::BuildEngine& engine, uintptr_t InputID,
+                              const core::ValueType& ValueData) override { }
+
+    virtual void start(core::BuildEngine& engine) override {
+      // Request all of the targets.
+      for (const auto& Target: TargetsToBuild) {
+        engine.taskNeedsInput(this, Target, 0);
+      }
+    }
+
+    virtual void inputsAvailable(core::BuildEngine& engine) override {
+      // Complete the job.
+      engine.taskIsComplete(
+        this, BuildValue::makeSuccessfulCommand(0).toValue());
+      return;
+    }
+  };
+
+  return Context.Engine.registerTask(new TargetsTask(Context, TargetsToBuild));
+}
+
 static bool BuildInputIsResultValid(ninja::Node* Node,
                                     const core::ValueType& ValueData) {
   BuildValue Value = BuildValue::fromValue(ValueData);
@@ -844,11 +875,35 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       TargetsToBuild.push_back(Target->getPath());
   }
 
-  // Build the requested targets.
-  for (auto& Name: TargetsToBuild) {
-    std::cerr << "building target \"" << util::EscapedString(Name) << "\"...\n";
-    Context.Engine.build(Name);
+  // Generate an error if there is nothing to build.
+  if (TargetsToBuild.empty()) {
+    fprintf(stderr, "error: %s: no targets to build\n", getprogname());
+    return 1;
   }
+
+  // If building multiple targets, do so via a dummy rule to allow them to build
+  // concurrently (and without duplicates).
+  //
+  // FIXME: We should sort out eventually whether the engine itself should
+  // support this. It seems like an obvious feature, but it is also trivial for
+  // the client to implement on top of the existing API.
+  if (TargetsToBuild.size() > 1) {
+    // Create a dummy rule to build all targets.
+    Context.Engine.addRule({
+        "<<build>>",
+        [&] (core::BuildEngine& Engine) {
+          return BuildTargets(Context, TargetsToBuild);
+        },
+        [&] (const core::Rule& Rule, const core::ValueType Value) {
+          // Always rebuild the dummy rule.
+          return false;
+        } });
+
+    Context.Engine.build("<<build>>");
+  } else {
+    Context.Engine.build(TargetsToBuild[0]);
+  }
+
   // Ensure the output queue is finished.
   dispatch_sync(Context.OutputQueue, ^() {});
 
