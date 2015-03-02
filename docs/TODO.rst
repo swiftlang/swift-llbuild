@@ -115,6 +115,12 @@ Tasks for Usable Tool
 * Implement Ninja failure semantics for order-only dependencies, which block the
   downstream command.
 
+* Fix the hashing of GetStatHash... which is totally broken when built with
+  libc++ (which defines Hash<uint64_t> as the identity function). On OS X it is
+  possible to get 'phony-inputs.ninja' to fail non-deterministically due to
+  this.
+
+
 Random Tasks
 ------------
 
