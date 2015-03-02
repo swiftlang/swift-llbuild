@@ -873,6 +873,27 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   if (TargetsToBuild.empty()) {
     for (auto& Target: Context.Manifest->getDefaultTargets())
       TargetsToBuild.push_back(Target->getPath());
+
+    // If there are no default targets, then build all of the root targets.
+    if (TargetsToBuild.empty()) {
+      std::unordered_set<ninja::Node*> InputNodes;
+
+      // Collect all of the input nodes.
+      for (const auto& Command: Context.Manifest->getCommands()) {
+        for (const auto& Input: Command->getInputs()) {
+          InputNodes.emplace(Input);
+        }
+      }
+
+      // Build all of the targets that are not an input.
+      for (const auto& Command: Context.Manifest->getCommands()) {
+        for (const auto& Output: Command->getOutputs()) {
+          if (!InputNodes.count(Output)) {
+            TargetsToBuild.push_back(Output->getPath());
+          }
+        }
+      }
+    }
   }
 
   // Generate an error if there is nothing to build.

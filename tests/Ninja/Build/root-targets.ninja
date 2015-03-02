@@ -1,0 +1,23 @@
+# Check building of Ninja files with no default targets set.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t.out
+# RUN: %{FileCheck} < %t.out %s
+#
+# CHECK: [1] touch output-A
+# CHECK: [2] touch output-B
+# CHECK: [3] cp output-B output-C
+# CHECK-NOT: [4]
+
+
+rule CUSTOM
+  command = ${COMMAND}
+
+build output-A: CUSTOM
+  command = touch output-A
+build output-B: CUSTOM
+  command = touch output-B
+build output-C: CUSTOM output-B
+  command = cp output-B output-C
