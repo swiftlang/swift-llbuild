@@ -17,17 +17,17 @@
 # then "input-2" (which does need to run), and then return to "output", which
 # needs to run because of "input-2".
 #
-# CHECK: { "new-rule", "R1", "output" },
-# CHECK: { "checking-rule-needs-to-run", "R1" },
-# CHECK: { "paused-input-request-for-rule-scan", "R1" },
-# CHECK: { "new-rule", "R2", "input-1" },
-# CHECK: { "checking-rule-needs-to-run", "R2" },
-# CHECK: { "rule-does-not-need-to-run", "R2" },
-# CHECK: { "rule-scanning-next-input", "R1", "R2" },
-# CHECK: { "new-rule", "R3", "input-2" },
-# CHECK: { "checking-rule-needs-to-run", "R3" },
-# CHECK: { "rule-needs-to-run", "R3", "invalid-value" },
-# CHECK: { "rule-needs-to-run", "R1", "input-unavailable", "R3" },
+# CHECK: { "new-rule", "[[RULE1:.*]]", "output" },
+# CHECK: { "checking-rule-needs-to-run", "[[RULE1]]" },
+# CHECK: { "paused-input-request-for-rule-scan", "[[RULE1]]" },
+# CHECK: { "new-rule", "[[RULE2:.*]]", "input-1" },
+# CHECK: { "checking-rule-needs-to-run", "[[RULE2]]" },
+# CHECK: { "rule-does-not-need-to-run", "[[RULE2]]" },
+# CHECK: { "rule-scanning-next-input", "[[RULE1]]", "[[RULE2]]" },
+# CHECK: { "new-rule", "[[RULE3:.*]]", "input-2" },
+# CHECK: { "checking-rule-needs-to-run", "[[RULE3]]" },
+# CHECK: { "rule-needs-to-run", "[[RULE3]]", "invalid-value" },
+# CHECK: { "rule-needs-to-run", "[[RULE1]]", "input-unavailable", "[[RULE3]]" },
 
 rule CAT
      command = cat ${in} > $out

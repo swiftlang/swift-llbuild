@@ -7,37 +7,37 @@
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
 # RUN: %{llbuild} ninja build --no-parallel --chdir %t.build --no-db --trace %t.trace-out
-# RUN: %{FileCheck} < %t.trace-out %s
+# RUN: %{FileCheck} --input-file %t.trace-out %s
 
 # The first task we see is for the "dummy" rule...
 #
-# CHECK: { "new-rule", "R1", "dummy" },
-# CHECK: { "checking-rule-needs-to-run", "R1" },
-# CHECK: { "rule-needs-to-run", "R1", "never-built" },
-# CHECK: { "new-task", "T1" },
-# CHECK: { "created-task-for-rule", "T1", "R1" },
+# CHECK: { "new-rule", "[[RULE1:.*]]", "dummy" },
+# CHECK: { "checking-rule-needs-to-run", "[[RULE1]]" },
+# CHECK: { "rule-needs-to-run", "[[RULE1]]", "never-built" },
+# CHECK: { "new-task", "[[TASK1:.*]]" },
+# CHECK: { "created-task-for-rule", "[[TASK1]]", "[[RULE1]]" },
 
 # ... which then asks for the input from the "dummy-A" rule, which triggers the
-# creation of its task (and registers the pending task T1 with that rule).
+# creation of its task (and registers the pending task [[TASK1]] with that rule).
 #
-# CHECK: { "new-rule", "R2", "dummy-A" },
-# CHECK: { "handling-task-input-request", "T1", "R2" },
-# CHECK: { "new-task", "T2" },
-# CHECK: { "created-task-for-rule", "T2", "R2" },
-# CHECK: { "added-rule-pending-task", "R2", "T1" },
+# CHECK: { "new-rule", "[[RULE2:.*]]", "dummy-A" },
+# CHECK: { "handling-task-input-request", "[[TASK1]]", "[[RULE2]]" },
+# CHECK: { "new-task", "[[TASK2:.*]]" },
+# CHECK: { "created-task-for-rule", "[[TASK2]]", "[[RULE2]]" },
+# CHECK: { "added-rule-pending-task", "[[RULE2]]", "[[TASK1]]" },
 
 # The task for "dummy-A" has no inputs, so it then completes and pushes its
 # finished input request...
 #
-# CHECK: { "finished-task", "T2", "R2" },
-# CHECK: { "readying-task-input-request", "T1", "R2" },
-# CHECK: { "completed-task-input-request", "T1", "R2" },
-# CHECK: { "updated-task-wait-count", "T1", 0 },
+# CHECK: { "finished-task", "[[TASK2]]", "[[RULE2]]" },
+# CHECK: { "readying-task-input-request", "[[TASK1]]", "[[RULE2]]" },
+# CHECK: { "completed-task-input-request", "[[TASK1]]", "[[RULE2]]" },
+# CHECK: { "updated-task-wait-count", "[[TASK1]]", 0 },
 
-# That unblocks T1, which then finishes...
+# That unblocks [[TASK1]], which then finishes...
 #
-# CHECK: { "unblocked-task", "T1" },
-# CHECK: { "finished-task", "T1", "R1" },
+# CHECK: { "unblocked-task", "[[TASK1]]" },
+# CHECK: { "finished-task", "[[TASK1]]", "[[RULE1]]" },
 
 build dummy-A: phony
 build dummy: phony dummy-A
