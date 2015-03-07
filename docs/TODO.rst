@@ -98,8 +98,6 @@ Tasks for Usable Tool
 * Stop build completely when a command fails (and report status better, vs just
   reporting everything downstream as a failure).
 
-* Implement support for automatically check build.ninja rule.
-
 * Buffer command output.
 
 * Support "restat" feature.

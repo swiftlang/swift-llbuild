@@ -707,7 +707,8 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   std::string DumpGraphPath, TraceFilename;
 
   // Create a context for the build.
-  BuildContext Context;
+  bool Quiet = false;
+  bool Simulate = false;
   bool UseParallelBuild = true;
 
   while (!Args.empty() && Args[0][0] == '-') {
@@ -720,9 +721,9 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
     if (Option == "--help") {
       usage(/*ExitCode=*/0);
     } else if (Option == "--simulate") {
-      Context.Simulate = true;
+      Simulate = true;
     } else if (Option == "--quiet") {
-      Context.Quiet = true;
+      Quiet = true;
     } else if (Option == "--chdir") {
       if (Args.empty()) {
         fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
@@ -788,158 +789,194 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
     }
   }
 
-  // Load the manifest.
-  BuildManifestActions Actions;
-  ninja::ManifestLoader Loader(ManifestFilename, Actions);
-  Context.Manifest = Loader.load();
-
-  // If there were errors loading, we are done.
-  if (unsigned NumErrors = Actions.getNumErrors()) {
-    fprintf(stderr, "%d errors generated.\n", NumErrors);
-    return 1;
-  }
-
-  // Otherwise, run the build.
-
-  // Create the job queue to use.
+  // Run up to two iterations, the first one loads the manifest and rebuilds it
+  // if necessary, the second only runs if the manifest needs to be reloaded.
   //
-  // If we are only executing with a single job, we take care to use a serial
-  // queue to ensure deterministic execution.
-  dispatch_queue_t TaskQueue;
-  unsigned NumJobs;
-  if (!UseParallelBuild) {
-    TaskQueue = dispatch_queue_create("task-queue", DISPATCH_QUEUE_SERIAL);
-    NumJobs = 1;
-  } else {
-    long NumCPUs = sysconf(_SC_NPROCESSORS_ONLN);
-    if (NumCPUs < 0) {
-      fprintf(stderr, "error: %s: unable to detect number of CPUs: %s\n",
-              getprogname(), strerror(errno));
-      return 1;
+  // This is somewhat inefficient in the case where the manifest needs to be
+  // reloaded (we reopen the database, for example), but we don't expect that to
+  // be a common case spot in practice.
+  for (int Iteration = 0; Iteration != 2; ++Iteration) {
+    BuildContext Context;
+
+    Context.Simulate = Simulate;
+    Context.Quiet = Quiet;
+
+    // Create the job queue to use.
+    //
+    // If we are only executing with a single job, we take care to use a serial
+    // queue to ensure deterministic execution.
+    dispatch_queue_t TaskQueue;
+    unsigned NumJobs;
+    if (!UseParallelBuild) {
+      TaskQueue = dispatch_queue_create("task-queue", DISPATCH_QUEUE_SERIAL);
+      NumJobs = 1;
+    } else {
+      long NumCPUs = sysconf(_SC_NPROCESSORS_ONLN);
+      if (NumCPUs < 0) {
+        fprintf(stderr, "error: %s: unable to detect number of CPUs: %s\n",
+                getprogname(), strerror(errno));
+        return 1;
+      }
+  
+      NumJobs = NumCPUs + 2;
+      TaskQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT,
+                                            /*flags=*/0);
+      dispatch_retain(TaskQueue);
+    }
+    Context.JobQueue.reset(new ConcurrentLimitedQueue(NumJobs, TaskQueue));
+
+    // Load the manifest.
+    BuildManifestActions Actions;
+    ninja::ManifestLoader Loader(ManifestFilename, Actions);
+    Context.Manifest = Loader.load();
+
+    // If there were errors loading, we are done.
+    if (unsigned NumErrors = Actions.getNumErrors()) {
+        fprintf(stderr, "%d errors generated.\n", NumErrors);
+        return 1;
     }
 
-    NumJobs = NumCPUs + 2;
-    TaskQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT,
-                                          /*flags=*/0);
-    dispatch_retain(TaskQueue);
-  }
-  Context.JobQueue.reset(new ConcurrentLimitedQueue(NumJobs, TaskQueue));
-
-  // Attach the database, if requested.
-  if (!DBFilename.empty()) {
-    std::string Error;
-    std::unique_ptr<core::BuildDB> DB(
-      core::CreateSQLiteBuildDB(DBFilename, BuildValue::CurrentSchemaVersion,
-                                &Error));
-    if (!DB) {
-      fprintf(stderr, "error: %s: unable to open build database: %s\n",
-              getprogname(), Error.c_str());
-      return 1;
+    // Otherwise, run the build.
+    
+    // Attach the database, if requested.
+    if (!DBFilename.empty()) {
+      std::string Error;
+      std::unique_ptr<core::BuildDB> DB(
+        core::CreateSQLiteBuildDB(DBFilename,
+                                  BuildValue::CurrentSchemaVersion,
+                                  &Error));
+      if (!DB) {
+        fprintf(stderr, "error: %s: unable to open build database: %s\n",
+                getprogname(), Error.c_str());
+        return 1;
+      }
+      Context.Engine.attachDB(std::move(DB));
     }
-    Context.Engine.attachDB(std::move(DB));
-  }
 
-  // Enable tracing, if requested.
-  if (!TraceFilename.empty()) {
-    std::string Error;
-    if (!Context.Engine.enableTracing(TraceFilename, &Error)) {
-      fprintf(stderr, "error: %s: unable to enable tracing: %s\n",
-              getprogname(), Error.c_str());
-      return 1;
+    // Enable tracing, if requested.
+    if (!TraceFilename.empty()) {
+      std::string Error;
+      if (!Context.Engine.enableTracing(TraceFilename, &Error)) {
+        fprintf(stderr, "error: %s: unable to enable tracing: %s\n",
+                getprogname(), Error.c_str());
+        return 1;
+      }
     }
-  }
 
-  // Create rules for all of the build commands up front.
-  //
-  // FIXME: We should probably also move this to be dynamic.
-  for (auto& Command: Context.Manifest->getCommands()) {
-    for (auto& Output: Command->getOutputs()) {
-      Context.Engine.addRule({
-          Output->getPath(),
-          [&] (core::BuildEngine& Engine) {
-            return BuildCommand(Context, Output, Command.get());
-          },
-          [&] (const core::Rule& Rule, const core::ValueType Value) {
-            // If simulating, assume cached results are valid.
-            if (Context.Simulate)
-              return true;
-
-            return BuildCommandIsResultValid(Command.get(), Output, Value);
-          } });
+    // Create rules for all of the build commands up front.
+    //
+    // FIXME: We should probably also move this to be dynamic.
+    for (auto& Command: Context.Manifest->getCommands()) {
+      for (auto& Output: Command->getOutputs()) {
+        Context.Engine.addRule({
+            Output->getPath(),
+            [&] (core::BuildEngine& Engine) {
+              return BuildCommand(Context, Output, Command.get());
+            },
+            [&] (const core::Rule& Rule, const core::ValueType Value) {
+              // If simulating, assume cached results are valid.
+              if (Context.Simulate)
+                return true;
+  
+              return BuildCommandIsResultValid(Command.get(), Output, Value);
+            } });
+      }
     }
-  }
 
-  // If no explicit targets were named, build the default targets.
-  if (TargetsToBuild.empty()) {
-    for (auto& Target: Context.Manifest->getDefaultTargets())
-      TargetsToBuild.push_back(Target->getPath());
-
-    // If there are no default targets, then build all of the root targets.
-    if (TargetsToBuild.empty()) {
-      std::unordered_set<ninja::Node*> InputNodes;
-
-      // Collect all of the input nodes.
-      for (const auto& Command: Context.Manifest->getCommands()) {
-        for (const auto& Input: Command->getInputs()) {
-          InputNodes.emplace(Input);
-        }
+    // If this is the first iteration, build the manifest.
+    if (Iteration == 0) {
+      Context.Engine.build(ManifestFilename);
+        
+      // If the manifest was rebuild, then reload it and build again.
+      if (Context.NumBuiltCommands) {
+        continue;
       }
 
-      // Build all of the targets that are not an input.
-      for (const auto& Command: Context.Manifest->getCommands()) {
-        for (const auto& Output: Command->getOutputs()) {
-          if (!InputNodes.count(Output)) {
-            TargetsToBuild.push_back(Output->getPath());
+      // Otherwise, perform the main build.
+      //
+      // FIXME: This is somewhat inefficient, as we will end up repeating any
+      // dependency scanning that was required for checking the manifest. We can
+      // fix this by building the manifest inline with the targets...
+    }
+  
+    // If no explicit targets were named, build the default targets.
+    if (TargetsToBuild.empty()) {
+      for (auto& Target: Context.Manifest->getDefaultTargets())
+        TargetsToBuild.push_back(Target->getPath());
+  
+      // If there are no default targets, then build all of the root targets.
+      if (TargetsToBuild.empty()) {
+        std::unordered_set<ninja::Node*> InputNodes;
+  
+        // Collect all of the input nodes.
+        for (const auto& Command: Context.Manifest->getCommands()) {
+          for (const auto& Input: Command->getInputs()) {
+            InputNodes.emplace(Input);
+          }
+        }
+  
+        // Build all of the targets that are not an input.
+        for (const auto& Command: Context.Manifest->getCommands()) {
+          for (const auto& Output: Command->getOutputs()) {
+            if (!InputNodes.count(Output)) {
+              TargetsToBuild.push_back(Output->getPath());
+            }
           }
         }
       }
     }
-  }
+  
+    // Generate an error if there is nothing to build.
+    if (TargetsToBuild.empty()) {
+      fprintf(stderr, "error: %s: no targets to build\n", getprogname());
+      return 1;
+    }
+  
+    // If building multiple targets, do so via a dummy rule to allow them to
+    // build concurrently (and without duplicates).
+    //
+    // FIXME: We should sort out eventually whether the engine itself should
+    // support this. It seems like an obvious feature, but it is also trivial
+    // for the client to implement on top of the existing API.
+    if (TargetsToBuild.size() > 1) {
+      // Create a dummy rule to build all targets.
+      Context.Engine.addRule({
+          "<<build>>",
+          [&] (core::BuildEngine& Engine) {
+            return BuildTargets(Context, TargetsToBuild);
+          },
+          [&] (const core::Rule& Rule, const core::ValueType Value) {
+            // Always rebuild the dummy rule.
+            return false;
+          } });
+  
+      Context.Engine.build("<<build>>");
+    } else {
+      Context.Engine.build(TargetsToBuild[0]);
+    }
 
-  // Generate an error if there is nothing to build.
-  if (TargetsToBuild.empty()) {
-    fprintf(stderr, "error: %s: no targets to build\n", getprogname());
-    return 1;
-  }
+    // Ensure the output queue is finished.
+    dispatch_sync(Context.OutputQueue, ^() {});
 
-  // If building multiple targets, do so via a dummy rule to allow them to build
-  // concurrently (and without duplicates).
-  //
-  // FIXME: We should sort out eventually whether the engine itself should
-  // support this. It seems like an obvious feature, but it is also trivial for
-  // the client to implement on top of the existing API.
-  if (TargetsToBuild.size() > 1) {
-    // Create a dummy rule to build all targets.
-    Context.Engine.addRule({
-        "<<build>>",
-        [&] (core::BuildEngine& Engine) {
-          return BuildTargets(Context, TargetsToBuild);
-        },
-        [&] (const core::Rule& Rule, const core::ValueType Value) {
-          // Always rebuild the dummy rule.
-          return false;
-        } });
+    std::cerr << "... built using " << Context.NumBuiltInputs << " inputs\n";
+    std::cerr << "... built using " << Context.NumBuiltCommands
+              << " commands\n";
 
-    Context.Engine.build("<<build>>");
-  } else {
-    Context.Engine.build(TargetsToBuild[0]);
-  }
+    if (!DumpGraphPath.empty()) {
+      Context.Engine.dumpGraphToFile(DumpGraphPath);
+    }
 
-  // Ensure the output queue is finished.
-  dispatch_sync(Context.OutputQueue, ^() {});
+    // If there were command failures, return an error status.
+    if (Context.NumFailedCommands) {
+      fprintf(stderr, "error: %s: build had %d command failures\n",
+              getprogname(), Context.NumFailedCommands.load());
+      return 1;
+    }
 
-  std::cerr << "... built using " << Context.NumBuiltInputs << " inputs\n";
-  std::cerr << "... built using " << Context.NumBuiltCommands << " commands\n";
-
-  if (!DumpGraphPath.empty()) {
-    Context.Engine.dumpGraphToFile(DumpGraphPath);
-  }
-
-  // If there were command failures, return an error status.
-  if (Context.NumFailedCommands) {
-    fprintf(stderr, "error: %s: build had %d command failures\n",
-            getprogname(), Context.NumFailedCommands.load());
-    return 1;
+    // If we reached here on the first iteration, then we don't need a second
+    // and are done.
+    if (Iteration == 0)
+        break;
   }
 
   // Return an appropriate exit status.
