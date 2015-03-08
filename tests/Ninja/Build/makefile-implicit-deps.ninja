@@ -26,7 +26,7 @@
 rule CC
      deps = gcc
      depfile = ${in}.d
-     command = echo "${out}: ${in} header-1" > ${depfile} && touch ${out}
+     command = echo "${out}: ${in} header-1" > ${depfile} && cat ${in} header-1 > ${out}
      description = "CC ${out}"
 
 rule CAT
