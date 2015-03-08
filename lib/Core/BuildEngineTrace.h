@@ -75,7 +75,7 @@ public:
     void updatedTaskWaitCount(const Task* Task, unsigned WaitCount);
     void unblockedTask(const Task* Task);
     void readiedTask(const Task* Task, const Rule* Rule);
-    void finishedTask(const Task* Task, const Rule* Rule);
+    void finishedTask(const Task* Task, const Rule* Rule, bool WasChanged);
     void buildEnded();
 
     /// @}

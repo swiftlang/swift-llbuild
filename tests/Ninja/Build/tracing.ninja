@@ -29,7 +29,7 @@
 # The task for "dummy-A" has no inputs, so it then completes and pushes its
 # finished input request...
 #
-# CHECK: { "finished-task", "[[TASK2]]", "[[RULE2]]" },
+# CHECK: { "finished-task", "[[TASK2]]", "[[RULE2]]", "changed" },
 # CHECK: { "readying-task-input-request", "[[TASK1]]", "[[RULE2]]" },
 # CHECK: { "completed-task-input-request", "[[TASK1]]", "[[RULE2]]" },
 # CHECK: { "updated-task-wait-count", "[[TASK1]]", 0 },
@@ -37,7 +37,7 @@
 # That unblocks [[TASK1]], which then finishes...
 #
 # CHECK: { "unblocked-task", "[[TASK1]]" },
-# CHECK: { "finished-task", "[[TASK1]]", "[[RULE1]]" },
+# CHECK: { "finished-task", "[[TASK1]]", "[[RULE1]]", "changed" },
 
 build dummy-A: phony
 build dummy: phony dummy-A

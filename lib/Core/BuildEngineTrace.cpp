@@ -187,11 +187,13 @@ void BuildEngineTrace::readiedTask(const Task* Task, const Rule* Rule) {
           getTaskName(Task), getRuleName(Rule));
 }
 
-void BuildEngineTrace::finishedTask(const Task* Task, const Rule* Rule) {
+void BuildEngineTrace::finishedTask(const Task* Task, const Rule* Rule,
+                                    bool WasChanged) {
   FILE *FP = static_cast<FILE*>(OutputPtr);
 
-  fprintf(FP, "{ \"finished-task\", \"%s\", \"%s\" },\n",
-          getTaskName(Task), getRuleName(Rule));
+  fprintf(FP, "{ \"finished-task\", \"%s\", \"%s\", \"%s\" },\n",
+          getTaskName(Task), getRuleName(Rule),
+          WasChanged ? "changed" : "unchanged");
 
   // Delete the task entry, as it could be reused.
   TaskNames.erase(TaskNames.find(Task));

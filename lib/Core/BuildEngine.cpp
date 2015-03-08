@@ -708,8 +708,10 @@ private:
         RuleInfo* RuleInfo = TaskInfo->ForRuleInfo;
         assert(TaskInfo == RuleInfo->getPendingTaskInfo());
 
-        if (Trace)
-            Trace->finishedTask(TaskInfo->Task.get(), &RuleInfo->Rule);
+        if (Trace) {
+            Trace->finishedTask(TaskInfo->Task.get(), &RuleInfo->Rule,
+                                /*WasChanged=*/true);
+        }
 
         // Transition the rule state.
         assert(RuleInfo->State == RuleInfo::StateKind::InProgressComputing);
