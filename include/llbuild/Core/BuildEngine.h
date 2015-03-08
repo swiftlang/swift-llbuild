@@ -264,7 +264,13 @@ public:
   /// Called by a task to indicate it has completed and to provide its value.
   ///
   /// It is legal to call this method from any thread.
-  void taskIsComplete(Task* Task, ValueType&& Value);
+  ///
+  /// \param Value The new value for the task's rule.
+  ///
+  /// \param ForceChange If true, treat the value as changed and trigger
+  /// dependents to rebuild, even if the value itself is not different from the
+  /// prior result.
+  void taskIsComplete(Task* Task, ValueType&& Value, bool ForceChange=false);
   
   /// @}
 };

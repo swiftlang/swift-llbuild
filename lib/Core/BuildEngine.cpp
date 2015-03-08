@@ -412,16 +412,9 @@ private:
     RuleInfo.State = RuleInfo::StateKind::InProgressWaiting;
     RuleInfo.setPendingTaskInfo(TaskInfo);
 
-    // Reset the Rule result state. The only field we must reset here is the
-    // Dependencies, which we just append to during processing, but we reset the
-    // others to ensure no one ever inadvertently uses them during an invalid
-    // state.
-    //
-    // FIXME: Eliminate the clearing of Value here, which might have a
-    // performance cost.
-    RuleInfo.Result.Value = ValueType();
-    RuleInfo.Result.BuiltAt = 0;
-    RuleInfo.Result.ComputedAt = 0;
+    // Reset the Rule Dependencies, which we just append to during processing,
+    // but we reset the others to ensure no one ever inadvertently uses them
+    // during an invalid state.
     RuleInfo.Result.Dependencies.clear();
 
     // Inform the task it should start.
@@ -711,20 +704,18 @@ private:
         RuleInfo* RuleInfo = TaskInfo->ForRuleInfo;
         assert(TaskInfo == RuleInfo->getPendingTaskInfo());
 
+        // The task was changed if was computed in the current iteration.
         if (Trace) {
-            Trace->finishedTask(TaskInfo->Task.get(), &RuleInfo->Rule,
-                                /*WasChanged=*/true);
+          bool WasChanged = RuleInfo->Result.ComputedAt == CurrentTimestamp;
+          Trace->finishedTask(TaskInfo->Task.get(), &RuleInfo->Rule,
+                              WasChanged);
         }
 
-        // Transition the rule state.
+        // Transition the rule state by completing the rule (the value itself is
+        // stored in the taskIsFinished call).
         assert(RuleInfo->State == RuleInfo::StateKind::InProgressComputing);
         RuleInfo->setPendingTaskInfo(nullptr);
-        RuleInfo->State = RuleInfo::StateKind::Complete;
-
-        // Complete the rule (the value itself is stored in the taskIsFinished
-        // call).
-        RuleInfo->Result.ComputedAt = CurrentTimestamp;
-        RuleInfo->Result.BuiltAt = CurrentTimestamp;
+        RuleInfo->setComplete(this);
 
         // Add all of the task's discovered dependencies.
         //
@@ -1030,7 +1021,7 @@ public:
     TaskInfo->DiscoveredDependencies.push_back(Key);
   }
 
-  void taskIsComplete(Task* Task, ValueType&& Value) {
+  void taskIsComplete(Task* Task, ValueType&& Value, bool ForceChange) {
     // FIXME: We should flag the task to ensure this is only called once, and
     // that no other API calls are made once complete.
 
@@ -1049,8 +1040,14 @@ public:
     RuleInfo *RuleInfo = TaskInfo->ForRuleInfo;
     assert(TaskInfo == RuleInfo->getPendingTaskInfo());
 
-    // Update the stored result value, and enqueue the finished task processing.
-    RuleInfo->Result.Value = std::move(Value);
+    // Process the provided result.
+    if (!ForceChange && Value == RuleInfo->Result.Value) {
+        // If the value is unchanged, do nothing.
+    } else {
+        // Otherwise, updated the result and the computed at time.
+        RuleInfo->Result.Value = std::move(Value);
+        RuleInfo->Result.ComputedAt = CurrentTimestamp;
+    }
 
     // Enqueue the finished task.
     {
@@ -1123,6 +1120,8 @@ void BuildEngine::taskMustFollow(Task* Task, const KeyType& Key) {
   static_cast<BuildEngineImpl*>(Impl)->taskMustFollow(Task, Key);
 }
 
-void BuildEngine::taskIsComplete(Task* Task, ValueType&& Value) {
-  static_cast<BuildEngineImpl*>(Impl)->taskIsComplete(Task, std::move(Value));
+void BuildEngine::taskIsComplete(Task* Task, ValueType&& Value,
+                                 bool ForceChange) {
+  static_cast<BuildEngineImpl*>(Impl)->taskIsComplete(Task, std::move(Value),
+                                                      ForceChange);
 }

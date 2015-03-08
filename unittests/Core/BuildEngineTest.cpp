@@ -577,4 +577,47 @@ TEST(BuildEngineTest, DiscoveredDependencies) {
   EXPECT_EQ(std::vector<std::string>(), BuiltKeys);
 }
 
+TEST(BuildEngineTest, UnchangedOutputs) {
+  // Check building with unchanged outputs.
+  std::vector<std::string> BuiltKeys;
+  SimpleBuildEngineDelegate Delegate;
+  core::BuildEngine Engine(Delegate);
+  Engine.addRule({
+      "value",
+      simpleAction({}, [&] (const std::vector<int>& Inputs) {
+        BuiltKeys.push_back("value");
+        return 2; }),
+      [&](const Rule& rule, const ValueType& Value) {
+        // Always rebuild
+        return false;
+      } });
+  Engine.addRule({
+      "result",
+      simpleAction({"value"},
+                   [&] (const std::vector<int>& Inputs) {
+                     EXPECT_EQ(1U, Inputs.size());
+                     EXPECT_EQ(2, Inputs[0]);
+                     BuiltKeys.push_back("result");
+                     return Inputs[0] * 3;
+                   }) });
+
+  // Build the result.
+  EXPECT_EQ(2 * 3, IntFromValue(Engine.build("result")));
+  EXPECT_EQ(2U, BuiltKeys.size());
+  EXPECT_EQ("value", BuiltKeys[0]);
+  EXPECT_EQ("result", BuiltKeys[1]);
+
+  std::string Error;
+  Engine.enableTracing("t.out", &Error);
+
+  // Rebuild the result.
+  //
+  // Only "value" should rebuild, as it explicitly declares itself invalid each
+  // time, but "result" should not need to rerun.
+  BuiltKeys.clear();
+  EXPECT_EQ(2 * 3, IntFromValue(Engine.build("result")));
+  EXPECT_EQ(1U, BuiltKeys.size());
+  EXPECT_EQ("value", BuiltKeys[0]);
+}
+
 }

@@ -462,7 +462,8 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
 
         // Complete the task with a failing value.
         Context.Engine.taskIsComplete(
-          this, BuildValue::makeFailedCommand().toValue());
+          this, BuildValue::makeFailedCommand().toValue(),
+          /*ForceChange=*/true);
         return;
       }
 
@@ -475,7 +476,8 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
 
       // Complete the task with a successful value.
       Context.Engine.taskIsComplete(
-        this, BuildValue::makeSuccessfulCommand(Hash).toValue());
+        this, BuildValue::makeSuccessfulCommand(Hash).toValue(),
+        /*ForceChange=*/true);
     }
 
     void processDiscoveredDependencies() {
