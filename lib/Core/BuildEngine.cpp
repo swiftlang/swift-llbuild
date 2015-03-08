@@ -214,6 +214,11 @@ class BuildEngineImpl {
     // (TaskInputRequest::TaskInfo == this) for all items, but we reuse the
     // existing structure for simplicity.
     std::vector<TaskInputRequest> RequestedBy;
+    /// The vector of deferred scan requests, for rules which are waiting on
+    /// this one to be scanned.
+    //
+    // FIXME: As above, this structure has redundancy in it.
+    std::vector<RuleScanRequest> DeferredScanRequests;
     /// The rule that this task is computing.
     RuleInfo* ForRuleInfo = nullptr;
     /// The number of outstanding inputs that this task is waiting on to be
@@ -468,17 +473,15 @@ private:
       // Demand the input.
       bool IsAvailable = demandRule(InputRuleInfo);
 
-      // If the input wasn't already available, it needs to run.
+      // If the input isn't already available, enqueue this scan request on the
+      // input.
       if (!IsAvailable) {
-        // FIXME: This is just wrong, just because we haven't run the task yet
-        // doesn't necessarily mean that this rule needs to run, if running
-        // the task results in an output that hasn't changed (and so
-        // ComputedAt isn't updated). This case doesn't come up until we
-        // support BuiltAt != ComputedAt, though.
         if (Trace)
-          Trace->ruleNeedsToRunBecauseInputUnavailable(
-            &RuleInfo.Rule, &InputRuleInfo.Rule);
-        finishScanRequest(RuleInfo, RuleInfo::StateKind::NeedsToRun);
+          Trace->ruleScanningDeferredOnTask(
+            &RuleInfo.Rule, InputRuleInfo.getPendingTaskInfo()->Task.get());
+        assert(InputRuleInfo.isInProgress());
+        InputRuleInfo.getPendingTaskInfo()->
+            DeferredScanRequests.push_back(Request);
         return;
       }
 
@@ -747,6 +750,11 @@ private:
         // Update the database record, if attached.
         if (DB)
             DB->setRuleResult(RuleInfo->Rule, RuleInfo->Result);
+
+        // Wake up all of the pending scan requests.
+        for (const auto& Request: TaskInfo->DeferredScanRequests) {
+          RuleInfosToScan.push_back(Request);
+        }
 
         // Push all pending input requests onto the work queue.
         if (Trace) {

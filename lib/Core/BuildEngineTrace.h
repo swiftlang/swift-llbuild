@@ -88,11 +88,11 @@ public:
     void ruleScanningNextInput(const Rule* ForRule, const Rule* InputRule);
     void ruleScanningDeferredOnInput(const Rule* ForRule,
                                      const Rule* InputRule);
+    void ruleScanningDeferredOnTask(const Rule* ForRule,
+                                    const Task* InputTask);
     void ruleNeedsToRunBecauseNeverBuilt(const Rule* ForRule);
     void ruleNeedsToRunBecauseInvalidValue(const Rule* ForRule);
     void ruleNeedsToRunBecauseInputMissing(const Rule* ForRule);
-    void ruleNeedsToRunBecauseInputUnavailable(const Rule* ForRule,
-                                               const Rule* InputRule);
     void ruleNeedsToRunBecauseInputRebuilt(const Rule* ForRule,
                                            const Rule* InputRule);
     void ruleDoesNotNeedToRun(const Rule* ForRule);

@@ -567,7 +567,7 @@ TEST(BuildEngineTest, DiscoveredDependencies) {
   ValueB = 7;
   BuiltKeys.clear();
   EXPECT_EQ(ValueA * ValueB * 5, IntFromValue(Engine.build("output")));
-  EXPECT_EQ(std::vector<std::string>({ "output", "value-B" }),
+  EXPECT_EQ(std::vector<std::string>({ "value-B", "output" }),
             BuiltKeys);
 
 

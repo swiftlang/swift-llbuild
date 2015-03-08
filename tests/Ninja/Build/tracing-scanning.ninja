@@ -11,11 +11,12 @@
 #
 # RUN: echo "mod" >> %t.build/input-2
 # RUN: %{llbuild} ninja build --no-parallel --chdir %t.build --trace %t.trace-out
-# RUN: %{FileCheck} < %t.trace-out %s
+# RUN: %{FileCheck} --input-file %t.trace-out %s
 #
 # We scan "output", which pauses, then "input-1" (which doesn't need to run),
 # then "input-2" (which does need to run), and then return to "output", which
-# needs to run because of "input-2".
+# needs to be deferred waiting for "input-2" to complete. After it completes, we
+# rescan "output" and realize it needs to run.
 #
 # CHECK: { "new-rule", "[[RULE1:.*]]", "output" },
 # CHECK: { "checking-rule-needs-to-run", "[[RULE1]]" },
@@ -27,7 +28,12 @@
 # CHECK: { "new-rule", "[[RULE3:.*]]", "input-2" },
 # CHECK: { "checking-rule-needs-to-run", "[[RULE3]]" },
 # CHECK: { "rule-needs-to-run", "[[RULE3]]", "invalid-value" },
-# CHECK: { "rule-needs-to-run", "[[RULE1]]", "input-unavailable", "[[RULE3]]" },
+# CHECK: { "rule-scanning-next-input", "[[RULE1]]", "[[RULE3]]" },
+# CHECK: { "created-task-for-rule", "[[TASK1:.*]]", "[[RULE3]]" },
+# CHECK: { "rule-scanning-deferred-on-task", "[[RULE1]]", "[[TASK1]]" },
+# CHECK: { "finished-task", "[[TASK1]]", "[[RULE3]]", "changed" },
+# CHECK: { "rule-scanning-next-input", "[[RULE1]]", "[[RULE3]]" },
+# CHECK: { "rule-needs-to-run", "[[RULE1]]", "input-rebuilt", "[[RULE3]]" },
 
 rule CAT
      command = cat ${in} > $out

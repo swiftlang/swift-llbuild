@@ -238,6 +238,15 @@ BuildEngineTrace::ruleScanningDeferredOnInput(const Rule* ForRule,
           getRuleName(ForRule), getRuleName(InputRule));
 }
 
+void
+BuildEngineTrace::ruleScanningDeferredOnTask(const Rule* ForRule,
+                                              const Task* InputTask) {
+  FILE *FP = static_cast<FILE*>(OutputPtr);
+
+  fprintf(FP, ("{ \"rule-scanning-deferred-on-task\", \"%s\", \"%s\" },\n"),
+          getRuleName(ForRule), getTaskName(InputTask));
+}
+
 void BuildEngineTrace::ruleNeedsToRunBecauseNeverBuilt(const Rule* ForRule) {
   FILE *FP = static_cast<FILE*>(OutputPtr);
 
@@ -258,16 +267,6 @@ BuildEngineTrace::ruleNeedsToRunBecauseInputMissing(const Rule* ForRule) {
 
   fprintf(FP, "{ \"rule-needs-to-run\", \"%s\", \"input-missing\" },\n",
           getRuleName(ForRule));
-}
-
-void
-BuildEngineTrace::ruleNeedsToRunBecauseInputUnavailable(const Rule* ForRule,
-                                                        const Rule* InputRule) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
-
-  fprintf(FP, ("{ \"rule-needs-to-run\", \"%s\", "
-               "\"input-unavailable\", \"%s\" },\n"),
-          getRuleName(ForRule), getRuleName(InputRule));
 }
 
 void
