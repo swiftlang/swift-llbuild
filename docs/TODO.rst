@@ -100,11 +100,6 @@ Tasks for Usable Tool
 
 * Buffer command output.
 
-* Support "restat" feature.
-
-  * <rdar://problem/19107312> LLBuild's incremental build dependency checking
-    isn't as good as Ninja
-
 * Implement path normalization (for Nodes as well as things like imported
   dependencies from compiler output).
 

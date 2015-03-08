@@ -477,7 +477,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       // Complete the task with a successful value.
       Context.Engine.taskIsComplete(
         this, BuildValue::makeSuccessfulCommand(Hash).toValue(),
-        /*ForceChange=*/true);
+        /*ForceChange=*/!Command->hasRestatFlag());
     }
 
     void processDiscoveredDependencies() {

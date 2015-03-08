@@ -1,0 +1,33 @@
+# Check that we properly honor the restat flag.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: touch %t.build/input
+# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
+# RUN: %{FileCheck} --check-prefix CHECK-INITIAL --input-file %t1.out %s
+#
+# CHECK-INITIAL: [1] MKIFNOT
+# CHECK-INITIAL: [2] CP
+
+# Modify the input (to triger a rebuild of "output-1") and rebuild.
+#
+# RUN: echo > %t.build/input
+# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t2.out
+# RUN: %{FileCheck} --check-prefix CHECK-REBUILD --input-file %t2.out %s
+#
+# CHECK-REBUILD: [1] MKIFNOT
+# CHECK-REBUILD-NOT: CP
+
+
+rule MKIFNOT
+     command = if [ ! -f "${out}" ]; then touch ${out}; fi
+     description = MKIFNOT
+     restat = 1
+rule CP
+     command = cp ${in} ${out}
+     description = CP
+
+build output-1: MKIFNOT input
+
+build output: CP output-1
