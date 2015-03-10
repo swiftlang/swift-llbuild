@@ -136,3 +136,12 @@ Random Tasks
     representation (the build engine would then be used to recompute that as
     necessary). This would be a nice validation of the generic engine approach
     too.
+
+  * There is some bad-smelling redundancy between how we check the file info in
+    the *IsValid() functions, and how we then recompute that info later as part
+    of the task (and the engine internally will compare it to see if it has
+    changed to know if it needs to propagate the change). We need to think about
+    this and figure out what is ideal. There might be a cleaner modeling where
+    we discretely represent each stat-of-file as an input that is then consumed
+    by each item that requires it. This would make it easy to guarantee we
+    compute such things once.

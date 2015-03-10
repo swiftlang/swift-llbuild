@@ -126,6 +126,10 @@ private:
   /// The kind of value.
   BuildValueKind Kind;
 
+  /// Padding, to ensure all bytes are defined (this is important given how we
+  /// serialize).
+  const uint32_t Padding = 0;
+
   /// A hash of the state computed by the rule.
   uint64_t Hash;
 
@@ -348,11 +352,15 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       //
       // FIXME: Make efficient.
       if (Command->getRule()->getName() == "phony") {
-        // Get the output hash, ignoring missing outputs.
+        // Get the output hash.
+        //
+        // If the output is missing, then we always want to force the change to
+        // propagate.
         uint64_t Hash;
-        GetStatHashForNode(Output, &Hash);
+        bool OutputExists = GetStatHashForNode(Output, &Hash);
         engine.taskIsComplete(
-          this, BuildValue::makeSuccessfulCommand(Hash).toValue());
+          this, BuildValue::makeSuccessfulCommand(Hash).toValue(),
+          /*ForceChange=*/!OutputExists);
         return;
       }
 
