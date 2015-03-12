@@ -12,6 +12,7 @@
 
 #include "NinjaBuildCommand.h"
 
+#include "llbuild/Basic/Hashing.h"
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/BuildEngine.h"
 #include "llbuild/Core/MakefileDepsParser.h"
@@ -127,7 +128,7 @@ struct FileInfo {
 /// Result value that is computed by the rules for input and command files.
 class BuildValue {
 public:
-  static const int CurrentSchemaVersion = 2;
+  static const int CurrentSchemaVersion = 3;
 
 private:
   enum class BuildValueKind : uint32_t {
@@ -157,10 +158,14 @@ private:
   /// The file info for the rule output.
   FileInfo OutputInfo;
 
+  /// The command hash, for successful commands.
+  uint64_t CommandHash;
+
 private:
   BuildValue() {}
-  BuildValue(BuildValueKind Kind, const FileInfo& OutputInfo)
-    : Kind(Kind), OutputInfo(OutputInfo) {}
+  BuildValue(BuildValueKind Kind, const FileInfo& OutputInfo,
+             uint64_t CommandHash = 0)
+    : Kind(Kind), OutputInfo(OutputInfo), CommandHash(CommandHash) {}
 
 public:
   static BuildValue makeExistingInput(const FileInfo& OutputInfo) {
@@ -169,8 +174,10 @@ public:
   static BuildValue makeMissingInput() {
     return BuildValue(BuildValueKind::MissingInput, {});
   }
-  static BuildValue makeSuccessfulCommand(const FileInfo& OutputInfo) {
-    return BuildValue(BuildValueKind::SuccessfulCommand, OutputInfo);
+  static BuildValue makeSuccessfulCommand(const FileInfo& OutputInfo,
+                                          uint64_t CommandHash) {
+    return BuildValue(BuildValueKind::SuccessfulCommand, OutputInfo,
+                      CommandHash);
   }
   static BuildValue makeFailedCommand() {
     return BuildValue(BuildValueKind::FailedCommand, {});
@@ -193,6 +200,11 @@ public:
     assert((isExistingInput() || isSuccessfulCommand()) &&
            "invalid call for value kind");
     return OutputInfo;
+  }
+
+  uint64_t getCommandHash() const {
+    assert(isSuccessfulCommand() && "invalid call for value kind");
+    return CommandHash;
   }
 
   static BuildValue fromValue(const core::ValueType& Value) {
@@ -393,7 +405,8 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
         FileInfo OutputInfo;
         bool OutputExists = GetStatInfoForNode(Output, &OutputInfo);
         engine.taskIsComplete(
-          this, BuildValue::makeSuccessfulCommand(OutputInfo).toValue(),
+          this, BuildValue::makeSuccessfulCommand(OutputInfo,
+                                                  /*CommandHash=*/0).toValue(),
           /*ForceChange=*/!OutputExists);
         return;
       }
@@ -517,8 +530,10 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       GetStatInfoForNode(Output, &OutputInfo);
 
       // Complete the task with a successful value.
+      uint64_t CommandHash = basic::HashString(Command->getCommandString());
       Context.Engine.taskIsComplete(
-        this, BuildValue::makeSuccessfulCommand(OutputInfo).toValue(),
+        this, BuildValue::makeSuccessfulCommand(OutputInfo,
+                                                CommandHash).toValue(),
         /*ForceChange=*/!Command->hasRestatFlag());
     }
 
@@ -661,7 +676,7 @@ core::Task* BuildTargets(BuildContext& Context,
     virtual void inputsAvailable(core::BuildEngine& engine) override {
       // Complete the job.
       engine.taskIsComplete(
-        this, BuildValue::makeSuccessfulCommand({}).toValue());
+        this, BuildValue::makeSuccessfulCommand({}, 0).toValue());
       return;
     }
   };
@@ -700,6 +715,13 @@ static bool BuildCommandIsResultValid(ninja::Command* Command,
   // If the prior value wasn't for a successful command, recompute.
   if (!Value.isSuccessfulCommand())
     return false;
+
+  // For non-generator commands, if the command hash has changed, recompute.
+  if (!Command->hasGeneratorFlag()) {
+    if (Value.getCommandHash() != basic::HashString(
+          Command->getCommandString()))
+      return false;
+  }
 
   // Always rebuild if the output is missing.
   FileInfo Info;

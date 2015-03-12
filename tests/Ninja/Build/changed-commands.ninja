@@ -8,8 +8,6 @@
 # RUN: echo "build output: CAT input-1 input-2" > %t.build/output-rule.ninja
 # RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t.out
 # RUN: %{FileCheck} --check-prefix=CHECK-FIRST < %t.out %s
-#
-# XFAIL: *
 
 # Change the manifest and rebuild.
 #
