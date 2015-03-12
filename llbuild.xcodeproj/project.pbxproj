@@ -99,6 +99,7 @@
 		E1E221071A00689C00957481 /* BuildDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E221051A0067F800957481 /* BuildDB.cpp */; };
 		E1E221091A00B82100957481 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
 		E1E2210C1A015B9E00957481 /* SQLiteBuildDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E2210B1A015B9E00957481 /* SQLiteBuildDB.cpp */; };
+		E1FE53411AB1346700041B8E /* Hashing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1FE53401AB1343B00041B8E /* Hashing.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -466,6 +467,7 @@
 		E1E221081A00B82100957481 /* libsqlite3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsqlite3.dylib; path = usr/lib/libsqlite3.dylib; sourceTree = SDKROOT; };
 		E1E2210A1A00BEE500957481 /* incremental.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = incremental.ninja; sourceTree = "<group>"; };
 		E1E2210B1A015B9E00957481 /* SQLiteBuildDB.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SQLiteBuildDB.cpp; sourceTree = "<group>"; };
+		E1FE53401AB1343B00041B8E /* Hashing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Hashing.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -696,6 +698,7 @@
 			children = (
 				E1A2244F19F997D40059043E /* Headers */,
 				E1A2240619F991530059043E /* CMakeLists.txt */,
+				E1FE53401AB1343B00041B8E /* Hashing.cpp */,
 				E1A2240719F991530059043E /* Version.cpp */,
 			);
 			path = Basic;
@@ -1370,7 +1373,7 @@
 		E1A223E919F98F1C0059043E /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0630;
+				LastUpgradeCheck = 0700;
 				ORGANIZATIONNAME = "Apple Inc.";
 				TargetAttributes = {
 					E10D5CD919FEBF6A00211ED4 = {
@@ -1528,6 +1531,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1FE53411AB1346700041B8E /* Hashing.cpp in Sources */,
 				E1A224BE19F9995E0059043E /* Version.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
