@@ -210,6 +210,11 @@ public:
   /// @name Attributes
   /// @{
 
+  /// Get the effective description.
+  const std::string& getEffectiveDescription() const {
+    return getDescription().empty() ? getCommandString() : getDescription();
+  }
+
   /// Get the shell command to execute to run this command.
   const std::string& getCommandString() const {
     return CommandString;

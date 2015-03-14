@@ -29,6 +29,7 @@
 #include <spawn.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 
 #include <dispatch/dispatch.h>
 
@@ -37,6 +38,12 @@ using namespace llbuild::commands;
 
 extern "C" {
   char **environ;
+}
+
+static uint64_t GetTimeInMicroseconds() {
+  struct timeval tv;
+  ::gettimeofday(&tv, nullptr);
+  return tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
 static void usage(int ExitCode=1) {
@@ -62,10 +69,10 @@ static void usage(int ExitCode=1) {
           "build commands in parallel [default]");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--dump-graph <PATH>",
           "dump build graph to PATH in Graphviz DOT format");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--jobs <NUM>",
-          "maximum number of parallel jobs to use [default=1]");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--trace <PATH>",
           "trace build engine operation to PATH");
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--profile <PATH>",
+          "write a build profile trace event file to PATH");
   ::exit(ExitCode);
 }
 
@@ -270,6 +277,9 @@ public:
   bool Simulate = false;
   /// Whether commands should print status information.
   bool Quiet = false;
+
+  /// The build profile output file.
+  FILE *ProfileFP = nullptr;
 
   /// Whether the build has been cancelled or not.
   std::atomic<bool> IsCancelled;
@@ -580,18 +590,32 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
 
       // Otherwise, enqueue the job to run later.
       Context.JobQueue->addJob([&] (unsigned Bucket) {
+          if (Context.ProfileFP) {
+            uint64_t StartTime = GetTimeInMicroseconds();
+            fprintf(Context.ProfileFP,
+                    ("{ \"name\": \"%s\", \"ph\": \"B\", \"pid\": 0, "
+                     "\"tid\": %d, \"ts\": %llu},\n"),
+                    Command->getEffectiveDescription().c_str(), Bucket,
+                    StartTime);
+          }
+
           executeCommand();
+
+          if (Context.ProfileFP) {
+            uint64_t EndTime = GetTimeInMicroseconds();
+            fprintf(Context.ProfileFP,
+                    ("{ \"name\": \"%s\", \"ph\": \"E\", \"pid\": 0, "
+                     "\"tid\": %d, \"ts\": %llu},\n"),
+                    Command->getEffectiveDescription().c_str(), Bucket,
+                    EndTime);
+          }
         });
     }
 
     static void writeDescription(BuildContext& Context,
                                  ninja::Command* Command) {
       std::cerr << "[" << ++Context.NumOutputDescriptions << "] ";
-      if (Command->getDescription().empty()) {
-        std::cerr << Command->getCommandString() << "\n";
-      } else {
-        std::cerr << Command->getDescription() << "\n";
-      }
+      std::cerr << Command->getEffectiveDescription() << "\n";
     }
 
     void executeCommand() {
@@ -950,7 +974,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   std::string ChdirPath = "";
   std::string DBFilename = "build.db";
   std::string ManifestFilename = "build.ninja";
-  std::string DumpGraphPath, TraceFilename;
+  std::string DumpGraphPath, ProfileFilename, TraceFilename;
 
   // Create a context for the build.
   bool Quiet = false;
@@ -1008,6 +1032,14 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       UseParallelBuild = false;
     } else if (Option == "--parallel") {
       UseParallelBuild = true;
+    } else if (Option == "--profile") {
+      if (Args.empty()) {
+        fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
+                ::getprogname(), Option.c_str());
+        usage();
+      }
+      ProfileFilename = Args[0];
+      Args.erase(Args.begin());
     } else if (Option == "--trace") {
       if (Args.empty()) {
         fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
@@ -1107,6 +1139,18 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
                 getprogname(), Error.c_str());
         return 1;
       }
+    }
+
+    // If using a build profile, open it.
+    if (!ProfileFilename.empty()) {
+      Context.ProfileFP = ::fopen(ProfileFilename.c_str(), "w");
+      if (!Context.ProfileFP) {
+        fprintf(stderr, "error: %s: unable to open build profile '%s': %s\n",
+                getprogname(), ProfileFilename.c_str(), strerror(errno));
+        return 1;
+      }
+
+      fprintf(Context.ProfileFP, "[\n");
     }
 
     // Create rules for all of the build commands up front.
@@ -1219,10 +1263,22 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       return 1;
     }
 
+    // Close the build profile, if used.
+    if (Context.ProfileFP) {
+      ::fclose(Context.ProfileFP);
+    }
+
     // If we reached here on the first iteration, then we don't need a second
     // and are done.
     if (Iteration == 0)
         break;
+  }
+
+  // Write a note about using build profile results.
+  if (!ProfileFilename.empty()) {
+    fprintf(stderr, ("... wrote build profile to '%s', use Chrome's "
+                     "about:tracing to view."),
+            ProfileFilename.c_str());
   }
 
   // Return an appropriate exit status.
