@@ -115,6 +115,9 @@ Tasks for Usable Tool
   it depended on a new file. We should probably make sure this happens even if
   the command doesn't change, although it might be good to check vs Ninja.
 
+* Support update-if-newer for commands with discovered dependencies.
+
+
 Random Tasks
 ------------
 

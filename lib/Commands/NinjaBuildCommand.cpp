@@ -354,12 +354,36 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
     BuildContext& Context;
     ninja::Node* Output;
     ninja::Command* Command;
+
+    /// If true, the command should be skipped (because of an error in an
+    /// input).
     bool ShouldSkip = false;
+
+    /// If true, the command can be updated if the output is newer than all of
+    /// the inputs.
+    bool CanUpdateIfNewer = true;
+
+    /// Information on the prior command result, if present.
+    bool HasPriorResult = false;
+    uint64_t PriorCommandHash;
+
+    /// The timestamp of the most recently rebuilt input.
+    struct {
+      uint64_t Seconds, Nanoseconds;
+    } NewestModTime = { 0, 0 };
 
     NinjaCommandTask(BuildContext& Context, ninja::Node* Output,
                      ninja::Command* Command)
       : Task("ninja-command"), Context(Context), Output(Output),
-        Command(Command) { }
+        Command(Command) {
+      // If this command uses discovered dependencies, we can never skip it (we
+      // don't yet have a way to account for the discovered dependencies, or
+      // preserve them if skipped).
+      //
+      // FIXME: We should support update-if-newer for commands with deps.
+      if (Command->getDepsStyle() != ninja::Command::DepsStyleKind::None)
+        CanUpdateIfNewer = false;
+    }
 
     virtual void provideValue(core::BuildEngine& engine, uintptr_t InputID,
                               const core::ValueType& ValueData) override {
@@ -370,6 +394,27 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       // shouldn't run this command.
       if (!Value.isExistingInput() && !Value.isSuccessfulCommand()) {
         ShouldSkip = true;
+      } else {
+        // Otherwise, track the information used to determine if we can just
+        // update the command instead of running it.
+        const FileInfo& OutputInfo = Value.getOutputInfo();
+
+        // If there is a missing input file (from a successful command), we
+        // always need to run the command.
+        //
+        // FIXME: Add an explicit state for missing files?
+        if (OutputInfo.ModTime.Seconds == 0 &&
+            OutputInfo.ModTime.Nanoseconds == 0) {
+          CanUpdateIfNewer = false;
+        } else {
+          // Otherwise, keep track of the newest input.
+          if (OutputInfo.ModTime.Seconds > NewestModTime.Seconds ||
+              (OutputInfo.ModTime.Seconds == NewestModTime.Seconds &&
+               OutputInfo.ModTime.Nanoseconds > NewestModTime.Nanoseconds)) {
+            NewestModTime.Seconds = OutputInfo.ModTime.Seconds;
+            NewestModTime.Nanoseconds = OutputInfo.ModTime.Nanoseconds;
+          }
+        }
       }
     }
 
@@ -393,10 +438,23 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       }
     }
 
+    virtual void providePriorValue(core::BuildEngine& Engine,
+                                   const core::ValueType& ValueData) override {
+      BuildValue Value = BuildValue::fromValue(ValueData);
+
+      if (Value.isSuccessfulCommand()) {
+        HasPriorResult = true;
+        PriorCommandHash = Value.getCommandHash();
+      }
+    }
+
     virtual void inputsAvailable(core::BuildEngine& engine) override {
       // Ignore phony commands.
       //
       // FIXME: Make efficient.
+      //
+      // FIXME: Is it right to bring this up-to-date when one of the inputs
+      // indicated a failure? It probably doesn't matter.
       if (Command->getRule()->getName() == "phony") {
         // Get the output info.
         //
@@ -410,6 +468,38 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
           /*ForceChange=*/!OutputExists);
         return;
       }
+
+      // If it is legal to simply update the command, then if the command output
+      // exists and is newer than all of the inputs, don't actually run the
+      // command (just bring it up-to-date).
+      //
+      // We use a strict "newer-than" check here, to guarantee correctness in
+      // the face of equivalent timestamps. This is particularly important on OS
+      // X, which has a low resolution mtime.
+      if (CanUpdateIfNewer) {
+        // If this isn't a generator command and it's command hash differs, we
+        // can't update it.
+        uint64_t CommandHash = basic::HashString(Command->getCommandString());
+        if (!Command->hasGeneratorFlag() &&
+            (!HasPriorResult || PriorCommandHash != CommandHash))
+          CanUpdateIfNewer = false;
+
+        if (CanUpdateIfNewer) {
+          FileInfo OutputInfo;
+          if (GetStatInfoForNode(Output, &OutputInfo) &&
+              (OutputInfo.ModTime.Seconds > NewestModTime.Seconds ||
+               (OutputInfo.ModTime.Seconds == NewestModTime.Seconds &&
+                OutputInfo.ModTime.Nanoseconds > NewestModTime.Nanoseconds)) ) {
+            // Complete the task with a successful value.
+            Context.Engine.taskIsComplete(
+              this, BuildValue::makeSuccessfulCommand(OutputInfo,
+                                                      CommandHash).toValue());
+            return;
+          }
+        }
+      }
+
+      // Otherwise, actually run the command.
 
       ++Context.NumBuiltCommands;
 

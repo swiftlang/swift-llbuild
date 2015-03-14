@@ -1,0 +1,25 @@
+# Check the handling of timestamps on output files.
+
+# Check that a command which overwrites one of its inputs before its output is
+# only run once. This happens for the 'LLVMBuild.cmake' part of the LLVM
+# generator step, for example.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: touch %t.build/input
+# RUN: %{llbuild} ninja build --chdir %t.build &> %t1.out
+# RUN: %{FileCheck} --check-prefix CHECK-FIRST --input-file %t1.out %s
+# CHECK-FIRST: [1] GENERATOR
+#
+# RUN: %{llbuild} ninja build --chdir %t.build &> %t2.out
+# RUN: %{FileCheck} --check-prefix CHECK-SECOND --input-file %t2.out %s
+# CHECK-SECOND-NOT: GENERATOR
+
+# We use `touch -r ...` here to ensure a timestamp on the input which is strictly
+# older than the output.
+rule GENERATOR
+     command = date >> input && touch -r / input && date >> output
+     description = GENERATOR
+
+build output: GENERATOR input
