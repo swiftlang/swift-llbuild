@@ -420,6 +420,16 @@ private:
     // Inform the task it should start.
     Task->start(BuildEngine);
 
+    // Provide the task the prior result, if present.
+    //
+    // FIXME: This should perhaps just be lumped in with the start call? Or
+    // alternately, maybe there should just be an API call to fetch this, and
+    // the clients that want it can ask? It's cheap to provide here, so
+    // ultimately this is mostly a matter of cleanliness.
+    if (RuleInfo.Result.BuiltAt != 0) {
+      Task->providePriorValue(BuildEngine, RuleInfo.Result.Value);
+    }
+
     // If this task has no waiters, schedule it immediately for finalization.
     if (!TaskInfo->WaitCount) {
       ReadyTaskInfos.push_back(TaskInfo);

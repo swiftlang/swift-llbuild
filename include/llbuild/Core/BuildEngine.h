@@ -97,6 +97,13 @@ public:
   /// Executed by the build engine when the task should be started.
   virtual void start(BuildEngine&) = 0;
 
+  /// Invoked by the build engine to provide the prior result for the task's
+  /// output, if present.
+  ///
+  /// This callback will always be invoked immediately after the task is
+  /// started, and prior to its receipt of any other callbacks.
+  virtual void providePriorValue(BuildEngine&, const ValueType& Value) {};
+
   /// Invoked by the build engine to provide an input value as it becomes
   /// available.
   ///
