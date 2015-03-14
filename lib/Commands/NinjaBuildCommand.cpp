@@ -245,6 +245,9 @@ public:
   /// Whether commands should print status information.
   bool Quiet = false;
 
+  /// Whether the build has been cancelled or not.
+  std::atomic<bool> IsCancelled;
+
   /// The number of inputs used during the build.
   unsigned NumBuiltInputs{0};
   /// The number of commands executed during the build
@@ -260,17 +263,38 @@ public:
   /// The limited queue we use to execute parallel jobs.
   std::unique_ptr<ConcurrentLimitedQueue> JobQueue;
 
+  /// The previous SIGINT handler.
+  struct sigaction PreviousSigintHandler;
+
 public:
   BuildContext()
     : Engine(Delegate),
+      IsCancelled(false),
       OutputQueue(dispatch_queue_create("output-queue",
                                         /*attr=*/DISPATCH_QUEUE_SERIAL))
   {
     // Register the context with the delegate.
     Delegate.Context = this;
+
+    // Register a dispatch source to handle SIGINT.
+    dispatch_source_t SigintSource = dispatch_source_create(
+      DISPATCH_SOURCE_TYPE_SIGNAL, SIGINT, 0, OutputQueue);
+    dispatch_source_set_event_handler(SigintSource, ^{
+        fprintf(stderr, "... cancelling build.\n");
+        IsCancelled = true;
+      });
+    dispatch_resume(SigintSource);
+
+    // Clear the default SIGINT handling behavior.
+    struct sigaction Action{};
+    Action.sa_handler = SIG_IGN;
+    sigaction(SIGINT, &Action, &PreviousSigintHandler);
   }
 
   ~BuildContext() {
+    // Restore any previous SIGINT handler.
+    sigaction(SIGINT, &PreviousSigintHandler, NULL);
+
     dispatch_release(OutputQueue);
   }
 };
@@ -449,6 +473,13 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
     }
 
     virtual void inputsAvailable(core::BuildEngine& engine) override {
+      // If the build is cancelled, skip everything.
+      if (Context.IsCancelled) {
+        Context.Engine.taskIsComplete(
+          this, BuildValue::makeSkippedCommand().toValue());
+        return;
+      }
+
       // Ignore phony commands.
       //
       // FIXME: Make efficient.
@@ -536,6 +567,13 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
     }
 
     void executeCommand() {
+      // If the build is cancelled, skip the job.
+      if (Context.IsCancelled) {
+        Context.Engine.taskIsComplete(
+          this, BuildValue::makeSkippedCommand().toValue());
+        return;
+      }
+
       // Write the description on the output queue, taking care to not rely on
       // the ``this`` object, which may disappear before the queue executes this
       // block.
@@ -599,11 +637,34 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
         exit(1);
       }
       if (Status != 0) {
-        ++Context.NumFailedCommands;
-        dispatch_async(Context.OutputQueue, ^() {
-            std::cerr << "  ... process returned error status: "
-                      << Status << "\n";
-          });
+        // If the child was killed by SIGINT, assume it is because we were
+        // interrupted.
+        //
+        // FIXME: We should probably match Ninja here, if what it does is run
+        // the process in its own process group. I haven't checked.
+        if (WIFSIGNALED(Status)) {
+          int Signal = WTERMSIG(Status);
+
+          if (Signal == SIGINT) {
+            Context.Engine.taskIsComplete(
+              this, BuildValue::makeFailedCommand().toValue(),
+              /*ForceChange=*/true);
+            return;
+          }
+
+          dispatch_async(Context.OutputQueue, ^() {
+              std::cerr << "  ... process exited with signal: "
+                        << Signal << "\n";
+            });
+        } else {
+          int ExitStatus = WEXITSTATUS(Status);
+
+          ++Context.NumFailedCommands;
+          dispatch_async(Context.OutputQueue, ^() {
+              std::cerr << "  ... process returned error status: "
+                        << ExitStatus << "\n";
+            });
+        }
 
         // Complete the task with a failing value.
         Context.Engine.taskIsComplete(
