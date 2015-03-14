@@ -79,21 +79,47 @@ struct ConcurrentLimitedQueue {
   /// The queue we should execute on.
   dispatch_queue_t Queue;
 
+  /// Queue we use to assign bucket numbers.
+  dispatch_queue_t BucketQueue;
+  uint64_t BucketMask = 0;
+
 public:
   ConcurrentLimitedQueue(unsigned JobLimit, dispatch_queue_t Queue)
-    : LimitSemaphore(dispatch_semaphore_create(JobLimit)), Queue(Queue) { }
+    : LimitSemaphore(dispatch_semaphore_create(JobLimit)), Queue(Queue)
+  {
+    BucketQueue = dispatch_queue_create("bucket-queue",
+                                        /*attr=*/DISPATCH_QUEUE_SERIAL);
+  }
   ~ConcurrentLimitedQueue() {
+    dispatch_release(BucketQueue);
     dispatch_release(LimitSemaphore);
     dispatch_release(Queue);
   }
 
-  void addJob(std::function<void(void)> Job) {
+  void addJob(std::function<void(unsigned)> Job) {
     dispatch_async(Queue, ^() {
         // Acquire the semaphore.
         dispatch_semaphore_wait(LimitSemaphore, DISPATCH_TIME_FOREVER);
 
+        // Allocate a bucket number.
+        __block unsigned BucketNumber;
+        dispatch_sync(BucketQueue, ^() {
+            for (BucketNumber = 0; BucketNumber != 64; ++BucketNumber) {
+              if (!(BucketMask & (1 << BucketNumber))) {
+                BucketMask |= (1 << BucketNumber);
+                break;
+              }
+            }
+          });
+
         // Execute the job.
-        Job();
+        Job(BucketNumber);
+
+        // Release the bucket number.
+        dispatch_sync(BucketQueue, ^() {
+            assert(BucketMask & (1 << BucketNumber));
+            BucketMask &= ~(1 << BucketNumber);
+          });
 
         // Release the semaphore.
         dispatch_semaphore_signal(LimitSemaphore);
@@ -553,7 +579,9 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       }
 
       // Otherwise, enqueue the job to run later.
-      Context.JobQueue->addJob([&] () { executeCommand(); });
+      Context.JobQueue->addJob([&] (unsigned Bucket) {
+          executeCommand();
+        });
     }
 
     static void writeDescription(BuildContext& Context,
