@@ -1,0 +1,23 @@
+# Check that SIGINT handling aborts a build.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: cp %S/Inputs/wait-for-file %t.build
+# RUN: /bin/sh -c \
+# RUN:   "%{llbuild} ninja build --no-parallel --chdir %t.build &> %t.out & \
+# RUN:    echo $! > %t.build/llbuild.pid; \
+# RUN:    wait $(cat %t.build/llbuild.pid)"
+# RUN: %{FileCheck} --input-file %t.out %s
+#
+# CHECK: [1] SIGNAL PARENT LLBUILD PROCESS
+# CHECK: cancelling build.
+
+rule CAT
+  command = cat ${in} > ${out}
+rule SIGNAL
+  description = SIGNAL PARENT LLBUILD PROCESS
+  command = ./wait-for-file llbuild.pid && cat llbuild.pid | xargs kill -SIGINT
+
+build output-1: SIGNAL
+build output: CAT output-1
