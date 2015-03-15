@@ -16,7 +16,6 @@
 # RUN: %{FileCheck} --check-prefix=CHECK-OUTPUT-INITIAL < %t.build/output %s
 #
 # CHECK-INITIAL: SIZING input TO output
-# CHECK-INITIAL: built using 1 command
 # CHECK-OUTPUT-INITIAL: input does not exist
 
 
@@ -27,7 +26,6 @@
 # RUN: %{FileCheck} --check-prefix=CHECK-OUTPUT-NEXT < %t.build/output %s
 #
 # CHECK-NEXT: SIZING input TO output
-# CHECK-NEXT: built using 1 command
 # CHECK-OUTPUT-NEXT: input does not exist
 
 
@@ -39,7 +37,6 @@
 # RUN: %{FileCheck} --check-prefix=CHECK-OUTPUT-WITH-INPUT < %t.build/output %s
 #
 # CHECK-WITH-INPUT: SIZING input TO output
-# CHECK-WITH-INPUT: built using 1 command
 # CHECK-OUTPUT-WITH-INPUT: input size: 0
 
 
@@ -48,7 +45,7 @@
 # RUN: /bin/sh -c "%{llbuild} ninja build --no-parallel --chdir %t.build" &> %t1.out
 # RUN: %{FileCheck} --check-prefix=CHECK-NEXT-WITH-INPUT < %t1.out %s
 #
-# CHECK-NEXT-WITH-INPUT: built using 0 commands
+# CHECK-NEXT-WITH-INPUT: no work to do
 
 
 # Check that the output rule does get rebuilt if input changes.
@@ -59,7 +56,6 @@
 # RUN: %{FileCheck} --check-prefix=CHECK-OUTPUT-WITH-NEW-INPUT < %t.build/output %s
 #
 # CHECK-WITH-NEW-INPUT: SIZING input TO output
-# CHECK-WITH-NEW-NEXT: built using 1 command
 # CHECK-OUTPUT-WITH-NEW-INPUT: input size: 1
 
 rule GETSIZE

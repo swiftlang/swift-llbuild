@@ -11,7 +11,6 @@
 # CHECK: [1] "false"
 # CHECK-NEXT: process returned error status
 # CHECK-NOT: [2] "cp output-1 output"
-# CHECK: ... built using 2 commands
 
 rule CP
      command = cp ${in} ${out}

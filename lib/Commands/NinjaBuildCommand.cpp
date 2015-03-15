@@ -1275,10 +1275,6 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
     // Ensure the output queue is finished.
     dispatch_sync(Context.OutputQueue, ^() {});
 
-    std::cerr << "... built using " << Context.NumBuiltInputs << " inputs\n";
-    std::cerr << "... built using " << Context.NumBuiltCommands
-              << " commands\n";
-
     if (!DumpGraphPath.empty()) {
       Context.Engine.dumpGraphToFile(DumpGraphPath);
     }
@@ -1303,6 +1299,12 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       kill(getpid(), SIGINT);
       usleep(1000);
       return 2;
+    }
+
+    // If nothing was done, print a single message to let the user know we
+    // completed successfully.
+    if (!Context.Quiet && !Context.NumBuiltCommands) {
+      printf("%s: no work to do.\n", getprogname());
     }
 
     // If there were command failures, return an error status.
