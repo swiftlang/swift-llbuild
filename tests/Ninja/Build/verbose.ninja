@@ -1,0 +1,18 @@
+# Check verbose output.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: %{llbuild} ninja build --no-parallel -v --chdir %t.build &> %t.out
+# RUN: %{FileCheck} --check-prefix=CHECK-VERBOSE --input-file %t.out %s
+# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t.out
+# RUN: %{FileCheck} --check-prefix=CHECK-NORMAL --input-file %t.out %s
+
+# CHECK-VERBOSE: [1] echo some custom command
+# CHECK-NORMAL: [1] CUSTOM
+
+rule CUSTOM
+  description = CUSTOM
+  command = echo some custom command
+
+build output: CUSTOM

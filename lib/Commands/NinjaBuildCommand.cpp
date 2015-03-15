@@ -69,10 +69,14 @@ static void usage(int ExitCode=1) {
           "build commands in parallel [default]");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--dump-graph <PATH>",
           "dump build graph to PATH in Graphviz DOT format");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--trace <PATH>",
-          "trace build engine operation to PATH");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--profile <PATH>",
           "write a build profile trace event file to PATH");
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--trace <PATH>",
+          "trace build engine operation to PATH");
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--quiet",
+          "don't show information on executed commands");
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "-v, --verbose",
+          "show full invocation for executed commands");
   ::exit(ExitCode);
 }
 
@@ -277,6 +281,8 @@ public:
   bool Simulate = false;
   /// Whether commands should print status information.
   bool Quiet = false;
+  /// Whether output should use verbose mode.
+  bool Verbose = false;
 
   /// The build profile output file.
   FILE *ProfileFP = nullptr;
@@ -615,7 +621,11 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
     static void writeDescription(BuildContext& Context,
                                  ninja::Command* Command) {
       std::cerr << "[" << ++Context.NumOutputDescriptions << "] ";
-      std::cerr << Command->getEffectiveDescription() << "\n";
+      if (Context.Verbose) {
+        std::cerr << Command->getCommandString() << "\n";
+      } else {
+        std::cerr << Command->getEffectiveDescription() << "\n";
+      }
     }
 
     void executeCommand() {
@@ -980,6 +990,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   bool Quiet = false;
   bool Simulate = false;
   bool UseParallelBuild = true;
+  bool Verbose = false;
 
   while (!Args.empty() && Args[0][0] == '-') {
     const std::string Option = Args[0];
@@ -1048,6 +1059,8 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       }
       TraceFilename = Args[0];
       Args.erase(Args.begin());
+    } else if (Option == "-v" || Option == "--verbose") {
+      Verbose = true;
     } else {
       fprintf(stderr, "error: %s: invalid option: '%s'\n\n",
               ::getprogname(), Option.c_str());
@@ -1078,6 +1091,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
 
     Context.Simulate = Simulate;
     Context.Quiet = Quiet;
+    Context.Verbose = Verbose;
 
     // Create the job queue to use.
     //
