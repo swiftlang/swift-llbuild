@@ -11,7 +11,7 @@
 # Check that the initial build creates 'output' properly, even though 'input'
 # does not exist.
 #
-# RUN: /bin/sh -c "%{llbuild} ninja build --no-parallel --chdir %t.build" &> %t1.out
+# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix=CHECK-INITIAL < %t1.out %s
 # RUN: %{FileCheck} --check-prefix=CHECK-OUTPUT-INITIAL < %t.build/output %s
 #
@@ -21,7 +21,7 @@
 
 # Check that a rebuild continues to run the output rule.
 #
-# RUN: /bin/sh -c "%{llbuild} ninja build --no-parallel --chdir %t.build" &> %t1.out
+# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix=CHECK-NEXT < %t1.out %s
 # RUN: %{FileCheck} --check-prefix=CHECK-OUTPUT-NEXT < %t.build/output %s
 #
@@ -32,7 +32,7 @@
 # Check that the output rule gets rebuilt when we create 'input'.
 #
 # RUN: touch %t.build/input
-# RUN: /bin/sh -c "%{llbuild} ninja build --no-parallel --chdir %t.build" &> %t1.out
+# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix=CHECK-WITH-INPUT < %t1.out %s
 # RUN: %{FileCheck} --check-prefix=CHECK-OUTPUT-WITH-INPUT < %t.build/output %s
 #
@@ -42,7 +42,7 @@
 
 # Check that the output rule no longer gets rebuilt ever build.
 #
-# RUN: /bin/sh -c "%{llbuild} ninja build --no-parallel --chdir %t.build" &> %t1.out
+# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix=CHECK-NEXT-WITH-INPUT < %t1.out %s
 #
 # CHECK-NEXT-WITH-INPUT: no work to do
@@ -51,7 +51,7 @@
 # Check that the output rule does get rebuilt if input changes.
 #
 # RUN: echo -n "X" > %t.build/input
-# RUN: /bin/sh -c "%{llbuild} ninja build --no-parallel --chdir %t.build" &> %t1.out
+# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix=CHECK-WITH-NEW-INPUT < %t1.out %s
 # RUN: %{FileCheck} --check-prefix=CHECK-OUTPUT-WITH-NEW-INPUT < %t.build/output %s
 #
