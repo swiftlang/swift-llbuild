@@ -3,6 +3,8 @@ add_llbuild_library(libllbuild
   SHARED
   OUTPUT_NAME llbuild)
 
+set_property(TARGET libllbuild PROPERTY MACOSX_RPATH ON)
+
 target_link_libraries(libllbuild
   llbuildBasic
   llbuildCore
