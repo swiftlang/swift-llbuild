@@ -3,25 +3,54 @@
 # We test with a simple command that just writes a fake .d file which lists an
 # input dependency on "header-1".
 #
+# We also enforce that the timestamp of input-1 is "old" to ensure that any
+# update-if-newer behavior works correctly.
+#
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
-# RUN: touch %t.build/header-1 %t.build/input-1
+# RUN: touch -r / %t.build/header-1 %t.build/input-1
 # RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file=%t1.out %s
-
-# RUN: echo "mod" >> %t.build/header-1
-# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t2.out
-# RUN: %{FileCheck} --check-prefix=CHECK-AFTER-MOD --input-file=%t2.out %s
 
 # Check the first build.
 #
 # CHECK-INITIAL: [1] "CC output-1"
 # CHECK-INITIAL: [2] "cat output-1 > output"
 
-# Check the second build.
+# Check a build that modifies the header.
+#
+# RUN: echo "mod" >> %t.build/header-1
+# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t2.out
+# RUN: %{FileCheck} --check-prefix=CHECK-AFTER-MOD --input-file=%t2.out %s
+#
 # CHECK-AFTER-MOD: [1] "CC output-1"
 # CHECK-AFTER-MOD: [2] "cat output-1 > output"
+
+
+# Check that a header modification follow a build that *could* trigger an output
+# update performs correctly.. This is to verify that the output updating doesn't
+# lose discovered dependencies.
+#
+# RUN: touch -r / %t.build/header-1
+# RUN: echo "xxx" >> %t.build/output-1
+# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t2.out
+# RUN: %{FileCheck} --check-prefix=CHECK-AFTER-OUTPUT-MOD --input-file=%t2.out %s
+#
+# FIXME: This build currently will actually rerun the command, but this test is
+# just defensive currently, it should be updated if/when we support
+# update-if-newer on commands with discovered dependencies.
+#
+# CHECK-AFTER-OUTPUT-MOD: "cat output-1 > output"
+
+# Check another build that modifies the header.
+#
+# RUN: echo "mod-2" >> %t.build/header-1
+# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t2.out
+# RUN: %{FileCheck} --check-prefix=CHECK-AFTER-SECOND-MOD --input-file=%t2.out %s
+#
+# CHECK-AFTER-SECOND-MOD: [1] "CC output-1"
+# CHECK-AFTER-SECOND-MOD: [2] "cat output-1 > output"
 
 rule CC
      deps = gcc
