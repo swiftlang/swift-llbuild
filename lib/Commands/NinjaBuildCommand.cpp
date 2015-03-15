@@ -308,6 +308,9 @@ public:
   /// The limited queue we use to execute parallel jobs.
   std::unique_ptr<ConcurrentLimitedQueue> JobQueue;
 
+  /// The SIGINT dispatch source.
+  dispatch_source_t SigintSource;
+
   /// The previous SIGINT handler.
   struct sigaction PreviousSigintHandler;
 
@@ -322,7 +325,7 @@ public:
     Delegate.Context = this;
 
     // Register a dispatch source to handle SIGINT.
-    dispatch_source_t SigintSource = dispatch_source_create(
+    SigintSource = dispatch_source_create(
       DISPATCH_SOURCE_TYPE_SIGNAL, SIGINT, 0, OutputQueue);
     dispatch_source_set_event_handler(SigintSource, ^{
         fprintf(stderr, "... cancelling build.\n");
@@ -338,6 +341,10 @@ public:
   }
 
   ~BuildContext() {
+    // Clean up our dispatch source.
+    dispatch_source_cancel(SigintSource);
+    dispatch_release(SigintSource);
+
     // Restore any previous SIGINT handler.
     sigaction(SIGINT, &PreviousSigintHandler, NULL);
 
