@@ -290,6 +290,9 @@ public:
   /// Whether the build has been cancelled or not.
   std::atomic<bool> IsCancelled;
 
+  /// Whether the build was cancelled by SIGINT.
+  std::atomic<bool> WasCancelledBySigint;
+
   /// The number of inputs used during the build.
   unsigned NumBuiltInputs{0};
   /// The number of commands executed during the build
@@ -324,6 +327,7 @@ public:
     dispatch_source_set_event_handler(SigintSource, ^{
         fprintf(stderr, "... cancelling build.\n");
         IsCancelled = true;
+        WasCancelledBySigint = true;
       });
     dispatch_resume(SigintSource);
 
@@ -1286,6 +1290,19 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       fprintf(stderr, ("... wrote build profile to '%s', use Chrome's "
                        "about:tracing to view.\n"),
               ProfileFilename.c_str());
+    }
+
+    // If the build was cancelled by SIGINT, cause ourself to also die by SIGINT
+    // to support proper shell behavior.
+    if (Context.WasCancelledBySigint) {
+      // Ensure SIGINT action is default.
+      struct sigaction Action{};
+      Action.sa_handler = SIG_DFL;
+      sigaction(SIGINT, &Action, 0);
+
+      kill(getpid(), SIGINT);
+      usleep(1000);
+      return 2;
     }
 
     // If there were command failures, return an error status.
