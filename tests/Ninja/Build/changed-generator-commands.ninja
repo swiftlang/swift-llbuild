@@ -3,14 +3,11 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
-# RUN: touch %t.build/config.ninja %t.build/generator-input
+# RUN: touch %t.build/config.ninja
 # RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix CHECK-FIRST --input-file %t1.out %s
 #
-# FIXME: We ignore whether not the generator is run in this step, we have other
-# tests for that, but we should update this to check that it doesn't once things
-# have stabilized.
-#
+# CHECK-FIRST-NOT: echo
 # CHECK-FIRST: date
 
 # Running again after changing the generator flags should not rebuild.
@@ -31,5 +28,5 @@ rule GENERATOR
 rule DATE
      command = date
 
-build build.ninja: GENERATOR generator-input
+build build.ninja: GENERATOR
 build output: DATE
