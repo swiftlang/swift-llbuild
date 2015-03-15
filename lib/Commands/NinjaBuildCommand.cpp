@@ -596,24 +596,33 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
 
       // Otherwise, enqueue the job to run later.
       Context.JobQueue->addJob([&] (unsigned Bucket) {
-          if (Context.ProfileFP) {
-            uint64_t StartTime = GetTimeInMicroseconds();
-            fprintf(Context.ProfileFP,
-                    ("{ \"name\": \"%s\", \"ph\": \"B\", \"pid\": 0, "
-                     "\"tid\": %d, \"ts\": %llu},\n"),
-                    Command->getEffectiveDescription().c_str(), Bucket,
-                    StartTime);
+          // Take care to not rely on the ``this`` object, which may disappear
+          // before the queue executes this block.
+          BuildContext& LocalContext(Context);
+          ninja::Command* LocalCommand(Command);
+
+          if (LocalContext.ProfileFP) {
+            dispatch_sync(LocalContext.OutputQueue, ^() {
+                uint64_t StartTime = GetTimeInMicroseconds();
+                fprintf(LocalContext.ProfileFP,
+                        ("{ \"name\": \"%s\", \"ph\": \"B\", \"pid\": 0, "
+                         "\"tid\": %d, \"ts\": %llu},\n"),
+                        LocalCommand->getEffectiveDescription().c_str(), Bucket,
+                        StartTime);
+              });
           }
 
           executeCommand();
 
-          if (Context.ProfileFP) {
-            uint64_t EndTime = GetTimeInMicroseconds();
-            fprintf(Context.ProfileFP,
-                    ("{ \"name\": \"%s\", \"ph\": \"E\", \"pid\": 0, "
-                     "\"tid\": %d, \"ts\": %llu},\n"),
-                    Command->getEffectiveDescription().c_str(), Bucket,
-                    EndTime);
+          if (LocalContext.ProfileFP) {
+            dispatch_sync(LocalContext.OutputQueue, ^() {
+                uint64_t EndTime = GetTimeInMicroseconds();
+                fprintf(LocalContext.ProfileFP,
+                        ("{ \"name\": \"%s\", \"ph\": \"E\", \"pid\": 0, "
+                         "\"tid\": %d, \"ts\": %llu},\n"),
+                        LocalCommand->getEffectiveDescription().c_str(), Bucket,
+                        EndTime);
+              });
           }
         });
     }
@@ -1155,18 +1164,6 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       }
     }
 
-    // If using a build profile, open it.
-    if (!ProfileFilename.empty()) {
-      Context.ProfileFP = ::fopen(ProfileFilename.c_str(), "w");
-      if (!Context.ProfileFP) {
-        fprintf(stderr, "error: %s: unable to open build profile '%s': %s\n",
-                getprogname(), ProfileFilename.c_str(), strerror(errno));
-        return 1;
-      }
-
-      fprintf(Context.ProfileFP, "[\n");
-    }
-
     // Create rules for all of the build commands up front.
     //
     // FIXME: We should probably also move this to be dynamic.
@@ -1191,7 +1188,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
     if (Iteration == 0) {
       Context.Engine.build(ManifestFilename);
         
-      // If the manifest was rebuild, then reload it and build again.
+      // If the manifest was rebuilt, then reload it and build again.
       if (Context.NumBuiltCommands) {
         continue;
       }
@@ -1201,6 +1198,18 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       // FIXME: This is somewhat inefficient, as we will end up repeating any
       // dependency scanning that was required for checking the manifest. We can
       // fix this by building the manifest inline with the targets...
+    }
+
+    // If using a build profile, open it.
+    if (!ProfileFilename.empty()) {
+      Context.ProfileFP = ::fopen(ProfileFilename.c_str(), "w");
+      if (!Context.ProfileFP) {
+        fprintf(stderr, "error: %s: unable to open build profile '%s': %s\n",
+                getprogname(), ProfileFilename.c_str(), strerror(errno));
+        return 1;
+      }
+
+      fprintf(Context.ProfileFP, "[\n");
     }
   
     // If no explicit targets were named, build the default targets.
@@ -1270,6 +1279,15 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       Context.Engine.dumpGraphToFile(DumpGraphPath);
     }
 
+    // Close the build profile, if used.
+    if (Context.ProfileFP) {
+      ::fclose(Context.ProfileFP);
+
+      fprintf(stderr, ("... wrote build profile to '%s', use Chrome's "
+                       "about:tracing to view.\n"),
+              ProfileFilename.c_str());
+    }
+
     // If there were command failures, return an error status.
     if (Context.NumFailedCommands) {
       fprintf(stderr, "error: %s: build had %d command failures\n",
@@ -1277,22 +1295,10 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       return 1;
     }
 
-    // Close the build profile, if used.
-    if (Context.ProfileFP) {
-      ::fclose(Context.ProfileFP);
-    }
-
     // If we reached here on the first iteration, then we don't need a second
     // and are done.
     if (Iteration == 0)
         break;
-  }
-
-  // Write a note about using build profile results.
-  if (!ProfileFilename.empty()) {
-    fprintf(stderr, ("... wrote build profile to '%s', use Chrome's "
-                     "about:tracing to view."),
-            ProfileFilename.c_str());
   }
 
   // Return an appropriate exit status.
