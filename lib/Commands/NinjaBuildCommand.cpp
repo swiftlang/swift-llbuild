@@ -37,7 +37,7 @@ using namespace llbuild;
 using namespace llbuild::commands;
 
 extern "C" {
-  char **environ;
+  extern char **environ;
 }
 
 static uint64_t GetTimeInMicroseconds() {

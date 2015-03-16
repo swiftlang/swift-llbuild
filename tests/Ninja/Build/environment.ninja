@@ -1,0 +1,17 @@
+# Check that subprocesses inherit the environment properly.
+
+# We run the build in a sandbox in the temp directory to ensure we don't
+# interact with the source dirs.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: env EXTRAKEY=foobar %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
+# RUN: %{FileCheck} --input-file=%t1.out %s
+#
+# CHECK: EXTRAKEY=foobar
+
+rule PRINTENV
+     command = env
+
+build dummy: PRINTENV
