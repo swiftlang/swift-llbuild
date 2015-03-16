@@ -24,7 +24,7 @@ class MakefileDepsParser {
 public:
   /// Delegate interface for parser behavior.
   struct ParseActions {
-    ~ParseActions();
+    virtual ~ParseActions();
 
     /// Called if an error is encountered in parsing the input.
     ///
