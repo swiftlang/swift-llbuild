@@ -243,7 +243,12 @@ public:
     Actions.error(getCurrentFilename(), Message, At);
   }
 
-  virtual void actOnBeginManifest(std::string Name) override { }
+  virtual void actOnBeginManifest(std::string Name) override {
+    // Create the built-in "console" pool.
+    Pool* ConsolePool = new Pool("console");
+    ConsolePool->setDepth(1);
+    TheManifest->getPools()["console"].reset(ConsolePool);
+  }
 
   virtual void actOnEndManifest() override {
     exitCurrentFile();

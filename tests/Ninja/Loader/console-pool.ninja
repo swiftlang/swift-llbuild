@@ -1,0 +1,13 @@
+# Check that we recognize the console pool as built-in.
+#
+# RUN: %{llbuild} ninja load-manifest %s > %t
+# RUN: %{FileCheck} < %t %s
+
+rule TRUE
+     command = true
+     pool = console
+
+# CHECK: build "output": TRUE
+# CHECK: command = "true"
+# CHECK: pool = console
+build output: TRUE
