@@ -1,0 +1,27 @@
+# Check that we match some amount of brokenness w.r.t. Ninja's handling of
+# inputs to phony rules.
+#
+# This is particularly important because CMake writes its phony rules wrong and
+# writes out a cyclic dependency.
+#
+# Unfortunately, the way this actually works in Ninja is subtle. What happens is
+# that Ninja in general does not detect a cyclic dependency except through an
+# output it believes is out-of-date. Whether or not it marks a phony edge as
+# out-of-date depends on how it marked the "outputs ready" flag on the inputs,
+# and it sets this on the output before it iterates over the inputs.
+#
+# See: https://github.com/martine/ninja/issues/935
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: %{llbuild} ninja build --no-db --no-parallel --chdir %t.build &> %t1.out
+# RUN: %{FileCheck} --input-file %t1.out %s
+#
+# CHECK: llbuild: no work to do.
+
+build output-1: phony output-1
+build output-2: phony | output-2
+build output-3: phony || output-3
+build output: phony output-1 output-2 output-3
+default output

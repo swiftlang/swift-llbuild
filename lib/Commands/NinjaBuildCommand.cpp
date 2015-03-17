@@ -522,21 +522,38 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
     }
 
     virtual void start(core::BuildEngine& engine) override {
+      // If this is a phony rule, ignore any immediately cyclic dependencies,
+      // which are generated frequently by CMake, but can be ignored by
+      // Ninja. See https://github.com/martine/ninja/issues/935.
+      //
+      // FIXME: Find a way to harden this more, or see if we can just get CMake
+      // to fix it.
+      bool isPhony = Command->getRule() == Context.Manifest->getPhonyRule();
+
       // Request all of the explicit and implicit inputs (the only difference
       // between them is that implicit inputs do not appear in ${in} during
       // variable expansion, but that has already been performed).
       for (auto it = Command->explicitInputs_begin(),
              ie = Command->explicitInputs_end(); it != ie; ++it) {
+        if (isPhony && (*it)->getPath() == Output->getPath())
+          continue;
+        
         engine.taskNeedsInput(this, (*it)->getPath(), 0);
       }
       for (auto it = Command->implicitInputs_begin(),
              ie = Command->implicitInputs_end(); it != ie; ++it) {
+        if (isPhony && (*it)->getPath() == Output->getPath())
+          continue;
+        
         engine.taskNeedsInput(this, (*it)->getPath(), 0);
       }
 
       // Request all of the order-only inputs.
       for (auto it = Command->orderOnlyInputs_begin(),
              ie = Command->orderOnlyInputs_end(); it != ie; ++it) {
+        if (isPhony && (*it)->getPath() == Output->getPath())
+          continue;
+        
         engine.taskMustFollow(this, (*it)->getPath());
       }
     }
@@ -561,11 +578,9 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
 
       // Ignore phony commands.
       //
-      // FIXME: Make efficient.
-      //
       // FIXME: Is it right to bring this up-to-date when one of the inputs
       // indicated a failure? It probably doesn't matter.
-      if (Command->getRule()->getName() == "phony") {
+      if (Command->getRule() == Context.Manifest->getPhonyRule()) {
         // Get the output info.
         //
         // If the output is missing, then we always want to force the change to
