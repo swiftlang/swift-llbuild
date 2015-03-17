@@ -292,10 +292,10 @@ public:
   FILE *ProfileFP = nullptr;
 
   /// Whether the build has been cancelled or not.
-  std::atomic<bool> IsCancelled;
+  std::atomic<bool> IsCancelled{false};
 
   /// Whether the build was cancelled by SIGINT.
-  std::atomic<bool> WasCancelledBySigint;
+  std::atomic<bool> WasCancelledBySigint{false};
 
   /// The number of inputs used during the build.
   unsigned NumBuiltInputs{0};
