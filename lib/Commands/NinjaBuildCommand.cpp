@@ -63,6 +63,8 @@ static void usage(int ExitCode=1) {
           "persist build results at PATH [default='build.db']");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "-f <PATH>",
           "load the manifest at PATH [default='build.ninja']");
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "-k <N>",
+          "keep building until N commands fail [default=1]");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--no-parallel",
           "build commands serially");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--parallel",
@@ -283,6 +285,8 @@ public:
   bool Quiet = false;
   /// Whether output should use verbose mode.
   bool Verbose = false;
+  /// The number of failed commands to tolerate, or 0 if unlimited
+  unsigned NumFailedCommandsToTolerate = 1;
 
   /// The build profile output file.
   FILE *ProfileFP = nullptr;
@@ -349,6 +353,22 @@ public:
     sigaction(SIGINT, &PreviousSigintHandler, NULL);
 
     dispatch_release(OutputQueue);
+  }
+
+  void incrementFailedCommands() {
+    // Update our count of the number of failed commands.
+    unsigned NumFailedCommands = ++this->NumFailedCommands;
+
+    // Cancel the build, if the number of command failures exceeds the
+    // number to continue past.
+    if (NumFailedCommandsToTolerate != 0 &&
+        NumFailedCommands == NumFailedCommandsToTolerate) {
+      dispatch_async(OutputQueue, ^() {
+          fprintf(stderr, "error: %s: stopping build due to command failures\n",
+                  getprogname());
+        });
+      IsCancelled = true;
+    }
   }
 };
 
@@ -611,13 +631,14 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
           // before the queue executes this block.
           ninja::Node *LocalOutput = Output;
 
-          ++Context.NumFailedCommands;
-
           dispatch_async(Context.OutputQueue, ^() {
               fprintf(stderr,
                       "error: %s: cannot build '%s' due to missing input\n",
                       getprogname(), LocalOutput->getPath().c_str());
             });
+
+          // Update the count of failed commands.
+          Context.incrementFailedCommands();
         }
 
         Context.Engine.taskIsComplete(
@@ -760,13 +781,15 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
                         << Signal << "\n";
             });
         } else {
+          // Report the exit status.
           int ExitStatus = WEXITSTATUS(Status);
-
-          ++Context.NumFailedCommands;
           dispatch_async(Context.OutputQueue, ^() {
               std::cerr << "  ... process returned error status: "
                         << ExitStatus << "\n";
             });
+
+          // Update the count of failed commands.
+          Context.incrementFailedCommands();
         }
 
         // Complete the task with a failing value.
@@ -1032,6 +1055,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   bool Simulate = false;
   bool UseParallelBuild = true;
   bool Verbose = false;
+  unsigned NumFailedCommandsToTolerate = 1;
 
   while (!Args.empty() && Args[0][0] == '-') {
     const std::string Option = Args[0];
@@ -1079,6 +1103,20 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
         usage();
       }
       ManifestFilename = Args[0];
+      Args.erase(Args.begin());
+    } else if (Option == "-k") {
+      if (Args.empty()) {
+        fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
+                ::getprogname(), Option.c_str());
+        usage();
+      }
+      char *End;
+      NumFailedCommandsToTolerate = ::strtol(Args[0].c_str(), &End, 10);
+      if (*End != '\0') {
+          fprintf(stderr, "error: %s: invalid argument '%s' to '%s'\n\n",
+                  getprogname(), Args[0].c_str(), Option.c_str());
+          usage();
+      }
       Args.erase(Args.begin());
     } else if (Option == "--no-parallel") {
       UseParallelBuild = false;
@@ -1130,8 +1168,9 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   for (int Iteration = 0; Iteration != 2; ++Iteration) {
     BuildContext Context;
 
-    Context.Simulate = Simulate;
+    Context.NumFailedCommandsToTolerate = NumFailedCommandsToTolerate;
     Context.Quiet = Quiet;
+    Context.Simulate = Simulate;
     Context.Verbose = Verbose;
 
     // Create the job queue to use.

@@ -95,9 +95,6 @@ Ninja Specific
 Tasks for Usable Tool
 ---------------------
 
-* Stop build completely when a command fails (and report status better, vs just
-  reporting everything downstream as a failure).
-
 * Buffer command output.
 
 * Implement path normalization (for Nodes as well as things like imported
