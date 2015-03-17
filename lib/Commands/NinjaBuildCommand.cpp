@@ -436,6 +436,10 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
     /// input).
     bool ShouldSkip = false;
 
+    /// If true, the command had a missing input (this implies ShouldSkip is
+    /// true).
+    bool HasMissingInput = false;
+
     /// If true, the command can be updated if the output is newer than all of
     /// the inputs.
     bool CanUpdateIfNewer = true;
@@ -471,6 +475,8 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       // shouldn't run this command.
       if (!Value.isExistingInput() && !Value.isSuccessfulCommand()) {
         ShouldSkip = true;
+        if (Value.isMissingInput())
+          HasMissingInput = true;
       } else {
         // Otherwise, track the information used to determine if we can just
         // update the command instead of running it.
@@ -599,11 +605,26 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
 
       // If not simulating, but this command should be skipped, then do nothing.
       if (ShouldSkip) {
-        ++Context.NumFailedCommands;
+        // If this command had a failed input, treat it as having failed.
+        if (HasMissingInput) {
+          // Take care to not rely on the ``this`` object, which may disappear
+          // before the queue executes this block.
+          ninja::Node *LocalOutput = Output;
+
+          ++Context.NumFailedCommands;
+
+          dispatch_async(Context.OutputQueue, ^() {
+              fprintf(stderr,
+                      "error: %s: cannot build '%s' due to missing input\n",
+                      getprogname(), LocalOutput->getPath().c_str());
+            });
+        }
+
         Context.Engine.taskIsComplete(
           this, BuildValue::makeSkippedCommand().toValue());
         return;
       }
+      assert(!HasMissingInput);
 
       // Otherwise, enqueue the job to run later.
       Context.JobQueue->addJob([&] (unsigned Bucket) {
