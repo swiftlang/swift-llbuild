@@ -73,6 +73,8 @@ static void usage(int ExitCode=1) {
           "dump build graph to PATH in Graphviz DOT format");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--profile <PATH>",
           "write a build profile trace event file to PATH");
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--strict",
+          "use strict mode (no bug compatibility)");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--trace <PATH>",
           "trace build engine operation to PATH");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--quiet",
@@ -278,11 +280,13 @@ public:
   /// The Ninja manifest we are operating on.
   std::unique_ptr<ninja::Manifest> Manifest;
 
+  /// Whether commands should print status information.
+  bool Quiet = false;
   /// Whether the build is being "simulated", in which case commands won't be
   /// run and inputs will be assumed to exist.
   bool Simulate = false;
-  /// Whether commands should print status information.
-  bool Quiet = false;
+  /// Whether to use strict mode.
+  bool Strict = false;
   /// Whether output should use verbose mode.
   bool Verbose = false;
   /// The number of failed commands to tolerate, or 0 if unlimited
@@ -847,6 +851,11 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
         uint64_t Length;
         if (!util::ReadFileContents(Command->getDepsFile(), &Data, &Length,
                                     &Error)) {
+          // If the file is missing, just ignore it for consistency with Ninja
+          // (when using stored deps) in non-strict mode.
+          if (!Context.Strict)
+              return;
+
           // FIXME: Error handling.
           fprintf(stderr,
                   "error: %s: unable to read dependency file: %s (%s)\n",
@@ -1068,6 +1077,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   // Create a context for the build.
   bool Quiet = false;
   bool Simulate = false;
+  bool Strict = false;
   bool UseParallelBuild = true;
   bool Verbose = false;
   unsigned NumFailedCommandsToTolerate = 1;
@@ -1145,6 +1155,8 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       }
       ProfileFilename = Args[0];
       Args.erase(Args.begin());
+    } else if (Option == "--strict") {
+      Strict = true;
     } else if (Option == "--trace") {
       if (Args.empty()) {
         fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
@@ -1186,6 +1198,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
     Context.NumFailedCommandsToTolerate = NumFailedCommandsToTolerate;
     Context.Quiet = Quiet;
     Context.Simulate = Simulate;
+    Context.Strict = Strict;
     Context.Verbose = Verbose;
 
     // Create the job queue to use.
