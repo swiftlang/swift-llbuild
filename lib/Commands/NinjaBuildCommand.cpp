@@ -628,6 +628,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
             // those rules will try and rerun the generator of the "TRY_COMPILE"
             // steps, and will enter an infinite reconfiguration loop. See also:
             //
+            // See: http://www.cmake.org/Bug/view.php?id=15456
             if (Context.Strict) {
               CanUpdateIfNewer = (
                   OutputInfo.ModTime.Seconds > NewestModTime.Seconds ||
