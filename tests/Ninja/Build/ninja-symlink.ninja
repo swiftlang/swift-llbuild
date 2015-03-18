@@ -1,0 +1,12 @@
+# Run a trivial dummy build.
+
+# We run the build in a sandbox in the temp directory to ensure we don't
+# interact with the source dirs.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: ln -s %{llbuild} %t.build/ninja
+# RUN: %t.build/ninja --help &> %t.out
+# RUN: %{FileCheck} --input-file %t.out %s
+#
+# CHECK: Usage: llbuild ninja build

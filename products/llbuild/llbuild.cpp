@@ -32,6 +32,20 @@ static void usage() {
 }
 
 int main(int argc, const char **argv) {
+  // Support use of llbuild as a replacement for ninja by indirecting to the
+  // `ninja build` subtool when invoked under the name `ninja.
+  if (strcmp(getprogname(), "ninja") == 0) {
+    // We still want to represent ourselves as llbuild in output messages.
+    setprogname("llbuild");
+
+    std::vector<std::string> Args;
+    Args.push_back("build");
+    for (int i = 1; i != argc; ++i) {
+      Args.push_back(argv[i]);
+    }
+    return ExecuteNinjaCommand(Args);
+  }
+
   // Expect the first argument to be the name of a subtool to delegate to.
   if (argc == 1 || std::string(argv[1]) == "--help")
     usage();
