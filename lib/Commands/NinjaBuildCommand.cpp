@@ -145,6 +145,32 @@ public:
   }
 };
 
+struct FileTimestamp {
+  uint64_t Seconds;
+  uint64_t Nanoseconds;
+
+  bool operator==(const FileTimestamp& RHS) const {
+    return Seconds == RHS.Seconds && Nanoseconds == RHS.Nanoseconds;
+  }
+  bool operator!=(const FileTimestamp& RHS) const {
+    return !(*this == RHS);
+  }
+  bool operator<(const FileTimestamp& RHS) const {
+    return (Seconds < RHS.Seconds ||
+            (Seconds == RHS.Seconds && Nanoseconds < RHS.Nanoseconds));
+  }
+  bool operator<=(const FileTimestamp& RHS) const {
+    return (Seconds < RHS.Seconds ||
+            (Seconds == RHS.Seconds && Nanoseconds <= RHS.Nanoseconds));
+  }
+  bool operator>(const FileTimestamp& RHS) const {
+    return RHS < *this;
+  }
+  bool operator>=(const FileTimestamp& RHS) const {
+    return RHS <= *this;
+  }
+};
+
 /// Information on an external file stored as part of a build value.
 ///
 /// This structure is intentionally sized to have no packing holes.
@@ -152,10 +178,7 @@ struct FileInfo {
   uint64_t Device;
   uint64_t INode;
   uint64_t Size;
-  struct {
-    uint64_t Seconds;
-    uint64_t Nanoseconds;
-  } ModTime;
+  FileTimestamp ModTime;
 
   /// Check if this is a FileInfo representing a missing file.
   bool isMissing() const {
@@ -169,8 +192,7 @@ struct FileInfo {
     return (Device == RHS.Device &&
             INode == RHS.INode &&
             Size == RHS.Size &&
-            ModTime.Seconds == RHS.ModTime.Seconds &&
-            ModTime.Nanoseconds == RHS.ModTime.Nanoseconds);
+            ModTime == RHS.ModTime);
   }
   bool operator!=(const FileInfo& RHS) const {
     return !(*this == RHS);
@@ -202,7 +224,7 @@ private:
     /// A value produced by a failing command.
     FailedCommand,
 
-    /// A value produced by a command that was not run.  
+    /// A value produced by a command that was not run.
     SkippedCommand,
   };
 
@@ -502,9 +524,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
     uint64_t PriorCommandHash;
 
     /// The timestamp of the most recently rebuilt input.
-    struct {
-      uint64_t Seconds, Nanoseconds;
-    } NewestModTime = { 0, 0 };
+    FileTimestamp NewestModTime{ 0, 0 };
 
     NinjaCommandTask(BuildContext& Context, ninja::Node* Output,
                      ninja::Command* Command)
@@ -541,11 +561,8 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
           CanUpdateIfNewer = false;
         } else {
           // Otherwise, keep track of the newest input.
-          if (OutputInfo.ModTime.Seconds > NewestModTime.Seconds ||
-              (OutputInfo.ModTime.Seconds == NewestModTime.Seconds &&
-               OutputInfo.ModTime.Nanoseconds > NewestModTime.Nanoseconds)) {
-            NewestModTime.Seconds = OutputInfo.ModTime.Seconds;
-            NewestModTime.Nanoseconds = OutputInfo.ModTime.Nanoseconds;
+          if (OutputInfo.ModTime > NewestModTime) {
+            NewestModTime = OutputInfo.ModTime;
           }
         }
       }
@@ -668,15 +685,9 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
             //
             // See: http://www.cmake.org/Bug/view.php?id=15456
             if (Context.Strict) {
-              CanUpdateIfNewer = (
-                  OutputInfo.ModTime.Seconds > NewestModTime.Seconds ||
-                  (OutputInfo.ModTime.Seconds == NewestModTime.Seconds &&
-                   OutputInfo.ModTime.Nanoseconds > NewestModTime.Nanoseconds));
+              CanUpdateIfNewer = OutputInfo.ModTime > NewestModTime;
             } else {
-              CanUpdateIfNewer = (
-                  OutputInfo.ModTime.Seconds > NewestModTime.Seconds ||
-                  (OutputInfo.ModTime.Seconds == NewestModTime.Seconds &&
-                   OutputInfo.ModTime.Nanoseconds >= NewestModTime.Nanoseconds));
+              CanUpdateIfNewer = OutputInfo.ModTime >= NewestModTime;
             }
 
             // Perform the update, if ok.
