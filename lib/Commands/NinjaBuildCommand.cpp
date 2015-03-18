@@ -69,6 +69,8 @@ static void usage(int ExitCode=1) {
           "build commands serially");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--parallel",
           "build commands in parallel [default]");
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--no-regenerate",
+          "disable manifest auto-regeneration");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--dump-graph <PATH>",
           "dump build graph to PATH in Graphviz DOT format");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--profile <PATH>",
@@ -1075,6 +1077,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   std::string DumpGraphPath, ProfileFilename, TraceFilename;
 
   // Create a context for the build.
+  bool AutoRegenerateManifest = true;
   bool Quiet = false;
   bool Simulate = false;
   bool Strict = false;
@@ -1147,6 +1150,8 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       UseParallelBuild = false;
     } else if (Option == "--parallel") {
       UseParallelBuild = true;
+    } else if (Option == "--no-regenerate") {
+      AutoRegenerateManifest = false;
     } else if (Option == "--profile") {
       if (Args.empty()) {
         fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
@@ -1283,8 +1288,8 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       }
     }
 
-    // If this is the first iteration, build the manifest.
-    if (Iteration == 0) {
+    // If this is the first iteration, build the manifest, unless disabled.
+    if (AutoRegenerateManifest && Iteration == 0) {
       Context.Engine.build(ManifestFilename);
         
       // If the manifest was rebuilt, then reload it and build again.
