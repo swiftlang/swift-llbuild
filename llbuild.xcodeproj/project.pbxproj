@@ -333,6 +333,7 @@
 		E153EBBA1A1E94CD00F93337 /* llbuild-test-tools */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "llbuild-test-tools"; sourceTree = "<group>"; };
 		E171538C1A0BF702004CD598 /* CorePerfTests.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = CorePerfTests.mm; sourceTree = "<group>"; };
 		E18043391A00129400662FE7 /* install-user-lit.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "install-user-lit.sh"; sourceTree = "<group>"; };
+		E182BE111ABA2B8D001840AD /* Compiler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Compiler.h; sourceTree = "<group>"; };
 		E19D549B1A00496900772777 /* basic.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = basic.ninja; sourceTree = "<group>"; };
 		E19D549D1A00497300772777 /* basic.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = basic.txt; sourceTree = "<group>"; };
 		E19D549E1A00497300772777 /* buildengine-ack.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "buildengine-ack.txt"; sourceTree = "<group>"; };
@@ -754,6 +755,7 @@
 		E1A2244F19F997D40059043E /* Headers */ = {
 			isa = PBXGroup;
 			children = (
+				E182BE111ABA2B8D001840AD /* Compiler.h */,
 				E1A2245119F997D40059043E /* Version.h */,
 			);
 			name = Headers;

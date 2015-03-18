@@ -12,6 +12,7 @@
 
 #include "NinjaBuildCommand.h"
 
+#include "llbuild/Basic/Compiler.h"
 #include "llbuild/Basic/Hashing.h"
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/BuildEngine.h"
@@ -178,6 +179,12 @@ struct FileInfo {
 
 /// Result value that is computed by the rules for input and command files.
 class BuildValue {
+private:
+  // Copying and move assignment are disabled.
+  BuildValue(const BuildValue&) LLBUILD_DELETED_FUNCTION;
+  void operator=(const BuildValue&) LLBUILD_DELETED_FUNCTION;
+  BuildValue &operator=(BuildValue&& RHS) LLBUILD_DELETED_FUNCTION;
+
 public:
   static const int CurrentSchemaVersion = 3;
 
@@ -219,6 +226,12 @@ private:
     : Kind(Kind), OutputInfo(OutputInfo), CommandHash(CommandHash) {}
 
 public:
+  // Build values can only be moved via construction, not copied.
+  BuildValue(BuildValue&& RHS) {
+    memcpy(this, &RHS, sizeof(RHS));
+    memset(&RHS, 0, sizeof(RHS));
+  }
+
   static BuildValue makeExistingInput(const FileInfo& OutputInfo) {
     return BuildValue(BuildValueKind::ExistingInput, OutputInfo);
   }
