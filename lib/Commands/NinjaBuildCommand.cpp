@@ -156,6 +156,14 @@ struct FileInfo {
     uint64_t Nanoseconds;
   } ModTime;
 
+  /// Check if this is a FileInfo representing a missing file.
+  bool isMissing() const {
+    // We use an all-zero FileInfo as a sentinel, under the assumption this can
+    // never exist in normal circumstances.
+    return (Device == 0 && INode == 0 && Size == 0 &&
+            ModTime.Seconds == 0 && ModTime.Nanoseconds == 0);
+  }
+
   bool operator==(const FileInfo& RHS) const {
     return (Device == RHS.Device &&
             INode == RHS.INode &&
@@ -256,7 +264,7 @@ public:
     memcpy(&Result, Value.data(), sizeof(Result));
     return Result;
   }
-  
+
   core::ValueType toValue() {
     std::vector<uint8_t> Result(sizeof(*this));
     memcpy(Result.data(), this, sizeof(*this));
@@ -432,6 +440,7 @@ static bool GetStatInfoForNode(const ninja::Node* Node, FileInfo *Info_Out) {
   struct ::stat Buf;
   if (::stat(Node->getPath().c_str(), &Buf) != 0) {
     memset(Info_Out, 0, sizeof(*Info_Out));
+    assert(Info_Out->isMissing());
     return false;
   }
 
@@ -440,6 +449,11 @@ static bool GetStatInfoForNode(const ninja::Node* Node, FileInfo *Info_Out) {
   Info_Out->Size = Buf.st_size;
   Info_Out->ModTime.Seconds = Buf.st_mtimespec.tv_sec;
   Info_Out->ModTime.Nanoseconds = Buf.st_mtimespec.tv_nsec;
+
+  // Enforce we never accidentally create our sentinel missing file value.
+  if (Info_Out->isMissing()) {
+    Info_Out->ModTime.Nanoseconds = 1;
+  }
 
   // Verify we didn't truncate any values.
   assert(Info_Out->Device == (unsigned)Buf.st_dev &&
@@ -510,10 +524,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
 
         // If there is a missing input file (from a successful command), we
         // always need to run the command.
-        //
-        // FIXME: Add an explicit state for missing files?
-        if (OutputInfo.ModTime.Seconds == 0 &&
-            OutputInfo.ModTime.Nanoseconds == 0) {
+        if (OutputInfo.isMissing()) {
           CanUpdateIfNewer = false;
         } else {
           // Otherwise, keep track of the newest input.
