@@ -763,6 +763,35 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
           });
       }
 
+      // Actually run the command.
+      if (!spawnAndWaitForCommand()) {
+        // If the command failed, comple the task with the failed result and
+        // always propagate.
+        Context.Engine.taskIsComplete(
+          this, BuildValue::makeFailedCommand().toValue(),
+          /*ForceChange=*/true);
+        return;
+      }
+
+      // Otherwise, the command succeeded so process the dependencies.
+      processDiscoveredDependencies();
+
+      // Get the output hash, ignoring missing outputs.
+      FileInfo OutputInfo;
+      GetStatInfoForNode(Output, &OutputInfo);
+
+      // Complete the task with a successful value.
+      uint64_t CommandHash = basic::HashString(Command->getCommandString());
+      Context.Engine.taskIsComplete(
+        this, BuildValue::makeSuccessfulCommand(OutputInfo,
+                                                CommandHash).toValue(),
+        /*ForceChange=*/!Command->hasRestatFlag());
+    }
+
+    /// Execute the command process and wait for it to complete.
+    ///
+    /// \returns True if the command succeeded.
+    bool spawnAndWaitForCommand() const {
       // Initialize the spawn attributes.
       //
       // FIXME: We need to audit this to be robust about resetting everything
@@ -797,6 +826,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       int PID;
       if (posix_spawn(&PID, Args[0], /*file_actions=*/0, /*attrp=*/&Attributes,
                       const_cast<char**>(Args), ::environ) != 0) {
+        // FIXME: Error handling.
         fprintf(stderr, "error: %s: unable to spawn process (%s)\n",
                 getprogname(), strerror(errno));
         exit(1);
@@ -823,12 +853,8 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
         if (WIFSIGNALED(Status)) {
           int Signal = WTERMSIG(Status);
 
-          if (Signal == SIGINT) {
-            Context.Engine.taskIsComplete(
-              this, BuildValue::makeFailedCommand().toValue(),
-              /*ForceChange=*/true);
-            return;
-          }
+          if (Signal == SIGINT)
+            return false;
 
           dispatch_async(Context.OutputQueue, ^() {
               std::cerr << "  ... process exited with signal: "
@@ -846,26 +872,10 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
           Context.incrementFailedCommands();
         }
 
-        // Complete the task with a failing value.
-        Context.Engine.taskIsComplete(
-          this, BuildValue::makeFailedCommand().toValue(),
-          /*ForceChange=*/true);
-        return;
+        return false;
       }
 
-      // Otherwise, the command succeeded so process the dependencies.
-      processDiscoveredDependencies();
-
-      // Get the output hash, ignoring missing outputs.
-      FileInfo OutputInfo;
-      GetStatInfoForNode(Output, &OutputInfo);
-
-      // Complete the task with a successful value.
-      uint64_t CommandHash = basic::HashString(Command->getCommandString());
-      Context.Engine.taskIsComplete(
-        this, BuildValue::makeSuccessfulCommand(OutputInfo,
-                                                CommandHash).toValue(),
-        /*ForceChange=*/!Command->hasRestatFlag());
+      return true;
     }
 
     void processDiscoveredDependencies() {
