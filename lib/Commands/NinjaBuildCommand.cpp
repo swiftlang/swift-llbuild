@@ -585,6 +585,13 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       }
     }
 
+    /// Compute the output result for the command.
+    BuildValue computeCommandResult(uint64_t CommandHash) const {
+      FileInfo OutputInfo;
+      GetStatInfoForNode(Output, &OutputInfo);
+      return BuildValue::makeSuccessfulCommand(OutputInfo, CommandHash);
+    }
+
     virtual void inputsAvailable(core::BuildEngine& engine) override {
       // If the build is cancelled, skip everything.
       if (Context.IsCancelled) {
@@ -598,16 +605,14 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       // FIXME: Is it right to bring this up-to-date when one of the inputs
       // indicated a failure? It probably doesn't matter.
       if (Command->getRule() == Context.Manifest->getPhonyRule()) {
-        // Get the output info.
-        //
+        // Get the result.
+        BuildValue Result = computeCommandResult(/*CommandHash=*/0);
+
         // If the output is missing, then we always want to force the change to
         // propagate.
-        FileInfo OutputInfo;
-        bool OutputExists = GetStatInfoForNode(Output, &OutputInfo);
-        engine.taskIsComplete(
-          this, BuildValue::makeSuccessfulCommand(OutputInfo,
-                                                  /*CommandHash=*/0).toValue(),
-          /*ForceChange=*/!OutputExists);
+        bool ForceChange = Result.getOutputInfo().isMissing();
+
+        engine.taskIsComplete(this, Result.toValue(), ForceChange);
         return;
       }
 
@@ -623,8 +628,10 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
           CanUpdateIfNewer = false;
 
         if (CanUpdateIfNewer) {
-          FileInfo OutputInfo;
-          if (GetStatInfoForNode(Output, &OutputInfo)) {
+          BuildValue Result = computeCommandResult(CommandHash);
+
+          if (!Result.getOutputInfo().isMissing()) {
+            auto& OutputInfo = Result.getOutputInfo();
             // Check if the output is actually newer than the most recent input.
             //
             // In strict mode, we use a strict "newer-than" check here, to
@@ -654,9 +661,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
 
             // Perform the update, if ok.
             if (CanUpdateIfNewer) {
-              Context.Engine.taskIsComplete(
-                  this, BuildValue::makeSuccessfulCommand(
-                      OutputInfo, CommandHash).toValue());
+              Context.Engine.taskIsComplete(this, Result.toValue());
               return;
             }
           }
@@ -776,16 +781,14 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       // Otherwise, the command succeeded so process the dependencies.
       processDiscoveredDependencies();
 
-      // Get the output hash, ignoring missing outputs.
-      FileInfo OutputInfo;
-      GetStatInfoForNode(Output, &OutputInfo);
-
       // Complete the task with a successful value.
+      //
+      // We always restat the output, but we honor Ninja's restat flag by
+      // forcing downstream propagation if it isn't set.
       uint64_t CommandHash = basic::HashString(Command->getCommandString());
-      Context.Engine.taskIsComplete(
-        this, BuildValue::makeSuccessfulCommand(OutputInfo,
-                                                CommandHash).toValue(),
-        /*ForceChange=*/!Command->hasRestatFlag());
+      BuildValue Result = computeCommandResult(CommandHash);
+      Context.Engine.taskIsComplete(this, Result.toValue(),
+                                    /*ForceChange=*/!Command->hasRestatFlag());
     }
 
     /// Execute the command process and wait for it to complete.
