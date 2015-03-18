@@ -603,12 +603,8 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       // If it is legal to simply update the command, then if the command output
       // exists and is newer than all of the inputs, don't actually run the
       // command (just bring it up-to-date).
-      //
-      // We use a strict "newer-than" check here, to guarantee correctness in
-      // the face of equivalent timestamps. This is particularly important on OS
-      // X, which has a low resolution mtime.
       if (CanUpdateIfNewer) {
-        // If this isn't a generator command and it's command hash differs, we
+        // If this isn't a generator command and its command hash differs, we
         // can't update it.
         uint64_t CommandHash = basic::HashString(Command->getCommandString());
         if (!Command->hasGeneratorFlag() &&
@@ -617,15 +613,40 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
 
         if (CanUpdateIfNewer) {
           FileInfo OutputInfo;
-          if (GetStatInfoForNode(Output, &OutputInfo) &&
-              (OutputInfo.ModTime.Seconds > NewestModTime.Seconds ||
-               (OutputInfo.ModTime.Seconds == NewestModTime.Seconds &&
-                OutputInfo.ModTime.Nanoseconds > NewestModTime.Nanoseconds)) ) {
-            // Complete the task with a successful value.
-            Context.Engine.taskIsComplete(
-              this, BuildValue::makeSuccessfulCommand(OutputInfo,
-                                                      CommandHash).toValue());
-            return;
+          if (GetStatInfoForNode(Output, &OutputInfo)) {
+            // Check if the output is actually newer than the most recent input.
+            //
+            // In strict mode, we use a strict "newer-than" check here, to
+            // guarantee correctness in the face of equivalent timestamps. This
+            // is particularly important on OS X, which has a low resolution
+            // mtime.
+            //
+            // However, in non-strict mode, we need to be compatible with Ninja
+            // here, because there are some very important uses cases where this
+            // behavior is relied on. One major example is CMake's initial
+            // configuration checks using Ninja -- if this is not in place,
+            // those rules will try and rerun the generator of the "TRY_COMPILE"
+            // steps, and will enter an infinite reconfiguration loop. See also:
+            //
+            if (Context.Strict) {
+              CanUpdateIfNewer = (
+                  OutputInfo.ModTime.Seconds > NewestModTime.Seconds ||
+                  (OutputInfo.ModTime.Seconds == NewestModTime.Seconds &&
+                   OutputInfo.ModTime.Nanoseconds > NewestModTime.Nanoseconds));
+            } else {
+              CanUpdateIfNewer = (
+                  OutputInfo.ModTime.Seconds > NewestModTime.Seconds ||
+                  (OutputInfo.ModTime.Seconds == NewestModTime.Seconds &&
+                   OutputInfo.ModTime.Nanoseconds >= NewestModTime.Nanoseconds));
+            }
+
+            // Perform the update, if ok.
+            if (CanUpdateIfNewer) {
+              Context.Engine.taskIsComplete(
+                  this, BuildValue::makeSuccessfulCommand(
+                      OutputInfo, CommandHash).toValue());
+              return;
+            }
           }
         }
       }

@@ -10,8 +10,12 @@
 # RUN: touch %t.build/input-2
 # RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file=%t1.out %s
+
+# We use strict mode here to ensure the update-if-newer behavior works properly
+# when timestamps collide.
+#
 # RUN: echo "mod" >> %t.build/input-1
-# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t2.out
+# RUN: %{llbuild} ninja build --strict --no-parallel --chdir %t.build &> %t2.out
 # RUN: %{FileCheck} --check-prefix=CHECK-AFTER-MOD --input-file=%t2.out %s
 
 # Check the first build.

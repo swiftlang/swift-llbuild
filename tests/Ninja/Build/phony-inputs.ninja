@@ -32,7 +32,7 @@
 # Check that the output rule gets rebuilt when we create 'input'.
 #
 # RUN: touch %t.build/input
-# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
+# RUN: %{llbuild} ninja build --strict --no-parallel --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix=CHECK-WITH-INPUT < %t1.out %s
 # RUN: %{FileCheck} --check-prefix=CHECK-OUTPUT-WITH-INPUT < %t.build/output %s
 #
@@ -51,7 +51,7 @@
 # Check that the output rule does get rebuilt if input changes.
 #
 # RUN: echo -n "X" > %t.build/input
-# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
+# RUN: %{llbuild} ninja build --strict --no-parallel --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix=CHECK-WITH-NEW-INPUT < %t1.out %s
 # RUN: %{FileCheck} --check-prefix=CHECK-OUTPUT-WITH-NEW-INPUT < %t.build/output %s
 #

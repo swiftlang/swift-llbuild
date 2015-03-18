@@ -13,7 +13,7 @@
 # Modify the input (to triger a rebuild of "output-1") and rebuild.
 #
 # RUN: echo > %t.build/input
-# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t2.out
+# RUN: %{llbuild} ninja build --strict --no-parallel --chdir %t.build &> %t2.out
 # RUN: %{FileCheck} --check-prefix CHECK-REBUILD --input-file %t2.out %s
 #
 # CHECK-REBUILD: [1] MKIFNOT
