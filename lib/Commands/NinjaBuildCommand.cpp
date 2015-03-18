@@ -538,6 +538,13 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       }
     }
 
+    bool isImmediatelyCyclicInput(const ninja::Node *Node) const {
+      for (auto* Output: Command->getOutputs())
+        if (Node == Output)
+          return true;
+      return false;
+    }
+
     virtual void start(core::BuildEngine& engine) override {
       // If this is a phony rule, ignore any immediately cyclic dependencies in
       // non-strict mode, which are generated frequently by CMake, but can be
@@ -552,25 +559,25 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       // variable expansion, but that has already been performed).
       for (auto it = Command->explicitInputs_begin(),
              ie = Command->explicitInputs_end(); it != ie; ++it) {
-        if (!Context.Strict && isPhony && (*it)->getPath() == Output->getPath())
+        if (!Context.Strict && isPhony && isImmediatelyCyclicInput(*it))
           continue;
-        
+
         engine.taskNeedsInput(this, (*it)->getPath(), 0);
       }
       for (auto it = Command->implicitInputs_begin(),
              ie = Command->implicitInputs_end(); it != ie; ++it) {
-        if (!Context.Strict && isPhony && (*it)->getPath() == Output->getPath())
+        if (!Context.Strict && isPhony && isImmediatelyCyclicInput(*it))
           continue;
-        
+
         engine.taskNeedsInput(this, (*it)->getPath(), 0);
       }
 
       // Request all of the order-only inputs.
       for (auto it = Command->orderOnlyInputs_begin(),
              ie = Command->orderOnlyInputs_end(); it != ie; ++it) {
-        if (!Context.Strict && isPhony && (*it)->getPath() == Output->getPath())
+        if (!Context.Strict && isPhony && isImmediatelyCyclicInput(*it))
           continue;
-        
+
         engine.taskMustFollow(this, (*it)->getPath());
       }
     }
