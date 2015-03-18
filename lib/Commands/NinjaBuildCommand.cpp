@@ -528,9 +528,9 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
     }
 
     virtual void start(core::BuildEngine& engine) override {
-      // If this is a phony rule, ignore any immediately cyclic dependencies,
-      // which are generated frequently by CMake, but can be ignored by
-      // Ninja. See https://github.com/martine/ninja/issues/935.
+      // If this is a phony rule, ignore any immediately cyclic dependencies in
+      // non-strict mode, which are generated frequently by CMake, but can be
+      // ignored by Ninja. See https://github.com/martine/ninja/issues/935.
       //
       // FIXME: Find a way to harden this more, or see if we can just get CMake
       // to fix it.
@@ -541,14 +541,14 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       // variable expansion, but that has already been performed).
       for (auto it = Command->explicitInputs_begin(),
              ie = Command->explicitInputs_end(); it != ie; ++it) {
-        if (isPhony && (*it)->getPath() == Output->getPath())
+        if (!Context.Strict && isPhony && (*it)->getPath() == Output->getPath())
           continue;
         
         engine.taskNeedsInput(this, (*it)->getPath(), 0);
       }
       for (auto it = Command->implicitInputs_begin(),
              ie = Command->implicitInputs_end(); it != ie; ++it) {
-        if (isPhony && (*it)->getPath() == Output->getPath())
+        if (!Context.Strict && isPhony && (*it)->getPath() == Output->getPath())
           continue;
         
         engine.taskNeedsInput(this, (*it)->getPath(), 0);
@@ -557,7 +557,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       // Request all of the order-only inputs.
       for (auto it = Command->orderOnlyInputs_begin(),
              ie = Command->orderOnlyInputs_end(); it != ie; ++it) {
-        if (isPhony && (*it)->getPath() == Output->getPath())
+        if (!Context.Strict && isPhony && (*it)->getPath() == Output->getPath())
           continue;
         
         engine.taskMustFollow(this, (*it)->getPath());
