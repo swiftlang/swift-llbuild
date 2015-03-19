@@ -708,6 +708,45 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
       return BuildValue::makeSuccessfulCommand(OutputInfo, CommandHash);
     }
 
+    /// Check if it is legal to only update the result (versus rerunning)
+    /// because the outputs are newer than all of the inputs.
+    bool canUpdateIfNewerWithResult(const BuildValue& Result) {
+      assert(Result.isSuccessfulCommand());
+
+      // Check each output.
+      for (unsigned i = 0, e = Result.getNumOutputs(); i != e; ++i) {
+        const FileInfo& OutputInfo = Result.getNthOutputInfo(i);
+
+        // If the output is missing, we need to rebuild.
+        if (OutputInfo.isMissing())
+          return false;
+
+        // Check if the output is actually newer than the most recent input.
+        //
+        // In strict mode, we use a strict "newer-than" check here, to guarantee
+        // correctness in the face of equivalent timestamps. This is
+        // particularly important on OS X, which has a low resolution mtime.
+        //
+        // However, in non-strict mode, we need to be compatible with Ninja
+        // here, because there are some very important uses cases where this
+        // behavior is relied on. One major example is CMake's initial
+        // configuration checks using Ninja -- if this is not in place, those
+        // rules will try and rerun the generator of the "TRY_COMPILE" steps,
+        // and will enter an infinite reconfiguration loop. See also:
+        //
+        // See: http://www.cmake.org/Bug/view.php?id=15456
+        if (Context.Strict) {
+          if (OutputInfo.ModTime <= NewestModTime)
+            return false;
+        } else {
+          if (OutputInfo.ModTime < NewestModTime)
+            return false;
+        }
+      }
+
+      return true;
+    }
+
     virtual void inputsAvailable(core::BuildEngine& engine) override {
       // If the build is cancelled, skip everything.
       if (Context.IsCancelled) {
@@ -746,34 +785,9 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
         if (CanUpdateIfNewer) {
           BuildValue Result = computeCommandResult(CommandHash);
 
-          if (!Result.getOutputInfo().isMissing()) {
-            auto& OutputInfo = Result.getOutputInfo();
-            // Check if the output is actually newer than the most recent input.
-            //
-            // In strict mode, we use a strict "newer-than" check here, to
-            // guarantee correctness in the face of equivalent timestamps. This
-            // is particularly important on OS X, which has a low resolution
-            // mtime.
-            //
-            // However, in non-strict mode, we need to be compatible with Ninja
-            // here, because there are some very important uses cases where this
-            // behavior is relied on. One major example is CMake's initial
-            // configuration checks using Ninja -- if this is not in place,
-            // those rules will try and rerun the generator of the "TRY_COMPILE"
-            // steps, and will enter an infinite reconfiguration loop. See also:
-            //
-            // See: http://www.cmake.org/Bug/view.php?id=15456
-            if (Context.Strict) {
-              CanUpdateIfNewer = OutputInfo.ModTime > NewestModTime;
-            } else {
-              CanUpdateIfNewer = OutputInfo.ModTime >= NewestModTime;
-            }
-
-            // Perform the update, if ok.
-            if (CanUpdateIfNewer) {
-              Context.Engine.taskIsComplete(this, Result.toValue());
-              return;
-            }
+          if (canUpdateIfNewerWithResult(Result)) {
+            Context.Engine.taskIsComplete(this, Result.toValue());
+            return;
           }
         }
       }
