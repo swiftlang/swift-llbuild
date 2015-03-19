@@ -294,6 +294,8 @@ public:
   static BuildValue makeSuccessfulCommand(const FileInfo* OutputInfos,
                                           uint32_t NumOutputInfos,
                                           uint64_t CommandHash) {
+    // This ctor function should only be used for multiple outputs.
+    assert(NumOutputInfos > 1);
     return BuildValue(BuildValueKind::SuccessfulCommand, OutputInfos,
                       NumOutputInfos, CommandHash);
   }
@@ -579,11 +581,9 @@ static bool GetStatInfoForNode(const ninja::Node* Node, FileInfo *Info_Out) {
   return true;
 }
 
-core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
-                         ninja::Command* Command) {
+core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
   struct NinjaCommandTask : core::Task {
     BuildContext& Context;
-    ninja::Node* Output;
     ninja::Command* Command;
 
     /// If true, the command should be skipped (because of an error in an
@@ -605,10 +605,8 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
     /// The timestamp of the most recently rebuilt input.
     FileTimestamp NewestModTime{ 0, 0 };
 
-    NinjaCommandTask(BuildContext& Context, ninja::Node* Output,
-                     ninja::Command* Command)
-      : Task("ninja-command"), Context(Context), Output(Output),
-        Command(Command) {
+    NinjaCommandTask(BuildContext& Context, ninja::Command* Command)
+      : Task("ninja-command"), Context(Context), Command(Command) {
       // If this command uses discovered dependencies, we can never skip it (we
       // don't yet have a way to account for the discovered dependencies, or
       // preserve them if skipped).
@@ -622,6 +620,10 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
                               const core::ValueType& ValueData) override {
       // Process the input value to see if we should skip this command.
       BuildValue Value = BuildValue::fromValue(ValueData);
+
+      // All direct inputs to NinjaCommandTask objects should be singleton
+      // values.
+      assert(!Value.hasMultipleOutputs());
 
       // If the value is not an existing input or a successful command, then we
       // shouldn't run this command.
@@ -703,9 +705,19 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
 
     /// Compute the output result for the command.
     BuildValue computeCommandResult(uint64_t CommandHash) const {
-      FileInfo OutputInfo;
-      GetStatInfoForNode(Output, &OutputInfo);
-      return BuildValue::makeSuccessfulCommand(OutputInfo, CommandHash);
+      unsigned NumOutputs = Command->getOutputs().size();
+      if (NumOutputs == 1) {
+        FileInfo OutputInfo;
+        GetStatInfoForNode(Command->getOutputs()[0], &OutputInfo);
+        return BuildValue::makeSuccessfulCommand(OutputInfo, CommandHash);
+      } else {
+        std::vector<FileInfo> OutputInfos(NumOutputs);
+        for (unsigned i = 0; i != NumOutputs; ++i) {
+          GetStatInfoForNode(Command->getOutputs()[i], &OutputInfos[i]);
+        }
+        return BuildValue::makeSuccessfulCommand(OutputInfos.data(), NumOutputs,
+                                                 CommandHash);
+      }
     }
 
     /// Check if it is legal to only update the result (versus rerunning)
@@ -763,9 +775,15 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
         // Get the result.
         BuildValue Result = computeCommandResult(/*CommandHash=*/0);
 
-        // If the output is missing, then we always want to force the change to
+        // If any output is missing, then we always want to force the change to
         // propagate.
-        bool ForceChange = Result.getOutputInfo().isMissing();
+        bool ForceChange = false;
+        for (unsigned i = 0, e = Result.getNumOutputs(); i != e; ++i) {
+            if (Result.getNthOutputInfo(i).isMissing()) {
+                ForceChange = true;
+                break;
+            }
+        }
 
         engine.taskIsComplete(this, Result.toValue(), ForceChange);
         return;
@@ -1074,8 +1092,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
     }
   };
 
-  return Context.Engine.registerTask(new NinjaCommandTask(Context, Output,
-                                                          Command));
+  return Context.Engine.registerTask(new NinjaCommandTask(Context, Command));
 }
 
 core::Task* BuildInput(BuildContext& Context, ninja::Node* Input) {
@@ -1158,6 +1175,69 @@ core::Task* BuildTargets(BuildContext& Context,
   return Context.Engine.registerTask(new TargetsTask(Context, TargetsToBuild));
 }
 
+core::Task* SelectCompositeBuildResult(BuildContext& Context,
+                                       ninja::Command* Command,
+                                       unsigned InputIndex,
+                                       const core::KeyType& CompositeRuleName) {
+  struct SelectResultTask : core::Task {
+    const BuildContext& Context;
+    const ninja::Command* Command;
+    const unsigned InputIndex;
+    const core::KeyType CompositeRuleName;
+    const core::ValueType *CompositeValueData = nullptr;
+
+    SelectResultTask(BuildContext& Context, ninja::Command* Command,
+                     unsigned InputIndex,
+                     const core::KeyType& CompositeRuleName)
+      : Task("ninja-select-result"), Context(Context), Command(Command), 
+        InputIndex(InputIndex), CompositeRuleName(CompositeRuleName) { }
+
+    virtual void start(core::BuildEngine& engine) override {
+      // Request the composite input.
+      engine.taskNeedsInput(this, CompositeRuleName, 0);
+    }
+
+    virtual void provideValue(core::BuildEngine& engine, uintptr_t InputID,
+                              const core::ValueType& ValueData) override {
+      CompositeValueData = &ValueData;
+    }
+
+    virtual void inputsAvailable(core::BuildEngine& engine) override {
+      // Construct the appropriate build value from the result.
+      assert(CompositeValueData);
+      BuildValue Value(BuildValue::fromValue(*CompositeValueData));
+
+      // If the input was a failed or skipped command, propagate that result.
+      if (Value.isFailedCommand() || Value.isSkippedCommand()) {
+        engine.taskIsComplete(this, Value.toValue(), /*ForceChange=*/true);
+      } else {
+        // FIXME: We don't try and set this in response to the restat flag on
+        // the incoming command, because it doesn't generally work -- the output
+        // will just honor update-if-newer and still not run. We need to move to
+        // a different model for handling restat = 0 to get this to work
+        // properly.
+        bool ForceChange = false;
+
+        // Otherwise, the value should be a successful command with file info
+        // for each output.
+        assert(Value.isSuccessfulCommand() && Value.hasMultipleOutputs() &&
+               InputIndex < Value.getNumOutputs());
+
+        // The result is the InputIndex-th element, and the command hash is
+        // unused.
+        engine.taskIsComplete(
+          this, BuildValue::makeSuccessfulCommand(
+            Value.getNthOutputInfo(InputIndex),
+            /*CommandHash=*/0).toValue(),
+          ForceChange);
+      }
+    }
+  };
+
+  return Context.Engine.registerTask(
+    new SelectResultTask(Context, Command, InputIndex, CompositeRuleName));
+}
+
 static bool BuildInputIsResultValid(ninja::Node* Node,
                                     const core::ValueType& ValueData) {
   BuildValue Value = BuildValue::fromValue(ValueData);
@@ -1182,7 +1262,6 @@ static bool BuildInputIsResultValid(ninja::Node* Node,
 }
 
 static bool BuildCommandIsResultValid(ninja::Command* Command,
-                                      ninja::Node* Node,
                                       const core::ValueType& ValueData) {
   BuildValue Value = BuildValue::fromValue(ValueData);
 
@@ -1197,21 +1276,22 @@ static bool BuildCommandIsResultValid(ninja::Command* Command,
       return false;
   }
 
-  // Always rebuild if the output is missing.
-  FileInfo Info;
-  if (!GetStatInfoForNode(Node, &Info))
-    return false;
+  // Check the timestamps on each of the outputs.
+  for (unsigned i = 0, e = Command->getOutputs().size(); i != e; ++i) {
+    // Always rebuild if the output is missing.
+    FileInfo Info;
+    if (!GetStatInfoForNode(Command->getOutputs()[i], &Info))
+      return false;
 
-  // Otherwise, the result is valid if the output exists and the hash has not
-  // changed.
-  //
-  // FIXME: While this is reasonable in a strictly functional view of the build
-  // system, a common behavior is that the *producer* of the output is not
-  // considered out of date if the output has been modified outside the build
-  // system, but *consumers* are. This is occasionally useful when doing things
-  // like manually reissuing compilation commands, for example. We do not yet
-  // support that model, and will rebuild outputs if anyone tampers with them.
-  return Value.getOutputInfo() == Info;
+    // Otherwise, the result is valid if file information has not changed.
+    //
+    // Note that we may still decide not to actually run the command based on
+    // the update-if-newer handling, but it does require running the task.
+    if (Value.getNthOutputInfo(i) != Info)
+      return false;
+  }
+
+  return true;
 }
 
 core::Rule NinjaBuildEngineDelegate::lookupRule(const core::KeyType& Key) {
@@ -1442,19 +1522,63 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
     // Create rules for all of the build commands up front.
     //
     // FIXME: We should probably also move this to be dynamic.
-    for (auto& Command: Context.Manifest->getCommands()) {
-      for (auto& Output: Command->getOutputs()) {
+    for (auto& CommandOwner: Context.Manifest->getCommands()) {
+      auto* Command = CommandOwner.get();
+
+      // If this command has a single output, create the trivial rule.
+      if (Command->getOutputs().size() == 1) {
         Context.Engine.addRule({
-            Output->getPath(),
-            [&] (core::BuildEngine& Engine) {
-              return BuildCommand(Context, Output, Command.get());
+            Command->getOutputs()[0]->getPath(),
+            [=, &Context] (core::BuildEngine& Engine) {
+              return BuildCommand(Context, Command);
             },
-            [&] (const core::Rule& Rule, const core::ValueType Value) {
+              [=, &Context] (const core::Rule& Rule,
+                                       const core::ValueType Value) {
               // If simulating, assume cached results are valid.
               if (Context.Simulate)
                 return true;
-  
-              return BuildCommandIsResultValid(Command.get(), Output, Value);
+
+              return BuildCommandIsResultValid(Command, Value);
+            } });
+        continue;
+      }
+
+      // Otherwise, create a composite rule group for the multiple outputs.
+
+      // Create a signature for the composite rule.
+      //
+      // FIXME: Make efficient.
+      std::string CompositeRuleName = "";
+      for (auto& Output: Command->getOutputs()) {
+        if (!CompositeRuleName.empty())
+          CompositeRuleName += "&&";
+        CompositeRuleName += Output->getPath();
+      }
+
+      // Add the composite rule, which will run the command and build all
+      // outputs.
+      Context.Engine.addRule({
+          CompositeRuleName,
+          [=, &Context] (core::BuildEngine& Engine) {
+            return BuildCommand(Context, Command);
+          },
+          [=, &Context] (const core::Rule& Rule, const core::ValueType Value) {
+            // If simulating, assume cached results are valid.
+            if (Context.Simulate)
+              return true;
+
+            return BuildCommandIsResultValid(Command, Value);
+          } });
+
+      // Create the per-output selection rules that select the individual output
+      // result from the composite result.
+      for (unsigned i = 0, e = Command->getOutputs().size(); i != e; ++i) {
+
+        Context.Engine.addRule({
+            Command->getOutputs()[i]->getPath(),
+            [=, &Context] (core::BuildEngine& Engine) {
+              return SelectCompositeBuildResult(Context, Command, i,
+                                                CompositeRuleName);
             } });
       }
     }

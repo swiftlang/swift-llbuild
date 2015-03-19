@@ -118,6 +118,16 @@ Tasks for Usable Tool
 Random Tasks
 ------------
 
+* Ninja reruns a command if the restat= flag changes? What triggers this? This
+  behavior probably also happens for depfiles and things, we should match.
+
+* There are some subtle differences in how we handle restat = 0, and generally
+  we don't do the same thing Ninja would (we can rebuild less). This is because
+  Ninja will just run things downstream if an incoming edge was dirty, but we
+  will do so and also allow the update-if-newer behavior to trigger on interior
+  commands. As an example, look at how the multiple-outputs test case behaves in
+  Ninja with restat = 0.
+
 * Add support for cleaning up output files (deleting them on failed tasks)?
 
 * Investigate using pselect mechanisms vs blocked threads.

@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+
+import errno
+import sys
+
+def write_data_to_path_if_changed(data, path):
+    # See if the file contents are identical.
+    try:
+        with open(path) as f:
+            if f.read() == data:
+                print >>sys.stderr, "note: %s: file contents unchanged" % (
+                    path,)
+                return
+    except IOError as e:
+        if e.errno != errno.ENOENT:
+            raise
+
+    # Otherwise, write the data.
+    with open(path, 'wb') as f:
+        f.write(data)
+    print >>sys.stderr, "note: %s: updated file" % (path,)
+
+# Split the input into even and odd numbers.
+even = []
+odd = []
+for line in sys.stdin:
+    for number in line.split():
+        if number.isdigit():
+            value = int(number)
+            if value % 2:
+                odd.append(value)
+            else:
+                even.append(value)
+
+if len(sys.argv) != 3:
+    raise SystemExit("error: invalid number of arguments")
+
+odd_data = '\n'.join(map(str, sorted(odd))) + '\n'
+even_data = '\n'.join(map(str, sorted(even))) + '\n'
+_, odd_out_path, even_out_path = sys.argv
+        
+# Write the files, if changed.
+write_data_to_path_if_changed(odd_data, odd_out_path)
+write_data_to_path_if_changed(even_data, even_out_path)
