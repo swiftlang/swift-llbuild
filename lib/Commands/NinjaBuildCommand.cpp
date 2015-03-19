@@ -231,21 +231,42 @@ private:
   /// The kind of value.
   BuildValueKind Kind;
 
-  /// Padding, to ensure all bytes are defined (this is important given how we
-  /// serialize).
-  const uint32_t Padding = 0;
+  /// The number of attached output infos.
+  const uint32_t NumOutputInfos = 0;
 
-  /// The file info for the rule output.
-  FileInfo OutputInfo;
+  union {
+    /// The file info for the rule output, for existing inputs and successful
+    /// commands with a single output.
+    FileInfo AsOutputInfo;
+
+    /// The file info for successful commands with multiple outputs.
+    FileInfo* AsOutputInfos;
+  } ValueData;
 
   /// The command hash, for successful commands.
   uint64_t CommandHash;
 
 private:
   BuildValue() {}
+  BuildValue(BuildValueKind Kind)
+    : Kind(Kind), NumOutputInfos(0), CommandHash(0)
+  {
+  }
   BuildValue(BuildValueKind Kind, const FileInfo& OutputInfo,
              uint64_t CommandHash = 0)
-    : Kind(Kind), OutputInfo(OutputInfo), CommandHash(CommandHash) {}
+    : Kind(Kind), NumOutputInfos(1), CommandHash(CommandHash)
+  {
+    ValueData.AsOutputInfo = OutputInfo;
+  }
+  BuildValue(BuildValueKind Kind, const FileInfo* OutputInfos,
+             uint32_t NumOutputInfos, uint64_t CommandHash = 0)
+    : Kind(Kind), NumOutputInfos(NumOutputInfos), CommandHash(CommandHash)
+  {
+    ValueData.AsOutputInfos = new FileInfo[NumOutputInfos];
+    for (uint32_t i = 0; i != NumOutputInfos; ++i) {
+      ValueData.AsOutputInfos[i] = OutputInfos[i];
+    }
+  }
 
 public:
   // Build values can only be moved via construction, not copied.
@@ -253,23 +274,34 @@ public:
     memcpy(this, &RHS, sizeof(RHS));
     memset(&RHS, 0, sizeof(RHS));
   }
+  ~BuildValue() {
+    if (hasMultipleOutputs()) {
+      delete[] ValueData.AsOutputInfos;
+    }
+  }
 
   static BuildValue makeExistingInput(const FileInfo& OutputInfo) {
     return BuildValue(BuildValueKind::ExistingInput, OutputInfo);
   }
   static BuildValue makeMissingInput() {
-    return BuildValue(BuildValueKind::MissingInput, {});
+    return BuildValue(BuildValueKind::MissingInput);
   }
   static BuildValue makeSuccessfulCommand(const FileInfo& OutputInfo,
                                           uint64_t CommandHash) {
     return BuildValue(BuildValueKind::SuccessfulCommand, OutputInfo,
                       CommandHash);
   }
+  static BuildValue makeSuccessfulCommand(const FileInfo* OutputInfos,
+                                          uint32_t NumOutputInfos,
+                                          uint64_t CommandHash) {
+    return BuildValue(BuildValueKind::SuccessfulCommand, OutputInfos,
+                      NumOutputInfos, CommandHash);
+  }
   static BuildValue makeFailedCommand() {
-    return BuildValue(BuildValueKind::FailedCommand, {});
+    return BuildValue(BuildValueKind::FailedCommand);
   }
   static BuildValue makeSkippedCommand() {
-    return BuildValue(BuildValueKind::SkippedCommand, {});
+    return BuildValue(BuildValueKind::SkippedCommand);
   }
 
   bool isExistingInput() const { return Kind == BuildValueKind::ExistingInput; }
@@ -282,10 +314,34 @@ public:
     return Kind == BuildValueKind::SkippedCommand;
   }
 
+  bool hasMultipleOutputs() const {
+    return NumOutputInfos > 1;
+  }
+
+  unsigned getNumOutputs() const {
+    assert((isExistingInput() || isSuccessfulCommand()) &&
+           "invalid call for value kind");
+    return NumOutputInfos;
+  }
+
   const FileInfo& getOutputInfo() const {
     assert((isExistingInput() || isSuccessfulCommand()) &&
            "invalid call for value kind");
-    return OutputInfo;
+    assert(!hasMultipleOutputs() &&
+           "invalid call on result with multiple outputs");
+    return ValueData.AsOutputInfo;
+  }
+
+  const FileInfo& getNthOutputInfo(unsigned N) const {
+    assert((isExistingInput() || isSuccessfulCommand()) &&
+           "invalid call for value kind");
+    assert(N < getNumOutputs());
+    if (hasMultipleOutputs()) {
+      return ValueData.AsOutputInfos[N];
+    } else {
+      assert(N == 0);
+      return ValueData.AsOutputInfo;
+    }
   }
 
   uint64_t getCommandHash() const {
@@ -295,15 +351,38 @@ public:
 
   static BuildValue fromValue(const core::ValueType& Value) {
     BuildValue Result;
-    assert(Value.size() == sizeof(Result));
+    assert(Value.size() >= sizeof(Result));
     memcpy(&Result, Value.data(), sizeof(Result));
+
+    // If this result has multiple output values, deserialize them properly.
+    if (Result.NumOutputInfos > 1) {
+      assert(Value.size() == (sizeof(Result) +
+                              Result.NumOutputInfos * sizeof(FileInfo)));
+      Result.ValueData.AsOutputInfos = new FileInfo[Result.NumOutputInfos];
+      memcpy(Result.ValueData.AsOutputInfos,
+             Value.data() + sizeof(Result),
+             Result.NumOutputInfos * sizeof(FileInfo));
+    } else {
+      assert(Value.size() == sizeof(Result));
+    }
+
     return Result;
   }
 
   core::ValueType toValue() {
-    std::vector<uint8_t> Result(sizeof(*this));
-    memcpy(Result.data(), this, sizeof(*this));
-    return Result;
+    if (NumOutputInfos > 1) {
+      // FIXME: This could be packed one entry tighter.
+      std::vector<uint8_t> Result(sizeof(*this) +
+                                  NumOutputInfos * sizeof(FileInfo));
+      memcpy(Result.data(), this, sizeof(*this));
+      memcpy(Result.data() + sizeof(*this), ValueData.AsOutputInfos,
+             NumOutputInfos * sizeof(FileInfo));
+      return Result;
+    } else {
+      std::vector<uint8_t> Result(sizeof(*this));
+      memcpy(Result.data(), this, sizeof(*this));
+      return Result;
+    }
   }
 };
 
