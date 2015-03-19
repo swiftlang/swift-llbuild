@@ -812,12 +812,13 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Node* Output,
         if (HasMissingInput) {
           // Take care to not rely on the ``this`` object, which may disappear
           // before the queue executes this block.
-          ninja::Node *LocalOutput = Output;
+          ninja::Command* LocalCommand(Command);
 
           dispatch_async(Context.OutputQueue, ^() {
               fprintf(stderr,
                       "error: %s: cannot build '%s' due to missing input\n",
-                      getprogname(), LocalOutput->getPath().c_str());
+                      getprogname(),
+                      LocalCommand->getOutputs()[0]->getPath().c_str());
             });
 
           // Update the count of failed commands.
