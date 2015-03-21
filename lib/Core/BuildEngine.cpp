@@ -478,6 +478,9 @@ private:
 
       // If the input isn't already available, enqueue this scan request on the
       // input.
+      //
+      // FIXME: We need to continue scanning the rest of the inputs to ensure we
+      // are not delaying necessary work. See <rdar://problem/20248283>.
       if (!IsAvailable) {
         if (Trace)
           Trace->ruleScanningDeferredOnTask(
