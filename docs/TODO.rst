@@ -156,3 +156,9 @@ Random Tasks
     we discretely represent each stat-of-file as an input that is then consumed
     by each item that requires it. This would make it easy to guarantee we
     compute such things once.
+
+  * I have heard a claim that one can actually improve performance by
+    strategically purging the OS buffer cache -- the claim was that it is faster
+    to build Swift after building LLVM & Clang if there is a purge in
+    between. If true, this may be better things we can do to communicate to the
+    kernel the purpose and lifetime of things like object files.
