@@ -656,6 +656,10 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
       return false;
     }
 
+    void completeTask(BuildValue&& Result, bool ForceChange=false) {
+      Context.Engine.taskIsComplete(this, Result.toValue(), ForceChange);
+    }
+
     virtual void start(core::BuildEngine& engine) override {
       // If this is a phony rule, ignore any immediately cyclic dependencies in
       // non-strict mode, which are generated frequently by CMake, but can be
@@ -762,9 +766,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
     virtual void inputsAvailable(core::BuildEngine& engine) override {
       // If the build is cancelled, skip everything.
       if (Context.IsCancelled) {
-        Context.Engine.taskIsComplete(
-          this, BuildValue::makeSkippedCommand().toValue());
-        return;
+        return completeTask(BuildValue::makeSkippedCommand());
       }
 
       // Ignore phony commands.
@@ -785,8 +787,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
             }
         }
 
-        engine.taskIsComplete(this, Result.toValue(), ForceChange);
-        return;
+        return completeTask(std::move(Result), ForceChange);
       }
 
       // If it is legal to simply update the command, then if the command output
@@ -804,8 +805,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
           BuildValue Result = computeCommandResult(CommandHash);
 
           if (canUpdateIfNewerWithResult(Result)) {
-            Context.Engine.taskIsComplete(this, Result.toValue());
-            return;
+            return completeTask(std::move(Result));
           }
         }
       }
@@ -819,9 +819,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
       if (Context.Simulate) {
         if (!Context.Quiet)
           writeDescription(Context, Command);
-        Context.Engine.taskIsComplete(
-          this, BuildValue::makeSkippedCommand().toValue());
-        return;
+        return completeTask(BuildValue::makeSkippedCommand());
       }
 
       // If not simulating, but this command should be skipped, then do nothing.
@@ -843,9 +841,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
           Context.incrementFailedCommands();
         }
 
-        Context.Engine.taskIsComplete(
-          this, BuildValue::makeSkippedCommand().toValue());
-        return;
+        return completeTask(BuildValue::makeSkippedCommand());
       }
       assert(!HasMissingInput);
 
@@ -895,9 +891,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
     void executeCommand() {
       // If the build is cancelled, skip the job.
       if (Context.IsCancelled) {
-        Context.Engine.taskIsComplete(
-          this, BuildValue::makeSkippedCommand().toValue());
-        return;
+        return completeTask(BuildValue::makeSkippedCommand());
       }
 
       // Write the description on the output queue, taking care to not rely on
@@ -913,12 +907,10 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
 
       // Actually run the command.
       if (!spawnAndWaitForCommand()) {
-        // If the command failed, comple the task with the failed result and
+        // If the command failed, complete the task with the failed result and
         // always propagate.
-        Context.Engine.taskIsComplete(
-          this, BuildValue::makeFailedCommand().toValue(),
-          /*ForceChange=*/true);
-        return;
+        return completeTask(BuildValue::makeFailedCommand(),
+                            /*ForceChange=*/true);
       }
 
       // Otherwise, the command succeeded so process the dependencies.
@@ -930,8 +922,8 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
       // forcing downstream propagation if it isn't set.
       uint64_t CommandHash = basic::HashString(Command->getCommandString());
       BuildValue Result = computeCommandResult(CommandHash);
-      Context.Engine.taskIsComplete(this, Result.toValue(),
-                                    /*ForceChange=*/!Command->hasRestatFlag());
+      return completeTask(std::move(Result),
+                          /*ForceChange=*/!Command->hasRestatFlag());
     }
 
     /// Execute the command process and wait for it to complete.
@@ -1062,7 +1054,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
           BuildContext& Context;
           NinjaCommandTask* Task;
           const std::string& Path;
-          
+
           DepsActions(BuildContext& Context, NinjaCommandTask* Task,
                       const std::string& Path)
             : Context(Context), Task(Task), Path(Path) {}
@@ -1073,13 +1065,13 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
                              "%s (%s) at offset %u\n"),
                     getprogname(), Path.c_str(), Message, unsigned(Length));
           }
-          
+
           virtual void actOnRuleDependency(const char* Dependency,
                                            uint64_t Length) override {
             Context.Engine.taskDiscoveredDependency(
               Task, std::string(Dependency, Dependency+Length));
           }
-          
+
           virtual void actOnRuleStart(const char* Name,
                                       uint64_t Length) override {}
           virtual void actOnRuleEnd() override {}
@@ -1135,7 +1127,7 @@ core::Task* BuildInput(BuildContext& Context, ninja::Node* Input) {
         engine.taskIsComplete(this, BuildValue::makeMissingInput().toValue());
         return;
       }
-        
+
       engine.taskIsComplete(
         this, BuildValue::makeExistingInput(OutputInfo).toValue());
     }
