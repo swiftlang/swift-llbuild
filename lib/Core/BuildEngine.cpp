@@ -329,6 +329,10 @@ private:
     if (Trace)
       Trace->checkingRuleNeedsToRun(&RuleInfo.Rule);
 
+    // Report the status change.
+    if (RuleInfo.Rule.UpdateStatus)
+      RuleInfo.Rule.UpdateStatus(Rule::StatusKind::IsScanning);
+
     // If the rule has never been run, it needs to run.
     if (RuleInfo.Result.BuiltAt == 0) {
       if (Trace)
@@ -389,6 +393,11 @@ private:
     // just update it.
     if (RuleInfo.State == RuleInfo::StateKind::DoesNotNeedToRun) {
       RuleInfo.setComplete(this);
+
+      // Report the status change.
+      if (RuleInfo.Rule.UpdateStatus)
+        RuleInfo.Rule.UpdateStatus(Rule::StatusKind::IsComplete);
+
       return true;
     }
 
@@ -729,6 +738,10 @@ private:
         assert(RuleInfo->State == RuleInfo::StateKind::InProgressComputing);
         RuleInfo->setPendingTaskInfo(nullptr);
         RuleInfo->setComplete(this);
+
+        // Report the status change.
+        if (RuleInfo->Rule.UpdateStatus)
+          RuleInfo->Rule.UpdateStatus(Rule::StatusKind::IsComplete);
 
         // Add all of the task's discovered dependencies.
         //

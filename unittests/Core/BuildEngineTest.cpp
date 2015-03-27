@@ -620,4 +620,44 @@ TEST(BuildEngineTest, UnchangedOutputs) {
   EXPECT_EQ("value", BuiltKeys[0]);
 }
 
+TEST(BuildEngineTest, StatusCallbacks) {
+  unsigned NumScanned = 0;
+  unsigned NumComplete = 0;
+  SimpleBuildEngineDelegate Delegate;
+  core::BuildEngine Engine(Delegate);
+  Engine.addRule({
+      "input",
+      simpleAction({}, [&] (const std::vector<int>& Inputs) {
+          return 2; }),
+      nullptr,
+      [&] (core::Rule::StatusKind Status) {
+        if (Status == core::Rule::StatusKind::IsScanning) {
+          ++NumScanned;
+        } else {
+          assert(Status == core::Rule::StatusKind::IsComplete);
+          ++NumComplete;
+        }
+      } });
+  Engine.addRule({
+      "output",
+      simpleAction({"input"},
+                   [&] (const std::vector<int>& Inputs) {
+                     return Inputs[0] * 3;
+                   }),
+      nullptr,
+      [&] (core::Rule::StatusKind Status) {
+        if (Status == core::Rule::StatusKind::IsScanning) {
+          ++NumScanned;
+        } else {
+          assert(Status == core::Rule::StatusKind::IsComplete);
+          ++NumComplete;
+        }
+      } });
+
+  // Build the result.
+  EXPECT_EQ(2 * 3, IntFromValue(Engine.build("output")));
+  EXPECT_EQ(2U, NumScanned);
+  EXPECT_EQ(2U, NumComplete);
+}
+
 }

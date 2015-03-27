@@ -126,11 +126,58 @@ public:
   virtual void inputsAvailable(BuildEngine&) = 0;
 };
 
+/// A rule represents an individual element of computation that can be performed
+/// by the build engine.
+///
+/// Each rule is identified by a unique key and the value for that key can be
+/// computed to produce a result, and supplies a set of callbacks that are used
+/// to implement the rule's behavior.
+///
+/// The computation for a rule is done by invocation of its \see Action
+/// callback, which is responsible for creating a Task object which will manage
+/// the computation.
+///
+/// All callbacks for the Rule are always invoked synchronously on the primary
+/// BuildEngine thread.
+//
+// FIXME: The intent of having a callback like Rule structure and a decoupled
+// (virtual) Task is that the Rule objects (of which there can be very many) can
+// be optimized for being lightweight. We don't currently make much of an
+// attempt in this direction with the std::functions, but we should investigate
+// if this can be lighter weight -- especially since many clients are likely to
+// need little more than a place to stuff a context object and register their
+// callbacks.
+//
+// FIXME: We also need to figure out if a richer concurrency model is needed for
+// the callbacks. The current intent is that they should be lightweight and
+// Tasks should be used when real concurrency is needed.
 class Rule {
 public:
+  enum class StatusKind {
+    /// Indicates the rule is being scanned.
+    IsScanning = 0,
+
+    /// Indicates the rule is complete.
+    IsComplete = 1
+  };
+
+  /// The key computed by the rule.
   KeyType Key;
+
+  /// Called to create the task to build the rule, when necessary.
   std::function<Task*(BuildEngine&)> Action;
+
+  /// Called to check whether the previously computed value for this rule is
+  /// still valid.
+  ///
+  /// This callback is designed for use in synchronizing values which represent
+  /// state managed externally to the build engine. For example, a rule which
+  /// computes something on the file system may use this to verify that the
+  /// computed output has not changed since it was built.
   std::function<bool(const Rule&, const ValueType&)> IsResultValid;
+
+  /// Called to indicate a change in the rule status.
+  std::function<void(StatusKind)> UpdateStatus;
 };
 
 /// Delegate interface for use with the build engine.
