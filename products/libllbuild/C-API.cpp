@@ -65,6 +65,11 @@ class CAPIBuildEngineDelegate : public BuildEngineDelegate {
       IsResultValid };
   }
 
+  virtual void cycleDetected(const std::vector<core::Rule*>& Items) override {
+    // FIXME.
+    assert(0 && "unexpected cycle!");
+  }
+
 public:
   CAPIBuildEngineDelegate(llb_buildengine_delegate_t delegate)
     : CAPIDelegate(delegate)

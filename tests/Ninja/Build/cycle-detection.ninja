@@ -1,0 +1,19 @@
+# Check that we report cycles.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: /bin/sh -c "%{llbuild} ninja build --no-parallel --no-db --chdir %t.build; echo \"exit code: $?\"" &> %t.out
+# RUN: %{FileCheck} < %t.out %s
+
+# CHECK: cycle detected among targets: "intermediate" -> "output-2" -> "output-1" -> "intermediate"
+# CHECK-NOT: command failure
+# CHECK: exit code: 1
+
+rule CAT
+     command = cat ${in} > ${out}
+
+build output-1: CAT intermediate
+build intermediate: CAT output-2
+build output-2: CAT output-1
+build output: CAT output-1 output-2

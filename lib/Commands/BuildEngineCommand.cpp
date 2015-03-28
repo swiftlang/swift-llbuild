@@ -165,6 +165,10 @@ static int RunAckermannBuild(int M, int N, int RecomputeCount,
       return core::Rule{Key, [M, N] (core::BuildEngine& engine) {
           return BuildAck(engine, M, N); } };
     }
+
+    virtual void cycleDetected(const std::vector<core::Rule*>& Items) override {
+      assert(0 && "unexpected cycle!");
+    }
   };
   AckermannDelegate delegate;
   core::BuildEngine engine(delegate);

@@ -193,6 +193,13 @@ public:
   /// requested Key cannot be supplied, the delegate should provide a dummy rule
   /// that the client can translate into an error.
   virtual Rule lookupRule(const KeyType& Key) = 0;
+
+  /// Called when a cycle is detected by the build engine and it cannot make
+  /// forward progress.
+  ///
+  /// \param Items The ordered list of items comprising the cycle.
+  virtual void cycleDetected(const std::vector<Rule*>& Items) = 0;
+
 };
 
 /// A build engine supports fast, incremental, persistent, and parallel

@@ -392,6 +392,8 @@ struct NinjaBuildEngineDelegate : public core::BuildEngineDelegate {
   class BuildContext* Context = nullptr;
 
   virtual core::Rule lookupRule(const core::KeyType& Key) override;
+
+  virtual void cycleDetected(const std::vector<core::Rule*>& Items) override;
 };
 
 /// Wrapper for information used during a single build.
@@ -426,6 +428,7 @@ public:
 
   /// Whether the build was cancelled by SIGINT.
   std::atomic<bool> WasCancelledBySigint{false};
+  std::atomic<bool> WasCancelledByCycle{false};
 
   /// The number of inputs used during the build.
   unsigned NumBuiltInputs{0};
@@ -1391,6 +1394,26 @@ core::Rule NinjaBuildEngineDelegate::lookupRule(const core::KeyType& Key) {
     } };
 }
 
+void NinjaBuildEngineDelegate::cycleDetected(
+    const std::vector<core::Rule*>& Cycle) {
+  // Report the cycle.
+  dispatch_sync(Context->OutputQueue, ^() {
+      fprintf(stderr, "error: %s: cycle detected among targets:",
+              getprogname());
+      bool First = true;
+      for (const auto& Rule: Cycle) {
+        fprintf(stderr, "%s \"%s\"", First ? "" : " ->",
+                Rule->Key.c_str());
+        First = false;
+      }
+      fprintf(stderr, "\n");
+    });
+
+  // Cancel the build.
+  Context->IsCancelled = true;
+  Context->WasCancelledByCycle = true;
+}
+
 }
 
 int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
@@ -1776,6 +1799,11 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       kill(getpid(), SIGINT);
       usleep(1000);
       return 2;
+    }
+
+    // If the build was stopped because of a cycle, return an error status.
+    if (Context.WasCancelledByCycle) {
+      return 1;
     }
 
     // If nothing was done, print a single message to let the user know we

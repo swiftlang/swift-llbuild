@@ -32,6 +32,12 @@ class SimpleBuildEngineDelegate : public core::BuildEngineDelegate {
     abort();
     return core::Rule();
   }
+
+  virtual void cycleDetected(const std::vector<core::Rule*>& Items) override {
+    // We never expect a cycle.
+    fprintf(stderr, "error: %s: cycle\n", getprogname());
+    abort();
+  }
 };
 
 static int32_t IntFromValue(const core::ValueType& Value) {

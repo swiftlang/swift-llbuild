@@ -21,6 +21,7 @@
 #include <iostream>
 #include <thread>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 using namespace llbuild;
@@ -211,7 +212,7 @@ class BuildEngineImpl {
     /// fulfilled once the task is complete.
     //
     // FIXME: Note that this structure is redundant here, as
-    // (TaskInputRequest::TaskInfo == this) for all items, but we reuse the
+    // (TaskInputRequest::InputTaskInfo == this) for all items, but we reuse the
     // existing structure for simplicity.
     std::vector<TaskInputRequest> RequestedBy;
     /// The vector of deferred scan requests, for rules which are waiting on
@@ -226,6 +227,19 @@ class BuildEngineImpl {
     unsigned WaitCount = 0;
     /// The list of discovered dependencies found during execution of the task.
     std::vector<KeyType> DiscoveredDependencies;
+
+#ifndef NDEBUG
+    void dump() const {
+      fprintf(stderr, "<TaskInfo:%p: task:%p, for-rule:\"%s\", wait-count:%d>\n",
+              this, Task.get(),
+              ForRuleInfo ? ForRuleInfo->Rule.Key.c_str() : "(null)",
+              WaitCount);
+      for (const auto& Request: RequestedBy) {
+        fprintf(stderr, "  requested by: %s\n",
+                Request.TaskInfo->ForRuleInfo->Rule.Key.c_str());
+      }
+    }
+#endif    
   };
   std::unordered_map<Task*, TaskInfo> TaskInfos;
 
@@ -814,8 +828,88 @@ private:
         break;
     }
 
-    // FIXME: If there was no work to do, but we still have running tasks, then
+    // If there was no work to do, but we still have running tasks, then
     // we have found a cycle and are deadlocked.
+    if (!TaskInfos.empty()) {
+      reportCycle();
+    }
+  }
+
+  void reportCycle() {
+    // Gather all of the successor relationships.
+    std::unordered_map<Rule*, std::vector<Rule*>> Graph;
+    for (const auto& it: TaskInfos) {
+      const TaskInfo& TaskInfo = it.second;
+      assert(TaskInfo.ForRuleInfo);
+      std::vector<Rule*> Successors;
+      for (const auto& Request: TaskInfo.RequestedBy) {
+        assert(Request.TaskInfo->ForRuleInfo);
+        Successors.push_back(&Request.TaskInfo->ForRuleInfo->Rule);
+      }
+      Graph.insert({ &TaskInfo.ForRuleInfo->Rule, Successors });
+    }
+
+    // Find the cycle, which should be reachable from any remaining node.
+    //
+    // FIXME: Need a setvector.
+    std::vector<Rule*> CycleList;
+    std::unordered_set<Rule*> CycleItems;
+    std::function<bool(Rule*)> FindCycle;
+    FindCycle = [&](Rule* Node) {
+      // Push the node on the stack.
+      CycleList.push_back(Node);
+      auto it = CycleItems.insert(Node);
+
+      // If the node is already in the stack, we found the cycle.
+      if (!it.second)
+        return true;
+
+      // Otherwise, iterate over each successor looking for a cycle.
+      for (Rule* Successor: Graph[Node]) {
+        if (FindCycle(Successor))
+          return true;
+      }
+
+      // If we didn't find the cycle, pop this item.
+      CycleItems.erase(it.first);
+      CycleList.pop_back();
+      return false;
+    };
+
+    // Iterate through the graph keys in a deterministic order.
+    std::vector<Rule*> OrderedKeys;
+    for (auto& Entry: Graph)
+      OrderedKeys.push_back(Entry.first);
+    std::sort(OrderedKeys.begin(), OrderedKeys.end(), [] (Rule* a, Rule* b) {
+        return a->Key < b->Key;
+      });
+    for (const auto& Key: OrderedKeys) {
+      if (FindCycle(Key))
+        break;
+    }
+    assert(!CycleList.empty());
+
+    // Reverse the cycle list, since it was formed from the successor graph.
+    std::reverse(CycleList.begin(), CycleList.end());
+
+    Delegate.cycleDetected(CycleList);
+
+    // Complete all of the remaining tasks.
+    //
+    // FIXME: Should we have a task abort callback?
+    for (auto& it: TaskInfos) {
+      // Complete the task, even though it did not update the value.
+      //
+      // FIXME: What should we do here with the value?
+      TaskInfo* TaskInfo = &it.second;
+      RuleInfo* RuleInfo = TaskInfo->ForRuleInfo;
+      assert(TaskInfo == RuleInfo->getPendingTaskInfo());
+      RuleInfo->setPendingTaskInfo(nullptr);
+      RuleInfo->setComplete(this);
+    }
+
+    // Delete all of the tasks.
+    TaskInfos.clear();
   }
 
 public:
