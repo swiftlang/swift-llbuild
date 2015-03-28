@@ -114,6 +114,8 @@ Tasks for Usable Tool
 
 * Support update-if-newer for commands with discovered dependencies.
 
+* We should probably store a rule type along with the result, and always
+  invalidate if the rule type has changed.
 
 Random Tasks
 ------------

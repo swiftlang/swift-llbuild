@@ -1281,11 +1281,11 @@ core::Task* SelectCompositeBuildResult(BuildContext& Context,
                InputIndex < Value.getNumOutputs());
 
         // The result is the InputIndex-th element, and the command hash is
-        // unused.
+        // propagated.
         engine.taskIsComplete(
           this, BuildValue::makeSuccessfulCommand(
             Value.getNthOutputInfo(InputIndex),
-            /*CommandHash=*/0).toValue(),
+            Value.getCommandHash()).toValue(),
           ForceChange);
       }
     }
@@ -1348,6 +1348,24 @@ static bool BuildCommandIsResultValid(ninja::Command* Command,
       return false;
   }
 
+  return true;
+}
+
+static bool SelectCompositeIsResultValid(ninja::Command* Command,
+                                         const core::ValueType& ValueData) {
+  BuildValue Value = BuildValue::fromValue(ValueData);
+
+  // If the prior value wasn't for a successful command, recompute.
+  if (!Value.isSuccessfulCommand())
+    return false;
+
+  // If the command's signature has changed since it was built, rebuild. This is
+  // important for ensuring that we properly reevaluate the select rule when
+  // it's incoming composite rule no longer exists.
+  if (Value.getCommandHash() != basic::HashString(Command->getCommandString()))
+    return false;
+
+  // Otherwise, this result is always valid.
   return true;
 }
 
@@ -1680,17 +1698,19 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       // Create the per-output selection rules that select the individual output
       // result from the composite result.
       for (unsigned i = 0, e = Command->getOutputs().size(); i != e; ++i) {
-
         Context.Engine.addRule({
             Command->getOutputs()[i]->getPath(),
             [=, &Context] (core::BuildEngine& Engine) {
               return SelectCompositeBuildResult(Context, Command, i,
                                                 CompositeRuleName);
-            }/*,
-            nullptr,
-            [=, &Context](core::Rule::StatusKind Status) {
-              UpdateCommandStatus(Context, Command, Status);
-            }*/});
+            },
+            [=, &Context] (const core::Rule& Rule, const core::ValueType Value) {
+              // If simulating, assume cached results are valid.
+              if (Context.Simulate)
+                return true;
+
+              return SelectCompositeIsResultValid(Command, Value);
+            } });
       }
     }
 

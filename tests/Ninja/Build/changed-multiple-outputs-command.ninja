@@ -1,0 +1,44 @@
+# Check that we properly handle a change to the number of outputs on a composite
+# rule.
+
+# Perform the initial build
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: ln %s %t.build/build.ninja
+# RUN: echo "build input-1 input-2: ECHO" > %t.build/output-specs.ninja
+# RUN: echo "build output: CAT input-1 input-2" >> %t.build/output-specs.ninja
+# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
+# RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file=%t1.out %s
+#
+# CHECK-INITIAL: ECHO input-1 input-2
+# CHECK-INITIAL: cat input-1 input-2 > output
+
+# Update the number of inputs and rebuild.
+#
+# RUN: echo "build input-1 input-2 input-3: ECHO" > %t.build/output-specs.ninja
+# RUN: echo "build output: CAT input-1 input-2 input-3" >> %t.build/output-specs.ninja
+# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t2.out
+# RUN: %{FileCheck} --check-prefix=CHECK-REBUILD --input-file=%t2.out %s
+#
+# CHECK-REBUILD-NOT: missing input
+# CHECK-REBUILD: ECHO input-1 input-2 input-3
+# CHECK-REBUILD-NOT: missing input
+# CHECK-REBUILD: cat input-1 input-2 input-3 > output
+
+# Check the output.
+#
+# RUN: %{FileCheck} --check-prefix=CHECK-OUTPUT --input-file=%t.build/output %s
+#
+# CHECK-OUTPUT: input-1
+# CHECK-OUTPUT-NEXT: input-2
+# CHECK-OUTPUT-NEXT: input-3
+
+rule ECHO
+     command = for i in ${out}; do echo $${i} > $${i}; done
+     description = ECHO ${out}
+rule CAT
+     command = cat ${in} > ${out}
+
+include output-specs.ninja
+
