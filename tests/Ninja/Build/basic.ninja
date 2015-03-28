@@ -9,11 +9,11 @@
 # RUN: %{llbuild} ninja build --no-parallel --no-db --chdir %t.build &> %t.out
 # RUN: %{FileCheck} < %t.out %s
 
-# CHECK: [1] "A"
+# CHECK: [1/{{.*}}] "A"
 # CHECK: RULE A
-# CHECK: [2] "B"
+# CHECK: [2/{{.*}}] "B"
 # CHECK: RULE B
-# CHECK: [3] "C"
+# CHECK: [3/{{.*}}] "C"
 # CHECK: RULE C -- dummy-A dummy-B
 
 rule A

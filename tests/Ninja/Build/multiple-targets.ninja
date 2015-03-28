@@ -10,10 +10,10 @@
 # RUN: %{llbuild} ninja build --parallel --chdir %t.build node-A node-B node-A node-B &> %t.out
 # RUN: %{FileCheck} < %t.out %s
 #
-# CHECK: [1] rm -f node-{A,B}-semaphore
-# CHECK: [2] touch node-{{.}}-semaphore
-# CHECK: [3] touch node-{{.}}-semaphore
-# CHECK-NOT: [4]
+# CHECK: [1/{{.*}}] rm -f node-{A,B}-semaphore
+# CHECK: [2/{{.*}}] touch node-{{.}}-semaphore
+# CHECK: [3/{{.*}}] touch node-{{.}}-semaphore
+# CHECK-NOT: [4/{{.*}}]
 
 rule CUSTOM
   command = ${COMMAND}

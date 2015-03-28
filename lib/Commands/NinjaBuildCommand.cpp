@@ -436,6 +436,23 @@ public:
   /// The number of failed commands.
   std::atomic<unsigned> NumFailedCommands{0};
 
+  /// @name Status Reporting Command Counts
+  /// @{
+
+  /// The number of commands being scanned.
+  std::atomic<unsigned> NumCommandsScanning{0};
+  /// The number of commands that have ever been started.
+  std::atomic<unsigned> NumCommandsStarted{0};
+  /// The number of commands that have been completed.
+  std::atomic<unsigned> NumCommandsCompleted{0};
+  /// The number of commands being executed.
+  std::atomic<unsigned> NumCommandsExecuting{0};
+  /// The number of commands that were updated (started, but didn't actually run
+  /// the command).
+  std::atomic<unsigned> NumCommandsUpdated{0};
+
+  /// @}
+
   /// The serial queue we used to order output consistently.
   dispatch_queue_t OutputQueue;
 
@@ -657,10 +674,20 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
     }
 
     void completeTask(BuildValue&& Result, bool ForceChange=false) {
+      // Update our count of actual commands executing.
+      if (Command->getRule() != Context.Manifest->getPhonyRule())
+        --Context.NumCommandsExecuting;
+
       Context.Engine.taskIsComplete(this, Result.toValue(), ForceChange);
     }
 
     virtual void start(core::BuildEngine& engine) override {
+      // Update our count of actual commands started and executing.
+      if (Command->getRule() != Context.Manifest->getPhonyRule()) {
+        ++Context.NumCommandsStarted;
+        ++Context.NumCommandsExecuting;
+      }
+
       // If this is a phony rule, ignore any immediately cyclic dependencies in
       // non-strict mode, which are generated frequently by CMake, but can be
       // ignored by Ninja. See https://github.com/martine/ninja/issues/935.
@@ -805,6 +832,10 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
           BuildValue Result = computeCommandResult(CommandHash);
 
           if (canUpdateIfNewerWithResult(Result)) {
+            // Update the count of the number of commands which have been
+            // updated without being rerun.
+            ++Context.NumCommandsUpdated;
+
             return completeTask(std::move(Result));
           }
         }
@@ -878,14 +909,45 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
         });
     }
 
+    static unsigned getNumPossibleMaxCommands(BuildContext& Context) {
+      // Compute the "possible" number of maximum commands that will be
+      // run. This is only the "possible" max because we can start running
+      // commands before dependency scanning is complete -- we include the
+      // number of commands that are being scanned so that this number will
+      // always be greater than the number of commands that have been executed
+      // until the very last command is run.
+      int TotalPossibleMaxCommands =
+        Context.NumCommandsCompleted + Context.NumCommandsScanning;
+
+      // Compute the number of max commands to show, subtracting out all the
+      // commands that we avoided running.
+      //
+      // We need to do some algebra in order to compute this number because we
+      // need to combine the statistics from the BuildEngine status mechanism
+      // with our own knowledge of what commands have been run so far and what
+      // have been skipped or updated.
+      
+      // Compute the number of completed commands that were never even executed,
+      // by subtracting the number of completed commands that *were* executed.
+      int NumCompletedCommandsNeverExecuted = Context.NumCommandsCompleted -
+        (Context.NumCommandsStarted - Context.NumCommandsExecuting);
+
+      // Then the number of max commands to show is the total max possible
+      // commands, minus the commands that were never executed and the commands
+      // that were updated.
+      int PossibleMaxCommands = TotalPossibleMaxCommands -
+        (NumCompletedCommandsNeverExecuted + Context.NumCommandsUpdated);
+
+      return PossibleMaxCommands;
+    }
+
     static void writeDescription(BuildContext& Context,
                                  ninja::Command* Command) {
-      std::cerr << "[" << ++Context.NumOutputDescriptions << "] ";
-      if (Context.Verbose) {
-        std::cerr << Command->getCommandString() << "\n";
-      } else {
-        std::cerr << Command->getEffectiveDescription() << "\n";
-      }
+      const std::string& Description =
+        Context.Verbose ? Command->getCommandString() :
+        Command->getEffectiveDescription();
+      fprintf(stderr, "[%d/%d] %s\n", ++Context.NumOutputDescriptions,
+              getNumPossibleMaxCommands(Context), Description.c_str());
     }
 
     void executeCommand() {
@@ -1181,7 +1243,7 @@ core::Task* SelectCompositeBuildResult(BuildContext& Context,
     SelectResultTask(BuildContext& Context, ninja::Command* Command,
                      unsigned InputIndex,
                      const core::KeyType& CompositeRuleName)
-      : Task("ninja-select-result"), Context(Context), Command(Command), 
+      : Task("ninja-select-result"), Context(Context), Command(Command),
         InputIndex(InputIndex), CompositeRuleName(CompositeRuleName) { }
 
     virtual void start(core::BuildEngine& engine) override {
@@ -1284,6 +1346,24 @@ static bool BuildCommandIsResultValid(ninja::Command* Command,
   }
 
   return true;
+}
+
+static void UpdateCommandStatus(BuildContext& Context,
+                                ninja::Command* Command,
+                                core::Rule::StatusKind Status) {
+  // Ignore phony rules.
+  if (Command->getRule() == Context.Manifest->getPhonyRule())
+    return;
+
+  // Track the number of commands which are currently being scanned along with
+  // the total number of completed commands.
+  if (Status == core::Rule::StatusKind::IsScanning) {
+    ++Context.NumCommandsScanning;
+  } else {
+    assert(Status == core::Rule::StatusKind::IsComplete);
+    --Context.NumCommandsScanning;
+    ++Context.NumCommandsCompleted;
+  }
 }
 
 core::Rule NinjaBuildEngineDelegate::lookupRule(const core::KeyType& Key) {
@@ -1465,7 +1545,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
                 getprogname(), strerror(errno));
         return 1;
       }
-  
+
       NumJobs = NumCPUs + 2;
       TaskQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT,
                                             /*flags=*/0);
@@ -1485,7 +1565,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
     }
 
     // Otherwise, run the build.
-    
+
     // Attach the database, if requested.
     if (!DBFilename.empty()) {
       std::string Error;
@@ -1531,6 +1611,9 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
                 return true;
 
               return BuildCommandIsResultValid(Command, Value);
+            },
+            [=, &Context](core::Rule::StatusKind Status) {
+              UpdateCommandStatus(Context, Command, Status);
             } });
         continue;
       }
@@ -1560,6 +1643,9 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
               return true;
 
             return BuildCommandIsResultValid(Command, Value);
+          },
+          [=, &Context](core::Rule::StatusKind Status) {
+            UpdateCommandStatus(Context, Command, Status);
           } });
 
       // Create the per-output selection rules that select the individual output
@@ -1571,14 +1657,18 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
             [=, &Context] (core::BuildEngine& Engine) {
               return SelectCompositeBuildResult(Context, Command, i,
                                                 CompositeRuleName);
-            } });
+            }/*,
+            nullptr,
+            [=, &Context](core::Rule::StatusKind Status) {
+              UpdateCommandStatus(Context, Command, Status);
+            }*/});
       }
     }
 
     // If this is the first iteration, build the manifest, unless disabled.
     if (AutoRegenerateManifest && Iteration == 0) {
       Context.Engine.build(ManifestFilename);
-        
+
       // If the manifest was rebuilt, then reload it and build again.
       if (Context.NumBuiltCommands) {
         continue;
@@ -1602,23 +1692,23 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
 
       fprintf(Context.ProfileFP, "[\n");
     }
-  
+
     // If no explicit targets were named, build the default targets.
     if (TargetsToBuild.empty()) {
       for (auto& Target: Context.Manifest->getDefaultTargets())
         TargetsToBuild.push_back(Target->getPath());
-  
+
       // If there are no default targets, then build all of the root targets.
       if (TargetsToBuild.empty()) {
         std::unordered_set<ninja::Node*> InputNodes;
-  
+
         // Collect all of the input nodes.
         for (const auto& Command: Context.Manifest->getCommands()) {
           for (const auto& Input: Command->getInputs()) {
             InputNodes.emplace(Input);
           }
         }
-  
+
         // Build all of the targets that are not an input.
         for (const auto& Command: Context.Manifest->getCommands()) {
           for (const auto& Output: Command->getOutputs()) {
@@ -1629,13 +1719,13 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
         }
       }
     }
-  
+
     // Generate an error if there is nothing to build.
     if (TargetsToBuild.empty()) {
       fprintf(stderr, "error: %s: no targets to build\n", getprogname());
       return 1;
     }
-  
+
     // If building multiple targets, do so via a dummy rule to allow them to
     // build concurrently (and without duplicates).
     //
@@ -1653,7 +1743,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
             // Always rebuild the dummy rule.
             return false;
           } });
-  
+
       Context.Engine.build("<<build>>");
     } else {
       Context.Engine.build(TargetsToBuild[0]);

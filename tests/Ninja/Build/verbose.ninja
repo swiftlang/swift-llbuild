@@ -8,8 +8,8 @@
 # RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t.out
 # RUN: %{FileCheck} --check-prefix=CHECK-NORMAL --input-file %t.out %s
 
-# CHECK-VERBOSE: [1] echo some custom command
-# CHECK-NORMAL: [1] CUSTOM
+# CHECK-VERBOSE: [1/{{.*}}] echo some custom command
+# CHECK-NORMAL: [1/{{.*}}] CUSTOM
 
 rule CUSTOM
   description = CUSTOM

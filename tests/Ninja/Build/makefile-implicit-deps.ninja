@@ -15,8 +15,8 @@
 
 # Check the first build.
 #
-# CHECK-INITIAL: [1] "CC output-1"
-# CHECK-INITIAL: [2] "cat output-1 > output"
+# CHECK-INITIAL: [1/{{.*}}] "CC output-1"
+# CHECK-INITIAL: [2/{{.*}}] "cat output-1 > output"
 
 # Check a build that modifies the header.
 #
@@ -24,8 +24,8 @@
 # RUN: %{llbuild} ninja build --strict --no-parallel --chdir %t.build &> %t2.out
 # RUN: %{FileCheck} --check-prefix=CHECK-AFTER-MOD --input-file=%t2.out %s
 #
-# CHECK-AFTER-MOD: [1] "CC output-1"
-# CHECK-AFTER-MOD: [2] "cat output-1 > output"
+# CHECK-AFTER-MOD: [1/{{.*}}] "CC output-1"
+# CHECK-AFTER-MOD: [2/{{.*}}] "cat output-1 > output"
 
 
 # Check that a header modification follow a build that *could* trigger an output
@@ -49,8 +49,8 @@
 # RUN: %{llbuild} ninja build --strict --no-parallel --chdir %t.build &> %t2.out
 # RUN: %{FileCheck} --check-prefix=CHECK-AFTER-SECOND-MOD --input-file=%t2.out %s
 #
-# CHECK-AFTER-SECOND-MOD: [1] "CC output-1"
-# CHECK-AFTER-SECOND-MOD: [2] "cat output-1 > output"
+# CHECK-AFTER-SECOND-MOD: [1/{{.*}}] "CC output-1"
+# CHECK-AFTER-SECOND-MOD: [2/{{.*}}] "cat output-1 > output"
 
 rule CC
      deps = gcc

@@ -17,7 +17,7 @@
 # RUN: %{llbuild} ninja build --strict --no-db --no-parallel --chdir %t.build &> %t2.out
 # RUN: %{FileCheck} --check-prefix CHECK-STRICT --input-file %t2.out %s
 #
-# CHECK-STRICT: [1] cat input > output
+# CHECK-STRICT: [1/{{.*}}] cat input > output
 
 
 rule CAT

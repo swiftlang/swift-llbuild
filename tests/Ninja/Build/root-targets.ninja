@@ -6,10 +6,10 @@
 # RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t.out
 # RUN: %{FileCheck} < %t.out %s
 #
-# CHECK: [1] touch output-A
-# CHECK: [2] touch output-B
-# CHECK: [3] cp output-B output-C
-# CHECK-NOT: [4]
+# CHECK: [1/{{.*}}] touch output-A
+# CHECK: [2/{{.*}}] touch output-B
+# CHECK: [3/{{.*}}] cp output-B output-C
+# CHECK-NOT: [4/{{.*}}]
 
 
 rule CUSTOM

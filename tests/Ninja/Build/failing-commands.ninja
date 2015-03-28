@@ -8,9 +8,9 @@
 # RUN: %{llbuild} ninja build --no-parallel --chdir %t.build --no-db &> %t1.out || true
 # RUN: %{FileCheck} < %t1.out %s
 #
-# CHECK: [1] "false"
+# CHECK: [1/{{.*}}] "false"
 # CHECK-NEXT: process returned error status
-# CHECK-NOT: [2] "cp output-1 output"
+# CHECK-NOT: [2/{{.*}}] "cp output-1 output"
 
 rule CP
      command = cp ${in} ${out}

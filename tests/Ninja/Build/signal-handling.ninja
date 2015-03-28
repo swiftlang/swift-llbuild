@@ -10,7 +10,7 @@
 # RUN:    wait $(cat %t.build/llbuild.pid)" || true
 # RUN: %{FileCheck} --input-file %t.out %s
 #
-# CHECK: [1] SIGNAL PARENT LLBUILD PROCESS
+# CHECK: [1/{{.*}}] SIGNAL PARENT LLBUILD PROCESS
 # CHECK: cancelling build.
 
 rule CAT

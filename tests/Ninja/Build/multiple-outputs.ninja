@@ -11,9 +11,9 @@
 # RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix CHECK-INITIAL --input-file %t1.out %s
 #
-# CHECK-INITIAL: [1] ./split-numbers < input odd even
-# CHECK-INITIAL: [2] cat odd > odd-copy
-# CHECK-INITIAL: [3] cat even > even-copy
+# CHECK-INITIAL: [1/{{.*}}] ./split-numbers < input odd even
+# CHECK-INITIAL: [2/{{.*}}] cat odd > odd-copy
+# CHECK-INITIAL: [3/{{.*}}] cat even > even-copy
 
 # Add an even number, and check that only the even side rebuilds.
 # 
@@ -21,11 +21,11 @@
 # RUN: %{llbuild} ninja build --strict --no-parallel --chdir %t.build &> %t2.out
 # RUN: %{FileCheck} --check-prefix CHECK-UPDATE-EVEN --input-file %t2.out %s
 #
-# CHECK-UPDATE-EVEN: [1] ./split-numbers < input odd even
+# CHECK-UPDATE-EVEN: [1/{{.*}}] ./split-numbers < input odd even
 # CHECK-UPDATE-EVEN-NEXT: odd: file contents unchanged
 # CHECK-UPDATE-EVEN-NEXT: even: updated file
-# CHECK-UPDATE-EVEN-NEXT: [2] cat even > even-copy
-# CHECK-UPDATE-EVEN-NOT: [3]
+# CHECK-UPDATE-EVEN-NEXT: [2/{{.*}}] cat even > even-copy
+# CHECK-UPDATE-EVEN-NOT: [3/{{.*}}]
 
 # Add an odd number, and check that only the odd side rebuilds.
 # 
@@ -33,11 +33,11 @@
 # RUN: %{llbuild} ninja build --strict --no-parallel --chdir %t.build &> %t3.out
 # RUN: %{FileCheck} --check-prefix CHECK-UPDATE-ODD --input-file %t3.out %s
 #
-# CHECK-UPDATE-ODD: [1] ./split-numbers < input odd even
+# CHECK-UPDATE-ODD: [1/{{.*}}] ./split-numbers < input odd even
 # CHECK-UPDATE-ODD-NEXT: odd: updated file
 # CHECK-UPDATE-ODD-NEXT: even: file contents unchanged
-# CHECK-UPDATE-ODD-NEXT: [2] cat odd > odd-copy
-# CHECK-UPDATE-ODD-NOT: [3]
+# CHECK-UPDATE-ODD-NEXT: [2/{{.*}}] cat odd > odd-copy
+# CHECK-UPDATE-ODD-NOT: [3/{{.*}}]
 
 rule CAT
      command = cat ${in} > ${out}

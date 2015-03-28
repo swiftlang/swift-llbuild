@@ -15,9 +15,9 @@
 # RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t.out
 # RUN: %{FileCheck} --check-prefix=CHECK-SECOND < %t.out %s
 
-# CHECK-FIRST: [1] cat input-1 input-2 > output
+# CHECK-FIRST: [1/{{.*}}] cat input-1 input-2 > output
 
-# CHECK-SECOND: [1] cat input-1 > output
+# CHECK-SECOND: [1/{{.*}}] cat input-1 > output
 
 rule CAT
   command = cat ${in} > ${out}

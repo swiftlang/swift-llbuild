@@ -8,7 +8,7 @@
 # RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix CHECK-FIRST --input-file %t1.out %s
 #
-# CHECK-FIRST: [1] date > output
+# CHECK-FIRST: [1/{{.*}}] date > output
 
 # Running again should do nothing.
 #

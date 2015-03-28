@@ -13,9 +13,9 @@
 # RUN: %{llbuild} ninja build --no-parallel --chdir %t.build no-output &> %t.out
 # RUN: %{FileCheck} --check-prefix=CHECK-SECOND < %t.out %s
 
-# CHECK-FIRST: [1] echo "built no-output"
+# CHECK-FIRST: [1/{{.*}}] echo "built no-output"
 # CHECK-FIRST: built no-output
-# CHECK-SECOND: [1] echo "built no-output"
+# CHECK-SECOND: [1/{{.*}}] echo "built no-output"
 # CHECK-SECOND: built no-output
 
 rule CUSTOM

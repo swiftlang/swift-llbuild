@@ -7,8 +7,8 @@
 # RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix CHECK-INITIAL --input-file %t1.out %s
 #
-# CHECK-INITIAL: [1] MKIFNOT
-# CHECK-INITIAL: [2] CP
+# CHECK-INITIAL: [1/{{.*}}] MKIFNOT
+# CHECK-INITIAL: [2/{{.*}}] CP
 
 # Modify the input (to triger a rebuild of "output-1") and rebuild.
 #
@@ -16,7 +16,7 @@
 # RUN: %{llbuild} ninja build --strict --no-parallel --chdir %t.build &> %t2.out
 # RUN: %{FileCheck} --check-prefix CHECK-REBUILD --input-file %t2.out %s
 #
-# CHECK-REBUILD: [1] MKIFNOT
+# CHECK-REBUILD: [1/{{.*}}] MKIFNOT
 # CHECK-REBUILD-NOT: CP
 
 
