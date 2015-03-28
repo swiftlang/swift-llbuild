@@ -1535,6 +1535,12 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
               getprogname(), strerror(errno));
       return 1;
     }
+
+    // Print a message about the changed directory. The exact format here is
+    // important, it is recognized by other tools (like Emacs).
+    fprintf(stdout, "%s: Entering directory `%s'\n", getprogname(),
+            ChdirPath.c_str());
+    fflush(stdout);
   }
 
   // Run up to two iterations, the first one loads the manifest and rebuilds it
