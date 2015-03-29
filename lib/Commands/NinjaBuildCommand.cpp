@@ -505,6 +505,16 @@ public:
     dispatch_release(OutputQueue);
   }
 
+  void reportMissingInput(const ninja::Node* Node) {
+    // We simply report the missing input here, the build will be cancelled when
+    // a rule sees it missing.
+    dispatch_async(OutputQueue, ^() {
+        fprintf(stderr,
+                "error: %s: missing input '%s' and no rule to build it\n",
+                getprogname(), Node->getPath().c_str());
+      });
+  }
+
   void incrementFailedCommands() {
     // Update our count of the number of failed commands.
     unsigned NumFailedCommands = ++this->NumFailedCommands;
@@ -649,8 +659,11 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
       // shouldn't run this command.
       if (!Value.isExistingInput() && !Value.isSuccessfulCommand()) {
         ShouldSkip = true;
-        if (Value.isMissingInput())
+        if (Value.isMissingInput()) {
           HasMissingInput = true;
+
+          Context.reportMissingInput(Command->getInputs()[InputID]);
+        }
       } else {
         // Otherwise, track the information used to determine if we can just
         // update the command instead of running it.
@@ -702,19 +715,20 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
       // Request all of the explicit and implicit inputs (the only difference
       // between them is that implicit inputs do not appear in ${in} during
       // variable expansion, but that has already been performed).
+      unsigned ID = 0;
       for (auto it = Command->explicitInputs_begin(),
              ie = Command->explicitInputs_end(); it != ie; ++it) {
         if (!Context.Strict && isPhony && isImmediatelyCyclicInput(*it))
           continue;
 
-        engine.taskNeedsInput(this, (*it)->getPath(), 0);
+        engine.taskNeedsInput(this, (*it)->getPath(), ID++);
       }
       for (auto it = Command->implicitInputs_begin(),
              ie = Command->implicitInputs_end(); it != ie; ++it) {
         if (!Context.Strict && isPhony && isImmediatelyCyclicInput(*it))
           continue;
 
-        engine.taskNeedsInput(this, (*it)->getPath(), 0);
+        engine.taskNeedsInput(this, (*it)->getPath(), ID++);
       }
 
       // Request all of the order-only inputs.
@@ -1165,11 +1179,6 @@ core::Task* BuildInput(BuildContext& Context, ninja::Node* Input) {
 
     virtual void start(core::BuildEngine& engine) override { }
 
-    static void reportMissingInput(const ninja::Node* Node) {
-      fprintf(stderr, "error: missing input '%s' and no rule to build it\n",
-              Node->getPath().c_str());
-    }
-
     virtual void inputsAvailable(core::BuildEngine& engine) override {
       ++Context.NumBuiltInputs;
 
@@ -1181,14 +1190,6 @@ core::Task* BuildInput(BuildContext& Context, ninja::Node* Input) {
 
       FileInfo OutputInfo;
       if (!GetStatInfoForNode(Node, &OutputInfo)) {
-        // Report the missing input on the output queue, taking care to not rely
-        // on the ``this`` object, which may disappear before the queue executes
-        // this block.
-        const ninja::Node* LocalNode(Node);
-        dispatch_async(Context.OutputQueue, ^() {
-            reportMissingInput(LocalNode);
-          });
-
         engine.taskIsComplete(this, BuildValue::makeMissingInput().toValue());
         return;
       }

@@ -130,6 +130,10 @@ Random Tasks
   commands. As an example, look at how the multiple-outputs test case behaves in
   Ninja with restat = 0.
 
+* Tasks should have a way to examine their discovered dependencies from a
+  previous run. For example, this is necessary to implement update-if-newer for
+  commands with discovered dependencies.
+
 * Add support for cleaning up output files (deleting them on failed tasks)?
 
 * Investigate using pselect mechanisms vs blocked threads.

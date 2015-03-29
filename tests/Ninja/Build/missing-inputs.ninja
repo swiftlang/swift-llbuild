@@ -9,7 +9,7 @@
 # RUN: /bin/sh -c "%{llbuild} ninja build --no-parallel --chdir %t.build --no-db; echo \"exit code: $?\"" &> %t1.out
 # RUN: %{FileCheck} < %t1.out %s
 #
-# CHECK: error: missing input 'input-1' and no rule to build it
+# CHECK: error:{{.*}} missing input 'input-1' and no rule to build it
 # CHECK-NOT: [1]
 # CHECK: exit code: 1
 

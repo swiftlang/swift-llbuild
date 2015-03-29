@@ -1,0 +1,45 @@
+# Test for handling of removed implicit header dependencies.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: ln -s %s %t.build/build.ninja
+# RUN: touch -r / %t.build/header-1 %t.build/input-1
+# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
+# RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file=%t1.out %s
+
+# Check the first build.
+#
+# CHECK-INITIAL: CC output-1
+# CHECK-INITIAL: cat output-1 > output
+
+# Check a build that removes the header.
+#
+# RUN: rm %t.build/header-1
+# RUN: %{llbuild} ninja build --strict --no-parallel --chdir %t.build &> %t2.out
+# RUN: %{FileCheck} --check-prefix=CHECK-AFTER-REMOVAL --input-file=%t2.out %s
+#
+# CHECK-AFTER-REMOVAL-NOT: missing input 'header-1'
+# CHECK-AFTER-REMOVAL: CC output-1
+# CHECK-AFTER-REMOVAL-NOT: missing input 'header-1'
+# CHECK-AFTER-REMOVAL: cat output-1 > output
+
+rule CC
+     deps = gcc
+     depfile = ${out}.d
+     command = $
+       if [ -f header-1 ]; then $
+         echo "${out}: ${in} header-1" > ${depfile}; $
+         cat ${in} header-1 > ${out}; $
+       else $
+         echo "${out}:" > ${depfile}; $
+       fi
+     description = CC ${out}
+
+rule CAT
+     command = cat ${in} > ${out}
+     description = ${command}
+
+build output-1: CC input-1
+build output: CAT output-1
+
+default output
