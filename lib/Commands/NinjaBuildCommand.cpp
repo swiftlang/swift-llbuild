@@ -23,7 +23,9 @@
 
 #include <cerrno>
 #include <cstdlib>
+#include <deque>
 #include <iostream>
+#include <thread>
 #include <unordered_set>
 
 #include <signal.h>
@@ -89,59 +91,72 @@ static void usage(int ExitCode=1) {
 
 namespace {
 
-/// A simple queue for concurrent task work.
-struct ConcurrentLimitedQueue {
-  /// Semaphore used to implement our task limit.
-  dispatch_semaphore_t LimitSemaphore;
+/// The build execution queue manages the actual parallel execution of jobs
+/// which have been enqueued as a result of command processing.
+///
+/// This queue guarantees serial execution when only configured with a single
+/// lane.
+struct BuildExecutionQueue {
+  /// The number of lanes the queue was configured with.
+  unsigned NumLanes;
 
-  /// The queue we should execute on.
-  dispatch_queue_t Queue;
+  /// A thread for each lane.
+  std::vector<std::unique_ptr<std::thread>> Lanes;
 
-  /// Queue we use to assign bucket numbers.
-  dispatch_queue_t BucketQueue;
-  uint64_t BucketMask = 0;
+  /// The ready queue of jobs to execute.
+  std::deque<std::function<void(unsigned)>> ReadyJobs;
+  std::mutex ReadyJobsMutex;
+  std::condition_variable ReadyJobsCondition;
 
 public:
-  ConcurrentLimitedQueue(unsigned JobLimit, dispatch_queue_t Queue)
-    : LimitSemaphore(dispatch_semaphore_create(JobLimit)), Queue(Queue)
-  {
-    BucketQueue = dispatch_queue_create("bucket-queue",
-                                        /*attr=*/DISPATCH_QUEUE_SERIAL);
+  BuildExecutionQueue(unsigned NumLanes) : NumLanes(NumLanes) {
+    for (unsigned i = 0; i != NumLanes; ++i) {
+      Lanes.push_back(std::unique_ptr<std::thread>(
+                          new std::thread(
+                              &BuildExecutionQueue::executeLane, this, i)));
+    }
   }
-  ~ConcurrentLimitedQueue() {
-    dispatch_release(BucketQueue);
-    dispatch_release(LimitSemaphore);
-    dispatch_release(Queue);
+  ~BuildExecutionQueue() {
+    // Shut down the lanes.
+    for (unsigned i = 0; i != NumLanes; ++i) {
+      addJob({});
+    }
+    for (unsigned i = 0; i != NumLanes; ++i) {
+      Lanes[i]->join();
+    }
+  }
+
+  void executeLane(unsigned LaneNumber) {
+    // Just execute items from the queue until shutdown.
+    while (true) {
+      // Take a job from the ready queue.
+      std::function<void(unsigned)> Job;
+      {
+        std::unique_lock<std::mutex> Lock(ReadyJobsMutex);
+
+        // If the queue is empty, wait for an item.
+        if (ReadyJobs.empty())
+          ReadyJobsCondition.wait(Lock);
+
+        // Take the first item (FIFO).
+        Job = ReadyJobs.front();
+
+        ReadyJobs.pop_front();
+      }
+
+      // If we got an empty job, the queue is shutting down.
+      if (!Job)
+        break;
+
+      // Process the job.
+      Job(LaneNumber);
+    }
   }
 
   void addJob(std::function<void(unsigned)> Job) {
-    dispatch_async(Queue, ^() {
-        // Acquire the semaphore.
-        dispatch_semaphore_wait(LimitSemaphore, DISPATCH_TIME_FOREVER);
-
-        // Allocate a bucket number.
-        __block unsigned BucketNumber;
-        dispatch_sync(BucketQueue, ^() {
-            for (BucketNumber = 0; BucketNumber != 64; ++BucketNumber) {
-              if (!(BucketMask & (1 << BucketNumber))) {
-                BucketMask |= (1 << BucketNumber);
-                break;
-              }
-            }
-          });
-
-        // Execute the job.
-        Job(BucketNumber);
-
-        // Release the bucket number.
-        dispatch_sync(BucketQueue, ^() {
-            assert(BucketMask & (1 << BucketNumber));
-            BucketMask &= ~(1 << BucketNumber);
-          });
-
-        // Release the semaphore.
-        dispatch_semaphore_signal(LimitSemaphore);
-      });
+    std::lock_guard<std::mutex> Guard(ReadyJobsMutex);
+    ReadyJobs.push_back(Job);
+    ReadyJobsCondition.notify_one();
   }
 };
 
@@ -460,7 +475,7 @@ public:
   dispatch_queue_t OutputQueue;
 
   /// The limited queue we use to execute parallel jobs.
-  std::unique_ptr<ConcurrentLimitedQueue> JobQueue;
+  std::unique_ptr<BuildExecutionQueue> JobQueue;
 
   /// The SIGINT dispatch source.
   dispatch_source_t SigintSource;
@@ -1578,13 +1593,8 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
     Context.Verbose = Verbose;
 
     // Create the job queue to use.
-    //
-    // If we are only executing with a single job, we take care to use a serial
-    // queue to ensure deterministic execution.
-    dispatch_queue_t TaskQueue;
     unsigned NumJobs;
     if (!UseParallelBuild) {
-      TaskQueue = dispatch_queue_create("task-queue", DISPATCH_QUEUE_SERIAL);
       NumJobs = 1;
     } else {
       long NumCPUs = sysconf(_SC_NPROCESSORS_ONLN);
@@ -1595,11 +1605,8 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       }
 
       NumJobs = NumCPUs + 2;
-      TaskQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT,
-                                            /*flags=*/0);
-      dispatch_retain(TaskQueue);
     }
-    Context.JobQueue.reset(new ConcurrentLimitedQueue(NumJobs, TaskQueue));
+    Context.JobQueue.reset(new BuildExecutionQueue(NumJobs));
 
     // Load the manifest.
     BuildManifestActions Actions;
