@@ -134,9 +134,10 @@ public:
       {
         std::unique_lock<std::mutex> Lock(ReadyJobsMutex);
 
-        // If the queue is empty, wait for an item.
-        if (ReadyJobs.empty())
+        // While the queue is empty, wait for an item.
+        while (ReadyJobs.empty()) {
           ReadyJobsCondition.wait(Lock);
+        }
 
         // Take the first item (FIFO).
         Job = ReadyJobs.front();
