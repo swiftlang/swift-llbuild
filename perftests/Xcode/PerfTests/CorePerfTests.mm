@@ -136,6 +136,11 @@ static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
       abort();
       return core::Rule();
     }
+    virtual void cycleDetected(const std::vector<core::Rule*>& Cycle) override {
+      // We never expect to find a cycle.
+      fprintf(stderr, "error: %s: unexpected cycle\n", getprogname());
+      abort();
+    }
   } Delegate;
   __block core::BuildEngine Engine(Delegate);
   int LastInputValue = 0;
@@ -203,6 +208,11 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
               getprogname(), Key.c_str());
       abort();
       return core::Rule();
+    }
+    virtual void cycleDetected(const std::vector<core::Rule*>& Cycle) override {
+      // We never expect to find a cycle.
+      fprintf(stderr, "error: %s: unexpected cycle\n", getprogname());
+      abort();
     }
   } Delegate;
   __block core::BuildEngine Engine(Delegate);
@@ -275,6 +285,11 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
               getprogname(), Key.c_str());
       abort();
       return core::Rule();
+    }
+    virtual void cycleDetected(const std::vector<core::Rule*>& Cycle) override {
+      // We never expect to find a cycle.
+      fprintf(stderr, "error: %s: unexpected cycle\n", getprogname());
+      abort();
     }
   } Delegate;
   __block core::BuildEngine Engine(Delegate);
