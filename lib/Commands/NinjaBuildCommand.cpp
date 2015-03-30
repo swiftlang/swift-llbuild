@@ -108,8 +108,13 @@ struct BuildExecutionQueue {
   std::mutex ReadyJobsMutex;
   std::condition_variable ReadyJobsCondition;
 
+  /// Use LIFO execution.
+  bool UseLIFO;
+
 public:
-  BuildExecutionQueue(unsigned NumLanes) : NumLanes(NumLanes) {
+  BuildExecutionQueue(unsigned NumLanes, bool UseLIFO)
+      : NumLanes(NumLanes), UseLIFO(UseLIFO)
+  {
     for (unsigned i = 0; i != NumLanes; ++i) {
       Lanes.push_back(std::unique_ptr<std::thread>(
                           new std::thread(
@@ -139,10 +144,14 @@ public:
           ReadyJobsCondition.wait(Lock);
         }
 
-        // Take the first item (FIFO).
-        Job = ReadyJobs.front();
-
-        ReadyJobs.pop_front();
+        // Take an item according to the chosen policy.
+        if (UseLIFO) {
+          Job = ReadyJobs.back();
+          ReadyJobs.pop_back();
+        } else {
+          Job = ReadyJobs.front();
+          ReadyJobs.pop_front();
+        }
       }
 
       // If we got an empty job, the queue is shutting down.
@@ -1462,6 +1471,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   bool Quiet = false;
   bool Simulate = false;
   bool Strict = false;
+  bool UseLIFOExecutionQueue = false;
   bool UseParallelBuild = true;
   bool Verbose = false;
   unsigned NumFailedCommandsToTolerate = 1;
@@ -1477,6 +1487,8 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       usage(/*ExitCode=*/0);
     } else if (Option == "--simulate") {
       Simulate = true;
+    } else if (Option == "--lifo") {
+      UseLIFOExecutionQueue = true;
     } else if (Option == "--quiet") {
       Quiet = true;
     } else if (Option == "--chdir") {
@@ -1607,7 +1619,8 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
 
       NumJobs = NumCPUs + 2;
     }
-    Context.JobQueue.reset(new BuildExecutionQueue(NumJobs));
+    Context.JobQueue.reset(new BuildExecutionQueue(
+                               NumJobs, UseLIFOExecutionQueue));
 
     // Load the manifest.
     BuildManifestActions Actions;
