@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+
+import errno
+import resource
+import sys
+import os
+
+# Check if the given FD is valid).
+def is_fd(fd):
+    fd2 = None
+    try:
+        fd2 = os.dup(fd)
+    except OSError as e:
+        if e.errno != errno.EBADF:
+            raise
+    if fd2 is not None:
+        os.close(fd2)
+        return True
+    return False
+
+max_fd_soft,max_fd_hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+num_valid_fds = [i for i in range(max_fd_soft) if is_fd(i)]
+print "open FDs: %s" % (num_valid_fds,)

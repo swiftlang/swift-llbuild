@@ -1,0 +1,47 @@
+# Verify that we buffer command output, by using the same trick as our parallel test.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: cp %S/Inputs/wait-for-file %t.build
+# RUN: %{llbuild} ninja build --parallel --chdir %t.build --no-db &> %t.out
+# RUN: %{FileCheck} --check-prefix=CHECK-A --input-file %t.out %s
+# RUN: %{FileCheck} --check-prefix=CHECK-B --input-file %t.out %s
+#
+# CHECK-A: [A] touching B semaphore
+# CHECK-A-NEXT: [A] waiting for A semaphore
+# CHECK-A-NEXT: waiting for file 'node-A-semaphore'
+# CHECK-A-NEXT: file exists
+# CHECK-A-NEXT: [A] done
+#
+# CHECK-B: [B] touching A semaphore
+# CHECK-B-NEXT: [B] waiting for B semaphore
+# CHECK-B-NEXT: waiting for file 'node-B-semaphore'
+# CHECK-B-NEXT: file exists
+# CHECK-B-NEXT: [B] done
+
+rule CUSTOM
+  command = ${COMMAND}
+
+build cleanup: CUSTOM
+  command = rm -f node-{A,B}-semaphore
+
+build node-A: CUSTOM cleanup
+  command = $
+          echo "[A] touching B semaphore" && $
+          touch node-B-semaphore && $
+          echo "[A] waiting for A semaphore" && $
+          ./wait-for-file node-A-semaphore && $
+          echo "[A] done"
+  description = node-A
+build node-B: CUSTOM cleanup
+  command = $
+          echo "[B] touching A semaphore" && $
+          touch node-A-semaphore && $
+          echo "[B] waiting for B semaphore" && $
+          ./wait-for-file node-B-semaphore && $
+          echo "[B] done"
+  description = node-B
+
+build both: phony node-A node-B
+default both

@@ -1,0 +1,20 @@
+# Check that only stdin, stdout, and stderr are inherited.
+
+# We explicitly attach an extra FD to 4 when we run, to ensure the subprocess
+# has an extra FD it needs to clear.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: ln -s %S/Inputs/check-open-fds %t.build
+# RUN: ln -s %s %t.build/build.ninja
+# RUN: /bin/sh -c "%{llbuild} ninja build --no-parallel --no-db --chdir %t.build 4< /dev/null" &> %t.out
+# RUN: %{FileCheck} < %t.out %s
+
+# CHECK: [1/1] ./check-open-fds
+# CHECK: open FDs: [0, 1, 2]
+
+rule CHECKFDS
+     command = ./check-open-fds
+build output: CHECKFDS
+
+

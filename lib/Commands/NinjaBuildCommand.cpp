@@ -968,7 +968,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
       // need to combine the statistics from the BuildEngine status mechanism
       // with our own knowledge of what commands have been run so far and what
       // have been skipped or updated.
-      
+
       // Compute the number of completed commands that were never even executed,
       // by subtracting the number of completed commands that *were* executed.
       int NumCompletedCommandsNeverExecuted = Context.NumCommandsCompleted -
@@ -1034,11 +1034,10 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
     ///
     /// \returns True if the command succeeded.
     bool spawnAndWaitForCommand() const {
+      bool IsConsole = Command->getExecutionPool() ==
+        Context.Manifest->getConsolePool();
+
       // Initialize the spawn attributes.
-      //
-      // FIXME: We need to audit this to be robust about resetting everything
-      // that is important, in particular we aren't handling file descriptors
-      // yet.
       posix_spawnattr_t Attributes;
       posix_spawnattr_init(&Attributes);
 
@@ -1053,21 +1052,59 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
       posix_spawnattr_setsigdefault(&Attributes, &AllSignals);
 
       // Set the attribute flags.
-      posix_spawnattr_setflags(&Attributes, (POSIX_SPAWN_SETSIGMASK |
-                                             POSIX_SPAWN_SETSIGDEF));
+      unsigned Flags = POSIX_SPAWN_SETSIGMASK | POSIX_SPAWN_SETSIGDEF;
+
+      // Close all other files by default.
+      //
+      // Note that this is an Apple-specific extension, and we will have to do
+      // something else on other platforms (and unfortunately, there isn't
+      // really an easy answer other than using a stub executable).
+      Flags |= POSIX_SPAWN_CLOEXEC_DEFAULT;
+
+      posix_spawnattr_setflags(&Attributes, Flags);
+
+      // Setup the file actions.
+      posix_spawn_file_actions_t FileActions;
+      posix_spawn_file_actions_init(&FileActions);
+
+      // Create a pipe to use to read the command output, if necessary.
+      int Pipe[2]{ -1, -1 };
+      if (!IsConsole) {
+        if (pipe(Pipe) < 0) {
+          // FIXME: Error handling.
+          fprintf(stderr, "error: %s: unable to create command pipe (%s)\n",
+                  getprogname(), strerror(errno));
+          exit(1);
+        }
+      }
+
+      // Open /dev/null as stdin.
+      posix_spawn_file_actions_addopen(
+          &FileActions, 0, "/dev/null", O_RDONLY, 0);
+
+      if (IsConsole) {
+        posix_spawn_file_actions_adddup2(&FileActions, 1, 1);
+        posix_spawn_file_actions_adddup2(&FileActions, 2, 2);
+      } else {
+        // Open the write end of the pipe as stdout and stderr.
+        posix_spawn_file_actions_adddup2(&FileActions, Pipe[1], 1);
+        posix_spawn_file_actions_adddup2(&FileActions, Pipe[1], 2);
+
+        // Close the read and write ends of the pipe.
+        posix_spawn_file_actions_addclose(&FileActions, Pipe[0]);
+        posix_spawn_file_actions_addclose(&FileActions, Pipe[1]);
+      }
 
       // Spawn the command.
-      //
-      // FIXME: We would like to buffer the command output, in the same manner
-      // as Ninja.
       const char* Args[4];
       Args[0] = "/bin/sh";
       Args[1] = "-c";
       Args[2] = Command->getCommandString().c_str();
       Args[3] = nullptr;
       int PID;
-      if (posix_spawn(&PID, Args[0], /*file_actions=*/0, /*attrp=*/&Attributes,
-                      const_cast<char**>(Args), ::environ) != 0) {
+      if (posix_spawn(&PID, Args[0], /*file_actions=*/&FileActions,
+                      /*attrp=*/&Attributes, const_cast<char**>(Args),
+                      ::environ) != 0) {
         // FIXME: Error handling.
         fprintf(stderr, "error: %s: unable to spawn process (%s)\n",
                 getprogname(), strerror(errno));
@@ -1075,6 +1112,41 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
       }
 
       posix_spawnattr_destroy(&Attributes);
+
+      // Read the command output, if buffering.
+      if (!IsConsole) {
+        // Close the write end of the output pipe.
+        ::close(Pipe[1]);
+
+        // Read all the data from the output pipe.
+        std::vector<char> OutputData;
+        while (true) {
+          char Buf[4096];
+          ssize_t NumBytes = read(Pipe[0], Buf, sizeof(Buf));
+          if (NumBytes < 0) {
+            // FIXME: Error handling.
+            fprintf(stderr, "error: %s: unable to read from output pipe (%s)\n",
+                    getprogname(), strerror(errno));
+            break;
+          }
+
+          if (NumBytes == 0)
+            break;
+
+          OutputData.insert(OutputData.end(), &Buf[0], &Buf[NumBytes]);
+        }
+
+        // Close the read end of the pipe.
+        ::close(Pipe[0]);
+
+        // Write all of the output data.
+        if (!OutputData.empty()) {
+          dispatch_sync(Context.OutputQueue, ^() {
+              fwrite(OutputData.data(), OutputData.size(), 1, stderr);
+              fflush(stderr);
+            });
+        }
+      }
 
       // Wait for the command to complete.
       int Status, Result = waitpid(PID, &Status, 0);
