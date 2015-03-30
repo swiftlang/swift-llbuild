@@ -339,8 +339,11 @@ class Manifest {
   /// The default targets, if specified.
   std::vector<Node*> DefaultTargets;
 
+  /// The built-in console pool.
+  Pool* ConsolePool;
+
   /// The built-in phony rule.
-  Rule *PhonyRule;
+  Rule* PhonyRule;
 
 public:
   explicit Manifest();
@@ -386,6 +389,10 @@ public:
   }
   const std::vector<Node*>& getDefaultTargets() const {
     return DefaultTargets;
+  }
+
+  Pool* getConsolePool() const {
+    return ConsolePool;
   }
 
   Rule* getPhonyRule() const {

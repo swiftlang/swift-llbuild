@@ -28,6 +28,11 @@ bool Rule::isValidParameterName(const std::string& Name) {
 }
 
 Manifest::Manifest() {
+  // Create the built-in console pool, and add it to the pool map.
+  ConsolePool = new Pool("console");
+  ConsolePool->setDepth(1);
+  Pools["console"].reset(ConsolePool);
+
   // Create the built-in phony rule, and add it to the rule map.
   PhonyRule = new Rule("phony");
   Rules["phony"].reset(PhonyRule);
