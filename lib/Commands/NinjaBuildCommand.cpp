@@ -493,6 +493,10 @@ public:
   /// The previous SIGINT handler.
   struct sigaction PreviousSigintHandler;
 
+  /// The set of spawned processes to cancel when interrupted.
+  std::unordered_set<pid_t> SpawnedProcesses;
+  std::mutex SpawnedProcessesMutex;
+
 public:
   BuildContext()
     : Engine(Delegate),
@@ -507,9 +511,7 @@ public:
     SigintSource = dispatch_source_create(
       DISPATCH_SOURCE_TYPE_SIGNAL, SIGINT, 0, OutputQueue);
     dispatch_source_set_event_handler(SigintSource, ^{
-        fprintf(stderr, "... cancelling build.\n");
-        IsCancelled = true;
-        WasCancelledBySigint = true;
+        cancelBuildOnInterrupt();
       });
     dispatch_resume(SigintSource);
 
@@ -528,6 +530,24 @@ public:
     sigaction(SIGINT, &PreviousSigintHandler, NULL);
 
     dispatch_release(OutputQueue);
+  }
+
+  void cancelBuildOnInterrupt() {
+    std::lock_guard<std::mutex> Guard(SpawnedProcessesMutex);
+
+    fprintf(stderr, "... cancelling build.\n");
+    IsCancelled = true;
+    WasCancelledBySigint = true;
+
+    // Cancel the spawned processes.
+    for (pid_t PID: SpawnedProcesses) {
+      ::kill(-PID, SIGINT);
+    }
+
+    // FIXME: In our model, we still wait for everything to terminate, which
+    // means a process that refuses to respond to SIGINT will cause us to just
+    // hang here. We should probably detect and report that and be willing to do
+    // a hard kill at some point (for example, on the second interrupt).
   }
 
   void reportMissingInput(const ninja::Node* Node) {
@@ -1051,8 +1071,13 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
       sigfillset(&AllSignals);
       posix_spawnattr_setsigdefault(&Attributes, &AllSignals);
 
+      // Establish a separate process group.
+      posix_spawnattr_setpgroup(&Attributes, 0);
+
       // Set the attribute flags.
       unsigned Flags = POSIX_SPAWN_SETSIGMASK | POSIX_SPAWN_SETSIGDEF;
+      if (!IsConsole)
+        Flags |= POSIX_SPAWN_SETPGROUP;
 
       // Close all other files by default.
       //
@@ -1101,25 +1126,36 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
       Args[1] = "-c";
       Args[2] = Command->getCommandString().c_str();
       Args[3] = nullptr;
-      int PID;
-      if (posix_spawn(&PID, Args[0], /*file_actions=*/&FileActions,
-                      /*attrp=*/&Attributes, const_cast<char**>(Args),
-                      ::environ) != 0) {
-        // FIXME: Error handling.
-        fprintf(stderr, "error: %s: unable to spawn process (%s)\n",
-                getprogname(), strerror(errno));
-        exit(1);
+
+      // We need to hold the spawn processes lock when we spawn, to ensure that
+      // we don't create a process in between when we are cancelled.
+      pid_t PID;
+      {
+        std::lock_guard<std::mutex> Guard(Context.SpawnedProcessesMutex);
+
+        if (posix_spawn(&PID, Args[0], /*file_actions=*/&FileActions,
+                        /*attrp=*/&Attributes, const_cast<char**>(Args),
+                        ::environ) != 0) {
+          // FIXME: Error handling.
+          fprintf(stderr, "error: %s: unable to spawn process (%s)\n",
+                  getprogname(), strerror(errno));
+          exit(1);
+        }
+
+        // The console process will get interrupted automatically.
+        if (!IsConsole)
+          Context.SpawnedProcesses.insert(PID);
       }
 
       posix_spawnattr_destroy(&Attributes);
 
       // Read the command output, if buffering.
+      std::vector<char> OutputData;
       if (!IsConsole) {
         // Close the write end of the output pipe.
         ::close(Pipe[1]);
 
         // Read all the data from the output pipe.
-        std::vector<char> OutputData;
         while (true) {
           char Buf[4096];
           ssize_t NumBytes = read(Pipe[0], Buf, sizeof(Buf));
@@ -1138,14 +1174,6 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
 
         // Close the read end of the pipe.
         ::close(Pipe[0]);
-
-        // Write all of the output data.
-        if (!OutputData.empty()) {
-          dispatch_sync(Context.OutputQueue, ^() {
-              fwrite(OutputData.data(), OutputData.size(), 1, stderr);
-              fflush(stderr);
-            });
-        }
       }
 
       // Wait for the command to complete.
@@ -1158,6 +1186,29 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
                 getprogname(), strerror(errno));
         exit(1);
       }
+
+      // Update the set of spawned processes.
+      {
+        std::lock_guard<std::mutex> Guard(Context.SpawnedProcessesMutex);
+        Context.SpawnedProcesses.erase(PID);
+      }
+
+      // If the build has been interrupted, return without writing any output or
+      // command status (since they will also have been interrupted).
+      if (Context.IsCancelled && Context.WasCancelledBySigint) {
+        // We still return an accurate status just in case the command actually
+        // completed successfully.
+        return Status == 0;
+      }
+
+      // Write all of the output data, if buffering and not cancelled.
+      if (!OutputData.empty()) {
+        dispatch_sync(Context.OutputQueue, ^() {
+            fwrite(OutputData.data(), OutputData.size(), 1, stderr);
+            fflush(stderr);
+          });
+      }
+
       if (Status != 0) {
         // If the child was killed by SIGINT, assume it is because we were
         // interrupted.
