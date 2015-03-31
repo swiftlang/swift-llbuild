@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.2)
 
+# Default to building the Debug configuration.
+if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "No build type selected, default to Debug")
+  set(CMAKE_BUILD_TYPE "Debug")
+endif()
+
 # Include standard CMake modules.
 include(CMakeParseArguments)
 include(CheckCXXCompilerFlag)
