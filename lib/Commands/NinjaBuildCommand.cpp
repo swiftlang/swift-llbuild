@@ -58,7 +58,7 @@ static void usage(int ExitCode=1) {
           "show this help message and exit");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--simulate",
           "simulate the build, assuming commands succeed");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--chdir <PATH>",
+  fprintf(stderr, "  %-*s %s\n", OptionWidth, "-C, --chdir <PATH>",
           "change directory to PATH before anything else");
   fprintf(stderr, "  %-*s %s\n", OptionWidth, "--no-db",
           "do not persist build results");
@@ -1614,7 +1614,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       UseLIFOExecutionQueue = true;
     } else if (Option == "--quiet") {
       Quiet = true;
-    } else if (Option == "--chdir") {
+    } else if (Option == "-C" || Option == "--chdir") {
       if (Args.empty()) {
         fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
                 ::getprogname(), Option.c_str());
