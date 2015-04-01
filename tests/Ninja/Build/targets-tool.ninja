@@ -1,0 +1,21 @@
+# Check the -t targets tool.
+
+# Check the default behavior.
+#
+# RUN: %{llbuild} ninja build -f %s -t targets all &> %t1.out
+# RUN: %{FileCheck} --check-prefix CHECK-TARGETS-ALL --input-file %t1.out %s
+
+# CHECK-TARGETS-ALL: output-1: ECHO
+# CHECK-TARGETS-ALL: output-2: ECHO
+
+# Check that we error on an unsupported argument.
+#
+# RUN: /bin/sh -c "%{llbuild} ninja build -f %s -t targets depth 2; echo \"exit code: $?\"" &> %t2.out
+# RUN: %{FileCheck} --check-prefix CHECK-TARGETS-ERR --input-file %t2.out %s
+
+# CHECK-TARGETS-ERR: unsupported argument to tool 'targets': 'depth'
+# CHECK-TARGETS-ERR: exit code: 1
+
+rule ECHO
+     command = echo
+build output-1 output-2: ECHO

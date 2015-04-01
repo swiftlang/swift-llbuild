@@ -1585,9 +1585,10 @@ void NinjaBuildEngineDelegate::cycleDetected(
 
 int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   std::string ChdirPath = "";
+  std::string CustomTool = "";
   std::string DBFilename = "build.db";
-  std::string ManifestFilename = "build.ninja";
   std::string DumpGraphPath, ProfileFilename, TraceFilename;
+  std::string ManifestFilename = "build.ninja";
 
   // Create a context for the build.
   bool AutoRegenerateManifest = true;
@@ -1678,6 +1679,14 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       Args.erase(Args.begin());
     } else if (Option == "--strict") {
       Strict = true;
+    } else if (Option == "-t") {
+      if (Args.empty()) {
+        fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
+                ::getprogname(), Option.c_str());
+        usage();
+      }
+      CustomTool = Args[0];
+      Args.erase(Args.begin());
     } else if (Option == "--trace") {
       if (Args.empty()) {
         fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
@@ -1694,9 +1703,6 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       usage();
     }
   }
-
-  // Parse the positional arguments.
-  std::vector<std::string> TargetsToBuild(Args);
 
   // Honor the --chdir option, if used.
   if (!ChdirPath.empty()) {
@@ -1750,6 +1756,37 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
     ninja::ManifestLoader Loader(ManifestFilename, Actions);
     Context.Manifest = Loader.load();
 
+    // Run the custom tool, if specified.
+    if (!CustomTool.empty()) {
+      if (CustomTool == "targets") {
+        if (Args.size() != 1 || Args[0] != "all") {
+          if (Args.empty()) {
+            fprintf(stderr, "error: %s: unsupported arguments to tool '%s'\n",
+                    getprogname(), CustomTool.c_str());
+          } else {
+            fprintf(stderr,
+                    "error: %s: unsupported argument to tool '%s': '%s'\n",
+                    getprogname(), CustomTool.c_str(), Args[0].c_str());
+          }
+          return 1;
+        }
+
+        for (auto& CommandOwner: Context.Manifest->getCommands()) {
+          auto* Command = CommandOwner.get();
+          for (auto& Output: Command->getOutputs()) {
+            fprintf(stdout, "%s: %s\n", Output->getPath().c_str(),
+                    Command->getRule()->getName().c_str());
+          }
+        }
+ 
+        return 0;
+      } else {
+        fprintf(stderr, "error: %s: unknown tool '%s'\n",
+                getprogname(), CustomTool.c_str());
+        return 1;
+      }
+    }
+
     // If there were errors loading, we are done.
     if (unsigned NumErrors = Actions.getNumErrors()) {
         fprintf(stderr, "%d errors generated.\n", NumErrors);
@@ -1757,6 +1794,9 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
     }
 
     // Otherwise, run the build.
+
+    // Parse the positional arguments.
+    std::vector<std::string> TargetsToBuild(Args);
 
     // Attach the database, if requested.
     if (!DBFilename.empty()) {
