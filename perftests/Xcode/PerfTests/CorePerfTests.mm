@@ -169,6 +169,7 @@ static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
   // Build the first result.
   LastInputValue = 42;
   auto Result = IntFromValue(Engine.build("i1"));
+  (void)Result;
   assert(Result == LastInputValue);
 
   // Run a single initial null build to try and warm the timings below.
@@ -177,6 +178,7 @@ static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
   // Measure the null build time.
   [self measureBlock:^{
       auto Result = IntFromValue(Engine.build("i1"));
+      (void)Result;
       assert(Result == LastInputValue);
     }];
 }
@@ -249,6 +251,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
   // Build the first result.
   LastInputValue = 42;
   auto Result = IntFromValue(Engine.build("i1,1"));
+  (void)Result;
   assert(Result == LastInputValue);
 
   // Run a single initial null build to try and warm the timings below.
@@ -257,6 +260,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
   // Measure the null build time.
   [self measureBlock:^{
       auto Result = IntFromValue(Engine.build("i1,1"));
+      (void)Result;
       assert(Result == LastInputValue);
     }];
 }
@@ -344,6 +348,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
   // Build the first result.
   LastInputValue = 42;
   auto Result = IntFromValue(Engine.build("i1,1"));
+  (void)Result;
   assert(Result == LastInputValue);
 
   // Run a single initial null build to try and warm the timings below.
@@ -352,6 +357,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
   // Measure the null build time.
   [self measureBlock:^{
       auto Result = IntFromValue(Engine.build("i1,1"));
+      (void)Result;
       assert(Result == LastInputValue);
     }];
 }
