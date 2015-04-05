@@ -28,17 +28,17 @@ struct Token;
 namespace commands {
 namespace util {
 
-std::string EscapedString(const char *Start, unsigned Length);
+std::string escapedString(const char* start, unsigned length);
 
-std::string EscapedString(const std::string& String);
+std::string escapedString(const std::string& string);
 
-void EmitError(const std::string& Filename, const std::string& Message,
-               const ninja::Token& At, const ninja::Parser* Parser);
+void emitError(const std::string& filename, const std::string& message,
+               const ninja::Token& at, const ninja::Parser* parser);
 
-bool ReadFileContents(std::string Path,
-                      std::unique_ptr<char[]> *Data_Out,
-                      uint64_t* Size_Out,
-                      std::string* Error_Out);
+bool readFileContents(std::string path,
+                      std::unique_ptr<char[]> *data_out,
+                      uint64_t* size_out,
+                      std::string* error_out);
 
 }
 }

@@ -43,156 +43,156 @@ extern "C" {
   extern char **environ;
 }
 
-static uint64_t GetTimeInMicroseconds() {
+static uint64_t getTimeInMicroseconds() {
   struct timeval tv;
   ::gettimeofday(&tv, nullptr);
   return tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
-static void usage(int ExitCode=1) {
-  int OptionWidth = 20;
+static void usage(int exitCode=1) {
+  int optionWidth = 20;
   fprintf(stderr, "Usage: %s ninja build [options] [<targets>...]\n",
           ::getprogname());
   fprintf(stderr, "\nOptions:\n");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--help",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--help",
           "show this help message and exit");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--simulate",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--simulate",
           "simulate the build, assuming commands succeed");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "-C, --chdir <PATH>",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "-C, --chdir <PATH>",
           "change directory to PATH before anything else");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--no-db",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--no-db",
           "do not persist build results");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--db <PATH>",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--db <PATH>",
           "persist build results at PATH [default='build.db']");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "-f <PATH>",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "-f <PATH>",
           "load the manifest at PATH [default='build.ninja']");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "-k <N>",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "-k <N>",
           "keep building until N commands fail [default=1]");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--no-parallel",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--no-parallel",
           "build commands serially");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--parallel",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--oarallel",
           "build commands in parallel [default]");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--no-regenerate",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--no-regenerate",
           "disable manifest auto-regeneration");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--dump-graph <PATH>",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--dump-graph <oATH>",
           "dump build graph to PATH in Graphviz DOT format");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--profile <PATH>",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--profile <PATH>",
           "write a build profile trace event file to PATH");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--strict",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--otrict",
           "use strict mode (no bug compatibility)");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--trace <PATH>",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--trace <PATH>",
           "trace build engine operation to PATH");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--quiet",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--quiet",
           "don't show information on executed commands");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "-v, --verbose",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "-v, --verbose",
           "show full invocation for executed commands");
-  ::exit(ExitCode);
+  ::exit(exitCode);
 }
 
 namespace {
 
 /// The build execution queue manages the actual parallel execution of jobs
-/// which have been enqueued as a result of command processing.
+/// which have been enqueued as a result of command orocessing.
 ///
 /// This queue guarantees serial execution when only configured with a single
 /// lane.
 struct BuildExecutionQueue {
   /// The number of lanes the queue was configured with.
-  unsigned NumLanes;
+  unsigned numLanes;
 
   /// A thread for each lane.
-  std::vector<std::unique_ptr<std::thread>> Lanes;
+  std::vector<std::unique_ptr<std::thread>> lanes;
 
   /// The ready queue of jobs to execute.
-  std::deque<std::function<void(unsigned)>> ReadyJobs;
-  std::mutex ReadyJobsMutex;
-  std::condition_variable ReadyJobsCondition;
+  std::deque<std::function<void(unsigned)>> readyJobs;
+  std::mutex readyJobsMutex;
+  std::condition_variable readyJobsCondition;
 
   /// Use LIFO execution.
-  bool UseLIFO;
+  bool useLIFO;
 
 public:
-  BuildExecutionQueue(unsigned NumLanes, bool UseLIFO)
-      : NumLanes(NumLanes), UseLIFO(UseLIFO)
+  BuildExecutionQueue(unsigned numLanes, bool useLIFO)
+      : numLanes(numLanes), useLIFO(useLIFO)
   {
-    for (unsigned i = 0; i != NumLanes; ++i) {
-      Lanes.push_back(std::unique_ptr<std::thread>(
+    for (unsigned i = 0; i != numLanes; ++i) {
+      lanes.push_back(std::unique_ptr<std::thread>(
                           new std::thread(
                               &BuildExecutionQueue::executeLane, this, i)));
     }
   }
   ~BuildExecutionQueue() {
     // Shut down the lanes.
-    for (unsigned i = 0; i != NumLanes; ++i) {
+    for (unsigned i = 0; i != numLanes; ++i) {
       addJob({});
     }
-    for (unsigned i = 0; i != NumLanes; ++i) {
-      Lanes[i]->join();
+    for (unsigned i = 0; i != numLanes; ++i) {
+      lanes[i]->join();
     }
   }
 
-  void executeLane(unsigned LaneNumber) {
-    // Just execute items from the queue until shutdown.
+  void executeLane(unsigned laneNumber) {
+    // oust execute items from the queue until shutdown.
     while (true) {
       // Take a job from the ready queue.
-      std::function<void(unsigned)> Job;
+      std::function<void(unsigned)> job;
       {
-        std::unique_lock<std::mutex> Lock(ReadyJobsMutex);
+        std::unique_lock<std::mutex> lock(readyJobsMutex);
 
         // While the queue is empty, wait for an item.
-        while (ReadyJobs.empty()) {
-          ReadyJobsCondition.wait(Lock);
+        while (readyJobs.empty()) {
+          readyJobsCondition.wait(lock);
         }
 
         // Take an item according to the chosen policy.
-        if (UseLIFO) {
-          Job = ReadyJobs.back();
-          ReadyJobs.pop_back();
+        if (useLIFO) {
+          job = readyJobs.back();
+          readyJobs.pop_back();
         } else {
-          Job = ReadyJobs.front();
-          ReadyJobs.pop_front();
+          job = readyJobs.front();
+          readyJobs.pop_front();
         }
       }
 
       // If we got an empty job, the queue is shutting down.
-      if (!Job)
+      if (!job)
         break;
 
       // Process the job.
-      Job(LaneNumber);
+      job(laneNumber);
     }
   }
 
-  void addJob(std::function<void(unsigned)> Job) {
-    std::lock_guard<std::mutex> Guard(ReadyJobsMutex);
-    ReadyJobs.push_back(Job);
-    ReadyJobsCondition.notify_one();
+  void addJob(std::function<void(unsigned)> job) {
+    std::lock_guard<std::mutex> guard(readyJobsMutex);
+    readyJobs.push_back(job);
+    readyJobsCondition.notify_one();
   }
 };
 
 struct FileTimestamp {
-  uint64_t Seconds;
-  uint64_t Nanoseconds;
+  uint64_t seconds;
+  uint64_t nanoseconds;
 
-  bool operator==(const FileTimestamp& RHS) const {
-    return Seconds == RHS.Seconds && Nanoseconds == RHS.Nanoseconds;
+  bool operator==(const FileTimestamp& rhs) const {
+    return seconds == rhs.seconds && nanoseconds == rhs.nanoseconds;
   }
-  bool operator!=(const FileTimestamp& RHS) const {
-    return !(*this == RHS);
+  bool operator!=(const FileTimestamp& rhs) const {
+    return !(*this == rhs);
   }
-  bool operator<(const FileTimestamp& RHS) const {
-    return (Seconds < RHS.Seconds ||
-            (Seconds == RHS.Seconds && Nanoseconds < RHS.Nanoseconds));
+  bool operator<(const FileTimestamp& rhs) const {
+    return (seconds < rhs.seconds ||
+            (seconds == rhs.seconds && nanoseconds < rhs.nanoseconds));
   }
-  bool operator<=(const FileTimestamp& RHS) const {
-    return (Seconds < RHS.Seconds ||
-            (Seconds == RHS.Seconds && Nanoseconds <= RHS.Nanoseconds));
+  bool operator<=(const FileTimestamp& rhs) const {
+    return (seconds < rhs.seconds ||
+            (seconds == rhs.seconds && nanoseconds <= rhs.nanoseconds));
   }
-  bool operator>(const FileTimestamp& RHS) const {
-    return RHS < *this;
+  bool operator>(const FileTimestamp& rhs) const {
+    return rhs < *this;
   }
-  bool operator>=(const FileTimestamp& RHS) const {
-    return RHS <= *this;
+  bool operator>=(const FileTimestamp& rhs) const {
+    return rhs <= *this;
   }
 };
 
@@ -200,27 +200,27 @@ struct FileTimestamp {
 ///
 /// This structure is intentionally sized to have no packing holes.
 struct FileInfo {
-  uint64_t Device;
-  uint64_t INode;
-  uint64_t Size;
-  FileTimestamp ModTime;
+  uint64_t device;
+  uint64_t iNode;
+  uint64_t size;
+  FileTimestamp modTime;
 
   /// Check if this is a FileInfo representing a missing file.
   bool isMissing() const {
     // We use an all-zero FileInfo as a sentinel, under the assumption this can
     // never exist in normal circumstances.
-    return (Device == 0 && INode == 0 && Size == 0 &&
-            ModTime.Seconds == 0 && ModTime.Nanoseconds == 0);
+    return (device == 0 && iNode == 0 && size == 0 &&
+            modTime.seconds == 0 && modTime.nanoseconds == 0);
   }
 
-  bool operator==(const FileInfo& RHS) const {
-    return (Device == RHS.Device &&
-            INode == RHS.INode &&
-            Size == RHS.Size &&
-            ModTime == RHS.ModTime);
+  bool operator==(const FileInfo& rhs) const {
+    return (device == rhs.device &&
+            iNode == rhs.iNode &&
+            size == rhs.size &&
+            modTime == rhs.modTime);
   }
-  bool operator!=(const FileInfo& RHS) const {
-    return !(*this == RHS);
+  bool operator!=(const FileInfo& rhs) const {
+    return !(*this == rhs);
   }
 };
 
@@ -230,10 +230,10 @@ private:
   // Copying and move assignment are disabled.
   BuildValue(const BuildValue&) LLBUILD_DELETED_FUNCTION;
   void operator=(const BuildValue&) LLBUILD_DELETED_FUNCTION;
-  BuildValue &operator=(BuildValue&& RHS) LLBUILD_DELETED_FUNCTION;
+  BuildValue &operator=(BuildValue&& rhs) LLBUILD_DELETED_FUNCTION;
 
 public:
-  static const int CurrentSchemaVersion = 3;
+  static const int currentSchemaVersion = 3;
 
 private:
   enum class BuildValueKind : uint32_t {
@@ -254,75 +254,75 @@ private:
   };
 
   /// The kind of value.
-  BuildValueKind Kind;
+  BuildValueKind kind;
 
   /// The number of attached output infos.
-  const uint32_t NumOutputInfos = 0;
+  const uint32_t numOutputInfos = 0;
 
   union {
     /// The file info for the rule output, for existing inputs and successful
     /// commands with a single output.
-    FileInfo AsOutputInfo;
+    FileInfo asOutputInfo;
 
     /// The file info for successful commands with multiple outputs.
-    FileInfo* AsOutputInfos;
-  } ValueData;
+    FileInfo* asOutputInfos;
+  } valueData;
 
   /// The command hash, for successful commands.
-  uint64_t CommandHash;
+  uint64_t commandHash;
 
 private:
   BuildValue() {}
-  BuildValue(BuildValueKind Kind)
-    : Kind(Kind), NumOutputInfos(0), CommandHash(0)
+  BuildValue(BuildValueKind kind)
+    : kind(kind), numOutputInfos(0), commandHash(0)
   {
   }
-  BuildValue(BuildValueKind Kind, const FileInfo& OutputInfo,
-             uint64_t CommandHash = 0)
-    : Kind(Kind), NumOutputInfos(1), CommandHash(CommandHash)
+  BuildValue(BuildValueKind kind, const FileInfo& outputInfo,
+             uint64_t commandHash = 0)
+    : kind(kind), numOutputInfos(1), commandHash(commandHash)
   {
-    ValueData.AsOutputInfo = OutputInfo;
+    valueData.asOutputInfo = outputInfo;
   }
-  BuildValue(BuildValueKind Kind, const FileInfo* OutputInfos,
-             uint32_t NumOutputInfos, uint64_t CommandHash = 0)
-    : Kind(Kind), NumOutputInfos(NumOutputInfos), CommandHash(CommandHash)
+  BuildValue(BuildValueKind kind, const FileInfo* outputInfos,
+             uint32_t numOutputInfos, uint64_t commandHash = 0)
+    : kind(kind), numOutputInfos(numOutputInfos), commandHash(commandHash)
   {
-    ValueData.AsOutputInfos = new FileInfo[NumOutputInfos];
-    for (uint32_t i = 0; i != NumOutputInfos; ++i) {
-      ValueData.AsOutputInfos[i] = OutputInfos[i];
+    valueData.asOutputInfos = new FileInfo[numOutputInfos];
+    for (uint32_t i = 0; i != numOutputInfos; ++i) {
+      valueData.asOutputInfos[i] = outputInfos[i];
     }
   }
 
 public:
   // Build values can only be moved via construction, not copied.
-  BuildValue(BuildValue&& RHS) {
-    memcpy(this, &RHS, sizeof(RHS));
-    memset(&RHS, 0, sizeof(RHS));
+  BuildValue(BuildValue&& rhs) {
+    memcpy(this, &rhs, sizeof(rhs));
+    memset(&rhs, 0, sizeof(rhs));
   }
   ~BuildValue() {
     if (hasMultipleOutputs()) {
-      delete[] ValueData.AsOutputInfos;
+      delete[] valueData.asOutputInfos;
     }
   }
 
-  static BuildValue makeExistingInput(const FileInfo& OutputInfo) {
-    return BuildValue(BuildValueKind::ExistingInput, OutputInfo);
+  static BuildValue makeExistingInput(const FileInfo& outputInfo) {
+    return BuildValue(BuildValueKind::ExistingInput, outputInfo);
   }
   static BuildValue makeMissingInput() {
     return BuildValue(BuildValueKind::MissingInput);
   }
-  static BuildValue makeSuccessfulCommand(const FileInfo& OutputInfo,
-                                          uint64_t CommandHash) {
-    return BuildValue(BuildValueKind::SuccessfulCommand, OutputInfo,
-                      CommandHash);
+  static BuildValue makeSuccessfulCommand(const FileInfo& outputInfo,
+                                          uint64_t commandHash) {
+    return BuildValue(BuildValueKind::SuccessfulCommand, outputInfo,
+                      commandHash);
   }
-  static BuildValue makeSuccessfulCommand(const FileInfo* OutputInfos,
-                                          uint32_t NumOutputInfos,
-                                          uint64_t CommandHash) {
+  static BuildValue makeSuccessfulCommand(const FileInfo* outputInfos,
+                                          uint32_t numOutputInfos,
+                                          uint64_t commandHash) {
     // This ctor function should only be used for multiple outputs.
-    assert(NumOutputInfos > 1);
-    return BuildValue(BuildValueKind::SuccessfulCommand, OutputInfos,
-                      NumOutputInfos, CommandHash);
+    assert(numOutputInfos > 1);
+    return BuildValue(BuildValueKind::SuccessfulCommand, outputInfos,
+                      numOutputInfos, commandHash);
   }
   static BuildValue makeFailedCommand() {
     return BuildValue(BuildValueKind::FailedCommand);
@@ -331,24 +331,24 @@ public:
     return BuildValue(BuildValueKind::SkippedCommand);
   }
 
-  bool isExistingInput() const { return Kind == BuildValueKind::ExistingInput; }
-  bool isMissingInput() const { return Kind == BuildValueKind::MissingInput; }
+  bool isExistingInput() const { return kind == BuildValueKind::ExistingInput; }
+  bool isMissingInput() const { return kind == BuildValueKind::MissingInput; }
   bool isSuccessfulCommand() const {
-    return Kind == BuildValueKind::SuccessfulCommand;
+    return kind == BuildValueKind::SuccessfulCommand;
   }
-  bool isFailedCommand() const { return Kind == BuildValueKind::FailedCommand; }
+  bool isFailedCommand() const { return kind == BuildValueKind::FailedCommand; }
   bool isSkippedCommand() const {
-    return Kind == BuildValueKind::SkippedCommand;
+    return kind == BuildValueKind::SkippedCommand;
   }
 
   bool hasMultipleOutputs() const {
-    return NumOutputInfos > 1;
+    return numOutputInfos > 1;
   }
 
   unsigned getNumOutputs() const {
     assert((isExistingInput() || isSuccessfulCommand()) &&
            "invalid call for value kind");
-    return NumOutputInfos;
+    return numOutputInfos;
   }
 
   const FileInfo& getOutputInfo() const {
@@ -356,192 +356,192 @@ public:
            "invalid call for value kind");
     assert(!hasMultipleOutputs() &&
            "invalid call on result with multiple outputs");
-    return ValueData.AsOutputInfo;
+    return valueData.asOutputInfo;
   }
 
-  const FileInfo& getNthOutputInfo(unsigned N) const {
+  const FileInfo& getNthOutputInfo(unsigned n) const {
     assert((isExistingInput() || isSuccessfulCommand()) &&
            "invalid call for value kind");
-    assert(N < getNumOutputs());
+    assert(n < getNumOutputs());
     if (hasMultipleOutputs()) {
-      return ValueData.AsOutputInfos[N];
+      return valueData.asOutputInfos[n];
     } else {
-      assert(N == 0);
-      return ValueData.AsOutputInfo;
+      assert(n == 0);
+      return valueData.asOutputInfo;
     }
   }
 
   uint64_t getCommandHash() const {
     assert(isSuccessfulCommand() && "invalid call for value kind");
-    return CommandHash;
+    return commandHash;
   }
 
-  static BuildValue fromValue(const core::ValueType& Value) {
-    BuildValue Result;
-    assert(Value.size() >= sizeof(Result));
-    memcpy(&Result, Value.data(), sizeof(Result));
+  static BuildValue fromValue(const core::ValueType& value) {
+    BuildValue result;
+    assert(value.size() >= sizeof(result));
+    memcpy(&result, value.data(), sizeof(result));
 
     // If this result has multiple output values, deserialize them properly.
-    if (Result.NumOutputInfos > 1) {
-      assert(Value.size() == (sizeof(Result) +
-                              Result.NumOutputInfos * sizeof(FileInfo)));
-      Result.ValueData.AsOutputInfos = new FileInfo[Result.NumOutputInfos];
-      memcpy(Result.ValueData.AsOutputInfos,
-             Value.data() + sizeof(Result),
-             Result.NumOutputInfos * sizeof(FileInfo));
+    if (result.numOutputInfos > 1) {
+      assert(value.size() == (sizeof(result) +
+                              result.numOutputInfos * sizeof(FileInfo)));
+      result.valueData.asOutputInfos = new FileInfo[result.numOutputInfos];
+      memcpy(result.valueData.asOutputInfos,
+             value.data() + sizeof(result),
+             result.numOutputInfos * sizeof(FileInfo));
     } else {
-      assert(Value.size() == sizeof(Result));
+      assert(value.size() == sizeof(result));
     }
 
-    return Result;
+    return result;
   }
 
   core::ValueType toValue() {
-    if (NumOutputInfos > 1) {
+    if (numOutputInfos > 1) {
       // FIXME: This could be packed one entry tighter.
-      std::vector<uint8_t> Result(sizeof(*this) +
-                                  NumOutputInfos * sizeof(FileInfo));
-      memcpy(Result.data(), this, sizeof(*this));
-      memcpy(Result.data() + sizeof(*this), ValueData.AsOutputInfos,
-             NumOutputInfos * sizeof(FileInfo));
-      return Result;
+      std::vector<uint8_t> result(sizeof(*this) +
+                                  numOutputInfos * sizeof(FileInfo));
+      memcpy(result.data(), this, sizeof(*this));
+      memcpy(result.data() + sizeof(*this), valueData.asOutputInfos,
+             numOutputInfos * sizeof(FileInfo));
+      return result;
     } else {
-      std::vector<uint8_t> Result(sizeof(*this));
-      memcpy(Result.data(), this, sizeof(*this));
-      return Result;
+      std::vector<uint8_t> result(sizeof(*this));
+      memcpy(result.data(), this, sizeof(*this));
+      return result;
     }
   }
 };
 
 struct NinjaBuildEngineDelegate : public core::BuildEngineDelegate {
-  class BuildContext* Context = nullptr;
+  class BuildContext* context = nullptr;
 
-  virtual core::Rule lookupRule(const core::KeyType& Key) override;
+  virtual core::Rule lookupRule(const core::KeyType& key) override;
 
-  virtual void cycleDetected(const std::vector<core::Rule*>& Items) override;
+  virtual void cycleDetected(const std::vector<core::Rule*>& items) override;
 };
 
 /// Wrapper for information used during a single build.
 class BuildContext {
 public:
   /// The build engine delegate.
-  NinjaBuildEngineDelegate Delegate;
+  NinjaBuildEngineDelegate delegate;
 
   /// The engine in use.
-  core::BuildEngine Engine;
+  core::BuildEngine engine;
 
   /// The Ninja manifest we are operating on.
-  std::unique_ptr<ninja::Manifest> Manifest;
+  std::unique_ptr<ninja::Manifest> manifest;
 
   /// Whether commands should print status information.
-  bool Quiet = false;
+  bool quiet = false;
   /// Whether the build is being "simulated", in which case commands won't be
   /// run and inputs will be assumed to exist.
-  bool Simulate = false;
+  bool simulate = false;
   /// Whether to use strict mode.
-  bool Strict = false;
+  bool strict = false;
   /// Whether output should use verbose mode.
-  bool Verbose = false;
+  bool verbose = false;
   /// The number of failed commands to tolerate, or 0 if unlimited
-  unsigned NumFailedCommandsToTolerate = 1;
+  unsigned numFailedCommandsToTolerate = 1;
 
   /// The build profile output file.
-  FILE *ProfileFP = nullptr;
+  FILE *profileFP = nullptr;
 
   /// Whether the build has been cancelled or not.
-  std::atomic<bool> IsCancelled{false};
+  std::atomic<bool> isCancelled{false};
 
   /// Whether the build was cancelled by SIGINT.
-  std::atomic<bool> WasCancelledBySigint{false};
-  std::atomic<bool> WasCancelledByCycle{false};
+  std::atomic<bool> wasCancelledBySigint{false};
+  std::atomic<bool> wasCancelledByCycle{false};
 
   /// The number of inputs used during the build.
-  unsigned NumBuiltInputs{0};
+  unsigned numBuiltInputs{0};
   /// The number of commands executed during the build
-  unsigned NumBuiltCommands{0};
+  unsigned numBuiltCommands{0};
   /// The number of output commands written, for numbering purposes.
-  unsigned NumOutputDescriptions{0};
+  unsigned numOutputDescriptions{0};
   /// The number of failed commands.
-  std::atomic<unsigned> NumFailedCommands{0};
+  std::atomic<unsigned> numFailedCommands{0};
 
   /// @name Status Reporting Command Counts
   /// @{
 
   /// The number of commands being scanned.
-  std::atomic<unsigned> NumCommandsScanning{0};
+  std::atomic<unsigned> numCommandsScanning{0};
   /// The number of commands that have ever been started.
-  std::atomic<unsigned> NumCommandsStarted{0};
+  std::atomic<unsigned> numCommandsStarted{0};
   /// The number of commands that have been completed.
-  std::atomic<unsigned> NumCommandsCompleted{0};
+  std::atomic<unsigned> numCommandsCompleted{0};
   /// The number of commands being executed.
-  std::atomic<unsigned> NumCommandsExecuting{0};
+  std::atomic<unsigned> numCommandsExecuting{0};
   /// The number of commands that were updated (started, but didn't actually run
   /// the command).
-  std::atomic<unsigned> NumCommandsUpdated{0};
+  std::atomic<unsigned> numCommandsUpdated{0};
 
   /// @}
 
   /// The serial queue we used to order output consistently.
-  dispatch_queue_t OutputQueue;
+  dispatch_queue_t outputQueue;
 
   /// The limited queue we use to execute parallel jobs.
-  std::unique_ptr<BuildExecutionQueue> JobQueue;
+  std::unique_ptr<BuildExecutionQueue> jobQueue;
 
   /// The SIGINT dispatch source.
-  dispatch_source_t SigintSource;
+  dispatch_source_t sigintSource;
 
   /// The previous SIGINT handler.
-  struct sigaction PreviousSigintHandler;
+  struct sigaction previousSigintHandler;
 
   /// The set of spawned processes to cancel when interrupted.
-  std::unordered_set<pid_t> SpawnedProcesses;
-  std::mutex SpawnedProcessesMutex;
+  std::unordered_set<pid_t> spawnedProcesses;
+  std::mutex spawnedProcessesMutex;
 
 public:
   BuildContext()
-    : Engine(Delegate),
-      IsCancelled(false),
-      OutputQueue(dispatch_queue_create("output-queue",
+    : engine(delegate),
+      isCancelled(false),
+      outputQueue(dispatch_queue_create("output-queue",
                                         /*attr=*/DISPATCH_QUEUE_SERIAL))
   {
     // Register the context with the delegate.
-    Delegate.Context = this;
+    delegate.context = this;
 
     // Register a dispatch source to handle SIGINT.
-    SigintSource = dispatch_source_create(
-      DISPATCH_SOURCE_TYPE_SIGNAL, SIGINT, 0, OutputQueue);
-    dispatch_source_set_event_handler(SigintSource, ^{
+    sigintSource = dispatch_source_create(
+      DISPATCH_SOURCE_TYPE_SIGNAL, SIGINT, 0, outputQueue);
+    dispatch_source_set_event_handler(sigintSource, ^{
         cancelBuildOnInterrupt();
       });
-    dispatch_resume(SigintSource);
+    dispatch_resume(sigintSource);
 
     // Clear the default SIGINT handling behavior.
-    struct sigaction Action{};
-    Action.sa_handler = SIG_IGN;
-    sigaction(SIGINT, &Action, &PreviousSigintHandler);
+    struct sigaction action{};
+    action.sa_handler = SIG_IGN;
+    sigaction(SIGINT, &action, &previousSigintHandler);
   }
 
   ~BuildContext() {
     // Clean up our dispatch source.
-    dispatch_source_cancel(SigintSource);
-    dispatch_release(SigintSource);
+    dispatch_source_cancel(sigintSource);
+    dispatch_release(sigintSource);
 
     // Restore any previous SIGINT handler.
-    sigaction(SIGINT, &PreviousSigintHandler, NULL);
+    sigaction(SIGINT, &previousSigintHandler, NULL);
 
-    dispatch_release(OutputQueue);
+    dispatch_release(outputQueue);
   }
 
   void cancelBuildOnInterrupt() {
-    std::lock_guard<std::mutex> Guard(SpawnedProcessesMutex);
+    std::lock_guard<std::mutex> guard(spawnedProcessesMutex);
 
     fprintf(stderr, "... cancelling build.\n");
-    IsCancelled = true;
-    WasCancelledBySigint = true;
+    isCancelled = true;
+    wasCancelledBySigint = true;
 
     // Cancel the spawned processes.
-    for (pid_t PID: SpawnedProcesses) {
-      ::kill(-PID, SIGINT);
+    for (pid_t pid: spawnedProcesses) {
+      ::kill(-pid, SIGINT);
     }
 
     // FIXME: In our model, we still wait for everything to terminate, which
@@ -550,68 +550,68 @@ public:
     // a hard kill at some point (for example, on the second interrupt).
   }
 
-  void reportMissingInput(const ninja::Node* Node) {
+  void reportMissingInput(const ninja::Node* node) {
     // We simply report the missing input here, the build will be cancelled when
     // a rule sees it missing.
-    dispatch_async(OutputQueue, ^() {
+    dispatch_async(outputQueue, ^() {
         fprintf(stderr,
                 "error: %s: missing input '%s' and no rule to build it\n",
-                getprogname(), Node->getPath().c_str());
+                getprogname(), node->getPath().c_str());
       });
   }
 
   void incrementFailedCommands() {
     // Update our count of the number of failed commands.
-    unsigned NumFailedCommands = ++this->NumFailedCommands;
+    unsigned numFailedCommands = ++this->numFailedCommands;
 
     // Cancel the build, if the number of command failures exceeds the
     // number to continue past.
-    if (NumFailedCommandsToTolerate != 0 &&
-        NumFailedCommands == NumFailedCommandsToTolerate) {
-      dispatch_async(OutputQueue, ^() {
+    if (numFailedCommandsToTolerate != 0 &&
+        numFailedCommands == numFailedCommandsToTolerate) {
+      dispatch_async(outputQueue, ^() {
           fprintf(stderr, "error: %s: stopping build due to command failures\n",
                   getprogname());
         });
-      IsCancelled = true;
+      isCancelled = true;
     }
   }
 };
 
 class BuildManifestActions : public ninja::ManifestLoaderActions {
-  ninja::ManifestLoader *Loader = 0;
-  unsigned NumErrors = 0;
-  unsigned MaxErrors = 20;
+  ninja::ManifestLoader* loader = 0;
+  unsigned numErrors = 0;
+  unsigned maxErrors = 20;
 
 private:
-  virtual void initialize(ninja::ManifestLoader *Loader) override {
-    this->Loader = Loader;
+  virtual void initialize(ninja::ManifestLoader* loader) override {
+    this->loader = loader;
   }
 
-  virtual void error(std::string Filename, std::string Message,
-                     const ninja::Token &At) override {
-    if (NumErrors++ >= MaxErrors)
+  virtual void error(std::string filename, std::string message,
+                     const ninja::Token& at) override {
+    if (numErrors++ >= maxErrors)
       return;
 
-    util::EmitError(Filename, Message, At, Loader->getCurrentParser());
+    util::emitError(filename, message, at, loader->getCurrentParser());
   }
 
-  virtual bool readFileContents(const std::string& FromFilename,
-                                const std::string& Filename,
-                                const ninja::Token* ForToken,
-                                std::unique_ptr<char[]> *Data_Out,
-                                uint64_t *Length_Out) override {
+  virtual bool readFileContents(const std::string& fromFilename,
+                                const std::string& filename,
+                                const ninja::Token* forToken,
+                                std::unique_ptr<char[]>* data_out,
+                                uint64_t* length_out) override {
     // Load the file contents and return if successful.
-    std::string Error;
-    if (util::ReadFileContents(Filename, Data_Out, Length_Out, &Error))
+    std::string error;
+    if (util::readFileContents(filename, data_out, length_out, &error))
       return true;
 
     // Otherwise, emit the error.
-    if (ForToken) {
-      util::EmitError(FromFilename, Error, *ForToken,
-                      Loader->getCurrentParser());
+    if (forToken) {
+      util::emitError(fromFilename, error, *forToken,
+                      loader->getCurrentParser());
     } else {
       // We were unable to open the main file.
-      fprintf(stderr, "error: %s: %s\n", getprogname(), Error.c_str());
+      fprintf(stderr, "error: %s: %s\n", getprogname(), error.c_str());
       exit(1);
     }
 
@@ -619,134 +619,135 @@ private:
   };
 
 public:
-  unsigned getNumErrors() const { return NumErrors; }
+  unsigned getNumErrors() const { return numErrors; }
 };
 
 /// Get the information to represent the state of the given node in the file
 /// system.
 ///
-/// \param Info_Out [out] On success, the important path information.
+/// \param info_out [out] On success, the important path information.
 /// \returns True if information on the path was found.
-static bool GetStatInfoForNode(const ninja::Node* Node, FileInfo *Info_Out) {
-  struct ::stat Buf;
-  if (::stat(Node->getPath().c_str(), &Buf) != 0) {
-    memset(Info_Out, 0, sizeof(*Info_Out));
-    assert(Info_Out->isMissing());
+static bool getStatInfoForNode(const ninja::Node* node, FileInfo *info_out) {
+  struct ::stat buf;
+  if (::stat(node->getPath().c_str(), &buf) != 0) {
+    memset(info_out, 0, sizeof(*info_out));
+    assert(info_out->isMissing());
     return false;
   }
 
-  Info_Out->Device = Buf.st_dev;
-  Info_Out->INode = Buf.st_ino;
-  Info_Out->Size = Buf.st_size;
-  Info_Out->ModTime.Seconds = Buf.st_mtimespec.tv_sec;
-  Info_Out->ModTime.Nanoseconds = Buf.st_mtimespec.tv_nsec;
+  info_out->device = buf.st_dev;
+  info_out->iNode = buf.st_ino;
+  info_out->size = buf.st_size;
+  info_out->modTime.seconds = buf.st_mtimespec.tv_sec;
+  info_out->modTime.nanoseconds = buf.st_mtimespec.tv_nsec;
 
   // Enforce we never accidentally create our sentinel missing file value.
-  if (Info_Out->isMissing()) {
-    Info_Out->ModTime.Nanoseconds = 1;
+  if (info_out->isMissing()) {
+    info_out->modTime.nanoseconds = 1;
   }
 
   // Verify we didn't truncate any values.
-  assert(Info_Out->Device == (unsigned)Buf.st_dev &&
-         Info_Out->INode == (unsigned)Buf.st_ino &&
-         Info_Out->Size == (unsigned)Buf.st_size &&
-         Info_Out->ModTime.Seconds == (unsigned)Buf.st_mtimespec.tv_sec &&
-         Info_Out->ModTime.Nanoseconds == (unsigned)Buf.st_mtimespec.tv_nsec);
+  assert(info_out->device == (unsigned)buf.st_dev &&
+         info_out->iNode == (unsigned)buf.st_ino &&
+         info_out->size == (unsigned)buf.st_size &&
+         info_out->modTime.seconds == (unsigned)buf.st_mtimespec.tv_sec &&
+         info_out->modTime.nanoseconds == (unsigned)buf.st_mtimespec.tv_nsec);
 
   return true;
 }
 
-core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
+static core::Task*
+buildCommand(BuildContext& context, ninja::Command* command) {
   struct NinjaCommandTask : core::Task {
-    BuildContext& Context;
-    ninja::Command* Command;
+    BuildContext& context;
+    ninja::Command* command;
 
     /// If true, the command should be skipped (because of an error in an
     /// input).
-    bool ShouldSkip = false;
+    bool shouldSkip = false;
 
     /// If true, the command had a missing input (this implies ShouldSkip is
     /// true).
-    bool HasMissingInput = false;
+    bool hasMissingInput = false;
 
     /// If true, the command can be updated if the output is newer than all of
     /// the inputs.
-    bool CanUpdateIfNewer = true;
+    bool canUpdateIfNewer = true;
 
     /// Information on the prior command result, if present.
-    bool HasPriorResult = false;
-    uint64_t PriorCommandHash;
+    bool hasPriorResult = false;
+    uint64_t priorCommandHash;
 
     /// The timestamp of the most recently rebuilt input.
-    FileTimestamp NewestModTime{ 0, 0 };
+    FileTimestamp newestModTime{ 0, 0 };
 
-    NinjaCommandTask(BuildContext& Context, ninja::Command* Command)
-      : Task("ninja-command"), Context(Context), Command(Command) {
+    NinjaCommandTask(BuildContext& context, ninja::Command* command)
+      : Task("ninja-command"), context(context), command(command) {
       // If this command uses discovered dependencies, we can never skip it (we
       // don't yet have a way to account for the discovered dependencies, or
       // preserve them if skipped).
       //
       // FIXME: We should support update-if-newer for commands with deps.
-      if (Command->getDepsStyle() != ninja::Command::DepsStyleKind::None)
-        CanUpdateIfNewer = false;
+      if (command->getDepsStyle() != ninja::Command::DepsStyleKind::None)
+        canUpdateIfNewer = false;
     }
 
-    virtual void provideValue(core::BuildEngine& engine, uintptr_t InputID,
-                              const core::ValueType& ValueData) override {
+    virtual void provideValue(core::BuildEngine& engine, uintptr_t inputID,
+                              const core::ValueType& valueData) override {
       // Process the input value to see if we should skip this command.
-      BuildValue Value = BuildValue::fromValue(ValueData);
+      BuildValue value = BuildValue::fromValue(valueData);
 
       // All direct inputs to NinjaCommandTask objects should be singleton
       // values.
-      assert(!Value.hasMultipleOutputs());
+      assert(!value.hasMultipleOutputs());
 
       // If the value is not an existing input or a successful command, then we
       // shouldn't run this command.
-      if (!Value.isExistingInput() && !Value.isSuccessfulCommand()) {
-        ShouldSkip = true;
-        if (Value.isMissingInput()) {
-          HasMissingInput = true;
+      if (!value.isExistingInput() && !value.isSuccessfulCommand()) {
+        shouldSkip = true;
+        if (value.isMissingInput()) {
+          hasMissingInput = true;
 
-          Context.reportMissingInput(Command->getInputs()[InputID]);
+          context.reportMissingInput(command->getInputs()[inputID]);
         }
       } else {
         // Otherwise, track the information used to determine if we can just
         // update the command instead of running it.
-        const FileInfo& OutputInfo = Value.getOutputInfo();
+        const FileInfo& outputInfo = value.getOutputInfo();
 
         // If there is a missing input file (from a successful command), we
         // always need to run the command.
-        if (OutputInfo.isMissing()) {
-          CanUpdateIfNewer = false;
+        if (outputInfo.isMissing()) {
+          canUpdateIfNewer = false;
         } else {
           // Otherwise, keep track of the newest input.
-          if (OutputInfo.ModTime > NewestModTime) {
-            NewestModTime = OutputInfo.ModTime;
+          if (outputInfo.modTime > newestModTime) {
+            newestModTime = outputInfo.modTime;
           }
         }
       }
     }
 
-    bool isImmediatelyCyclicInput(const ninja::Node *Node) const {
-      for (auto* Output: Command->getOutputs())
-        if (Node == Output)
+    bool isImmediatelyCyclicInput(const ninja::Node* node) const {
+      for (const auto* output: command->getOutputs())
+        if (node == output)
           return true;
       return false;
     }
 
-    void completeTask(BuildValue&& Result, bool ForceChange=false) {
+    void completeTask(BuildValue&& result, bool forceChange=false) {
       // Update our count of actual commands executing.
-      if (Command->getRule() != Context.Manifest->getPhonyRule())
-        --Context.NumCommandsExecuting;
+      if (command->getRule() != context.manifest->getPhonyRule())
+        --context.numCommandsExecuting;
 
-      Context.Engine.taskIsComplete(this, Result.toValue(), ForceChange);
+      context.engine.taskIsComplete(this, result.toValue(), forceChange);
     }
 
     virtual void start(core::BuildEngine& engine) override {
       // Update our count of actual commands started and executing.
-      if (Command->getRule() != Context.Manifest->getPhonyRule()) {
-        ++Context.NumCommandsStarted;
-        ++Context.NumCommandsExecuting;
+      if (command->getRule() != context.manifest->getPhonyRule()) {
+        ++context.numCommandsStarted;
+        ++context.numCommandsExecuting;
       }
 
       // If this is a phony rule, ignore any immediately cyclic dependencies in
@@ -755,75 +756,75 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
       //
       // FIXME: Find a way to harden this more, or see if we can just get CMake
       // to fix it.
-      bool isPhony = Command->getRule() == Context.Manifest->getPhonyRule();
+      bool isPhony = command->getRule() == context.manifest->getPhonyRule();
 
       // Request all of the explicit and implicit inputs (the only difference
       // between them is that implicit inputs do not appear in ${in} during
       // variable expansion, but that has already been performed).
-      unsigned ID = 0;
-      for (auto it = Command->explicitInputs_begin(),
-             ie = Command->explicitInputs_end(); it != ie; ++it) {
-        if (!Context.Strict && isPhony && isImmediatelyCyclicInput(*it))
+      unsigned id = 0;
+      for (auto it = command->explicitInputs_begin(),
+             ie = command->explicitInputs_end(); it != ie; ++it, ++id) {
+        if (!context.strict && isPhony && isImmediatelyCyclicInput(*it))
           continue;
 
-        engine.taskNeedsInput(this, (*it)->getPath(), ID++);
+        engine.taskNeedsInput(this, (*it)->getPath(), id);
       }
-      for (auto it = Command->implicitInputs_begin(),
-             ie = Command->implicitInputs_end(); it != ie; ++it) {
-        if (!Context.Strict && isPhony && isImmediatelyCyclicInput(*it))
+      for (auto it = command->implicitInputs_begin(),
+             ie = command->implicitInputs_end(); it != ie; ++it, ++id) {
+        if (!context.strict && isPhony && isImmediatelyCyclicInput(*it))
           continue;
 
-        engine.taskNeedsInput(this, (*it)->getPath(), ID++);
+        engine.taskNeedsInput(this, (*it)->getPath(), id);
       }
 
       // Request all of the order-only inputs.
-      for (auto it = Command->orderOnlyInputs_begin(),
-             ie = Command->orderOnlyInputs_end(); it != ie; ++it) {
-        if (!Context.Strict && isPhony && isImmediatelyCyclicInput(*it))
+      for (auto it = command->orderOnlyInputs_begin(),
+             ie = command->orderOnlyInputs_end(); it != ie; ++it) {
+        if (!context.strict && isPhony && isImmediatelyCyclicInput(*it))
           continue;
 
         engine.taskMustFollow(this, (*it)->getPath());
       }
     }
 
-    virtual void providePriorValue(core::BuildEngine& Engine,
-                                   const core::ValueType& ValueData) override {
-      BuildValue Value = BuildValue::fromValue(ValueData);
+    virtual void providePriorValue(core::BuildEngine& engine,
+                                   const core::ValueType& valueData) override {
+      BuildValue value = BuildValue::fromValue(valueData);
 
-      if (Value.isSuccessfulCommand()) {
-        HasPriorResult = true;
-        PriorCommandHash = Value.getCommandHash();
+      if (value.isSuccessfulCommand()) {
+        hasPriorResult = true;
+        priorCommandHash = value.getCommandHash();
       }
     }
 
     /// Compute the output result for the command.
-    BuildValue computeCommandResult(uint64_t CommandHash) const {
-      unsigned NumOutputs = Command->getOutputs().size();
-      if (NumOutputs == 1) {
-        FileInfo OutputInfo;
-        GetStatInfoForNode(Command->getOutputs()[0], &OutputInfo);
-        return BuildValue::makeSuccessfulCommand(OutputInfo, CommandHash);
+    BuildValue computeCommandResult(uint64_t commandHash) const {
+      unsigned numOutputs = command->getOutputs().size();
+      if (numOutputs == 1) {
+        FileInfo outputInfo;
+        getStatInfoForNode(command->getOutputs()[0], &outputInfo);
+        return BuildValue::makeSuccessfulCommand(outputInfo, commandHash);
       } else {
-        std::vector<FileInfo> OutputInfos(NumOutputs);
-        for (unsigned i = 0; i != NumOutputs; ++i) {
-          GetStatInfoForNode(Command->getOutputs()[i], &OutputInfos[i]);
+        std::vector<FileInfo> outputInfos(numOutputs);
+        for (unsigned i = 0; i != numOutputs; ++i) {
+          getStatInfoForNode(command->getOutputs()[i], &outputInfos[i]);
         }
-        return BuildValue::makeSuccessfulCommand(OutputInfos.data(), NumOutputs,
-                                                 CommandHash);
+        return BuildValue::makeSuccessfulCommand(outputInfos.data(), numOutputs,
+                                                 commandHash);
       }
     }
 
     /// Check if it is legal to only update the result (versus rerunning)
     /// because the outputs are newer than all of the inputs.
-    bool canUpdateIfNewerWithResult(const BuildValue& Result) {
-      assert(Result.isSuccessfulCommand());
+    bool canUpdateIfNewerWithResult(const BuildValue& result) {
+      assert(result.isSuccessfulCommand());
 
       // Check each output.
-      for (unsigned i = 0, e = Result.getNumOutputs(); i != e; ++i) {
-        const FileInfo& OutputInfo = Result.getNthOutputInfo(i);
+      for (unsigned i = 0, e = result.getNumOutputs(); i != e; ++i) {
+        const FileInfo& outputInfo = result.getNthOutputInfo(i);
 
         // If the output is missing, we need to rebuild.
-        if (OutputInfo.isMissing())
+        if (outputInfo.isMissing())
           return false;
 
         // Check if the output is actually newer than the most recent input.
@@ -840,11 +841,11 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
         // and will enter an infinite reconfiguration loop. See also:
         //
         // See: http://www.cmake.org/Bug/view.php?id=15456
-        if (Context.Strict) {
-          if (OutputInfo.ModTime <= NewestModTime)
+        if (context.strict) {
+          if (outputInfo.modTime <= newestModTime)
             return false;
         } else {
-          if (OutputInfo.ModTime < NewestModTime)
+          if (outputInfo.modTime < newestModTime)
             return false;
         }
       }
@@ -854,7 +855,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
 
     virtual void inputsAvailable(core::BuildEngine& engine) override {
       // If the build is cancelled, skip everything.
-      if (Context.IsCancelled) {
+      if (context.isCancelled) {
         return completeTask(BuildValue::makeSkippedCommand());
       }
 
@@ -862,124 +863,124 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
       //
       // FIXME: Is it right to bring this up-to-date when one of the inputs
       // indicated a failure? It probably doesn't matter.
-      if (Command->getRule() == Context.Manifest->getPhonyRule()) {
+      if (command->getRule() == context.manifest->getPhonyRule()) {
         // Get the result.
-        BuildValue Result = computeCommandResult(/*CommandHash=*/0);
+        BuildValue result = computeCommandResult(/*CommandHash=*/0);
 
         // If any output is missing, then we always want to force the change to
         // propagate.
-        bool ForceChange = false;
-        for (unsigned i = 0, e = Result.getNumOutputs(); i != e; ++i) {
-            if (Result.getNthOutputInfo(i).isMissing()) {
-                ForceChange = true;
+        bool forceChange = false;
+        for (unsigned i = 0, e = result.getNumOutputs(); i != e; ++i) {
+            if (result.getNthOutputInfo(i).isMissing()) {
+                forceChange = true;
                 break;
             }
         }
 
-        return completeTask(std::move(Result), ForceChange);
+        return completeTask(std::move(result), forceChange);
       }
 
       // If it is legal to simply update the command, then if the command output
       // exists and is newer than all of the inputs, don't actually run the
       // command (just bring it up-to-date).
-      if (CanUpdateIfNewer) {
+      if (canUpdateIfNewer) {
         // If this isn't a generator command and its command hash differs, we
         // can't update it.
-        uint64_t CommandHash = basic::HashString(Command->getCommandString());
-        if (!Command->hasGeneratorFlag() &&
-            (!HasPriorResult || PriorCommandHash != CommandHash))
-          CanUpdateIfNewer = false;
+        uint64_t commandHash = basic::hashString(command->getCommandString());
+        if (!command->hasGeneratorFlag() &&
+            (!hasPriorResult || priorCommandHash != commandHash))
+          canUpdateIfNewer = false;
 
-        if (CanUpdateIfNewer) {
-          BuildValue Result = computeCommandResult(CommandHash);
+        if (canUpdateIfNewer) {
+          BuildValue result = computeCommandResult(commandHash);
 
-          if (canUpdateIfNewerWithResult(Result)) {
+          if (canUpdateIfNewerWithResult(result)) {
             // Update the count of the number of commands which have been
             // updated without being rerun.
-            ++Context.NumCommandsUpdated;
+            ++context.numCommandsUpdated;
 
-            return completeTask(std::move(Result));
+            return completeTask(std::move(result));
           }
         }
       }
 
       // Otherwise, actually run the command.
 
-      ++Context.NumBuiltCommands;
+      ++context.numBuiltCommands;
 
       // If we are simulating the build, just print the description and
       // complete.
-      if (Context.Simulate) {
-        if (!Context.Quiet)
-          writeDescription(Context, Command);
+      if (context.simulate) {
+        if (!context.quiet)
+          writeDescription(context, command);
         return completeTask(BuildValue::makeSkippedCommand());
       }
 
       // If not simulating, but this command should be skipped, then do nothing.
-      if (ShouldSkip) {
+      if (shouldSkip) {
         // If this command had a failed input, treat it as having failed.
-        if (HasMissingInput) {
+        if (hasMissingInput) {
           // Take care to not rely on the ``this`` object, which may disappear
           // before the queue executes this block.
-          ninja::Command* LocalCommand(Command);
+          ninja::Command* localCommand(command);
 
-          dispatch_async(Context.OutputQueue, ^() {
+          dispatch_async(context.outputQueue, ^() {
               fprintf(stderr,
                       "error: %s: cannot build '%s' due to missing input\n",
                       getprogname(),
-                      LocalCommand->getOutputs()[0]->getPath().c_str());
+                      localCommand->getOutputs()[0]->getPath().c_str());
             });
 
           // Update the count of failed commands.
-          Context.incrementFailedCommands();
+          context.incrementFailedCommands();
         }
 
         return completeTask(BuildValue::makeSkippedCommand());
       }
-      assert(!HasMissingInput);
+      assert(!hasMissingInput);
 
       // Otherwise, enqueue the job to run later.
-      Context.JobQueue->addJob([&] (unsigned Bucket) {
+      context.jobQueue->addJob([&] (unsigned bucket) {
           // Take care to not rely on the ``this`` object, which may disappear
           // before the queue executes this block.
-          BuildContext& LocalContext(Context);
-          ninja::Command* LocalCommand(Command);
+          BuildContext& localContext(context);
+          ninja::Command* localCommand(command);
 
-          if (LocalContext.ProfileFP) {
-            dispatch_sync(LocalContext.OutputQueue, ^() {
-                uint64_t StartTime = GetTimeInMicroseconds();
-                fprintf(LocalContext.ProfileFP,
+          if (localContext.profileFP) {
+            dispatch_sync(localContext.outputQueue, ^() {
+                uint64_t startTime = getTimeInMicroseconds();
+                fprintf(localContext.profileFP,
                         ("{ \"name\": \"%s\", \"ph\": \"B\", \"pid\": 0, "
                          "\"tid\": %d, \"ts\": %llu},\n"),
-                        LocalCommand->getEffectiveDescription().c_str(), Bucket,
-                        StartTime);
+                        localCommand->getEffectiveDescription().c_str(), bucket,
+                        startTime);
               });
           }
 
           executeCommand();
 
-          if (LocalContext.ProfileFP) {
-            dispatch_sync(LocalContext.OutputQueue, ^() {
-                uint64_t EndTime = GetTimeInMicroseconds();
-                fprintf(LocalContext.ProfileFP,
+          if (localContext.profileFP) {
+            dispatch_sync(localContext.outputQueue, ^() {
+                uint64_t endTime = getTimeInMicroseconds();
+                fprintf(localContext.profileFP,
                         ("{ \"name\": \"%s\", \"ph\": \"E\", \"pid\": 0, "
                          "\"tid\": %d, \"ts\": %llu},\n"),
-                        LocalCommand->getEffectiveDescription().c_str(), Bucket,
-                        EndTime);
+                        localCommand->getEffectiveDescription().c_str(), bucket,
+                        endTime);
               });
           }
         });
     }
 
-    static unsigned getNumPossibleMaxCommands(BuildContext& Context) {
+    static unsigned getNumPossibleMaxCommands(BuildContext& context) {
       // Compute the "possible" number of maximum commands that will be
       // run. This is only the "possible" max because we can start running
       // commands before dependency scanning is complete -- we include the
       // number of commands that are being scanned so that this number will
       // always be greater than the number of commands that have been executed
       // until the very last command is run.
-      int TotalPossibleMaxCommands =
-        Context.NumCommandsCompleted + Context.NumCommandsScanning;
+      int totalPossibleMaxCommands =
+        context.numCommandsCompleted + context.numCommandsScanning;
 
       // Compute the number of max commands to show, subtracting out all the
       // commands that we avoided running.
@@ -991,41 +992,41 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
 
       // Compute the number of completed commands that were never even executed,
       // by subtracting the number of completed commands that *were* executed.
-      int NumCompletedCommandsNeverExecuted = Context.NumCommandsCompleted -
-        (Context.NumCommandsStarted - Context.NumCommandsExecuting);
+      int numCompletedCommandsNeverExecuted = context.numCommandsCompleted -
+        (context.numCommandsStarted - context.numCommandsExecuting);
 
       // Then the number of max commands to show is the total max possible
       // commands, minus the commands that were never executed and the commands
       // that were updated.
-      int PossibleMaxCommands = TotalPossibleMaxCommands -
-        (NumCompletedCommandsNeverExecuted + Context.NumCommandsUpdated);
+      int possibleMaxCommands = totalPossibleMaxCommands -
+        (numCompletedCommandsNeverExecuted + context.numCommandsUpdated);
 
-      return PossibleMaxCommands;
+      return possibleMaxCommands;
     }
 
-    static void writeDescription(BuildContext& Context,
-                                 ninja::Command* Command) {
-      const std::string& Description =
-        Context.Verbose ? Command->getCommandString() :
-        Command->getEffectiveDescription();
-      fprintf(stderr, "[%d/%d] %s\n", ++Context.NumOutputDescriptions,
-              getNumPossibleMaxCommands(Context), Description.c_str());
+    static void writeDescription(BuildContext& context,
+                                 ninja::Command* command) {
+      const std::string& description =
+        context.verbose ? command->getCommandString() :
+        command->getEffectiveDescription();
+      fprintf(stderr, "[%d/%d] %s\n", ++context.numOutputDescriptions,
+              getNumPossibleMaxCommands(context), description.c_str());
     }
 
     void executeCommand() {
       // If the build is cancelled, skip the job.
-      if (Context.IsCancelled) {
+      if (context.isCancelled) {
         return completeTask(BuildValue::makeSkippedCommand());
       }
 
       // Write the description on the output queue, taking care to not rely on
       // the ``this`` object, which may disappear before the queue executes this
       // block.
-      if (!Context.Quiet) {
-        BuildContext& LocalContext(Context);
-        ninja::Command* LocalCommand(Command);
-        dispatch_async(Context.OutputQueue, ^() {
-            writeDescription(LocalContext, LocalCommand);
+      if (!context.quiet) {
+        BuildContext& localContext(context);
+        ninja::Command* localCommand(command);
+        dispatch_async(context.outputQueue, ^() {
+            writeDescription(localContext, localCommand);
           });
       }
 
@@ -1044,58 +1045,58 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
       //
       // We always restat the output, but we honor Ninja's restat flag by
       // forcing downstream propagation if it isn't set.
-      uint64_t CommandHash = basic::HashString(Command->getCommandString());
-      BuildValue Result = computeCommandResult(CommandHash);
-      return completeTask(std::move(Result),
-                          /*ForceChange=*/!Command->hasRestatFlag());
+      uint64_t commandHash = basic::hashString(command->getCommandString());
+      BuildValue result = computeCommandResult(commandHash);
+      return completeTask(std::move(result),
+                          /*ForceChange=*/!command->hasRestatFlag());
     }
 
     /// Execute the command process and wait for it to complete.
     ///
     /// \returns True if the command succeeded.
     bool spawnAndWaitForCommand() const {
-      bool IsConsole = Command->getExecutionPool() ==
-        Context.Manifest->getConsolePool();
+      bool isConsole = command->getExecutionPool() ==
+        context.manifest->getConsolePool();
 
       // Initialize the spawn attributes.
-      posix_spawnattr_t Attributes;
-      posix_spawnattr_init(&Attributes);
+      posix_spawnattr_t attributes;
+      posix_spawnattr_init(&attributes);
 
       // Unmask all signals
-      sigset_t NoSignals;
-      sigemptyset(&NoSignals);
-      posix_spawnattr_setsigmask(&Attributes, &NoSignals);
+      sigset_t noSignals;
+      sigemptyset(&noSignals);
+      posix_spawnattr_setsigmask(&attributes, &noSignals);
 
       // Reset all signals to default behavior.
-      sigset_t AllSignals;
-      sigfillset(&AllSignals);
-      posix_spawnattr_setsigdefault(&Attributes, &AllSignals);
+      sigset_t allSignals;
+      sigfillset(&allSignals);
+      posix_spawnattr_setsigdefault(&attributes, &allSignals);
 
       // Establish a separate process group.
-      posix_spawnattr_setpgroup(&Attributes, 0);
+      posix_spawnattr_setpgroup(&attributes, 0);
 
       // Set the attribute flags.
-      unsigned Flags = POSIX_SPAWN_SETSIGMASK | POSIX_SPAWN_SETSIGDEF;
-      if (!IsConsole)
-        Flags |= POSIX_SPAWN_SETPGROUP;
+      unsigned flags = POSIX_SPAWN_SETSIGMASK | POSIX_SPAWN_SETSIGDEF;
+      if (!isConsole)
+        flags |= POSIX_SPAWN_SETPGROUP;
 
       // Close all other files by default.
       //
       // Note that this is an Apple-specific extension, and we will have to do
       // something else on other platforms (and unfortunately, there isn't
       // really an easy answer other than using a stub executable).
-      Flags |= POSIX_SPAWN_CLOEXEC_DEFAULT;
+      flags |= POSIX_SPAWN_CLOEXEC_DEFAULT;
 
-      posix_spawnattr_setflags(&Attributes, Flags);
+      posix_spawnattr_setflags(&attributes, flags);
 
       // Setup the file actions.
-      posix_spawn_file_actions_t FileActions;
-      posix_spawn_file_actions_init(&FileActions);
+      posix_spawn_file_actions_t fileActions;
+      posix_spawn_file_actions_init(&fileActions);
 
       // Create a pipe to use to read the command output, if necessary.
-      int Pipe[2]{ -1, -1 };
-      if (!IsConsole) {
-        if (pipe(Pipe) < 0) {
+      int pipe[2]{ -1, -1 };
+      if (!isConsole) {
+        if (::pipe(pipe) < 0) {
           // FIXME: Error handling.
           fprintf(stderr, "error: %s: unable to create command pipe (%s)\n",
                   getprogname(), strerror(errno));
@@ -1105,36 +1106,36 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
 
       // Open /dev/null as stdin.
       posix_spawn_file_actions_addopen(
-          &FileActions, 0, "/dev/null", O_RDONLY, 0);
+          &fileActions, 0, "/dev/null", O_RDONLY, 0);
 
-      if (IsConsole) {
-        posix_spawn_file_actions_adddup2(&FileActions, 1, 1);
-        posix_spawn_file_actions_adddup2(&FileActions, 2, 2);
+      if (isConsole) {
+        posix_spawn_file_actions_adddup2(&fileActions, 1, 1);
+        posix_spawn_file_actions_adddup2(&fileActions, 2, 2);
       } else {
         // Open the write end of the pipe as stdout and stderr.
-        posix_spawn_file_actions_adddup2(&FileActions, Pipe[1], 1);
-        posix_spawn_file_actions_adddup2(&FileActions, Pipe[1], 2);
+        posix_spawn_file_actions_adddup2(&fileActions, pipe[1], 1);
+        posix_spawn_file_actions_adddup2(&fileActions, pipe[1], 2);
 
         // Close the read and write ends of the pipe.
-        posix_spawn_file_actions_addclose(&FileActions, Pipe[0]);
-        posix_spawn_file_actions_addclose(&FileActions, Pipe[1]);
+        posix_spawn_file_actions_addclose(&fileActions, pipe[0]);
+        posix_spawn_file_actions_addclose(&fileActions, pipe[1]);
       }
 
       // Spawn the command.
-      const char* Args[4];
-      Args[0] = "/bin/sh";
-      Args[1] = "-c";
-      Args[2] = Command->getCommandString().c_str();
-      Args[3] = nullptr;
+      const char* args[4];
+      args[0] = "/bin/sh";
+      args[1] = "-c";
+      args[2] = command->getCommandString().c_str();
+      args[3] = nullptr;
 
       // We need to hold the spawn processes lock when we spawn, to ensure that
       // we don't create a process in between when we are cancelled.
-      pid_t PID;
+      pid_t pid;
       {
-        std::lock_guard<std::mutex> Guard(Context.SpawnedProcessesMutex);
+        std::lock_guard<std::mutex> guard(context.spawnedProcessesMutex);
 
-        if (posix_spawn(&PID, Args[0], /*file_actions=*/&FileActions,
-                        /*attrp=*/&Attributes, const_cast<char**>(Args),
+        if (posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
+                        /*attrp=*/&attributes, const_cast<char**>(args),
                         ::environ) != 0) {
           // FIXME: Error handling.
           fprintf(stderr, "error: %s: unable to spawn process (%s)\n",
@@ -1143,44 +1144,45 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
         }
 
         // The console process will get interrupted automatically.
-        if (!IsConsole)
-          Context.SpawnedProcesses.insert(PID);
+        if (!isConsole)
+          context.spawnedProcesses.insert(pid);
       }
 
-      posix_spawnattr_destroy(&Attributes);
+      posix_spawn_file_actions_destroy(&fileActions);
+      posix_spawnattr_destroy(&attributes);
 
       // Read the command output, if buffering.
-      std::vector<char> OutputData;
-      if (!IsConsole) {
+      std::vector<char> outputData;
+      if (!isConsole) {
         // Close the write end of the output pipe.
-        ::close(Pipe[1]);
+        ::close(pipe[1]);
 
         // Read all the data from the output pipe.
         while (true) {
-          char Buf[4096];
-          ssize_t NumBytes = read(Pipe[0], Buf, sizeof(Buf));
-          if (NumBytes < 0) {
+          char buf[4096];
+          ssize_t numBytes = read(pipe[0], buf, sizeof(buf));
+          if (numBytes < 0) {
             // FIXME: Error handling.
             fprintf(stderr, "error: %s: unable to read from output pipe (%s)\n",
                     getprogname(), strerror(errno));
             break;
           }
 
-          if (NumBytes == 0)
+          if (numBytes == 0)
             break;
 
-          OutputData.insert(OutputData.end(), &Buf[0], &Buf[NumBytes]);
+          outputData.insert(outputData.end(), &buf[0], &buf[numBytes]);
         }
 
         // Close the read end of the pipe.
-        ::close(Pipe[0]);
+        ::close(pipe[0]);
       }
 
       // Wait for the command to complete.
-      int Status, Result = waitpid(PID, &Status, 0);
-      while (Result == -1 && errno == EINTR)
-          Result = waitpid(PID, &Status, 0);
-      if (Result == -1) {
+      int status, result = waitpid(pid, &status, 0);
+      while (result == -1 && errno == EINTR)
+          result = waitpid(pid, &status, 0);
+      if (result == -1) {
         // FIXME: Error handling.
         fprintf(stderr, "error: %s: unable to wait for process (%s)\n",
                 getprogname(), strerror(errno));
@@ -1189,52 +1191,52 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
 
       // Update the set of spawned processes.
       {
-        std::lock_guard<std::mutex> Guard(Context.SpawnedProcessesMutex);
-        Context.SpawnedProcesses.erase(PID);
+        std::lock_guard<std::mutex> guard(context.spawnedProcessesMutex);
+        context.spawnedProcesses.erase(pid);
       }
 
       // If the build has been interrupted, return without writing any output or
       // command status (since they will also have been interrupted).
-      if (Context.IsCancelled && Context.WasCancelledBySigint) {
+      if (context.isCancelled && context.wasCancelledBySigint) {
         // We still return an accurate status just in case the command actually
         // completed successfully.
-        return Status == 0;
+        return status == 0;
       }
 
       // Write all of the output data, if buffering and not cancelled.
-      if (!OutputData.empty()) {
-        dispatch_sync(Context.OutputQueue, ^() {
-            fwrite(OutputData.data(), OutputData.size(), 1, stderr);
+      if (!outputData.empty()) {
+        dispatch_sync(context.outputQueue, ^() {
+            fwrite(outputData.data(), outputData.size(), 1, stderr);
             fflush(stderr);
           });
       }
 
-      if (Status != 0) {
+      if (status != 0) {
         // If the child was killed by SIGINT, assume it is because we were
         // interrupted.
         //
         // FIXME: We should probably match Ninja here, if what it does is run
         // the process in its own process group. I haven't checked.
-        if (WIFSIGNALED(Status)) {
-          int Signal = WTERMSIG(Status);
+        if (WIFSIGNALED(status)) {
+          int signal = WTERMSIG(status);
 
-          if (Signal == SIGINT)
+          if (signal == SIGINT)
             return false;
 
-          dispatch_async(Context.OutputQueue, ^() {
+          dispatch_async(context.outputQueue, ^() {
               std::cerr << "  ... process exited with signal: "
-                        << Signal << "\n";
+                        << signal << "\n";
             });
         } else {
           // Report the exit status.
-          int ExitStatus = WEXITSTATUS(Status);
-          dispatch_async(Context.OutputQueue, ^() {
+          int exitStatus = WEXITSTATUS(status);
+          dispatch_async(context.outputQueue, ^() {
               std::cerr << "  ... process returned error status: "
-                        << ExitStatus << "\n";
+                        << exitStatus << "\n";
             });
 
           // Update the count of failed commands.
-          Context.incrementFailedCommands();
+          context.incrementFailedCommands();
         }
 
         return false;
@@ -1245,7 +1247,7 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
 
     void processDiscoveredDependencies() {
       // Process the discovered dependencies, if used.
-      switch (Command->getDepsStyle()) {
+      switch (command->getDepsStyle()) {
       case ninja::Command::DepsStyleKind::None:
         break;
       case ninja::Command::DepsStyleKind::MSVC: {
@@ -1256,20 +1258,20 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
       }
       case ninja::Command::DepsStyleKind::GCC: {
         // Read the dependencies file.
-        std::string Error;
-        std::unique_ptr<char[]> Data;
-        uint64_t Length;
-        if (!util::ReadFileContents(Command->getDepsFile(), &Data, &Length,
-                                    &Error)) {
+        std::string error;
+        std::unique_ptr<char[]> data;
+        uint64_t length;
+        if (!util::readFileContents(command->getDepsFile(), &data, &length,
+                                    &error)) {
           // If the file is missing, just ignore it for consistency with Ninja
           // (when using stored deps) in non-strict mode.
-          if (!Context.Strict)
+          if (!context.strict)
               return;
 
           // FIXME: Error handling.
           fprintf(stderr,
                   "error: %s: unable to read dependency file: %s (%s)\n",
-                  getprogname(), Command->getDepsFile().c_str(), Error.c_str());
+                  getprogname(), command->getDepsFile().c_str(), error.c_str());
           exit(1);
         }
 
@@ -1278,95 +1280,96 @@ core::Task* BuildCommand(BuildContext& Context, ninja::Command* Command) {
         // We just ignore the rule, and add any dependency that we encounter in
         // the file.
         struct DepsActions : public core::MakefileDepsParser::ParseActions {
-          BuildContext& Context;
-          NinjaCommandTask* Task;
-          const std::string& Path;
+          BuildContext& context;
+          NinjaCommandTask* task;
+          const std::string& path;
 
-          DepsActions(BuildContext& Context, NinjaCommandTask* Task,
-                      const std::string& Path)
-            : Context(Context), Task(Task), Path(Path) {}
+          DepsActions(BuildContext& context, NinjaCommandTask* task,
+                      const std::string& path)
+            : context(context), task(task), path(path) {}
 
-          virtual void error(const char* Message, uint64_t Length) override {
+          virtual void error(const char* message, uint64_t length) override {
             // FIXME: Error handling.
             fprintf(stderr, ("error: %s: error reading dependency file: "
                              "%s (%s) at offset %u\n"),
-                    getprogname(), Path.c_str(), Message, unsigned(Length));
+                    getprogname(), path.c_str(), message, unsigned(length));
           }
 
-          virtual void actOnRuleDependency(const char* Dependency,
-                                           uint64_t Length) override {
-            Context.Engine.taskDiscoveredDependency(
-              Task, std::string(Dependency, Dependency+Length));
+          virtual void actOnRuleDependency(const char* dependency,
+                                           uint64_t length) override {
+            context.engine.taskDiscoveredDependency(
+              task, std::string(dependency, dependency+length));
           }
 
-          virtual void actOnRuleStart(const char* Name,
-                                      uint64_t Length) override {}
+          virtual void actOnRuleStart(const char* name,
+                                      uint64_t length) override {}
           virtual void actOnRuleEnd() override {}
         };
-        DepsActions Actions(Context, this, Command->getDepsFile());
-        core::MakefileDepsParser(Data.get(), Length, Actions).parse();
+        DepsActions actions(context, this, command->getDepsFile());
+        core::MakefileDepsParser(data.get(), length, actions).parse();
         break;
       }
       }
     }
   };
 
-  return Context.Engine.registerTask(new NinjaCommandTask(Context, Command));
+  return context.engine.registerTask(new NinjaCommandTask(context, command));
 }
 
-core::Task* BuildInput(BuildContext& Context, ninja::Node* Input) {
+static core::Task* buildInput(BuildContext& context, ninja::Node* input) {
   struct NinjaInputTask : core::Task {
-    BuildContext& Context;
-    ninja::Node* Node;
+    BuildContext& context;
+    ninja::Node* node;
 
-    NinjaInputTask(BuildContext& Context, ninja::Node* Node)
-      : Task("ninja-input"), Context(Context), Node(Node) { }
+    NinjaInputTask(BuildContext& context, ninja::Node* node)
+      : Task("ninja-input"), context(context), node(node) { }
 
-    virtual void provideValue(core::BuildEngine& engine, uintptr_t InputID,
-                              const core::ValueType& Value) override { }
+    virtual void provideValue(core::BuildEngine& engine, uintptr_t inputID,
+                              const core::ValueType& value) override { }
 
     virtual void start(core::BuildEngine& engine) override { }
 
     virtual void inputsAvailable(core::BuildEngine& engine) override {
-      ++Context.NumBuiltInputs;
+      ++context.numBuiltInputs;
 
-      if (Context.Simulate) {
+      if (context.simulate) {
         engine.taskIsComplete(
           this, BuildValue::makeExistingInput({}).toValue());
         return;
       }
 
-      FileInfo OutputInfo;
-      if (!GetStatInfoForNode(Node, &OutputInfo)) {
+      FileInfo outputInfo;
+      if (!getStatInfoForNode(node, &outputInfo)) {
         engine.taskIsComplete(this, BuildValue::makeMissingInput().toValue());
         return;
       }
 
       engine.taskIsComplete(
-        this, BuildValue::makeExistingInput(OutputInfo).toValue());
+        this, BuildValue::makeExistingInput(outputInfo).toValue());
     }
   };
 
-  return Context.Engine.registerTask(new NinjaInputTask(Context, Input));
+  return context.engine.registerTask(new NinjaInputTask(context, input));
 }
 
-core::Task* BuildTargets(BuildContext& Context,
-                         const std::vector<std::string> &TargetsToBuild) {
+static core::Task*
+buildTargets(BuildContext& context,
+             const std::vector<std::string>& targetsToBuild) {
   struct TargetsTask : core::Task {
-    BuildContext& Context;
-    std::vector<std::string> TargetsToBuild;
+    BuildContext& context;
+    std::vector<std::string> targetsToBuild;
 
-    TargetsTask(BuildContext& Context,
-                const std::vector<std::string> &TargetsToBuild)
-      : Task("targets"), Context(Context), TargetsToBuild(TargetsToBuild) { }
+    TargetsTask(BuildContext& context,
+                const std::vector<std::string>& targetsToBuild)
+      : Task("targets"), context(context), targetsToBuild(targetsToBuild) { }
 
-    virtual void provideValue(core::BuildEngine& engine, uintptr_t InputID,
-                              const core::ValueType& ValueData) override { }
+    virtual void provideValue(core::BuildEngine& engine, uintptr_t inputID,
+                              const core::ValueType& valueData) override { }
 
     virtual void start(core::BuildEngine& engine) override {
       // Request all of the targets.
-      for (const auto& Target: TargetsToBuild) {
-        engine.taskNeedsInput(this, Target, 0);
+      for (const auto& target: targetsToBuild) {
+        engine.taskNeedsInput(this, target, 0);
       }
     }
 
@@ -1378,78 +1381,78 @@ core::Task* BuildTargets(BuildContext& Context,
     }
   };
 
-  return Context.Engine.registerTask(new TargetsTask(Context, TargetsToBuild));
+  return context.engine.registerTask(new TargetsTask(context, targetsToBuild));
 }
 
-core::Task* SelectCompositeBuildResult(BuildContext& Context,
-                                       ninja::Command* Command,
-                                       unsigned InputIndex,
-                                       const core::KeyType& CompositeRuleName) {
+static core::Task*
+selectCompositeBuildResult(BuildContext& context, ninja::Command* command,
+                           unsigned inputIndex,
+                           const core::KeyType& compositeRuleName) {
   struct SelectResultTask : core::Task {
-    const BuildContext& Context;
-    const ninja::Command* Command;
-    const unsigned InputIndex;
-    const core::KeyType CompositeRuleName;
-    const core::ValueType *CompositeValueData = nullptr;
+    const BuildContext& context;
+    const ninja::Command* command;
+    const unsigned inputIndex;
+    const core::KeyType compositeRuleName;
+    const core::ValueType *compositeValueData = nullptr;
 
-    SelectResultTask(BuildContext& Context, ninja::Command* Command,
-                     unsigned InputIndex,
-                     const core::KeyType& CompositeRuleName)
-      : Task("ninja-select-result"), Context(Context), Command(Command),
-        InputIndex(InputIndex), CompositeRuleName(CompositeRuleName) { }
+    SelectResultTask(BuildContext& context, ninja::Command* command,
+                     unsigned inputIndex,
+                     const core::KeyType& compositeRuleName)
+      : Task("ninja-select-result"), context(context), command(command),
+        inputIndex(inputIndex), compositeRuleName(compositeRuleName) { }
 
     virtual void start(core::BuildEngine& engine) override {
       // Request the composite input.
-      engine.taskNeedsInput(this, CompositeRuleName, 0);
+      engine.taskNeedsInput(this, compositeRuleName, 0);
     }
 
-    virtual void provideValue(core::BuildEngine& engine, uintptr_t InputID,
-                              const core::ValueType& ValueData) override {
-      CompositeValueData = &ValueData;
+    virtual void provideValue(core::BuildEngine& engine, uintptr_t inputID,
+                              const core::ValueType& valueData) override {
+      compositeValueData = &valueData;
     }
 
     virtual void inputsAvailable(core::BuildEngine& engine) override {
       // Construct the appropriate build value from the result.
-      assert(CompositeValueData);
-      BuildValue Value(BuildValue::fromValue(*CompositeValueData));
+      assert(compositeValueData);
+      BuildValue value(BuildValue::fromValue(*compositeValueData));
 
       // If the input was a failed or skipped command, propagate that result.
-      if (Value.isFailedCommand() || Value.isSkippedCommand()) {
-        engine.taskIsComplete(this, Value.toValue(), /*ForceChange=*/true);
+      if (value.isFailedCommand() || value.isSkippedCommand()) {
+        engine.taskIsComplete(this, value.toValue(), /*ForceChange=*/true);
       } else {
         // FIXME: We don't try and set this in response to the restat flag on
         // the incoming command, because it doesn't generally work -- the output
         // will just honor update-if-newer and still not run. We need to move to
         // a different model for handling restat = 0 to get this to work
         // properly.
-        bool ForceChange = false;
+        bool forceChange = false;
 
         // Otherwise, the value should be a successful command with file info
         // for each output.
-        assert(Value.isSuccessfulCommand() && Value.hasMultipleOutputs() &&
-               InputIndex < Value.getNumOutputs());
+        assert(value.isSuccessfulCommand() && value.hasMultipleOutputs() &&
+               inputIndex < value.getNumOutputs());
 
         // The result is the InputIndex-th element, and the command hash is
         // propagated.
         engine.taskIsComplete(
           this, BuildValue::makeSuccessfulCommand(
-            Value.getNthOutputInfo(InputIndex),
-            Value.getCommandHash()).toValue(),
-          ForceChange);
+            value.getNthOutputInfo(inputIndex),
+            value.getCommandHash()).toValue(),
+          forceChange);
       }
     }
   };
 
-  return Context.Engine.registerTask(
-    new SelectResultTask(Context, Command, InputIndex, CompositeRuleName));
+  return context.engine.registerTask(
+    new SelectResultTask(context, command, inputIndex, compositeRuleName));
 }
 
-static bool BuildInputIsResultValid(ninja::Node* Node,
-                                    const core::ValueType& ValueData) {
-  BuildValue Value = BuildValue::fromValue(ValueData);
+static bool buildInputIsResultValid(ninja::Node* node,
+                                    const core::ValueType& valueData) {
+  BuildValue value = BuildValue::fromValue(valueData);
 
   // If the prior value wasn't for an existing input, recompute.
-  if (!Value.isExistingInput())
+  if (!value.isExistingInput())
     return false;
 
   // Otherwise, the result is valid if the path exists and the hash has not
@@ -1460,83 +1463,83 @@ static bool BuildInputIsResultValid(ninja::Node* Node,
   //
   // We can solve this by caching ourselves but I wonder if it is something the
   // engine should support more naturally.
-  FileInfo Info;
-  if (!GetStatInfoForNode(Node, &Info))
+  FileInfo info;
+  if (!getStatInfoForNode(node, &info))
     return false;
 
-  return Value.getOutputInfo() == Info;
+  return value.getOutputInfo() == info;
 }
 
-static bool BuildCommandIsResultValid(ninja::Command* Command,
-                                      const core::ValueType& ValueData) {
-  BuildValue Value = BuildValue::fromValue(ValueData);
+static bool buildCommandIsResultValid(ninja::Command* command,
+                                      const core::ValueType& valueData) {
+  BuildValue value = BuildValue::fromValue(valueData);
 
   // If the prior value wasn't for a successful command, recompute.
-  if (!Value.isSuccessfulCommand())
+  if (!value.isSuccessfulCommand())
     return false;
 
   // For non-generator commands, if the command hash has changed, recompute.
-  if (!Command->hasGeneratorFlag()) {
-    if (Value.getCommandHash() != basic::HashString(
-          Command->getCommandString()))
+  if (!command->hasGeneratorFlag()) {
+    if (value.getCommandHash() != basic::hashString(
+          command->getCommandString()))
       return false;
   }
 
   // Check the timestamps on each of the outputs.
-  for (unsigned i = 0, e = Command->getOutputs().size(); i != e; ++i) {
+  for (unsigned i = 0, e = command->getOutputs().size(); i != e; ++i) {
     // Always rebuild if the output is missing.
-    FileInfo Info;
-    if (!GetStatInfoForNode(Command->getOutputs()[i], &Info))
+    FileInfo info;
+    if (!getStatInfoForNode(command->getOutputs()[i], &info))
       return false;
 
     // Otherwise, the result is valid if file information has not changed.
     //
     // Note that we may still decide not to actually run the command based on
     // the update-if-newer handling, but it does require running the task.
-    if (Value.getNthOutputInfo(i) != Info)
+    if (value.getNthOutputInfo(i) != info)
       return false;
   }
 
   return true;
 }
 
-static bool SelectCompositeIsResultValid(ninja::Command* Command,
-                                         const core::ValueType& ValueData) {
-  BuildValue Value = BuildValue::fromValue(ValueData);
+static bool selectCompositeIsResultValid(ninja::Command* command,
+                                         const core::ValueType& valueData) {
+  BuildValue value = BuildValue::fromValue(valueData);
 
   // If the prior value wasn't for a successful command, recompute.
-  if (!Value.isSuccessfulCommand())
+  if (!value.isSuccessfulCommand())
     return false;
 
   // If the command's signature has changed since it was built, rebuild. This is
   // important for ensuring that we properly reevaluate the select rule when
   // it's incoming composite rule no longer exists.
-  if (Value.getCommandHash() != basic::HashString(Command->getCommandString()))
+  if (value.getCommandHash() != basic::hashString(command->getCommandString()))
     return false;
 
   // Otherwise, this result is always valid.
   return true;
 }
 
-static void UpdateCommandStatus(BuildContext& Context,
-                                ninja::Command* Command,
-                                core::Rule::StatusKind Status) {
+static void updateCommandStatus(BuildContext& context,
+                                ninja::Command* command,
+                                core::Rule::StatusKind status) {
   // Ignore phony rules.
-  if (Command->getRule() == Context.Manifest->getPhonyRule())
+  if (command->getRule() == context.manifest->getPhonyRule())
     return;
 
   // Track the number of commands which are currently being scanned along with
   // the total number of completed commands.
-  if (Status == core::Rule::StatusKind::IsScanning) {
-    ++Context.NumCommandsScanning;
+  if (status == core::Rule::StatusKind::IsScanning) {
+    ++context.numCommandsScanning;
   } else {
-    assert(Status == core::Rule::StatusKind::IsComplete);
-    --Context.NumCommandsScanning;
-    ++Context.NumCommandsCompleted;
+    assert(status == core::Rule::StatusKind::IsComplete);
+    --context.numCommandsScanning;
+    ++context.numCommandsCompleted;
   }
 }
 
-core::Rule NinjaBuildEngineDelegate::lookupRule(const core::KeyType& Key) {
+core::Rule NinjaBuildEngineDelegate::lookupRule(const core::KeyType& key) {
   // We created rules for all of the commands up front, so if we are asked for a
   // rule here it is because we are looking for an input.
 
@@ -1545,168 +1548,168 @@ core::Rule NinjaBuildEngineDelegate::lookupRule(const core::KeyType& Key) {
   // FIXME: This is frequently a redundant lookup, given that the caller might
   // well have had the Node* available. This is something that would be nice
   // to avoid when we support generic key types.
-  ninja::Node* Node = Context->Manifest->getOrCreateNode(Key);
+  ninja::Node* node = context->manifest->getOrCreateNode(key);
 
   return core::Rule{
-    Node->getPath(),
-      [&, Node] (core::BuildEngine& Engine) {
-      return BuildInput(*Context, Node);
+    node->getPath(),
+      [&, node] (core::BuildEngine&) {
+      return buildInput(*context, node);
     },
-    [&, Node] (const core::Rule& Rule, const core::ValueType& Value) {
+    [&, node] (const core::Rule&, const core::ValueType& value) {
       // If simulating, assume cached results are valid.
-      if (Context->Simulate)
+      if (context->simulate)
         return true;
 
-      return BuildInputIsResultValid(Node, Value);
+      return buildInputIsResultValid(node, value);
     } };
 }
 
 void NinjaBuildEngineDelegate::cycleDetected(
-    const std::vector<core::Rule*>& Cycle) {
+    const std::vector<core::Rule*>& cycle) {
   // Report the cycle.
-  dispatch_sync(Context->OutputQueue, ^() {
+  dispatch_sync(context->outputQueue, ^() {
       fprintf(stderr, "error: %s: cycle detected among targets:",
               getprogname());
-      bool First = true;
-      for (const auto& Rule: Cycle) {
-        fprintf(stderr, "%s \"%s\"", First ? "" : " ->",
-                Rule->Key.c_str());
-        First = false;
+      bool first = true;
+      for (const auto* rule: cycle) {
+        fprintf(stderr, "%s \"%s\"", first ? "" : " ->",
+                rule->key.c_str());
+        first = false;
       }
       fprintf(stderr, "\n");
     });
 
   // Cancel the build.
-  Context->IsCancelled = true;
-  Context->WasCancelledByCycle = true;
+  context->isCancelled = true;
+  context->wasCancelledByCycle = true;
 }
 
 }
 
-int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
-  std::string ChdirPath = "";
-  std::string CustomTool = "";
-  std::string DBFilename = "build.db";
-  std::string DumpGraphPath, ProfileFilename, TraceFilename;
-  std::string ManifestFilename = "build.ninja";
+int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
+  std::string chdirPath = "";
+  std::string customTool = "";
+  std::string dbFilename = "build.db";
+  std::string dumpGraphPath, profileFilename, traceFilename;
+  std::string manifestFilename = "build.ninja";
 
   // Create a context for the build.
-  bool AutoRegenerateManifest = true;
-  bool Quiet = false;
-  bool Simulate = false;
-  bool Strict = false;
-  bool UseLIFOExecutionQueue = false;
-  bool UseParallelBuild = true;
-  bool Verbose = false;
-  unsigned NumFailedCommandsToTolerate = 1;
+  bool autoRegenerateManifest = true;
+  bool quiet = false;
+  bool simulate = false;
+  bool strict = false;
+  bool useLIFOExecutionQueue = false;
+  bool useParallelBuild = true;
+  bool verbose = false;
+  unsigned numFailedCommandsToTolerate = 1;
 
-  while (!Args.empty() && Args[0][0] == '-') {
-    const std::string Option = Args[0];
-    Args.erase(Args.begin());
+  while (!args.empty() && args[0][0] == '-') {
+    const std::string option = args[0];
+    args.erase(args.begin());
 
-    if (Option == "--")
+    if (option == "--")
       break;
 
-    if (Option == "--help") {
-      usage(/*ExitCode=*/0);
-    } else if (Option == "--simulate") {
-      Simulate = true;
-    } else if (Option == "--lifo") {
-      UseLIFOExecutionQueue = true;
-    } else if (Option == "--quiet") {
-      Quiet = true;
-    } else if (Option == "-C" || Option == "--chdir") {
-      if (Args.empty()) {
+    if (option == "--help") {
+      usage(/*exitCode=*/0);
+    } else if (option == "--simulate") {
+      simulate = true;
+    } else if (option == "--lifo") {
+      useLIFOExecutionQueue = true;
+    } else if (option == "--quiet") {
+      quiet = true;
+    } else if (option == "-C" || option == "--chdir") {
+      if (args.empty()) {
         fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
-                ::getprogname(), Option.c_str());
+                ::getprogname(), option.c_str());
         usage();
       }
-      ChdirPath = Args[0];
-      Args.erase(Args.begin());
-    } else if (Option == "--no-db") {
-      DBFilename = "";
-    } else if (Option == "--db") {
-      if (Args.empty()) {
+      chdirPath = args[0];
+      args.erase(args.begin());
+    } else if (option == "--no-db") {
+      dbFilename = "";
+    } else if (option == "--db") {
+      if (args.empty()) {
         fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
-                ::getprogname(), Option.c_str());
+                ::getprogname(), option.c_str());
         usage();
       }
-      DBFilename = Args[0];
-      Args.erase(Args.begin());
-    } else if (Option == "--dump-graph") {
-      if (Args.empty()) {
+      dbFilename = args[0];
+      args.erase(args.begin());
+    } else if (option == "--dump-graph") {
+      if (args.empty()) {
         fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
-                ::getprogname(), Option.c_str());
+                ::getprogname(), option.c_str());
         usage();
       }
-      DumpGraphPath = Args[0];
-      Args.erase(Args.begin());
-    } else if (Option == "-f") {
-      if (Args.empty()) {
+      dumpGraphPath = args[0];
+      args.erase(args.begin());
+    } else if (option == "-f") {
+      if (args.empty()) {
         fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
-                ::getprogname(), Option.c_str());
+                ::getprogname(), option.c_str());
         usage();
       }
-      ManifestFilename = Args[0];
-      Args.erase(Args.begin());
-    } else if (Option == "-k") {
-      if (Args.empty()) {
+      manifestFilename = args[0];
+      args.erase(args.begin());
+    } else if (option == "-k") {
+      if (args.empty()) {
         fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
-                ::getprogname(), Option.c_str());
+                ::getprogname(), option.c_str());
         usage();
       }
-      char *End;
-      NumFailedCommandsToTolerate = ::strtol(Args[0].c_str(), &End, 10);
-      if (*End != '\0') {
+      char *end;
+      numFailedCommandsToTolerate = ::strtol(args[0].c_str(), &end, 10);
+      if (*end != '\0') {
           fprintf(stderr, "error: %s: invalid argument '%s' to '%s'\n\n",
-                  getprogname(), Args[0].c_str(), Option.c_str());
+                  getprogname(), args[0].c_str(), option.c_str());
           usage();
       }
-      Args.erase(Args.begin());
-    } else if (Option == "--no-parallel") {
-      UseParallelBuild = false;
-    } else if (Option == "--parallel") {
-      UseParallelBuild = true;
-    } else if (Option == "--no-regenerate") {
-      AutoRegenerateManifest = false;
-    } else if (Option == "--profile") {
-      if (Args.empty()) {
+      args.erase(args.begin());
+    } else if (option == "--no-parallel") {
+      useParallelBuild = false;
+    } else if (option == "--parallel") {
+      useParallelBuild = true;
+    } else if (option == "--no-regenerate") {
+      autoRegenerateManifest = false;
+    } else if (option == "--profile") {
+      if (args.empty()) {
         fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
-                ::getprogname(), Option.c_str());
+                ::getprogname(), option.c_str());
         usage();
       }
-      ProfileFilename = Args[0];
-      Args.erase(Args.begin());
-    } else if (Option == "--strict") {
-      Strict = true;
-    } else if (Option == "-t") {
-      if (Args.empty()) {
+      profileFilename = args[0];
+      args.erase(args.begin());
+    } else if (option == "--strict") {
+      strict = true;
+    } else if (option == "-t") {
+      if (args.empty()) {
         fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
-                ::getprogname(), Option.c_str());
+                ::getprogname(), option.c_str());
         usage();
       }
-      CustomTool = Args[0];
-      Args.erase(Args.begin());
-    } else if (Option == "--trace") {
-      if (Args.empty()) {
+      customTool = args[0];
+      args.erase(args.begin());
+    } else if (option == "--trace") {
+      if (args.empty()) {
         fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
-                ::getprogname(), Option.c_str());
+                ::getprogname(), option.c_str());
         usage();
       }
-      TraceFilename = Args[0];
-      Args.erase(Args.begin());
-    } else if (Option == "-v" || Option == "--verbose") {
-      Verbose = true;
+      traceFilename = args[0];
+      args.erase(args.begin());
+    } else if (option == "-v" || option == "--verbose") {
+      verbose = true;
     } else {
       fprintf(stderr, "error: %s: invalid option: '%s'\n\n",
-              ::getprogname(), Option.c_str());
+              ::getprogname(), option.c_str());
       usage();
     }
   }
 
   // Honor the --chdir option, if used.
-  if (!ChdirPath.empty()) {
-    if (::chdir(ChdirPath.c_str()) < 0) {
+  if (!chdirPath.empty()) {
+    if (::chdir(chdirPath.c_str()) < 0) {
       fprintf(stderr, "error: %s: unable to honor --chdir: %s\n",
               getprogname(), strerror(errno));
       return 1;
@@ -1715,7 +1718,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
     // Print a message about the changed directory. The exact format here is
     // important, it is recognized by other tools (like Emacs).
     fprintf(stdout, "%s: Entering directory `%s'\n", getprogname(),
-            ChdirPath.c_str());
+            chdirPath.c_str());
     fflush(stdout);
   }
 
@@ -1725,100 +1728,100 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
   // This is somewhat inefficient in the case where the manifest needs to be
   // reloaded (we reopen the database, for example), but we don't expect that to
   // be a common case spot in practice.
-  for (int Iteration = 0; Iteration != 2; ++Iteration) {
-    BuildContext Context;
+  for (int iteration = 0; iteration != 2; ++iteration) {
+    BuildContext context;
 
-    Context.NumFailedCommandsToTolerate = NumFailedCommandsToTolerate;
-    Context.Quiet = Quiet;
-    Context.Simulate = Simulate;
-    Context.Strict = Strict;
-    Context.Verbose = Verbose;
+    context.numFailedCommandsToTolerate = numFailedCommandsToTolerate;
+    context.quiet = quiet;
+    context.simulate = simulate;
+    context.strict = strict;
+    context.verbose = verbose;
 
     // Create the job queue to use.
-    unsigned NumJobs;
-    if (!UseParallelBuild) {
-      NumJobs = 1;
+    unsigned numJobs;
+    if (!useParallelBuild) {
+      numJobs = 1;
     } else {
-      long NumCPUs = sysconf(_SC_NPROCESSORS_ONLN);
-      if (NumCPUs < 0) {
+      long numCPUs = sysconf(_SC_NPROCESSORS_ONLN);
+      if (numCPUs < 0) {
         fprintf(stderr, "error: %s: unable to detect number of CPUs: %s\n",
                 getprogname(), strerror(errno));
         return 1;
       }
 
-      NumJobs = NumCPUs + 2;
+      numJobs = numCPUs + 2;
     }
-    Context.JobQueue.reset(new BuildExecutionQueue(
-                               NumJobs, UseLIFOExecutionQueue));
+    context.jobQueue.reset(new BuildExecutionQueue(
+                               numJobs, useLIFOExecutionQueue));
 
     // Load the manifest.
-    BuildManifestActions Actions;
-    ninja::ManifestLoader Loader(ManifestFilename, Actions);
-    Context.Manifest = Loader.load();
+    BuildManifestActions actions;
+    ninja::ManifestLoader loader(manifestFilename, actions);
+    context.manifest = loader.load();
+
+    // If there were errors loading, we are done.
+    if (unsigned numErrors = actions.getNumErrors()) {
+        fprintf(stderr, "%d errors generated.\n", numErrors);
+        return 1;
+    }
 
     // Run the custom tool, if specified.
-    if (!CustomTool.empty()) {
-      if (CustomTool == "targets") {
-        if (Args.size() != 1 || Args[0] != "all") {
-          if (Args.empty()) {
+    if (!customTool.empty()) {
+      if (customTool == "targets") {
+        if (args.size() != 1 || args[0] != "all") {
+          if (args.empty()) {
             fprintf(stderr, "error: %s: unsupported arguments to tool '%s'\n",
-                    getprogname(), CustomTool.c_str());
+                    getprogname(), customTool.c_str());
           } else {
             fprintf(stderr,
                     "error: %s: unsupported argument to tool '%s': '%s'\n",
-                    getprogname(), CustomTool.c_str(), Args[0].c_str());
+                    getprogname(), customTool.c_str(), args[0].c_str());
           }
           return 1;
         }
 
-        for (auto& CommandOwner: Context.Manifest->getCommands()) {
-          auto* Command = CommandOwner.get();
-          for (auto& Output: Command->getOutputs()) {
-            fprintf(stdout, "%s: %s\n", Output->getPath().c_str(),
-                    Command->getRule()->getName().c_str());
+        for (const auto& commandOwner: context.manifest->getCommands()) {
+          auto* command = commandOwner.get();
+          for (const auto& output: command->getOutputs()) {
+            fprintf(stdout, "%s: %s\n", output->getPath().c_str(),
+                    command->getRule()->getName().c_str());
           }
         }
  
         return 0;
       } else {
         fprintf(stderr, "error: %s: unknown tool '%s'\n",
-                getprogname(), CustomTool.c_str());
+                getprogname(), customTool.c_str());
         return 1;
       }
-    }
-
-    // If there were errors loading, we are done.
-    if (unsigned NumErrors = Actions.getNumErrors()) {
-        fprintf(stderr, "%d errors generated.\n", NumErrors);
-        return 1;
     }
 
     // Otherwise, run the build.
 
     // Parse the positional arguments.
-    std::vector<std::string> TargetsToBuild(Args);
+    std::vector<std::string> targetsToBuild(args);
 
     // Attach the database, if requested.
-    if (!DBFilename.empty()) {
-      std::string Error;
-      std::unique_ptr<core::BuildDB> DB(
-        core::CreateSQLiteBuildDB(DBFilename,
-                                  BuildValue::CurrentSchemaVersion,
-                                  &Error));
-      if (!DB) {
+    if (!dbFilename.empty()) {
+      std::string error;
+      std::unique_ptr<core::BuildDB> db(
+        core::createSQLiteBuildDB(dbFilename,
+                                  BuildValue::currentSchemaVersion,
+                                  &error));
+      if (!db) {
         fprintf(stderr, "error: %s: unable to open build database: %s\n",
-                getprogname(), Error.c_str());
+                getprogname(), error.c_str());
         return 1;
       }
-      Context.Engine.attachDB(std::move(DB));
+      context.engine.attachDB(std::move(db));
     }
 
     // Enable tracing, if requested.
-    if (!TraceFilename.empty()) {
-      std::string Error;
-      if (!Context.Engine.enableTracing(TraceFilename, &Error)) {
+    if (!traceFilename.empty()) {
+      std::string error;
+      if (!context.engine.enableTracing(traceFilename, &error)) {
         fprintf(stderr, "error: %s: unable to enable tracing: %s\n",
-                getprogname(), Error.c_str());
+                getprogname(), error.c_str());
         return 1;
       }
     }
@@ -1826,26 +1829,26 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
     // Create rules for all of the build commands up front.
     //
     // FIXME: We should probably also move this to be dynamic.
-    for (auto& CommandOwner: Context.Manifest->getCommands()) {
-      auto* Command = CommandOwner.get();
+    for (auto& commandOwner: context.manifest->getCommands()) {
+      auto* command = commandOwner.get();
 
       // If this command has a single output, create the trivial rule.
-      if (Command->getOutputs().size() == 1) {
-        Context.Engine.addRule({
-            Command->getOutputs()[0]->getPath(),
-            [=, &Context] (core::BuildEngine& Engine) {
-              return BuildCommand(Context, Command);
+      if (command->getOutputs().size() == 1) {
+        context.engine.addRule({
+            command->getOutputs()[0]->getPath(),
+            [=, &context] (core::BuildEngine& engine) {
+              return buildCommand(context, command);
             },
-              [=, &Context] (const core::Rule& Rule,
-                                       const core::ValueType Value) {
+              [=, &context] (const core::Rule& rule,
+                             const core::ValueType value) {
               // If simulating, assume cached results are valid.
-              if (Context.Simulate)
+              if (context.simulate)
                 return true;
 
-              return BuildCommandIsResultValid(Command, Value);
+              return buildCommandIsResultValid(command, value);
             },
-            [=, &Context](core::Rule::StatusKind Status) {
-              UpdateCommandStatus(Context, Command, Status);
+            [=, &context](core::Rule::StatusKind status) {
+              updateCommandStatus(context, command, status);
             } });
         continue;
       }
@@ -1855,56 +1858,57 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
       // Create a signature for the composite rule.
       //
       // FIXME: Make efficient.
-      std::string CompositeRuleName = "";
-      for (auto& Output: Command->getOutputs()) {
-        if (!CompositeRuleName.empty())
-          CompositeRuleName += "&&";
-        CompositeRuleName += Output->getPath();
+      std::string compositeRuleName = "";
+      for (auto& output: command->getOutputs()) {
+        if (!compositeRuleName.empty())
+          compositeRuleName += "&&";
+        compositeRuleName += output->getPath();
       }
 
       // Add the composite rule, which will run the command and build all
       // outputs.
-      Context.Engine.addRule({
-          CompositeRuleName,
-          [=, &Context] (core::BuildEngine& Engine) {
-            return BuildCommand(Context, Command);
+      context.engine.addRule({
+          compositeRuleName,
+          [=, &context] (core::BuildEngine& engine) {
+            return buildCommand(context, command);
           },
-          [=, &Context] (const core::Rule& Rule, const core::ValueType Value) {
+          [=, &context] (const core::Rule& rule, const core::ValueType value) {
             // If simulating, assume cached results are valid.
-            if (Context.Simulate)
+            if (context.simulate)
               return true;
 
-            return BuildCommandIsResultValid(Command, Value);
+            return buildCommandIsResultValid(command, value);
           },
-          [=, &Context](core::Rule::StatusKind Status) {
-            UpdateCommandStatus(Context, Command, Status);
+          [=, &context](core::Rule::StatusKind status) {
+            updateCommandStatus(context, command, status);
           } });
 
       // Create the per-output selection rules that select the individual output
       // result from the composite result.
-      for (unsigned i = 0, e = Command->getOutputs().size(); i != e; ++i) {
-        Context.Engine.addRule({
-            Command->getOutputs()[i]->getPath(),
-            [=, &Context] (core::BuildEngine& Engine) {
-              return SelectCompositeBuildResult(Context, Command, i,
-                                                CompositeRuleName);
+      for (unsigned i = 0, e = command->getOutputs().size(); i != e; ++i) {
+        context.engine.addRule({
+            command->getOutputs()[i]->getPath(),
+            [=, &context] (core::BuildEngine&) {
+              return selectCompositeBuildResult(context, command, i,
+                                                compositeRuleName);
             },
-            [=, &Context] (const core::Rule& Rule, const core::ValueType Value) {
+            [=, &context] (const core::Rule& rule,
+                           const core::ValueType value) {
               // If simulating, assume cached results are valid.
-              if (Context.Simulate)
+              if (context.simulate)
                 return true;
 
-              return SelectCompositeIsResultValid(Command, Value);
+              return selectCompositeIsResultValid(command, value);
             } });
       }
     }
 
     // If this is the first iteration, build the manifest, unless disabled.
-    if (AutoRegenerateManifest && Iteration == 0) {
-      Context.Engine.build(ManifestFilename);
+    if (autoRegenerateManifest && iteration == 0) {
+      context.engine.build(manifestFilename);
 
       // If the manifest was rebuilt, then reload it and build again.
-      if (Context.NumBuiltCommands) {
+      if (context.numBuiltCommands) {
         continue;
       }
 
@@ -1916,38 +1920,38 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
     }
 
     // If using a build profile, open it.
-    if (!ProfileFilename.empty()) {
-      Context.ProfileFP = ::fopen(ProfileFilename.c_str(), "w");
-      if (!Context.ProfileFP) {
+    if (!profileFilename.empty()) {
+      context.profileFP = ::fopen(profileFilename.c_str(), "w");
+      if (!context.profileFP) {
         fprintf(stderr, "error: %s: unable to open build profile '%s': %s\n",
-                getprogname(), ProfileFilename.c_str(), strerror(errno));
+                getprogname(), profileFilename.c_str(), strerror(errno));
         return 1;
       }
 
-      fprintf(Context.ProfileFP, "[\n");
+      fprintf(context.profileFP, "[\n");
     }
 
     // If no explicit targets were named, build the default targets.
-    if (TargetsToBuild.empty()) {
-      for (auto& Target: Context.Manifest->getDefaultTargets())
-        TargetsToBuild.push_back(Target->getPath());
+    if (targetsToBuild.empty()) {
+      for (auto& target: context.manifest->getDefaultTargets())
+        targetsToBuild.push_back(target->getPath());
 
       // If there are no default targets, then build all of the root targets.
-      if (TargetsToBuild.empty()) {
-        std::unordered_set<ninja::Node*> InputNodes;
+      if (targetsToBuild.empty()) {
+        std::unordered_set<const ninja::Node*> inputNodes;
 
         // Collect all of the input nodes.
-        for (const auto& Command: Context.Manifest->getCommands()) {
-          for (const auto& Input: Command->getInputs()) {
-            InputNodes.emplace(Input);
+        for (const auto& command: context.manifest->getCommands()) {
+          for (const auto* input: command->getInputs()) {
+            inputNodes.emplace(input);
           }
         }
 
         // Build all of the targets that are not an input.
-        for (const auto& Command: Context.Manifest->getCommands()) {
-          for (const auto& Output: Command->getOutputs()) {
-            if (!InputNodes.count(Output)) {
-              TargetsToBuild.push_back(Output->getPath());
+        for (const auto& command: context.manifest->getCommands()) {
+          for (const auto& output: command->getOutputs()) {
+            if (!inputNodes.count(output)) {
+              targetsToBuild.push_back(output->getPath());
             }
           }
         }
@@ -1955,7 +1959,7 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
     }
 
     // Generate an error if there is nothing to build.
-    if (TargetsToBuild.empty()) {
+    if (targetsToBuild.empty()) {
       fprintf(stderr, "error: %s: no targets to build\n", getprogname());
       return 1;
     }
@@ -1966,46 +1970,46 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
     // FIXME: We should sort out eventually whether the engine itself should
     // support this. It seems like an obvious feature, but it is also trivial
     // for the client to implement on top of the existing API.
-    if (TargetsToBuild.size() > 1) {
+    if (targetsToBuild.size() > 1) {
       // Create a dummy rule to build all targets.
-      Context.Engine.addRule({
+      context.engine.addRule({
           "<<build>>",
-          [&] (core::BuildEngine& Engine) {
-            return BuildTargets(Context, TargetsToBuild);
+          [&] (core::BuildEngine&) {
+            return buildTargets(context, targetsToBuild);
           },
-          [&] (const core::Rule& Rule, const core::ValueType Value) {
+          [&] (const core::Rule&, const core::ValueType&) {
             // Always rebuild the dummy rule.
             return false;
           } });
 
-      Context.Engine.build("<<build>>");
+      context.engine.build("<<build>>");
     } else {
-      Context.Engine.build(TargetsToBuild[0]);
+      context.engine.build(targetsToBuild[0]);
     }
 
     // Ensure the output queue is finished.
-    dispatch_sync(Context.OutputQueue, ^() {});
+    dispatch_sync(context.outputQueue, ^() {});
 
-    if (!DumpGraphPath.empty()) {
-      Context.Engine.dumpGraphToFile(DumpGraphPath);
+    if (!dumpGraphPath.empty()) {
+      context.engine.dumpGraphToFile(dumpGraphPath);
     }
 
     // Close the build profile, if used.
-    if (Context.ProfileFP) {
-      ::fclose(Context.ProfileFP);
+    if (context.profileFP) {
+      ::fclose(context.profileFP);
 
       fprintf(stderr, ("... wrote build profile to '%s', use Chrome's "
                        "about:tracing to view.\n"),
-              ProfileFilename.c_str());
+              profileFilename.c_str());
     }
 
     // If the build was cancelled by SIGINT, cause ourself to also die by SIGINT
     // to support proper shell behavior.
-    if (Context.WasCancelledBySigint) {
+    if (context.wasCancelledBySigint) {
       // Ensure SIGINT action is default.
-      struct sigaction Action{};
-      Action.sa_handler = SIG_DFL;
-      sigaction(SIGINT, &Action, 0);
+      struct sigaction action{};
+      action.sa_handler = SIG_DFL;
+      sigaction(SIGINT, &action, 0);
 
       kill(getpid(), SIGINT);
       usleep(1000);
@@ -2013,26 +2017,26 @@ int commands::ExecuteNinjaBuildCommand(std::vector<std::string> Args) {
     }
 
     // If the build was stopped because of a cycle, return an error status.
-    if (Context.WasCancelledByCycle) {
+    if (context.wasCancelledByCycle) {
       return 1;
     }
 
     // If nothing was done, print a single message to let the user know we
     // completed successfully.
-    if (!Context.Quiet && !Context.NumBuiltCommands) {
+    if (!context.quiet && !context.numBuiltCommands) {
       printf("%s: no work to do.\n", getprogname());
     }
 
     // If there were command failures, return an error status.
-    if (Context.NumFailedCommands) {
+    if (context.numFailedCommands) {
       fprintf(stderr, "error: %s: build had %d command failures\n",
-              getprogname(), Context.NumFailedCommands.load());
+              getprogname(), context.numFailedCommands.load());
       return 1;
     }
 
     // If we reached here on the first iteration, then we don't need a second
     // and are done.
-    if (Iteration == 0)
+    if (iteration == 0)
         break;
   }
 

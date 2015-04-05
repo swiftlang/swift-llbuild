@@ -27,29 +27,29 @@ ParseActions::~ParseActions() {
 namespace {
 
 class ParserImpl {
-  Lexer Lexer;
-  ParseActions &Actions;
+  Lexer lexer;
+  ParseActions &actions;
 
   /// The currently lexed token.
-  Token Tok;
+  Token tok;
 
   /// @name Diagnostics Support
   /// @{
 
-  void error(std::string Message, const Token &At) {
-    Actions.error(Message, At);
+  void error(std::string message, const Token &at) {
+    actions.error(message, at);
   }
 
-  void error(std::string Message) {
-    error(Message, Tok);
+  void error(std::string message) {
+    error(message, tok);
   }
 
   /// @}
 
   void getNextNonCommentToken() {
     do {
-      Lexer.lex(Tok);
-    } while (Tok.TokenKind == Token::Kind::Comment);
+      lexer.lex(tok);
+    } while (tok.tokenKind == Token::Kind::Comment);
   }
 
   /// Consume the current 'peek token' and lex the next one.
@@ -59,17 +59,17 @@ class ParserImpl {
 
   /// Check that the current token is of the expected kind and consume it,
   /// returning the token.
-  Token consumeExpectedToken(Token::Kind Kind) {
-    assert(Tok.TokenKind == Kind && "Unexpected token!");
-    Token Result = Tok;
+  Token consumeExpectedToken(Token::Kind kind) {
+    assert(tok.tokenKind == kind && "Unexpected token!");
+    Token result = tok;
     getNextNonCommentToken();
-    return Result;
+    return result;
   }
 
   /// Consume the current token if it matches the given kind, returning whether
   /// or not it was consumed.
-  bool consumeIfToken(Token::Kind Kind) {
-    if (Tok.TokenKind == Kind) {
+  bool consumeIfToken(Token::Kind kind) {
+    if (tok.tokenKind == kind) {
       getNextNonCommentToken();
       return true;
     } else {
@@ -79,9 +79,9 @@ class ParserImpl {
 
   /// Consume tokens until past the next newline (or end of file).
   void skipPastEOL() {
-    while (Tok.TokenKind != Token::Kind::Newline &&
-           Tok.TokenKind != Token::Kind::EndOfFile)
-      Lexer.lex(Tok);
+    while (tok.tokenKind != Token::Kind::Newline &&
+           tok.tokenKind != Token::Kind::EndOfFile)
+      lexer.lex(tok);
 
     // Always consume at least one token.
     consumeToken();
@@ -92,37 +92,37 @@ class ParserImpl {
 
   /// Parse a variable binding.
   ///
-  /// \param Name_Out [out] On success, the identifier token for the binding
+  /// \param name_out [out] On success, the identifier token for the binding
   /// name.
   ///
-  /// \param Value_Out [out] On success, the string token for the binding
+  /// \param value_out [out] On success, the string token for the binding
   /// value.
   ///
   /// \returns True on success. On failure, the lexer will be advanced past the
   /// next newline (see \see skipPastEOL()).
-  bool parseBindingInternal(Token* Name_Out, Token* Value_Out);
+  bool parseBindingInternal(Token* name_out, Token* value_out);
 
   void parseBindingDecl();
   void parseDefaultDecl();
   void parseIncludeDecl();
   void parseParameterizedDecl();
 
-  bool parseBuildSpecifier(ParseActions::BuildResult *Decl_Out);
-  bool parsePoolSpecifier(ParseActions::PoolResult *Decl_Out);
-  bool parseRuleSpecifier(ParseActions::RuleResult *Decl_Out);
+  bool parseBuildSpecifier(ParseActions::BuildResult *decl_out);
+  bool parsePoolSpecifier(ParseActions::PoolResult *decl_out);
+  bool parseRuleSpecifier(ParseActions::RuleResult *decl_out);
 
 public:
-  ParserImpl(const char* Data, uint64_t Length,
-             ParseActions &Actions);
+  ParserImpl(const char* data, uint64_t length,
+             ParseActions& actions);
 
   void parse();
 
-  ParseActions& getActions() { return Actions; }
-  const class Lexer& getLexer() const { return Lexer; }
+  ParseActions& getActions() { return actions; }
+  const class Lexer& getLexer() const { return lexer; }
 };
 
-ParserImpl::ParserImpl(const char* Data, uint64_t Length, ParseActions &Actions)
-  : Lexer(Data, Length), Actions(Actions)
+ParserImpl::ParserImpl(const char* data, uint64_t length, ParseActions& actions)
+  : lexer(data, length), actions(actions)
 {
 }
 
@@ -131,21 +131,21 @@ void ParserImpl::parse() {
   // Initialize the Lexer.
   getNextNonCommentToken();
 
-  Actions.actOnBeginManifest("<main>");
-  while (Tok.TokenKind != Token::Kind::EndOfFile) {
+  actions.actOnBeginManifest("<main>");
+  while (tok.tokenKind != Token::Kind::EndOfFile) {
     // Check that no one accidentally left the lexer in the wrong mode.
-    assert(Lexer.getMode() == Lexer::LexingMode::None);
+    assert(lexer.getMode() == Lexer::LexingMode::None);
 
     parseDecl();
   }
-  Actions.actOnEndManifest();
+  actions.actOnEndManifest();
 }
 
 /// Parse a declaration.
 ///
 /// decl ::= default-decl | include-decl | binding-decl | parameterized-decl
 void ParserImpl::parseDecl() {
-  switch (Tok.TokenKind) {
+  switch (tok.tokenKind) {
   case Token::Kind::Newline:
     consumeToken();
     break;
@@ -176,18 +176,18 @@ void ParserImpl::parseDecl() {
 }
 
 /// binding-decl ::= identifier '=' var-string '\n'
-bool ParserImpl::parseBindingInternal(Token* Name_Out, Token* Value_Out) {
+bool ParserImpl::parseBindingInternal(Token* name_out, Token* value_out) {
   // The leading token should be an identifier.
-  if (Tok.TokenKind != Token::Kind::Identifier) {
+  if (tok.tokenKind != Token::Kind::Identifier) {
     error("expected variable name");
     skipPastEOL();
     return false;
   }
 
-  *Name_Out = consumeExpectedToken(Token::Kind::Identifier);
+  *name_out = consumeExpectedToken(Token::Kind::Identifier);
 
   // Expect the variable name to be followed by '='.
-  if (Tok.TokenKind != Token::Kind::Equals) {
+  if (tok.tokenKind != Token::Kind::Equals) {
     error("expected '=' token");
     skipPastEOL();
     return false;
@@ -198,28 +198,28 @@ bool ParserImpl::parseBindingInternal(Token* Name_Out, Token* Value_Out) {
   // We must consume the RHS in variable lexing mode, so given our lookahead
   // design we switch modes, consume the equals (which will advance the lexer),
   // and then immediately switch back.
-  Lexer.setMode(Lexer::LexingMode::VariableString);
+  lexer.setMode(Lexer::LexingMode::VariableString);
   consumeExpectedToken(Token::Kind::Equals);
-  Lexer.setMode(Lexer::LexingMode::None);
+  lexer.setMode(Lexer::LexingMode::None);
 
   // If the RHS is a newline, we have an empty binding which we handle as a
   // special case.
-  if (Tok.TokenKind == Token::Kind::Newline) {
+  if (tok.tokenKind == Token::Kind::Newline) {
     // Derive an empty string token from the newline.
-    *Value_Out = consumeExpectedToken(Token::Kind::Newline);
-    Value_Out->TokenKind = Token::Kind::String;
-    Value_Out->Length = 0;
+    *value_out = consumeExpectedToken(Token::Kind::Newline);
+    value_out->tokenKind = Token::Kind::String;
+    value_out->length = 0;
     return true;
   }
 
   // Otherwise, check that the RHS is a string.
-  if (Tok.TokenKind != Token::Kind::String) {
+  if (tok.tokenKind != Token::Kind::String) {
     error("expected variable value");
     skipPastEOL();
     return false;
   }
 
-  *Value_Out = consumeExpectedToken(Token::Kind::String);
+  *value_out = consumeExpectedToken(Token::Kind::String);
 
   // The binding should be terminated by a newline.
   if (!consumeIfToken(Token::Kind::Newline)) {
@@ -233,28 +233,28 @@ bool ParserImpl::parseBindingInternal(Token* Name_Out, Token* Value_Out) {
 
 /// binding-decl ::= identifier '=' var-string '\n'
 void ParserImpl::parseBindingDecl() {
-  Token Name, Value;
-  if (parseBindingInternal(&Name, &Value))
-    Actions.actOnBindingDecl(Name, Value);
+  Token name, value;
+  if (parseBindingInternal(&name, &value))
+    actions.actOnBindingDecl(name, value);
 }
 
 /// default-decl ::= "default" path-string-list '\n'
 void ParserImpl::parseDefaultDecl() {
   // Put the lexer in path string mode.
-  Lexer.setMode(Lexer::LexingMode::PathString);
+  lexer.setMode(Lexer::LexingMode::PathString);
   consumeExpectedToken(Token::Kind::KWDefault);
 
   // Consume all the strings.
-  std::vector<Token> Names;
-  while (Tok.TokenKind == Token::Kind::String) {
-    Names.push_back(consumeExpectedToken(Token::Kind::String));
+  std::vector<Token> names;
+  while (tok.tokenKind == Token::Kind::String) {
+    names.push_back(consumeExpectedToken(Token::Kind::String));
   }
 
   // Reset the string mode.
-  Lexer.setMode(Lexer::LexingMode::None);
+  lexer.setMode(Lexer::LexingMode::None);
 
   // Verify we have at least one name.
-  if (Names.empty()) {
+  if (names.empty()) {
     error("expected target path string");
     return skipPastEOL();
   }
@@ -265,31 +265,31 @@ void ParserImpl::parseDefaultDecl() {
     return skipPastEOL();
   }
 
-  Actions.actOnDefaultDecl(Names);
+  actions.actOnDefaultDecl(names);
 }
 
 /// include-decl ::= ( "include" | "subninja" ) path-string '\n'
 void ParserImpl::parseIncludeDecl() {
   // Put the lexer in path string mode for one token.
-  Lexer.setMode(Lexer::LexingMode::PathString);
-  bool IsInclude = Tok.TokenKind == Token::Kind::KWInclude;
-  consumeExpectedToken(IsInclude ? Token::Kind::KWInclude :
+  lexer.setMode(Lexer::LexingMode::PathString);
+  bool isInclude = tok.tokenKind == Token::Kind::KWInclude;
+  consumeExpectedToken(isInclude ? Token::Kind::KWInclude :
                        Token::Kind::KWSubninja);
-  Lexer.setMode(Lexer::LexingMode::None);
+  lexer.setMode(Lexer::LexingMode::None);
 
-  if (Tok.TokenKind != Token::Kind::String) {
+  if (tok.tokenKind != Token::Kind::String) {
     error("expected path string");
     return skipPastEOL();
   }
 
-  Token Path = consumeExpectedToken(Token::Kind::String);
+  Token path = consumeExpectedToken(Token::Kind::String);
 
   if (!consumeIfToken(Token::Kind::Newline)) {
     error("expected newline token");
     return skipPastEOL();
   }
 
-  Actions.actOnIncludeDecl(IsInclude, Path);
+  actions.actOnIncludeDecl(isInclude, path);
 }
 
 /// Parse a parameterized declaration (one followed by variable bindings).
@@ -300,202 +300,202 @@ void ParserImpl::parseIncludeDecl() {
 void ParserImpl::parseParameterizedDecl() {
   // Begin by parsing the specifier.
   union {
-    ParseActions::BuildResult AsBuild;
-    ParseActions::PoolResult AsPool;
-    ParseActions::RuleResult AsRule;
-  } Decl;
-  bool Success;
-  Token StartTok = Tok;
-  Token::Kind Kind = Tok.TokenKind;
-  switch (Kind) {
+    ParseActions::BuildResult asBuild;
+    ParseActions::PoolResult asPool;
+    ParseActions::RuleResult asRule;
+  } decl;
+  bool success;
+  Token startTok = tok;
+  Token::Kind kind = tok.tokenKind;
+  switch (kind) {
   case Token::Kind::KWBuild:
-    Success = parseBuildSpecifier(&Decl.AsBuild);
+    success = parseBuildSpecifier(&decl.asBuild);
     break;
   case Token::Kind::KWPool:
-    Success = parsePoolSpecifier(&Decl.AsPool);
+    success = parsePoolSpecifier(&decl.asPool);
     break;
   default:
-    assert(Kind == Token::Kind::KWRule);
-    Success = parseRuleSpecifier(&Decl.AsRule);
+    assert(kind == Token::Kind::KWRule);
+    success = parseRuleSpecifier(&decl.asRule);
     break;
   }
 
   // If parsing the specifier failed, skip forward until we reach a non-indented
   // line.
-  if (!Success) {
+  if (!success) {
     do {
       skipPastEOL();
-    } while (Tok.TokenKind == Token::Kind::Indentation);
+    } while (tok.tokenKind == Token::Kind::Indentation);
 
     return;
   }
 
   // Otherwise, parse the set of indented bindings.
-  while (Tok.TokenKind == Token::Kind::Indentation) {
+  while (tok.tokenKind == Token::Kind::Indentation) {
     // Put the lexer in identifier specific mode for the binding. It will
     // automatically be taken out by parseBindingInternal switching for the
     // value.
-    Lexer.setMode(Lexer::LexingMode::IdentifierSpecific);
+    lexer.setMode(Lexer::LexingMode::IdentifierSpecific);
     consumeExpectedToken(Token::Kind::Indentation);
 
     // Allow blank lines in parameterized decls.
-    if (Tok.TokenKind == Token::Kind::Newline) {
+    if (tok.tokenKind == Token::Kind::Newline) {
       // Ensure we switch out of identifier specific mode.
-      Lexer.setMode(Lexer::LexingMode::None);
+      lexer.setMode(Lexer::LexingMode::None);
       consumeExpectedToken(Token::Kind::Newline);
       continue;
     }
 
-    Token Name, Value;
-    if (parseBindingInternal(&Name, &Value)) {
+    Token name, value;
+    if (parseBindingInternal(&name, &value)) {
       // Dispatch to the appropriate parser action.
-      switch (Kind) {
+      switch (kind) {
       case Token::Kind::KWBuild:
-        Actions.actOnBuildBindingDecl(Decl.AsBuild, Name, Value);
+        actions.actOnBuildBindingDecl(decl.asBuild, name, value);
         break;
       case Token::Kind::KWPool:
-        Actions.actOnPoolBindingDecl(Decl.AsPool, Name, Value);
+        actions.actOnPoolBindingDecl(decl.asPool, name, value);
         break;
       default:
-        assert(Kind == Token::Kind::KWRule);
-        Actions.actOnRuleBindingDecl(Decl.AsRule, Name, Value);
+        assert(kind == Token::Kind::KWRule);
+        actions.actOnRuleBindingDecl(decl.asRule, name, value);
         break;
       }
     }
   }
 
-  switch (Kind) {
+  switch (kind) {
   case Token::Kind::KWBuild:
-    Actions.actOnEndBuildDecl(Decl.AsBuild, StartTok);
+    actions.actOnEndBuildDecl(decl.asBuild, startTok);
     break;
   case Token::Kind::KWPool:
-    Actions.actOnEndPoolDecl(Decl.AsPool, StartTok);
+    actions.actOnEndPoolDecl(decl.asPool, startTok);
     break;
   default:
-    assert(Kind == Token::Kind::KWRule);
-    Actions.actOnEndRuleDecl(Decl.AsRule, StartTok);
+    assert(kind == Token::Kind::KWRule);
+    actions.actOnEndRuleDecl(decl.asRule, startTok);
     break;
   }
 }
 
 /// build-spec ::= "build" path-string-list ":" path-string path-string-list
 ///                [ "|" path-string-list ] [ "||" path-string-list" ] '\n'
-bool ParserImpl::parseBuildSpecifier(ParseActions::BuildResult *Decl_Out) {
+bool ParserImpl::parseBuildSpecifier(ParseActions::BuildResult *decl_out) {
   // Put the lexer in path string mode for the entire specifier parsing.
-  Lexer.setMode(Lexer::LexingMode::PathString);
+  lexer.setMode(Lexer::LexingMode::PathString);
   consumeExpectedToken(Token::Kind::KWBuild);
 
   // Parse the output list.
-  if (Tok.TokenKind != Token::Kind::String) {
+  if (tok.tokenKind != Token::Kind::String) {
     error("expected output path string");
-    Lexer.setMode(Lexer::LexingMode::None);
+    lexer.setMode(Lexer::LexingMode::None);
     return false;
   }
-  std::vector<Token> Outputs;
+  std::vector<Token> outputs;
   do {
-    Outputs.push_back(consumeExpectedToken(Token::Kind::String));
-  } while (Tok.TokenKind == Token::Kind::String);
+    outputs.push_back(consumeExpectedToken(Token::Kind::String));
+  } while (tok.tokenKind == Token::Kind::String);
 
   // Expect the string list to be terminated by a colon.
-  if (Tok.TokenKind != Token::Kind::Colon) {
+  if (tok.tokenKind != Token::Kind::Colon) {
     error("expected ':' token");
-    Lexer.setMode(Lexer::LexingMode::None);
+    lexer.setMode(Lexer::LexingMode::None);
     return false;
   }
 
   // Parse the rule name identifier, switching out of path string mode for this
   // one lex.
-  Lexer.setMode(Lexer::LexingMode::IdentifierSpecific);
+  lexer.setMode(Lexer::LexingMode::IdentifierSpecific);
   consumeExpectedToken(Token::Kind::Colon);
-  Lexer.setMode(Lexer::LexingMode::PathString);
+  lexer.setMode(Lexer::LexingMode::PathString);
 
-  if (Tok.TokenKind != Token::Kind::Identifier) {
+  if (tok.tokenKind != Token::Kind::Identifier) {
     error("expected rule name identifier");
-    Lexer.setMode(Lexer::LexingMode::None);
+    lexer.setMode(Lexer::LexingMode::None);
     return false;
   }
-  Token Name = consumeExpectedToken(Token::Kind::Identifier);
+  Token name = consumeExpectedToken(Token::Kind::Identifier);
 
   // Parse the explicit inputs.
-  std::vector<Token> Inputs;
-  while (Tok.TokenKind == Token::Kind::String) {
-    Inputs.push_back(consumeExpectedToken(Token::Kind::String));
+  std::vector<Token> inputs;
+  while (tok.tokenKind == Token::Kind::String) {
+    inputs.push_back(consumeExpectedToken(Token::Kind::String));
   }
-  unsigned NumExplicitInputs = Inputs.size();
+  unsigned numExplicitInputs = inputs.size();
 
   // Parse the implicit inputs, if present.
   if (consumeIfToken(Token::Kind::Pipe)) {
-    while (Tok.TokenKind == Token::Kind::String) {
-      Inputs.push_back(consumeExpectedToken(Token::Kind::String));
+    while (tok.tokenKind == Token::Kind::String) {
+      inputs.push_back(consumeExpectedToken(Token::Kind::String));
     }
   }
-  unsigned NumImplicitInputs = Inputs.size() - NumExplicitInputs;
+  unsigned numImplicitInputs = inputs.size() - numExplicitInputs;
 
   // Parse the order-only inputs, if present.
   if (consumeIfToken(Token::Kind::PipePipe)) {
-    while (Tok.TokenKind == Token::Kind::String) {
-      Inputs.push_back(consumeExpectedToken(Token::Kind::String));
+    while (tok.tokenKind == Token::Kind::String) {
+      inputs.push_back(consumeExpectedToken(Token::Kind::String));
     }
   }
 
   // Reset the lexer mode.
-  Lexer.setMode(Lexer::LexingMode::None);
+  lexer.setMode(Lexer::LexingMode::None);
 
   if (!consumeIfToken(Token::Kind::Newline)) {
     error("expected newline token");
     return false;
   }
 
-  *Decl_Out = Actions.actOnBeginBuildDecl(Name, Outputs, Inputs,
-                                          NumExplicitInputs, NumImplicitInputs);
+  *decl_out = actions.actOnBeginBuildDecl(name, outputs, inputs,
+                                          numExplicitInputs, numImplicitInputs);
 
   return true;
 }
 
 /// pool-spec ::= "pool" identifier '\n'
-bool ParserImpl::parsePoolSpecifier(ParseActions::PoolResult *Decl_Out) {
+bool ParserImpl::parsePoolSpecifier(ParseActions::PoolResult *decl_out) {
   // Put the lexer in identifier specific mode for the name.
-  Lexer.setMode(Lexer::LexingMode::IdentifierSpecific);
+  lexer.setMode(Lexer::LexingMode::IdentifierSpecific);
   consumeExpectedToken(Token::Kind::KWPool);
-  Lexer.setMode(Lexer::LexingMode::None);
+  lexer.setMode(Lexer::LexingMode::None);
 
-  if (Tok.TokenKind != Token::Kind::Identifier) {
+  if (tok.tokenKind != Token::Kind::Identifier) {
     error("expected pool name identifier");
     return false;
   }
 
-  Token Name = consumeExpectedToken(Token::Kind::Identifier);
+  Token name = consumeExpectedToken(Token::Kind::Identifier);
 
   if (!consumeIfToken(Token::Kind::Newline)) {
     error("expected newline token");
     return false;
   }
 
-  *Decl_Out = Actions.actOnBeginPoolDecl(Name);
+  *decl_out = actions.actOnBeginPoolDecl(name);
 
   return true;
 }
 
 /// rule-spec ::= "rule" identifier '\n'
-bool ParserImpl::parseRuleSpecifier(ParseActions::RuleResult *Decl_Out) {
+bool ParserImpl::parseRuleSpecifier(ParseActions::RuleResult *decl_out) {
   // Put the lexer in identifier specific mode for the name.
-  Lexer.setMode(Lexer::LexingMode::IdentifierSpecific);
+  lexer.setMode(Lexer::LexingMode::IdentifierSpecific);
   consumeExpectedToken(Token::Kind::KWRule);
-  Lexer.setMode(Lexer::LexingMode::None);
+  lexer.setMode(Lexer::LexingMode::None);
 
-  if (Tok.TokenKind != Token::Kind::Identifier) {
+  if (tok.tokenKind != Token::Kind::Identifier) {
     error("expected rule name identifier");
     return false;
   }
 
-  Token Name = consumeExpectedToken(Token::Kind::Identifier);
+  Token name = consumeExpectedToken(Token::Kind::Identifier);
 
   if (!consumeIfToken(Token::Kind::Newline)) {
     error("expected newline token");
     return false;
   }
 
-  *Decl_Out = Actions.actOnBeginRuleDecl(Name);
+  *decl_out = actions.actOnBeginRuleDecl(name);
 
   return true;
 }
@@ -504,23 +504,23 @@ bool ParserImpl::parseRuleSpecifier(ParseActions::RuleResult *Decl_Out) {
 
 #pragma mark - Parser
 
-Parser::Parser(const char* Data, uint64_t Length,
-               ParseActions &Actions)
-  : Impl(static_cast<void*>(new ParserImpl(Data, Length, Actions)))
+Parser::Parser(const char* data, uint64_t length,
+               ParseActions& actions)
+  : impl(static_cast<void*>(new ParserImpl(data, length, actions)))
 {
 }
 
 Parser::~Parser() {
-  delete static_cast<ParserImpl*>(Impl);
+  delete static_cast<ParserImpl*>(impl);
 }
 
 void Parser::parse() {
   // Initialize the actions.
-  static_cast<ParserImpl*>(Impl)->getActions().initialize(this);
+  static_cast<ParserImpl*>(impl)->getActions().initialize(this);
 
-  static_cast<ParserImpl*>(Impl)->parse();
+  static_cast<ParserImpl*>(impl)->parse();
 }
 
 const Lexer& Parser::getLexer() const {
-  return static_cast<ParserImpl*>(Impl)->getLexer();
+  return static_cast<ParserImpl*>(impl)->getLexer();
 }

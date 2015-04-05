@@ -28,38 +28,38 @@ class Rule;
 /// This class represents a set of name to value variable bindings.
 class BindingSet {
   /// The parent binding scope, if any.
-  const BindingSet *ParentScope = 0;
+  const BindingSet *parentScope = 0;
 
   /// The actual bindings, mapping from Name to Value.
-  std::unordered_map<std::string, std::string> Entries;
+  std::unordered_map<std::string, std::string> entries;
 
 public:
-  BindingSet(const BindingSet* ParentScope = 0) : ParentScope(ParentScope) {}
+  BindingSet(const BindingSet* parentScope = 0) : parentScope(parentScope) {}
 
   /// Get the parent scope.
   const BindingSet* getParentScope() const {
-    return ParentScope;
+    return parentScope;
   }
 
   /// Get the map of bindings.
   const std::unordered_map<std::string, std::string>& getEntries() const {
-    return Entries;
+    return entries;
   }
 
   /// Insert a binding into the set.
-  void insert(const std::string& Name, const std::string& Value) {
-    Entries[Name] = Value;
+  void insert(const std::string& name, const std::string& value) {
+    entries[name] = value;
   }
 
   /// Look up the given variable name in the binding set, returning its value or
   /// the empty string if not found.
-  std::string lookup(const std::string& Name) const {
-    auto it = Entries.find(Name);
-    if (it != Entries.end())
+  std::string lookup(const std::string& name) const {
+    auto it = entries.find(name);
+    if (it != entries.end())
       return it->second;
 
-    if (ParentScope)
-      return ParentScope->lookup(Name);
+    if (parentScope)
+      return parentScope->lookup(name);
 
     return "";
   }
@@ -69,32 +69,32 @@ public:
 //
 // FIXME: Figure out what the deal is with normalization.
 class Node {
-  std::string Path;
+  std::string path;
 
 public:
-  explicit Node(const std::string& Path) : Path(Path) {}
+  explicit Node(const std::string& path) : path(path) {}
 
-  const std::string& getPath() const { return Path; }
+  const std::string& getPath() const { return path; }
 };
 
 /// A pool represents a generic bucket for organizing commands.
 class Pool {
   /// The name of the pool.
-  std::string Name;
+  std::string name;
 
   /// The pool depth, or 0 if unspecified.
-  uint32_t Depth = 0;
+  uint32_t depth = 0;
 
 public:
-  explicit Pool(const std::string& Name) : Name(Name) {}
+  explicit Pool(const std::string& name) : name(name) {}
 
-  const std::string& getName() const { return Name; }
+  const std::string& getName() const { return name; }
 
   uint32_t getDepth() const {
-    return Depth;
+    return depth;
   }
   void setDepth(uint32_t Value) {
-    Depth = Value;
+    depth = Value;
   }
 };
 
@@ -119,62 +119,62 @@ public:
   
 private:
   /// The rule used to derive the command properties.
-  Rule *Rule;
+  Rule* rule;
 
   /// The outputs of the command.
-  std::vector<Node*> Outputs;
+  std::vector<Node*> outputs;
 
   /// The list of all inputs to the command, include explicit as well as
   /// implicit and order-only inputs (which are determined by their position in
-  /// the array and the \see NumExplicitInputs and \see NumImplicitInputs
+  /// the array and the \see numExplicitInputs and \see numImplicitInputs
   /// variables).
-  std::vector<Node*> Inputs;
+  std::vector<Node*> inputs;
 
-  /// The number of explicit inputs, at the start of the \see Inputs array.
-  unsigned NumExplicitInputs;
+  /// The number of explicit inputs, at the start of the \see inputs array.
+  unsigned numExplicitInputs;
 
   /// The number of implicit inputs, immediately following the explicit inputs
-  /// in the \see Inputs array. The remaining inputs are the order-only ones.
-  unsigned NumImplicitInputs;
+  /// in the \see inputs array. The remaining inputs are the order-only ones.
+  unsigned numImplicitInputs;
 
   /// The command parameters, which are used to evaluate the rule template.
   //
   // FIXME: It might be substantially better to evaluate all of these in the
   // context of the rule up-front (during loading).
-  std::unordered_map<std::string, std::string> Parameters;
+  std::unordered_map<std::string, std::string> parameters;
 
-  Pool *ExecutionPool;
+  Pool* executionPool;
 
-  std::string CommandString;
-  std::string Description;
-  std::string DepsFile;
+  std::string commandString;
+  std::string description;
+  std::string depsFile;
 
-  unsigned DepsStyle: 2;
-  unsigned IsGenerator: 1;
-  unsigned ShouldRestat: 1;
+  unsigned depsStyle: 2;
+  unsigned isGenerator: 1;
+  unsigned shouldRestat: 1;
 
 public:
-  explicit Command(class Rule *Rule, std::vector<Node*> Outputs,
-                   std::vector<Node*> Inputs, unsigned NumExplicitInputs,
-                   unsigned NumImplicitInputs)
-    : Rule(Rule), Outputs(Outputs), Inputs(Inputs),
-      NumExplicitInputs(NumExplicitInputs),
-      NumImplicitInputs(NumImplicitInputs),
-      ExecutionPool(nullptr), DepsStyle(unsigned(DepsStyleKind::None)),
-      IsGenerator(0), ShouldRestat(0)
+  explicit Command(class Rule* rule, std::vector<Node*> outputs,
+                   std::vector<Node*> inputs, unsigned numExplicitInputs,
+                   unsigned numImplicitInputs)
+    : rule(rule), outputs(outputs), inputs(inputs),
+      numExplicitInputs(numExplicitInputs),
+      numImplicitInputs(numImplicitInputs),
+      executionPool(nullptr), depsStyle(unsigned(DepsStyleKind::None)),
+      isGenerator(0), shouldRestat(0)
   {
-    assert(Outputs.size() > 0);
-    assert(NumExplicitInputs + NumImplicitInputs <= Inputs.size());
+    assert(outputs.size() > 0);
+    assert(numExplicitInputs + numImplicitInputs <= inputs.size());
   }
 
-  const class Rule* getRule() const { return Rule; }
+  const class Rule* getRule() const { return rule; }
 
-  const std::vector<Node*>& getOutputs() const { return Outputs; }
+  const std::vector<Node*>& getOutputs() const { return outputs; }
 
-  const std::vector<Node*>& getInputs() const { return Inputs; }
+  const std::vector<Node*>& getInputs() const { return inputs; }
 
   const std::vector<Node*>::const_iterator explicitInputs_begin() const {
-    return Inputs.begin();
+    return inputs.begin();
   }
   const std::vector<Node*>::const_iterator explicitInputs_end() const {
     return explicitInputs_begin() + getNumExplicitInputs();
@@ -191,20 +191,20 @@ public:
     return implicitInputs_end();
   }
   const std::vector<Node*>::const_iterator orderOnlyInputs_end() const {
-    return Inputs.end();
+    return inputs.end();
   }
 
-  unsigned getNumExplicitInputs() const { return NumExplicitInputs; }
-  unsigned getNumImplicitInputs() const { return NumImplicitInputs; }
+  unsigned getNumExplicitInputs() const { return numExplicitInputs; }
+  unsigned getNumImplicitInputs() const { return numImplicitInputs; }
   unsigned getNumOrderOnlyInputs() const {
-    return Inputs.size() - getNumExplicitInputs() - getNumImplicitInputs();
+    return inputs.size() - getNumExplicitInputs() - getNumImplicitInputs();
   }
 
   std::unordered_map<std::string, std::string>& getParameters() {
-    return Parameters;
+    return parameters;
   }
   const std::unordered_map<std::string, std::string>& getParameters() const {
-    return Parameters;
+    return parameters;
   }
 
   /// @name Attributes
@@ -217,61 +217,61 @@ public:
 
   /// Get the shell command to execute to run this command.
   const std::string& getCommandString() const {
-    return CommandString;
+    return commandString;
   }
-  void setCommandString(const std::string& Value) {
-    CommandString = Value;
+  void setCommandString(const std::string& value) {
+    commandString = value;
   }
 
   /// Get the description to use when running this command.
   const std::string& getDescription() const {
-    return Description;
+    return description;
   }
-  void setDescription(const std::string& Value) {
-    Description = Value;
+  void setDescription(const std::string& value) {
+    description = value;
   }
 
   /// Get the style of implicit dependencies used by this command.
   DepsStyleKind getDepsStyle() const {
-    return DepsStyleKind(DepsStyle);
+    return DepsStyleKind(depsStyle);
   }
-  void setDepsStyle(DepsStyleKind Value) {
-    DepsStyle = unsigned(Value);
-    assert(DepsStyle == unsigned(Value));
+  void setDepsStyle(DepsStyleKind value) {
+    depsStyle = unsigned(value);
+    assert(depsStyle == unsigned(value));
   }
 
   /// Get the dependency output file to use, for some implicit dependencies
   /// styles.
   const std::string& getDepsFile() const {
-    return DepsFile;
+    return depsFile;
   }
-  void setDepsFile(const std::string& Value) {
-    DepsFile = Value;
+  void setDepsFile(const std::string& value) {
+    depsFile = value;
   }
 
   /// Check whether this command should be treated as a generator command.
   bool hasGeneratorFlag() const {
-    return IsGenerator;
+    return isGenerator;
   }
-  void setGeneratorFlag(bool Value) {
-    IsGenerator = Value;
+  void setGeneratorFlag(bool value) {
+    isGenerator = value;
   }
 
   /// Check whether this command should restat outputs after execution to
   /// determine if downstream commands still need to run.
   bool hasRestatFlag() const {
-    return ShouldRestat;
+    return shouldRestat;
   }
-  void setRestatFlag(bool Value) {
-    ShouldRestat = Value;
+  void setRestatFlag(bool value) {
+    shouldRestat = value;
   }
 
   /// Get the pool to use when running this command.
   Pool* getExecutionPool() const {
-    return ExecutionPool;
+    return executionPool;
   }
-  void setExecutionPool(class Pool* Value) {
-    ExecutionPool = Value;
+  void setExecutionPool(class Pool* value) {
+    executionPool = value;
   }
 
   /// @}
@@ -281,122 +281,122 @@ public:
 /// command.
 class Rule {
   /// The name of the rule.
-  std::string Name;
+  std::string name;
 
   /// The rule parameters, which are all unexpanded string exprs.
   //
   // FIXME: It would be nice to optimize this more, and the common case is that
   // we have a fixed set of values which are never dynamically expanded for most
   // parameters *other* than the command.
-  std::unordered_map<std::string, std::string> Parameters;
+  std::unordered_map<std::string, std::string> parameters;
 
 public:
-  explicit Rule(const std::string& Name) : Name(Name) {}
+  explicit Rule(const std::string& name) : name(name) {}
 
-  const std::string& getName() const { return Name; }
+  const std::string& getName() const { return name; }
 
   std::unordered_map<std::string, std::string>& getParameters() {
-    return Parameters;
+    return parameters;
   }
   const std::unordered_map<std::string, std::string>& getParameters() const {
-    return Parameters;
+    return parameters;
   }
 
   /// Check whether the given string is a valid rule parameter.
-  static bool isValidParameterName(const std::string& Name);
+  static bool isValidParameterName(const std::string& name);
 };
 
 /// A manifest represents the complete set of rules and commands used to perform
 /// a build.
 class Manifest {
   /// The top level variable bindings.
-  BindingSet Bindings;
+  BindingSet bindings;
 
   /// The nodes in the manifest, stored as a map on the node name.
   //
   // FIXME: This is an inefficent map, given that the string is contained
   // inside the node.
   typedef std::unordered_map<std::string, std::unique_ptr<Node>> node_set;
-  node_set Nodes;
+  node_set nodes;
 
   /// The commands in the manifest.
-  std::vector<std::unique_ptr<Command>> Commands;
+  std::vector<std::unique_ptr<Command>> commands;
 
   /// The pools in the manifest, stored as a map on the pool name.
   //
   // FIXME: This is an inefficent map, given that the string is contained
   // inside the pool.
   typedef std::unordered_map<std::string, std::unique_ptr<Pool>> pool_set;
-  pool_set Pools;
+  pool_set pools;
 
   /// The rules in the manifest, stored as a map on the rule name.
   //
   // FIXME: This is an inefficent map, given that the string is contained
   // inside the rule.
   typedef std::unordered_map<std::string, std::unique_ptr<Rule>> rule_set;
-  rule_set Rules;
+  rule_set rules;
 
   /// The default targets, if specified.
-  std::vector<Node*> DefaultTargets;
+  std::vector<Node*> defaultTargets;
 
   /// The built-in console pool.
-  Pool* ConsolePool;
+  Pool* consolePool;
 
   /// The built-in phony rule.
-  Rule* PhonyRule;
+  Rule* phonyRule;
 
 public:
   explicit Manifest();
 
   /// Get the final set of top level variable bindings.
-  BindingSet& getBindings() { return Bindings; }
+  BindingSet& getBindings() { return bindings; }
   /// Get the final set of top level variable bindings.
-  const BindingSet& getBindings() const { return Bindings; }
+  const BindingSet& getBindings() const { return bindings; }
 
   node_set& getNodes() {
-    return Nodes;
+    return nodes;
   }
   const node_set& getNodes() const {
-    return Nodes;
+    return nodes;
   }
 
   /// Get or create the unique node for the given path.
-  Node* getOrCreateNode(const std::string& Path);
+  Node* getOrCreateNode(const std::string& path);
 
   std::vector<std::unique_ptr<Command>>& getCommands() {
-    return Commands;
+    return commands;
   }
   const std::vector<std::unique_ptr<Command>>& getCommands() const {
-    return Commands;
+    return commands;
   }
 
   pool_set& getPools() {
-    return Pools;
+    return pools;
   }
   const pool_set& getPools() const {
-    return Pools;
+    return pools;
   }
 
   rule_set& getRules() {
-    return Rules;
+    return rules;
   }
   const rule_set& getRules() const {
-    return Rules;
+    return rules;
   }
 
   std::vector<Node*>& getDefaultTargets() {
-    return DefaultTargets;
+    return defaultTargets;
   }
   const std::vector<Node*>& getDefaultTargets() const {
-    return DefaultTargets;
+    return defaultTargets;
   }
 
   Pool* getConsolePool() const {
-    return ConsolePool;
+    return consolePool;
   }
 
   Rule* getPhonyRule() const {
-    return PhonyRule;
+    return phonyRule;
   }
 };
 

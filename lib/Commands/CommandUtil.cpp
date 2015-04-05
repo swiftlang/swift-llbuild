@@ -21,64 +21,64 @@
 using namespace llbuild;
 using namespace llbuild::commands;
 
-static char hexdigit(unsigned Input) {
-  return (Input < 10) ? '0' + Input : 'A' + Input - 10;
+static char hexdigit(unsigned input) {
+  return (input < 10) ? '0' + input : 'A' + input - 10;
 }
 
-std::string util::EscapedString(const char *Start, unsigned Length) {
-  std::stringstream Result;
-  for (unsigned i = 0; i != Length; ++i) {
-    char c = Start[i];
+std::string util::escapedString(const char* start, unsigned length) {
+  std::stringstream result;
+  for (unsigned i = 0; i != length; ++i) {
+    char c = start[i];
     if (c == '"') {
-      Result << "\\\"";
+      result << "\\\"";
     } else if (isprint(c)) {
-      Result << c;
+      result << c;
     } else if (c == '\n') {
-      Result << "\\n";
+      result << "\\n";
     } else {
-      Result << "\\x"
+      result << "\\x"
              << hexdigit(((unsigned char) c >> 4) & 0xF)
              << hexdigit((unsigned char) c & 0xF);
     }
   }
-  return Result.str();
+  return result.str();
 }
-std::string util::EscapedString(const std::string& String) {
-  return EscapedString(String.data(), String.size());
+std::string util::escapedString(const std::string& string) {
+  return escapedString(string.data(), string.size());
 }
 
-void util::EmitError(const std::string& Filename, const std::string& Message,
-                     const ninja::Token& At, const ninja::Parser* Parser) {
-  std::cerr << Filename << ":" << At.Line << ":" << At.Column
-            << ": error: " << Message << "\n";
+void util::emitError(const std::string& filename, const std::string& message,
+                     const ninja::Token& at, const ninja::Parser* parser) {
+  std::cerr << filename << ":" << at.line << ":" << at.column
+            << ": error: " << message << "\n";
 
   // Skip carat diagnostics on EOF token.
-  if (At.TokenKind == ninja::Token::Kind::EndOfFile)
+  if (at.tokenKind == ninja::Token::Kind::EndOfFile)
     return;
 
   // Simple caret style diagnostics.
-  const char *LineBegin = At.Start, *LineEnd = At.Start,
-    *BufferBegin = Parser->getLexer().getBufferStart(),
-    *BufferEnd = Parser->getLexer().getBufferEnd();
+  const char *lineBegin = at.start, *lineEnd = at.start,
+    *bufferBegin = parser->getLexer().getBufferStart(),
+    *bufferEnd = parser->getLexer().getBufferEnd();
 
   // Run line pointers forward and back.
-  while (LineBegin > BufferBegin &&
-         LineBegin[-1] != '\r' && LineBegin[-1] != '\n')
-    --LineBegin;
-  while (LineEnd < BufferEnd &&
-         LineEnd[0] != '\r' && LineEnd[0] != '\n')
-    ++LineEnd;
+  while (lineBegin > bufferBegin &&
+         lineBegin[-1] != '\r' && lineBegin[-1] != '\n')
+    --lineBegin;
+  while (lineEnd < bufferEnd &&
+         lineEnd[0] != '\r' && lineEnd[0] != '\n')
+    ++lineEnd;
 
   // Show the line, indented by 2.
-  std::cerr << "  " << std::string(LineBegin, LineEnd) << "\n";
+  std::cerr << "  " << std::string(lineBegin, lineEnd) << "\n";
 
   // Show the caret or squiggly, making sure to print back spaces the
   // same.
   std::cerr << "  ";
-  for (const char* S = LineBegin; S != At.Start; ++S)
-    std::cerr << (isspace(*S) ? *S : ' ');
-  if (At.Length > 1) {
-    for (unsigned i = 0; i != At.Length; ++i)
+  for (const char* s = lineBegin; s != at.start; ++s)
+    std::cerr << (isspace(*s) ? *s : ' ');
+  if (at.length > 1) {
+    for (unsigned i = 0; i != at.length; ++i)
       std::cerr << '~';
   } else {
     std::cerr << '^';
@@ -86,40 +86,40 @@ void util::EmitError(const std::string& Filename, const std::string& Message,
   std::cerr << '\n';
 }
 
-bool util::ReadFileContents(std::string Path,
-                            std::unique_ptr<char[]> *Data_Out,
-                            uint64_t* Size_Out,
-                            std::string* Error_Out) {
+bool util::readFileContents(std::string path,
+                            std::unique_ptr<char[]> *data_out,
+                            uint64_t* size_out,
+                            std::string* error_out) {
   // Open the input buffer and compute its size.
-  FILE* fp = ::fopen(Path.c_str(), "rb");
+  FILE* fp = ::fopen(path.c_str(), "rb");
   if (!fp) {
-    int ErrorNumber = errno;
-    *Error_Out = std::string("unable to open input: \"") +
-      util::EscapedString(Path) + "\" (" + ::strerror(ErrorNumber) + ")";
+    int errorNumber = errno;
+    *error_out = std::string("unable to open input: \"") +
+      util::escapedString(path) + "\" (" + ::strerror(errorNumber) + ")";
     return false;
   }
 
   fseek(fp, 0, SEEK_END);
-  uint64_t Size = *Size_Out = ::ftell(fp);
+  uint64_t size = *size_out = ::ftell(fp);
   fseek(fp, 0, SEEK_SET);
 
   // Read the file contents.
-  std::unique_ptr<char[]> Data(new char[Size]);
-  uint64_t Pos = 0;
-  while (Pos < Size) {
+  std::unique_ptr<char[]> data(new char[size]);
+  uint64_t pos = 0;
+  while (pos < size) {
     // Read data into the buffer.
-    size_t Result = ::fread(Data.get() + Pos, 1, Size - Pos, fp);
-    if (Result <= 0) {
-      *Error_Out = std::string("unable to read input: ") + Path;
+    size_t result = ::fread(data.get() + pos, 1, size - pos, fp);
+    if (result <= 0) {
+      *error_out = std::string("unable to read input: ") + path;
       return false;
     }
 
-    Pos += Result;
+    pos += result;
   }
 
   // Close the file.
   ::fclose(fp);
 
-  *Data_Out = std::move(Data);
+  *data_out = std::move(data);
   return true;
 }

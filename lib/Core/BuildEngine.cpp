@@ -31,11 +31,11 @@ Task::~Task() {}
 
 BuildEngineDelegate::~BuildEngineDelegate() {}
 
-#pragma mark - BuildEngine Implementation
+#pragma mark - BuildEngine implementation
 
 namespace {
 
-class BuildEngineImpl {
+class BuildEngineimpl {
   struct RuleInfo;
   struct TaskInfo;
 
@@ -44,51 +44,51 @@ class BuildEngineImpl {
     kMustFollowInputID = ~(uintptr_t)0
   };
 
-  BuildEngine& BuildEngine;
+  BuildEngine& buildEngine;
 
-  BuildEngineDelegate& Delegate;
+  BuildEngineDelegate& delegate;
 
   /// The build database, if attached.
-  std::unique_ptr<BuildDB> DB;
+  std::unique_ptr<BuildDB> db;
 
   /// The tracing implementation, if enabled.
-  std::unique_ptr<BuildEngineTrace> Trace;
+  std::unique_ptr<BuildEngineTrace> trace;
 
   /// The current build iteration, used to sequentially timestamp build results.
-  uint64_t CurrentTimestamp = 0;
+  uint64_t currentTimestamp = 0;
 
   /// The queue of input requests to process.
   struct TaskInputRequest {
     /// The task making the request.
-    TaskInfo* TaskInfo;
+    TaskInfo* taskInfo;
     /// The rule for the input which was requested.
-    RuleInfo* InputRuleInfo;
+    RuleInfo* inputRuleInfo;
     /// The task provided input ID, for its own use in identifying the input.
-    uintptr_t InputID;
+    uintptr_t inputID;
   };
-  std::vector<TaskInputRequest> InputRequests;
+  std::vector<TaskInputRequest> inputRequests;
 
   /// The queue of rules being scanned.
   struct RuleScanRequest {
     /// The rule making the request.
-    RuleInfo* RuleInfo;
+    RuleInfo* ruleInfo;
     /// The input index being considered.
-    unsigned InputIndex;
+    unsigned inputIndex;
     /// The input being considered, if already looked up.
     ///
     /// This is used when a scan request is deferred waiting on its input to be
     /// scanned, to avoid a redundant hash lookup.
-    struct RuleInfo* InputRuleInfo;
+    struct RuleInfo* inputRuleInfo;
   };
-  std::vector<RuleScanRequest> RuleInfosToScan;
+  std::vector<RuleScanRequest> ruleInfosToScan;
 
   struct RuleScanRecord {
     /// The vector of paused input requests, waiting for the dependency scan on
     /// this rule to complete.
-    std::vector<TaskInputRequest> PausedInputRequests;
+    std::vector<TaskInputRequest> pausedInputRequests;
     /// The vector of deferred scan requests, for rules which are waiting on
     /// this one to be scanned.
-    std::vector<RuleScanRequest> DeferredScanRequests;
+    std::vector<RuleScanRequest> deferredScanRequests;
   };
 
   /// Wrapper for information specific to a single rule.
@@ -117,56 +117,56 @@ class BuildEngineImpl {
       ///
       /// Note that as an optimization, when the build timestamp is incremented
       /// we do not immediately reset the state, rather we do it lazily as part
-      /// of \see demandRule() in conjunction with the Result::BuiltAt field.
+      /// of \see demandRule() in conjunction with the Result::builtAt field.
       Complete
     };
 
-    RuleInfo(Rule &&Rule) : Rule(Rule) {}
+    RuleInfo(Rule&& rule) : rule(rule) {}
 
-    Rule Rule;
+    Rule rule;
     /// The state dependent record for in-progress information.
     union {
-      RuleScanRecord* PendingScanRecord;
-      TaskInfo* PendingTaskInfo;
-    } InProgressInfo = { nullptr };
+      RuleScanRecord* pendingScanRecord;
+      TaskInfo* pendingTaskInfo;
+    } inProgressInfo = { nullptr };
     /// The most recent rule result.
-    Result Result = {};
+    Result result = {};
     /// The current state of the rule.
-    StateKind State = StateKind::Incomplete;
+    StateKind state = StateKind::Incomplete;
 
   public:
     bool isScanning() const {
-      return State == StateKind::IsScanning;
+      return state == StateKind::IsScanning;
     }
 
-    bool isScanned(const BuildEngineImpl* Engine) const {
+    bool isScanned(const BuildEngineimpl* engine) const {
       // If the rule is marked as complete, just check that state.
-      if (State == StateKind::Complete)
-        return isComplete(Engine);
+      if (state == StateKind::Complete)
+        return isComplete(engine);
 
       // Otherwise, the rule is scanned if it has passed the scanning state.
-      return int(State) > int(StateKind::IsScanning);
+      return int(state) > int(StateKind::IsScanning);
     }
 
     bool isInProgressWaiting() const {
-      return State == StateKind::InProgressWaiting;
+      return state == StateKind::InProgressWaiting;
     }
 
     bool isInProgressComputing() const {
-      return State == StateKind::InProgressComputing;
+      return state == StateKind::InProgressComputing;
     }
 
     bool isInProgress() const {
       return isInProgressWaiting() || isInProgressComputing();
     }
 
-    bool isComplete(const BuildEngineImpl* Engine) const {
-      return State == StateKind::Complete &&
-        Result.BuiltAt == Engine->getCurrentTimestamp();
+    bool isComplete(const BuildEngineimpl* engine) const {
+      return state == StateKind::Complete &&
+        result.builtAt == engine->getCurrentTimestamp();
     }
 
-    void setComplete(const BuildEngineImpl* Engine) {
-      State = StateKind::Complete;
+    void setComplete(const BuildEngineimpl* engine) {
+      state = StateKind::Complete;
       // Note we do not push this change to the database. This is essentially a
       // mark we maintain to allow a lazy transition to Incomplete when the
       // timestamp is incremented.
@@ -174,24 +174,24 @@ class BuildEngineImpl {
       // FIXME: This is a bit dubious, and wouldn't work anymore if we moved the
       // Result to being totally managed by the database. However, it is just a
       // matter of keeping an extra timestamp outside the Result to fix.
-      Result.BuiltAt = Engine->getCurrentTimestamp();
+      result.builtAt = engine->getCurrentTimestamp();
     }
 
     RuleScanRecord* getPendingScanRecord() {
       assert(isScanning());
-      return InProgressInfo.PendingScanRecord;
+      return inProgressInfo.pendingScanRecord;
     }
-    void setPendingScanRecord(RuleScanRecord* Value) {
-      InProgressInfo.PendingScanRecord = Value;
+    void setPendingScanRecord(RuleScanRecord* value) {
+      inProgressInfo.pendingScanRecord = value;
     }
 
     TaskInfo* getPendingTaskInfo() {
       assert(isInProgress());
-      return InProgressInfo.PendingTaskInfo;
+      return inProgressInfo.pendingTaskInfo;
     }
-    void setPendingTaskInfo(TaskInfo* Value) {
+    void setPendingTaskInfo(TaskInfo* value) {
       assert(isInProgress());
-      InProgressInfo.PendingTaskInfo = Value;
+      inProgressInfo.pendingTaskInfo = value;
     }
   };
 
@@ -201,64 +201,65 @@ class BuildEngineImpl {
   // references to elements are not invalidated by insertion. We will need to
   // move to an alternate allocation strategy if we switch to DenseMap style
   // table.
-  std::unordered_map<KeyType, RuleInfo> RuleInfos;
+  std::unordered_map<KeyType, RuleInfo> ruleInfos;
 
   /// The set of pending tasks.
   struct TaskInfo {
-    TaskInfo(Task* Task) : Task(Task) {}
+    TaskInfo(Task* task) : task(task) {}
 
-    std::unique_ptr<Task> Task;
+    std::unique_ptr<Task> task;
     /// The list of input requests that are waiting on this task, which will be
     /// fulfilled once the task is complete.
     //
     // FIXME: Note that this structure is redundant here, as
     // (TaskInputRequest::InputTaskInfo == this) for all items, but we reuse the
     // existing structure for simplicity.
-    std::vector<TaskInputRequest> RequestedBy;
+    std::vector<TaskInputRequest> requestedBy;
     /// The vector of deferred scan requests, for rules which are waiting on
     /// this one to be scanned.
     //
     // FIXME: As above, this structure has redundancy in it.
-    std::vector<RuleScanRequest> DeferredScanRequests;
+    std::vector<RuleScanRequest> deferredScanRequests;
     /// The rule that this task is computing.
-    RuleInfo* ForRuleInfo = nullptr;
+    RuleInfo* forRuleInfo = nullptr;
     /// The number of outstanding inputs that this task is waiting on to be
     /// provided.
-    unsigned WaitCount = 0;
+    unsigned waitCount = 0;
     /// The list of discovered dependencies found during execution of the task.
-    std::vector<KeyType> DiscoveredDependencies;
+    std::vector<KeyType> discoveredDependencies;
 
 #ifndef NDEBUG
     void dump() const {
-      fprintf(stderr, "<TaskInfo:%p: task:%p, for-rule:\"%s\", wait-count:%d>\n",
-              this, Task.get(),
-              ForRuleInfo ? ForRuleInfo->Rule.Key.c_str() : "(null)",
-              WaitCount);
-      for (const auto& Request: RequestedBy) {
+      fprintf(stderr,
+              "<TaskInfo:%p: task:%p, for-rule:\"%s\", wait-count:%d>\n",
+              this, task.get(),
+              forRuleInfo ? forRuleInfo->rule.key.c_str() : "(null)",
+              waitCount);
+      for (const auto& request: requestedBy) {
         fprintf(stderr, "  requested by: %s\n",
-                Request.TaskInfo->ForRuleInfo->Rule.Key.c_str());
+                request.taskInfo->forRuleInfo->rule.key.c_str());
       }
     }
 #endif    
   };
-  std::unordered_map<Task*, TaskInfo> TaskInfos;
+  std::unordered_map<Task*, TaskInfo> taskInfos;
 
   /// The queue of tasks ready to be finalized.
-  std::vector<TaskInfo*> ReadyTaskInfos;
+  std::vector<TaskInfo*> readyTaskInfos;
 
   /// The number tasks which have been readied but not yet finished.
-  unsigned NumOutstandingUnfinishedTasks = 0;
+  unsigned numOutstandingUnfinishedTasks = 0;
 
   /// The queue of tasks which are complete, accesses to this member variable
   /// must be protected via \see FinishedTaskInfosMutex.
-  std::vector<TaskInfo*> FinishedTaskInfos;
+  std::vector<TaskInfo*> finishedTaskInfos;
 
   /// The mutex that protects finished task infos.
-  std::mutex FinishedTaskInfosMutex;
+  std::mutex finishedTaskInfosMutex;
 
   /// This variable is used to signal when additional work is added to the
   /// FinishedTaskInfos queue, which the engine may need to wait on.
-  std::condition_variable FinishedTaskInfosCondition;
+  std::condition_variable finishedTaskInfosCondition;
 
 private:
   /// @name RuleScanRecord Allocation
@@ -284,39 +285,39 @@ private:
   // FIXME: This should be abstracted into a helper class.
 
   /// A free-list of RuleScanRecord objects.
-  std::vector<RuleScanRecord*> FreeRuleScanRecords;
+  std::vector<RuleScanRecord*> freeRuleScanRecords;
   /// The maximum number of free-list items to keep.
-  const size_t MaximumFreeRuleScanRecords = 8096;
+  const size_t maximumFreeRuleScanRecords = 8096;
   /// The list of blocks (of size \see NumScanRecordsPerBlock) we have
   /// allocated.
-  std::vector<RuleScanRecord*> RuleScanRecordBlocks;
+  std::vector<RuleScanRecord*> ruleScanRecordBlocks;
   /// The number of records to allocate per block.
-  const size_t NumScanRecordsPerBlock = 4096;
+  const size_t numScanRecordsPerBlock = 4096;
   /// The buffer positions of the current block.
-  RuleScanRecord* CurrentBlockPos = nullptr, * CurrentBlockEnd = nullptr;
+  RuleScanRecord* currentBlockPos = nullptr, * currentBlockEnd = nullptr;
 
   RuleScanRecord* newRuleScanRecord() {
     // If we have an item on the free list, return it.
-    if (!FreeRuleScanRecords.empty()) {
-      auto Result = FreeRuleScanRecords.back();
-      FreeRuleScanRecords.pop_back();
-      return Result;
+    if (!freeRuleScanRecords.empty()) {
+      auto result = freeRuleScanRecords.back();
+      freeRuleScanRecords.pop_back();
+      return result;
     }
 
     // If we are at the end of a block, allocate a new one.
-    if (CurrentBlockPos == CurrentBlockEnd) {
-      CurrentBlockPos = new RuleScanRecord[NumScanRecordsPerBlock];
-      RuleScanRecordBlocks.push_back(CurrentBlockPos);
-      CurrentBlockEnd = CurrentBlockPos + NumScanRecordsPerBlock;
+    if (currentBlockPos == currentBlockEnd) {
+      currentBlockPos = new RuleScanRecord[numScanRecordsPerBlock];
+      ruleScanRecordBlocks.push_back(currentBlockPos);
+      currentBlockEnd = currentBlockPos + numScanRecordsPerBlock;
     }
-    return CurrentBlockPos++;
+    return currentBlockPos++;
   }
 
-  void freeRuleScanRecord(RuleScanRecord* ScanRecord) {
-    if (FreeRuleScanRecords.size() < MaximumFreeRuleScanRecords) {
-      ScanRecord->PausedInputRequests.clear();
-      ScanRecord->DeferredScanRequests.clear();
-      FreeRuleScanRecords.push_back(ScanRecord);
+  void freeRuleScanRecord(RuleScanRecord* scanRecord) {
+    if (freeRuleScanRecords.size() < maximumFreeRuleScanRecords) {
+      scanRecord->pausedInputRequests.clear();
+      scanRecord->deferredScanRequests.clear();
+      freeRuleScanRecords.push_back(scanRecord);
     }
   }
 
@@ -330,45 +331,45 @@ private:
   ///
   /// \returns True if the rule is already scanned, otherwise the rule will be
   /// enqueued for processing.
-  bool scanRule(RuleInfo& RuleInfo) {
+  bool scanRule(RuleInfo& ruleInfo) {
     // If the rule is already scanned, we are done.
-    if (RuleInfo.isScanned(this))
+    if (ruleInfo.isScanned(this))
       return true;
 
     // If the rule is being scanned, we don't need to do anything.
-    if (RuleInfo.isScanning())
+    if (ruleInfo.isScanning())
       return false;
 
     // Otherwise, start scanning the rule.
-    if (Trace)
-      Trace->checkingRuleNeedsToRun(&RuleInfo.Rule);
+    if (trace)
+      trace->checkingRuleNeedsToRun(&ruleInfo.rule);
 
     // Report the status change.
-    if (RuleInfo.Rule.UpdateStatus)
-      RuleInfo.Rule.UpdateStatus(Rule::StatusKind::IsScanning);
+    if (ruleInfo.rule.updateStatus)
+      ruleInfo.rule.updateStatus(Rule::StatusKind::IsScanning);
 
     // If the rule has never been run, it needs to run.
-    if (RuleInfo.Result.BuiltAt == 0) {
-      if (Trace)
-        Trace->ruleNeedsToRunBecauseNeverBuilt(&RuleInfo.Rule);
-      RuleInfo.State = RuleInfo::StateKind::NeedsToRun;
+    if (ruleInfo.result.builtAt == 0) {
+      if (trace)
+        trace->ruleNeedsToRunBecauseNeverBuilt(&ruleInfo.rule);
+      ruleInfo.state = RuleInfo::StateKind::NeedsToRun;
       return true;
     }
 
     // If the rule indicates its computed value is out of date, it needs to run.
-    if (RuleInfo.Rule.IsResultValid &&
-        !RuleInfo.Rule.IsResultValid(RuleInfo.Rule, RuleInfo.Result.Value)) {
-      if (Trace)
-        Trace->ruleNeedsToRunBecauseInvalidValue(&RuleInfo.Rule);
-      RuleInfo.State = RuleInfo::StateKind::NeedsToRun;
+    if (ruleInfo.rule.isResultValid &&
+        !ruleInfo.rule.isResultValid(ruleInfo.rule, ruleInfo.result.value)) {
+      if (trace)
+        trace->ruleNeedsToRunBecauseInvalidValue(&ruleInfo.rule);
+      ruleInfo.state = RuleInfo::StateKind::NeedsToRun;
       return true;
     }
 
     // If the rule has no dependencies, then it is ready to run.
-    if (RuleInfo.Result.Dependencies.empty()) {
-      if (Trace)
-        Trace->ruleDoesNotNeedToRun(&RuleInfo.Rule);
-      RuleInfo.State = RuleInfo::StateKind::DoesNotNeedToRun;
+    if (ruleInfo.result.dependencies.empty()) {
+      if (trace)
+        trace->ruleDoesNotNeedToRun(&ruleInfo.rule);
+      ruleInfo.state = RuleInfo::StateKind::DoesNotNeedToRun;
       return true;
     }
 
@@ -378,11 +379,11 @@ private:
     // We could also take an approach where we enqueue each of the individual
     // inputs, but in my experiments with that approach it has always performed
     // significantly worse.
-    if (Trace)
-      Trace->ruleScheduledForScanning(&RuleInfo.Rule);
-    RuleInfo.State = RuleInfo::StateKind::IsScanning;
-    RuleInfo.setPendingScanRecord(newRuleScanRecord());
-    RuleInfosToScan.push_back({ &RuleInfo, /*InputIndex=*/0, nullptr });
+    if (trace)
+      trace->ruleScheduledForScanning(&ruleInfo.rule);
+    ruleInfo.state = RuleInfo::StateKind::IsScanning;
+    ruleInfo.setPendingScanRecord(newRuleScanRecord());
+    ruleInfosToScan.push_back({ &ruleInfo, /*InputIndex=*/0, nullptr });
 
     return false;
   }
@@ -391,57 +392,57 @@ private:
   ///
   /// \returns True if the rule is already available, otherwise the rule will be
   /// enqueued for processing.
-  bool demandRule(RuleInfo& RuleInfo) {
+  bool demandRule(RuleInfo& ruleInfo) {
     // The rule must have already been scanned.
-    assert(RuleInfo.isScanned(this));
+    assert(ruleInfo.isScanned(this));
 
     // If the rule is complete, we are done.
-    if (RuleInfo.isComplete(this))
+    if (ruleInfo.isComplete(this))
       return true;
 
     // If the rule is in progress, we don't need to do anything.
-    if (RuleInfo.isInProgress())
+    if (ruleInfo.isInProgress())
       return false;
 
     // If the rule isn't marked complete, but doesn't need to actually run, then
     // just update it.
-    if (RuleInfo.State == RuleInfo::StateKind::DoesNotNeedToRun) {
-      RuleInfo.setComplete(this);
+    if (ruleInfo.state == RuleInfo::StateKind::DoesNotNeedToRun) {
+      ruleInfo.setComplete(this);
 
       // Report the status change.
-      if (RuleInfo.Rule.UpdateStatus)
-        RuleInfo.Rule.UpdateStatus(Rule::StatusKind::IsComplete);
+      if (ruleInfo.rule.updateStatus)
+        ruleInfo.rule.updateStatus(Rule::StatusKind::IsComplete);
 
       return true;
     }
 
     // Otherwise, we actually need to initiate the processing of this rule.
-    assert(RuleInfo.State == RuleInfo::StateKind::NeedsToRun);
+    assert(ruleInfo.state == RuleInfo::StateKind::NeedsToRun);
 
     // Create the task for this rule.
-    Task* Task = RuleInfo.Rule.Action(BuildEngine);
+    Task* task = ruleInfo.rule.action(buildEngine);
 
     // Find the task info for this task.
-    auto it = TaskInfos.find(Task);
-    assert(it != TaskInfos.end() &&
+    auto it = taskInfos.find(task);
+    assert(it != taskInfos.end() &&
            "rule action returned an unregistered task");
-    TaskInfo* TaskInfo = &it->second;
-    TaskInfo->ForRuleInfo = &RuleInfo;
+    TaskInfo* taskInfo = &it->second;
+    taskInfo->forRuleInfo = &ruleInfo;
 
-    if (Trace)
-      Trace->createdTaskForRule(TaskInfo->Task.get(), &RuleInfo.Rule);
+    if (trace)
+      trace->createdTaskForRule(taskInfo->task.get(), &ruleInfo.rule);
 
     // Transition the rule state.
-    RuleInfo.State = RuleInfo::StateKind::InProgressWaiting;
-    RuleInfo.setPendingTaskInfo(TaskInfo);
+    ruleInfo.state = RuleInfo::StateKind::InProgressWaiting;
+    ruleInfo.setPendingTaskInfo(taskInfo);
 
     // Reset the Rule Dependencies, which we just append to during processing,
     // but we reset the others to ensure no one ever inadvertently uses them
     // during an invalid state.
-    RuleInfo.Result.Dependencies.clear();
+    ruleInfo.result.dependencies.clear();
 
     // Inform the task it should start.
-    Task->start(BuildEngine);
+    task->start(buildEngine);
 
     // Provide the task the prior result, if present.
     //
@@ -449,13 +450,13 @@ private:
     // alternately, maybe there should just be an API call to fetch this, and
     // the clients that want it can ask? It's cheap to provide here, so
     // ultimately this is mostly a matter of cleanliness.
-    if (RuleInfo.Result.BuiltAt != 0) {
-      Task->providePriorValue(BuildEngine, RuleInfo.Result.Value);
+    if (ruleInfo.result.builtAt != 0) {
+      task->providePriorValue(buildEngine, ruleInfo.result.value);
     }
 
     // If this task has no waiters, schedule it immediately for finalization.
-    if (!TaskInfo->WaitCount) {
-      ReadyTaskInfos.push_back(TaskInfo);
+    if (!taskInfo->waitCount) {
+      readyTaskInfos.push_back(taskInfo);
     }
 
     return false;
@@ -465,195 +466,195 @@ private:
   ///
   /// This will process all of the inputs required by the requesting rule, in
   /// order, unless the scan needs to be deferred waiting for an input.
-  void processRuleScanRequest(RuleScanRequest Request) {
-    auto& RuleInfo = *Request.RuleInfo;
+  void processRuleScanRequest(RuleScanRequest request) {
+    auto& ruleInfo = *request.ruleInfo;
 
-    assert(RuleInfo.isScanning());
+    assert(ruleInfo.isScanning());
 
     // Process each of the remaining inputs.
     do {
       // Look up the input rule info, if not yet cached.
-      if (!Request.InputRuleInfo) {
-        const auto& InputKey = RuleInfo.Result.Dependencies[Request.InputIndex];
-        Request.InputRuleInfo = &getRuleInfoForKey(InputKey);
+      if (!request.inputRuleInfo) {
+        const auto& inputKey = ruleInfo.result.dependencies[request.inputIndex];
+        request.inputRuleInfo = &getRuleInfoForKey(inputKey);
       }
-      auto& InputRuleInfo = *Request.InputRuleInfo;
+      auto& inputRuleInfo = *request.inputRuleInfo;
 
       // Scan the input.
-      bool IsScanned = scanRule(InputRuleInfo);
+      bool isScanned = scanRule(inputRuleInfo);
 
       // If the input isn't scanned yet, enqueue this input scan request.
-      if (!IsScanned) {
-        assert(InputRuleInfo.isScanning());
-        if (Trace)
-          Trace->ruleScanningDeferredOnInput(&RuleInfo.Rule,
-                                             &InputRuleInfo.Rule);
-        InputRuleInfo.getPendingScanRecord()
-          ->DeferredScanRequests.push_back(Request);
+      if (!isScanned) {
+        assert(inputRuleInfo.isScanning());
+        if (trace)
+          trace->ruleScanningDeferredOnInput(&ruleInfo.rule,
+                                             &inputRuleInfo.rule);
+        inputRuleInfo.getPendingScanRecord()
+          ->deferredScanRequests.push_back(request);
         return;
       }
 
-      if (Trace)
-        Trace->ruleScanningNextInput(&RuleInfo.Rule, &InputRuleInfo.Rule);
+      if (trace)
+        trace->ruleScanningNextInput(&ruleInfo.rule, &inputRuleInfo.rule);
 
       // Demand the input.
-      bool IsAvailable = demandRule(InputRuleInfo);
+      bool isAvailable = demandRule(inputRuleInfo);
 
       // If the input isn't already available, enqueue this scan request on the
       // input.
       //
       // FIXME: We need to continue scanning the rest of the inputs to ensure we
       // are not delaying necessary work. See <rdar://problem/20248283>.
-      if (!IsAvailable) {
-        if (Trace)
-          Trace->ruleScanningDeferredOnTask(
-            &RuleInfo.Rule, InputRuleInfo.getPendingTaskInfo()->Task.get());
-        assert(InputRuleInfo.isInProgress());
-        InputRuleInfo.getPendingTaskInfo()->
-            DeferredScanRequests.push_back(Request);
+      if (!isAvailable) {
+        if (trace)
+          trace->ruleScanningDeferredOnTask(
+            &ruleInfo.rule, inputRuleInfo.getPendingTaskInfo()->task.get());
+        assert(inputRuleInfo.isInProgress());
+        inputRuleInfo.getPendingTaskInfo()->
+            deferredScanRequests.push_back(request);
         return;
       }
 
       // If the input has been computed since the last time this rule was
       // built, it needs to run.
-      if (RuleInfo.Result.BuiltAt < InputRuleInfo.Result.ComputedAt) {
-        if (Trace)
-          Trace->ruleNeedsToRunBecauseInputRebuilt(
-            &RuleInfo.Rule, &InputRuleInfo.Rule);
-        finishScanRequest(RuleInfo, RuleInfo::StateKind::NeedsToRun);
+      if (ruleInfo.result.builtAt < inputRuleInfo.result.computedAt) {
+        if (trace)
+          trace->ruleNeedsToRunBecauseInputRebuilt(
+            &ruleInfo.rule, &inputRuleInfo.rule);
+        finishScanRequest(ruleInfo, RuleInfo::StateKind::NeedsToRun);
         return;
       }
 
       // Otherwise, increment the scan index.
-      ++Request.InputIndex;
-      Request.InputRuleInfo = nullptr;
-    } while (Request.InputIndex != RuleInfo.Result.Dependencies.size());
+      ++request.inputIndex;
+      request.inputRuleInfo = nullptr;
+    } while (request.inputIndex != ruleInfo.result.dependencies.size());
 
     // If we reached the end of the inputs, the rule does not need to run.
-    if (Trace)
-      Trace->ruleDoesNotNeedToRun(&RuleInfo.Rule);
-    finishScanRequest(RuleInfo, RuleInfo::StateKind::DoesNotNeedToRun);
+    if (trace)
+      trace->ruleDoesNotNeedToRun(&ruleInfo.rule);
+    finishScanRequest(ruleInfo, RuleInfo::StateKind::DoesNotNeedToRun);
   }
 
-  void finishScanRequest(RuleInfo& InputRuleInfo,
-                         RuleInfo::StateKind NewState) {
-    assert(InputRuleInfo.isScanning());
-    auto ScanRecord = InputRuleInfo.getPendingScanRecord();
+  void finishScanRequest(RuleInfo& inputRuleInfo,
+                         RuleInfo::StateKind newState) {
+    assert(inputRuleInfo.isScanning());
+    auto scanRecord = inputRuleInfo.getPendingScanRecord();
 
     // Wake up all of the pending scan requests.
-    for (const auto& Request: ScanRecord->DeferredScanRequests) {
-      RuleInfosToScan.push_back(Request);
+    for (const auto& request: scanRecord->deferredScanRequests) {
+      ruleInfosToScan.push_back(request);
     }
 
     // Wake up all of the input requests on this rule.
-    for (const auto& Request: ScanRecord->PausedInputRequests) {
-      InputRequests.push_back(Request);
+    for (const auto& request: scanRecord->pausedInputRequests) {
+      inputRequests.push_back(request);
     }
 
     // Update the rule state.
-    freeRuleScanRecord(ScanRecord);
-    InputRuleInfo.setPendingScanRecord(nullptr);
-    InputRuleInfo.State = NewState;
+    freeRuleScanRecord(scanRecord);
+    inputRuleInfo.setPendingScanRecord(nullptr);
+    inputRuleInfo.state = newState;
   }
 
   /// Decrement the task's wait count, and move it to the ready queue if
   /// necessary.
-  void decrementTaskWaitCount(TaskInfo* TaskInfo) {
-    --TaskInfo->WaitCount;
-    if (Trace)
-      Trace->updatedTaskWaitCount(TaskInfo->Task.get(), TaskInfo->WaitCount);
-    if (TaskInfo->WaitCount == 0) {
-      if (Trace)
-        Trace->unblockedTask(TaskInfo->Task.get());
-      ReadyTaskInfos.push_back(TaskInfo);
+  void decrementTaskWaitCount(TaskInfo* taskInfo) {
+    --taskInfo->waitCount;
+    if (trace)
+      trace->updatedTaskWaitCount(taskInfo->task.get(), taskInfo->waitCount);
+    if (taskInfo->waitCount == 0) {
+      if (trace)
+        trace->unblockedTask(taskInfo->task.get());
+      readyTaskInfos.push_back(taskInfo);
     }
   }
 
   /// Execute all of the work pending in the engine queues until they are empty.
   void executeTasks() {
-    std::vector<TaskInputRequest> FinishedInputRequests;
+    std::vector<TaskInputRequest> finishedInputRequests;
 
     // Process requests as long as we have work to do.
     while (true) {
-      bool DidWork = false;
+      bool didWork = false;
 
       // Process all of the pending rule scan requests.
       //
       // FIXME: We don't want to process all of these requests, this amounts to
       // doing all of the dependency scanning up-front.
-      while (!RuleInfosToScan.empty()) {
-        DidWork = true;
+      while (!ruleInfosToScan.empty()) {
+        didWork = true;
 
-        auto Request = RuleInfosToScan.back();
-        RuleInfosToScan.pop_back();
+        auto request = ruleInfosToScan.back();
+        ruleInfosToScan.pop_back();
 
-        processRuleScanRequest(Request);
+        processRuleScanRequest(request);
       }
 
       // Process all of the pending input requests.
-      while (!InputRequests.empty()) {
-        DidWork = true;
+      while (!inputRequests.empty()) {
+        didWork = true;
 
-        auto Request = InputRequests.back();
-        InputRequests.pop_back();
+        auto request = inputRequests.back();
+        inputRequests.pop_back();
 
-        if (Trace) {
-          if (Request.TaskInfo) {
-            Trace->handlingTaskInputRequest(Request.TaskInfo->Task.get(),
-                                            &Request.InputRuleInfo->Rule);
+        if (trace) {
+          if (request.taskInfo) {
+            trace->handlingTaskInputRequest(request.taskInfo->task.get(),
+                                            &request.inputRuleInfo->rule);
           } else {
-            Trace->handlingBuildInputRequest(&Request.InputRuleInfo->Rule);
+            trace->handlingBuildInputRequest(&request.inputRuleInfo->rule);
           }
         }
 
         // Request the input rule be scanned.
-        bool IsScanned = scanRule(*Request.InputRuleInfo);
+        bool isScanned = scanRule(*request.inputRuleInfo);
 
         // If the rule is not yet scanned, suspend this input request.
-        if (!IsScanned) {
-          assert(Request.InputRuleInfo->isScanning());
-          if (Trace)
-            Trace->pausedInputRequestForRuleScan(
-              &Request.InputRuleInfo->Rule);
-          Request.InputRuleInfo->getPendingScanRecord()
-            ->PausedInputRequests.push_back(Request);
+        if (!isScanned) {
+          assert(request.inputRuleInfo->isScanning());
+          if (trace)
+            trace->pausedInputRequestForRuleScan(
+              &request.inputRuleInfo->rule);
+          request.inputRuleInfo->getPendingScanRecord()
+            ->pausedInputRequests.push_back(request);
           continue;
         }
 
         // Request the input rule be computed.
-        bool IsAvailable = demandRule(*Request.InputRuleInfo);
+        bool isAvailable = demandRule(*request.inputRuleInfo);
 
         // If this is a dummy input request, we are done.
-        if (!Request.TaskInfo)
+        if (!request.taskInfo)
           continue;
 
         // If the rule is already available, enqueue the finalize request.
-        if (IsAvailable) {
-          if (Trace)
-            Trace->readyingTaskInputRequest(Request.TaskInfo->Task.get(),
-                                            &Request.InputRuleInfo->Rule);
-          FinishedInputRequests.push_back(Request);
+        if (isAvailable) {
+          if (trace)
+            trace->readyingTaskInputRequest(request.taskInfo->task.get(),
+                                            &request.inputRuleInfo->rule);
+          finishedInputRequests.push_back(request);
         } else {
           // Otherwise, record the pending input request.
-          assert(Request.InputRuleInfo->getPendingTaskInfo());
-          if (Trace)
-            Trace->addedRulePendingTask(&Request.InputRuleInfo->Rule,
-                                        Request.TaskInfo->Task.get());
-          Request.InputRuleInfo->getPendingTaskInfo()->RequestedBy.push_back(
-            Request);
+          assert(request.inputRuleInfo->getPendingTaskInfo());
+          if (trace)
+            trace->addedRulePendingTask(&request.inputRuleInfo->rule,
+                                        request.taskInfo->task.get());
+          request.inputRuleInfo->getPendingTaskInfo()->requestedBy.push_back(
+            request);
         }
       }
 
       // Process all of the finished inputs.
-      while (!FinishedInputRequests.empty()) {
-        DidWork = true;
+      while (!finishedInputRequests.empty()) {
+        didWork = true;
 
-        auto Request = FinishedInputRequests.back();
-        FinishedInputRequests.pop_back();
+        auto request = finishedInputRequests.back();
+        finishedInputRequests.pop_back();
 
-        if (Trace)
-          Trace->completedTaskInputRequest(Request.TaskInfo->Task.get(),
-                                           &Request.InputRuleInfo->Rule);
+        if (trace)
+          trace->completedTaskInputRequest(request.taskInfo->task.get(),
+                                           &request.inputRuleInfo->rule);
 
         // If this is a must follow input, we simply decrement the task wait
         // count.
@@ -661,8 +662,8 @@ private:
         // This works because must follow inputs do not need to be recorded or
         // scanned -- they are only relevant if the task is executing, in which
         // case it is responsible for having supplied the request.
-        if (Request.InputID == kMustFollowInputID) {
-          decrementTaskWaitCount(Request.TaskInfo);
+        if (request.inputID == kMustFollowInputID) {
+          decrementTaskWaitCount(request.taskInfo);
           continue;
         }
 
@@ -679,93 +680,93 @@ private:
         // * Record at the time it is requested.
         // * Record at the time it is popped off the input request queue.
         // * Record at the time the input is supplied (here).
-        Request.TaskInfo->ForRuleInfo->Result.Dependencies.push_back(
-          Request.InputRuleInfo->Rule.Key);
+        request.taskInfo->forRuleInfo->result.dependencies.push_back(
+          request.inputRuleInfo->rule.key);
 
         // Provide the requesting task with the input.
         //
         // FIXME: Should we provide the input key here? We have it available
         // cheaply.
-        assert(Request.InputRuleInfo->isComplete(this));
-        Request.TaskInfo->Task->provideValue(
-          BuildEngine, Request.InputID, Request.InputRuleInfo->Result.Value);
+        assert(request.inputRuleInfo->isComplete(this));
+        request.taskInfo->task->provideValue(
+          buildEngine, request.inputID, request.inputRuleInfo->result.value);
 
         // Decrement the wait count, and move to finish queue if necessary.
-        decrementTaskWaitCount(Request.TaskInfo);
+        decrementTaskWaitCount(request.taskInfo);
       }
 
       // Process all of the ready to run tasks.
-      while (!ReadyTaskInfos.empty()) {
-        DidWork = true;
+      while (!readyTaskInfos.empty()) {
+        didWork = true;
 
-        TaskInfo* TaskInfo = ReadyTaskInfos.back();
-        ReadyTaskInfos.pop_back();
+        TaskInfo* taskInfo = readyTaskInfos.back();
+        readyTaskInfos.pop_back();
 
-        RuleInfo* RuleInfo = TaskInfo->ForRuleInfo;
-        assert(TaskInfo == RuleInfo->getPendingTaskInfo());
+        RuleInfo* ruleInfo = taskInfo->forRuleInfo;
+        assert(taskInfo == ruleInfo->getPendingTaskInfo());
 
-        if (Trace)
-            Trace->readiedTask(TaskInfo->Task.get(), &RuleInfo->Rule);
+        if (trace)
+            trace->readiedTask(taskInfo->task.get(), &ruleInfo->rule);
 
         // Transition the rule state.
-        assert(RuleInfo->isInProgressWaiting());
-        RuleInfo->State = RuleInfo::StateKind::InProgressComputing;
+        assert(ruleInfo->isInProgressWaiting());
+        ruleInfo->state = RuleInfo::StateKind::InProgressComputing;
 
         // Inform the task its inputs are ready and it should finish.
         //
         // FIXME: We need to track this state, and generate an error if this
         // task ever requests additional inputs.
-        TaskInfo->Task->inputsAvailable(BuildEngine);
+        taskInfo->task->inputsAvailable(buildEngine);
 
         // Increment our count of outstanding tasks.
-        ++NumOutstandingUnfinishedTasks;
+        ++numOutstandingUnfinishedTasks;
       }
 
       // Process all of the finished tasks.
       while (true) {
         // Try to take a task from the finished queue.
-        TaskInfo* TaskInfo = nullptr;
+        TaskInfo* taskInfo = nullptr;
         {
-          std::lock_guard<std::mutex> Guard(FinishedTaskInfosMutex);
-          if (!FinishedTaskInfos.empty()) {
-            TaskInfo = FinishedTaskInfos.back();
-            FinishedTaskInfos.pop_back();
+          std::lock_guard<std::mutex> guard(finishedTaskInfosMutex);
+          if (!finishedTaskInfos.empty()) {
+            taskInfo = finishedTaskInfos.back();
+            finishedTaskInfos.pop_back();
           }
         }
-        if (!TaskInfo)
+        if (!taskInfo)
           break;
 
-        DidWork = true;
+        didWork = true;
 
-        RuleInfo* RuleInfo = TaskInfo->ForRuleInfo;
-        assert(TaskInfo == RuleInfo->getPendingTaskInfo());
+        RuleInfo* ruleInfo = taskInfo->forRuleInfo;
+        assert(taskInfo == ruleInfo->getPendingTaskInfo());
 
         // The task was changed if was computed in the current iteration.
-        if (Trace) {
-          bool WasChanged = RuleInfo->Result.ComputedAt == CurrentTimestamp;
-          Trace->finishedTask(TaskInfo->Task.get(), &RuleInfo->Rule,
-                              WasChanged);
+        if (trace) {
+          bool wasChanged = ruleInfo->result.computedAt == currentTimestamp;
+          trace->finishedTask(taskInfo->task.get(), &ruleInfo->rule,
+                              wasChanged);
         }
 
         // Transition the rule state by completing the rule (the value itself is
         // stored in the taskIsFinished call).
-        assert(RuleInfo->State == RuleInfo::StateKind::InProgressComputing);
-        RuleInfo->setPendingTaskInfo(nullptr);
-        RuleInfo->setComplete(this);
+        assert(ruleInfo->state == RuleInfo::StateKind::InProgressComputing);
+        ruleInfo->setPendingTaskInfo(nullptr);
+        ruleInfo->setComplete(this);
 
         // Report the status change.
-        if (RuleInfo->Rule.UpdateStatus)
-          RuleInfo->Rule.UpdateStatus(Rule::StatusKind::IsComplete);
+        if (ruleInfo->rule.updateStatus)
+          ruleInfo->rule.updateStatus(Rule::StatusKind::IsComplete);
 
         // Add all of the task's discovered dependencies.
         //
         // FIXME: We could audit these dependencies at this point to verify that
         // they are not keys for rules which have not been run, which would
         // indicate an underspecified build (e.g., a generated header).
-        RuleInfo->Result.Dependencies.insert(
-          RuleInfo->Result.Dependencies.begin(),
-          TaskInfo->DiscoveredDependencies.begin(),
-          TaskInfo->DiscoveredDependencies.end());
+        ruleInfo->result.dependencies.insert(
+          ruleInfo->result.dependencies.begin(),
+          taskInfo->discoveredDependencies.begin(),
+          taskInfo->discoveredDependencies.end());
 
         // Push back dummy input requests for any discovered dependencies, which
         // must be at least built in order to be brought up-to-date.
@@ -774,176 +775,176 @@ private:
         // approach for discovered dependencies instead of just providing
         // support for taskNeedsInput() even after the task has started
         // computing and from parallel contexts.
-        for (const auto& InputKey: TaskInfo->DiscoveredDependencies) {
-          InputRequests.push_back({ nullptr, &getRuleInfoForKey(InputKey) });
+        for (const auto& inputKey: taskInfo->discoveredDependencies) {
+          inputRequests.push_back({ nullptr, &getRuleInfoForKey(inputKey) });
         }
 
         // Update the database record, if attached.
-        if (DB)
-            DB->setRuleResult(RuleInfo->Rule, RuleInfo->Result);
+        if (db)
+            db->setRuleResult(ruleInfo->rule, ruleInfo->result);
 
         // Wake up all of the pending scan requests.
-        for (const auto& Request: TaskInfo->DeferredScanRequests) {
-          RuleInfosToScan.push_back(Request);
+        for (const auto& request: taskInfo->deferredScanRequests) {
+          ruleInfosToScan.push_back(request);
         }
 
         // Push all pending input requests onto the work queue.
-        if (Trace) {
-          for (auto& Request: TaskInfo->RequestedBy) {
-            Trace->readyingTaskInputRequest(Request.TaskInfo->Task.get(),
-                                            &Request.InputRuleInfo->Rule);
+        if (trace) {
+          for (auto& request: taskInfo->requestedBy) {
+            trace->readyingTaskInputRequest(request.taskInfo->task.get(),
+                                            &request.inputRuleInfo->rule);
           }
         }
-        FinishedInputRequests.insert(FinishedInputRequests.end(),
-                                     TaskInfo->RequestedBy.begin(),
-                                     TaskInfo->RequestedBy.end());
+        finishedInputRequests.insert(finishedInputRequests.end(),
+                                     taskInfo->requestedBy.begin(),
+                                     taskInfo->requestedBy.end());
 
         // Decrement our count of outstanding tasks.
-        --NumOutstandingUnfinishedTasks;
+        --numOutstandingUnfinishedTasks;
 
         // Delete the pending task.
-        auto it = TaskInfos.find(TaskInfo->Task.get());
-        assert(it != TaskInfos.end());
-        TaskInfos.erase(it);
+        auto it = taskInfos.find(taskInfo->task.get());
+        assert(it != taskInfos.end());
+        taskInfos.erase(it);
       }
 
       // If we haven't done any other work at this point but we have pending
       // tasks, we need to wait for a task to complete.
-      if (!DidWork && NumOutstandingUnfinishedTasks != 0) {
+      if (!didWork && numOutstandingUnfinishedTasks != 0) {
         // Wait for our condition variable.
-        std::unique_lock<std::mutex> Lock(FinishedTaskInfosMutex);
+        std::unique_lock<std::mutex> lock(finishedTaskInfosMutex);
 
         // Ensure we still don't have enqueued operations under the protection
         // of the mutex, if one has been added then we may have already missed
         // the condition notification and cannot safely wait.
-        if (FinishedTaskInfos.empty()) {
-            FinishedTaskInfosCondition.wait(Lock);
+        if (finishedTaskInfos.empty()) {
+            finishedTaskInfosCondition.wait(lock);
         }
 
-        DidWork = true;
+        didWork = true;
       }
 
       // If we didn't do any work, we are done.
-      if (!DidWork)
+      if (!didWork)
         break;
     }
 
     // If there was no work to do, but we still have running tasks, then
     // we have found a cycle and are deadlocked.
-    if (!TaskInfos.empty()) {
+    if (!taskInfos.empty()) {
       reportCycle();
     }
   }
 
   void reportCycle() {
     // Gather all of the successor relationships.
-    std::unordered_map<Rule*, std::vector<Rule*>> Graph;
-    for (const auto& it: TaskInfos) {
-      const TaskInfo& TaskInfo = it.second;
-      assert(TaskInfo.ForRuleInfo);
-      std::vector<Rule*> Successors;
-      for (const auto& Request: TaskInfo.RequestedBy) {
-        assert(Request.TaskInfo->ForRuleInfo);
-        Successors.push_back(&Request.TaskInfo->ForRuleInfo->Rule);
+    std::unordered_map<Rule*, std::vector<Rule*>> graph;
+    for (const auto& it: taskInfos) {
+      const TaskInfo& taskInfo = it.second;
+      assert(taskInfo.forRuleInfo);
+      std::vector<Rule*> successors;
+      for (const auto& request: taskInfo.requestedBy) {
+        assert(request.taskInfo->forRuleInfo);
+        successors.push_back(&request.taskInfo->forRuleInfo->rule);
       }
-      Graph.insert({ &TaskInfo.ForRuleInfo->Rule, Successors });
+      graph.insert({ &taskInfo.forRuleInfo->rule, successors });
     }
 
     // Find the cycle, which should be reachable from any remaining node.
     //
     // FIXME: Need a setvector.
-    std::vector<Rule*> CycleList;
-    std::unordered_set<Rule*> CycleItems;
-    std::function<bool(Rule*)> FindCycle;
-    FindCycle = [&](Rule* Node) {
+    std::vector<Rule*> cycleList;
+    std::unordered_set<Rule*> cycleItems;
+    std::function<bool(Rule*)> findCycle;
+    findCycle = [&](Rule* node) {
       // Push the node on the stack.
-      CycleList.push_back(Node);
-      auto it = CycleItems.insert(Node);
+      cycleList.push_back(node);
+      auto it = cycleItems.insert(node);
 
       // If the node is already in the stack, we found the cycle.
       if (!it.second)
         return true;
 
       // Otherwise, iterate over each successor looking for a cycle.
-      for (Rule* Successor: Graph[Node]) {
-        if (FindCycle(Successor))
+      for (Rule* successor: graph[node]) {
+        if (findCycle(successor))
           return true;
       }
 
       // If we didn't find the cycle, pop this item.
-      CycleItems.erase(it.first);
-      CycleList.pop_back();
+      cycleItems.erase(it.first);
+      cycleList.pop_back();
       return false;
     };
 
     // Iterate through the graph keys in a deterministic order.
-    std::vector<Rule*> OrderedKeys;
-    for (auto& Entry: Graph)
-      OrderedKeys.push_back(Entry.first);
-    std::sort(OrderedKeys.begin(), OrderedKeys.end(), [] (Rule* a, Rule* b) {
-        return a->Key < b->Key;
+    std::vector<Rule*> orderedKeys;
+    for (auto& entry: graph)
+      orderedKeys.push_back(entry.first);
+    std::sort(orderedKeys.begin(), orderedKeys.end(), [] (Rule* a, Rule* b) {
+        return a->key < b->key;
       });
-    for (const auto& Key: OrderedKeys) {
-      if (FindCycle(Key))
+    for (const auto& key: orderedKeys) {
+      if (findCycle(key))
         break;
     }
-    assert(!CycleList.empty());
+    assert(!cycleList.empty());
 
     // Reverse the cycle list, since it was formed from the successor graph.
-    std::reverse(CycleList.begin(), CycleList.end());
+    std::reverse(cycleList.begin(), cycleList.end());
 
-    Delegate.cycleDetected(CycleList);
+    delegate.cycleDetected(cycleList);
 
     // Complete all of the remaining tasks.
     //
     // FIXME: Should we have a task abort callback?
-    for (auto& it: TaskInfos) {
+    for (auto& it: taskInfos) {
       // Complete the task, even though it did not update the value.
       //
       // FIXME: What should we do here with the value?
-      TaskInfo* TaskInfo = &it.second;
-      RuleInfo* RuleInfo = TaskInfo->ForRuleInfo;
-      assert(TaskInfo == RuleInfo->getPendingTaskInfo());
-      RuleInfo->setPendingTaskInfo(nullptr);
-      RuleInfo->setComplete(this);
+      TaskInfo* taskInfo = &it.second;
+      RuleInfo* ruleInfo = taskInfo->forRuleInfo;
+      assert(taskInfo == ruleInfo->getPendingTaskInfo());
+      ruleInfo->setPendingTaskInfo(nullptr);
+      ruleInfo->setComplete(this);
     }
 
     // Delete all of the tasks.
-    TaskInfos.clear();
+    taskInfos.clear();
   }
 
 public:
-  BuildEngineImpl(class BuildEngine& BuildEngine,
-                  BuildEngineDelegate& Delegate)
-    : BuildEngine(BuildEngine), Delegate(Delegate) {}
+  BuildEngineimpl(class BuildEngine& buildEngine,
+                  BuildEngineDelegate& delegate)
+    : buildEngine(buildEngine), delegate(delegate) {}
 
-  ~BuildEngineImpl() {
+  ~BuildEngineimpl() {
     // If tracing is enabled, close it.
-    if (Trace) {
-      std::string Error;
-      Trace->close(&Error);
+    if (trace) {
+      std::string error;
+      trace->close(&error);
     }
   }
 
-  RuleInfo& getRuleInfoForKey(const KeyType& Key) {
+  RuleInfo& getRuleInfoForKey(const KeyType& key) {
     // Check if we have already found the rule.
-    auto it = RuleInfos.find(Key);
-    if (it != RuleInfos.end())
+    auto it = ruleInfos.find(key);
+    if (it != ruleInfos.end())
       return it->second;
 
     // Otherwise, request it from the delegate and add it.
-    return addRule(Delegate.lookupRule(Key));
+    return addRule(delegate.lookupRule(key));
   }
 
   /// @name Rule Definition
   /// @{
 
-  RuleInfo& addRule(Rule &&Rule) {
-    auto Result = RuleInfos.emplace(Rule.Key, RuleInfo(std::move(Rule)));
-    if (!Result.second) {
+  RuleInfo& addRule(Rule&& rule) {
+    auto result = ruleInfos.emplace(rule.key, RuleInfo(std::move(rule)));
+    if (!result.second) {
       // FIXME: Error handling.
       std::cerr << "error: attempt to register duplicate rule \""
-                << Rule.Key << "\"\n";
+                << rule.key << "\"\n";
       exit(1);
     }
 
@@ -952,12 +953,12 @@ public:
     // FIXME: Investigate retrieving this result lazily. If the DB is
     // particularly efficient, it may be best to retrieve this only when we need
     // it and never duplicate it.
-    RuleInfo& RuleInfo = Result.first->second;
-    if (DB) {
-      DB->lookupRuleResult(RuleInfo.Rule, &RuleInfo.Result);
+    RuleInfo& ruleInfo = result.first->second;
+    if (db) {
+      db->lookupRuleResult(ruleInfo.rule, &ruleInfo.result);
     }
 
-    return RuleInfo;
+    return ruleInfo;
   }
 
   /// @}
@@ -965,28 +966,28 @@ public:
   /// @name Client API
   /// @{
 
-  const ValueType& build(const KeyType& Key) {
-    if (DB)
-      DB->buildStarted();
+  const ValueType& build(const KeyType& key) {
+    if (db)
+      db->buildStarted();
 
     // Increment our running iteration count.
     //
     // At this point, we should conceptually mark each complete rule as
     // incomplete. However, instead of doing all that work immediately, we
-    // perform it lazily by reusing the Result::BuiltAt field for each rule as
-    // an additional mark. When a rule is demanded, if its BuiltAt index isn't
+    // perform it lazily by reusing the Result::builtAt field for each rule as
+    // an additional mark. When a rule is demanded, if its builtAt index isn't
     // up-to-date then we lazily reset it to be Incomplete, \see demandRule()
     // and \see RuleInfo::isComplete().
-    ++CurrentTimestamp;
+    ++currentTimestamp;
 
     // Find the rule.
-    auto& RuleInfo = getRuleInfoForKey(Key);
+    auto& ruleInfo = getRuleInfoForKey(key);
 
-    if (Trace)
-      Trace->buildStarted();
+    if (trace)
+      trace->buildStarted();
 
     // Push a dummy input request for this rule.
-    InputRequests.push_back({ nullptr, &RuleInfo });
+    inputRequests.push_back({ nullptr, &ruleInfo });
 
     // Run the build engine, to process any necessary tasks.
     executeTasks();
@@ -994,106 +995,106 @@ public:
     // Update the build database, if attached.
     //
     // FIXME: Is it correct to do this here, or earlier?
-    if (DB) {
-      DB->setCurrentIteration(CurrentTimestamp);
-      DB->buildComplete();
+    if (db) {
+      db->setCurrentIteration(currentTimestamp);
+      db->buildComplete();
     }
 
-    if (Trace)
-      Trace->buildEnded();
+    if (trace)
+      trace->buildEnded();
 
     // Clear the rule scan free-lists.
     //
     // FIXME: Introduce a per-build context object to hold this.
-    for (auto Block: RuleScanRecordBlocks)
-      delete[] Block;
-    CurrentBlockPos = CurrentBlockEnd = nullptr;
-    FreeRuleScanRecords.clear();
-    RuleScanRecordBlocks.clear();
+    for (auto block: ruleScanRecordBlocks)
+      delete[] block;
+    currentBlockPos = currentBlockEnd = nullptr;
+    freeRuleScanRecords.clear();
+    ruleScanRecordBlocks.clear();
 
     // The task queue should be empty and the rule complete.
-    assert(TaskInfos.empty() && RuleInfo.isComplete(this));
-    return RuleInfo.Result.Value;
+    assert(taskInfos.empty() && ruleInfo.isComplete(this));
+    return ruleInfo.result.value;
   }
 
-  void attachDB(std::unique_ptr<BuildDB> Database) {
-    assert(!DB && "invalid attachDB() call");
-    assert(CurrentTimestamp == 0 && "invalid attachDB() call");
-    assert(RuleInfos.empty() && "invalid attachDB() call");
-    DB = std::move(Database);
+  void attachDB(std::unique_ptr<BuildDB> database) {
+    assert(!db && "invalid attachDB() call");
+    assert(currentTimestamp == 0 && "invalid attachDB() call");
+    assert(ruleInfos.empty() && "invalid attachDB() call");
+    db = std::move(database);
 
     // Load our initial state from the database.
-    CurrentTimestamp = DB->getCurrentIteration();
+    currentTimestamp = db->getCurrentIteration();
   }
 
-  bool enableTracing(const std::string& Filename, std::string* Error_Out) {
-    std::unique_ptr<BuildEngineTrace> Trace(new BuildEngineTrace());
+  bool enableTracing(const std::string& filename, std::string* error_out) {
+    std::unique_ptr<BuildEngineTrace> trace(new BuildEngineTrace());
 
-    if (!Trace->open(Filename, Error_Out))
+    if (!trace->open(filename, error_out))
       return false;
 
-    this->Trace = std::move(Trace);
+    this->trace = std::move(trace);
     return true;
   }
 
   /// Dump the build state to a file in Graphviz DOT format.
-  void dumpGraphToFile(const std::string &Path) {
-    FILE* FP = ::fopen(Path.c_str(), "w");
-    if (!FP) {
+  void dumpGraphToFile(const std::string& path) {
+    FILE* fp = ::fopen(path.c_str(), "w");
+    if (!fp) {
       // FIXME: Error handling.
       std::cerr << "error: unable to open graph output path \""
-                << Path << "\"\n";
+                << path << "\"\n";
       exit(1);
     }
 
     // Write the graph header.
-    fprintf(FP, "digraph llbuild {\n");
-    fprintf(FP, "rankdir=\"LR\"\n");
-    fprintf(FP, "node [fontsize=10, shape=box, height=0.25]\n");
-    fprintf(FP, "edge [fontsize=10]\n");
-    fprintf(FP, "\n");
+    fprintf(fp, "digraph llbuild {\n");
+    fprintf(fp, "rankdir=\"LR\"\n");
+    fprintf(fp, "node [fontsize=10, shape=box, height=0.25]\n");
+    fprintf(fp, "edge [fontsize=10]\n");
+    fprintf(fp, "\n");
 
     // Create a canonical node ordering.
-    std::vector<RuleInfo*> OrderedRuleInfos;
-    for (auto& Entry: RuleInfos)
-      OrderedRuleInfos.push_back(&Entry.second);
-    std::sort(OrderedRuleInfos.begin(), OrderedRuleInfos.end(),
-              [] (RuleInfo* a, RuleInfo* b) {
-        return a->Rule.Key < b->Rule.Key;
+    std::vector<const RuleInfo*> orderedRuleInfos;
+    for (const auto& entry: ruleInfos)
+      orderedRuleInfos.push_back(&entry.second);
+    std::sort(orderedRuleInfos.begin(), orderedRuleInfos.end(),
+              [] (const RuleInfo* a, const RuleInfo* b) {
+        return a->rule.key < b->rule.key;
       });
 
     // Write out all of the rules.
-    for (auto RuleInfo: OrderedRuleInfos) {
-      fprintf(FP, "\"%s\"\n", RuleInfo->Rule.Key.c_str());
-      for (auto& Input: RuleInfo->Result.Dependencies) {
-        fprintf(FP, "\"%s\" -> \"%s\"\n", RuleInfo->Rule.Key.c_str(),
-                Input.c_str());
+    for (const auto& ruleInfo: orderedRuleInfos) {
+      fprintf(fp, "\"%s\"\n", ruleInfo->rule.key.c_str());
+      for (auto& input: ruleInfo->result.dependencies) {
+        fprintf(fp, "\"%s\" -> \"%s\"\n", ruleInfo->rule.key.c_str(),
+                input.c_str());
       }
-      fprintf(FP, "\n");
+      fprintf(fp, "\n");
     }
 
     // Write the footer and close.
-    fprintf(FP, "}\n");
-    fclose(FP);
+    fprintf(fp, "}\n");
+    fclose(fp);
   }
 
-  void addTaskInputRequest(Task* Task, const KeyType& Key, uintptr_t InputID) {
-    auto taskinfo_it = TaskInfos.find(Task);
-    assert(taskinfo_it != TaskInfos.end() &&
+  void addTaskInputRequest(Task* task, const KeyType& key, uintptr_t inputID) {
+    auto taskinfo_it = taskInfos.find(task);
+    assert(taskinfo_it != taskInfos.end() &&
            "cannot request inputs for an unknown task");
-    TaskInfo* TaskInfo = &taskinfo_it->second;
+    TaskInfo* taskInfo = &taskinfo_it->second;
 
     // Validate that the task is in a valid state to request inputs.
-    if (!TaskInfo->ForRuleInfo->isInProgressWaiting()) {
+    if (!taskInfo->forRuleInfo->isInProgressWaiting()) {
       // FIXME: Error handling.
       abort();
     }
 
     // Lookup the rule for this task.
-    RuleInfo* RuleInfo = &getRuleInfoForKey(Key);
+    RuleInfo* ruleInfo = &getRuleInfoForKey(key);
     
-    InputRequests.push_back({ TaskInfo, RuleInfo, InputID });
-    TaskInfo->WaitCount++;
+    inputRequests.push_back({ taskInfo, ruleInfo, inputID });
+    taskInfo->waitCount++;
   }
 
   /// @}
@@ -1101,82 +1102,82 @@ public:
   /// @name Task Management Client APIs
   /// @{
 
-  Task* registerTask(Task* Task) {
-    auto Result = TaskInfos.emplace(Task, TaskInfo(Task));
-    assert(Result.second && "task already registered");
-    (void)Result;
-    return Task;
+  Task* registerTask(Task* task) {
+    auto result = taskInfos.emplace(task, TaskInfo(task));
+    assert(result.second && "task already registered");
+    (void)result;
+    return task;
   }
 
-  void taskNeedsInput(Task* Task, const KeyType& Key, uintptr_t InputID) {
+  void taskNeedsInput(Task* task, const KeyType& key, uintptr_t inputID) {
     // Validate the InputID.
-    if (InputID > BuildEngine::kMaximumInputID) {
+    if (inputID > BuildEngine::kMaximumInputID) {
       // FIXME: Error handling.
       std::cerr << "error: attempt to use reserved input ID\n";
       exit(1);
     }
 
-    addTaskInputRequest(Task, Key, InputID);
+    addTaskInputRequest(task, key, inputID);
   }
 
-  void taskMustFollow(Task* Task, const KeyType& Key) {
-    addTaskInputRequest(Task, Key, kMustFollowInputID);
+  void taskMustFollow(Task* task, const KeyType& key) {
+    addTaskInputRequest(task, key, kMustFollowInputID);
   }
 
-  void taskDiscoveredDependency(Task* Task, const KeyType& Key) {
+  void taskDiscoveredDependency(Task* task, const KeyType& key) {
     // Find the task info.
     //
     // FIXME: This is not safe.
-    auto taskinfo_it = TaskInfos.find(Task);
-    assert(taskinfo_it != TaskInfos.end() &&
+    auto taskinfo_it = taskInfos.find(task);
+    assert(taskinfo_it != taskInfos.end() &&
            "cannot request inputs for an unknown task");
-    TaskInfo* TaskInfo = &taskinfo_it->second;
+    TaskInfo* taskInfo = &taskinfo_it->second;
 
-    if (!TaskInfo->ForRuleInfo->isInProgressComputing()) {
+    if (!taskInfo->forRuleInfo->isInProgressComputing()) {
       // FIXME: Error handling.
       std::cerr << "error: invalid state for adding discovered dependency\n";
       exit(1);
     }
 
-    TaskInfo->DiscoveredDependencies.push_back(Key);
+    taskInfo->discoveredDependencies.push_back(key);
   }
 
-  void taskIsComplete(Task* Task, ValueType&& Value, bool ForceChange) {
+  void taskIsComplete(Task* task, ValueType&& value, bool forceChange) {
     // FIXME: We should flag the task to ensure this is only called once, and
     // that no other API calls are made once complete.
 
     // FIXME: This is not safe.
-    auto taskinfo_it = TaskInfos.find(Task);
-    assert(taskinfo_it != TaskInfos.end() &&
+    auto taskinfo_it = taskInfos.find(task);
+    assert(taskinfo_it != taskInfos.end() &&
            "cannot request inputs for an unknown task");
-    TaskInfo* TaskInfo = &taskinfo_it->second;
+    TaskInfo* taskInfo = &taskinfo_it->second;
 
-    if (!TaskInfo->ForRuleInfo->isInProgressComputing()) {
+    if (!taskInfo->forRuleInfo->isInProgressComputing()) {
       // FIXME: Error handling.
       std::cerr << "error: invalid state for marking task complete\n";
       exit(1);
     }
 
-    RuleInfo *RuleInfo = TaskInfo->ForRuleInfo;
-    assert(TaskInfo == RuleInfo->getPendingTaskInfo());
+    RuleInfo* ruleInfo = taskInfo->forRuleInfo;
+    assert(taskInfo == ruleInfo->getPendingTaskInfo());
 
     // Process the provided result.
-    if (!ForceChange && Value == RuleInfo->Result.Value) {
+    if (!forceChange && value == ruleInfo->result.value) {
         // If the value is unchanged, do nothing.
     } else {
         // Otherwise, updated the result and the computed at time.
-        RuleInfo->Result.Value = std::move(Value);
-        RuleInfo->Result.ComputedAt = CurrentTimestamp;
+        ruleInfo->result.value = std::move(value);
+        ruleInfo->result.computedAt = currentTimestamp;
     }
 
     // Enqueue the finished task.
     {
-      std::lock_guard<std::mutex> Guard(FinishedTaskInfosMutex);
-      FinishedTaskInfos.push_back(TaskInfo);
+      std::lock_guard<std::mutex> guard(finishedTaskInfosMutex);
+      finishedTaskInfos.push_back(taskInfo);
     }
 
     // Notify the engine to wake up, if necessary.
-    FinishedTaskInfosCondition.notify_one();
+    finishedTaskInfosCondition.notify_one();
   }
 
   /// @}
@@ -1184,7 +1185,7 @@ public:
   /// @name Internal APIs
   /// @{
 
-  uint64_t getCurrentTimestamp() const { return CurrentTimestamp; }
+  uint64_t getCurrentTimestamp() const { return currentTimestamp; }
 
   /// @}
 };
@@ -1193,55 +1194,55 @@ public:
 
 #pragma mark - BuildEngine
 
-BuildEngine::BuildEngine(BuildEngineDelegate& Delegate)
-  : Impl(new BuildEngineImpl(*this, Delegate)) 
+BuildEngine::BuildEngine(BuildEngineDelegate& delegate)
+  : impl(new BuildEngineimpl(*this, delegate)) 
 {
 }
 
 BuildEngine::~BuildEngine() {
-  delete static_cast<BuildEngineImpl*>(Impl);
+  delete static_cast<BuildEngineimpl*>(impl);
 }
 
-void BuildEngine::addRule(Rule &&Rule) {
-  static_cast<BuildEngineImpl*>(Impl)->addRule(std::move(Rule));
+void BuildEngine::addRule(Rule&& rule) {
+  static_cast<BuildEngineimpl*>(impl)->addRule(std::move(rule));
 }
 
-const ValueType& BuildEngine::build(const KeyType& Key) {
-  return static_cast<BuildEngineImpl*>(Impl)->build(Key);
+const ValueType& BuildEngine::build(const KeyType& key) {
+  return static_cast<BuildEngineimpl*>(impl)->build(key);
 }
 
-void BuildEngine::dumpGraphToFile(const std::string& Path) {
-  static_cast<BuildEngineImpl*>(Impl)->dumpGraphToFile(Path);
+void BuildEngine::dumpGraphToFile(const std::string& path) {
+  static_cast<BuildEngineimpl*>(impl)->dumpGraphToFile(path);
 }
 
-void BuildEngine::attachDB(std::unique_ptr<BuildDB> Database) {
-  static_cast<BuildEngineImpl*>(Impl)->attachDB(std::move(Database));
+void BuildEngine::attachDB(std::unique_ptr<BuildDB> database) {
+  static_cast<BuildEngineimpl*>(impl)->attachDB(std::move(database));
 }
 
-bool BuildEngine::enableTracing(const std::string& Path,
-                                std::string* Error_Out) {
-  return static_cast<BuildEngineImpl*>(Impl)->enableTracing(Path, Error_Out);
+bool BuildEngine::enableTracing(const std::string& path,
+                                std::string* error_out) {
+  return static_cast<BuildEngineimpl*>(impl)->enableTracing(path, error_out);
 }
 
-Task* BuildEngine::registerTask(Task* Task) {
-  return static_cast<BuildEngineImpl*>(Impl)->registerTask(Task);
+Task* BuildEngine::registerTask(Task* task) {
+  return static_cast<BuildEngineimpl*>(impl)->registerTask(task);
 }
 
-void BuildEngine::taskNeedsInput(Task* Task, const KeyType& Key,
-                                 uintptr_t InputID) {
-  static_cast<BuildEngineImpl*>(Impl)->taskNeedsInput(Task, Key, InputID);
+void BuildEngine::taskNeedsInput(Task* task, const KeyType& key,
+                                 uintptr_t inputID) {
+  static_cast<BuildEngineimpl*>(impl)->taskNeedsInput(task, key, inputID);
 }
 
-void BuildEngine::taskDiscoveredDependency(Task* Task, const KeyType& Key) {
-  static_cast<BuildEngineImpl*>(Impl)->taskDiscoveredDependency(Task, Key);
+void BuildEngine::taskDiscoveredDependency(Task* task, const KeyType& key) {
+  static_cast<BuildEngineimpl*>(impl)->taskDiscoveredDependency(task, key);
 }
 
-void BuildEngine::taskMustFollow(Task* Task, const KeyType& Key) {
-  static_cast<BuildEngineImpl*>(Impl)->taskMustFollow(Task, Key);
+void BuildEngine::taskMustFollow(Task* task, const KeyType& key) {
+  static_cast<BuildEngineimpl*>(impl)->taskMustFollow(task, key);
 }
 
-void BuildEngine::taskIsComplete(Task* Task, ValueType&& Value,
-                                 bool ForceChange) {
-  static_cast<BuildEngineImpl*>(Impl)->taskIsComplete(Task, std::move(Value),
-                                                      ForceChange);
+void BuildEngine::taskIsComplete(Task* task, ValueType&& value,
+                                 bool forceChange) {
+  static_cast<BuildEngineimpl*>(impl)->taskIsComplete(task, std::move(value),
+                                                      forceChange);
 }

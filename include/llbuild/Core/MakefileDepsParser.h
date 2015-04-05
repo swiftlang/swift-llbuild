@@ -28,32 +28,32 @@ public:
 
     /// Called if an error is encountered in parsing the input.
     ///
-    /// \param Message A C-string text message including information on the
+    /// \param message A C-string text message including information on the
     /// error.
     ///
-    /// \param Position The approximate position of the error in the input
+    /// \param position The approximate position of the error in the input
     /// buffer.
-    virtual void error(const char* Message, uint64_t Position) = 0;
+    virtual void error(const char* message, uint64_t position) = 0;
 
     /// Called when a new rule is encountered.
-    virtual void actOnRuleStart(const char* Name, uint64_t Length) = 0;
+    virtual void actOnRuleStart(const char* name, uint64_t length) = 0;
     /// Called when a new dependency is found for the current rule.
     ///
     /// This is only called between paired calls to \see actOnRuleStart() and
     /// \see actOnRuleEnd().
-    virtual void actOnRuleDependency(const char* Dependency,
-                                     uint64_t Length) = 0;
+    virtual void actOnRuleDependency(const char* dependency,
+                                     uint64_t length) = 0;
     /// Called when a rule is complete.
     virtual void actOnRuleEnd() = 0;
   };
 
-  const char* Data;
-  uint64_t Length;
-  ParseActions& Actions;
+  const char* data;
+  uint64_t length;
+  ParseActions& actions;
   
 public:
-  MakefileDepsParser(const char* Data, uint64_t Length, ParseActions& Actions)
-    : Data(Data), Length(Length), Actions(Actions) {}
+  MakefileDepsParser(const char* data, uint64_t length, ParseActions& actions)
+    : data(data), length(length), actions(actions) {}
 
   void parse();
 };

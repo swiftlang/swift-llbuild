@@ -102,7 +102,7 @@ static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
   // operation.
 
   [self measureBlock:^{
-      llbuild::commands::ExecuteBuildEngineCommand({
+      llbuild::commands::executeBuildEngineCommand({
           "ack", "3", "14" });
     }];
 }
@@ -114,7 +114,7 @@ static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
   // which is a stress test of the dependency scanning performance.
 
   [self measureBlock:^{
-      llbuild::commands::ExecuteBuildEngineCommand({
+      llbuild::commands::executeBuildEngineCommand({
           "ack", "--recompute", "100", "3", "11" });
     }];
 }

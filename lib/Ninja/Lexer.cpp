@@ -21,9 +21,9 @@ using namespace llbuild::ninja;
 
 ///
 
-const char *Token::getKindName() const {
+const char* Token::getKindName() const {
 #define CASE(name) case Kind::name: return #name
-  switch (TokenKind) {
+  switch (tokenKind) {
     CASE(Colon);
     CASE(Comment);
     CASE(EndOfFile);
@@ -49,15 +49,15 @@ const char *Token::getKindName() const {
 
 void Token::dump() {
   std::cerr << "(Token \"" << getKindName() << "\" "
-            << (const void*) Start << " " << Length << " "
-            << Line << " " << Column << ")\n";
+            << (const void*) start << " " << length << " "
+            << line << " " << column << ")\n";
 }
 
 ///
 
-Lexer::Lexer(const char* Data, uint64_t Length)
-  : BufferStart(Data), BufferPos(Data), BufferEnd(Data + Length),
-    LineNumber(1), ColumnNumber(0), Mode(LexingMode::None)
+Lexer::Lexer(const char* data, uint64_t length)
+  : bufferStart(data), bufferPos(data), bufferEnd(data + length),
+    lineNumber(1), columnNumber(0), mode(LexingMode::None)
 {
 }
 
@@ -65,115 +65,115 @@ Lexer::~Lexer() {
 }
 
 int Lexer::peekNextChar() {
-  if (BufferPos == BufferEnd)
+  if (bufferPos == bufferEnd)
     return -1;
-  return *BufferPos;
+  return *bufferPos;
 }
 
 int Lexer::getNextChar() {
-  if (BufferPos == BufferEnd)
+  if (bufferPos == bufferEnd)
     return -1;
 
   // Handle DOS/Mac newlines here, by stripping duplicates and by returning '\n'
   // for both.
-  char Result = *BufferPos++;
-  if (Result == '\n' || Result == '\r') {
-    if (BufferPos != BufferEnd && *BufferPos == ('\n' + '\r' - Result))
-      ++BufferPos;
-    Result = '\n';
+  char result = *bufferPos++;
+  if (result == '\n' || result == '\r') {
+    if (bufferPos != bufferEnd && *bufferPos == ('\n' + '\r' - result))
+      ++bufferPos;
+    result = '\n';
   }
 
-  if (Result == '\n') {
-    ++LineNumber;
-    ColumnNumber = 0;
+  if (result == '\n') {
+    ++lineNumber;
+    columnNumber = 0;
   } else {
-    ++ColumnNumber;
+    ++columnNumber;
   }
 
-  return Result;
+  return result;
 }
 
-Token &Lexer::setTokenKind(Token &Result, Token::Kind Kind) const {
-  Result.TokenKind = Kind;
-  Result.Length = BufferPos - Result.Start;
-  return Result;
+Token& Lexer::setTokenKind(Token& result, Token::Kind kind) const {
+  result.tokenKind = kind;
+  result.length = bufferPos - result.start;
+  return result;
 }
 
 void Lexer::skipToEndOfLine() {
   // Skip to the end of the line, but not past the actual newline character
   // (which we want to generate a Newline token).
   for (;;) {
-    int Char = peekNextChar();
-    if (Char == -1 || Char == '\n')
+    int c = peekNextChar();
+    if (c == -1 || c == '\n')
       break;
     getNextChar();
   }
 }
 
-Token &Lexer::setIdentifierTokenKind(Token &Result) const {
-  unsigned Length = BufferPos - Result.Start;
-  switch (Length) {
+Token& Lexer::setIdentifierTokenKind(Token& result) const {
+  unsigned length = bufferPos - result.start;
+  switch (length) {
   case 4:
-    if (memcmp("rule", Result.Start, 4) == 0)
-      return setTokenKind(Result, Token::Kind::KWRule);
-    if (memcmp("pool", Result.Start, 4) == 0)
-      return setTokenKind(Result, Token::Kind::KWPool);
+    if (memcmp("rule", result.start, 4) == 0)
+      return setTokenKind(result, Token::Kind::KWRule);
+    if (memcmp("pool", result.start, 4) == 0)
+      return setTokenKind(result, Token::Kind::KWPool);
     break;
 
   case 5:
-    if (memcmp("build", Result.Start, 5) == 0)
-      return setTokenKind(Result, Token::Kind::KWBuild);
+    if (memcmp("build", result.start, 5) == 0)
+      return setTokenKind(result, Token::Kind::KWBuild);
     break;
 
   case 7:
-    if (memcmp("default", Result.Start, 7) == 0)
-      return setTokenKind(Result, Token::Kind::KWDefault);
-    if (memcmp("include", Result.Start, 7) == 0)
-      return setTokenKind(Result, Token::Kind::KWInclude);
+    if (memcmp("default", result.start, 7) == 0)
+      return setTokenKind(result, Token::Kind::KWDefault);
+    if (memcmp("include", result.start, 7) == 0)
+      return setTokenKind(result, Token::Kind::KWInclude);
     break;
 
   case 8:
-    if (memcmp("subninja", Result.Start, 7) == 0)
-      return setTokenKind(Result, Token::Kind::KWSubninja);
+    if (memcmp("subninja", result.start, 7) == 0)
+      return setTokenKind(result, Token::Kind::KWSubninja);
     break;
   }
 
-  return setTokenKind(Result, Token::Kind::Identifier);
+  return setTokenKind(result, Token::Kind::Identifier);
 }
 
-Token &Lexer::lexIdentifier(Token &Result) {
+Token& Lexer::lexIdentifier(Token& result) {
   // Consume characters as long as we are in an identifier.
   while (Lexer::isIdentifierChar(peekNextChar())) {
     getNextChar();
   }
 
   // If we are in identifier specific mode, ignore keywords.
-  if (Mode == Lexer::LexingMode::IdentifierSpecific)
-    return setTokenKind(Result, Token::Kind::Identifier);
+  if (mode == Lexer::LexingMode::IdentifierSpecific)
+    return setTokenKind(result, Token::Kind::Identifier);
 
   // Recognize keywords specially.
-  return setIdentifierTokenKind(Result);
+  return setIdentifierTokenKind(result);
 }
 
-static bool isNonNewlineSpace(int Char) {
-  return isspace(Char) && Char != '\n';
+static bool isNonNewlineSpace(int c) {
+  return isspace(c) && c != '\n';
 }
 
-Token &Lexer::lexPathString(Token &Result) {
+Token &Lexer::lexPathString(Token &result) {
   // String tokens in path contexts consume until a space, ':', or '|'
   // character.
   while (true) {
-    int Char = peekNextChar();
+    int c = peekNextChar();
 
     // If this is an escape character, skip the next character.
-    if (Char == '$') {
+    if (c == '$') {
       getNextChar(); // Consume the actual '$'.
 
       // Consume the next character.
-      Char = getNextChar();
+      c = getNextChar();
 
       // If the character was a newline, consume any leading spaces.
-      if (Char == '\n') {
+      if (c == '\n') {
         while (isNonNewlineSpace(peekNextChar()))
           getNextChar();
       }
@@ -182,57 +182,57 @@ Token &Lexer::lexPathString(Token &Result) {
     }
 
     // Otherwise, continue only if this is not the EOL or EOF.
-    if (isspace(Char) || Char == ':' || Char == '|' || Char == -1)
+    if (isspace(c) || c == ':' || c == '|' || c == -1)
       break;
 
     getNextChar();
   }
 
-  return setTokenKind(Result, Token::Kind::String);
+  return setTokenKind(result, Token::Kind::String);
 }
 
-Token &Lexer::lexVariableString(Token &Result) {
+Token& Lexer::lexVariableString(Token& result) {
   // String tokens in variable assignments consume until the end of the line.
   while (true) {
-    int Char = peekNextChar();
+    int c = peekNextChar();
 
     // If this is an escape character, skip the next character.
-    if (Char == '$') {
+    if (c == '$') {
       getNextChar(); // Consume the actual '$'.
       getNextChar(); // Consume the next character.
       continue;
     }
 
     // Otherwise, continue only if this is not the EOL or EOF.
-    if (Char == '\n' || Char == -1)
+    if (c == '\n' || c == -1)
       break;
 
     getNextChar();
   }
 
-  return setTokenKind(Result, Token::Kind::String);
+  return setTokenKind(result, Token::Kind::String);
 }
 
-Token &Lexer::lex(Token &Result) {
+Token& Lexer::lex(Token& result) {
   // Check if we need to emit an indentation token.
-  int Char = peekNextChar();
-  if (isNonNewlineSpace(Char) && ColumnNumber == 0) {
+  int c = peekNextChar();
+  if (isNonNewlineSpace(c) && columnNumber == 0) {
     // If we are at the start of a line, then any leading whitespace should be
     // parsed as an indentation token.
     //
     // We do not need to handle "$\n" sequences here because they will be
     // consumed next, and the exact length of the indentation token is never
     // used.
-    if (ColumnNumber == 0) {
-      Result.Start = BufferPos;
-      Result.Line = LineNumber;
-      Result.Column = ColumnNumber;
+    if (columnNumber == 0) {
+      result.start = bufferPos;
+      result.line = lineNumber;
+      result.column = columnNumber;
 
       do {
         getNextChar();
       } while (isNonNewlineSpace(peekNextChar()));
 
-      return setTokenKind(Result, Token::Kind::Indentation);
+      return setTokenKind(result, Token::Kind::Indentation);
     }
   }
 
@@ -240,67 +240,67 @@ Token &Lexer::lex(Token &Result) {
   // at the start of lines, which Ninja does not recognize).
   while (true) {
     // Check for escape sequences.
-    if (Char == '$' && ColumnNumber != 0) {
+    if (c == '$' && columnNumber != 0) {
       // If this is a newline escape, consume it.
-      if (BufferPos + 1 != BufferEnd && BufferPos[1] == '\n') {
+      if (bufferPos + 1 != bufferEnd && bufferPos[1] == '\n') {
         getNextChar();
         getNextChar();
       } else {
         // Otherwise, break out and lex normally.
         break;
       }
-    } else if (isNonNewlineSpace(Char)) {
+    } else if (isNonNewlineSpace(c)) {
       getNextChar();
     } else {
       break;
     }
     
-    Char = peekNextChar();
+    c = peekNextChar();
   }
 
   // Initialize the token position.
-  Result.Start = BufferPos;
-  Result.Line = LineNumber;
-  Result.Column = ColumnNumber;
+  result.start = bufferPos;
+  result.line = lineNumber;
+  result.column = columnNumber;
 
   // Check if we are at a string mode independent token.
-  if (Char == '\n') {
+  if (c == '\n') {
     getNextChar();
-    return setTokenKind(Result, Token::Kind::Newline);
+    return setTokenKind(result, Token::Kind::Newline);
   }
-  if (Char == -1)
-    return setTokenKind(Result, Token::Kind::EndOfFile);
+  if (c == -1)
+    return setTokenKind(result, Token::Kind::EndOfFile);
 
   // If we are in string lexing mode, delegate immediately if appropriate.
-  if (Mode == LexingMode::VariableString)
-    return lexVariableString(Result);
-  if (Mode == LexingMode::PathString) {
+  if (mode == LexingMode::VariableString)
+    return lexVariableString(result);
+  if (mode == LexingMode::PathString) {
     // Only delegate for characters not special to path lexing.
-    if (Char != ':' && Char != '|')
-      return lexPathString(Result);
+    if (c != ':' && c != '|')
+      return lexPathString(result);
   }
 
   // Otherwise, consume the character and lex from the regular token set.
   getNextChar();
-  switch (Char) {
-  case ':': return setTokenKind(Result, Token::Kind::Colon);
-  case '=': return setTokenKind(Result, Token::Kind::Equals);
+  switch (c) {
+  case ':': return setTokenKind(result, Token::Kind::Colon);
+  case '=': return setTokenKind(result, Token::Kind::Equals);
 
   case '#': {
     skipToEndOfLine();
-    return setTokenKind(Result, Token::Kind::Comment);
+    return setTokenKind(result, Token::Kind::Comment);
   }
 
   case '|': {
     if (peekNextChar() == '|')
-      return getNextChar(), setTokenKind(Result, Token::Kind::PipePipe);
-    return setTokenKind(Result, Token::Kind::Pipe);
+      return getNextChar(), setTokenKind(result, Token::Kind::PipePipe);
+    return setTokenKind(result, Token::Kind::Pipe);
   }
 
   default:
-    if (Lexer::isIdentifierChar(Char))
-      return lexIdentifier(Result);
+    if (Lexer::isIdentifierChar(c))
+      return lexIdentifier(result);
 
-    return setTokenKind(Result, Token::Kind::Unknown);
+    return setTokenKind(result, Token::Kind::Unknown);
   }
 }

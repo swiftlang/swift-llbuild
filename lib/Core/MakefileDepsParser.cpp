@@ -19,8 +19,8 @@ MakefileDepsParser::ParseActions::~ParseActions() {}
 
 #pragma mark - MakefileDepsParser Implementation
 
-static bool IsWordChar(int Char) {
-  switch (Char) {
+static bool isWordChar(int c) {
+  switch (c) {
   case '\0':
   case '\t':
   case '\n':
@@ -37,36 +37,36 @@ static bool IsWordChar(int Char) {
   }
 }
 
-static void SkipWhitespaceAndComments(const char*& Cur, const char* End) {
-  for (; Cur != End; ++Cur) {
-    int Char = *Cur;
+static void skipWhitespaceAndComments(const char*& cur, const char* end) {
+  for (; cur != end; ++cur) {
+    int c = *cur;
 
     // Skip comments.
-    if (Char == '#') {
+    if (c == '#') {
       // Skip to the next newline.
-      while (Cur + 1 != End && Cur[1] == '\n')
-        ++Cur;
+      while (cur + 1 != end && cur[1] == '\n')
+        ++cur;
       continue;
     }
 
-    if (Char == ' ' || Char == '\t' || Char == '\n')
+    if (c == ' ' || c == '\t' || c == '\n')
       continue;
 
     break;
   }
 }
 
-static void SkipNonNewlineWhitespace(const char*& Cur, const char* End) {
-  for (; Cur != End; ++Cur) {
-    int Char = *Cur;
+static void skipNonNewlineWhitespace(const char*& cur, const char* end) {
+  for (; cur != end; ++cur) {
+    int c = *cur;
 
     // Skip regular whitespace.
-    if (Char == ' ' || Char == '\t')
+    if (c == ' ' || c == '\t')
       continue;
 
     // If this is an escaped newline, also skip it.
-    if (Char == '\\' && Cur + 1 != End && Cur[1] == '\n') {
-      ++Cur;
+    if (c == '\\' && cur + 1 != end && cur[1] == '\n') {
+      ++cur;
       continue;
     }
 
@@ -75,90 +75,90 @@ static void SkipNonNewlineWhitespace(const char*& Cur, const char* End) {
   }
 }
 
-static void SkipToEndOfLine(const char*& Cur, const char* End) {
-  for (; Cur != End; ++Cur) {
-    int Char = *Cur;
+static void skipToEndOfLine(const char*& cur, const char* end) {
+  for (; cur != end; ++cur) {
+    int c = *cur;
 
-    if (Char == '\n') {
-      ++Cur;
+    if (c == '\n') {
+      ++cur;
       break;
     }
   }
 }
 
-static void LexWord(const char*& Cur, const char* End) {
-  for (; Cur != End; ++Cur) {
-    int Char = *Cur;
+static void lexWord(const char*& cur, const char* end) {
+  for (; cur != end; ++cur) {
+    int c = *cur;
 
     // Check if this is an escape sequence.
-    if (Char == '\\') {
+    if (c == '\\') {
       // If this is a line continuation, it ends the word.
-      if (Cur + 1 != End && Cur[1] == '\n')
+      if (cur + 1 != end && cur[1] == '\n')
         break;
 
       // Otherwise, skip the escaped character.
-      ++Cur;
+      ++cur;
       continue;
     }
 
     // Otherwise, if this is not a valid word character then skip it.
-    if (!IsWordChar(*Cur))
+    if (!isWordChar(*cur))
       break;
   }
 }
 
 void MakefileDepsParser::parse() {
-  const char* Cur = Data;
-  const char* End = Data + Length;
+  const char* cur = data;
+  const char* end = data + length;
 
   // While we have input data...
-  while (Cur != End) {
+  while (cur != end) {
     // Skip leading whitespace and comments.
-    SkipWhitespaceAndComments(Cur, End);
+    skipWhitespaceAndComments(cur, end);
 
     // If we have reached the end of the input, we are done.
-    if (Cur == End)
+    if (cur == end)
       break;
     
     // The next token should be a word.
-    const char* WordStart = Cur;
-    LexWord(Cur, End);
-    if (Cur == WordStart) {
-      Actions.error("unexpected character in file", Cur - Data);
-      SkipToEndOfLine(Cur, End);
+    const char* wordStart = cur;
+    lexWord(cur, end);
+    if (cur == wordStart) {
+      actions.error("unexpected character in file", cur - data);
+      skipToEndOfLine(cur, end);
       continue;
     }
-    Actions.actOnRuleStart(WordStart, Cur - WordStart);
+    actions.actOnRuleStart(wordStart, cur - wordStart);
 
     // The next token should be a colon.
-    SkipNonNewlineWhitespace(Cur, End);
-    if (Cur == End || *Cur != ':') {
-      Actions.error("missing ':' following rule", Cur - Data);
-      Actions.actOnRuleEnd();
-      SkipToEndOfLine(Cur, End);
+    skipNonNewlineWhitespace(cur, end);
+    if (cur == end || *cur != ':') {
+      actions.error("missing ':' following rule", cur - data);
+      actions.actOnRuleEnd();
+      skipToEndOfLine(cur, end);
       continue;
     }
 
     // Skip the colon.
-    ++Cur;
+    ++cur;
 
     // Consume dependency words until we reach the end of a line.
-    while (Cur != End) {
+    while (cur != end) {
       // Skip forward and check for EOL.
-      SkipNonNewlineWhitespace(Cur, End);
-      if (Cur == End || *Cur == '\n')
+      skipNonNewlineWhitespace(cur, end);
+      if (cur == end || *cur == '\n')
         break;
 
       // Otherwise, we should have a word.
-      const char* WordStart = Cur;
-      LexWord(Cur, End);
-      if (Cur == WordStart) {
-        Actions.error("unexpected character in prerequisites", Cur - Data);
-        SkipToEndOfLine(Cur, End);
+      const char* wordStart = cur;
+      lexWord(cur, end);
+      if (cur == wordStart) {
+        actions.error("unexpected character in prerequisites", cur - data);
+        skipToEndOfLine(cur, end);
         continue;
       }
-      Actions.actOnRuleDependency(WordStart, Cur - WordStart);
+      actions.actOnRuleDependency(wordStart, cur - wordStart);
     }
-    Actions.actOnRuleEnd();
+    actions.actOnRuleEnd();
   }
 }

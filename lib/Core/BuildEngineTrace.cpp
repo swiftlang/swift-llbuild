@@ -24,42 +24,40 @@ using namespace llbuild::core;
 
 BuildEngineTrace::BuildEngineTrace() {}
 
-BuildEngineTrace::~BuildEngineTrace() {
-  assert(!IsOpen);
-}
+BuildEngineTrace::~BuildEngineTrace() {}
 
-bool BuildEngineTrace::open(const std::string& Filename,
-                            std::string* Error_Out) {
-  assert(!IsOpen);
+bool BuildEngineTrace::open(const std::string& filename,
+                            std::string* error_out) {
+  assert(!isOpen());
 
-  FILE *fp = fopen(Filename.c_str(), "wb");
+  FILE *fp = fopen(filename.c_str(), "wb");
   if (!fp) {
-    *Error_Out = "unable to open '" + Filename + "' (" +
+    *error_out = "unable to open '" + filename + "' (" +
       ::strerror(errno) + ")";
     return false;
   }
-  OutputPtr = fp;
-  IsOpen = true;
+  outputPtr = fp;
+  assert(isOpen());
 
   // Write the opening header.
   fprintf(fp, "[\n");
   return true;
 }
 
-bool BuildEngineTrace::close(std::string* Error_Out) {
-  assert(IsOpen);
+bool BuildEngineTrace::close(std::string* error_out) {
+  assert(isOpen());
 
-  FILE *FP = static_cast<FILE*>(OutputPtr);
+  FILE *fp = static_cast<FILE*>(outputPtr);
 
   // Write the footer.
-  fprintf(FP, "]\n");
+  fprintf(fp, "]\n");
 
-  bool Success = fclose(FP) == 0;
-  OutputPtr = nullptr;
-  IsOpen = false;
+  bool success = fclose(fp) == 0;
+  outputPtr = nullptr;
+  assert(!isOpen());
 
-  if (!Success) {
-    *Error_Out = "unable to close file";
+  if (!success) {
+    *error_out = "unable to close file";
     return false;
   }
 
@@ -68,221 +66,221 @@ bool BuildEngineTrace::close(std::string* Error_Out) {
 
 #pragma mark - Tracing APIs
 
-const char* BuildEngineTrace::getTaskName(const Task* Task) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
+const char* BuildEngineTrace::getTaskName(const Task* task) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
 
   // See if we have already assigned a name.
-  auto it = TaskNames.find(Task);
-  if (it != TaskNames.end())
+  auto it = taskNames.find(task);
+  if (it != taskNames.end())
     return it->second.c_str();
 
   // Otherwise, create a name.
-  char Name[64];
-  sprintf(Name, "T%d", ++NumNamedTasks);
-  auto Result = TaskNames.emplace(Task, Name);
+  char name[64];
+  sprintf(name, "T%d", ++numNamedTasks);
+  auto result = taskNames.emplace(task, name);
 
   // Report the newly seen rule.
-  fprintf(FP, "{ \"new-task\", \"%s\" },\n", Name);
+  fprintf(fp, "{ \"new-task\", \"%s\" },\n", name);
 
-  return Result.first->second.c_str();
+  return result.first->second.c_str();
 }
 
-const char* BuildEngineTrace::getRuleName(const Rule* Rule) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
+const char* BuildEngineTrace::getRuleName(const Rule* rule) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
 
   // See if we have already assigned a name.
-  auto it = RuleNames.find(Rule);
-  if (it != RuleNames.end())
+  auto it = ruleNames.find(rule);
+  if (it != ruleNames.end())
     return it->second.c_str();
 
   // Otherwise, create a name.
-  char Name[64];
-  sprintf(Name, "R%d", ++NumNamedRules);
-  auto Result = RuleNames.emplace(Rule, Name);
+  char name[64];
+  sprintf(name, "R%d", ++numNamedRules);
+  auto result = ruleNames.emplace(rule, name);
 
   // Report the newly seen rule.
-  fprintf(FP, "{ \"new-rule\", \"%s\", \"%s\" },\n", Name, Rule->Key.c_str());
+  fprintf(fp, "{ \"new-rule\", \"%s\", \"%s\" },\n", name, rule->key.c_str());
 
-  return Result.first->second.c_str();
+  return result.first->second.c_str();
 }
 
 void BuildEngineTrace::buildStarted() {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
+  FILE *fp = static_cast<FILE*>(outputPtr);
 
-  fprintf(FP, "{ \"build-started\" },\n");
+  fprintf(fp, "{ \"build-started\" },\n");
 }
 
-void BuildEngineTrace::handlingBuildInputRequest(const Rule* Rule) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
+void BuildEngineTrace::handlingBuildInputRequest(const Rule* rule) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
 
-  fprintf(FP, "{ \"handling-build-input-request\", \"%s\" },\n",
-          getRuleName(Rule));
+  fprintf(fp, "{ \"handling-build-input-request\", \"%s\" },\n",
+          getRuleName(rule));
 }
 
-void BuildEngineTrace::createdTaskForRule(const Task* Task,
-                                          const Rule* Rule) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
+void BuildEngineTrace::createdTaskForRule(const Task* task,
+                                          const Rule* rule) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
 
-  fprintf(FP, "{ \"created-task-for-rule\", \"%s\", \"%s\" },\n",
-          getTaskName(Task), getRuleName(Rule));
+  fprintf(fp, "{ \"created-task-for-rule\", \"%s\", \"%s\" },\n",
+          getTaskName(task), getRuleName(rule));
 }
 
-void BuildEngineTrace::handlingTaskInputRequest(const Task* Task,
-                                                const Rule* Rule) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
+void BuildEngineTrace::handlingTaskInputRequest(const Task* task,
+                                                const Rule* rule) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
 
-  fprintf(FP, "{ \"handling-task-input-request\", \"%s\", \"%s\" },\n",
-          getTaskName(Task), getRuleName(Rule));
+  fprintf(fp, "{ \"handling-task-input-request\", \"%s\", \"%s\" },\n",
+          getTaskName(task), getRuleName(rule));
 }
 
-void BuildEngineTrace::pausedInputRequestForRuleScan(const Rule* Rule) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
+void BuildEngineTrace::pausedInputRequestForRuleScan(const Rule* rule) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
 
-  fprintf(FP, "{ \"paused-input-request-for-rule-scan\", \"%s\" },\n",
-          getRuleName(Rule));
+  fprintf(fp, "{ \"paused-input-request-for-rule-scan\", \"%s\" },\n",
+          getRuleName(rule));
 }
 
-void BuildEngineTrace::readyingTaskInputRequest(const Task* Task,
-                                                const Rule* Rule) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
+void BuildEngineTrace::readyingTaskInputRequest(const Task* task,
+                                                const Rule* rule) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
 
-  fprintf(FP, "{ \"readying-task-input-request\", \"%s\", \"%s\" },\n",
-          getTaskName(Task), getRuleName(Rule));
+  fprintf(fp, "{ \"readying-task-input-request\", \"%s\", \"%s\" },\n",
+          getTaskName(task), getRuleName(rule));
 }
 
-void BuildEngineTrace::addedRulePendingTask(const Rule* Rule,
-                                            const Task* Task) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
+void BuildEngineTrace::addedRulePendingTask(const Rule* rule,
+                                            const Task* task) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
 
-  fprintf(FP, "{ \"added-rule-pending-task\", \"%s\", \"%s\" },\n",
-          getRuleName(Rule), getTaskName(Task));
+  fprintf(fp, "{ \"added-rule-pending-task\", \"%s\", \"%s\" },\n",
+          getRuleName(rule), getTaskName(task));
 }
 
-void BuildEngineTrace::completedTaskInputRequest(const Task* Task,
-                                                 const Rule* Rule) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
+void BuildEngineTrace::completedTaskInputRequest(const Task* task,
+                                                 const Rule* rule) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
 
-  fprintf(FP, "{ \"completed-task-input-request\", \"%s\", \"%s\" },\n",
-          getTaskName(Task), getRuleName(Rule));
+  fprintf(fp, "{ \"completed-task-input-request\", \"%s\", \"%s\" },\n",
+          getTaskName(task), getRuleName(rule));
 }
 
-void BuildEngineTrace::updatedTaskWaitCount(const Task* Task,
-                                            unsigned WaitCount) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
+void BuildEngineTrace::updatedTaskWaitCount(const Task* task,
+                                            unsigned waitCount) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
 
-  fprintf(FP, "{ \"updated-task-wait-count\", \"%s\", %d },\n",
-          getTaskName(Task), WaitCount);
+  fprintf(fp, "{ \"updated-task-wait-count\", \"%s\", %d },\n",
+          getTaskName(task), waitCount);
 }
 
-void BuildEngineTrace::unblockedTask(const Task* Task) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
+void BuildEngineTrace::unblockedTask(const Task* task) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
 
-  fprintf(FP, "{ \"unblocked-task\", \"%s\" },\n", getTaskName(Task));
+  fprintf(fp, "{ \"unblocked-task\", \"%s\" },\n", getTaskName(task));
 }
 
-void BuildEngineTrace::readiedTask(const Task* Task, const Rule* Rule) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
+void BuildEngineTrace::readiedTask(const Task* task, const Rule* rule) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
 
-  fprintf(FP, "{ \"readied-task\", \"%s\", \"%s\" },\n",
-          getTaskName(Task), getRuleName(Rule));
+  fprintf(fp, "{ \"readied-task\", \"%s\", \"%s\" },\n",
+          getTaskName(task), getRuleName(rule));
 }
 
-void BuildEngineTrace::finishedTask(const Task* Task, const Rule* Rule,
-                                    bool WasChanged) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
+void BuildEngineTrace::finishedTask(const Task* task, const Rule* rule,
+                                    bool wasChanged) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
 
-  fprintf(FP, "{ \"finished-task\", \"%s\", \"%s\", \"%s\" },\n",
-          getTaskName(Task), getRuleName(Rule),
-          WasChanged ? "changed" : "unchanged");
+  fprintf(fp, "{ \"finished-task\", \"%s\", \"%s\", \"%s\" },\n",
+          getTaskName(task), getRuleName(rule),
+          wasChanged ? "changed" : "unchanged");
 
   // Delete the task entry, as it could be reused.
-  TaskNames.erase(TaskNames.find(Task));
+  taskNames.erase(taskNames.find(task));
 }
 
 void BuildEngineTrace::buildEnded() {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
+  FILE *fp = static_cast<FILE*>(outputPtr);
 
-  fprintf(FP, "{ \"build-ended\" },\n");
+  fprintf(fp, "{ \"build-ended\" },\n");
 }
 
 #pragma mark - Dependency Scanning Tracing APIs
 
-void BuildEngineTrace::checkingRuleNeedsToRun(const Rule* ForRule) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
+void BuildEngineTrace::checkingRuleNeedsToRun(const Rule* forRule) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
 
-  fprintf(FP, "{ \"checking-rule-needs-to-run\", \"%s\" },\n",
-          getRuleName(ForRule));
+  fprintf(fp, "{ \"checking-rule-needs-to-run\", \"%s\" },\n",
+          getRuleName(forRule));
 }
 
-void BuildEngineTrace::ruleScheduledForScanning(const Rule* ForRule) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
+void BuildEngineTrace::ruleScheduledForScanning(const Rule* forRule) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
 
-  fprintf(FP, ("{ \"rule-scheduled-for-scanning\", \"%s\"},\n"),
-          getRuleName(ForRule));
+  fprintf(fp, ("{ \"rule-scheduled-for-scanning\", \"%s\"},\n"),
+          getRuleName(forRule));
 }
 
-void BuildEngineTrace::ruleScanningNextInput(const Rule* ForRule,
-                                             const Rule* InputRule) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
+void BuildEngineTrace::ruleScanningNextInput(const Rule* forRule,
+                                             const Rule* inputRule) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
 
-  fprintf(FP, ("{ \"rule-scanning-next-input\", \"%s\", \"%s\" },\n"),
-          getRuleName(ForRule), getRuleName(InputRule));
-}
-
-void
-BuildEngineTrace::ruleScanningDeferredOnInput(const Rule* ForRule,
-                                              const Rule* InputRule) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
-
-  fprintf(FP, ("{ \"rule-scanning-deferred-on-input\", \"%s\", \"%s\" },\n"),
-          getRuleName(ForRule), getRuleName(InputRule));
+  fprintf(fp, ("{ \"rule-scanning-next-input\", \"%s\", \"%s\" },\n"),
+          getRuleName(forRule), getRuleName(inputRule));
 }
 
 void
-BuildEngineTrace::ruleScanningDeferredOnTask(const Rule* ForRule,
-                                              const Task* InputTask) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
+BuildEngineTrace::ruleScanningDeferredOnInput(const Rule* forRule,
+                                              const Rule* inputRule) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
 
-  fprintf(FP, ("{ \"rule-scanning-deferred-on-task\", \"%s\", \"%s\" },\n"),
-          getRuleName(ForRule), getTaskName(InputTask));
-}
-
-void BuildEngineTrace::ruleNeedsToRunBecauseNeverBuilt(const Rule* ForRule) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
-
-  fprintf(FP, "{ \"rule-needs-to-run\", \"%s\", \"never-built\" },\n",
-          getRuleName(ForRule));
-}
-
-void BuildEngineTrace::ruleNeedsToRunBecauseInvalidValue(const Rule* ForRule) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
-
-  fprintf(FP, "{ \"rule-needs-to-run\", \"%s\", \"invalid-value\" },\n",
-          getRuleName(ForRule));
+  fprintf(fp, ("{ \"rule-scanning-deferred-on-input\", \"%s\", \"%s\" },\n"),
+          getRuleName(forRule), getRuleName(inputRule));
 }
 
 void
-BuildEngineTrace::ruleNeedsToRunBecauseInputMissing(const Rule* ForRule) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
+BuildEngineTrace::ruleScanningDeferredOnTask(const Rule* forRule,
+                                             const Task* inputTask) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
 
-  fprintf(FP, "{ \"rule-needs-to-run\", \"%s\", \"input-missing\" },\n",
-          getRuleName(ForRule));
+  fprintf(fp, ("{ \"rule-scanning-deferred-on-task\", \"%s\", \"%s\" },\n"),
+          getRuleName(forRule), getTaskName(inputTask));
+}
+
+void BuildEngineTrace::ruleNeedsToRunBecauseNeverBuilt(const Rule* forRule) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
+
+  fprintf(fp, "{ \"rule-needs-to-run\", \"%s\", \"never-built\" },\n",
+          getRuleName(forRule));
+}
+
+void BuildEngineTrace::ruleNeedsToRunBecauseInvalidValue(const Rule* forRule) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
+
+  fprintf(fp, "{ \"rule-needs-to-run\", \"%s\", \"invalid-value\" },\n",
+          getRuleName(forRule));
 }
 
 void
-BuildEngineTrace::ruleNeedsToRunBecauseInputRebuilt(const Rule* ForRule,
-                                                    const Rule* InputRule) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
+BuildEngineTrace::ruleNeedsToRunBecauseInputMissing(const Rule* forRule) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
 
-  fprintf(FP, ("{ \"rule-needs-to-run\", \"%s\", "
+  fprintf(fp, "{ \"rule-needs-to-run\", \"%s\", \"input-missing\" },\n",
+          getRuleName(forRule));
+}
+
+void
+BuildEngineTrace::ruleNeedsToRunBecauseInputRebuilt(const Rule* forRule,
+                                                    const Rule* inputRule) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
+
+  fprintf(fp, ("{ \"rule-needs-to-run\", \"%s\", "
                "\"input-rebuilt\", \"%s\" },\n"),
-          getRuleName(ForRule), getRuleName(InputRule));
+          getRuleName(forRule), getRuleName(inputRule));
 }
 
-void BuildEngineTrace::ruleDoesNotNeedToRun(const Rule* ForRule) {
-  FILE *FP = static_cast<FILE*>(OutputPtr);
+void BuildEngineTrace::ruleDoesNotNeedToRun(const Rule* forRule) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
 
-  fprintf(FP, "{ \"rule-does-not-need-to-run\", \"%s\" },\n",
-          getRuleName(ForRule));
+  fprintf(fp, "{ \"rule-does-not-need-to-run\", \"%s\" },\n",
+          getRuleName(forRule));
 }
 

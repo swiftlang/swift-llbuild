@@ -18,7 +18,7 @@
 namespace llbuild {
 namespace basic {
 
-    uint64_t HashString(const std::string& String);
+    uint64_t hashString(const std::string& value);
 
 }
 }

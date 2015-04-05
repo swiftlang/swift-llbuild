@@ -15,36 +15,36 @@
 using namespace llbuild;
 using namespace llbuild::ninja;
 
-bool Rule::isValidParameterName(const std::string& Name) {
-  return Name == "command" ||
-    Name == "description" ||
-    Name == "deps" ||
-    Name == "depfile" ||
-    Name == "generator" ||
-    Name == "pool" ||
-    Name == "restat" ||
-    Name == "rspfile" ||
-    Name == "rspfile_content";
+bool Rule::isValidParameterName(const std::string& name) {
+  return name == "command" ||
+    name == "description" ||
+    name == "deps" ||
+    name == "depfile" ||
+    name == "generator" ||
+    name == "pool" ||
+    name == "restat" ||
+    name == "rspfile" ||
+    name == "rspfile_content";
 }
 
 Manifest::Manifest() {
   // Create the built-in console pool, and add it to the pool map.
-  ConsolePool = new Pool("console");
-  ConsolePool->setDepth(1);
-  Pools["console"].reset(ConsolePool);
+  consolePool = new Pool("console");
+  consolePool->setDepth(1);
+  pools["console"].reset(consolePool);
 
   // Create the built-in phony rule, and add it to the rule map.
-  PhonyRule = new Rule("phony");
-  Rules["phony"].reset(PhonyRule);
+  phonyRule = new Rule("phony");
+  rules["phony"].reset(phonyRule);
 }
 
-Node* Manifest::getOrCreateNode(const std::string& Path) {
+Node* Manifest::getOrCreateNode(const std::string& path) {
   // If we have an existing node for this path, return it.
-  auto it = Nodes.find(Path);
-  if (it != Nodes.end())
+  auto it = nodes.find(path);
+  if (it != nodes.end())
     return it->second.get();
 
-  Node *Result = new Node(Path);
-  Nodes[Path].reset(Result);
-  return Result;
+  Node *result = new Node(path);
+  nodes[path].reset(result);
+  return result;
 }

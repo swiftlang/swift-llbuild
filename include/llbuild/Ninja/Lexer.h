@@ -42,18 +42,18 @@ struct Token {
     KWKindLast = KWSubninja
   };
 
-  const char* Start;          /// The beginning of the token string.
-  Kind        TokenKind;      /// The token kind.
-  unsigned    Length;         /// The length of the token.
-  unsigned    Line;           /// The line number of the start of this token.
-  unsigned    Column;         /// The column number at the start of this token.
+  const char* start;          /// The beginning of the token string.
+  Kind        tokenKind;      /// The token kind.
+  unsigned    length;         /// The length of the token.
+  unsigned    line;           /// The line number of the start of this token.
+  unsigned    column;         /// The column number at the start of this token.
 
   /// The name of this token's kind.
   const char *getKindName() const;
 
   /// True if this token is a keyword.
   bool isKeyword() const {
-    return TokenKind >= Kind::KWKindFirst && TokenKind <= Kind::KWKindLast;
+    return tokenKind >= Kind::KWKindFirst && tokenKind <= Kind::KWKindLast;
   }
 
   // Dump the token to stderr.
@@ -87,12 +87,12 @@ public:
   };
 
 private:
-  const char* BufferStart;    ///< The buffer end position.
-  const char* BufferPos;      ///< The current lexer position.
-  const char* BufferEnd;      ///< The buffer end position.
-  unsigned    LineNumber;     ///< The current line.
-  unsigned    ColumnNumber;   ///< The current column.
-  LexingMode  Mode;           ///< The current lexing mode.
+  const char* bufferStart;    ///< The buffer end position.
+  const char* bufferPos;      ///< The current lexer position.
+  const char* bufferEnd;      ///< The buffer end position.
+  unsigned    lineNumber;     ///< The current line.
+  unsigned    columnNumber;   ///< The current column.
+  LexingMode  mode;           ///< The current lexing mode.
 
   /// Eat a character or -1 from the stream.
   int getNextChar();
@@ -106,62 +106,62 @@ private:
 
   /// Set the token Kind and Length based on the current lexer position, and
   /// return the input.
-  Token &setTokenKind(Token &Result, Token::Kind Kind) const;
+  Token& setTokenKind(Token& result, Token::Kind kind) const;
 
   /// Set the token Kind assuming the token is an identifier or keyword, and
   /// return the input.
-  Token &setIdentifierTokenKind(Token &Result) const;
+  Token& setIdentifierTokenKind(Token& result) const;
 
   /// Lex a token, assuming the current position is the start of an identifier.
-  Token &lexIdentifier(Token &Result);
+  Token& lexIdentifier(Token& result);
 
   /// Lex a token, assuming the current position is the start of a string and
   /// the lexer is in the "path" string mode.
-  Token &lexPathString(Token &Result);
+  Token& lexPathString(Token& result);
 
   /// Lex a token, assuming the current position is the start of a string and
   /// the lexer is in the "variable" string mode.
-  Token &lexVariableString(Token &Result);
+  Token& lexVariableString(Token& result);
 
 public:
-  explicit Lexer(const char *Data, uint64_t Length);
+  explicit Lexer(const char* data, uint64_t length);
   ~Lexer();
 
   /// Return the next token from the file or EOF continually
   /// when the end of the file is reached. The input argument is
   /// used as the result, for convenience.
-  Token &lex(Token &Result);
+  Token& lex(Token& result);
 
   /// Get the buffer start pointer.
-  const char* getBufferStart() const { return BufferStart; }
+  const char* getBufferStart() const { return bufferStart; }
 
   /// Get the buffer end pointer.
-  const char* getBufferEnd() const { return BufferEnd; }
+  const char* getBufferEnd() const { return bufferEnd; }
 
   /// Get the current lexing mode.
-  LexingMode getMode() const { return Mode; }
+  LexingMode getMode() const { return mode; }
 
   /// Set the current lexing mode.
-  void setMode(LexingMode Value) { Mode = Value; }
+  void setMode(LexingMode value) { mode = value; }
 
   /// @name Utility Methods
   /// @{
 
   /// Check whether the given \arg Char is valid in an identifier.
-  static bool isIdentifierChar(char Char) {
-    return (Char >= 'a' && Char <= 'z') ||
-      (Char >= 'A' && Char <= 'Z') ||
-      (Char >= '0' && Char <= '9') ||
-      Char == '_' || Char == '.' || Char == '-';
+  static bool isIdentifierChar(char c) {
+    return (c >= 'a' && c <= 'z') ||
+      (c >= 'A' && c <= 'Z') ||
+      (c >= '0' && c <= '9') ||
+      c == '_' || c == '.' || c == '-';
   }
 
   /// Check whether the given \arg Char is valid in a simple identifier (one
   /// which can appear in the middle of an expression string outside braces).
-  static bool isSimpleIdentifierChar(char Char) {
-    return (Char >= 'a' && Char <= 'z') ||
-      (Char >= 'A' && Char <= 'Z') ||
-      (Char >= '0' && Char <= '9') ||
-      Char == '_' || Char == '-';
+  static bool isSimpleIdentifierChar(char c) {
+    return (c >= 'a' && c <= 'z') ||
+      (c >= 'A' && c <= 'Z') ||
+      (c >= '0' && c <= '9') ||
+      c == '_' || c == '-';
   }
 
   /// @}

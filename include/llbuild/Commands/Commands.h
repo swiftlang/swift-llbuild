@@ -24,8 +24,8 @@
 namespace llbuild {
 namespace commands {
 
-int ExecuteNinjaCommand(const std::vector<std::string> &Args);
-int ExecuteBuildEngineCommand(const std::vector<std::string> &Args);
+int executeNinjaCommand(const std::vector<std::string> &args);
+int executeBuildEngineCommand(const std::vector<std::string> &args);
 
 }
 }

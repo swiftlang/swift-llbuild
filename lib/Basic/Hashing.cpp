@@ -17,7 +17,7 @@
 namespace llbuild {
 namespace basic {
 
-uint64_t HashString(const std::string& Value) {
+uint64_t hashString(const std::string& value) {
   // FIXME: Replace with a real hash function.
   uint64_t Result = Value.size();
   for (auto Char: Value) {

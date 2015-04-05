@@ -22,107 +22,107 @@ using namespace llbuild::core;
 
 namespace {
 
-TEST(MakefileDepsParserTest, Basic) {
+TEST(MakefileDepsParserTest, basic) {
   typedef std::pair<std::string, std::vector<std::string>> RuleRecord;
   typedef std::pair<std::string, uint64_t> ErrorRecord;
-  struct TestActions : public MakefileDepsParser::ParseActions {
-    std::vector<RuleRecord> Records;
-    std::vector<std::pair<std::string, uint64_t>> Errors;
+  struct Testactions : public MakefileDepsParser::ParseActions {
+    std::vector<RuleRecord> records;
+    std::vector<std::pair<std::string, uint64_t>> errors;
 
-    virtual void error(const char* Message, uint64_t Length) override {
-      Errors.push_back({ Message, Length });
+    virtual void error(const char* message, uint64_t length) override {
+      errors.push_back({ message, length });
     }
 
-    virtual void actOnRuleStart(const char* Name, uint64_t Length) override {
-      Records.push_back({ std::string(Name, Name + Length), {} });
+    virtual void actOnRuleStart(const char* name, uint64_t length) override {
+      records.push_back({ std::string(name, name + length), {} });
     }
 
-    virtual void actOnRuleDependency(const char* Dependency,
-                                     uint64_t Length) override {
-      assert(!Records.empty());
-      Records.back().second.push_back(std::string(Dependency,
-                                                  Dependency+Length));
+    virtual void actOnRuleDependency(const char* dependency,
+                                     uint64_t length) override {
+      assert(!records.empty());
+      records.back().second.push_back(std::string(dependency,
+                                                  dependency+length));
     }
     virtual void actOnRuleEnd() override {}
   };
 
-  TestActions Actions;
-  std::string Input;
+  Testactions actions;
+  std::string input;
 
   // Check a basic valid input with an escape sequence.
-  Input = "a: b\\$c d\\\ne";
-  MakefileDepsParser(Input.data(), Input.size(), Actions).parse();
-  EXPECT_EQ(0U, Actions.Errors.size());
-  EXPECT_EQ(1U, Actions.Records.size());
+  input = "a: b\\$c d\\\ne";
+  MakefileDepsParser(input.data(), input.size(), actions).parse();
+  EXPECT_EQ(0U, actions.errors.size());
+  EXPECT_EQ(1U, actions.records.size());
   EXPECT_EQ(RuleRecord("a", { "b\\$c", "d", "e" }),
-            Actions.Records[0]);
+            actions.records[0]);
 
   // Check a basic valid input.
-  Actions.Errors.clear();
-  Actions.Records.clear();
-  Input = "a: b c d";
-  MakefileDepsParser(Input.data(), Input.size(), Actions).parse();
-  EXPECT_EQ(0U, Actions.Errors.size());
-  EXPECT_EQ(1U, Actions.Records.size());
+  actions.errors.clear();
+  actions.records.clear();
+  input = "a: b c d";
+  MakefileDepsParser(input.data(), input.size(), actions).parse();
+  EXPECT_EQ(0U, actions.errors.size());
+  EXPECT_EQ(1U, actions.records.size());
   EXPECT_EQ(RuleRecord("a", { "b", "c", "d" }),
-            Actions.Records[0]);
+            actions.records[0]);
 
   // Check a basic valid input with two rules.
-  Actions.Errors.clear();
-  Actions.Records.clear();
-  Input = "a: b c d\none: two three";
-  MakefileDepsParser(Input.data(), Input.size(), Actions).parse();
-  EXPECT_EQ(0U, Actions.Errors.size());
-  EXPECT_EQ(2U, Actions.Records.size());
+  actions.errors.clear();
+  actions.records.clear();
+  input = "a: b c d\none: two three";
+  MakefileDepsParser(input.data(), input.size(), actions).parse();
+  EXPECT_EQ(0U, actions.errors.size());
+  EXPECT_EQ(2U, actions.records.size());
   EXPECT_EQ(RuleRecord("a", { "b", "c", "d" }),
-            Actions.Records[0]);
+            actions.records[0]);
   EXPECT_EQ(RuleRecord("one", { "two", "three" }),
-            Actions.Records[1]);
+            actions.records[1]);
 
   // Check a valid input with a trailing newline.
-  Input = "out: \\\n  in1\n";
-  Actions.Errors.clear();
-  Actions.Records.clear();
-  MakefileDepsParser(Input.data(), Input.size(), Actions).parse();
-  EXPECT_EQ(0U, Actions.Errors.size());
-  EXPECT_EQ(1U, Actions.Records.size());
+  input = "out: \\\n  in1\n";
+  actions.errors.clear();
+  actions.records.clear();
+  MakefileDepsParser(input.data(), input.size(), actions).parse();
+  EXPECT_EQ(0U, actions.errors.size());
+  EXPECT_EQ(1U, actions.records.size());
   EXPECT_EQ(RuleRecord("out", { "in1" }),
-            Actions.Records[0]);
+            actions.records[0]);
 
   // Check error case if leading garbage.
-  Actions.Errors.clear();
-  Actions.Records.clear();
-  Input = "  =$ a";
-  MakefileDepsParser(Input.data(), Input.size(), Actions).parse();
-  EXPECT_EQ(1U, Actions.Errors.size());
-  EXPECT_EQ(Actions.Errors[0],
+  actions.errors.clear();
+  actions.records.clear();
+  input = "  =$ a";
+  MakefileDepsParser(input.data(), input.size(), actions).parse();
+  EXPECT_EQ(1U, actions.errors.size());
+  EXPECT_EQ(actions.errors[0],
             ErrorRecord("unexpected character in file", 2U));
-  EXPECT_EQ(0U, Actions.Records.size());
+  EXPECT_EQ(0U, actions.records.size());
 
   // Check error case if no ':'.
-  Actions.Errors.clear();
-  Actions.Records.clear();
-  Input = "a";
-  MakefileDepsParser(Input.data(), Input.size(), Actions).parse();
-  EXPECT_EQ(1U, Actions.Errors.size());
-  EXPECT_EQ(Actions.Errors[0],
+  actions.errors.clear();
+  actions.records.clear();
+  input = "a";
+  MakefileDepsParser(input.data(), input.size(), actions).parse();
+  EXPECT_EQ(1U, actions.errors.size());
+  EXPECT_EQ(actions.errors[0],
             ErrorRecord("missing ':' following rule", 1U));
-  EXPECT_EQ(1U, Actions.Records.size());
+  EXPECT_EQ(1U, actions.records.size());
   EXPECT_EQ(RuleRecord("a", {}),
-            Actions.Records[0]);
+            actions.records[0]);
 
 
   // Check error case in dependency list.
-  Actions.Errors.clear();
-  Actions.Records.clear();
-  Input = "a: b$";
-  MakefileDepsParser(Input.data(), Input.size(), Actions).parse();
-  EXPECT_EQ(1U, Actions.Errors.size());
-  EXPECT_EQ(Actions.Errors[0],
+  actions.errors.clear();
+  actions.records.clear();
+  input = "a: b$";
+  MakefileDepsParser(input.data(), input.size(), actions).parse();
+  EXPECT_EQ(1U, actions.errors.size());
+  EXPECT_EQ(actions.errors[0],
             ErrorRecord("unexpected character in prerequisites", 4U));
-  EXPECT_EQ(1U, Actions.Records.size());
+  EXPECT_EQ(1U, actions.records.size());
   EXPECT_EQ(RuleRecord("a", { "b" }),
-            Actions.Records[0]);
+            actions.records[0]);
   
 }
 

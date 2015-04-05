@@ -37,260 +37,261 @@ namespace {
 class ManifestLoaderImpl: public ParseActions {
   struct IncludeEntry {
     /// The file that is being processed.
-    std::string Filename;
+    std::string filename;
     /// An owning reference to the data consumed by the parser.
-    std::unique_ptr<char[]> Data;
+    std::unique_ptr<char[]> data;
     /// The parser for the file.
-    std::unique_ptr<Parser> Parser;
+    std::unique_ptr<Parser> parser;
     /// The active binding set.
-    BindingSet &Bindings;
+    BindingSet& bindings;
 
-    IncludeEntry(const std::string& Filename,
-                 std::unique_ptr<char[]> Data,
-                 std::unique_ptr<class Parser> Parser,
-                 BindingSet &Bindings)
-      : Filename(Filename), Data(std::move(Data)), Parser(std::move(Parser)),
-        Bindings(Bindings) {}
+    IncludeEntry(const std::string& filename,
+                 std::unique_ptr<char[]> data,
+                 std::unique_ptr<class Parser> parser,
+                 BindingSet& bindings)
+      : filename(filename), data(std::move(data)), parser(std::move(parser)),
+        bindings(bindings) {}
   };
 
-  std::string MainFilename;
-  ManifestLoaderActions &Actions;
-  std::unique_ptr<Manifest> TheManifest;
-  std::vector<IncludeEntry> IncludeStack;
+  std::string mainFilename;
+  ManifestLoaderActions& actions;
+  std::unique_ptr<Manifest> theManifest;
+  std::vector<IncludeEntry> includeStack;
 
 public:
-  ManifestLoaderImpl(std::string MainFilename, ManifestLoaderActions &Actions)
-    : MainFilename(MainFilename), Actions(Actions), TheManifest(nullptr)
+  ManifestLoaderImpl(std::string mainFilename, ManifestLoaderActions& actions)
+    : mainFilename(mainFilename), actions(actions), theManifest(nullptr)
   {
   }
 
   std::unique_ptr<Manifest> load() {
     // Create the manifest.
-    TheManifest.reset(new Manifest);
+    theManifest.reset(new Manifest);
 
     // Enter the main file.
-    if (!enterFile(MainFilename, TheManifest->getBindings()))
+    if (!enterFile(mainFilename, theManifest->getBindings()))
       return nullptr;
 
     // Run the parser.
-    assert(IncludeStack.size() == 1);
+    assert(includeStack.size() == 1);
     getCurrentParser()->parse();
-    assert(IncludeStack.size() == 0);
+    assert(includeStack.size() == 0);
 
-    return std::move(TheManifest);
+    return std::move(theManifest);
   }
 
-  bool enterFile(const std::string& Filename, BindingSet& Bindings,
-                 const Token* ForToken = nullptr) {
+  bool enterFile(const std::string& filename, BindingSet& bindings,
+                 const Token* forToken = nullptr) {
     // Load the file data.
-    std::unique_ptr<char[]> Data;
-    uint64_t Length;
-    std::string FromFilename = IncludeStack.empty() ? Filename :
+    std::unique_ptr<char[]> data;
+    uint64_t length;
+    std::string fromFilename = includeStack.empty() ? filename :
       getCurrentFilename();
-    if (!Actions.readFileContents(FromFilename, Filename, ForToken, &Data,
-                                  &Length))
+    if (!actions.readFileContents(fromFilename, filename, forToken, &data,
+                                  &length))
       return false;
 
     // Push a new entry onto the include stack.
-    std::unique_ptr<Parser> FileParser(new Parser(Data.get(), Length, *this));
-    IncludeStack.push_back(IncludeEntry(Filename, std::move(Data),
-                                        std::move(FileParser),
-                                        Bindings));
+    std::unique_ptr<Parser> fileParser(new Parser(data.get(), length, *this));
+    includeStack.push_back(IncludeEntry(filename, std::move(data),
+                                        std::move(fileParser),
+                                        bindings));
 
     return true;
   }
 
   void exitCurrentFile() {
-    IncludeStack.pop_back();
+    includeStack.pop_back();
   }
 
-  ManifestLoaderActions& getActions() { return Actions; }
+  ManifestLoaderActions& getActions() { return actions; }
   Parser* getCurrentParser() const {
-    assert(!IncludeStack.empty());
-    return IncludeStack.back().Parser.get();
+    assert(!includeStack.empty());
+    return includeStack.back().parser.get();
   }
   const std::string& getCurrentFilename() const {
-    assert(!IncludeStack.empty());
-    return IncludeStack.back().Filename;
+    assert(!includeStack.empty());
+    return includeStack.back().filename;
   }
   BindingSet& getCurrentBindings() const {
-    assert(!IncludeStack.empty());
-    return IncludeStack.back().Bindings;
+    assert(!includeStack.empty());
+    return includeStack.back().bindings;
   }
 
-  std::string evalString(const char* Start, const char* End,
-                         std::function<std::string(const std::string&)> Lookup,
-                         std::function<void(const std::string&)> Error) {
+  std::string evalString(const char* start, const char* end,
+                         std::function<std::string(const std::string&)> lookup,
+                         std::function<void(const std::string&)> error) {
     // Scan the string for escape sequences or variable references, accumulating
     // output pieces as we go.
     //
     // FIXME: Rewrite this with StringRef once we have it, and make efficient.
-    std::stringstream Result;
-    const char* Pos = Start;
-    while (Pos != End) {
+    std::stringstream result;
+    const char* pos = start;
+    while (pos != end) {
       // Find the next '$'.
-      const char* PieceStart = Pos;
-      for (; Pos != End; ++Pos) {
-        if (*Pos == '$')
+      const char* pieceStart = pos;
+      for (; pos != end; ++pos) {
+        if (*pos == '$')
           break;
       }
 
       // Add the current piece, if non-empty.
-      if (Pos != PieceStart)
-        Result << std::string(PieceStart, Pos);
+      if (pos != pieceStart)
+        result << std::string(pieceStart, pos);
 
       // If we are at the end, we are done.
-      if (Pos == End)
+      if (pos == end)
         break;
 
       // Otherwise, we have a '$' character to handle.
-      ++Pos;
-      if (Pos == End) {
-        Error("invalid '$'-escape at end of string");
+      ++pos;
+      if (pos == end) {
+        error("invalid '$'-escape at end of string");
         break;
       }
 
       // If this is a newline continuation, skip it and all leading space.
-      char Char = *Pos;
-      if (Char == '\n') {
-        ++Pos;
-        while (Pos != End && isspace(*Pos))
-          ++Pos;
+      int c = *pos;
+      if (c == '\n') {
+        ++pos;
+        while (pos != end && isspace(*pos))
+          ++pos;
         continue;
       }
 
       // If this is single character escape, honor it.
-      if (Char == ' ' || Char == ':' || Char == '$') {
-        Result << Char;
-        ++Pos;
+      if (c == ' ' || c == ':' || c == '$') {
+        result << char(c);
+        ++pos;
         continue;
       }
 
       // If this is a braced variable reference, expand it.
-      if (Char == '{') {
+      if (c == '{') {
         // Scan until the end of the reference, checking validity of the
         // identifier name as we go.
-        ++Pos;
-        const char* VarStart = Pos;
-        bool IsValid = true;
+        ++pos;
+        const char* varStart = pos;
+        bool isValid = true;
         while (true) {
           // If we reached the end of the string, this is an error.
-          if (Pos == End) {
-            Error("invalid variable reference in string (missing trailing '}')");
+          if (pos == end) {
+            error(
+                "invalid variable reference in string (missing trailing '}')");
             break;
           }
 
           // If we found the end of the reference, resolve it.
-          char Char = *Pos;
-          if (Char == '}') {
+          int c = *pos;
+          if (c == '}') {
             // If this identifier isn't valid, emit an error.
-            if (!IsValid) {
-              Error("invalid variable name in reference");
+            if (!isValid) {
+              error("invalid variable name in reference");
             } else {
-              Result << Lookup(std::string(VarStart, Pos - VarStart));
+              result << lookup(std::string(varStart, pos - varStart));
             }
-            ++Pos;
+            ++pos;
             break;
           }
 
           // Track whether this is a valid identifier.
-          if (!Lexer::isIdentifierChar(Char))
-            IsValid = false;
+          if (!Lexer::isIdentifierChar(c))
+            isValid = false;
 
-          ++Pos;
+          ++pos;
         }
         continue;
       }
 
       // If this is a simple variable reference, expand it.
-      if (Lexer::isSimpleIdentifierChar(Char)) {
-        const char* VarStart = Pos;
+      if (Lexer::isSimpleIdentifierChar(c)) {
+        const char* varStart = pos;
         // Scan until the end of the simple identifier.
-        ++Pos;
-        while (Pos != End && Lexer::isSimpleIdentifierChar(*Pos))
-          ++Pos;
-        Result << Lookup(std::string(VarStart, Pos-VarStart));
+        ++pos;
+        while (pos != end && Lexer::isSimpleIdentifierChar(*pos))
+          ++pos;
+        result << lookup(std::string(varStart, pos-varStart));
         continue;
       }
 
       // Otherwise, we have an invalid '$' escape.
-      Error("invalid '$'-escape (literal '$' should be written as '$$')");
+      error("invalid '$'-escape (literal '$' should be written as '$$')");
       break;
     }
 
-    return Result.str();
+    return result.str();
   }
 
   /// Given a string template token, evaluate it against the given \arg Bindings
   /// and return the resulting string.
-  std::string evalString(const Token& Value, const BindingSet& Bindings) {
-    assert(Value.TokenKind == Token::Kind::String && "invalid token kind");
+  std::string evalString(const Token& value, const BindingSet& bindings) {
+    assert(value.tokenKind == Token::Kind::String && "invalid token kind");
 
-    return evalString(Value.Start, Value.Start + Value.Length,
-                      /*Lookup=*/ [&](const std::string& Name) {
-                        return Bindings.lookup(Name); },
-                      /*Error=*/ [this, &Value](const std::string& Msg) {
-                        error(Msg, Value);
+    return evalString(value.start, value.start + value.length,
+                      /*Lookup=*/ [&](const std::string& name) {
+                        return bindings.lookup(name); },
+                      /*Error=*/ [this, &value](const std::string& msg) {
+                        error(msg, value);
                       });
   }
 
   /// @name Parse Actions Interfaces
   /// @{
 
-  virtual void initialize(ninja::Parser *Parser) override { }
+  virtual void initialize(ninja::Parser* parser) override { }
 
-  virtual void error(std::string Message, const Token &At) override {
-    Actions.error(getCurrentFilename(), Message, At);
+  virtual void error(std::string message, const Token& at) override {
+    actions.error(getCurrentFilename(), message, at);
   }
 
-  virtual void actOnBeginManifest(std::string Name) override { }
+  virtual void actOnBeginManifest(std::string name) override { }
 
   virtual void actOnEndManifest() override {
     exitCurrentFile();
   }
 
-  virtual void actOnBindingDecl(const Token& NameTok,
-                                const Token& ValueTok) override {
+  virtual void actOnBindingDecl(const Token& nameTok,
+                                const Token& valueTok) override {
     // Extract the name string.
-    std::string Name(NameTok.Start, NameTok.Length);
+    std::string name(nameTok.start, nameTok.length);
 
     // Evaluate the value string with the current top-level bindings.
-    std::string Value(evalString(ValueTok, getCurrentBindings()));
+    std::string value(evalString(valueTok, getCurrentBindings()));
 
-    getCurrentBindings().insert(Name, Value);
+    getCurrentBindings().insert(name, value);
   }
 
-  virtual void actOnDefaultDecl(const std::vector<Token>& NameToks) override {
+  virtual void actOnDefaultDecl(const std::vector<Token>& nameToks) override {
     // Resolve all of the inputs and outputs.
-    for (auto& NameTok: NameToks) {
-      std::string Name(NameTok.Start, NameTok.Length);
+    for (const auto& nameTok: nameToks) {
+      std::string name(nameTok.start, nameTok.length);
 
-      auto it = TheManifest->getNodes().find(Name);
-      if (it == TheManifest->getNodes().end()) {
-        error("unknown target name", NameTok);
+      auto it = theManifest->getNodes().find(name);
+      if (it == theManifest->getNodes().end()) {
+        error("unknown target name", nameTok);
         continue;
       }
 
-      TheManifest->getDefaultTargets().push_back(it->second.get());
+      theManifest->getDefaultTargets().push_back(it->second.get());
     }
   }
 
-  virtual void actOnIncludeDecl(bool IsInclude,
-                                const Token& PathTok) override {
-    std::string Path = evalString(PathTok, getCurrentBindings());
+  virtual void actOnIncludeDecl(bool isInclude,
+                                const Token& pathTok) override {
+    std::string path = evalString(pathTok, getCurrentBindings());
 
     // Enter the new file, with a new binding scope if this is a "subninja"
     // decl.
-    if (IsInclude) {
-      if (enterFile(Path, getCurrentBindings(), &PathTok)) {
+    if (isInclude) {
+      if (enterFile(path, getCurrentBindings(), &pathTok)) {
         // Run the parser for the included file.
         getCurrentParser()->parse();
       }
     } else {
       // Establish a local binding set and use that to contain the bindings for
       // the subninja.
-      BindingSet SubninjaBindings(&getCurrentBindings());
-      if (enterFile(Path, SubninjaBindings, &PathTok)) {
+      BindingSet subninjaBindings(&getCurrentBindings());
+      if (enterFile(path, subninjaBindings, &pathTok)) {
         // Run the parser for the included file.
         getCurrentParser()->parse();
       }
@@ -298,70 +299,70 @@ public:
   }
 
   virtual BuildResult
-  actOnBeginBuildDecl(const Token& NameTok,
-                      const std::vector<Token> &OutputTokens,
-                      const std::vector<Token> &InputTokens,
-                      unsigned NumExplicitInputs,
-                      unsigned NumImplicitInputs) override {
-    std::string Name(NameTok.Start, NameTok.Length);
+  actOnBeginBuildDecl(const Token& nameTok,
+                      const std::vector<Token>& outputTokens,
+                      const std::vector<Token>& inputTokens,
+                      unsigned numExplicitInputs,
+                      unsigned numImplicitInputs) override {
+    std::string name(nameTok.start, nameTok.length);
 
     // Resolve the rule.
-    auto it = TheManifest->getRules().find(Name);
-    Rule *Rule;
-    if (it == TheManifest->getRules().end()) {
-      error("unknown rule", NameTok);
+    auto it = theManifest->getRules().find(name);
+    Rule* rule;
+    if (it == theManifest->getRules().end()) {
+      error("unknown rule", nameTok);
 
       // Ensure we always have a rule for each command.
-      Rule = TheManifest->getPhonyRule();
+      rule = theManifest->getPhonyRule();
     } else {
-      Rule = it->second.get();
+      rule = it->second.get();
     }
 
     // Resolve all of the inputs and outputs.
-    std::vector<Node*> Outputs;
-    std::vector<Node*> Inputs;
-    for (auto& Token: OutputTokens) {
+    std::vector<Node*> outputs;
+    std::vector<Node*> inputs;
+    for (const auto& token: outputTokens) {
       // Evaluate the token string.
-      std::string Path = evalString(Token, getCurrentBindings());
-      if (Path.empty()) {
-        error("empty output path", Token);
+      std::string path = evalString(token, getCurrentBindings());
+      if (path.empty()) {
+        error("empty output path", token);
       }
-      Outputs.push_back(TheManifest->getOrCreateNode(Path));
+      outputs.push_back(theManifest->getOrCreateNode(path));
     }
-    for (auto& Token: InputTokens) {
+    for (const auto& token: inputTokens) {
       // Evaluate the token string.
-      std::string Path = evalString(Token, getCurrentBindings());
-      if (Path.empty()) {
-        error("empty input path", Token);
+      std::string path = evalString(token, getCurrentBindings());
+      if (path.empty()) {
+        error("empty input path", token);
       }
-      Inputs.push_back(TheManifest->getOrCreateNode(Path));
+      inputs.push_back(theManifest->getOrCreateNode(path));
     }
 
-    Command *Decl = new Command(Rule, Outputs, Inputs, NumExplicitInputs,
-                                NumImplicitInputs);
-    TheManifest->getCommands().push_back(std::unique_ptr<Command>(Decl));
+    Command* decl = new Command(rule, outputs, inputs, numExplicitInputs,
+                                numImplicitInputs);
+    theManifest->getCommands().push_back(std::unique_ptr<Command>(decl));
 
-    return Decl;
+    return decl;
   }
 
-  virtual void actOnBuildBindingDecl(BuildResult AbstractDecl,
-                                     const Token& NameTok,
-                                     const Token& ValueTok) override {
-    Command* Decl = static_cast<Command*>(AbstractDecl);
+  virtual void actOnBuildBindingDecl(BuildResult abstractDecl,
+                                     const Token& nameTok,
+                                     const Token& valueTok) override {
+    Command* decl = static_cast<Command*>(abstractDecl);
 
-    std::string Name(NameTok.Start, NameTok.Length);
+    std::string name(nameTok.start, nameTok.length);
 
     // FIXME: It probably should be an error to assign to the same parameter
     // multiple times, but Ninja doesn't diagnose this.
 
     // The value in a build decl is always evaluated immediately, but only in
     // the context of the top-level bindings.
-    Decl->getParameters()[Name] = evalString(ValueTok, getCurrentBindings());
+    decl->getParameters()[name] = evalString(valueTok, getCurrentBindings());
   }
 
-  virtual void actOnEndBuildDecl(BuildResult AbstractDecl,
-                                const Token& StartTok) override {
-    Command* Decl = static_cast<Command*>(AbstractDecl);
+  virtual void actOnEndBuildDecl(BuildResult abstractDecl,
+                                const Token& startTok) override {
+    Command* decl = static_cast<Command*>(abstractDecl);
 
     // Resolve the build decl parameters by evaluating in the context of the
     // rule and parameter overrides.
@@ -381,191 +382,191 @@ public:
     // Create the appropriate binding context.
     //
     // FIXME: Make this efficient.
-    std::function<std::string(const std::string&)> Lookup;
-    Lookup = [&](const std::string& Name) -> std::string {
+    std::function<std::string(const std::string&)> lookup;
+    lookup = [&](const std::string& name) -> std::string {
       // Support "in" and "out".
-      if (Name == "in") {
-        std::stringstream Result;
-        for (unsigned i = 0, ie = Decl->getNumExplicitInputs(); i != ie; ++i) {
+      if (name == "in") {
+        std::stringstream result;
+        for (unsigned i = 0, ie = decl->getNumExplicitInputs(); i != ie; ++i) {
           if (i != 0)
-            Result << " ";
-          Result << Decl->getInputs()[i]->getPath();
+            result << " ";
+          result << decl->getInputs()[i]->getPath();
         }
-        return Result.str();
-      } else if (Name == "out") {
-        std::stringstream Result;
-        for (unsigned i = 0, ie = Decl->getOutputs().size(); i != ie; ++i) {
+        return result.str();
+      } else if (name == "out") {
+        std::stringstream result;
+        for (unsigned i = 0, ie = decl->getOutputs().size(); i != ie; ++i) {
           if (i != 0)
-            Result << " ";
-          Result << Decl->getOutputs()[i]->getPath();
+            result << " ";
+          result << decl->getOutputs()[i]->getPath();
         }
-        return Result.str();
+        return result.str();
       }
 
-      auto it = Decl->getParameters().find(Name);
-      if (it != Decl->getParameters().end())
+      auto it = decl->getParameters().find(name);
+      if (it != decl->getParameters().end())
         return it->second;
-      auto it2 = Decl->getRule()->getParameters().find(Name);
-      if (it2 != Decl->getRule()->getParameters().end()) {
-        auto& Value = it2->second;
-        return evalString(Value.data(), Value.data() + Value.size(),
-                          /*Lookup=*/ [&](const std::string& Name) {
+      auto it2 = decl->getRule()->getParameters().find(name);
+      if (it2 != decl->getRule()->getParameters().end()) {
+        const auto& value = it2->second;
+        return evalString(value.data(), value.data() + value.size(),
+                          /*Lookup=*/ [&](const std::string& name) {
                             // FIXME: Mange recursive lookup? Ninja crashes on
                             // it.
-                            return Lookup(Name); },
-                          /*Error=*/ [&](const std::string& Msg) {
-                            error(Msg + " during evaluation of '" + Name + "'",
-                                  StartTok);
+                            return lookup(name); },
+                          /*Error=*/ [&](const std::string& msg) {
+                            error(msg + " during evaluation of '" + name + "'",
+                                  startTok);
                           });
       }
-      return getCurrentBindings().lookup(Name);
+      return getCurrentBindings().lookup(name);
     };
 
     // Evaluate the build parameters.
-    Decl->setCommandString(Lookup("command"));
-    Decl->setDescription(Lookup("description"));
+    decl->setCommandString(lookup("command"));
+    decl->setDescription(lookup("description"));
 
     // Set the dependency style.
-    std::string DepsStyleName = Lookup("deps");
-    std::string Depfile = Lookup("depfile");
-    Command::DepsStyleKind DepsStyle = Command::DepsStyleKind::None;
-    if (DepsStyleName == "") {
-      if (!Depfile.empty())
-        DepsStyle = Command::DepsStyleKind::GCC;
-    } else if (DepsStyleName == "gcc") {
-      DepsStyle = Command::DepsStyleKind::GCC;
-    } else if (DepsStyleName == "msvc") {
-      DepsStyle = Command::DepsStyleKind::MSVC;
+    std::string depsStyleName = lookup("deps");
+    std::string depfile = lookup("depfile");
+    Command::DepsStyleKind depsStyle = Command::DepsStyleKind::None;
+    if (depsStyleName == "") {
+      if (!depfile.empty())
+        depsStyle = Command::DepsStyleKind::GCC;
+    } else if (depsStyleName == "gcc") {
+      depsStyle = Command::DepsStyleKind::GCC;
+    } else if (depsStyleName == "msvc") {
+      depsStyle = Command::DepsStyleKind::MSVC;
     } else {
-      error("invalid 'deps' style '" + DepsStyleName + "'", StartTok);
+      error("invalid 'deps' style '" + depsStyleName + "'", startTok);
     }
-    Decl->setDepsStyle(DepsStyle);
+    decl->setDepsStyle(depsStyle);
 
-    if (!Depfile.empty()) {
-      if (DepsStyle != Command::DepsStyleKind::GCC) {
+    if (!depfile.empty()) {
+      if (depsStyle != Command::DepsStyleKind::GCC) {
         error("invalid 'depfile' attribute with selected 'deps' style",
-              StartTok);
+              startTok);
       } else {
-        Decl->setDepsFile(Depfile);
+        decl->setDepsFile(depfile);
       }
     } else {
-      if (DepsStyle == Command::DepsStyleKind::GCC) {
+      if (depsStyle == Command::DepsStyleKind::GCC) {
         error("missing 'depfile' attribute with selected 'deps' style",
-              StartTok);
+              startTok);
       }
     }
 
-    std::string PoolName = Lookup("pool");
-    if (!PoolName.empty()) {
-      const auto& it = TheManifest->getPools().find(PoolName);
-      if (it == TheManifest->getPools().end()) {
-        error("unknown pool '" + PoolName + "'", StartTok);
+    std::string poolName = lookup("pool");
+    if (!poolName.empty()) {
+      const auto& it = theManifest->getPools().find(poolName);
+      if (it == theManifest->getPools().end()) {
+        error("unknown pool '" + poolName + "'", startTok);
       } else {
-        Decl->setExecutionPool(it->second.get());
+        decl->setExecutionPool(it->second.get());
       }
     }
 
-    std::string Generator = Lookup("generator");
-    Decl->setGeneratorFlag(!Generator.empty());
+    std::string generator = lookup("generator");
+    decl->setGeneratorFlag(!generator.empty());
 
-    std::string Restat = Lookup("restat");
-    Decl->setRestatFlag(!Restat.empty());
+    std::string restat = lookup("restat");
+    decl->setRestatFlag(!restat.empty());
 
     // FIXME: Handle rspfile attributes.
   }
 
-  virtual PoolResult actOnBeginPoolDecl(const Token& NameTok) override {
-    std::string Name(NameTok.Start, NameTok.Length);
+  virtual PoolResult actOnBeginPoolDecl(const Token& nameTok) override {
+    std::string name(nameTok.start, nameTok.length);
 
     // Find the hash slot.
-    auto& Result = TheManifest->getPools()[Name];
+    auto& result = theManifest->getPools()[name];
 
     // Diagnose if the pool already exists (we still create a new one).
-    if (Result.get()) {
+    if (result.get()) {
       // The pool already exists.
-      error("duplicate pool", NameTok);
+      error("duplicate pool", nameTok);
     }
 
     // Insert the new pool.
-    Pool* Decl = new Pool(Name);
-    Result.reset(Decl);
-    return static_cast<PoolResult>(Decl);
+    Pool* decl = new Pool(name);
+    result.reset(decl);
+    return static_cast<PoolResult>(decl);
   }
 
-  virtual void actOnPoolBindingDecl(PoolResult AbstractDecl,
-                                    const Token& NameTok,
-                                    const Token& ValueTok) override {
-    Pool* Decl = static_cast<Pool*>(AbstractDecl);
+  virtual void actOnPoolBindingDecl(PoolResult abstractDecl,
+                                    const Token& nameTok,
+                                    const Token& valueTok) override {
+    Pool* decl = static_cast<Pool*>(abstractDecl);
 
-    std::string Name(NameTok.Start, NameTok.Length);
+    std::string name(nameTok.start, nameTok.length);
 
     // Evaluate the value string with the current top-level bindings.
-    std::string Value(evalString(ValueTok, getCurrentBindings()));
+    std::string value(evalString(valueTok, getCurrentBindings()));
 
-    if (Name == "depth") {
-      const char* Start = Value.c_str();
-      char* End;
-      long IntValue = ::strtol(Start, &End, 10);
-      if (*End != '\0' || IntValue <= 0) {
-        error("invalid depth", ValueTok);
+    if (name == "depth") {
+      const char* start = value.c_str();
+      char* end;
+      long intValue = ::strtol(start, &end, 10);
+      if (*end != '\0' || intValue <= 0) {
+        error("invalid depth", valueTok);
       } else {
-        Decl->setDepth(static_cast<uint32_t>(IntValue));
+        decl->setDepth(static_cast<uint32_t>(intValue));
       }
     } else {
-      error("unexpected variable", NameTok);
+      error("unexpected variable", nameTok);
     }
   }
 
-  virtual void actOnEndPoolDecl(PoolResult AbstractDecl,
-                                const Token& StartTok) override {
-    Pool* Decl = static_cast<Pool*>(AbstractDecl);
+  virtual void actOnEndPoolDecl(PoolResult abstractDecl,
+                                const Token& startTok) override {
+    Pool* decl = static_cast<Pool*>(abstractDecl);
 
     // It is an error to not specify the pool depth.
-    if (Decl->getDepth() == 0) {
-      error("missing 'depth' variable assignment", StartTok);
+    if (decl->getDepth() == 0) {
+      error("missing 'depth' variable assignment", startTok);
     }
   }
 
-  virtual RuleResult actOnBeginRuleDecl(const Token& NameTok) override {
-    std::string Name(NameTok.Start, NameTok.Length);
+  virtual RuleResult actOnBeginRuleDecl(const Token& nameTok) override {
+    std::string name(nameTok.start, nameTok.length);
 
     // Find the hash slot.
-    auto& Result = TheManifest->getRules()[Name];
+    auto& result = theManifest->getRules()[name];
 
     // Diagnose if the rule already exists (we still create a new one).
-    if (Result.get()) {
+    if (result.get()) {
       // The rule already exists.
-      error("duplicate rule", NameTok);
+      error("duplicate rule", nameTok);
     }
 
     // Insert the new rule.
-    Rule* Decl = new Rule(Name);
-    Result.reset(Decl);
-    return static_cast<RuleResult>(Decl);
+    Rule* decl = new Rule(name);
+    result.reset(decl);
+    return static_cast<RuleResult>(decl);
   }
 
-  virtual void actOnRuleBindingDecl(RuleResult AbstractDecl,
-                                    const Token& NameTok,
-                                    const Token& ValueTok) override {
-    Rule* Decl = static_cast<Rule*>(AbstractDecl);
+  virtual void actOnRuleBindingDecl(RuleResult abstractDecl,
+                                    const Token& nameTok,
+                                    const Token& valueTok) override {
+    Rule* decl = static_cast<Rule*>(abstractDecl);
 
-    std::string Name(NameTok.Start, NameTok.Length);
+    std::string name(nameTok.start, nameTok.length);
     // FIXME: It probably should be an error to assign to the same parameter
     // multiple times, but Ninja doesn't diagnose this.
-    if (Rule::isValidParameterName(Name)) {
-      Decl->getParameters()[Name] = std::string(ValueTok.Start,
-                                                ValueTok.Length);
+    if (Rule::isValidParameterName(name)) {
+      decl->getParameters()[name] = std::string(valueTok.start,
+                                                valueTok.length);
     } else {
-      error("unexpected variable", NameTok);
+      error("unexpected variable", nameTok);
     }
   }
 
-  virtual void actOnEndRuleDecl(RuleResult AbstractDecl,
-                                const Token& StartTok) override {
-    Rule* Decl = static_cast<Rule*>(AbstractDecl);
+  virtual void actOnEndRuleDecl(RuleResult abstractDecl,
+                                const Token& startTok) override {
+    Rule* decl = static_cast<Rule*>(abstractDecl);
 
-    if (!Decl->getParameters().count("command")) {
-      error("missing 'command' variable assignment", StartTok);
+    if (!decl->getParameters().count("command")) {
+      error("missing 'command' variable assignment", startTok);
     }
   }
 
@@ -576,24 +577,24 @@ public:
 
 #pragma mark - ManifestLoader
 
-ManifestLoader::ManifestLoader(std::string Filename,
-                               ManifestLoaderActions &Actions)
-  : Impl(static_cast<void*>(new ManifestLoaderImpl(Filename, Actions)))
+ManifestLoader::ManifestLoader(std::string filename,
+                               ManifestLoaderActions &actions)
+  : impl(static_cast<void*>(new ManifestLoaderImpl(filename, actions)))
 {
 }
 
 ManifestLoader::~ManifestLoader() {
-  delete static_cast<ManifestLoaderImpl*>(Impl);
+  delete static_cast<ManifestLoaderImpl*>(impl);
 }
 
 std::unique_ptr<Manifest> ManifestLoader::load() {
   // Initialize the actions.
-  static_cast<ManifestLoaderImpl*>(Impl)->getActions().initialize(this);
+  static_cast<ManifestLoaderImpl*>(impl)->getActions().initialize(this);
 
-  return static_cast<ManifestLoaderImpl*>(Impl)->load();
+  return static_cast<ManifestLoaderImpl*>(impl)->load();
 }
 
 const Parser* ManifestLoader::getCurrentParser() const {
-  return static_cast<const ManifestLoaderImpl*>(Impl)->getCurrentParser();
+  return static_cast<const ManifestLoaderImpl*>(impl)->getCurrentParser();
 }
 

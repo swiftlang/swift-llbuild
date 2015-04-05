@@ -28,145 +28,145 @@ namespace {
 #ifndef NDEBUG
 static uint64_t ack(int m, int n) {
   // Memoize using an array of growable vectors.
-  std::vector<std::vector<int>> MemoTable(m+1);
+  std::vector<std::vector<int>> memoTable(m+1);
 
   std::function<int(int,int)> ack_internal;
   ack_internal = [&] (int m, int n) {
     assert(m >= 0 && n >= 0);
-    auto& MemoRow = MemoTable[m];
-    if (size_t(n) >= MemoRow.size())
-        MemoRow.resize(n + 1);
-    if (MemoRow[n] != 0)
-      return MemoRow[n];
+    auto& memoRow = memoTable[m];
+    if (size_t(n) >= memoRow.size())
+        memoRow.resize(n + 1);
+    if (memoRow[n] != 0)
+      return memoRow[n];
 
-    int Result;
+    int result;
     if (m == 0) {
-      Result = n + 1;
+      result = n + 1;
     } else if (n == 0) {
-      Result = ack_internal(m - 1, 1);
+      result = ack_internal(m - 1, 1);
     } else {
-      Result = ack_internal(m - 1, ack_internal(m, n - 1));
+      result = ack_internal(m - 1, ack_internal(m, n - 1));
     };
 
-    MemoRow[n] = Result;
-    return Result;
+    memoRow[n] = result;
+    return result;
   };
 
   return ack_internal(m, n);
 }
 #endif
 
-static int32_t IntFromValue(const core::ValueType& Value) {
-  assert(Value.size() == 4);
-  return ((Value[0] << 0) |
-          (Value[1] << 8) |
-          (Value[2] << 16) |
-          (Value[3] << 24));
+static int32_t intFromValue(const core::ValueType& value) {
+  assert(value.size() == 4);
+  return ((value[0] << 0) |
+          (value[1] << 8) |
+          (value[2] << 16) |
+          (value[3] << 24));
 }
-static core::ValueType IntToValue(int32_t Value) {
-  std::vector<uint8_t> Result(4);
-  Result[0] = (Value >> 0) & 0xFF;
-  Result[1] = (Value >> 8) & 0xFF;
-  Result[2] = (Value >> 16) & 0xFF;
-  Result[3] = (Value >> 24) & 0xFF;
-  return Result;
+static core::ValueType intToValue(int32_t value) {
+  std::vector<uint8_t> result(4);
+  result[0] = (value >> 0) & 0xFF;
+  result[1] = (value >> 8) & 0xFF;
+  result[2] = (value >> 16) & 0xFF;
+  result[3] = (value >> 24) & 0xFF;
+  return result;
 }
 
-static core::Task* BuildAck(core::BuildEngine& engine, int M, int N) {
+static core::Task* buildAck(core::BuildEngine& engine, int m, int n) {
   struct AckermannTask : core::Task {
-    int M, N;
-    int RecursiveResultA = 0;
-    int RecursiveResultB = 0;
+    int m, n;
+    int recursiveResultA = 0;
+    int recursiveResultB = 0;
 
-    AckermannTask(int M, int N) : Task("ack()"), M(M), N(N) { }
+    AckermannTask(int m, int n) : Task("ack()"), m(m), n(n) { }
 
-    virtual void provideValue(core::BuildEngine& engine, uintptr_t InputID,
-                              const core::ValueType& Value) override {
-      if (InputID == 0) {
-        RecursiveResultA = IntFromValue(Value);
+    virtual void provideValue(core::BuildEngine& engine, uintptr_t inputID,
+                              const core::ValueType& value) override {
+      if (inputID == 0) {
+        recursiveResultA = intFromValue(value);
 
         // Request the second recursive result, if needed.
-        if (M != 0 && N != 0) {
-          char InputKey[32];
-          sprintf(InputKey, "ack(%d,%d)", M - 1, RecursiveResultA);
-          engine.taskNeedsInput(this, InputKey, 1);
+        if (m != 0 && n != 0) {
+          char inputKey[32];
+          sprintf(inputKey, "ack(%d,%d)", m - 1, recursiveResultA);
+          engine.taskNeedsInput(this, inputKey, 1);
         }
       } else {
-        assert(InputID == 1 && "invalid input ID");
-        RecursiveResultB = IntFromValue(Value);
+        assert(inputID == 1 && "invalid input ID");
+        recursiveResultB = intFromValue(value);
       }
     }
 
     virtual void start(core::BuildEngine& engine) override {
       // Request the first recursive result, if necessary.
-      if (M == 0) {
+      if (m == 0) {
         ;
-      } else if (N == 0) {
-        char InputKey[32];
-        sprintf(InputKey, "ack(%d,%d)", M-1, 1);
-        engine.taskNeedsInput(this, InputKey, 0);
+      } else if (n == 0) {
+        char inputKey[32];
+        sprintf(inputKey, "ack(%d,%d)", m-1, 1);
+        engine.taskNeedsInput(this, inputKey, 0);
       } else {
-        char InputKey[32];
-        sprintf(InputKey, "ack(%d,%d)", M, N-1);
-        engine.taskNeedsInput(this, InputKey, 0);
+        char inputKey[32];
+        sprintf(inputKey, "ack(%d,%d)", m, n-1);
+        engine.taskNeedsInput(this, inputKey, 0);
       }
     }
 
     virtual void inputsAvailable(core::BuildEngine& engine) override {
-      if (M == 0) {
-        engine.taskIsComplete(this, IntToValue(N + 1));
+      if (m == 0) {
+        engine.taskIsComplete(this, intToValue(n + 1));
         return;
       }
 
-      assert(RecursiveResultA != 0);
-      if (N == 0) {
-        engine.taskIsComplete(this, IntToValue(RecursiveResultA));
+      assert(recursiveResultA != 0);
+      if (n == 0) {
+        engine.taskIsComplete(this, intToValue(recursiveResultA));
         return;
       }
 
-      assert(RecursiveResultB != 0);
-      engine.taskIsComplete(this, IntToValue(RecursiveResultB));
+      assert(recursiveResultB != 0);
+      engine.taskIsComplete(this, intToValue(recursiveResultB));
     }
   };
 
   // Create the task.
-  return engine.registerTask(new AckermannTask(M, N));
+  return engine.registerTask(new AckermannTask(m, n));
 }
 
-static int RunAckermannBuild(int M, int N, int RecomputeCount,
-                             const std::string& TraceFilename,
-                             const std::string& DumpGraphPath) {
+static int runAckermannBuild(int m, int n, int recomputeCount,
+                             const std::string& traceFilename,
+                             const std::string& dumpGraphPath) {
   // Compute the value of ackermann(M, N) using the build system.
-  assert(M >= 0 && M < 4);
-  assert(N >= 0);
+  assert(m >= 0 && m < 4);
+  assert(n >= 0);
 
   // Define the delegate which will dynamically construct rules of the form
   // "ack(M,N)".
   class AckermannDelegate : public core::BuildEngineDelegate {
   public:
-    int NumRules = 0;
+    int numRules = 0;
 
-    virtual core::Rule lookupRule(const core::KeyType& Key) override {
+    virtual core::Rule lookupRule(const core::KeyType& key) override {
       // Extract the Ackermann parameters.
       //
       // FIXME: Need generalized key type.
-      assert(Key[0] == 'a' && Key[1] == 'c' && Key[2] == 'k' &&
-             Key[3] == '(');
-      const char* MStart = &Key[4];
-      const char* MEnd = strchr(MStart, ',');
-      assert(MEnd != nullptr && MEnd[0] == ',');
-      const char* NStart = &MEnd[1];
-      int M = strtol(MStart, nullptr, 10);
-      int N = strtol(NStart, nullptr, 10);
-      assert(M >= 0 && M < 4);
-      assert(N >= 0);
+      assert(key[0] == 'a' && key[1] == 'c' && key[2] == 'k' &&
+             key[3] == '(');
+      const char* mStart = &key[4];
+      const char* mEnd = strchr(mStart, ',');
+      assert(mEnd != nullptr && mEnd[0] == ',');
+      const char* nStart = &mEnd[1];
+      int m = strtol(mStart, nullptr, 10);
+      int n = strtol(nStart, nullptr, 10);
+      assert(m >= 0 && m < 4);
+      assert(n >= 0);
 
-      ++NumRules;
-      return core::Rule{Key, [M, N] (core::BuildEngine& engine) {
-          return BuildAck(engine, M, N); } };
+      ++numRules;
+      return core::Rule{key, [m, n] (core::BuildEngine& engine) {
+          return buildAck(engine, m, n); } };
     }
 
-    virtual void cycleDetected(const std::vector<core::Rule*>& Items) override {
+    virtual void cycleDetected(const std::vector<core::Rule*>& items) override {
       assert(0 && "unexpected cycle!");
     }
   };
@@ -174,139 +174,139 @@ static int RunAckermannBuild(int M, int N, int RecomputeCount,
   core::BuildEngine engine(delegate);
 
   // Enable tracing, if requested.
-  if (!TraceFilename.empty()) {
-    std::string Error;
-    if (!engine.enableTracing(TraceFilename, &Error)) {
+  if (!traceFilename.empty()) {
+    std::string error;
+    if (!engine.enableTracing(traceFilename, &error)) {
       fprintf(stderr, "error: %s: unable to enable tracing: %s\n",
-              getprogname(), Error.c_str());
+              getprogname(), error.c_str());
       return 1;
     }
   }
 
-  char Key[32];
-  sprintf(Key, "ack(%d,%d)", M, N);
-  int Result = IntFromValue(engine.build(Key));
-  std::cout << "ack(" << M << ", " << N << ") = " << Result << "\n";
-  if (N < 10) {
+  char key[32];
+  sprintf(key, "ack(%d,%d)", m, n);
+  int result = intFromValue(engine.build(key));
+  std::cout << "ack(" << m << ", " << n << ") = " << result << "\n";
+  if (n < 10) {
 #ifndef NDEBUG
-    int Expected = ack(M, N);
-    assert(Result == Expected);
+    int expected = ack(m, n);
+    assert(result == expected);
 #endif
   }
-  std::cout << "... computed using " << delegate.NumRules << " rules\n";
+  std::cout << "... computed using " << delegate.numRules << " rules\n";
 
-  if (!DumpGraphPath.empty()) {
-    engine.dumpGraphToFile(DumpGraphPath);
+  if (!dumpGraphPath.empty()) {
+    engine.dumpGraphToFile(dumpGraphPath);
   }
 
   // Recompute the result as many times as requested.
-  for (int i = 0; i != RecomputeCount; ++i) {
-    int RecomputedResult = IntFromValue(engine.build(Key));
-    if (RecomputedResult != Result)
+  for (int i = 0; i != recomputeCount; ++i) {
+    int recomputedResult = intFromValue(engine.build(key));
+    if (recomputedResult != result)
       abort();
   }
 
   return 0;
 }
 
-static void AckermannUsage() {
-  int OptionWidth = 20;
+static void ackermannUsage() {
+  int optionWidth = 20;
   fprintf(stderr, "Usage: %s buildengine ack [options] <M> <N>\n",
           ::getprogname());
   fprintf(stderr, "\nOptions:\n");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--help",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--help",
           "show this help message and exit");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--dump-graph <PATH>",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--dump-graph <PATH>",
           "dump build graph to PATH in Graphviz DOT format");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--recompute <N>",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--recompute <N>",
           "recompute the result N times, to stress dependency checking");
-  fprintf(stderr, "  %-*s %s\n", OptionWidth, "--trace <PATH>",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--trace <PATH>",
           "trace build engine operation to PATH");
   ::exit(1);
 }
 
-static int ExecuteAckermannCommand(std::vector<std::string> Args) {
-  int RecomputeCount = 0;
-  std::string DumpGraphPath, TraceFilename;
-  while (!Args.empty() && Args[0][0] == '-') {
-    const std::string Option = Args[0];
-    Args.erase(Args.begin());
+static int executeAckermannCommand(std::vector<std::string> args) {
+  int recomputeCount = 0;
+  std::string dumpGraphPath, traceFilename;
+  while (!args.empty() && args[0][0] == '-') {
+    const std::string option = args[0];
+    args.erase(args.begin());
 
-    if (Option == "--")
+    if (option == "--")
       break;
 
-    if (Option == "--help") {
-      AckermannUsage();
-    } else if (Option == "--recompute") {
-      if (Args.empty()) {
+    if (option == "--help") {
+      ackermannUsage();
+    } else if (option == "--recompute") {
+      if (args.empty()) {
         fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
-                ::getprogname(), Option.c_str());
-        AckermannUsage();
+                ::getprogname(), option.c_str());
+        ackermannUsage();
       }
-      char *End;
-      RecomputeCount = ::strtol(Args[0].c_str(), &End, 10);
-      if (*End != '\0') {
+      char *end;
+      recomputeCount = ::strtol(args[0].c_str(), &end, 10);
+      if (*end != '\0') {
         fprintf(stderr, "\error: %s: invalid argument to '%s'\n\n",
-                ::getprogname(), Option.c_str());
-        AckermannUsage();
+                ::getprogname(), option.c_str());
+        ackermannUsage();
       }
-      Args.erase(Args.begin());
-    } else if (Option == "--dump-graph") {
-      if (Args.empty()) {
+      args.erase(args.begin());
+    } else if (option == "--dump-graph") {
+      if (args.empty()) {
         fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
-                ::getprogname(), Option.c_str());
-        AckermannUsage();
+                ::getprogname(), option.c_str());
+        ackermannUsage();
       }
-      DumpGraphPath = Args[0];
-      Args.erase(Args.begin());
-    } else if (Option == "--trace") {
-      if (Args.empty()) {
+      dumpGraphPath = args[0];
+      args.erase(args.begin());
+    } else if (option == "--trace") {
+      if (args.empty()) {
         fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
-                ::getprogname(), Option.c_str());
-        AckermannUsage();
+                ::getprogname(), option.c_str());
+        ackermannUsage();
       }
-      TraceFilename = Args[0];
-      Args.erase(Args.begin());
+      traceFilename = args[0];
+      args.erase(args.begin());
     } else {
       fprintf(stderr, "\error: %s: invalid option: '%s'\n\n",
-              ::getprogname(), Option.c_str());
-      AckermannUsage();
+              ::getprogname(), option.c_str());
+      ackermannUsage();
     }
   }
 
-  if (Args.size() != 2) {
+  if (args.size() != 2) {
     fprintf(stderr, "error: %s: invalid number of arguments\n", getprogname());
-    AckermannUsage();
+    ackermannUsage();
   }
 
-  const char *Str = Args[0].c_str();
-  int M = ::strtol(Str, (char**)&Str, 10);
-  if (*Str != '\0') {
+  const char *str = args[0].c_str();
+  int m = ::strtol(str, (char**)&str, 10);
+  if (*str != '\0') {
     fprintf(stderr, "error: %s: invalid argument '%s' (expected integer)\n",
-            getprogname(), Args[0].c_str());
+            getprogname(), args[0].c_str());
     return 1;
   }
-  Str = Args[1].c_str();
-  int N = ::strtol(Str, (char**)&Str, 10);
-  if (*Str != '\0') {
+  str = args[1].c_str();
+  int n = ::strtol(str, (char**)&str, 10);
+  if (*str != '\0') {
     fprintf(stderr, "error: %s: invalid argument '%s' (expected integer)\n",
-            getprogname(), Args[1].c_str());
+            getprogname(), args[1].c_str());
     return 1;
   }
 
-  if (M >= 4) {
+  if (m >= 4) {
     fprintf(stderr, "error: %s: invalid argument M = '%d' (too large)\n",
-            getprogname(), M);
+            getprogname(), m);
     return 1;
   }
 
-  if (N >= 1024) {
+  if (n >= 1024) {
     fprintf(stderr, "error: %s: invalid argument N = '%d' (too large)\n",
-            getprogname(), N);
+            getprogname(), n);
     return 1;
   }
 
-  return RunAckermannBuild(M, N, RecomputeCount, TraceFilename, DumpGraphPath);
+  return runAckermannBuild(m, n, recomputeCount, traceFilename, dumpGraphPath);
 }
 
 }
@@ -323,16 +323,16 @@ static void usage() {
   exit(1);
 }
 
-int commands::ExecuteBuildEngineCommand(const std::vector<std::string> &Args) {
+int commands::executeBuildEngineCommand(const std::vector<std::string> &args) {
   // Expect the first argument to be the name of another subtool to delegate to.
-  if (Args.empty() || Args[0] == "--help")
+  if (args.empty() || args[0] == "--help")
     usage();
 
-  if (Args[0] == "ack") {
-    return ExecuteAckermannCommand({Args.begin()+1, Args.end()});
+  if (args[0] == "ack") {
+    return executeAckermannCommand({args.begin()+1, args.end()});
   } else {
     fprintf(stderr, "error: %s: unknown command '%s'\n", getprogname(),
-            Args[0].c_str());
+            args[0].c_str());
     return 1;
   }
 }

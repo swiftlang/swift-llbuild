@@ -31,12 +31,12 @@ public:
   virtual uint64_t getCurrentIteration() = 0;
 
   /// Set the current build iteration.
-  virtual void setCurrentIteration(uint64_t Value) = 0;
+  virtual void setCurrentIteration(uint64_t value) = 0;
 
   /// Look up the result for a rule.
   ///
-  /// \param Rule The rule to look up the result for.
-  /// \param Result_Out [out] The result, if found.
+  /// \param rule The rule to look up the result for.
+  /// \param result_out [out] The result, if found.
   /// \returns True if the database had a stored result for the rule.
   //
   // FIXME: This might be more efficient if it returns Result.
@@ -44,10 +44,10 @@ public:
   // FIXME: Figure out if we want a more lazy approach where we make the
   // database cache result objects and we query them only when needed. This may
   // scale better to very large build graphs.
-  virtual bool lookupRuleResult(const Rule& Rule, Result* Result_Out) = 0;
+  virtual bool lookupRuleResult(const Rule& rule, Result* result_out) = 0;
 
   /// Update the stored result for a rule.
-  virtual void setRuleResult(const Rule& Rule, const Result& Result) = 0;
+  virtual void setRuleResult(const Rule& rule, const Result& result) = 0;
 
   /// Called by the build engine to indicate that a build has started.
   ///
@@ -63,13 +63,13 @@ public:
 
 /// Create a BuildDB instance backed by a SQLite3 database.
 ///
-/// \param ClientSchemaVersion An uninterpreted version number for use by the
+/// \param clientSchemaVersion An uninterpreted version number for use by the
 /// client to allow batch changes to the stored build results; if the stored
 /// schema does not match the provided version the database will be cleared upon
 /// opening.
-std::unique_ptr<BuildDB> CreateSQLiteBuildDB(const std::string& Path,
-                                             uint32_t ClientSchemaVersion,
-                                             std::string* Error_Out);
+std::unique_ptr<BuildDB> createSQLiteBuildDB(const std::string& path,
+                                             uint32_t clientSchemaVersion,
+                                             std::string* error_out);
 
 }
 }

@@ -38,12 +38,12 @@ int main(int argc, const char **argv) {
     // We still want to represent ourselves as llbuild in output messages.
     setprogname("llbuild");
 
-    std::vector<std::string> Args;
-    Args.push_back("build");
+    std::vector<std::string> args;
+    args.push_back("build");
     for (int i = 1; i != argc; ++i) {
-      Args.push_back(argv[i]);
+      args.push_back(argv[i]);
     }
-    return ExecuteNinjaCommand(Args);
+    return executeNinjaCommand(args);
   }
 
   // Expect the first argument to be the name of a subtool to delegate to.
@@ -57,19 +57,19 @@ int main(int argc, const char **argv) {
   }
 
   // Otherwise, expect a command name.
-  std::string Command(argv[1]);
-  std::vector<std::string> Args;
+  std::string command(argv[1]);
+  std::vector<std::string> args;
   for (int i = 2; i != argc; ++i) {
-    Args.push_back(argv[i]);
+    args.push_back(argv[i]);
   }
 
-  if (Command == "ninja") {
-    return ExecuteNinjaCommand(Args);
-  } else if (Command == "buildengine") {
-    return ExecuteBuildEngineCommand(Args);
+  if (command == "ninja") {
+    return executeNinjaCommand(args);
+  } else if (command == "buildengine") {
+    return executeBuildEngineCommand(args);
   } else {
     fprintf(stderr, "error: %s: unknown command '%s'\n", getprogname(),
-            Command.c_str());
+            command.c_str());
     return 1;
   }
 }

@@ -33,28 +33,28 @@ class BuildEngine;
 /// a key.
 struct Result {
   /// The last value that resulted from executing the task.
-  ValueType Value = {};
+  ValueType value = {};
 
   /// The build timestamp during which the result \see Value was computed.
-  uint64_t ComputedAt = 0;
+  uint64_t computedAt = 0;
 
   /// The build timestamp at which this result was last checked to be
   /// up-to-date.
   ///
-  /// \invariant BuiltAt >= ComputedAt
+  /// \invariant builtAt >= computedAt
   //
   // FIXME: Think about this representation more. The problem with storing this
   // field here in this fashion is that every build will result in bringing all
-  // of the BuiltAt fields up to date. That is unfortunate from a persistence
-  // perspective, where it would be ideal if we didn't touch any disk state for
-  // null builds.
-  uint64_t BuiltAt = 0;
+  // of the \see builtAt fields up to date. That is unfortunate from a
+  // persistence perspective, where it would be ideal if we didn't touch any
+  // disk state for null builds.
+  uint64_t builtAt = 0;
 
   /// The explicit dependencies required by the generation.
   //
   // FIXME: At some point, figure out the optimal representation for this field,
   // which is likely to be a lot of the resident memory size.
-  std::vector<KeyType> Dependencies;
+  std::vector<KeyType> dependencies;
 };
 
 /// A task object represents an abstract in progress computation in the build
@@ -87,10 +87,10 @@ public:
   /// The name of the task, for debugging purposes.
   //
   // FIXME: Eliminate this?
-  std::string Name;
+  std::string name;
 
 public:
-  Task(const std::string& Name) : Name(Name) {}
+  Task(const std::string& name) : name(name) {}
 
   virtual ~Task();
 
@@ -102,18 +102,18 @@ public:
   ///
   /// This callback will always be invoked immediately after the task is
   /// started, and prior to its receipt of any other callbacks.
-  virtual void providePriorValue(BuildEngine&, const ValueType& Value) {};
+  virtual void providePriorValue(BuildEngine&, const ValueType& value) {};
 
   /// Invoked by the build engine to provide an input value as it becomes
   /// available.
   ///
-  /// \param InputID The unique identifier provided to the build engine to
+  /// \param inputID The unique identifier provided to the build engine to
   /// represent this input when requested in \see
   /// BuildEngine::taskNeedsInput().
   ///
-  /// \param Value The computed value for the given input.
-  virtual void provideValue(BuildEngine&, uintptr_t InputID,
-                            const ValueType& Value) = 0;
+  /// \param value The computed value for the given input.
+  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+                            const ValueType& value) = 0;
 
   /// Executed by the build engine to indicate that all inputs have been
   /// provided, and the task should begin its computation.
@@ -162,10 +162,10 @@ public:
   };
 
   /// The key computed by the rule.
-  KeyType Key;
+  KeyType key;
 
   /// Called to create the task to build the rule, when necessary.
-  std::function<Task*(BuildEngine&)> Action;
+  std::function<Task*(BuildEngine&)> action;
 
   /// Called to check whether the previously computed value for this rule is
   /// still valid.
@@ -174,10 +174,10 @@ public:
   /// state managed externally to the build engine. For example, a rule which
   /// computes something on the file system may use this to verify that the
   /// computed output has not changed since it was built.
-  std::function<bool(const Rule&, const ValueType&)> IsResultValid;
+  std::function<bool(const Rule&, const ValueType&)> isResultValid;
 
   /// Called to indicate a change in the rule status.
-  std::function<void(StatusKind)> UpdateStatus;
+  std::function<void(StatusKind)> updateStatus;
 };
 
 /// Delegate interface for use with the build engine.
@@ -192,13 +192,13 @@ public:
   /// Task through mechanisms such as \see BuildEngine::taskNeedsInput()). If a
   /// requested Key cannot be supplied, the delegate should provide a dummy rule
   /// that the client can translate into an error.
-  virtual Rule lookupRule(const KeyType& Key) = 0;
+  virtual Rule lookupRule(const KeyType& key) = 0;
 
   /// Called when a cycle is detected by the build engine and it cannot make
   /// forward progress.
   ///
-  /// \param Items The ordered list of items comprising the cycle.
-  virtual void cycleDetected(const std::vector<Rule*>& Items) = 0;
+  /// \param items The ordered list of items comprising the cycle.
+  virtual void cycleDetected(const std::vector<Rule*>& items) = 0;
 
 };
 
@@ -224,18 +224,18 @@ public:
 /// attachDB()) which can be used to record the prior results of evaluating Rule
 /// instances.
 class BuildEngine {
-  void *Impl;
+  void *impl;
 
 public:
   /// Create a build engine with the given delegate.
-  explicit BuildEngine(BuildEngineDelegate& Delegate);
+  explicit BuildEngine(BuildEngineDelegate& delegate);
   ~BuildEngine();
 
   /// @name Rule Definition
   /// @{
 
   /// Add a rule which the engine can use to produce outputs.
-  void addRule(Rule &&Rule);
+  void addRule(Rule&& rule);
 
   /// @}
 
@@ -243,22 +243,22 @@ public:
   /// @{
 
   /// Build the result for a particular key.
-  const ValueType& build(const KeyType& Key);
+  const ValueType& build(const KeyType& key);
 
   /// Attach a database for persisting build state.
   ///
   /// A database should only be attached immediately after creating the engine,
   /// it is an error to attach a database after adding rules or initiating any
   /// builds, or to attempt to attach multiple databases.
-  void attachDB(std::unique_ptr<BuildDB> Database);
+  void attachDB(std::unique_ptr<BuildDB> database);
 
   /// Enable tracing into the given output file.
   ///
   /// \returns True on success.
-  bool enableTracing(const std::string& Path, std::string* Error_Out);
+  bool enableTracing(const std::string& path, std::string* error_out);
 
   /// Dump the build state to a file in Graphviz DOT format.
-  void dumpGraphToFile(const std::string &Path);
+  void dumpGraphToFile(const std::string &path);
 
   /// @}
 
@@ -271,7 +271,7 @@ public:
   /// subsequently be returned as the task to execute for a Rule evaluation.
   ///
   /// \returns The provided task, for the convenience of the client.
-  Task* registerTask(Task* Task);
+  Task* registerTask(Task* task);
 
   /// The maximum allowed input ID.
   static const uintptr_t kMaximumInputID = ~(uintptr_t)0xFF;
@@ -285,12 +285,12 @@ public:
   /// NOTE: It is an unchecked error for a task to request the same input value
   /// multiple times.
   ///
-  /// \param InputID An arbitrary value that may be provided by the client to
+  /// \param inputID An arbitrary value that may be provided by the client to
   /// use in efficiently associating this input. The range of this parameter is
   /// intentionally chosen to allow a pointer to be provided, but note that all
   /// input IDs greater than \see kMaximumInputID are reserved for internal use
   /// by the engine.
-  void taskNeedsInput(Task* Task, const KeyType& Key, uintptr_t InputID);
+  void taskNeedsInput(Task* task, const KeyType& key, uintptr_t inputID);
 
   /// Specify that the given \arg Task must be built subsequent to the
   /// computation of \arg Key.
@@ -298,7 +298,7 @@ public:
   /// The value of the computation of \arg Key is not available to the task, and
   /// the only guarantee the engine provides is that if \arg Key is computed
   /// during a build, then \arg Task will not be computed until after it.
-  void taskMustFollow(Task* Task, const KeyType& Key);
+  void taskMustFollow(Task* task, const KeyType& key);
 
   /// Inform the engine of an input dependency that was discovered by the task
   /// during its execution, a la compiler generated dependency files.
@@ -320,18 +320,18 @@ public:
   /// It is legal to call this method from any thread, but the caller is
   /// responsible for ensuring that it is never called concurrently for the same
   /// task.
-  void taskDiscoveredDependency(Task* Task, const KeyType& Key);
+  void taskDiscoveredDependency(Task* task, const KeyType& key);
 
   /// Called by a task to indicate it has completed and to provide its value.
   ///
   /// It is legal to call this method from any thread.
   ///
-  /// \param Value The new value for the task's rule.
+  /// \param value The new value for the task's rule.
   ///
-  /// \param ForceChange If true, treat the value as changed and trigger
+  /// \param forceChange If true, treat the value as changed and trigger
   /// dependents to rebuild, even if the value itself is not different from the
   /// prior result.
-  void taskIsComplete(Task* Task, ValueType&& Value, bool ForceChange=false);
+  void taskIsComplete(Task* task, ValueType&& value, bool forceChange = false);
   
   /// @}
 };

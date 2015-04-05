@@ -26,15 +26,12 @@ class Task;
 /// external log file, suitable for ex post facto debugging and analysis.
 class BuildEngineTrace {
     /// The output file pointer.
-    void* OutputPtr = nullptr;
+    void* outputPtr = nullptr;
 
-    /// Whether the trace has been opened.
-    bool IsOpen = false;
-
-    unsigned NumNamedTasks = 0;
-    std::unordered_map<const Task*, std::string> TaskNames;
-    unsigned NumNamedRules = 0;
-    std::unordered_map<const Rule*, std::string> RuleNames;
+    unsigned numNamedTasks = 0;
+    std::unordered_map<const Task*, std::string> taskNames;
+    unsigned numNamedRules = 0;
+    std::unordered_map<const Rule*, std::string> ruleNames;
 
 private:
     const char* getTaskName(const Task*);
@@ -48,15 +45,15 @@ public:
     /// recording, and may only be called once per trace object.
     ///
     /// \returns True on success.
-    bool open(const std::string& Path, std::string* Error_Out);
+    bool open(const std::string& path, std::string* error_out);
 
     /// Close the output file; no subsequest trace recording may be done.
     ///
     /// \returns True on success.
-    bool close(std::string* Error_Out);
+    bool close(std::string* error_out);
 
     /// Check if the trace output is open.
-    bool isOpen() const { return IsOpen; }
+    bool isOpen() const { return outputPtr != nullptr; }
 
     /// @name Trace Recording APIs
     /// @{
@@ -65,17 +62,17 @@ public:
     /// @{
 
     void buildStarted();
-    void handlingBuildInputRequest(const Rule* Rule);
-    void createdTaskForRule(const Task* Task, const Rule* Rule);
-    void handlingTaskInputRequest(const Task* Task, const Rule* Rule);
-    void pausedInputRequestForRuleScan(const Rule* Rule);
-    void readyingTaskInputRequest(const Task* Task, const Rule* Rule);
-    void addedRulePendingTask(const Rule* Rule, const Task* Task);
-    void completedTaskInputRequest(const Task* Task, const Rule* Rule);
-    void updatedTaskWaitCount(const Task* Task, unsigned WaitCount);
-    void unblockedTask(const Task* Task);
-    void readiedTask(const Task* Task, const Rule* Rule);
-    void finishedTask(const Task* Task, const Rule* Rule, bool WasChanged);
+    void handlingBuildInputRequest(const Rule* rule);
+    void createdTaskForRule(const Task* task, const Rule* rule);
+    void handlingTaskInputRequest(const Task* task, const Rule* rule);
+    void pausedInputRequestForRuleScan(const Rule* rule);
+    void readyingTaskInputRequest(const Task* task, const Rule* rule);
+    void addedRulePendingTask(const Rule* rule, const Task* task);
+    void completedTaskInputRequest(const Task* task, const Rule* rule);
+    void updatedTaskWaitCount(const Task* task, unsigned waitCount);
+    void unblockedTask(const Task* task);
+    void readiedTask(const Task* task, const Rule* rule);
+    void finishedTask(const Task* task, const Rule* rule, bool wasChanged);
     void buildEnded();
 
     /// @}
@@ -83,19 +80,19 @@ public:
     /// @name Dependency Checking
     /// @{
 
-    void checkingRuleNeedsToRun(const Rule* ForRule);
-    void ruleScheduledForScanning(const Rule* ForRule);
-    void ruleScanningNextInput(const Rule* ForRule, const Rule* InputRule);
-    void ruleScanningDeferredOnInput(const Rule* ForRule,
-                                     const Rule* InputRule);
-    void ruleScanningDeferredOnTask(const Rule* ForRule,
-                                    const Task* InputTask);
-    void ruleNeedsToRunBecauseNeverBuilt(const Rule* ForRule);
-    void ruleNeedsToRunBecauseInvalidValue(const Rule* ForRule);
-    void ruleNeedsToRunBecauseInputMissing(const Rule* ForRule);
-    void ruleNeedsToRunBecauseInputRebuilt(const Rule* ForRule,
-                                           const Rule* InputRule);
-    void ruleDoesNotNeedToRun(const Rule* ForRule);
+    void checkingRuleNeedsToRun(const Rule* forRule);
+    void ruleScheduledForScanning(const Rule* forRule);
+    void ruleScanningNextInput(const Rule* forRule, const Rule* inputRule);
+    void ruleScanningDeferredOnInput(const Rule* forRule,
+                                     const Rule* inputRule);
+    void ruleScanningDeferredOnTask(const Rule* forRule,
+                                    const Task* inputTask);
+    void ruleNeedsToRunBecauseNeverBuilt(const Rule* forRule);
+    void ruleNeedsToRunBecauseInvalidValue(const Rule* forRule);
+    void ruleNeedsToRunBecauseInputMissing(const Rule* forRule);
+    void ruleNeedsToRunBecauseInputRebuilt(const Rule* forRule,
+                                           const Rule* inputRule);
+    void ruleDoesNotNeedToRun(const Rule* forRule);
 
     /// @}
 

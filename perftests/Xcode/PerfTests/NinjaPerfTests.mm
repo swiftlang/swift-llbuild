@@ -47,7 +47,7 @@ static void ExecuteShellCommand(const char *String) {
   
   printf("performing load-manifest-only test...\n");
   [self measureBlock:^{
-          llbuild::commands::ExecuteNinjaCommand({
+          llbuild::commands::executeNinjaCommand({
                   "load-manifest-only", ninjaPath.UTF8String });
       }];
 }
@@ -85,7 +85,7 @@ static void ExecuteShellCommand(const char *String) {
       ExecuteShellCommand([NSString stringWithFormat:@"rm -f \"%@\"",
                                     dbPath].UTF8String);
       
-      llbuild::commands::ExecuteNinjaCommand({
+      llbuild::commands::executeNinjaCommand({
           "build", "--quiet", "--no-parallel", "--simulate",
             "--db", dbPath.UTF8String, "-f", ninjaPath.UTF8String, TargetName });
     }];
@@ -123,7 +123,7 @@ static void ExecuteShellCommand(const char *String) {
   printf("performing initial build...\n");
   ExecuteShellCommand([NSString stringWithFormat:@"rm -f \"%@\"",
                                 dbPath].UTF8String);
-  llbuild::commands::ExecuteNinjaCommand({
+  llbuild::commands::executeNinjaCommand({
       "build", "--quiet", "--no-parallel", "--simulate",
       "--db", dbPath.UTF8String, "-f", ninjaPath.UTF8String, TargetName });
     
@@ -131,7 +131,7 @@ static void ExecuteShellCommand(const char *String) {
   // database, but should not modify it other than to bump the iteration count.
   printf("performing null builds (performance test)...\n");
   [self measureBlock:^{
-      llbuild::commands::ExecuteNinjaCommand({
+      llbuild::commands::executeNinjaCommand({
           "build", "--quiet", "--no-parallel", "--simulate",
           "--db", dbPath.UTF8String, "-f", ninjaPath.UTF8String, TargetName });
     }];

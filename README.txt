@@ -14,7 +14,8 @@ Swift conventions.
 * For C++ code:
   * The code is written against the C++11 standard.
 
-  * The style should follow the LLVM conventions.
+  * The style should follow the LLVM conventions, but variable names use
+    camelCase.
 
   * Both exceptions and RTTI are **disallowed**.
 
