@@ -172,3 +172,17 @@ Random Tasks
   * We should consider allowing the right of the target result to go directly
     into the stored Result field. That would avoid the need for spurious
     allocations when updating results.
+
+  * We need to switch the Rule Dependencies to be stored using the ID of the
+    rule (which means we need to assign rule IDs, but the DB would like that
+    anyway). This dramatically reduces the storage required by the database
+    (although a lot of that is because of our subpar phony command
+    implementation, and it would drop significantly if we switch to a
+    specialized implementation for phony commands, because we don't need the
+    clunky giant composite-key).
+
+  * We should use a custom task for Phony commands, they have a lot of special
+    cases (like the one above about the composite key size).
+
+  * We should move to a compact encoding for the build value. Not worth doing
+    until we address the rule_dependencies table size.
