@@ -181,6 +181,12 @@ Random Tasks
     specialized implementation for phony commands, because we don't need the
     clunky giant composite-key).
 
+  * We should move the rule_dependencies DB table to be a table with a composite
+    primary key and WITHOUT ROWID (and drop the index). This reduces the
+    duplication between the table and the index and drops the database size
+    significantly. In my performance tests on LLVM, this sped up the null build
+    time by 20%.
+
   * We should use a custom task for Phony commands, they have a lot of special
     cases (like the one above about the composite key size).
 
