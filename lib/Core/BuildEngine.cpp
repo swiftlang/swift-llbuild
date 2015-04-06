@@ -35,7 +35,7 @@ BuildEngineDelegate::~BuildEngineDelegate() {}
 
 namespace {
 
-class BuildEngineimpl {
+class BuildEngineImpl {
   struct RuleInfo;
   struct TaskInfo;
 
@@ -139,7 +139,7 @@ class BuildEngineimpl {
       return state == StateKind::IsScanning;
     }
 
-    bool isScanned(const BuildEngineimpl* engine) const {
+    bool isScanned(const BuildEngineImpl* engine) const {
       // If the rule is marked as complete, just check that state.
       if (state == StateKind::Complete)
         return isComplete(engine);
@@ -160,12 +160,12 @@ class BuildEngineimpl {
       return isInProgressWaiting() || isInProgressComputing();
     }
 
-    bool isComplete(const BuildEngineimpl* engine) const {
+    bool isComplete(const BuildEngineImpl* engine) const {
       return state == StateKind::Complete &&
         result.builtAt == engine->getCurrentTimestamp();
     }
 
-    void setComplete(const BuildEngineimpl* engine) {
+    void setComplete(const BuildEngineImpl* engine) {
       state = StateKind::Complete;
       // Note we do not push this change to the database. This is essentially a
       // mark we maintain to allow a lazy transition to Incomplete when the
@@ -914,11 +914,11 @@ private:
   }
 
 public:
-  BuildEngineimpl(class BuildEngine& buildEngine,
+  BuildEngineImpl(class BuildEngine& buildEngine,
                   BuildEngineDelegate& delegate)
     : buildEngine(buildEngine), delegate(delegate) {}
 
-  ~BuildEngineimpl() {
+  ~BuildEngineImpl() {
     // If tracing is enabled, close it.
     if (trace) {
       std::string error;
@@ -1195,54 +1195,54 @@ public:
 #pragma mark - BuildEngine
 
 BuildEngine::BuildEngine(BuildEngineDelegate& delegate)
-  : impl(new BuildEngineimpl(*this, delegate)) 
+  : impl(new BuildEngineImpl(*this, delegate)) 
 {
 }
 
 BuildEngine::~BuildEngine() {
-  delete static_cast<BuildEngineimpl*>(impl);
+  delete static_cast<BuildEngineImpl*>(impl);
 }
 
 void BuildEngine::addRule(Rule&& rule) {
-  static_cast<BuildEngineimpl*>(impl)->addRule(std::move(rule));
+  static_cast<BuildEngineImpl*>(impl)->addRule(std::move(rule));
 }
 
 const ValueType& BuildEngine::build(const KeyType& key) {
-  return static_cast<BuildEngineimpl*>(impl)->build(key);
+  return static_cast<BuildEngineImpl*>(impl)->build(key);
 }
 
 void BuildEngine::dumpGraphToFile(const std::string& path) {
-  static_cast<BuildEngineimpl*>(impl)->dumpGraphToFile(path);
+  static_cast<BuildEngineImpl*>(impl)->dumpGraphToFile(path);
 }
 
 void BuildEngine::attachDB(std::unique_ptr<BuildDB> database) {
-  static_cast<BuildEngineimpl*>(impl)->attachDB(std::move(database));
+  static_cast<BuildEngineImpl*>(impl)->attachDB(std::move(database));
 }
 
 bool BuildEngine::enableTracing(const std::string& path,
                                 std::string* error_out) {
-  return static_cast<BuildEngineimpl*>(impl)->enableTracing(path, error_out);
+  return static_cast<BuildEngineImpl*>(impl)->enableTracing(path, error_out);
 }
 
 Task* BuildEngine::registerTask(Task* task) {
-  return static_cast<BuildEngineimpl*>(impl)->registerTask(task);
+  return static_cast<BuildEngineImpl*>(impl)->registerTask(task);
 }
 
 void BuildEngine::taskNeedsInput(Task* task, const KeyType& key,
                                  uintptr_t inputID) {
-  static_cast<BuildEngineimpl*>(impl)->taskNeedsInput(task, key, inputID);
+  static_cast<BuildEngineImpl*>(impl)->taskNeedsInput(task, key, inputID);
 }
 
 void BuildEngine::taskDiscoveredDependency(Task* task, const KeyType& key) {
-  static_cast<BuildEngineimpl*>(impl)->taskDiscoveredDependency(task, key);
+  static_cast<BuildEngineImpl*>(impl)->taskDiscoveredDependency(task, key);
 }
 
 void BuildEngine::taskMustFollow(Task* task, const KeyType& key) {
-  static_cast<BuildEngineimpl*>(impl)->taskMustFollow(task, key);
+  static_cast<BuildEngineImpl*>(impl)->taskMustFollow(task, key);
 }
 
 void BuildEngine::taskIsComplete(Task* task, ValueType&& value,
                                  bool forceChange) {
-  static_cast<BuildEngineimpl*>(impl)->taskIsComplete(task, std::move(value),
+  static_cast<BuildEngineImpl*>(impl)->taskIsComplete(task, std::move(value),
                                                       forceChange);
 }
