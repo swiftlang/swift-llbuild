@@ -19,6 +19,7 @@
 #include "llbuild/Core/MakefileDepsParser.h"
 #include "llbuild/Ninja/ManifestLoader.h"
 
+#include "CommandLineStatusOutput.h"
 #include "CommandUtil.h"
 
 #include <cerrno>
@@ -500,6 +501,9 @@ public:
 
   /// @}
 
+  /// The status output object.
+  CommandLineStatusOutput statusOutput;
+
   /// The serial queue we used to order output consistently.
   dispatch_queue_t outputQueue;
 
@@ -523,6 +527,14 @@ public:
       outputQueue(dispatch_queue_create("output-queue",
                                         /*attr=*/DISPATCH_QUEUE_SERIAL))
   {
+    // Open the status output.
+    std::string error;
+    if (!statusOutput.open(&error)) {
+      fprintf(stderr, "error: %s: unable to open output: %s\n",
+              getprogname(), error.c_str());
+      exit(1);
+    }
+
     // Register the context with the delegate.
     delegate.context = this;
 
@@ -552,14 +564,31 @@ public:
     sigaction(SIGINT, &previousSigintHandler, NULL);
 
     dispatch_release(outputQueue);
+
+    // Close the status output.
+    std::string error;
+    statusOutput.close(&error);
   }
 
   /// @name Diagnostics Output
   /// @{
 
+  /// Emit a status line, which can be updated.
+  ///
+  /// This method should only be called from the outputQueue.
+  void emitStatus(const char* fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    std::string message = getFormattedString(fmt, ap);
+    va_end(ap);
+
+    statusOutput.setOrWriteLine(message);
+  }
+
   /// Emit a diagnostic to the error stream.
   void emitDiagnostic(std::string kind, std::string message) {
     dispatch_async(outputQueue, ^() {
+        statusOutput.finishLine();
         fprintf(stderr, "%s: %s: %s\n", getprogname(), kind.c_str(),
                 message.c_str());
       });
@@ -570,6 +599,7 @@ public:
   void emitDiagnosticAndText(std::string kind, std::string message,
                              std::string text) {
     dispatch_async(outputQueue, ^() {
+        statusOutput.finishLine();
         fprintf(stderr, "%s: %s: %s\n", getprogname(), kind.c_str(),
                 message.c_str());
         fflush(stderr);
@@ -581,6 +611,7 @@ public:
   /// Emit a block of text to the output.
   void emitText(std::string text) {
     dispatch_async(outputQueue, ^() {
+        statusOutput.finishLine();
         fwrite(text.data(), text.size(), 1, stdout);
         fflush(stdout);
       });
@@ -1088,8 +1119,9 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       const std::string& description =
         context.verbose ? command->getCommandString() :
         command->getEffectiveDescription();
-      context.emitText("[%d/%d] %s\n", ++context.numOutputDescriptions,
-                       getNumPossibleMaxCommands(context), description.c_str());
+      context.emitStatus(
+          "[%d/%d] %s", ++context.numOutputDescriptions,
+          getNumPossibleMaxCommands(context), description.c_str());
     }
 
     void executeCommand() {
