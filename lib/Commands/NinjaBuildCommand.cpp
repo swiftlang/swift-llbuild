@@ -24,7 +24,7 @@
 #include <cerrno>
 #include <cstdlib>
 #include <deque>
-#include <iostream>
+#include <sstream>
 #include <thread>
 #include <unordered_set>
 
@@ -453,8 +453,9 @@ public:
 
   /// Whether the build was cancelled by SIGINT.
   std::atomic<bool> wasCancelledBySigint{false};
-  std::atomic<bool> wasCancelledByCycle{false};
 
+  /// The number of generated errors.
+  std::atomic<unsigned> numErrors{0};
   /// The number of inputs used during the build.
   unsigned numBuiltInputs{0};
   /// The number of commands executed during the build
@@ -522,6 +523,9 @@ public:
   }
 
   ~BuildContext() {
+    // Ensure the output queue is done.
+    dispatch_sync(outputQueue, ^() {});
+
     // Clean up our dispatch source.
     dispatch_source_cancel(sigintSource);
     dispatch_release(sigintSource);
@@ -532,10 +536,63 @@ public:
     dispatch_release(outputQueue);
   }
 
+  /// @name Diagnostics Output
+  /// @{
+
+  void emitDiagnostic(std::string kind, std::string message) {
+    dispatch_async(outputQueue, ^() {
+        fprintf(stderr, "%s: %s: %s\n", getprogname(), kind.c_str(),
+                message.c_str());
+      });
+  }
+
+  void emitError(std::string&& message) {
+    emitDiagnostic("error", std::move(message));
+    ++numErrors;
+  }
+
+  void emitError(const char* fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    char* buf;
+    int result = ::vasprintf(&buf, fmt, ap);
+    va_end(ap);
+
+    if (result < 0) {
+      buf = ::strdup("unable to format message");
+    }
+
+    emitError(std::string(buf));
+
+    ::free(buf);
+  }
+
+  void emitNote(std::string&& message) {
+    emitDiagnostic("note", std::move(message));
+  }
+
+  void emitNote(const char* fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    char* buf;
+    int result = ::vasprintf(&buf, fmt, ap);
+    va_end(ap);
+
+    if (result < 0) {
+      buf = ::strdup("unable to format note");
+    }
+
+    emitNote(std::string(buf));
+
+    ::free(buf);
+  }
+
+  /// @}
+
   void cancelBuildOnInterrupt() {
     std::lock_guard<std::mutex> guard(spawnedProcessesMutex);
 
-    fprintf(stderr, "... cancelling build.\n");
+    emitNote("cancelling build.");
     isCancelled = true;
     wasCancelledBySigint = true;
 
@@ -553,11 +610,8 @@ public:
   void reportMissingInput(const ninja::Node* node) {
     // We simply report the missing input here, the build will be cancelled when
     // a rule sees it missing.
-    dispatch_async(outputQueue, ^() {
-        fprintf(stderr,
-                "error: %s: missing input '%s' and no rule to build it\n",
-                getprogname(), node->getPath().c_str());
-      });
+    emitError("missing input '%s' and no rule to build it",
+              node->getPath().c_str());
   }
 
   void incrementFailedCommands() {
@@ -568,16 +622,14 @@ public:
     // number to continue past.
     if (numFailedCommandsToTolerate != 0 &&
         numFailedCommands == numFailedCommandsToTolerate) {
-      dispatch_async(outputQueue, ^() {
-          fprintf(stderr, "error: %s: stopping build due to command failures\n",
-                  getprogname());
-        });
+      emitError("stopping build due to command failures");
       isCancelled = true;
     }
   }
 };
 
 class BuildManifestActions : public ninja::ManifestLoaderActions {
+  BuildContext& context;
   ninja::ManifestLoader* loader = 0;
   unsigned numErrors = 0;
   unsigned maxErrors = 20;
@@ -606,19 +658,20 @@ private:
       return true;
 
     // Otherwise, emit the error.
+    ++numErrors;
     if (forToken) {
       util::emitError(fromFilename, error, *forToken,
                       loader->getCurrentParser());
     } else {
-      // We were unable to open the main file.
-      fprintf(stderr, "error: %s: %s\n", getprogname(), error.c_str());
-      exit(1);
+      context.emitError(std::move(error));
     }
 
     return false;
   };
 
 public:
+  BuildManifestActions(BuildContext& context) : context(context) {}
+
   unsigned getNumErrors() const { return numErrors; }
 };
 
@@ -920,16 +973,8 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       if (shouldSkip) {
         // If this command had a failed input, treat it as having failed.
         if (hasMissingInput) {
-          // Take care to not rely on the ``this`` object, which may disappear
-          // before the queue executes this block.
-          ninja::Command* localCommand(command);
-
-          dispatch_async(context.outputQueue, ^() {
-              fprintf(stderr,
-                      "error: %s: cannot build '%s' due to missing input\n",
-                      getprogname(),
-                      localCommand->getOutputs()[0]->getPath().c_str());
-            });
+          context.emitError("cannot build '%s' due to missing input",
+                            command->getOutputs()[0]->getPath().c_str());
 
           // Update the count of failed commands.
           context.incrementFailedCommands();
@@ -1039,7 +1084,11 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       }
 
       // Otherwise, the command succeeded so process the dependencies.
-      processDiscoveredDependencies();
+      if (!processDiscoveredDependencies()) {
+        context.incrementFailedCommands();
+        return completeTask(BuildValue::makeFailedCommand(),
+                            /*ForceChange=*/true);
+      }
 
       // Complete the task with a successful value.
       //
@@ -1097,10 +1146,9 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       int pipe[2]{ -1, -1 };
       if (!isConsole) {
         if (::pipe(pipe) < 0) {
-          // FIXME: Error handling.
-          fprintf(stderr, "error: %s: unable to create command pipe (%s)\n",
-                  getprogname(), strerror(errno));
-          exit(1);
+          context.emitError("unable to create command pipe (%s)",
+                            strerror(errno));
+          return false;
         }
       }
 
@@ -1137,10 +1185,8 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         if (posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
                         /*attrp=*/&attributes, const_cast<char**>(args),
                         ::environ) != 0) {
-          // FIXME: Error handling.
-          fprintf(stderr, "error: %s: unable to spawn process (%s)\n",
-                  getprogname(), strerror(errno));
-          exit(1);
+          context.emitError("unable to spawn process (%s)", strerror(errno));
+          return false;
         }
 
         // The console process will get interrupted automatically.
@@ -1162,9 +1208,8 @@ buildCommand(BuildContext& context, ninja::Command* command) {
           char buf[4096];
           ssize_t numBytes = read(pipe[0], buf, sizeof(buf));
           if (numBytes < 0) {
-            // FIXME: Error handling.
-            fprintf(stderr, "error: %s: unable to read from output pipe (%s)\n",
-                    getprogname(), strerror(errno));
+            context.emitError("unable to read from output pipe (%s)",
+                              strerror(errno));
             break;
           }
 
@@ -1183,10 +1228,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       while (result == -1 && errno == EINTR)
           result = waitpid(pid, &status, 0);
       if (result == -1) {
-        // FIXME: Error handling.
-        fprintf(stderr, "error: %s: unable to wait for process (%s)\n",
-                getprogname(), strerror(errno));
-        exit(1);
+        context.emitError("unable to wait for process (%s)", strerror(errno));
       }
 
       // Update the set of spawned processes.
@@ -1204,6 +1246,9 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       }
 
       // Write all of the output data, if buffering and not cancelled.
+      //
+      // FIXME: We should write the output following the command arguments, if
+      // it was a failure.
       if (!outputData.empty()) {
         dispatch_sync(context.outputQueue, ^() {
             fwrite(outputData.data(), outputData.size(), 1, stderr);
@@ -1214,26 +1259,17 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       if (status != 0) {
         // If the child was killed by SIGINT, assume it is because we were
         // interrupted.
-        //
-        // FIXME: We should probably match Ninja here, if what it does is run
-        // the process in its own process group. I haven't checked.
         if (WIFSIGNALED(status)) {
           int signal = WTERMSIG(status);
 
           if (signal == SIGINT)
             return false;
 
-          dispatch_async(context.outputQueue, ^() {
-              std::cerr << "  ... process exited with signal: "
-                        << signal << "\n";
-            });
+          context.emitError("process exited with signal: %d", signal);
         } else {
           // Report the exit status.
-          int exitStatus = WEXITSTATUS(status);
-          dispatch_async(context.outputQueue, ^() {
-              std::cerr << "  ... process returned error status: "
-                        << exitStatus << "\n";
-            });
+          context.emitError("process returned error status: %d",
+                            WEXITSTATUS(status));
 
           // Update the count of failed commands.
           context.incrementFailedCommands();
@@ -1245,16 +1281,14 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       return true;
     }
 
-    void processDiscoveredDependencies() {
+    bool processDiscoveredDependencies() {
       // Process the discovered dependencies, if used.
       switch (command->getDepsStyle()) {
       case ninja::Command::DepsStyleKind::None:
-        break;
+        return true;
       case ninja::Command::DepsStyleKind::MSVC: {
-        fprintf(stderr, "error: %s: MSVC style dependencies are unsupported\n",
-                getprogname());
-        exit(1);
-        break;
+        context.emitError("MSVC style dependencies are unsupported");
+        return false;
       }
       case ninja::Command::DepsStyleKind::GCC: {
         // Read the dependencies file.
@@ -1266,13 +1300,12 @@ buildCommand(BuildContext& context, ninja::Command* command) {
           // If the file is missing, just ignore it for consistency with Ninja
           // (when using stored deps) in non-strict mode.
           if (!context.strict)
-              return;
+            return true;
 
           // FIXME: Error handling.
-          fprintf(stderr,
-                  "error: %s: unable to read dependency file: %s (%s)\n",
-                  getprogname(), command->getDepsFile().c_str(), error.c_str());
-          exit(1);
+          context.emitError("unable to read dependency file: %s (%s)",
+                  command->getDepsFile().c_str(), error.c_str());
+          return false;
         }
 
         // Parse the output.
@@ -1283,16 +1316,17 @@ buildCommand(BuildContext& context, ninja::Command* command) {
           BuildContext& context;
           NinjaCommandTask* task;
           const std::string& path;
+          unsigned numErrors{0};
 
           DepsActions(BuildContext& context, NinjaCommandTask* task,
                       const std::string& path)
             : context(context), task(task), path(path) {}
 
-          virtual void error(const char* message, uint64_t length) override {
-            // FIXME: Error handling.
-            fprintf(stderr, ("error: %s: error reading dependency file: "
-                             "%s (%s) at offset %u\n"),
-                    getprogname(), path.c_str(), message, unsigned(length));
+          virtual void error(const char* message, uint64_t position) override {
+            context.emitError(
+                "error reading dependency file: %s (%s) at offset %u",
+                path.c_str(), message, unsigned(position));
+            ++numErrors;
           }
 
           virtual void actOnRuleDependency(const char* dependency,
@@ -1305,11 +1339,15 @@ buildCommand(BuildContext& context, ninja::Command* command) {
                                       uint64_t length) override {}
           virtual void actOnRuleEnd() override {}
         };
+
         DepsActions actions(context, this, command->getDepsFile());
         core::MakefileDepsParser(data.get(), length, actions).parse();
-        break;
+        return actions.numErrors == 0;
       }
       }
+
+      assert(0 && "unexpected case");
+      return false;
     }
   };
 
@@ -1364,12 +1402,20 @@ buildTargets(BuildContext& context,
       : Task("targets"), context(context), targetsToBuild(targetsToBuild) { }
 
     virtual void provideValue(core::BuildEngine& engine, uintptr_t inputID,
-                              const core::ValueType& valueData) override { }
+                              const core::ValueType& valueData) override {
+      BuildValue value = BuildValue::fromValue(valueData);
+
+      if (value.isMissingInput()) {
+        context.emitError("unknown target '%s'",
+                          targetsToBuild[inputID].c_str());
+      }
+    }
 
     virtual void start(core::BuildEngine& engine) override {
       // Request all of the targets.
+      unsigned id = 0;
       for (const auto& target: targetsToBuild) {
-        engine.taskNeedsInput(this, target, 0);
+        engine.taskNeedsInput(this, target, id++);
       }
     }
 
@@ -1567,21 +1613,20 @@ core::Rule NinjaBuildEngineDelegate::lookupRule(const core::KeyType& key) {
 void NinjaBuildEngineDelegate::cycleDetected(
     const std::vector<core::Rule*>& cycle) {
   // Report the cycle.
-  dispatch_sync(context->outputQueue, ^() {
-      fprintf(stderr, "error: %s: cycle detected among targets:",
-              getprogname());
-      bool first = true;
-      for (const auto* rule: cycle) {
-        fprintf(stderr, "%s \"%s\"", first ? "" : " ->",
-                rule->key.c_str());
-        first = false;
-      }
-      fprintf(stderr, "\n");
-    });
+  std::stringstream message;
+  message << "cycle detected among targets:";
+  bool first = true;
+  for (const auto* rule: cycle) {
+    if (!first)
+      message << " ->";
+    message << " \"" << rule->key << '"';
+    first = false;
+  }
+
+  context->emitError(message.str());
 
   // Cancel the build.
   context->isCancelled = true;
-  context->wasCancelledByCycle = true;
 }
 
 }
@@ -1620,7 +1665,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       quiet = true;
     } else if (option == "-C" || option == "--chdir") {
       if (args.empty()) {
-        fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
+        fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
                 ::getprogname(), option.c_str());
         usage();
       }
@@ -1630,7 +1675,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       dbFilename = "";
     } else if (option == "--db") {
       if (args.empty()) {
-        fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
+        fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
                 ::getprogname(), option.c_str());
         usage();
       }
@@ -1638,7 +1683,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       args.erase(args.begin());
     } else if (option == "--dump-graph") {
       if (args.empty()) {
-        fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
+        fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
                 ::getprogname(), option.c_str());
         usage();
       }
@@ -1646,7 +1691,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       args.erase(args.begin());
     } else if (option == "-f") {
       if (args.empty()) {
-        fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
+        fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
                 ::getprogname(), option.c_str());
         usage();
       }
@@ -1654,14 +1699,14 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       args.erase(args.begin());
     } else if (option == "-k") {
       if (args.empty()) {
-        fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
+        fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
                 ::getprogname(), option.c_str());
         usage();
       }
       char *end;
       numFailedCommandsToTolerate = ::strtol(args[0].c_str(), &end, 10);
       if (*end != '\0') {
-          fprintf(stderr, "error: %s: invalid argument '%s' to '%s'\n\n",
+          fprintf(stderr, "%s: error: invalid argument '%s' to '%s'\n\n",
                   getprogname(), args[0].c_str(), option.c_str());
           usage();
       }
@@ -1674,7 +1719,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       autoRegenerateManifest = false;
     } else if (option == "--profile") {
       if (args.empty()) {
-        fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
+        fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
                 ::getprogname(), option.c_str());
         usage();
       }
@@ -1684,7 +1729,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       strict = true;
     } else if (option == "-t") {
       if (args.empty()) {
-        fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
+        fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
                 ::getprogname(), option.c_str());
         usage();
       }
@@ -1692,7 +1737,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       args.erase(args.begin());
     } else if (option == "--trace") {
       if (args.empty()) {
-        fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
+        fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
                 ::getprogname(), option.c_str());
         usage();
       }
@@ -1701,7 +1746,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     } else if (option == "-v" || option == "--verbose") {
       verbose = true;
     } else {
-      fprintf(stderr, "error: %s: invalid option: '%s'\n\n",
+      fprintf(stderr, "%s: error: invalid option: '%s'\n\n",
               ::getprogname(), option.c_str());
       usage();
     }
@@ -1710,7 +1755,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
   // Honor the --chdir option, if used.
   if (!chdirPath.empty()) {
     if (::chdir(chdirPath.c_str()) < 0) {
-      fprintf(stderr, "error: %s: unable to honor --chdir: %s\n",
+      fprintf(stderr, "%s: error: unable to honor --chdir: %s\n",
               getprogname(), strerror(errno));
       return 1;
     }
@@ -1744,8 +1789,8 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     } else {
       long numCPUs = sysconf(_SC_NPROCESSORS_ONLN);
       if (numCPUs < 0) {
-        fprintf(stderr, "error: %s: unable to detect number of CPUs: %s\n",
-                getprogname(), strerror(errno));
+        context.emitError("unable to detect number of CPUs (%s)",
+                          strerror(errno));
         return 1;
       }
 
@@ -1755,14 +1800,14 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
                                numJobs, useLIFOExecutionQueue));
 
     // Load the manifest.
-    BuildManifestActions actions;
+    BuildManifestActions actions(context);
     ninja::ManifestLoader loader(manifestFilename, actions);
     context.manifest = loader.load();
 
     // If there were errors loading, we are done.
     if (unsigned numErrors = actions.getNumErrors()) {
-        fprintf(stderr, "%d errors generated.\n", numErrors);
-        return 1;
+      context.emitNote("%d errors generated.", numErrors);
+      return 1;
     }
 
     // Run the custom tool, if specified.
@@ -1770,12 +1815,11 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       if (customTool == "targets") {
         if (args.size() != 1 || args[0] != "all") {
           if (args.empty()) {
-            fprintf(stderr, "error: %s: unsupported arguments to tool '%s'\n",
-                    getprogname(), customTool.c_str());
+            context.emitError("unsupported arguments to tool '%s'",
+                              customTool.c_str());
           } else {
-            fprintf(stderr,
-                    "error: %s: unsupported argument to tool '%s': '%s'\n",
-                    getprogname(), customTool.c_str(), args[0].c_str());
+            context.emitError("unsupported argument to tool '%s': '%s'",
+                              customTool.c_str(), args[0].c_str());
           }
           return 1;
         }
@@ -1790,8 +1834,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
  
         return 0;
       } else {
-        fprintf(stderr, "error: %s: unknown tool '%s'\n",
-                getprogname(), customTool.c_str());
+        context.emitError("unknown tool '%s'", customTool.c_str());
         return 1;
       }
     }
@@ -1809,8 +1852,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
                                   BuildValue::currentSchemaVersion,
                                   &error));
       if (!db) {
-        fprintf(stderr, "error: %s: unable to open build database: %s\n",
-                getprogname(), error.c_str());
+        context.emitError("unable to open build database: %s", error.c_str());
         return 1;
       }
       context.engine.attachDB(std::move(db));
@@ -1820,8 +1862,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     if (!traceFilename.empty()) {
       std::string error;
       if (!context.engine.enableTracing(traceFilename, &error)) {
-        fprintf(stderr, "error: %s: unable to enable tracing: %s\n",
-                getprogname(), error.c_str());
+        context.emitError("unable to enable tracing: %s", error.c_str());
         return 1;
       }
     }
@@ -1923,8 +1964,8 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     if (!profileFilename.empty()) {
       context.profileFP = ::fopen(profileFilename.c_str(), "w");
       if (!context.profileFP) {
-        fprintf(stderr, "error: %s: unable to open build profile '%s': %s\n",
-                getprogname(), profileFilename.c_str(), strerror(errno));
+        context.emitError("unable to open build profile '%s' (%s)\n",
+                          profileFilename.c_str(), strerror(errno));
         return 1;
       }
 
@@ -1960,7 +2001,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
 
     // Generate an error if there is nothing to build.
     if (targetsToBuild.empty()) {
-      fprintf(stderr, "error: %s: no targets to build\n", getprogname());
+      context.emitError("no targets to build");
       return 1;
     }
 
@@ -1987,9 +2028,6 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       context.engine.build(targetsToBuild[0]);
     }
 
-    // Ensure the output queue is finished.
-    dispatch_sync(context.outputQueue, ^() {});
-
     if (!dumpGraphPath.empty()) {
       context.engine.dumpGraphToFile(dumpGraphPath);
     }
@@ -1998,9 +2036,9 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     if (context.profileFP) {
       ::fclose(context.profileFP);
 
-      fprintf(stderr, ("... wrote build profile to '%s', use Chrome's "
-                       "about:tracing to view.\n"),
-              profileFilename.c_str());
+      context.emitNote(
+          "wrote build profile to '%s', use Chrome's about:tracing to view.",
+          profileFilename.c_str());
     }
 
     // If the build was cancelled by SIGINT, cause ourself to also die by SIGINT
@@ -2016,22 +2054,21 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       return 2;
     }
 
-    // If the build was stopped because of a cycle, return an error status.
-    if (context.wasCancelledByCycle) {
-      return 1;
-    }
-
-    // If nothing was done, print a single message to let the user know we
-    // completed successfully.
-    if (!context.quiet && !context.numBuiltCommands) {
-      printf("%s: no work to do.\n", getprogname());
-    }
-
-    // If there were command failures, return an error status.
+    // If there were command failures, report the count.
     if (context.numFailedCommands) {
-      fprintf(stderr, "error: %s: build had %d command failures\n",
-              getprogname(), context.numFailedCommands.load());
+      context.emitError("build had %d command failures",
+                        context.numFailedCommands.load());
+    }
+
+    // If the build was stopped because of an error, return an error status.
+    if (context.numErrors) {
       return 1;
+    }
+
+    // Otherwise, if nothing was done, print a single message to let the user
+    // know we completed successfully.
+    if (!context.quiet && !context.numBuiltCommands) {
+      context.emitNote("no work to do.");
     }
 
     // If we reached here on the first iteration, then we don't need a second

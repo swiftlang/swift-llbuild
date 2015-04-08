@@ -18,7 +18,7 @@
 # RUN: %{llbuild} ninja build --no-db --no-parallel --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --input-file %t1.out %s
 #
-# CHECK: llbuild: no work to do.
+# CHECK: llbuild: note: no work to do.
 
 build output-1: phony output-1
 build output-2: phony | output-2
