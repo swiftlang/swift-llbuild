@@ -1700,7 +1700,6 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
   bool quiet = false;
   bool simulate = false;
   bool strict = false;
-  bool useLIFOExecutionQueue = false;
   bool useParallelBuild = true;
   bool verbose = false;
   unsigned numFailedCommandsToTolerate = 1;
@@ -1716,8 +1715,6 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       usage(/*exitCode=*/0);
     } else if (option == "--simulate") {
       simulate = true;
-    } else if (option == "--lifo") {
-      useLIFOExecutionQueue = true;
     } else if (option == "--quiet") {
       quiet = true;
     } else if (option == "-C" || option == "--chdir") {
@@ -1840,7 +1837,15 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     context.verbose = verbose;
 
     // Create the job queue to use.
+    //
+    // When running in parallel, we use a LIFO queue to work around the default
+    // traversal of the BuildEngine tending to build in BFS order. This is
+    // generally at avoiding clustering of links.
+    //
+    // FIXME: Do a serious analysis of scheduling, including ideally an active
+    // scheduler in the execution queue.
     unsigned numJobs;
+    bool useLIFO = false;
     if (!useParallelBuild) {
       numJobs = 1;
     } else {
@@ -1852,9 +1857,9 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       }
 
       numJobs = numCPUs + 2;
+      useLIFO = true;
     }
-    context.jobQueue.reset(new BuildExecutionQueue(
-                               numJobs, useLIFOExecutionQueue));
+    context.jobQueue.reset(new BuildExecutionQueue(numJobs, useLIFO));
 
     // Load the manifest.
     BuildManifestActions actions(context);
