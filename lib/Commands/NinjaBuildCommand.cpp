@@ -1122,6 +1122,13 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       context.emitStatus(
           "[%d/%d] %s", ++context.numOutputDescriptions,
           getNumPossibleMaxCommands(context), description.c_str());
+
+      // Whenever we write a description for a console job, make sure to finish
+      // the output under the expectation that the console job might write to
+      // the output. We don't make any attempt to lock this in case the console
+      // job can run concurrently with anything else.
+      if (command->getExecutionPool() == context.manifest->getConsolePool())
+        context.statusOutput.finishLine();
     }
 
     void executeCommand() {
@@ -1134,11 +1141,19 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       // the ``this`` object, which may disappear before the queue executes this
       // block.
       if (!context.quiet) {
+        // If this is a console job, do the write synchronously to ensure it
+        // appears before the task might start.
         BuildContext& localContext(context);
         ninja::Command* localCommand(command);
-        dispatch_async(context.outputQueue, ^() {
-            writeDescription(localContext, localCommand);
-          });
+        if (command->getExecutionPool() == context.manifest->getConsolePool()) {
+          dispatch_sync(context.outputQueue, ^() {
+              writeDescription(localContext, localCommand);
+            });
+        } else {
+          dispatch_async(context.outputQueue, ^() {
+              writeDescription(localContext, localCommand);
+            });
+        }
       }
 
       // Actually run the command.
