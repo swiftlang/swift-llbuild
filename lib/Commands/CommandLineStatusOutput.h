@@ -51,6 +51,9 @@ public:
   /// The text should be a single line with no newlines or carriage returns.
   void setOrWriteLine(const std::string& text);
 
+  /// Finish writing the current line, if necessary.
+  void finishLine();
+
   /// Write a non-overwritable block of text to the output.
   ///
   /// Any text written by this method should always end with a newline.

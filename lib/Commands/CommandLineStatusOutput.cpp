@@ -119,6 +119,17 @@ struct CommandLineStatusOutputImpl {
     writeText(text + "\n");
   }
 
+  void finishLine() {
+    assert(isOpen());
+
+    // Finish the current line, if necessary.
+    if (canUpdateCurrentLine() && hasOutput) {
+      fputc('\n', fp);
+      fflush(fp);
+      hasOutput = false;
+    }
+  }
+
   void writeText(const std::string& text) {
     assert(isOpen());
     assert(text.size() && text.back() == '\n');
@@ -128,6 +139,7 @@ struct CommandLineStatusOutputImpl {
       clearOutput();
 
     fwrite(text.c_str(), text.size(), 1, fp);
+    fflush(fp);
   }
 };
 
@@ -170,6 +182,10 @@ void CommandLineStatusOutput::setCurrentLine(const std::string& text) {
 void CommandLineStatusOutput::setOrWriteLine(const std::string& text) {
   return
     static_cast<CommandLineStatusOutputImpl*>(impl)->setOrWriteLine(text);
+}
+
+void CommandLineStatusOutput::finishLine() {
+  return static_cast<CommandLineStatusOutputImpl*>(impl)->finishLine();
 }
 
 void CommandLineStatusOutput::writeText(const std::string& text) {
