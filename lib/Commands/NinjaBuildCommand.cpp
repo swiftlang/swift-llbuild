@@ -49,6 +49,24 @@ static uint64_t getTimeInMicroseconds() {
   return tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
+static std::string getFormattedString(const char* fmt, va_list ap) {
+  char* buf;
+  if (::vasprintf(&buf, fmt, ap) < 0) {
+    return "unable to format message";
+  }
+  std::string result(buf);
+  ::free(buf);
+  return result;
+}
+
+static std::string getFormattedString(const char* fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  std::string result = getFormattedString(fmt, ap);
+  va_end(ap);
+  return result;
+}
+
 static void usage(int exitCode=1) {
   int optionWidth = 20;
   fprintf(stderr, "Usage: %s ninja build [options] [<targets>...]\n",
@@ -539,6 +557,7 @@ public:
   /// @name Diagnostics Output
   /// @{
 
+  /// Emit a diagnostic to the error stream.
   void emitDiagnostic(std::string kind, std::string message) {
     dispatch_async(outputQueue, ^() {
         fprintf(stderr, "%s: %s: %s\n", getprogname(), kind.c_str(),
@@ -554,17 +573,8 @@ public:
   void emitError(const char* fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
-    char* buf;
-    int result = ::vasprintf(&buf, fmt, ap);
+    emitError(getFormattedString(fmt, ap));
     va_end(ap);
-
-    if (result < 0) {
-      buf = ::strdup("unable to format message");
-    }
-
-    emitError(std::string(buf));
-
-    ::free(buf);
   }
 
   void emitNote(std::string&& message) {
@@ -574,17 +584,8 @@ public:
   void emitNote(const char* fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
-    char* buf;
-    int result = ::vasprintf(&buf, fmt, ap);
+    emitNote(getFormattedString(fmt, ap));
     va_end(ap);
-
-    if (result < 0) {
-      buf = ::strdup("unable to format note");
-    }
-
-    emitNote(std::string(buf));
-
-    ::free(buf);
   }
 
   /// @}
