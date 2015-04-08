@@ -8,16 +8,18 @@
 # RUN: %{llbuild} ninja build --no-parallel --chdir %t.build --no-db &> %t1.out || true
 # RUN: %{FileCheck} < %t1.out %s
 #
-# CHECK: [1/{{.*}}] "false"
-# CHECK-NEXT: process returned error status
+# CHECK: [1/{{.*}}] FALSE
+# CHECK-NEXT: error: process failed: echo "this command fails"; false
+# CHECK-NEXT: this command fails
+# CHECK-NEXT: error: stopping build 
 # CHECK-NOT: [2/{{.*}}] "cp output-1 output"
 
 rule CP
      command = cp ${in} ${out}
      description = "${command}"
 rule FALSE
-     command = false
-     description = "${command}"
+     command = echo "this command fails"; false
+     description = FALSE
 
 build output-1: FALSE
 build output: CP output-1

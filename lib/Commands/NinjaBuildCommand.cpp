@@ -565,8 +565,41 @@ public:
       });
   }
 
+  /// Emit a diagnostic followed by a block of text, ensuring the text
+  /// immediately follows the diagnostic.
+  void emitDiagnosticAndText(std::string kind, std::string message,
+                             std::string text) {
+    dispatch_async(outputQueue, ^() {
+        fprintf(stderr, "%s: %s: %s\n", getprogname(), kind.c_str(),
+                message.c_str());
+        fflush(stderr);
+        fwrite(text.data(), text.size(), 1, stdout);
+        fflush(stdout);
+      });
+  }
+
+  /// Emit a block of text to the output.
+  void emitText(std::string text) {
+    dispatch_async(outputQueue, ^() {
+        fwrite(text.data(), text.size(), 1, stdout);
+        fflush(stdout);
+      });
+  }
+
+  void emitText(const char* fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    emitText(getFormattedString(fmt, ap));
+    va_end(ap);
+  }
+
   void emitError(std::string&& message) {
     emitDiagnostic("error", std::move(message));
+    ++numErrors;
+  }
+
+  void emitErrorAndText(std::string&& message, std::string&& text) {
+    emitDiagnosticAndText("error", std::move(message), text);
     ++numErrors;
   }
 
@@ -1055,8 +1088,8 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       const std::string& description =
         context.verbose ? command->getCommandString() :
         command->getEffectiveDescription();
-      fprintf(stderr, "[%d/%d] %s\n", ++context.numOutputDescriptions,
-              getNumPossibleMaxCommands(context), description.c_str());
+      context.emitText("[%d/%d] %s\n", ++context.numOutputDescriptions,
+                       getNumPossibleMaxCommands(context), description.c_str());
     }
 
     void executeCommand() {
@@ -1246,37 +1279,28 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         return status == 0;
       }
 
-      // Write all of the output data, if buffering and not cancelled.
-      //
-      // FIXME: We should write the output following the command arguments, if
-      // it was a failure.
-      if (!outputData.empty()) {
-        dispatch_sync(context.outputQueue, ^() {
-            fwrite(outputData.data(), outputData.size(), 1, stderr);
-            fflush(stderr);
-          });
-      }
-
+      // If the child failed, show the full command and the output.
       if (status != 0) {
-        // If the child was killed by SIGINT, assume it is because we were
+        // If the process was killed by SIGINT, assume it is because we were
         // interrupted.
-        if (WIFSIGNALED(status)) {
-          int signal = WTERMSIG(status);
+        if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
+          return false;
 
-          if (signal == SIGINT)
-            return false;
+        // Otherwise, report the failure.
+        context.emitErrorAndText(
+            getFormattedString(
+                "process failed: %s", command->getCommandString().c_str()),
+            std::string(outputData.data(), outputData.size()));
 
-          context.emitError("process exited with signal: %d", signal);
-        } else {
-          // Report the exit status.
-          context.emitError("process returned error status: %d",
-                            WEXITSTATUS(status));
-
-          // Update the count of failed commands.
-          context.incrementFailedCommands();
-        }
+        // Update the count of failed commands.
+        context.incrementFailedCommands();
 
         return false;
+      } else {
+        // Write the output data, if buffered.
+        if (!outputData.empty()) {
+          context.emitText(std::string(outputData.data(), outputData.size()));
+        }
       }
 
       return true;
