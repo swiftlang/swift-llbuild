@@ -137,4 +137,39 @@ static void ExecuteShellCommand(const char *String) {
     }];
 }
 
+- (void)testPseudoLLVMNullBuild {
+  // Test the pseudo LLVM build, which includes the time to do the actual
+  // stat'ing and dependency checking of files, and in particular includes all
+  // the overhead of the database.
+    
+  // Create a sandbox to run the test in.
+  NSString *inputsDir = [@(SRCROOT)
+                            stringByAppendingPathComponent:@"perftests/Inputs"];
+  NSString *sandboxDir = [@(TEST_TEMPS_PATH)
+                             stringByAppendingPathComponent:@"PseudoLLVMNullBuild"];
+  NSLog(@"executing test using inputs: %@", inputsDir);
+  NSLog(@"executing test using sandbox: %@", sandboxDir);
+  ExecuteShellCommand([NSString stringWithFormat:@"rm -rf \"%@\"",
+                                sandboxDir].UTF8String);
+  ExecuteShellCommand([NSString stringWithFormat:@"mkdir -p \"%@\"",
+                                sandboxDir].UTF8String);
+  ExecuteShellCommand([NSString
+                         stringWithFormat:@"tar -C \"%@\" -xf \"%@\"/pseudo-llvm.tgz",
+                        sandboxDir, inputsDir].UTF8String);
+    
+  // Build once to create a fresh initial database.
+  printf("performing initial build...\n");
+  NSString *pseudoLLVMPath = [sandboxDir stringByAppendingPathComponent:@"pseudo-llvm"];
+  llbuild::commands::executeNinjaCommand({
+      "build", "--quiet", "-C", pseudoLLVMPath.UTF8String, "all" });
+    
+  // Test the null build performance, each run of which will reuse the initial
+  // database, but should not modify it other than to bump the iteration count.
+  printf("performing null builds (performance test)...\n");
+  [self measureBlock:^{
+      llbuild::commands::executeNinjaCommand({
+          "build", "--quiet", "-C", pseudoLLVMPath.UTF8String, "all" });
+    }];
+}
+
 @end
