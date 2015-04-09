@@ -90,7 +90,7 @@ struct CommandLineStatusOutputImpl {
     if (hasOutput) {
       // Clear the line before writing, this tends to produce better results
       // than clearing the unwritten tail of the line written below.
-      fprintf(fp, "\r%.*s", numCurrentCharacters, "");
+      fprintf(fp, "\r%*s\r", numCurrentCharacters, "");
       fflush(fp);
       hasOutput = false;
     }
