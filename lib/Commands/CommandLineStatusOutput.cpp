@@ -15,6 +15,8 @@
 #include <cassert>
 #include <cstdio>
 
+#include <sys/ioctl.h>
+
 namespace {
 
 struct CommandLineStatusOutputImpl {
@@ -96,6 +98,16 @@ struct CommandLineStatusOutputImpl {
     }
   }
 
+  int getNumColumns() {
+    ::ttysize size;
+    if (ioctl(fileno(fp), TIOCGWINSZ, &size) < 0) {
+      // If we were unable to query the terminal, just use a default.
+      return 80;
+    }
+    
+    return size.ts_cols;
+  }
+
   void setCurrentLine(const std::string& text) {
     assert(isOpen());
     assert(text.find('\r') == std::string::npos);
@@ -105,11 +117,22 @@ struct CommandLineStatusOutputImpl {
     // clearing the unwritten tail of the line written below.
     clearOutput();
 
-    // Write the line.
-    fprintf(fp, "%s", text.c_str());
+    // Write the line, trimming it to fit in the current terminal.
+    int columns = getNumColumns();
+    if ((int)text.size() > columns) {
+      // Elide the middle of the text.
+      int midpoint = columns / 2;
+      std::string elided = text.substr(0, std::max(0, midpoint - 2)) + "..." +
+        text.substr(text.size() - (columns - (midpoint + 1)));
+      assert(columns < 3 || (int)elided.size() == columns);
+      fprintf(fp, "%s", elided.c_str());
+      numCurrentCharacters = elided.size();
+    } else {
+      fprintf(fp, "%s", text.c_str());
+      numCurrentCharacters = text.size();
+    }
     fflush(fp);
 
-    numCurrentCharacters = text.size();
     hasOutput = numCurrentCharacters != 0;
   }
 
