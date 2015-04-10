@@ -157,8 +157,11 @@ public:
     /// Indicates the rule is being scanned.
     IsScanning = 0,
 
-    /// Indicates the rule is complete.
-    IsComplete = 1
+    /// Indicates the rule is up-to-date, and doesn't need to run.
+    IsUpToDate = 1,
+
+    /// Indicates the rule was run, and is now complete.
+    IsComplete = 2
   };
 
   /// The key computed by the rule.

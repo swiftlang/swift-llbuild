@@ -411,7 +411,7 @@ private:
 
       // Report the status change.
       if (ruleInfo.rule.updateStatus)
-        ruleInfo.rule.updateStatus(Rule::StatusKind::IsComplete);
+        ruleInfo.rule.updateStatus(Rule::StatusKind::IsUpToDate);
 
       return true;
     }

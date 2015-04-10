@@ -489,12 +489,10 @@ public:
 
   /// The number of commands being scanned.
   std::atomic<unsigned> numCommandsScanning{0};
-  /// The number of commands that have ever been started.
-  std::atomic<unsigned> numCommandsStarted{0};
+  /// The number of commands that were up-to-date.
+  std::atomic<unsigned> numCommandsUpToDate{0};
   /// The number of commands that have been completed.
   std::atomic<unsigned> numCommandsCompleted{0};
-  /// The number of commands being executed.
-  std::atomic<unsigned> numCommandsExecuting{0};
   /// The number of commands that were updated (started, but didn't actually run
   /// the command).
   std::atomic<unsigned> numCommandsUpdated{0};
@@ -854,20 +852,10 @@ buildCommand(BuildContext& context, ninja::Command* command) {
     }
 
     void completeTask(BuildValue&& result, bool forceChange=false) {
-      // Update our count of actual commands executing.
-      if (command->getRule() != context.manifest->getPhonyRule())
-        --context.numCommandsExecuting;
-
       context.engine.taskIsComplete(this, result.toValue(), forceChange);
     }
 
     virtual void start(core::BuildEngine& engine) override {
-      // Update our count of actual commands started and executing.
-      if (command->getRule() != context.manifest->getPhonyRule()) {
-        ++context.numCommandsStarted;
-        ++context.numCommandsExecuting;
-      }
-
       // If this is a phony rule, ignore any immediately cyclic dependencies in
       // non-strict mode, which are generated frequently by CMake, but can be
       // ignored by Ninja. See https://github.com/martine/ninja/issues/935.
@@ -1094,22 +1082,8 @@ buildCommand(BuildContext& context, ninja::Command* command) {
 
       // Compute the number of max commands to show, subtracting out all the
       // commands that we avoided running.
-      //
-      // We need to do some algebra in order to compute this number because we
-      // need to combine the statistics from the BuildEngine status mechanism
-      // with our own knowledge of what commands have been run so far and what
-      // have been skipped or updated.
-
-      // Compute the number of completed commands that were never even executed,
-      // by subtracting the number of completed commands that *were* executed.
-      int numCompletedCommandsNeverExecuted = context.numCommandsCompleted -
-        (context.numCommandsStarted - context.numCommandsExecuting);
-
-      // Then the number of max commands to show is the total max possible
-      // commands, minus the commands that were never executed and the commands
-      // that were updated.
       int possibleMaxCommands = totalPossibleMaxCommands -
-        (numCompletedCommandsNeverExecuted + context.numCommandsUpdated);
+        (context.numCommandsUpToDate + context.numCommandsUpdated);
 
       return possibleMaxCommands;
     }
@@ -1650,6 +1624,10 @@ static void updateCommandStatus(BuildContext& context,
   // the total number of completed commands.
   if (status == core::Rule::StatusKind::IsScanning) {
     ++context.numCommandsScanning;
+  } else if (status == core::Rule::StatusKind::IsUpToDate) {
+    --context.numCommandsScanning;
+    ++context.numCommandsUpToDate;
+    ++context.numCommandsCompleted;
   } else {
     assert(status == core::Rule::StatusKind::IsComplete);
     --context.numCommandsScanning;
