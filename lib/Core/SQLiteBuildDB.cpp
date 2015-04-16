@@ -31,7 +31,7 @@ using namespace llbuild::core;
 namespace {
 
 class SQLiteBuildDB : public BuildDB {
-  static const int currentSchemaVersion = 3;
+  static const int currentSchemaVersion = 4;
 
   sqlite3 *db = nullptr;
 
@@ -124,12 +124,20 @@ public:
           nullptr, nullptr, &cError);
       }
       if (result == SQLITE_OK) {
+        // Create the table used for storing rule dependencies.
+        //
+        // In order to reduce duplication, we use a WITHOUT ROWID table with a
+        // composite key on the rule_id and the dependency key. This allows us
+        // to use the table itself to perform efficient queries for all of the
+        // keys associated with a particular rule_id, and by doing so avoid
+        // having an ancillary index with duplicate data.
         result = sqlite3_exec(
           db, ("CREATE TABLE rule_dependencies ("
-               "id INTEGER PRIMARY KEY, "
                "rule_id INTEGER, "
                "key STRING, "
-               "FOREIGN KEY(rule_id) REFERENCES rule_info(id));"),
+               "PRIMARY KEY (rule_id, key) "
+               "FOREIGN KEY(rule_id) REFERENCES rule_info(id)) "
+               "WITHOUT ROWID;"),
           nullptr, nullptr, &cError);
       }
 
@@ -139,14 +147,6 @@ public:
         // information from a key.
         result = sqlite3_exec(
           db, "CREATE UNIQUE INDEX rule_results_idx ON rule_results (key);",
-          nullptr, nullptr, &cError);
-      }
-      if (result == SQLITE_OK) {
-        // Create an index to be used for efficiently finding the dependencies
-        // for a rule. This is a covering index.
-        result = sqlite3_exec(
-          db, ("CREATE INDEX rule_dependencies_idx ON "
-               "rule_dependencies (rule_id, key);"),
           nullptr, nullptr, &cError);
       }
 
@@ -335,8 +335,13 @@ public:
     "INSERT INTO rule_results VALUES (NULL, ?, ?, ?, ?);";
   sqlite3_stmt* insertIntoRuleResultsStmt = nullptr;
 
+  /// The query for inserting new rule dependencies.
+  ///
+  /// Note that we explicitly allow ignoring the insert which will happen when
+  /// there is a duplicate dependencies for a rule, because the primary key is a
+  /// composite of (rule_id, key).
   static constexpr const char *insertIntoRuleDependenciesStmtSQL =
-    "INSERT INTO rule_dependencies VALUES (NULL, ?, ?);";
+    "INSERT OR IGNORE INTO rule_dependencies(rule_id, key) VALUES (?, ?);";
   sqlite3_stmt* insertIntoRuleDependenciesStmt = nullptr;
 
   static constexpr const char *deleteFromRuleResultsStmtSQL =
