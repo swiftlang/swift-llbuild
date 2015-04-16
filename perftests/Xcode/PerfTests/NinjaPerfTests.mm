@@ -131,9 +131,11 @@ static void ExecuteShellCommand(const char *String) {
   // database, but should not modify it other than to bump the iteration count.
   printf("performing null builds (performance test)...\n");
   [self measureBlock:^{
-      llbuild::commands::executeNinjaCommand({
-          "build", "--quiet", "--no-parallel", "--simulate",
-          "--db", dbPath.UTF8String, "-f", ninjaPath.UTF8String, TargetName });
+      for (int i = 0; i != 10; ++i) {
+        llbuild::commands::executeNinjaCommand({
+            "build", "--quiet", "--no-parallel", "--simulate",
+            "--db", dbPath.UTF8String, "-f", ninjaPath.UTF8String, TargetName });
+      }
     }];
 }
 
@@ -168,7 +170,7 @@ static void ExecuteShellCommand(const char *String) {
   printf("performing null builds (performance test)...\n");
   [self measureBlock:^{
       llbuild::commands::executeNinjaCommand({
-          "build", "--quiet", "-C", pseudoLLVMPath.UTF8String, "all" });
+          "build", "--quiet", "-C", pseudoLLVMPath.UTF8String, "--no-parallel", "all" });
     }];
 }
 
