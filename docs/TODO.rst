@@ -95,17 +95,11 @@ Ninja Specific
 Tasks for Usable Tool
 ---------------------
 
-* Buffer command output.
-
 * Implement path normalization (for Nodes as well as things like imported
   dependencies from compiler output).
 
 * Implement Ninja failure semantics for order-only dependencies, which block the
   downstream command.
-
-* Handle removed implicit dependencies properly, currently this generates an
-  error and then builds ok on the next iteration. The latter problem may
-  indicate a latent issue in handling of discovered dependencies.
 
 * Handle rerunning a command on introduction of new dependencies. For example,
   before we reran on command changes we wouldn't rebuild a library just because
@@ -114,7 +108,7 @@ Tasks for Usable Tool
 
 * Support update-if-newer for commands with discovered dependencies.
 
-* We should probably store a rule type along with the result, and always
+* We should probably store a rule type ID along with the result, and always
   invalidate if the rule type has changed.
 
 Random Tasks

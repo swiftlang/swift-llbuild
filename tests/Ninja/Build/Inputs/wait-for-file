@@ -14,7 +14,7 @@ START_TIME=$(date +%s)
 END_TIME=$(expr "${START_TIME}" + 2)
 while [ "$(date +%s)" -lt "${END_TIME}"  ]; do
   if [ -f "${FILE}" ]; then
-    echo "note: file exists, exiting"
+    echo "note: file '${FILE}' exists, exiting"
     exit 0
   fi
 done

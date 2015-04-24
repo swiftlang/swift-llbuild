@@ -11,13 +11,13 @@
 # CHECK-A: [A] touching B semaphore
 # CHECK-A-NEXT: [A] waiting for A semaphore
 # CHECK-A-NEXT: waiting for file 'node-A-semaphore'
-# CHECK-A-NEXT: file exists
+# CHECK-A-NEXT: file 'node-A-semaphore' exists
 # CHECK-A-NEXT: [A] done
 #
 # CHECK-B: [B] touching A semaphore
 # CHECK-B-NEXT: [B] waiting for B semaphore
 # CHECK-B-NEXT: waiting for file 'node-B-semaphore'
-# CHECK-B-NEXT: file exists
+# CHECK-B-NEXT: file 'node-B-semaphore' exists
 # CHECK-B-NEXT: [B] done
 
 rule CUSTOM
