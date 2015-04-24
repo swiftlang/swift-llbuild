@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>classNames</key>
+	<dict>
+		<key>CorePerfTests</key>
+		<dict>
+			<key>testBuildEngineBasicPerf</key>
+			<dict>
+				<key>com.apple.XCTPerformanceMetric_WallClockTime</key>
+				<dict>
+					<key>baselineAverage</key>
+					<real>1.23</real>
+					<key>baselineIntegrationDisplayName</key>
+					<string>Mar 6, 2015, 7:46:27 PM</string>
+				</dict>
+			</dict>
+			<key>testBuildEngineDependencyScanningCorePerf</key>
+			<dict>
+				<key>com.apple.XCTPerformanceMetric_WallClockTime</key>
+				<dict>
+					<key>baselineAverage</key>
+					<real>1.17</real>
+					<key>baselineIntegrationDisplayName</key>
+					<string>Mar 6, 2015, 7:46:32 PM</string>
+				</dict>
+			</dict>
+			<key>testBuildEngineDependencyScanningOn2DMatrix</key>
+			<dict>
+				<key>com.apple.XCTPerformanceMetric_WallClockTime</key>
+				<dict>
+					<key>baselineAverage</key>
+					<real>0.62</real>
+					<key>baselineIntegrationDisplayName</key>
+					<string>Mar 6, 2015, 7:46:35 PM</string>
+				</dict>
+			</dict>
+			<key>testBuildEngineDependencyScanningOnLinearChain</key>
+			<dict>
+				<key>com.apple.XCTPerformanceMetric_WallClockTime</key>
+				<dict>
+					<key>baselineAverage</key>
+					<real>0.56</real>
+					<key>baselineIntegrationDisplayName</key>
+					<string>Mar 6, 2015, 7:46:38 PM</string>
+				</dict>
+			</dict>
+		</dict>
+		<key>NinjaPerfTests</key>
+		<dict>
+			<key>testChromiumFakeManifestLoading</key>
+			<dict>
+				<key>com.apple.XCTPerformanceMetric_WallClockTime</key>
+				<dict>
+					<key>baselineAverage</key>
+					<real>1.48</real>
+					<key>baselineIntegrationDisplayName</key>
+					<string>Mar 6, 2015, 7:46:46 PM</string>
+				</dict>
+			</dict>
+			<key>testLLVMOnlyNoExecuteInitialBuild</key>
+			<dict>
+				<key>com.apple.XCTPerformanceMetric_WallClockTime</key>
+				<dict>
+					<key>baselineAverage</key>
+					<real>0.06</real>
+					<key>baselineIntegrationDisplayName</key>
+					<string>Mar 6, 2015, 7:46:51 PM</string>
+				</dict>
+			</dict>
+			<key>testLLVMOnlyNoExecuteNullBuild</key>
+			<dict>
+				<key>com.apple.XCTPerformanceMetric_WallClockTime</key>
+				<dict>
+					<key>baselineAverage</key>
+					<real>0.04</real>
+					<key>baselineIntegrationDisplayName</key>
+					<string>Mar 6, 2015, 7:46:58 PM</string>
+				</dict>
+			</dict>
+		</dict>
+	</dict>
+</dict>
+</plist>
