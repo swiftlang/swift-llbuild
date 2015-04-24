@@ -97,7 +97,7 @@ static void usage(int exitCode=1) {
           "dump build graph to PATH in Graphviz DOT format");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--profile <PATH>",
           "write a build profile trace event file to PATH");
-  fprintf(stderr, "  %-*s %s\n", optionWidth, "--otrict",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--strict",
           "use strict mode (no bug compatibility)");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--trace <PATH>",
           "trace build engine operation to PATH");
