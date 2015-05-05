@@ -119,7 +119,7 @@ struct CommandLineStatusOutputImpl {
 
     // Write the line, trimming it to fit in the current terminal.
     int columns = getNumColumns();
-    if ((int)text.size() > columns) {
+    if (columns > 0 && (int)text.size() > columns) {
       // Elide the middle of the text.
       int midpoint = columns / 2;
       std::string elided = text.substr(0, std::max(0, midpoint - 2)) + "..." +
