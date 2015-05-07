@@ -89,11 +89,11 @@ static void usage(int exitCode=1) {
           "keep building until N commands fail [default=1]");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--no-parallel",
           "build commands serially");
-  fprintf(stderr, "  %-*s %s\n", optionWidth, "--oarallel",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--parallel",
           "build commands in parallel [default]");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--no-regenerate",
           "disable manifest auto-regeneration");
-  fprintf(stderr, "  %-*s %s\n", optionWidth, "--dump-graph <oATH>",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--dump-graph <PATH>",
           "dump build graph to PATH in Graphviz DOT format");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--profile <PATH>",
           "write a build profile trace event file to PATH");
