@@ -56,6 +56,27 @@
 		E171538D1A0BF702004CD598 /* CorePerfTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = E171538C1A0BF702004CD598 /* CorePerfTests.mm */; };
 		E19D79921A15D9E6002604FB /* MakefileDepsParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */; };
 		E19D79951A15DA06002604FB /* MakefileDepsParserTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E19D79941A15DA06002604FB /* MakefileDepsParserTest.cpp */; };
+		E19EC51B1B349E0A00A2F233 /* llbuild.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240319F991350059043E /* llbuild.cpp */; };
+		E19EC51D1B349E1200A2F233 /* Hashing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1FE53401AB1343B00041B8E /* Hashing.cpp */; };
+		E19EC51E1B349E1200A2F233 /* Version.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240719F991530059043E /* Version.cpp */; };
+		E19EC51F1B349E2D00A2F233 /* BuildDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E221051A0067F800957481 /* BuildDB.cpp */; };
+		E19EC5201B349E2D00A2F233 /* BuildEngine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241219F991530059043E /* BuildEngine.cpp */; };
+		E19EC5211B349E2D00A2F233 /* BuildEngineTrace.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241319F991530059043E /* BuildEngineTrace.cpp */; };
+		E19EC5221B349E2D00A2F233 /* DependencyCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241619F991530059043E /* DependencyCommand.cpp */; };
+		E19EC5231B349E2D00A2F233 /* DependencyGraph.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241719F991530059043E /* DependencyGraph.cpp */; };
+		E19EC5241B349E2D00A2F233 /* DependencyNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241819F991530059043E /* DependencyNode.cpp */; };
+		E19EC5251B349E2D00A2F233 /* MakefileDepsParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */; };
+		E19EC5261B349E2D00A2F233 /* SQLiteBuildDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E2210B1A015B9E00957481 /* SQLiteBuildDB.cpp */; };
+		E19EC52F1B349E3C00A2F233 /* Lexer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241B19F991530059043E /* Lexer.cpp */; };
+		E19EC5301B349E3C00A2F233 /* Manifest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241C19F991530059043E /* Manifest.cpp */; };
+		E19EC5311B349E3C00A2F233 /* ManifestLoader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241D19F991530059043E /* ManifestLoader.cpp */; };
+		E19EC5321B349E3C00A2F233 /* Parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241E19F991530059043E /* Parser.cpp */; };
+		E19EC5331B349E3C00A2F233 /* BuildEngineCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240A19F991530059043E /* BuildEngineCommand.cpp */; };
+		E19EC5341B349E3C00A2F233 /* CommandUtil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240C19F991530059043E /* CommandUtil.cpp */; };
+		E19EC5351B349E3C00A2F233 /* NinjaBuildCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240E19F991530059043E /* NinjaBuildCommand.cpp */; };
+		E19EC5361B349E3C00A2F233 /* NinjaCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241019F991530059043E /* NinjaCommand.cpp */; };
+		E19EC5391B349F0A00A2F233 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
+		E19EC53A1B349F2D00A2F233 /* CommandLineStatusOutput.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E12E12A71AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp */; };
 		E1A2244219F9973F0059043E /* BuildEngineCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240A19F991530059043E /* BuildEngineCommand.cpp */; };
 		E1A2244319F997410059043E /* CommandUtil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240C19F991530059043E /* CommandUtil.cpp */; };
 		E1A2244419F997450059043E /* NinjaBuildCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240E19F991530059043E /* NinjaBuildCommand.cpp */; };
@@ -174,6 +195,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = E1A224F819F99DFD0059043E;
 			remoteInfo = NinjaTests;
+		};
+		E19EC53B1B34A09B00A2F233 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E19EC5131B349DCC00A2F233;
+			remoteInfo = "llbuild-all-in-one";
 		};
 		E1A2250519F99E7E0059043E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -297,6 +325,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		E19EC5121B349DCC00A2F233 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		E1A224C119F999B80059043E /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -346,6 +383,7 @@
 		E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MakefileDepsParser.cpp; sourceTree = "<group>"; };
 		E19D79931A15D9F5002604FB /* MakefileDepsParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MakefileDepsParser.h; sourceTree = "<group>"; };
 		E19D79941A15DA06002604FB /* MakefileDepsParserTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MakefileDepsParserTest.cpp; sourceTree = "<group>"; };
+		E19EC5141B349DCC00A2F233 /* llbuild */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = llbuild; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1A223FB19F990E60059043E /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1A223FC19F990E60059043E /* README.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.txt; sourceTree = "<group>"; };
 		E1A2240019F991350059043E /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
@@ -481,6 +519,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				E10D5CE419FEF3BD00211ED4 /* Python.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E19EC5111B349DCC00A2F233 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E19EC5391B349F0A00A2F233 /* libsqlite3.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -663,6 +709,7 @@
 				E10D5CDA19FEBF6A00211ED4 /* LitXCTestAdaptor.xctest */,
 				E1C404AC1A0308F3003392BA /* PerfTests.xctest */,
 				E1ADC23A1A85936400D5387C /* libllbuild.dylib */,
+				E19EC5141B349DCC00A2F233 /* llbuild */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1161,6 +1208,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				E19EC53C1B34A09B00A2F233 /* PBXTargetDependency */,
 				E18043701A001E6E00662FE7 /* PBXTargetDependency */,
 				E18043741A001E7100662FE7 /* PBXTargetDependency */,
 				E18043721A001E6F00662FE7 /* PBXTargetDependency */,
@@ -1174,6 +1222,23 @@
 			productName = "llbuild Tests";
 			productReference = E10D5CDA19FEBF6A00211ED4 /* LitXCTestAdaptor.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		E19EC5131B349DCC00A2F233 /* llbuild-all-in-one */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E19EC51A1B349DCC00A2F233 /* Build configuration list for PBXNativeTarget "llbuild-all-in-one" */;
+			buildPhases = (
+				E19EC5101B349DCC00A2F233 /* Sources */,
+				E19EC5111B349DCC00A2F233 /* Frameworks */,
+				E19EC5121B349DCC00A2F233 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "llbuild-all-in-one";
+			productName = "llbuild (w/o static libs)";
+			productReference = E19EC5141B349DCC00A2F233 /* llbuild */;
+			productType = "com.apple.product-type.tool";
 		};
 		E1A2242419F991B40059043E /* llbuildBasic */ = {
 			isa = PBXNativeTarget;
@@ -1394,6 +1459,9 @@
 					E180432F1A00122900662FE7 = {
 						CreatedOnToolsVersion = 6.3;
 					};
+					E19EC5131B349DCC00A2F233 = {
+						CreatedOnToolsVersion = 7.0;
+					};
 					E1A2242419F991B40059043E = {
 						CreatedOnToolsVersion = 6.3;
 					};
@@ -1457,6 +1525,7 @@
 				E1A2254219F9A20D0059043E /* test */,
 				E10D5CD919FEBF6A00211ED4 /* LitXCTestAdaptor */,
 				E1C404AB1A0308F3003392BA /* PerfTests */,
+				E19EC5131B349DCC00A2F233 /* llbuild-all-in-one */,
 			);
 		};
 /* End PBXProject section */
@@ -1533,6 +1602,33 @@
 			buildActionMask = 2147483647;
 			files = (
 				E10D5CDF19FEBF6A00211ED4 /* LitTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E19EC5101B349DCC00A2F233 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E19EC53A1B349F2D00A2F233 /* CommandLineStatusOutput.cpp in Sources */,
+				E19EC52F1B349E3C00A2F233 /* Lexer.cpp in Sources */,
+				E19EC5301B349E3C00A2F233 /* Manifest.cpp in Sources */,
+				E19EC5311B349E3C00A2F233 /* ManifestLoader.cpp in Sources */,
+				E19EC5321B349E3C00A2F233 /* Parser.cpp in Sources */,
+				E19EC5331B349E3C00A2F233 /* BuildEngineCommand.cpp in Sources */,
+				E19EC5341B349E3C00A2F233 /* CommandUtil.cpp in Sources */,
+				E19EC5351B349E3C00A2F233 /* NinjaBuildCommand.cpp in Sources */,
+				E19EC5361B349E3C00A2F233 /* NinjaCommand.cpp in Sources */,
+				E19EC51F1B349E2D00A2F233 /* BuildDB.cpp in Sources */,
+				E19EC5201B349E2D00A2F233 /* BuildEngine.cpp in Sources */,
+				E19EC5211B349E2D00A2F233 /* BuildEngineTrace.cpp in Sources */,
+				E19EC5221B349E2D00A2F233 /* DependencyCommand.cpp in Sources */,
+				E19EC5231B349E2D00A2F233 /* DependencyGraph.cpp in Sources */,
+				E19EC5241B349E2D00A2F233 /* DependencyNode.cpp in Sources */,
+				E19EC5251B349E2D00A2F233 /* MakefileDepsParser.cpp in Sources */,
+				E19EC5261B349E2D00A2F233 /* SQLiteBuildDB.cpp in Sources */,
+				E19EC51D1B349E1200A2F233 /* Hashing.cpp in Sources */,
+				E19EC51E1B349E1200A2F233 /* Version.cpp in Sources */,
+				E19EC51B1B349E0A00A2F233 /* llbuild.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1695,6 +1791,11 @@
 			target = E1A224F819F99DFD0059043E /* NinjaTests */;
 			targetProxy = E18043791A001E7700662FE7 /* PBXContainerItemProxy */;
 		};
+		E19EC53C1B34A09B00A2F233 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E19EC5131B349DCC00A2F233 /* llbuild-all-in-one */;
+			targetProxy = E19EC53B1B34A09B00A2F233 /* PBXContainerItemProxy */;
+		};
 		E1A2250619F99E7E0059043E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = E1A224DC19F99B0E0059043E /* gtest */;
@@ -1846,6 +1947,24 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		E19EC5181B349DCC00A2F233 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				PRODUCT_NAME = llbuild;
+			};
+			name = Debug;
+		};
+		E19EC5191B349DCC00A2F233 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_NAME = llbuild;
 			};
 			name = Release;
 		};
@@ -2266,6 +2385,14 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		E19EC51A1B349DCC00A2F233 /* Build configuration list for PBXNativeTarget "llbuild-all-in-one" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E19EC5181B349DCC00A2F233 /* Debug */,
+				E19EC5191B349DCC00A2F233 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 		E1A223EC19F98F1C0059043E /* Build configuration list for PBXProject "llbuild" */ = {
 			isa = XCConfigurationList;
