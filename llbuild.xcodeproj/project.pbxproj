@@ -1370,6 +1370,7 @@
 				E1A224EB19F99D880059043E /* Sources */,
 				E1A224EC19F99D880059043E /* Frameworks */,
 				E1A224ED19F99D880059043E /* CopyFiles */,
+				E19EC53F1B34A44F00A2F233 /* Create Target Link */,
 			);
 			buildRules = (
 			);
@@ -1391,6 +1392,7 @@
 				E1A224F919F99DFD0059043E /* Sources */,
 				E1A224FC19F99DFD0059043E /* Frameworks */,
 				E1A224FD19F99DFD0059043E /* CopyFiles */,
+				E19EC53E1B34A3D800A2F233 /* Create Target Link */,
 			);
 			buildRules = (
 			);
@@ -1577,6 +1579,38 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "${SRCROOT}/utils/Xcode/install-user-lit.sh";
+			showEnvVarsInLog = 0;
+		};
+		E19EC53E1B34A3D800A2F233 /* Create Target Link */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Create Target Link";
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/unittests/$(PRODUCT_NAME)",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Create a link for the output product in the unittests subdir, which lit\n# uses to find our test binary.\n\nset -ex\n\nmkdir -p ${BUILT_PRODUCTS_DIR}/unittests\nrm -f ${BUILT_PRODUCTS_DIR}/unittests/${PRODUCT_NAME}\nln -s ../${PRODUCT_NAME} ${BUILT_PRODUCTS_DIR}/unittests\n";
+			showEnvVarsInLog = 0;
+		};
+		E19EC53F1B34A44F00A2F233 /* Create Target Link */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Create Target Link";
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/unittests/$(PRODUCT_NAME)",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Create a link for the output product in the unittests subdir, which lit\n# uses to find our test binary.\n\nset -ex\n\nmkdir -p ${BUILT_PRODUCTS_DIR}/unittests\nrm -f ${BUILT_PRODUCTS_DIR}/unittests/${PRODUCT_NAME}\nln -s ../${PRODUCT_NAME} ${BUILT_PRODUCTS_DIR}/unittests\n";
 			showEnvVarsInLog = 0;
 		};
 		E1A2254C19F9A2280059043E /* Execute 'lit' tests */ = {
@@ -2211,7 +2245,6 @@
 		E1A224F419F99D880059043E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/unittests/Core";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
@@ -2225,7 +2258,6 @@
 		E1A224F519F99D880059043E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/unittests/Core";
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -2240,7 +2272,6 @@
 		E1A224FF19F99DFD0059043E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/unittests/Ninja";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
@@ -2254,7 +2285,6 @@
 		E1A2250019F99DFD0059043E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/unittests/Ninja";
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
