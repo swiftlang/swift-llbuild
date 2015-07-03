@@ -234,6 +234,9 @@ public:
   explicit BuildEngine(BuildEngineDelegate& delegate);
   ~BuildEngine();
 
+  /// Return the delegate the engine was configured with.
+  BuildEngineDelegate* getDelegate();
+
   /// @name Rule Definition
   /// @{
 

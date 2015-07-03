@@ -950,6 +950,10 @@ public:
     }
   }
 
+  BuildEngineDelegate* getDelegate() {
+    return &delegate;
+  }
+
   RuleInfo& getRuleInfoForKey(const KeyType& key) {
     // Check if we have already found the rule.
     auto it = ruleInfos.find(key);
@@ -1225,6 +1229,10 @@ BuildEngine::BuildEngine(BuildEngineDelegate& delegate)
 
 BuildEngine::~BuildEngine() {
   delete static_cast<BuildEngineImpl*>(impl);
+}
+
+BuildEngineDelegate* BuildEngine::getDelegate() {
+  return static_cast<BuildEngineImpl*>(impl)->getDelegate();
 }
 
 void BuildEngine::addRule(Rule&& rule) {
