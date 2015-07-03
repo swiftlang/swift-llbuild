@@ -54,6 +54,18 @@ typedef struct llb_data_t_ {
     const uint8_t* data;
 } llb_data_t;
 
+/// Status kind indications for Rules.
+typedef enum {
+    /// Indicates the rule is being scanned.
+    llb_rule_is_scanning = 0,
+
+    /// Indicates the rule is up-to-date, and doesn't need to run.
+    llb_rule_is_up_to_date = 1,
+
+    /// Indicates the rule was run, and is now complete.
+    llb_rule_is_complete = 2
+} llb_rule_status_kind_t;
+
 /// Rule representation.
 typedef struct llb_rule_t_ llb_rule_t;
 struct llb_rule_t_ {
@@ -77,6 +89,10 @@ struct llb_rule_t_ {
     /// Xparam result The previously computed result for the rule.
     bool (*is_result_valid)(void* context, void* engine_context,
                             const llb_rule_t* rule, const llb_data_t* result);
+
+    /// Called to indicate a change in the rule status.
+    void (*update_status)(void* context, void* engine_context,
+                          llb_rule_status_kind_t kind);
 };
 
 /// Delegate structure for callbacks required by the build engine.
@@ -107,6 +123,24 @@ llb_buildengine_create(llb_buildengine_delegate_t delegate);
 /// Destroy a build engine.
 LLBUILD_EXPORT void
 llb_buildengine_destroy(llb_buildengine_t* engine);
+
+/// Create a new build engine object.
+///
+/// \param path The path to create or load the database from.
+///
+/// \param schema_version The schema version used by the client for this
+/// database. Any existing database will be checked against this schema version
+/// to determine if existing results can be used.
+///
+/// \param error_out On failure, a pointer to a C-string describing the
+/// error. The string must be released using \see free().
+///
+/// \returns True on success.
+LLBUILD_EXPORT bool
+llb_buildengine_attach_db(llb_buildengine_t* engine,
+                          const llb_data_t* path,
+                          uint32_t schema_version,
+                          char **error_out);
 
 /// Build the result for a particular key.
 ///

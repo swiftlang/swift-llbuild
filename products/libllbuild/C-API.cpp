@@ -14,6 +14,7 @@
 #include <llbuild/llbuild.h>
 
 #include "llbuild/Basic/Version.h"
+#include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/BuildEngine.h"
 
 using namespace llbuild;
@@ -45,7 +46,7 @@ class CAPIBuildEngineDelegate : public BuildEngineDelegate {
 
   virtual Rule lookupRule(const KeyType& key) override {
     void* engineContext = cAPIDelegate.context;
-    llb_rule_t rule;
+    llb_rule_t rule{};
     llb_data_t key_data{ key.length(), (const uint8_t*)key.data() };
     cAPIDelegate.lookup_rule(cAPIDelegate.context, &key_data, &rule);
 
@@ -61,13 +62,22 @@ class CAPIBuildEngineDelegate : public BuildEngineDelegate {
       };
     }
 
+    std::function<void(Rule::StatusKind)> updateStatus;
+    if (rule.update_status) {
+      updateStatus = [rule, engineContext] (Rule::StatusKind kind) {
+        return rule.update_status(rule.context, engineContext,
+                                  (llb_rule_status_kind_t)kind);
+      };
+    }
+
     return Rule{
       // FIXME: This is a wasteful copy.
       key,
       [rule, engineContext] (BuildEngine& engine) {
         return (Task*) rule.create_task(rule.context, engineContext);
       },
-      isResultValid };
+      isResultValid,
+      updateStatus };
   }
 
   virtual void cycleDetected(const std::vector<core::Rule*>& items) override {
@@ -133,6 +143,27 @@ llb_buildengine_t* llb_buildengine_create(llb_buildengine_delegate_t delegate) {
 void llb_buildengine_destroy(llb_buildengine_t* engine) {
   // FIXME: Delegate is lost.
   delete (BuildEngine*)engine;
+}
+
+bool llb_buildengine_attach_db(llb_buildengine_t* engine_p,
+                               const llb_data_t* path,
+                               uint32_t schema_version,
+                               char** error_out) {
+  BuildEngine* engine = (BuildEngine*) engine_p;
+
+  std::string error;
+  std::unique_ptr<BuildDB> db(createSQLiteBuildDB(
+                                  std::string((char*)path->data,
+                                              path->length),
+                                  schema_version,
+                                  &error));
+  if (!db) {
+    *error_out = strdup(error.c_str());
+    return false;
+  }
+  
+  engine->attachDB(std::move(db));
+  return true;
 }
 
 void llb_buildengine_build(llb_buildengine_t* engine_p, const llb_data_t* key,
