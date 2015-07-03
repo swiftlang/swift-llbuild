@@ -42,6 +42,13 @@ typedef struct llb_buildengine_t_ llb_buildengine_t;
 typedef struct llb_task_t_ llb_task_t;
 
 /// Representation for a blob of bytes.
+///
+/// NOTE: There is no defined memory management model for the provided data
+/// pointer. Instead, all uses of the llb_data_t when provided as input
+/// arguments to llbuild are required to ensure the data pointer is live for the
+/// life of the call. When used as an output parameter, the build system will
+/// ensure that the data pointer is live at least until the next llbuild API
+/// call is made.
 typedef struct llb_data_t_ {
     uint64_t length;
     const uint8_t* data;
@@ -57,12 +64,19 @@ struct llb_rule_t_ {
     llb_data_t key;
 
     /// The callback to create a task for computing this rule.
-    llb_task_t* (*create_task)(void* context,
-                               llb_buildengine_t* engine);
+    ///
+    /// Xparam context The task context pointer.
+    /// Xparam engine_context The context pointer for the engine delegate.
+    llb_task_t* (*create_task)(void* context, void* engine_context);
 
     /// The callback to check if a previously computed result is still valid.
-    bool (*is_result_valid)(void* context, const llb_rule_t* rule,
-                            const llb_data_t* result);
+    ///
+    /// Xparam context The task context pointer.
+    /// Xparam engine_context The context pointer for the engine delegate.
+    /// Xparam rule The rule under consideration.
+    /// Xparam result The previously computed result for the rule.
+    bool (*is_result_valid)(void* context, void* engine_context,
+                            const llb_rule_t* rule, const llb_data_t* result);
 };
 
 /// Delegate structure for callbacks required by the build engine.
@@ -183,16 +197,32 @@ typedef struct llb_task_delegate_t_ {
     void* context;
 
     /// The callback indicating the task has been started.
-    void (*start)(void* context, llb_task_t* task, llb_buildengine_t* engine);
+    ///
+    /// Xparam context The task context pointer.
+    /// Xparam engine_context The context pointer for the engine delegate.
+    /// Xparam task The task which is being started.
+    void (*start)(void* context, void* engine_context, llb_task_t* task);
 
     /// The callback to provide a requested input value to the task.
-    void (*provide_value)(void* context, llb_task_t* task,
-                          llb_buildengine_t* engine, uintptr_t input_id,
-                          const llb_data_t* value);
+    ///
+    /// Xparam context The task context pointer.
+    /// Xparam engine_context The context pointer for the engine delegate.
+    /// Xparam task The task which is being started.
+    void (*provide_value)(void* context, void* engine_context, 
+                          llb_task_t* task,
+                          uintptr_t input_id, const llb_data_t* value);
 
     /// The callback indicating that all requested inputs have been provided.
-    void (*inputs_available)(void* context, llb_task_t* task,
-                             llb_buildengine_t* engine);
+    ///
+    /// The task is expected to call \see llb_buildengine_task_is_complete() at
+    /// some point in the future for the task, to provide the result of
+    /// executing the task.
+    ///
+    /// Xparam context The task context pointer.
+    /// Xparam engine_context The context pointer for the engine delegate.
+    /// Xparam task The task which is being started.
+    void (*inputs_available)(void* context, void* engine_context,
+                             llb_task_t* task);
 } llb_task_delegate_t;
 
 /// Create a task object.

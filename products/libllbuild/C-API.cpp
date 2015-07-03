@@ -35,6 +35,8 @@ namespace {
 class CAPIBuildEngineDelegate : public BuildEngineDelegate {
   llb_buildengine_delegate_t cAPIDelegate;
 
+  friend class CAPITask;
+
   virtual ~CAPIBuildEngineDelegate() {
     if (cAPIDelegate.destroy_context) {
       cAPIDelegate.destroy_context(cAPIDelegate.context);
@@ -42,25 +44,28 @@ class CAPIBuildEngineDelegate : public BuildEngineDelegate {
   }
 
   virtual Rule lookupRule(const KeyType& key) override {
+    void* engineContext = cAPIDelegate.context;
     llb_rule_t rule;
     llb_data_t key_data{ key.length(), (const uint8_t*)key.data() };
     cAPIDelegate.lookup_rule(cAPIDelegate.context, &key_data, &rule);
 
     std::function<bool(const Rule&, const ValueType&)> isResultValid;
     if (rule.is_result_valid) {
-      isResultValid = [rule] (const Rule& nativeRule, const ValueType& value) {
+      isResultValid = [rule, engineContext] (const Rule& nativeRule,
+                                             const ValueType& value) {
         // FIXME: Why do we pass the rule here, it is redundant. NativeRule
         // should be == rule here.
         llb_data_t value_data{ value.size(), value.data() };
-        return rule.is_result_valid(rule.context, &rule, &value_data);
+        return rule.is_result_valid(rule.context, engineContext, &rule,
+                                    &value_data);
       };
     }
 
     return Rule{
-      KeyType((const char*)rule.key.data, rule.key.length),
-      [rule] (BuildEngine& engine) {
-        return (Task*) rule.create_task(
-          rule.context, (llb_buildengine_t*) &engine);
+      // FIXME: This is a wasteful copy.
+      key,
+      [rule, engineContext] (BuildEngine& engine) {
+        return (Task*) rule.create_task(rule.context, engineContext);
       },
       isResultValid };
   }
@@ -89,21 +94,30 @@ public:
   }
 
   virtual void start(BuildEngine& engine) override {
-    cAPIDelegate.start(cAPIDelegate.context, (llb_task_t*)this,
-                       (llb_buildengine_t*) &engine);
+    CAPIBuildEngineDelegate* delegate =
+      static_cast<CAPIBuildEngineDelegate*>(engine.getDelegate());
+    cAPIDelegate.start(cAPIDelegate.context,
+                       delegate->cAPIDelegate.context,
+                       (llb_task_t*)this);
   }
 
   virtual void provideValue(BuildEngine& engine, uintptr_t inputID,
                             const ValueType& value) override {
+    CAPIBuildEngineDelegate* delegate =
+      static_cast<CAPIBuildEngineDelegate*>(engine.getDelegate());
     llb_data_t valueData{ value.size(), value.data() };
-    cAPIDelegate.provide_value(cAPIDelegate.context, (llb_task_t*)this,
-                               (llb_buildengine_t*) &engine,
+    cAPIDelegate.provide_value(cAPIDelegate.context,
+                               delegate->cAPIDelegate.context,
+                               (llb_task_t*)this,
                                inputID, &valueData);
   }
 
   virtual void inputsAvailable(BuildEngine& engine) override {
-    cAPIDelegate.inputs_available(cAPIDelegate.context, (llb_task_t*)this,
-                                  (llb_buildengine_t*) &engine);
+    CAPIBuildEngineDelegate* delegate =
+      static_cast<CAPIBuildEngineDelegate*>(engine.getDelegate());
+    cAPIDelegate.inputs_available(cAPIDelegate.context,
+                                  delegate->cAPIDelegate.context,
+                                  (llb_task_t*)this);
   }
 };
 
