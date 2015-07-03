@@ -182,9 +182,15 @@ llb_buildengine_task_discovered_dependency(llb_buildengine_t* engine,
 /// Called by a task to indicate it has completed and to provide its value.
 ///
 /// It is legal to call this method from any thread.
+///
+/// \param value The new value for the task's rule.
+///
+/// \param force_change If true, treat the value as changed and trigger
+/// dependents to rebuild, even if the value itself is not different from the
+/// prior result.
 LLBUILD_EXPORT void
 llb_buildengine_task_is_complete(llb_buildengine_t* engine, llb_task_t* task,
-                                 const llb_data_t* value);
+                                 const llb_data_t* value, bool force_change);
 
 /// @}
 

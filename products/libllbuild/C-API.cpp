@@ -180,7 +180,8 @@ void llb_buildengine_task_discovered_dependency(llb_buildengine_t* engine_p,
 
 void llb_buildengine_task_is_complete(llb_buildengine_t* engine_p,
                                       llb_task_t* task,
-                                      const llb_data_t* value) {
+                                      const llb_data_t* value,
+                                      bool force_change) {
   BuildEngine* engine = (BuildEngine*) engine_p;
   std::vector<uint8_t> result(value->length);
   memcpy(result.data(), value->data, value->length);
