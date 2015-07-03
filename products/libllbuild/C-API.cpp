@@ -170,7 +170,7 @@ void llb_buildengine_build(llb_buildengine_t* engine_p, const llb_data_t* key,
                            llb_data_t* result_out) {
   BuildEngine* engine = (BuildEngine*) engine_p;
 
-  auto result = engine->build(KeyType((const char*)key->data, key->length));
+  auto& result = engine->build(KeyType((const char*)key->data, key->length));
 
   *result_out = llb_data_t{ result.size(), result.data() };
 }
