@@ -21,7 +21,7 @@
 #include <stdint.h>
 
 #if defined(__cplusplus)
-#define LLBUILD_EXPORT extern "C"
+#define LLBUILD_EXPORT extern "C" __attribute__((visibility("default")))
 #elif __GNUC__
 #define LLBUILD_EXPORT extern __attribute__((visibility("default")))
 #else
