@@ -50,6 +50,11 @@ class CAPIBuildEngineDelegate : public BuildEngineDelegate {
     llb_data_t key_data{ key.length(), (const uint8_t*)key.data() };
     cAPIDelegate.lookup_rule(cAPIDelegate.context, &key_data, &rule);
 
+    // FIXME: Check that the client created the rule appropriately. We should
+    // change the API to be type safe here, by forcing the client to return a
+    // handle created by the C API.
+    assert(rule.create_task && "client failed to initialize rule");
+
     std::function<bool(const Rule&, const ValueType&)> isResultValid;
     if (rule.is_result_valid) {
       isResultValid = [rule, engineContext] (const Rule& nativeRule,
@@ -100,7 +105,11 @@ public:
   CAPITask(llb_task_delegate_t delegate)
     : Task("C-API-Task"), cAPIDelegate(delegate)
   {
-    
+      assert(cAPIDelegate.start && "missing task start function");
+      assert(cAPIDelegate.provide_value &&
+             "missing task provide_value function");
+      assert(cAPIDelegate.inputs_available &&
+             "missing task inputs_available function");
   }
 
   virtual void start(BuildEngine& engine) override {
@@ -161,7 +170,7 @@ bool llb_buildengine_attach_db(llb_buildengine_t* engine_p,
     *error_out = strdup(error.c_str());
     return false;
   }
-  
+
   engine->attachDB(std::move(db));
   return true;
 }
