@@ -57,7 +57,7 @@ struct Result {
   std::vector<KeyType> dependencies;
 };
 
-/// A task object represents an abstract in progress computation in the build
+/// A task object represents an abstract in-progress computation in the build
 /// engine.
 ///
 /// The task represents not just the primary computation, but also the process
@@ -192,7 +192,7 @@ public:
   ///
   /// The delegate *must* provide a rule for any possible key that can be
   /// requested (either by a client, through \see BuildEngine::build(), or via a
-  /// Task through mechanisms such as \see BuildEngine::taskNeedsInput()). If a
+  /// Task through mechanisms such as \see BuildEngine::taskNeedsInput(). If a
   /// requested Key cannot be supplied, the delegate should provide a dummy rule
   /// that the client can translate into an error.
   virtual Rule lookupRule(const KeyType& key) = 0;
