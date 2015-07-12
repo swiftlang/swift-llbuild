@@ -23,6 +23,13 @@ Swift conventions.
   into distinct "libraries" under ``lib/``. The current set of libraries, and
   their dependencies, is:
 
+  **llvm**
+    Shared LLVM support facilities, for llbuild use. These are intended to be
+    relatively unmodified versions of data structures which are available in
+    LLVM, but are just not factored in a way that we can use them. The goal is
+    to eventually factor out a common LLVM-support infrastructure that can be
+    shared.
+
   **Basic**
     Support facilities available to all libraries.
 

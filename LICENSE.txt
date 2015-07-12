@@ -9,3 +9,20 @@ Licensed under Apache License v2.0 with Runtime Library Exception
 
 See http://swift.org/LICENSE.txt for license information
 See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+
+==========================================================================
+Copyrights and Licenses for Third Party Software Distributed with llbuild:
+==========================================================================
+
+The llbuild software contains code written by third parties.  Such software will
+have its own individual LICENSE.TXT file as part of its source or in the
+directory in which it appears.  This file will describe the copyrights, license,
+and restrictions which apply to that code.
+
+The following pieces of software have additional or alternate copyrights,
+licenses, and/or restrictions:
+
+Program             Directory
+-------             ---------
+Google Test         llbuild/utils/unittest/googletest
+LLVM                llbuild/lib/llvm, llbuild/include/llvm

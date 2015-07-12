@@ -1,3 +1,4 @@
+add_subdirectory(llvm)
 add_subdirectory(Basic)
 add_subdirectory(Core)
 add_subdirectory(Ninja)

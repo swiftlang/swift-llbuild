@@ -1,0 +1,113 @@
+#!/usr/bin/env python
+
+# This is a helper script for importing the things we use from LLVM.
+#
+# NOTE: We have slightly modified copies of some of the files, to reduce the
+# dependency surface area, so if you run this to update the sources, please
+# examine the diffs to remove things that don't make sense.
+
+import errno
+import optparse
+import os
+import shutil
+import sys
+
+# ADT types.
+ADT_imports = ['iterator_range', 'Hashing' 'None', 'Optional', 'StringExtras',
+               'STLExtras']
+
+# ADT basic data structures.
+ADT_imports += ['ArrayRef', 'PointerIntPair', 'StringRef', 'StringSwitch',
+                'Twine', 'IntrusiveRefCntPtr', 'ilist', 'ilist_node']
+
+# ADT Mapping structures.
+ADT_imports += ['DenseMap', 'DenseMapInfo', 'StringMap']
+
+# ADT "Small" structures.
+ADT_imports += ['SmallPtrSet', 'SmallString', 'SmallVector']
+
+# ADT Algorithms.
+ADT_imports += ['edit_distance']
+
+# Support types and infrastructure.
+Support_imports = [
+    'AlignOf', 'Allocator', 'Atomic', 'CBindingWrapping', 'Casting', 'Compiler',
+    'Endian', 'Errno', 'ErrorHandling', 'Errc', 'ErrorOr', 'Format',
+    'ManagedStatic', 'MathExtras', 'Mutex', 'MutexGuard', 'Memory',
+    'MemoryBuffer', 'PointerLikeTypeTraits', 'Recycler', 'SwapByteOrder',
+    'TimeValue', 'Threading', 'Unicode', 'UniqueLock', 'Unix', 'WindowsError',
+    'Valgrind', 'circular_raw_ostream', 'raw_ostream', 'type_traits']
+
+# Stuff we don't want, but have to pull in.
+Support_imports += [
+    'COFF', 'ConvertUTF', 'Debug', 'FileSystem', 'FileUtilities', 'Host',
+    'Locale', 'Path', 'Process', 'Program', 'SMLoc', 'SourceMgr', 'Signals',
+    'Unicode', 'UnicodeCharRanges']
+
+# Support data structures.
+Support_imports += ['YAMLParser']
+
+# Source files to exclude.
+Support_source_excludes = set(['Host'])
+
+llvm_srcroot = None
+llbuild_srcroot = None
+
+def note(msg):
+    msg = msg.replace(llvm_srcroot, "<LLVM>")
+    msg = msg.replace(llbuild_srcroot, "<LLBUILD>")
+    print >>sys.stderr, "note: %s" % (msg,)
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+        note("mkdir -p %r" % (path,))
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+
+def copyfile(src, dst):
+    note("cp %r %r" % (src, dst))
+    shutil.copyfile(src, dst)
+
+def main():
+    parser = optparse.OptionParser("usage: %prog <llvm-source-path>")
+    (opts, args) = parser.parse_args()
+
+    if len(args) != 1:
+        parser.error("unexpected number of arguments")
+
+    global llvm_srcroot, llbuild_srcroot
+    llvm_srcroot, = args
+    llbuild_srcroot = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+    def import_header(dir, name):
+        src = os.path.join(llvm_srcroot, 'include', 'llvm', dir, name)
+        if os.path.exists(src):
+            dst = os.path.join(llbuild_srcroot, 'include', 'llvm', dir, name)
+            mkdir_p(os.path.dirname(dst))
+            copyfile(src, dst)
+
+    def import_source(dir, name):
+        src = os.path.join(llvm_srcroot, 'lib', dir, name)
+        if os.path.exists(src):
+            dst = os.path.join(llbuild_srcroot, 'lib', 'llvm', dir, name)
+            mkdir_p(os.path.dirname(dst))
+            copyfile(src, dst)
+
+    print "note: importing from %r to %r" % (llvm_srcroot, llbuild_srcroot)
+
+    for name in ADT_imports:
+        import_header('ADT', name+'.h')
+        if name not in Support_source_excludes:
+            import_source('Support', name+'.cpp')
+    for name in Support_imports:
+        import_header('Support', name+'.h')
+        if name not in Support_source_excludes:
+            import_source('Support', name+'.cpp')
+            import_source('Support', os.path.join('Unix', name+'.h'))
+            import_source('Support', os.path.join('Unix', name+'.inc'))
+        
+if __name__ == '__main__':
+    main()
