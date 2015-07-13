@@ -54,6 +54,10 @@
 		E10D5CE619FEF40100211ED4 /* LitTests.py in Resources */ = {isa = PBXBuildFile; fileRef = E10D5CE519FEF40100211ED4 /* LitTests.py */; };
 		E12E12A91AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E12E12A71AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp */; };
 		E12E12AA1AD50AE600ACE7B3 /* CommandLineStatusOutput.h in Headers */ = {isa = PBXBuildFile; fileRef = E12E12A81AD50AE500ACE7B3 /* CommandLineStatusOutput.h */; };
+		E15B6EC41B546A1600643066 /* ConvertUTF.c in Sources */ = {isa = PBXBuildFile; fileRef = E15B6EC21B546A0D00643066 /* ConvertUTF.c */; };
+		E15B6EC51B546A1600643066 /* ConvertUTFWrapper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E15B6EC31B546A0D00643066 /* ConvertUTFWrapper.cpp */; };
+		E15B6EC71B546A2C00643066 /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
+		E15B6EC81B546A3400643066 /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
 		E171538D1A0BF702004CD598 /* CorePerfTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = E171538C1A0BF702004CD598 /* CorePerfTests.mm */; };
 		E19D79921A15D9E6002604FB /* MakefileDepsParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */; };
 		E19D79951A15DA06002604FB /* MakefileDepsParserTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E19D79941A15DA06002604FB /* MakefileDepsParserTest.cpp */; };
@@ -468,6 +472,9 @@
 		E12E12A71AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CommandLineStatusOutput.cpp; sourceTree = "<group>"; };
 		E12E12A81AD50AE500ACE7B3 /* CommandLineStatusOutput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CommandLineStatusOutput.h; sourceTree = "<group>"; };
 		E153EBBA1A1E94CD00F93337 /* llbuild-test-tools */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "llbuild-test-tools"; sourceTree = "<group>"; };
+		E15B6EC21B546A0D00643066 /* ConvertUTF.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ConvertUTF.c; sourceTree = "<group>"; };
+		E15B6EC31B546A0D00643066 /* ConvertUTFWrapper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ConvertUTFWrapper.cpp; sourceTree = "<group>"; };
+		E15B6EC61B546A2C00643066 /* libcurses.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcurses.dylib; path = usr/lib/libcurses.dylib; sourceTree = SDKROOT; };
 		E171538C1A0BF702004CD598 /* CorePerfTests.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = CorePerfTests.mm; sourceTree = "<group>"; };
 		E18043391A00129400662FE7 /* install-user-lit.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "install-user-lit.sh"; sourceTree = "<group>"; };
 		E182BE111ABA2B8D001840AD /* Compiler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Compiler.h; sourceTree = "<group>"; };
@@ -743,8 +750,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E1B8393C1B52E8D500DB876B /* libllvmSupport.a in Frameworks */,
+				E15B6EC81B546A3400643066 /* libcurses.dylib in Frameworks */,
 				E19EC5391B349F0A00A2F233 /* libsqlite3.dylib in Frameworks */,
+				E1B8393C1B52E8D500DB876B /* libllvmSupport.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -780,6 +788,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E15B6EC71B546A2C00643066 /* libcurses.dylib in Frameworks */,
 				E1E221091A00B82100957481 /* libsqlite3.dylib in Frameworks */,
 				E1B8393B1B52E8CC00DB876B /* libllvmSupport.a in Frameworks */,
 				E1A224D519F99A2D0059043E /* libllbuildBasic.a in Frameworks */,
@@ -897,6 +906,7 @@
 		E13B5E411A00395300EA0405 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				E15B6EC61B546A2C00643066 /* libcurses.dylib */,
 				E1E221081A00B82100957481 /* libsqlite3.dylib */,
 				E10D5CE319FEF3BD00211ED4 /* Python.framework */,
 			);
@@ -1368,6 +1378,8 @@
 				E1B838A91B52E85400DB876B /* CMakeLists.txt */,
 				E1B838A71B52E85400DB876B /* Allocator.cpp */,
 				E1B838A81B52E85400DB876B /* Atomic.cpp */,
+				E15B6EC21B546A0D00643066 /* ConvertUTF.c */,
+				E15B6EC31B546A0D00643066 /* ConvertUTFWrapper.cpp */,
 				E1B838AA1B52E85400DB876B /* Debug.cpp */,
 				E1B838AB1B52E85400DB876B /* Errno.cpp */,
 				E1B838AC1B52E85400DB876B /* ErrorHandling.cpp */,
@@ -2321,11 +2333,13 @@
 				E1B838D81B52E86E00DB876B /* Hashing.cpp in Sources */,
 				E1B838D91B52E86E00DB876B /* IntrusiveRefCntPtr.cpp in Sources */,
 				E1B838DA1B52E86E00DB876B /* Locale.cpp in Sources */,
+				E15B6EC51B546A1600643066 /* ConvertUTFWrapper.cpp in Sources */,
 				E1B838DB1B52E86E00DB876B /* ManagedStatic.cpp in Sources */,
 				E1B838DC1B52E86E00DB876B /* MathExtras.cpp in Sources */,
 				E1B838DD1B52E86E00DB876B /* Memory.cpp in Sources */,
 				E1B838DE1B52E86E00DB876B /* MemoryBuffer.cpp in Sources */,
 				E1B838DF1B52E86E00DB876B /* Mutex.cpp in Sources */,
+				E15B6EC41B546A1600643066 /* ConvertUTF.c in Sources */,
 				E1B838E01B52E86E00DB876B /* Path.cpp in Sources */,
 				E1B838E11B52E86E00DB876B /* Process.cpp in Sources */,
 				E1B838E21B52E86E00DB876B /* Program.cpp in Sources */,

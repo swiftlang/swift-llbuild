@@ -40,9 +40,9 @@ Support_imports = [
 
 # Stuff we don't want, but have to pull in.
 Support_imports += [
-    'COFF', 'ConvertUTF', 'Debug', 'FileSystem', 'FileUtilities', 'Host',
-    'Locale', 'Path', 'Process', 'Program', 'SMLoc', 'SourceMgr', 'Signals',
-    'Unicode', 'UnicodeCharRanges']
+    'COFF', 'ConvertUTF', 'ConvertUTFWrapper', 'Debug', 'FileSystem',
+    'FileUtilities', 'Host', 'Locale', 'Path', 'Process', 'Program', 'SMLoc',
+    'SourceMgr', 'Signals', 'Unicode', 'UnicodeCharRanges']
 
 # Support data structures.
 Support_imports += ['YAMLParser']
@@ -101,10 +101,12 @@ def main():
     for name in ADT_imports:
         import_header('ADT', name+'.h')
         if name not in Support_source_excludes:
+            import_source('Support', name+'.c')
             import_source('Support', name+'.cpp')
     for name in Support_imports:
         import_header('Support', name+'.h')
         if name not in Support_source_excludes:
+            import_source('Support', name+'.c')
             import_source('Support', name+'.cpp')
             import_source('Support', os.path.join('Unix', name+'.h'))
             import_source('Support', os.path.join('Unix', name+'.inc'))

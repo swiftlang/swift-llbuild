@@ -4,6 +4,8 @@ append_if(CXX_SUPPORTS_IMPLICIT_FALLTHROUGH_FLAG "-Wno-implicit-fallthrough" CMA
 add_llbuild_library(llvmSupport
 Allocator.cpp
 Atomic.cpp
+ConvertUTF.c
+ConvertUTFWrapper.cpp
 Debug.cpp
 Errno.cpp
 ErrorHandling.cpp
