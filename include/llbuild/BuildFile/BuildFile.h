@@ -20,7 +20,7 @@ namespace buildfile {
 
 class BuildFileDelegate {
 public:
-    virtual ~BuildFileDelegate();
+  virtual ~BuildFileDelegate();
 };
 
 /// The BuildFile class supports the "LLBuild"-native build description file
@@ -45,7 +45,6 @@ public:
   void load();
 
   /// @}
-  
 };
 
 }

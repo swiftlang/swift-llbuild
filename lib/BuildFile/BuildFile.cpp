@@ -15,6 +15,8 @@
 using namespace llbuild;
 using namespace llbuild::buildfile;
 
+BuildFileDelegate::~BuildFileDelegate() {}
+
 #pragma mark - BuildEngine implementation
 
 namespace {

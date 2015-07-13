@@ -150,6 +150,9 @@
 		E1B839471B52EAAE00DB876B /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
 		E1B8395E1B541C5900DB876B /* BuildFile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1B839591B541C1F00DB876B /* BuildFile.cpp */; };
 		E1B8395F1B541C6400DB876B /* libllbuildBuildFile.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildFile.a */; };
+		E1B839651B5420F500DB876B /* BuildFileCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1B839641B5420F500DB876B /* BuildFileCommand.cpp */; };
+		E1B839661B54226900DB876B /* BuildFileCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1B839641B5420F500DB876B /* BuildFileCommand.cpp */; };
+		E1B839671B54226D00DB876B /* BuildFile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1B839591B541C1F00DB876B /* BuildFile.cpp */; };
 		E1C404B11A0308F3003392BA /* NinjaPerfTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = E1C404B01A0308F3003392BA /* NinjaPerfTests.mm */; };
 		E1C404B91A030A1D003392BA /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
 		E1C404BA1A030A1D003392BA /* libllbuildCommands.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242E19F997050059043E /* libllbuildCommands.a */; };
@@ -711,6 +714,7 @@
 		E1B839591B541C1F00DB876B /* BuildFile.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildFile.cpp; sourceTree = "<group>"; };
 		E1B8395A1B541C1F00DB876B /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1B8395D1B541C4300DB876B /* BuildFile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuildFile.h; sourceTree = "<group>"; };
+		E1B839641B5420F500DB876B /* BuildFileCommand.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildFileCommand.cpp; sourceTree = "<group>"; };
 		E1C404AC1A0308F3003392BA /* PerfTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PerfTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1C404AF1A0308F3003392BA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E1C404B01A0308F3003392BA /* NinjaPerfTests.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = NinjaPerfTests.mm; sourceTree = "<group>"; };
@@ -1010,6 +1014,7 @@
 				E1A2245419F997E80059043E /* Headers */,
 				E1A2240B19F991530059043E /* CMakeLists.txt */,
 				E1A2240A19F991530059043E /* BuildEngineCommand.cpp */,
+				E1B839641B5420F500DB876B /* BuildFileCommand.cpp */,
 				E12E12A71AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp */,
 				E12E12A81AD50AE500ACE7B3 /* CommandLineStatusOutput.h */,
 				E1A2240C19F991530059043E /* CommandUtil.cpp */,
@@ -2190,9 +2195,11 @@
 				E19EC5351B349E3C00A2F233 /* NinjaBuildCommand.cpp in Sources */,
 				E19EC5361B349E3C00A2F233 /* NinjaCommand.cpp in Sources */,
 				E19EC51F1B349E2D00A2F233 /* BuildDB.cpp in Sources */,
+				E1B839661B54226900DB876B /* BuildFileCommand.cpp in Sources */,
 				E19EC5201B349E2D00A2F233 /* BuildEngine.cpp in Sources */,
 				E19EC5211B349E2D00A2F233 /* BuildEngineTrace.cpp in Sources */,
 				E19EC5221B349E2D00A2F233 /* DependencyCommand.cpp in Sources */,
+				E1B839671B54226D00DB876B /* BuildFile.cpp in Sources */,
 				E19EC5231B349E2D00A2F233 /* DependencyGraph.cpp in Sources */,
 				E19EC5241B349E2D00A2F233 /* DependencyNode.cpp in Sources */,
 				E19EC5251B349E2D00A2F233 /* MakefileDepsParser.cpp in Sources */,
@@ -2216,6 +2223,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1B839651B5420F500DB876B /* BuildFileCommand.cpp in Sources */,
 				E1A2244219F9973F0059043E /* BuildEngineCommand.cpp in Sources */,
 				E1A2244319F997410059043E /* CommandUtil.cpp in Sources */,
 				E1A2244419F997450059043E /* NinjaBuildCommand.cpp in Sources */,
