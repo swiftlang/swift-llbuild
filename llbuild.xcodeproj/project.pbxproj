@@ -476,6 +476,7 @@
 		E15B6EC31B546A0D00643066 /* ConvertUTFWrapper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ConvertUTFWrapper.cpp; sourceTree = "<group>"; };
 		E15B6EC61B546A2C00643066 /* libcurses.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcurses.dylib; path = usr/lib/libcurses.dylib; sourceTree = SDKROOT; };
 		E171538C1A0BF702004CD598 /* CorePerfTests.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = CorePerfTests.mm; sourceTree = "<group>"; };
+		E17C29E41B5AAA2F00C12DA9 /* create-target-link.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "create-target-link.sh"; sourceTree = "<group>"; };
 		E18043391A00129400662FE7 /* install-user-lit.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "install-user-lit.sh"; sourceTree = "<group>"; };
 		E182BE111ABA2B8D001840AD /* Compiler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Compiler.h; sourceTree = "<group>"; };
 		E19D549B1A00496900772777 /* basic.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = basic.ninja; sourceTree = "<group>"; };
@@ -1325,6 +1326,7 @@
 			children = (
 				E10D5CDB19FEBF6A00211ED4 /* LitXCTestAdaptor */,
 				E1A2254F19F9A74B0059043E /* README.txt */,
+				E17C29E41B5AAA2F00C12DA9 /* create-target-link.sh */,
 				E1A2255019F9A74B0059043E /* create-lit-site-cfg.sh */,
 				E1A2255119F9A74B0059043E /* execute-lit-tests.sh */,
 				E18043391A00129400662FE7 /* install-user-lit.sh */,
@@ -2117,7 +2119,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "${SRCROOT}/utils/Xcode/create-lit-site-cfg.sh";
+			shellScript = "\"${SRCROOT}/utils/Xcode/create-lit-site-cfg.sh\"";
 			showEnvVarsInLog = 0;
 		};
 		E18043381A00127600662FE7 /* Install per-user 'lit' module */ = {
@@ -2132,7 +2134,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "${SRCROOT}/utils/Xcode/install-user-lit.sh";
+			shellScript = "\"${SRCROOT}/utils/Xcode/install-user-lit.sh\"";
 			showEnvVarsInLog = 0;
 		};
 		E19EC53E1B34A3D800A2F233 /* Create Target Link */ = {
@@ -2148,7 +2150,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Create a link for the output product in the unittests subdir, which lit\n# uses to find our test binary.\n\nset -ex\n\nmkdir -p ${BUILT_PRODUCTS_DIR}/unittests\nrm -f ${BUILT_PRODUCTS_DIR}/unittests/${PRODUCT_NAME}\nln -s ../${PRODUCT_NAME} ${BUILT_PRODUCTS_DIR}/unittests\n";
+			shellScript = "\"${SRCROOT}/utils/Xcode/create-target-link.sh\"";
 			showEnvVarsInLog = 0;
 		};
 		E19EC53F1B34A44F00A2F233 /* Create Target Link */ = {
@@ -2164,7 +2166,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Create a link for the output product in the unittests subdir, which lit\n# uses to find our test binary.\n\nset -ex\n\nmkdir -p ${BUILT_PRODUCTS_DIR}/unittests\nrm -f ${BUILT_PRODUCTS_DIR}/unittests/${PRODUCT_NAME}\nln -s ../${PRODUCT_NAME} ${BUILT_PRODUCTS_DIR}/unittests\n";
+			shellScript = "\"${SRCROOT}/utils/Xcode/create-target-link.sh\"";
 			showEnvVarsInLog = 0;
 		};
 		E1A2254C19F9A2280059043E /* Execute 'lit' tests */ = {
@@ -2577,7 +2579,7 @@
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
-					"BUILT_PRODUCTS_DIR=\\\"$(BUILT_PRODUCTS_DIR)\\\"",
+					"\"BUILT_PRODUCTS_DIR=\\\"$(BUILT_PRODUCTS_DIR)\\\"\"",
 				);
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				INFOPLIST_FILE = utils/Xcode/LitXCTestAdaptor/Info.plist;
@@ -2596,7 +2598,7 @@
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
-					"BUILT_PRODUCTS_DIR=\\\"$(BUILT_PRODUCTS_DIR)\\\"",
+					"\"BUILT_PRODUCTS_DIR=\\\"$(BUILT_PRODUCTS_DIR)\\\"\"",
 				);
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				INFOPLIST_FILE = utils/Xcode/LitXCTestAdaptor/Info.plist;
@@ -3026,8 +3028,8 @@
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
-					"SRCROOT=\\\"$(SRCROOT)\\\"",
-					"TEST_TEMPS_PATH=\\\"$(CONFIGURATION_TEMP_DIR)/test-temps\\\"",
+					"\"SRCROOT=\\\"$(SRCROOT)\\\"\"",
+					"\"TEST_TEMPS_PATH=\\\"$(CONFIGURATION_TEMP_DIR)/test-temps\\\"\"",
 				);
 				INFOPLIST_FILE = perftests/Xcode/PerfTests/Info.plist;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -3043,8 +3045,8 @@
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
-					"SRCROOT=\\\"$(SRCROOT)\\\"",
-					"TEST_TEMPS_PATH=\\\"$(CONFIGURATION_TEMP_DIR)/test-temps\\\"",
+					"\"SRCROOT=\\\"$(SRCROOT)\\\"\"",
+					"\"TEST_TEMPS_PATH=\\\"$(CONFIGURATION_TEMP_DIR)/test-temps\\\"\"",
 				);
 				INFOPLIST_FILE = perftests/Xcode/PerfTests/Info.plist;
 				PRODUCT_NAME = "$(TARGET_NAME)";

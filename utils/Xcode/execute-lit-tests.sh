@@ -8,4 +8,4 @@ LIT="python -m lit.main"
 
 echo "note: running LLBuild tests..."
 echo "note: using lit: '${LIT}'"
-${LIT} -sv --no-progress ${BUILT_PRODUCTS_DIR}/tests
+${LIT} -sv --no-progress "${BUILT_PRODUCTS_DIR}/tests"
