@@ -149,7 +149,7 @@ Random Tasks
     too.
 
   * There is some bad-smelling redundancy between how we check the file info in
-    the *IsValid() functions, and how we then recompute that info later as part
+    the `*IsValid()` functions, and how we then recompute that info later as part
     of the task (and the engine internally will compare it to see if it has
     changed to know if it needs to propagate the change). We need to think about
     this and figure out what is ideal. There might be a cleaner modeling where

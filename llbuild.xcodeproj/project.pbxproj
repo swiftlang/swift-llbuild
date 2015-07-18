@@ -19,6 +19,18 @@
 			name = "B&I";
 			productName = "B&I";
 		};
+		E17C29ED1B5AC12B00C12DA9 /* Sphinx-Docs */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = E17C29F01B5AC12B00C12DA9 /* Build configuration list for PBXAggregateTarget "Sphinx-Docs" */;
+			buildPhases = (
+				E17C29F11B5AC13C00C12DA9 /* Install per-use 'sphinx' tools */,
+				E17C29F41B5AC2F600C12DA9 /* Build Sphinx Docs */,
+			);
+			dependencies = (
+			);
+			name = "Sphinx-Docs";
+			productName = "Sphinx-Docs";
+		};
 		E180432F1A00122900662FE7 /* Lit-Tests-Setup */ = {
 			isa = PBXAggregateTarget;
 			buildConfigurationList = E18043321A00122900662FE7 /* Build configuration list for PBXAggregateTarget "Lit-Tests-Setup" */;
@@ -429,6 +441,8 @@
 		E15B6EC61B546A2C00643066 /* libcurses.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcurses.dylib; path = usr/lib/libcurses.dylib; sourceTree = SDKROOT; };
 		E171538C1A0BF702004CD598 /* CorePerfTests.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = CorePerfTests.mm; sourceTree = "<group>"; };
 		E17C29E41B5AAA2F00C12DA9 /* create-target-link.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "create-target-link.sh"; sourceTree = "<group>"; };
+		E17C29F21B5AC18C00C12DA9 /* install-user-sphinx.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "install-user-sphinx.sh"; sourceTree = "<group>"; };
+		E17C29F31B5AC2A700C12DA9 /* build-sphinx-docs.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "build-sphinx-docs.sh"; sourceTree = "<group>"; };
 		E18043391A00129400662FE7 /* install-user-lit.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "install-user-lit.sh"; sourceTree = "<group>"; };
 		E182BE111ABA2B8D001840AD /* Compiler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Compiler.h; sourceTree = "<group>"; };
 		E19D549B1A00496900772777 /* basic.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = basic.ninja; sourceTree = "<group>"; };
@@ -1266,10 +1280,12 @@
 			children = (
 				E10D5CDB19FEBF6A00211ED4 /* LitXCTestAdaptor */,
 				E1A2254F19F9A74B0059043E /* README.txt */,
+				E17C29F31B5AC2A700C12DA9 /* build-sphinx-docs.sh */,
 				E17C29E41B5AAA2F00C12DA9 /* create-target-link.sh */,
 				E1A2255019F9A74B0059043E /* create-lit-site-cfg.sh */,
 				E1A2255119F9A74B0059043E /* execute-lit-tests.sh */,
 				E18043391A00129400662FE7 /* install-user-lit.sh */,
+				E17C29F21B5AC18C00C12DA9 /* install-user-sphinx.sh */,
 			);
 			path = Xcode;
 			sourceTree = "<group>";
@@ -1922,6 +1938,9 @@
 					E178FCC11A1BF3270039F8B5 = {
 						CreatedOnToolsVersion = 6.3;
 					};
+					E17C29ED1B5AC12B00C12DA9 = {
+						CreatedOnToolsVersion = 7.0;
+					};
 					E180432F1A00122900662FE7 = {
 						CreatedOnToolsVersion = 6.3;
 					};
@@ -1990,6 +2009,7 @@
 				E1A224EE19F99D880059043E /* CoreTests */,
 				E1A224F819F99DFD0059043E /* NinjaTests */,
 				E180432F1A00122900662FE7 /* Lit-Tests-Setup */,
+				E17C29ED1B5AC12B00C12DA9 /* Sphinx-Docs */,
 				E1A2254219F9A20D0059043E /* test */,
 				E10D5CD919FEBF6A00211ED4 /* LitXCTestAdaptor */,
 				E1C404AB1A0308F3003392BA /* PerfTests */,
@@ -2024,6 +2044,36 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		E17C29F11B5AC13C00C12DA9 /* Install per-use 'sphinx' tools */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Install per-use 'sphinx' tools";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/utils/Xcode/install-user-sphinx.sh\"";
+			showEnvVarsInLog = 0;
+		};
+		E17C29F41B5AC2F600C12DA9 /* Build Sphinx Docs */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Build Sphinx Docs";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/utils/Xcode/build-sphinx-docs.sh\"";
+			showEnvVarsInLog = 0;
+		};
 		E18043371A00125500662FE7 /* Create 'lit.site.cfg' */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -2493,6 +2543,20 @@
 			name = Debug;
 		};
 		E178FCC31A1BF3270039F8B5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		E17C29EE1B5AC12B00C12DA9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		E17C29EF1B5AC12B00C12DA9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2971,6 +3035,14 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		E17C29F01B5AC12B00C12DA9 /* Build configuration list for PBXAggregateTarget "Sphinx-Docs" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E17C29EE1B5AC12B00C12DA9 /* Debug */,
+				E17C29EF1B5AC12B00C12DA9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 		E18043321A00122900662FE7 /* Build configuration list for PBXAggregateTarget "Lit-Tests-Setup" */ = {
 			isa = XCConfigurationList;
