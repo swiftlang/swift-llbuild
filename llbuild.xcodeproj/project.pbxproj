@@ -57,31 +57,9 @@
 		E15B6EC41B546A1600643066 /* ConvertUTF.c in Sources */ = {isa = PBXBuildFile; fileRef = E15B6EC21B546A0D00643066 /* ConvertUTF.c */; };
 		E15B6EC51B546A1600643066 /* ConvertUTFWrapper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E15B6EC31B546A0D00643066 /* ConvertUTFWrapper.cpp */; };
 		E15B6EC71B546A2C00643066 /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
-		E15B6EC81B546A3400643066 /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
 		E171538D1A0BF702004CD598 /* CorePerfTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = E171538C1A0BF702004CD598 /* CorePerfTests.mm */; };
 		E19D79921A15D9E6002604FB /* MakefileDepsParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */; };
 		E19D79951A15DA06002604FB /* MakefileDepsParserTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E19D79941A15DA06002604FB /* MakefileDepsParserTest.cpp */; };
-		E19EC51B1B349E0A00A2F233 /* llbuild.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240319F991350059043E /* llbuild.cpp */; };
-		E19EC51D1B349E1200A2F233 /* Hashing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1FE53401AB1343B00041B8E /* Hashing.cpp */; };
-		E19EC51E1B349E1200A2F233 /* Version.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240719F991530059043E /* Version.cpp */; };
-		E19EC51F1B349E2D00A2F233 /* BuildDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E221051A0067F800957481 /* BuildDB.cpp */; };
-		E19EC5201B349E2D00A2F233 /* BuildEngine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241219F991530059043E /* BuildEngine.cpp */; };
-		E19EC5211B349E2D00A2F233 /* BuildEngineTrace.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241319F991530059043E /* BuildEngineTrace.cpp */; };
-		E19EC5221B349E2D00A2F233 /* DependencyCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241619F991530059043E /* DependencyCommand.cpp */; };
-		E19EC5231B349E2D00A2F233 /* DependencyGraph.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241719F991530059043E /* DependencyGraph.cpp */; };
-		E19EC5241B349E2D00A2F233 /* DependencyNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241819F991530059043E /* DependencyNode.cpp */; };
-		E19EC5251B349E2D00A2F233 /* MakefileDepsParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */; };
-		E19EC5261B349E2D00A2F233 /* SQLiteBuildDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E2210B1A015B9E00957481 /* SQLiteBuildDB.cpp */; };
-		E19EC52F1B349E3C00A2F233 /* Lexer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241B19F991530059043E /* Lexer.cpp */; };
-		E19EC5301B349E3C00A2F233 /* Manifest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241C19F991530059043E /* Manifest.cpp */; };
-		E19EC5311B349E3C00A2F233 /* ManifestLoader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241D19F991530059043E /* ManifestLoader.cpp */; };
-		E19EC5321B349E3C00A2F233 /* Parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241E19F991530059043E /* Parser.cpp */; };
-		E19EC5331B349E3C00A2F233 /* BuildEngineCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240A19F991530059043E /* BuildEngineCommand.cpp */; };
-		E19EC5341B349E3C00A2F233 /* CommandUtil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240C19F991530059043E /* CommandUtil.cpp */; };
-		E19EC5351B349E3C00A2F233 /* NinjaBuildCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240E19F991530059043E /* NinjaBuildCommand.cpp */; };
-		E19EC5361B349E3C00A2F233 /* NinjaCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241019F991530059043E /* NinjaCommand.cpp */; };
-		E19EC5391B349F0A00A2F233 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
-		E19EC53A1B349F2D00A2F233 /* CommandLineStatusOutput.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E12E12A71AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp */; };
 		E1A2244219F9973F0059043E /* BuildEngineCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240A19F991530059043E /* BuildEngineCommand.cpp */; };
 		E1A2244319F997410059043E /* CommandUtil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240C19F991530059043E /* CommandUtil.cpp */; };
 		E1A2244419F997450059043E /* NinjaBuildCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240E19F991530059043E /* NinjaBuildCommand.cpp */; };
@@ -150,13 +128,10 @@
 		E1B838F11B52E86E00DB876B /* raw_ostream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1B838D11B52E85400DB876B /* raw_ostream.cpp */; };
 		E1B8393A1B52E8C100DB876B /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
 		E1B8393B1B52E8CC00DB876B /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
-		E1B8393C1B52E8D500DB876B /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
 		E1B839471B52EAAE00DB876B /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
 		E1B8395E1B541C5900DB876B /* BuildFile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1B839591B541C1F00DB876B /* BuildFile.cpp */; };
 		E1B8395F1B541C6400DB876B /* libllbuildBuildFile.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildFile.a */; };
 		E1B839651B5420F500DB876B /* BuildFileCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1B839641B5420F500DB876B /* BuildFileCommand.cpp */; };
-		E1B839661B54226900DB876B /* BuildFileCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1B839641B5420F500DB876B /* BuildFileCommand.cpp */; };
-		E1B839671B54226D00DB876B /* BuildFile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1B839591B541C1F00DB876B /* BuildFile.cpp */; };
 		E1C404B11A0308F3003392BA /* NinjaPerfTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = E1C404B01A0308F3003392BA /* NinjaPerfTests.mm */; };
 		E1C404B91A030A1D003392BA /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
 		E1C404BA1A030A1D003392BA /* libllbuildCommands.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242E19F997050059043E /* libllbuildCommands.a */; };
@@ -184,6 +159,34 @@
 			remoteGlobalIDString = E1A224C219F999B80059043E;
 			remoteInfo = "llbuild Tool";
 		};
+		E17C29E51B5AAF6100C12DA9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1A2242419F991B40059043E;
+			remoteInfo = llbuildBasic;
+		};
+		E17C29E71B5AAF6100C12DA9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1A2242D19F997050059043E;
+			remoteInfo = llbuildCommands;
+		};
+		E17C29E91B5AAF6100C12DA9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1A2243D19F997150059043E;
+			remoteInfo = llbuildCore;
+		};
+		E17C29EB1B5AAF6100C12DA9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1A2243519F9970D0059043E;
+			remoteInfo = llbuildNinja;
+		};
 		E18043331A00123600662FE7 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
@@ -205,34 +208,6 @@
 			remoteGlobalIDString = E1A224C219F999B80059043E;
 			remoteInfo = "llbuild Tool";
 		};
-		E180436F1A001E6E00662FE7 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = E1A2242419F991B40059043E;
-			remoteInfo = llbuildBasic;
-		};
-		E18043711A001E6F00662FE7 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = E1A2242D19F997050059043E;
-			remoteInfo = llbuildCommands;
-		};
-		E18043731A001E7100662FE7 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = E1A2243D19F997150059043E;
-			remoteInfo = llbuildCore;
-		};
-		E18043751A001E7400662FE7 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = E1A2243519F9970D0059043E;
-			remoteInfo = llbuildNinja;
-		};
 		E18043771A001E7600662FE7 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
@@ -246,13 +221,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = E1A224F819F99DFD0059043E;
 			remoteInfo = NinjaTests;
-		};
-		E19EC53B1B34A09B00A2F233 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = E19EC5131B349DCC00A2F233;
-			remoteInfo = "llbuild-all-in-one";
 		};
 		E1A2250519F99E7E0059043E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -366,13 +334,6 @@
 			remoteGlobalIDString = E1B838981B52E7DE00DB876B;
 			remoteInfo = llvmSupport;
 		};
-		E1B8393F1B52EA2600DB876B /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = E1B838981B52E7DE00DB876B;
-			remoteInfo = llvmSupport;
-		};
 		E1B839411B52EA9E00DB876B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
@@ -425,15 +386,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		E19EC5121B349DCC00A2F233 /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-		};
 		E1A224C119F999B80059043E /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -487,7 +439,6 @@
 		E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MakefileDepsParser.cpp; sourceTree = "<group>"; };
 		E19D79931A15D9F5002604FB /* MakefileDepsParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MakefileDepsParser.h; sourceTree = "<group>"; };
 		E19D79941A15DA06002604FB /* MakefileDepsParserTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MakefileDepsParserTest.cpp; sourceTree = "<group>"; };
-		E19EC5141B349DCC00A2F233 /* llbuild */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = llbuild; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1A223FB19F990E60059043E /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1A223FC19F990E60059043E /* README.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.txt; sourceTree = "<group>"; };
 		E1A2240019F991350059043E /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
@@ -747,16 +698,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		E19EC5111B349DCC00A2F233 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				E15B6EC81B546A3400643066 /* libcurses.dylib in Frameworks */,
-				E19EC5391B349F0A00A2F233 /* libsqlite3.dylib in Frameworks */,
-				E1B8393C1B52E8D500DB876B /* libllvmSupport.a in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		E1A2242219F991B40059043E /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -966,7 +907,6 @@
 				E10D5CDA19FEBF6A00211ED4 /* LitXCTestAdaptor.xctest */,
 				E1C404AC1A0308F3003392BA /* PerfTests.xctest */,
 				E1ADC23A1A85936400D5387C /* libllbuild.dylib */,
-				E19EC5141B349DCC00A2F233 /* llbuild */,
 				E1D191BE1B47232B000C4E95 /* llbuild.framework */,
 				E1B838A21B52E7DE00DB876B /* libllvmSupport.a */,
 				E1B839571B541BFD00DB876B /* libllbuildBuildFile.a */,
@@ -1693,38 +1633,15 @@
 			buildRules = (
 			);
 			dependencies = (
-				E19EC53C1B34A09B00A2F233 /* PBXTargetDependency */,
-				E18043701A001E6E00662FE7 /* PBXTargetDependency */,
-				E18043741A001E7100662FE7 /* PBXTargetDependency */,
-				E18043721A001E6F00662FE7 /* PBXTargetDependency */,
-				E18043761A001E7400662FE7 /* PBXTargetDependency */,
+				E18043341A00123600662FE7 /* PBXTargetDependency */,
 				E180436E1A001E6C00662FE7 /* PBXTargetDependency */,
 				E18043781A001E7600662FE7 /* PBXTargetDependency */,
 				E180437A1A001E7700662FE7 /* PBXTargetDependency */,
-				E18043341A00123600662FE7 /* PBXTargetDependency */,
 			);
 			name = LitXCTestAdaptor;
 			productName = "llbuild Tests";
 			productReference = E10D5CDA19FEBF6A00211ED4 /* LitXCTestAdaptor.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
-		};
-		E19EC5131B349DCC00A2F233 /* llbuild-all-in-one */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = E19EC51A1B349DCC00A2F233 /* Build configuration list for PBXNativeTarget "llbuild-all-in-one" */;
-			buildPhases = (
-				E19EC5101B349DCC00A2F233 /* Sources */,
-				E19EC5111B349DCC00A2F233 /* Frameworks */,
-				E19EC5121B349DCC00A2F233 /* CopyFiles */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				E1B839401B52EA2600DB876B /* PBXTargetDependency */,
-			);
-			name = "llbuild-all-in-one";
-			productName = "llbuild (w/o static libs)";
-			productReference = E19EC5141B349DCC00A2F233 /* llbuild */;
-			productType = "com.apple.product-type.tool";
 		};
 		E1A2242419F991B40059043E /* llbuildBasic */ = {
 			isa = PBXNativeTarget;
@@ -1959,6 +1876,10 @@
 			buildRules = (
 			);
 			dependencies = (
+				E17C29E61B5AAF6100C12DA9 /* PBXTargetDependency */,
+				E17C29E81B5AAF6100C12DA9 /* PBXTargetDependency */,
+				E17C29EA1B5AAF6100C12DA9 /* PBXTargetDependency */,
+				E17C29EC1B5AAF6100C12DA9 /* PBXTargetDependency */,
 			);
 			name = PerfTests;
 			productName = PerfTests;
@@ -2003,9 +1924,6 @@
 					};
 					E180432F1A00122900662FE7 = {
 						CreatedOnToolsVersion = 6.3;
-					};
-					E19EC5131B349DCC00A2F233 = {
-						CreatedOnToolsVersion = 7.0;
 					};
 					E1A2242419F991B40059043E = {
 						CreatedOnToolsVersion = 6.3;
@@ -2075,7 +1993,6 @@
 				E1A2254219F9A20D0059043E /* test */,
 				E10D5CD919FEBF6A00211ED4 /* LitXCTestAdaptor */,
 				E1C404AB1A0308F3003392BA /* PerfTests */,
-				E19EC5131B349DCC00A2F233 /* llbuild-all-in-one */,
 				E1D191BD1B47232B000C4E95 /* llbuild-framework */,
 			);
 		};
@@ -2192,35 +2109,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				E10D5CDF19FEBF6A00211ED4 /* LitTests.m in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		E19EC5101B349DCC00A2F233 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				E19EC53A1B349F2D00A2F233 /* CommandLineStatusOutput.cpp in Sources */,
-				E19EC52F1B349E3C00A2F233 /* Lexer.cpp in Sources */,
-				E19EC5301B349E3C00A2F233 /* Manifest.cpp in Sources */,
-				E19EC5311B349E3C00A2F233 /* ManifestLoader.cpp in Sources */,
-				E19EC5321B349E3C00A2F233 /* Parser.cpp in Sources */,
-				E19EC5331B349E3C00A2F233 /* BuildEngineCommand.cpp in Sources */,
-				E19EC5341B349E3C00A2F233 /* CommandUtil.cpp in Sources */,
-				E19EC5351B349E3C00A2F233 /* NinjaBuildCommand.cpp in Sources */,
-				E19EC5361B349E3C00A2F233 /* NinjaCommand.cpp in Sources */,
-				E19EC51F1B349E2D00A2F233 /* BuildDB.cpp in Sources */,
-				E1B839661B54226900DB876B /* BuildFileCommand.cpp in Sources */,
-				E19EC5201B349E2D00A2F233 /* BuildEngine.cpp in Sources */,
-				E19EC5211B349E2D00A2F233 /* BuildEngineTrace.cpp in Sources */,
-				E19EC5221B349E2D00A2F233 /* DependencyCommand.cpp in Sources */,
-				E1B839671B54226D00DB876B /* BuildFile.cpp in Sources */,
-				E19EC5231B349E2D00A2F233 /* DependencyGraph.cpp in Sources */,
-				E19EC5241B349E2D00A2F233 /* DependencyNode.cpp in Sources */,
-				E19EC5251B349E2D00A2F233 /* MakefileDepsParser.cpp in Sources */,
-				E19EC5261B349E2D00A2F233 /* SQLiteBuildDB.cpp in Sources */,
-				E19EC51D1B349E1200A2F233 /* Hashing.cpp in Sources */,
-				E19EC51E1B349E1200A2F233 /* Version.cpp in Sources */,
-				E19EC51B1B349E0A00A2F233 /* llbuild.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2396,6 +2284,26 @@
 			target = E1A224C219F999B80059043E /* llbuild Tool */;
 			targetProxy = E178FCC51A1BF32F0039F8B5 /* PBXContainerItemProxy */;
 		};
+		E17C29E61B5AAF6100C12DA9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1A2242419F991B40059043E /* llbuildBasic */;
+			targetProxy = E17C29E51B5AAF6100C12DA9 /* PBXContainerItemProxy */;
+		};
+		E17C29E81B5AAF6100C12DA9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1A2242D19F997050059043E /* llbuildCommands */;
+			targetProxy = E17C29E71B5AAF6100C12DA9 /* PBXContainerItemProxy */;
+		};
+		E17C29EA1B5AAF6100C12DA9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1A2243D19F997150059043E /* llbuildCore */;
+			targetProxy = E17C29E91B5AAF6100C12DA9 /* PBXContainerItemProxy */;
+		};
+		E17C29EC1B5AAF6100C12DA9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1A2243519F9970D0059043E /* llbuildNinja */;
+			targetProxy = E17C29EB1B5AAF6100C12DA9 /* PBXContainerItemProxy */;
+		};
 		E18043341A00123600662FE7 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = E180432F1A00122900662FE7 /* Lit-Tests-Setup */;
@@ -2411,26 +2319,6 @@
 			target = E1A224C219F999B80059043E /* llbuild Tool */;
 			targetProxy = E180436D1A001E6C00662FE7 /* PBXContainerItemProxy */;
 		};
-		E18043701A001E6E00662FE7 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = E1A2242419F991B40059043E /* llbuildBasic */;
-			targetProxy = E180436F1A001E6E00662FE7 /* PBXContainerItemProxy */;
-		};
-		E18043721A001E6F00662FE7 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = E1A2242D19F997050059043E /* llbuildCommands */;
-			targetProxy = E18043711A001E6F00662FE7 /* PBXContainerItemProxy */;
-		};
-		E18043741A001E7100662FE7 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = E1A2243D19F997150059043E /* llbuildCore */;
-			targetProxy = E18043731A001E7100662FE7 /* PBXContainerItemProxy */;
-		};
-		E18043761A001E7400662FE7 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = E1A2243519F9970D0059043E /* llbuildNinja */;
-			targetProxy = E18043751A001E7400662FE7 /* PBXContainerItemProxy */;
-		};
 		E18043781A001E7600662FE7 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = E1A224EE19F99D880059043E /* CoreTests */;
@@ -2440,11 +2328,6 @@
 			isa = PBXTargetDependency;
 			target = E1A224F819F99DFD0059043E /* NinjaTests */;
 			targetProxy = E18043791A001E7700662FE7 /* PBXContainerItemProxy */;
-		};
-		E19EC53C1B34A09B00A2F233 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = E19EC5131B349DCC00A2F233 /* llbuild-all-in-one */;
-			targetProxy = E19EC53B1B34A09B00A2F233 /* PBXContainerItemProxy */;
 		};
 		E1A2250619F99E7E0059043E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -2525,11 +2408,6 @@
 			isa = PBXTargetDependency;
 			target = E1B838981B52E7DE00DB876B /* llvmSupport */;
 			targetProxy = E1B8393D1B52E8F000DB876B /* PBXContainerItemProxy */;
-		};
-		E1B839401B52EA2600DB876B /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = E1B838981B52E7DE00DB876B /* llvmSupport */;
-			targetProxy = E1B8393F1B52EA2600DB876B /* PBXContainerItemProxy */;
 		};
 		E1B839421B52EA9E00DB876B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -2632,24 +2510,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Release;
-		};
-		E19EC5181B349DCC00A2F233 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				DEBUG_INFORMATION_FORMAT = dwarf;
-				ENABLE_TESTABILITY = YES;
-				MTL_ENABLE_DEBUG_INFO = YES;
-				PRODUCT_NAME = llbuild;
-			};
-			name = Debug;
-		};
-		E19EC5191B349DCC00A2F233 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				MTL_ENABLE_DEBUG_INFO = NO;
-				PRODUCT_NAME = llbuild;
 			};
 			name = Release;
 		};
@@ -3117,15 +2977,6 @@
 			buildConfigurations = (
 				E18043301A00122900662FE7 /* Debug */,
 				E18043311A00122900662FE7 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		E19EC51A1B349DCC00A2F233 /* Build configuration list for PBXNativeTarget "llbuild-all-in-one" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				E19EC5181B349DCC00A2F233 /* Debug */,
-				E19EC5191B349DCC00A2F233 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
