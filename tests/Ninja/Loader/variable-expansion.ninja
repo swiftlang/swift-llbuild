@@ -47,3 +47,11 @@ b1_sub = first
 b1_sub = second
 # CHECK: b1 = "x.second.x"
 b1 = x.${b1_sub}.x
+
+# Check error handling in deferred expansion.
+#
+# CHECK-ERR: error: invalid variable reference {{.*}} during evaluation of 'command'
+rule DEFERRED
+    command = ECHO ${bar
+build foo: DEFERRED
+
