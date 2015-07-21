@@ -47,11 +47,13 @@ const char* Token::getKindName() const {
   return "<invalid token kind>";
 }
 
+#ifndef NDEBUG
 void Token::dump() {
   std::cerr << "(Token \"" << getKindName() << "\" "
             << (const void*) start << " " << length << " "
             << line << " " << column << ")\n";
 }
+#endif
 
 ///
 

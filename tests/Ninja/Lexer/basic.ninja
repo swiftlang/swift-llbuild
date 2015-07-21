@@ -30,4 +30,25 @@ a: b
 # CHECK: (Token "Identifier" String:"b" Length:1 Line:[[@LINE+1]] Column:2)
 a$b
 
+# Check indentation tokens.
+#
+# CHECK: (Token "Indentation" String:"    " Length:4 Line:[[@LINE+2]] Column:0)
+# CHECK: (Token "Identifier" String:"b" Length:1 Line:[[@LINE+1]] Column:4)
+    b
+
+# Check keyword tokens.
+#
+# CHECK: (Token "KWBuild" String:"build" Length:5 Line:[[@LINE+1]] Column:0)
+build
+# CHECK: (Token "KWDefault" String:"default" Length:7 Line:[[@LINE+1]] Column:0)
+default
+# CHECK: (Token "KWInclude" String:"include" Length:7 Line:[[@LINE+1]] Column:0)
+include
+# CHECK: (Token "KWPool" String:"pool" Length:4 Line:[[@LINE+1]] Column:0)
+pool
+# CHECK: (Token "KWRule" String:"rule" Length:4 Line:[[@LINE+1]] Column:0)
+rule
+# CHECK: (Token "KWSubninja" String:"subninja" Length:8 Line:[[@LINE+1]] Column:0)
+subninja
+
 # CHECK: (Token "EndOfFile" String:{{.*}} Length:0 Line:[[@LINE+1]] Column:0)

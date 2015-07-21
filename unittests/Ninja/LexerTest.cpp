@@ -282,6 +282,7 @@ this string crosses a $\nnewline\n\
   // Check we consume spaces in strings.
   lexer.lex(tok);
   EXPECT_EQ(ninja::Token::Kind::String, tok.tokenKind);
+  EXPECT_EQ("String", tok.getKindName());
   EXPECT_EQ(0, memcmp(tok.start, "this is one string", tok.length));
   lexer.lex(tok);
   EXPECT_EQ(ninja::Token::Kind::Newline, tok.tokenKind);
