@@ -1,0 +1,39 @@
+# Check basic parsing functionality.
+#
+# RUN: %{llbuild} buildfile parse %s 2> %t.err
+
+# FIXME: Check the results.
+
+# Declare the client information.
+client:
+  name: example-client
+  version: 1
+
+# Define the tools.
+tools:
+  cc:
+    enable-dependencies: True
+    cwd: /tmp/example
+  link:
+    cwd: /tmp/example
+
+# Define the targets.
+targets:
+  hello: ["hello"]
+
+# Define properties on nodes.
+nodes:
+  ["hello.o", "hello"]:
+    hash-content: True
+  
+# Define the tasks.
+tasks:
+  link-hello:
+    tool: link
+    inputs: ["hello.o"]
+    outputs: ["hello"]
+  cc-hello.o:
+    tool: cc
+    input: ["hello.c"]
+    outputs: ["hello.o"]
+    args: -O0

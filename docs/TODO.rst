@@ -2,11 +2,6 @@
  TODO
 ======
 
-General
-=======
-
-* Import LLVM Support and ADT.
-
 Ninja Manifests
 ===============
 
@@ -163,7 +158,7 @@ Random Tasks
     between. If true, this may be better things we can do to communicate to the
     kernel the purpose and lifetime of things like object files.
 
-  * We should consider allowing the right of the target result to go directly
+  * We should consider allowing the write of the target result to go directly
     into the stored Result field. That would avoid the need for spurious
     allocations when updating results.
 

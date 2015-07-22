@@ -700,6 +700,8 @@
 		E1E221081A00B82100957481 /* libsqlite3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsqlite3.dylib; path = usr/lib/libsqlite3.dylib; sourceTree = SDKROOT; };
 		E1E2210A1A00BEE500957481 /* incremental.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = incremental.ninja; sourceTree = "<group>"; };
 		E1E2210B1A015B9E00957481 /* SQLiteBuildDB.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SQLiteBuildDB.cpp; sourceTree = "<group>"; };
+		E1ECD7AD1B60610A006B4C2A /* basic.llbuild */ = {isa = PBXFileReference; lastKnownFileType = text; path = basic.llbuild; sourceTree = "<group>"; };
+		E1ECD7AE1B60610A006B4C2A /* lit.local.cfg */ = {isa = PBXFileReference; lastKnownFileType = text; path = lit.local.cfg; sourceTree = "<group>"; };
 		E1FE53401AB1343B00041B8E /* Hashing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Hashing.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -1199,6 +1201,7 @@
 		E1A2252319F9A0310059043E /* tests */ = {
 			isa = PBXGroup;
 			children = (
+				E1ECD7AB1B60610A006B4C2A /* BuildFile */,
 				E19D549C1A00497300772777 /* Commands */,
 				E1A2252519F9A0310059043E /* Ninja */,
 				E1A2253D19F9A0310059043E /* Unit */,
@@ -1557,6 +1560,23 @@
 				E1D191B81B472305000C4E95 /* llbuild-module.modulemap */,
 			);
 			path = "llbuild-framework";
+			sourceTree = "<group>";
+		};
+		E1ECD7AB1B60610A006B4C2A /* BuildFile */ = {
+			isa = PBXGroup;
+			children = (
+				E1ECD7AC1B60610A006B4C2A /* Parser */,
+				E1ECD7AE1B60610A006B4C2A /* lit.local.cfg */,
+			);
+			path = BuildFile;
+			sourceTree = "<group>";
+		};
+		E1ECD7AC1B60610A006B4C2A /* Parser */ = {
+			isa = PBXGroup;
+			children = (
+				E1ECD7AD1B60610A006B4C2A /* basic.llbuild */,
+			);
+			path = Parser;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -3043,6 +3063,7 @@
 				E17C29EF1B5AC12B00C12DA9 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		E18043321A00122900662FE7 /* Build configuration list for PBXAggregateTarget "Lit-Tests-Setup" */ = {
 			isa = XCConfigurationList;

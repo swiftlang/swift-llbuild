@@ -20,7 +20,8 @@ discard the order-only input request once satisfied.
 Parallelism
 ===========
 
-There are two obvious approachs to introducing parallelism into the core build engine.
+There are two obvious approachs to introducing parallelism into the core build
+engine.
 
 1. The first approach (which is taken currently) changes the task definition so
    that it gets a callback like ``inputsAreReady()``, and add a new task API on
