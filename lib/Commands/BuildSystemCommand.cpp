@@ -12,10 +12,10 @@
 
 #include "llbuild/Commands/Commands.h"
 
-#include "llbuild/BuildFile/BuildFile.h"
+#include "llbuild/BuildSystem/BuildFile.h"
 
 using namespace llbuild;
-using namespace llbuild::buildfile;
+using namespace llbuild::buildsystem;
 
 namespace {
 
@@ -68,7 +68,7 @@ static int executeParseCommand(std::vector<std::string> args) {
 #pragma mark - Build Engine Top-Level Command
 
 static void usage() {
-  fprintf(stderr, "Usage: %s buildfile [--help] <command> [<args>]\n",
+  fprintf(stderr, "Usage: %s buildsystem [--help] <command> [<args>]\n",
           getprogname());
   fprintf(stderr, "\n");
   fprintf(stderr, "Available commands:\n");
@@ -77,7 +77,7 @@ static void usage() {
   exit(1);
 }
 
-int commands::executeBuildFileCommand(const std::vector<std::string> &args) {
+int commands::executeBuildSystemCommand(const std::vector<std::string> &args) {
   // Expect the first argument to be the name of another subtool to delegate to.
   if (args.empty() || args[0] == "--help")
     usage();

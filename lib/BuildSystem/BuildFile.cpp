@@ -10,14 +10,14 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llbuild/BuildFile/BuildFile.h"
+#include "llbuild/BuildSystem/BuildFile.h"
 
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/YAMLParser.h"
 
 using namespace llbuild;
-using namespace llbuild::buildfile;
+using namespace llbuild::buildsystem;
 
 BuildFileDelegate::~BuildFileDelegate() {}
 

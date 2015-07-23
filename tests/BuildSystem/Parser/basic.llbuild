@@ -1,6 +1,6 @@
 # Check basic parsing functionality.
 #
-# RUN: %{llbuild} buildfile parse %s 2> %t.err
+# RUN: %{llbuild} buildsystem parse %s 2> %t.err
 
 # FIXME: Check the results.
 

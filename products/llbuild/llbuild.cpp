@@ -27,7 +27,7 @@ static void usage() {
   fprintf(stderr, "Available commands:\n");
   fprintf(stderr, "  ninja       -- Run the Ninja subtool\n");
   fprintf(stderr, "  buildengine -- Run the build engine subtool\n");
-  fprintf(stderr, "  buildfile   -- Run the build file subtool\n");
+  fprintf(stderr, "  buildsystem -- Run the build system subtool\n");
   fprintf(stderr, "\n");
   exit(0);
 }
@@ -68,8 +68,8 @@ int main(int argc, const char **argv) {
     return executeNinjaCommand(args);
   } else if (command == "buildengine") {
     return executeBuildEngineCommand(args);
-  } else if (command == "buildfile") {
-    return executeBuildFileCommand(args);
+  } else if (command == "buildsystem") {
+    return executeBuildSystemCommand(args);
   } else {
     fprintf(stderr, "error: %s: unknown command '%s'\n", getprogname(),
             command.c_str());

@@ -10,13 +10,13 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLBUILD_BUILDFILE_BUILDFILE_H
-#define LLBUILD_BUILDFILE_BUILDFILE_H
+#ifndef LLBUILD_BUILDSYSTEM_BUILDFILE_H
+#define LLBUILD_BUILDSYSTEM_BUILDFILE_H
 
 #include <string>
 
 namespace llbuild {
-namespace buildfile {
+namespace buildsystem {
 
 class BuildFileDelegate {
 public:
