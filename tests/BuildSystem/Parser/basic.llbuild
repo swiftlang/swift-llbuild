@@ -13,6 +13,12 @@ client:
   extra-key: extra-value
 
 # Define the tools.
+#
+# CHECK: tool('cc')
+# CHECK:  -- 'enable-dependencies': 'True'
+# CHECK:  -- 'cwd': '/tmp/example'
+# CHECK: tool('link')
+# CHECK:  -- 'cwd': '/tmp/example'
 tools:
   cc:
     enable-dependencies: True

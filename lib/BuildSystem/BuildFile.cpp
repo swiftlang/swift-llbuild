@@ -21,6 +21,8 @@ using namespace llbuild::buildsystem;
 
 BuildFileDelegate::~BuildFileDelegate() {}
 
+Tool::~Tool() {}
+
 #pragma mark - BuildEngine implementation
 
 namespace {
@@ -90,6 +92,9 @@ class BuildFileImpl {
   /// The delegate the BuildFile was configured with.
   BuildFileDelegate& delegate;
 
+  /// The set of all registered tools.
+  BuildFile::tool_set tools;
+  
   // FIXME: Factor out into a parser helper class.
   std::string stringFromScalarNode(llvm::yaml::ScalarNode* scalar) {
     llvm::SmallString<256> storage;
@@ -118,7 +123,8 @@ class BuildFileImpl {
     if (!nodeIsScalarString(it->getKey(), "client")) {
       delegate.error(mainFilename, "expected initial mapping key 'client'");
       return false;
-    } else if (it->getValue()->getType() != llvm::yaml::Node::NK_Mapping) {
+    }
+    if (it->getValue()->getType() != llvm::yaml::Node::NK_Mapping) {
       delegate.error(mainFilename, "unexpected 'client' value (expected map)");
       return false;
     }
@@ -128,7 +134,22 @@ class BuildFileImpl {
             static_cast<llvm::yaml::MappingNode*>(it->getValue()))) {
       return false;
     }
+    ++it;
 
+    // Parse the tools mapping, if present.
+    if (it != mapping->end() && nodeIsScalarString(it->getKey(), "tools")) {
+      if (it->getValue()->getType() != llvm::yaml::Node::NK_Mapping) {
+        delegate.error(mainFilename, "unexpected 'tools' value (expected map)");
+        return false;
+      }
+
+      if (!parseToolsMapping(
+              static_cast<llvm::yaml::MappingNode*>(it->getValue()))) {
+        return false;
+      }
+      ++it;
+    }
+        
     // Walk to the end of the map.
     for (; it != mapping->end(); ++it) ;
 
@@ -173,6 +194,62 @@ class BuildFileImpl {
     if (!delegate.configureClient(name, version, properties)) {
       delegate.error(mainFilename, "unable to configure client");
       return false;
+    }
+
+    return true;
+  }
+
+  bool parseToolsMapping(llvm::yaml::MappingNode* map) {
+    for (auto& entry: *map) {
+      // Every key must be scalar.
+      if (entry.getKey()->getType() != llvm::yaml::Node::NK_Scalar) {
+        delegate.error(mainFilename, "invalid key type in 'tools' map");
+        return false;
+      }
+      // Every value must be a mapping.
+      if (entry.getValue()->getType() != llvm::yaml::Node::NK_Mapping) {
+        delegate.error(mainFilename, "invalid value type in 'tools' map");
+        return false;
+      }
+
+      std::string name = stringFromScalarNode(
+          static_cast<llvm::yaml::ScalarNode*>(entry.getKey()));
+      llvm::yaml::MappingNode* attrs = static_cast<llvm::yaml::MappingNode*>(
+          entry.getValue());
+
+      // Get the tool.
+      auto tool = delegate.lookupTool(name);
+      if (!tool) {
+        delegate.error(mainFilename, "invalid tool type in 'tools' map");
+        return false;
+      }
+
+      // Configure all of the tool attributes.
+      for (auto& valueEntry: *attrs) {
+        auto key = valueEntry.getKey();
+        auto value = valueEntry.getValue();
+        
+        // All keys and values must be scalar.
+        if (key->getType() != llvm::yaml::Node::NK_Scalar) {
+          delegate.error(mainFilename, "invalid key type in 'tools' map");
+          return false;
+        }
+        if (value->getType() != llvm::yaml::Node::NK_Scalar) {
+          delegate.error(mainFilename, "invalid value type in 'tools' map");
+          return false;
+        }
+
+        if (!tool->configureAttribute(
+                stringFromScalarNode(
+                    static_cast<llvm::yaml::ScalarNode*>(key)),
+                stringFromScalarNode(
+                    static_cast<llvm::yaml::ScalarNode*>(value)))) {
+          return false;
+        }
+      }
+
+      // Add the tool to the tools map.
+      tools[name] = std::move(tool);
     }
 
     return true;
@@ -230,6 +307,11 @@ public:
     return true;
   }
 
+  /// @name Accessors
+  /// @{
+
+  const BuildFile::tool_set& getTools() const { return tools; }
+
   /// @}
 };
 
@@ -249,6 +331,10 @@ BuildFile::~BuildFile() {
 
 BuildFileDelegate* BuildFile::getDelegate() {
   return static_cast<BuildFileImpl*>(impl)->getDelegate();
+}
+
+const BuildFile::tool_set& BuildFile::getTools() const {
+  return static_cast<BuildFileImpl*>(impl)->getTools();
 }
 
 bool BuildFile::load() {

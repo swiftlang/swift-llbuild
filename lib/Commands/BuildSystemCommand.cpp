@@ -19,6 +19,17 @@ using namespace llbuild::buildsystem;
 
 namespace {
 
+class ParseDummyTool : public Tool {
+public:
+  using Tool::Tool;
+  
+  virtual bool configureAttribute(const std::string& name,
+                                  const std::string& value) override {
+      printf("  -- '%s': '%s'\n", name.c_str(), value.c_str());
+      return true;
+  }
+};
+
 class ParseBuildFileDelegate : public BuildFileDelegate {
 public:
   ~ParseBuildFileDelegate() {}
@@ -41,6 +52,12 @@ public:
     printf("\n");
 
     return true;
+  }
+
+  virtual std::unique_ptr<Tool> lookupTool(const std::string& name) override {
+    printf("tool('%s')\n", name.c_str());
+
+    return std::unique_ptr<Tool>(new ParseDummyTool(name));
   }
 };
 

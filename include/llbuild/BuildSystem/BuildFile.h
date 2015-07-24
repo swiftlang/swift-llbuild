@@ -13,7 +13,10 @@
 #ifndef LLBUILD_BUILDSYSTEM_BUILDFILE_H
 #define LLBUILD_BUILDSYSTEM_BUILDFILE_H
 
+#include "llbuild/Basic/Compiler.h"
+
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -22,6 +25,24 @@ namespace buildsystem {
 
 /// The type used to pass parsed properties to the delegate.
 typedef std::vector<std::pair<std::string, std::string>> property_list_type;
+
+/// Abstract tool definition used by the build file.
+class Tool {
+  // DO NOT COPY
+  Tool(const Tool&) LLBUILD_DELETED_FUNCTION;
+  void operator=(const Tool&) LLBUILD_DELETED_FUNCTION;
+  Tool &operator=(Tool&& rhs) LLBUILD_DELETED_FUNCTION;
+    
+  std::string name;
+
+public:
+  explicit Tool(const std::string& name) : name(name) {}
+  virtual ~Tool();
+
+  /// Called by the build file loader to configure a specified tool property.
+  virtual bool configureAttribute(const std::string& name,
+                                  const std::string& value) = 0;
+};
 
 class BuildFileDelegate {
 public:
@@ -44,11 +65,22 @@ public:
   virtual bool configureClient(const std::string& name,
                                uint32_t version,
                                const property_list_type& properties) = 0;
+
+  /// Called by the build file loader to get a tool definition.
+  ///
+  /// \param name The name of the tool to lookup.
+  /// \returns The tool to use on success, or otherwise nil.
+  virtual std::unique_ptr<Tool> lookupTool(const std::string& name) = 0;
 };
 
 /// The BuildFile class supports the "LLBuild"-native build description file
 /// format.
 class BuildFile {
+public:
+  // FIXME: This is an inefficent map, the string is duplicate.
+  typedef std::unordered_map<std::string, std::unique_ptr<Tool>> tool_set;
+  
+private:
   void *impl;
 
 public:
@@ -72,6 +104,12 @@ public:
   ///
   /// \returns True on success.
   bool load();
+
+  /// @}
+  /// @name Accessors
+  /// @{
+
+  const tool_set& getTools() const;
 
   /// @}
 };

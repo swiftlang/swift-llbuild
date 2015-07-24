@@ -136,7 +136,8 @@ A small example build file is below:
       args: -O0
 
 The build file is logically organized into five different sections (grouped by
-keys in a YAML mapping).
+keys in a YAML mapping). These sections *MUST* appear in the following order if
+present.
 
 * Client Definition (`client` key)
 
@@ -146,11 +147,20 @@ keys in a YAML mapping).
   section gives the name of the client, and an additional version that can be
   used by the client to version semantic changes in the client hooks.
 
+  The name field is required, and must be non-empty.
+
+  The version field is optional, and defaults to 0.
+
+  Additional string keys and values may be specified here, and are passed to the
+  client to handle.
+
 * ``Tool`` Definitions (`tools` key)
 
   This section is used to configure common properties on any of the tools used
   by the build file. Exactly what properties are available depends on the tool
   being used.
+
+  Each property is expected to be a string key and a string value.
 
 * Target Definitions (`targets` key)
 
