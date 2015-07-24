@@ -62,6 +62,24 @@ public:
   const std::vector<std::string>& getNodeNames() const { return nodeNames; }
 };
 
+/// Abstract definition for a Node used by the build file.
+class Node {
+  // DO NOT COPY
+  Node(const Node&) LLBUILD_DELETED_FUNCTION;
+  void operator=(const Node&) LLBUILD_DELETED_FUNCTION;
+  Node &operator=(Node&& rhs) LLBUILD_DELETED_FUNCTION;
+    
+  std::string name;
+
+public:
+  explicit Node(const std::string& name) : name(name) {}
+  virtual ~Node();
+
+  /// Called by the build file loader to configure a specified node property.
+  virtual bool configureAttribute(const std::string& name,
+                                  const std::string& value) = 0;
+};
+
 class BuildFileDelegate {
 public:
   virtual ~BuildFileDelegate();
@@ -90,10 +108,14 @@ public:
   /// \returns The tool to use on success, or otherwise nil.
   virtual std::unique_ptr<Tool> lookupTool(const std::string& name) = 0;
 
-
   /// Called by the build file loader to inform the client that a target
   /// definition has been loaded.
   virtual void loadedTarget(const std::string& name, const Target& target) = 0;
+
+  /// Called by the build file loader to get a node.
+  ///
+  /// \param name The name of the node to lookup.
+  virtual std::unique_ptr<Node> lookupNode(const std::string& name) = 0;
 };
 
 /// The BuildFile class supports the "LLBuild"-native build description file
@@ -101,10 +123,13 @@ public:
 class BuildFile {
 public:
   // FIXME: This is an inefficent map, the string is duplicated.
-  typedef std::unordered_map<std::string, std::unique_ptr<Tool>> tool_set;
+  typedef std::unordered_map<std::string, std::unique_ptr<Node>> node_set;
   
   // FIXME: This is an inefficent map, the string is duplicated.
   typedef std::unordered_map<std::string, std::unique_ptr<Target>> target_set;
+  
+  // FIXME: This is an inefficent map, the string is duplicated.
+  typedef std::unordered_map<std::string, std::unique_ptr<Tool>> tool_set;
 
 private:
   void *impl;
@@ -134,6 +159,9 @@ public:
   /// @}
   /// @name Accessors
   /// @{
+
+  /// Get the set of declared nodes for the file.
+  const node_set& getNodes() const;
 
   /// Get the set of declared targets for the file.
   const target_set& getTargets() const;

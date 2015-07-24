@@ -19,6 +19,17 @@ using namespace llbuild::buildsystem;
 
 namespace {
 
+class ParseDummyNode : public Node {
+public:
+  using Node::Node;
+  
+  virtual bool configureAttribute(const std::string& name,
+                                  const std::string& value) override {
+      printf("  -- '%s': '%s'\n", name.c_str(), value.c_str());
+      return true;
+  }
+};
+
 class ParseDummyTool : public Tool {
 public:
   using Tool::Tool;
@@ -72,6 +83,12 @@ public:
       first = false;
     }
     printf("]\n");
+  }
+
+  virtual std::unique_ptr<Node> lookupNode(const std::string& name) override {
+    printf("node('%s')\n", name.c_str());
+
+    return std::unique_ptr<Node>(new ParseDummyNode(name));
   }
 };
 

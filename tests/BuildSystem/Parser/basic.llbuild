@@ -34,8 +34,13 @@ targets:
   hello: ["hello"]
 
 # Define properties on nodes.
+#
+# CHECK: node('hello.o')
+# CHECK:  -- 'hash-content': 'True'
 nodes:
-  ["hello.o", "hello"]:
+  hello:
+    hash-content: True
+  hello.o:
     hash-content: True
 
 # Define the tasks.

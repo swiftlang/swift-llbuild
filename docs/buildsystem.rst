@@ -120,7 +120,7 @@ A small example build file is below:
   
   # Define properties on nodes.
   nodes:
-    ["hello.o", "hello"]:
+    hello.o:
       hash-content: True
     
   # Define the tasks.
@@ -175,6 +175,11 @@ present.
   input or output, and the properties of the object will be inferred from the
   context (i.e., by the task that produces or consumes them). However, this
   section allows customizing those properties or adding additional ones.
+
+  Each key must be a scalar string naming identifying the node, and the value
+  should be a map containing properties for the node.
+
+  Each property is expected to be a string key and a string value.
 
   .. note::
     FIXME: We may want to add a mechanism for defining default properties.

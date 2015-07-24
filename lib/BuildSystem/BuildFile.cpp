@@ -21,6 +21,8 @@ using namespace llbuild::buildsystem;
 
 BuildFileDelegate::~BuildFileDelegate() {}
 
+Node::~Node() {}
+
 Tool::~Tool() {}
 
 #pragma mark - BuildEngine implementation
@@ -95,8 +97,11 @@ class BuildFileImpl {
   /// The set of all registered tools.
   BuildFile::tool_set tools;
 
-  /// The set of all declared targets .
+  /// The set of all declared targets.
   BuildFile::target_set targets;
+
+  /// The set of all declared nodes.
+  BuildFile::node_set nodes;
   
   // FIXME: Factor out into a parser helper class.
   std::string stringFromScalarNode(llvm::yaml::ScalarNode* scalar) {
@@ -162,6 +167,21 @@ class BuildFileImpl {
       }
 
       if (!parseTargetsMapping(
+              static_cast<llvm::yaml::MappingNode*>(it->getValue()))) {
+        return false;
+      }
+      ++it;
+    }
+
+    // Parse the nodes mapping, if present.
+    if (it != mapping->end() && nodeIsScalarString(it->getKey(), "nodes")) {
+      if (it->getValue()->getType() != llvm::yaml::Node::NK_Mapping) {
+        delegate.error(
+            mainFilename, "unexpected 'nodes' value (expected map)");
+        return false;
+      }
+
+      if (!parseNodesMapping(
               static_cast<llvm::yaml::MappingNode*>(it->getValue()))) {
         return false;
       }
@@ -296,7 +316,7 @@ class BuildFileImpl {
 
       // Add all of the nodes.
       for (auto& node: *nodes) {
-        // All keys and values must be scalar.
+        // All items must be scalar.
         if (node.getType() != llvm::yaml::Node::NK_Scalar) {
           delegate.error(mainFilename, "invalid node type in 'targets' map");
           return false;
@@ -312,6 +332,65 @@ class BuildFileImpl {
 
       // Add the tool to the tools map.
       targets[name] = std::move(target);
+    }
+
+    return true;
+  }
+
+  bool parseNodesMapping(llvm::yaml::MappingNode* map) {
+    for (auto& entry: *map) {
+      // Every key must be scalar.
+      if (entry.getKey()->getType() != llvm::yaml::Node::NK_Scalar) {
+        delegate.error(mainFilename, "invalid key type in 'nodes' map");
+        return false;
+      }
+      // Every value must be a mapping.
+      if (entry.getValue()->getType() != llvm::yaml::Node::NK_Mapping) {
+        delegate.error(mainFilename, "invalid value type in 'nodes' map");
+        return false;
+      }
+
+      std::string name = stringFromScalarNode(
+          static_cast<llvm::yaml::ScalarNode*>(entry.getKey()));
+      llvm::yaml::MappingNode* attrs = static_cast<llvm::yaml::MappingNode*>(
+          entry.getValue());
+
+      // Get the node.
+      //
+      // FIXME: One downside of doing the lookup here is that the client cannot
+      // ever make a context dependent node that can have configured properties.
+      auto node = delegate.lookupNode(name);
+      if (!node) {
+        delegate.error(mainFilename, "unable to create declared node");
+        return false;
+      }
+
+      // Configure all of the tool attributes.
+      for (auto& valueEntry: *attrs) {
+        auto key = valueEntry.getKey();
+        auto value = valueEntry.getValue();
+        
+        // All keys and values must be scalar.
+        if (key->getType() != llvm::yaml::Node::NK_Scalar) {
+          delegate.error(mainFilename, "invalid key type in 'tools' map");
+          return false;
+        }
+        if (value->getType() != llvm::yaml::Node::NK_Scalar) {
+          delegate.error(mainFilename, "invalid value type in 'tools' map");
+          return false;
+        }
+
+        if (!node->configureAttribute(
+                stringFromScalarNode(
+                    static_cast<llvm::yaml::ScalarNode*>(key)),
+                stringFromScalarNode(
+                    static_cast<llvm::yaml::ScalarNode*>(value)))) {
+          return false;
+        }
+      }
+
+      // Add the node to the nodes map.
+      nodes[name] = std::move(node);
     }
 
     return true;
@@ -334,6 +413,8 @@ public:
 
   bool load() {
     // Create a memory buffer for the input.
+    //
+    // FIXME: Lift the file access into the delegate, like we do for Ninja.
     llvm::SourceMgr sourceMgr;
     auto res = llvm::MemoryBuffer::getFile(
         mainFilename);
@@ -372,6 +453,8 @@ public:
   /// @name Accessors
   /// @{
 
+  const BuildFile::node_set& getNodes() const { return nodes; }
+
   const BuildFile::target_set& getTargets() const { return targets; }
 
   const BuildFile::tool_set& getTools() const { return tools; }
@@ -395,6 +478,10 @@ BuildFile::~BuildFile() {
 
 BuildFileDelegate* BuildFile::getDelegate() {
   return static_cast<BuildFileImpl*>(impl)->getDelegate();
+}
+
+const BuildFile::node_set& BuildFile::getNodes() const {
+  return static_cast<BuildFileImpl*>(impl)->getNodes();
 }
 
 const BuildFile::target_set& BuildFile::getTargets() const {
