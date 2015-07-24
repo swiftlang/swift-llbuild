@@ -94,6 +94,9 @@ class BuildFileImpl {
 
   /// The set of all registered tools.
   BuildFile::tool_set tools;
+
+  /// The set of all declared targets .
+  BuildFile::target_set targets;
   
   // FIXME: Factor out into a parser helper class.
   std::string stringFromScalarNode(llvm::yaml::ScalarNode* scalar) {
@@ -144,6 +147,21 @@ class BuildFileImpl {
       }
 
       if (!parseToolsMapping(
+              static_cast<llvm::yaml::MappingNode*>(it->getValue()))) {
+        return false;
+      }
+      ++it;
+    }
+
+    // Parse the targets mapping, if present.
+    if (it != mapping->end() && nodeIsScalarString(it->getKey(), "targets")) {
+      if (it->getValue()->getType() != llvm::yaml::Node::NK_Mapping) {
+        delegate.error(
+            mainFilename, "unexpected 'targets' value (expected map)");
+        return false;
+      }
+
+      if (!parseTargetsMapping(
               static_cast<llvm::yaml::MappingNode*>(it->getValue()))) {
         return false;
       }
@@ -255,6 +273,50 @@ class BuildFileImpl {
     return true;
   }
 
+  bool parseTargetsMapping(llvm::yaml::MappingNode* map) {
+    for (auto& entry: *map) {
+      // Every key must be scalar.
+      if (entry.getKey()->getType() != llvm::yaml::Node::NK_Scalar) {
+        delegate.error(mainFilename, "invalid key type in 'targets' map");
+        return false;
+      }
+      // Every value must be a sequence.
+      if (entry.getValue()->getType() != llvm::yaml::Node::NK_Sequence) {
+        delegate.error(mainFilename, "invalid value type in 'targets' map");
+        return false;
+      }
+
+      std::string name = stringFromScalarNode(
+          static_cast<llvm::yaml::ScalarNode*>(entry.getKey()));
+      llvm::yaml::SequenceNode* nodes = static_cast<llvm::yaml::SequenceNode*>(
+          entry.getValue());
+
+      // Create the target.
+      std::unique_ptr<Target> target(new Target(name));
+
+      // Add all of the nodes.
+      for (auto& node: *nodes) {
+        // All keys and values must be scalar.
+        if (node.getType() != llvm::yaml::Node::NK_Scalar) {
+          delegate.error(mainFilename, "invalid node type in 'targets' map");
+          return false;
+        }
+
+        target->getNodeNames().push_back(
+            stringFromScalarNode(
+                static_cast<llvm::yaml::ScalarNode*>(&node)));
+      }
+
+      // Let the delegate know we loaded a target.
+      delegate.loadedTarget(name, *target);
+
+      // Add the tool to the tools map.
+      targets[name] = std::move(target);
+    }
+
+    return true;
+  }
+
 public:
   BuildFileImpl(class BuildFile& buildFile,
                 const std::string& mainFilename,
@@ -310,6 +372,8 @@ public:
   /// @name Accessors
   /// @{
 
+  const BuildFile::target_set& getTargets() const { return targets; }
+
   const BuildFile::tool_set& getTools() const { return tools; }
 
   /// @}
@@ -331,6 +395,10 @@ BuildFile::~BuildFile() {
 
 BuildFileDelegate* BuildFile::getDelegate() {
   return static_cast<BuildFileImpl*>(impl)->getDelegate();
+}
+
+const BuildFile::target_set& BuildFile::getTargets() const {
+  return static_cast<BuildFileImpl*>(impl)->getTargets();
 }
 
 const BuildFile::tool_set& BuildFile::getTools() const {

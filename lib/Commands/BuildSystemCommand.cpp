@@ -59,6 +59,20 @@ public:
 
     return std::unique_ptr<Tool>(new ParseDummyTool(name));
   }
+
+  virtual void loadedTarget(const std::string& name,
+                            const Target& target) override {
+    printf("target('%s')\n", target.getName().c_str());
+
+    // Print the nodes in the target.
+    bool first = true;
+    printf(" -- nodes: [");
+    for (const auto& nodeName: target.getNodeNames()) {
+      printf("%s'%s'", first ? "" : ", ", nodeName.c_str());
+      first = false;
+    }
+    printf("]\n");
+  }
 };
 
 static void parseUsage() {

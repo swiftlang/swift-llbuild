@@ -44,6 +44,24 @@ public:
                                   const std::string& value) = 0;
 };
 
+/// Each Target declares a name that can be used to reference it, and a list of
+/// the top-level nodes which must be built to bring that target up to date.
+class Target {
+  /// The name of the target.
+  std::string name;
+
+  /// The list of node names that should be computed to build this target.
+  std::vector<std::string> nodeNames;
+
+public:
+  explicit Target(std::string name) : name(name) { }
+
+  const std::string& getName() const { return name; }
+
+  std::vector<std::string>& getNodeNames() { return nodeNames; }
+  const std::vector<std::string>& getNodeNames() const { return nodeNames; }
+};
+
 class BuildFileDelegate {
 public:
   virtual ~BuildFileDelegate();
@@ -71,15 +89,23 @@ public:
   /// \param name The name of the tool to lookup.
   /// \returns The tool to use on success, or otherwise nil.
   virtual std::unique_ptr<Tool> lookupTool(const std::string& name) = 0;
+
+
+  /// Called by the build file loader to inform the client that a target
+  /// definition has been loaded.
+  virtual void loadedTarget(const std::string& name, const Target& target) = 0;
 };
 
 /// The BuildFile class supports the "LLBuild"-native build description file
 /// format.
 class BuildFile {
 public:
-  // FIXME: This is an inefficent map, the string is duplicate.
+  // FIXME: This is an inefficent map, the string is duplicated.
   typedef std::unordered_map<std::string, std::unique_ptr<Tool>> tool_set;
   
+  // FIXME: This is an inefficent map, the string is duplicated.
+  typedef std::unordered_map<std::string, std::unique_ptr<Target>> target_set;
+
 private:
   void *impl;
 
@@ -109,6 +135,10 @@ public:
   /// @name Accessors
   /// @{
 
+  /// Get the set of declared targets for the file.
+  const target_set& getTargets() const;
+
+  /// Get the set of all tools used by the file.
   const tool_set& getTools() const;
 
   /// @}

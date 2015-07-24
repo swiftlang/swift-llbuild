@@ -27,6 +27,9 @@ tools:
     cwd: /tmp/example
 
 # Define the targets.
+#
+# CHECK: target('hello')
+# CHECK:  -- nodes: ['hello']
 targets:
   hello: ["hello"]
 
