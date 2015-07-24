@@ -2934,6 +2934,7 @@
 		E1B838A01B52E7DE00DB876B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_CODE_COVERAGE = NO;
 				EXECUTABLE_PREFIX = lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -2942,6 +2943,7 @@
 		E1B838A11B52E7DE00DB876B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_CODE_COVERAGE = NO;
 				EXECUTABLE_PREFIX = lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
