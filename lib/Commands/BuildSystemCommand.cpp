@@ -22,6 +22,26 @@ namespace {
 class ParseBuildFileDelegate : public BuildFileDelegate {
 public:
   ~ParseBuildFileDelegate() {}
+
+  virtual void error(const std::string& filename,
+                     const std::string& message) override {
+    fprintf(stderr, "%s: error: %s\n", filename.c_str(), message.c_str());
+  }
+
+  virtual bool configureClient(const std::string& name,
+                               uint32_t version,
+                               const property_list_type& properties) override {
+    // Dump the client information.
+    printf("client ('%s', version: %u)\n", name.c_str(), version);
+    for (const auto& property: properties) {
+      printf("  -- '%s': '%s'\n", property.first.c_str(),
+             property.second.c_str());
+
+    }
+    printf("\n");
+
+    return true;
+  }
 };
 
 static void parseUsage() {

@@ -25,7 +25,10 @@ BuildFileDelegate::~BuildFileDelegate() {}
 
 namespace {
 
-static void dumpNode(llvm::yaml::Node *node, unsigned indent=0) {
+#ifndef NDEBUG
+static void dumpNode(llvm::yaml::Node* node, unsigned indent=0)
+    __attribute__((used));
+static void dumpNode(llvm::yaml::Node* node, unsigned indent) {
   switch (node->getType()) {
   default: {
     fprintf(stderr, "%*s<node: %p, unknown>\n", indent*2, "", node);
@@ -38,7 +41,7 @@ static void dumpNode(llvm::yaml::Node *node, unsigned indent=0) {
   }
 
   case llvm::yaml::Node::NK_Scalar: {
-    llvm::yaml::ScalarNode *scalar = llvm::cast<llvm::yaml::ScalarNode>(node);
+    llvm::yaml::ScalarNode* scalar = llvm::cast<llvm::yaml::ScalarNode>(node);
     llvm::SmallString<256> storage;
     fprintf(stderr, "%*s(scalar: '%s')\n", indent*2, "",
             scalar->getValue(storage).str().c_str());
@@ -51,7 +54,7 @@ static void dumpNode(llvm::yaml::Node *node, unsigned indent=0) {
   }
 
   case llvm::yaml::Node::NK_Mapping: {
-    llvm::yaml::MappingNode *map = llvm::cast<llvm::yaml::MappingNode>(node);
+    llvm::yaml::MappingNode* map = llvm::cast<llvm::yaml::MappingNode>(node);
     fprintf(stderr, "%*smap:\n", indent*2, "");
     for (auto& it: *map) {
       fprintf(stderr, "%*skey:\n", (indent+1)*2, "");
@@ -63,7 +66,7 @@ static void dumpNode(llvm::yaml::Node *node, unsigned indent=0) {
   }
 
   case llvm::yaml::Node::NK_Sequence: {
-    llvm::yaml::SequenceNode *sequence =
+    llvm::yaml::SequenceNode* sequence =
       llvm::cast<llvm::yaml::SequenceNode>(node);
     fprintf(stderr, "%*ssequence:\n", indent*2, "");
     for (auto& it: *sequence) {
@@ -78,6 +81,7 @@ static void dumpNode(llvm::yaml::Node *node, unsigned indent=0) {
   }
   }
 }
+#endif
 
 class BuildFileImpl {
   /// The name of the main input file.
@@ -85,6 +89,94 @@ class BuildFileImpl {
 
   /// The delegate the BuildFile was configured with.
   BuildFileDelegate& delegate;
+
+  // FIXME: Factor out into a parser helper class.
+  std::string stringFromScalarNode(llvm::yaml::ScalarNode* scalar) {
+    llvm::SmallString<256> storage;
+    return scalar->getValue(storage).str();
+  }
+
+  // FIXME: Factor out into a parser helper class.
+  bool nodeIsScalarString(llvm::yaml::Node* node, const std::string& name) {
+    if (node->getType() != llvm::yaml::Node::NK_Scalar)
+      return false;
+
+    return stringFromScalarNode(
+        static_cast<llvm::yaml::ScalarNode*>(node)) == name;
+  }
+
+  bool parseRootNode(llvm::yaml::Node* node) {
+    // The root must always be a mapping.
+    if (node->getType() != llvm::yaml::Node::NK_Mapping) {
+      delegate.error(mainFilename, "unexpected top-level node");
+      return false;
+    }
+    auto mapping = static_cast<llvm::yaml::MappingNode*>(node);
+
+    // Iterate over each of the sections in the mapping.
+    auto it = mapping->begin();
+    if (!nodeIsScalarString(it->getKey(), "client")) {
+      delegate.error(mainFilename, "expected initial mapping key 'client'");
+      return false;
+    } else if (it->getValue()->getType() != llvm::yaml::Node::NK_Mapping) {
+      delegate.error(mainFilename, "unexpected 'client' value (expected map)");
+      return false;
+    }
+
+    // Parse the client mapping.
+    if (!parseClientMapping(
+            static_cast<llvm::yaml::MappingNode*>(it->getValue()))) {
+      return false;
+    }
+
+    // Walk to the end of the map.
+    for (; it != mapping->end(); ++it) ;
+
+    return true;
+  }
+
+  bool parseClientMapping(llvm::yaml::MappingNode* map) {
+    // Collect all of the keys.
+    std::string name;
+    uint32_t version = 0;
+    property_list_type properties;
+
+    for (auto& entry: *map) {
+      // All keys and values must be scalar.
+      if (entry.getKey()->getType() != llvm::yaml::Node::NK_Scalar) {
+        delegate.error(mainFilename, "invalid key type in 'client' map");
+        return false;
+      }
+      if (entry.getValue()->getType() != llvm::yaml::Node::NK_Scalar) {
+        delegate.error(mainFilename, "invalid value type in 'client' map");
+        return false;
+      }
+
+      std::string key = stringFromScalarNode(
+          static_cast<llvm::yaml::ScalarNode*>(entry.getKey()));
+      std::string value = stringFromScalarNode(
+          static_cast<llvm::yaml::ScalarNode*>(entry.getValue()));
+      if (key == "name") {
+        name = value;
+      } else if (key == "version") {
+        if (llvm::StringRef(value).getAsInteger(10, version)) {
+          delegate.error(
+              mainFilename, "invalid version number in 'client' map");
+          return false;
+        }
+      } else {
+        properties.push_back({ key, value });
+      }
+    }
+
+    // Pass to the delegate.
+    if (!delegate.configureClient(name, version, properties)) {
+      delegate.error(mainFilename, "unable to configure client");
+      return false;
+    }
+
+    return true;
+  }
 
 public:
   BuildFileImpl(class BuildFile& buildFile,
@@ -101,16 +193,16 @@ public:
   /// @name Parse Actions
   /// @{
 
-  void load() {
+  bool load() {
     // Create a memory buffer for the input.
     llvm::SourceMgr sourceMgr;
     auto res = llvm::MemoryBuffer::getFile(
         mainFilename);
     if (auto ec = res.getError()) {
-      // FIXME: Propagate error here.
-      fprintf(stderr, "error: unable to open '%s' (%s)\n",
-              mainFilename.c_str(), ec.message().c_str());
-      return;
+      delegate.error(mainFilename,
+                     ("unable to open '" + mainFilename +
+                      "' (" + ec.message() + ")"));
+      return false;
     }
 
     std::unique_ptr<llvm::MemoryBuffer> input(res->release());
@@ -118,11 +210,24 @@ public:
     // Create a YAML parser.
     llvm::yaml::Stream stream(input->getMemBufferRef(), sourceMgr);
 
-    // Read all of the documents.
-    for (auto& document: stream) {
-      llvm::yaml::Node *node = document.getRoot();
-      dumpNode(node);
+    // Read the stream, we only expect a single document.
+    auto it = stream.begin();
+    if (it == stream.end()) {
+      delegate.error(mainFilename, "missing document in stream");
+      return false;
     }
+
+    auto& document = *it;
+    if (!parseRootNode(document.getRoot())) {
+      return false;
+    }
+
+    if (++it != stream.end()) {
+      delegate.error(mainFilename, "unexpected additional document in stream");
+      return false;
+    }
+
+    return true;
   }
 
   /// @}
@@ -134,7 +239,7 @@ public:
 
 BuildFile::BuildFile(const std::string& mainFilename,
                      BuildFileDelegate& delegate)
-  : impl(new BuildFileImpl(*this, mainFilename, delegate)) 
+  : impl(new BuildFileImpl(*this, mainFilename, delegate))
 {
 }
 
@@ -146,6 +251,6 @@ BuildFileDelegate* BuildFile::getDelegate() {
   return static_cast<BuildFileImpl*>(impl)->getDelegate();
 }
 
-void BuildFile::load() {
+bool BuildFile::load() {
   return static_cast<BuildFileImpl*>(impl)->load();
 }

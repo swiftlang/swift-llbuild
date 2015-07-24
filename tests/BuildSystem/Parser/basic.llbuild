@@ -1,13 +1,16 @@
 # Check basic parsing functionality.
 #
-# RUN: %{llbuild} buildsystem parse %s 2> %t.err
-
-# FIXME: Check the results.
+# RUN: %{llbuild} buildsystem parse %s > %t.out 2> %t.err
+# RUN: %{FileCheck} < %t.out %s
 
 # Declare the client information.
+#
+# CHECK: client ('example-client', version: 1)
+# CHECK:  -- 'extra-key': 'extra-value'
 client:
   name: example-client
   version: 1
+  extra-key: extra-value
 
 # Define the tools.
 tools:
@@ -25,7 +28,7 @@ targets:
 nodes:
   ["hello.o", "hello"]:
     hash-content: True
-  
+
 # Define the tasks.
 tasks:
   link-hello:
