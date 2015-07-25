@@ -175,3 +175,37 @@ Random Tasks
 
   * We should move to a compact encoding for the build value. Not worth doing
     until we address the rule_dependencies table size.
+
+
+Build System
+============
+
+Build File
+----------
+
+ * We will probably want some way to define properties shared by groups of tasks
+   (for example, common flags), for efficiencies sake. There are a couple ways
+   to do this:
+
+   * We could make the build file an "immediate-mode" sort of interface, and
+     allow interleaving of tool and task maps. Then the client could just
+     generate the file with updated information interleaved. This would be
+     similar to how Ninja files get generated in practice by nice generators
+     (`gyp`, not `CMake`).
+
+   * We could allow the definition of tool aliases, that can define additional
+     properties. This lets the format be better definite and not have immediate
+     mode stateful problems.
+
+ * We want some way to allow the task name and one of the tasks outputs to be
+   the same, without having a redundant specification.
+
+ * We might need a mechanism for defining default properties for nodes.
+
+ * We may want to add a notion of types for nodes. We could try and be context
+   dependent too, but having a type here would make it easier for the client to
+   bind the node to the right type during loading.
+
+ * We may want some provision for providing inline node attributes with the task
+   definitions. Otherwise we cannot really stream the file to the build system
+   in cases where node attributes are required.
