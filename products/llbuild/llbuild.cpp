@@ -14,6 +14,8 @@
 
 #include "llbuild/Commands/Commands.h"
 
+#include "llvm/Support/Signals.h"
+
 #include <cstdio>
 #include <cstdlib>
 
@@ -33,6 +35,9 @@ static void usage() {
 }
 
 int main(int argc, const char **argv) {
+  // Print stacks on error.
+  llvm::sys::PrintStackTraceOnErrorSignal();
+  
   // Support use of llbuild as a replacement for ninja by indirecting to the
   // `ninja build` subtool when invoked under the name `ninja.
   if (strcmp(getprogname(), "ninja") == 0) {
