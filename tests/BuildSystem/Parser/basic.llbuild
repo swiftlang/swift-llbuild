@@ -2,6 +2,13 @@
 #
 # RUN: %{llbuild} buildsystem parse %s > %t.out 2> %t.err
 # RUN: %{FileCheck} < %t.out %s
+#
+# Sanity check --no-output mode.
+# RUN: %{llbuild} buildsystem parse --no-output %s > %t2.out
+# RUN: wc -c < %t2.out > %t2.out.size
+# RUN: %{FileCheck} < %t2.out.size %s --check-prefix CHECK-NO-OUT-SIZE
+#
+# CHECK-NO-OUT-SIZE: {{^ *0$}}
 
 # Declare the client information.
 #
