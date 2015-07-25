@@ -26,6 +26,8 @@ namespace buildsystem {
 /// The type used to pass parsed properties to the delegate.
 typedef std::vector<std::pair<std::string, std::string>> property_list_type;
 
+class Task;
+
 /// Abstract tool definition used by the build file.
 class Tool {
   // DO NOT COPY
@@ -39,9 +41,16 @@ public:
   explicit Tool(const std::string& name) : name(name) {}
   virtual ~Tool();
 
+  const std::string& getName() const { return name; }
+
   /// Called by the build file loader to configure a specified tool property.
   virtual bool configureAttribute(const std::string& name,
                                   const std::string& value) = 0;
+
+  /// Called by the build file loader to create a task which uses this tool.
+  ///
+  /// \param name - The name of the task.
+  virtual std::unique_ptr<Task> createTask(const std::string& name) = 0;
 };
 
 /// Each Target declares a name that can be used to reference it, and a list of
@@ -75,7 +84,35 @@ public:
   explicit Node(const std::string& name) : name(name) {}
   virtual ~Node();
 
+  const std::string& getName() const { return name; }
+
   /// Called by the build file loader to configure a specified node property.
+  virtual bool configureAttribute(const std::string& name,
+                                  const std::string& value) = 0;
+};
+
+/// Abstract task definition used by the build file.
+class Task {
+  // DO NOT COPY
+  Task(const Task&) LLBUILD_DELETED_FUNCTION;
+  void operator=(const Task&) LLBUILD_DELETED_FUNCTION;
+  Task &operator=(Task&& rhs) LLBUILD_DELETED_FUNCTION;
+    
+  std::string name;
+
+public:
+  explicit Task(const std::string& name) : name(name) {}
+  virtual ~Task();
+
+  const std::string& getName() const { return name; }
+
+  /// Called by the build file loader to pass the list of input nodes.
+  virtual void configureInputs(const std::vector<Node*>& inputs) = 0;
+
+  /// Called by the build file loader to pass the list of output nodes.
+  virtual void configureOutputs(const std::vector<Node*>& outputs) = 0;
+                               
+  /// Called by the build file loader to configure a specified task property.
   virtual bool configureAttribute(const std::string& name,
                                   const std::string& value) = 0;
 };
@@ -112,10 +149,18 @@ public:
   /// definition has been loaded.
   virtual void loadedTarget(const std::string& name, const Target& target) = 0;
 
+  /// Called by the build file loader to inform the client that a task
+  /// has been fully loaded.
+  virtual void loadedTask(const std::string& name, const Task& target) = 0;
+
   /// Called by the build file loader to get a node.
   ///
   /// \param name The name of the node to lookup.
-  virtual std::unique_ptr<Node> lookupNode(const std::string& name) = 0;
+  ///
+  /// \param isImplicit Whether the node is an implicit one (created as a side
+  /// effect of being declared by a task).
+  virtual std::unique_ptr<Node> lookupNode(const std::string& name,
+                                           bool isImplicit=false) = 0;
 };
 
 /// The BuildFile class supports the "LLBuild"-native build description file
@@ -127,6 +172,9 @@ public:
   
   // FIXME: This is an inefficent map, the string is duplicated.
   typedef std::unordered_map<std::string, std::unique_ptr<Target>> target_set;
+
+  // FIXME: This is an inefficent map, the string is duplicated.
+  typedef std::unordered_map<std::string, std::unique_ptr<Task>> task_set;
   
   // FIXME: This is an inefficent map, the string is duplicated.
   typedef std::unordered_map<std::string, std::unique_ptr<Tool>> tool_set;
@@ -165,6 +213,9 @@ public:
 
   /// Get the set of declared targets for the file.
   const target_set& getTargets() const;
+
+  /// Get the set of declared tasks for the file.
+  const task_set& getTasks() const;
 
   /// Get the set of all tools used by the file.
   const tool_set& getTools() const;

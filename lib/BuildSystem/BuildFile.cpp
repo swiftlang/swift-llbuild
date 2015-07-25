@@ -23,6 +23,8 @@ BuildFileDelegate::~BuildFileDelegate() {}
 
 Node::~Node() {}
 
+Task::~Task() {}
+
 Tool::~Tool() {}
 
 #pragma mark - BuildEngine implementation
@@ -102,6 +104,9 @@ class BuildFileImpl {
 
   /// The set of all declared nodes.
   BuildFile::node_set nodes;
+
+  /// The set of all declared tasks.
+  BuildFile::task_set tasks;
   
   // FIXME: Factor out into a parser helper class.
   std::string stringFromScalarNode(llvm::yaml::ScalarNode* scalar) {
@@ -116,6 +121,39 @@ class BuildFileImpl {
 
     return stringFromScalarNode(
         static_cast<llvm::yaml::ScalarNode*>(node)) == name;
+  }
+
+  Tool* getOrCreateTool(const std::string& name) {
+    // First, check the map.
+    auto it = tools.find(name);
+    if (it != tools.end())
+      return it->second.get();
+    
+    // Otherwise, ask the delegate to create the tool.
+    auto tool = delegate.lookupTool(name);
+    if (!tool) {
+      delegate.error(mainFilename, "invalid tool type in 'tools' map");
+      return nullptr;
+    }
+    auto result = tool.get();
+    tools[name] = std::move(tool);
+
+    return result;
+  }
+
+  Node* getOrCreateNode(const std::string& name, bool isImplicit) {
+    // First, check the map.
+    auto it = nodes.find(name);
+    if (it != nodes.end())
+      return it->second.get();
+    
+    // Otherwise, ask the delegate to create the node.
+    auto node = delegate.lookupNode(name, isImplicit);
+    assert(node);
+    auto result = node.get();
+    nodes[name] = std::move(node);
+
+    return result;
   }
 
   bool parseRootNode(llvm::yaml::Node* node) {
@@ -187,9 +225,27 @@ class BuildFileImpl {
       }
       ++it;
     }
-        
-    // Walk to the end of the map.
-    for (; it != mapping->end(); ++it) ;
+
+    // Parse the tasks mapping, if present.
+    if (it != mapping->end() && nodeIsScalarString(it->getKey(), "tasks")) {
+      if (it->getValue()->getType() != llvm::yaml::Node::NK_Mapping) {
+        delegate.error(
+            mainFilename, "unexpected 'tasks' value (expected map)");
+        return false;
+      }
+
+      if (!parseTasksMapping(
+              static_cast<llvm::yaml::MappingNode*>(it->getValue()))) {
+        return false;
+      }
+      ++it;
+    }
+
+    // There shouldn't be any trailing sections.
+    if (it != mapping->end()) {
+      delegate.error(mainFilename, "unexpected trailing top-level section");
+      return false;
+    }
 
     return true;
   }
@@ -256,9 +312,8 @@ class BuildFileImpl {
           entry.getValue());
 
       // Get the tool.
-      auto tool = delegate.lookupTool(name);
+      auto tool = getOrCreateTool(name);
       if (!tool) {
-        delegate.error(mainFilename, "invalid tool type in 'tools' map");
         return false;
       }
 
@@ -285,14 +340,11 @@ class BuildFileImpl {
           return false;
         }
       }
-
-      // Add the tool to the tools map.
-      tools[name] = std::move(tool);
     }
 
     return true;
   }
-
+  
   bool parseTargetsMapping(llvm::yaml::MappingNode* map) {
     for (auto& entry: *map) {
       // Every key must be scalar.
@@ -330,7 +382,7 @@ class BuildFileImpl {
       // Let the delegate know we loaded a target.
       delegate.loadedTarget(name, *target);
 
-      // Add the tool to the tools map.
+      // Add the target to the targets map.
       targets[name] = std::move(target);
     }
 
@@ -359,11 +411,7 @@ class BuildFileImpl {
       //
       // FIXME: One downside of doing the lookup here is that the client cannot
       // ever make a context dependent node that can have configured properties.
-      auto node = delegate.lookupNode(name);
-      if (!node) {
-        delegate.error(mainFilename, "unable to create declared node");
-        return false;
-      }
+      auto node = getOrCreateNode(name, /*isImplicit=*/false);
 
       // Configure all of the tool attributes.
       for (auto& valueEntry: *attrs) {
@@ -388,9 +436,145 @@ class BuildFileImpl {
           return false;
         }
       }
+    }
 
-      // Add the node to the nodes map.
-      nodes[name] = std::move(node);
+    return true;
+  }
+
+  bool parseTasksMapping(llvm::yaml::MappingNode* map) {
+    for (auto& entry: *map) {
+      // Every key must be scalar.
+      if (entry.getKey()->getType() != llvm::yaml::Node::NK_Scalar) {
+        delegate.error(mainFilename, "invalid key type in 'tasks' map");
+        return false;
+      }
+      // Every value must be a mapping.
+      if (entry.getValue()->getType() != llvm::yaml::Node::NK_Mapping) {
+        delegate.error(mainFilename, "invalid value type in 'tasks' map");
+        return false;
+      }
+
+      std::string name = stringFromScalarNode(
+          static_cast<llvm::yaml::ScalarNode*>(entry.getKey()));
+      llvm::yaml::MappingNode* attrs = static_cast<llvm::yaml::MappingNode*>(
+          entry.getValue());
+      
+      // Get the initial attribute, which must be the tool name.
+      auto it = attrs->begin();
+      if (it == attrs->end()) {
+        delegate.error(mainFilename, "missing 'tool' key in 'task' map");
+        return false;
+      }
+      if (!nodeIsScalarString(it->getKey(), "tool")) {
+        delegate.error(
+            mainFilename, "expected 'tool' initial key in 'tasks' map");
+        return false;
+      }
+      if (it->getValue()->getType() != llvm::yaml::Node::NK_Scalar) {
+        delegate.error(
+            mainFilename, "invalid 'tool' value type in 'tasks' map");
+        return false;
+      }
+      
+      // Lookup the tool for this task.
+      auto tool = getOrCreateTool(
+          stringFromScalarNode(
+              static_cast<llvm::yaml::ScalarNode*>(
+                  it->getValue())));
+      if (!tool) {
+        return false;
+      }
+        
+      // Create the task.
+      auto task = tool->createTask(name);
+
+      // Parse the remaining task attributes.
+      ++it;
+      for (; it != attrs->end(); ++it) {
+        auto key = it->getKey();
+        auto value = it->getValue();
+        
+        // If this is a known key, parse it.
+        if (nodeIsScalarString(key, "inputs")) {
+          if (value->getType() != llvm::yaml::Node::NK_Sequence) {
+            delegate.error(
+                mainFilename, "invalid value type for 'inputs' task key");
+            return false;
+          }
+
+          llvm::yaml::SequenceNode* nodeNames =
+            static_cast<llvm::yaml::SequenceNode*>(value);
+
+          std::vector<Node*> nodes;
+          for (auto& nodeName: *nodeNames) {
+            if (nodeName.getType() != llvm::yaml::Node::NK_Scalar) {
+              delegate.error(
+                  mainFilename, "invalid node type in 'inputs' task key");
+              return false;
+            }
+
+            nodes.push_back(
+                getOrCreateNode(
+                    stringFromScalarNode(
+                        static_cast<llvm::yaml::ScalarNode*>(&nodeName)),
+                    /*isImplicit=*/true));
+          }
+
+          task->configureInputs(nodes);
+        } else if (nodeIsScalarString(key, "outputs")) {
+          if (value->getType() != llvm::yaml::Node::NK_Sequence) {
+            delegate.error(
+                mainFilename, "invalid value type for 'outputs' task key");
+            return false;
+          }
+
+          llvm::yaml::SequenceNode* nodeNames =
+            static_cast<llvm::yaml::SequenceNode*>(value);
+
+          std::vector<Node*> nodes;
+          for (auto& nodeName: *nodeNames) {
+            if (nodeName.getType() != llvm::yaml::Node::NK_Scalar) {
+              delegate.error(
+                  mainFilename, "invalid node type in 'outputs' task key");
+              return false;
+            }
+
+            nodes.push_back(
+                getOrCreateNode(
+                    stringFromScalarNode(
+                        static_cast<llvm::yaml::ScalarNode*>(&nodeName)),
+                    /*isImplicit=*/true));
+          }
+
+          task->configureOutputs(nodes);
+        } else {
+          // Otherwise, it should be an attribute string key value pair.
+          
+          // All keys and values must be scalar.
+          if (key->getType() != llvm::yaml::Node::NK_Scalar) {
+            delegate.error(mainFilename, "invalid key type in 'tools' map");
+            return false;
+          }
+          if (value->getType() != llvm::yaml::Node::NK_Scalar) {
+            delegate.error(mainFilename, "invalid value type in 'tools' map");
+            return false;
+          }
+
+          if (!task->configureAttribute(
+                  stringFromScalarNode(
+                      static_cast<llvm::yaml::ScalarNode*>(key)),
+                  stringFromScalarNode(
+                      static_cast<llvm::yaml::ScalarNode*>(value)))) {
+            return false;
+          }
+        }
+      }
+
+      // Let the delegate know we loaded a task.
+      delegate.loadedTask(name, *task);
+
+      // Add the task to the tasks map.
+      tasks[name] = std::move(task);
     }
 
     return true;
@@ -457,6 +641,8 @@ public:
 
   const BuildFile::target_set& getTargets() const { return targets; }
 
+  const BuildFile::task_set& getTasks() const { return tasks; }
+
   const BuildFile::tool_set& getTools() const { return tools; }
 
   /// @}
@@ -486,6 +672,10 @@ const BuildFile::node_set& BuildFile::getNodes() const {
 
 const BuildFile::target_set& BuildFile::getTargets() const {
   return static_cast<BuildFileImpl*>(impl)->getTargets();
+}
+
+const BuildFile::task_set& BuildFile::getTasks() const {
+  return static_cast<BuildFileImpl*>(impl)->getTasks();
 }
 
 const BuildFile::tool_set& BuildFile::getTools() const {

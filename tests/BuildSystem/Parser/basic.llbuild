@@ -44,6 +44,17 @@ nodes:
     hash-content: True
 
 # Define the tasks.
+#
+# CHECK: task('link-hello')
+# CHECK:  -- 'tool': 'link'
+# CHECK:  -- 'inputs': ['hello.o']
+# CHECK:  -- 'outputs': ['hello']
+# CHECK:  -- -- loaded task('link-hello')
+# CHECK: task('cc-hello.o')
+# CHECK:  -- 'tool': 'cc'
+# CHECK:  -- 'inputs': ['hello.c']
+# CHECK:  -- 'outputs': ['hello.o']
+# CHECK:  -- 'args': '-O0'
 tasks:
   link-hello:
     tool: link
@@ -51,6 +62,6 @@ tasks:
     outputs: ["hello"]
   cc-hello.o:
     tool: cc
-    input: ["hello.c"]
+    inputs: ["hello.c"]
     outputs: ["hello.o"]
     args: -O0

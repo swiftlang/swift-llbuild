@@ -289,16 +289,18 @@ public:
     return *Base->CurrentEntry;
   }
 
-  operator ValueT *() const {
+  explicit operator ValueT *() const {
     assert(Base && Base->CurrentEntry && "Attempted to access end iterator!");
     return Base->CurrentEntry;
   }
 
-  bool operator!=(const basic_collection_iterator &Other) const {
+  bool operator==(const basic_collection_iterator &Other) const {
     if (Base != Other.Base)
-      return true;
-    return (Base && Other.Base) &&
-           Base->CurrentEntry != Other.Base->CurrentEntry;
+      return false;
+    return !Base || Base->CurrentEntry == Other.Base->CurrentEntry;
+  }
+  bool operator!=(const basic_collection_iterator &Other) {
+    return !(*this == Other);
   }
 
   basic_collection_iterator &operator++() {

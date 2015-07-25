@@ -194,6 +194,8 @@ present.
   name of the task and the value is the task definition. The only required field
   is the `tool` key to specify which tool produces the task.
 
+  The `tool` key must always be the leading key in the mapping.
+  
   The `inputs` and `outputs` keys are shared by all tools (although not all
   tools may use them) and are lists naming the input and output nodes of the
   ``Task``. It is legal to use undeclared nodes in a task definition -- they
@@ -201,7 +203,12 @@ present.
 
   All other keys are ``Tool`` specific. Most tool specific properties can also
   be declared in the tool definitions section to set a default for all tasks in
-  the file, although this is at the descretion of the individual tool.
+  the file, although this is at the discretion of the individual tool.
+
+  .. note::
+    FIXME: We may want some provision for providing inline node attributes with
+    the task definitions. Otherwise we cannot really stream the file to the
+    build system in cases where node attributes are required.
 
 Format Details
 --------------

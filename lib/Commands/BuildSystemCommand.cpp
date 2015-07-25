@@ -30,6 +30,37 @@ public:
   }
 };
 
+class ParseDummyTask : public Task {
+public:
+  using Task::Task;
+
+  virtual void configureInputs(const std::vector<Node*>& inputs) override {
+    bool first = true;
+    printf("  -- 'inputs': [");
+    for (const auto& node: inputs) {
+      printf("%s'%s'", first ? "" : ", ", node->getName().c_str());
+      first = false;
+    }
+    printf("]\n");
+  }
+
+  virtual void configureOutputs(const std::vector<Node*>& outputs) override {
+    bool first = true;
+    printf("  -- 'outputs': [");
+    for (const auto& node: outputs) {
+      printf("%s'%s'", first ? "" : ", ", node->getName().c_str());
+      first = false;
+    }
+    printf("]\n");
+  }
+
+  virtual bool configureAttribute(const std::string& name,
+                                  const std::string& value) override {
+      printf("  -- '%s': '%s'\n", name.c_str(), value.c_str());
+      return true;
+  }
+};
+
 class ParseDummyTool : public Tool {
 public:
   using Tool::Tool;
@@ -38,6 +69,13 @@ public:
                                   const std::string& value) override {
       printf("  -- '%s': '%s'\n", name.c_str(), value.c_str());
       return true;
+  }
+
+  virtual std::unique_ptr<Task> createTask(const std::string& name) override {
+      printf("task('%s')\n", name.c_str());
+      printf("  -- 'tool': '%s')\n", getName().c_str());
+
+      return std::unique_ptr<Task>(new ParseDummyTask(name));
   }
 };
 
@@ -60,7 +98,6 @@ public:
              property.second.c_str());
 
     }
-    printf("\n");
 
     return true;
   }
@@ -85,10 +122,17 @@ public:
     printf("]\n");
   }
 
-  virtual std::unique_ptr<Node> lookupNode(const std::string& name) override {
-    printf("node('%s')\n", name.c_str());
+  virtual std::unique_ptr<Node> lookupNode(const std::string& name,
+                                           bool isImplicit) override {
+    if (!isImplicit)
+      printf("node('%s')\n", name.c_str());
 
     return std::unique_ptr<Node>(new ParseDummyNode(name));
+  }
+
+  virtual void loadedTask(const std::string& name, const Task& task) override {
+    // Do nothing.
+    printf("  -- -- loaded task('%s')\n", task.getName().c_str());
   }
 };
 
