@@ -172,11 +172,16 @@ class SLFDeserializer(object):
         
         return self.readObject()
 
-def dumpReport(data, results, outputPath, opts):
+def dumpReport(logs, results, opts):
+    startTime = min(data['timeStarted']
+                for data in logs)
+    endTime = max(data['timeStopped']
+                  for data in logs)
+    
     # Convert times from format Cocoa uses.
     reference = datetime.datetime(year=2001, month=1, day=1)
-    start = reference + datetime.timedelta(seconds=data['timeStarted'])
-    end = reference + datetime.timedelta(seconds=data['timeStopped'])
+    start = reference + datetime.timedelta(seconds=startTime)
+    end = reference + datetime.timedelta(seconds=endTime)
 
     # Create the machine info.
     report = collections.OrderedDict()
@@ -202,82 +207,80 @@ def dumpReport(data, results, outputPath, opts):
         tests.append(test)
 
     # Write the report.
-    with open(outputPath, 'w') as f:
+    with open(opts.output_path, 'w') as f:
         json.dump(report, f, indent=4)
     
 def main():
     parser = OptionParser(
-        "%prog [options] <input integration path> <output file>")
+        "%prog [options] <input activity logs>")
     parser.add_option("", "--machine-name", dest="machine_name", type='str',
                          help="Machine name to use in submission [%default]",
                          action="store", default=platform.uname()[1])
     parser.add_option("", "--run-order", dest="run_order", metavar="STR",
                       help="String to use to identify and order this run",
                       action="store", type=str, default=None)
+    parser.add_option("", "--output-path", dest="output_path", metavar="PATH",
+                      help="Path to write the output report to.",
+                      action="store", type=str, default=None)
     opts, args = parser.parse_args()
 
     if not opts.run_order:
         parser.error("--run-order is required")
+    if not opts.output_path:
+        parser.error("--output-path is required")
 
-    if len(args) != 2:
+    if len(args) == 0:
         parser.error("invalid number of arguments")
 
-    path,outputPath = args
-    
-    # Open the results zip.
-    results = zipfile.ZipFile(
-        os.path.join(path, "xcodebuild_result.bundle.zip"))
+    logPaths = args
 
-    # Get the activity log.
-    testLogGZ = results.open(
-        "xcodebuild_result.bundle/2_Test/action.xcactivitylog")
-
-    # We have to extract the data to get a file object we can use with GzipFile.
-    testLog = gzip.GzipFile(fileobj=StringIO.StringIO(testLogGZ.read()))
-
-    # Load the activity log data.
-    data = SLFDeserializer(testLog).parse()
-
-    # Extract the performance data.
-    def visit(section):
-        # We found a performance test if the performanceTestOutput key is
-        # present.
-        if section.get('performanceTestOutput'):
-            m = performanceDataRex.match(section['summaryString'])
-            if not m:
-                # Sometimes the summary doesn't get parsed?
-                m = performanceDataRex.search(section['text'])
-                if not m:
-                    print section
-                    raise RuntimeError("unable to parse performance data")
-
-            data = m.groups()
-            name = data[2]
-            average = data[3]
-            values = eval(data[5])
-
-            # Sanity check the data.
-            assert data[3] == "%.3f" % (sum(values)/len(values),)
-
-            performanceResults[name] = values
-        else:
-            # Otherwise, visit the subsections.
-            for section in section['subsections']:
-                visit(section)
-    performanceDataRex = re.compile(
-        r"""(.*):([0-9]+): Test Case '(.*)' measured \[Time, seconds\] """
-        r"""average: ([0-9.]+), relative standard deviation: ([0-9.]+)%, """
-        r"""values: (\[[^]]*\]).*, performanceMetricID:([A-Za-z._]+), """
-        r"""baselineName: ("[^"]*"), baselineAverage: (.*), """
-        r"""maxPercentRegression: ([0-9.]+)%, """
-        r"""maxPercentRelativeStandardDeviation: ([0-9.]+)%, """
-        r"""maxRegression: ([0-9.]+), """
-        r"""maxStandardDeviation: ([0-9.]+)\r""")
+    # Load an merge peformance data from each log:
     performanceResults = {}
-    visit(data)
+    logs = []
+    for logPath in logPaths:
+        # Extract the performance data.
+        def visit(section):
+            # We found a performance test if the performanceTestOutput key is
+            # present.
+            if section.get('performanceTestOutput'):
+                m = performanceDataRex.match(section['summaryString'])
+                if not m:
+                    # Sometimes the summary doesn't get parsed?
+                    m = performanceDataRex.search(section['text'])
+                    if not m:
+                        print section
+                        raise RuntimeError("unable to parse performance data")
+
+                data = m.groups()
+                name = data[2]
+                average = data[3]
+                values = eval(data[5])
+
+                # Sanity check the data.
+                assert data[3] == "%.3f" % (sum(values)/len(values),)
+
+                performanceResults[name] = values
+            else:
+                # Otherwise, visit the subsections.
+                for section in section['subsections']:
+                    visit(section)
+        performanceDataRex = re.compile(
+            r"""(.*):([0-9]+): Test Case '(.*)' measured \[Time, seconds\] """
+            r"""average: ([0-9.]+), relative standard deviation: ([0-9.]+)%, """
+            r"""values: (\[[^]]*\]).*, performanceMetricID:([A-Za-z._]+), """
+            r"""baselineName: ("[^"]*"), baselineAverage: (.*), """
+            r"""maxPercentRegression: ([0-9.]+)%, """
+            r"""maxPercentRelativeStandardDeviation: ([0-9.]+)%, """
+            r"""maxRegression: ([0-9.]+), """
+            r"""maxStandardDeviation: ([0-9.]+)\r""")
+
+        testLog = gzip.GzipFile(logPath)
+        data = SLFDeserializer(testLog).parse()
+        visit(data)
+        logs.append(data)
 
     # Dump the data to an LNT report.
-    dumpReport(data, performanceResults, outputPath, opts)
+    dumpReport(logs, performanceResults, opts)
     
 if __name__ == '__main__':
    main()
