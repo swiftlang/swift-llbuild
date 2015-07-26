@@ -61,6 +61,10 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		E104FAF71B655A97005C68A0 /* BuildSystemPerfTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = E104FAF61B655A97005C68A0 /* BuildSystemPerfTests.mm */; };
+		E104FAFA1B655BBA005C68A0 /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
+		E104FAFB1B655C33005C68A0 /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
+		E104FAFE1B655C5D005C68A0 /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
 		E10D5CDF19FEBF6A00211ED4 /* LitTests.m in Sources */ = {isa = PBXBuildFile; fileRef = E10D5CDE19FEBF6A00211ED4 /* LitTests.m */; };
 		E10D5CE419FEF3BD00211ED4 /* Python.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E10D5CE319FEF3BD00211ED4 /* Python.framework */; };
 		E10D5CE619FEF40100211ED4 /* LitTests.py in Resources */ = {isa = PBXBuildFile; fileRef = E10D5CE519FEF40100211ED4 /* LitTests.py */; };
@@ -164,6 +168,20 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		E104FAF81B655BB2005C68A0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1B839481B541BFD00DB876B;
+			remoteInfo = llbuildBuildSystem;
+		};
+		E104FAFC1B655C3C005C68A0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1B838981B52E7DE00DB876B;
+			remoteInfo = llvmSupport;
+		};
 		E178FCC51A1BF32F0039F8B5 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
@@ -428,6 +446,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		E104FAF61B655A97005C68A0 /* BuildSystemPerfTests.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = BuildSystemPerfTests.mm; sourceTree = "<group>"; };
 		E10D5CDA19FEBF6A00211ED4 /* LitXCTestAdaptor.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LitXCTestAdaptor.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E10D5CDD19FEBF6A00211ED4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E10D5CDE19FEBF6A00211ED4 /* LitTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LitTests.m; sourceTree = "<group>"; };
@@ -821,10 +840,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E104FAFB1B655C33005C68A0 /* libllvmSupport.a in Frameworks */,
 				E1C404B91A030A1D003392BA /* libllbuildBasic.a in Frameworks */,
-				E1C404BA1A030A1D003392BA /* libllbuildCommands.a in Frameworks */,
 				E1C404BB1A030A1D003392BA /* libllbuildCore.a in Frameworks */,
 				E1C404BC1A030A1D003392BA /* libllbuildNinja.a in Frameworks */,
+				E104FAFA1B655BBA005C68A0 /* libllbuildBuildSystem.a in Frameworks */,
+				E1C404BA1A030A1D003392BA /* libllbuildCommands.a in Frameworks */,
+				E104FAFE1B655C5D005C68A0 /* libcurses.dylib in Frameworks */,
 				E1C404BD1A030A23003392BA /* libsqlite3.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1514,6 +1536,7 @@
 			isa = PBXGroup;
 			children = (
 				E1C404AE1A0308F3003392BA /* Supporting Files */,
+				E104FAF61B655A97005C68A0 /* BuildSystemPerfTests.mm */,
 				E171538C1A0BF702004CD598 /* CorePerfTests.mm */,
 				E1C404B01A0308F3003392BA /* NinjaPerfTests.mm */,
 			);
@@ -1912,10 +1935,12 @@
 			buildRules = (
 			);
 			dependencies = (
+				E104FAFD1B655C3C005C68A0 /* PBXTargetDependency */,
 				E17C29E61B5AAF6100C12DA9 /* PBXTargetDependency */,
-				E17C29E81B5AAF6100C12DA9 /* PBXTargetDependency */,
 				E17C29EA1B5AAF6100C12DA9 /* PBXTargetDependency */,
 				E17C29EC1B5AAF6100C12DA9 /* PBXTargetDependency */,
+				E104FAF91B655BB2005C68A0 /* PBXTargetDependency */,
+				E17C29E81B5AAF6100C12DA9 /* PBXTargetDependency */,
 			);
 			name = PerfTests;
 			productName = PerfTests;
@@ -2335,6 +2360,7 @@
 			files = (
 				E1C404B11A0308F3003392BA /* NinjaPerfTests.mm in Sources */,
 				E171538D1A0BF702004CD598 /* CorePerfTests.mm in Sources */,
+				E104FAF71B655A97005C68A0 /* BuildSystemPerfTests.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2349,6 +2375,16 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		E104FAF91B655BB2005C68A0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1B839481B541BFD00DB876B /* llbuildBuildSystem */;
+			targetProxy = E104FAF81B655BB2005C68A0 /* PBXContainerItemProxy */;
+		};
+		E104FAFD1B655C3C005C68A0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1B838981B52E7DE00DB876B /* llvmSupport */;
+			targetProxy = E104FAFC1B655C3C005C68A0 /* PBXContainerItemProxy */;
+		};
 		E178FCC61A1BF32F0039F8B5 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = E1A224C219F999B80059043E /* llbuild Tool */;

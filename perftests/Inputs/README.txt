@@ -17,3 +17,9 @@ chromium-fake-manifest.ninja.gz
   use. It is a good performance test for Ninja parsing/loading on a large real
   world test case, although it won't exercise the performance of
   ``include``/``subninja`` directives specifically.
+
+chromium-fake-manifest.llbuild.gz
+  This is the same manifest above, but transferred to use llbuild's native build
+  file format. It currently is not as semantically complete as the Ninja
+  version, so it isn't fair to use as a direct head to head comparison of the
+  parsing performance of the two formats, but is a good large test case.

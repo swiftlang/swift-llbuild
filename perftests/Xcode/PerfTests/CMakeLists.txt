@@ -18,7 +18,8 @@ add_definitions("-F" "${MACOSX_PLATFORM_PATH}/Developer/Library/Frameworks")
 add_library(XcodePerfTests
   MODULE
   CorePerfTests.mm
-  NinjaPerfTests.mm)
+  NinjaPerfTests.mm
+  BuildSystemPerfTests.mm)
 
 set_target_properties(XcodePerfTests
   PROPERTIES
@@ -26,10 +27,13 @@ set_target_properties(XcodePerfTests
   BUNDLE_EXTENSION xctest)
 
 target_link_libraries(XcodePerfTests
+  llvmSupport
   llbuildBasic
   llbuildCore
   llbuildNinja
+  llbuildBuildSystem
   llbuildCommands
+  curses
   sqlite3
   "${MACOSX_SDK_PATH}/System/Library/Frameworks/Foundation.framework"
   "${MACOSX_PLATFORM_PATH}/Developer/Library/Frameworks/XCTest.framework"
