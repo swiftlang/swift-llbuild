@@ -13,11 +13,14 @@
 #include "llbuild/Commands/Commands.h"
 
 #include "llbuild/BuildSystem/BuildFile.h"
+#include "llbuild/BuildSystem/BuildSystem.h"
 
 using namespace llbuild;
 using namespace llbuild::buildsystem;
 
 namespace {
+
+/*  Parse Command */
 
 class ParseBuildFileDelegate : public BuildFileDelegate {
   bool showOutput;
@@ -192,10 +195,9 @@ void ParseBuildFileDelegate::loadedTask(const std::string& name,
   }
 }
 
-
 static void parseUsage() {
   int optionWidth = 20;
-  fprintf(stderr, "Usage: %s buildfile parse [options] <path>\n",
+  fprintf(stderr, "Usage: %s buildsystem parse [options] <path>\n",
           ::getprogname());
   fprintf(stderr, "\nOptions:\n");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--help",
@@ -242,9 +244,62 @@ static int executeParseCommand(std::vector<std::string> args) {
   return 0;
 }
 
+
+/* Build Command */
+
+class BuildCommandDelegate : public BuildSystemDelegate {
+public:
+    BuildCommandDelegate() : BuildSystemDelegate("basic") {}
+};
+
+static void buildUsage() {
+  int optionWidth = 20;
+  fprintf(stderr, "Usage: %s buildsystem build [options] <path>\n",
+          ::getprogname());
+  fprintf(stderr, "\nOptions:\n");
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--help",
+          "show this help message and exit");
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--no-output",
+          "don't display parser output");
+  ::exit(1);
 }
 
-#pragma mark - Build Engine Top-Level Command
+static int executeBuildCommand(std::vector<std::string> args) {
+  while (!args.empty() && args[0][0] == '-') {
+    const std::string option = args[0];
+    args.erase(args.begin());
+
+    if (option == "--")
+      break;
+
+    if (option == "--help") {
+      parseUsage();
+    } else {
+      fprintf(stderr, "\error: %s: invalid option: '%s'\n\n",
+              ::getprogname(), option.c_str());
+      buildUsage();
+    }
+  }
+
+  if (args.size() != 1) {
+    fprintf(stderr, "error: %s: invalid number of arguments\n", getprogname());
+    buildUsage();
+  }
+
+  std::string filename = args[0].c_str();
+
+  BuildCommandDelegate delegate{};
+  BuildSystem system(delegate, filename);
+
+  // Build the default target.
+  system.build("");
+  
+  return 0;
+}
+
+}
+
+#pragma mark - Build System Top-Level Command
 
 static void usage() {
   fprintf(stderr, "Usage: %s buildsystem [--help] <command> [<args>]\n",
@@ -263,6 +318,8 @@ int commands::executeBuildSystemCommand(const std::vector<std::string> &args) {
 
   if (args[0] == "parse") {
     return executeParseCommand({args.begin()+1, args.end()});
+  } else if (args[0] == "build") {
+    return executeBuildCommand({args.begin()+1, args.end()});
   } else {
     fprintf(stderr, "error: %s: unknown command '%s'\n", getprogname(),
             args[0].c_str());

@@ -27,7 +27,7 @@ Task::~Task() {}
 
 Tool::~Tool() {}
 
-#pragma mark - BuildEngine implementation
+#pragma mark - BuildFile implementation
 
 namespace {
 
@@ -585,8 +585,6 @@ public:
                 const std::string& mainFilename,
                 BuildFileDelegate& delegate)
     : mainFilename(mainFilename), delegate(delegate) {}
-
-  ~BuildFileImpl() {}
 
   BuildFileDelegate* getDelegate() {
     return &delegate;

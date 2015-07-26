@@ -1,0 +1,22 @@
+# Check basic building functionality.
+#
+# RUN: %{llbuild} buildsystem build %s > %t.out
+
+# FIXME: Check the result.
+#
+# RUN-X: %{FileCheck} < %t.out %s
+#
+# CHECK: cp input output
+
+client:
+  name: basic
+
+targets:
+  "": ["output"]
+
+tasks:
+  output:
+    tool: shell
+    inputs: ["input"]
+    outputs: ["output"]            
+    args: cp ${in} ${out}

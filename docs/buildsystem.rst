@@ -168,6 +168,9 @@ present.
   should be build together for a particular purpose. This typically would
   include definitions for all of the things a user might want to build directly.
 
+  The default target to build can be specified by including an entry for the
+  empty string (`""`).
+  
 * ``Node`` Definitions (`nodes` key)
 
   This section can be used to configure additional properties on the node

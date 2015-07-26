@@ -163,7 +163,7 @@ public:
                                            bool isImplicit=false) = 0;
 };
 
-/// The BuildFile class supports the "LLBuild"-native build description file
+/// The BuildFile class supports the "llbuild"-native build description file
 /// format.
 class BuildFile {
 public:
@@ -183,7 +183,7 @@ private:
   void *impl;
 
 public:
-  /// Create a build engine with the given delegate.
+  /// Create a build file with the given delegate.
   ///
   /// \arg mainFilename The path of the main build file.
   explicit BuildFile(const std::string& mainFilename,
