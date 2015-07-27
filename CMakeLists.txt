@@ -63,13 +63,13 @@ find_package(FileCheck REQUIRED)
 include_directories(BEFORE
   ${CMAKE_SOURCE_DIR}/include)
 
-# Xcode: use libc++ and c++11 using proper build settings.
+# Xcode: Use libc++ and c++14 using proper build settings.
 if (XCODE)
   # Force usage of Clang.
   set(CMAKE_XCODE_ATTRIBUTE_GCC_VERSION "com.apple.compilers.llvm.clang.1_0"
       CACHE STRING "Xcode Compiler")
   # Use C++'11.
-  set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++11"
+  set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++14"
       CACHE STRING "Xcode C++ Language Standard")
   # Use libc++.
   set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++"
@@ -103,8 +103,8 @@ if (XCODE)
   # Disable headermaps.
   set(CMAKE_XCODE_ATTRIBUTE_USE_HEADERMAP "NO") 
 else ()
-  # Compile with C++11, without RTTI, exceptions
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++ -fno-rtti -fno-exceptions")
+  # Compile with C++14, without RTTI, exceptions
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -stdlib=libc++ -fno-rtti -fno-exceptions")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -stdlib=libc++")
   # Enable additional Clang warnings.
