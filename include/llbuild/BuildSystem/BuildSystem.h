@@ -29,6 +29,12 @@ public:
 
   /// Called by the build system to get the client name.
   const std::string& getName() const { return name; }
+
+  /// Called by the build file loader to report an error.
+  //
+  // FIXME: Support better diagnostics by passing a token of some kind.
+  virtual void error(const std::string& filename,
+                     const std::string& message) = 0;
 };
 
 /// The BuildSystem class is used to perform builds using the native build
@@ -46,7 +52,7 @@ public:
   ~BuildSystem();
 
   /// Return the delegate the engine was configured with.
-  BuildSystemDelegate* getDelegate();
+  BuildSystemDelegate& getDelegate();
 
   /// @name Actions
   /// @{

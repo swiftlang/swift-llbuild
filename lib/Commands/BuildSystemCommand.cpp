@@ -250,6 +250,11 @@ static int executeParseCommand(std::vector<std::string> args) {
 class BuildCommandDelegate : public BuildSystemDelegate {
 public:
     BuildCommandDelegate() : BuildSystemDelegate("basic") {}
+
+    virtual void error(const std::string& filename,
+                       const std::string& message) override {
+        fprintf(stderr, "%s: error: %s\n", filename.c_str(), message.c_str());
+    }
 };
 
 static void buildUsage() {
