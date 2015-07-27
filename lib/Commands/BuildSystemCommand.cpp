@@ -249,12 +249,17 @@ static int executeParseCommand(std::vector<std::string> args) {
 
 class BuildCommandDelegate : public BuildSystemDelegate {
 public:
-    BuildCommandDelegate() : BuildSystemDelegate("basic") {}
+  BuildCommandDelegate() : BuildSystemDelegate("basic") {}
 
-    virtual void error(const std::string& filename,
-                       const std::string& message) override {
-        fprintf(stderr, "%s: error: %s\n", filename.c_str(), message.c_str());
-    }
+  virtual void error(const std::string& filename,
+                     const std::string& message) override {
+    fprintf(stderr, "%s: error: %s\n", filename.c_str(), message.c_str());
+  }
+  
+  virtual std::unique_ptr<Tool> lookupTool(const std::string& name) override {
+    // We do not support any non-built-in tools.
+    return nullptr;
+  }
 };
 
 static void buildUsage() {

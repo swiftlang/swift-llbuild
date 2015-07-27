@@ -20,6 +20,8 @@
 namespace llbuild {
 namespace buildsystem {
 
+class Tool;
+  
 class BuildSystemDelegate {
   std::string name;
   
@@ -35,6 +37,16 @@ public:
   // FIXME: Support better diagnostics by passing a token of some kind.
   virtual void error(const std::string& filename,
                      const std::string& message) = 0;
+
+  /// Called by the build system to get a tool definition.
+  ///
+  /// This method is called to look for all tools, even ones which are built-in
+  /// to the BuildSystem, in order to give the client an opportunity to override
+  /// built-in tools.
+  ///
+  /// \param name The name of the tool to lookup.
+  /// \returns The tool to use on success, or otherwise nil.
+  virtual std::unique_ptr<Tool> lookupTool(const std::string& name) = 0;
 };
 
 /// The BuildSystem class is used to perform builds using the native build
