@@ -60,6 +60,12 @@ class ManifestLoaderImpl: public ParseActions {
   std::unique_ptr<Manifest> theManifest;
   std::vector<IncludeEntry> includeStack;
 
+  // Cached buffers for temporary expansion of possibly large strings. These are
+  // lifted out of the function body to ensure we don't blow up the stack
+  // unnecesssarily.
+  llvm::SmallString<10 * 1024> buildCommand;
+  llvm::SmallString<10 * 1024> buildDescription;
+
 public:
   ManifestLoaderImpl(std::string mainFilename, ManifestLoaderActions& actions)
     : mainFilename(mainFilename), actions(actions), theManifest(nullptr)
@@ -436,11 +442,10 @@ public:
     };
     
     // Evaluate the build parameters.
-    llvm::SmallString<256> command;
-    decl->setCommandString(lookupStr("command", command));
-
-    llvm::SmallString<256> description;
-    decl->setDescription(lookupStr("description", description));
+    buildCommand.clear();
+    decl->setCommandString(lookupStr("command", buildCommand));
+    buildDescription.clear();
+    decl->setDescription(lookupStr("description", buildDescription));
 
     // Set the dependency style.
     llvm::SmallString<256> deps;
