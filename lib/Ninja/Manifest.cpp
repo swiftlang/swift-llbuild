@@ -38,7 +38,7 @@ Manifest::Manifest() {
   rules["phony"].reset(phonyRule);
 }
 
-Node* Manifest::getOrCreateNode(const std::string& path) {
+Node* Manifest::getOrCreateNode(llvm::StringRef path) {
   // If we have an existing node for this path, return it.
   auto it = nodes.find(path);
   if (it != nodes.end())

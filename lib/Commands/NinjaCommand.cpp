@@ -429,8 +429,8 @@ static int executeLoadManifestCommand(const std::vector<std::string>& args,
   std::cout << "# Top-Level Bindings\n";
   assert(manifest->getBindings().getParentScope() == nullptr);
   std::vector<std::pair<std::string, std::string>> bindings;
-  for (const auto&it: manifest->getBindings().getEntries()) {
-    bindings.push_back({ it.getKey(), it.getValue() });
+  for (const auto& entry: manifest->getBindings().getEntries()) {
+    bindings.push_back({ entry.getKey(), entry.getValue() });
   }
   std::sort(bindings.begin(), bindings.end());
   for (const auto& entry: bindings) {
@@ -473,8 +473,10 @@ static int executeLoadManifestCommand(const std::vector<std::string>& args,
     std::cout << "rule " << rule->getName() << "\n";
 
     // Write the parameters.
-    std::vector<std::pair<std::string, std::string>>
-      parameters(rule->getParameters().begin(), rule->getParameters().end());
+    std::vector<std::pair<std::string, std::string>> parameters;
+    for (const auto& entry: rule->getParameters()) {
+        parameters.push_back({ entry.getKey(), entry.getValue() });
+    }
     std::sort(parameters.begin(), parameters.end());
     for (const auto& entry: parameters) {
       std::cout << "  " << entry.first << " = \""

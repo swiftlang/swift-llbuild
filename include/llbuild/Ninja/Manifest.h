@@ -15,8 +15,8 @@
 
 #include <cassert>
 #include <cstdint>
+#include <functional>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "llvm/ADT/StringMap.h"
@@ -144,7 +144,7 @@ private:
   //
   // FIXME: It might be substantially better to evaluate all of these in the
   // context of the rule up-front (during loading).
-  std::unordered_map<std::string, std::string> parameters;
+  llvm::StringMap<std::string> parameters;
 
   Pool* executionPool;
 
@@ -203,10 +203,10 @@ public:
     return inputs.size() - getNumExplicitInputs() - getNumImplicitInputs();
   }
 
-  std::unordered_map<std::string, std::string>& getParameters() {
+  llvm::StringMap<std::string>& getParameters() {
     return parameters;
   }
-  const std::unordered_map<std::string, std::string>& getParameters() const {
+  const llvm::StringMap<std::string>& getParameters() const {
     return parameters;
   }
 
@@ -291,17 +291,17 @@ class Rule {
   // FIXME: It would be nice to optimize this more, and the common case is that
   // we have a fixed set of values which are never dynamically expanded for most
   // parameters *other* than the command.
-  std::unordered_map<std::string, std::string> parameters;
+  llvm::StringMap<std::string> parameters;
 
 public:
   explicit Rule(const std::string& name) : name(name) {}
 
   const std::string& getName() const { return name; }
 
-  std::unordered_map<std::string, std::string>& getParameters() {
+  llvm::StringMap<std::string>& getParameters() {
     return parameters;
   }
-  const std::unordered_map<std::string, std::string>& getParameters() const {
+  const llvm::StringMap<std::string>& getParameters() const {
     return parameters;
   }
 
@@ -319,7 +319,7 @@ class Manifest {
   //
   // FIXME: This is an inefficent map, given that the string is contained
   // inside the node.
-  typedef std::unordered_map<std::string, std::unique_ptr<Node>> node_set;
+  typedef llvm::StringMap<std::unique_ptr<Node>> node_set;
   node_set nodes;
 
   /// The commands in the manifest.
@@ -329,14 +329,14 @@ class Manifest {
   //
   // FIXME: This is an inefficent map, given that the string is contained
   // inside the pool.
-  typedef std::unordered_map<std::string, std::unique_ptr<Pool>> pool_set;
+  typedef llvm::StringMap<std::unique_ptr<Pool>> pool_set;
   pool_set pools;
 
   /// The rules in the manifest, stored as a map on the rule name.
   //
   // FIXME: This is an inefficent map, given that the string is contained
   // inside the rule.
-  typedef std::unordered_map<std::string, std::unique_ptr<Rule>> rule_set;
+  typedef llvm::StringMap<std::unique_ptr<Rule>> rule_set;
   rule_set rules;
 
   /// The default targets, if specified.
@@ -364,7 +364,7 @@ public:
   }
 
   /// Get or create the unique node for the given path.
-  Node* getOrCreateNode(const std::string& path);
+  Node* getOrCreateNode(llvm::StringRef path);
 
   std::vector<std::unique_ptr<Command>>& getCommands() {
     return commands;
