@@ -15,7 +15,7 @@
 using namespace llbuild;
 using namespace llbuild::ninja;
 
-bool Rule::isValidParameterName(const std::string& name) {
+bool Rule::isValidParameterName(llvm::StringRef name) {
   return name == "command" ||
     name == "description" ||
     name == "deps" ||

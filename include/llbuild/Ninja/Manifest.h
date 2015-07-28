@@ -75,7 +75,7 @@ class Node {
   std::string path;
 
 public:
-  explicit Node(const std::string& path) : path(path) {}
+  explicit Node(llvm::StringRef path) : path(path) {}
 
   const std::string& getPath() const { return path; }
 };
@@ -89,7 +89,7 @@ class Pool {
   uint32_t depth = 0;
 
 public:
-  explicit Pool(const std::string& name) : name(name) {}
+  explicit Pool(llvm::StringRef name) : name(name) {}
 
   const std::string& getName() const { return name; }
 
@@ -222,7 +222,7 @@ public:
   const std::string& getCommandString() const {
     return commandString;
   }
-  void setCommandString(const std::string& value) {
+  void setCommandString(llvm::StringRef value) {
     commandString = value;
   }
 
@@ -230,7 +230,7 @@ public:
   const std::string& getDescription() const {
     return description;
   }
-  void setDescription(const std::string& value) {
+  void setDescription(llvm::StringRef value) {
     description = value;
   }
 
@@ -248,7 +248,7 @@ public:
   const std::string& getDepsFile() const {
     return depsFile;
   }
-  void setDepsFile(const std::string& value) {
+  void setDepsFile(llvm::StringRef value) {
     depsFile = value;
   }
 
@@ -294,7 +294,7 @@ class Rule {
   llvm::StringMap<std::string> parameters;
 
 public:
-  explicit Rule(const std::string& name) : name(name) {}
+  explicit Rule(llvm::StringRef name) : name(name) {}
 
   const std::string& getName() const { return name; }
 
@@ -306,7 +306,7 @@ public:
   }
 
   /// Check whether the given string is a valid rule parameter.
-  static bool isValidParameterName(const std::string& name);
+  static bool isValidParameterName(llvm::StringRef name);
 };
 
 /// A manifest represents the complete set of rules and commands used to perform
