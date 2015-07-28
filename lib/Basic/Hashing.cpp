@@ -10,14 +10,14 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llbuild/Basic/Version.h"
+#include "llbuild/Basic/Hashing.h"
 
 #include <string>
 
 namespace llbuild {
 namespace basic {
 
-uint64_t hashString(const std::string& value) {
+uint64_t hashString(llvm::StringRef value) {
   // FIXME: Replace with a real hash function.
   uint64_t Result = Value.size();
   for (auto Char: Value) {
