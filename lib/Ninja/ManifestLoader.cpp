@@ -47,7 +47,7 @@ class ManifestLoaderImpl: public ParseActions {
     /// The active binding set.
     BindingSet& bindings;
 
-    IncludeEntry(const std::string& filename,
+    IncludeEntry(llvm::StringRef filename,
                  std::unique_ptr<char[]> data,
                  std::unique_ptr<class Parser> parser,
                  BindingSet& bindings)
@@ -120,15 +120,14 @@ public:
     return includeStack.back().bindings;
   }
 
-  void evalString(const char* start, const char* end, llvm::raw_ostream& result,
-                  std::function<void(const std::string&,
+  void evalString(llvm::StringRef string, llvm::raw_ostream& result,
+                  std::function<void(llvm::StringRef,
                                      llvm::raw_ostream&)> lookup,
                   std::function<void(const std::string&)> error) {
     // Scan the string for escape sequences or variable references, accumulating
     // output pieces as we go.
-    //
-    // FIXME: Rewrite this with StringRef once we have it, and make efficient.
-    const char* pos = start;
+    const char* pos = string.begin();
+    const char* end = string.end();
     while (pos != end) {
       // Find the next '$'.
       const char* pieceStart = pos;
@@ -139,7 +138,7 @@ public:
 
       // Add the current piece, if non-empty.
       if (pos != pieceStart)
-        result << std::string(pieceStart, pos);
+        result << llvm::StringRef(pieceStart, pos - pieceStart);
 
       // If we are at the end, we are done.
       if (pos == end)
@@ -190,7 +189,7 @@ public:
             if (!isValid) {
               error("invalid variable name in reference");
             } else {
-              lookup(std::string(varStart, pos - varStart), result);
+              lookup(llvm::StringRef(varStart, pos - varStart), result);
             }
             ++pos;
             break;
@@ -212,7 +211,7 @@ public:
         ++pos;
         while (pos != end && Lexer::isSimpleIdentifierChar(*pos))
           ++pos;
-        lookup(std::string(varStart, pos-varStart), result);
+        lookup(llvm::StringRef(varStart, pos-varStart), result);
         continue;
       }
 
@@ -229,8 +228,8 @@ public:
     assert(value.tokenKind == Token::Kind::String && "invalid token kind");
     
     llvm::raw_svector_ostream result(storage);
-    evalString(value.start, value.start + value.length, result,
-               /*Lookup=*/ [&](const std::string& name,
+    evalString(llvm::StringRef(value.start, value.length), result,
+               /*Lookup=*/ [&](llvm::StringRef name,
                                llvm::raw_ostream& result) {
                  result << bindings.lookup(name);
                },
@@ -269,7 +268,7 @@ public:
   virtual void actOnDefaultDecl(const std::vector<Token>& nameToks) override {
     // Resolve all of the inputs and outputs.
     for (const auto& nameTok: nameToks) {
-      std::string name(nameTok.start, nameTok.length);
+      llvm::StringRef name(nameTok.start, nameTok.length);
 
       auto it = theManifest->getNodes().find(name);
       if (it == theManifest->getNodes().end()) {
@@ -310,7 +309,7 @@ public:
                       const std::vector<Token>& inputTokens,
                       unsigned numExplicitInputs,
                       unsigned numImplicitInputs) override {
-    std::string name(nameTok.start, nameTok.length);
+    llvm::StringRef name(nameTok.start, nameTok.length);
 
     // Resolve the rule.
     auto it = theManifest->getRules().find(name);
@@ -391,10 +390,10 @@ public:
     // once this is all complete.
 
     // Create the appropriate binding context.
-    //
-    // FIXME: Make this efficient.
-    std::function<void(const std::string&, llvm::raw_ostream&)> lookup;
-    lookup = [&](const std::string& name, llvm::raw_ostream& result) {
+    std::function<void(llvm::StringRef, llvm::raw_ostream&)> lookup;
+    lookup = [&](llvm::StringRef name, llvm::raw_ostream& result) {
+      // FIXME: Mange recursive lookup? Ninja crashes on it.
+      
       // Support "in" and "out".
       if (name == "in") {
         for (unsigned i = 0, ie = decl->getNumExplicitInputs(); i != ie; ++i) {
@@ -419,16 +418,9 @@ public:
       }
       auto it2 = decl->getRule()->getParameters().find(name);
       if (it2 != decl->getRule()->getParameters().end()) {
-        const auto& value = it2->second;
-        
-        evalString(value.data(), value.data() + value.size(), result,
-                   /*Lookup=*/ [&](const std::string& name,
-                                   llvm::raw_ostream& result) {
-                     // FIXME: Mange recursive lookup? Ninja crashes on it.
-                     lookup(name, result);
-                   },
+        evalString(it2->second, result, lookup,
                    /*Error=*/ [&](const std::string& msg) {
-                     error(msg + " during evaluation of '" + name + "'",
+                     error(msg + " during evaluation of '" + name.str() + "'",
                            startTok);
                    });
         return;
@@ -436,7 +428,7 @@ public:
       
       result << getCurrentBindings().lookup(name);
     };
-    auto lookupStr = [&](const std::string& name,
+    auto lookupStr = [&](llvm::StringRef name,
                          llvm::SmallVectorImpl<char>& result) {
       llvm::raw_svector_ostream os(result);
       lookup(name, os);
@@ -505,7 +497,7 @@ public:
   }
 
   virtual PoolResult actOnBeginPoolDecl(const Token& nameTok) override {
-    std::string name(nameTok.start, nameTok.length);
+    llvm::StringRef name(nameTok.start, nameTok.length);
 
     // Find the hash slot.
     auto& result = theManifest->getPools()[name];
@@ -556,7 +548,7 @@ public:
   }
 
   virtual RuleResult actOnBeginRuleDecl(const Token& nameTok) override {
-    std::string name(nameTok.start, nameTok.length);
+    llvm::StringRef name(nameTok.start, nameTok.length);
 
     // Find the hash slot.
     auto& result = theManifest->getRules()[name];
@@ -578,12 +570,12 @@ public:
                                     const Token& valueTok) override {
     Rule* decl = static_cast<Rule*>(abstractDecl);
 
-    std::string name(nameTok.start, nameTok.length);
+    llvm::StringRef name(nameTok.start, nameTok.length);
     // FIXME: It probably should be an error to assign to the same parameter
     // multiple times, but Ninja doesn't diagnose this.
     if (Rule::isValidParameterName(name)) {
-      decl->getParameters()[name] = std::string(valueTok.start,
-                                                valueTok.length);
+      decl->getParameters()[name] = llvm::StringRef(valueTok.start,
+                                                    valueTok.length);
     } else {
       error("unexpected variable", nameTok);
     }
