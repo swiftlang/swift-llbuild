@@ -19,6 +19,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "llvm/ADT/StringRef.h"
+
 namespace llbuild {
 namespace ninja {
 
@@ -47,7 +49,7 @@ public:
   }
 
   /// Insert a binding into the set.
-  void insert(const std::string& name, const std::string& value) {
+  void insert(llvm::StringRef name, llvm::StringRef value) {
     entries[name] = value;
   }
 

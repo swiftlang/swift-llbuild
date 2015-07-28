@@ -120,15 +120,14 @@ public:
     return includeStack.back().bindings;
   }
 
-  std::string evalString(const char* start, const char* end,
-                         std::function<std::string(const std::string&)> lookup,
-                         std::function<void(const std::string&)> error) {
+  void evalString(const char* start, const char* end, llvm::raw_ostream& result,
+                  std::function<void(const std::string&,
+                                     llvm::raw_ostream&)> lookup,
+                  std::function<void(const std::string&)> error) {
     // Scan the string for escape sequences or variable references, accumulating
     // output pieces as we go.
     //
     // FIXME: Rewrite this with StringRef once we have it, and make efficient.
-    llvm::SmallString<256> storage;
-    llvm::raw_svector_ostream result(storage);
     const char* pos = start;
     while (pos != end) {
       // Find the next '$'.
@@ -191,7 +190,7 @@ public:
             if (!isValid) {
               error("invalid variable name in reference");
             } else {
-              result << lookup(std::string(varStart, pos - varStart));
+              lookup(std::string(varStart, pos - varStart), result);
             }
             ++pos;
             break;
@@ -213,7 +212,7 @@ public:
         ++pos;
         while (pos != end && Lexer::isSimpleIdentifierChar(*pos))
           ++pos;
-        result << lookup(std::string(varStart, pos-varStart));
+        lookup(std::string(varStart, pos-varStart), result);
         continue;
       }
 
@@ -221,21 +220,23 @@ public:
       error("invalid '$'-escape (literal '$' should be written as '$$')");
       break;
     }
-
-    return result.str();
   }
 
   /// Given a string template token, evaluate it against the given \arg Bindings
   /// and return the resulting string.
-  std::string evalString(const Token& value, const BindingSet& bindings) {
+  void evalString(const Token& value, const BindingSet& bindings,
+                  llvm::SmallVectorImpl<char>& storage) {
     assert(value.tokenKind == Token::Kind::String && "invalid token kind");
-
-    return evalString(value.start, value.start + value.length,
-                      /*Lookup=*/ [&](const std::string& name) {
-                        return bindings.lookup(name); },
-                      /*Error=*/ [this, &value](const std::string& msg) {
-                        error(msg, value);
-                      });
+    
+    llvm::raw_svector_ostream result(storage);
+    evalString(value.start, value.start + value.length, result,
+               /*Lookup=*/ [&](const std::string& name,
+                               llvm::raw_ostream& result) {
+                 result << bindings.lookup(name);
+               },
+               /*Error=*/ [this, &value](const std::string& msg) {
+                 error(msg, value);
+               });
   }
 
   /// @name Parse Actions Interfaces
@@ -256,12 +257,13 @@ public:
   virtual void actOnBindingDecl(const Token& nameTok,
                                 const Token& valueTok) override {
     // Extract the name string.
-    std::string name(nameTok.start, nameTok.length);
+    llvm::StringRef name(nameTok.start, nameTok.length);
 
     // Evaluate the value string with the current top-level bindings.
-    std::string value(evalString(valueTok, getCurrentBindings()));
+    llvm::SmallString<256> value;
+    evalString(valueTok, getCurrentBindings(), value);
 
-    getCurrentBindings().insert(name, value);
+    getCurrentBindings().insert(name, value.str());
   }
 
   virtual void actOnDefaultDecl(const std::vector<Token>& nameToks) override {
@@ -281,12 +283,13 @@ public:
 
   virtual void actOnIncludeDecl(bool isInclude,
                                 const Token& pathTok) override {
-    std::string path = evalString(pathTok, getCurrentBindings());
+    llvm::SmallString<256> path;
+    evalString(pathTok, getCurrentBindings(), path);
 
     // Enter the new file, with a new binding scope if this is a "subninja"
     // decl.
     if (isInclude) {
-      if (enterFile(path, getCurrentBindings(), &pathTok)) {
+      if (enterFile(path.str(), getCurrentBindings(), &pathTok)) {
         // Run the parser for the included file.
         getCurrentParser()->parse();
       }
@@ -294,7 +297,7 @@ public:
       // Establish a local binding set and use that to contain the bindings for
       // the subninja.
       BindingSet subninjaBindings(&getCurrentBindings());
-      if (enterFile(path, subninjaBindings, &pathTok)) {
+      if (enterFile(path.str(), subninjaBindings, &pathTok)) {
         // Run the parser for the included file.
         getCurrentParser()->parse();
       }
@@ -326,19 +329,21 @@ public:
     std::vector<Node*> inputs;
     for (const auto& token: outputTokens) {
       // Evaluate the token string.
-      std::string path = evalString(token, getCurrentBindings());
+      llvm::SmallString<256> path;
+      evalString(token, getCurrentBindings(), path);
       if (path.empty()) {
         error("empty output path", token);
       }
-      outputs.push_back(theManifest->getOrCreateNode(path));
+      outputs.push_back(theManifest->getOrCreateNode(path.str()));
     }
     for (const auto& token: inputTokens) {
       // Evaluate the token string.
-      std::string path = evalString(token, getCurrentBindings());
+      llvm::SmallString<256> path;
+      evalString(token, getCurrentBindings(), path);
       if (path.empty()) {
         error("empty input path", token);
       }
-      inputs.push_back(theManifest->getOrCreateNode(path));
+      inputs.push_back(theManifest->getOrCreateNode(path.str()));
     }
 
     Command* decl = new Command(rule, outputs, inputs, numExplicitInputs,
@@ -353,14 +358,17 @@ public:
                                      const Token& valueTok) override {
     Command* decl = static_cast<Command*>(abstractDecl);
 
-    std::string name(nameTok.start, nameTok.length);
+    llvm::StringRef name(nameTok.start, nameTok.length);
 
     // FIXME: It probably should be an error to assign to the same parameter
     // multiple times, but Ninja doesn't diagnose this.
 
     // The value in a build decl is always evaluated immediately, but only in
     // the context of the top-level bindings.
-    decl->getParameters()[name] = evalString(valueTok, getCurrentBindings());
+    llvm::SmallString<256> value;
+    evalString(valueTok, getCurrentBindings(), value);
+    
+    decl->getParameters()[name] = value.str();
   }
 
   virtual void actOnEndBuildDecl(BuildResult abstractDecl,
@@ -385,74 +393,87 @@ public:
     // Create the appropriate binding context.
     //
     // FIXME: Make this efficient.
-    std::function<std::string(const std::string&)> lookup;
-    lookup = [&](const std::string& name) -> std::string {
+    std::function<void(const std::string&, llvm::raw_ostream&)> lookup;
+    lookup = [&](const std::string& name, llvm::raw_ostream& result) {
       // Support "in" and "out".
       if (name == "in") {
-        llvm::SmallString<256> storage;
-        llvm::raw_svector_ostream result(storage);
         for (unsigned i = 0, ie = decl->getNumExplicitInputs(); i != ie; ++i) {
           if (i != 0)
             result << " ";
           result << decl->getInputs()[i]->getPath();
         }
-        return result.str();
+        return;
       } else if (name == "out") {
-        llvm::SmallString<256> storage;
-        llvm::raw_svector_ostream result(storage);
         for (unsigned i = 0, ie = decl->getOutputs().size(); i != ie; ++i) {
           if (i != 0)
             result << " ";
           result << decl->getOutputs()[i]->getPath();
         }
-        return result.str();
+        return;
       }
 
       auto it = decl->getParameters().find(name);
-      if (it != decl->getParameters().end())
-        return it->second;
+      if (it != decl->getParameters().end()) {
+        result << it->second;
+        return;
+      }
       auto it2 = decl->getRule()->getParameters().find(name);
       if (it2 != decl->getRule()->getParameters().end()) {
         const auto& value = it2->second;
-        return evalString(value.data(), value.data() + value.size(),
-                          /*Lookup=*/ [&](const std::string& name) {
-                            // FIXME: Mange recursive lookup? Ninja crashes on
-                            // it.
-                            return lookup(name); },
-                          /*Error=*/ [&](const std::string& msg) {
-                            error(msg + " during evaluation of '" + name + "'",
-                                  startTok);
-                          });
+        
+        evalString(value.data(), value.data() + value.size(), result,
+                   /*Lookup=*/ [&](const std::string& name,
+                                   llvm::raw_ostream& result) {
+                     // FIXME: Mange recursive lookup? Ninja crashes on it.
+                     lookup(name, result);
+                   },
+                   /*Error=*/ [&](const std::string& msg) {
+                     error(msg + " during evaluation of '" + name + "'",
+                           startTok);
+                   });
+        return;
       }
-      return getCurrentBindings().lookup(name);
+      
+      result << getCurrentBindings().lookup(name);
     };
-
+    auto lookupStr = [&](const std::string& name,
+                         llvm::SmallVectorImpl<char>& result) {
+      llvm::raw_svector_ostream os(result);
+      lookup(name, os);
+      return os.str();
+    };
+    
     // Evaluate the build parameters.
-    decl->setCommandString(lookup("command"));
-    decl->setDescription(lookup("description"));
+    llvm::SmallString<256> command;
+    decl->setCommandString(lookupStr("command", command));
+
+    llvm::SmallString<256> description;
+    decl->setDescription(lookupStr("description", description));
 
     // Set the dependency style.
-    std::string depsStyleName = lookup("deps");
-    std::string depfile = lookup("depfile");
+    llvm::SmallString<256> deps;
+    lookupStr("deps", deps);
+    llvm::SmallString<256> depfile;
+    lookupStr("depfile", depfile);
     Command::DepsStyleKind depsStyle = Command::DepsStyleKind::None;
-    if (depsStyleName == "") {
+    if (deps.str() == "") {
       if (!depfile.empty())
         depsStyle = Command::DepsStyleKind::GCC;
-    } else if (depsStyleName == "gcc") {
+    } else if (deps.str() == "gcc") {
       depsStyle = Command::DepsStyleKind::GCC;
-    } else if (depsStyleName == "msvc") {
+    } else if (deps.str() == "msvc") {
       depsStyle = Command::DepsStyleKind::MSVC;
     } else {
-      error("invalid 'deps' style '" + depsStyleName + "'", startTok);
+      error("invalid 'deps' style '" + deps.str().str() + "'", startTok);
     }
     decl->setDepsStyle(depsStyle);
 
-    if (!depfile.empty()) {
+    if (!depfile.str().empty()) {
       if (depsStyle != Command::DepsStyleKind::GCC) {
         error("invalid 'depfile' attribute with selected 'deps' style",
               startTok);
       } else {
-        decl->setDepsFile(depfile);
+        decl->setDepsFile(depfile.str());
       }
     } else {
       if (depsStyle == Command::DepsStyleKind::GCC) {
@@ -461,21 +482,24 @@ public:
       }
     }
 
-    std::string poolName = lookup("pool");
+    llvm::SmallString<256> poolName;
+    lookupStr("pool", poolName);
     if (!poolName.empty()) {
-      const auto& it = theManifest->getPools().find(poolName);
+      const auto& it = theManifest->getPools().find(poolName.str());
       if (it == theManifest->getPools().end()) {
-        error("unknown pool '" + poolName + "'", startTok);
+        error("unknown pool '" + poolName.str().str() + "'", startTok);
       } else {
         decl->setExecutionPool(it->second.get());
       }
     }
 
-    std::string generator = lookup("generator");
-    decl->setGeneratorFlag(!generator.empty());
+    llvm::SmallString<256> generator;
+    lookupStr("generator", generator);
+    decl->setGeneratorFlag(!generator.str().empty());
 
-    std::string restat = lookup("restat");
-    decl->setRestatFlag(!restat.empty());
+    llvm::SmallString<256> restat;
+    lookupStr("restat", restat);
+    decl->setRestatFlag(!restat.str().empty());
 
     // FIXME: Handle rspfile attributes.
   }
@@ -503,16 +527,15 @@ public:
                                     const Token& valueTok) override {
     Pool* decl = static_cast<Pool*>(abstractDecl);
 
-    std::string name(nameTok.start, nameTok.length);
+    llvm::StringRef name(nameTok.start, nameTok.length);
 
     // Evaluate the value string with the current top-level bindings.
-    std::string value(evalString(valueTok, getCurrentBindings()));
+    llvm::SmallString<256> value;
+    evalString(valueTok, getCurrentBindings(), value);
 
     if (name == "depth") {
-      const char* start = value.c_str();
-      char* end;
-      long intValue = ::strtol(start, &end, 10);
-      if (*end != '\0' || intValue <= 0) {
+      long intValue;
+      if (value.str().getAsInteger(10, intValue) || intValue <= 0) {
         error("invalid depth", valueTok);
       } else {
         decl->setDepth(static_cast<uint32_t>(intValue));
