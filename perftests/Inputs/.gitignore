@@ -1,0 +1,3 @@
+# Ignore user-unpacked versions of the perftest inputs.
+*.llbuild
+*.ninja
