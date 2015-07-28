@@ -29,22 +29,18 @@ bool Rule::isValidParameterName(llvm::StringRef name) {
 
 Manifest::Manifest() {
   // Create the built-in console pool, and add it to the pool map.
-  consolePool = new Pool("console");
+  consolePool = new (getAllocator()) Pool("console");
   consolePool->setDepth(1);
-  pools["console"].reset(consolePool);
+  pools["console"] = consolePool;
 
   // Create the built-in phony rule, and add it to the rule map.
-  phonyRule = new Rule("phony");
-  rules["phony"].reset(phonyRule);
+  phonyRule = new (getAllocator()) Rule("phony");
+  rules["phony"] = phonyRule;
 }
 
 Node* Manifest::getOrCreateNode(llvm::StringRef path) {
-  // If we have an existing node for this path, return it.
-  auto it = nodes.find(path);
-  if (it != nodes.end())
-    return it->second.get();
-
-  Node *result = new Node(path);
-  nodes[path].reset(result);
+  auto& result = nodes[path];
+  if (!result)
+    result = new (getAllocator()) Node(path);
   return result;
 }

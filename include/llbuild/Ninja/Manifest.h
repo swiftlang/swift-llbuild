@@ -23,6 +23,7 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Allocator.h"
 
 namespace llbuild {
 namespace ninja {
@@ -318,6 +319,9 @@ public:
 /// A manifest represents the complete set of rules and commands used to perform
 /// a build.
 class Manifest {
+  /// The pool allocator used for manifest objects.
+  llvm::BumpPtrAllocator allocator;
+  
   /// The top level variable bindings.
   BindingSet bindings;
 
@@ -325,24 +329,24 @@ class Manifest {
   //
   // FIXME: This is an inefficent map, given that the string is contained
   // inside the node.
-  typedef llvm::StringMap<std::unique_ptr<Node>> node_set;
+  typedef llvm::StringMap<Node*> node_set;
   node_set nodes;
 
   /// The commands in the manifest.
-  std::vector<std::unique_ptr<Command>> commands;
+  std::vector<Command*> commands;
 
   /// The pools in the manifest, stored as a map on the pool name.
   //
   // FIXME: This is an inefficent map, given that the string is contained
   // inside the pool.
-  typedef llvm::StringMap<std::unique_ptr<Pool>> pool_set;
+  typedef llvm::StringMap<Pool*> pool_set;
   pool_set pools;
 
   /// The rules in the manifest, stored as a map on the rule name.
   //
   // FIXME: This is an inefficent map, given that the string is contained
   // inside the rule.
-  typedef llvm::StringMap<std::unique_ptr<Rule>> rule_set;
+  typedef llvm::StringMap<Rule*> rule_set;
   rule_set rules;
 
   /// The default targets, if specified.
@@ -356,6 +360,9 @@ class Manifest {
 
 public:
   explicit Manifest();
+
+  /// Get the allocator to use for manifest objects.
+  llvm::BumpPtrAllocator& getAllocator() { return allocator; }
 
   /// Get the final set of top level variable bindings.
   BindingSet& getBindings() { return bindings; }
@@ -372,10 +379,10 @@ public:
   /// Get or create the unique node for the given path.
   Node* getOrCreateNode(llvm::StringRef path);
 
-  std::vector<std::unique_ptr<Command>>& getCommands() {
+  std::vector<Command*>& getCommands() {
     return commands;
   }
-  const std::vector<std::unique_ptr<Command>>& getCommands() const {
+  const std::vector<Command*>& getCommands() const {
     return commands;
   }
 

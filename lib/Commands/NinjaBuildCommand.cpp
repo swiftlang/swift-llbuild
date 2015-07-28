@@ -1879,8 +1879,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
           return 1;
         }
 
-        for (const auto& commandOwner: context.manifest->getCommands()) {
-          auto* command = commandOwner.get();
+        for (const auto command: context.manifest->getCommands()) {
           for (const auto& output: command->getOutputs()) {
             fprintf(stdout, "%s: %s\n", output->getPath().c_str(),
                     command->getRule()->getName().c_str());
@@ -1925,9 +1924,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     // Create rules for all of the build commands up front.
     //
     // FIXME: We should probably also move this to be dynamic.
-    for (auto& commandOwner: context.manifest->getCommands()) {
-      auto* command = commandOwner.get();
-
+    for (const auto command: context.manifest->getCommands()) {
       // If this command has a single output, create the trivial rule.
       if (command->getOutputs().size() == 1) {
         context.engine.addRule({

@@ -285,7 +285,7 @@ public:
         continue;
       }
 
-      theManifest->getDefaultTargets().push_back(it->second.get());
+      theManifest->getDefaultTargets().push_back(it->second);
     }
   }
 
@@ -329,7 +329,7 @@ public:
       // Ensure we always have a rule for each command.
       rule = theManifest->getPhonyRule();
     } else {
-      rule = it->second.get();
+      rule = it->second;
     }
 
     // Resolve all of the inputs and outputs.
@@ -354,9 +354,9 @@ public:
       inputs.push_back(theManifest->getOrCreateNode(path.str()));
     }
 
-    Command* decl = new Command(rule, outputs, inputs, numExplicitInputs,
-                                numImplicitInputs);
-    theManifest->getCommands().push_back(std::unique_ptr<Command>(decl));
+    Command* decl = new (theManifest->getAllocator())
+      Command(rule, outputs, inputs, numExplicitInputs, numImplicitInputs);
+    theManifest->getCommands().push_back(decl);
 
     return decl;
   }
@@ -504,7 +504,7 @@ public:
       if (it == theManifest->getPools().end()) {
         error("unknown pool '" + poolName.str().str() + "'", startTok);
       } else {
-        decl->setExecutionPool(it->second.get());
+        decl->setExecutionPool(it->second);
       }
     }
 
@@ -526,14 +526,14 @@ public:
     auto& result = theManifest->getPools()[name];
 
     // Diagnose if the pool already exists (we still create a new one).
-    if (result.get()) {
+    if (result) {
       // The pool already exists.
       error("duplicate pool", nameTok);
     }
 
     // Insert the new pool.
-    Pool* decl = new Pool(name);
-    result.reset(decl);
+    Pool* decl = new (theManifest->getAllocator()) Pool(name);
+    result = decl;
     return static_cast<PoolResult>(decl);
   }
 
@@ -577,14 +577,14 @@ public:
     auto& result = theManifest->getRules()[name];
 
     // Diagnose if the rule already exists (we still create a new one).
-    if (result.get()) {
+    if (result) {
       // The rule already exists.
       error("duplicate rule", nameTok);
     }
 
     // Insert the new rule.
-    Rule* decl = new Rule(name);
-    result.reset(decl);
+    Rule* decl = new (theManifest->getAllocator()) Rule(name);
+    result = decl;
     return static_cast<RuleResult>(decl);
   }
 
@@ -640,4 +640,3 @@ std::unique_ptr<Manifest> ManifestLoader::load() {
 const Parser* ManifestLoader::getCurrentParser() const {
   return static_cast<const ManifestLoaderImpl*>(impl)->getCurrentParser();
 }
-

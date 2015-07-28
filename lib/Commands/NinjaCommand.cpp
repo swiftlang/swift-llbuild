@@ -442,7 +442,7 @@ static int executeLoadManifestCommand(const std::vector<std::string>& args,
     std::cout << "# Pools\n";
     std::vector<ninja::Pool*> pools;
     for (const auto& entry: manifest->getPools()) {
-      pools.push_back(entry.second.get());
+      pools.push_back(entry.getValue());
     }
     std::sort(pools.begin(), pools.end(), [] (ninja::Pool* a, ninja::Pool* b) {
         return a->getName() < b->getName();
@@ -461,7 +461,7 @@ static int executeLoadManifestCommand(const std::vector<std::string>& args,
   std::cout << "# Rules\n";
   std::vector<ninja::Rule*> rules;
   for (const auto& entry: manifest->getRules()) {
-    rules.push_back(entry.second.get());
+    rules.push_back(entry.getValue());
   }
   std::sort(rules.begin(), rules.end(), [] (ninja::Rule* a, ninja::Rule* b) {
       return a->getName() < b->getName();
@@ -484,10 +484,7 @@ static int executeLoadManifestCommand(const std::vector<std::string>& args,
   }
 
   // Dump the commands.
-  std::vector<ninja::Command*> commands;
-  for (const auto& entry: manifest->getCommands()) {
-    commands.push_back(entry.get());
-  }
+  std::vector<ninja::Command*> commands(manifest->getCommands());
   std::sort(commands.begin(), commands.end(),
             [] (ninja::Command* a, ninja::Command* b) {
               // Commands can not have duplicate outputs, so comparing based
