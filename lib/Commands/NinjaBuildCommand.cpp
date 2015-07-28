@@ -969,9 +969,10 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       //
       // FIXME: Is it right to bring this up-to-date when one of the inputs
       // indicated a failure? It probably doesn't matter.
+      uint64_t commandHash = basic::hashString(command->getCommandString());
       if (command->getRule() == context.manifest->getPhonyRule()) {
         // Get the result.
-        BuildValue result = computeCommandResult(/*CommandHash=*/0);
+        BuildValue result = computeCommandResult(commandHash);
 
         // If any output is missing, then we always want to force the change to
         // propagate.
@@ -992,7 +993,6 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       if (canUpdateIfNewer) {
         // If this isn't a generator command and its command hash differs, we
         // can't update it.
-        uint64_t commandHash = basic::hashString(command->getCommandString());
         if (!command->hasGeneratorFlag() &&
             (!hasPriorResult || priorCommandHash != commandHash))
           canUpdateIfNewer = false;
