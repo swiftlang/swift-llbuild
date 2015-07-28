@@ -126,8 +126,9 @@ public:
     return includeStack.back().bindings;
   }
 
-  void evalString(llvm::StringRef string, llvm::raw_ostream& result,
-                  std::function<void(llvm::StringRef,
+  void evalString(void* userContext, llvm::StringRef string,
+                  llvm::raw_ostream& result,
+                  std::function<void(void*, llvm::StringRef,
                                      llvm::raw_ostream&)> lookup,
                   std::function<void(const std::string&)> error) {
     // Scan the string for escape sequences or variable references, accumulating
@@ -195,7 +196,8 @@ public:
             if (!isValid) {
               error("invalid variable name in reference");
             } else {
-              lookup(llvm::StringRef(varStart, pos - varStart), result);
+              lookup(userContext, llvm::StringRef(varStart, pos - varStart),
+                     result);
             }
             ++pos;
             break;
@@ -217,7 +219,7 @@ public:
         ++pos;
         while (pos != end && Lexer::isSimpleIdentifierChar(*pos))
           ++pos;
-        lookup(llvm::StringRef(varStart, pos-varStart), result);
+        lookup(userContext, llvm::StringRef(varStart, pos-varStart), result);
         continue;
       }
 
@@ -234,8 +236,9 @@ public:
     assert(value.tokenKind == Token::Kind::String && "invalid token kind");
     
     llvm::raw_svector_ostream result(storage);
-    evalString(llvm::StringRef(value.start, value.length), result,
-               /*Lookup=*/ [&](llvm::StringRef name,
+    evalString(nullptr, llvm::StringRef(value.start, value.length), result,
+               /*Lookup=*/ [&](void*,
+                               llvm::StringRef name,
                                llvm::raw_ostream& result) {
                  result << bindings.lookup(name);
                },
@@ -376,6 +379,65 @@ public:
     decl->getParameters()[name] = value.str();
   }
 
+  struct LookupContext {
+    ManifestLoaderImpl& loader;
+    Command* decl;
+    const Token& startTok;
+  };
+  static void lookupBuildParameter(void* userContext, llvm::StringRef name,
+                                   llvm::raw_ostream& result) {
+    LookupContext* context = static_cast<LookupContext*>(userContext);
+    context->loader.lookupBuildParameterImpl(context, name, result);
+  }
+  void lookupBuildParameterImpl(LookupContext* context, llvm::StringRef name,
+                                llvm::raw_ostream& result) {
+    auto decl = context->decl;
+      
+    // FIXME: Mange recursive lookup? Ninja crashes on it.
+      
+    // Support "in" and "out".
+    if (name == "in") {
+      for (unsigned i = 0, ie = decl->getNumExplicitInputs(); i != ie; ++i) {
+        if (i != 0)
+          result << " ";
+        result << decl->getInputs()[i]->getPath();
+      }
+      return;
+    } else if (name == "out") {
+      for (unsigned i = 0, ie = decl->getOutputs().size(); i != ie; ++i) {
+        if (i != 0)
+          result << " ";
+        result << decl->getOutputs()[i]->getPath();
+      }
+      return;
+    }
+
+    auto it = decl->getParameters().find(name);
+    if (it != decl->getParameters().end()) {
+      result << it->second;
+      return;
+    }
+    auto it2 = decl->getRule()->getParameters().find(name);
+    if (it2 != decl->getRule()->getParameters().end()) {
+      evalString(context, it2->second, result, lookupBuildParameter,
+                 /*Error=*/ [&](const std::string& msg) {
+                   error(msg + " during evaluation of '" + name.str() + "'",
+                         context->startTok);
+                 });
+      return;
+    }
+      
+    result << context->loader.getCurrentBindings().lookup(name);
+  }
+  llvm::StringRef lookupNamedBuildParameter(
+      Command* decl, const Token& startTok, llvm::StringRef name,
+      llvm::SmallVectorImpl<char>& storage) {
+    LookupContext context{ *this, decl, startTok };
+    llvm::raw_svector_ostream os(storage);
+    lookupBuildParameter(&context, name, os);
+    return os.str();
+  }
+  
   virtual void actOnEndBuildDecl(BuildResult abstractDecl,
                                 const Token& startTok) override {
     Command* decl = static_cast<Command*>(abstractDecl);
@@ -394,64 +456,20 @@ public:
 
     // FIXME: There is no need to store the parameters in the build decl anymore
     // once this is all complete.
-
-    // Create the appropriate binding context.
-    std::function<void(llvm::StringRef, llvm::raw_ostream&)> lookup;
-    lookup = [&](llvm::StringRef name, llvm::raw_ostream& result) {
-      // FIXME: Mange recursive lookup? Ninja crashes on it.
-      
-      // Support "in" and "out".
-      if (name == "in") {
-        for (unsigned i = 0, ie = decl->getNumExplicitInputs(); i != ie; ++i) {
-          if (i != 0)
-            result << " ";
-          result << decl->getInputs()[i]->getPath();
-        }
-        return;
-      } else if (name == "out") {
-        for (unsigned i = 0, ie = decl->getOutputs().size(); i != ie; ++i) {
-          if (i != 0)
-            result << " ";
-          result << decl->getOutputs()[i]->getPath();
-        }
-        return;
-      }
-
-      auto it = decl->getParameters().find(name);
-      if (it != decl->getParameters().end()) {
-        result << it->second;
-        return;
-      }
-      auto it2 = decl->getRule()->getParameters().find(name);
-      if (it2 != decl->getRule()->getParameters().end()) {
-        evalString(it2->second, result, lookup,
-                   /*Error=*/ [&](const std::string& msg) {
-                     error(msg + " during evaluation of '" + name.str() + "'",
-                           startTok);
-                   });
-        return;
-      }
-      
-      result << getCurrentBindings().lookup(name);
-    };
-    auto lookupStr = [&](llvm::StringRef name,
-                         llvm::SmallVectorImpl<char>& result) {
-      llvm::raw_svector_ostream os(result);
-      lookup(name, os);
-      return os.str();
-    };
     
     // Evaluate the build parameters.
     buildCommand.clear();
-    decl->setCommandString(lookupStr("command", buildCommand));
+    decl->setCommandString(lookupNamedBuildParameter(
+                               decl, startTok, "command", buildCommand));
     buildDescription.clear();
-    decl->setDescription(lookupStr("description", buildDescription));
+    decl->setDescription(lookupNamedBuildParameter(
+                             decl, startTok, "description", buildDescription));
 
     // Set the dependency style.
     llvm::SmallString<256> deps;
-    lookupStr("deps", deps);
+    lookupNamedBuildParameter(decl, startTok, "deps", deps);
     llvm::SmallString<256> depfile;
-    lookupStr("depfile", depfile);
+    lookupNamedBuildParameter(decl, startTok, "depfile", depfile);
     Command::DepsStyleKind depsStyle = Command::DepsStyleKind::None;
     if (deps.str() == "") {
       if (!depfile.empty())
@@ -480,7 +498,7 @@ public:
     }
 
     llvm::SmallString<256> poolName;
-    lookupStr("pool", poolName);
+    lookupNamedBuildParameter(decl, startTok, "pool", poolName);
     if (!poolName.empty()) {
       const auto& it = theManifest->getPools().find(poolName.str());
       if (it == theManifest->getPools().end()) {
@@ -491,11 +509,11 @@ public:
     }
 
     llvm::SmallString<256> generator;
-    lookupStr("generator", generator);
+    lookupNamedBuildParameter(decl, startTok, "generator", generator);
     decl->setGeneratorFlag(!generator.str().empty());
 
     llvm::SmallString<256> restat;
-    lookupStr("restat", restat);
+    lookupNamedBuildParameter(decl, startTok, "restat", restat);
     decl->setRestatFlag(!restat.str().empty());
 
     // FIXME: Handle rspfile attributes.
