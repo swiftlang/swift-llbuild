@@ -12,11 +12,13 @@
 
 #include "llbuild/Ninja/ManifestLoader.h"
 
+#include "llvm/ADT/SmallString.h"
+#include "llvm/Support/raw_ostream.h"
+
 #include "llbuild/Ninja/Lexer.h"
 #include "llbuild/Ninja/Parser.h"
 
 #include <cstdlib>
-#include <sstream>
 #include <vector>
 
 using namespace llbuild;
@@ -125,7 +127,8 @@ public:
     // output pieces as we go.
     //
     // FIXME: Rewrite this with StringRef once we have it, and make efficient.
-    std::stringstream result;
+    llvm::SmallString<256> storage;
+    llvm::raw_svector_ostream result(storage);
     const char* pos = start;
     while (pos != end) {
       // Find the next '$'.
@@ -386,7 +389,8 @@ public:
     lookup = [&](const std::string& name) -> std::string {
       // Support "in" and "out".
       if (name == "in") {
-        std::stringstream result;
+        llvm::SmallString<256> storage;
+        llvm::raw_svector_ostream result(storage);
         for (unsigned i = 0, ie = decl->getNumExplicitInputs(); i != ie; ++i) {
           if (i != 0)
             result << " ";
@@ -394,7 +398,8 @@ public:
         }
         return result.str();
       } else if (name == "out") {
-        std::stringstream result;
+        llvm::SmallString<256> storage;
+        llvm::raw_svector_ostream result(storage);
         for (unsigned i = 0, ie = decl->getOutputs().size(); i != ie; ++i) {
           if (i != 0)
             result << " ";
