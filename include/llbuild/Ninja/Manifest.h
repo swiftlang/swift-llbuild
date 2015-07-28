@@ -19,6 +19,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
 
 namespace llbuild {
@@ -33,7 +34,7 @@ class BindingSet {
   const BindingSet *parentScope = 0;
 
   /// The actual bindings, mapping from Name to Value.
-  std::unordered_map<std::string, std::string> entries;
+  llvm::StringMap<std::string> entries;
 
 public:
   BindingSet(const BindingSet* parentScope = 0) : parentScope(parentScope) {}
@@ -44,7 +45,7 @@ public:
   }
 
   /// Get the map of bindings.
-  const std::unordered_map<std::string, std::string>& getEntries() const {
+  const llvm::StringMap<std::string>& getEntries() const {
     return entries;
   }
 
@@ -55,7 +56,7 @@ public:
 
   /// Look up the given variable name in the binding set, returning its value or
   /// the empty string if not found.
-  std::string lookup(const std::string& name) const {
+  llvm::StringRef lookup(llvm::StringRef name) const {
     auto it = entries.find(name);
     if (it != entries.end())
       return it->second;

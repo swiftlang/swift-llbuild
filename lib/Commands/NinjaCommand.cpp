@@ -428,9 +428,10 @@ static int executeLoadManifestCommand(const std::vector<std::string>& args,
   // Dump the top-level bindings.
   std::cout << "# Top-Level Bindings\n";
   assert(manifest->getBindings().getParentScope() == nullptr);
-  std::vector<std::pair<std::string, std::string>>
-    bindings(manifest->getBindings().getEntries().begin(),
-             manifest->getBindings().getEntries().end());
+  std::vector<std::pair<std::string, std::string>> bindings;
+  for (const auto&it: manifest->getBindings().getEntries()) {
+    bindings.push_back({ it.getKey(), it.getValue() });
+  }
   std::sort(bindings.begin(), bindings.end());
   for (const auto& entry: bindings) {
     std::cout << entry.first << " = \""
