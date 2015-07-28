@@ -245,7 +245,7 @@ void ParserImpl::parseDefaultDecl() {
   consumeExpectedToken(Token::Kind::KWDefault);
 
   // Consume all the strings.
-  std::vector<Token> names;
+  llvm::SmallVector<Token, 8> names;
   while (tok.tokenKind == Token::Kind::String) {
     names.push_back(consumeExpectedToken(Token::Kind::String));
   }
@@ -391,7 +391,7 @@ bool ParserImpl::parseBuildSpecifier(ParseActions::BuildResult *decl_out) {
     lexer.setMode(Lexer::LexingMode::None);
     return false;
   }
-  std::vector<Token> outputs;
+  llvm::SmallVector<Token, 8> outputs;
   do {
     outputs.push_back(consumeExpectedToken(Token::Kind::String));
   } while (tok.tokenKind == Token::Kind::String);
@@ -417,7 +417,7 @@ bool ParserImpl::parseBuildSpecifier(ParseActions::BuildResult *decl_out) {
   Token name = consumeExpectedToken(Token::Kind::Identifier);
 
   // Parse the explicit inputs.
-  std::vector<Token> inputs;
+  llvm::SmallVector<Token, 8> inputs;
   while (tok.tokenKind == Token::Kind::String) {
     inputs.push_back(consumeExpectedToken(Token::Kind::String));
   }

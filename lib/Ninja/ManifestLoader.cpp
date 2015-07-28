@@ -265,7 +265,7 @@ public:
     getCurrentBindings().insert(name, value.str());
   }
 
-  virtual void actOnDefaultDecl(const std::vector<Token>& nameToks) override {
+  virtual void actOnDefaultDecl(llvm::ArrayRef<Token> nameToks) override {
     // Resolve all of the inputs and outputs.
     for (const auto& nameTok: nameToks) {
       llvm::StringRef name(nameTok.start, nameTok.length);
@@ -305,8 +305,8 @@ public:
 
   virtual BuildResult
   actOnBeginBuildDecl(const Token& nameTok,
-                      const std::vector<Token>& outputTokens,
-                      const std::vector<Token>& inputTokens,
+                      llvm::ArrayRef<Token> outputTokens,
+                      llvm::ArrayRef<Token> inputTokens,
                       unsigned numExplicitInputs,
                       unsigned numImplicitInputs) override {
     llvm::StringRef name(nameTok.start, nameTok.length);
@@ -324,8 +324,8 @@ public:
     }
 
     // Resolve all of the inputs and outputs.
-    std::vector<Node*> outputs;
-    std::vector<Node*> inputs;
+    llvm::SmallVector<Node*, 8> outputs;
+    llvm::SmallVector<Node*, 8> inputs;
     for (const auto& token: outputTokens) {
       // Evaluate the token string.
       llvm::SmallString<256> path;

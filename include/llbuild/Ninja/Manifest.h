@@ -19,6 +19,8 @@
 #include <string>
 #include <vector>
 
+#include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
 
@@ -157,8 +159,12 @@ private:
   unsigned shouldRestat: 1;
 
 public:
-  explicit Command(class Rule* rule, std::vector<Node*> outputs,
-                   std::vector<Node*> inputs, unsigned numExplicitInputs,
+  // FIXME: Use an rvalue reference for the outputs and inputs here to avoid
+  // copying, but requires SmallVectorImpl to take a move constructor.
+  explicit Command(class Rule* rule,
+                   llvm::ArrayRef<Node*> outputs,
+                   llvm::ArrayRef<Node*> inputs,
+                   unsigned numExplicitInputs,
                    unsigned numImplicitInputs)
     : rule(rule), outputs(outputs), inputs(inputs),
       numExplicitInputs(numExplicitInputs),

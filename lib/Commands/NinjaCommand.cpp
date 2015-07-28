@@ -130,8 +130,7 @@ private:
                                                        value.length) << "\")\n";
   }
 
-  virtual void actOnDefaultDecl(const std::vector<ninja::Token>&
-                                    names) override {
+  virtual void actOnDefaultDecl(llvm::ArrayRef<ninja::Token> names) override {
     std::cerr << __FUNCTION__ << "(/*Names=*/[";
     bool first = true;
     for (auto& name: names) {
@@ -153,8 +152,8 @@ private:
 
   virtual BuildResult
   actOnBeginBuildDecl(const ninja::Token& name,
-                      const std::vector<ninja::Token>& outputs,
-                      const std::vector<ninja::Token>& inputs,
+                      llvm::ArrayRef<ninja::Token> outputs,
+                      llvm::ArrayRef<ninja::Token> inputs,
                       unsigned numExplicitInputs,
                       unsigned numImplicitInputs) override {
     std::cerr << __FUNCTION__ << "(/*Name=*/"
@@ -266,16 +265,15 @@ private:
   virtual void actOnBindingDecl(const ninja::Token& name,
                                 const ninja::Token& value) override { }
 
-  virtual void actOnDefaultDecl(const std::vector<ninja::Token>&
-                                    names) override { }
+  virtual void actOnDefaultDecl(llvm::ArrayRef<ninja::Token> names) override { }
 
   virtual void actOnIncludeDecl(bool isInclude,
                                 const ninja::Token& path) override { }
 
   virtual BuildResult
   actOnBeginBuildDecl(const ninja::Token& name,
-                      const std::vector<ninja::Token>& outputs,
-                      const std::vector<ninja::Token>& inputs,
+                      llvm::ArrayRef<ninja::Token> outputs,
+                      llvm::ArrayRef<ninja::Token> inputs,
                       unsigned numExplicitInputs,
                       unsigned numImplicitInputs) override {
     return 0;

@@ -13,10 +13,11 @@
 #ifndef LLBUILD_NINJA_PARSER_H
 #define LLBUILD_NINJA_PARSER_H
 
+#include "llvm/ADT/ArrayRef.h"
+
 #include "llbuild/Ninja/Lexer.h"
 
 #include <string>
-#include <vector>
 
 namespace llbuild {
 namespace ninja {
@@ -53,7 +54,7 @@ public:
   /// Called on a default declaration.
   ///
   /// \param names The identifier tokens for each of the names.
-  virtual void actOnDefaultDecl(const std::vector<Token>& names) = 0;
+  virtual void actOnDefaultDecl(llvm::ArrayRef<Token> names) = 0;
 
   /// Called on an include or subninja declaration.
   ///
@@ -82,8 +83,8 @@ public:
   /// \returns A result object to represent this decl, which will be passed
   /// later to \see actOnEndBuildDecl().
   virtual BuildResult actOnBeginBuildDecl(const Token& name,
-                                          const std::vector<Token>& outputs,
-                                          const std::vector<Token>& inputs,
+                                          llvm::ArrayRef<Token> outputs,
+                                          llvm::ArrayRef<Token> inputs,
                                           unsigned numExplicitInputs,
                                           unsigned numImplicitInputs) = 0;
 
