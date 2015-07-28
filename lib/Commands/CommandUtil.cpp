@@ -104,7 +104,7 @@ bool util::readFileContents(std::string path,
   fseek(fp, 0, SEEK_SET);
 
   // Read the file contents.
-  std::unique_ptr<char[]> data(new char[size]);
+  auto data = std::make_unique<char[]>(size);
   uint64_t pos = 0;
   while (pos < size) {
     // Read data into the buffer.

@@ -1056,7 +1056,7 @@ public:
   }
 
   bool enableTracing(const std::string& filename, std::string* error_out) {
-    std::unique_ptr<BuildEngineTrace> trace(new BuildEngineTrace());
+    auto trace = std::make_unique<BuildEngineTrace>();
 
     if (!trace->open(filename, error_out))
       return false;

@@ -364,7 +364,7 @@ class BuildFileImpl {
           entry.getValue());
 
       // Create the target.
-      std::unique_ptr<Target> target(new Target(name));
+      auto target = std::make_unique<Target>(name);
 
       // Add all of the nodes.
       for (auto& node: *nodes) {

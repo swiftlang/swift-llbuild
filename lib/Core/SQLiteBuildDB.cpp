@@ -480,7 +480,7 @@ public:
 std::unique_ptr<BuildDB> core::createSQLiteBuildDB(const std::string& path,
                                                    uint32_t clientSchemaVersion,
                                                    std::string* error_out) {
-  std::unique_ptr<SQLiteBuildDB> db(new SQLiteBuildDB);
+  auto db = std::make_unique<SQLiteBuildDB>();
   if (!db->open(path, clientSchemaVersion, error_out))
     return nullptr;
 

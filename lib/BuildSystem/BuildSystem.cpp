@@ -146,7 +146,7 @@ public:
   }
 
   virtual std::unique_ptr<Task> createTask(const std::string& name) override {
-    return std::unique_ptr<Task>(new ShellTask(name));
+    return std::make_unique<ShellTask>(name);
   }
 };
 
@@ -185,7 +185,7 @@ BuildSystemFileDelegate::lookupTool(const std::string& name) {
 
   // Otherwise, look for one of the builtin tool definitions.
   if (name == "shell") {
-    return std::unique_ptr<Tool>(new ShellTool(name));
+    return std::make_unique<ShellTool>(name);
   }
 
   return nullptr;
@@ -202,7 +202,7 @@ void BuildSystemFileDelegate::loadedTask(const std::string& name,
 std::unique_ptr<Node>
 BuildSystemFileDelegate::lookupNode(const std::string& name,
                                     bool isImplicit) {
-  return std::unique_ptr<Node>(new BuildNode(name));
+  return std::make_unique<BuildNode>(name);
 }
 
 }

@@ -126,7 +126,7 @@ public:
       printf("  -- 'tool': '%s')\n", getName().c_str());
     }
 
-    return std::unique_ptr<Task>(new ParseDummyTask(delegate, name));
+    return std::make_unique<ParseDummyTask>(delegate, name);
   }
 };
 
@@ -157,7 +157,7 @@ ParseBuildFileDelegate::lookupTool(const std::string& name) {
     printf("tool('%s')\n", name.c_str());
   }
 
-  return std::unique_ptr<Tool>(new ParseDummyTool(*this, name));
+  return std::make_unique<ParseDummyTool>(*this, name);
 }
 
 void ParseBuildFileDelegate::loadedTarget(const std::string& name,
@@ -185,7 +185,7 @@ ParseBuildFileDelegate::lookupNode(const std::string& name,
     }
   }
 
-  return std::unique_ptr<Node>(new ParseDummyNode(*this, name));
+  return std::make_unique<ParseDummyNode>(*this, name);
 }
 
 void ParseBuildFileDelegate::loadedTask(const std::string& name,

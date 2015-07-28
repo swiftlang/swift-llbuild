@@ -92,7 +92,7 @@ public:
       return false;
 
     // Push a new entry onto the include stack.
-    std::unique_ptr<Parser> fileParser(new Parser(data.get(), length, *this));
+    auto fileParser = std::make_unique<Parser>(data.get(), length, *this);
     includeStack.push_back(IncludeEntry(filename, std::move(data),
                                         std::move(fileParser),
                                         bindings));
