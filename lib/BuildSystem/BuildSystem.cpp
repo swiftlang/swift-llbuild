@@ -104,7 +104,10 @@ public:
 /// used by the BuildSystem when using the core BuildEngine.
 struct SystemKey {
   enum class Kind {
-    /// A key used to identify a named target.
+    /// A key used to identify a node.
+    Node,
+      
+    /// A key used to identify a target.
     Target,
 
     /// An invalid key kind.
@@ -147,6 +150,10 @@ public:
     return result;
   }
   
+  static SystemKey makeNode(llvm::StringRef name) {
+    return SystemKey('N', name);
+  }
+
   static SystemKey makeTarget(llvm::StringRef name) {
     return SystemKey('T', name);
   }
@@ -159,13 +166,19 @@ public:
   
   Kind getKind() const {
     switch (key[0]) {
+    case 'N': return Kind::Node;
     case 'T': return Kind::Target;
     default:
       return Kind::Unknown;
     }
   }
 
+  bool isNode() const { return getKind() == Kind::Node; }
   bool isTarget() const { return getKind() == Kind::Target; }
+
+  llvm::StringRef getNodeName() const {
+    return llvm::StringRef(key.data()+1, key.size()-1);
+  }
 
   llvm::StringRef getTargetName() const {
     return llvm::StringRef(key.data()+1, key.size()-1);
@@ -174,7 +187,41 @@ public:
   /// @}
 };
 
-class ToolBasedCoreTask : public core::Task {
+/// This is the task used to "build" a target, it translates between the request
+/// for building a target key and the requests for all of its nodes.
+class TargetCoreTask : public core::Task {
+  Target& target;
+  
+public:
+  TargetCoreTask(Target& target) : target(target) {}
+  
+  virtual void start(core::BuildEngine& engine) override {
+    // Request all of the necessary system tasks.
+    for (const auto& nodeName: target.getNodeNames()) {
+      engine.taskNeedsInput(this, SystemKey::makeNode(nodeName),
+                            /*InputID=*/0);
+    }
+  }
+  
+  virtual void providePriorValue(core::BuildEngine&,
+                                 const core::ValueType& value) override {
+    // Do nothing.
+  }
+  
+  virtual void provideValue(core::BuildEngine&, uintptr_t inputID,
+                            const core::ValueType& value) override {
+    // Do nothing.
+    //
+    // FIXME: We may need to percolate an error status here.
+  }
+  
+  virtual void inputsAvailable(core::BuildEngine& engine) override {
+    // Complete the task immediately.
+    engine.taskIsComplete(this, core::ValueType());
+  }
+};
+
+class DummyTask : public core::Task {
   virtual void start(core::BuildEngine&) override {
   }
   
@@ -194,8 +241,11 @@ class ToolBasedCoreTask : public core::Task {
 
 class BuildSystemEngineDelegate : public core::BuildEngineDelegate {
   BuildSystemImpl& system;
+  BuildFile& buildFile;
+  
 public:
-  BuildSystemEngineDelegate(BuildSystemImpl& system) : system(system) {}
+  BuildSystemEngineDelegate(BuildSystemImpl& system, BuildFile& buildFile)
+      : system(system), buildFile(buildFile) {}
 
   virtual core::Rule lookupRule(const core::KeyType& keyData) override {
     // Decode the key.
@@ -206,12 +256,30 @@ public:
       assert(0 && "invalid key");
       abort();
 
-    case SystemKey::Kind::Target: {
-      // FIXME: Return an appropriate rule.
+    case SystemKey::Kind::Node: {
+      // FIXME: Return the appropriate rule.
       return core::Rule{
         key,
         /*Action=*/ [&](core::BuildEngine& engine) -> core::Task* {
-          return engine.registerTask(new ToolBasedCoreTask());
+          return engine.registerTask(new DummyTask());
+        }
+      };
+    }
+      
+    case SystemKey::Kind::Target: {
+      // Find the target.
+      auto it = buildFile.getTargets().find(key.getTargetName());
+      if (it == buildFile.getTargets().end()) {
+        // FIXME: Invalid target name, produce an error.
+        assert(0 && "FIXME: invalid target");
+        abort();
+      }
+      Target* target = it->second.get();
+      
+      return core::Rule{
+        key,
+        /*Action=*/ [target](core::BuildEngine& engine) -> core::Task* {
+          return engine.registerTask(new TargetCoreTask(*target));
         }
       };
     }
@@ -235,7 +303,7 @@ bool BuildSystemImpl::build(const std::string& target) {
   buildFile.load();
 
   // Create the engine to use for building.
-  BuildSystemEngineDelegate engineDelegate(*this);
+  BuildSystemEngineDelegate engineDelegate(*this, buildFile);
   core::BuildEngine engine(engineDelegate);
 
   // Build the target.
