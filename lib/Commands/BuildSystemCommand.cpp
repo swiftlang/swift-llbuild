@@ -195,7 +195,7 @@ void ParseBuildFileDelegate::loadedTask(const std::string& name,
   }
 }
 
-static void parseUsage() {
+static void parseUsage(int exitCode) {
   int optionWidth = 20;
   fprintf(stderr, "Usage: %s buildsystem parse [options] <path>\n",
           ::getprogname());
@@ -204,7 +204,7 @@ static void parseUsage() {
           "show this help message and exit");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--no-output",
           "don't display parser output");
-  ::exit(1);
+  ::exit(exitCode);
 }
 
 static int executeParseCommand(std::vector<std::string> args) {
@@ -218,19 +218,19 @@ static int executeParseCommand(std::vector<std::string> args) {
       break;
 
     if (option == "--help") {
-      parseUsage();
+      parseUsage(0);
     } else if (option == "--no-output") {
       showOutput = false;
     } else {
       fprintf(stderr, "\error: %s: invalid option: '%s'\n\n",
               ::getprogname(), option.c_str());
-      parseUsage();
+      parseUsage(1);
     }
   }
 
   if (args.size() != 1) {
     fprintf(stderr, "error: %s: invalid number of arguments\n", getprogname());
-    parseUsage();
+    parseUsage(1);
   }
 
   std::string filename = args[0].c_str();
@@ -262,16 +262,14 @@ public:
   }
 };
 
-static void buildUsage() {
+static void buildUsage(int exitCode) {
   int optionWidth = 20;
   fprintf(stderr, "Usage: %s buildsystem build [options] <path>\n",
           ::getprogname());
   fprintf(stderr, "\nOptions:\n");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--help",
           "show this help message and exit");
-  fprintf(stderr, "  %-*s %s\n", optionWidth, "--no-output",
-          "don't display parser output");
-  ::exit(1);
+  ::exit(exitCode);
 }
 
 static int executeBuildCommand(std::vector<std::string> args) {
@@ -283,17 +281,17 @@ static int executeBuildCommand(std::vector<std::string> args) {
       break;
 
     if (option == "--help") {
-      parseUsage();
+      buildUsage(0);
     } else {
       fprintf(stderr, "\error: %s: invalid option: '%s'\n\n",
               ::getprogname(), option.c_str());
-      buildUsage();
+      buildUsage(1);
     }
   }
 
   if (args.size() != 1) {
     fprintf(stderr, "error: %s: invalid number of arguments\n", getprogname());
-    buildUsage();
+    buildUsage(1);
   }
 
   std::string filename = args[0].c_str();
