@@ -12,6 +12,9 @@
 
 #include "llbuild/BuildSystem/BuildSystem.h"
 
+#include "llvm/ADT/StringRef.h"
+
+#include "llbuild/Core/BuildEngine.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 
 #include <memory>
@@ -90,21 +93,156 @@ public:
   /// @name Actions
   /// @{
 
-  bool build(const std::string& target) {
-    // Load the build file.
-    //
-    // FIXME: Eventually, we may want to support something fancier where we load
-    // the build file in the background so we can immediately start building
-    // things as they show up.
-    BuildSystemFileDelegate fileDelegate(*this);
-    BuildFile buildFile(mainFilename, fileDelegate);
-    buildFile.load();
-
-    return false;
-  }
+  bool build(const std::string& target);
 
   /// @}
 };
+
+#pragma mark - BuildSystem engine integration
+
+/// The system key defines the helpers for translating to and from the key space
+/// used by the BuildSystem when using the core BuildEngine.
+struct SystemKey {
+  enum class Kind {
+    /// A key used to identify a named target.
+    Target,
+
+    /// An invalid key kind.
+    Unknown,
+  };
+
+  /// The actual key data.
+  core::KeyType key;
+
+private:
+  SystemKey(const core::KeyType& key) : key(key) {}
+  SystemKey(char kindCode, llvm::StringRef str) {
+    key.reserve(str.size() + 1);
+    key.push_back(kindCode);
+    key.append(str.begin(), str.end());
+  }
+    
+public:
+  // Support copy and move.
+  SystemKey(SystemKey&& rhs) : key(rhs.key) { }
+  void operator=(const SystemKey& rhs) {
+    if (this != &rhs)
+      key = rhs.key;
+  }
+  SystemKey& operator=(SystemKey&& rhs) {
+    if (this != &rhs)
+      key = rhs.key;
+    return *this;
+  }
+
+  // Allow implicit conversion to the contained key.
+  operator const core::KeyType& () const { return getKeyData(); }
+
+  /// @name Construction Functions
+  /// @{
+
+  static SystemKey fromKeyData(const core::KeyType& key) {
+    auto result = SystemKey(key);
+    assert(result.getKind() != Kind::Unknown && "invalid key");
+    return result;
+  }
+  
+  static SystemKey makeTarget(llvm::StringRef name) {
+    return SystemKey('T', name);
+  }
+
+  /// @}
+  /// @name Accessors
+  /// @{
+
+  const core::KeyType& getKeyData() const { return key; }
+  
+  Kind getKind() const {
+    switch (key[0]) {
+    case 'T': return Kind::Target;
+    default:
+      return Kind::Unknown;
+    }
+  }
+
+  bool isTarget() const { return getKind() == Kind::Target; }
+
+  llvm::StringRef getTargetName() const {
+    return llvm::StringRef(key.data()+1, key.size()-1);
+  }
+  
+  /// @}
+};
+
+class ToolBasedCoreTask : public core::Task {
+  virtual void start(core::BuildEngine&) override {
+  }
+  
+  virtual void providePriorValue(core::BuildEngine&,
+                                 const core::ValueType& value) override {
+  }
+  
+  virtual void provideValue(core::BuildEngine&, uintptr_t inputID,
+                            const core::ValueType& value) override {
+  }
+  
+  virtual void inputsAvailable(core::BuildEngine& engine) override {
+    // Complete the task immediately.
+    engine.taskIsComplete(this, core::ValueType());
+  }
+};
+
+class BuildSystemEngineDelegate : public core::BuildEngineDelegate {
+  BuildSystemImpl& system;
+public:
+  BuildSystemEngineDelegate(BuildSystemImpl& system) : system(system) {}
+
+  virtual core::Rule lookupRule(const core::KeyType& keyData) override {
+    // Decode the key.
+    auto key = SystemKey::fromKeyData(keyData);
+
+    switch (key.getKind()) {
+    default:
+      assert(0 && "invalid key");
+      abort();
+
+    case SystemKey::Kind::Target: {
+      // FIXME: Return an appropriate rule.
+      return core::Rule{
+        key,
+        /*Action=*/ [&](core::BuildEngine& engine) -> core::Task* {
+          return engine.registerTask(new ToolBasedCoreTask());
+        }
+      };
+    }
+    }
+  }
+
+  virtual void cycleDetected(const std::vector<core::Rule*>& items) override {
+    system.getDelegate().error(system.getMainFilename(),
+                               "cycle detected while building");
+  }
+};
+
+bool BuildSystemImpl::build(const std::string& target) {
+  // Load the build file.
+  //
+  // FIXME: Eventually, we may want to support something fancier where we load
+  // the build file in the background so we can immediately start building
+  // things as they show up.
+  BuildSystemFileDelegate fileDelegate(*this);
+  BuildFile buildFile(mainFilename, fileDelegate);
+  buildFile.load();
+
+  // Create the engine to use for building.
+  BuildSystemEngineDelegate engineDelegate(*this);
+  core::BuildEngine engine(engineDelegate);
+
+  // Build the target.
+  engine.build(SystemKey::makeTarget(target));
+
+  return false;
+}
 
 #pragma mark - BuildNode implementation
 
