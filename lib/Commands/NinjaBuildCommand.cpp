@@ -798,7 +798,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
     FileTimestamp newestModTime{ 0, 0 };
 
     NinjaCommandTask(BuildContext& context, ninja::Command* command)
-      : Task("ninja-command"), context(context), command(command) {
+        : context(context), command(command) {
       // If this command uses discovered dependencies, we can never skip it (we
       // don't yet have a way to account for the discovered dependencies, or
       // preserve them if skipped).
@@ -1406,7 +1406,7 @@ static core::Task* buildInput(BuildContext& context, ninja::Node* input) {
     ninja::Node* node;
 
     NinjaInputTask(BuildContext& context, ninja::Node* node)
-      : Task("ninja-input"), context(context), node(node) { }
+        : context(context), node(node) { }
 
     virtual void provideValue(core::BuildEngine& engine, uintptr_t inputID,
                               const core::ValueType& value) override { }
@@ -1445,7 +1445,7 @@ buildTargets(BuildContext& context,
 
     TargetsTask(BuildContext& context,
                 const std::vector<std::string>& targetsToBuild)
-      : Task("targets"), context(context), targetsToBuild(targetsToBuild) { }
+        : context(context), targetsToBuild(targetsToBuild) { }
 
     virtual void provideValue(core::BuildEngine& engine, uintptr_t inputID,
                               const core::ValueType& valueData) override {
@@ -1490,8 +1490,8 @@ selectCompositeBuildResult(BuildContext& context, ninja::Command* command,
     SelectResultTask(BuildContext& context, ninja::Command* command,
                      unsigned inputIndex,
                      const core::KeyType& compositeRuleName)
-      : Task("ninja-select-result"), context(context), command(command),
-        inputIndex(inputIndex), compositeRuleName(compositeRuleName) { }
+        : context(context), command(command),
+          inputIndex(inputIndex), compositeRuleName(compositeRuleName) { }
 
     virtual void start(core::BuildEngine& engine) override {
       // Request the composite input.

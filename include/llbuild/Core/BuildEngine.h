@@ -84,14 +84,7 @@ struct Result {
 // FIXME: Define parallel execution semantics.
 class Task {
 public:
-  /// The name of the task, for debugging purposes.
-  //
-  // FIXME: Eliminate this?
-  std::string name;
-
-public:
-  Task(const std::string& name) : name(name) {}
-
+  Task() {}
   virtual ~Task();
 
   /// Executed by the build engine when the task should be started.

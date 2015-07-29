@@ -69,7 +69,7 @@ private:
 
 public:
   SimpleTask(const std::vector<KeyType>& inputs, ComputeFnType compute)
-    : Task("SimpleTask"), inputs(inputs), compute(compute)
+      : inputs(inputs), compute(compute)
   {
     inputValues.resize(inputs.size());
   }
@@ -510,8 +510,7 @@ TEST(BuildEngineTest, discoveredDependencies) {
     int computedInputValue = -1;
 
   public:
-    TaskWithDiscoveredDependency(int& valueB)
-      : Task("TaskWithDiscoveredDependency"), valueB(valueB) { }
+    TaskWithDiscoveredDependency(int& valueB) : valueB(valueB) { }
 
     virtual void start(BuildEngine& engine) override {
       // Request the known input.

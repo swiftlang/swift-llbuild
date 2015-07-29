@@ -56,7 +56,7 @@ private:
 
 public:
   SimpleTask(const std::vector<KeyType>& Inputs, ComputeFnType Compute)
-    : Task("SimpleTask"), Inputs(Inputs), Compute(Compute)
+    : Inputs(Inputs), Compute(Compute)
   {
     InputValues.resize(Inputs.size());
   }

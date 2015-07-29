@@ -102,9 +102,7 @@ class CAPITask : public Task {
   llb_task_delegate_t cAPIDelegate;
 
 public:
-  CAPITask(llb_task_delegate_t delegate)
-    : Task("C-API-Task"), cAPIDelegate(delegate)
-  {
+  CAPITask(llb_task_delegate_t delegate) : cAPIDelegate(delegate) {
       assert(cAPIDelegate.start && "missing task start function");
       assert(cAPIDelegate.provide_value &&
              "missing task provide_value function");
