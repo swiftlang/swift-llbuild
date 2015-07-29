@@ -1,0 +1,8 @@
+# Check basic usage.
+#
+# RUN: %{llbuild} buildsystem 2> %t.err
+# RUN: %{FileCheck} < %t.err %s
+
+# CHECK: Usage: llbuild buildsystem
+# CHECK: parse --
+# CHECK: build --

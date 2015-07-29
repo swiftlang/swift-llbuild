@@ -311,20 +311,21 @@ static int executeBuildCommand(std::vector<std::string> args) {
 
 #pragma mark - Build System Top-Level Command
 
-static void usage() {
+static void usage(int exitCode) {
   fprintf(stderr, "Usage: %s buildsystem [--help] <command> [<args>]\n",
           getprogname());
   fprintf(stderr, "\n");
   fprintf(stderr, "Available commands:\n");
   fprintf(stderr, "  parse         -- Parse a build file\n");
+  fprintf(stderr, "  build         -- Build using a build file\n");
   fprintf(stderr, "\n");
-  exit(1);
+  exit(exitCode);
 }
 
 int commands::executeBuildSystemCommand(const std::vector<std::string> &args) {
   // Expect the first argument to be the name of another subtool to delegate to.
   if (args.empty() || args[0] == "--help")
-    usage();
+    usage(0);
 
   if (args[0] == "parse") {
     return executeParseCommand({args.begin()+1, args.end()});
@@ -333,6 +334,7 @@ int commands::executeBuildSystemCommand(const std::vector<std::string> &args) {
   } else {
     fprintf(stderr, "error: %s: unknown command '%s'\n", getprogname(),
             args[0].c_str());
+    usage(1);
     return 1;
   }
 }
