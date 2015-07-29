@@ -3,6 +3,13 @@
 # RUN: %{llbuild} ninja parse %s 2> %t.err
 # RUN: %{FileCheck} < %t.err %s
 
+# Sanity check parse-only mode.
+#
+# RUN: %{llbuild} ninja parse-only %s | wc -c > %t2.out
+# RUN: %{FileCheck} < %t2.out %s --check-prefix CHECK-PARSE-ONLY-COUNT
+#
+# CHECK-PARSE-ONLY-COUNT: {{ *0}}
+
 # CHECK: actOnBeginManifest("<main>")
 
 # Check binding parsing.
