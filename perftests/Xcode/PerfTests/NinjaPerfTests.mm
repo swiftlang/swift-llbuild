@@ -139,6 +139,88 @@ static void ExecuteShellCommand(const char *String) {
     }];
 }
 
+- (void)testPseudoLLVMParallelFullBuild {
+    // Test the pseudo LLVM build, which includes the time to do the actual
+    // stat'ing and dependency checking of files, and in particular includes all
+    // the overhead of the database.
+    
+    // Create a sandbox to run the test in.
+    NSString *inputsDir = [@(SRCROOT)
+                           stringByAppendingPathComponent:@"perftests/Inputs"];
+    NSString *sandboxDir = [@(TEST_TEMPS_PATH)
+                            stringByAppendingPathComponent:@"PseudoLLVMParallelFullBuild"];
+    NSLog(@"executing test using inputs: %@", inputsDir);
+    NSLog(@"executing test using sandbox: %@", sandboxDir);
+    ExecuteShellCommand([NSString stringWithFormat:@"rm -rf \"%@\"",
+                         sandboxDir].UTF8String);
+    ExecuteShellCommand([NSString stringWithFormat:@"mkdir -p \"%@\"",
+                         sandboxDir].UTF8String);
+    ExecuteShellCommand([NSString
+                         stringWithFormat:@"tar -C \"%@\" -xf \"%@\"/pseudo-llvm.tgz",
+                         sandboxDir, inputsDir].UTF8String);
+    
+    // Build once to prime the tree.
+    printf("performing initial build...\n");
+    NSString *pseudoLLVMPath = [sandboxDir stringByAppendingPathComponent:@"pseudo-llvm"];
+    NSString *dbPath = [pseudoLLVMPath stringByAppendingPathComponent:@"build.db"];
+    llbuild::commands::executeNinjaCommand({
+        "build", "--quiet", "-C", pseudoLLVMPath.UTF8String, "all" });
+    
+    // Test the null build performance, each run of which will reuse the initial
+    // database, but should not modify it other than to bump the iteration count.
+    printf("performing full builds (performance test)...\n");
+    [self measureBlock:^{
+        // For each iteration, remove the database file.
+        ExecuteShellCommand([NSString stringWithFormat:@"rm -f \"%@\"",
+                             dbPath].UTF8String);
+        
+        llbuild::commands::executeNinjaCommand({
+            "build", "--quiet", "-C", pseudoLLVMPath.UTF8String, "all" });
+    }];
+}
+
+- (void)testPseudoLLVMParallelFullBuildWithNinja {
+    // Test the pseudo LLVM build using the actual Ninja tool, so we can easily
+    // compare the performance.
+    
+    // Create a sandbox to run the test in.
+    NSString *inputsDir = [@(SRCROOT)
+                           stringByAppendingPathComponent:@"perftests/Inputs"];
+    NSString *sandboxDir = [@(TEST_TEMPS_PATH)
+                            stringByAppendingPathComponent:@"PseudoLLVMParallelFullBuildWithNinja"];
+    NSLog(@"executing test using inputs: %@", inputsDir);
+    NSLog(@"executing test using sandbox: %@", sandboxDir);
+    ExecuteShellCommand([NSString stringWithFormat:@"rm -rf \"%@\"",
+                         sandboxDir].UTF8String);
+    ExecuteShellCommand([NSString stringWithFormat:@"mkdir -p \"%@\"",
+                         sandboxDir].UTF8String);
+    ExecuteShellCommand([NSString
+                         stringWithFormat:@"tar -C \"%@\" -xf \"%@\"/pseudo-llvm.tgz",
+                         sandboxDir, inputsDir].UTF8String);
+    
+    // Build once to prime the tree.
+    printf("performing initial build...\n");
+    NSString *pseudoLLVMPath = [sandboxDir stringByAppendingPathComponent:@"pseudo-llvm"];
+    NSString *dbPath = [pseudoLLVMPath stringByAppendingPathComponent:@".ninja_log"];
+    NSString *ninjaPath = [@(SRCROOT) stringByAppendingPathComponent:@"llbuild-test-tools/utils/Xcode/ninja"];
+    // NOTE: We have to pipe to /dev/null because Ninja has no -q (Ninja #480).
+    ExecuteShellCommand([NSString stringWithFormat:@"%@  -C \"%@\" all > /dev/null",
+                         ninjaPath, pseudoLLVMPath].UTF8String);
+    
+    // Test the null build performance.
+    printf("performing full builds (performance test)...\n");
+    [self measureBlock:^{
+        // For each iteration, make clean and remove the database file.
+        ExecuteShellCommand([NSString stringWithFormat:@"%@ -C \"%@\" -t clean",
+                             ninjaPath, pseudoLLVMPath].UTF8String);
+        ExecuteShellCommand([NSString stringWithFormat:@"rm -f \"%@\"",
+                             dbPath].UTF8String);
+        
+        ExecuteShellCommand([NSString stringWithFormat:@"%@ -C \"%@\" all > /dev/null",
+                             ninjaPath, pseudoLLVMPath].UTF8String);
+    }];
+}
+
 - (void)testPseudoLLVMNullBuild {
     // Test the pseudo LLVM build, which includes the time to do the actual
     // stat'ing and dependency checking of files, and in particular includes all
@@ -171,6 +253,42 @@ static void ExecuteShellCommand(const char *String) {
     [self measureBlock:^{
         llbuild::commands::executeNinjaCommand({
             "build", "--quiet", "-C", pseudoLLVMPath.UTF8String, "--no-parallel", "all" });
+    }];
+}
+
+- (void)testPseudoLLVMNullBuildWithNinja {
+    // Test the pseudo LLVM build using the actual Ninja tool, so we can easily
+    // compare the performance.
+    
+    // Create a sandbox to run the test in.
+    NSString *inputsDir = [@(SRCROOT)
+                           stringByAppendingPathComponent:@"perftests/Inputs"];
+    NSString *sandboxDir = [@(TEST_TEMPS_PATH)
+                            stringByAppendingPathComponent:@"PseudoLLVMNullBuildWithNinja"];
+    NSLog(@"executing test using inputs: %@", inputsDir);
+    NSLog(@"executing test using sandbox: %@", sandboxDir);
+    ExecuteShellCommand([NSString stringWithFormat:@"rm -rf \"%@\"",
+                         sandboxDir].UTF8String);
+    ExecuteShellCommand([NSString stringWithFormat:@"mkdir -p \"%@\"",
+                         sandboxDir].UTF8String);
+    ExecuteShellCommand([NSString
+                         stringWithFormat:@"tar -C \"%@\" -xf \"%@\"/pseudo-llvm.tgz",
+                         sandboxDir, inputsDir].UTF8String);
+    
+    // Build once to initialize the database.
+    printf("performing initial build...\n");
+    NSString *pseudoLLVMPath = [sandboxDir stringByAppendingPathComponent:@"pseudo-llvm"];
+    NSString *ninjaPath = [@(SRCROOT) stringByAppendingPathComponent:@"llbuild-test-tools/utils/Xcode/ninja"];
+    // NOTE: We have to pipe to /dev/null because Ninja has no -q (Ninja #480).
+    ExecuteShellCommand([NSString stringWithFormat:@"%@ -C \"%@\" > /dev/null",
+                            ninjaPath, pseudoLLVMPath].UTF8String);
+    
+    // Test the null build performance.
+    printf("performing null builds (performance test)...\n");
+    [self measureBlock:^{
+        ExecuteShellCommand([NSString stringWithFormat:@"%@ -j1 -C \"%@\" > /dev/null",
+                             ninjaPath, pseudoLLVMPath].UTF8String);
+        
     }];
 }
 
