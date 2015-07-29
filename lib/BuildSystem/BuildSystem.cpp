@@ -83,6 +83,10 @@ public:
     return delegate;
   }
 
+  const std::string& getMainFilename() {
+    return mainFilename;
+  }
+
   /// @name Actions
   /// @{
 
@@ -119,34 +123,57 @@ public:
 #pragma mark - ShellTool implementation
 
 class ShellTask : public Task {
+  BuildSystemImpl& system;
+  std::vector<Node*> inputs;
+  std::vector<Node*> outputs;
+  std::string args;
+  
 public:
-  using Task::Task;
+  ShellTask(BuildSystemImpl& system, const std::string& name)
+      : Task(name), system(system) {}
 
-  virtual void configureInputs(const std::vector<Node*>& inputs) override {
+  virtual void configureInputs(const std::vector<Node*>& value) override {
+    inputs = value;
   }
 
-  virtual void configureOutputs(const std::vector<Node*>& outputs) override {
+  virtual void configureOutputs(const std::vector<Node*>& value) override {
+    outputs = value;
   }
 
   virtual bool configureAttribute(const std::string& name,
                                   const std::string& value) override {
-    // FIXME: Handle 'args' attribute, reject others.
-    return false;
+    if (name == "args") {
+      args = value;
+    } else {
+      system.getDelegate().error(
+          system.getMainFilename(),
+          "unexpected attribute: '" + name + "'");
+      return false;
+    }
+
+    return true;
   }
 };
 
 class ShellTool : public Tool {
+  BuildSystemImpl& system;
+  
 public:
-  using Tool::Tool;
+  ShellTool(BuildSystemImpl& system, const std::string& name)
+      : Tool(name), system(system) {}
 
   virtual bool configureAttribute(const std::string& name,
                                   const std::string& value) override {
+    system.getDelegate().error(
+        system.getMainFilename(),
+        "unexpected attribute: '" + name + "'");
+
     // No supported attributes.
     return false;
   }
 
   virtual std::unique_ptr<Task> createTask(const std::string& name) override {
-    return std::make_unique<ShellTask>(name);
+    return std::make_unique<ShellTask>(system, name);
   }
 };
 
@@ -185,7 +212,7 @@ BuildSystemFileDelegate::lookupTool(const std::string& name) {
 
   // Otherwise, look for one of the builtin tool definitions.
   if (name == "shell") {
-    return std::make_unique<ShellTool>(name);
+    return std::make_unique<ShellTool>(system, name);
   }
 
   return nullptr;
