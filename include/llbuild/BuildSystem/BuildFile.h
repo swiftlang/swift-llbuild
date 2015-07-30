@@ -78,14 +78,24 @@ class Node {
   void operator=(const Node&) LLBUILD_DELETED_FUNCTION;
   Node &operator=(Node&& rhs) LLBUILD_DELETED_FUNCTION;
     
+  /// The name used to identify the node.
   std::string name;
 
+  /// The list of commands which can produce this node.
+  //
+  // FIXME: Optimize for single entry list.
+  std::vector<Command*> producers;
+  
 public:
   explicit Node(const std::string& name) : name(name) {}
   virtual ~Node();
 
   const std::string& getName() const { return name; }
+  
+  std::vector<Command*>& getProducers() { return producers; }
 
+  const std::vector<Command*>& getProducers() const { return producers; }
+  
   /// Called by the build file loader to configure a specified node property.
   virtual bool configureAttribute(const std::string& name,
                                   const std::string& value) = 0;

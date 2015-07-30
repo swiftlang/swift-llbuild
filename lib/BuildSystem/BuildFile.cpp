@@ -539,11 +539,14 @@ class BuildFileImpl {
               return false;
             }
 
-            nodes.push_back(
-                getOrCreateNode(
+            auto node = getOrCreateNode(
                     stringFromScalarNode(
                         static_cast<llvm::yaml::ScalarNode*>(&nodeName)),
-                    /*isImplicit=*/true));
+                    /*isImplicit=*/true);
+            nodes.push_back(node);
+
+            // Add this command to the node producer list.
+            node->getProducers().push_back(command.get());
           }
 
           command->configureOutputs(nodes);
