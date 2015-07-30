@@ -20,6 +20,7 @@
 #include <memory>
 
 using namespace llbuild;
+using namespace llbuild::core;
 using namespace llbuild::buildsystem;
 
 BuildSystemDelegate::~BuildSystemDelegate() {}
@@ -55,7 +56,8 @@ public:
   virtual void loadedTarget(const std::string& name,
                             const Target& target) override;
 
-  virtual void loadedTask(const std::string& name, const Task& target) override;
+  virtual void loadedCommand(const std::string& name,
+                             const Command& target) override;
 
   virtual std::unique_ptr<Node> lookupNode(const std::string& name,
                                            bool isImplicit=false) override;
@@ -64,7 +66,7 @@ public:
 };
 
 /// The delegate used to build a loaded build file.
-class BuildSystemEngineDelegate : public core::BuildEngineDelegate {
+class BuildSystemEngineDelegate : public BuildEngineDelegate {
   BuildSystemImpl& system;
 
   BuildFile& getBuildFile();
@@ -72,8 +74,8 @@ class BuildSystemEngineDelegate : public core::BuildEngineDelegate {
 public:
   BuildSystemEngineDelegate(BuildSystemImpl& system) : system(system) {}
 
-  virtual core::Rule lookupRule(const core::KeyType& keyData) override;
-  virtual void cycleDetected(const std::vector<core::Rule*>& items) override;
+  virtual Rule lookupRule(const KeyType& keyData) override;
+  virtual void cycleDetected(const std::vector<Rule*>& items) override;
 };
 
 class BuildSystemImpl {
@@ -95,7 +97,7 @@ class BuildSystemImpl {
   BuildSystemEngineDelegate engineDelegate;
 
   /// The build engine.
-  core::BuildEngine buildEngine;
+  BuildEngine buildEngine;
 
 public:
   BuildSystemImpl(class BuildSystem& buildSystem,
@@ -122,7 +124,7 @@ public:
     return buildFile;
   }
 
-  core::BuildEngine& getBuildEngine() {
+  BuildEngine& getBuildEngine() {
     return buildEngine;
   }
 
@@ -155,10 +157,10 @@ struct SystemKey {
       };
 
   /// The actual key data.
-  core::KeyType key;
+  KeyType key;
 
 private:
-  SystemKey(const core::KeyType& key) : key(key) {}
+  SystemKey(const KeyType& key) : key(key) {}
   SystemKey(char kindCode, llvm::StringRef str) {
     key.reserve(str.size() + 1);
     key.push_back(kindCode);
@@ -179,12 +181,12 @@ public:
   }
 
   // Allow implicit conversion to the contained key.
-  operator const core::KeyType& () const { return getKeyData(); }
+  operator const KeyType& () const { return getKeyData(); }
 
   /// @name Construction Functions
   /// @{
 
-  static SystemKey fromKeyData(const core::KeyType& key) {
+  static SystemKey fromKeyData(const KeyType& key) {
     auto result = SystemKey(key);
     assert(result.getKind() != Kind::Unknown && "invalid key");
     return result;
@@ -202,7 +204,7 @@ public:
   /// @name Accessors
   /// @{
 
-  const core::KeyType& getKeyData() const { return key; }
+  const KeyType& getKeyData() const { return key; }
 
   Kind getKind() const {
     switch (key[0]) {
@@ -227,15 +229,15 @@ public:
   /// @}
 };
 
-/// This is the task used to "build" a target, it translates between the request
-/// for building a target key and the requests for all of its nodes.
-class TargetCoreTask : public core::Task {
+/// This is the command used to "build" a target, it translates between the
+/// request for building a target key and the requests for all of its nodes.
+class TargetCoreTask : public Task {
   Target& target;
 
 public:
   TargetCoreTask(Target& target) : target(target) {}
 
-  virtual void start(core::BuildEngine& engine) override {
+  virtual void start(BuildEngine& engine) override {
     // Request all of the necessary system tasks.
     for (const auto& nodeName: target.getNodeNames()) {
       engine.taskNeedsInput(this, SystemKey::makeNode(nodeName),
@@ -243,39 +245,39 @@ public:
     }
   }
 
-  virtual void providePriorValue(core::BuildEngine&,
-                                 const core::ValueType& value) override {
+  virtual void providePriorValue(BuildEngine&,
+                                 const ValueType& value) override {
     // Do nothing.
   }
 
-  virtual void provideValue(core::BuildEngine&, uintptr_t inputID,
-                            const core::ValueType& value) override {
+  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+                            const ValueType& value) override {
     // Do nothing.
     //
     // FIXME: We may need to percolate an error status here.
   }
 
-  virtual void inputsAvailable(core::BuildEngine& engine) override {
+  virtual void inputsAvailable(BuildEngine& engine) override {
     // Complete the task immediately.
-    engine.taskIsComplete(this, core::ValueType());
+    engine.taskIsComplete(this, ValueType());
   }
 };
 
-class DummyTask : public core::Task {
-  virtual void start(core::BuildEngine&) override {
+class DummyTask : public Task {
+  virtual void start(BuildEngine&) override {
   }
 
-  virtual void providePriorValue(core::BuildEngine&,
-                                 const core::ValueType& value) override {
+  virtual void providePriorValue(BuildEngine&,
+                                 const ValueType& value) override {
   }
 
-  virtual void provideValue(core::BuildEngine&, uintptr_t inputID,
-                            const core::ValueType& value) override {
+  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+                            const ValueType& value) override {
   }
 
-  virtual void inputsAvailable(core::BuildEngine& engine) override {
+  virtual void inputsAvailable(BuildEngine& engine) override {
     // Complete the task immediately.
-    engine.taskIsComplete(this, core::ValueType());
+    engine.taskIsComplete(this, ValueType());
   }
 };
 
@@ -285,7 +287,7 @@ BuildFile& BuildSystemEngineDelegate::getBuildFile() {
   return system.getBuildFile();
 }
 
-core::Rule BuildSystemEngineDelegate::lookupRule(const core::KeyType& keyData) {
+Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
   // Decode the key.
   auto key = SystemKey::fromKeyData(keyData);
 
@@ -296,9 +298,9 @@ core::Rule BuildSystemEngineDelegate::lookupRule(const core::KeyType& keyData) {
 
   case SystemKey::Kind::Node: {
     // FIXME: Return the appropriate rule.
-    return core::Rule{
+    return Rule{
       key,
-        /*Action=*/ [&](core::BuildEngine& engine) -> core::Task* {
+        /*Action=*/ [&](BuildEngine& engine) -> Task* {
         return engine.registerTask(new DummyTask());
       }
     };
@@ -314,9 +316,9 @@ core::Rule BuildSystemEngineDelegate::lookupRule(const core::KeyType& keyData) {
     }
     Target* target = it->second.get();
 
-    return core::Rule{
+    return Rule{
       key,
-        /*Action=*/ [target](core::BuildEngine& engine) -> core::Task* {
+        /*Action=*/ [target](BuildEngine& engine) -> Task* {
         return engine.registerTask(new TargetCoreTask(*target));
       }
     };
@@ -324,9 +326,7 @@ core::Rule BuildSystemEngineDelegate::lookupRule(const core::KeyType& keyData) {
   }
 }
 
-
-void BuildSystemEngineDelegate::cycleDetected(
-    const std::vector<core::Rule*>& items)  {
+void BuildSystemEngineDelegate::cycleDetected(const std::vector<Rule*>& items) {
   system.getDelegate().error(system.getMainFilename(),
                              "cycle detected while building");
 }
@@ -365,15 +365,15 @@ public:
 
 #pragma mark - ShellTool implementation
 
-class ShellTask : public Task {
+class ShellCommand : public Command {
   BuildSystemImpl& system;
   std::vector<Node*> inputs;
   std::vector<Node*> outputs;
   std::string args;
 
 public:
-  ShellTask(BuildSystemImpl& system, const std::string& name)
-      : Task(name), system(system) {}
+  ShellCommand(BuildSystemImpl& system, const std::string& name)
+      : Command(name), system(system) {}
 
   virtual void configureInputs(const std::vector<Node*>& value) override {
     inputs = value;
@@ -415,8 +415,9 @@ public:
     return false;
   }
 
-  virtual std::unique_ptr<Task> createTask(const std::string& name) override {
-    return std::make_unique<ShellTask>(system, name);
+  virtual std::unique_ptr<Command> createCommand(
+      const std::string& name) override {
+    return std::make_unique<ShellCommand>(system, name);
   }
 };
 
@@ -465,8 +466,8 @@ void BuildSystemFileDelegate::loadedTarget(const std::string& name,
                                            const Target& target) {
 }
 
-void BuildSystemFileDelegate::loadedTask(const std::string& name,
-                                         const Task& target) {
+void BuildSystemFileDelegate::loadedCommand(const std::string& name,
+                                            const Command& command) {
 }
 
 std::unique_ptr<Node>

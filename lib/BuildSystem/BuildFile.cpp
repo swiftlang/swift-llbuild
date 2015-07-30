@@ -23,7 +23,7 @@ BuildFileDelegate::~BuildFileDelegate() {}
 
 Node::~Node() {}
 
-Task::~Task() {}
+Command::~Command() {}
 
 Tool::~Tool() {}
 
@@ -105,8 +105,8 @@ class BuildFileImpl {
   /// The set of all declared nodes.
   BuildFile::node_set nodes;
 
-  /// The set of all declared tasks.
-  BuildFile::task_set tasks;
+  /// The set of all declared commands.
+  BuildFile::command_set commands;
   
   // FIXME: Factor out into a parser helper class.
   std::string stringFromScalarNode(llvm::yaml::ScalarNode* scalar) {
@@ -226,15 +226,15 @@ class BuildFileImpl {
       ++it;
     }
 
-    // Parse the tasks mapping, if present.
-    if (it != mapping->end() && nodeIsScalarString(it->getKey(), "tasks")) {
+    // Parse the commands mapping, if present.
+    if (it != mapping->end() && nodeIsScalarString(it->getKey(), "commands")) {
       if (it->getValue()->getType() != llvm::yaml::Node::NK_Mapping) {
         delegate.error(
-            mainFilename, "unexpected 'tasks' value (expected map)");
+            mainFilename, "unexpected 'commands' value (expected map)");
         return false;
       }
 
-      if (!parseTasksMapping(
+      if (!parseCommandsMapping(
               static_cast<llvm::yaml::MappingNode*>(it->getValue()))) {
         return false;
       }
@@ -441,16 +441,16 @@ class BuildFileImpl {
     return true;
   }
 
-  bool parseTasksMapping(llvm::yaml::MappingNode* map) {
+  bool parseCommandsMapping(llvm::yaml::MappingNode* map) {
     for (auto& entry: *map) {
       // Every key must be scalar.
       if (entry.getKey()->getType() != llvm::yaml::Node::NK_Scalar) {
-        delegate.error(mainFilename, "invalid key type in 'tasks' map");
+        delegate.error(mainFilename, "invalid key type in 'commands' map");
         return false;
       }
       // Every value must be a mapping.
       if (entry.getValue()->getType() != llvm::yaml::Node::NK_Mapping) {
-        delegate.error(mainFilename, "invalid value type in 'tasks' map");
+        delegate.error(mainFilename, "invalid value type in 'commands' map");
         return false;
       }
 
@@ -462,21 +462,21 @@ class BuildFileImpl {
       // Get the initial attribute, which must be the tool name.
       auto it = attrs->begin();
       if (it == attrs->end()) {
-        delegate.error(mainFilename, "missing 'tool' key in 'task' map");
+        delegate.error(mainFilename, "missing 'tool' key in 'command' map");
         return false;
       }
       if (!nodeIsScalarString(it->getKey(), "tool")) {
         delegate.error(
-            mainFilename, "expected 'tool' initial key in 'tasks' map");
+            mainFilename, "expected 'tool' initial key in 'commands' map");
         return false;
       }
       if (it->getValue()->getType() != llvm::yaml::Node::NK_Scalar) {
         delegate.error(
-            mainFilename, "invalid 'tool' value type in 'tasks' map");
+            mainFilename, "invalid 'tool' value type in 'commands' map");
         return false;
       }
       
-      // Lookup the tool for this task.
+      // Lookup the tool for this command.
       auto tool = getOrCreateTool(
           stringFromScalarNode(
               static_cast<llvm::yaml::ScalarNode*>(
@@ -485,10 +485,10 @@ class BuildFileImpl {
         return false;
       }
         
-      // Create the task.
-      auto task = tool->createTask(name);
+      // Create the command.
+      auto command = tool->createCommand(name);
 
-      // Parse the remaining task attributes.
+      // Parse the remaining command attributes.
       ++it;
       for (; it != attrs->end(); ++it) {
         auto key = it->getKey();
@@ -498,7 +498,7 @@ class BuildFileImpl {
         if (nodeIsScalarString(key, "inputs")) {
           if (value->getType() != llvm::yaml::Node::NK_Sequence) {
             delegate.error(
-                mainFilename, "invalid value type for 'inputs' task key");
+                mainFilename, "invalid value type for 'inputs' command key");
             return false;
           }
 
@@ -509,7 +509,7 @@ class BuildFileImpl {
           for (auto& nodeName: *nodeNames) {
             if (nodeName.getType() != llvm::yaml::Node::NK_Scalar) {
               delegate.error(
-                  mainFilename, "invalid node type in 'inputs' task key");
+                  mainFilename, "invalid node type in 'inputs' command key");
               return false;
             }
 
@@ -520,11 +520,11 @@ class BuildFileImpl {
                     /*isImplicit=*/true));
           }
 
-          task->configureInputs(nodes);
+          command->configureInputs(nodes);
         } else if (nodeIsScalarString(key, "outputs")) {
           if (value->getType() != llvm::yaml::Node::NK_Sequence) {
             delegate.error(
-                mainFilename, "invalid value type for 'outputs' task key");
+                mainFilename, "invalid value type for 'outputs' command key");
             return false;
           }
 
@@ -535,7 +535,7 @@ class BuildFileImpl {
           for (auto& nodeName: *nodeNames) {
             if (nodeName.getType() != llvm::yaml::Node::NK_Scalar) {
               delegate.error(
-                  mainFilename, "invalid node type in 'outputs' task key");
+                  mainFilename, "invalid node type in 'outputs' command key");
               return false;
             }
 
@@ -546,7 +546,7 @@ class BuildFileImpl {
                     /*isImplicit=*/true));
           }
 
-          task->configureOutputs(nodes);
+          command->configureOutputs(nodes);
         } else {
           // Otherwise, it should be an attribute string key value pair.
           
@@ -560,7 +560,7 @@ class BuildFileImpl {
             return false;
           }
 
-          if (!task->configureAttribute(
+          if (!command->configureAttribute(
                   stringFromScalarNode(
                       static_cast<llvm::yaml::ScalarNode*>(key)),
                   stringFromScalarNode(
@@ -570,11 +570,11 @@ class BuildFileImpl {
         }
       }
 
-      // Let the delegate know we loaded a task.
-      delegate.loadedTask(name, *task);
+      // Let the delegate know we loaded a command.
+      delegate.loadedCommand(name, *command);
 
-      // Add the task to the tasks map.
-      tasks[name] = std::move(task);
+      // Add the command to the commands map.
+      commands[name] = std::move(command);
     }
 
     return true;
@@ -639,7 +639,7 @@ public:
 
   const BuildFile::target_set& getTargets() const { return targets; }
 
-  const BuildFile::task_set& getTasks() const { return tasks; }
+  const BuildFile::command_set& getCommands() const { return commands; }
 
   const BuildFile::tool_set& getTools() const { return tools; }
 
@@ -672,8 +672,8 @@ const BuildFile::target_set& BuildFile::getTargets() const {
   return static_cast<BuildFileImpl*>(impl)->getTargets();
 }
 
-const BuildFile::task_set& BuildFile::getTasks() const {
-  return static_cast<BuildFileImpl*>(impl)->getTasks();
+const BuildFile::command_set& BuildFile::getCommands() const {
+  return static_cast<BuildFileImpl*>(impl)->getCommands();
 }
 
 const BuildFile::tool_set& BuildFile::getTools() const {

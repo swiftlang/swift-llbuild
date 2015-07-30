@@ -46,7 +46,8 @@ public:
   virtual std::unique_ptr<Node> lookupNode(const std::string& name,
                                            bool isImplicit) override;
 
-  virtual void loadedTask(const std::string& name, const Task& task) override;
+  virtual void loadedCommand(const std::string& name,
+                             const Command& command) override;
 };
 
 class ParseDummyNode : public Node {
@@ -65,12 +66,12 @@ public:
   }
 };
 
-class ParseDummyTask : public Task {
+class ParseDummyCommand : public Command {
   ParseBuildFileDelegate& delegate;
   
 public:
-  ParseDummyTask(ParseBuildFileDelegate& delegate, const std::string& name)
-      : Task(name), delegate(delegate) {}
+  ParseDummyCommand(ParseBuildFileDelegate& delegate, const std::string& name)
+      : Command(name), delegate(delegate) {}
 
   virtual void configureInputs(const std::vector<Node*>& inputs) override {
     if (delegate.shouldShowOutput()) {
@@ -120,13 +121,14 @@ public:
     return true;
   }
 
-  virtual std::unique_ptr<Task> createTask(const std::string& name) override {
+  virtual std::unique_ptr<Command> createCommand(
+      const std::string& name) override {
     if (delegate.shouldShowOutput()) {
-      printf("task('%s')\n", name.c_str());
+      printf("command('%s')\n", name.c_str());
       printf("  -- 'tool': '%s')\n", getName().c_str());
     }
 
-    return std::make_unique<ParseDummyTask>(delegate, name);
+    return std::make_unique<ParseDummyCommand>(delegate, name);
   }
 };
 
@@ -188,10 +190,10 @@ ParseBuildFileDelegate::lookupNode(const std::string& name,
   return std::make_unique<ParseDummyNode>(*this, name);
 }
 
-void ParseBuildFileDelegate::loadedTask(const std::string& name,
-                                        const Task& task) {
+void ParseBuildFileDelegate::loadedCommand(const std::string& name,
+                                        const Command& command) {
   if (showOutput) {
-    printf("  -- -- loaded task('%s')\n", task.getName().c_str());
+    printf("  -- -- loaded command('%s')\n", command.getName().c_str());
   }
 }
 

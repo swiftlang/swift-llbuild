@@ -23,8 +23,8 @@ client:
 targets:
   "": ["output"]
 
-tasks:
-  output:
+commands:
+  cp-output:
     tool: shell
     inputs: ["input"]
     outputs: ["output"]            
