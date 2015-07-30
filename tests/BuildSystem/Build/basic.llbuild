@@ -1,12 +1,21 @@
 # Check basic building functionality.
 #
-# RUN: %{llbuild} buildsystem build %s > %t.out
+# RUN: %{llbuild} buildsystem build --trace %t.trace %s > %t.out
 
 # FIXME: Check the result.
 #
 # RUN-X: %{FileCheck} < %t.out %s
 #
 # CHECK: cp input output
+
+# Check the engine trace.
+#
+# RUN: %{FileCheck} < %t.trace %s --check-prefix CHECK-TRACE
+#
+# CHECK-TRACE: "build-started"
+# CHECK-TRACE: "new-rule", "R1", "T"
+# CHECK-TRACE: "new-rule", "R2", "Noutput"
+# CHECK-TRACE: "build-ended"
 
 client:
   name: basic

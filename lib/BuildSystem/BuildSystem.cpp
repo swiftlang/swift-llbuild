@@ -126,8 +126,12 @@ public:
     return buildEngine;
   }
 
-  /// @name Actions
+  /// @name Client API
   /// @{
+
+  bool enableTracing(const std::string& filename, std::string* error_out) {
+    return buildEngine.enableTracing(filename, error_out);
+  }
 
   bool build(const std::string& target);
 
@@ -487,6 +491,11 @@ BuildSystem::~BuildSystem() {
 
 BuildSystemDelegate& BuildSystem::getDelegate() {
   return static_cast<BuildSystemImpl*>(impl)->getDelegate();
+}
+
+bool BuildSystem::enableTracing(const std::string& path,
+                                std::string* error_out) {
+  return static_cast<BuildSystemImpl*>(impl)->enableTracing(path, error_out);
 }
 
 bool BuildSystem::build(const std::string& name) {

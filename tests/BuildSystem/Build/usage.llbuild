@@ -5,3 +5,4 @@
 
 # CHECK: Usage: llbuild buildsystem build
 # CHECK: --help
+# CHECK: --trace <PATH>

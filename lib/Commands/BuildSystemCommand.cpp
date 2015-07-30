@@ -269,10 +269,14 @@ static void buildUsage(int exitCode) {
   fprintf(stderr, "\nOptions:\n");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--help",
           "show this help message and exit");
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--trace <PATH>",
+          "trace build engine operation to PATH");
   ::exit(exitCode);
 }
 
 static int executeBuildCommand(std::vector<std::string> args) {
+  std::string traceFilename;
+  
   while (!args.empty() && args[0][0] == '-') {
     const std::string option = args[0];
     args.erase(args.begin());
@@ -282,6 +286,14 @@ static int executeBuildCommand(std::vector<std::string> args) {
 
     if (option == "--help") {
       buildUsage(0);
+    } else if (option == "--trace") {
+      if (args.empty()) {
+        fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
+                ::getprogname(), option.c_str());
+        buildUsage(1);
+      }
+      traceFilename = args[0];
+      args.erase(args.begin());
     } else {
       fprintf(stderr, "\error: %s: invalid option: '%s'\n\n",
               ::getprogname(), option.c_str());
@@ -299,6 +311,16 @@ static int executeBuildCommand(std::vector<std::string> args) {
   BuildCommandDelegate delegate{};
   BuildSystem system(delegate, filename);
 
+  // Enable tracing, if requested.
+  if (!traceFilename.empty()) {
+    std::string error;
+    if (!system.enableTracing(traceFilename, &error)) {
+      fprintf(stderr, "error: %s: unable to enable tracing: %s", getprogname(),
+              error.c_str());
+      return 1;
+    }
+  }
+  
   // Build the default target.
   system.build("");
   

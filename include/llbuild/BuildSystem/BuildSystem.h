@@ -66,8 +66,13 @@ public:
   /// Return the delegate the engine was configured with.
   BuildSystemDelegate& getDelegate();
 
-  /// @name Actions
+  /// @name Client API
   /// @{
+
+  /// Enable low-level engine tracing into the given output file.
+  ///
+  /// \returns True on success.
+  bool enableTracing(const std::string& path, std::string* error_out);
 
   /// Build the named target.
   ///
