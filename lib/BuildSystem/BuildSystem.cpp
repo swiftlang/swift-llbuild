@@ -30,6 +30,7 @@ namespace {
 
 class BuildSystemImpl;
 
+/// The delegate used to load the build file for use by a build system.
 class BuildSystemFileDelegate : public BuildFileDelegate {
   BuildSystemImpl& system;
 
@@ -62,6 +63,19 @@ public:
   /// @}
 };
 
+/// The delegate used to build a loaded build file.
+class BuildSystemEngineDelegate : public core::BuildEngineDelegate {
+  BuildSystemImpl& system;
+
+  BuildFile& getBuildFile();
+
+public:
+  BuildSystemEngineDelegate(BuildSystemImpl& system) : system(system) {}
+
+  virtual core::Rule lookupRule(const core::KeyType& keyData) override;
+  virtual void cycleDetected(const std::vector<core::Rule*>& items) override;
+};
+
 class BuildSystemImpl {
   BuildSystem& buildSystem;
 
@@ -71,12 +85,26 @@ class BuildSystemImpl {
   /// The name of the main input file.
   std::string mainFilename;
 
+  /// The delegate used for the loading the build file.
+  BuildSystemFileDelegate fileDelegate;
+
+  /// The build file the system is building.
+  BuildFile buildFile;
+
+  /// The delegate used for building the file contents.
+  BuildSystemEngineDelegate engineDelegate;
+
+  /// The build engine.
+  core::BuildEngine buildEngine;
+
 public:
   BuildSystemImpl(class BuildSystem& buildSystem,
                   BuildSystemDelegate& delegate,
                   const std::string& mainFilename)
       : buildSystem(buildSystem), delegate(delegate),
-        mainFilename(mainFilename) {}
+        mainFilename(mainFilename),
+        fileDelegate(*this), buildFile(mainFilename, fileDelegate),
+        engineDelegate(*this), buildEngine(engineDelegate) {}
 
   BuildSystem& getBuildSystem() {
     return buildSystem;
@@ -88,6 +116,14 @@ public:
 
   const std::string& getMainFilename() {
     return mainFilename;
+  }
+
+  BuildFile& getBuildFile() {
+    return buildFile;
+  }
+
+  core::BuildEngine& getBuildEngine() {
+    return buildEngine;
   }
 
   /// @name Actions
@@ -106,13 +142,13 @@ struct SystemKey {
   enum class Kind {
     /// A key used to identify a node.
     Node,
-      
+
     /// A key used to identify a target.
-    Target,
+      Target,
 
     /// An invalid key kind.
-    Unknown,
-  };
+      Unknown,
+      };
 
   /// The actual key data.
   core::KeyType key;
@@ -124,7 +160,7 @@ private:
     key.push_back(kindCode);
     key.append(str.begin(), str.end());
   }
-    
+
 public:
   // Support copy and move.
   SystemKey(SystemKey&& rhs) : key(rhs.key) { }
@@ -149,7 +185,7 @@ public:
     assert(result.getKind() != Kind::Unknown && "invalid key");
     return result;
   }
-  
+
   static SystemKey makeNode(llvm::StringRef name) {
     return SystemKey('N', name);
   }
@@ -163,7 +199,7 @@ public:
   /// @{
 
   const core::KeyType& getKeyData() const { return key; }
-  
+
   Kind getKind() const {
     switch (key[0]) {
     case 'N': return Kind::Node;
@@ -183,7 +219,7 @@ public:
   llvm::StringRef getTargetName() const {
     return llvm::StringRef(key.data()+1, key.size()-1);
   }
-  
+
   /// @}
 };
 
@@ -191,10 +227,10 @@ public:
 /// for building a target key and the requests for all of its nodes.
 class TargetCoreTask : public core::Task {
   Target& target;
-  
+
 public:
   TargetCoreTask(Target& target) : target(target) {}
-  
+
   virtual void start(core::BuildEngine& engine) override {
     // Request all of the necessary system tasks.
     for (const auto& nodeName: target.getNodeNames()) {
@@ -202,19 +238,19 @@ public:
                             /*InputID=*/0);
     }
   }
-  
+
   virtual void providePriorValue(core::BuildEngine&,
                                  const core::ValueType& value) override {
     // Do nothing.
   }
-  
+
   virtual void provideValue(core::BuildEngine&, uintptr_t inputID,
                             const core::ValueType& value) override {
     // Do nothing.
     //
     // FIXME: We may need to percolate an error status here.
   }
-  
+
   virtual void inputsAvailable(core::BuildEngine& engine) override {
     // Complete the task immediately.
     engine.taskIsComplete(this, core::ValueType());
@@ -224,73 +260,74 @@ public:
 class DummyTask : public core::Task {
   virtual void start(core::BuildEngine&) override {
   }
-  
+
   virtual void providePriorValue(core::BuildEngine&,
                                  const core::ValueType& value) override {
   }
-  
+
   virtual void provideValue(core::BuildEngine&, uintptr_t inputID,
                             const core::ValueType& value) override {
   }
-  
+
   virtual void inputsAvailable(core::BuildEngine& engine) override {
     // Complete the task immediately.
     engine.taskIsComplete(this, core::ValueType());
   }
 };
 
-class BuildSystemEngineDelegate : public core::BuildEngineDelegate {
-  BuildSystemImpl& system;
-  BuildFile& buildFile;
-  
-public:
-  BuildSystemEngineDelegate(BuildSystemImpl& system, BuildFile& buildFile)
-      : system(system), buildFile(buildFile) {}
+#pragma mark - BuildSystemEngineDelegate implementation
 
-  virtual core::Rule lookupRule(const core::KeyType& keyData) override {
-    // Decode the key.
-    auto key = SystemKey::fromKeyData(keyData);
+BuildFile& BuildSystemEngineDelegate::getBuildFile() {
+  return system.getBuildFile();
+}
 
-    switch (key.getKind()) {
-    default:
-      assert(0 && "invalid key");
-      abort();
+core::Rule BuildSystemEngineDelegate::lookupRule(const core::KeyType& keyData) {
+  // Decode the key.
+  auto key = SystemKey::fromKeyData(keyData);
 
-    case SystemKey::Kind::Node: {
-      // FIXME: Return the appropriate rule.
-      return core::Rule{
-        key,
+  switch (key.getKind()) {
+  default:
+    assert(0 && "invalid key");
+    abort();
+
+  case SystemKey::Kind::Node: {
+    // FIXME: Return the appropriate rule.
+    return core::Rule{
+      key,
         /*Action=*/ [&](core::BuildEngine& engine) -> core::Task* {
-          return engine.registerTask(new DummyTask());
-        }
-      };
-    }
-      
-    case SystemKey::Kind::Target: {
-      // Find the target.
-      auto it = buildFile.getTargets().find(key.getTargetName());
-      if (it == buildFile.getTargets().end()) {
-        // FIXME: Invalid target name, produce an error.
-        assert(0 && "FIXME: invalid target");
-        abort();
+        return engine.registerTask(new DummyTask());
       }
-      Target* target = it->second.get();
-      
-      return core::Rule{
-        key,
-        /*Action=*/ [target](core::BuildEngine& engine) -> core::Task* {
-          return engine.registerTask(new TargetCoreTask(*target));
-        }
-      };
-    }
-    }
+    };
   }
 
-  virtual void cycleDetected(const std::vector<core::Rule*>& items) override {
-    system.getDelegate().error(system.getMainFilename(),
-                               "cycle detected while building");
+  case SystemKey::Kind::Target: {
+    // Find the target.
+    auto it = getBuildFile().getTargets().find(key.getTargetName());
+    if (it == getBuildFile().getTargets().end()) {
+      // FIXME: Invalid target name, produce an error.
+      assert(0 && "FIXME: invalid target");
+      abort();
+    }
+    Target* target = it->second.get();
+
+    return core::Rule{
+      key,
+        /*Action=*/ [target](core::BuildEngine& engine) -> core::Task* {
+        return engine.registerTask(new TargetCoreTask(*target));
+      }
+    };
   }
-};
+  }
+}
+
+
+void BuildSystemEngineDelegate::cycleDetected(
+    const std::vector<core::Rule*>& items)  {
+  system.getDelegate().error(system.getMainFilename(),
+                             "cycle detected while building");
+}
+
+#pragma mark - BuildSystemImpl implementation
 
 bool BuildSystemImpl::build(const std::string& target) {
   // Load the build file.
@@ -298,16 +335,12 @@ bool BuildSystemImpl::build(const std::string& target) {
   // FIXME: Eventually, we may want to support something fancier where we load
   // the build file in the background so we can immediately start building
   // things as they show up.
-  BuildSystemFileDelegate fileDelegate(*this);
-  BuildFile buildFile(mainFilename, fileDelegate);
-  buildFile.load();
-
-  // Create the engine to use for building.
-  BuildSystemEngineDelegate engineDelegate(*this, buildFile);
-  core::BuildEngine engine(engineDelegate);
+  //
+  // FIXME: We need to load this only once.
+  getBuildFile().load();
 
   // Build the target.
-  engine.build(SystemKey::makeTarget(target));
+  getBuildEngine().build(SystemKey::makeTarget(target));
 
   return false;
 }
@@ -333,7 +366,7 @@ class ShellTask : public Task {
   std::vector<Node*> inputs;
   std::vector<Node*> outputs;
   std::string args;
-  
+
 public:
   ShellTask(BuildSystemImpl& system, const std::string& name)
       : Task(name), system(system) {}
@@ -363,7 +396,7 @@ public:
 
 class ShellTool : public Tool {
   BuildSystemImpl& system;
-  
+
 public:
   ShellTool(BuildSystemImpl& system, const std::string& name)
       : Tool(name), system(system) {}
