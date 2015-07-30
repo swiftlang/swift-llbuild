@@ -146,15 +146,18 @@ public:
 /// used by the BuildSystem when using the core BuildEngine.
 struct SystemKey {
   enum class Kind {
+    /// A key used to identify a command.
+    Command,
+
     /// A key used to identify a node.
     Node,
 
     /// A key used to identify a target.
-      Target,
+    Target,
 
     /// An invalid key kind.
-      Unknown,
-      };
+    Unknown,
+  };
 
   /// The actual key data.
   KeyType key;
@@ -192,6 +195,10 @@ public:
     return result;
   }
 
+  static SystemKey makeCommand(llvm::StringRef name) {
+    return SystemKey('C', name);
+  }
+
   static SystemKey makeNode(llvm::StringRef name) {
     return SystemKey('N', name);
   }
@@ -208,6 +215,7 @@ public:
 
   Kind getKind() const {
     switch (key[0]) {
+    case 'C': return Kind::Command;
     case 'N': return Kind::Node;
     case 'T': return Kind::Target;
     default:
@@ -215,8 +223,13 @@ public:
     }
   }
 
+  bool isCommand() const { return getKind() == Kind::Command; }
   bool isNode() const { return getKind() == Kind::Node; }
   bool isTarget() const { return getKind() == Kind::Target; }
+
+  llvm::StringRef getCommandName() const {
+    return llvm::StringRef(key.data()+1, key.size()-1);
+  }
 
   llvm::StringRef getNodeName() const {
     return llvm::StringRef(key.data()+1, key.size()-1);
@@ -231,11 +244,11 @@ public:
 
 /// This is the command used to "build" a target, it translates between the
 /// request for building a target key and the requests for all of its nodes.
-class TargetCoreTask : public Task {
+class TargetTask : public Task {
   Target& target;
 
 public:
-  TargetCoreTask(Target& target) : target(target) {}
+  TargetTask(Target& target) : target(target) {}
 
   virtual void start(BuildEngine& engine) override {
     // Request all of the necessary system tasks.
@@ -255,6 +268,41 @@ public:
     // Do nothing.
     //
     // FIXME: We may need to percolate an error status here.
+  }
+
+  virtual void inputsAvailable(BuildEngine& engine) override {
+    // Complete the task immediately.
+    engine.taskIsComplete(this, ValueType());
+  }
+};
+
+class NodeTask : public Task {
+  Node& node;
+
+public:
+  NodeTask(Node& node) : node(node) {}
+  
+  virtual void start(BuildEngine& engine) override {
+    // Request the producer command.
+    if (node.getProducers().size() == 1) {
+      auto command = node.getProducers()[0];
+      engine.taskNeedsInput(this, SystemKey::makeCommand(command->getName()),
+                            /*InputID=*/0);
+      return;
+    }
+
+    // FIXME: Delegate to the client to select the appropriate producer if
+    // there are more than one.
+    assert(0 && "FIXME: not implemented (support for non-unary producers");
+    abort();
+  }
+
+  virtual void providePriorValue(BuildEngine&,
+                                 const ValueType& value) override {
+  }
+
+  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+                            const ValueType& value) override {
   }
 
   virtual void inputsAvailable(BuildEngine& engine) override {
@@ -296,13 +344,39 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     assert(0 && "invalid key");
     abort();
 
-  case SystemKey::Kind::Node: {
-    // FIXME: Return the appropriate rule.
+  case SystemKey::Kind::Command: {
+    // FIXME: Return a real rule.
     return Rule{
       key,
-        /*Action=*/ [&](BuildEngine& engine) -> Task* {
+      /*Action=*/ [](BuildEngine& engine) -> Task* {
         return engine.registerTask(new DummyTask());
       }
+    };
+  }
+    
+  case SystemKey::Kind::Node: {
+    // Find the node.
+    auto it = getBuildFile().getNodes().find(key.getNodeName());
+    if (it == getBuildFile().getNodes().end()) {
+      // FIXME: Unknown node name, should map to a default type (a file
+      // generally, although we might want to provide a way to put this under
+      // control of the client).
+      assert(0 && "FIXME: unknown node");
+      abort();
+    }
+
+    // Create the rule used to construct this node.
+    //
+    // We could bypass this level and directly return the rule to run the
+    // command, which would reduce the number of tasks in the system. For now we
+    // do the uniform thing.
+    Node* node = it->second.get();
+    return Rule{
+      key,
+      /*Action=*/ [node](BuildEngine& engine) -> Task* {
+        return engine.registerTask(new NodeTask(*node));
+      }
+      // FIXME: Check node validity.
     };
   }
 
@@ -314,13 +388,16 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       assert(0 && "FIXME: invalid target");
       abort();
     }
-    Target* target = it->second.get();
 
+    // Create the rule to construct this target.
+    Target* target = it->second.get();
     return Rule{
       key,
         /*Action=*/ [target](BuildEngine& engine) -> Task* {
-        return engine.registerTask(new TargetCoreTask(*target));
+        return engine.registerTask(new TargetTask(*target));
       }
+      // FIXME: Check target validitity, we need to check the target list hasn't
+      // changed.
     };
   }
   }

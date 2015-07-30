@@ -15,6 +15,7 @@
 # CHECK-TRACE: "build-started"
 # CHECK-TRACE: "new-rule", "R1", "T"
 # CHECK-TRACE: "new-rule", "R2", "Noutput"
+# CHECK-TRACE: "new-rule", "R3", "Ccp-output"
 # CHECK-TRACE: "build-ended"
 
 client:
