@@ -111,6 +111,7 @@ def _buildengine_lookup_rule(context, key, rule_out):
 class _Data(object):
     """Wrapper for a key and its data."""
     def __init__(self, name):
+        name = str(name)
         self.key = ffi.new("llb_data_t*")
         self.key.length = length = len(name)
         # Store in a local to keep alive.
@@ -120,12 +121,16 @@ class _Data(object):
         ffi.buffer(self.key.data, length)[:] = name
 
 class _HandledObject(object):
+    _all_handles = []
     _handle_cache = None
     @property
     def _handle(self):
         # FIXME: This creates a cycle.
         if self._handle_cache is None:
-            self._handle_cache = ffi.new_handle(self)
+            self._handle_cache = handle = ffi.new_handle(self)
+            # FIXME: This leaks everything, but we are currently dropping a
+            # handle somewhere.
+            self._all_handles.append(handle)
         return self._handle_cache
             
 ###
