@@ -11,6 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llbuild/BuildSystem/BuildSystem.h"
+#include "llbuild/BuildSystem/BuildSystemCommandInterface.h"
 
 #include "llvm/ADT/StringRef.h"
 
@@ -24,6 +25,8 @@ using namespace llbuild::core;
 using namespace llbuild::buildsystem;
 
 BuildSystemDelegate::~BuildSystemDelegate() {}
+
+BuildSystemCommandInterface::~BuildSystemCommandInterface() {}
 
 #pragma mark - BuildSystem implementation
 
@@ -71,14 +74,18 @@ class BuildSystemEngineDelegate : public BuildEngineDelegate {
 
   BuildFile& getBuildFile();
 
+  virtual Rule lookupRule(const KeyType& keyData) override;
+  virtual void cycleDetected(const std::vector<Rule*>& items) override;
+
 public:
   BuildSystemEngineDelegate(BuildSystemImpl& system) : system(system) {}
 
-  virtual Rule lookupRule(const KeyType& keyData) override;
-  virtual void cycleDetected(const std::vector<Rule*>& items) override;
+  BuildSystemImpl& getBuildSystem() {
+    return system;
+  }
 };
 
-class BuildSystemImpl {
+class BuildSystemImpl : public BuildSystemCommandInterface {
   BuildSystem& buildSystem;
 
   /// The delegate the BuildSystem was configured with.
@@ -99,6 +106,16 @@ class BuildSystemImpl {
   /// The build engine.
   BuildEngine buildEngine;
 
+  /// @name BuildSystemCommandInterface Implementation
+  /// @{
+
+  virtual void taskIsComplete(core::Task* task, core::ValueType&& value,
+                              bool forceChange) override {
+    return buildEngine.taskIsComplete(task, std::move(value), forceChange);
+  }
+
+  /// @}
+  
 public:
   BuildSystemImpl(class BuildSystem& buildSystem,
                   BuildSystemDelegate& delegate,
@@ -118,6 +135,10 @@ public:
 
   const std::string& getMainFilename() {
     return mainFilename;
+  }
+
+  BuildSystemCommandInterface& getCommandInterface() {
+    return *this;
   }
 
   BuildFile& getBuildFile() {
@@ -242,13 +263,10 @@ public:
   /// @}
 };
 
-/// This is the command used to "build" a target, it translates between the
-/// request for building a target key and the requests for all of its nodes.
+/// This is the task used to "build" a target, it translates between the request
+/// for building a target key and the requests for all of its nodes.
 class TargetTask : public Task {
   Target& target;
-
-public:
-  TargetTask(Target& target) : target(target) {}
 
   virtual void start(BuildEngine& engine) override {
     // Request all of the necessary system tasks.
@@ -274,13 +292,16 @@ public:
     // Complete the task immediately.
     engine.taskIsComplete(this, ValueType());
   }
-};
-
-class NodeTask : public Task {
-  Node& node;
 
 public:
-  NodeTask(Node& node) : node(node) {}
+  TargetTask(Target& target) : target(target) {}
+};
+
+/// This is the task to "build" a node. It is responsible for selecting the
+/// appropriate producer command to run to produce the ndoe, and for
+/// synchronizing any external state the node depends on.
+class NodeTask : public Task {
+  Node& node;
   
   virtual void start(BuildEngine& engine) override {
     // Request the producer command.
@@ -309,10 +330,22 @@ public:
     // Complete the task immediately.
     engine.taskIsComplete(this, ValueType());
   }
+
+public:
+  NodeTask(Node& node) : node(node) {}
 };
 
-class DummyTask : public Task {
-  virtual void start(BuildEngine&) override {
+/// This is the task to actually execute a command.
+class CommandTask : public Task {
+  Command& command;
+
+  static BuildSystemImpl& getBuildSystem(BuildEngine& engine) {
+    return static_cast<BuildSystemEngineDelegate*>(
+        engine.getDelegate())->getBuildSystem();
+  }
+    
+  virtual void start(BuildEngine& engine) override {
+    command.start(getBuildSystem(engine).getCommandInterface());
   }
 
   virtual void providePriorValue(BuildEngine&,
@@ -324,9 +357,11 @@ class DummyTask : public Task {
   }
 
   virtual void inputsAvailable(BuildEngine& engine) override {
-    // Complete the task immediately.
-    engine.taskIsComplete(this, ValueType());
+    command.inputsAvailable(getBuildSystem(engine).getCommandInterface(), this);
   }
+
+public:
+  CommandTask(Command& command) : command(command) {}
 };
 
 #pragma mark - BuildSystemEngineDelegate implementation
@@ -345,11 +380,19 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     abort();
 
   case SystemKey::Kind::Command: {
-    // FIXME: Return a real rule.
+    // Find the comand.
+    auto it = getBuildFile().getCommands().find(key.getCommandName());
+    if (it == getBuildFile().getCommands().end()) {
+      assert(0 && "unexpected request for missing command");
+      abort();
+    }
+
+    // Create the rule for the command.
+    Command* command = it->second.get();
     return Rule{
       key,
-      /*Action=*/ [](BuildEngine& engine) -> Task* {
-        return engine.registerTask(new DummyTask());
+      /*Action=*/ [command](BuildEngine& engine) -> Task* {
+        return engine.registerTask(new CommandTask(*command));
       }
     };
   }
@@ -472,6 +515,14 @@ public:
     }
 
     return true;
+  }
+
+  virtual void start(BuildSystemCommandInterface&) override {
+  }
+
+  virtual void inputsAvailable(BuildSystemCommandInterface& system,
+                               Task* task) override {
+    system.taskIsComplete(task, ValueType());
   }
 };
 

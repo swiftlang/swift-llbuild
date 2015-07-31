@@ -16,6 +16,7 @@
 #include "llbuild/BuildSystem/BuildSystem.h"
 
 using namespace llbuild;
+using namespace llbuild::core;
 using namespace llbuild::buildsystem;
 
 namespace {
@@ -104,6 +105,9 @@ public:
     }
     return true;
   }
+
+  virtual void start(BuildSystemCommandInterface&) override {}
+  virtual void inputsAvailable(BuildSystemCommandInterface&, Task*) override {}
 };
 
 class ParseDummyTool : public Tool {

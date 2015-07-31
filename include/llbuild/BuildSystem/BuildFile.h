@@ -15,6 +15,10 @@
 
 #include "llbuild/Basic/Compiler.h"
 
+// FIXME: Eliminate need for this include, if we could forward declare the value
+// type.
+#include "llbuild/Core/BuildEngine.h"
+
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -27,6 +31,7 @@ namespace buildsystem {
 typedef std::vector<std::pair<std::string, std::string>> property_list_type;
 
 class Command;
+class BuildSystemCommandInterface;
 
 /// Abstract tool definition used by the build file.
 class Tool {
@@ -116,6 +121,9 @@ public:
 
   const std::string& getName() const { return name; }
 
+  /// @name File Loading
+  /// @{
+  
   /// Called by the build file loader to pass the list of input nodes.
   virtual void configureInputs(const std::vector<Node*>& inputs) = 0;
 
@@ -125,6 +133,22 @@ public:
   /// Called by the build file loader to configure a specified command property.
   virtual bool configureAttribute(const std::string& name,
                                   const std::string& value) = 0;
+
+  /// @}
+
+  /// @name Command Execution
+  ///
+  /// @description These APIs directly mirror the APIs available in the
+  /// lower-level BuildEngine, but with additional services provided by the
+  /// BuildSystem. See the BuildEngine documentation for more information.
+  ///
+  /// @{
+
+  virtual void start(BuildSystemCommandInterface&) = 0;
+
+  virtual void inputsAvailable(BuildSystemCommandInterface&, core::Task*) = 0;
+  
+  /// @}
 };
 
 class BuildFileDelegate {

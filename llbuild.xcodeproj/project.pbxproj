@@ -591,6 +591,8 @@
 		E1ADC2341A85928100D5387C /* README.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.txt; sourceTree = "<group>"; };
 		E1ADC2351A8592AA00D5387C /* llbuild.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = llbuild.h; sourceTree = "<group>"; };
 		E1ADC23A1A85936400D5387C /* libllbuild.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libllbuild.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		E1B49EF91B6BD45D0031AFC2 /* BuildSystemCommandInterface.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildSystemCommandInterface.h; sourceTree = "<group>"; };
+		E1B49EFA1B6BD45D0031AFC2 /* BuildSystem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildSystem.h; sourceTree = "<group>"; };
 		E1B838A21B52E7DE00DB876B /* libllvmSupport.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libllvmSupport.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1B838A41B52E85400DB876B /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1B838A51B52E85400DB876B /* import-llvm */ = {isa = PBXFileReference; lastKnownFileType = text; path = "import-llvm"; sourceTree = "<group>"; };
@@ -1530,6 +1532,8 @@
 			isa = PBXGroup;
 			children = (
 				E1B8395D1B541C4300DB876B /* BuildFile.h */,
+				E1B49EF91B6BD45D0031AFC2 /* BuildSystemCommandInterface.h */,
+				E1B49EFA1B6BD45D0031AFC2 /* BuildSystem.h */,
 			);
 			name = Headers;
 			path = include/llbuild/BuildSystem;
