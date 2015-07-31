@@ -89,9 +89,6 @@ class BuildEngineImpl {
     /// The vector of deferred scan requests, for rules which are waiting on
     /// this one to be scanned.
     std::vector<RuleScanRequest> deferredScanRequests;
-    /// The total number of outstanding deferred scan requests for the rule
-    /// scanned with this record.
-    unsigned scanWaitCount = 0;
   };
 
   /// Wrapper for information specific to a single rule.
@@ -472,10 +469,7 @@ private:
   void processRuleScanRequest(RuleScanRequest request) {
     auto& ruleInfo = *request.ruleInfo;
 
-    // If the rule has been completed after this scan request was enqueued,
-    // ignore the request.
-    if (!ruleInfo.isScanning())
-        return;
+    assert(ruleInfo.isScanning());
 
     // Process each of the remaining inputs.
     do {
@@ -497,23 +491,7 @@ private:
                                              &inputRuleInfo.rule);
         inputRuleInfo.getPendingScanRecord()
           ->deferredScanRequests.push_back(request);
-
-        // We will continue scanning the remainder of the inputs in this pass,
-        // so we modify the duplicated scan request so that when it will be
-        // individually processed when it is resumed. Note that this relies on
-        // the cached input rule info lookup above.
-        //
-        // FIXME: This is a hack, maybe we should have a separate return queue
-        // for these.
-        inputRuleInfo.getPendingScanRecord()
-          ->deferredScanRequests.back().inputIndex =
-            ruleInfo.result.dependencies.size() - 1;
-        ruleInfo.getPendingScanRecord()->scanWaitCount++;
-
-        // Continue scanning the remainder of the inputs.
-        ++request.inputIndex;
-        request.inputRuleInfo = nullptr;
-        continue;
+        return;
       }
 
       if (trace)
@@ -524,6 +502,9 @@ private:
 
       // If the input isn't already available, enqueue this scan request on the
       // input.
+      //
+      // FIXME: We need to continue scanning the rest of the inputs to ensure we
+      // are not delaying necessary work. See <rdar://problem/20248283>.
       if (!isAvailable) {
         if (trace)
           trace->ruleScanningDeferredOnTask(
@@ -549,10 +530,6 @@ private:
       request.inputRuleInfo = nullptr;
     } while (request.inputIndex != ruleInfo.result.dependencies.size());
 
-    // If we have deferred scan requests, wait to be reprocessed.
-    if (ruleInfo.getPendingScanRecord()->scanWaitCount != 0)
-      return;
-
     // If we reached the end of the inputs, the rule does not need to run.
     if (trace)
       trace->ruleDoesNotNeedToRun(&ruleInfo.rule);
@@ -567,7 +544,6 @@ private:
     // Wake up all of the pending scan requests.
     for (const auto& request: scanRecord->deferredScanRequests) {
       ruleInfosToScan.push_back(request);
-      request.ruleInfo->getPendingScanRecord()->scanWaitCount--;
     }
 
     // Wake up all of the input requests on this rule.
