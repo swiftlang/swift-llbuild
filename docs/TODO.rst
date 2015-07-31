@@ -90,6 +90,16 @@ Build Database
   * Normalize key and dependency node types to a unique entry to reduce
     duplication of large key values.
 
+  * Many clients end up having additional information about a key that then gets
+    lost when they serialize it and get it back somewhere else (e.g., one task
+    requests the key, another starts the key). For example, the client most
+    likely has some internal state associated with that key that would be really
+    nice to be able to pass around.
+
+    We can solve this by making the key type richer, and allowing it to have
+    serialization as just one of its methods. We could use a virtual interface
+    or just a simple mechanism to attach a payload.
+
 
 Ninja Specific
 ==============
