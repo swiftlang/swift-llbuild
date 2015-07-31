@@ -194,6 +194,7 @@ def dumpReport(logs, results, opts):
     run["Info"] = collections.OrderedDict()
     run["Info"]["tag"] = "simple"
     run["Info"]["run_order"] = str(opts.run_order)
+    run["Info"]["revision"] = str(opts.revision)
     run["Start Time"] = start.strftime('%Y-%m-%d %H:%M:%S')
     run["End Time"] = end.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -219,6 +220,9 @@ def main():
     parser.add_option("", "--run-order", dest="run_order", metavar="STR",
                       help="String to use to identify and order this run",
                       action="store", type=str, default=None)
+    parser.add_option("", "--revision", dest="revision", metavar="STR",
+                      help="Revision string to include with the run",
+                      action="store", type=str, default=None)
     parser.add_option("", "--output-path", dest="output_path", metavar="PATH",
                       help="Path to write the output report to.",
                       action="store", type=str, default=None)
@@ -226,6 +230,8 @@ def main():
 
     if not opts.run_order:
         parser.error("--run-order is required")
+    if not opts.revision:
+        parser.error("--revision is required")
     if not opts.output_path:
         parser.error("--output-path is required")
 
