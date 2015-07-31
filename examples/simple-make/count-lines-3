@@ -1,0 +1,75 @@
+#!/usr/bin/env python
+
+import os
+
+import util
+from simplebuild import *
+
+class GetFileInfoRule(SimpleAsyncRule):
+    """
+    Rule which synchronizes the state of external file.
+    """
+
+    def __init__(self, path):
+        self.path = str(path)
+
+    def run(self):
+        util.note("getting file info: %r" % (self.path,))
+        return util.get_stat_info(self.path)
+
+    def is_data_valid(self, engine, data):
+        # Check if the current info is up-to-date.
+        util.note("checking file info: %r" % (self.path,))
+        return util.get_stat_info(self.path) == data
+        
+class GetDirectoryContentsRule(SimpleAsyncRule):
+    def __init__(self, path):
+        self.path = path
+
+    def start(self, engine):
+        # Get the file info for the directory, to ensure we treat the external
+        # directory as an input.
+        engine.task_needs_input(self, GetFileInfoRule.asKey(self.path))
+
+    def provide_data(self, engine, input_id, data):
+        pass
+
+    def run(self):
+        util.note("listing directory contents: %r" % (str(self.path),))
+        try:
+            return sorted(os.listdir(self.path))
+        except OSError:
+            return []
+    
+class CountSourceLinesRule(SimpleAsyncRule):
+    def __init__(self, path):
+        self.path = str(path)
+        self.result = None
+
+    def run(self):
+        with open(self.path) as file:
+            return len(file.readlines())
+
+    def start(self, engine):
+        engine.task_needs_input(self, GetDirectoryContentsRule.asKey(self.path))
+
+    def provide_data(self, engine, input_id, data):
+        # The input data will be the list of files.
+        self.result = 0
+        for input in data:
+            if input.endswith(".c"):
+                with open(os.path.join(self.path, input)) as file:
+                    self.result += len(file.readlines())
+
+    def run(self):
+        return self.result
+
+# Get the input path.
+_,path = sys.argv
+
+# Run the job
+engine = DataDrivenEngine(globals())
+engine.attach_db(".count-source-lines.db")
+
+result = engine.build(CountSourceLinesRule.asKey(path))
+print result

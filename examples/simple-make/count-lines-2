@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+
+import util
+from simplebuild import *
+
+class GetFileInfoRule(SimpleAsyncRule):
+    """
+    Rule which synchronizes the state of external file.
+    """
+
+    def __init__(self, path):
+        self.path = str(path)
+
+    def run(self):
+        util.note("getting file info: %r" % (self.path,))
+        return util.get_stat_info(self.path)
+
+    def is_data_valid(self, engine, data):
+        # Check if the current info is up-to-date.
+        util.note("checking file info: %r" % (self.path,))
+        return util.get_stat_info(self.path) == data
+
+
+    
+class CountLinesRule(SimpleAsyncRule):
+    def __init__(self, path):
+        self.path = str(path)
+
+    def run(self):
+        with open(self.path) as file:
+            return len(file.readlines())
+
+    def start(self, engine):
+        engine.task_needs_input(self, GetFileInfoRule.asKey(self.path),
+                                input_id=0)
+
+    def provide_data(self, engine, input_id, data):
+        pass
+
+# Get the input path.
+_,path = sys.argv
+
+# Run the job
+engine = DataDrivenEngine(globals())
+engine.attach_db(".count-lines.db")
+
+result = engine.build(CountLinesRule.asKey(path))
+print result

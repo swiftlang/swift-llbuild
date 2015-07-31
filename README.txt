@@ -57,6 +57,8 @@ Swift conventions.
   llbuild
     The implementation of the command line ``llbuild`` tool.
 
+* Examples of using ``llbuild`` are available under ``examples/``.
+
 * There are two kinds of correctness tests include in the project:
 
   LLVM-Style Functional Tests

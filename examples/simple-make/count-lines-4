@@ -1,0 +1,123 @@
+#!/usr/bin/env python
+
+import os
+import subprocess
+
+import util
+from simplebuild import *
+
+class GetFileInfoRule(SimpleAsyncRule):
+    """
+    Rule which synchronizes the state of external file.
+    """
+
+    def __init__(self, path):
+        self.path = str(path)
+
+    def run(self):
+        util.note("getting file info: %r" % (self.path,))
+        return util.get_stat_info(self.path)
+
+    def is_data_valid(self, engine, data):
+        # Check if the current info is up-to-date.
+        util.note("checking file info: %r" % (self.path,))
+        return util.get_stat_info(self.path) == data
+        
+class GetDirectoryContentsRule(SimpleAsyncRule):
+    def __init__(self, path):
+        self.path = path
+
+    def start(self, engine):
+        # Get the file info for the directory, to ensure we treat the external
+        # directory as an input.
+        engine.task_needs_input(self, GetFileInfoRule.asKey(self.path))
+
+    def provide_data(self, engine, input_id, data):
+        pass
+
+    def run(self):
+        util.note("listing directory contents: %r" % (str(self.path),))
+        try:
+            return sorted(os.listdir(self.path))
+        except OSError:
+            return []
+
+class SpawnJobRule(SimpleAsyncRule):
+    def __init__(self, args, input_files, output_files, other_inputs=()):
+        self.args = list(args)
+        self.input_files = list(input_files)
+        self.output_files = list(output_files)
+
+    def start(self, engine):
+        # Request all of the inputs.
+        for path in self.input_files:
+            engine.task_needs_input(self, GetFileInfoRule.asKey(path))
+
+    def provide_data(self, engine, input_id, data):
+        pass
+        
+    def run(self):
+        try:
+            util.message(' '.join(self.args))
+            subprocess.check_call(self.args)
+        except:
+            import traceback
+            traceback.print_exc()
+            util.error("error: command failed: %s" % (' '.join(self.args),))
+            return { "error" : True }
+
+        # Get the file info on all of the output files.
+        output_infos = [util.get_stat_info(path)
+                       for path in self.output_files]
+        return { "output_info" : output_infos }
+    
+class CountSourceLinesRule(SimpleAsyncRule):
+    get_dir_input_ID = 0
+    source_count_input_ID = 1
+
+    def __init__(self, path):
+        super(CountSourceLinesRule, self).__init__()
+        self.path = str(path)
+        self.output_paths = None
+        self.result = None
+
+    def start(self, engine):
+        engine.task_needs_input(self, GetDirectoryContentsRule.asKey(self.path),
+                                self.get_dir_input_ID)
+
+    def provide_data(self, engine, input_id, data):
+        # If this is the directory result, scan it and request individual
+        # counts.
+        if input_id == 0:
+            self.output_paths = []
+            for input in data:
+                if input.endswith(".c"):
+                    input_path = os.path.join(self.path, input)
+                    output_path = os.path.join(self.path, input + ".wc")
+                    self.output_paths.append(output_path)
+
+                    cmd = ['/bin/sh', '-c', "wc -l < %s > %s" % (input_path,
+                                                              output_path)]
+                    engine.task_needs_input(
+                        self, SpawnJobRule.asKey(cmd, [input_path],
+                                                 [output_path]),
+                        self.source_count_input_ID)
+            return
+
+    def run(self):
+        # Gather all the results.
+        self.result = 0
+        for path in self.output_paths:
+            with open(path) as f:
+                self.result += int(f.read())
+        return self.result
+
+# Get the input path.
+_,path = sys.argv
+
+# Run the job
+engine = DataDrivenEngine(globals())
+engine.attach_db(".count-source-lines-with-wc.db")
+
+result = engine.build(CountSourceLinesRule.asKey(path))
+print result

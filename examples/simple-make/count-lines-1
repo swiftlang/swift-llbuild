@@ -1,0 +1,22 @@
+#!/usr/bin/env python
+
+from simplebuild import *
+
+class CountLinesRule(SimpleAsyncRule):
+    def __init__(self, path):
+        self.path = str(path)
+
+    def run(self):
+        with open(self.path) as file:
+            return len(file.readlines())
+
+# Get the input path.
+_,path = sys.argv
+
+# Run the job
+engine = DataDrivenEngine(globals())
+engine.attach_db(".count-lines.db")
+result = engine.build(CountLinesRule.asKey(path))
+print result
+
+

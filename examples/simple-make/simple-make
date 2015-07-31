@@ -1,0 +1,126 @@
+#!/usr/bin/env python
+
+import os
+import subprocess
+import sys
+
+import util
+from simplebuild import *
+
+class GetFileInfoRule(SimpleAsyncRule):
+    """
+    Rule which synchronizes the state of external file.
+    """
+
+    def __init__(self, path):
+        self.path = str(path)
+
+    def run(self):
+        util.note("getting file info: %r" % (self.path,))
+        return util.get_stat_info(self.path)
+
+    def is_data_valid(self, engine, data):
+        # Check if the current info is up-to-date.
+        util.note("checking file info: %r" % (self.path,))
+        return util.get_stat_info(self.path) == data
+        
+class GetDirectoryContentsRule(SimpleAsyncRule):
+    def __init__(self, path):
+        self.path = path
+
+    def start(self, engine):
+        # Get the file info for the directory, to ensure we treat the external
+        # directory as an input.
+        engine.task_needs_input(self, GetFileInfoRule.asKey(self.path))
+
+    def provide_data(self, engine, input_id, data):
+        pass
+
+    def run(self):
+        util.note("listing directory contents: %r" % (str(self.path),))
+        try:
+            return sorted(os.listdir(self.path))
+        except OSError:
+            return []
+    
+class SpawnJobRule(SimpleAsyncRule):
+    def __init__(self, args, input_files, output_files, other_inputs=()):
+        self.args = list(args)
+        self.input_files = list(input_files)
+        self.output_files = list(output_files)
+        self.other_inputs = list(other_inputs)
+
+    def start(self, engine):
+        # Request all of the inputs.
+        for path in self.input_files:
+            engine.task_needs_input(self, GetFileInfoRule.asKey(path))
+        for key in self.other_inputs:
+            engine.task_needs_input(self, key)
+
+    def provide_data(self, engine, input_id, data):
+        pass
+        
+    def run(self):
+        try:
+            util.message(' '.join(self.args))
+            subprocess.check_call(self.args)
+        except:
+            util.error("error: command failed: %s" % (' '.join(self.args),))
+            return { "error" : True }
+
+        # Get the file info on all of the output files.
+        output_infos = [util.get_stat_info(path)
+                       for path in self.output_files]
+        return { "output_info" : output_infos }
+
+class BuildDirectoryRule(SimpleRule):
+    sources_list_ID = 0
+    compile_ID = 1
+    link_ID = 2
+
+    def __init__(self, path):
+        self.path = path
+        self.sources = None
+
+    def start(self, engine):
+        # Request the source files for the current directory.
+        engine.task_needs_input(self, GetDirectoryContentsRule.asKey(self.path),
+                                self.sources_list_ID)
+
+    def provide_data(self, engine, input_id, result):
+        if input_id == self.sources_list_ID:
+            self.sources = [str(name)
+                            for name in result
+                            if name.endswith(".c")]
+            util.note("building sources: %r" % (self.sources),)
+
+            # Request compilation of all the sources.
+            objects = []
+            objects_keys = []
+            for name in self.sources:
+                input = os.path.join(self.path, name)
+                output = os.path.join(self.path, "%s.o" % name)
+                objects.append(output)
+
+                cmd = ['cc', '-c', '-o', output, input]
+                job = SpawnJobRule.asKey(cmd, [input], [output])
+                engine.task_needs_input(self, job, self.compile_ID)
+                objects_keys.append(job)
+
+            # Request a link of the objects.
+            output = os.path.join(self.path, os.path.basename(self.path))
+            cmd = ['cc', '-o', output] + objects
+            job = SpawnJobRule.asKey(cmd, [], [output], objects_keys)
+            engine.task_needs_input(self, job, self.link_ID)
+
+    def inputs_available(self, engine):
+        engine.task_is_complete(self, "done.")
+
+# Get the input path.
+_,path = sys.argv
+
+# Build the app.
+engine = DataDrivenEngine(globals())
+engine.attach_db(".build.db")
+result = engine.build(BuildDirectoryRule.asKey(path))
+print result
