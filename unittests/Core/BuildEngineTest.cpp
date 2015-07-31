@@ -239,7 +239,7 @@ TEST(BuildEngineTest, veryBasicIncremental) {
   EXPECT_EQ(valueA * valueB * 5, intFromValue(engine.build("value-R")));
   EXPECT_EQ(2U, builtKeys.size());
   EXPECT_EQ("value-A", builtKeys[0]);
-  EXPECT_EQ("value-R", builtKeys[2]);
+  EXPECT_EQ("value-R", builtKeys[1]);
 
   // Check that a subsequent build is null.
   builtKeys.clear();
