@@ -12,7 +12,7 @@ The project is set up in the following fashion, generally following LLVM and
 Swift conventions.
 
 * For C++ code:
-  * The code is written against the C++11 standard.
+  * The code is written against the C++14 standard.
 
   * The style should follow the LLVM conventions, but variable names use
     camelCase.
