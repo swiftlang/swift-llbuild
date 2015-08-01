@@ -144,7 +144,7 @@ public:
   ///
   /// @{
 
-  virtual void start(BuildSystemCommandInterface&) = 0;
+  virtual void start(BuildSystemCommandInterface&, core::Task*) = 0;
 
   virtual void inputsAvailable(BuildSystemCommandInterface&, core::Task*) = 0;
   

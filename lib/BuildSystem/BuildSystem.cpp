@@ -109,7 +109,22 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
   /// @name BuildSystemCommandInterface Implementation
   /// @{
 
-  virtual void taskIsComplete(core::Task* task, core::ValueType&& value,
+
+  virtual void taskNeedsInput(core::Task* task, const KeyType& key,
+                              uintptr_t inputID) override {
+    return buildEngine.taskNeedsInput(task, key, inputID);
+  }
+
+  virtual void taskMustFollow(core::Task* task, const KeyType& key) override {
+    return buildEngine.taskMustFollow(task, key);
+  }
+
+  virtual void taskDiscoveredDependency(core::Task* task,
+                                        const KeyType& key) override {
+    return buildEngine.taskDiscoveredDependency(task, key);
+  }
+
+  virtual void taskIsComplete(core::Task* task, ValueType&& value,
                               bool forceChange) override {
     return buildEngine.taskIsComplete(task, std::move(value), forceChange);
   }
@@ -345,7 +360,7 @@ class CommandTask : public Task {
   }
     
   virtual void start(BuildEngine& engine) override {
-    command.start(getBuildSystem(engine).getCommandInterface());
+    command.start(getBuildSystem(engine).getCommandInterface(), this);
   }
 
   virtual void providePriorValue(BuildEngine&,
@@ -517,7 +532,7 @@ public:
     return true;
   }
 
-  virtual void start(BuildSystemCommandInterface&) override {
+  virtual void start(BuildSystemCommandInterface& system, Task* task) override {
   }
 
   virtual void inputsAvailable(BuildSystemCommandInterface& system,

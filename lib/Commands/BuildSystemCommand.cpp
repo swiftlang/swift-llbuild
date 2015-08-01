@@ -106,7 +106,7 @@ public:
     return true;
   }
 
-  virtual void start(BuildSystemCommandInterface&) override {}
+  virtual void start(BuildSystemCommandInterface&, Task*) override {}
   virtual void inputsAvailable(BuildSystemCommandInterface&, Task*) override {}
 };
 
