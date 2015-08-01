@@ -238,6 +238,9 @@ public:
   static SystemKey makeNode(llvm::StringRef name) {
     return SystemKey('N', name);
   }
+  static SystemKey makeNode(const Node* node) {
+    return makeNode(node->getName());
+  }
 
   static SystemKey makeTarget(llvm::StringRef name) {
     return SystemKey('T', name);
@@ -312,10 +315,39 @@ public:
   TargetTask(Target& target) : target(target) {}
 };
 
-/// This is the task to "build" a node. It is responsible for selecting the
-/// appropriate producer command to run to produce the ndoe, and for
-/// synchronizing any external state the node depends on.
-class NodeTask : public Task {
+/// This is the task to "build" a node which represents pure raw input to the
+/// system.
+class InputNodeTask : public Task {
+  Node& node;
+  
+  virtual void start(BuildEngine& engine) override {
+    assert(node.getProducers().empty());
+  }
+
+  virtual void providePriorValue(BuildEngine&,
+                                 const ValueType& value) override {
+  }
+
+  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+                            const ValueType& value) override {
+  }
+
+  virtual void inputsAvailable(BuildEngine& engine) override {
+    // Complete the task immediately.
+    engine.taskIsComplete(this, ValueType());
+  }
+
+public:
+  InputNodeTask(Node& node) : node(node) {}
+};
+
+
+/// This is the task to "build" a node which is the product of some command.
+///
+/// It is responsible for selecting the appropriate producer command to run to
+/// produce the ndoe, and for synchronizing any external state the node depends
+/// on.
+class ProducedNodeTask : public Task {
   Node& node;
   
   virtual void start(BuildEngine& engine) override {
@@ -347,7 +379,7 @@ class NodeTask : public Task {
   }
 
 public:
-  NodeTask(Node& node) : node(node) {}
+  ProducedNodeTask(Node& node) : node(node) {}
 };
 
 /// This is the task to actually execute a command.
@@ -427,12 +459,26 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     //
     // We could bypass this level and directly return the rule to run the
     // command, which would reduce the number of tasks in the system. For now we
-    // do the uniform thing.
+    // do the uniform thing, but do differentiate between input and command
+    // nodes.
     Node* node = it->second.get();
+
+    // Create an input node if there are no producers.
+    if (node->getProducers().empty()) {
+      return Rule{
+        key,
+        /*Action=*/ [node](BuildEngine& engine) -> Task* {
+          return engine.registerTask(new InputNodeTask(*node));
+        }
+        // FIXME: Check node validity.
+      };
+    }
+
+    // Otherwise, create a task for a produced node.
     return Rule{
       key,
       /*Action=*/ [node](BuildEngine& engine) -> Task* {
-        return engine.registerTask(new NodeTask(*node));
+        return engine.registerTask(new ProducedNodeTask(*node));
       }
       // FIXME: Check node validity.
     };
@@ -533,6 +579,10 @@ public:
   }
 
   virtual void start(BuildSystemCommandInterface& system, Task* task) override {
+    // Request all of the inputs.
+    for (const auto& node: inputs) {
+      system.taskNeedsInput(task, SystemKey::makeNode(node), /*InputID=*/0);
+    }
   }
 
   virtual void inputsAvailable(BuildSystemCommandInterface& system,
