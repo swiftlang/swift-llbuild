@@ -146,6 +146,13 @@ public:
 
   virtual void start(BuildSystemCommandInterface&, core::Task*) = 0;
 
+  virtual void providePriorValue(BuildSystemCommandInterface&,
+                                 core::Task*, const core::ValueType& value) = 0;
+
+  virtual void provideValue(BuildSystemCommandInterface&, core::Task*,
+                            uintptr_t inputID,
+                            const core::ValueType& value) = 0;
+
   virtual void inputsAvailable(BuildSystemCommandInterface&, core::Task*) = 0;
   
   /// @}

@@ -107,6 +107,11 @@ public:
   }
 
   virtual void start(BuildSystemCommandInterface&, Task*) override {}
+  virtual void providePriorValue(BuildSystemCommandInterface&, Task*,
+                                 const core::ValueType&) override {}
+  virtual void provideValue(BuildSystemCommandInterface&, Task*,
+                                 uintptr_t inputID,
+                                 const core::ValueType&) override {}
   virtual void inputsAvailable(BuildSystemCommandInterface&, Task*) override {}
 };
 

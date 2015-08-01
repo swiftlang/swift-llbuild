@@ -395,12 +395,16 @@ class CommandTask : public Task {
     command.start(getBuildSystem(engine).getCommandInterface(), this);
   }
 
-  virtual void providePriorValue(BuildEngine&,
+  virtual void providePriorValue(BuildEngine& engine,
                                  const ValueType& value) override {
+    command.providePriorValue(
+        getBuildSystem(engine).getCommandInterface(), this, value);
   }
 
-  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+  virtual void provideValue(BuildEngine& engine, uintptr_t inputID,
                             const ValueType& value) override {
+    command.provideValue(
+        getBuildSystem(engine).getCommandInterface(), this, inputID, value);
   }
 
   virtual void inputsAvailable(BuildEngine& engine) override {
@@ -583,6 +587,15 @@ public:
     for (const auto& node: inputs) {
       system.taskNeedsInput(task, SystemKey::makeNode(node), /*InputID=*/0);
     }
+  }
+
+  virtual void providePriorValue(BuildSystemCommandInterface&, Task*,
+                                 const core::ValueType&) override {
+  }
+  
+  virtual void provideValue(BuildSystemCommandInterface&, Task*,
+                            uintptr_t inputID,
+                            const core::ValueType&) override {
   }
 
   virtual void inputsAvailable(BuildSystemCommandInterface& system,
