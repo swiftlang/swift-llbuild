@@ -20,6 +20,8 @@
 namespace llbuild {
 namespace buildsystem {
 
+class QueueJob;
+
 /// This is an abstract interface class which defines the API available to
 /// Commands when being invoked by the BuildSystem for the purposes of
 /// execution.
@@ -29,6 +31,9 @@ class BuildSystemCommandInterface {
 public:
   virtual ~BuildSystemCommandInterface();
 
+  /// @name BuildEngine Task API
+  /// @{
+  
   virtual void taskNeedsInput(core::Task* task, const core::KeyType& key,
                               uintptr_t inputID) = 0;
 
@@ -39,6 +44,16 @@ public:
 
   virtual void taskIsComplete(core::Task* task, core::ValueType&& value,
                               bool forceChange = false) = 0;
+
+  /// @}
+
+  /// @name BuildSystem API
+  /// @{
+
+  /// Add a job to be executed.
+  virtual void addJob(QueueJob&&) = 0;
+
+  /// @}
 };
 
 }

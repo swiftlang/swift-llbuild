@@ -20,6 +20,7 @@
 namespace llbuild {
 namespace buildsystem {
 
+class BuildExecutionQueue;
 class Tool;
   
 class BuildSystemDelegate {
@@ -47,6 +48,9 @@ public:
   /// \param name The name of the tool to lookup.
   /// \returns The tool to use on success, or otherwise nil.
   virtual std::unique_ptr<Tool> lookupTool(const std::string& name) = 0;
+
+  /// Called by the build system to get create the object used to dispatch work.
+  virtual std::unique_ptr<BuildExecutionQueue> createExecutionQueue() = 0;
 };
 
 /// The BuildSystem class is used to perform builds using the native build

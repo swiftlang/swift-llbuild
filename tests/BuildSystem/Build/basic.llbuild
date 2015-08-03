@@ -4,7 +4,7 @@
 
 # FIXME: Check the result.
 #
-# RUN-X: %{FileCheck} < %t.out %s
+# RUN: %{FileCheck} < %t.out %s
 #
 # CHECK: cp input output
 
@@ -29,5 +29,6 @@ commands:
   cp-output:
     tool: shell
     inputs: ["input"]
-    outputs: ["output"]            
-    args: cp ${in} ${out}
+    outputs: ["output"]
+    # FIXME: Design a limited mechanism for substitution. Might be tool specific.
+    args: cp input output

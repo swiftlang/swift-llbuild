@@ -16,6 +16,7 @@
 #include "llvm/ADT/StringRef.h"
 
 #include "llbuild/Core/BuildEngine.h"
+#include "llbuild/BuildSystem/BuildExecutionQueue.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 
 #include <memory>
@@ -23,6 +24,8 @@
 using namespace llbuild;
 using namespace llbuild::core;
 using namespace llbuild::buildsystem;
+
+BuildExecutionQueue::~BuildExecutionQueue() {}
 
 BuildSystemDelegate::~BuildSystemDelegate() {}
 
@@ -106,9 +109,11 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
   /// The build engine.
   BuildEngine buildEngine;
 
+  /// The execution queue.
+  std::unique_ptr<BuildExecutionQueue> executionQueue;
+  
   /// @name BuildSystemCommandInterface Implementation
   /// @{
-
 
   virtual void taskNeedsInput(core::Task* task, const KeyType& key,
                               uintptr_t inputID) override {
@@ -129,6 +134,10 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
     return buildEngine.taskIsComplete(task, std::move(value), forceChange);
   }
 
+  virtual void addJob(QueueJob&& job) override {
+    executionQueue->addJob(std::move(job));
+  }
+  
   /// @}
   
 public:
@@ -138,7 +147,8 @@ public:
       : buildSystem(buildSystem), delegate(delegate),
         mainFilename(mainFilename),
         fileDelegate(*this), buildFile(mainFilename, fileDelegate),
-        engineDelegate(*this), buildEngine(engineDelegate) {}
+        engineDelegate(*this), buildEngine(engineDelegate),
+        executionQueue(delegate.createExecutionQueue()) {}
 
   BuildSystem& getBuildSystem() {
     return buildSystem;
@@ -162,6 +172,10 @@ public:
 
   BuildEngine& getBuildEngine() {
     return buildEngine;
+  }
+
+  BuildExecutionQueue& getExecutionQueue() {
+    return *executionQueue;
   }
 
   /// @name Client API
@@ -208,14 +222,14 @@ private:
 
 public:
   // Support copy and move.
-  SystemKey(SystemKey&& rhs) : key(rhs.key) { }
+  SystemKey(SystemKey&& rhs) : key(std::move(rhs.key)) { }
   void operator=(const SystemKey& rhs) {
     if (this != &rhs)
       key = rhs.key;
   }
   SystemKey& operator=(SystemKey&& rhs) {
     if (this != &rhs)
-      key = rhs.key;
+      key = std::move(rhs.key);
     return *this;
   }
 
@@ -600,7 +614,12 @@ public:
 
   virtual void inputsAvailable(BuildSystemCommandInterface& system,
                                Task* task) override {
-    system.taskIsComplete(task, ValueType());
+    system.addJob(QueueJob(this, [&, &system=system, task] {
+          // FIXME: Actually run the command.
+          fprintf(stdout, "%s\n", args.c_str());
+          
+          system.taskIsComplete(task, ValueType());
+        }));
   }
 };
 

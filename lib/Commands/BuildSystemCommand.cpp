@@ -12,12 +12,23 @@
 
 #include "llbuild/Commands/Commands.h"
 
+#include "llbuild/BuildSystem/BuildExecutionQueue.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildSystem.h"
+
+#include <deque>
+#include <thread>
+
+#include <signal.h>
+#include <spawn.h>
 
 using namespace llbuild;
 using namespace llbuild::core;
 using namespace llbuild::buildsystem;
+
+extern "C" {
+  extern char **environ;
+}
 
 namespace {
 
@@ -258,6 +269,74 @@ static int executeParseCommand(std::vector<std::string> args) {
 
 /* Build Command */
 
+/// Build execution queue.
+//
+// FIXME: Consider trying to share this with the Ninja implementation.
+class ExecutionQueue : public BuildExecutionQueue {
+  /// The number of lanes the queue was configured with.
+  unsigned numLanes;
+
+  /// A thread for each lane.
+  std::vector<std::unique_ptr<std::thread>> lanes;
+
+  /// The ready queue of jobs to execute.
+  std::deque<QueueJob> readyJobs;
+  std::mutex readyJobsMutex;
+  std::condition_variable readyJobsCondition;
+  
+  void executeLane(unsigned laneNumber) {
+    // Execute items from the queue until shutdown.
+    while (true) {
+      // Take a job from the ready queue.
+      QueueJob job{};
+      {
+        std::unique_lock<std::mutex> lock(readyJobsMutex);
+
+        // While the queue is empty, wait for an item.
+        while (readyJobs.empty()) {
+          readyJobsCondition.wait(lock);
+        }
+
+        // Take an item according to the chosen policy.
+        job = readyJobs.front();
+        readyJobs.pop_front();
+      }
+
+      // If we got an empty job, the queue is shutting down.
+      if (!job.getForCommand())
+        break;
+
+      // Process the job.
+      job.execute();
+    }
+  }
+
+public:
+  ExecutionQueue(unsigned numLanes) : numLanes(numLanes) {
+    for (unsigned i = 0; i != numLanes; ++i) {
+      lanes.push_back(std::unique_ptr<std::thread>(
+                          new std::thread(
+                              &ExecutionQueue::executeLane, this, i)));
+    }
+  }
+  
+  virtual ~ExecutionQueue() {
+    // Shut down the lanes.
+    for (unsigned i = 0; i != numLanes; ++i) {
+      addJob({});
+    }
+    for (unsigned i = 0; i != numLanes; ++i) {
+      lanes[i]->join();
+    }
+  }
+
+  virtual void addJob(QueueJob job) override {
+    std::lock_guard<std::mutex> guard(readyJobsMutex);
+    readyJobs.push_back(job);
+    readyJobsCondition.notify_one();
+  }
+};
+
 class BuildCommandDelegate : public BuildSystemDelegate {
 public:
   BuildCommandDelegate() : BuildSystemDelegate("basic") {}
@@ -270,6 +349,20 @@ public:
   virtual std::unique_ptr<Tool> lookupTool(const std::string& name) override {
     // We do not support any non-built-in tools.
     return nullptr;
+  }
+
+  virtual std::unique_ptr<BuildExecutionQueue> createExecutionQueue() override {
+    // Get the number of CPUs to use.
+    long numCPUs = sysconf(_SC_NPROCESSORS_ONLN);
+    unsigned numLanes;
+    if (numCPUs < 0) {
+      error("<unknown", "unable to detect number of CPUs");
+      numLanes = 1;
+    } else {
+      numLanes = numCPUs + 2;
+    }
+    
+    return std::make_unique<ExecutionQueue>(numLanes);
   }
 };
 
