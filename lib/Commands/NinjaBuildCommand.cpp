@@ -580,7 +580,11 @@ public:
     std::string message = getFormattedString(fmt, ap);
     va_end(ap);
 
-    statusOutput.setOrWriteLine(message);
+    if (verbose) {
+      statusOutput.writeText(message + "\n");
+    } else {
+      statusOutput.setOrWriteLine(message);
+    }
   }
 
   /// Emit a diagnostic to the error stream.
