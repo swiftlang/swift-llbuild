@@ -3,7 +3,8 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: ln -s %s %t.build/build.ninja
-# RUN: touch -r / %t.build/header-1 %t.build/input-1
+# RUN: echo "header-1" > %t.build/header-1
+# RUN: echo "input-1" > %t.build/input-1
 # RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file=%t1.out %s
 
@@ -32,6 +33,7 @@ rule CC
          cat ${in} header-1 > ${out}; $
        else $
          echo "${out}:" > ${depfile}; $
+         cat ${in} > ${out}; $
        fi
      description = CC ${out}
 
