@@ -19,6 +19,7 @@
 #include <deque>
 #include <thread>
 
+#include <fcntl.h>
 #include <signal.h>
 #include <spawn.h>
 
@@ -307,7 +308,8 @@ class ExecutionQueue : public BuildExecutionQueue {
         break;
 
       // Process the job.
-      job.execute();
+      QueueJobContext* context = nullptr;
+      job.execute(context);
     }
   }
 
@@ -334,6 +336,84 @@ public:
     std::lock_guard<std::mutex> guard(readyJobsMutex);
     readyJobs.push_back(job);
     readyJobsCondition.notify_one();
+  }
+
+  virtual bool executeShellCommand(QueueJobContext*,
+                                   const std::string& command) override {
+    // Initialize the spawn attributes.
+    posix_spawnattr_t attributes;
+    posix_spawnattr_init(&attributes);
+
+    // Unmask all signals.
+    sigset_t noSignals;
+    sigemptyset(&noSignals);
+    posix_spawnattr_setsigmask(&attributes, &noSignals);
+
+    // Reset all signals to default behavior.
+    sigset_t allSignals;
+    sigfillset(&allSignals);
+    posix_spawnattr_setsigdefault(&attributes, &allSignals);
+
+    // Establish a separate process group.
+    posix_spawnattr_setpgroup(&attributes, 0);
+
+    // Set the attribute flags.
+    unsigned flags = POSIX_SPAWN_SETSIGMASK | POSIX_SPAWN_SETSIGDEF;
+    flags |= POSIX_SPAWN_SETPGROUP;
+
+    // Close all other files by default.
+    //
+    // Note that this is an Apple-specific extension, and we will have to do
+    // something else on other platforms (and unfortunately, there isn't really
+    // an easy answer other than using a stub executable).
+    flags |= POSIX_SPAWN_CLOEXEC_DEFAULT;
+
+    posix_spawnattr_setflags(&attributes, flags);
+
+    // Setup the file actions.
+    posix_spawn_file_actions_t fileActions;
+    posix_spawn_file_actions_init(&fileActions);
+
+    // Open /dev/null as stdin.
+    posix_spawn_file_actions_addopen(
+        &fileActions, 0, "/dev/null", O_RDONLY, 0);
+    posix_spawn_file_actions_adddup2(&fileActions, 1, 1);
+    posix_spawn_file_actions_adddup2(&fileActions, 2, 2);
+
+    // Spawn the command.
+    const char* args[4];
+    args[0] = "/bin/sh";
+    args[1] = "-c";
+    args[2] = command.c_str();
+    args[3] = nullptr;
+
+    // FIXME: Need to track spawned processes for the purposes of cancellation.
+    
+    pid_t pid;
+    if (posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
+                    /*attrp=*/&attributes, const_cast<char**>(args),
+                    ::environ) != 0) {
+      // FIXME: Error handling.
+      fprintf(stderr, "error: unable to spawn process (%s)", strerror(errno));
+      return false;
+    }
+
+    posix_spawn_file_actions_destroy(&fileActions);
+    posix_spawnattr_destroy(&attributes);
+
+    // Wait for the command to complete.
+    int status, result = waitpid(pid, &status, 0);
+    while (result == -1 && errno == EINTR)
+      result = waitpid(pid, &status, 0);
+    if (result == -1) {
+      // FIXME: Error handling.
+      fprintf(stderr, "error: unable to wait for process (%s)",
+              strerror(errno));
+      return false;
+    }
+
+    // If the child failed, show the full command and the output.
+    return (status == 0);
   }
 };
 

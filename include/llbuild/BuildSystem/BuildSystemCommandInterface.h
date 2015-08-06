@@ -21,6 +21,7 @@ namespace llbuild {
 namespace buildsystem {
 
 class QueueJob;
+class BuildExecutionQueue;
 
 /// This is an abstract interface class which defines the API available to
 /// Commands when being invoked by the BuildSystem for the purposes of
@@ -31,6 +32,13 @@ class BuildSystemCommandInterface {
 public:
   virtual ~BuildSystemCommandInterface();
 
+  /// @name Accessors
+  /// @{
+
+  virtual BuildExecutionQueue& getExecutionQueue() = 0;
+  
+  /// @}
+  
   /// @name BuildEngine Task API
   /// @{
   

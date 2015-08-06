@@ -115,6 +115,10 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
   /// @name BuildSystemCommandInterface Implementation
   /// @{
 
+  virtual BuildExecutionQueue& getExecutionQueue() override {
+    return *executionQueue;
+  }
+
   virtual void taskNeedsInput(core::Task* task, const KeyType& key,
                               uintptr_t inputID) override {
     return buildEngine.taskNeedsInput(task, key, inputID);
@@ -172,10 +176,6 @@ public:
 
   BuildEngine& getBuildEngine() {
     return buildEngine;
-  }
-
-  BuildExecutionQueue& getExecutionQueue() {
-    return *executionQueue;
   }
 
   /// @name Client API
@@ -617,12 +617,18 @@ public:
     // Suppress static analyzer false positive on generalized lambda capture
     // (rdar://problem/22165130).
 #ifndef __clang_analyzer__
-    system.addJob(QueueJob(this, [&, &system=system, task] {
-          // FIXME: Actually run the command.
-          fprintf(stdout, "%s\n", args.c_str());
+    auto fn = [this, &system=system, task](QueueJobContext* context) {
+      // Log the command.
+      //
+      // FIXME: Design the logging and status output APIs.
+      fprintf(stdout, "%s\n", args.c_str());
+      
+      // Execute the command.
+      system.getExecutionQueue().executeShellCommand(context, args);
           
-          system.taskIsComplete(task, ValueType());
-        }));
+      system.taskIsComplete(task, ValueType());
+    };
+    system.addJob({ this, std::move(fn) });
 #endif
   }
 };

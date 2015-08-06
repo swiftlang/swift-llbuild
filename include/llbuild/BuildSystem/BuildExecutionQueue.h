@@ -21,6 +21,7 @@ namespace llbuild {
 namespace buildsystem {
 
 class Command;
+struct QueueJobContext;
 
 /// Wrapper for individual pieces of work that are added to the execution queue.
 ///
@@ -31,39 +32,20 @@ class QueueJob {
   Command* forCommand = nullptr;
 
   /// The function to execute to do the work.
-  std::function<void()> work;
+  typedef std::function<void(QueueJobContext*)> work_fn_ty;
+  work_fn_ty work;
   
 public:
   /// Default constructor, for use as a sentinel.
   QueueJob() {}
 
   /// General constructor.
-  QueueJob(Command* forCommand, std::function<void()> work)
+  QueueJob(Command* forCommand, work_fn_ty work)
       : forCommand(forCommand), work(work) {}
-
-  /// Support copy and move.
-  QueueJob(const QueueJob& rhs) : forCommand(rhs.forCommand), work(rhs.work) {}
-  QueueJob(QueueJob&& rhs)
-      : forCommand(rhs.forCommand), work(std::move(rhs.work)) {
-    rhs.forCommand = nullptr;
-  }
-  void operator=(const QueueJob& rhs) {
-    if (this != &rhs) {
-      forCommand = std::move(rhs.forCommand);
-      work = std::move(rhs.work);
-    }
-  }
-  QueueJob& operator=(QueueJob&& rhs) {
-    if (this != &rhs) {
-      forCommand = rhs.forCommand;
-      work = rhs.work;
-    }
-    return *this;
-  }
 
   Command* getForCommand() const { return forCommand; }
 
-  void execute() { work(); }
+  void execute(QueueJobContext* context) { work(context); }
 };
 
 /// This abstact class encapsulates the interface needed by the build system for
@@ -83,6 +65,32 @@ public:
 
   /// Add a job to be executed.
   virtual void addJob(QueueJob job) = 0;
+
+  /// @name Execution Interfaces
+  ///
+  /// These are additional interfaces provided by the execution queue which can
+  /// be invoked by the individual \see QueueJob::execute() to perform
+  /// particular actions. The benefit of delegating to the execution queue to
+  /// perform these actions is that the queue can potentially do a better job of
+  /// scheduling activities.
+  ///
+  /// @{
+
+  /// Execute the given command using "/bin/sh".
+  ///
+  /// This will launch and execute the given command line and wait for it to
+  /// complete.
+  ///
+  /// \param context The context object passed to the job's worker function.
+  /// \param command The command to execute.
+  /// \returns True on success.
+  //
+  // FIXME: This interface will need to get more complicated, and provide the
+  // command result and facilities for dealing with the output.
+  virtual bool executeShellCommand(QueueJobContext* context,
+                                   const std::string& command) = 0;
+  
+  /// @}
 };
 
 }
