@@ -221,18 +221,6 @@ private:
   }
 
 public:
-  // Support copy and move.
-  SystemKey(SystemKey&& rhs) : key(std::move(rhs.key)) { }
-  void operator=(const SystemKey& rhs) {
-    if (this != &rhs)
-      key = rhs.key;
-  }
-  SystemKey& operator=(SystemKey&& rhs) {
-    if (this != &rhs)
-      key = std::move(rhs.key);
-    return *this;
-  }
-
   // Allow implicit conversion to the contained key.
   operator const KeyType& () const { return getKeyData(); }
 
