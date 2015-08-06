@@ -1,5 +1,6 @@
 add_llbuild_unittest(CoreTests
   BuildEngineTest.cpp
+  DepsBuildEngineTest.cpp
   DependencyGraphTest.cpp
   MakefileDepsParserTest.cpp
   )
