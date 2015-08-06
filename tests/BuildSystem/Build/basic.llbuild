@@ -1,6 +1,9 @@
 # Check basic building functionality.
 #
-# RUN: %{llbuild} buildsystem build --trace %t.trace %s > %t.out
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: touch %t.build/input
+# RUN: %{llbuild} buildsystem build --chdir %t.build --trace %t.trace %s > %t.out
 
 # FIXME: Check the result.
 #

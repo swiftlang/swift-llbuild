@@ -373,12 +373,15 @@ static void buildUsage(int exitCode) {
   fprintf(stderr, "\nOptions:\n");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--help",
           "show this help message and exit");
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "-C <PATH>, --chdir <PATH>",
+          "change directory to PATH before building");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--trace <PATH>",
           "trace build engine operation to PATH");
   ::exit(exitCode);
 }
 
 static int executeBuildCommand(std::vector<std::string> args) {
+  std::string chdirPath;
   std::string traceFilename;
   
   while (!args.empty() && args[0][0] == '-') {
@@ -390,6 +393,14 @@ static int executeBuildCommand(std::vector<std::string> args) {
 
     if (option == "--help") {
       buildUsage(0);
+    } else if (option == "-C" || option == "--chdir") {
+      if (args.empty()) {
+        fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
+                ::getprogname(), option.c_str());
+        buildUsage(1);
+      }
+      chdirPath = args[0];
+      args.erase(args.begin());
     } else if (option == "--trace") {
       if (args.empty()) {
         fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
@@ -408,6 +419,21 @@ static int executeBuildCommand(std::vector<std::string> args) {
   if (args.size() != 1) {
     fprintf(stderr, "error: %s: invalid number of arguments\n", getprogname());
     buildUsage(1);
+  }
+
+  // Honor the --chdir option, if used.
+  if (!chdirPath.empty()) {
+    if (::chdir(chdirPath.c_str()) < 0) {
+      fprintf(stderr, "%s: error: unable to honor --chdir: %s\n",
+              getprogname(), strerror(errno));
+      return 1;
+    }
+
+    // Print a message about the changed directory. The exact format here is
+    // important, it is recognized by other tools (like Emacs).
+    fprintf(stdout, "%s: Entering directory `%s'\n", getprogname(),
+            chdirPath.c_str());
+    fflush(stdout);
   }
 
   std::string filename = args[0].c_str();
