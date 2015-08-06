@@ -213,7 +213,10 @@ TEST(DepsBuildEngineTest, BogusConcurrentDepScan) {
 
   // Now change the dynamic contents and rebuild.
   builtKeys.clear();
+  // Suppress a static analyzer false positive (rdar://problem/22165179).
+#ifndef __clang_analyzer__
   dirListValue = 3;
+#endif
   EXPECT_EQ(3 * 7, intFromValue(engine.build("output")));
   EXPECT_EQ(4U, builtKeys.size());
   EXPECT_EQ("dir-list-input", builtKeys[0]);

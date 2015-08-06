@@ -614,12 +614,16 @@ public:
 
   virtual void inputsAvailable(BuildSystemCommandInterface& system,
                                Task* task) override {
+    // Suppress static analyzer false positive on generalized lambda capture
+    // (rdar://problem/22165130).
+#ifndef __clang_analyzer__
     system.addJob(QueueJob(this, [&, &system=system, task] {
           // FIXME: Actually run the command.
           fprintf(stdout, "%s\n", args.c_str());
           
           system.taskIsComplete(task, ValueType());
         }));
+#endif
   }
 };
 
