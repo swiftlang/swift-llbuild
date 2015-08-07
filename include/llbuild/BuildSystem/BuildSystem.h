@@ -15,6 +15,7 @@
 
 #include "llbuild/Basic/Compiler.h"
 
+#include <cstdint>
 #include <string>
 
 namespace llbuild {
@@ -25,13 +26,18 @@ class Tool;
   
 class BuildSystemDelegate {
   std::string name;
+  uint32_t version;
   
 public:
-  BuildSystemDelegate(const std::string& name) : name(name) {}
+  BuildSystemDelegate(const std::string& name, uint32_t version)
+      : name(name), version(version) {}
   virtual ~BuildSystemDelegate();
 
   /// Called by the build system to get the client name.
   const std::string& getName() const { return name; }
+
+  /// Called by the build system to get the current client version.
+  uint32_t getVersion() const { return version; }
 
   /// Called by the build file loader to report an error.
   //

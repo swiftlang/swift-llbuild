@@ -186,7 +186,8 @@ public:
     // FIXME: How do we pass the client schema version here, if we haven't
     // loaded the file yet.
     std::unique_ptr<core::BuildDB> db(
-        core::createSQLiteBuildDB(filename, /*clientVersion=*/1, error_out));
+        core::createSQLiteBuildDB(filename, delegate.getVersion(),
+                                  error_out));
     if (!db)
       return false;
 
@@ -677,8 +678,12 @@ BuildSystemFileDelegate::configureClient(const std::string& name,
   if (name != getSystemDelegate().getName())
     return false;
 
-  // FIXME: Give the client an opportunity to respond to the schema version and
-  // configuration the properties.
+  // The client version must match the configured version.
+  //
+  // FIXME: We should give the client the opportunity to support a previous
+  // schema version (auto-upgrade).
+  if (version != getSystemDelegate().getVersion())
+    return false;
 
   return true;
 }

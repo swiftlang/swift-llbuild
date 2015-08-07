@@ -419,7 +419,7 @@ public:
 
 class BuildCommandDelegate : public BuildSystemDelegate {
 public:
-  BuildCommandDelegate() : BuildSystemDelegate("basic") {}
+  BuildCommandDelegate() : BuildSystemDelegate("basic", /*version=*/0) {}
 
   virtual void error(const std::string& filename,
                      const std::string& message) override {
