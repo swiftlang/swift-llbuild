@@ -15,6 +15,7 @@
 
 #include "llvm/ADT/StringRef.h"
 
+#include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/BuildEngine.h"
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
 #include "llbuild/BuildSystem/BuildFile.h"
@@ -180,6 +181,18 @@ public:
 
   /// @name Client API
   /// @{
+
+  bool attachDB(const std::string& filename, std::string* error_out) {
+    // FIXME: How do we pass the client schema version here, if we haven't
+    // loaded the file yet.
+    std::unique_ptr<core::BuildDB> db(
+        core::createSQLiteBuildDB(filename, /*clientVersion=*/1, error_out));
+    if (!db)
+      return false;
+
+    buildEngine.attachDB(std::move(db));
+    return true;
+  }
 
   bool enableTracing(const std::string& filename, std::string* error_out) {
     return buildEngine.enableTracing(filename, error_out);
@@ -715,6 +728,11 @@ BuildSystem::~BuildSystem() {
 
 BuildSystemDelegate& BuildSystem::getDelegate() {
   return static_cast<BuildSystemImpl*>(impl)->getDelegate();
+}
+
+bool BuildSystem::attachDB(const std::string& path,
+                                std::string* error_out) {
+  return static_cast<BuildSystemImpl*>(impl)->attachDB(path, error_out);
 }
 
 bool BuildSystem::enableTracing(const std::string& path,

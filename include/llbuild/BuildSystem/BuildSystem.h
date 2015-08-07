@@ -73,6 +73,11 @@ public:
   /// @name Client API
   /// @{
 
+  /// Attach (or create) the database at the given path.
+  ///
+  /// \returns True on success.
+  bool attachDB(const std::string& path, std::string* error_out);
+
   /// Enable low-level engine tracing into the given output file.
   ///
   /// \returns True on success.

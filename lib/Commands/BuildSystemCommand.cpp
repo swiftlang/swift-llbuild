@@ -453,6 +453,10 @@ static void buildUsage(int exitCode) {
   fprintf(stderr, "\nOptions:\n");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--help",
           "show this help message and exit");
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--no-db",
+          "disable use of a build database");
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--db <PATH>",
+          "enable building against the database at PATH [default='build.db']");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "-C <PATH>, --chdir <PATH>",
           "change directory to PATH before building");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--trace <PATH>",
@@ -461,6 +465,7 @@ static void buildUsage(int exitCode) {
 }
 
 static int executeBuildCommand(std::vector<std::string> args) {
+  std::string dbFilename = "build.db";
   std::string chdirPath;
   std::string traceFilename;
   
@@ -473,6 +478,16 @@ static int executeBuildCommand(std::vector<std::string> args) {
 
     if (option == "--help") {
       buildUsage(0);
+    } else if (option == "--no-db") {
+      dbFilename = "";
+    } else if (option == "--db") {
+      if (args.empty()) {
+        fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
+                ::getprogname(), option.c_str());
+        buildUsage(1);
+      }
+      dbFilename = args[0];
+      args.erase(args.begin());
     } else if (option == "-C" || option == "--chdir") {
       if (args.empty()) {
         fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
@@ -526,6 +541,16 @@ static int executeBuildCommand(std::vector<std::string> args) {
     std::string error;
     if (!system.enableTracing(traceFilename, &error)) {
       fprintf(stderr, "error: %s: unable to enable tracing: %s", getprogname(),
+              error.c_str());
+      return 1;
+    }
+  }
+
+  // Attach the database.
+  if (!dbFilename.empty()) {
+    std::string error;
+    if (!system.attachDB(dbFilename, &error)) {
+      fprintf(stderr, "error: %s: unable to attach DB: %s", getprogname(),
               error.c_str());
       return 1;
     }
