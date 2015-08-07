@@ -239,11 +239,16 @@ class TargetTask : public Task {
 
   virtual void inputsAvailable(BuildEngine& engine) override {
     // Complete the task immediately.
-    engine.taskIsComplete(this, ValueType());
+    engine.taskIsComplete(this, BuildValue::makeTarget().toData());
   }
 
 public:
   TargetTask(Target& target) : target(target) {}
+
+  static bool isResultValid(Target& node, const BuildValue& value) {
+    // Always treat target tasks as invalid.
+    return false;
+  }
 };
 
 /// This is the task to "build" a node which represents pure raw input to the
@@ -479,9 +484,10 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       keyData,
         /*Action=*/ [target](BuildEngine& engine) -> Task* {
         return engine.registerTask(new TargetTask(*target));
+      },
+      /*IsValid=*/ [target](const Rule& rule, const ValueType& value) -> bool {
+        return TargetTask::isResultValid(*target, BuildValue::fromData(value));
       }
-      // FIXME: Check target validitity, we need to check the target list hasn't
-      // changed.
     };
   }
   }

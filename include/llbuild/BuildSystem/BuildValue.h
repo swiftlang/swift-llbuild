@@ -42,6 +42,9 @@ class BuildValue {
 
     /// A value produced by a failing command.
     FailedCommand,
+
+    /// Sentinel value representing the result of "building" a top-level target.
+    Target,
   };
 
   /// The kind of value.
@@ -119,6 +122,9 @@ public:
   static BuildValue makeFailedCommand() {
     return BuildValue(Kind::FailedCommand);
   }
+  static BuildValue makeTarget() {
+    return BuildValue(Kind::Target);
+  }
 
   /// @}
 
@@ -129,6 +135,7 @@ public:
   bool isMissingInput() const { return kind == Kind::MissingInput; }
   bool isSuccessfulCommand() const {return kind == Kind::SuccessfulCommand; }
   bool isFailedCommand() const { return kind == Kind::FailedCommand; }
+  bool isTarget() const { return kind == Kind::Target; }
   
   bool hasMultipleOutputs() const {
     return numOutputInfos > 1;
