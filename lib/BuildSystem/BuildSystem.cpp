@@ -20,6 +20,7 @@
 #include "llbuild/Core/BuildEngine.h"
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
 #include "llbuild/BuildSystem/BuildFile.h"
+#include "llbuild/BuildSystem/BuildKey.h"
 #include "llbuild/BuildSystem/BuildValue.h"
 
 #include <memory>
@@ -211,97 +212,6 @@ public:
 
 #pragma mark - BuildSystem engine integration
 
-/// The system key defines the helpers for translating to and from the key space
-/// used by the BuildSystem when using the core BuildEngine.
-struct SystemKey {
-  enum class Kind {
-    /// A key used to identify a command.
-    Command,
-
-    /// A key used to identify a node.
-    Node,
-
-    /// A key used to identify a target.
-    Target,
-
-    /// An invalid key kind.
-    Unknown,
-  };
-
-  /// The actual key data.
-  KeyType key;
-
-private:
-  SystemKey(const KeyType& key) : key(key) {}
-  SystemKey(char kindCode, llvm::StringRef str) {
-    key.reserve(str.size() + 1);
-    key.push_back(kindCode);
-    key.append(str.begin(), str.end());
-  }
-
-public:
-  // Allow implicit conversion to the contained key.
-  operator const KeyType& () const { return getKeyData(); }
-
-  /// @name Construction Functions
-  /// @{
-
-  static SystemKey fromKeyData(const KeyType& key) {
-    auto result = SystemKey(key);
-    assert(result.getKind() != Kind::Unknown && "invalid key");
-    return result;
-  }
-
-  static SystemKey makeCommand(llvm::StringRef name) {
-    return SystemKey('C', name);
-  }
-
-  static SystemKey makeNode(llvm::StringRef name) {
-    return SystemKey('N', name);
-  }
-  static SystemKey makeNode(const Node* node) {
-    return makeNode(node->getName());
-  }
-
-  static SystemKey makeTarget(llvm::StringRef name) {
-    return SystemKey('T', name);
-  }
-
-  /// @}
-  /// @name Accessors
-  /// @{
-
-  const KeyType& getKeyData() const { return key; }
-
-  Kind getKind() const {
-    switch (key[0]) {
-    case 'C': return Kind::Command;
-    case 'N': return Kind::Node;
-    case 'T': return Kind::Target;
-    default:
-      return Kind::Unknown;
-    }
-  }
-
-  bool isCommand() const { return getKind() == Kind::Command; }
-  bool isNode() const { return getKind() == Kind::Node; }
-  bool isTarget() const { return getKind() == Kind::Target; }
-
-  llvm::StringRef getCommandName() const {
-    return llvm::StringRef(key.data()+1, key.size()-1);
-  }
-
-  llvm::StringRef getNodeName() const {
-    return llvm::StringRef(key.data()+1, key.size()-1);
-  }
-
-  llvm::StringRef getTargetName() const {
-    return llvm::StringRef(key.data()+1, key.size()-1);
-  }
-
-  /// @}
-};
-
 /// Get the information to represent the state of the given node in the file
 /// system.
 ///
@@ -350,7 +260,7 @@ class TargetTask : public Task {
   virtual void start(BuildEngine& engine) override {
     // Request all of the necessary system tasks.
     for (const auto& nodeName: target.getNodeNames()) {
-      engine.taskNeedsInput(this, SystemKey::makeNode(nodeName),
+      engine.taskNeedsInput(this, BuildKey::makeNode(nodeName).toData(),
                             /*InputID=*/0);
     }
   }
@@ -446,7 +356,8 @@ class ProducedNodeTask : public Task {
     // Request the producer command.
     if (node.getProducers().size() == 1) {
       auto command = node.getProducers()[0];
-      engine.taskNeedsInput(this, SystemKey::makeCommand(command->getName()),
+      engine.taskNeedsInput(this,
+                            BuildKey::makeCommand(command->getName()).toData(),
                             /*InputID=*/0);
       return;
     }
@@ -528,14 +439,14 @@ BuildFile& BuildSystemEngineDelegate::getBuildFile() {
 
 Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
   // Decode the key.
-  auto key = SystemKey::fromKeyData(keyData);
+  auto key = BuildKey::fromData(keyData);
 
   switch (key.getKind()) {
   default:
     assert(0 && "invalid key");
     abort();
 
-  case SystemKey::Kind::Command: {
+  case BuildKey::Kind::Command: {
     // Find the comand.
     auto it = getBuildFile().getCommands().find(key.getCommandName());
     if (it == getBuildFile().getCommands().end()) {
@@ -546,7 +457,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     // Create the rule for the command.
     Command* command = it->second.get();
     return Rule{
-      key,
+      keyData,
       /*Action=*/ [command](BuildEngine& engine) -> Task* {
         return engine.registerTask(new CommandTask(*command));
       },
@@ -557,7 +468,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     };
   }
 
-  case SystemKey::Kind::Node: {
+  case BuildKey::Kind::Node: {
     // Find the node.
     auto it = getBuildFile().getNodes().find(key.getNodeName());
     if (it == getBuildFile().getNodes().end()) {
@@ -579,7 +490,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     // Create an input node if there are no producers.
     if (node->getProducers().empty()) {
       return Rule{
-        key,
+        keyData,
         /*Action=*/ [node](BuildEngine& engine) -> Task* {
           return engine.registerTask(new InputNodeTask(*node));
         },
@@ -592,7 +503,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
 
     // Otherwise, create a task for a produced node.
     return Rule{
-      key,
+      keyData,
       /*Action=*/ [node](BuildEngine& engine) -> Task* {
         return engine.registerTask(new ProducedNodeTask(*node));
       }
@@ -600,7 +511,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     };
   }
 
-  case SystemKey::Kind::Target: {
+  case BuildKey::Kind::Target: {
     // Find the target.
     auto it = getBuildFile().getTargets().find(key.getTargetName());
     if (it == getBuildFile().getTargets().end()) {
@@ -612,7 +523,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     // Create the rule to construct this target.
     Target* target = it->second.get();
     return Rule{
-      key,
+      keyData,
         /*Action=*/ [target](BuildEngine& engine) -> Task* {
         return engine.registerTask(new TargetTask(*target));
       }
@@ -641,7 +552,7 @@ bool BuildSystemImpl::build(const std::string& target) {
   getBuildFile().load();
 
   // Build the target.
-  getBuildEngine().build(SystemKey::makeTarget(target));
+  getBuildEngine().build(BuildKey::makeTarget(target).toData());
 
   return false;
 }
@@ -697,7 +608,8 @@ public:
   virtual void start(BuildSystemCommandInterface& system, Task* task) override {
     // Request all of the inputs.
     for (const auto& node: inputs) {
-      system.taskNeedsInput(task, SystemKey::makeNode(node), /*InputID=*/0);
+      system.taskNeedsInput(task, BuildKey::makeNode(node).toData(),
+                            /*InputID=*/0);
     }
   }
 

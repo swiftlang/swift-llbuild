@@ -459,6 +459,7 @@
 		E10FE0D61B7313D50059D086 /* DepsBuildEngineTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DepsBuildEngineTest.cpp; sourceTree = "<group>"; };
 		E11470901B75160400ED84CF /* FileInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FileInfo.h; sourceTree = "<group>"; };
 		E11470911B7517C800ED84CF /* BuildValue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuildValue.h; sourceTree = "<group>"; };
+		E11470921B752E7000ED84CF /* BuildKey.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildKey.h; sourceTree = "<group>"; };
 		E12E12A71AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CommandLineStatusOutput.cpp; sourceTree = "<group>"; };
 		E12E12A81AD50AE500ACE7B3 /* CommandLineStatusOutput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CommandLineStatusOutput.h; sourceTree = "<group>"; };
 		E153EBBA1A1E94CD00F93337 /* llbuild-test-tools */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "llbuild-test-tools"; sourceTree = "<group>"; };
@@ -1540,6 +1541,7 @@
 			children = (
 				E10FE0D51B6FF2000059D086 /* BuildExecutionQueue.h */,
 				E1B8395D1B541C4300DB876B /* BuildFile.h */,
+				E11470921B752E7000ED84CF /* BuildKey.h */,
 				E1B49EF91B6BD45D0031AFC2 /* BuildSystemCommandInterface.h */,
 				E1B49EFA1B6BD45D0031AFC2 /* BuildSystem.h */,
 				E11470911B7517C800ED84CF /* BuildValue.h */,
