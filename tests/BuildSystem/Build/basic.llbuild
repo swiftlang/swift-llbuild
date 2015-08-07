@@ -4,9 +4,7 @@
 # RUN: mkdir -p %t.build
 # RUN: touch %t.build/input
 # RUN: %{llbuild} buildsystem build --chdir %t.build --trace %t.trace %s > %t.out
-
-# FIXME: Check the result.
-#
+# RUN: diff %t.build/input %t.build/output
 # RUN: %{FileCheck} < %t.out %s
 #
 # CHECK: cp input output
@@ -21,6 +19,22 @@
 # CHECK-TRACE: "new-rule", "R3", "Ccp-output"
 # CHECK-TRACE: "new-rule", "R4", "Ninput"
 # CHECK-TRACE: "build-ended"
+
+# Check that a null build does nothing.
+#
+# RUN: %{llbuild} buildsystem build --chdir %t.build --trace %t.trace %s > %t2.out
+# RUN: %{FileCheck} < %t2.out %s --check-prefix=CHECK-REBUILD
+#
+# CHECK-REBUILD-NOT: cp input output
+
+# Check that we properly copy the output when the input changes.
+#
+# RUN: echo mod >> %t.build/input
+# RUN: %{llbuild} buildsystem build --chdir %t.build --trace %t.trace %s > %t3.out
+# RUN: diff %t.build/input %t.build/output
+# RUN: %{FileCheck} < %t3.out %s --check-prefix=CHECK-REBUILD-MODIFIED
+#
+# CHECK-REBUILD-MODIFIED: cp input output
 
 client:
   name: basic

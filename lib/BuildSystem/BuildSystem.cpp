@@ -22,6 +22,8 @@
 
 #include <memory>
 
+#include <sys/stat.h>
+
 using namespace llbuild;
 using namespace llbuild::core;
 using namespace llbuild::buildsystem;
@@ -297,6 +299,172 @@ public:
   /// @}
 };
 
+/// Information on a file timestamp.
+struct FileTimestamp {
+  uint64_t seconds;
+  uint64_t nanoseconds;
+
+  bool operator==(const FileTimestamp& rhs) const {
+    return seconds == rhs.seconds && nanoseconds == rhs.nanoseconds;
+  }
+  bool operator!=(const FileTimestamp& rhs) const {
+    return !(*this == rhs);
+  }
+  bool operator<(const FileTimestamp& rhs) const {
+    return (seconds < rhs.seconds ||
+            (seconds == rhs.seconds && nanoseconds < rhs.nanoseconds));
+  }
+  bool operator<=(const FileTimestamp& rhs) const {
+    return (seconds < rhs.seconds ||
+            (seconds == rhs.seconds && nanoseconds <= rhs.nanoseconds));
+  }
+  bool operator>(const FileTimestamp& rhs) const {
+    return rhs < *this;
+  }
+  bool operator>=(const FileTimestamp& rhs) const {
+    return rhs <= *this;
+  }
+};
+
+/// Information on an external file stored as part of a build value.
+///
+/// This structure is intentionally sized to have no packing holes.
+struct FileInfo {
+  uint64_t device;
+  uint64_t inode;
+  uint64_t size;
+  FileTimestamp modTime;
+
+  /// Check if this is a FileInfo representing a missing file.
+  bool isMissing() const {
+    // We use an all-zero FileInfo as a sentinel, under the assumption this can
+    // never exist in normal circumstances.
+    return (device == 0 && inode == 0 && size == 0 &&
+            modTime.seconds == 0 && modTime.nanoseconds == 0);
+  }
+
+  bool operator==(const FileInfo& rhs) const {
+    return (device == rhs.device &&
+            inode == rhs.inode &&
+            size == rhs.size &&
+            modTime == rhs.modTime);
+  }
+  bool operator!=(const FileInfo& rhs) const {
+    return !(*this == rhs);
+  }
+};
+
+/// The system value defines the helpers for translating to and from the value
+/// space used by the BuildSystem when using the core BuildEngine.
+struct SystemValue {
+  enum class Kind : uint32_t {
+    /// An invalid value, for sentinel purposes.
+    Invalid = 0,
+      
+    /// A value produced by an existing input file.
+    ExistingInput,
+
+    /// A value produced by a missing input file.
+    MissingInput,
+  };
+
+  /// The kind of value.
+  Kind kind;
+
+  /// The information on the relevant output file, if used.
+  FileInfo outputInfo;
+
+private:
+  SystemValue() {}
+  SystemValue(Kind kind) : kind(kind), outputInfo() {}
+  SystemValue(Kind kind, FileInfo outputInfo)
+      : kind(kind), outputInfo(outputInfo) {}
+
+public:
+  /// @name Construction Functions
+  /// @{
+
+  static SystemValue makeExistingInput(FileInfo outputInfo) {
+    return SystemValue(Kind::ExistingInput, outputInfo);
+  }
+  static SystemValue makeMissingInput() {
+    return SystemValue(Kind::MissingInput);
+  }
+
+  /// @}
+  
+  /// @name Accessors
+  /// @{
+
+  bool isExistingInput() const { return kind == Kind::ExistingInput; }
+  bool isMissingInput() const { return kind == Kind::MissingInput; }
+
+  const FileInfo& getOutputInfo() const {
+    assert(isExistingInput() && "invalid call for value kind");
+    return outputInfo;
+  }
+
+  /// @}
+
+  /// @name Conversion to core ValueType.
+  /// @{
+  
+  static SystemValue fromValue(const core::ValueType& value) {
+    SystemValue result;
+    assert(value.size() == sizeof(result));
+    memcpy(&result, value.data(), sizeof(result));
+    return result;
+  }
+
+  core::ValueType toValue() {
+    std::vector<uint8_t> result(sizeof(*this));
+    memcpy(result.data(), this, sizeof(*this));
+    return result;
+  }
+
+  /// @}
+};
+
+/// Get the information to represent the state of the given node in the file
+/// system.
+///
+/// \param info_out [out] On success, the important path information.
+/// \returns True if information on the path was found.
+//
+// FIXME: Move this to a more insolated location, I would like non-functional
+// parts to be clearly demarcated, but this one is tricky because we want to
+// keep FileInfo a value type.
+static bool getStatInfoForNode(const Node& node, FileInfo *info_out) {
+  struct ::stat buf;
+  if (::stat(node.getName().c_str(), &buf) != 0) {
+    memset(info_out, 0, sizeof(*info_out));
+    assert(info_out->isMissing());
+    return false;
+  }
+
+  info_out->device = buf.st_dev;
+  info_out->inode = buf.st_ino;
+  info_out->size = buf.st_size;
+  info_out->modTime.seconds = buf.st_mtimespec.tv_sec;
+  info_out->modTime.nanoseconds = buf.st_mtimespec.tv_nsec;
+
+  // Enforce we never accidentally create our sentinel missing file value.
+  if (info_out->isMissing()) {
+    info_out->modTime.nanoseconds = 1;
+  }
+
+  // Verify we didn't truncate any values.
+  assert(info_out->device == (unsigned)buf.st_dev &&
+         info_out->inode == (unsigned)buf.st_ino &&
+         info_out->size == (unsigned)buf.st_size &&
+         info_out->modTime.seconds == (unsigned)buf.st_mtimespec.tv_sec &&
+         info_out->modTime.nanoseconds == (unsigned)buf.st_mtimespec.tv_nsec);
+
+  return true;
+}
+
+#pragma mark - Task implementations
+
 /// This is the task used to "build" a target, it translates between the request
 /// for building a target key and the requests for all of its nodes.
 class TargetTask : public Task {
@@ -349,12 +517,43 @@ class InputNodeTask : public Task {
   }
 
   virtual void inputsAvailable(BuildEngine& engine) override {
-    // Complete the task immediately.
-    engine.taskIsComplete(this, ValueType());
+    // Get the information on the file.
+    //
+    // FIXME: This needs to delegate, since we want to have a notion of
+    // different node types.
+    FileInfo info;
+    if (!getStatInfoForNode(node, &info)) {
+      engine.taskIsComplete(this, SystemValue::makeMissingInput().toValue());
+      return;
+    }
+
+    engine.taskIsComplete(
+        this, SystemValue::makeExistingInput(info).toValue());
   }
 
 public:
   InputNodeTask(Node& node) : node(node) {}
+
+  static bool isResultValid(const Node& node, const SystemValue& value) {
+    // If the previous value wasn't for an existing input, always recompute.
+    if (!value.isExistingInput())
+      return false;
+
+    // Otherwise, the result is valid if the path exists and the file
+    // information remains the same.
+    //
+    // FIXME: This is inefficient, we will end up doing the stat twice, once
+    // when we check the value for up to dateness, and once when we "build" the
+    // output.
+    //
+    // We can solve this by caching ourselves but I wonder if it is something
+    // the engine should support more naturally.
+    FileInfo info;
+    if (!getStatInfoForNode(node, &info))
+      return false;
+      
+    return value.getOutputInfo() == info;
+  }
 };
 
 
@@ -489,8 +688,11 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
         key,
         /*Action=*/ [node](BuildEngine& engine) -> Task* {
           return engine.registerTask(new InputNodeTask(*node));
+        },
+        /*IsValid=*/ [node](const Rule& rule, const ValueType& value) -> bool {
+          return InputNodeTask::isResultValid(
+              *node, SystemValue::fromValue(value));
         }
-        // FIXME: Check node validity.
       };
     }
 
