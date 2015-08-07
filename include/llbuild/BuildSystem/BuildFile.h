@@ -147,6 +147,8 @@ public:
   ///
   /// @{
 
+  virtual bool isResultValid(const BuildValue& value) = 0;
+  
   virtual void start(BuildSystemCommandInterface&, core::Task*) = 0;
 
   virtual void providePriorValue(BuildSystemCommandInterface&, core::Task*,

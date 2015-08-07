@@ -419,15 +419,8 @@ class CommandTask : public Task {
 public:
   CommandTask(Command& command) : command(command) {}
 
-  static bool isResultValid(const Command& command, const BuildValue& value) {
-    // If the previous value wasn't for a successful command, always recompute.
-    if (!value.isSuccessfulCommand())
-      return false;
-
-    // FIXME: Check the validity of the command outputs.
-
-    // Otherwise, the result is ok.
-    return true;
+  static bool isResultValid(Command& command, const BuildValue& value) {
+    return command.isResultValid(value);
   }
 };
 
@@ -602,6 +595,17 @@ public:
       return false;
     }
 
+    return true;
+  }
+
+  virtual bool isResultValid(const BuildValue& value) override {
+    // If the previous value wasn't for a successful command, always recompute.
+    if (!value.isSuccessfulCommand())
+      return false;
+
+    // FIXME: Check the validity of the command outputs.
+
+    // Otherwise, the result is ok.
     return true;
   }
 

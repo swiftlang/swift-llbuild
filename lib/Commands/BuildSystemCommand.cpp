@@ -117,7 +117,8 @@ public:
     }
     return true;
   }
-
+  
+  virtual bool isResultValid(const BuildValue&) override { return false; }
   virtual void start(BuildSystemCommandInterface&, Task*) override {}
   virtual void providePriorValue(BuildSystemCommandInterface&, Task*,
                                  const BuildValue&) override {}
