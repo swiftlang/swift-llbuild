@@ -139,9 +139,9 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
     return buildEngine.taskDiscoveredDependency(task, key);
   }
 
-  virtual void taskIsComplete(core::Task* task, ValueType&& value,
+  virtual void taskIsComplete(core::Task* task, const BuildValue& value,
                               bool forceChange) override {
-    return buildEngine.taskIsComplete(task, std::move(value), forceChange);
+    return buildEngine.taskIsComplete(task, value.toData(), forceChange);
   }
 
   virtual void addJob(QueueJob&& job) override {
@@ -400,12 +400,12 @@ class InputNodeTask : public Task {
     // different node types.
     FileInfo info;
     if (!getStatInfoForNode(node, &info)) {
-      engine.taskIsComplete(this, BuildValue::makeMissingInput().toValue());
+      engine.taskIsComplete(this, BuildValue::makeMissingInput().toData());
       return;
     }
 
     engine.taskIsComplete(
-        this, BuildValue::makeExistingInput(info).toValue());
+        this, BuildValue::makeExistingInput(info).toData());
   }
 
 public:
@@ -488,15 +488,17 @@ class CommandTask : public Task {
   }
 
   virtual void providePriorValue(BuildEngine& engine,
-                                 const ValueType& value) override {
+                                 const ValueType& valueData) override {
+    BuildValue value = BuildValue::fromData(valueData);
     command.providePriorValue(
         getBuildSystem(engine).getCommandInterface(), this, value);
   }
 
   virtual void provideValue(BuildEngine& engine, uintptr_t inputID,
-                            const ValueType& value) override {
+                            const ValueType& valueData) override {
     command.provideValue(
-        getBuildSystem(engine).getCommandInterface(), this, inputID, value);
+        getBuildSystem(engine).getCommandInterface(), this, inputID,
+        BuildValue::fromData(valueData));
   }
 
   virtual void inputsAvailable(BuildEngine& engine) override {
@@ -550,7 +552,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       },
       /*IsValid=*/ [command](const Rule& rule, const ValueType& value) -> bool {
         return CommandTask::isResultValid(
-            *command, BuildValue::fromValue(value));
+            *command, BuildValue::fromData(value));
       }
     };
   }
@@ -583,7 +585,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
         },
         /*IsValid=*/ [node](const Rule& rule, const ValueType& value) -> bool {
           return InputNodeTask::isResultValid(
-              *node, BuildValue::fromValue(value));
+              *node, BuildValue::fromData(value));
         }
       };
     }
@@ -700,12 +702,12 @@ public:
   }
 
   virtual void providePriorValue(BuildSystemCommandInterface&, Task*,
-                                 const core::ValueType&) override {
+                                 const BuildValue&) override {
   }
 
   virtual void provideValue(BuildSystemCommandInterface&, Task*,
                             uintptr_t inputID,
-                            const core::ValueType&) override {
+                            const BuildValue& value) override {
   }
 
   virtual void inputsAvailable(BuildSystemCommandInterface& system,
@@ -722,13 +724,13 @@ public:
       // Execute the command.
       if (!system.getExecutionQueue().executeShellCommand(context, args)) {
         // If the command failed, the result is failure.
-        system.taskIsComplete(task, BuildValue::makeFailedCommand().toValue());
+        system.taskIsComplete(task, BuildValue::makeFailedCommand());
         return;
       }
 
       // Otherwise, complete with a successful result.
       system.taskIsComplete(
-          task, BuildValue::makeSuccessfulCommand().toValue());
+          task, BuildValue::makeSuccessfulCommand());
     };
     system.addJob({ this, std::move(fn) });
 #endif

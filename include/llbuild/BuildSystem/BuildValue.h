@@ -15,9 +15,6 @@
 
 #include "llbuild/Basic/Compiler.h"
 #include "llbuild/Basic/FileInfo.h"
-
-// FIXME: Eliminate need for this include, if we could forward declare the value
-// type.
 #include "llbuild/Core/BuildEngine.h"
 
 namespace llbuild {
@@ -25,7 +22,7 @@ namespace buildsystem {
 
 /// The BuildValue encodes the value space used by the BuildSystem when using
 /// the core BuildEngine.
-struct BuildValue {
+class BuildValue {
   using FileInfo = basic::FileInfo;
   
   enum class Kind : uint32_t {
@@ -94,14 +91,14 @@ public:
   /// @name Conversion to core ValueType.
   /// @{
 
-  static BuildValue fromValue(const core::ValueType& value) {
+  static BuildValue fromData(const core::ValueType& value) {
     BuildValue result;
     assert(value.size() == sizeof(result));
     memcpy(&result, value.data(), sizeof(result));
     return result;
   }
 
-  core::ValueType toValue() {
+  core::ValueType toData() const {
     std::vector<uint8_t> result(sizeof(*this));
     memcpy(result.data(), this, sizeof(*this));
     return result;

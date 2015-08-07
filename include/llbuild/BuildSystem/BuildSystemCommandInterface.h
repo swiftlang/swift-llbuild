@@ -13,15 +13,16 @@
 #ifndef LLBUILD_BUILDSYSTEM_BUILDSYSTEMCOMMANDINTERFACE_H
 #define LLBUILD_BUILDSYSTEM_BUILDSYSTEMCOMMANDINTERFACE_H
 
-// FIXME: Eliminate need for this include, if we could forward declare the value
+// FIXME: Eliminate need for this include, if we could forward declare the key
 // type.
 #include "llbuild/Core/BuildEngine.h"
 
 namespace llbuild {
 namespace buildsystem {
 
-class QueueJob;
 class BuildExecutionQueue;
+class BuildValue;
+class QueueJob;
 
 /// This is an abstract interface class which defines the API available to
 /// Commands when being invoked by the BuildSystem for the purposes of
@@ -50,7 +51,7 @@ public:
   virtual void taskDiscoveredDependency(core::Task* task,
                                         const core::KeyType& key) = 0;
 
-  virtual void taskIsComplete(core::Task* task, core::ValueType&& value,
+  virtual void taskIsComplete(core::Task* task, const BuildValue& value,
                               bool forceChange = false) = 0;
 
   /// @}

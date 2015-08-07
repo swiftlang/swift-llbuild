@@ -15,21 +15,24 @@
 
 #include "llbuild/Basic/Compiler.h"
 
-// FIXME: Eliminate need for this include, if we could forward declare the value
-// type.
-#include "llbuild/Core/BuildEngine.h"
-
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 namespace llbuild {
+namespace core {
+
+class Task;
+
+}
+
 namespace buildsystem {
 
 /// The type used to pass parsed properties to the delegate.
 typedef std::vector<std::pair<std::string, std::string>> property_list_type;
 
+class BuildValue;
 class Command;
 class BuildSystemCommandInterface;
 
@@ -146,12 +149,11 @@ public:
 
   virtual void start(BuildSystemCommandInterface&, core::Task*) = 0;
 
-  virtual void providePriorValue(BuildSystemCommandInterface&,
-                                 core::Task*, const core::ValueType& value) = 0;
+  virtual void providePriorValue(BuildSystemCommandInterface&, core::Task*,
+                                 const BuildValue& value) = 0;
 
   virtual void provideValue(BuildSystemCommandInterface&, core::Task*,
-                            uintptr_t inputID,
-                            const core::ValueType& value) = 0;
+                            uintptr_t inputID, const BuildValue& value) = 0;
 
   virtual void inputsAvailable(BuildSystemCommandInterface&, core::Task*) = 0;
   
