@@ -20,6 +20,7 @@
 #include "llbuild/Core/BuildEngine.h"
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
 #include "llbuild/BuildSystem/BuildFile.h"
+#include "llbuild/BuildSystem/BuildValue.h"
 
 #include <memory>
 
@@ -301,91 +302,6 @@ public:
   /// @}
 };
 
-/// The system value defines the helpers for translating to and from the value
-/// space used by the BuildSystem when using the core BuildEngine.
-struct SystemValue {
-  enum class Kind : uint32_t {
-    /// An invalid value, for sentinel purposes.
-    Invalid = 0,
-
-    /// A value produced by an existing input file.
-    ExistingInput,
-
-    /// A value produced by a missing input file.
-    MissingInput,
-
-    /// A value produced by a successful command.
-    SuccessfulCommand,
-
-    /// A value produced by a failing command.
-    FailedCommand,
-  };
-
-  /// The kind of value.
-  Kind kind;
-
-  /// The information on the relevant output file, if used.
-  FileInfo outputInfo;
-
-private:
-  SystemValue() {}
-  SystemValue(Kind kind) : kind(kind), outputInfo() {}
-  SystemValue(Kind kind, FileInfo outputInfo)
-      : kind(kind), outputInfo(outputInfo) {}
-
-public:
-  /// @name Construction Functions
-  /// @{
-
-  static SystemValue makeExistingInput(FileInfo outputInfo) {
-    return SystemValue(Kind::ExistingInput, outputInfo);
-  }
-  static SystemValue makeMissingInput() {
-    return SystemValue(Kind::MissingInput);
-  }
-  static SystemValue makeSuccessfulCommand() {
-    return SystemValue(Kind::SuccessfulCommand);
-  }
-  static SystemValue makeFailedCommand() {
-    return SystemValue(Kind::FailedCommand);
-  }
-
-  /// @}
-
-  /// @name Accessors
-  /// @{
-
-  bool isExistingInput() const { return kind == Kind::ExistingInput; }
-  bool isMissingInput() const { return kind == Kind::MissingInput; }
-  bool isSuccessfulCommand() const {return kind == Kind::SuccessfulCommand; }
-  bool isFailedCommand() const { return kind == Kind::FailedCommand; }
-
-  const FileInfo& getOutputInfo() const {
-    assert(isExistingInput() && "invalid call for value kind");
-    return outputInfo;
-  }
-
-  /// @}
-
-  /// @name Conversion to core ValueType.
-  /// @{
-
-  static SystemValue fromValue(const core::ValueType& value) {
-    SystemValue result;
-    assert(value.size() == sizeof(result));
-    memcpy(&result, value.data(), sizeof(result));
-    return result;
-  }
-
-  core::ValueType toValue() {
-    std::vector<uint8_t> result(sizeof(*this));
-    memcpy(result.data(), this, sizeof(*this));
-    return result;
-  }
-
-  /// @}
-};
-
 /// Get the information to represent the state of the given node in the file
 /// system.
 ///
@@ -484,18 +400,18 @@ class InputNodeTask : public Task {
     // different node types.
     FileInfo info;
     if (!getStatInfoForNode(node, &info)) {
-      engine.taskIsComplete(this, SystemValue::makeMissingInput().toValue());
+      engine.taskIsComplete(this, BuildValue::makeMissingInput().toValue());
       return;
     }
 
     engine.taskIsComplete(
-        this, SystemValue::makeExistingInput(info).toValue());
+        this, BuildValue::makeExistingInput(info).toValue());
   }
 
 public:
   InputNodeTask(Node& node) : node(node) {}
 
-  static bool isResultValid(const Node& node, const SystemValue& value) {
+  static bool isResultValid(const Node& node, const BuildValue& value) {
     // If the previous value wasn't for an existing input, always recompute.
     if (!value.isExistingInput())
       return false;
@@ -590,7 +506,7 @@ class CommandTask : public Task {
 public:
   CommandTask(Command& command) : command(command) {}
 
-  static bool isResultValid(const Command& command, const SystemValue& value) {
+  static bool isResultValid(const Command& command, const BuildValue& value) {
     // If the previous value wasn't for a successful command, always recompute.
     if (!value.isSuccessfulCommand())
       return false;
@@ -634,7 +550,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       },
       /*IsValid=*/ [command](const Rule& rule, const ValueType& value) -> bool {
         return CommandTask::isResultValid(
-            *command, SystemValue::fromValue(value));
+            *command, BuildValue::fromValue(value));
       }
     };
   }
@@ -667,7 +583,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
         },
         /*IsValid=*/ [node](const Rule& rule, const ValueType& value) -> bool {
           return InputNodeTask::isResultValid(
-              *node, SystemValue::fromValue(value));
+              *node, BuildValue::fromValue(value));
         }
       };
     }
@@ -806,13 +722,13 @@ public:
       // Execute the command.
       if (!system.getExecutionQueue().executeShellCommand(context, args)) {
         // If the command failed, the result is failure.
-        system.taskIsComplete(task, SystemValue::makeFailedCommand().toValue());
+        system.taskIsComplete(task, BuildValue::makeFailedCommand().toValue());
         return;
       }
 
       // Otherwise, complete with a successful result.
       system.taskIsComplete(
-          task, SystemValue::makeSuccessfulCommand().toValue());
+          task, BuildValue::makeSuccessfulCommand().toValue());
     };
     system.addJob({ this, std::move(fn) });
 #endif
