@@ -1,0 +1,33 @@
+# Check that we always rerun commands which fail.
+
+# Run an initial build which fails on the command.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: %{llbuild} buildsystem build --chdir %t.build %s > %t.out 2> %t.err
+# RUN: test ! -f %t.build/output
+# RUN: %{FileCheck} < %t.err %s --check-prefix=CHECK-FAILURE
+#
+# CHECK-FAILURE: cp: input: No such file or directory
+
+# Rebuild and verify the command reruns.
+#
+# RUN: %{llbuild} buildsystem build --chdir %t.build %s > %t2.out 2> %t2.err
+# RUN: test ! -f %t.build/output
+# RUN: %{FileCheck} < %t2.err %s --check-prefix=CHECK-FAILURE-REBUILD
+#
+# CHECK-FAILURE-REBUILD: cp: input: No such file or directory
+
+client:
+  name: basic
+
+targets:
+  "": ["output"]
+
+commands:
+  cp-output:
+    tool: shell
+    inputs: ["input"]
+    outputs: ["output"]
+    # FIXME: Design a limited mechanism for substitution. Might be tool specific.
+    args: cp input output

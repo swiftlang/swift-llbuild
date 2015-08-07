@@ -114,7 +114,7 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
 
   /// The execution queue.
   std::unique_ptr<BuildExecutionQueue> executionQueue;
-  
+
   /// @name BuildSystemCommandInterface Implementation
   /// @{
 
@@ -144,9 +144,9 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
   virtual void addJob(QueueJob&& job) override {
     executionQueue->addJob(std::move(job));
   }
-  
+
   /// @}
-  
+
 public:
   BuildSystemImpl(class BuildSystem& buildSystem,
                   BuildSystemDelegate& delegate,
@@ -360,12 +360,18 @@ struct SystemValue {
   enum class Kind : uint32_t {
     /// An invalid value, for sentinel purposes.
     Invalid = 0,
-      
+
     /// A value produced by an existing input file.
     ExistingInput,
 
     /// A value produced by a missing input file.
     MissingInput,
+
+    /// A value produced by a successful command.
+    SuccessfulCommand,
+
+    /// A value produced by a failing command.
+    FailedCommand,
   };
 
   /// The kind of value.
@@ -390,14 +396,22 @@ public:
   static SystemValue makeMissingInput() {
     return SystemValue(Kind::MissingInput);
   }
+  static SystemValue makeSuccessfulCommand() {
+    return SystemValue(Kind::SuccessfulCommand);
+  }
+  static SystemValue makeFailedCommand() {
+    return SystemValue(Kind::FailedCommand);
+  }
 
   /// @}
-  
+
   /// @name Accessors
   /// @{
 
   bool isExistingInput() const { return kind == Kind::ExistingInput; }
   bool isMissingInput() const { return kind == Kind::MissingInput; }
+  bool isSuccessfulCommand() const {return kind == Kind::SuccessfulCommand; }
+  bool isFailedCommand() const { return kind == Kind::FailedCommand; }
 
   const FileInfo& getOutputInfo() const {
     assert(isExistingInput() && "invalid call for value kind");
@@ -408,7 +422,7 @@ public:
 
   /// @name Conversion to core ValueType.
   /// @{
-  
+
   static SystemValue fromValue(const core::ValueType& value) {
     SystemValue result;
     assert(value.size() == sizeof(result));
@@ -503,7 +517,7 @@ public:
 /// system.
 class InputNodeTask : public Task {
   Node& node;
-  
+
   virtual void start(BuildEngine& engine) override {
     assert(node.getProducers().empty());
   }
@@ -551,7 +565,7 @@ public:
     FileInfo info;
     if (!getStatInfoForNode(node, &info))
       return false;
-      
+
     return value.getOutputInfo() == info;
   }
 };
@@ -560,11 +574,11 @@ public:
 /// This is the task to "build" a node which is the product of some command.
 ///
 /// It is responsible for selecting the appropriate producer command to run to
-/// produce the ndoe, and for synchronizing any external state the node depends
+/// produce the node, and for synchronizing any external state the node depends
 /// on.
 class ProducedNodeTask : public Task {
   Node& node;
-  
+
   virtual void start(BuildEngine& engine) override {
     // Request the producer command.
     if (node.getProducers().size() == 1) {
@@ -605,7 +619,7 @@ class CommandTask : public Task {
     return static_cast<BuildSystemEngineDelegate*>(
         engine.getDelegate())->getBuildSystem();
   }
-    
+
   virtual void start(BuildEngine& engine) override {
     command.start(getBuildSystem(engine).getCommandInterface(), this);
   }
@@ -628,6 +642,17 @@ class CommandTask : public Task {
 
 public:
   CommandTask(Command& command) : command(command) {}
+
+  static bool isResultValid(const Command& command, const SystemValue& value) {
+    // If the previous value wasn't for a successful command, always recompute.
+    if (!value.isSuccessfulCommand())
+      return false;
+
+    // FIXME: Check the validity of the command outputs.
+
+    // Otherwise, the result is ok.
+    return true;
+  }
 };
 
 #pragma mark - BuildSystemEngineDelegate implementation
@@ -659,10 +684,14 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       key,
       /*Action=*/ [command](BuildEngine& engine) -> Task* {
         return engine.registerTask(new CommandTask(*command));
+      },
+      /*IsValid=*/ [command](const Rule& rule, const ValueType& value) -> bool {
+        return CommandTask::isResultValid(
+            *command, SystemValue::fromValue(value));
       }
     };
   }
-    
+
   case SystemKey::Kind::Node: {
     // Find the node.
     auto it = getBuildFile().getNodes().find(key.getNodeName());
@@ -810,7 +839,7 @@ public:
   virtual void providePriorValue(BuildSystemCommandInterface&, Task*,
                                  const core::ValueType&) override {
   }
-  
+
   virtual void provideValue(BuildSystemCommandInterface&, Task*,
                             uintptr_t inputID,
                             const core::ValueType&) override {
@@ -826,11 +855,17 @@ public:
       //
       // FIXME: Design the logging and status output APIs.
       fprintf(stdout, "%s\n", args.c_str());
-      
+
       // Execute the command.
-      system.getExecutionQueue().executeShellCommand(context, args);
-          
-      system.taskIsComplete(task, ValueType());
+      if (!system.getExecutionQueue().executeShellCommand(context, args)) {
+        // If the command failed, the result is failure.
+        system.taskIsComplete(task, SystemValue::makeFailedCommand().toValue());
+        return;
+      }
+
+      // Otherwise, complete with a successful result.
+      system.taskIsComplete(
+          task, SystemValue::makeSuccessfulCommand().toValue());
     };
     system.addJob({ this, std::move(fn) });
 #endif
