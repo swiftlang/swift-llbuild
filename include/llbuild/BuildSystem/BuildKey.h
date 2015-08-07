@@ -21,9 +21,10 @@ namespace buildsystem {
 
 /// The BuildKey encodes the key space used by the BuildSystem when using the
 /// core BuildEngine.
-struct BuildKey {
+class BuildKey {
   using KeyType = core::KeyType;
   
+public:
   enum class Kind {
     /// A key used to identify a command.
     Command,
@@ -38,6 +39,7 @@ struct BuildKey {
     Unknown,
   };
 
+private:
   /// The actual key data.
   KeyType key;
 
@@ -111,7 +113,7 @@ public:
     return result;
   }
 
-  const core::KeyType toData() { return getKeyData(); }
+  const core::KeyType toData() const { return getKeyData(); }
 
   /// @}
 };

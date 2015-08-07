@@ -126,18 +126,18 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
     return *executionQueue;
   }
 
-  virtual void taskNeedsInput(core::Task* task, const KeyType& key,
+  virtual void taskNeedsInput(core::Task* task, const BuildKey& key,
                               uintptr_t inputID) override {
-    return buildEngine.taskNeedsInput(task, key, inputID);
+    return buildEngine.taskNeedsInput(task, key.toData(), inputID);
   }
 
-  virtual void taskMustFollow(core::Task* task, const KeyType& key) override {
-    return buildEngine.taskMustFollow(task, key);
+  virtual void taskMustFollow(core::Task* task, const BuildKey& key) override {
+    return buildEngine.taskMustFollow(task, key.toData());
   }
 
   virtual void taskDiscoveredDependency(core::Task* task,
-                                        const KeyType& key) override {
-    return buildEngine.taskDiscoveredDependency(task, key);
+                                        const BuildKey& key) override {
+    return buildEngine.taskDiscoveredDependency(task, key.toData());
   }
 
   virtual void taskIsComplete(core::Task* task, const BuildValue& value,
@@ -608,8 +608,7 @@ public:
   virtual void start(BuildSystemCommandInterface& system, Task* task) override {
     // Request all of the inputs.
     for (const auto& node: inputs) {
-      system.taskNeedsInput(task, BuildKey::makeNode(node).toData(),
-                            /*InputID=*/0);
+      system.taskNeedsInput(task, BuildKey::makeNode(node), /*InputID=*/0);
     }
   }
 

@@ -13,14 +13,17 @@
 #ifndef LLBUILD_BUILDSYSTEM_BUILDSYSTEMCOMMANDINTERFACE_H
 #define LLBUILD_BUILDSYSTEM_BUILDSYSTEMCOMMANDINTERFACE_H
 
-// FIXME: Eliminate need for this include, if we could forward declare the key
-// type.
-#include "llbuild/Core/BuildEngine.h"
-
 namespace llbuild {
+namespace core {
+
+class Task;
+
+}
+
 namespace buildsystem {
 
 class BuildExecutionQueue;
+class BuildKey;
 class BuildValue;
 class QueueJob;
 
@@ -43,13 +46,13 @@ public:
   /// @name BuildEngine Task API
   /// @{
   
-  virtual void taskNeedsInput(core::Task* task, const core::KeyType& key,
+  virtual void taskNeedsInput(core::Task* task, const BuildKey& key,
                               uintptr_t inputID) = 0;
 
-  virtual void taskMustFollow(core::Task* task, const core::KeyType& key) = 0;
+  virtual void taskMustFollow(core::Task* task, const BuildKey& key) = 0;
 
   virtual void taskDiscoveredDependency(core::Task* task,
-                                        const core::KeyType& key) = 0;
+                                        const BuildKey& key) = 0;
 
   virtual void taskIsComplete(core::Task* task, const BuildValue& value,
                               bool forceChange = false) = 0;
