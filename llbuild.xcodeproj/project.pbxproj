@@ -70,6 +70,7 @@
 		E10D5CE419FEF3BD00211ED4 /* Python.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E10D5CE319FEF3BD00211ED4 /* Python.framework */; };
 		E10D5CE619FEF40100211ED4 /* LitTests.py in Resources */ = {isa = PBXBuildFile; fileRef = E10D5CE519FEF40100211ED4 /* LitTests.py */; };
 		E10FE0D71B7313D50059D086 /* DepsBuildEngineTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E10FE0D61B7313D50059D086 /* DepsBuildEngineTest.cpp */; };
+		E11470941B7555FA00ED84CF /* FileInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E11470931B7554F800ED84CF /* FileInfo.cpp */; };
 		E12E12A91AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E12E12A71AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp */; };
 		E12E12AA1AD50AE600ACE7B3 /* CommandLineStatusOutput.h in Headers */ = {isa = PBXBuildFile; fileRef = E12E12A81AD50AE500ACE7B3 /* CommandLineStatusOutput.h */; };
 		E15B6EC41B546A1600643066 /* ConvertUTF.c in Sources */ = {isa = PBXBuildFile; fileRef = E15B6EC21B546A0D00643066 /* ConvertUTF.c */; };
@@ -460,6 +461,7 @@
 		E11470901B75160400ED84CF /* FileInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FileInfo.h; sourceTree = "<group>"; };
 		E11470911B7517C800ED84CF /* BuildValue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuildValue.h; sourceTree = "<group>"; };
 		E11470921B752E7000ED84CF /* BuildKey.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildKey.h; sourceTree = "<group>"; };
+		E11470931B7554F800ED84CF /* FileInfo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FileInfo.cpp; sourceTree = "<group>"; };
 		E12E12A71AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CommandLineStatusOutput.cpp; sourceTree = "<group>"; };
 		E12E12A81AD50AE500ACE7B3 /* CommandLineStatusOutput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CommandLineStatusOutput.h; sourceTree = "<group>"; };
 		E153EBBA1A1E94CD00F93337 /* llbuild-test-tools */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "llbuild-test-tools"; sourceTree = "<group>"; };
@@ -1001,6 +1003,7 @@
 			children = (
 				E1A2244F19F997D40059043E /* Headers */,
 				E1A2240619F991530059043E /* CMakeLists.txt */,
+				E11470931B7554F800ED84CF /* FileInfo.cpp */,
 				E1FE53401AB1343B00041B8E /* Hashing.cpp */,
 				E1A2240719F991530059043E /* Version.cpp */,
 			);
@@ -2230,6 +2233,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E1FE53411AB1346700041B8E /* Hashing.cpp in Sources */,
+				E11470941B7555FA00ED84CF /* FileInfo.cpp in Sources */,
 				E1A224BE19F9995E0059043E /* Version.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

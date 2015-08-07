@@ -688,40 +688,6 @@ public:
   unsigned getNumErrors() const { return numErrors; }
 };
 
-/// Get the information to represent the state of the given node in the file
-/// system.
-///
-/// \param info_out [out] On success, the important path information.
-/// \returns True if information on the path was found.
-static bool getStatInfoForNode(const ninja::Node* node, FileInfo *info_out) {
-  struct ::stat buf;
-  if (::stat(node->getPath().c_str(), &buf) != 0) {
-    memset(info_out, 0, sizeof(*info_out));
-    assert(info_out->isMissing());
-    return false;
-  }
-
-  info_out->device = buf.st_dev;
-  info_out->inode = buf.st_ino;
-  info_out->size = buf.st_size;
-  info_out->modTime.seconds = buf.st_mtimespec.tv_sec;
-  info_out->modTime.nanoseconds = buf.st_mtimespec.tv_nsec;
-
-  // Enforce we never accidentally create our sentinel missing file value.
-  if (info_out->isMissing()) {
-    info_out->modTime.nanoseconds = 1;
-  }
-
-  // Verify we didn't truncate any values.
-  assert(info_out->device == (unsigned)buf.st_dev &&
-         info_out->inode == (unsigned)buf.st_ino &&
-         info_out->size == (unsigned)buf.st_size &&
-         info_out->modTime.seconds == (unsigned)buf.st_mtimespec.tv_sec &&
-         info_out->modTime.nanoseconds == (unsigned)buf.st_mtimespec.tv_nsec);
-
-  return true;
-}
-
 static core::Task*
 buildCommand(BuildContext& context, ninja::Command* command) {
   struct NinjaCommandTask : core::Task {
@@ -857,13 +823,15 @@ buildCommand(BuildContext& context, ninja::Command* command) {
     BuildValue computeCommandResult(uint64_t commandHash) const {
       unsigned numOutputs = command->getOutputs().size();
       if (numOutputs == 1) {
-        FileInfo outputInfo;
-        getStatInfoForNode(command->getOutputs()[0], &outputInfo);
-        return BuildValue::makeSuccessfulCommand(outputInfo, commandHash);
+        return BuildValue::makeSuccessfulCommand(
+            FileInfo::getInfoForPath(
+                command->getOutputs()[0]->getPath()),
+            commandHash);
       } else {
         std::vector<FileInfo> outputInfos(numOutputs);
         for (unsigned i = 0; i != numOutputs; ++i) {
-          getStatInfoForNode(command->getOutputs()[i], &outputInfos[i]);
+          outputInfos[i] = FileInfo::getInfoForPath(
+              command->getOutputs()[i]->getPath());
         }
         return BuildValue::makeSuccessfulCommand(outputInfos.data(), numOutputs,
                                                  commandHash);
@@ -1370,8 +1338,8 @@ static core::Task* buildInput(BuildContext& context, ninja::Node* input) {
         return;
       }
 
-      FileInfo outputInfo;
-      if (!getStatInfoForNode(node, &outputInfo)) {
+      auto outputInfo = FileInfo::getInfoForPath(node->getPath());
+      if (outputInfo.isMissing()) {
         engine.taskIsComplete(this, BuildValue::makeMissingInput().toValue());
         return;
       }
@@ -1503,8 +1471,8 @@ static bool buildInputIsResultValid(ninja::Node* node,
   //
   // We can solve this by caching ourselves but I wonder if it is something the
   // engine should support more naturally.
-  FileInfo info;
-  if (!getStatInfoForNode(node, &info))
+  auto info = FileInfo::getInfoForPath(node->getPath());
+  if (info.isMissing())
     return false;
 
   return value.getOutputInfo() == info;
@@ -1528,8 +1496,8 @@ static bool buildCommandIsResultValid(ninja::Command* command,
   // Check the timestamps on each of the outputs.
   for (unsigned i = 0, e = command->getOutputs().size(); i != e; ++i) {
     // Always rebuild if the output is missing.
-    FileInfo info;
-    if (!getStatInfoForNode(command->getOutputs()[i], &info))
+    auto info = FileInfo::getInfoForPath(command->getOutputs()[i]->getPath());
+    if (info.isMissing())
       return false;
 
     // Otherwise, the result is valid if file information has not changed.

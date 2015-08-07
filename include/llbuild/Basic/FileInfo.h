@@ -26,6 +26,7 @@
 #define LLBUILD_BASIC_FILEINFO_H
 
 #include <cstdint>
+#include <string>
 
 namespace llbuild {
 namespace basic {
@@ -84,6 +85,13 @@ struct FileInfo {
   bool operator!=(const FileInfo& rhs) const {
     return !(*this == rhs);
   }
+
+  /// Get the information to represent the state of the given node in the file
+  /// system.
+  ///
+  /// \returns The FileInfo for the given path, which will be missing if the
+  /// path does not exist (or any error was encountered).
+  static FileInfo getInfoForPath(const std::string& path);
 };
 
 }

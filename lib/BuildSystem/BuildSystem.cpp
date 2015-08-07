@@ -25,8 +25,6 @@
 
 #include <memory>
 
-#include <sys/stat.h>
-
 using namespace llbuild;
 using namespace llbuild::basic;
 using namespace llbuild::core;
@@ -212,44 +210,6 @@ public:
 
 #pragma mark - BuildSystem engine integration
 
-/// Get the information to represent the state of the given node in the file
-/// system.
-///
-/// \param info_out [out] On success, the important path information.
-/// \returns True if information on the path was found.
-//
-// FIXME: Move this to a more insolated location, I would like non-functional
-// parts to be clearly demarcated, but this one is tricky because we want to
-// keep FileInfo a value type.
-static bool getStatInfoForNode(const Node& node, FileInfo *info_out) {
-  struct ::stat buf;
-  if (::stat(node.getName().c_str(), &buf) != 0) {
-    memset(info_out, 0, sizeof(*info_out));
-    assert(info_out->isMissing());
-    return false;
-  }
-
-  info_out->device = buf.st_dev;
-  info_out->inode = buf.st_ino;
-  info_out->size = buf.st_size;
-  info_out->modTime.seconds = buf.st_mtimespec.tv_sec;
-  info_out->modTime.nanoseconds = buf.st_mtimespec.tv_nsec;
-
-  // Enforce we never accidentally create our sentinel missing file value.
-  if (info_out->isMissing()) {
-    info_out->modTime.nanoseconds = 1;
-  }
-
-  // Verify we didn't truncate any values.
-  assert(info_out->device == (unsigned)buf.st_dev &&
-         info_out->inode == (unsigned)buf.st_ino &&
-         info_out->size == (unsigned)buf.st_size &&
-         info_out->modTime.seconds == (unsigned)buf.st_mtimespec.tv_sec &&
-         info_out->modTime.nanoseconds == (unsigned)buf.st_mtimespec.tv_nsec);
-
-  return true;
-}
-
 #pragma mark - Task implementations
 
 /// This is the task used to "build" a target, it translates between the request
@@ -308,8 +268,8 @@ class InputNodeTask : public Task {
     //
     // FIXME: This needs to delegate, since we want to have a notion of
     // different node types.
-    FileInfo info;
-    if (!getStatInfoForNode(node, &info)) {
+    auto info = FileInfo::getInfoForPath(node.getName());
+    if (info.isMissing()) {
       engine.taskIsComplete(this, BuildValue::makeMissingInput().toData());
       return;
     }
@@ -335,8 +295,8 @@ public:
     //
     // We can solve this by caching ourselves but I wonder if it is something
     // the engine should support more naturally.
-    FileInfo info;
-    if (!getStatInfoForNode(node, &info))
+    auto info = FileInfo::getInfoForPath(node.getName());
+    if (info.isMissing())
       return false;
 
     return value.getOutputInfo() == info;
