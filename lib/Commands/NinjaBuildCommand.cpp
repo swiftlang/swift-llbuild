@@ -475,8 +475,6 @@ public:
 
   /// The number of generated errors.
   std::atomic<unsigned> numErrors{0};
-  /// The number of inputs used during the build.
-  unsigned numBuiltInputs{0};
   /// The number of commands executed during the build
   unsigned numBuiltCommands{0};
   /// The number of output commands written, for numbering purposes.
@@ -1418,8 +1416,6 @@ static core::Task* buildInput(BuildContext& context, ninja::Node* input) {
     virtual void start(core::BuildEngine& engine) override { }
 
     virtual void inputsAvailable(core::BuildEngine& engine) override {
-      ++context.numBuiltInputs;
-
       if (context.simulate) {
         engine.taskIsComplete(
           this, BuildValue::makeExistingInput({}).toValue());
