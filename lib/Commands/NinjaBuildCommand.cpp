@@ -13,6 +13,7 @@
 #include "NinjaBuildCommand.h"
 
 #include "llbuild/Basic/Compiler.h"
+#include "llbuild/Basic/FileInfo.h"
 #include "llbuild/Basic/Hashing.h"
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/BuildEngine.h"
@@ -38,6 +39,7 @@
 #include <dispatch/dispatch.h>
 
 using namespace llbuild;
+using namespace llbuild::basic;
 using namespace llbuild::commands;
 
 extern "C" {
@@ -186,60 +188,6 @@ public:
     std::lock_guard<std::mutex> guard(readyJobsMutex);
     readyJobs.push_back(job);
     readyJobsCondition.notify_one();
-  }
-};
-
-struct FileTimestamp {
-  uint64_t seconds;
-  uint64_t nanoseconds;
-
-  bool operator==(const FileTimestamp& rhs) const {
-    return seconds == rhs.seconds && nanoseconds == rhs.nanoseconds;
-  }
-  bool operator!=(const FileTimestamp& rhs) const {
-    return !(*this == rhs);
-  }
-  bool operator<(const FileTimestamp& rhs) const {
-    return (seconds < rhs.seconds ||
-            (seconds == rhs.seconds && nanoseconds < rhs.nanoseconds));
-  }
-  bool operator<=(const FileTimestamp& rhs) const {
-    return (seconds < rhs.seconds ||
-            (seconds == rhs.seconds && nanoseconds <= rhs.nanoseconds));
-  }
-  bool operator>(const FileTimestamp& rhs) const {
-    return rhs < *this;
-  }
-  bool operator>=(const FileTimestamp& rhs) const {
-    return rhs <= *this;
-  }
-};
-
-/// Information on an external file stored as part of a build value.
-///
-/// This structure is intentionally sized to have no packing holes.
-struct FileInfo {
-  uint64_t device;
-  uint64_t iNode;
-  uint64_t size;
-  FileTimestamp modTime;
-
-  /// Check if this is a FileInfo representing a missing file.
-  bool isMissing() const {
-    // We use an all-zero FileInfo as a sentinel, under the assumption this can
-    // never exist in normal circumstances.
-    return (device == 0 && iNode == 0 && size == 0 &&
-            modTime.seconds == 0 && modTime.nanoseconds == 0);
-  }
-
-  bool operator==(const FileInfo& rhs) const {
-    return (device == rhs.device &&
-            iNode == rhs.iNode &&
-            size == rhs.size &&
-            modTime == rhs.modTime);
-  }
-  bool operator!=(const FileInfo& rhs) const {
-    return !(*this == rhs);
   }
 };
 
@@ -754,7 +702,7 @@ static bool getStatInfoForNode(const ninja::Node* node, FileInfo *info_out) {
   }
 
   info_out->device = buf.st_dev;
-  info_out->iNode = buf.st_ino;
+  info_out->inode = buf.st_ino;
   info_out->size = buf.st_size;
   info_out->modTime.seconds = buf.st_mtimespec.tv_sec;
   info_out->modTime.nanoseconds = buf.st_mtimespec.tv_nsec;
@@ -766,7 +714,7 @@ static bool getStatInfoForNode(const ninja::Node* node, FileInfo *info_out) {
 
   // Verify we didn't truncate any values.
   assert(info_out->device == (unsigned)buf.st_dev &&
-         info_out->iNode == (unsigned)buf.st_ino &&
+         info_out->inode == (unsigned)buf.st_ino &&
          info_out->size == (unsigned)buf.st_size &&
          info_out->modTime.seconds == (unsigned)buf.st_mtimespec.tv_sec &&
          info_out->modTime.nanoseconds == (unsigned)buf.st_mtimespec.tv_nsec);

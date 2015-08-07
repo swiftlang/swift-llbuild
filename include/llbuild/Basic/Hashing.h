@@ -18,7 +18,7 @@
 namespace llbuild {
 namespace basic {
 
-    uint64_t hashString(llvm::StringRef value);
+uint64_t hashString(llvm::StringRef value);
 
 }
 }

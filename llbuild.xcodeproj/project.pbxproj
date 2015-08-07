@@ -457,6 +457,7 @@
 		E10D5CE519FEF40100211ED4 /* LitTests.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = LitTests.py; sourceTree = "<group>"; };
 		E10FE0D51B6FF2000059D086 /* BuildExecutionQueue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildExecutionQueue.h; sourceTree = "<group>"; };
 		E10FE0D61B7313D50059D086 /* DepsBuildEngineTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DepsBuildEngineTest.cpp; sourceTree = "<group>"; };
+		E11470901B75160400ED84CF /* FileInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FileInfo.h; sourceTree = "<group>"; };
 		E12E12A71AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CommandLineStatusOutput.cpp; sourceTree = "<group>"; };
 		E12E12A81AD50AE500ACE7B3 /* CommandLineStatusOutput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CommandLineStatusOutput.h; sourceTree = "<group>"; };
 		E153EBBA1A1E94CD00F93337 /* llbuild-test-tools */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "llbuild-test-tools"; sourceTree = "<group>"; };
@@ -1058,6 +1059,7 @@
 			isa = PBXGroup;
 			children = (
 				E182BE111ABA2B8D001840AD /* Compiler.h */,
+				E11470901B75160400ED84CF /* FileInfo.h */,
 				E1A2245119F997D40059043E /* Version.h */,
 			);
 			name = Headers;

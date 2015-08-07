@@ -15,6 +15,7 @@
 
 #include "llvm/ADT/StringRef.h"
 
+#include "llbuild/Basic/FileInfo.h"
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/BuildEngine.h"
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
@@ -25,6 +26,7 @@
 #include <sys/stat.h>
 
 using namespace llbuild;
+using namespace llbuild::basic;
 using namespace llbuild::core;
 using namespace llbuild::buildsystem;
 
@@ -297,61 +299,6 @@ public:
   }
 
   /// @}
-};
-
-/// Information on a file timestamp.
-struct FileTimestamp {
-  uint64_t seconds;
-  uint64_t nanoseconds;
-
-  bool operator==(const FileTimestamp& rhs) const {
-    return seconds == rhs.seconds && nanoseconds == rhs.nanoseconds;
-  }
-  bool operator!=(const FileTimestamp& rhs) const {
-    return !(*this == rhs);
-  }
-  bool operator<(const FileTimestamp& rhs) const {
-    return (seconds < rhs.seconds ||
-            (seconds == rhs.seconds && nanoseconds < rhs.nanoseconds));
-  }
-  bool operator<=(const FileTimestamp& rhs) const {
-    return (seconds < rhs.seconds ||
-            (seconds == rhs.seconds && nanoseconds <= rhs.nanoseconds));
-  }
-  bool operator>(const FileTimestamp& rhs) const {
-    return rhs < *this;
-  }
-  bool operator>=(const FileTimestamp& rhs) const {
-    return rhs <= *this;
-  }
-};
-
-/// Information on an external file stored as part of a build value.
-///
-/// This structure is intentionally sized to have no packing holes.
-struct FileInfo {
-  uint64_t device;
-  uint64_t inode;
-  uint64_t size;
-  FileTimestamp modTime;
-
-  /// Check if this is a FileInfo representing a missing file.
-  bool isMissing() const {
-    // We use an all-zero FileInfo as a sentinel, under the assumption this can
-    // never exist in normal circumstances.
-    return (device == 0 && inode == 0 && size == 0 &&
-            modTime.seconds == 0 && modTime.nanoseconds == 0);
-  }
-
-  bool operator==(const FileInfo& rhs) const {
-    return (device == rhs.device &&
-            inode == rhs.inode &&
-            size == rhs.size &&
-            modTime == rhs.modTime);
-  }
-  bool operator!=(const FileInfo& rhs) const {
-    return !(*this == rhs);
-  }
 };
 
 /// The system value defines the helpers for translating to and from the value
