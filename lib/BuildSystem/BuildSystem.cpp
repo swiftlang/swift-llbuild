@@ -563,7 +563,21 @@ public:
     if (!value.isSuccessfulCommand())
       return false;
 
-    // FIXME: Check the validity of the command outputs.
+    // FIXME: Check command signature.
+
+    // Check the timestamps on each of the outputs.
+    for (unsigned i = 0, e = outputs.size(); i != e; ++i) {
+      auto* node = outputs[i];
+
+      // Always rebuild if the output is missing.
+      auto info = FileInfo::getInfoForPath(node->getName());
+      if (info.isMissing())
+        return false;
+
+      // Otherwise, the result is valid if the file information has not changed.
+      if (value.getNthOutputInfo(i) != info)
+        return false;
+    }
 
     // Otherwise, the result is ok.
     return true;
@@ -603,9 +617,17 @@ public:
         return;
       }
 
+      // Capture the file information for each of the output nodes.
+      //
+      // FIXME: We need to delegate to the node here.
+      llvm::SmallVector<FileInfo, 8> outputInfos;
+      for (auto* node: outputs) {
+        outputInfos.push_back(FileInfo::getInfoForPath(node->getName()));
+      }
+      
       // Otherwise, complete with a successful result.
       system.taskIsComplete(
-          task, BuildValue::makeSuccessfulCommand());
+          task, BuildValue::makeSuccessfulCommand(outputInfos));
     };
     system.addJob({ this, std::move(fn) });
 #endif
