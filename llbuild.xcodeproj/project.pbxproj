@@ -23,7 +23,7 @@
 			isa = PBXAggregateTarget;
 			buildConfigurationList = E17C29F01B5AC12B00C12DA9 /* Build configuration list for PBXAggregateTarget "Sphinx-Docs" */;
 			buildPhases = (
-				E17C29F11B5AC13C00C12DA9 /* Install per-use 'sphinx' tools */,
+				E17C29F11B5AC13C00C12DA9 /* Install per-user 'sphinx' tools */,
 				E17C29F41B5AC2F600C12DA9 /* Build Sphinx Docs */,
 			);
 			dependencies = (
@@ -2110,14 +2110,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		E17C29F11B5AC13C00C12DA9 /* Install per-use 'sphinx' tools */ = {
+		E17C29F11B5AC13C00C12DA9 /* Install per-user 'sphinx' tools */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputPaths = (
 			);
-			name = "Install per-use 'sphinx' tools";
+			name = "Install per-user 'sphinx' tools";
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
