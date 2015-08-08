@@ -1,0 +1,32 @@
+# Check basic handling of dependencies.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: %{llbuild} buildsystem build --chdir %t.build --trace %t.trace %s > %t.out
+# RUN: test -f %t.build/output-1
+# RUN: %{FileCheck} < %t.build/output-1 %s --check-prefix=CHECK-OUTPUT-1
+# RUN: %{FileCheck} < %t.out %s
+# RUN: diff %t.build/output-1 %t.build/output
+#
+# CHECK: echo hi > output-1
+# CHECK: cp output-1 output
+#
+# CHECK-OUTPUT-1: hi
+
+client:
+  name: basic
+
+targets:
+  "": ["output"]
+
+commands:
+  echo-1:
+    tool: shell
+    outputs: ["output-1"]
+    args: echo hi > output-1
+    
+  cp-output:
+    tool: shell
+    inputs: ["output-1"]
+    outputs: ["output"]
+    args: cp output-1 output

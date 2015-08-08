@@ -139,6 +139,25 @@ public:
 
   /// @}
 
+  /// @name Node Interfaces
+  ///
+  /// @description These are the interfaces which allow the build system to
+  /// coordinate between the abstract command and node objects.
+  //
+  // FIXME: This feels awkward, maybe this isn't the right way to manage
+  // this. However, we want the system to be able to provide the plumbing
+  // between pluggable comands and nodes, so it feels like it has to live
+  // somewhere.
+  //
+  /// @{
+
+  /// Get the appropriate output for a particular node (known to be produced by
+  /// this command) given the command's result.
+  virtual BuildValue getResultForOutput(Node* node,
+                                        const BuildValue& value) = 0;
+
+  /// @}
+  
   /// @name Command Execution
   ///
   /// @description These APIs directly mirror the APIs available in the

@@ -15,6 +15,7 @@
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildSystem.h"
+#include "llbuild/BuildSystem/BuildValue.h"
 
 #include <deque>
 #include <thread>
@@ -117,7 +118,11 @@ public:
     }
     return true;
   }
-  
+
+  virtual BuildValue getResultForOutput(Node* node,
+                                        const BuildValue& value) override {
+    return BuildValue::makeMissingInput();
+  }
   virtual bool isResultValid(const BuildValue&) override { return false; }
   virtual void start(BuildSystemCommandInterface&, Task*) override {}
   virtual void providePriorValue(BuildSystemCommandInterface&, Task*,

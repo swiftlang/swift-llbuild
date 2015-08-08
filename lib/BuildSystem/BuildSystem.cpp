@@ -316,13 +316,15 @@ public:
 /// on.
 class ProducedNodeTask : public Task {
   Node& node;
-
+  BuildValue nodeResult;
+  Command* producingCommand = nullptr;
+  
   virtual void start(BuildEngine& engine) override {
     // Request the producer command.
     if (node.getProducers().size() == 1) {
-      auto command = node.getProducers()[0];
-      engine.taskNeedsInput(this,
-                            BuildKey::makeCommand(command->getName()).toData(),
+      producingCommand = node.getProducers()[0];
+      engine.taskNeedsInput(this, BuildKey::makeCommand(
+                                producingCommand->getName()).toData(),
                             /*InputID=*/0);
       return;
     }
@@ -338,16 +340,29 @@ class ProducedNodeTask : public Task {
   }
 
   virtual void provideValue(BuildEngine&, uintptr_t inputID,
-                            const ValueType& value) override {
+                            const ValueType& valueData) override {
+    auto value = BuildValue::fromData(valueData);
+    
+    // Extract the node result from the command.
+    assert(producingCommand);
+    nodeResult = std::move(producingCommand->getResultForOutput(&node, value));
   }
 
   virtual void inputsAvailable(BuildEngine& engine) override {
+    assert(!nodeResult.isInvalid());
+    
     // Complete the task immediately.
-    engine.taskIsComplete(this, ValueType());
+    engine.taskIsComplete(this, nodeResult.toData());
   }
 
 public:
-  ProducedNodeTask(Node& node) : node(node) {}
+  ProducedNodeTask(Node& node)
+      : node(node), nodeResult(BuildValue::makeInvalid()) {}
+  
+  static bool isResultValid(Node& node, const BuildValue& value) {
+    // The produced node result itself doesn't need any synchronization.
+    return true;
+  }
 };
 
 /// This is the task to actually execute a command.
@@ -464,8 +479,11 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       keyData,
       /*Action=*/ [node](BuildEngine& engine) -> Task* {
         return engine.registerTask(new ProducedNodeTask(*node));
+      },
+      /*IsValid=*/ [node](const Rule& rule, const ValueType& value) -> bool {
+        return ProducedNodeTask::isResultValid(
+            *node, BuildValue::fromData(value));
       }
-      // FIXME: Check node validity.
     };
   }
 
@@ -564,6 +582,27 @@ public:
     return true;
   }
 
+
+  virtual BuildValue getResultForOutput(Node* node,
+                                        const BuildValue& value) override {
+    // If the value was a failed command, treat the node as missing.
+    //
+    // FIXME: Reevaluate once nodes become more general.
+    if (value.isFailedCommand())
+      return BuildValue::makeMissingInput();
+
+    // Otherwise, return the actual result for the output.
+    
+    // Find the index of the output node.
+    auto it = std::find(outputs.begin(), outputs.end(), node);
+    assert(it != outputs.end());
+    
+    auto idx = it - outputs.begin();
+    assert(idx < value.getNumOutputs());
+
+    return BuildValue::makeExistingInput(value.getNthOutputInfo(idx));
+  }
+  
   virtual bool isResultValid(const BuildValue& value) override {
     // If the previous value wasn't for a successful command, always recompute.
     if (!value.isSuccessfulCommand())

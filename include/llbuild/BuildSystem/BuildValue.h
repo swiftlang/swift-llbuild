@@ -51,7 +51,7 @@ class BuildValue {
   Kind kind;
 
   /// The number of attached output infos.
-  const uint32_t numOutputInfos = 0;
+  uint32_t numOutputInfos = 0;
 
   union {
     /// The file info for the rule output, for existing inputs and successful
@@ -63,10 +63,9 @@ class BuildValue {
   } valueData;
 
 private:
-  // Copying and move assignment are disabled.
+  // Copying is disabled.
   BuildValue(const BuildValue&) LLBUILD_DELETED_FUNCTION;
   void operator=(const BuildValue&) LLBUILD_DELETED_FUNCTION;
-  BuildValue &operator=(BuildValue&& rhs) LLBUILD_DELETED_FUNCTION;
   
   BuildValue() {}
   BuildValue(Kind kind) : kind(kind) {
@@ -90,7 +89,7 @@ private:
   }
 
 public:
-  // BuildValues can only be moved via construction, not copied.
+  // BuildValues can only be moved, not copied.
   BuildValue(BuildValue&& rhs) : numOutputInfos(rhs.numOutputInfos) {
     kind = rhs.kind;
     if (numOutputInfos == 1) {
@@ -99,6 +98,22 @@ public:
       valueData.asOutputInfos = rhs.valueData.asOutputInfos;
       rhs.valueData.asOutputInfos = nullptr;
     }
+  }
+  BuildValue &operator=(BuildValue&& rhs) {
+    if (this != &rhs) {
+      // Release our resources.
+      if (hasMultipleOutputs())
+        delete[] valueData.asOutputInfos;
+
+      // Move the data.
+      kind = rhs.kind;
+      numOutputInfos = rhs.numOutputInfos;
+      if (numOutputInfos > 1) {
+        valueData.asOutputInfos = rhs.valueData.asOutputInfos;
+        rhs.valueData.asOutputInfos = nullptr;
+      }
+    }
+    return *this;
   }
   ~BuildValue() {
     if (hasMultipleOutputs()) {
@@ -109,6 +124,9 @@ public:
   /// @name Construction Functions
   /// @{
 
+  static BuildValue makeInvalid() {
+    return BuildValue(Kind::Invalid);
+  }
   static BuildValue makeExistingInput(FileInfo outputInfo) {
     return BuildValue(Kind::ExistingInput, outputInfo);
   }
@@ -131,6 +149,7 @@ public:
   /// @name Accessors
   /// @{
 
+  bool isInvalid() const { return kind == Kind::Invalid; }
   bool isExistingInput() const { return kind == Kind::ExistingInput; }
   bool isMissingInput() const { return kind == Kind::MissingInput; }
   bool isSuccessfulCommand() const {return kind == Kind::SuccessfulCommand; }
