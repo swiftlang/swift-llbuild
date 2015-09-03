@@ -474,6 +474,8 @@
 		E17C29F31B5AC2A700C12DA9 /* build-sphinx-docs.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "build-sphinx-docs.sh"; sourceTree = "<group>"; };
 		E18043391A00129400662FE7 /* install-user-lit.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "install-user-lit.sh"; sourceTree = "<group>"; };
 		E182BE111ABA2B8D001840AD /* Compiler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Compiler.h; sourceTree = "<group>"; };
+		E19C3F171B98B3CB0035E1AA /* extract-perf-data */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "extract-perf-data"; sourceTree = "<group>"; };
+		E19C3F181B98B3CB0035E1AA /* xcs-submit-perf-data.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "xcs-submit-perf-data.sh"; sourceTree = "<group>"; };
 		E19D549B1A00496900772777 /* basic.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = basic.ninja; sourceTree = "<group>"; };
 		E19D549D1A00497300772777 /* basic.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = basic.txt; sourceTree = "<group>"; };
 		E19D549E1A00497300772777 /* buildengine-ack.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "buildengine-ack.txt"; sourceTree = "<group>"; };
@@ -1324,8 +1326,10 @@
 				E17C29E41B5AAA2F00C12DA9 /* create-target-link.sh */,
 				E1A2255019F9A74B0059043E /* create-lit-site-cfg.sh */,
 				E1A2255119F9A74B0059043E /* execute-lit-tests.sh */,
+				E19C3F171B98B3CB0035E1AA /* extract-perf-data */,
 				E18043391A00129400662FE7 /* install-user-lit.sh */,
 				E17C29F21B5AC18C00C12DA9 /* install-user-sphinx.sh */,
+				E19C3F181B98B3CB0035E1AA /* xcs-submit-perf-data.sh */,
 			);
 			path = Xcode;
 			sourceTree = "<group>";
