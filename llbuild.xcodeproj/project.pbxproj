@@ -476,11 +476,7 @@
 		E182BE111ABA2B8D001840AD /* Compiler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Compiler.h; sourceTree = "<group>"; };
 		E19C3F171B98B3CB0035E1AA /* extract-perf-data */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "extract-perf-data"; sourceTree = "<group>"; };
 		E19C3F181B98B3CB0035E1AA /* xcs-submit-perf-data.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "xcs-submit-perf-data.sh"; sourceTree = "<group>"; };
-		E19D549B1A00496900772777 /* basic.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = basic.ninja; sourceTree = "<group>"; };
-		E19D549D1A00497300772777 /* basic.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = basic.txt; sourceTree = "<group>"; };
-		E19D549E1A00497300772777 /* buildengine-ack.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "buildengine-ack.txt"; sourceTree = "<group>"; };
-		E19D549F1A00497300772777 /* lit.local.cfg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = lit.local.cfg; sourceTree = "<group>"; };
-		E19D54A21A004EC900772777 /* tracing.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tracing.ninja; sourceTree = "<group>"; };
+		E19C3FD51B98C1A70035E1AA /* tests */ = {isa = PBXFileReference; lastKnownFileType = folder; path = tests; sourceTree = "<group>"; };
 		E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MakefileDepsParser.cpp; sourceTree = "<group>"; };
 		E19D79931A15D9F5002604FB /* MakefileDepsParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MakefileDepsParser.h; sourceTree = "<group>"; };
 		E19D79941A15DA06002604FB /* MakefileDepsParserTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MakefileDepsParserTest.cpp; sourceTree = "<group>"; };
@@ -571,28 +567,6 @@
 		E1A224E619F99C580059043E /* libgtest_main.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libgtest_main.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1A224EF19F99D880059043E /* CoreTests */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = CoreTests; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1A2250119F99DFD0059043E /* NinjaTests */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = NinjaTests; sourceTree = BUILT_PRODUCTS_DIR; };
-		E1A2252419F9A0310059043E /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
-		E1A2252719F9A0310059043E /* basic.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = basic.ninja; sourceTree = "<group>"; };
-		E1A2252819F9A0310059043E /* whitespace-skipping.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "whitespace-skipping.ninja"; sourceTree = "<group>"; };
-		E1A2252D19F9A0310059043E /* include-b-2.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "include-b-2.ninja"; sourceTree = "<group>"; };
-		E1A2252E19F9A0310059043E /* include-b.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "include-b.ninja"; sourceTree = "<group>"; };
-		E1A2252F19F9A0310059043E /* include-with-error.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "include-with-error.ninja"; sourceTree = "<group>"; };
-		E1A2253019F9A0310059043E /* builds.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = builds.ninja; sourceTree = "<group>"; };
-		E1A2253119F9A0310059043E /* default.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = default.ninja; sourceTree = "<group>"; };
-		E1A2253219F9A0310059043E /* include.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = include.ninja; sourceTree = "<group>"; };
-		E1A2253319F9A0310059043E /* pools.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = pools.ninja; sourceTree = "<group>"; };
-		E1A2253419F9A0310059043E /* rules.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = rules.ninja; sourceTree = "<group>"; };
-		E1A2253519F9A0310059043E /* variable-expansion.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "variable-expansion.ninja"; sourceTree = "<group>"; };
-		E1A2253719F9A0310059043E /* basic.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = basic.ninja; sourceTree = "<group>"; };
-		E1A2253819F9A0310059043E /* identifier-names.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "identifier-names.ninja"; sourceTree = "<group>"; };
-		E1A2253919F9A0310059043E /* identifier-specific-parsing.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "identifier-specific-parsing.ninja"; sourceTree = "<group>"; };
-		E1A2253A19F9A0310059043E /* path-string-parsing.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "path-string-parsing.ninja"; sourceTree = "<group>"; };
-		E1A2253B19F9A0310059043E /* variable-string-parsing.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "variable-string-parsing.ninja"; sourceTree = "<group>"; };
-		E1A2253C19F9A0310059043E /* lit.local.cfg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = lit.local.cfg; sourceTree = "<group>"; };
-		E1A2253E19F9A0310059043E /* lit.cfg */ = {isa = PBXFileReference; explicitFileType = text.script.python; fileEncoding = 4; path = lit.cfg; sourceTree = "<group>"; };
-		E1A2253F19F9A0320059043E /* lit.site.cfg.in */ = {isa = PBXFileReference; explicitFileType = text.script.python; fileEncoding = 4; path = lit.site.cfg.in; sourceTree = "<group>"; };
-		E1A2254019F9A0320059043E /* lit.cfg */ = {isa = PBXFileReference; explicitFileType = text.script.python; fileEncoding = 4; path = lit.cfg; sourceTree = "<group>"; };
-		E1A2254119F9A0320059043E /* lit.site.cfg.in */ = {isa = PBXFileReference; explicitFileType = text.script.python; fileEncoding = 4; path = lit.site.cfg.in; sourceTree = "<group>"; };
 		E1A2254F19F9A74B0059043E /* README.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.txt; sourceTree = "<group>"; };
 		E1A2255019F9A74B0059043E /* create-lit-site-cfg.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "create-lit-site-cfg.sh"; sourceTree = "<group>"; };
 		E1A2255119F9A74B0059043E /* execute-lit-tests.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "execute-lit-tests.sh"; sourceTree = "<group>"; };
@@ -731,10 +705,7 @@
 		E1E221041A0067EF00957481 /* BuildDB.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuildDB.h; sourceTree = "<group>"; };
 		E1E221051A0067F800957481 /* BuildDB.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildDB.cpp; sourceTree = "<group>"; };
 		E1E221081A00B82100957481 /* libsqlite3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsqlite3.dylib; path = usr/lib/libsqlite3.dylib; sourceTree = SDKROOT; };
-		E1E2210A1A00BEE500957481 /* incremental.ninja */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = incremental.ninja; sourceTree = "<group>"; };
 		E1E2210B1A015B9E00957481 /* SQLiteBuildDB.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SQLiteBuildDB.cpp; sourceTree = "<group>"; };
-		E1ECD7AD1B60610A006B4C2A /* basic.llbuild */ = {isa = PBXFileReference; lastKnownFileType = text; path = basic.llbuild; sourceTree = "<group>"; };
-		E1ECD7AE1B60610A006B4C2A /* lit.local.cfg */ = {isa = PBXFileReference; lastKnownFileType = text; path = lit.local.cfg; sourceTree = "<group>"; };
 		E1FE53401AB1343B00041B8E /* Hashing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Hashing.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -907,33 +878,13 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		E19D549A1A00496900772777 /* Build */ = {
-			isa = PBXGroup;
-			children = (
-				E19D549B1A00496900772777 /* basic.ninja */,
-				E1E2210A1A00BEE500957481 /* incremental.ninja */,
-				E19D54A21A004EC900772777 /* tracing.ninja */,
-			);
-			path = Build;
-			sourceTree = "<group>";
-		};
-		E19D549C1A00497300772777 /* Commands */ = {
-			isa = PBXGroup;
-			children = (
-				E19D549D1A00497300772777 /* basic.txt */,
-				E19D549E1A00497300772777 /* buildengine-ack.txt */,
-				E19D549F1A00497300772777 /* lit.local.cfg */,
-			);
-			path = Commands;
-			sourceTree = "<group>";
-		};
 		E1A223E819F98F1C0059043E = {
 			isa = PBXGroup;
 			children = (
 				E153EBBA1A1E94CD00F93337 /* llbuild-test-tools */,
 				E1A223FD19F990F10059043E /* products */,
 				E1A2240419F991530059043E /* lib */,
-				E1A2252319F9A0310059043E /* tests */,
+				E19C3FD51B98C1A70035E1AA /* tests */,
 				E1C404B51A03090D003392BA /* perftests */,
 				E1A224B219F998D40059043E /* unittests */,
 				E1A2246A19F998C30059043E /* utils */,
@@ -1237,86 +1188,6 @@
 			path = Ninja;
 			sourceTree = "<group>";
 		};
-		E1A2252319F9A0310059043E /* tests */ = {
-			isa = PBXGroup;
-			children = (
-				E1ECD7AB1B60610A006B4C2A /* BuildSystem */,
-				E19D549C1A00497300772777 /* Commands */,
-				E1A2252519F9A0310059043E /* Ninja */,
-				E1A2253D19F9A0310059043E /* Unit */,
-				E1A2252419F9A0310059043E /* CMakeLists.txt */,
-				E1A2254019F9A0320059043E /* lit.cfg */,
-				E1A2254119F9A0320059043E /* lit.site.cfg.in */,
-			);
-			path = tests;
-			sourceTree = "<group>";
-		};
-		E1A2252519F9A0310059043E /* Ninja */ = {
-			isa = PBXGroup;
-			children = (
-				E19D549A1A00496900772777 /* Build */,
-				E1A2252619F9A0310059043E /* Lexer */,
-				E1A2252919F9A0310059043E /* Loader */,
-				E1A2253619F9A0310059043E /* Parser */,
-				E1A2253C19F9A0310059043E /* lit.local.cfg */,
-			);
-			path = Ninja;
-			sourceTree = "<group>";
-		};
-		E1A2252619F9A0310059043E /* Lexer */ = {
-			isa = PBXGroup;
-			children = (
-				E1A2252719F9A0310059043E /* basic.ninja */,
-				E1A2252819F9A0310059043E /* whitespace-skipping.ninja */,
-			);
-			path = Lexer;
-			sourceTree = "<group>";
-		};
-		E1A2252919F9A0310059043E /* Loader */ = {
-			isa = PBXGroup;
-			children = (
-				E1A2252C19F9A0310059043E /* Inputs */,
-				E1A2253019F9A0310059043E /* builds.ninja */,
-				E1A2253119F9A0310059043E /* default.ninja */,
-				E1A2253219F9A0310059043E /* include.ninja */,
-				E1A2253319F9A0310059043E /* pools.ninja */,
-				E1A2253419F9A0310059043E /* rules.ninja */,
-				E1A2253519F9A0310059043E /* variable-expansion.ninja */,
-			);
-			path = Loader;
-			sourceTree = "<group>";
-		};
-		E1A2252C19F9A0310059043E /* Inputs */ = {
-			isa = PBXGroup;
-			children = (
-				E1A2252D19F9A0310059043E /* include-b-2.ninja */,
-				E1A2252E19F9A0310059043E /* include-b.ninja */,
-				E1A2252F19F9A0310059043E /* include-with-error.ninja */,
-			);
-			path = Inputs;
-			sourceTree = "<group>";
-		};
-		E1A2253619F9A0310059043E /* Parser */ = {
-			isa = PBXGroup;
-			children = (
-				E1A2253719F9A0310059043E /* basic.ninja */,
-				E1A2253819F9A0310059043E /* identifier-names.ninja */,
-				E1A2253919F9A0310059043E /* identifier-specific-parsing.ninja */,
-				E1A2253A19F9A0310059043E /* path-string-parsing.ninja */,
-				E1A2253B19F9A0310059043E /* variable-string-parsing.ninja */,
-			);
-			path = Parser;
-			sourceTree = "<group>";
-		};
-		E1A2253D19F9A0310059043E /* Unit */ = {
-			isa = PBXGroup;
-			children = (
-				E1A2253E19F9A0310059043E /* lit.cfg */,
-				E1A2253F19F9A0320059043E /* lit.site.cfg.in */,
-			);
-			path = Unit;
-			sourceTree = "<group>";
-		};
 		E1A2254E19F9A74B0059043E /* Xcode */ = {
 			isa = PBXGroup;
 			children = (
@@ -1608,23 +1479,6 @@
 				E1D191B81B472305000C4E95 /* llbuild-module.modulemap */,
 			);
 			path = "llbuild-framework";
-			sourceTree = "<group>";
-		};
-		E1ECD7AB1B60610A006B4C2A /* BuildSystem */ = {
-			isa = PBXGroup;
-			children = (
-				E1ECD7AC1B60610A006B4C2A /* Parser */,
-				E1ECD7AE1B60610A006B4C2A /* lit.local.cfg */,
-			);
-			path = BuildSystem;
-			sourceTree = "<group>";
-		};
-		E1ECD7AC1B60610A006B4C2A /* Parser */ = {
-			isa = PBXGroup;
-			children = (
-				E1ECD7AD1B60610A006B4C2A /* basic.llbuild */,
-			);
-			path = Parser;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
