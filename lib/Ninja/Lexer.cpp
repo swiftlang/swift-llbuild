@@ -12,6 +12,7 @@
 
 #include "llbuild/Ninja/Lexer.h"
 
+#include <cstring>
 #include <string>
 #include <iostream>
 #include <iomanip>

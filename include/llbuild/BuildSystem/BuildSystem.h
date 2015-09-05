@@ -16,6 +16,7 @@
 #include "llbuild/Basic/Compiler.h"
 
 #include <cstdint>
+#include <memory>
 #include <string>
 
 namespace llbuild {

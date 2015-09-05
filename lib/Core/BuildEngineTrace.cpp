@@ -16,6 +16,7 @@
 
 #include <cassert>
 #include <cstdio>
+#include <cstring>
 
 #include <errno.h>
 

@@ -16,9 +16,12 @@
 
 #include "BuildEngineTrace.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cstdio>
+#include <condition_variable>
 #include <iostream>
+#include <mutex>
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>

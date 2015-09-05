@@ -15,11 +15,12 @@
 #include "llbuild/Core/DependencyNode.h"
 #include "llbuild/Core/DependencyCommand.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
-#include <algorithm>
-#include <iostream>
+#include <functional>
 #include <iomanip>
+#include <iostream>
 #include <sstream>
 
 using namespace llbuild;

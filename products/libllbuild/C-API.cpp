@@ -17,6 +17,9 @@
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/BuildEngine.h"
 
+#include <cassert>
+#include <cstring>
+
 using namespace llbuild;
 using namespace llbuild::core;
 

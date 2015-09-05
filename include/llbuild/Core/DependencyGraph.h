@@ -13,8 +13,9 @@
 #ifndef LLBUILD_CORE_DEPENDENCYGRAPH_H
 #define LLBUILD_CORE_DEPENDENCYGRAPH_H
 
-#include <unordered_map>
 #include <string>
+#include <functional>
+#include <unordered_map>
 #include <vector>
 
 namespace llbuild {

@@ -16,6 +16,7 @@
 
 #include <cassert>
 #include <cerrno>
+#include <cstring>
 
 #include <sqlite3.h>
 #include <unistd.h>
