@@ -12,6 +12,8 @@
 
 #include "llbuild/Basic/FileInfo.h"
 
+#include <cassert>
+#include <cstring>
 #include <sys/stat.h>
 
 using namespace llbuild;

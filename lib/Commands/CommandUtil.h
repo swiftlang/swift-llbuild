@@ -13,6 +13,7 @@
 #ifndef LLBUILD_NINJA_COMMANDUTIL_H
 #define LLBUILD_NINJA_COMMANDUTIL_H
 
+#include <memory>
 #include <string>
 #include <utility>
 

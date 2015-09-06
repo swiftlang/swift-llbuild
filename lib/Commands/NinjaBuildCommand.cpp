@@ -24,18 +24,23 @@
 #include "CommandLineStatusOutput.h"
 #include "CommandUtil.h"
 
+#include <atomic>
 #include <cerrno>
+#include <condition_variable>
 #include <cstdlib>
 #include <deque>
+#include <mutex>
 #include <sstream>
 #include <thread>
 #include <unordered_set>
 
+#include <fcntl.h>
 #include <signal.h>
 #include <spawn.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/wait.h>
 
 #include <dispatch/dispatch.h>
 

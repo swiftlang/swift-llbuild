@@ -14,10 +14,14 @@
 
 #include "llbuild/Core/BuildEngine.h"
 
+#include <cassert>
 #include <cmath>
+#include <cstring>
 #include <cstdlib>
 #include <functional>
 #include <iostream>
+#include <memory>
+#include <mutex>
 
 using namespace llbuild;
 using namespace llbuild::commands;

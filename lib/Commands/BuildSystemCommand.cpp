@@ -17,12 +17,17 @@
 #include "llbuild/BuildSystem/BuildSystem.h"
 #include "llbuild/BuildSystem/BuildValue.h"
 
+#include <condition_variable>
 #include <deque>
+#include <mutex>
+#include <memory>
 #include <thread>
 
 #include <fcntl.h>
+#include <unistd.h>
 #include <signal.h>
 #include <spawn.h>
+#include <sys/wait.h>
 
 using namespace llbuild;
 using namespace llbuild::commands;
