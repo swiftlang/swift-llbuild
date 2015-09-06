@@ -34,6 +34,20 @@
                ReferencedContainer = "container:llbuild.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "E1C404AB1A0308F3003392BA"
+               BuildableName = "PerfTests.xctest"
+               BlueprintName = "PerfTests"
+               ReferencedContainer = "container:llbuild.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
