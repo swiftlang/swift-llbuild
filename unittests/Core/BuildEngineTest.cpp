@@ -27,15 +27,15 @@ namespace {
 class SimpleBuildEngineDelegate : public core::BuildEngineDelegate {
   virtual core::Rule lookupRule(const core::KeyType& key) override {
     // We never expect dynamic rule lookup.
-    fprintf(stderr, "error: %s: unexpected rule lookup for \"%s\"\n",
-            getprogname(), key.c_str());
+    fprintf(stderr, "error: unexpected rule lookup for \"%s\"\n",
+            key.c_str());
     abort();
     return core::Rule();
   }
 
   virtual void cycleDetected(const std::vector<core::Rule*>& items) override {
     // We never expect a cycle.
-    fprintf(stderr, "error: %s: cycle\n", getprogname());
+    fprintf(stderr, "error: cycle\n");
     abort();
   }
 };

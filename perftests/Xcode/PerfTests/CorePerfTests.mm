@@ -131,14 +131,14 @@ static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
   struct LinearDelegate : public BuildEngineDelegate {
     virtual core::Rule lookupRule(const core::KeyType& Key) override {
       // We never expect dynamic rule lookup.
-      fprintf(stderr, "error: %s: unexpected rule lookup for \"%s\"\n",
-              getprogname(), Key.c_str());
+      fprintf(stderr, "error: unexpected rule lookup for \"%s\"\n",
+              Key.c_str());
       abort();
       return core::Rule();
     }
     virtual void cycleDetected(const std::vector<core::Rule*>& Cycle) override {
       // We never expect to find a cycle.
-      fprintf(stderr, "error: %s: unexpected cycle\n", getprogname());
+      fprintf(stderr, "error: unexpected cycle\n");
       abort();
     }
   } Delegate;
@@ -206,14 +206,14 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
   struct NaryTreeDelegate : public BuildEngineDelegate {
     virtual core::Rule lookupRule(const core::KeyType& Key) override {
       // We never expect dynamic rule lookup.
-      fprintf(stderr, "error: %s: unexpected rule lookup for \"%s\"\n",
-              getprogname(), Key.c_str());
+      fprintf(stderr, "error: unexpected rule lookup for \"%s\"\n",
+              Key.c_str());
       abort();
       return core::Rule();
     }
     virtual void cycleDetected(const std::vector<core::Rule*>& Cycle) override {
       // We never expect to find a cycle.
-      fprintf(stderr, "error: %s: unexpected cycle\n", getprogname());
+      fprintf(stderr, "error: unexpected cycle\n");
       abort();
     }
   } Delegate;
@@ -285,14 +285,14 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
   struct MatrixDelegate : public BuildEngineDelegate {
     virtual core::Rule lookupRule(const core::KeyType& Key) override {
       // We never expect dynamic rule lookup.
-      fprintf(stderr, "error: %s: unexpected rule lookup for \"%s\"\n",
-              getprogname(), Key.c_str());
+      fprintf(stderr, "error: unexpected rule lookup for \"%s\"\n",
+              Key.c_str());
       abort();
       return core::Rule();
     }
     virtual void cycleDetected(const std::vector<core::Rule*>& Cycle) override {
       // We never expect to find a cycle.
-      fprintf(stderr, "error: %s: unexpected cycle\n", getprogname());
+      fprintf(stderr, "error: unexpected cycle\n");
       abort();
     }
   } Delegate;
