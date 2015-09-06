@@ -6,8 +6,8 @@ add_llbuild_library(libllbuild
 set_property(TARGET libllbuild PROPERTY MACOSX_RPATH ON)
 
 target_link_libraries(libllbuild
-  llbuildBasic
   llbuildCore
+  llbuildBasic
   sqlite3
   )
 

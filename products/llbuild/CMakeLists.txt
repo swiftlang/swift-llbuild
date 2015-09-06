@@ -2,12 +2,12 @@ add_llbuild_executable(llbuild
   llbuild.cpp)
 
 target_link_libraries(llbuild
-  llvmSupport
-  llbuildBasic
-  llbuildCore
-  llbuildBuildSystem
-  llbuildNinja
   llbuildCommands
+  llbuildNinja
+  llbuildBuildSystem
+  llbuildCore
+  llbuildBasic
+  llvmSupport
   sqlite3
   curses
   )
