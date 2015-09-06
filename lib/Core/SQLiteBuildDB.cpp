@@ -112,7 +112,7 @@ public:
           "INSERT INTO info VALUES (0, %d, %d, 0);",
           currentSchemaVersion, clientSchemaVersion);
         result = sqlite3_exec(db, query, nullptr, nullptr, &cError);
-        free(query);
+        sqlite3_free(query);
       }
       if (result == SQLITE_OK) {
         result = sqlite3_exec(
@@ -154,7 +154,7 @@ public:
       if (result != SQLITE_OK) {
         *error_out = (std::string("unable to initialize database (") + cError
                       + ")");
-        ::free(cError);
+        sqlite3_free(cError);
         sqlite3_close(db);
         return false;
       }
