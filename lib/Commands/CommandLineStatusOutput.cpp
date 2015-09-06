@@ -54,7 +54,7 @@ struct CommandLineStatusOutputImpl {
 
     // Detect the features of the output.
     int fd = fileno(fp);
-    if (::isatty(fd)) {
+    if (llvm::sys::Process::FileDescriptorIsDisplayed(fd)) {
       // If the terminal is a tty, check the TERM variable.
       const char* term = ::getenv("TERM");
 
