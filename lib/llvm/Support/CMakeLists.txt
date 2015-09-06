@@ -37,3 +37,7 @@ YAMLParser.cpp
 circular_raw_ostream.cpp
 raw_ostream.cpp
 )
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  target_link_libraries(llvmSupport pthread dl)
+endif()
