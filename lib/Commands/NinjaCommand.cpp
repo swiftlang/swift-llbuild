@@ -32,7 +32,7 @@ using namespace llbuild::commands;
 
 static void usage() {
   fprintf(stderr, "Usage: %s ninja [--help] <command> [<args>]\n",
-          getprogname());
+          getProgramName());
   fprintf(stderr, "\n");
   fprintf(stderr, "Available commands:\n");
   fprintf(stderr, "  build         -- Build using Ninja manifests\n");
@@ -50,7 +50,7 @@ static int executeLexCommand(const std::vector<std::string> &args,
 
   if (args.size() != 1) {
     fprintf(stderr, "error: %s: invalid number of arguments\n",
-            getprogname());
+            getProgramName());
     return 1;
   }
 
@@ -59,13 +59,13 @@ static int executeLexCommand(const std::vector<std::string> &args,
   std::unique_ptr<char[]> data;
   std::string error;
   if (!util::readFileContents(args[0], &data, &size, &error)) {
-    fprintf(stderr, "error: %s: %s\n", getprogname(), error.c_str());
+    fprintf(stderr, "error: %s: %s\n", getProgramName(), error.c_str());
     exit(1);
   }
 
   // Create a Ninja lexer.
   if (!lexOnly) {
-      fprintf(stderr, "note: %s: reading tokens from %s\n", getprogname(),
+      fprintf(stderr, "note: %s: reading tokens from %s\n", getProgramName(),
               args[0].c_str());
   }
   ninja::Lexer lexer(data.get(), size);
@@ -312,7 +312,7 @@ static int executeParseCommand(const std::vector<std::string> &args,
                                bool parseOnly) {
   if (args.size() != 1) {
     fprintf(stderr, "error: %s: invalid number of arguments\n",
-            getprogname());
+            getProgramName());
     return 1;
   }
 
@@ -321,7 +321,7 @@ static int executeParseCommand(const std::vector<std::string> &args,
   std::unique_ptr<char[]> data;
   std::string error;
   if (!util::readFileContents(args[0], &data, &size, &error)) {
-    fprintf(stderr, "error: %s: %s\n", getprogname(), error.c_str());
+    fprintf(stderr, "error: %s: %s\n", getProgramName(), error.c_str());
     exit(1);
   }
 
@@ -377,7 +377,7 @@ private:
                       Loader->getCurrentParser());
     } else {
       // We were unable to open the main file.
-      fprintf(stderr, "error: %s: %s\n", getprogname(), Error.c_str());
+      fprintf(stderr, "error: %s: %s\n", getProgramName(), Error.c_str());
       exit(1);
     }
 
@@ -392,7 +392,7 @@ static int executeLoadManifestCommand(const std::vector<std::string>& args,
                                       bool loadOnly) {
   if (args.size() != 1) {
     fprintf(stderr, "error: %s: invalid number of arguments\n",
-            getprogname());
+            getProgramName());
     return 1;
   }
 
@@ -405,7 +405,7 @@ static int executeLoadManifestCommand(const std::vector<std::string>& args,
   if (pos != std::string::npos) {
     if (::chdir(std::string(filename.substr(0, pos)).c_str()) < 0) {
       fprintf(stderr, "error: %s: unable to chdir(): %s\n",
-              getprogname(), strerror(errno));
+              getProgramName(), strerror(errno));
       return 1;
     }
     filename = filename.substr(pos+1);
@@ -600,7 +600,7 @@ int commands::executeNinjaCommand(const std::vector<std::string>& args) {
     return executeNinjaBuildCommand(std::vector<std::string>(args.begin()+1,
                                                              args.end()));
   } else {
-    fprintf(stderr, "error: %s: unknown command '%s'\n", getprogname(),
+    fprintf(stderr, "error: %s: unknown command '%s'\n", getProgramName(),
             args[0].c_str());
     return 1;
   }

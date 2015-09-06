@@ -15,6 +15,7 @@
 #include "llbuild/Basic/Compiler.h"
 #include "llbuild/Basic/FileInfo.h"
 #include "llbuild/Basic/Hashing.h"
+#include "llbuild/Commands/Commands.h"
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/BuildEngine.h"
 #include "llbuild/Core/MakefileDepsParser.h"
@@ -73,7 +74,7 @@ static std::string getFormattedString(const char* fmt, ...) {
 static void usage(int exitCode=1) {
   int optionWidth = 20;
   fprintf(stderr, "Usage: %s ninja build [options] [<targets>...]\n",
-          ::getprogname());
+          getProgramName());
   fprintf(stderr, "\nOptions:\n");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--help",
           "show this help message and exit");
@@ -475,7 +476,7 @@ public:
     std::string error;
     if (!statusOutput.open(&error)) {
       fprintf(stderr, "error: %s: unable to open output: %s\n",
-              getprogname(), error.c_str());
+              getProgramName(), error.c_str());
       exit(1);
     }
 
@@ -537,7 +538,7 @@ public:
   void emitDiagnostic(std::string kind, std::string message) {
     dispatch_async(outputQueue, ^() {
         statusOutput.finishLine();
-        fprintf(stderr, "%s: %s: %s\n", getprogname(), kind.c_str(),
+        fprintf(stderr, "%s: %s: %s\n", getProgramName(), kind.c_str(),
                 message.c_str());
       });
   }
@@ -548,7 +549,7 @@ public:
                              std::string text) {
     dispatch_async(outputQueue, ^() {
         statusOutput.finishLine();
-        fprintf(stderr, "%s: %s: %s\n", getprogname(), kind.c_str(),
+        fprintf(stderr, "%s: %s: %s\n", getProgramName(), kind.c_str(),
                 message.c_str());
         fflush(stderr);
         fwrite(text.data(), text.size(), 1, stdout);
@@ -1629,7 +1630,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     } else if (option == "-C" || option == "--chdir") {
       if (args.empty()) {
         fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
-                ::getprogname(), option.c_str());
+                getProgramName(), option.c_str());
         usage();
       }
       chdirPath = args[0];
@@ -1639,7 +1640,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     } else if (option == "--db") {
       if (args.empty()) {
         fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
-                ::getprogname(), option.c_str());
+                getProgramName(), option.c_str());
         usage();
       }
       dbFilename = args[0];
@@ -1647,7 +1648,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     } else if (option == "--dump-graph") {
       if (args.empty()) {
         fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
-                ::getprogname(), option.c_str());
+                getProgramName(), option.c_str());
         usage();
       }
       dumpGraphPath = args[0];
@@ -1655,7 +1656,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     } else if (option == "-f") {
       if (args.empty()) {
         fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
-                ::getprogname(), option.c_str());
+                getProgramName(), option.c_str());
         usage();
       }
       manifestFilename = args[0];
@@ -1663,14 +1664,14 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     } else if (option == "-k") {
       if (args.empty()) {
         fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
-                ::getprogname(), option.c_str());
+                getProgramName(), option.c_str());
         usage();
       }
       char *end;
       numFailedCommandsToTolerate = ::strtol(args[0].c_str(), &end, 10);
       if (*end != '\0') {
           fprintf(stderr, "%s: error: invalid argument '%s' to '%s'\n\n",
-                  getprogname(), args[0].c_str(), option.c_str());
+                  getProgramName(), args[0].c_str(), option.c_str());
           usage();
       }
       args.erase(args.begin());
@@ -1683,7 +1684,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     } else if (option == "--profile") {
       if (args.empty()) {
         fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
-                ::getprogname(), option.c_str());
+                getProgramName(), option.c_str());
         usage();
       }
       profileFilename = args[0];
@@ -1693,7 +1694,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     } else if (option == "-t") {
       if (args.empty()) {
         fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
-                ::getprogname(), option.c_str());
+                getProgramName(), option.c_str());
         usage();
       }
       customTool = args[0];
@@ -1701,7 +1702,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     } else if (option == "--trace") {
       if (args.empty()) {
         fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
-                ::getprogname(), option.c_str());
+                getProgramName(), option.c_str());
         usage();
       }
       traceFilename = args[0];
@@ -1710,7 +1711,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       verbose = true;
     } else {
       fprintf(stderr, "%s: error: invalid option: '%s'\n\n",
-              ::getprogname(), option.c_str());
+              getProgramName(), option.c_str());
       usage();
     }
   }
@@ -1719,13 +1720,13 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
   if (!chdirPath.empty()) {
     if (::chdir(chdirPath.c_str()) < 0) {
       fprintf(stderr, "%s: error: unable to honor --chdir: %s\n",
-              getprogname(), strerror(errno));
+              getProgramName(), strerror(errno));
       return 1;
     }
 
     // Print a message about the changed directory. The exact format here is
     // important, it is recognized by other tools (like Emacs).
-    fprintf(stdout, "%s: Entering directory `%s'\n", getprogname(),
+    fprintf(stdout, "%s: Entering directory `%s'\n", getProgramName(),
             chdirPath.c_str());
     fflush(stdout);
   }

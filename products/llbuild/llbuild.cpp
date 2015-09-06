@@ -14,6 +14,7 @@
 
 #include "llbuild/Commands/Commands.h"
 
+#include "llvm/Support/Path.h"
 #include "llvm/Support/Signals.h"
 
 #include <cstdio>
@@ -24,7 +25,7 @@ using namespace llbuild::commands;
 
 static void usage() {
   fprintf(stderr, "Usage: %s [--version] [--help] <command> [<args>]\n",
-          getprogname());
+          getProgramName());
   fprintf(stderr, "\n");
   fprintf(stderr, "Available commands:\n");
   fprintf(stderr, "  ninja       -- Run the Ninja subtool\n");
@@ -40,9 +41,9 @@ int main(int argc, const char **argv) {
   
   // Support use of llbuild as a replacement for ninja by indirecting to the
   // `ninja build` subtool when invoked under the name `ninja.
-  if (strcmp(getprogname(), "ninja") == 0) {
+  if (llvm::sys::path::filename(argv[0]) == "ninja") {
     // We still want to represent ourselves as llbuild in output messages.
-    setprogname("llbuild");
+    setProgramName("llbuild");
 
     std::vector<std::string> args;
     args.push_back("build");
@@ -50,6 +51,8 @@ int main(int argc, const char **argv) {
       args.push_back(argv[i]);
     }
     return executeNinjaCommand(args);
+  } else {
+    setProgramName(llvm::sys::path::filename(argv[0]));
   }
 
   // Expect the first argument to be the name of a subtool to delegate to.
@@ -76,7 +79,7 @@ int main(int argc, const char **argv) {
   } else if (command == "buildsystem") {
     return executeBuildSystemCommand(args);
   } else {
-    fprintf(stderr, "error: %s: unknown command '%s'\n", getprogname(),
+    fprintf(stderr, "error: %s: unknown command '%s'\n", getProgramName(),
             command.c_str());
     return 1;
   }

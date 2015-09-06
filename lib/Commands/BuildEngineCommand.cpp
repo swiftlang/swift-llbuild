@@ -20,6 +20,7 @@
 #include <iostream>
 
 using namespace llbuild;
+using namespace llbuild::commands;
 
 #pragma mark - Ackermann Build Command
 
@@ -178,7 +179,7 @@ static int runAckermannBuild(int m, int n, int recomputeCount,
     std::string error;
     if (!engine.enableTracing(traceFilename, &error)) {
       fprintf(stderr, "error: %s: unable to enable tracing: %s\n",
-              getprogname(), error.c_str());
+              getProgramName(), error.c_str());
       return 1;
     }
   }
@@ -212,7 +213,7 @@ static int runAckermannBuild(int m, int n, int recomputeCount,
 static void ackermannUsage() {
   int optionWidth = 20;
   fprintf(stderr, "Usage: %s buildengine ack [options] <M> <N>\n",
-          ::getprogname());
+          getProgramName());
   fprintf(stderr, "\nOptions:\n");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--help",
           "show this help message and exit");
@@ -240,21 +241,21 @@ static int executeAckermannCommand(std::vector<std::string> args) {
     } else if (option == "--recompute") {
       if (args.empty()) {
         fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
-                ::getprogname(), option.c_str());
+                getProgramName(), option.c_str());
         ackermannUsage();
       }
       char *end;
       recomputeCount = ::strtol(args[0].c_str(), &end, 10);
       if (*end != '\0') {
         fprintf(stderr, "\error: %s: invalid argument to '%s'\n\n",
-                ::getprogname(), option.c_str());
+                getProgramName(), option.c_str());
         ackermannUsage();
       }
       args.erase(args.begin());
     } else if (option == "--dump-graph") {
       if (args.empty()) {
         fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
-                ::getprogname(), option.c_str());
+                getProgramName(), option.c_str());
         ackermannUsage();
       }
       dumpGraphPath = args[0];
@@ -262,20 +263,20 @@ static int executeAckermannCommand(std::vector<std::string> args) {
     } else if (option == "--trace") {
       if (args.empty()) {
         fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
-                ::getprogname(), option.c_str());
+                getProgramName(), option.c_str());
         ackermannUsage();
       }
       traceFilename = args[0];
       args.erase(args.begin());
     } else {
       fprintf(stderr, "\error: %s: invalid option: '%s'\n\n",
-              ::getprogname(), option.c_str());
+              getProgramName(), option.c_str());
       ackermannUsage();
     }
   }
 
   if (args.size() != 2) {
-    fprintf(stderr, "error: %s: invalid number of arguments\n", getprogname());
+    fprintf(stderr, "error: %s: invalid number of arguments\n", getProgramName());
     ackermannUsage();
   }
 
@@ -283,26 +284,26 @@ static int executeAckermannCommand(std::vector<std::string> args) {
   int m = ::strtol(str, (char**)&str, 10);
   if (*str != '\0') {
     fprintf(stderr, "error: %s: invalid argument '%s' (expected integer)\n",
-            getprogname(), args[0].c_str());
+            getProgramName(), args[0].c_str());
     return 1;
   }
   str = args[1].c_str();
   int n = ::strtol(str, (char**)&str, 10);
   if (*str != '\0') {
     fprintf(stderr, "error: %s: invalid argument '%s' (expected integer)\n",
-            getprogname(), args[1].c_str());
+            getProgramName(), args[1].c_str());
     return 1;
   }
 
   if (m >= 4) {
     fprintf(stderr, "error: %s: invalid argument M = '%d' (too large)\n",
-            getprogname(), m);
+            getProgramName(), m);
     return 1;
   }
 
   if (n >= 1024) {
     fprintf(stderr, "error: %s: invalid argument N = '%d' (too large)\n",
-            getprogname(), n);
+            getProgramName(), n);
     return 1;
   }
 
@@ -315,7 +316,7 @@ static int executeAckermannCommand(std::vector<std::string> args) {
 
 static void usage() {
   fprintf(stderr, "Usage: %s buildengine [--help] <command> [<args>]\n",
-          getprogname());
+          getProgramName());
   fprintf(stderr, "\n");
   fprintf(stderr, "Available commands:\n");
   fprintf(stderr, "  ack           -- Compute Ackermann\n");
@@ -331,7 +332,7 @@ int commands::executeBuildEngineCommand(const std::vector<std::string> &args) {
   if (args[0] == "ack") {
     return executeAckermannCommand({args.begin()+1, args.end()});
   } else {
-    fprintf(stderr, "error: %s: unknown command '%s'\n", getprogname(),
+    fprintf(stderr, "error: %s: unknown command '%s'\n", getProgramName(),
             args[0].c_str());
     return 1;
   }

@@ -11,6 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "CommandUtil.h"
+#include "llbuild/Commands/Commands.h"
 
 #include "llbuild/Ninja/ManifestLoader.h"
 #include "llbuild/Ninja/Parser.h"
@@ -20,6 +21,20 @@
 
 using namespace llbuild;
 using namespace llbuild::commands;
+
+static std::string programName;
+
+void commands::setProgramName(llvm::StringRef name) {
+  assert(programName.empty());
+  programName = name;
+}
+
+const char* commands::getProgramName() {
+  if (programName.empty())
+    return nullptr;
+  
+  return programName.c_str();
+}
 
 static char hexdigit(unsigned input) {
   return (input < 10) ? '0' + input : 'A' + input - 10;

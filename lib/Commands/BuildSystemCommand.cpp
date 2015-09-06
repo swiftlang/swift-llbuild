@@ -25,6 +25,7 @@
 #include <spawn.h>
 
 using namespace llbuild;
+using namespace llbuild::commands;
 using namespace llbuild::core;
 using namespace llbuild::buildsystem;
 
@@ -227,7 +228,7 @@ void ParseBuildFileDelegate::loadedCommand(const std::string& name,
 static void parseUsage(int exitCode) {
   int optionWidth = 20;
   fprintf(stderr, "Usage: %s buildsystem parse [options] <path>\n",
-          ::getprogname());
+          getProgramName());
   fprintf(stderr, "\nOptions:\n");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--help",
           "show this help message and exit");
@@ -252,13 +253,13 @@ static int executeParseCommand(std::vector<std::string> args) {
       showOutput = false;
     } else {
       fprintf(stderr, "\error: %s: invalid option: '%s'\n\n",
-              ::getprogname(), option.c_str());
+              getProgramName(), option.c_str());
       parseUsage(1);
     }
   }
 
   if (args.size() != 1) {
-    fprintf(stderr, "error: %s: invalid number of arguments\n", getprogname());
+    fprintf(stderr, "error: %s: invalid number of arguments\n", getProgramName());
     parseUsage(1);
   }
 
@@ -455,7 +456,7 @@ public:
 static void buildUsage(int exitCode) {
   int optionWidth = 20;
   fprintf(stderr, "Usage: %s buildsystem build [options] <path>\n",
-          ::getprogname());
+          getProgramName());
   fprintf(stderr, "\nOptions:\n");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--help",
           "show this help message and exit");
@@ -489,7 +490,7 @@ static int executeBuildCommand(std::vector<std::string> args) {
     } else if (option == "--db") {
       if (args.empty()) {
         fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
-                ::getprogname(), option.c_str());
+                getProgramName(), option.c_str());
         buildUsage(1);
       }
       dbFilename = args[0];
@@ -497,7 +498,7 @@ static int executeBuildCommand(std::vector<std::string> args) {
     } else if (option == "-C" || option == "--chdir") {
       if (args.empty()) {
         fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
-                ::getprogname(), option.c_str());
+                getProgramName(), option.c_str());
         buildUsage(1);
       }
       chdirPath = args[0];
@@ -505,20 +506,20 @@ static int executeBuildCommand(std::vector<std::string> args) {
     } else if (option == "--trace") {
       if (args.empty()) {
         fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
-                ::getprogname(), option.c_str());
+                getProgramName(), option.c_str());
         buildUsage(1);
       }
       traceFilename = args[0];
       args.erase(args.begin());
     } else {
       fprintf(stderr, "\error: %s: invalid option: '%s'\n\n",
-              ::getprogname(), option.c_str());
+              getProgramName(), option.c_str());
       buildUsage(1);
     }
   }
 
   if (args.size() != 1) {
-    fprintf(stderr, "error: %s: invalid number of arguments\n", getprogname());
+    fprintf(stderr, "error: %s: invalid number of arguments\n", getProgramName());
     buildUsage(1);
   }
 
@@ -526,13 +527,13 @@ static int executeBuildCommand(std::vector<std::string> args) {
   if (!chdirPath.empty()) {
     if (::chdir(chdirPath.c_str()) < 0) {
       fprintf(stderr, "%s: error: unable to honor --chdir: %s\n",
-              getprogname(), strerror(errno));
+              getProgramName(), strerror(errno));
       return 1;
     }
 
     // Print a message about the changed directory. The exact format here is
     // important, it is recognized by other tools (like Emacs).
-    fprintf(stdout, "%s: Entering directory `%s'\n", getprogname(),
+    fprintf(stdout, "%s: Entering directory `%s'\n", getProgramName(),
             chdirPath.c_str());
     fflush(stdout);
   }
@@ -546,7 +547,7 @@ static int executeBuildCommand(std::vector<std::string> args) {
   if (!traceFilename.empty()) {
     std::string error;
     if (!system.enableTracing(traceFilename, &error)) {
-      fprintf(stderr, "error: %s: unable to enable tracing: %s", getprogname(),
+      fprintf(stderr, "error: %s: unable to enable tracing: %s", getProgramName(),
               error.c_str());
       return 1;
     }
@@ -556,7 +557,7 @@ static int executeBuildCommand(std::vector<std::string> args) {
   if (!dbFilename.empty()) {
     std::string error;
     if (!system.attachDB(dbFilename, &error)) {
-      fprintf(stderr, "error: %s: unable to attach DB: %s", getprogname(),
+      fprintf(stderr, "error: %s: unable to attach DB: %s", getProgramName(),
               error.c_str());
       return 1;
     }
@@ -574,7 +575,7 @@ static int executeBuildCommand(std::vector<std::string> args) {
 
 static void usage(int exitCode) {
   fprintf(stderr, "Usage: %s buildsystem [--help] <command> [<args>]\n",
-          getprogname());
+          getProgramName());
   fprintf(stderr, "\n");
   fprintf(stderr, "Available commands:\n");
   fprintf(stderr, "  parse         -- Parse a build file\n");
@@ -593,7 +594,7 @@ int commands::executeBuildSystemCommand(const std::vector<std::string> &args) {
   } else if (args[0] == "build") {
     return executeBuildCommand({args.begin()+1, args.end()});
   } else {
-    fprintf(stderr, "error: %s: unknown command '%s'\n", getprogname(),
+    fprintf(stderr, "error: %s: unknown command '%s'\n", getProgramName(),
             args[0].c_str());
     usage(1);
     return 1;

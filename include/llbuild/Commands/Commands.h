@@ -21,8 +21,16 @@
 #include <string>
 #include <vector>
 
+#include <llvm/ADT/StringRef.h>
+
 namespace llbuild {
 namespace commands {
+
+/// Register the program name.
+void setProgramName(llvm::StringRef name);
+
+/// Get the registered program name.
+const char* getProgramName();
 
 int executeNinjaCommand(const std::vector<std::string> &args);
 int executeBuildEngineCommand(const std::vector<std::string> &args);
