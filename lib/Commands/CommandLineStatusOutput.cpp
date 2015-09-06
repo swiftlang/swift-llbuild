@@ -15,7 +15,7 @@
 #include <cassert>
 #include <cstdio>
 
-#include <sys/ioctl.h>
+#include <llvm/Support/Process.h>
 
 namespace {
 
@@ -99,13 +99,14 @@ struct CommandLineStatusOutputImpl {
   }
 
   int getNumColumns() {
-    ::ttysize size;
-    if (ioctl(fileno(fp), TIOCGWINSZ, &size) < 0) {
-      // If we were unable to query the terminal, just use a default.
+    auto result = llvm::sys::Process::StandardOutColumns();
+
+    // If we were unable to query the terminal, just use a default.
+    if (!result) {
       return 80;
     }
     
-    return size.ts_cols;
+    return result;
   }
 
   void setCurrentLine(const std::string& text) {
