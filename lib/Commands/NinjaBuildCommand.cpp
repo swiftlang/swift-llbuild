@@ -1091,9 +1091,22 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       posix_spawnattr_setsigmask(&attributes, &noSignals);
 
       // Reset all signals to default behavior.
+      //
+      // On Linux, this can only be used to reset signals that are legal to
+      // modify, so we have to take care about the set we use.
+#if defined(__linux__)
+      sigset_t mostSignals;
+      sigemptyset(&mostSignals);
+      for (int i = 1; i < SIGUNUSED; ++i) {
+        if (i == SIGKILL || i == SIGSTOP) continue;
+        sigaddset(&mostSignals, i);
+      }
+      posix_spawnattr_setsigdefault(&attributes, &mostSignals);
+#else
       sigset_t allSignals;
       sigfillset(&allSignals);
       posix_spawnattr_setsigdefault(&attributes, &allSignals);
+#endif      
 
       // Establish a separate process group.
       posix_spawnattr_setpgroup(&attributes, 0);
