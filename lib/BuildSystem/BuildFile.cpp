@@ -614,6 +614,7 @@ public:
     }
 
     std::unique_ptr<llvm::MemoryBuffer> input(res->release());
+    delegate.setFileContentsBeingParsed(input->getBuffer());
 
     // Create a YAML parser.
     llvm::yaml::Stream stream(input->getMemBufferRef(), sourceMgr);

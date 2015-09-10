@@ -45,7 +45,8 @@ class BuildSystemImpl;
 /// The delegate used to load the build file for use by a build system.
 class BuildSystemFileDelegate : public BuildFileDelegate {
   BuildSystemImpl& system;
-
+  llvm::StringRef bufferBeingParsed;
+  
 public:
   BuildSystemFileDelegate(BuildSystemImpl& system)
       : BuildFileDelegate(), system(system) {}
@@ -55,6 +56,8 @@ public:
   /// @name Delegate Implementation
   /// @{
 
+  virtual void setFileContentsBeingParsed(llvm::StringRef buffer) override;
+  
   virtual void error(const std::string& filename,
                      const std::string& message) override;
 
@@ -709,6 +712,11 @@ public:
 
 BuildSystemDelegate& BuildSystemFileDelegate::getSystemDelegate() {
   return system.getDelegate();
+}
+
+void BuildSystemFileDelegate::setFileContentsBeingParsed(
+    llvm::StringRef buffer) {
+  bufferBeingParsed = buffer;
 }
 
 void BuildSystemFileDelegate::error(const std::string& filename,

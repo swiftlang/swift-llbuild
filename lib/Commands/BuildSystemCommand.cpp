@@ -44,12 +44,15 @@ namespace {
 
 class ParseBuildFileDelegate : public BuildFileDelegate {
   bool showOutput;
+  llvm::StringRef bufferBeingParsed;
   
 public:
   ParseBuildFileDelegate(bool showOutput) : showOutput(showOutput) {}
   ~ParseBuildFileDelegate() {}
 
   virtual bool shouldShowOutput() { return showOutput; }
+  
+  virtual void setFileContentsBeingParsed(llvm::StringRef buffer) override;
   
   virtual void error(const std::string& filename,
                      const std::string& message) override;
@@ -164,6 +167,11 @@ public:
     return std::make_unique<ParseDummyCommand>(delegate, name);
   }
 };
+
+void ParseBuildFileDelegate::setFileContentsBeingParsed(
+    llvm::StringRef buffer) {
+  bufferBeingParsed = buffer;
+}
 
 void ParseBuildFileDelegate::error(const std::string& filename,
                                    const std::string& message) {

@@ -15,6 +15,8 @@
 
 #include "llbuild/Basic/Compiler.h"
 
+#include "llvm/ADT/StringRef.h"
+
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -185,6 +187,9 @@ public:
 class BuildFileDelegate {
 public:
   virtual ~BuildFileDelegate();
+
+  /// Called by the build file loader to register the current file contents.
+  virtual void setFileContentsBeingParsed(llvm::StringRef buffer) = 0;
 
   /// Called by the build file loader to report an error.
   //
