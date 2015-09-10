@@ -17,6 +17,8 @@
 #include <string>
 #include <utility>
 
+#include "llvm/ADT/StringRef.h"
+
 namespace llbuild {
 namespace ninja {
 
@@ -35,6 +37,10 @@ std::string escapedString(const std::string& string);
 
 void emitError(const std::string& filename, const std::string& message,
                const ninja::Token& at, const ninja::Parser* parser);
+
+void emitError(const std::string& filename, const std::string& message,
+               const char* position, unsigned length,
+               llvm::StringRef buffer);
 
 bool readFileContents(std::string path,
                       std::unique_ptr<char[]> *data_out,

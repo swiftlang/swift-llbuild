@@ -62,19 +62,40 @@ std::string util::escapedString(const std::string& string) {
   return escapedString(string.data(), string.size());
 }
 
-void util::emitError(const std::string& filename, const std::string& message,
-                     const ninja::Token& at, const ninja::Parser* parser) {
-  std::cerr << filename << ":" << at.line << ":" << at.column
+static void emitError(const std::string& filename, const std::string& message,
+                      const char* position, unsigned length,
+                      int line, int column,
+                      llvm::StringRef buffer) {
+  assert(position >= buffer.begin() && position <= buffer.end() &&
+         "invalid position");
+  assert(position + length <= buffer.end() && "invalid length");
+
+  // Compute the line and column, if not provided.
+  //
+  // FIXME: This is not very efficient, if there are a lot of diagnostics.
+  if (line == -1) {
+    line = 1;
+    column = 0;
+    for (const char *c = buffer.begin(); c != position; ++c) {
+      if (*c == '\n') {
+        ++line;
+        column = 0;
+      } else {
+        ++column;
+      }
+    }
+  }
+  
+  std::cerr << filename << ":" << line << ":" << column
             << ": error: " << message << "\n";
 
   // Skip carat diagnostics on EOF token.
-  if (at.tokenKind == ninja::Token::Kind::EndOfFile)
+  if (position == buffer.end())
     return;
 
   // Simple caret style diagnostics.
-  const char *lineBegin = at.start, *lineEnd = at.start,
-    *bufferBegin = parser->getLexer().getBuffer().begin(),
-    *bufferEnd = parser->getLexer().getBuffer().end();
+  const char *lineBegin = position, *lineEnd = position;
+  const char *bufferBegin = buffer.begin(), *bufferEnd = buffer.end();
 
   // Run line pointers forward and back.
   while (lineBegin > bufferBegin &&
@@ -87,18 +108,29 @@ void util::emitError(const std::string& filename, const std::string& message,
   // Show the line, indented by 2.
   std::cerr << "  " << std::string(lineBegin, lineEnd) << "\n";
 
-  // Show the caret or squiggly, making sure to print back spaces the
-  // same.
+  // Show the caret or squiggly, making sure to print back spaces the same.
   std::cerr << "  ";
-  for (const char* s = lineBegin; s != at.start; ++s)
+  for (const char* s = lineBegin; s != position; ++s)
     std::cerr << (isspace(*s) ? *s : ' ');
-  if (at.length > 1) {
-    for (unsigned i = 0; i != at.length; ++i)
+  if (length > 1) {
+    for (unsigned i = 0; i != length; ++i)
       std::cerr << '~';
   } else {
     std::cerr << '^';
   }
   std::cerr << '\n';
+}
+
+void util::emitError(const std::string& filename, const std::string& message,
+                     const ninja::Token& at, const ninja::Parser* parser) {
+  ::emitError(filename, message, at.start, at.length, at.line, at.column,
+            parser->getLexer().getBuffer());
+}
+
+void util::emitError(const std::string& filename, const std::string& message,
+                     const char* position, unsigned length,
+                     llvm::StringRef buffer) {
+  ::emitError(filename, message, position, length, -1, -1, buffer);
 }
 
 bool util::readFileContents(std::string path,
