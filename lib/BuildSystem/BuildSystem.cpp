@@ -526,7 +526,10 @@ bool BuildSystemImpl::build(const std::string& target) {
   // things as they show up.
   //
   // FIXME: We need to load this only once.
-  getBuildFile().load();
+  if (!getBuildFile().load()) {
+    getDelegate().error(getMainFilename(), "unable to load build file");
+    return false;
+  }    
 
   // Build the target.
   getBuildEngine().build(BuildKey::makeTarget(target).toData());
