@@ -506,7 +506,7 @@ class BuildFileImpl {
         if (nodeIsScalarString(key, "inputs")) {
           if (value->getType() != llvm::yaml::Node::NK_Sequence) {
             error(mainFilename, "invalid value type for 'inputs' command key");
-            return false;
+            continue;
           }
 
           llvm::yaml::SequenceNode* nodeNames =
@@ -516,7 +516,7 @@ class BuildFileImpl {
           for (auto& nodeName: *nodeNames) {
             if (nodeName.getType() != llvm::yaml::Node::NK_Scalar) {
               error(mainFilename, "invalid node type in 'inputs' command key");
-              return false;
+              continue;
             }
 
             nodes.push_back(
@@ -530,7 +530,7 @@ class BuildFileImpl {
         } else if (nodeIsScalarString(key, "outputs")) {
           if (value->getType() != llvm::yaml::Node::NK_Sequence) {
             error(mainFilename, "invalid value type for 'outputs' command key");
-            return false;
+            continue;
           }
 
           llvm::yaml::SequenceNode* nodeNames =
@@ -540,7 +540,7 @@ class BuildFileImpl {
           for (auto& nodeName: *nodeNames) {
             if (nodeName.getType() != llvm::yaml::Node::NK_Scalar) {
               error(mainFilename, "invalid node type in 'outputs' command key");
-              return false;
+              continue;
             }
 
             auto node = getOrCreateNode(
@@ -559,12 +559,12 @@ class BuildFileImpl {
           
           // All keys and values must be scalar.
           if (key->getType() != llvm::yaml::Node::NK_Scalar) {
-            error(mainFilename, "invalid key type in 'tools' map");
-            return false;
+            error(mainFilename, "invalid key type in 'commands' map");
+            continue;
           }
           if (value->getType() != llvm::yaml::Node::NK_Scalar) {
-            error(mainFilename, "invalid value type in 'tools' map");
-            return false;
+            error(mainFilename, "invalid value type in 'commands' map");
+            continue;
           }
 
           if (!command->configureAttribute(

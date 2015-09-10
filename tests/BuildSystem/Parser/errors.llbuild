@@ -58,3 +58,25 @@ commands:
         tool: ["bad", "key"]
   command3:
         tool: "good"
+  command3:
+        tool: "good"
+        # CHECK-ERR-NEXT: invalid value type for 'inputs' command key
+        inputs: {}
+  command4:
+        tool: "good"
+        # CHECK-ERR-NEXT: invalid node type in 'inputs' command key
+        inputs: [["bad"]]
+  command5:
+        tool: "good"
+        # CHECK-ERR-NEXT: invalid value type for 'outputs' command key
+        outputs: {}
+  command6:
+        tool: "good"
+        # CHECK-ERR-NEXT: invalid node type in 'outputs' command key
+        outputs: [["bad"]]
+  command7:
+        tool: "good"
+        # CHECK-ERR-NEXT: invalid key type in 'commands' map
+        ["bad", "key"]: value
+        # CHECK-ERR-NEXT: invalid value type in 'commands' map
+        value: { "bad": "value" }
