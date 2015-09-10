@@ -282,7 +282,6 @@ class BuildFileImpl {
       } else if (key == "version") {
         if (llvm::StringRef(value).getAsInteger(10, version)) {
           error(mainFilename, "invalid version number in 'client' map");
-          return false;
         }
       } else {
         properties.push_back({ key, value });
@@ -303,12 +302,12 @@ class BuildFileImpl {
       // Every key must be scalar.
       if (entry.getKey()->getType() != llvm::yaml::Node::NK_Scalar) {
         error(mainFilename, "invalid key type in 'tools' map");
-        return false;
+        continue;
       }
       // Every value must be a mapping.
       if (entry.getValue()->getType() != llvm::yaml::Node::NK_Mapping) {
         error(mainFilename, "invalid value type in 'tools' map");
-        return false;
+        continue;
       }
 
       std::string name = stringFromScalarNode(
@@ -329,12 +328,12 @@ class BuildFileImpl {
         
         // All keys and values must be scalar.
         if (key->getType() != llvm::yaml::Node::NK_Scalar) {
-          error(mainFilename, "invalid key type in 'tools' map");
-          return false;
+          error(mainFilename, "invalid key type for tool in 'tools' map");
+          continue;
         }
         if (value->getType() != llvm::yaml::Node::NK_Scalar) {
-          error(mainFilename, "invalid value type in 'tools' map");
-          return false;
+          error(mainFilename, "invalid value type for tool in 'tools' map");
+          continue;
         }
 
         if (!tool->configureAttribute(
@@ -355,12 +354,12 @@ class BuildFileImpl {
       // Every key must be scalar.
       if (entry.getKey()->getType() != llvm::yaml::Node::NK_Scalar) {
         error(mainFilename, "invalid key type in 'targets' map");
-        return false;
+        continue;
       }
       // Every value must be a sequence.
       if (entry.getValue()->getType() != llvm::yaml::Node::NK_Sequence) {
         error(mainFilename, "invalid value type in 'targets' map");
-        return false;
+        continue;
       }
 
       std::string name = stringFromScalarNode(
@@ -376,7 +375,7 @@ class BuildFileImpl {
         // All items must be scalar.
         if (node.getType() != llvm::yaml::Node::NK_Scalar) {
           error(mainFilename, "invalid node type in 'targets' map");
-          return false;
+          continue;
         }
 
         target->getNodeNames().push_back(
@@ -399,12 +398,12 @@ class BuildFileImpl {
       // Every key must be scalar.
       if (entry.getKey()->getType() != llvm::yaml::Node::NK_Scalar) {
         error(mainFilename, "invalid key type in 'nodes' map");
-        return false;
+        continue;
       }
       // Every value must be a mapping.
       if (entry.getValue()->getType() != llvm::yaml::Node::NK_Mapping) {
         error(mainFilename, "invalid value type in 'nodes' map");
-        return false;
+        continue;
       }
 
       std::string name = stringFromScalarNode(
@@ -425,12 +424,12 @@ class BuildFileImpl {
         
         // All keys and values must be scalar.
         if (key->getType() != llvm::yaml::Node::NK_Scalar) {
-          error(mainFilename, "invalid key type in 'tools' map");
-          return false;
+          error(mainFilename, "invalid key type for node in 'nodes' map");
+          continue;
         }
         if (value->getType() != llvm::yaml::Node::NK_Scalar) {
-          error(mainFilename, "invalid value type in 'tools' map");
-          return false;
+          error(mainFilename, "invalid value type for node in 'nodes' map");
+          continue;
         }
 
         if (!node->configureAttribute(
@@ -451,12 +450,12 @@ class BuildFileImpl {
       // Every key must be scalar.
       if (entry.getKey()->getType() != llvm::yaml::Node::NK_Scalar) {
         error(mainFilename, "invalid key type in 'commands' map");
-        return false;
+        continue;
       }
       // Every value must be a mapping.
       if (entry.getValue()->getType() != llvm::yaml::Node::NK_Mapping) {
         error(mainFilename, "invalid value type in 'commands' map");
-        return false;
+        continue;
       }
 
       std::string name = stringFromScalarNode(
@@ -467,16 +466,22 @@ class BuildFileImpl {
       // Get the initial attribute, which must be the tool name.
       auto it = attrs->begin();
       if (it == attrs->end()) {
-        error(mainFilename, "missing 'tool' key in 'command' map");
-        return false;
+        error(mainFilename, "missing 'tool' key for command in 'command' map");
+        continue;
       }
       if (!nodeIsScalarString(it->getKey(), "tool")) {
-        error(mainFilename, "expected 'tool' initial key in 'commands' map");
-        return false;
+        error(mainFilename,
+              "expected 'tool' initial key for command in 'commands' map");
+        // Skip to the end.
+        while (it != attrs->end()) ++it;
+        continue;
       }
       if (it->getValue()->getType() != llvm::yaml::Node::NK_Scalar) {
-        error(mainFilename, "invalid 'tool' value type in 'commands' map");
-        return false;
+        error(mainFilename,
+              "invalid 'tool' value type for command in 'commands' map");
+        // Skip to the end.
+        while (it != attrs->end()) ++it;
+        continue;
       }
       
       // Lookup the tool for this command.
