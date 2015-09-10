@@ -459,12 +459,24 @@ public:
 };
 
 class BuildCommandDelegate : public BuildSystemDelegate {
+  llvm::StringRef bufferBeingParsed;
+  
 public:
   BuildCommandDelegate() : BuildSystemDelegate("basic", /*version=*/0) {}
 
+  void setFileContentsBeingParsed(llvm::StringRef buffer) override {
+    bufferBeingParsed = buffer;
+  }
+
   virtual void error(const std::string& filename,
+                     const Token& at,
                      const std::string& message) override {
-    fprintf(stderr, "%s: error: %s\n", filename.c_str(), message.c_str());
+    if (at.start) {
+      util::emitError(filename, message, at.start, at.length,
+                      bufferBeingParsed);
+    } else {
+      fprintf(stderr, "%s: error: %s\n", filename.c_str(), message.c_str());
+    }
   }
   
   virtual std::unique_ptr<Tool> lookupTool(const std::string& name) override {
@@ -477,7 +489,7 @@ public:
     long numCPUs = sysconf(_SC_NPROCESSORS_ONLN);
     unsigned numLanes;
     if (numCPUs < 0) {
-      error("<unknown", "unable to detect number of CPUs");
+      error("<unknown>", {}, "unable to detect number of CPUs");
       numLanes = 1;
     } else {
       numLanes = numCPUs + 2;

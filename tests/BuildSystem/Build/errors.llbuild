@@ -20,8 +20,8 @@ commands:
     outputs: ["output"]
     args: not-a-real-command
 
-# CHECK-ERR: unexpected trailing top-level section
-# CHECK-ERR-NEXT: unable to load build file
+# CHECK-ERR: errors.llbuild:[[@LINE+2]]:0: error: unexpected trailing top-level section
+# CHECK-ERR: error: unable to load build file
 this:
   is:
     an: error

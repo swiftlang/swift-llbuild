@@ -45,7 +45,6 @@ class BuildSystemImpl;
 /// The delegate used to load the build file for use by a build system.
 class BuildSystemFileDelegate : public BuildFileDelegate {
   BuildSystemImpl& system;
-  llvm::StringRef bufferBeingParsed;
   
 public:
   BuildSystemFileDelegate(BuildSystemImpl& system)
@@ -187,6 +186,15 @@ public:
     return buildEngine;
   }
 
+  void error(const std::string& filename, const std::string& message) {
+    getDelegate().error(filename, {}, message);
+  }
+
+  void error(const std::string& filename, const BuildSystemDelegate::Token& at,
+             const std::string& message) {
+    getDelegate().error(filename, at, message);
+  }
+  
   /// @name Client API
   /// @{
 
@@ -516,8 +524,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
 }
 
 void BuildSystemEngineDelegate::cycleDetected(const std::vector<Rule*>& items) {
-  system.getDelegate().error(system.getMainFilename(),
-                             "cycle detected while building");
+  system.error(system.getMainFilename(), "cycle detected while building");
 }
 
 #pragma mark - BuildSystemImpl implementation
@@ -531,7 +538,7 @@ bool BuildSystemImpl::build(const std::string& target) {
   //
   // FIXME: We need to load this only once.
   if (!getBuildFile().load()) {
-    getDelegate().error(getMainFilename(), "unable to load build file");
+    error(getMainFilename(), "unable to load build file");
     return false;
   }    
 
@@ -580,9 +587,8 @@ public:
     if (name == "args") {
       args = value;
     } else {
-      system.getDelegate().error(
-          system.getMainFilename(),
-          "unexpected attribute: '" + name + "'");
+      system.error(system.getMainFilename(),
+                   "unexpected attribute: '" + name + "'");
       return false;
     }
 
@@ -695,9 +701,8 @@ public:
 
   virtual bool configureAttribute(const std::string& name,
                                   const std::string& value) override {
-    system.getDelegate().error(
-        system.getMainFilename(),
-        "unexpected attribute: '" + name + "'");
+    system.error(system.getMainFilename(),
+                 "unexpected attribute: '" + name + "'");
 
     // No supported attributes.
     return false;
@@ -717,16 +722,15 @@ BuildSystemDelegate& BuildSystemFileDelegate::getSystemDelegate() {
 
 void BuildSystemFileDelegate::setFileContentsBeingParsed(
     llvm::StringRef buffer) {
-  bufferBeingParsed = buffer;
+  getSystemDelegate().setFileContentsBeingParsed(buffer);
 }
 
 void BuildSystemFileDelegate::error(const std::string& filename,
                                     const Token& at,
                                     const std::string& message) {
-  // FIXME: Don't discard the token.
-  
   // Delegate to the system delegate.
-  getSystemDelegate().error(filename, message);
+  auto atSystemToken = BuildSystemDelegate::Token{at.start, at.length};
+  system.error(filename, atSystemToken, message);
 }
 
 bool
