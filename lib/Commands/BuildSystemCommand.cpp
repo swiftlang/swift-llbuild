@@ -17,6 +17,8 @@
 #include "llbuild/BuildSystem/BuildSystem.h"
 #include "llbuild/BuildSystem/BuildValue.h"
 
+#include "llvm/Support/Path.h"
+
 #include "CommandUtil.h"
 
 #include <condition_variable>
@@ -593,17 +595,26 @@ static int executeBuildCommand(std::vector<std::string> args) {
   if (!traceFilename.empty()) {
     std::string error;
     if (!system.enableTracing(traceFilename, &error)) {
-      fprintf(stderr, "error: %s: unable to enable tracing: %s", getProgramName(),
-              error.c_str());
+      fprintf(stderr, "error: %s: unable to enable tracing: %s",
+              getProgramName(), error.c_str());
       return 1;
     }
   }
 
   // Attach the database.
   if (!dbFilename.empty()) {
+    // If the database path is relative, always make it relative to the input
+    // file.
+    if (llvm::sys::path::has_relative_path(dbFilename)) {
+      llvm::SmallString<256> tmp;
+      llvm::sys::path::append(tmp, llvm::sys::path::parent_path(filename),
+                              dbFilename);
+      dbFilename = tmp.str();
+    }
+    
     std::string error;
     if (!system.attachDB(dbFilename, &error)) {
-      fprintf(stderr, "error: %s: unable to attach DB: %s", getProgramName(),
+      fprintf(stderr, "error: %s: unable to attach DB: %s\n", getProgramName(),
               error.c_str());
       return 1;
     }

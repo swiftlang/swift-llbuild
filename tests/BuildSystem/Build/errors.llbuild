@@ -2,7 +2,8 @@
 #
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
-# RUN: %{llbuild} buildsystem build --chdir %t.build --trace %t.trace %s > %t.out 2> %t.err
+# RUN: cp %s %t.build/build.llbuild
+# RUN: %{llbuild} buildsystem build --chdir %t.build build.llbuild > %t.out 2> %t.err
 # RUN: %{FileCheck} --check-prefix CHECK --input-file %t.err %s
 # RUN: %{FileCheck} --check-prefix CHECK-ERR --input-file %t.err %s
 #
@@ -20,7 +21,7 @@ commands:
     outputs: ["output"]
     args: not-a-real-command
 
-# CHECK-ERR: errors.llbuild:[[@LINE+2]]:0: error: unexpected trailing top-level section
+# CHECK-ERR: build.llbuild:[[@LINE+2]]:0: error: unexpected trailing top-level section
 # CHECK-ERR: error: unable to load build file
 this:
   is:

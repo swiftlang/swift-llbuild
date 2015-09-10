@@ -4,7 +4,8 @@
 #
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
-# RUN: %{llbuild} buildsystem build --chdir %t.build %s > %t.out 2> %t.err
+# RUN: cp %s %t.build/build.llbuild
+# RUN: %{llbuild} buildsystem build --chdir %t.build build.llbuild > %t.out 2> %t.err
 # RUN: test ! -f %t.build/output
 # RUN: %{FileCheck} < %t.err %s --check-prefix=CHECK-FAILURE
 #
@@ -12,7 +13,7 @@
 
 # Rebuild and verify the command reruns.
 #
-# RUN: %{llbuild} buildsystem build --chdir %t.build %s > %t2.out 2> %t2.err
+# RUN: %{llbuild} buildsystem build --chdir %t.build build.llbuild > %t2.out 2> %t2.err
 # RUN: test ! -f %t.build/output
 # RUN: %{FileCheck} < %t2.err %s --check-prefix=CHECK-FAILURE-REBUILD
 #

@@ -1,0 +1,23 @@
+# Check that we put the build database adjacent to the build file.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build/subdir
+# RUN: cp %s %t.build/subdir/build.llbuild
+# RUN: touch %t.build/subdir/input
+# RUN: %{llbuild} buildsystem build --chdir %t.build subdir/build.llbuild > %t.out
+# RUN: %{FileCheck} --input-file %t.out %s
+# RUN: test -f %t.build/subdir/build.db
+#
+# CHECK: touch output
+
+client:
+  name: basic
+
+targets:
+  "": ["output"]
+
+commands:
+  cp-output:
+    tool: shell
+    outputs: ["output"]
+    args: touch output

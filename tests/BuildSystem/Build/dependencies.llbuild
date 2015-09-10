@@ -2,7 +2,8 @@
 #
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
-# RUN: %{llbuild} buildsystem build --chdir %t.build --trace %t.trace %s > %t.out
+# RUN: cp %s %t.build/build.llbuild
+# RUN: %{llbuild} buildsystem build --chdir %t.build build.llbuild > %t.out
 # RUN: test -f %t.build/output-1
 # RUN: %{FileCheck} < %t.build/output-1 %s --check-prefix=CHECK-OUTPUT-1
 # RUN: %{FileCheck} < %t.out %s
