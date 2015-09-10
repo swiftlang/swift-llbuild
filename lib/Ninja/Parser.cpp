@@ -122,7 +122,7 @@ public:
 };
 
 ParserImpl::ParserImpl(const char* data, uint64_t length, ParseActions& actions)
-  : lexer(data, length), actions(actions)
+    : lexer(llvm::StringRef(data, length)), actions(actions)
 {
 }
 

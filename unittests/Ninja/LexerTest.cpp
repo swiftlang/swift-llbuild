@@ -19,9 +19,8 @@ using namespace llbuild;
 namespace {
 
 TEST(LexerTest, basic) {
-  char input[] = "| : || # Comment\n";
-  size_t inputSize = strlen(input);
-  ninja::Lexer lexer(input, inputSize);
+  llvm::StringRef input = "| : || # Comment\n";
+  ninja::Lexer lexer(input);
 
   // Check that we get the appropriate tokens.
   ninja::Token tok;
@@ -32,7 +31,7 @@ TEST(LexerTest, basic) {
 
   // Check first token.
   EXPECT_EQ(ninja::Token::Kind::Pipe, tok.tokenKind);
-  EXPECT_EQ(&input[0], tok.start);
+  EXPECT_EQ(&input.data()[0], tok.start);
   EXPECT_EQ(1U, tok.length);
   EXPECT_EQ(1U, tok.line);
   EXPECT_EQ(0U, tok.column);
@@ -40,7 +39,7 @@ TEST(LexerTest, basic) {
   // Check second token.
   lexer.lex(tok);
   EXPECT_EQ(ninja::Token::Kind::Colon, tok.tokenKind);
-  EXPECT_EQ(&input[2], tok.start);
+  EXPECT_EQ(&input.data()[2], tok.start);
   EXPECT_EQ(1U, tok.length);
   EXPECT_EQ(1U, tok.line);
   EXPECT_EQ(2U, tok.column);
@@ -48,7 +47,7 @@ TEST(LexerTest, basic) {
   // Check third token.
   lexer.lex(tok);
   EXPECT_EQ(ninja::Token::Kind::PipePipe, tok.tokenKind);
-  EXPECT_EQ(&input[4], tok.start);
+  EXPECT_EQ(&input.data()[4], tok.start);
   EXPECT_EQ(2U, tok.length);
   EXPECT_EQ(1U, tok.line);
   EXPECT_EQ(4U, tok.column);
@@ -56,7 +55,7 @@ TEST(LexerTest, basic) {
   // Check fourth token.
   lexer.lex(tok);
   EXPECT_EQ(ninja::Token::Kind::Comment, tok.tokenKind);
-  EXPECT_EQ(&input[7], tok.start);
+  EXPECT_EQ(&input.data()[7], tok.start);
   EXPECT_EQ(9U, tok.length);
   EXPECT_EQ(1U, tok.line);
   EXPECT_EQ(7U, tok.column);
@@ -64,7 +63,7 @@ TEST(LexerTest, basic) {
   // Check fifth token.
   lexer.lex(tok);
   EXPECT_EQ(ninja::Token::Kind::Newline, tok.tokenKind);
-  EXPECT_EQ(&input[16], tok.start);
+  EXPECT_EQ(&input.data()[16], tok.start);
   EXPECT_EQ(1U, tok.length);
   EXPECT_EQ(1U, tok.line);
   EXPECT_EQ(16U, tok.column);
@@ -72,7 +71,7 @@ TEST(LexerTest, basic) {
   // Check final token.
   lexer.lex(tok);
   EXPECT_EQ(ninja::Token::Kind::EndOfFile, tok.tokenKind);
-  EXPECT_EQ(&input[strlen(input)], tok.start);
+  EXPECT_EQ(input.end(), tok.start);
   EXPECT_EQ(0U, tok.length);
   EXPECT_EQ(2U, tok.line);
   EXPECT_EQ(0U, tok.column);
@@ -83,11 +82,10 @@ TEST(LexerTest, basic) {
 }
 
 TEST(LexerTest, indentation) {
-  char input[] = "\
+  llvm::StringRef input = "\
 |\n\
  | |";
-  size_t inputSize = strlen(input);
-  ninja::Lexer lexer(input, inputSize);
+  ninja::Lexer lexer(input);
 
   // Check that we get an indentation token for whitespace, but only at the
   // start of a line.
@@ -134,15 +132,14 @@ TEST(LexerTest, indentation) {
 }
 
 TEST(LexerTest, basicIdentifierHandling) {
-  char input[] = "a b$c";
-  size_t inputSize = strlen(input);
-  ninja::Lexer lexer(input, inputSize);
+  llvm::StringRef input = "a b$c";
+  ninja::Lexer lexer(input);
   ninja::Token tok;
 
   // Check first token.
   lexer.lex(tok);
   EXPECT_EQ(ninja::Token::Kind::Identifier, tok.tokenKind);
-  EXPECT_EQ(&input[0], tok.start);
+  EXPECT_EQ(&input.data()[0], tok.start);
   EXPECT_EQ(1U, tok.length);
   EXPECT_EQ(1U, tok.line);
   EXPECT_EQ(0U, tok.column);
@@ -150,7 +147,7 @@ TEST(LexerTest, basicIdentifierHandling) {
   // Check second token.
   lexer.lex(tok);
   EXPECT_EQ(ninja::Token::Kind::Identifier, tok.tokenKind);
-  EXPECT_EQ(&input[2], tok.start);
+  EXPECT_EQ(&input.data()[2], tok.start);
   EXPECT_EQ(1U, tok.length);
   EXPECT_EQ(1U, tok.line);
   EXPECT_EQ(2U, tok.column);
@@ -158,7 +155,7 @@ TEST(LexerTest, basicIdentifierHandling) {
   // Check third token.
   lexer.lex(tok);
   EXPECT_EQ(ninja::Token::Kind::Unknown, tok.tokenKind);
-  EXPECT_EQ(&input[3], tok.start);
+  EXPECT_EQ(&input.data()[3], tok.start);
   EXPECT_EQ(1U, tok.length);
   EXPECT_EQ(1U, tok.line);
   EXPECT_EQ(3U, tok.column);
@@ -166,7 +163,7 @@ TEST(LexerTest, basicIdentifierHandling) {
   // Check fourth token.
   lexer.lex(tok);
   EXPECT_EQ(ninja::Token::Kind::Identifier, tok.tokenKind);
-  EXPECT_EQ(&input[4], tok.start);
+  EXPECT_EQ(&input.data()[4], tok.start);
   EXPECT_EQ(1U, tok.length);
   EXPECT_EQ(1U, tok.line);
   EXPECT_EQ(4U, tok.column);
@@ -177,10 +174,9 @@ TEST(LexerTest, basicIdentifierHandling) {
 }
 
 TEST(LexerTest, identifierKeywords) {
-  char input[] = "notakeyword build default include \
+  llvm::StringRef input = "notakeyword build default include \
 pool rule subninja";
-  size_t inputSize = strlen(input);
-  ninja::Lexer lexer(input, inputSize);
+  ninja::Lexer lexer(input);
   ninja::Token tok;
 
   // Check first token.
@@ -214,11 +210,10 @@ pool rule subninja";
 }
 
 TEST(LexerTest, pathStrings) {
-  char input[] = "this is: a| path$ str$:ing$\ncontext\n\
+  llvm::StringRef input = "this is: a| path$ str$:ing$\ncontext\n\
 #hash-is-ok\n\
 =equal-is-too\n";
-  size_t inputSize = strlen(input);
-  ninja::Lexer lexer(input, inputSize);
+  ninja::Lexer lexer(input);
   ninja::Token tok;
 
   // Put the lexer into "path" string mode.
@@ -267,13 +262,12 @@ TEST(LexerTest, pathStrings) {
 }
 
 TEST(LexerTest, variableStrings) {
-  char input[] = "\
+  llvm::StringRef input = "\
 this is one string\n\
 this string crosses a $\nnewline\n\
 :\n\
 |\n";
-  size_t inputSize = strlen(input);
-  ninja::Lexer lexer(input, inputSize);
+  ninja::Lexer lexer(input);
   ninja::Token tok;
 
   // Put the lexer into "variable" string mode.
@@ -314,9 +308,8 @@ this string crosses a $\nnewline\n\
 }
 
 TEST(LexerTest, identifierSpecific) {
-  char input[] = "rule pool build default include subninja random";
-  size_t inputSize = strlen(input);
-  ninja::Lexer lexer(input, inputSize);
+  llvm::StringRef input = "rule pool build default include subninja random";
+  ninja::Lexer lexer(input);
   ninja::Token tok;
 
   // Put the lexer into "identifier specific" string mode.

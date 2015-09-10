@@ -68,7 +68,7 @@ static int executeLexCommand(const std::vector<std::string> &args,
       fprintf(stderr, "note: %s: reading tokens from %s\n", getProgramName(),
               args[0].c_str());
   }
-  ninja::Lexer lexer(data.get(), size);
+  ninja::Lexer lexer(llvm::StringRef(data.get(), size));
   ninja::Token tok;
 
   do {

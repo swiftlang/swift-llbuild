@@ -58,9 +58,9 @@ void Token::dump() {
 
 ///
 
-Lexer::Lexer(const char* data, uint64_t length)
-  : bufferStart(data), bufferPos(data), bufferEnd(data + length),
-    lineNumber(1), columnNumber(0), mode(LexingMode::None)
+Lexer::Lexer(llvm::StringRef buffer)
+  : buffer(buffer), bufferPos(buffer.data()), lineNumber(1), columnNumber(0),
+    mode(LexingMode::None)
 {
 }
 
@@ -68,20 +68,20 @@ Lexer::~Lexer() {
 }
 
 int Lexer::peekNextChar() {
-  if (bufferPos == bufferEnd)
+  if (bufferPos == buffer.end())
     return -1;
   return *bufferPos;
 }
 
 int Lexer::getNextChar() {
-  if (bufferPos == bufferEnd)
+  if (bufferPos == buffer.end())
     return -1;
 
   // Handle DOS/Mac newlines here, by stripping duplicates and by returning '\n'
   // for both.
   char result = *bufferPos++;
   if (result == '\n' || result == '\r') {
-    if (bufferPos != bufferEnd && *bufferPos == ('\n' + '\r' - result))
+    if (bufferPos != buffer.end() && *bufferPos == ('\n' + '\r' - result))
       ++bufferPos;
     result = '\n';
   }
@@ -245,7 +245,7 @@ Token& Lexer::lex(Token& result) {
     // Check for escape sequences.
     if (c == '$' && columnNumber != 0) {
       // If this is a newline escape, consume it.
-      if (bufferPos + 1 != bufferEnd && bufferPos[1] == '\n') {
+      if (bufferPos + 1 != buffer.end() && bufferPos[1] == '\n') {
         getNextChar();
         getNextChar();
       } else {

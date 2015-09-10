@@ -15,6 +15,8 @@
 
 #include <cstdint>
 
+#include "llvm/ADT/StringRef.h"
+
 namespace llbuild {
 namespace ninja {
 
@@ -87,9 +89,10 @@ public:
   };
 
 private:
-  const char* bufferStart;    ///< The buffer end position.
+  /// The buffer contents.
+  llvm::StringRef buffer;
+
   const char* bufferPos;      ///< The current lexer position.
-  const char* bufferEnd;      ///< The buffer end position.
   unsigned    lineNumber;     ///< The current line.
   unsigned    columnNumber;   ///< The current column.
   LexingMode  mode;           ///< The current lexing mode.
@@ -124,7 +127,7 @@ private:
   Token& lexVariableString(Token& result);
 
 public:
-  explicit Lexer(const char* data, uint64_t length);
+  explicit Lexer(llvm::StringRef contents);
   ~Lexer();
 
   /// Return the next token from the file or EOF continually
@@ -132,11 +135,8 @@ public:
   /// used as the result, for convenience.
   Token& lex(Token& result);
 
-  /// Get the buffer start pointer.
-  const char* getBufferStart() const { return bufferStart; }
-
-  /// Get the buffer end pointer.
-  const char* getBufferEnd() const { return bufferEnd; }
+  /// Get the buffer contents.
+  llvm::StringRef getBuffer() const { return buffer; }
 
   /// Get the current lexing mode.
   LexingMode getMode() const { return mode; }

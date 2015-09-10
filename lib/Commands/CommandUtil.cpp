@@ -73,8 +73,8 @@ void util::emitError(const std::string& filename, const std::string& message,
 
   // Simple caret style diagnostics.
   const char *lineBegin = at.start, *lineEnd = at.start,
-    *bufferBegin = parser->getLexer().getBufferStart(),
-    *bufferEnd = parser->getLexer().getBufferEnd();
+    *bufferBegin = parser->getLexer().getBuffer().begin(),
+    *bufferEnd = parser->getLexer().getBuffer().end();
 
   // Run line pointers forward and back.
   while (lineBegin > bufferBegin &&
