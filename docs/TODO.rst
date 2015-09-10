@@ -206,8 +206,6 @@ Build System
 Build File
 ----------
 
- * We need to clean up the parser and add proper error handling and diagnostics.
-
  * We will probably want some way to define properties shared by groups of tasks
    (for example, common flags), for efficiencies sake. There are a couple ways
    to do this:

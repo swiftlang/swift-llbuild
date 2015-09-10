@@ -17,6 +17,8 @@
 #include "llbuild/BuildSystem/BuildSystem.h"
 #include "llbuild/BuildSystem/BuildValue.h"
 
+#include "CommandUtil.h"
+
 #include <condition_variable>
 #include <deque>
 #include <mutex>
@@ -55,6 +57,7 @@ public:
   virtual void setFileContentsBeingParsed(llvm::StringRef buffer) override;
   
   virtual void error(const std::string& filename,
+                     const Token& at,
                      const std::string& message) override;
 
   virtual bool configureClient(const std::string& name,
@@ -174,8 +177,13 @@ void ParseBuildFileDelegate::setFileContentsBeingParsed(
 }
 
 void ParseBuildFileDelegate::error(const std::string& filename,
+                                   const Token& at,
                                    const std::string& message) {
-  fprintf(stderr, "%s: error: %s\n", filename.c_str(), message.c_str());
+  if (at.start) {
+    util::emitError(filename, message, at.start, at.length, bufferBeingParsed);
+  } else {
+    fprintf(stderr, "%s: error: %s\n", filename.c_str(), message.c_str());
+  }
 }
 
 bool

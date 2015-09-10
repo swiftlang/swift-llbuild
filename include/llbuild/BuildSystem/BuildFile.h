@@ -186,15 +186,27 @@ public:
 
 class BuildFileDelegate {
 public:
+  /// Minimal token object representing the range where a diagnostic occurred.
+  struct Token {
+    const char* start;
+    unsigned length;
+  };
+
   virtual ~BuildFileDelegate();
 
   /// Called by the build file loader to register the current file contents.
   virtual void setFileContentsBeingParsed(llvm::StringRef buffer) = 0;
 
   /// Called by the build file loader to report an error.
-  //
-  // FIXME: Support better diagnostics by passing a token of some kind.
+  ///
+  /// \param filename The file the error occurred in.
+  ///
+  /// \param at The token at which the error occurred. The token will be null if
+  /// no location is associated.
+  ///
+  /// \param message The diagnostic message.
   virtual void error(const std::string& filename,
+                     const Token& at,
                      const std::string& message) = 0;
   
   /// Called by the build file loader after the 'client' file section has been

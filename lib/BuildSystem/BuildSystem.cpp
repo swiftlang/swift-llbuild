@@ -59,6 +59,7 @@ public:
   virtual void setFileContentsBeingParsed(llvm::StringRef buffer) override;
   
   virtual void error(const std::string& filename,
+                     const Token& at,
                      const std::string& message) override;
 
   virtual bool configureClient(const std::string& name,
@@ -720,7 +721,10 @@ void BuildSystemFileDelegate::setFileContentsBeingParsed(
 }
 
 void BuildSystemFileDelegate::error(const std::string& filename,
+                                    const Token& at,
                                     const std::string& message) {
+  // FIXME: Don't discard the token.
+  
   // Delegate to the system delegate.
   getSystemDelegate().error(filename, message);
 }

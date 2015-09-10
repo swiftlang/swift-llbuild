@@ -118,11 +118,22 @@ class BuildFileImpl {
   }
 
   /// Emit an error.
-  void error(const std::string& filename, const std::string& error) {
-    delegate.error(mainFilename, error);
+  void error(const std::string& filename, llvm::SMRange at,
+             const std::string& message) {
+    BuildFileDelegate::Token atToken{at.Start.getPointer(),
+        unsigned(at.End.getPointer()-at.Start.getPointer())};
+    delegate.error(mainFilename, atToken, message);
     ++numErrors;
   }
+
+  void error(const std::string& message) {
+    error(mainFilename, {}, message);
+  }
   
+  void error(llvm::yaml::Node* node, const std::string& message) {
+    error(mainFilename, node->getSourceRange(), message);
+  }
+
   // FIXME: Factor out into a parser helper class.
   bool nodeIsScalarString(llvm::yaml::Node* node, const std::string& name) {
     if (node->getType() != llvm::yaml::Node::NK_Scalar)
@@ -132,7 +143,7 @@ class BuildFileImpl {
         static_cast<llvm::yaml::ScalarNode*>(node)) == name;
   }
 
-  Tool* getOrCreateTool(const std::string& name) {
+  Tool* getOrCreateTool(const std::string& name, llvm::yaml::Node* forNode) {
     // First, check the map.
     auto it = tools.find(name);
     if (it != tools.end())
@@ -141,7 +152,7 @@ class BuildFileImpl {
     // Otherwise, ask the delegate to create the tool.
     auto tool = delegate.lookupTool(name);
     if (!tool) {
-      error(mainFilename, "invalid tool type in 'tools' map");
+      error(forNode, "invalid tool type in 'tools' map");
       return nullptr;
     }
     auto result = tool.get();
@@ -168,7 +179,7 @@ class BuildFileImpl {
   bool parseRootNode(llvm::yaml::Node* node) {
     // The root must always be a mapping.
     if (node->getType() != llvm::yaml::Node::NK_Mapping) {
-      error(mainFilename, "unexpected top-level node");
+      error(node, "unexpected top-level node");
       return false;
     }
     auto mapping = static_cast<llvm::yaml::MappingNode*>(node);
@@ -176,11 +187,11 @@ class BuildFileImpl {
     // Iterate over each of the sections in the mapping.
     auto it = mapping->begin();
     if (!nodeIsScalarString(it->getKey(), "client")) {
-      error(mainFilename, "expected initial mapping key 'client'");
+      error(it->getKey(), "expected initial mapping key 'client'");
       return false;
     }
     if (it->getValue()->getType() != llvm::yaml::Node::NK_Mapping) {
-      error(mainFilename, "unexpected 'client' value (expected map)");
+      error(it->getValue(), "unexpected 'client' value (expected map)");
       return false;
     }
 
@@ -194,7 +205,7 @@ class BuildFileImpl {
     // Parse the tools mapping, if present.
     if (it != mapping->end() && nodeIsScalarString(it->getKey(), "tools")) {
       if (it->getValue()->getType() != llvm::yaml::Node::NK_Mapping) {
-        error(mainFilename, "unexpected 'tools' value (expected map)");
+        error(it->getValue(), "unexpected 'tools' value (expected map)");
         return false;
       }
 
@@ -208,7 +219,7 @@ class BuildFileImpl {
     // Parse the targets mapping, if present.
     if (it != mapping->end() && nodeIsScalarString(it->getKey(), "targets")) {
       if (it->getValue()->getType() != llvm::yaml::Node::NK_Mapping) {
-        error(mainFilename, "unexpected 'targets' value (expected map)");
+        error(it->getValue(), "unexpected 'targets' value (expected map)");
         return false;
       }
 
@@ -222,7 +233,7 @@ class BuildFileImpl {
     // Parse the nodes mapping, if present.
     if (it != mapping->end() && nodeIsScalarString(it->getKey(), "nodes")) {
       if (it->getValue()->getType() != llvm::yaml::Node::NK_Mapping) {
-        error(mainFilename, "unexpected 'nodes' value (expected map)");
+        error(it->getValue(), "unexpected 'nodes' value (expected map)");
         return false;
       }
 
@@ -236,7 +247,7 @@ class BuildFileImpl {
     // Parse the commands mapping, if present.
     if (it != mapping->end() && nodeIsScalarString(it->getKey(), "commands")) {
       if (it->getValue()->getType() != llvm::yaml::Node::NK_Mapping) {
-        error(mainFilename, "unexpected 'commands' value (expected map)");
+        error(it->getValue(), "unexpected 'commands' value (expected map)");
         return false;
       }
 
@@ -249,7 +260,7 @@ class BuildFileImpl {
 
     // There shouldn't be any trailing sections.
     if (it != mapping->end()) {
-      error(mainFilename, "unexpected trailing top-level section");
+      error(&*it, "unexpected trailing top-level section");
       return false;
     }
 
@@ -265,11 +276,11 @@ class BuildFileImpl {
     for (auto& entry: *map) {
       // All keys and values must be scalar.
       if (entry.getKey()->getType() != llvm::yaml::Node::NK_Scalar) {
-        error(mainFilename, "invalid key type in 'client' map");
+        error(entry.getKey(), "invalid key type in 'client' map");
         return false;
       }
       if (entry.getValue()->getType() != llvm::yaml::Node::NK_Scalar) {
-        error(mainFilename, "invalid value type in 'client' map");
+        error(entry.getValue(), "invalid value type in 'client' map");
         return false;
       }
 
@@ -281,7 +292,7 @@ class BuildFileImpl {
         name = value;
       } else if (key == "version") {
         if (llvm::StringRef(value).getAsInteger(10, version)) {
-          error(mainFilename, "invalid version number in 'client' map");
+          error(entry.getValue(), "invalid version number in 'client' map");
         }
       } else {
         properties.push_back({ key, value });
@@ -290,7 +301,7 @@ class BuildFileImpl {
 
     // Pass to the delegate.
     if (!delegate.configureClient(name, version, properties)) {
-      error(mainFilename, "unable to configure client");
+      error(map, "unable to configure client");
       return false;
     }
 
@@ -301,12 +312,12 @@ class BuildFileImpl {
     for (auto& entry: *map) {
       // Every key must be scalar.
       if (entry.getKey()->getType() != llvm::yaml::Node::NK_Scalar) {
-        error(mainFilename, "invalid key type in 'tools' map");
+        error(entry.getKey(), "invalid key type in 'tools' map");
         continue;
       }
       // Every value must be a mapping.
       if (entry.getValue()->getType() != llvm::yaml::Node::NK_Mapping) {
-        error(mainFilename, "invalid value type in 'tools' map");
+        error(entry.getValue(), "invalid value type in 'tools' map");
         continue;
       }
 
@@ -316,7 +327,7 @@ class BuildFileImpl {
           entry.getValue());
 
       // Get the tool.
-      auto tool = getOrCreateTool(name);
+      auto tool = getOrCreateTool(name, entry.getKey());
       if (!tool) {
         return false;
       }
@@ -328,11 +339,11 @@ class BuildFileImpl {
         
         // All keys and values must be scalar.
         if (key->getType() != llvm::yaml::Node::NK_Scalar) {
-          error(mainFilename, "invalid key type for tool in 'tools' map");
+          error(key, "invalid key type for tool in 'tools' map");
           continue;
         }
         if (value->getType() != llvm::yaml::Node::NK_Scalar) {
-          error(mainFilename, "invalid value type for tool in 'tools' map");
+          error(value, "invalid value type for tool in 'tools' map");
           continue;
         }
 
@@ -353,12 +364,12 @@ class BuildFileImpl {
     for (auto& entry: *map) {
       // Every key must be scalar.
       if (entry.getKey()->getType() != llvm::yaml::Node::NK_Scalar) {
-        error(mainFilename, "invalid key type in 'targets' map");
+        error(entry.getKey(), "invalid key type in 'targets' map");
         continue;
       }
       // Every value must be a sequence.
       if (entry.getValue()->getType() != llvm::yaml::Node::NK_Sequence) {
-        error(mainFilename, "invalid value type in 'targets' map");
+        error(entry.getValue(), "invalid value type in 'targets' map");
         continue;
       }
 
@@ -374,7 +385,7 @@ class BuildFileImpl {
       for (auto& node: *nodes) {
         // All items must be scalar.
         if (node.getType() != llvm::yaml::Node::NK_Scalar) {
-          error(mainFilename, "invalid node type in 'targets' map");
+          error(&node, "invalid node type in 'targets' map");
           continue;
         }
 
@@ -397,12 +408,12 @@ class BuildFileImpl {
     for (auto& entry: *map) {
       // Every key must be scalar.
       if (entry.getKey()->getType() != llvm::yaml::Node::NK_Scalar) {
-        error(mainFilename, "invalid key type in 'nodes' map");
+        error(entry.getKey(), "invalid key type in 'nodes' map");
         continue;
       }
       // Every value must be a mapping.
       if (entry.getValue()->getType() != llvm::yaml::Node::NK_Mapping) {
-        error(mainFilename, "invalid value type in 'nodes' map");
+        error(entry.getValue(), "invalid value type in 'nodes' map");
         continue;
       }
 
@@ -424,11 +435,11 @@ class BuildFileImpl {
         
         // All keys and values must be scalar.
         if (key->getType() != llvm::yaml::Node::NK_Scalar) {
-          error(mainFilename, "invalid key type for node in 'nodes' map");
+          error(key, "invalid key type for node in 'nodes' map");
           continue;
         }
         if (value->getType() != llvm::yaml::Node::NK_Scalar) {
-          error(mainFilename, "invalid value type for node in 'nodes' map");
+          error(value, "invalid value type for node in 'nodes' map");
           continue;
         }
 
@@ -449,12 +460,12 @@ class BuildFileImpl {
     for (auto& entry: *map) {
       // Every key must be scalar.
       if (entry.getKey()->getType() != llvm::yaml::Node::NK_Scalar) {
-        error(mainFilename, "invalid key type in 'commands' map");
+        error(entry.getKey(), "invalid key type in 'commands' map");
         continue;
       }
       // Every value must be a mapping.
       if (entry.getValue()->getType() != llvm::yaml::Node::NK_Mapping) {
-        error(mainFilename, "invalid value type in 'commands' map");
+        error(entry.getValue(), "invalid value type in 'commands' map");
         continue;
       }
 
@@ -466,18 +477,19 @@ class BuildFileImpl {
       // Get the initial attribute, which must be the tool name.
       auto it = attrs->begin();
       if (it == attrs->end()) {
-        error(mainFilename, "missing 'tool' key for command in 'command' map");
+        error(entry.getKey(),
+              "missing 'tool' key for command in 'command' map");
         continue;
       }
       if (!nodeIsScalarString(it->getKey(), "tool")) {
-        error(mainFilename,
+        error(it->getKey(),
               "expected 'tool' initial key for command in 'commands' map");
         // Skip to the end.
         while (it != attrs->end()) ++it;
         continue;
       }
       if (it->getValue()->getType() != llvm::yaml::Node::NK_Scalar) {
-        error(mainFilename,
+        error(it->getValue(),
               "invalid 'tool' value type for command in 'commands' map");
         // Skip to the end.
         while (it != attrs->end()) ++it;
@@ -488,7 +500,8 @@ class BuildFileImpl {
       auto tool = getOrCreateTool(
           stringFromScalarNode(
               static_cast<llvm::yaml::ScalarNode*>(
-                  it->getValue())));
+                  it->getValue())),
+          it->getValue());
       if (!tool) {
         return false;
       }
@@ -505,7 +518,7 @@ class BuildFileImpl {
         // If this is a known key, parse it.
         if (nodeIsScalarString(key, "inputs")) {
           if (value->getType() != llvm::yaml::Node::NK_Sequence) {
-            error(mainFilename, "invalid value type for 'inputs' command key");
+            error(value, "invalid value type for 'inputs' command key");
             continue;
           }
 
@@ -515,7 +528,7 @@ class BuildFileImpl {
           std::vector<Node*> nodes;
           for (auto& nodeName: *nodeNames) {
             if (nodeName.getType() != llvm::yaml::Node::NK_Scalar) {
-              error(mainFilename, "invalid node type in 'inputs' command key");
+              error(&nodeName, "invalid node type in 'inputs' command key");
               continue;
             }
 
@@ -529,7 +542,7 @@ class BuildFileImpl {
           command->configureInputs(nodes);
         } else if (nodeIsScalarString(key, "outputs")) {
           if (value->getType() != llvm::yaml::Node::NK_Sequence) {
-            error(mainFilename, "invalid value type for 'outputs' command key");
+            error(value, "invalid value type for 'outputs' command key");
             continue;
           }
 
@@ -539,7 +552,7 @@ class BuildFileImpl {
           std::vector<Node*> nodes;
           for (auto& nodeName: *nodeNames) {
             if (nodeName.getType() != llvm::yaml::Node::NK_Scalar) {
-              error(mainFilename, "invalid node type in 'outputs' command key");
+              error(&nodeName, "invalid node type in 'outputs' command key");
               continue;
             }
 
@@ -559,11 +572,11 @@ class BuildFileImpl {
           
           // All keys and values must be scalar.
           if (key->getType() != llvm::yaml::Node::NK_Scalar) {
-            error(mainFilename, "invalid key type in 'commands' map");
+            error(key, "invalid key type in 'commands' map");
             continue;
           }
           if (value->getType() != llvm::yaml::Node::NK_Scalar) {
-            error(mainFilename, "invalid value type in 'commands' map");
+            error(value, "invalid value type in 'commands' map");
             continue;
           }
 
@@ -608,8 +621,7 @@ public:
     auto res = llvm::MemoryBuffer::getFile(
         mainFilename);
     if (auto ec = res.getError()) {
-      error(mainFilename, ("unable to open '" + mainFilename +
-                           "' (" + ec.message() + ")"));
+      error("unable to open '" + mainFilename + "' (" + ec.message() + ")");
       return false;
     }
 
@@ -622,7 +634,7 @@ public:
     // Read the stream, we only expect a single document.
     auto it = stream.begin();
     if (it == stream.end()) {
-      error(mainFilename, "missing document in stream");
+      error("missing document in stream");
       return false;
     }
 
@@ -632,7 +644,7 @@ public:
     }
 
     if (++it != stream.end()) {
-      error(mainFilename, "unexpected additional document in stream");
+      error(it->getRoot(), "unexpected additional document in stream");
       return false;
     }
 

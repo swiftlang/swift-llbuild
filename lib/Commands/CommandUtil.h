@@ -13,11 +13,11 @@
 #ifndef LLBUILD_NINJA_COMMANDUTIL_H
 #define LLBUILD_NINJA_COMMANDUTIL_H
 
+#include "llvm/ADT/StringRef.h"
+
 #include <memory>
 #include <string>
 #include <utility>
-
-#include "llvm/ADT/StringRef.h"
 
 namespace llbuild {
 namespace ninja {
