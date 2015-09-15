@@ -971,6 +971,9 @@ buildCommand(BuildContext& context, ninja::Command* command) {
 
       // Otherwise, enqueue the job to run later.
       context.jobQueue->addJob([&] (unsigned bucket) {
+          // Suppress static analyzer false positive on generalized lambda capture
+          // (rdar://problem/22165130).
+#ifndef __clang_analyzer__
           // Take care to not rely on the ``this`` object, which may disappear
           // before the queue executes this block.
           BuildContext& localContext(context);
@@ -1001,6 +1004,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
                         endTime);
               });
           }
+#endif
         });
     }
 
@@ -1049,6 +1053,9 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       // the ``this`` object, which may disappear before the queue executes this
       // block.
       if (!context.quiet) {
+          // Suppress static analyzer false positive on generalized lambda capture
+          // (rdar://problem/22165130).
+#ifndef __clang_analyzer__
         // If this is a console job, do the write synchronously to ensure it
         // appears before the task might start.
         if (command->getExecutionPool() == context.manifest->getConsolePool()) {
@@ -1060,6 +1067,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
               writeDescription(context, command);
             });
         }
+#endif
       }
 
       // Actually run the command.
