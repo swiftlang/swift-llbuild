@@ -87,8 +87,5 @@
 /* LLVM version string */
 #define LLVM_VERSION_STRING "3.7.0svn"
 
-/* Define if we link Polly to the tools */
-/* #undef LINK_POLLY_INTO_TOOLS */
-
 #endif
 
