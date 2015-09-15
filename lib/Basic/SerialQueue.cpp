@@ -12,6 +12,7 @@
 
 #include "llbuild/Basic/SerialQueue.h"
 
+#include <cassert>
 #include <condition_variable>
 #include <deque>
 #include <mutex>
