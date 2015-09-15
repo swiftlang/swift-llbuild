@@ -65,6 +65,12 @@ class SerialQueueImpl {
       fn();
     }
   }
+
+  void addOperation(std::function<void(void)>&& fn) {
+    std::lock_guard<std::mutex> guard(operationsMutex);
+    operations.push_back(fn);
+    readyOperationsCondition.notify_one();
+  }
   
 public:
   SerialQueueImpl() {
@@ -74,13 +80,10 @@ public:
   }
 
   ~SerialQueueImpl() {
-    // Shut down the worker.
-    {
-      std::lock_guard<std::mutex> guard(operationsMutex);
-      operations.push_back({});
-      readyOperationsCondition.notify_one();
-    }
+    // Signal the worker to shut down.
+    addOperation({});
 
+    // Wait for the worker to complete.
     operationsThread->join();
   }
   
@@ -92,18 +95,14 @@ public:
     std::condition_variable cv{};
     std::mutex isCompleteMutex{};
     bool isComplete = false;
-    {
-      std::lock_guard<std::mutex> guard(operationsMutex);
-      operations.push_back([&]() {
-          fn();
-          {
-            std::unique_lock<std::mutex> lock(isCompleteMutex);
-            isComplete = true;
-            cv.notify_one();
-          }
-        });
-      readyOperationsCondition.notify_one();
-    }
+    addOperation([&]() {
+        fn();
+        {
+          std::unique_lock<std::mutex> lock(isCompleteMutex);
+          isComplete = true;
+          cv.notify_one();
+        }
+      });
 
     // Wait for the operation to complete.
     while (true) {
@@ -120,9 +119,7 @@ public:
     assert(fn);
     
     // Add the operation.
-    std::lock_guard<std::mutex> guard(operationsMutex);
-    operations.push_back(fn);
-    readyOperationsCondition.notify_one();
+    addOperation(std::move(fn));
   }
 };
 
