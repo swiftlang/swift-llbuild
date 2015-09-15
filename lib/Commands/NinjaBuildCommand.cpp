@@ -15,6 +15,7 @@
 #include "llbuild/Basic/Compiler.h"
 #include "llbuild/Basic/FileInfo.h"
 #include "llbuild/Basic/Hashing.h"
+#include "llbuild/Basic/SerialQueue.h"
 #include "llbuild/Commands/Commands.h"
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/BuildEngine.h"
@@ -455,8 +456,11 @@ public:
   CommandLineStatusOutput statusOutput;
 
   /// The serial queue we used to order output consistently.
-  dispatch_queue_t outputQueue;
+  SerialQueue outputQueue;
 
+  /// The dispatch queue used for sources.
+  dispatch_queue_t sharedQueue;
+  
   /// The limited queue we use to execute parallel jobs.
   std::unique_ptr<BuildExecutionQueue> jobQueue;
 
@@ -474,7 +478,7 @@ public:
   BuildContext()
     : engine(delegate),
       isCancelled(false),
-      outputQueue(dispatch_queue_create("output-queue",
+      sharedQueue(dispatch_queue_create("output-queue",
                                         /*attr=*/DISPATCH_QUEUE_SERIAL))
   {
     // Open the status output.
@@ -490,7 +494,7 @@ public:
 
     // Register a dispatch source to handle SIGINT.
     sigintSource = dispatch_source_create(
-      DISPATCH_SOURCE_TYPE_SIGNAL, SIGINT, 0, outputQueue);
+      DISPATCH_SOURCE_TYPE_SIGNAL, SIGINT, 0, sharedQueue);
     dispatch_source_set_event_handler(sigintSource, ^{
         cancelBuildOnInterrupt();
       });
@@ -504,7 +508,10 @@ public:
 
   ~BuildContext() {
     // Ensure the output queue is done.
-    dispatch_sync(outputQueue, ^() {});
+    outputQueue.sync([] {});
+
+    // Ensure the shared dispatch queue is done.
+    dispatch_sync(sharedQueue, ^() {});
 
     // Clean up our dispatch source.
     dispatch_source_cancel(sigintSource);
@@ -513,7 +520,7 @@ public:
     // Restore any previous SIGINT handler.
     sigaction(SIGINT, &previousSigintHandler, NULL);
 
-    dispatch_release(outputQueue);
+    dispatch_release(sharedQueue);
 
     // Close the status output.
     std::string error;
@@ -541,7 +548,7 @@ public:
 
   /// Emit a diagnostic to the error stream.
   void emitDiagnostic(std::string kind, std::string message) {
-    dispatch_async(outputQueue, ^() {
+    outputQueue.async([this, kind=std::move(kind), message=std::move(message)] {
         statusOutput.finishLine();
         fprintf(stderr, "%s: %s: %s\n", getProgramName(), kind.c_str(),
                 message.c_str());
@@ -552,7 +559,8 @@ public:
   /// immediately follows the diagnostic.
   void emitDiagnosticAndText(std::string kind, std::string message,
                              std::string text) {
-    dispatch_async(outputQueue, ^() {
+    outputQueue.async([this, kind=std::move(kind), message=std::move(message),
+                       text=std::move(text)] {
         statusOutput.finishLine();
         fprintf(stderr, "%s: %s: %s\n", getProgramName(), kind.c_str(),
                 message.c_str());
@@ -564,7 +572,7 @@ public:
 
   /// Emit a block of text to the output.
   void emitText(std::string text) {
-    dispatch_async(outputQueue, ^() {
+    outputQueue.async([this, text=std::move(text)] {
         statusOutput.finishLine();
         fwrite(text.data(), text.size(), 1, stdout);
         fflush(stdout);
@@ -969,7 +977,8 @@ buildCommand(BuildContext& context, ninja::Command* command) {
           ninja::Command* localCommand(command);
 
           if (localContext.profileFP) {
-            dispatch_sync(localContext.outputQueue, ^() {
+            localContext.outputQueue.sync(
+              [&localContext=localContext, localCommand=localCommand, bucket] {
                 uint64_t startTime = getTimeInMicroseconds();
                 fprintf(localContext.profileFP,
                         ("{ \"name\": \"%s\", \"ph\": \"B\", \"pid\": 0, "
@@ -982,7 +991,8 @@ buildCommand(BuildContext& context, ninja::Command* command) {
           executeCommand();
 
           if (localContext.profileFP) {
-            dispatch_sync(localContext.outputQueue, ^() {
+            localContext.outputQueue.sync(
+              [&localContext=localContext, localCommand=localCommand, bucket] {
                 uint64_t endTime = getTimeInMicroseconds();
                 fprintf(localContext.profileFP,
                         ("{ \"name\": \"%s\", \"ph\": \"E\", \"pid\": 0, "
@@ -1041,15 +1051,13 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       if (!context.quiet) {
         // If this is a console job, do the write synchronously to ensure it
         // appears before the task might start.
-        BuildContext& localContext(context);
-        ninja::Command* localCommand(command);
         if (command->getExecutionPool() == context.manifest->getConsolePool()) {
-          dispatch_sync(context.outputQueue, ^() {
-              writeDescription(localContext, localCommand);
+          context.outputQueue.sync([&context=context, command=command] {
+              writeDescription(context, command);
             });
         } else {
-          dispatch_async(context.outputQueue, ^() {
-              writeDescription(localContext, localCommand);
+          context.outputQueue.async([&context=context, command=command] {
+              writeDescription(context, command);
             });
         }
       }
