@@ -105,13 +105,9 @@ public:
       });
 
     // Wait for the operation to complete.
-    while (true) {
-      std::unique_lock<std::mutex> lock(isCompleteMutex);
-      if (!isComplete) {
-        cv.wait(lock);
-      }
-      if (isComplete)
-        break;
+    std::unique_lock<std::mutex> lock(isCompleteMutex);
+    while (!isComplete) {
+      cv.wait(lock);
     }
   }
 
