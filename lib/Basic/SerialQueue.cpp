@@ -67,9 +67,10 @@ class SerialQueueImpl {
   }
   
 public:
-  SerialQueueImpl() : operationsThread(std::make_unique<std::thread>(
-                                           &SerialQueueImpl::run, this))
-  {
+  SerialQueueImpl() {
+    // Ensure the queue is fully initialized before creating the worker thread.
+    operationsThread = std::make_unique<std::thread>(
+        &SerialQueueImpl::run, this);
   }
 
   ~SerialQueueImpl() {
