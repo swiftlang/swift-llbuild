@@ -36,15 +36,22 @@ FileInfo FileInfo::getInfoForPath(const std::string& path) {
   result.device = buf.st_dev;
   result.inode = buf.st_ino;
   result.size = buf.st_size;
-  result.modTime.seconds = buf.st_mtimespec.tv_sec;
-  result.modTime.nanoseconds = buf.st_mtimespec.tv_nsec;
+#if defined(__APPLE__)
+  auto seconds = buf.st_mtimespec.tv_sec;
+  auto nanoseconds = buf.st_mtimespec.tv_nsec;
+#else
+  auto seconds = buf.st_mtim.tv_sec;
+  auto nanoseconds = buf.st_mtim.tv_nsec;
+#endif
+  result.modTime.seconds = seconds;
+  result.modTime.nanoseconds = nanoseconds;
 
   // Verify we didn't truncate any values.
   assert(result.device == (unsigned)buf.st_dev &&
          result.inode == (unsigned)buf.st_ino &&
          result.size == (unsigned)buf.st_size &&
-         result.modTime.seconds == (unsigned)buf.st_mtimespec.tv_sec &&
-         result.modTime.nanoseconds == (unsigned)buf.st_mtimespec.tv_nsec);
+         result.modTime.seconds == (unsigned)seconds &&
+         result.modTime.nanoseconds == (unsigned)nanoseconds);
 
   // Enforce we never accidentally create our sentinel missing file value.
   if (result.isMissing()) {
