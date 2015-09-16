@@ -43,8 +43,6 @@
 #include <sys/time.h>
 #include <sys/wait.h>
 
-#include <dispatch/dispatch.h>
-
 using namespace llbuild;
 using namespace llbuild::basic;
 using namespace llbuild::commands;
@@ -458,14 +456,8 @@ public:
   /// The serial queue we used to order output consistently.
   SerialQueue outputQueue;
 
-  /// The dispatch queue used for sources.
-  dispatch_queue_t sharedQueue;
-  
   /// The limited queue we use to execute parallel jobs.
   std::unique_ptr<BuildExecutionQueue> jobQueue;
-
-  /// The SIGINT dispatch source.
-  dispatch_source_t sigintSource;
 
   /// The previous SIGINT handler.
   struct sigaction previousSigintHandler;
@@ -474,12 +466,77 @@ public:
   std::unordered_set<pid_t> spawnedProcesses;
   std::mutex spawnedProcessesMutex;
 
+  /// Low-level flag for when a SIGINT has been received.
+  static std::atomic<bool> wasInterrupted;
+
+  /// Pipe used to allow detection of signals.
+  static int signalWatchingPipe[2];
+
+  static void sigintHandler(int) {
+    // Set the atomic interrupt flag.
+    BuildContext::wasInterrupted = true;
+
+    // Write to wake up the signal monitoring thread.
+    char byte{};
+    write(signalWatchingPipe[1], &byte, 1);
+  }
+
+  /// Cancel the build in response to an interrupt event.
+  void cancelBuildOnInterrupt() {
+    std::lock_guard<std::mutex> guard(spawnedProcessesMutex);
+
+    emitNote("cancelling build.");
+    isCancelled = true;
+    wasCancelledBySigint = true;
+
+    // Cancel the spawned processes.
+    for (pid_t pid: spawnedProcesses) {
+      ::kill(-pid, SIGINT);
+    }
+
+    // FIXME: In our model, we still wait for everything to terminate, which
+    // means a process that refuses to respond to SIGINT will cause us to just
+    // hang here. We should probably detect and report that and be willing to do
+    // a hard kill at some point (for example, on the second interrupt).
+  }
+
+  /// Check if an interrupt has occurred.
+  void checkForInterrupt() {
+    // Save and clear the interrupt flag, atomically.
+    bool wasInterrupted = BuildContext::wasInterrupted.exchange(false);
+
+    // Process the interrupt flag, if present.
+    if (wasInterrupted) {
+      // Otherwise, process the interrupt.
+      cancelBuildOnInterrupt();
+    }
+  }
+
+  /// Thread function to wait for indications that signals have arrived and to
+  /// process them.
+  void signalWaitThread() {
+    // Wait for signal arrival indications.
+    while (true) {
+      char byte;
+      int res = read(signalWatchingPipe[0], &byte, 1);
+
+      // If nothing was read, the pipe has been closed and we should shut down.
+      if (res == 0)
+        break;
+
+      // Otherwise, check if we were awoke because of an interrupt.
+      checkForInterrupt();
+    }
+
+    // Shut down the pipe.
+    close(signalWatchingPipe[0]);
+    signalWatchingPipe[0] = -1;
+  }
+
 public:
   BuildContext()
     : engine(delegate),
-      isCancelled(false),
-      sharedQueue(dispatch_queue_create("output-queue",
-                                        /*attr=*/DISPATCH_QUEUE_SERIAL))
+      isCancelled(false)
   {
     // Open the status output.
     std::string error;
@@ -492,39 +549,34 @@ public:
     // Register the context with the delegate.
     delegate.context = this;
 
-    // Register a dispatch source to handle SIGINT.
-    sigintSource = dispatch_source_create(
-      DISPATCH_SOURCE_TYPE_SIGNAL, SIGINT, 0, sharedQueue);
-    dispatch_source_set_event_handler(sigintSource, ^{
-        cancelBuildOnInterrupt();
-      });
-    dispatch_resume(sigintSource);
-
-    // Clear the default SIGINT handling behavior.
+    // Register an interrupt handler.
     struct sigaction action{};
-    action.sa_handler = SIG_IGN;
+    action.sa_handler = &BuildContext::sigintHandler;
     sigaction(SIGINT, &action, &previousSigintHandler);
+
+    // Create a pipe and thread to watch for signals.
+    assert(BuildContext::signalWatchingPipe[0] == -1 &&
+           BuildContext::signalWatchingPipe[1] == -1);
+    new std::thread(&BuildContext::signalWaitThread, this);
+    if (::pipe(BuildContext::signalWatchingPipe) < 0) {
+      perror("pipe");
+    }
   }
 
   ~BuildContext() {
     // Ensure the output queue is done.
     outputQueue.sync([] {});
 
-    // Ensure the shared dispatch queue is done.
-    dispatch_sync(sharedQueue, ^() {});
-
-    // Clean up our dispatch source.
-    dispatch_source_cancel(sigintSource);
-    dispatch_release(sigintSource);
-
     // Restore any previous SIGINT handler.
     sigaction(SIGINT, &previousSigintHandler, NULL);
-
-    dispatch_release(sharedQueue);
 
     // Close the status output.
     std::string error;
     statusOutput.close(&error);
+
+    // Close the signal watching pipe.
+    ::close(BuildContext::signalWatchingPipe[1]);
+    signalWatchingPipe[1] = -1;
   }
 
   /// @name Diagnostics Output
@@ -616,24 +668,6 @@ public:
 
   /// @}
 
-  void cancelBuildOnInterrupt() {
-    std::lock_guard<std::mutex> guard(spawnedProcessesMutex);
-
-    emitNote("cancelling build.");
-    isCancelled = true;
-    wasCancelledBySigint = true;
-
-    // Cancel the spawned processes.
-    for (pid_t pid: spawnedProcesses) {
-      ::kill(-pid, SIGINT);
-    }
-
-    // FIXME: In our model, we still wait for everything to terminate, which
-    // means a process that refuses to respond to SIGINT will cause us to just
-    // hang here. We should probably detect and report that and be willing to do
-    // a hard kill at some point (for example, on the second interrupt).
-  }
-
   void reportMissingInput(const ninja::Node* node) {
     // We simply report the missing input here, the build will be cancelled when
     // a rule sees it missing.
@@ -654,6 +688,9 @@ public:
     }
   }
 };
+
+std::atomic<bool> BuildContext::wasInterrupted{false};
+int BuildContext::signalWatchingPipe[2]{-1, -1};
 
 class BuildManifestActions : public ninja::ManifestLoaderActions {
   BuildContext& context;
@@ -1127,7 +1164,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       sigset_t allSignals;
       sigfillset(&allSignals);
       posix_spawnattr_setsigdefault(&attributes, &allSignals);
-#endif      
+#endif
 
       // Establish a separate process group.
       posix_spawnattr_setpgroup(&attributes, 0);
@@ -1836,7 +1873,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
                     command->getRule()->getName().c_str());
           }
         }
- 
+
         return 0;
       } else {
         context.emitError("unknown tool '%s'", customTool.c_str());
