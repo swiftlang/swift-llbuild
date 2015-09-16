@@ -2,8 +2,8 @@
  Build System
 ==============
 
-This document describes the LLBuild-native ``BuildSystem`` component. While
-LLBuild contains a Core engine which can be used to build a variety of build
+This document describes the *llbuild*-native ``BuildSystem`` component. While
+*llbuild* contains a Core engine which can be used to build a variety of build
 systems (and other incremental, persistent, and parallel computational systems),
 it also contains a native build system implementation on which higher level
 facilities are built.
@@ -31,7 +31,7 @@ an input or output of those commands. Each ``Command`` declares which ``Tool``
 is to be used to create it. The tools themselves are integrated into the
 ``BuildSystem`` component (either as builtin tools, or via the client), and this
 allows them to provided customizable features for use in the build file, and to
-be deeply integrated with LLBuild.
+be deeply integrated with *llbuild*.
 
 Nodes
 -----
@@ -240,3 +240,29 @@ Dynamic Content
 .. note::
   FIXME: Add design for how dynamically generated work is embedded in the build
   file.
+
+
+Builtin Tools
+=============
+
+The build system provides several built-in tool definitions which are available
+regardless of the client.
+
+The following tools are currently built in:
+
+Phony Tool
+  **Identifier**: *phony*
+
+  A dummy tool, used for imposing ordering and grouping between input and output
+  nodes.
+
+  No attributes are supported other than the common keys.
+
+Shell Tool
+  **Identifier**: *shell*
+
+  A tool used to invoke shell commands.
+ 
+  This tool supports an "args" key used to provide the shell command to be run
+  (using ``/bin/sh -c``).
+

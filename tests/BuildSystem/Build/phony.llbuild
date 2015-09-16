@@ -1,0 +1,32 @@
+# Check basic handling of 'phony' commands.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.llbuild
+# RUN: %{llbuild} buildsystem build --chdir %t.build build.llbuild > %t.out
+# RUN: %{FileCheck} --input-file %t.out %s
+#
+# CHECK: THING1
+# CHECK: THING2
+
+client:
+  name: basic
+
+targets:
+  "": ["output"]
+
+commands:
+  thing-1:
+    tool: shell
+    outputs: ["thing-1"]
+    args: echo THING1
+
+  thing-2:
+    tool: shell
+    outputs: ["thing-2"]
+    args: echo THING2
+  
+  output:
+    tool: phony
+    inputs: ["thing-1", "thing-2"]
+    outputs: ["output"]

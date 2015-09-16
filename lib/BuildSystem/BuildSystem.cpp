@@ -562,6 +562,136 @@ public:
   }
 };
 
+#pragma mark - PhonyTool implementation
+
+class PhonyCommand : public Command {
+  BuildSystemImpl& system;
+  std::vector<Node*> inputs;
+  std::vector<Node*> outputs;
+  std::string args;
+
+public:
+  PhonyCommand(BuildSystemImpl& system, const std::string& name)
+      : Command(name), system(system) {}
+
+  virtual void configureInputs(const std::vector<Node*>& value) override {
+    inputs = value;
+  }
+
+  virtual void configureOutputs(const std::vector<Node*>& value) override {
+    outputs = value;
+  }
+
+  virtual bool configureAttribute(const std::string& name,
+                                  const std::string& value) override {
+    system.error(system.getMainFilename(),
+                 "unexpected attribute: '" + name + "'");
+    return false;
+  }
+
+  virtual BuildValue getResultForOutput(Node* node,
+                                        const BuildValue& value) override {
+    // If the value was a failed command, treat the node as missing.
+    //
+    // FIXME: Reevaluate once nodes become more general.
+    if (value.isFailedCommand())
+      return BuildValue::makeMissingInput();
+
+    // Otherwise, return the actual result for the output.
+    
+    // Find the index of the output node.
+    auto it = std::find(outputs.begin(), outputs.end(), node);
+    assert(it != outputs.end());
+    
+    auto idx = it - outputs.begin();
+    assert(idx < value.getNumOutputs());
+
+    return BuildValue::makeExistingInput(value.getNthOutputInfo(idx));
+  }
+  
+  virtual bool isResultValid(const BuildValue& value) override {
+    // If the previous value wasn't for a successful command, always recompute.
+    if (!value.isSuccessfulCommand())
+      return false;
+
+    // Check the timestamps on each of the outputs.
+    for (unsigned i = 0, e = outputs.size(); i != e; ++i) {
+      auto* node = outputs[i];
+
+      // Always rebuild if the output is missing.
+      auto info = FileInfo::getInfoForPath(node->getName());
+      if (info.isMissing())
+        return false;
+
+      // Otherwise, the result is valid if the file information has not changed.
+      if (value.getNthOutputInfo(i) != info)
+        return false;
+    }
+
+    // Otherwise, the result is ok.
+    return true;
+  }
+
+  virtual void start(BuildSystemCommandInterface& system, Task* task) override {
+    // Request all of the inputs.
+    for (const auto& node: inputs) {
+      system.taskNeedsInput(task, BuildKey::makeNode(node), /*InputID=*/0);
+    }
+  }
+
+  virtual void providePriorValue(BuildSystemCommandInterface&, Task*,
+                                 const BuildValue&) override {
+  }
+
+  virtual void provideValue(BuildSystemCommandInterface&, Task*,
+                            uintptr_t inputID,
+                            const BuildValue& value) override {
+  }
+
+  virtual void inputsAvailable(BuildSystemCommandInterface& system,
+                               Task* task) override {
+    // Suppress static analyzer false positive on generalized lambda capture
+    // (rdar://problem/22165130).
+#ifndef __clang_analyzer__
+    auto fn = [this, &system=system, task](QueueJobContext* context) {
+      // Capture the file information for each of the output nodes.
+      //
+      // FIXME: We need to delegate to the node here.
+      llvm::SmallVector<FileInfo, 8> outputInfos;
+      for (auto* node: outputs) {
+        outputInfos.push_back(FileInfo::getInfoForPath(node->getName()));
+      }
+      
+      // Otherwise, complete with a successful result.
+      system.taskIsComplete(
+          task, BuildValue::makeSuccessfulCommand(outputInfos));
+    };
+    system.addJob({ this, std::move(fn) });
+#endif
+  }
+};
+
+class PhonyTool : public Tool {
+  BuildSystemImpl& system;
+
+public:
+  PhonyTool(BuildSystemImpl& system, const std::string& name)
+      : Tool(name), system(system) {}
+
+  virtual bool configureAttribute(const std::string& name,
+                                  const std::string& value) override {
+    // No supported configuration attributes.
+    system.error(system.getMainFilename(),
+                 "unexpected attribute: '" + name + "'");
+    return false;
+  }
+
+  virtual std::unique_ptr<Command> createCommand(
+      const std::string& name) override {
+    return std::make_unique<PhonyCommand>(system, name);
+  }
+};
+
 #pragma mark - ShellTool implementation
 
 class ShellCommand : public Command {
@@ -761,6 +891,8 @@ BuildSystemFileDelegate::lookupTool(const std::string& name) {
   // Otherwise, look for one of the builtin tool definitions.
   if (name == "shell") {
     return std::make_unique<ShellTool>(system, name);
+  } else if (name == "phony") {
+    return std::make_unique<PhonyTool>(system, name);
   }
 
   return nullptr;
