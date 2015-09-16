@@ -11,6 +11,7 @@
 #include "llvm/ADT/Hashing.h"
 #include "llvm/ADT/edit_distance.h"
 #include <bitset>
+#include <climits>
 
 using namespace llvm;
 
