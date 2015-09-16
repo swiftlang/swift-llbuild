@@ -406,10 +406,12 @@ public:
 
     // Close all other files by default.
     //
-    // Note that this is an Apple-specific extension, and we will have to do
-    // something else on other platforms (and unfortunately, there isn't really
-    // an easy answer other than using a stub executable).
+    // FIXME: Note that this is an Apple-specific extension, and we will have to
+    // do something else on other platforms (and unfortunately, there isn't
+    // really an easy answer other than using a stub executable).
+#ifdef __APPLE__
     flags |= POSIX_SPAWN_CLOEXEC_DEFAULT;
+#endif
 
     posix_spawnattr_setflags(&attributes, flags);
 
