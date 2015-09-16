@@ -805,7 +805,11 @@ public:
       // Log the command.
       //
       // FIXME: Design the logging and status output APIs.
-      fprintf(stdout, "%s\n", args.c_str());
+      if (description.empty()) {
+        fprintf(stdout, "%s\n", args.c_str());
+      } else {
+        fprintf(stdout, "%s\n", description.c_str());
+      }
 
       // Execute the command.
       if (!system.getExecutionQueue().executeShellCommand(context, args)) {

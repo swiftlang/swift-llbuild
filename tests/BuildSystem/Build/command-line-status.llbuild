@@ -1,0 +1,25 @@
+# Check command line status output
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: touch %t.build/input
+# RUN: cp %s %t.build/build.llbuild
+# RUN: %{llbuild} buildsystem build --chdir %t.build build.llbuild > %t.out
+# RUN: %{FileCheck} --input-file %t.out %s
+#
+# CHECK: COPY
+
+client:
+  name: basic
+
+targets:
+  "": ["output"]
+
+commands:
+  cp-output:
+    tool: shell
+    description: COPY
+    inputs: ["input"]
+    outputs: ["output"]
+    # FIXME: Design a limited mechanism for substitution. Might be tool specific.
+    args: cp input output
