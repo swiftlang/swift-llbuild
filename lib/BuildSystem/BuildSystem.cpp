@@ -574,6 +574,10 @@ public:
   PhonyCommand(BuildSystemImpl& system, const std::string& name)
       : Command(name), system(system) {}
 
+  virtual void configureDescription(const std::string& value) override {
+    // The description is unused for phony commands.
+  }
+  
   virtual void configureInputs(const std::vector<Node*>& value) override {
     inputs = value;
   }
@@ -696,6 +700,7 @@ public:
 
 class ShellCommand : public Command {
   BuildSystemImpl& system;
+  std::string description;
   std::vector<Node*> inputs;
   std::vector<Node*> outputs;
   std::string args;
@@ -704,6 +709,10 @@ public:
   ShellCommand(BuildSystemImpl& system, const std::string& name)
       : Command(name), system(system) {}
 
+  virtual void configureDescription(const std::string& value) override {
+    description = value;
+  }
+  
   virtual void configureInputs(const std::vector<Node*>& value) override {
     inputs = value;
   }

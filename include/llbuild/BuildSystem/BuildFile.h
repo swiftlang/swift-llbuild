@@ -129,7 +129,10 @@ public:
 
   /// @name File Loading
   /// @{
-  
+
+  /// Called by the build file loader to set the description.
+  virtual void configureDescription(const std::string& description) = 0;
+
   /// Called by the build file loader to pass the list of input nodes.
   virtual void configureInputs(const std::vector<Node*>& inputs) = 0;
 

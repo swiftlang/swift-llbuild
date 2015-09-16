@@ -198,6 +198,9 @@ present.
   required field is the `tool` key to specify which tool produces the command.
 
   The `tool` key must always be the leading key in the mapping.
+
+  The `description` key is available to all tools, and should be a string
+  describing the command.
   
   The `inputs` and `outputs` keys are shared by all tools (although not all
   tools may use them) and are lists naming the input and output nodes of the

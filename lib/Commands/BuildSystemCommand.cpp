@@ -101,6 +101,12 @@ public:
   ParseDummyCommand(ParseBuildFileDelegate& delegate, const std::string& name)
       : Command(name), delegate(delegate) {}
 
+  virtual void configureDescription(const std::string& description) override {
+    if (delegate.shouldShowOutput()) {
+      printf("  -- 'description': '%s'", description.c_str());
+    }
+  }
+  
   virtual void configureInputs(const std::vector<Node*>& inputs) override {
     if (delegate.shouldShowOutput()) {
       bool first = true;

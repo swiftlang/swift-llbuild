@@ -54,6 +54,7 @@ nodes:
 #
 # CHECK: command('link-hello')
 # CHECK:  -- 'tool': 'link'
+# CHECK:  -- 'description': 'LINK'
 # CHECK:  -- 'inputs': ['hello.o']
 # CHECK:  -- 'outputs': ['hello']
 # CHECK:  -- -- loaded command('link-hello')
@@ -65,6 +66,7 @@ nodes:
 commands:
   link-hello:
     tool: link
+    description: LINK
     inputs: ["hello.o"]
     outputs: ["hello"]
   cc-hello.o:

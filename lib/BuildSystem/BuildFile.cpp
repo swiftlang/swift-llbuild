@@ -567,6 +567,15 @@ class BuildFileImpl {
           }
 
           command->configureOutputs(nodes);
+        } else if (nodeIsScalarString(key, "description")) {
+          if (value->getType() != llvm::yaml::Node::NK_Scalar) {
+            error(value, "invalid value type for 'description' command key");
+            continue;
+          }
+
+          command->configureDescription(
+              stringFromScalarNode(
+                  static_cast<llvm::yaml::ScalarNode*>(value)));
         } else {
           // Otherwise, it should be an attribute string key value pair.
           
