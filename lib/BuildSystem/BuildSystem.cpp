@@ -610,7 +610,11 @@ public:
     auto idx = it - outputs.begin();
     assert(idx < value.getNumOutputs());
 
-    return BuildValue::makeExistingInput(value.getNthOutputInfo(idx));
+    auto& info = value.getNthOutputInfo(idx);
+    if (info.isMissing())
+      return BuildValue::makeMissingInput();
+    
+    return BuildValue::makeExistingInput(info);
   }
   
   virtual bool isResultValid(const BuildValue& value) override {
@@ -752,7 +756,11 @@ public:
     auto idx = it - outputs.begin();
     assert(idx < value.getNumOutputs());
 
-    return BuildValue::makeExistingInput(value.getNthOutputInfo(idx));
+    auto& info = value.getNthOutputInfo(idx);
+    if (info.isMissing())
+      return BuildValue::makeMissingInput();
+    
+    return BuildValue::makeExistingInput(info);
   }
   
   virtual bool isResultValid(const BuildValue& value) override {

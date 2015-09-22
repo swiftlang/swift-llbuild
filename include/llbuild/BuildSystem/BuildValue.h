@@ -128,6 +128,7 @@ public:
     return BuildValue(Kind::Invalid);
   }
   static BuildValue makeExistingInput(FileInfo outputInfo) {
+    assert(!outputInfo.isMissing());
     return BuildValue(Kind::ExistingInput, outputInfo);
   }
   static BuildValue makeMissingInput() {
