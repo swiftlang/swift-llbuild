@@ -511,7 +511,7 @@ public:
 
 static void buildUsage(int exitCode) {
   int optionWidth = 20;
-  fprintf(stderr, "Usage: %s buildsystem build [options] <path>\n",
+  fprintf(stderr, "Usage: %s buildsystem build [options] <path> [<target>]\n",
           getProgramName());
   fprintf(stderr, "\nOptions:\n");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--help",
@@ -574,7 +574,7 @@ static int executeBuildCommand(std::vector<std::string> args) {
     }
   }
 
-  if (args.size() != 1) {
+  if (args.size() != 1 && args.size() != 2) {
     fprintf(stderr, "error: %s: invalid number of arguments\n", getProgramName());
     buildUsage(1);
   }
@@ -627,9 +627,11 @@ static int executeBuildCommand(std::vector<std::string> args) {
       return 1;
     }
   }
-  
-  // Build the default target.
-  system.build("");
+
+  // Select the target to build.
+  std::string targetToBuild = args.size() == 1 ? "" : args[1];
+    
+  system.build(targetToBuild);
   
   return 0;
 }

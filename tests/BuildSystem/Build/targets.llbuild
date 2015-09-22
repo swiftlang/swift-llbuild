@@ -1,0 +1,33 @@
+# Check command line support for building different targets.
+
+# Run an initial build which fails on the command.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.llbuild
+# RUN: %{llbuild} buildsystem build --chdir %t.build build.llbuild > %t-A.out
+# RUN: %{FileCheck} --input-file %t-A.out %s --check-prefix=CHECK-A
+#
+# CHECK-A: echo target-A
+
+# RUN: %{llbuild} buildsystem build --chdir %t.build build.llbuild B > %t-B.out
+# RUN: %{FileCheck} --input-file %t-B.out %s --check-prefix=CHECK-B
+#
+# CHECK-B: echo target-B
+
+client:
+  name: basic
+
+targets:
+  "": ["target-A"]
+  "B": ["target-B"]
+
+commands:
+  target-A:
+    tool: shell
+    outputs: ["target-A"]
+    args: echo target-A
+  target-B:
+    tool: shell
+    outputs: ["target-B"]
+    args: echo target-B
