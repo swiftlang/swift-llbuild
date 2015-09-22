@@ -14,10 +14,15 @@
 #define LLBUILD_BUILDSYSTEM_BUILDVALUE_H
 
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/StringRef.h"
 
 #include "llbuild/Basic/Compiler.h"
 #include "llbuild/Basic/FileInfo.h"
 #include "llbuild/Core/BuildEngine.h"
+
+namespace llvm {
+class raw_ostream;
+}
 
 namespace llbuild {
 namespace buildsystem {
@@ -26,7 +31,7 @@ namespace buildsystem {
 /// the core BuildEngine.
 class BuildValue {
   using FileInfo = basic::FileInfo;
-  
+
   enum class Kind : uint32_t {
     /// An invalid value, for sentinel purposes.
     Invalid = 0,
@@ -49,6 +54,7 @@ class BuildValue {
     /// Sentinel value representing the result of "building" a top-level target.
     Target,
   };
+  static llvm::StringRef stringForKind(Kind);
 
   /// The kind of value.
   Kind kind;
@@ -69,7 +75,7 @@ private:
   // Copying is disabled.
   BuildValue(const BuildValue&) LLBUILD_DELETED_FUNCTION;
   void operator=(const BuildValue&) LLBUILD_DELETED_FUNCTION;
-  
+
   BuildValue() {}
   BuildValue(Kind kind) : kind(kind) {
     valueData.asOutputInfo = {};
@@ -123,7 +129,7 @@ public:
       delete[] valueData.asOutputInfos;
     }
   }
-  
+
   /// @name Construction Functions
   /// @{
 
@@ -163,7 +169,7 @@ public:
   bool isSuccessfulCommand() const {return kind == Kind::SuccessfulCommand; }
   bool isFailedCommand() const { return kind == Kind::FailedCommand; }
   bool isTarget() const { return kind == Kind::Target; }
-  
+
   bool hasMultipleOutputs() const {
     return numOutputInfos > 1;
   }
@@ -234,6 +240,13 @@ public:
       return result;
     }
   }
+
+  /// @}
+
+  /// @name Debug Support
+  /// @{
+
+  void dump(llvm::raw_ostream& OS) const;
 
   /// @}
 };

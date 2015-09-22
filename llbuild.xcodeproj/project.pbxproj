@@ -173,6 +173,7 @@
 		E1E221071A00689C00957481 /* BuildDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E221051A0067F800957481 /* BuildDB.cpp */; };
 		E1E221091A00B82100957481 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
 		E1E2210C1A015B9E00957481 /* SQLiteBuildDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E2210B1A015B9E00957481 /* SQLiteBuildDB.cpp */; };
+		E1FC67F91BB1F427004EBC54 /* BuildValue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1FC67F81BB1F417004EBC54 /* BuildValue.cpp */; };
 		E1FE53411AB1346700041B8E /* Hashing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1FE53401AB1343B00041B8E /* Hashing.cpp */; };
 /* End PBXBuildFile section */
 
@@ -762,6 +763,7 @@
 		E1E221051A0067F800957481 /* BuildDB.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildDB.cpp; sourceTree = "<group>"; };
 		E1E221081A00B82100957481 /* libsqlite3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsqlite3.dylib; path = usr/lib/libsqlite3.dylib; sourceTree = SDKROOT; };
 		E1E2210B1A015B9E00957481 /* SQLiteBuildDB.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SQLiteBuildDB.cpp; sourceTree = "<group>"; };
+		E1FC67F81BB1F417004EBC54 /* BuildValue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildValue.cpp; sourceTree = "<group>"; };
 		E1FE53401AB1343B00041B8E /* Hashing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Hashing.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -1490,6 +1492,7 @@
 				E1B8395A1B541C1F00DB876B /* CMakeLists.txt */,
 				E1B839591B541C1F00DB876B /* BuildFile.cpp */,
 				E104FAFF1B6568E0005C68A0 /* BuildSystem.cpp */,
+				E1FC67F81BB1F417004EBC54 /* BuildValue.cpp */,
 			);
 			path = BuildSystem;
 			sourceTree = "<group>";
@@ -2359,6 +2362,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1FC67F91BB1F427004EBC54 /* BuildValue.cpp in Sources */,
 				E1B8395E1B541C5900DB876B /* BuildFile.cpp in Sources */,
 				E104FB001B6568E0005C68A0 /* BuildSystem.cpp in Sources */,
 			);
