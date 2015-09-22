@@ -3,16 +3,32 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.llbuild
+# RUN: echo "INITIAL" > %t.build/input-1
 # RUN: %{llbuild} buildsystem build --chdir %t.build build.llbuild > %t.out
 # RUN: test -f %t.build/output-1
-# RUN: %{FileCheck} < %t.build/output-1 %s --check-prefix=CHECK-OUTPUT-1
-# RUN: %{FileCheck} < %t.out %s
+# RUN: %{FileCheck} --check-prefix=CHECK-INITIAL-OUTPUT-1 --input-file %t.build/output-1 %s
+# RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file %t.out %s
 # RUN: diff %t.build/output-1 %t.build/output
 #
-# CHECK: echo hi > output-1
-# CHECK: cp output-1 output
+# CHECK-INITIAL: cat input-1 > output-1
+# CHECK-INITIAL: cp output-1 output
 #
-# CHECK-OUTPUT-1: hi
+# CHECK-INITIAL-OUTPUT-1: INITIAL
+
+# Verify that a rebuild after modifying the input performs as expected.
+#
+# RUN: echo "REBUILD" >> %t.build/input-1
+# RUN: %{llbuild} buildsystem build --chdir %t.build build.llbuild > %t.out
+# RUN: test -f %t.build/output-1
+# RUN: %{FileCheck} --check-prefix=CHECK-REBUILD-OUTPUT-1 --input-file %t.build/output-1 %s
+# RUN: %{FileCheck} --check-prefix=CHECK-REBUILD --input-file %t.out %s
+# RUN: diff %t.build/output-1 %t.build/output
+#
+# CHECK-REBUILD: cat input-1 > output-1
+# CHECK-REBUILD: cp output-1 output
+#
+# CHECK-REBUILD-OUTPUT-1: INITIAL
+# CHECK-REBUILD-OUTPUT-1: REBUILD
 
 client:
   name: basic
@@ -21,10 +37,11 @@ targets:
   "": ["output"]
 
 commands:
-  echo-1:
+  cat-1:
     tool: shell
+    inputs: ["input-1"]
     outputs: ["output-1"]
-    args: echo hi > output-1
+    args: cat input-1 > output-1
     
   cp-output:
     tool: shell

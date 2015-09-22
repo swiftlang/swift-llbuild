@@ -120,6 +120,8 @@ public:
       if (numOutputInfos > 1) {
         valueData.asOutputInfos = rhs.valueData.asOutputInfos;
         rhs.valueData.asOutputInfos = nullptr;
+      } else {
+        valueData.asOutputInfo = rhs.valueData.asOutputInfo;
       }
     }
     return *this;
