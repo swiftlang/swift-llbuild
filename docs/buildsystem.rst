@@ -43,6 +43,10 @@ with a file (that said, it is a common case and the ``BuildSystem`` will have
 special support to ensure that using nodes which are proxies for files on disk
 is convenient and featureful).
 
+Currently, the build system automatically treats nodes as files unless they have
+a name matching ``'<.*>'``, see the documentation of the ``is-virtual`` node
+attribute for more information.
+
 Commands
 --------
 
@@ -243,6 +247,32 @@ Dynamic Content
 .. note::
   FIXME: Add design for how dynamically generated work is embedded in the build
   file.
+
+
+Node Attributes
+===============
+
+As with commands, nodes can also have attributes which configured their
+behavior.
+
+The following attributes are currently supported:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 80
+
+   * - Name
+     - Description
+
+   * - is-virtual
+     - A boolean value, indicating whether or not the node is "virtual". By
+       default, the build system assumes that nodes matching the pattern
+       ``'<.*>'`` (e.g., ``<link>``) are virtual, and all other nodes correspond
+       to files in the file system matching the name. This attribute can be used
+       to override that default.
+
+.. note::
+  FIXME: At some point, we probably want to support custom node types.
 
 
 Builtin Tools

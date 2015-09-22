@@ -1,0 +1,40 @@
+# Check handling of virtual (non-file-system) nodes.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.llbuild
+
+# Perform the initial build.
+#
+# RUN: %{llbuild} buildsystem build --chdir %t.build build.llbuild > %t.out
+# RUN: %{FileCheck} --check-prefix CHECK-INITIAL --input-file %t.out %s
+#
+# CHECK-INITIAL: touch actual-output
+
+# Perform a second build, which shouldn't do anything.
+#
+# RUN: %{llbuild} buildsystem build --chdir %t.build build.llbuild > %t.out
+# RUN: %{FileCheck} --check-prefix CHECK-REBUILD --input-file %t.out %s
+#
+# CHECK-REBUILD-NOT: touch actual-output
+
+client:
+  name: basic
+
+targets:
+  "": ["output"]
+
+nodes:
+  VIRTUAL2:
+    is-virtual: true
+    
+commands:
+  c1:
+    tool: shell
+    outputs: ["<VIRTUAL1>", "VIRTUAL2", "actual-output"]
+    args: touch actual-output
+  
+  output:
+    tool: phony
+    inputs: ["<VIRTUAL1>", "VIRTUAL2"]
+    outputs: ["output"]

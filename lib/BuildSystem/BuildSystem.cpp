@@ -222,6 +222,53 @@ public:
 
 #pragma mark - BuildSystem engine integration
 
+#pragma mark - BuildNode implementation
+
+// FIXME: Figure out how this is going to be organized.
+class BuildNode : public Node {
+  // FIXME: This is just needed for diagnostics during configuration, we should
+  // make that some kind of context argument instead of storing it in every
+  // node.
+  BuildSystemImpl& system;
+  
+  /// Whether or not this node is "virtual" (i.e., not a filesystem path).
+  bool virtualNode;
+
+public:
+  explicit BuildNode(BuildSystemImpl& system, const std::string& name,
+                     bool isVirtual)
+      : Node(name), system(system), virtualNode(isVirtual) {}
+
+  bool isVirtual() const { return virtualNode; }
+
+  virtual bool configureAttribute(const std::string& name,
+                                  const std::string& value) override {
+    if (name == "is-virtual") {
+      if (value == "true") {
+        virtualNode = true;
+      } else if (value == "false") {
+        virtualNode = false;
+      } else {
+        system.error(system.getMainFilename(),
+                     "invalid value: '" + value +
+                     "' for attribute '" + name + "'");
+        return false;
+      }
+      return true;
+    }
+    
+    // We don't support any other custom attributes.
+    system.error(system.getMainFilename(),
+                 "unexpected attribute: '" + name + "'");
+    return false;
+  }
+
+  FileInfo getFileInfo() const {
+    assert(!isVirtual());
+    return FileInfo::getInfoForPath(getName());
+  }
+};
+
 #pragma mark - Task implementations
 
 /// This is the task used to "build" a target, it translates between the request
@@ -266,7 +313,7 @@ public:
 /// This is the task to "build" a node which represents pure raw input to the
 /// system.
 class InputNodeTask : public Task {
-  Node& node;
+  BuildNode& node;
 
   virtual void start(BuildEngine& engine) override {
     assert(node.getProducers().empty());
@@ -281,11 +328,18 @@ class InputNodeTask : public Task {
   }
 
   virtual void inputsAvailable(BuildEngine& engine) override {
+    // Handle virtual nodes.
+    if (node.isVirtual()) {
+      engine.taskIsComplete(
+          this, BuildValue::makeVirtualInput().toData());
+      return;
+    }
+    
     // Get the information on the file.
     //
     // FIXME: This needs to delegate, since we want to have a notion of
     // different node types.
-    auto info = FileInfo::getInfoForPath(node.getName());
+    auto info = node.getFileInfo();
     if (info.isMissing()) {
       engine.taskIsComplete(this, BuildValue::makeMissingInput().toData());
       return;
@@ -296,9 +350,13 @@ class InputNodeTask : public Task {
   }
 
 public:
-  InputNodeTask(Node& node) : node(node) {}
+  InputNodeTask(BuildNode& node) : node(node) {}
 
-  static bool isResultValid(const Node& node, const BuildValue& value) {
+  static bool isResultValid(const BuildNode& node, const BuildValue& value) {
+    // Virtual input nodes are always valid unless the value type is wrong.
+    if (node.isVirtual())
+      return value.isVirtualInput();
+    
     // If the previous value wasn't for an existing input, always recompute.
     if (!value.isExistingInput())
       return false;
@@ -312,7 +370,7 @@ public:
     //
     // We can solve this by caching ourselves but I wonder if it is something
     // the engine should support more naturally.
-    auto info = FileInfo::getInfoForPath(node.getName());
+    auto info = node.getFileInfo();
     if (info.isMissing())
       return false;
 
@@ -470,7 +528,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     // command, which would reduce the number of tasks in the system. For now we
     // do the uniform thing, but do differentiate between input and command
     // nodes.
-    Node* node = it->second.get();
+    BuildNode* node = static_cast<BuildNode*>(it->second.get());
 
     // Create an input node if there are no producers.
     if (node->getProducers().empty()) {
@@ -548,26 +606,12 @@ bool BuildSystemImpl::build(const std::string& target) {
   return false;
 }
 
-#pragma mark - BuildNode implementation
-
-// FIXME: Figure out how this is going to be organized.
-class BuildNode : public Node {
-public:
-  using Node::Node;
-
-  virtual bool configureAttribute(const std::string& name,
-                                  const std::string& value) override {
-    // We don't support any custom attributes.
-    return false;
-  }
-};
-
 #pragma mark - PhonyTool implementation
 
 class PhonyCommand : public Command {
   BuildSystemImpl& system;
-  std::vector<Node*> inputs;
-  std::vector<Node*> outputs;
+  std::vector<BuildNode*> inputs;
+  std::vector<BuildNode*> outputs;
   std::string args;
 
 public:
@@ -579,11 +623,17 @@ public:
   }
   
   virtual void configureInputs(const std::vector<Node*>& value) override {
-    inputs = value;
+    inputs.reserve(value.size());
+    for (auto* node: value) {
+      inputs.emplace_back(static_cast<BuildNode*>(node));
+    }
   }
 
   virtual void configureOutputs(const std::vector<Node*>& value) override {
-    outputs = value;
+    outputs.reserve(value.size());
+    for (auto* node: value) {
+      outputs.emplace_back(static_cast<BuildNode*>(node));
+    }
   }
 
   virtual bool configureAttribute(const std::string& name,
@@ -602,6 +652,10 @@ public:
       return BuildValue::makeMissingInput();
 
     // Otherwise, return the actual result for the output.
+
+    if (static_cast<BuildNode*>(node)->isVirtual()) {
+      return BuildValue::makeVirtualInput();
+    }
     
     // Find the index of the output node.
     auto it = std::find(outputs.begin(), outputs.end(), node);
@@ -626,8 +680,12 @@ public:
     for (unsigned i = 0, e = outputs.size(); i != e; ++i) {
       auto* node = outputs[i];
 
+      // Ignore virtual outputs.
+      if (node->isVirtual())
+        continue;
+      
       // Always rebuild if the output is missing.
-      auto info = FileInfo::getInfoForPath(node->getName());
+      auto info = node->getFileInfo();
       if (info.isMissing())
         return false;
 
@@ -667,7 +725,11 @@ public:
       // FIXME: We need to delegate to the node here.
       llvm::SmallVector<FileInfo, 8> outputInfos;
       for (auto* node: outputs) {
-        outputInfos.push_back(FileInfo::getInfoForPath(node->getName()));
+        if (node->isVirtual()) {
+          outputInfos.push_back(FileInfo{});
+        } else {
+          outputInfos.push_back(node->getFileInfo());
+        }
       }
       
       // Otherwise, complete with a successful result.
@@ -705,8 +767,8 @@ public:
 class ShellCommand : public Command {
   BuildSystemImpl& system;
   std::string description;
-  std::vector<Node*> inputs;
-  std::vector<Node*> outputs;
+  std::vector<BuildNode*> inputs;
+  std::vector<BuildNode*> outputs;
   std::string args;
 
 public:
@@ -718,11 +780,17 @@ public:
   }
   
   virtual void configureInputs(const std::vector<Node*>& value) override {
-    inputs = value;
+    inputs.reserve(value.size());
+    for (auto* node: value) {
+      inputs.emplace_back(static_cast<BuildNode*>(node));
+    }
   }
 
   virtual void configureOutputs(const std::vector<Node*>& value) override {
-    outputs = value;
+    outputs.reserve(value.size());
+    for (auto* node: value) {
+      outputs.emplace_back(static_cast<BuildNode*>(node));
+    }
   }
 
   virtual bool configureAttribute(const std::string& name,
@@ -738,7 +806,6 @@ public:
     return true;
   }
 
-
   virtual BuildValue getResultForOutput(Node* node,
                                         const BuildValue& value) override {
     // If the value was a failed command, treat the node as missing.
@@ -748,7 +815,11 @@ public:
       return BuildValue::makeMissingInput();
 
     // Otherwise, return the actual result for the output.
-    
+
+    if (static_cast<BuildNode*>(node)->isVirtual()) {
+      return BuildValue::makeVirtualInput();
+    }
+
     // Find the index of the output node.
     auto it = std::find(outputs.begin(), outputs.end(), node);
     assert(it != outputs.end());
@@ -773,9 +844,13 @@ public:
     // Check the timestamps on each of the outputs.
     for (unsigned i = 0, e = outputs.size(); i != e; ++i) {
       auto* node = outputs[i];
+      
+      // Ignore virtual outputs.
+      if (node->isVirtual())
+        continue;
 
       // Always rebuild if the output is missing.
-      auto info = FileInfo::getInfoForPath(node->getName());
+      auto info = node->getFileInfo();
       if (info.isMissing())
         return false;
 
@@ -831,7 +906,11 @@ public:
       // FIXME: We need to delegate to the node here.
       llvm::SmallVector<FileInfo, 8> outputInfos;
       for (auto* node: outputs) {
-        outputInfos.push_back(FileInfo::getInfoForPath(node->getName()));
+        if (node->isVirtual()) {
+          outputInfos.push_back(FileInfo{});
+        } else {
+          outputInfos.push_back(node->getFileInfo());
+        }
       }
       
       // Otherwise, complete with a successful result.
@@ -930,7 +1009,8 @@ void BuildSystemFileDelegate::loadedCommand(const std::string& name,
 std::unique_ptr<Node>
 BuildSystemFileDelegate::lookupNode(const std::string& name,
                                     bool isImplicit) {
-  return std::make_unique<BuildNode>(name);
+  bool isVirtual = !name.empty() && name[0] == '<' && name.back() == '>';
+  return std::make_unique<BuildNode>(system, name, isVirtual);
 }
 
 }

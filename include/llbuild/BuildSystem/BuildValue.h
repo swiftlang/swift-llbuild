@@ -31,6 +31,9 @@ class BuildValue {
     /// An invalid value, for sentinel purposes.
     Invalid = 0,
 
+    /// A value produced by a virtual input.
+    VirtualInput,
+
     /// A value produced by an existing input file.
     ExistingInput,
 
@@ -127,6 +130,9 @@ public:
   static BuildValue makeInvalid() {
     return BuildValue(Kind::Invalid);
   }
+  static BuildValue makeVirtualInput() {
+    return BuildValue(Kind::VirtualInput);
+  }
   static BuildValue makeExistingInput(FileInfo outputInfo) {
     assert(!outputInfo.isMissing());
     return BuildValue(Kind::ExistingInput, outputInfo);
@@ -151,6 +157,7 @@ public:
   /// @{
 
   bool isInvalid() const { return kind == Kind::Invalid; }
+  bool isVirtualInput() const { return kind == Kind::VirtualInput; }
   bool isExistingInput() const { return kind == Kind::ExistingInput; }
   bool isMissingInput() const { return kind == Kind::MissingInput; }
   bool isSuccessfulCommand() const {return kind == Kind::SuccessfulCommand; }
