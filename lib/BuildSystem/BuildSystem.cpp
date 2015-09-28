@@ -412,7 +412,7 @@ class ProducedNodeTask : public Task {
   virtual void provideValue(BuildEngine&, uintptr_t inputID,
                             const ValueType& valueData) override {
     auto value = BuildValue::fromData(valueData);
-    
+
     // Extract the node result from the command.
     assert(producingCommand);
     nodeResult = std::move(producingCommand->getResultForOutput(&node, value));
@@ -645,11 +645,9 @@ public:
 
   virtual BuildValue getResultForOutput(Node* node,
                                         const BuildValue& value) override {
-    // If the value was a failed command, treat the node as missing.
-    //
-    // FIXME: Reevaluate once nodes become more general.
-    if (value.isFailedCommand())
-      return BuildValue::makeMissingInput();
+    // If the value was a failed or skipped command, propagate the failure.
+    if (value.isFailedCommand() || value.isSkippedCommand())
+      return BuildValue::makeFailedInput();
 
     // Otherwise, return the actual result for the output.
 
@@ -712,6 +710,7 @@ public:
   virtual void provideValue(BuildSystemCommandInterface&, Task*,
                             uintptr_t inputID,
                             const BuildValue& value) override {
+    // FIXME: Need to implement handling for 'phony' commands of failure.
   }
 
   virtual void inputsAvailable(BuildSystemCommandInterface& system,
@@ -771,6 +770,18 @@ class ShellCommand : public Command {
   std::vector<BuildNode*> outputs;
   std::string args;
 
+  // Build specific data.
+  //
+  // FIXME: We should probably factor this out somewhere else, so we can enforce
+  // it is never used when initialized incorrectly.
+
+  /// If true, the command should be skipped (because of an error in an input).
+  bool shouldSkip = false;
+
+  /// If true, the command had a missing input (this implies ShouldSkip is
+  /// true).
+  bool hasMissingInput = false;
+  
 public:
   ShellCommand(BuildSystemImpl& system, const std::string& name)
       : Command(name), system(system) {}
@@ -808,11 +819,9 @@ public:
 
   virtual BuildValue getResultForOutput(Node* node,
                                         const BuildValue& value) override {
-    // If the value was a failed command, treat the node as missing.
-    //
-    // FIXME: Reevaluate once nodes become more general.
-    if (value.isFailedCommand())
-      return BuildValue::makeMissingInput();
+    // If the value was a failed or skipped command, propagate the failure.
+    if (value.isFailedCommand() || value.isSkippedCommand())
+      return BuildValue::makeFailedInput();
 
     // Otherwise, return the actual result for the output.
 
@@ -864,9 +873,14 @@ public:
   }
 
   virtual void start(BuildSystemCommandInterface& system, Task* task) override {
+    // Initialize the build state.
+    shouldSkip = false;
+    hasMissingInput = false;
+    
     // Request all of the inputs.
-    for (const auto& node: inputs) {
-      system.taskNeedsInput(task, BuildKey::makeNode(node), /*InputID=*/0);
+    unsigned id = 0;
+    for (auto it = inputs.begin(), ie = inputs.end(); it != ie; ++it, ++id) {
+      system.taskNeedsInput(task, BuildKey::makeNode(*it), id);
     }
   }
 
@@ -877,10 +891,45 @@ public:
   virtual void provideValue(BuildSystemCommandInterface&, Task*,
                             uintptr_t inputID,
                             const BuildValue& value) override {
+    // Process the input value to see if we should skip this command.
+
+    // All direct inputs should be individual node values.
+    assert(!value.hasMultipleOutputs());
+    assert(value.isExistingInput() || value.isMissingInput() ||
+           value.isFailedInput());
+
+    // If the value is not an existing input, then we shouldn't run this
+    // command.
+    if (!value.isExistingInput()) {
+      shouldSkip = true;
+      if (value.isMissingInput()) {
+        hasMissingInput = true;
+
+        // FIXME: Design the logging and status output APIs.
+        fprintf(stderr, "error: missing input '%s' and no rule to build it\n",
+                inputs[inputID]->getName().c_str());
+      }
+    }
   }
 
   virtual void inputsAvailable(BuildSystemCommandInterface& system,
                                Task* task) override {
+    // If this command should be skipped, do nothing.
+    if (shouldSkip) {
+      // If this command had a failed input, treat it as having failed.
+      if (hasMissingInput) {
+        // FIXME: Design the logging and status output APIs.
+        fprintf(stderr, "error: cannot build '%s' due to missing input\n",
+                outputs[0]->getName().c_str());
+
+        // FIXME: Update a count of failed commands.
+      }
+
+      system.taskIsComplete(task, BuildValue::makeSkippedCommand());
+      return;
+    }
+    assert(!hasMissingInput);
+    
     // Suppress static analyzer false positive on generalized lambda capture
     // (rdar://problem/22165130).
 #ifndef __clang_analyzer__
@@ -899,6 +948,8 @@ public:
       if (!system.getExecutionQueue().executeShellCommand(context, args)) {
         // If the command failed, the result is failure.
         system.taskIsComplete(task, BuildValue::makeFailedCommand());
+
+        // FIXME: Update a count of failed commands.
         return;
       }
 

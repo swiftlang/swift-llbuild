@@ -23,8 +23,10 @@ llvm::StringRef BuildValue::stringForKind(BuildValue::Kind kind) {
     CASE(VirtualInput);
     CASE(ExistingInput);
     CASE(MissingInput);
+    CASE(FailedInput);
     CASE(SuccessfulCommand);
     CASE(FailedCommand);
+    CASE(SkippedCommand);
     CASE(Target);
 #undef CASE
   }

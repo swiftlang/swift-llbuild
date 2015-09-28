@@ -45,11 +45,17 @@ class BuildValue {
     /// A value produced by a missing input file.
     MissingInput,
 
+    /// A value for a produced output whose command failed.
+    FailedInput,
+
     /// A value produced by a successful command.
     SuccessfulCommand,
 
     /// A value produced by a failing command.
     FailedCommand,
+      
+    /// A value produced by a command which was skipped.
+    SkippedCommand,
 
     /// Sentinel value representing the result of "building" a top-level target.
     Target,
@@ -148,12 +154,18 @@ public:
   static BuildValue makeMissingInput() {
     return BuildValue(Kind::MissingInput);
   }
+  static BuildValue makeFailedInput() {
+    return BuildValue(Kind::FailedInput);
+  }
   static BuildValue makeSuccessfulCommand(
       llvm::ArrayRef<FileInfo> outputInfos) {
     return BuildValue(Kind::SuccessfulCommand, outputInfos);
   }
   static BuildValue makeFailedCommand() {
     return BuildValue(Kind::FailedCommand);
+  }
+  static BuildValue makeSkippedCommand() {
+    return BuildValue(Kind::SkippedCommand);
   }
   static BuildValue makeTarget() {
     return BuildValue(Kind::Target);
@@ -168,8 +180,10 @@ public:
   bool isVirtualInput() const { return kind == Kind::VirtualInput; }
   bool isExistingInput() const { return kind == Kind::ExistingInput; }
   bool isMissingInput() const { return kind == Kind::MissingInput; }
+  bool isFailedInput() const { return kind == Kind::FailedInput; }
   bool isSuccessfulCommand() const {return kind == Kind::SuccessfulCommand; }
   bool isFailedCommand() const { return kind == Kind::FailedCommand; }
+  bool isSkippedCommand() const { return kind == Kind::SkippedCommand; }
   bool isTarget() const { return kind == Kind::Target; }
 
   bool hasMultipleOutputs() const {

@@ -7,17 +7,34 @@
 # RUN: cp %s %t.build/build.llbuild
 # RUN: %{llbuild} buildsystem build --chdir %t.build build.llbuild > %t.out 2> %t.err
 # RUN: test ! -f %t.build/output
-# RUN: %{FileCheck} < %t.err %s --check-prefix=CHECK-FAILURE
+# RUN: %{FileCheck} %s --input-file %t.out --check-prefix=CHECK-FAILURE
+# RUN: %{FileCheck} %s --input-file %t.err --check-prefix=CHECK-FAILURE-ERR
 #
-# CHECK-FAILURE: cp: input: No such file or directory
+# CHECK-FAILURE: cp input output-1
+# CHECK-FAILURE-NOT: cp output-1 output
+# CHECK-FAILURE-ERR: cp: input: No such file or directory
+# CHECK-FAILURE-ERR-NOT: cp: output-1: No such file or directory
+
 
 # Rebuild and verify the command reruns.
 #
 # RUN: %{llbuild} buildsystem build --chdir %t.build build.llbuild > %t2.out 2> %t2.err
 # RUN: test ! -f %t.build/output
-# RUN: %{FileCheck} < %t2.err %s --check-prefix=CHECK-FAILURE-REBUILD
+# RUN: %{FileCheck} %s --input-file %t2.err --check-prefix=CHECK-FAILURE-REBUILD-ERR
 #
-# CHECK-FAILURE-REBUILD: cp: input: No such file or directory
+# CHECK-FAILURE-REBUILD-ERR: cp: input: No such file or directory
+
+
+# Create the missing input, and verify everything works. Aside from the obvious,
+# this also ensures our patterns above stay up to date.
+#
+# RUN: touch %t.build/input
+# RUN: %{llbuild} buildsystem build --chdir %t.build build.llbuild > %t3.out
+# RUN: test -f %t.build/output
+# RUN: %{FileCheck} %s --input-file %t3.out --check-prefix=CHECK-SUCCESSFUL-REBUILD
+#
+# CHECK-SUCCESSFUL-REBUILD: cp input output-1
+# CHECK-SUCCESSFUL-REBUILD: cp output-1 output
 
 client:
   name: basic
@@ -26,9 +43,14 @@ targets:
   "": ["output"]
 
 commands:
-  cp-output:
+  C1:
     tool: shell
-    inputs: ["input"]
+    # NOTE: We intentionally don't declare the input here, we don't want to test "missing input behavior".
+    outputs: ["output-1"]
+    args: cp input output-1
+    
+  C2:
+    tool: shell
+    inputs: ["output-1"]
     outputs: ["output"]
-    # FIXME: Design a limited mechanism for substitution. Might be tool specific.
-    args: cp input output
+    args: cp output-1 output
