@@ -469,10 +469,13 @@ public:
 };
 
 class BuildCommandDelegate : public BuildSystemDelegate {
+  bool useSerialBuild;
   llvm::StringRef bufferBeingParsed;
   
 public:
-  BuildCommandDelegate() : BuildSystemDelegate("basic", /*version=*/0) {}
+  BuildCommandDelegate(bool useSerialBuild)
+      : BuildSystemDelegate("basic", /*version=*/0),
+        useSerialBuild(useSerialBuild) {}
 
   void setFileContentsBeingParsed(llvm::StringRef buffer) override {
     bufferBeingParsed = buffer;
@@ -495,6 +498,10 @@ public:
   }
 
   virtual std::unique_ptr<BuildExecutionQueue> createExecutionQueue() override {
+    if (useSerialBuild) {
+      return std::make_unique<ExecutionQueue>(1);
+    }
+    
     // Get the number of CPUs to use.
     long numCPUs = sysconf(_SC_NPROCESSORS_ONLN);
     unsigned numLanes;
@@ -522,6 +529,8 @@ static void buildUsage(int exitCode) {
           "enable building against the database at PATH [default='build.db']");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "-C <PATH>, --chdir <PATH>",
           "change directory to PATH before building");
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--serial",
+          "Do not build in parallel");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--trace <PATH>",
           "trace build engine operation to PATH");
   ::exit(exitCode);
@@ -530,6 +539,7 @@ static void buildUsage(int exitCode) {
 static int executeBuildCommand(std::vector<std::string> args) {
   std::string dbFilename = "build.db";
   std::string chdirPath;
+  bool useSerialBuild = false;
   std::string traceFilename;
   
   while (!args.empty() && args[0][0] == '-') {
@@ -559,6 +569,8 @@ static int executeBuildCommand(std::vector<std::string> args) {
       }
       chdirPath = args[0];
       args.erase(args.begin());
+    } else if (option == "--serial") {
+      useSerialBuild = true;
     } else if (option == "--trace") {
       if (args.empty()) {
         fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
@@ -596,7 +608,7 @@ static int executeBuildCommand(std::vector<std::string> args) {
 
   std::string filename = args[0].c_str();
 
-  BuildCommandDelegate delegate{};
+  BuildCommandDelegate delegate(useSerialBuild);
   BuildSystem system(delegate, filename);
 
   // Enable tracing, if requested.
