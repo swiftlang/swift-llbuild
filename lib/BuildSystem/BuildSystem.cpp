@@ -896,11 +896,11 @@ public:
     // All direct inputs should be individual node values.
     assert(!value.hasMultipleOutputs());
     assert(value.isExistingInput() || value.isMissingInput() ||
-           value.isFailedInput());
+           value.isFailedInput() || value.isVirtualInput());
 
-    // If the value is not an existing input, then we shouldn't run this
-    // command.
-    if (!value.isExistingInput()) {
+    // If the value is not an existing or virtual input, then we shouldn't run
+    // this command.
+    if (!value.isExistingInput() && !value.isVirtualInput()) {
       shouldSkip = true;
       if (value.isMissingInput()) {
         hasMissingInput = true;

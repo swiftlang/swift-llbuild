@@ -10,6 +10,7 @@
 # RUN: %{FileCheck} --check-prefix CHECK-INITIAL --input-file %t.out %s
 #
 # CHECK-INITIAL: touch actual-output
+# CHECK-INITIAL: true
 
 # Perform a second build, which shouldn't do anything.
 #
@@ -17,6 +18,7 @@
 # RUN: %{FileCheck} --check-prefix CHECK-REBUILD --input-file %t.out %s
 #
 # CHECK-REBUILD-NOT: touch actual-output
+# CHECK-REBUILD-NOT: true
 
 client:
   name: basic
@@ -33,8 +35,14 @@ commands:
     tool: shell
     outputs: ["<VIRTUAL1>", "VIRTUAL2", "actual-output"]
     args: touch actual-output
-  
+
+  c2:
+    tool: shell
+    inputs: ["VIRTUAL2"]
+    outputs: ["<VIRTUAL3>"]
+    args: true
+    
   output:
     tool: phony
-    inputs: ["<VIRTUAL1>", "VIRTUAL2"]
+    inputs: ["<VIRTUAL1>", "VIRTUAL2", "<VIRTUAL3>"]
     outputs: ["output"]
