@@ -1,0 +1,24 @@
+# Check that the tool works.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: touch %t.build/input
+# RUN: cp %s %t.build/build.swift-build
+# RUN: /bin/sh -c 'cd %t.build && %{swift-build-tool} > %t.out'
+# RUN: %{FileCheck} < %t.out %s
+#
+# CHECK: ECHO
+# CHECK: Hello Swift Build Tool
+
+client:
+  name: basic
+
+targets:
+  "": ["echo"]
+
+commands:
+  C1:
+    tool: shell
+    outputs: ["echo"]
+    description: ECHO
+    args: echo "Hello Swift Build Tool"
