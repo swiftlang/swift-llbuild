@@ -893,6 +893,7 @@ public:
       } else {
         fprintf(stdout, "%s\n", description.c_str());
       }
+      fflush(stdout);
 
       // Execute the command.
       if (!system.getExecutionQueue().executeShellCommand(context, args)) {
