@@ -77,6 +77,14 @@ public:
 
   /// Called by the build system to get create the object used to dispatch work.
   virtual std::unique_ptr<BuildExecutionQueue> createExecutionQueue() = 0;
+
+  /// Called by the build system to determine if the build has been cancelled.
+  ///
+  /// This is checked before starting each new command.
+  virtual bool isCancelled() = 0;
+  
+  /// Called by the build system to report a command failure.
+  virtual void hadCommandFailure() = 0;
 };
 
 /// The BuildSystem class is used to perform builds using the native build

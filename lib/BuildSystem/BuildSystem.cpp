@@ -912,8 +912,14 @@ public:
     }
   }
 
-  virtual void inputsAvailable(BuildSystemCommandInterface& system,
+  virtual void inputsAvailable(BuildSystemCommandInterface& bsci,
                                Task* task) override {
+    // If the build should cancel, do nothing.
+    if (system.getDelegate().isCancelled()) {
+      bsci.taskIsComplete(task, BuildValue::makeSkippedCommand());
+      return;
+    }
+    
     // If this command should be skipped, do nothing.
     if (shouldSkip) {
       // If this command had a failed input, treat it as having failed.
@@ -922,10 +928,11 @@ public:
         fprintf(stderr, "error: cannot build '%s' due to missing input\n",
                 outputs[0]->getName().c_str());
 
-        // FIXME: Update a count of failed commands.
+        // Report the command failure.
+        system.getDelegate().hadCommandFailure();
       }
 
-      system.taskIsComplete(task, BuildValue::makeSkippedCommand());
+      bsci.taskIsComplete(task, BuildValue::makeSkippedCommand());
       return;
     }
     assert(!hasMissingInput);
@@ -933,7 +940,7 @@ public:
     // Suppress static analyzer false positive on generalized lambda capture
     // (rdar://problem/22165130).
 #ifndef __clang_analyzer__
-    auto fn = [this, &system=system, task](QueueJobContext* context) {
+    auto fn = [this, &bsci=bsci, task](QueueJobContext* context) {
       // Log the command.
       //
       // FIXME: Design the logging and status output APIs.
@@ -945,11 +952,11 @@ public:
       fflush(stdout);
 
       // Execute the command.
-      if (!system.getExecutionQueue().executeShellCommand(context, args)) {
+      if (!bsci.getExecutionQueue().executeShellCommand(context, args)) {
         // If the command failed, the result is failure.
-        system.taskIsComplete(task, BuildValue::makeFailedCommand());
+        bsci.taskIsComplete(task, BuildValue::makeFailedCommand());
 
-        // FIXME: Update a count of failed commands.
+        system.getDelegate().hadCommandFailure();
         return;
       }
 
@@ -966,10 +973,10 @@ public:
       }
       
       // Otherwise, complete with a successful result.
-      system.taskIsComplete(
+      bsci.taskIsComplete(
           task, BuildValue::makeSuccessfulCommand(outputInfos));
     };
-    system.addJob({ this, std::move(fn) });
+    bsci.addJob({ this, std::move(fn) });
 #endif
   }
 };

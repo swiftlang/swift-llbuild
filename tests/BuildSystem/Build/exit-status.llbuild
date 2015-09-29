@@ -1,0 +1,22 @@
+# Check that we report a proper exit status with failing commands.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.llbuild
+# RUN: /bin/sh -c "%{llbuild} buildsystem build --chdir %t.build build.llbuild; echo \"exit code: $?\"" > %t.out
+# RUN: %{FileCheck} < %t.out %s
+
+# CHECK: exit code: 1
+
+client:
+  name: basic
+
+targets:
+  "": ["output"]
+
+commands:
+  C2:
+    tool: shell
+    inputs: ["output-1"]
+    outputs: ["output"]
+    args: false

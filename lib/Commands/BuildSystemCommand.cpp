@@ -471,6 +471,9 @@ public:
 class BuildCommandDelegate : public BuildSystemDelegate {
   bool useSerialBuild;
   llvm::StringRef bufferBeingParsed;
+
+  /// The number of failed commands.
+  std::atomic<unsigned> numFailedCommands{0};
   
 public:
   BuildCommandDelegate(bool useSerialBuild)
@@ -481,6 +484,10 @@ public:
     bufferBeingParsed = buffer;
   }
 
+  unsigned getNumFailedCommands() {
+    return numFailedCommands;
+  }
+  
   virtual void error(const std::string& filename,
                      const Token& at,
                      const std::string& message) override {
@@ -513,6 +520,16 @@ public:
     }
     
     return std::make_unique<ExecutionQueue>(numLanes);
+  }
+
+  virtual bool isCancelled() override {
+    // Stop the build after any command failures.
+    return numFailedCommands > 0;
+  }
+
+  virtual void hadCommandFailure() override{
+    // Increment the failed command count.
+    ++numFailedCommands;
   }
 };
 
@@ -644,6 +661,14 @@ static int executeBuildCommand(std::vector<std::string> args) {
   std::string targetToBuild = args.size() == 1 ? "" : args[1];
     
   system.build(targetToBuild);
+
+  // If there were failed commands, report the count and exit with an error
+  // status.
+  if (delegate.getNumFailedCommands()) {
+      fprintf(stderr, "%s: error: build had %d command failures\n",
+              getProgramName(), delegate.getNumFailedCommands());
+      return 1;
+  }
   
   return 0;
 }
