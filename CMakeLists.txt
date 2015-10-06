@@ -1,9 +1,15 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 2.8)
 
 # Default to building the Debug configuration.
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "No build type selected, default to Debug")
   set(CMAKE_BUILD_TYPE "Debug")
+endif()
+
+if(CMAKE_VERSION VERSION_LESS 3.1.20141117)
+  set(cmake_3_2_USES_TERMINAL)
+else()
+  set(cmake_3_2_USES_TERMINAL USES_TERMINAL)
 endif()
 
 # Include standard CMake modules.
