@@ -14,11 +14,11 @@ client:
   name: basic
 
 targets:
-  "": ["echo"]
+  "": ["<echo>"]
 
 commands:
   C1:
     tool: shell
-    outputs: ["echo"]
+    outputs: ["<echo>"]
     description: ECHO
     args: echo "Hello Swift Build Tool"

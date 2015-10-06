@@ -13,7 +13,7 @@ client:
   name: basic
 
 targets:
-  "": ["output"]
+  "": ["<output>"]
 
 commands:
   thing-1:
@@ -29,4 +29,4 @@ commands:
   output:
     tool: phony
     inputs: ["thing-1", "thing-2"]
-    outputs: ["output"]
+    outputs: ["<output>"]

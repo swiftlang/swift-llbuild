@@ -24,7 +24,7 @@ client:
   name: basic
 
 targets:
-  "": ["output"]
+  "": ["<output>"]
 
 nodes:
   VIRTUAL2:
@@ -45,4 +45,4 @@ commands:
   output:
     tool: phony
     inputs: ["<VIRTUAL1>", "VIRTUAL2", "<VIRTUAL3>"]
-    outputs: ["output"]
+    outputs: ["<output>"]

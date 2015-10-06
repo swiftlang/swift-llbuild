@@ -19,15 +19,15 @@ client:
   name: basic
 
 targets:
-  "": ["target-A"]
-  "B": ["target-B"]
+  "": ["<target-A>"]
+  "B": ["<target-B>"]
 
 commands:
   target-A:
     tool: shell
-    outputs: ["target-A"]
+    outputs: ["<target-A>"]
     args: echo target-A
   target-B:
     tool: shell
-    outputs: ["target-B"]
+    outputs: ["<target-B>"]
     args: echo target-B
