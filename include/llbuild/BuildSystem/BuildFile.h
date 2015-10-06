@@ -157,7 +157,7 @@ public:
   // somewhere.
   //
   /// @{
-
+  
   /// Get the appropriate output for a particular node (known to be produced by
   /// this command) given the command's result.
   virtual BuildValue getResultForOutput(Node* node,

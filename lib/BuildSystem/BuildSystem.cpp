@@ -16,6 +16,7 @@
 #include "llvm/ADT/StringRef.h"
 
 #include "llbuild/Basic/FileInfo.h"
+#include "llbuild/Basic/Hashing.h"
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/BuildEngine.h"
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
@@ -499,6 +500,7 @@ public:
   CommandTask(Command& command) : command(command) {}
 
   static bool isResultValid(Command& command, const BuildValue& value) {
+    // Delegate to the command for further checking.
     return command.isResultValid(value);
   }
 };
@@ -641,8 +643,18 @@ class PhonyCommand : public Command {
   BuildSystemImpl& system;
   std::vector<BuildNode*> inputs;
   std::vector<BuildNode*> outputs;
-  std::string args;
 
+  uint64_t getSignature() {
+    uint64_t result = 0;
+    for (const auto* input: inputs) {
+      result ^= basic::hashString(input->getName());
+    }
+    for (const auto* output: outputs) {
+      result ^= basic::hashString(output->getName());
+    }
+    return result;
+  }
+  
 public:
   PhonyCommand(BuildSystemImpl& system, const std::string& name)
       : Command(name), system(system) {}
@@ -699,8 +711,12 @@ public:
   }
   
   virtual bool isResultValid(const BuildValue& value) override {
-    // If the previous value wasn't for a successful command, always recompute.
+    // If the prior value wasn't for a successful command, recompute.
     if (!value.isSuccessfulCommand())
+      return false;
+    
+    // If the command's signature has changed since it was built, rebuild.
+    if (value.getCommandSignature() != getSignature())
       return false;
 
     // Check the timestamps on each of the outputs.
@@ -762,7 +778,7 @@ public:
       
       // Otherwise, complete with a successful result.
       system.taskIsComplete(
-          task, BuildValue::makeSuccessfulCommand(outputInfos));
+          task, BuildValue::makeSuccessfulCommand(outputInfos, getSignature()));
     };
     system.addJob({ this, std::move(fn) });
 #endif
@@ -810,6 +826,18 @@ class ShellCommand : public Command {
   /// If true, the command had a missing input (this implies ShouldSkip is
   /// true).
   bool hasMissingInput = false;
+
+  uint64_t getSignature() {
+    uint64_t result = 0;
+    for (const auto* input: inputs) {
+      result ^= basic::hashString(input->getName());
+    }
+    for (const auto* output: outputs) {
+      result ^= basic::hashString(output->getName());
+    }
+    result ^= basic::hashString(args);
+    return result;
+  }
   
 public:
   ShellCommand(BuildSystemImpl& system, const std::string& name)
@@ -873,11 +901,15 @@ public:
   }
   
   virtual bool isResultValid(const BuildValue& value) override {
-    // If the previous value wasn't for a successful command, always recompute.
+    // If the prior value wasn't for a successful command, recompute.
     if (!value.isSuccessfulCommand())
       return false;
-
-    // FIXME: Check command signature.
+    
+    // If the command's signature has changed since it was built, rebuild.
+    fprintf(stderr, "old: %lld, new: %lld\n", value.getCommandSignature(),
+            getSignature());
+    if (value.getCommandSignature() != getSignature())
+      return false;
 
     // Check the timestamps on each of the outputs.
     for (unsigned i = 0, e = outputs.size(); i != e; ++i) {
@@ -1003,7 +1035,7 @@ public:
       
       // Otherwise, complete with a successful result.
       bsci.taskIsComplete(
-          task, BuildValue::makeSuccessfulCommand(outputInfos));
+          task, BuildValue::makeSuccessfulCommand(outputInfos, getSignature()));
     };
     bsci.addJob({ this, std::move(fn) });
 #endif

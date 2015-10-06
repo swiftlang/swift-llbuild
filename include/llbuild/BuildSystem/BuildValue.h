@@ -68,6 +68,9 @@ class BuildValue {
   /// The number of attached output infos.
   uint32_t numOutputInfos = 0;
 
+  /// The command hash, for successful commands.
+  uint64_t commandSignature;
+
   union {
     /// The file info for the rule output, for existing inputs and successful
     /// commands with a single output.
@@ -86,11 +89,10 @@ private:
   BuildValue(Kind kind) : kind(kind) {
     valueData.asOutputInfo = {};
   }
-  BuildValue(Kind kind, FileInfo outputInfo) : kind(kind), numOutputInfos(1) {
-    valueData.asOutputInfo = std::move(outputInfo);
-  }
-  BuildValue(Kind kind, llvm::ArrayRef<FileInfo> outputInfos)
-      : kind(kind), numOutputInfos(outputInfos.size())
+  BuildValue(Kind kind, llvm::ArrayRef<FileInfo> outputInfos,
+             uint64_t commandSignature = 0)
+      : kind(kind), numOutputInfos(outputInfos.size()),
+        commandSignature(commandSignature)
   {
     assert(numOutputInfos >= 1);
     if (numOutputInfos == 1) {
@@ -158,8 +160,8 @@ public:
     return BuildValue(Kind::FailedInput);
   }
   static BuildValue makeSuccessfulCommand(
-      llvm::ArrayRef<FileInfo> outputInfos) {
-    return BuildValue(Kind::SuccessfulCommand, outputInfos);
+      llvm::ArrayRef<FileInfo> outputInfos, uint64_t commandSignature) {
+    return BuildValue(Kind::SuccessfulCommand, outputInfos, commandSignature);
   }
   static BuildValue makeFailedCommand() {
     return BuildValue(Kind::FailedCommand);
@@ -214,6 +216,11 @@ public:
       assert(n == 0);
       return valueData.asOutputInfo;
     }
+  }
+
+  uint64_t getCommandSignature() const {
+    assert(isSuccessfulCommand() && "invalid call for value kind");
+    return commandSignature;
   }
 
   /// @}

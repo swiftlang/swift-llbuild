@@ -1,0 +1,49 @@
+# Check that commands are rerun when signatures change.
+#
+# We use 'grep' to slice out two different subfiles from the same file.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+#
+# RUN: grep -A1000 "VERSION-BEGIN-[1]" %s | grep -B10000 "VERSION-END-1" | grep -ve '^--$' > %t.build/build-1.llbuild
+# RUN: %{llbuild} buildsystem build --chdir %t.build build-1.llbuild > %t1.out
+# RUN: %{FileCheck} --check-prefix CHECK-VERSION-1 --input-file %t1.out %s
+#
+# RUN: grep -A1000 "VERSION-BEGIN-[2]" %s | grep -B10000 "VERSION-END-2" | grep -ve '^--$' > %t.build/build-2.llbuild
+# RUN: %{llbuild} buildsystem build --chdir %t.build --trace /tmp/x.trace build-2.llbuild > %t2.out
+# RUN: %{FileCheck} --check-prefix CHECK-VERSION-2 --input-file %t2.out %s
+
+##### VERSION-BEGIN-1 #####
+
+# CHECK-VERSION-1: echo hi
+client:
+  name: basic
+
+targets:
+  "": ["<output>"]
+
+commands:
+  output:
+    tool: shell
+    outputs: ["<output>"]
+    args: echo hi
+
+##### VERSION-END-1 #####
+
+##### VERSION-BEGIN-2 #####
+
+# CHECK-VERSION-2: echo hello
+
+client:
+  name: basic
+
+targets:
+  "": ["<output>"]
+
+commands:
+  output:
+    tool: shell
+    outputs: ["<output>"]
+    args: echo hello
+
+##### VERSION-END-2 #####
