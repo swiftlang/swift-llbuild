@@ -16,6 +16,7 @@
 #include "llbuild/Basic/FileInfo.h"
 #include "llbuild/Basic/Hashing.h"
 #include "llbuild/Basic/SerialQueue.h"
+#include "llbuild/Basic/Version.h"
 #include "llbuild/Commands/Commands.h"
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/BuildEngine.h"
@@ -82,6 +83,8 @@ static void usage(int exitCode=1) {
   fprintf(stderr, "\nOptions:\n");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--help",
           "show this help message and exit");
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--version",
+          "print the Ninja compatible version number");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--simulate",
           "simulate the build, assuming commands succeed");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "-C, --chdir <PATH>",
@@ -1694,7 +1697,12 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     if (option == "--")
       break;
 
-    if (option == "--help") {
+    if (option == "--version") {
+      // Report a fake version for tools (like CMake) that detect compatibility
+      // based on the 'Ninja' version.
+      printf("1.5 Ninja Compatible (%s)\n", getLLBuildFullVersion().c_str());
+      return 0;
+    } else if (option == "--help") {
       usage(/*exitCode=*/0);
     } else if (option == "--simulate") {
       simulate = true;
