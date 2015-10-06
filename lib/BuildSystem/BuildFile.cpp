@@ -389,9 +389,11 @@ class BuildFileImpl {
           continue;
         }
 
-        target->getNodeNames().push_back(
-            stringFromScalarNode(
-                static_cast<llvm::yaml::ScalarNode*>(&node)));
+        target->getNodes().push_back(
+            getOrCreateNode(
+                stringFromScalarNode(
+                    static_cast<llvm::yaml::ScalarNode*>(&node)),
+                /*isImplicit=*/true));
       }
 
       // Let the delegate know we loaded a target.

@@ -227,8 +227,8 @@ void ParseBuildFileDelegate::loadedTarget(const std::string& name,
     // Print the nodes in the target.
     bool first = true;
     printf(" -- nodes: [");
-    for (const auto& nodeName: target.getNodeNames()) {
-      printf("%s'%s'", first ? "" : ", ", nodeName.c_str());
+    for (const auto& node: target.getNodes()) {
+      printf("%s'%s'", first ? "" : ", ", node->getName().c_str());
       first = false;
     }
     printf("]\n");

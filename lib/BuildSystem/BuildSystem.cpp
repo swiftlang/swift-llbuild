@@ -278,9 +278,10 @@ class TargetTask : public Task {
 
   virtual void start(BuildEngine& engine) override {
     // Request all of the necessary system tasks.
-    for (const auto& nodeName: target.getNodeNames()) {
-      engine.taskNeedsInput(this, BuildKey::makeNode(nodeName).toData(),
-                            /*InputID=*/0);
+    unsigned id = 0;
+    for (auto it = target.getNodes().begin(),
+           ie = target.getNodes().end(); it != ie; ++it, ++id) {
+      engine.taskNeedsInput(this, BuildKey::makeNode(*it).toData(), id);
     }
   }
 

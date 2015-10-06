@@ -59,11 +59,8 @@ public:
     return BuildKey('C', name);
   }
 
-  static BuildKey makeNode(llvm::StringRef name) {
-    return BuildKey('N', name);
-  }
   static BuildKey makeNode(const Node* node) {
-    return makeNode(node->getName());
+    return BuildKey('N', node->getName());
   }
 
   static BuildKey makeTarget(llvm::StringRef name) {

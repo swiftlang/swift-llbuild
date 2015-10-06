@@ -35,9 +35,10 @@ namespace buildsystem {
 /// The type used to pass parsed properties to the delegate.
 typedef std::vector<std::pair<std::string, std::string>> property_list_type;
 
+class BuildSystemCommandInterface;
 class BuildValue;
 class Command;
-class BuildSystemCommandInterface;
+class Node;
 
 /// Abstract tool definition used by the build file.
 class Tool {
@@ -70,16 +71,16 @@ class Target {
   /// The name of the target.
   std::string name;
 
-  /// The list of node names that should be computed to build this target.
-  std::vector<std::string> nodeNames;
+  /// The list of nodes that should be computed to build this target.
+  std::vector<Node*> nodes;
 
 public:
   explicit Target(std::string name) : name(name) { }
 
   const std::string& getName() const { return name; }
 
-  std::vector<std::string>& getNodeNames() { return nodeNames; }
-  const std::vector<std::string>& getNodeNames() const { return nodeNames; }
+  std::vector<Node*>& getNodes() { return nodes; }
+  const std::vector<Node*>& getNodes() const { return nodes; }
 };
 
 /// Abstract definition for a Node used by the build file.
