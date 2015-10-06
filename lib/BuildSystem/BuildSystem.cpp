@@ -603,7 +603,7 @@ bool BuildSystemImpl::build(const std::string& target) {
   // Build the target.
   getBuildEngine().build(BuildKey::makeTarget(target).toData());
 
-  return false;
+  return true;
 }
 
 #pragma mark - PhonyTool implementation
