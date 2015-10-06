@@ -271,10 +271,27 @@ public:
 
 #pragma mark - Task implementations
 
+class BuildSystemTask : public Task {
+protected:
+  static BuildSystemImpl& getBuildSystem(BuildEngine& engine) {
+    return static_cast<BuildSystemEngineDelegate*>(
+        engine.getDelegate())->getBuildSystem();
+  }
+};
+  
 /// This is the task used to "build" a target, it translates between the request
 /// for building a target key and the requests for all of its nodes.
-class TargetTask : public Task {
+class TargetTask : public BuildSystemTask {
   Target& target;
+  
+  // Build specific data.
+  //
+  // FIXME: We should probably factor this out somewhere else, so we can enforce
+  // it is never used when initialized incorrectly.
+
+  /// If true, the command had a missing input (this implies ShouldSkip is
+  /// true).
+  bool hasMissingInput = false;
 
   virtual void start(BuildEngine& engine) override {
     // Request all of the necessary system tasks.
@@ -291,13 +308,29 @@ class TargetTask : public Task {
   }
 
   virtual void provideValue(BuildEngine&, uintptr_t inputID,
-                            const ValueType& value) override {
+                            const ValueType& valueData) override {
     // Do nothing.
-    //
-    // FIXME: We may need to percolate an error status here.
+    auto value = BuildValue::fromData(valueData);
+
+    if (value.isMissingInput()) {
+      hasMissingInput = true;
+
+      // FIXME: Design the logging and status output APIs.
+      fprintf(stderr, "error: missing input '%s' and no rule to build it\n",
+              target.getNodes()[inputID]->getName().c_str());
+    }
   }
 
   virtual void inputsAvailable(BuildEngine& engine) override {
+    if (hasMissingInput) {
+      // FIXME: Design the logging and status output APIs.
+      fprintf(stderr, "error: cannot build target '%s' due to missing input\n",
+              target.getName().c_str());
+
+      // Report the command failure.
+      getBuildSystem(engine).getDelegate().hadCommandFailure();
+    }
+    
     // Complete the task immediately.
     engine.taskIsComplete(this, BuildValue::makeTarget().toData());
   }
@@ -313,7 +346,7 @@ public:
 
 /// This is the task to "build" a node which represents pure raw input to the
 /// system.
-class InputNodeTask : public Task {
+class InputNodeTask : public BuildSystemTask {
   BuildNode& node;
 
   virtual void start(BuildEngine& engine) override {
@@ -385,7 +418,7 @@ public:
 /// It is responsible for selecting the appropriate producer command to run to
 /// produce the node, and for synchronizing any external state the node depends
 /// on.
-class ProducedNodeTask : public Task {
+class ProducedNodeTask : public BuildSystemTask {
   Node& node;
   BuildValue nodeResult;
   Command* producingCommand = nullptr;
@@ -437,13 +470,8 @@ public:
 };
 
 /// This is the task to actually execute a command.
-class CommandTask : public Task {
+class CommandTask : public BuildSystemTask {
   Command& command;
-
-  static BuildSystemImpl& getBuildSystem(BuildEngine& engine) {
-    return static_cast<BuildSystemEngineDelegate*>(
-        engine.getDelegate())->getBuildSystem();
-  }
 
   virtual void start(BuildEngine& engine) override {
     command.start(getBuildSystem(engine).getCommandInterface(), this);
