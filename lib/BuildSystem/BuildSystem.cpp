@@ -906,8 +906,6 @@ public:
       return false;
     
     // If the command's signature has changed since it was built, rebuild.
-    fprintf(stderr, "old: %lld, new: %lld\n", value.getCommandSignature(),
-            getSignature());
     if (value.getCommandSignature() != getSignature())
       return false;
 
