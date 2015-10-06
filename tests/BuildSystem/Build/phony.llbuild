@@ -3,7 +3,7 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.llbuild
-# RUN: %{llbuild} buildsystem build --chdir %t.build build.llbuild > %t.out
+# RUN: %{llbuild} buildsystem build --chdir %t.build > %t.out
 # RUN: %{FileCheck} --input-file %t.out %s
 #
 # CHECK: THING1

@@ -5,14 +5,14 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.llbuild
-# RUN: %{llbuild} buildsystem build --serial --chdir %t.build build.llbuild > %t.out 2> %t.err || true
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.out 2> %t.err || true
 # RUN: %{FileCheck} %s --input-file %t.err --check-prefix=CHECK-FAILURE-ERR
 #
 # CHECK-FAILURE-ERR: missing input 'input' and no rule to build it
 # CHECK-FAILURE-ERR: cannot build 'output-1' due to missing input
 
 # RUN: touch %t.build/input
-# RUN: %{llbuild} buildsystem build --serial --chdir %t.build build.llbuild > %t2.out 2> %t2.err || true
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t2.out 2> %t2.err || true
 # RUN: %{FileCheck} %s --input-file %t2.err --check-prefix=CHECK-FAILURE-2-ERR
 #
 # CHECK-FAILURE-2-ERR: missing input 'output-2' and no rule to build it

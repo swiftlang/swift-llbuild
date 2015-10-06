@@ -5,7 +5,7 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.llbuild
-# RUN: %{llbuild} buildsystem build --chdir %t.build build.llbuild > %t.out 2> %t.err || true
+# RUN: %{llbuild} buildsystem build --chdir %t.build > %t.out 2> %t.err || true
 # RUN: test ! -f %t.build/output
 # RUN: %{FileCheck} %s --input-file %t.out --check-prefix=CHECK-FAILURE
 # RUN: %{FileCheck} %s --input-file %t.err --check-prefix=CHECK-FAILURE-ERR
@@ -18,7 +18,7 @@
 
 # Rebuild and verify the command reruns.
 #
-# RUN: %{llbuild} buildsystem build --chdir %t.build build.llbuild > %t2.out 2> %t2.err || true
+# RUN: %{llbuild} buildsystem build --chdir %t.build > %t2.out 2> %t2.err || true
 # RUN: test ! -f %t.build/output
 # RUN: %{FileCheck} %s --input-file %t2.err --check-prefix=CHECK-FAILURE-REBUILD-ERR
 #
@@ -29,7 +29,7 @@
 # this also ensures our patterns above stay up to date.
 #
 # RUN: touch %t.build/input
-# RUN: %{llbuild} buildsystem build --chdir %t.build build.llbuild > %t3.out
+# RUN: %{llbuild} buildsystem build --chdir %t.build > %t3.out
 # RUN: test -f %t.build/output
 # RUN: %{FileCheck} %s --input-file %t3.out --check-prefix=CHECK-SUCCESSFUL-REBUILD
 #

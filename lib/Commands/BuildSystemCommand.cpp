@@ -549,12 +549,14 @@ static void buildUsage(int exitCode) {
   fprintf(stderr, "\nOptions:\n");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--help",
           "show this help message and exit");
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "-C <PATH>, --chdir <PATH>",
+          "change directory to PATH before building");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--no-db",
           "disable use of a build database");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--db <PATH>",
           "enable building against the database at PATH [default='build.db']");
-  fprintf(stderr, "  %-*s %s\n", optionWidth, "-C <PATH>, --chdir <PATH>",
-          "change directory to PATH before building");
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "-f <PATH>",
+          "load the build task file at PATH [default='build.llbuild']");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--serial",
           "Do not build in parallel");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--trace <PATH>",
@@ -567,6 +569,7 @@ static int executeBuildCommand(std::vector<std::string> args) {
   std::string chdirPath;
   bool useSerialBuild = false;
   std::string traceFilename;
+  std::string buildFilename = "build.llbuild";
   
   while (!args.empty() && args[0][0] == '-') {
     const std::string option = args[0];
@@ -595,6 +598,14 @@ static int executeBuildCommand(std::vector<std::string> args) {
       }
       chdirPath = args[0];
       args.erase(args.begin());
+    } else if (option == "-f") {
+      if (args.empty()) {
+        fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
+                getProgramName(), option.c_str());
+        buildUsage(1);
+      }
+      buildFilename = args[0];
+      args.erase(args.begin());
     } else if (option == "--serial") {
       useSerialBuild = true;
     } else if (option == "--trace") {
@@ -612,8 +623,9 @@ static int executeBuildCommand(std::vector<std::string> args) {
     }
   }
 
-  if (args.size() != 1 && args.size() != 2) {
-    fprintf(stderr, "error: %s: invalid number of arguments\n", getProgramName());
+  if (args.size() > 1) {
+    fprintf(stderr, "error: %s: invalid number of arguments\n",
+            getProgramName());
     buildUsage(1);
   }
 
@@ -632,10 +644,8 @@ static int executeBuildCommand(std::vector<std::string> args) {
     fflush(stdout);
   }
 
-  std::string filename = args[0].c_str();
-
   BuildCommandDelegate delegate(useSerialBuild);
-  BuildSystem system(delegate, filename);
+  BuildSystem system(delegate, buildFilename);
 
   // Enable tracing, if requested.
   if (!traceFilename.empty()) {
@@ -653,7 +663,7 @@ static int executeBuildCommand(std::vector<std::string> args) {
     // file.
     if (llvm::sys::path::has_relative_path(dbFilename)) {
       llvm::SmallString<256> tmp;
-      llvm::sys::path::append(tmp, llvm::sys::path::parent_path(filename),
+      llvm::sys::path::append(tmp, llvm::sys::path::parent_path(buildFilename),
                               dbFilename);
       dbFilename = tmp.str();
     }
@@ -667,7 +677,7 @@ static int executeBuildCommand(std::vector<std::string> args) {
   }
 
   // Select the target to build.
-  std::string targetToBuild = args.size() == 1 ? "" : args[1];
+  std::string targetToBuild = args.empty() ? "" : args[0];
 
   // If something unspecified failed about the build, return an error.
   if (!system.build(targetToBuild)) {

@@ -6,7 +6,7 @@
 
 # Perform the initial build.
 #
-# RUN: %{llbuild} buildsystem build --chdir %t.build build.llbuild > %t.out
+# RUN: %{llbuild} buildsystem build --chdir %t.build > %t.out
 # RUN: %{FileCheck} --check-prefix CHECK-INITIAL --input-file %t.out %s
 #
 # CHECK-INITIAL: touch actual-output
@@ -14,7 +14,7 @@
 
 # Perform a second build, which shouldn't do anything.
 #
-# RUN: %{llbuild} buildsystem build --chdir %t.build build.llbuild > %t.out
+# RUN: %{llbuild} buildsystem build --chdir %t.build > %t.out
 # RUN: %{FileCheck} --check-prefix CHECK-REBUILD --input-file %t.out %s
 #
 # CHECK-REBUILD-NOT: touch actual-output

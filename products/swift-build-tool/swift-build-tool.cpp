@@ -28,6 +28,7 @@ int main(int argc, const char **argv) {
   
   std::vector<std::string> args;
   args.push_back("build");
+  args.push_back("-f");
   args.push_back("build.swift-build");
   for (int i = 1; i != argc; ++i) {
     args.push_back(argv[i]);
