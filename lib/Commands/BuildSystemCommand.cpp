@@ -1,4 +1,4 @@
-//===-- BuildFileCommand.cpp ----------------------------------------------===//
+//===-- BuildSystemCommand.cpp --------------------------------------------===//
 //
 // This source file is part of the Swift.org open source project
 //
@@ -21,6 +21,7 @@
 
 #include "CommandUtil.h"
 
+#include <atomic>
 #include <condition_variable>
 #include <deque>
 #include <mutex>
