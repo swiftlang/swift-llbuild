@@ -13,11 +13,9 @@
 #include "llbuild/BuildSystem/BuildSystem.h"
 #include "llbuild/BuildSystem/BuildSystemCommandInterface.h"
 
-#include "llvm/ADT/StringRef.h"
-#include "llvm/Support/MemoryBuffer.h"
-
 #include "llbuild/Basic/FileInfo.h"
 #include "llbuild/Basic/Hashing.h"
+#include "llbuild/Basic/LLVM.h"
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/BuildEngine.h"
 #include "llbuild/Core/MakefileDepsParser.h"
@@ -25,6 +23,9 @@
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildKey.h"
 #include "llbuild/BuildSystem/BuildValue.h"
+
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/MemoryBuffer.h"
 
 #include <memory>
 
@@ -59,7 +60,7 @@ public:
   /// @name Delegate Implementation
   /// @{
 
-  virtual void setFileContentsBeingParsed(llvm::StringRef buffer) override;
+  virtual void setFileContentsBeingParsed(StringRef buffer) override;
   
   virtual void error(const std::string& filename,
                      const Token& at,
@@ -869,7 +870,7 @@ public:
       // Capture the file information for each of the output nodes.
       //
       // FIXME: We need to delegate to the node here.
-      llvm::SmallVector<FileInfo, 8> outputInfos;
+      SmallVector<FileInfo, 8> outputInfos;
       for (auto* node: outputs) {
         if (node->isVirtual()) {
           outputInfos.push_back(FileInfo{});
@@ -1042,7 +1043,7 @@ class ClangShellCommand : public ExternalCommand {
       virtual void actOnRuleDependency(const char* dependency,
                                        uint64_t length) override {
         bsci.taskDiscoveredDependency(
-            task, BuildKey::makeNode(llvm::StringRef(dependency, length)));
+            task, BuildKey::makeNode(StringRef(dependency, length)));
       }
 
       virtual void actOnRuleStart(const char* name, uint64_t length) override {}
@@ -1131,8 +1132,7 @@ BuildSystemDelegate& BuildSystemFileDelegate::getSystemDelegate() {
   return system.getDelegate();
 }
 
-void BuildSystemFileDelegate::setFileContentsBeingParsed(
-    llvm::StringRef buffer) {
+void BuildSystemFileDelegate::setFileContentsBeingParsed(StringRef buffer) {
   getSystemDelegate().setFileContentsBeingParsed(buffer);
 }
 

@@ -17,6 +17,8 @@
 
 #include "llvm/ADT/StringRef.h"
 
+#include "llbuild/Basic/LLVM.h"
+
 namespace llbuild {
 namespace ninja {
 
@@ -90,7 +92,7 @@ public:
 
 private:
   /// The buffer contents.
-  llvm::StringRef buffer;
+  StringRef buffer;
 
   const char* bufferPos;      ///< The current lexer position.
   unsigned    lineNumber;     ///< The current line.
@@ -127,7 +129,7 @@ private:
   Token& lexVariableString(Token& result);
 
 public:
-  explicit Lexer(llvm::StringRef contents);
+  explicit Lexer(StringRef contents);
   ~Lexer();
 
   /// Return the next token from the file or EOF continually
@@ -136,7 +138,7 @@ public:
   Token& lex(Token& result);
 
   /// Get the buffer contents.
-  llvm::StringRef getBuffer() const { return buffer; }
+  StringRef getBuffer() const { return buffer; }
 
   /// Get the current lexing mode.
   LexingMode getMode() const { return mode; }

@@ -579,6 +579,7 @@
 		E104FAF61B655A97005C68A0 /* BuildSystemPerfTests.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = BuildSystemPerfTests.mm; sourceTree = "<group>"; };
 		E104FAFF1B6568E0005C68A0 /* BuildSystem.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildSystem.cpp; sourceTree = "<group>"; };
 		E1066C071BC5ACAB00B892CE /* LaneBasedExecutionQueue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LaneBasedExecutionQueue.cpp; sourceTree = "<group>"; };
+		E1066C091BC5BCE700B892CE /* LLVM.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LLVM.h; sourceTree = "<group>"; };
 		E10D5CDA19FEBF6A00211ED4 /* LitXCTestAdaptor.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LitXCTestAdaptor.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E10D5CDD19FEBF6A00211ED4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E10D5CDE19FEBF6A00211ED4 /* LitTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LitTests.m; sourceTree = "<group>"; };
@@ -1204,6 +1205,7 @@
 				E182BE111ABA2B8D001840AD /* Compiler.h */,
 				E11470901B75160400ED84CF /* FileInfo.h */,
 				E147DEFD1BA81D0E0032D08E /* Hashing.h */,
+				E1066C091BC5BCE700B892CE /* LLVM.h */,
 				E147DEFC1BA81D0E0032D08E /* SerialQueue.h */,
 				E1A2245119F997D40059043E /* Version.h */,
 			);

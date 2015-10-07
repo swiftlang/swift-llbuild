@@ -12,12 +12,14 @@
 
 #include "llbuild/Basic/Hashing.h"
 
+#include "llbuild/Basic/LLVM.h"
+
 #include <string>
 
 namespace llbuild {
 namespace basic {
 
-uint64_t hashString(llvm::StringRef value) {
+uint64_t hashString(StringRef value) {
   // FIXME: Replace with a real hash function.
   uint64_t Result = Value.size();
   for (auto Char: Value) {

@@ -13,17 +13,19 @@
 #ifndef LLBUILD_NINJA_MANIFEST_H
 #define LLBUILD_NINJA_MANIFEST_H
 
-#include <cassert>
-#include <cstdint>
-#include <functional>
-#include <string>
-#include <vector>
+#include "llbuild/Basic/LLVM.h"
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Allocator.h"
+
+#include <cassert>
+#include <cstdint>
+#include <functional>
+#include <string>
+#include <vector>
 
 namespace llbuild {
 namespace ninja {
@@ -53,13 +55,13 @@ public:
   }
 
   /// Insert a binding into the set.
-  void insert(llvm::StringRef name, llvm::StringRef value) {
+  void insert(StringRef name, StringRef value) {
     entries[name] = value;
   }
 
   /// Look up the given variable name in the binding set, returning its value or
   /// the empty string if not found.
-  llvm::StringRef lookup(llvm::StringRef name) const {
+  StringRef lookup(StringRef name) const {
     auto it = entries.find(name);
     if (it != entries.end())
       return it->second;
@@ -78,7 +80,7 @@ class Node {
   std::string path;
 
 public:
-  explicit Node(llvm::StringRef path) : path(path) {}
+  explicit Node(StringRef path) : path(path) {}
 
   const std::string& getPath() const { return path; }
 };
@@ -92,7 +94,7 @@ class Pool {
   uint32_t depth = 0;
 
 public:
-  explicit Pool(llvm::StringRef name) : name(name) {}
+  explicit Pool(StringRef name) : name(name) {}
 
   const std::string& getName() const { return name; }
 
@@ -163,8 +165,8 @@ public:
   // FIXME: Use an rvalue reference for the outputs and inputs here to avoid
   // copying, but requires SmallVectorImpl to take a move constructor.
   explicit Command(class Rule* rule,
-                   llvm::ArrayRef<Node*> outputs,
-                   llvm::ArrayRef<Node*> inputs,
+                   ArrayRef<Node*> outputs,
+                   ArrayRef<Node*> inputs,
                    unsigned numExplicitInputs,
                    unsigned numImplicitInputs)
     : rule(rule), outputs(outputs), inputs(inputs),
@@ -229,7 +231,7 @@ public:
   const std::string& getCommandString() const {
     return commandString;
   }
-  void setCommandString(llvm::StringRef value) {
+  void setCommandString(StringRef value) {
     commandString = value;
   }
 
@@ -237,7 +239,7 @@ public:
   const std::string& getDescription() const {
     return description;
   }
-  void setDescription(llvm::StringRef value) {
+  void setDescription(StringRef value) {
     description = value;
   }
 
@@ -255,7 +257,7 @@ public:
   const std::string& getDepsFile() const {
     return depsFile;
   }
-  void setDepsFile(llvm::StringRef value) {
+  void setDepsFile(StringRef value) {
     depsFile = value;
   }
 
@@ -301,7 +303,7 @@ class Rule {
   llvm::StringMap<std::string> parameters;
 
 public:
-  explicit Rule(llvm::StringRef name) : name(name) {}
+  explicit Rule(StringRef name) : name(name) {}
 
   const std::string& getName() const { return name; }
 
@@ -313,7 +315,7 @@ public:
   }
 
   /// Check whether the given string is a valid rule parameter.
-  static bool isValidParameterName(llvm::StringRef name);
+  static bool isValidParameterName(StringRef name);
 };
 
 /// A manifest represents the complete set of rules and commands used to perform
@@ -377,7 +379,7 @@ public:
   }
 
   /// Get or create the unique node for the given path.
-  Node* getOrCreateNode(llvm::StringRef path);
+  Node* getOrCreateNode(StringRef path);
 
   std::vector<Command*>& getCommands() {
     return commands;

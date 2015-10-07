@@ -12,6 +12,8 @@
 
 #include "llbuild/BuildSystem/BuildFile.h"
 
+#include "llbuild/Basic/LLVM.h"
+
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/YAMLParser.h"
@@ -48,7 +50,7 @@ static void dumpNode(llvm::yaml::Node* node, unsigned indent) {
 
   case llvm::yaml::Node::NK_Scalar: {
     llvm::yaml::ScalarNode* scalar = llvm::cast<llvm::yaml::ScalarNode>(node);
-    llvm::SmallString<256> storage;
+    SmallString<256> storage;
     fprintf(stderr, "%*s(scalar: '%s')\n", indent*2, "",
             scalar->getValue(storage).str().c_str());
     break;
@@ -113,7 +115,7 @@ class BuildFileImpl {
     
   // FIXME: Factor out into a parser helper class.
   std::string stringFromScalarNode(llvm::yaml::ScalarNode* scalar) {
-    llvm::SmallString<256> storage;
+    SmallString<256> storage;
     return scalar->getValue(storage).str();
   }
 
@@ -291,7 +293,7 @@ class BuildFileImpl {
       if (key == "name") {
         name = value;
       } else if (key == "version") {
-        if (llvm::StringRef(value).getAsInteger(10, version)) {
+        if (StringRef(value).getAsInteger(10, version)) {
           error(entry.getValue(), "invalid version number in 'client' map");
         }
       } else {

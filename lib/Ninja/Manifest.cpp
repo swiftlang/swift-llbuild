@@ -12,10 +12,12 @@
 
 #include "llbuild/Ninja/Manifest.h"
 
+#include "llbuild/Basic/LLVM.h"
+
 using namespace llbuild;
 using namespace llbuild::ninja;
 
-bool Rule::isValidParameterName(llvm::StringRef name) {
+bool Rule::isValidParameterName(StringRef name) {
   return name == "command" ||
     name == "description" ||
     name == "deps" ||
@@ -38,7 +40,7 @@ Manifest::Manifest() {
   rules["phony"] = phonyRule;
 }
 
-Node* Manifest::getOrCreateNode(llvm::StringRef path) {
+Node* Manifest::getOrCreateNode(StringRef path) {
   auto& result = nodes[path];
   if (!result)
     result = new (getAllocator()) Node(path);

@@ -12,11 +12,14 @@
 
 #include "llbuild/BuildSystem/BuildValue.h"
 
+#include "llbuild/Basic/LLVM.h"
+
 #include "llvm/Support/raw_ostream.h"
 
+using namespace llbuild;
 using namespace llbuild::buildsystem;
 
-llvm::StringRef BuildValue::stringForKind(BuildValue::Kind kind) {
+StringRef BuildValue::stringForKind(BuildValue::Kind kind) {
   switch (kind) {
 #define CASE(kind) case Kind::kind: return #kind
     CASE(Invalid);
@@ -33,7 +36,7 @@ llvm::StringRef BuildValue::stringForKind(BuildValue::Kind kind) {
   return "<unknown>";
 }
   
-void BuildValue::dump(llvm::raw_ostream& OS) const {
+void BuildValue::dump(raw_ostream& OS) const {
   OS << "BuildValue(" << stringForKind(kind);
   if (isExistingInput() || isSuccessfulCommand()) {
     OS << ", outputInfos=[";

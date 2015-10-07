@@ -13,12 +13,14 @@
 #ifndef LLBUILD_BASIC_HASHING_H
 #define LLBUILD_BASIC_HASHING_H
 
+#include "llbuild/Basic/LLVM.h"
+
 #include "llvm/ADT/StringRef.h"
 
 namespace llbuild {
 namespace basic {
 
-uint64_t hashString(llvm::StringRef value);
+uint64_t hashString(StringRef value);
 
 }
 }

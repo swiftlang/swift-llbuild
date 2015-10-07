@@ -12,6 +12,7 @@
 
 #include "llbuild/Commands/Commands.h"
 
+#include "llbuild/Basic/LLVM.h"
 #include "llbuild/Ninja/Lexer.h"
 #include "llbuild/Ninja/Manifest.h"
 #include "llbuild/Ninja/ManifestLoader.h"
@@ -68,7 +69,7 @@ static int executeLexCommand(const std::vector<std::string> &args,
       fprintf(stderr, "note: %s: reading tokens from %s\n", getProgramName(),
               args[0].c_str());
   }
-  ninja::Lexer lexer(llvm::StringRef(data.get(), size));
+  ninja::Lexer lexer(StringRef(data.get(), size));
   ninja::Token tok;
 
   do {
@@ -130,7 +131,7 @@ private:
                                                        value.length) << "\")\n";
   }
 
-  virtual void actOnDefaultDecl(llvm::ArrayRef<ninja::Token> names) override {
+  virtual void actOnDefaultDecl(ArrayRef<ninja::Token> names) override {
     std::cerr << __FUNCTION__ << "(/*Names=*/[";
     bool first = true;
     for (auto& name: names) {
@@ -152,8 +153,8 @@ private:
 
   virtual BuildResult
   actOnBeginBuildDecl(const ninja::Token& name,
-                      llvm::ArrayRef<ninja::Token> outputs,
-                      llvm::ArrayRef<ninja::Token> inputs,
+                      ArrayRef<ninja::Token> outputs,
+                      ArrayRef<ninja::Token> inputs,
                       unsigned numExplicitInputs,
                       unsigned numImplicitInputs) override {
     std::cerr << __FUNCTION__ << "(/*Name=*/"
@@ -265,15 +266,15 @@ private:
   virtual void actOnBindingDecl(const ninja::Token& name,
                                 const ninja::Token& value) override { }
 
-  virtual void actOnDefaultDecl(llvm::ArrayRef<ninja::Token> names) override { }
+  virtual void actOnDefaultDecl(ArrayRef<ninja::Token> names) override { }
 
   virtual void actOnIncludeDecl(bool isInclude,
                                 const ninja::Token& path) override { }
 
   virtual BuildResult
   actOnBeginBuildDecl(const ninja::Token& name,
-                      llvm::ArrayRef<ninja::Token> outputs,
-                      llvm::ArrayRef<ninja::Token> inputs,
+                      ArrayRef<ninja::Token> outputs,
+                      ArrayRef<ninja::Token> inputs,
                       unsigned numExplicitInputs,
                       unsigned numImplicitInputs) override {
     return 0;

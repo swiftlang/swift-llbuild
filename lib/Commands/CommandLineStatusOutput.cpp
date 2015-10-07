@@ -12,10 +12,10 @@
 
 #include "CommandLineStatusOutput.h"
 
+#include "llvm/Support/Process.h"
+
 #include <cassert>
 #include <cstdio>
-
-#include <llvm/Support/Process.h>
 
 namespace {
 

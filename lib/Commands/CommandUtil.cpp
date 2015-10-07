@@ -13,6 +13,7 @@
 #include "CommandUtil.h"
 #include "llbuild/Commands/Commands.h"
 
+#include "llbuild/Basic/LLVM.h"
 #include "llbuild/Ninja/ManifestLoader.h"
 #include "llbuild/Ninja/Parser.h"
 
@@ -24,7 +25,7 @@ using namespace llbuild::commands;
 
 static std::string programName;
 
-void commands::setProgramName(llvm::StringRef name) {
+void commands::setProgramName(StringRef name) {
   assert(programName.empty());
   programName = name;
 }
@@ -65,7 +66,7 @@ std::string util::escapedString(const std::string& string) {
 static void emitError(const std::string& filename, const std::string& message,
                       const char* position, unsigned length,
                       int line, int column,
-                      llvm::StringRef buffer) {
+                      StringRef buffer) {
   assert(position >= buffer.begin() && position <= buffer.end() &&
          "invalid position");
   assert(position + length <= buffer.end() && "invalid length");
@@ -129,7 +130,7 @@ void util::emitError(const std::string& filename, const std::string& message,
 
 void util::emitError(const std::string& filename, const std::string& message,
                      const char* position, unsigned length,
-                     llvm::StringRef buffer) {
+                     StringRef buffer) {
   ::emitError(filename, message, position, length, -1, -1, buffer);
 }
 

@@ -13,12 +13,13 @@
 #ifndef LLBUILD_BUILDSYSTEM_BUILDVALUE_H
 #define LLBUILD_BUILDSYSTEM_BUILDVALUE_H
 
-#include "llvm/ADT/ArrayRef.h"
-#include "llvm/ADT/StringRef.h"
-
+#include "llbuild/Core/BuildEngine.h"
 #include "llbuild/Basic/Compiler.h"
 #include "llbuild/Basic/FileInfo.h"
-#include "llbuild/Core/BuildEngine.h"
+#include "llbuild/Basic/LLVM.h"
+
+#include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/StringRef.h"
 
 namespace llvm {
 class raw_ostream;
@@ -60,7 +61,7 @@ class BuildValue {
     /// Sentinel value representing the result of "building" a top-level target.
     Target,
   };
-  static llvm::StringRef stringForKind(Kind);
+  static StringRef stringForKind(Kind);
 
   /// The kind of value.
   Kind kind;
@@ -89,7 +90,7 @@ private:
   BuildValue(Kind kind) : kind(kind) {
     valueData.asOutputInfo = {};
   }
-  BuildValue(Kind kind, llvm::ArrayRef<FileInfo> outputInfos,
+  BuildValue(Kind kind, ArrayRef<FileInfo> outputInfos,
              uint64_t commandSignature = 0)
       : kind(kind), numOutputInfos(outputInfos.size()),
         commandSignature(commandSignature)
@@ -160,7 +161,7 @@ public:
     return BuildValue(Kind::FailedInput);
   }
   static BuildValue makeSuccessfulCommand(
-      llvm::ArrayRef<FileInfo> outputInfos, uint64_t commandSignature) {
+      ArrayRef<FileInfo> outputInfos, uint64_t commandSignature) {
     return BuildValue(Kind::SuccessfulCommand, outputInfos, commandSignature);
   }
   static BuildValue makeFailedCommand() {
@@ -269,7 +270,7 @@ public:
   /// @name Debug Support
   /// @{
 
-  void dump(llvm::raw_ostream& OS) const;
+  void dump(raw_ostream& OS) const;
 
   /// @}
 };

@@ -12,6 +12,7 @@
 
 #include "llbuild/Commands/Commands.h"
 
+#include "llbuild/Basic/LLVM.h"
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildSystem.h"
@@ -39,7 +40,7 @@ namespace {
 
 class ParseBuildFileDelegate : public BuildFileDelegate {
   bool showOutput;
-  llvm::StringRef bufferBeingParsed;
+  StringRef bufferBeingParsed;
   
 public:
   ParseBuildFileDelegate(bool showOutput) : showOutput(showOutput) {}
@@ -47,7 +48,7 @@ public:
 
   virtual bool shouldShowOutput() { return showOutput; }
   
-  virtual void setFileContentsBeingParsed(llvm::StringRef buffer) override;
+  virtual void setFileContentsBeingParsed(StringRef buffer) override;
   
   virtual void error(const std::string& filename,
                      const Token& at,
@@ -170,8 +171,7 @@ public:
   }
 };
 
-void ParseBuildFileDelegate::setFileContentsBeingParsed(
-    llvm::StringRef buffer) {
+void ParseBuildFileDelegate::setFileContentsBeingParsed(StringRef buffer) {
   bufferBeingParsed = buffer;
 }
 
@@ -299,7 +299,7 @@ static int executeParseCommand(std::vector<std::string> args) {
 
 class BuildCommandDelegate : public BuildSystemDelegate {
   bool useSerialBuild;
-  llvm::StringRef bufferBeingParsed;
+  StringRef bufferBeingParsed;
 
   /// The number of reported errors.
   std::atomic<unsigned> numErrors{0};
@@ -312,7 +312,7 @@ public:
       : BuildSystemDelegate("basic", /*version=*/0),
         useSerialBuild(useSerialBuild) {}
 
-  void setFileContentsBeingParsed(llvm::StringRef buffer) override {
+  void setFileContentsBeingParsed(StringRef buffer) override {
     bufferBeingParsed = buffer;
   }
 
@@ -493,7 +493,7 @@ static int executeBuildCommand(std::vector<std::string> args) {
     // If the database path is relative, always make it relative to the input
     // file.
     if (llvm::sys::path::has_relative_path(dbFilename)) {
-      llvm::SmallString<256> tmp;
+      SmallString<256> tmp;
       llvm::sys::path::append(tmp, llvm::sys::path::parent_path(buildFilename),
                               dbFilename);
       dbFilename = tmp.str();

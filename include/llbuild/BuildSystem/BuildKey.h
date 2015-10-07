@@ -14,6 +14,7 @@
 #define LLBUILD_BUILDSYSTEM_BUILDKEY_H
 
 #include "llbuild/Basic/Compiler.h"
+#include "llbuild/Basic/LLVM.h"
 #include "llbuild/Core/BuildEngine.h"
 
 namespace llbuild {
@@ -45,7 +46,7 @@ private:
 
 private:
   BuildKey(const KeyType& key) : key(key) {}
-  BuildKey(char kindCode, llvm::StringRef str) {
+  BuildKey(char kindCode, StringRef str) {
     key.reserve(str.size() + 1);
     key.push_back(kindCode);
     key.append(str.begin(), str.end());
@@ -55,11 +56,11 @@ public:
   /// @name Construction Functions
   /// @{
 
-  static BuildKey makeCommand(llvm::StringRef name) {
+  static BuildKey makeCommand(StringRef name) {
     return BuildKey('C', name);
   }
 
-  static BuildKey makeNode(llvm::StringRef path) {
+  static BuildKey makeNode(StringRef path) {
     return BuildKey('N', path);
   }
 
@@ -67,7 +68,7 @@ public:
     return BuildKey('N', node->getName());
   }
 
-  static BuildKey makeTarget(llvm::StringRef name) {
+  static BuildKey makeTarget(StringRef name) {
     return BuildKey('T', name);
   }
 
@@ -91,16 +92,16 @@ public:
   bool isNode() const { return getKind() == Kind::Node; }
   bool isTarget() const { return getKind() == Kind::Target; }
 
-  llvm::StringRef getCommandName() const {
-    return llvm::StringRef(key.data()+1, key.size()-1);
+  StringRef getCommandName() const {
+    return StringRef(key.data()+1, key.size()-1);
   }
 
-  llvm::StringRef getNodeName() const {
-    return llvm::StringRef(key.data()+1, key.size()-1);
+  StringRef getNodeName() const {
+    return StringRef(key.data()+1, key.size()-1);
   }
 
-  llvm::StringRef getTargetName() const {
-    return llvm::StringRef(key.data()+1, key.size()-1);
+  StringRef getTargetName() const {
+    return StringRef(key.data()+1, key.size()-1);
   }
 
   /// @}

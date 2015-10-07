@@ -15,6 +15,8 @@
 
 #include "llvm/ADT/StringRef.h"
 
+#include "llbuild/Basic/LLVM.h"
+
 #include <memory>
 #include <string>
 #include <utility>
@@ -40,7 +42,7 @@ void emitError(const std::string& filename, const std::string& message,
 
 void emitError(const std::string& filename, const std::string& message,
                const char* position, unsigned length,
-               llvm::StringRef buffer);
+               StringRef buffer);
 
 bool readFileContents(std::string path,
                       std::unique_ptr<char[]> *data_out,

@@ -14,6 +14,7 @@
 #define LLBUILD_BUILDSYSTEM_BUILDFILE_H
 
 #include "llbuild/Basic/Compiler.h"
+#include "llbuild/Basic/LLVM.h"
 
 #include "llvm/ADT/StringRef.h"
 
@@ -199,7 +200,7 @@ public:
   virtual ~BuildFileDelegate();
 
   /// Called by the build file loader to register the current file contents.
-  virtual void setFileContentsBeingParsed(llvm::StringRef buffer) = 0;
+  virtual void setFileContentsBeingParsed(StringRef buffer) = 0;
 
   /// Called by the build file loader to report an error.
   ///

@@ -12,6 +12,7 @@
 
 #include "llbuild/Ninja/Parser.h"
 
+#include "llbuild/Basic/LLVM.h"
 #include "llbuild/Ninja/Lexer.h"
 
 using namespace llbuild;
@@ -122,7 +123,7 @@ public:
 };
 
 ParserImpl::ParserImpl(const char* data, uint64_t length, ParseActions& actions)
-    : lexer(llvm::StringRef(data, length)), actions(actions)
+    : lexer(StringRef(data, length)), actions(actions)
 {
 }
 
@@ -245,7 +246,7 @@ void ParserImpl::parseDefaultDecl() {
   consumeExpectedToken(Token::Kind::KWDefault);
 
   // Consume all the strings.
-  llvm::SmallVector<Token, 8> names;
+  SmallVector<Token, 8> names;
   while (tok.tokenKind == Token::Kind::String) {
     names.push_back(consumeExpectedToken(Token::Kind::String));
   }
@@ -391,7 +392,7 @@ bool ParserImpl::parseBuildSpecifier(ParseActions::BuildResult *decl_out) {
     lexer.setMode(Lexer::LexingMode::None);
     return false;
   }
-  llvm::SmallVector<Token, 8> outputs;
+  SmallVector<Token, 8> outputs;
   do {
     outputs.push_back(consumeExpectedToken(Token::Kind::String));
   } while (tok.tokenKind == Token::Kind::String);
@@ -417,7 +418,7 @@ bool ParserImpl::parseBuildSpecifier(ParseActions::BuildResult *decl_out) {
   Token name = consumeExpectedToken(Token::Kind::Identifier);
 
   // Parse the explicit inputs.
-  llvm::SmallVector<Token, 8> inputs;
+  SmallVector<Token, 8> inputs;
   while (tok.tokenKind == Token::Kind::String) {
     inputs.push_back(consumeExpectedToken(Token::Kind::String));
   }

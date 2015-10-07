@@ -12,6 +12,8 @@
 
 #include "llbuild/Ninja/Lexer.h"
 
+#include "llbuild/Basic/LLVM.h"
+
 #include "gtest/gtest.h"
 
 using namespace llbuild;
@@ -19,7 +21,7 @@ using namespace llbuild;
 namespace {
 
 TEST(LexerTest, basic) {
-  llvm::StringRef input = "| : || # Comment\n";
+  StringRef input = "| : || # Comment\n";
   ninja::Lexer lexer(input);
 
   // Check that we get the appropriate tokens.
@@ -82,7 +84,7 @@ TEST(LexerTest, basic) {
 }
 
 TEST(LexerTest, indentation) {
-  llvm::StringRef input = "\
+  StringRef input = "\
 |\n\
  | |";
   ninja::Lexer lexer(input);
@@ -132,7 +134,7 @@ TEST(LexerTest, indentation) {
 }
 
 TEST(LexerTest, basicIdentifierHandling) {
-  llvm::StringRef input = "a b$c";
+  StringRef input = "a b$c";
   ninja::Lexer lexer(input);
   ninja::Token tok;
 
@@ -174,7 +176,7 @@ TEST(LexerTest, basicIdentifierHandling) {
 }
 
 TEST(LexerTest, identifierKeywords) {
-  llvm::StringRef input = "notakeyword build default include \
+  StringRef input = "notakeyword build default include \
 pool rule subninja";
   ninja::Lexer lexer(input);
   ninja::Token tok;
@@ -210,7 +212,7 @@ pool rule subninja";
 }
 
 TEST(LexerTest, pathStrings) {
-  llvm::StringRef input = "this is: a| path$ str$:ing$\ncontext\n\
+  StringRef input = "this is: a| path$ str$:ing$\ncontext\n\
 #hash-is-ok\n\
 =equal-is-too\n";
   ninja::Lexer lexer(input);
@@ -262,7 +264,7 @@ TEST(LexerTest, pathStrings) {
 }
 
 TEST(LexerTest, variableStrings) {
-  llvm::StringRef input = "\
+  StringRef input = "\
 this is one string\n\
 this string crosses a $\nnewline\n\
 :\n\
@@ -308,7 +310,7 @@ this string crosses a $\nnewline\n\
 }
 
 TEST(LexerTest, identifierSpecific) {
-  llvm::StringRef input = "rule pool build default include subninja random";
+  StringRef input = "rule pool build default include subninja random";
   ninja::Lexer lexer(input);
   ninja::Token tok;
 

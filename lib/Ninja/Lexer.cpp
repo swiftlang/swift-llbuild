@@ -12,6 +12,8 @@
 
 #include "llbuild/Ninja/Lexer.h"
 
+#include "llbuild/Basic/LLVM.h"
+
 #include <cstring>
 #include <string>
 #include <iostream>
@@ -58,7 +60,7 @@ void Token::dump() {
 
 ///
 
-Lexer::Lexer(llvm::StringRef buffer)
+Lexer::Lexer(StringRef buffer)
   : buffer(buffer), bufferPos(buffer.data()), lineNumber(1), columnNumber(0),
     mode(LexingMode::None)
 {

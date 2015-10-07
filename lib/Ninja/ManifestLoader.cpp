@@ -15,6 +15,7 @@
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include "llbuild/Basic/LLVM.h"
 #include "llbuild/Ninja/Lexer.h"
 #include "llbuild/Ninja/Parser.h"
 
@@ -47,7 +48,7 @@ class ManifestLoaderImpl: public ParseActions {
     /// The active binding set.
     BindingSet& bindings;
 
-    IncludeEntry(llvm::StringRef filename,
+    IncludeEntry(StringRef filename,
                  std::unique_ptr<char[]> data,
                  std::unique_ptr<class Parser> parser,
                  BindingSet& bindings)
@@ -63,8 +64,8 @@ class ManifestLoaderImpl: public ParseActions {
   // Cached buffers for temporary expansion of possibly large strings. These are
   // lifted out of the function body to ensure we don't blow up the stack
   // unnecesssarily.
-  llvm::SmallString<10 * 1024> buildCommand;
-  llvm::SmallString<10 * 1024> buildDescription;
+  SmallString<10 * 1024> buildCommand;
+  SmallString<10 * 1024> buildDescription;
 
 public:
   ManifestLoaderImpl(std::string mainFilename, ManifestLoaderActions& actions)
@@ -126,10 +127,8 @@ public:
     return includeStack.back().bindings;
   }
 
-  void evalString(void* userContext, llvm::StringRef string,
-                  llvm::raw_ostream& result,
-                  std::function<void(void*, llvm::StringRef,
-                                     llvm::raw_ostream&)> lookup,
+  void evalString(void* userContext, StringRef string, raw_ostream& result,
+                  std::function<void(void*, StringRef, raw_ostream&)> lookup,
                   std::function<void(const std::string&)> error) {
     // Scan the string for escape sequences or variable references, accumulating
     // output pieces as we go.
@@ -145,7 +144,7 @@ public:
 
       // Add the current piece, if non-empty.
       if (pos != pieceStart)
-        result << llvm::StringRef(pieceStart, pos - pieceStart);
+        result << StringRef(pieceStart, pos - pieceStart);
 
       // If we are at the end, we are done.
       if (pos == end)
@@ -196,7 +195,7 @@ public:
             if (!isValid) {
               error("invalid variable name in reference");
             } else {
-              lookup(userContext, llvm::StringRef(varStart, pos - varStart),
+              lookup(userContext, StringRef(varStart, pos - varStart),
                      result);
             }
             ++pos;
@@ -219,7 +218,7 @@ public:
         ++pos;
         while (pos != end && Lexer::isSimpleIdentifierChar(*pos))
           ++pos;
-        lookup(userContext, llvm::StringRef(varStart, pos-varStart), result);
+        lookup(userContext, StringRef(varStart, pos-varStart), result);
         continue;
       }
 
@@ -232,14 +231,12 @@ public:
   /// Given a string template token, evaluate it against the given \arg Bindings
   /// and return the resulting string.
   void evalString(const Token& value, const BindingSet& bindings,
-                  llvm::SmallVectorImpl<char>& storage) {
+                  SmallVectorImpl<char>& storage) {
     assert(value.tokenKind == Token::Kind::String && "invalid token kind");
     
     llvm::raw_svector_ostream result(storage);
-    evalString(nullptr, llvm::StringRef(value.start, value.length), result,
-               /*Lookup=*/ [&](void*,
-                               llvm::StringRef name,
-                               llvm::raw_ostream& result) {
+    evalString(nullptr, StringRef(value.start, value.length), result,
+               /*Lookup=*/ [&](void*, StringRef name, raw_ostream& result) {
                  result << bindings.lookup(name);
                },
                /*Error=*/ [this, &value](const std::string& msg) {
@@ -265,19 +262,19 @@ public:
   virtual void actOnBindingDecl(const Token& nameTok,
                                 const Token& valueTok) override {
     // Extract the name string.
-    llvm::StringRef name(nameTok.start, nameTok.length);
+    StringRef name(nameTok.start, nameTok.length);
 
     // Evaluate the value string with the current top-level bindings.
-    llvm::SmallString<256> value;
+    SmallString<256> value;
     evalString(valueTok, getCurrentBindings(), value);
 
     getCurrentBindings().insert(name, value.str());
   }
 
-  virtual void actOnDefaultDecl(llvm::ArrayRef<Token> nameToks) override {
+  virtual void actOnDefaultDecl(ArrayRef<Token> nameToks) override {
     // Resolve all of the inputs and outputs.
     for (const auto& nameTok: nameToks) {
-      llvm::StringRef name(nameTok.start, nameTok.length);
+      StringRef name(nameTok.start, nameTok.length);
 
       auto it = theManifest->getNodes().find(name);
       if (it == theManifest->getNodes().end()) {
@@ -291,7 +288,7 @@ public:
 
   virtual void actOnIncludeDecl(bool isInclude,
                                 const Token& pathTok) override {
-    llvm::SmallString<256> path;
+    SmallString<256> path;
     evalString(pathTok, getCurrentBindings(), path);
 
     // Enter the new file, with a new binding scope if this is a "subninja"
@@ -314,11 +311,11 @@ public:
 
   virtual BuildResult
   actOnBeginBuildDecl(const Token& nameTok,
-                      llvm::ArrayRef<Token> outputTokens,
-                      llvm::ArrayRef<Token> inputTokens,
+                      ArrayRef<Token> outputTokens,
+                      ArrayRef<Token> inputTokens,
                       unsigned numExplicitInputs,
                       unsigned numImplicitInputs) override {
-    llvm::StringRef name(nameTok.start, nameTok.length);
+    StringRef name(nameTok.start, nameTok.length);
 
     // Resolve the rule.
     auto it = theManifest->getRules().find(name);
@@ -333,11 +330,11 @@ public:
     }
 
     // Resolve all of the inputs and outputs.
-    llvm::SmallVector<Node*, 8> outputs;
-    llvm::SmallVector<Node*, 8> inputs;
+    SmallVector<Node*, 8> outputs;
+    SmallVector<Node*, 8> inputs;
     for (const auto& token: outputTokens) {
       // Evaluate the token string.
-      llvm::SmallString<256> path;
+      SmallString<256> path;
       evalString(token, getCurrentBindings(), path);
       if (path.empty()) {
         error("empty output path", token);
@@ -346,7 +343,7 @@ public:
     }
     for (const auto& token: inputTokens) {
       // Evaluate the token string.
-      llvm::SmallString<256> path;
+      SmallString<256> path;
       evalString(token, getCurrentBindings(), path);
       if (path.empty()) {
         error("empty input path", token);
@@ -366,14 +363,14 @@ public:
                                      const Token& valueTok) override {
     Command* decl = static_cast<Command*>(abstractDecl);
 
-    llvm::StringRef name(nameTok.start, nameTok.length);
+    StringRef name(nameTok.start, nameTok.length);
 
     // FIXME: It probably should be an error to assign to the same parameter
     // multiple times, but Ninja doesn't diagnose this.
 
     // The value in a build decl is always evaluated immediately, but only in
     // the context of the top-level bindings.
-    llvm::SmallString<256> value;
+    SmallString<256> value;
     evalString(valueTok, getCurrentBindings(), value);
     
     decl->getParameters()[name] = value.str();
@@ -384,13 +381,13 @@ public:
     Command* decl;
     const Token& startTok;
   };
-  static void lookupBuildParameter(void* userContext, llvm::StringRef name,
-                                   llvm::raw_ostream& result) {
+  static void lookupBuildParameter(void* userContext, StringRef name,
+                                   raw_ostream& result) {
     LookupContext* context = static_cast<LookupContext*>(userContext);
     context->loader.lookupBuildParameterImpl(context, name, result);
   }
-  void lookupBuildParameterImpl(LookupContext* context, llvm::StringRef name,
-                                llvm::raw_ostream& result) {
+  void lookupBuildParameterImpl(LookupContext* context, StringRef name,
+                                raw_ostream& result) {
     auto decl = context->decl;
       
     // FIXME: Mange recursive lookup? Ninja crashes on it.
@@ -429,9 +426,9 @@ public:
       
     result << context->loader.getCurrentBindings().lookup(name);
   }
-  llvm::StringRef lookupNamedBuildParameter(
-      Command* decl, const Token& startTok, llvm::StringRef name,
-      llvm::SmallVectorImpl<char>& storage) {
+  StringRef lookupNamedBuildParameter(Command* decl, const Token& startTok,
+                                      StringRef name,
+                                      SmallVectorImpl<char>& storage) {
     LookupContext context{ *this, decl, startTok };
     llvm::raw_svector_ostream os(storage);
     lookupBuildParameter(&context, name, os);
@@ -466,9 +463,9 @@ public:
                              decl, startTok, "description", buildDescription));
 
     // Set the dependency style.
-    llvm::SmallString<256> deps;
+    SmallString<256> deps;
     lookupNamedBuildParameter(decl, startTok, "deps", deps);
-    llvm::SmallString<256> depfile;
+    SmallString<256> depfile;
     lookupNamedBuildParameter(decl, startTok, "depfile", depfile);
     Command::DepsStyleKind depsStyle = Command::DepsStyleKind::None;
     if (deps.str() == "") {
@@ -497,7 +494,7 @@ public:
       }
     }
 
-    llvm::SmallString<256> poolName;
+    SmallString<256> poolName;
     lookupNamedBuildParameter(decl, startTok, "pool", poolName);
     if (!poolName.empty()) {
       const auto& it = theManifest->getPools().find(poolName.str());
@@ -508,11 +505,11 @@ public:
       }
     }
 
-    llvm::SmallString<256> generator;
+    SmallString<256> generator;
     lookupNamedBuildParameter(decl, startTok, "generator", generator);
     decl->setGeneratorFlag(!generator.str().empty());
 
-    llvm::SmallString<256> restat;
+    SmallString<256> restat;
     lookupNamedBuildParameter(decl, startTok, "restat", restat);
     decl->setRestatFlag(!restat.str().empty());
 
@@ -520,7 +517,7 @@ public:
   }
 
   virtual PoolResult actOnBeginPoolDecl(const Token& nameTok) override {
-    llvm::StringRef name(nameTok.start, nameTok.length);
+    StringRef name(nameTok.start, nameTok.length);
 
     // Find the hash slot.
     auto& result = theManifest->getPools()[name];
@@ -542,10 +539,10 @@ public:
                                     const Token& valueTok) override {
     Pool* decl = static_cast<Pool*>(abstractDecl);
 
-    llvm::StringRef name(nameTok.start, nameTok.length);
+    StringRef name(nameTok.start, nameTok.length);
 
     // Evaluate the value string with the current top-level bindings.
-    llvm::SmallString<256> value;
+    SmallString<256> value;
     evalString(valueTok, getCurrentBindings(), value);
 
     if (name == "depth") {
@@ -571,7 +568,7 @@ public:
   }
 
   virtual RuleResult actOnBeginRuleDecl(const Token& nameTok) override {
-    llvm::StringRef name(nameTok.start, nameTok.length);
+    StringRef name(nameTok.start, nameTok.length);
 
     // Find the hash slot.
     auto& result = theManifest->getRules()[name];
@@ -593,12 +590,11 @@ public:
                                     const Token& valueTok) override {
     Rule* decl = static_cast<Rule*>(abstractDecl);
 
-    llvm::StringRef name(nameTok.start, nameTok.length);
+    StringRef name(nameTok.start, nameTok.length);
     // FIXME: It probably should be an error to assign to the same parameter
     // multiple times, but Ninja doesn't diagnose this.
     if (Rule::isValidParameterName(name)) {
-      decl->getParameters()[name] = llvm::StringRef(valueTok.start,
-                                                    valueTok.length);
+      decl->getParameters()[name] = StringRef(valueTok.start, valueTok.length);
     } else {
       error("unexpected variable", nameTok);
     }

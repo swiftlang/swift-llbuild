@@ -18,16 +18,18 @@
 #ifndef LLBUILD_COMMANDS_H
 #define LLBUILD_COMMANDS_H
 
-#include <string>
-#include <vector>
+#include "llbuild/Basic/LLVM.h"
 
 #include "llvm/ADT/StringRef.h"
+
+#include <string>
+#include <vector>
 
 namespace llbuild {
 namespace commands {
 
 /// Register the program name.
-void setProgramName(llvm::StringRef name);
+void setProgramName(StringRef name);
 
 /// Get the registered program name.
 const char* getProgramName();

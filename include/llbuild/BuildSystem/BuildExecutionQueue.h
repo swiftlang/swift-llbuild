@@ -14,6 +14,7 @@
 #define LLBUILD_BUILDSYSTEM_BUILDEXECUTIONQUEUE_H
 
 #include "llbuild/Basic/Compiler.h"
+#include "llbuild/Basic/LLVM.h"
 
 #include "llvm/ADT/StringRef.h"
 
@@ -90,7 +91,7 @@ public:
   // FIXME: This interface will need to get more complicated, and provide the
   // command result and facilities for dealing with the output.
   virtual bool executeShellCommand(QueueJobContext* context,
-                                   llvm::StringRef command) = 0;
+                                   StringRef command) = 0;
   
   /// @}
 };
