@@ -128,6 +128,10 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
   /// @name BuildSystemCommandInterface Implementation
   /// @{
 
+  virtual BuildEngine& getBuildEngine() override {
+    return buildEngine;
+  }
+  
   virtual BuildExecutionQueue& getExecutionQueue() override {
     return *executionQueue;
   }
@@ -185,10 +189,6 @@ public:
 
   BuildFile& getBuildFile() {
     return buildFile;
-  }
-
-  BuildEngine& getBuildEngine() {
-    return buildEngine;
   }
 
   void error(const std::string& filename, const std::string& message) {

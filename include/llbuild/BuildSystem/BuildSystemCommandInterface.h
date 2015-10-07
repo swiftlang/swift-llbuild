@@ -16,6 +16,7 @@
 namespace llbuild {
 namespace core {
 
+class BuildEngine;
 class Task;
 
 }
@@ -38,6 +39,8 @@ public:
 
   /// @name Accessors
   /// @{
+
+  virtual core::BuildEngine& getBuildEngine() = 0;
 
   virtual BuildExecutionQueue& getExecutionQueue() = 0;
   
