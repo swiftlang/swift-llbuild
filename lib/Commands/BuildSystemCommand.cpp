@@ -19,6 +19,7 @@
 #include "llbuild/BuildSystem/BuildValue.h"
 
 #include "llvm/Support/Path.h"
+#include "llvm/Support/SourceMgr.h"
 
 #include "CommandUtil.h"
 
@@ -297,6 +298,104 @@ static int executeParseCommand(std::vector<std::string> args) {
 
 /* Build Command */
 
+class BuildSystemInvocation {
+public:
+  /// Whether command usage should be printed.
+  bool showUsage = false;
+
+  /// Whether to use a serial build.
+  bool useSerialBuild = false;
+  
+  /// The path of the database file to use, if any.
+  std::string dbPath = "build.db";
+
+  /// The path of a directory to change into before anything else, if any.
+  std::string chdirPath = "";
+
+  /// The name of the build file to use.
+  std::string buildFilePath = "build.llbuild";
+
+  /// The name of the build trace output file to use, if any.
+  std::string traceFilePath = "";
+
+  /// The positional arguments.
+  std::vector<std::string> positionalArgs;
+
+  /// Whether there were any parsing errors.
+  bool hadErrors = false;
+  
+public:
+  /// Parse the invocation parameters from the given arguments.
+  ///
+  /// \param sourceMgr The source manager to use for diagnostics.
+  void parse(llvm::ArrayRef<std::string> args, llvm::SourceMgr& sourceMgr);
+};
+
+void BuildSystemInvocation::parse(llvm::ArrayRef<std::string> args,
+                                  llvm::SourceMgr& sourceMgr) {
+  auto error = [&](const Twine &message) {
+    sourceMgr.PrintMessage(llvm::SMLoc{}, llvm::SourceMgr::DK_Error, message);
+    hadErrors = true;
+  };
+
+  while (!args.empty()) {
+    const auto& option = args.front();
+    args = args.slice(1);
+
+    if (option == "-") {
+      for (const auto& arg: args) {
+        positionalArgs.push_back(arg);
+      }
+      break;
+    }
+
+    if (!option.empty() && option[0] != '-') {
+      positionalArgs.push_back(option);
+      continue;
+    }
+    
+    if (option == "--help") {
+      showUsage = true;
+      break;
+    } else if (option == "--no-db") {
+      dbPath = "";
+    } else if (option == "--db") {
+      if (args.empty()) {
+        error("missing argument to '" + option + "'");
+        break;
+      }
+      dbPath = args[0];
+      args = args.slice(1);
+    } else if (option == "-C" || option == "--chdir") {
+      if (args.empty()) {
+        error("missing argument to '" + option + "'");
+        break;
+      }
+      chdirPath = args[0];
+      args = args.slice(1);
+    } else if (option == "-f") {
+      if (args.empty()) {
+        error("missing argument to '" + option + "'");
+        break;
+      }
+      buildFilePath = args[0];
+      args = args.slice(1);
+    } else if (option == "--serial") {
+      useSerialBuild = true;
+    } else if (option == "--trace") {
+      if (args.empty()) {
+        error("missing argument to '" + option + "'");
+        break;
+      }
+      traceFilePath = args[0];
+      args = args.slice(1);
+    } else {
+      error("invalid option '" + option + "'");
+      break;
+    }
+  }
+}
+
 class BuildCommandDelegate : public BuildSystemDelegate {
   bool useSerialBuild;
   StringRef bufferBeingParsed;
@@ -396,73 +495,30 @@ static void buildUsage(int exitCode) {
 }
 
 static int executeBuildCommand(std::vector<std::string> args) {
-  std::string dbFilename = "build.db";
-  std::string chdirPath;
-  bool useSerialBuild = false;
-  std::string traceFilename;
-  std::string buildFilename = "build.llbuild";
-  
-  while (!args.empty() && args[0][0] == '-') {
-    const std::string option = args[0];
-    args.erase(args.begin());
+  llvm::SourceMgr sourceMgr;
+  BuildSystemInvocation invocation{};
 
-    if (option == "--")
-      break;
+  // Initialize defaults.
+  invocation.dbPath = "build.db";
+  invocation.buildFilePath = "build.llbuild";
+  invocation.parse(args, sourceMgr);
 
-    if (option == "--help") {
-      buildUsage(0);
-    } else if (option == "--no-db") {
-      dbFilename = "";
-    } else if (option == "--db") {
-      if (args.empty()) {
-        fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
-                getProgramName(), option.c_str());
-        buildUsage(1);
-      }
-      dbFilename = args[0];
-      args.erase(args.begin());
-    } else if (option == "-C" || option == "--chdir") {
-      if (args.empty()) {
-        fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
-                getProgramName(), option.c_str());
-        buildUsage(1);
-      }
-      chdirPath = args[0];
-      args.erase(args.begin());
-    } else if (option == "-f") {
-      if (args.empty()) {
-        fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
-                getProgramName(), option.c_str());
-        buildUsage(1);
-      }
-      buildFilename = args[0];
-      args.erase(args.begin());
-    } else if (option == "--serial") {
-      useSerialBuild = true;
-    } else if (option == "--trace") {
-      if (args.empty()) {
-        fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
-                getProgramName(), option.c_str());
-        buildUsage(1);
-      }
-      traceFilename = args[0];
-      args.erase(args.begin());
-    } else {
-      fprintf(stderr, "\error: %s: invalid option: '%s'\n\n",
-              getProgramName(), option.c_str());
-      buildUsage(1);
-    }
+  // Handle invocation actions.
+  if (invocation.showUsage) {
+    buildUsage(0);
+  } else if (invocation.hadErrors) {
+    buildUsage(1);
   }
-
-  if (args.size() > 1) {
+  
+  if (invocation.positionalArgs.size() > 1) {
     fprintf(stderr, "error: %s: invalid number of arguments\n",
             getProgramName());
     buildUsage(1);
   }
 
   // Honor the --chdir option, if used.
-  if (!chdirPath.empty()) {
-    if (::chdir(chdirPath.c_str()) < 0) {
+  if (!invocation.chdirPath.empty()) {
+    if (::chdir(invocation.chdirPath.c_str()) < 0) {
       fprintf(stderr, "%s: error: unable to honor --chdir: %s\n",
               getProgramName(), strerror(errno));
       return 1;
@@ -471,17 +527,17 @@ static int executeBuildCommand(std::vector<std::string> args) {
     // Print a message about the changed directory. The exact format here is
     // important, it is recognized by other tools (like Emacs).
     fprintf(stdout, "%s: Entering directory `%s'\n", getProgramName(),
-            chdirPath.c_str());
+            invocation.chdirPath.c_str());
     fflush(stdout);
   }
 
-  BuildCommandDelegate delegate(useSerialBuild);
-  BuildSystem system(delegate, buildFilename);
+  BuildCommandDelegate delegate(invocation.useSerialBuild);
+  BuildSystem system(delegate, invocation.buildFilePath);
 
   // Enable tracing, if requested.
-  if (!traceFilename.empty()) {
+  if (!invocation.traceFilePath.empty()) {
     std::string error;
-    if (!system.enableTracing(traceFilename, &error)) {
+    if (!system.enableTracing(invocation.traceFilePath, &error)) {
       fprintf(stderr, "error: %s: unable to enable tracing: %s",
               getProgramName(), error.c_str());
       return 1;
@@ -489,18 +545,19 @@ static int executeBuildCommand(std::vector<std::string> args) {
   }
 
   // Attach the database.
-  if (!dbFilename.empty()) {
+  if (!invocation.dbPath.empty()) {
     // If the database path is relative, always make it relative to the input
     // file.
-    if (llvm::sys::path::has_relative_path(dbFilename)) {
+    if (llvm::sys::path::has_relative_path(invocation.dbPath)) {
       SmallString<256> tmp;
-      llvm::sys::path::append(tmp, llvm::sys::path::parent_path(buildFilename),
-                              dbFilename);
-      dbFilename = tmp.str();
+      llvm::sys::path::append(
+          tmp, llvm::sys::path::parent_path(invocation.buildFilePath),
+          invocation.dbPath);
+      invocation.dbPath = tmp.str();
     }
     
     std::string error;
-    if (!system.attachDB(dbFilename, &error)) {
+    if (!system.attachDB(invocation.dbPath, &error)) {
       fprintf(stderr, "error: %s: unable to attach DB: %s\n", getProgramName(),
               error.c_str());
       return 1;
@@ -508,7 +565,8 @@ static int executeBuildCommand(std::vector<std::string> args) {
   }
 
   // Select the target to build.
-  std::string targetToBuild = args.empty() ? "" : args[0];
+  std::string targetToBuild =
+    invocation.positionalArgs.empty() ? "" : invocation.positionalArgs[0];
 
   // If something unspecified failed about the build, return an error.
   if (!system.build(targetToBuild)) {
