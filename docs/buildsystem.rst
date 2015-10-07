@@ -299,3 +299,13 @@ Shell Tool
   This tool supports an "args" key used to provide the shell command to be run
   (using ``/bin/sh -c``).
 
+Clang Tool
+  **Identifier**: *clang*
+
+  A tool used to invoke the Clang compiler.
+ 
+  This tool supports an "args" key used to provide the shell command to be run
+  (using ``/bin/sh -c``), as well as a "deps" key which specified the path to a
+  Makefile fragment (presumed to be output by the compiler) specifying
+  additional discovered dependencies for the output.
+

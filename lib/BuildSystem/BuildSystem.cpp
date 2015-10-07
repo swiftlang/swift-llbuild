@@ -14,11 +14,13 @@
 #include "llbuild/BuildSystem/BuildSystemCommandInterface.h"
 
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/MemoryBuffer.h"
 
 #include "llbuild/Basic/FileInfo.h"
 #include "llbuild/Basic/Hashing.h"
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/BuildEngine.h"
+#include "llbuild/Core/MakefileDepsParser.h"
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildKey.h"
@@ -279,17 +281,14 @@ public:
 
 #pragma mark - Task implementations
 
-class BuildSystemTask : public Task {
-protected:
-  static BuildSystemImpl& getBuildSystem(BuildEngine& engine) {
-    return static_cast<BuildSystemEngineDelegate*>(
-        engine.getDelegate())->getBuildSystem();
-  }
-};
+static BuildSystemImpl& getBuildSystem(BuildEngine& engine) {
+  return static_cast<BuildSystemEngineDelegate*>(
+      engine.getDelegate())->getBuildSystem();
+}
   
 /// This is the task used to "build" a target, it translates between the request
 /// for building a target key and the requests for all of its nodes.
-class TargetTask : public BuildSystemTask {
+class TargetTask : public Task {
   Target& target;
   
   // Build specific data.
@@ -354,7 +353,7 @@ public:
 
 /// This is the task to "build" a node which represents pure raw input to the
 /// system.
-class InputNodeTask : public BuildSystemTask {
+class InputNodeTask : public Task {
   BuildNode& node;
 
   virtual void start(BuildEngine& engine) override {
@@ -426,7 +425,7 @@ public:
 /// It is responsible for selecting the appropriate producer command to run to
 /// produce the node, and for synchronizing any external state the node depends
 /// on.
-class ProducedNodeTask : public BuildSystemTask {
+class ProducedNodeTask : public Task {
   Node& node;
   BuildValue nodeResult;
   Command* producingCommand = nullptr;
@@ -478,7 +477,7 @@ public:
 };
 
 /// This is the task to actually execute a command.
-class CommandTask : public BuildSystemTask {
+class CommandTask : public Task {
   Command& command;
 
   virtual void start(BuildEngine& engine) override {
@@ -992,6 +991,140 @@ public:
   }
 };
 
+#pragma mark - ClangTool implementation
+
+class ClangShellCommand : public ExternalCommand {
+  /// The compiler command to invoke.
+  std::string args;
+  
+  /// The path to the dependency output file, if used.
+  std::string depsPath;
+  
+  virtual uint64_t getSignature() override {
+    uint64_t result = ExternalCommand::getSignature();
+    result ^= basic::hashString(args);
+    return result;
+  }
+
+  bool processDiscoveredDependencies(BuildSystemCommandInterface& bsci,
+                                      Task* task,
+                                      QueueJobContext* context) {
+    // Read the dependencies file.
+    auto res = llvm::MemoryBuffer::getFile(depsPath);
+    if (auto ec = res.getError()) {
+      getBuildSystem(bsci.getBuildEngine()).error(
+          depsPath, "unable to open dependencies file (" + ec.message() + ")");
+      return false;
+    }
+    std::unique_ptr<llvm::MemoryBuffer> input(res->release());
+
+    // Parse the output.
+    //
+    // We just ignore the rule, and add any dependency that we encounter in the
+    // file.
+    struct DepsActions : public core::MakefileDepsParser::ParseActions {
+      BuildSystemCommandInterface& bsci;
+      Task* task;
+      ClangShellCommand* command;
+      unsigned numErrors{0};
+
+      DepsActions(BuildSystemCommandInterface& bsci, Task* task,
+                  ClangShellCommand* command)
+          : bsci(bsci), task(task), command(command) {}
+
+      virtual void error(const char* message, uint64_t position) override {
+        getBuildSystem(bsci.getBuildEngine()).error(
+            command->depsPath,
+            "error reading dependency file: " + std::string(message));
+        ++numErrors;
+      }
+
+      virtual void actOnRuleDependency(const char* dependency,
+                                       uint64_t length) override {
+        bsci.taskDiscoveredDependency(
+            task, BuildKey::makeNode(llvm::StringRef(dependency, length)));
+      }
+
+      virtual void actOnRuleStart(const char* name, uint64_t length) override {}
+      virtual void actOnRuleEnd() override {}
+    };
+
+    DepsActions actions(bsci, task, this);
+    core::MakefileDepsParser(input->getBufferStart(), input->getBufferSize(),
+                             actions).parse();
+    return actions.numErrors == 0;
+  }
+
+public:
+  using ExternalCommand::ExternalCommand;
+  
+  virtual bool configureAttribute(const std::string& name,
+                                  const std::string& value) override {
+    if (name == "args") {
+      args = value;
+    } else if (name == "deps") {
+      depsPath = value;
+    } else {
+      return ExternalCommand::configureAttribute(name, value);
+    }
+
+    return true;
+  }
+
+  virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
+                                      Task* task,
+                                      QueueJobContext* context) override {
+    // Log the command.
+    //
+    // FIXME: Design the logging and status output APIs.
+    if (getDescription().empty()) {
+      fprintf(stdout, "%s\n", args.c_str());
+    } else {
+      fprintf(stdout, "%s\n", getDescription().c_str());
+    }
+    fflush(stdout);
+
+    // Execute the command.
+    if (!bsci.getExecutionQueue().executeShellCommand(context, args)) {
+      // If the command failed, there is no need to gather dependencies.
+      return false;
+    }
+
+    // Otherwise, collect the discovered dependencies, if used.
+    if (!depsPath.empty()) {
+      if (!processDiscoveredDependencies(bsci, task, context)) {
+        // If we were unable to process the dependencies output, report a
+        // failure.
+        return false;
+      }
+    }
+
+    return true;
+  }
+};
+
+class ClangTool : public Tool {
+  BuildSystemImpl& system;
+
+public:
+  ClangTool(BuildSystemImpl& system, const std::string& name)
+      : Tool(name), system(system) {}
+
+  virtual bool configureAttribute(const std::string& name,
+                                  const std::string& value) override {
+    system.error(system.getMainFilename(),
+                 "unexpected attribute: '" + name + "'");
+
+    // No supported attributes.
+    return false;
+  }
+
+  virtual std::unique_ptr<Command> createCommand(
+      const std::string& name) override {
+    return std::make_unique<ClangShellCommand>(system, name);
+  }
+};
+
 #pragma mark - BuildSystemFileDelegate
 
 BuildSystemDelegate& BuildSystemFileDelegate::getSystemDelegate() {
@@ -1041,6 +1174,8 @@ BuildSystemFileDelegate::lookupTool(const std::string& name) {
     return std::make_unique<ShellTool>(system, name);
   } else if (name == "phony") {
     return std::make_unique<PhonyTool>(system, name);
+  } else if (name == "clang") {
+    return std::make_unique<ClangTool>(system, name);
   }
 
   return nullptr;
