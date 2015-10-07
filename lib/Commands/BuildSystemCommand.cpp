@@ -376,7 +376,7 @@ public:
   }
 
   virtual bool executeShellCommand(QueueJobContext*,
-                                   const std::string& command) override {
+                                   llvm::StringRef command) override {
     // Initialize the spawn attributes.
     posix_spawnattr_t attributes;
     posix_spawnattr_init(&attributes);
@@ -433,10 +433,11 @@ public:
     posix_spawn_file_actions_adddup2(&fileActions, 2, 2);
 
     // Spawn the command.
+    llvm::SmallString<1024> commandCStr(command);
     const char* args[4];
     args[0] = "/bin/sh";
     args[1] = "-c";
-    args[2] = command.c_str();
+    args[2] = commandCStr.c_str();
     args[3] = nullptr;
 
     // FIXME: Need to track spawned processes for the purposes of cancellation.

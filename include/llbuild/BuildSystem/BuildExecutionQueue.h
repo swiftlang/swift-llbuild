@@ -88,7 +88,7 @@ public:
   // FIXME: This interface will need to get more complicated, and provide the
   // command result and facilities for dealing with the output.
   virtual bool executeShellCommand(QueueJobContext* context,
-                                   const std::string& command) = 0;
+                                   llvm::StringRef command) = 0;
   
   /// @}
 };
