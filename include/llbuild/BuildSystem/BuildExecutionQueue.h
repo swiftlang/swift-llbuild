@@ -15,6 +15,8 @@
 
 #include "llbuild/Basic/Compiler.h"
 
+#include "llvm/ADT/StringRef.h"
+
 #include <functional>
 
 namespace llbuild {
@@ -92,6 +94,10 @@ public:
   
   /// @}
 };
+
+/// Create an execution queue that schedules jobs to individual lanes with a
+/// capped limit on the number of concurrent lanes.
+BuildExecutionQueue *createLaneBasedExecutionQueue(int numLanes);
 
 }
 }
