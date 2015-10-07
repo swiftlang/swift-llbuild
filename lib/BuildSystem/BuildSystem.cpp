@@ -41,6 +41,7 @@ BuildSystemCommandInterface::~BuildSystemCommandInterface() {}
 
 namespace {
 
+class BuildNode;
 class BuildSystemImpl;
 
 /// The delegate used to load the build file for use by a build system.
@@ -84,6 +85,9 @@ public:
 class BuildSystemEngineDelegate : public BuildEngineDelegate {
   BuildSystemImpl& system;
 
+  // FIXME: This is an inefficent map, the string is duplicated.
+  std::unordered_map<std::string, std::unique_ptr<BuildNode>> dynamicNodes;
+  
   BuildFile& getBuildFile();
 
   virtual Rule lookupRule(const KeyType& keyData) override;
@@ -195,7 +199,10 @@ public:
              const std::string& message) {
     getDelegate().error(filename, at, message);
   }
-  
+
+  std::unique_ptr<BuildNode> lookupNode(const std::string& name,
+                                        bool isImplicit);
+
   /// @name Client API
   /// @{
 
@@ -545,12 +552,20 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
   case BuildKey::Kind::Node: {
     // Find the node.
     auto it = getBuildFile().getNodes().find(key.getNodeName());
-    if (it == getBuildFile().getNodes().end()) {
-      // FIXME: Unknown node name, should map to a default type (a file
-      // generally, although we might want to provide a way to put this under
-      // control of the client).
-      assert(0 && "FIXME: unknown node");
-      abort();
+    BuildNode* node;
+    if (it != getBuildFile().getNodes().end()) {
+      node = static_cast<BuildNode*>(it->second.get());
+    } else {
+      auto it = dynamicNodes.find(key.getNodeName());
+      if (it != dynamicNodes.end()) {
+        node = it->second.get();
+      } else {
+        // Create nodes on the fly for any unknown ones.
+        auto nodeOwner = system.lookupNode(
+            key.getNodeName(), /*isImplicit=*/true);
+        node = nodeOwner.get();
+        dynamicNodes[key.getNodeName()] = std::move(nodeOwner);
+      }
     }
 
     // Create the rule used to construct this node.
@@ -559,7 +574,6 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     // command, which would reduce the number of tasks in the system. For now we
     // do the uniform thing, but do differentiate between input and command
     // nodes.
-    BuildNode* node = static_cast<BuildNode*>(it->second.get());
 
     // Create an input node if there are no producers.
     if (node->getProducers().empty()) {
@@ -617,6 +631,12 @@ void BuildSystemEngineDelegate::cycleDetected(const std::vector<Rule*>& items) {
 }
 
 #pragma mark - BuildSystemImpl implementation
+
+std::unique_ptr<BuildNode>
+BuildSystemImpl::lookupNode(const std::string& name, bool isImplicit) {
+  bool isVirtual = !name.empty() && name[0] == '<' && name.back() == '>';
+  return std::make_unique<BuildNode>(*this, name, isVirtual);
+}
 
 bool BuildSystemImpl::build(const std::string& target) {
   // Load the build file.
@@ -1037,8 +1057,7 @@ void BuildSystemFileDelegate::loadedCommand(const std::string& name,
 std::unique_ptr<Node>
 BuildSystemFileDelegate::lookupNode(const std::string& name,
                                     bool isImplicit) {
-  bool isVirtual = !name.empty() && name[0] == '<' && name.back() == '>';
-  return std::make_unique<BuildNode>(system, name, isVirtual);
+  return system.lookupNode(name, isImplicit);
 }
 
 }
