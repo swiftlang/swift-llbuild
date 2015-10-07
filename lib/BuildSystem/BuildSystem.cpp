@@ -637,183 +637,16 @@ bool BuildSystemImpl::build(const std::string& target) {
   return true;
 }
 
-#pragma mark - PhonyTool implementation
+#pragma mark - ExternalCommand implementation
 
-class PhonyCommand : public Command {
+/// This is a base class for defining commands which are run externally to the
+/// build system and interact using files. It defines common base behaviors
+/// which make sense for all such tools.
+class ExternalCommand : public Command {
   BuildSystemImpl& system;
   std::vector<BuildNode*> inputs;
   std::vector<BuildNode*> outputs;
-
-  uint64_t getSignature() {
-    uint64_t result = 0;
-    for (const auto* input: inputs) {
-      result ^= basic::hashString(input->getName());
-    }
-    for (const auto* output: outputs) {
-      result ^= basic::hashString(output->getName());
-    }
-    return result;
-  }
-  
-public:
-  PhonyCommand(BuildSystemImpl& system, const std::string& name)
-      : Command(name), system(system) {}
-
-  virtual void configureDescription(const std::string& value) override {
-    // The description is unused for phony commands.
-  }
-  
-  virtual void configureInputs(const std::vector<Node*>& value) override {
-    inputs.reserve(value.size());
-    for (auto* node: value) {
-      inputs.emplace_back(static_cast<BuildNode*>(node));
-    }
-  }
-
-  virtual void configureOutputs(const std::vector<Node*>& value) override {
-    outputs.reserve(value.size());
-    for (auto* node: value) {
-      outputs.emplace_back(static_cast<BuildNode*>(node));
-    }
-  }
-
-  virtual bool configureAttribute(const std::string& name,
-                                  const std::string& value) override {
-    system.error(system.getMainFilename(),
-                 "unexpected attribute: '" + name + "'");
-    return false;
-  }
-
-  virtual BuildValue getResultForOutput(Node* node,
-                                        const BuildValue& value) override {
-    // If the value was a failed or skipped command, propagate the failure.
-    if (value.isFailedCommand() || value.isSkippedCommand())
-      return BuildValue::makeFailedInput();
-
-    // Otherwise, return the actual result for the output.
-
-    if (static_cast<BuildNode*>(node)->isVirtual()) {
-      return BuildValue::makeVirtualInput();
-    }
-    
-    // Find the index of the output node.
-    auto it = std::find(outputs.begin(), outputs.end(), node);
-    assert(it != outputs.end());
-    
-    auto idx = it - outputs.begin();
-    assert(idx < value.getNumOutputs());
-
-    auto& info = value.getNthOutputInfo(idx);
-    if (info.isMissing())
-      return BuildValue::makeMissingInput();
-    
-    return BuildValue::makeExistingInput(info);
-  }
-  
-  virtual bool isResultValid(const BuildValue& value) override {
-    // If the prior value wasn't for a successful command, recompute.
-    if (!value.isSuccessfulCommand())
-      return false;
-    
-    // If the command's signature has changed since it was built, rebuild.
-    if (value.getCommandSignature() != getSignature())
-      return false;
-
-    // Check the timestamps on each of the outputs.
-    for (unsigned i = 0, e = outputs.size(); i != e; ++i) {
-      auto* node = outputs[i];
-
-      // Ignore virtual outputs.
-      if (node->isVirtual())
-        continue;
-      
-      // Always rebuild if the output is missing.
-      auto info = node->getFileInfo();
-      if (info.isMissing())
-        return false;
-
-      // Otherwise, the result is valid if the file information has not changed.
-      if (value.getNthOutputInfo(i) != info)
-        return false;
-    }
-
-    // Otherwise, the result is ok.
-    return true;
-  }
-
-  virtual void start(BuildSystemCommandInterface& system, Task* task) override {
-    // Request all of the inputs.
-    for (const auto& node: inputs) {
-      system.taskNeedsInput(task, BuildKey::makeNode(node), /*InputID=*/0);
-    }
-  }
-
-  virtual void providePriorValue(BuildSystemCommandInterface&, Task*,
-                                 const BuildValue&) override {
-  }
-
-  virtual void provideValue(BuildSystemCommandInterface&, Task*,
-                            uintptr_t inputID,
-                            const BuildValue& value) override {
-    // FIXME: Need to implement handling for 'phony' commands of failure.
-  }
-
-  virtual void inputsAvailable(BuildSystemCommandInterface& system,
-                               Task* task) override {
-    // Suppress static analyzer false positive on generalized lambda capture
-    // (rdar://problem/22165130).
-#ifndef __clang_analyzer__
-    auto fn = [this, &system=system, task](QueueJobContext* context) {
-      // Capture the file information for each of the output nodes.
-      //
-      // FIXME: We need to delegate to the node here.
-      llvm::SmallVector<FileInfo, 8> outputInfos;
-      for (auto* node: outputs) {
-        if (node->isVirtual()) {
-          outputInfos.push_back(FileInfo{});
-        } else {
-          outputInfos.push_back(node->getFileInfo());
-        }
-      }
-      
-      // Otherwise, complete with a successful result.
-      system.taskIsComplete(
-          task, BuildValue::makeSuccessfulCommand(outputInfos, getSignature()));
-    };
-    system.addJob({ this, std::move(fn) });
-#endif
-  }
-};
-
-class PhonyTool : public Tool {
-  BuildSystemImpl& system;
-
-public:
-  PhonyTool(BuildSystemImpl& system, const std::string& name)
-      : Tool(name), system(system) {}
-
-  virtual bool configureAttribute(const std::string& name,
-                                  const std::string& value) override {
-    // No supported configuration attributes.
-    system.error(system.getMainFilename(),
-                 "unexpected attribute: '" + name + "'");
-    return false;
-  }
-
-  virtual std::unique_ptr<Command> createCommand(
-      const std::string& name) override {
-    return std::make_unique<PhonyCommand>(system, name);
-  }
-};
-
-#pragma mark - ShellTool implementation
-
-class ShellCommand : public Command {
-  BuildSystemImpl& system;
   std::string description;
-  std::vector<BuildNode*> inputs;
-  std::vector<BuildNode*> outputs;
-  std::string args;
 
   // Build specific data.
   //
@@ -827,7 +660,8 @@ class ShellCommand : public Command {
   /// true).
   bool hasMissingInput = false;
 
-  uint64_t getSignature() {
+protected:
+  virtual uint64_t getSignature() {
     uint64_t result = 0;
     for (const auto* input: inputs) {
       result ^= basic::hashString(input->getName());
@@ -835,12 +669,17 @@ class ShellCommand : public Command {
     for (const auto* output: outputs) {
       result ^= basic::hashString(output->getName());
     }
-    result ^= basic::hashString(args);
     return result;
   }
+
+  const std::vector<BuildNode*>& getInputs() { return inputs; }
+  
+  const std::vector<BuildNode*>& getOutputs() { return outputs; }
+  
+  const std::string& getDescription() { return description; }
   
 public:
-  ShellCommand(BuildSystemImpl& system, const std::string& name)
+  ExternalCommand(BuildSystemImpl& system, const std::string& name)
       : Command(name), system(system) {}
 
   virtual void configureDescription(const std::string& value) override {
@@ -863,15 +702,9 @@ public:
 
   virtual bool configureAttribute(const std::string& name,
                                   const std::string& value) override {
-    if (name == "args") {
-      args = value;
-    } else {
-      system.error(system.getMainFilename(),
-                   "unexpected attribute: '" + name + "'");
-      return false;
-    }
-
-    return true;
+    system.error(system.getMainFilename(),
+                 "unexpected attribute: '" + name + "'");
+    return false;
   }
 
   virtual BuildValue getResultForOutput(Node* node,
@@ -880,13 +713,19 @@ public:
     if (value.isFailedCommand() || value.isSkippedCommand())
       return BuildValue::makeFailedInput();
 
-    // Otherwise, return the actual result for the output.
+    // Otherwise, we should have a successful command -- return the actual
+    // result for the output.
+    assert(value.isSuccessfulCommand());
 
+    // If the node is virtual, the output is always a virtual input value.
     if (static_cast<BuildNode*>(node)->isVirtual()) {
       return BuildValue::makeVirtualInput();
     }
-
+    
     // Find the index of the output node.
+    //
+    // FIXME: This is O(N). We don't expect N to be large in practice, but it
+    // could be.
     auto it = std::find(outputs.begin(), outputs.end(), node);
     assert(it != outputs.end());
     
@@ -912,11 +751,11 @@ public:
     // Check the timestamps on each of the outputs.
     for (unsigned i = 0, e = outputs.size(); i != e; ++i) {
       auto* node = outputs[i];
-      
+
       // Ignore virtual outputs.
       if (node->isVirtual())
         continue;
-
+      
       // Always rebuild if the output is missing.
       auto info = node->getFileInfo();
       if (info.isMissing())
@@ -935,7 +774,7 @@ public:
     // Initialize the build state.
     shouldSkip = false;
     hasMissingInput = false;
-    
+
     // Request all of the inputs.
     unsigned id = 0;
     for (auto it = inputs.begin(), ie = inputs.end(); it != ie; ++it, ++id) {
@@ -1000,21 +839,10 @@ public:
     // (rdar://problem/22165130).
 #ifndef __clang_analyzer__
     auto fn = [this, &bsci=bsci, task](QueueJobContext* context) {
-      // Log the command.
-      //
-      // FIXME: Design the logging and status output APIs.
-      if (description.empty()) {
-        fprintf(stdout, "%s\n", args.c_str());
-      } else {
-        fprintf(stdout, "%s\n", description.c_str());
-      }
-      fflush(stdout);
-
       // Execute the command.
-      if (!bsci.getExecutionQueue().executeShellCommand(context, args)) {
+      if (!executeExternalCommand(bsci, task, context)) {
         // If the command failed, the result is failure.
         bsci.taskIsComplete(task, BuildValue::makeFailedCommand());
-
         system.getDelegate().hadCommandFailure();
         return;
       }
@@ -1037,6 +865,88 @@ public:
     };
     bsci.addJob({ this, std::move(fn) });
 #endif
+  }
+
+  /// Extension point for subclasses, to actually execute the command.
+  virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
+                                      Task* task, QueueJobContext* context) = 0;
+};
+
+#pragma mark - PhonyTool implementation
+
+class PhonyCommand : public ExternalCommand {
+public:
+  using ExternalCommand::ExternalCommand;
+
+  virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
+                                      Task* task,
+                                      QueueJobContext* context) override {
+    // Nothing needs to be done for phony commands.
+    return true;
+  }
+};
+
+class PhonyTool : public Tool {
+  BuildSystemImpl& system;
+
+public:
+  PhonyTool(BuildSystemImpl& system, const std::string& name)
+      : Tool(name), system(system) {}
+
+  virtual bool configureAttribute(const std::string& name,
+                                  const std::string& value) override {
+    // No supported configuration attributes.
+    system.error(system.getMainFilename(),
+                 "unexpected attribute: '" + name + "'");
+    return false;
+  }
+
+  virtual std::unique_ptr<Command> createCommand(
+      const std::string& name) override {
+    return std::make_unique<PhonyCommand>(system, name);
+  }
+};
+
+#pragma mark - ShellTool implementation
+
+class ShellCommand : public ExternalCommand {
+  std::string args;
+
+  virtual uint64_t getSignature() override {
+    uint64_t result = ExternalCommand::getSignature();
+    result ^= basic::hashString(args);
+    return result;
+  }
+  
+public:
+  using ExternalCommand::ExternalCommand;
+  
+  virtual bool configureAttribute(const std::string& name,
+                                  const std::string& value) override {
+    if (name == "args") {
+      args = value;
+    } else {
+      return ExternalCommand::configureAttribute(name, value);
+    }
+
+    return true;
+  }
+
+  virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
+                                      Task* task,
+                                      QueueJobContext* context) override {
+    // Log the command.
+    //
+    // FIXME: Design the logging and status output APIs.
+    if (getDescription().empty()) {
+      fprintf(stdout, "%s\n", args.c_str());
+    } else {
+      fprintf(stdout, "%s\n", getDescription().c_str());
+    }
+    fflush(stdout);
+
+    // Execute the command.
+    return bsci.getExecutionQueue().executeShellCommand(context, args);
   }
 };
 

@@ -18,15 +18,15 @@ targets:
 commands:
   thing-1:
     tool: shell
-    outputs: ["thing-1"]
+    outputs: ["<thing-1>"]
     args: echo THING1
 
   thing-2:
     tool: shell
-    outputs: ["thing-2"]
+    outputs: ["<thing-2>"]
     args: echo THING2
   
   output:
     tool: phony
-    inputs: ["thing-1", "thing-2"]
+    inputs: ["<thing-1>", "<thing-2>"]
     outputs: ["<output>"]
