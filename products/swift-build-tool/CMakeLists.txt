@@ -9,3 +9,6 @@ target_link_libraries(swift-build-tool
   sqlite3
   curses
   )
+
+install(TARGETS swift-build-tool
+        DESTINATION bin)
