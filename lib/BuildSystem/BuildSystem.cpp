@@ -237,22 +237,16 @@ public:
 
 // FIXME: Figure out how this is going to be organized.
 class BuildNode : public Node {
-  // FIXME: This is just needed for diagnostics during configuration, we should
-  // make that some kind of context argument instead of storing it in every
-  // node.
-  BuildSystemImpl& system;
-  
   /// Whether or not this node is "virtual" (i.e., not a filesystem path).
   bool virtualNode;
 
 public:
-  explicit BuildNode(BuildSystemImpl& system, StringRef name,
-                     bool isVirtual)
-      : Node(name), system(system), virtualNode(isVirtual) {}
+  explicit BuildNode(StringRef name, bool isVirtual)
+      : Node(name), virtualNode(isVirtual) {}
 
   bool isVirtual() const { return virtualNode; }
 
-  virtual bool configureAttribute(const ConfigureContext&, StringRef name,
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
     if (name == "is-virtual") {
       if (value == "true") {
@@ -260,17 +254,15 @@ public:
       } else if (value == "false") {
         virtualNode = false;
       } else {
-        system.error(system.getMainFilename(),
-                     "invalid value: '" + value +
-                     "' for attribute '" + name + "'");
+        ctx.error("invalid value: '" + value + "' for attribute '"
+                  + name + "'");
         return false;
       }
       return true;
     }
     
     // We don't support any other custom attributes.
-    system.error(system.getMainFilename(),
-                 "unexpected attribute: '" + name + "'");
+    ctx.error("unexpected attribute: '" + name + "'");
     return false;
   }
 
@@ -640,7 +632,7 @@ void BuildSystemEngineDelegate::cycleDetected(const std::vector<Rule*>& items) {
 std::unique_ptr<BuildNode>
 BuildSystemImpl::lookupNode(StringRef name, bool isImplicit) {
   bool isVirtual = !name.empty() && name[0] == '<' && name.back() == '>';
-  return std::make_unique<BuildNode>(*this, name, isVirtual);
+  return std::make_unique<BuildNode>(name, isVirtual);
 }
 
 bool BuildSystemImpl::build(StringRef target) {
@@ -668,7 +660,6 @@ bool BuildSystemImpl::build(StringRef target) {
 /// build system and interact using files. It defines common base behaviors
 /// which make sense for all such tools.
 class ExternalCommand : public Command {
-  BuildSystemImpl& system;
   std::vector<BuildNode*> inputs;
   std::vector<BuildNode*> outputs;
   std::string description;
@@ -704,8 +695,7 @@ protected:
   StringRef getDescription() { return description; }
   
 public:
-  ExternalCommand(BuildSystemImpl& system, StringRef name)
-      : Command(name), system(system) {}
+  using Command::Command;
 
   virtual void configureDescription(const ConfigureContext&,
                                     StringRef value) override {
@@ -728,10 +718,9 @@ public:
     }
   }
 
-  virtual bool configureAttribute(const ConfigureContext&, StringRef name,
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
-    system.error(system.getMainFilename(),
-                 "unexpected attribute: '" + name + "'");
+    ctx.error("unexpected attribute: '" + name + "'");
     return false;
   }
 
@@ -798,7 +787,7 @@ public:
     return true;
   }
 
-  virtual void start(BuildSystemCommandInterface& system, Task* task) override {
+  virtual void start(BuildSystemCommandInterface& bsci, Task* task) override {
     // Initialize the build state.
     shouldSkip = false;
     hasMissingInput = false;
@@ -806,7 +795,7 @@ public:
     // Request all of the inputs.
     unsigned id = 0;
     for (auto it = inputs.begin(), ie = inputs.end(); it != ie; ++it, ++id) {
-      system.taskNeedsInput(task, BuildKey::makeNode(*it), id);
+      bsci.taskNeedsInput(task, BuildKey::makeNode(*it), id);
     }
   }
 
@@ -814,9 +803,11 @@ public:
                                  const BuildValue&) override {
   }
 
-  virtual void provideValue(BuildSystemCommandInterface&, Task*,
+  virtual void provideValue(BuildSystemCommandInterface& bsci, Task*,
                             uintptr_t inputID,
                             const BuildValue& value) override {
+    auto& system = getBuildSystem(bsci.getBuildEngine());
+    
     // Process the input value to see if we should skip this command.
 
     // All direct inputs should be individual node values.
@@ -841,6 +832,8 @@ public:
 
   virtual void inputsAvailable(BuildSystemCommandInterface& bsci,
                                Task* task) override {
+    auto& system = getBuildSystem(bsci.getBuildEngine());
+    
     // If the build should cancel, do nothing.
     if (system.getDelegate().isCancelled()) {
       bsci.taskIsComplete(task, BuildValue::makeSkippedCommand());
@@ -869,6 +862,8 @@ public:
     // (rdar://problem/22165130).
 #ifndef __clang_analyzer__
     auto fn = [this, &bsci=bsci, task](QueueJobContext* context) {
+      auto& system = getBuildSystem(bsci.getBuildEngine());
+    
       // Execute the command.
       if (!executeExternalCommand(bsci, task, context)) {
         // If the command failed, the result is failure.
@@ -917,23 +912,18 @@ public:
 };
 
 class PhonyTool : public Tool {
-  BuildSystemImpl& system;
-
 public:
-  PhonyTool(BuildSystemImpl& system, StringRef name)
-      : Tool(name), system(system) {}
+  using Tool::Tool;
 
-  virtual bool configureAttribute(const ConfigureContext&, StringRef name,
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
     // No supported configuration attributes.
-    system.error(system.getMainFilename(),
-                 "unexpected attribute: '" + name + "'");
+    ctx.error("unexpected attribute: '" + name + "'");
     return false;
   }
 
-  virtual std::unique_ptr<Command> createCommand(
-      StringRef name) override {
-    return std::make_unique<PhonyCommand>(system, name);
+  virtual std::unique_ptr<Command> createCommand(StringRef name) override {
+    return std::make_unique<PhonyCommand>(name);
   }
 };
 
@@ -981,24 +971,18 @@ public:
 };
 
 class ShellTool : public Tool {
-  BuildSystemImpl& system;
-
 public:
-  ShellTool(BuildSystemImpl& system, StringRef name)
-      : Tool(name), system(system) {}
+  using Tool::Tool;
 
-  virtual bool configureAttribute(const ConfigureContext&, StringRef name,
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
-    system.error(system.getMainFilename(),
-                 "unexpected attribute: '" + name + "'");
-
     // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
     return false;
   }
 
-  virtual std::unique_ptr<Command> createCommand(
-      StringRef name) override {
-    return std::make_unique<ShellCommand>(system, name);
+  virtual std::unique_ptr<Command> createCommand(StringRef name) override {
+    return std::make_unique<ShellCommand>(name);
   }
 };
 
@@ -1115,24 +1099,18 @@ public:
 };
 
 class ClangTool : public Tool {
-  BuildSystemImpl& system;
-
 public:
-  ClangTool(BuildSystemImpl& system, StringRef name)
-      : Tool(name), system(system) {}
+  using Tool::Tool;
 
-  virtual bool configureAttribute(const ConfigureContext&, StringRef name,
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
-    system.error(system.getMainFilename(),
-                 "unexpected attribute: '" + name + "'");
-
     // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
     return false;
   }
 
-  virtual std::unique_ptr<Command> createCommand(
-      StringRef name) override {
-    return std::make_unique<ClangShellCommand>(system, name);
+  virtual std::unique_ptr<Command> createCommand(StringRef name) override {
+    return std::make_unique<ClangShellCommand>(name);
   }
 };
 
@@ -1182,11 +1160,11 @@ BuildSystemFileDelegate::lookupTool(StringRef name) {
 
   // Otherwise, look for one of the builtin tool definitions.
   if (name == "shell") {
-    return std::make_unique<ShellTool>(system, name);
+    return std::make_unique<ShellTool>(name);
   } else if (name == "phony") {
-    return std::make_unique<PhonyTool>(system, name);
+    return std::make_unique<PhonyTool>(name);
   } else if (name == "clang") {
-    return std::make_unique<ClangTool>(system, name);
+    return std::make_unique<ClangTool>(name);
   }
 
   return nullptr;

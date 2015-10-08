@@ -528,6 +528,7 @@ class BuildFileImpl {
         
       // Create the command.
       auto command = tool->createCommand(name);
+      assert(command && "tool failed to create a command");
 
       // Parse the remaining command attributes.
       ++it;
