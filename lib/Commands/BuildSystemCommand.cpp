@@ -308,7 +308,7 @@ public:
 
 static void buildUsage(int exitCode) {
   int optionWidth = 25;
-  fprintf(stderr, "Usage: %s buildsystem build [options] <path> [<target>]\n",
+  fprintf(stderr, "Usage: %s buildsystem build [options] [<target>]\n",
           getProgramName());
   fprintf(stderr, "\nOptions:\n");
   BuildSystemInvocation::getUsage(optionWidth, llvm::errs());

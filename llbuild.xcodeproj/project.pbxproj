@@ -88,10 +88,8 @@
 		E1604CA61BB9E01D001153A1 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
 		E1604CA71BB9E01D001153A1 /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
 		E1604CA81BB9E01D001153A1 /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
-		E1604CA91BB9E01D001153A1 /* libllbuildCommands.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242E19F997050059043E /* libllbuildCommands.a */; };
 		E1604CAA1BB9E01D001153A1 /* libllbuildCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243E19F997150059043E /* libllbuildCore.a */; };
 		E1604CAB1BB9E01D001153A1 /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
-		E1604CAC1BB9E01D001153A1 /* libllbuildNinja.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243619F9970D0059043E /* libllbuildNinja.a */; };
 		E1604CB51BB9E03E001153A1 /* swift-build-tool.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1604CB41BB9E032001153A1 /* swift-build-tool.cpp */; };
 		E171538D1A0BF702004CD598 /* CorePerfTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = E171538C1A0BF702004CD598 /* CorePerfTests.mm */; };
 		E19D79921A15D9E6002604FB /* MakefileDepsParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */; };
@@ -253,13 +251,6 @@
 			remoteGlobalIDString = E1A2242419F991B40059043E;
 			remoteInfo = llbuildBasic;
 		};
-		E1604C9B1BB9E01D001153A1 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = E1A2242D19F997050059043E;
-			remoteInfo = llbuildCommands;
-		};
 		E1604C9D1BB9E01D001153A1 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
@@ -273,13 +264,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = E1B839481B541BFD00DB876B;
 			remoteInfo = llbuildBuildFile;
-		};
-		E1604CA11BB9E01D001153A1 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = E1A2243519F9970D0059043E;
-			remoteInfo = llbuildNinja;
 		};
 		E1604CB61BB9E07B001153A1 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -878,10 +862,8 @@
 				E1604CA61BB9E01D001153A1 /* libsqlite3.dylib in Frameworks */,
 				E1604CA71BB9E01D001153A1 /* libllvmSupport.a in Frameworks */,
 				E1604CA81BB9E01D001153A1 /* libllbuildBasic.a in Frameworks */,
-				E1604CA91BB9E01D001153A1 /* libllbuildCommands.a in Frameworks */,
 				E1604CAA1BB9E01D001153A1 /* libllbuildCore.a in Frameworks */,
 				E1604CAB1BB9E01D001153A1 /* libllbuildBuildSystem.a in Frameworks */,
-				E1604CAC1BB9E01D001153A1 /* libllbuildNinja.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1814,10 +1796,8 @@
 			dependencies = (
 				E1604C961BB9E01D001153A1 /* PBXTargetDependency */,
 				E1604C981BB9E01D001153A1 /* PBXTargetDependency */,
-				E1604C9A1BB9E01D001153A1 /* PBXTargetDependency */,
 				E1604C9C1BB9E01D001153A1 /* PBXTargetDependency */,
 				E1604C9E1BB9E01D001153A1 /* PBXTargetDependency */,
-				E1604CA01BB9E01D001153A1 /* PBXTargetDependency */,
 			);
 			name = "swift-build-tool";
 			productName = llbuild;
@@ -2583,11 +2563,6 @@
 			target = E1A2242419F991B40059043E /* llbuildBasic */;
 			targetProxy = E1604C991BB9E01D001153A1 /* PBXContainerItemProxy */;
 		};
-		E1604C9A1BB9E01D001153A1 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = E1A2242D19F997050059043E /* llbuildCommands */;
-			targetProxy = E1604C9B1BB9E01D001153A1 /* PBXContainerItemProxy */;
-		};
 		E1604C9C1BB9E01D001153A1 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = E1A2243D19F997150059043E /* llbuildCore */;
@@ -2597,11 +2572,6 @@
 			isa = PBXTargetDependency;
 			target = E1B839481B541BFD00DB876B /* llbuildBuildSystem */;
 			targetProxy = E1604C9F1BB9E01D001153A1 /* PBXContainerItemProxy */;
-		};
-		E1604CA01BB9E01D001153A1 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = E1A2243519F9970D0059043E /* llbuildNinja */;
-			targetProxy = E1604CA11BB9E01D001153A1 /* PBXContainerItemProxy */;
 		};
 		E1604CB71BB9E07B001153A1 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;

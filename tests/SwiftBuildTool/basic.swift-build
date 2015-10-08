@@ -11,7 +11,7 @@
 # CHECK: Hello Swift Build Tool
 
 client:
-  name: basic
+  name: swift-build
 
 targets:
   "": ["<echo>"]
