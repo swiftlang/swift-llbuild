@@ -19,6 +19,7 @@
 #include "llbuild/BuildSystem/BuildSystemCommandInterface.h"
 #include "llbuild/BuildSystem/ExternalCommand.h"
 
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Twine.h"
 
 using namespace llbuild;
@@ -28,7 +29,7 @@ namespace {
 
 class SwiftCompilerShellCommand : public ExternalCommand {
   /// The compiler command to invoke.
-  std::string executable;
+  std::string executable = "swiftc";
   
   /// The name of the module.
   std::string moduleName;
@@ -75,6 +76,17 @@ public:
   virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
                                       core::Task* task,
                                       QueueJobContext* context) override {
+    // FIXME: Need to add support for required parameters.
+    if (moduleName.empty()) {
+      bsci.getDelegate().error("", {}, "no configured 'module-name'");
+      return false;
+    }
+
+    // Get the list of sources.
+    SmallVector<StringRef, 32> sources;
+    StringRef(sourcesList).split(sources, " ", /*MaxSplit=*/-1,
+                                 /*KeepEmpty=*/false);
+    
     // Form the complete command.
     std::string command = executable + " -module-name " + moduleName +
       " -c " + sourcesList + " " + otherArgs;
@@ -82,7 +94,12 @@ public:
     // Log the command.
     //
     // FIXME: Design the logging and status output APIs.
-    fprintf(stdout, "%s\n", command.c_str());
+    if (!bsci.getDelegate().showVerboseStatus()) {
+      fprintf(stdout, "Compiling Swift Module '%s' (%d sources)\n",
+              moduleName.c_str(), int(sources.size()));
+    } else {
+      fprintf(stdout, "%s\n", command.c_str());
+    }
     fflush(stdout);
 
     // Execute the command.
