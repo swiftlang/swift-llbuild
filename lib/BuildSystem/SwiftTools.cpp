@@ -38,11 +38,17 @@ class SwiftCompilerShellCommand : public ExternalCommand {
   // FIXME: This should be an actual list.
   std::string sourcesList;
 
+  /// Additional arguments, as a string.
+  //
+  // FIXME: This should be an actual list.
+  std::string otherArgs;
+  
   virtual uint64_t getSignature() override {
     uint64_t result = ExternalCommand::getSignature();
     result ^= basic::hashString(executable);
     result ^= basic::hashString(moduleName);
     result ^= basic::hashString(sourcesList);
+    result ^= basic::hashString(otherArgs);
     return result;
   }
 
@@ -57,6 +63,8 @@ public:
       moduleName = value;
     } else if (name == "sources") {
       sourcesList = value;
+    } else if (name == "other-args") {
+      otherArgs = value;
     } else {
       return ExternalCommand::configureAttribute(ctx, name, value);
     }
@@ -69,7 +77,7 @@ public:
                                       QueueJobContext* context) override {
     // Form the complete command.
     std::string command = executable + " -module-name " + moduleName +
-      " -c " + sourcesList;
+      " -c " + sourcesList + " " + otherArgs;
     
     // Log the command.
     //

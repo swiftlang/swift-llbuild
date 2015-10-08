@@ -7,7 +7,7 @@
 # RUN: %{swift-build-tool} --chdir %t.build > %t.out
 # RUN: %{FileCheck} < %t.out %s
 #
-# CHECK: echo swiftc -module-name Foo -c s1.swift s2.swift
+# CHECK: echo swiftc -module-name Foo -c s1.swift s2.swift -OTHERARG
 
 client:
   name: swift-build
@@ -21,4 +21,6 @@ commands:
     outputs: ["<output>"]
     executable: echo swiftc
     module-name: Foo
+    # FIXME: This needs to be a list.
     sources: s1.swift s2.swift
+    other-args: -OTHERARG
