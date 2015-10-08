@@ -45,7 +45,9 @@ if(PYTHONINTERP_FOUND)
 endif()
 
 # Add a target for running all tests.
-cmake_policy(SET CMP0037 OLD)
+if(POLICY CMP0037)
+  cmake_policy(SET CMP0037 OLD)
+endif(POLICY CMP0037)
 add_custom_target(test)
 add_dependencies(test test-llbuild)
 set_target_properties(test PROPERTIES FOLDER "Tests")
