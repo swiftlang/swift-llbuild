@@ -86,6 +86,14 @@ public:
   
   /// Called by the build system to report a command failure.
   virtual void hadCommandFailure() = 0;
+
+  /// @name Status Reporting APIs
+  /// @{
+
+  /// Called to determine whether to show verbose status.
+  virtual bool showVerboseStatus() = 0;
+
+  /// @}
 };
 
 /// The BuildSystem class is used to perform builds using the native build

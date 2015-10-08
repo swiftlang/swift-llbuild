@@ -4,10 +4,13 @@
 # RUN: mkdir -p %t.build
 # RUN: touch %t.build/input
 # RUN: cp %s %t.build/build.llbuild
-# RUN: %{llbuild} buildsystem build --chdir %t.build > %t.out
+# RUN: %{llbuild} buildsystem build --no-db --chdir %t.build > %t.out
 # RUN: %{FileCheck} --input-file %t.out %s
+# RUN: %{llbuild} buildsystem build --no-db -v --chdir %t.build > %t2.out
+# RUN: %{FileCheck} --check-prefix CHECK-VERBOSE --input-file %t2.out %s
 #
 # CHECK: COPY
+# CHECK-VERBOSE: cp input output
 
 client:
   name: basic

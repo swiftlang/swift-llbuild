@@ -114,6 +114,10 @@ public:
   /// Subclass should call this method if overridden.
   virtual void hadCommandFailure() override;
 
+  /// Provides a default implementation that is connected to a command line
+  /// option.
+  virtual bool showVerboseStatus() override;
+
   /// @name Frontend-specific APIs
   /// @{
 
@@ -142,6 +146,9 @@ class BuildSystemInvocation {
 public:
   /// Whether command usage should be printed.
   bool showUsage = false;
+
+  /// Whether to show verbose output.
+  bool showVerboseStatus = false;
 
   /// Whether to use a serial build.
   bool useSerialBuild = false;

@@ -677,7 +677,7 @@ public:
     // Log the command.
     //
     // FIXME: Design the logging and status output APIs.
-    if (getDescription().empty()) {
+    if (bsci.getDelegate().showVerboseStatus() || getDescription().empty()) {
       fprintf(stdout, "%s\n", args.c_str());
     } else {
       fprintf(stdout, "%s\n", getDescription().str().c_str());

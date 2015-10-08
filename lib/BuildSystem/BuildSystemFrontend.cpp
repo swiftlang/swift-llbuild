@@ -40,7 +40,8 @@ void BuildSystemInvocation::getUsage(int optionWidth, raw_ostream& os) {
     { "--no-db", "disable use of a build database" },
     { "--db <PATH>", "enable building against the database at PATH" },
     { "-f <PATH>", "load the build task file at PATH" },
-    { "--serial", "Do not build in parallel" },
+    { "--serial", "do not build in parallel" },
+    { "-v, --verbose", "show verbose status information" },
     { "--trace <PATH>", "trace build engine operation to PATH" },
   };
   
@@ -101,6 +102,8 @@ void BuildSystemInvocation::parse(llvm::ArrayRef<std::string> args,
       args = args.slice(1);
     } else if (option == "--serial") {
       useSerialBuild = true;
+    } else if (option == "-v" || option == "--verbose") {
+      showVerboseStatus = true;
     } else if (option == "--trace") {
       if (args.empty()) {
         error("missing argument to '" + option + "'");
@@ -250,6 +253,12 @@ void BuildSystemFrontendDelegate::hadCommandFailure() {
   
   // Increment the failed command count.
   ++impl->numFailedCommands;
+}
+
+bool BuildSystemFrontendDelegate::showVerboseStatus() {
+  auto impl = static_cast<BuildSystemFrontendDelegateImpl*>(this->impl);
+  
+  return impl->invocation.showVerboseStatus;
 }
 
 #pragma mark - BuildSystemFrontend implementation
