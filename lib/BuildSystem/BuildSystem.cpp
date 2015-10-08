@@ -63,10 +63,10 @@ public:
   virtual void setFileContentsBeingParsed(StringRef buffer) override;
   
   virtual void error(StringRef filename,
-                     const Token& at,
+                     const BuildFileToken& at,
                      const Twine& message) override;
 
-  virtual bool configureClient(StringRef name,
+  virtual bool configureClient(const ConfigureContext&, StringRef name,
                                uint32_t version,
                                const property_list_type& properties) override;
 
@@ -252,7 +252,7 @@ public:
 
   bool isVirtual() const { return virtualNode; }
 
-  virtual bool configureAttribute(StringRef name,
+  virtual bool configureAttribute(const ConfigureContext&, StringRef name,
                                   StringRef value) override {
     if (name == "is-virtual") {
       if (value == "true") {
@@ -707,25 +707,28 @@ public:
   ExternalCommand(BuildSystemImpl& system, StringRef name)
       : Command(name), system(system) {}
 
-  virtual void configureDescription(StringRef value) override {
+  virtual void configureDescription(const ConfigureContext&,
+                                    StringRef value) override {
     description = value;
   }
   
-  virtual void configureInputs(const std::vector<Node*>& value) override {
+  virtual void configureInputs(const ConfigureContext&,
+                               const std::vector<Node*>& value) override {
     inputs.reserve(value.size());
     for (auto* node: value) {
       inputs.emplace_back(static_cast<BuildNode*>(node));
     }
   }
 
-  virtual void configureOutputs(const std::vector<Node*>& value) override {
+  virtual void configureOutputs(const ConfigureContext&,
+                                const std::vector<Node*>& value) override {
     outputs.reserve(value.size());
     for (auto* node: value) {
       outputs.emplace_back(static_cast<BuildNode*>(node));
     }
   }
 
-  virtual bool configureAttribute(StringRef name,
+  virtual bool configureAttribute(const ConfigureContext&, StringRef name,
                                   StringRef value) override {
     system.error(system.getMainFilename(),
                  "unexpected attribute: '" + name + "'");
@@ -920,7 +923,7 @@ public:
   PhonyTool(BuildSystemImpl& system, StringRef name)
       : Tool(name), system(system) {}
 
-  virtual bool configureAttribute(StringRef name,
+  virtual bool configureAttribute(const ConfigureContext&, StringRef name,
                                   StringRef value) override {
     // No supported configuration attributes.
     system.error(system.getMainFilename(),
@@ -948,12 +951,12 @@ class ShellCommand : public ExternalCommand {
 public:
   using ExternalCommand::ExternalCommand;
   
-  virtual bool configureAttribute(StringRef name,
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
     if (name == "args") {
       args = value;
     } else {
-      return ExternalCommand::configureAttribute(name, value);
+      return ExternalCommand::configureAttribute(ctx, name, value);
     }
 
     return true;
@@ -984,7 +987,7 @@ public:
   ShellTool(BuildSystemImpl& system, StringRef name)
       : Tool(name), system(system) {}
 
-  virtual bool configureAttribute(StringRef name,
+  virtual bool configureAttribute(const ConfigureContext&, StringRef name,
                                   StringRef value) override {
     system.error(system.getMainFilename(),
                  "unexpected attribute: '" + name + "'");
@@ -1066,14 +1069,14 @@ class ClangShellCommand : public ExternalCommand {
 public:
   using ExternalCommand::ExternalCommand;
   
-  virtual bool configureAttribute(StringRef name,
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
     if (name == "args") {
       args = value;
     } else if (name == "deps") {
       depsPath = value;
     } else {
-      return ExternalCommand::configureAttribute(name, value);
+      return ExternalCommand::configureAttribute(ctx, name, value);
     }
 
     return true;
@@ -1118,7 +1121,7 @@ public:
   ClangTool(BuildSystemImpl& system, StringRef name)
       : Tool(name), system(system) {}
 
-  virtual bool configureAttribute(StringRef name,
+  virtual bool configureAttribute(const ConfigureContext&, StringRef name,
                                   StringRef value) override {
     system.error(system.getMainFilename(),
                  "unexpected attribute: '" + name + "'");
@@ -1144,7 +1147,7 @@ void BuildSystemFileDelegate::setFileContentsBeingParsed(StringRef buffer) {
 }
 
 void BuildSystemFileDelegate::error(StringRef filename,
-                                    const Token& at,
+                                    const BuildFileToken& at,
                                     const Twine& message) {
   // Delegate to the system delegate.
   auto atSystemToken = BuildSystemDelegate::Token{at.start, at.length};
@@ -1152,7 +1155,8 @@ void BuildSystemFileDelegate::error(StringRef filename,
 }
 
 bool
-BuildSystemFileDelegate::configureClient(StringRef name,
+BuildSystemFileDelegate::configureClient(const ConfigureContext&,
+                                         StringRef name,
                                          uint32_t version,
                                          const property_list_type& properties) {
   // The client must match the configured name of the build system.

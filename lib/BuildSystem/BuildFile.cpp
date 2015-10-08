@@ -21,6 +21,10 @@
 using namespace llbuild;
 using namespace llbuild::buildsystem;
 
+void ConfigureContext::error(const Twine& message) const {
+  delegate.error(filename, at, message);
+}
+
 BuildFileDelegate::~BuildFileDelegate() {}
 
 Node::~Node() {}
@@ -122,7 +126,7 @@ class BuildFileImpl {
   /// Emit an error.
   void error(StringRef filename, llvm::SMRange at,
              StringRef message) {
-    BuildFileDelegate::Token atToken{at.Start.getPointer(),
+    BuildFileToken atToken{at.Start.getPointer(),
         unsigned(at.End.getPointer()-at.Start.getPointer())};
     delegate.error(mainFilename, atToken, message);
     ++numErrors;
@@ -134,6 +138,16 @@ class BuildFileImpl {
   
   void error(llvm::yaml::Node* node, StringRef message) {
     error(mainFilename, node->getSourceRange(), message);
+  }
+
+  ConfigureContext getContext(llvm::SMRange at) {
+    BuildFileToken atToken{at.Start.getPointer(),
+        unsigned(at.End.getPointer()-at.Start.getPointer())};
+    return ConfigureContext{ delegate, mainFilename, atToken };
+  }
+
+  ConfigureContext getContext(llvm::yaml::Node *node) {
+    return getContext(node->getSourceRange());
   }
 
   // FIXME: Factor out into a parser helper class.
@@ -177,7 +191,7 @@ class BuildFileImpl {
 
     return result;
   }
-
+  
   bool parseRootNode(llvm::yaml::Node* node) {
     // The root must always be a mapping.
     if (node->getType() != llvm::yaml::Node::NK_Mapping) {
@@ -302,7 +316,7 @@ class BuildFileImpl {
     }
 
     // Pass to the delegate.
-    if (!delegate.configureClient(name, version, properties)) {
+    if (!delegate.configureClient(getContext(map), name, version, properties)) {
       error(map, "unable to configure client");
       return false;
     }
@@ -350,6 +364,7 @@ class BuildFileImpl {
         }
 
         if (!tool->configureAttribute(
+                getContext(key),
                 stringFromScalarNode(
                     static_cast<llvm::yaml::ScalarNode*>(key)),
                 stringFromScalarNode(
@@ -448,6 +463,7 @@ class BuildFileImpl {
         }
 
         if (!node->configureAttribute(
+                getContext(key),
                 stringFromScalarNode(
                     static_cast<llvm::yaml::ScalarNode*>(key)),
                 stringFromScalarNode(
@@ -543,7 +559,7 @@ class BuildFileImpl {
                     /*isImplicit=*/true));
           }
 
-          command->configureInputs(nodes);
+          command->configureInputs(getContext(key), nodes);
         } else if (nodeIsScalarString(key, "outputs")) {
           if (value->getType() != llvm::yaml::Node::NK_Sequence) {
             error(value, "invalid value type for 'outputs' command key");
@@ -570,7 +586,7 @@ class BuildFileImpl {
             node->getProducers().push_back(command.get());
           }
 
-          command->configureOutputs(nodes);
+          command->configureOutputs(getContext(key), nodes);
         } else if (nodeIsScalarString(key, "description")) {
           if (value->getType() != llvm::yaml::Node::NK_Scalar) {
             error(value, "invalid value type for 'description' command key");
@@ -578,7 +594,7 @@ class BuildFileImpl {
           }
 
           command->configureDescription(
-              stringFromScalarNode(
+              getContext(key), stringFromScalarNode(
                   static_cast<llvm::yaml::ScalarNode*>(value)));
         } else {
           // Otherwise, it should be an attribute string key value pair.
@@ -594,6 +610,7 @@ class BuildFileImpl {
           }
 
           if (!command->configureAttribute(
+                  getContext(key),
                   stringFromScalarNode(
                       static_cast<llvm::yaml::ScalarNode*>(key)),
                   stringFromScalarNode(

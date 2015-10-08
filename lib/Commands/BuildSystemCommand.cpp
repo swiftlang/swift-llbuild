@@ -47,10 +47,10 @@ public:
   virtual void setFileContentsBeingParsed(StringRef buffer) override;
   
   virtual void error(StringRef filename,
-                     const Token& at,
+                     const BuildFileToken& at,
                      const Twine& message) override;
 
-  virtual bool configureClient(StringRef name,
+  virtual bool configureClient(const ConfigureContext&, StringRef name,
                                uint32_t version,
                                const property_list_type& properties) override;
 
@@ -73,7 +73,7 @@ public:
   ParseDummyNode(ParseBuildFileDelegate& delegate, StringRef name)
       : Node(name), delegate(delegate) {}
   
-  virtual bool configureAttribute(StringRef name,
+  virtual bool configureAttribute(const ConfigureContext&, StringRef name,
                                   StringRef value) override {
     if (delegate.shouldShowOutput()) {
       printf("  -- '%s': '%s'\n", name.str().c_str(), value.str().c_str());
@@ -89,13 +89,13 @@ public:
   ParseDummyCommand(ParseBuildFileDelegate& delegate, StringRef name)
       : Command(name), delegate(delegate) {}
 
-  virtual void configureDescription(StringRef description) override {
+  virtual void configureDescription(const ConfigureContext&, StringRef description) override {
     if (delegate.shouldShowOutput()) {
       printf("  -- 'description': '%s'", description.str().c_str());
     }
   }
   
-  virtual void configureInputs(const std::vector<Node*>& inputs) override {
+  virtual void configureInputs(const ConfigureContext&, const std::vector<Node*>& inputs) override {
     if (delegate.shouldShowOutput()) {
       bool first = true;
       printf("  -- 'inputs': [");
@@ -107,7 +107,7 @@ public:
     }
   }
 
-  virtual void configureOutputs(const std::vector<Node*>& outputs) override {
+  virtual void configureOutputs(const ConfigureContext&, const std::vector<Node*>& outputs) override {
     if (delegate.shouldShowOutput()) {
       bool first = true;
       printf("  -- 'outputs': [");
@@ -119,7 +119,7 @@ public:
     }
   }
 
-  virtual bool configureAttribute(StringRef name,
+  virtual bool configureAttribute(const ConfigureContext&, StringRef name,
                                   StringRef value) override {
     if (delegate.shouldShowOutput()) {
       printf("  -- '%s': '%s'\n", name.str().c_str(), value.str().c_str());
@@ -148,7 +148,7 @@ public:
   ParseDummyTool(ParseBuildFileDelegate& delegate, StringRef name)
       : Tool(name), delegate(delegate) {}
   
-  virtual bool configureAttribute(StringRef name,
+  virtual bool configureAttribute(const ConfigureContext&, StringRef name,
                                   StringRef value) override {
     if (delegate.shouldShowOutput()) {
       printf("  -- '%s': '%s'\n", name.str().c_str(), value.str().c_str());
@@ -172,7 +172,7 @@ void ParseBuildFileDelegate::setFileContentsBeingParsed(StringRef buffer) {
 }
 
 void ParseBuildFileDelegate::error(StringRef filename,
-                                   const Token& at,
+                                   const BuildFileToken& at,
                                    const Twine& message) {
   if (at.start) {
     util::emitError(filename, message.str(), at.start, at.length,
@@ -184,7 +184,8 @@ void ParseBuildFileDelegate::error(StringRef filename,
 }
 
 bool
-ParseBuildFileDelegate::configureClient(StringRef name,
+ParseBuildFileDelegate::configureClient(const ConfigureContext&,
+                                        StringRef name,
                                         uint32_t version,
                                         const property_list_type& properties) {
   if (showOutput) {

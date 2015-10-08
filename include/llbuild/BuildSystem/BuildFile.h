@@ -36,10 +36,32 @@ namespace buildsystem {
 /// The type used to pass parsed properties to the delegate.
 typedef std::vector<std::pair<std::string, std::string>> property_list_type;
 
+class BuildFileDelegate;
 class BuildSystemCommandInterface;
 class BuildValue;
 class Command;
 class Node;
+
+/// Minimal token object representing the range where a diagnostic occurred.
+struct BuildFileToken {
+  const char* start;
+  unsigned length;
+};
+
+/// Context for information that may be needed for a configuration action.
+struct ConfigureContext {
+  /// The file delegate, to use for error reporting, etc.
+  BuildFileDelegate& delegate;
+
+  /// The file the configuration request originated from.
+  StringRef filename;
+
+  /// The token to use in error reporting.
+  BuildFileToken at;
+
+public:
+  void error(const Twine& message) const;
+};
 
 /// Abstract tool definition used by the build file.
 class Tool {
@@ -57,7 +79,8 @@ public:
   StringRef getName() const { return name; }
 
   /// Called by the build file loader to configure a specified tool property.
-  virtual bool configureAttribute(StringRef name, StringRef value) = 0;
+  virtual bool configureAttribute(const ConfigureContext&, StringRef name,
+                                  StringRef value) = 0;
 
   /// Called by the build file loader to create a command which uses this tool.
   ///
@@ -109,7 +132,8 @@ public:
   const std::vector<Command*>& getProducers() const { return producers; }
   
   /// Called by the build file loader to configure a specified node property.
-  virtual bool configureAttribute(StringRef name, StringRef value) = 0;
+  virtual bool configureAttribute(const ConfigureContext&, StringRef name,
+                                  StringRef value) = 0;
 };
 
 /// Abstract command definition used by the build file.
@@ -131,16 +155,20 @@ public:
   /// @{
 
   /// Called by the build file loader to set the description.
-  virtual void configureDescription(StringRef description) = 0;
+  virtual void configureDescription(const ConfigureContext&,
+                                    StringRef description) = 0;
 
   /// Called by the build file loader to pass the list of input nodes.
-  virtual void configureInputs(const std::vector<Node*>& inputs) = 0;
+  virtual void configureInputs(const ConfigureContext&,
+                               const std::vector<Node*>& inputs) = 0;
 
   /// Called by the build file loader to pass the list of output nodes.
-  virtual void configureOutputs(const std::vector<Node*>& outputs) = 0;
+  virtual void configureOutputs(const ConfigureContext&,
+                                const std::vector<Node*>& outputs) = 0;
                                
   /// Called by the build file loader to configure a specified command property.
-  virtual bool configureAttribute(StringRef name, StringRef value) = 0;
+  virtual bool configureAttribute(const ConfigureContext&, StringRef name,
+                                  StringRef value) = 0;
 
   /// @}
 
@@ -188,12 +216,6 @@ public:
 
 class BuildFileDelegate {
 public:
-  /// Minimal token object representing the range where a diagnostic occurred.
-  struct Token {
-    const char* start;
-    unsigned length;
-  };
-
   virtual ~BuildFileDelegate();
 
   /// Called by the build file loader to register the current file contents.
@@ -208,7 +230,7 @@ public:
   ///
   /// \param message The diagnostic message.
   virtual void error(StringRef filename,
-                     const Token& at,
+                     const BuildFileToken& at,
                      const Twine& message) = 0;
   
   /// Called by the build file loader after the 'client' file section has been
@@ -219,7 +241,7 @@ public:
   /// \param properties The list of additional properties passed to the client.
   ///
   /// \returns True on success.
-  virtual bool configureClient(StringRef name,
+  virtual bool configureClient(const ConfigureContext&, StringRef name,
                                uint32_t version,
                                const property_list_type& properties) = 0;
 
