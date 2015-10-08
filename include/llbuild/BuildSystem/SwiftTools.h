@@ -17,6 +17,8 @@
 
 #include "llvm/ADT/StringRef.h"
 
+#include <memory>
+
 namespace llbuild {
 namespace buildsystem {
 
