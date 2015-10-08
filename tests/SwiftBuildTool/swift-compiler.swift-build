@@ -1,0 +1,24 @@
+# Check that we communicate properly with the Swift compiler.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: touch %t.build/input
+# RUN: cp %s %t.build/build.swift-build
+# RUN: %{swift-build-tool} --chdir %t.build > %t.out
+# RUN: %{FileCheck} < %t.out %s
+#
+# CHECK: echo swiftc -module-name Foo -c s1.swift s2.swift
+
+client:
+  name: swift-build
+
+targets:
+  "": ["<output>"]
+
+commands:
+  C1:
+    tool: swift-compiler
+    outputs: ["<output>"]
+    executable: echo swiftc
+    module-name: Foo
+    sources: s1.swift s2.swift

@@ -13,6 +13,7 @@
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
 
 #include "llbuild/BuildSystem/BuildFile.h"
+#include "llbuild/BuildSystem/SwiftTools.h"
 
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/Signals.h"
@@ -29,7 +30,10 @@ public:
                                     "swift-build", /*version=*/0) {}
   
   virtual std::unique_ptr<Tool> lookupTool(StringRef name) override {
-    // We do not support any non-built-in tools.
+    if (name == "swift-compiler") {
+      return createSwiftCompilerTool(name);
+    }
+
     return nullptr;
   }
 };

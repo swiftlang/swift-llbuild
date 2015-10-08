@@ -6,4 +6,5 @@ add_llbuild_library(llbuildBuildSystem
   BuildValue.cpp
   ExternalCommand.cpp
   LaneBasedExecutionQueue.cpp
+  SwiftTools.cpp
   )
