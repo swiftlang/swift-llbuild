@@ -120,24 +120,24 @@ class BuildFileImpl {
   }
 
   /// Emit an error.
-  void error(const std::string& filename, llvm::SMRange at,
-             const std::string& message) {
+  void error(StringRef filename, llvm::SMRange at,
+             StringRef message) {
     BuildFileDelegate::Token atToken{at.Start.getPointer(),
         unsigned(at.End.getPointer()-at.Start.getPointer())};
     delegate.error(mainFilename, atToken, message);
     ++numErrors;
   }
 
-  void error(const std::string& message) {
+  void error(StringRef message) {
     error(mainFilename, {}, message);
   }
   
-  void error(llvm::yaml::Node* node, const std::string& message) {
+  void error(llvm::yaml::Node* node, StringRef message) {
     error(mainFilename, node->getSourceRange(), message);
   }
 
   // FIXME: Factor out into a parser helper class.
-  bool nodeIsScalarString(llvm::yaml::Node* node, const std::string& name) {
+  bool nodeIsScalarString(llvm::yaml::Node* node, StringRef name) {
     if (node->getType() != llvm::yaml::Node::NK_Scalar)
       return false;
 
@@ -145,7 +145,7 @@ class BuildFileImpl {
         static_cast<llvm::yaml::ScalarNode*>(node)) == name;
   }
 
-  Tool* getOrCreateTool(const std::string& name, llvm::yaml::Node* forNode) {
+  Tool* getOrCreateTool(StringRef name, llvm::yaml::Node* forNode) {
     // First, check the map.
     auto it = tools.find(name);
     if (it != tools.end())
@@ -163,7 +163,7 @@ class BuildFileImpl {
     return result;
   }
 
-  Node* getOrCreateNode(const std::string& name, bool isImplicit) {
+  Node* getOrCreateNode(StringRef name, bool isImplicit) {
     // First, check the map.
     auto it = nodes.find(name);
     if (it != nodes.end())
@@ -615,7 +615,7 @@ class BuildFileImpl {
 
 public:
   BuildFileImpl(class BuildFile& buildFile,
-                const std::string& mainFilename,
+                StringRef mainFilename,
                 BuildFileDelegate& delegate)
     : mainFilename(mainFilename), delegate(delegate) {}
 
@@ -682,7 +682,7 @@ public:
 
 #pragma mark - BuildFile
 
-BuildFile::BuildFile(const std::string& mainFilename,
+BuildFile::BuildFile(StringRef mainFilename,
                      BuildFileDelegate& delegate)
   : impl(new BuildFileImpl(*this, mainFilename, delegate))
 {

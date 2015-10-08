@@ -51,19 +51,18 @@ class Tool {
   std::string name;
 
 public:
-  explicit Tool(const std::string& name) : name(name) {}
+  explicit Tool(StringRef name) : name(name) {}
   virtual ~Tool();
 
-  const std::string& getName() const { return name; }
+  StringRef getName() const { return name; }
 
   /// Called by the build file loader to configure a specified tool property.
-  virtual bool configureAttribute(const std::string& name,
-                                  const std::string& value) = 0;
+  virtual bool configureAttribute(StringRef name, StringRef value) = 0;
 
   /// Called by the build file loader to create a command which uses this tool.
   ///
   /// \param name - The name of the command.
-  virtual std::unique_ptr<Command> createCommand(const std::string& name) = 0;
+  virtual std::unique_ptr<Command> createCommand(StringRef name) = 0;
 };
 
 /// Each Target declares a name that can be used to reference it, and a list of
@@ -78,7 +77,7 @@ class Target {
 public:
   explicit Target(std::string name) : name(name) { }
 
-  const std::string& getName() const { return name; }
+  StringRef getName() const { return name; }
 
   std::vector<Node*>& getNodes() { return nodes; }
   const std::vector<Node*>& getNodes() const { return nodes; }
@@ -100,18 +99,17 @@ class Node {
   std::vector<Command*> producers;
   
 public:
-  explicit Node(const std::string& name) : name(name) {}
+  explicit Node(StringRef name) : name(name) {}
   virtual ~Node();
 
-  const std::string& getName() const { return name; }
+  StringRef getName() const { return name; }
   
   std::vector<Command*>& getProducers() { return producers; }
 
   const std::vector<Command*>& getProducers() const { return producers; }
   
   /// Called by the build file loader to configure a specified node property.
-  virtual bool configureAttribute(const std::string& name,
-                                  const std::string& value) = 0;
+  virtual bool configureAttribute(StringRef name, StringRef value) = 0;
 };
 
 /// Abstract command definition used by the build file.
@@ -124,16 +122,16 @@ class Command {
   std::string name;
 
 public:
-  explicit Command(const std::string& name) : name(name) {}
+  explicit Command(StringRef name) : name(name) {}
   virtual ~Command();
 
-  const std::string& getName() const { return name; }
+  StringRef getName() const { return name; }
 
   /// @name File Loading
   /// @{
 
   /// Called by the build file loader to set the description.
-  virtual void configureDescription(const std::string& description) = 0;
+  virtual void configureDescription(StringRef description) = 0;
 
   /// Called by the build file loader to pass the list of input nodes.
   virtual void configureInputs(const std::vector<Node*>& inputs) = 0;
@@ -142,8 +140,7 @@ public:
   virtual void configureOutputs(const std::vector<Node*>& outputs) = 0;
                                
   /// Called by the build file loader to configure a specified command property.
-  virtual bool configureAttribute(const std::string& name,
-                                  const std::string& value) = 0;
+  virtual bool configureAttribute(StringRef name, StringRef value) = 0;
 
   /// @}
 
@@ -210,9 +207,9 @@ public:
   /// no location is associated.
   ///
   /// \param message The diagnostic message.
-  virtual void error(const std::string& filename,
+  virtual void error(StringRef filename,
                      const Token& at,
-                     const std::string& message) = 0;
+                     const Twine& message) = 0;
   
   /// Called by the build file loader after the 'client' file section has been
   /// loaded.
@@ -222,7 +219,7 @@ public:
   /// \param properties The list of additional properties passed to the client.
   ///
   /// \returns True on success.
-  virtual bool configureClient(const std::string& name,
+  virtual bool configureClient(StringRef name,
                                uint32_t version,
                                const property_list_type& properties) = 0;
 
@@ -230,15 +227,15 @@ public:
   ///
   /// \param name The name of the tool to lookup.
   /// \returns The tool to use on success, or otherwise nil.
-  virtual std::unique_ptr<Tool> lookupTool(const std::string& name) = 0;
+  virtual std::unique_ptr<Tool> lookupTool(StringRef name) = 0;
 
   /// Called by the build file loader to inform the client that a target
   /// definition has been loaded.
-  virtual void loadedTarget(const std::string& name, const Target& target) = 0;
+  virtual void loadedTarget(StringRef name, const Target& target) = 0;
 
   /// Called by the build file loader to inform the client that a command
   /// has been fully loaded.
-  virtual void loadedCommand(const std::string& name, const Command& command) = 0;
+  virtual void loadedCommand(StringRef name, const Command& command) = 0;
 
   /// Called by the build file loader to get a node.
   ///
@@ -246,7 +243,7 @@ public:
   ///
   /// \param isImplicit Whether the node is an implicit one (created as a side
   /// effect of being declared by a command).
-  virtual std::unique_ptr<Node> lookupNode(const std::string& name,
+  virtual std::unique_ptr<Node> lookupNode(StringRef name,
                                            bool isImplicit=false) = 0;
 };
 
@@ -273,7 +270,7 @@ public:
   /// Create a build file with the given delegate.
   ///
   /// \arg mainFilename The path of the main build file.
-  explicit BuildFile(const std::string& mainFilename,
+  explicit BuildFile(StringRef mainFilename,
                      BuildFileDelegate& delegate);
   ~BuildFile();
 

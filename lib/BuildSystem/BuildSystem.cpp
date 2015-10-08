@@ -62,23 +62,23 @@ public:
 
   virtual void setFileContentsBeingParsed(StringRef buffer) override;
   
-  virtual void error(const std::string& filename,
+  virtual void error(StringRef filename,
                      const Token& at,
-                     const std::string& message) override;
+                     const Twine& message) override;
 
-  virtual bool configureClient(const std::string& name,
+  virtual bool configureClient(StringRef name,
                                uint32_t version,
                                const property_list_type& properties) override;
 
-  virtual std::unique_ptr<Tool> lookupTool(const std::string& name) override;
+  virtual std::unique_ptr<Tool> lookupTool(StringRef name) override;
 
-  virtual void loadedTarget(const std::string& name,
+  virtual void loadedTarget(StringRef name,
                             const Target& target) override;
 
-  virtual void loadedCommand(const std::string& name,
+  virtual void loadedCommand(StringRef name,
                              const Command& target) override;
 
-  virtual std::unique_ptr<Node> lookupNode(const std::string& name,
+  virtual std::unique_ptr<Node> lookupNode(StringRef name,
                                            bool isImplicit=false) override;
 
   /// @}
@@ -167,7 +167,7 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
 public:
   BuildSystemImpl(class BuildSystem& buildSystem,
                   BuildSystemDelegate& delegate,
-                  const std::string& mainFilename)
+                  StringRef mainFilename)
       : buildSystem(buildSystem), delegate(delegate),
         mainFilename(mainFilename),
         fileDelegate(*this), buildFile(mainFilename, fileDelegate),
@@ -182,7 +182,7 @@ public:
     return delegate;
   }
 
-  const std::string& getMainFilename() {
+  StringRef getMainFilename() {
     return mainFilename;
   }
 
@@ -194,22 +194,22 @@ public:
     return buildFile;
   }
 
-  void error(const std::string& filename, const std::string& message) {
+  void error(StringRef filename, const Twine& message) {
     getDelegate().error(filename, {}, message);
   }
 
-  void error(const std::string& filename, const BuildSystemDelegate::Token& at,
-             const std::string& message) {
+  void error(StringRef filename, const BuildSystemDelegate::Token& at,
+             const Twine& message) {
     getDelegate().error(filename, at, message);
   }
 
-  std::unique_ptr<BuildNode> lookupNode(const std::string& name,
+  std::unique_ptr<BuildNode> lookupNode(StringRef name,
                                         bool isImplicit);
 
   /// @name Client API
   /// @{
 
-  bool attachDB(const std::string& filename, std::string* error_out) {
+  bool attachDB(StringRef filename, std::string* error_out) {
     // FIXME: How do we pass the client schema version here, if we haven't
     // loaded the file yet.
     std::unique_ptr<core::BuildDB> db(
@@ -222,11 +222,11 @@ public:
     return true;
   }
 
-  bool enableTracing(const std::string& filename, std::string* error_out) {
+  bool enableTracing(StringRef filename, std::string* error_out) {
     return buildEngine.enableTracing(filename, error_out);
   }
 
-  bool build(const std::string& target);
+  bool build(StringRef target);
 
   /// @}
 };
@@ -246,14 +246,14 @@ class BuildNode : public Node {
   bool virtualNode;
 
 public:
-  explicit BuildNode(BuildSystemImpl& system, const std::string& name,
+  explicit BuildNode(BuildSystemImpl& system, StringRef name,
                      bool isVirtual)
       : Node(name), system(system), virtualNode(isVirtual) {}
 
   bool isVirtual() const { return virtualNode; }
 
-  virtual bool configureAttribute(const std::string& name,
-                                  const std::string& value) override {
+  virtual bool configureAttribute(StringRef name,
+                                  StringRef value) override {
     if (name == "is-virtual") {
       if (value == "true") {
         virtualNode = true;
@@ -315,7 +315,7 @@ class TargetTask : public Task {
     // Do nothing.
   }
 
-  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+  virtual void provideValue(BuildEngine& engine, uintptr_t inputID,
                             const ValueType& valueData) override {
     // Do nothing.
     auto value = BuildValue::fromData(valueData);
@@ -324,19 +324,24 @@ class TargetTask : public Task {
       hasMissingInput = true;
 
       // FIXME: Design the logging and status output APIs.
-      fprintf(stderr, "error: missing input '%s' and no rule to build it\n",
-              target.getNodes()[inputID]->getName().c_str());
+      auto& system = getBuildSystem(engine);
+      system.error(system.getMainFilename(),
+                   (Twine("missing input '") +
+                    target.getNodes()[inputID]->getName() +
+                    "' and no rule to build it"));
     }
   }
 
   virtual void inputsAvailable(BuildEngine& engine) override {
     if (hasMissingInput) {
       // FIXME: Design the logging and status output APIs.
-      fprintf(stderr, "error: cannot build target '%s' due to missing input\n",
-              target.getName().c_str());
-
+      auto& system = getBuildSystem(engine);
+      system.error(system.getMainFilename(),
+                   (Twine("cannot build target '") + target.getName() +
+                    "' due to missing input"));
+      
       // Report the command failure.
-      getBuildSystem(engine).getDelegate().hadCommandFailure();
+      system.getDelegate().hadCommandFailure();
     }
     
     // Complete the task immediately.
@@ -633,12 +638,12 @@ void BuildSystemEngineDelegate::cycleDetected(const std::vector<Rule*>& items) {
 #pragma mark - BuildSystemImpl implementation
 
 std::unique_ptr<BuildNode>
-BuildSystemImpl::lookupNode(const std::string& name, bool isImplicit) {
+BuildSystemImpl::lookupNode(StringRef name, bool isImplicit) {
   bool isVirtual = !name.empty() && name[0] == '<' && name.back() == '>';
   return std::make_unique<BuildNode>(*this, name, isVirtual);
 }
 
-bool BuildSystemImpl::build(const std::string& target) {
+bool BuildSystemImpl::build(StringRef target) {
   // Load the build file.
   //
   // FIXME: Eventually, we may want to support something fancier where we load
@@ -696,13 +701,13 @@ protected:
   
   const std::vector<BuildNode*>& getOutputs() { return outputs; }
   
-  const std::string& getDescription() { return description; }
+  StringRef getDescription() { return description; }
   
 public:
-  ExternalCommand(BuildSystemImpl& system, const std::string& name)
+  ExternalCommand(BuildSystemImpl& system, StringRef name)
       : Command(name), system(system) {}
 
-  virtual void configureDescription(const std::string& value) override {
+  virtual void configureDescription(StringRef value) override {
     description = value;
   }
   
@@ -720,8 +725,8 @@ public:
     }
   }
 
-  virtual bool configureAttribute(const std::string& name,
-                                  const std::string& value) override {
+  virtual bool configureAttribute(StringRef name,
+                                  StringRef value) override {
     system.error(system.getMainFilename(),
                  "unexpected attribute: '" + name + "'");
     return false;
@@ -824,8 +829,9 @@ public:
         hasMissingInput = true;
 
         // FIXME: Design the logging and status output APIs.
-        fprintf(stderr, "error: missing input '%s' and no rule to build it\n",
-                inputs[inputID]->getName().c_str());
+        system.error(system.getMainFilename(),
+                     (Twine("missing input '") + inputs[inputID]->getName() +
+                      "' and no rule to build it"));
       }
     }
   }
@@ -843,8 +849,9 @@ public:
       // If this command had a failed input, treat it as having failed.
       if (hasMissingInput) {
         // FIXME: Design the logging and status output APIs.
-        fprintf(stderr, "error: cannot build '%s' due to missing input\n",
-                outputs[0]->getName().c_str());
+        system.error(system.getMainFilename(),
+                     (Twine("cannot build '") + outputs[0]->getName() +
+                      "' due to missing input"));
 
         // Report the command failure.
         system.getDelegate().hadCommandFailure();
@@ -910,11 +917,11 @@ class PhonyTool : public Tool {
   BuildSystemImpl& system;
 
 public:
-  PhonyTool(BuildSystemImpl& system, const std::string& name)
+  PhonyTool(BuildSystemImpl& system, StringRef name)
       : Tool(name), system(system) {}
 
-  virtual bool configureAttribute(const std::string& name,
-                                  const std::string& value) override {
+  virtual bool configureAttribute(StringRef name,
+                                  StringRef value) override {
     // No supported configuration attributes.
     system.error(system.getMainFilename(),
                  "unexpected attribute: '" + name + "'");
@@ -922,7 +929,7 @@ public:
   }
 
   virtual std::unique_ptr<Command> createCommand(
-      const std::string& name) override {
+      StringRef name) override {
     return std::make_unique<PhonyCommand>(system, name);
   }
 };
@@ -941,8 +948,8 @@ class ShellCommand : public ExternalCommand {
 public:
   using ExternalCommand::ExternalCommand;
   
-  virtual bool configureAttribute(const std::string& name,
-                                  const std::string& value) override {
+  virtual bool configureAttribute(StringRef name,
+                                  StringRef value) override {
     if (name == "args") {
       args = value;
     } else {
@@ -961,7 +968,7 @@ public:
     if (getDescription().empty()) {
       fprintf(stdout, "%s\n", args.c_str());
     } else {
-      fprintf(stdout, "%s\n", getDescription().c_str());
+      fprintf(stdout, "%s\n", getDescription().str().c_str());
     }
     fflush(stdout);
 
@@ -974,11 +981,11 @@ class ShellTool : public Tool {
   BuildSystemImpl& system;
 
 public:
-  ShellTool(BuildSystemImpl& system, const std::string& name)
+  ShellTool(BuildSystemImpl& system, StringRef name)
       : Tool(name), system(system) {}
 
-  virtual bool configureAttribute(const std::string& name,
-                                  const std::string& value) override {
+  virtual bool configureAttribute(StringRef name,
+                                  StringRef value) override {
     system.error(system.getMainFilename(),
                  "unexpected attribute: '" + name + "'");
 
@@ -987,7 +994,7 @@ public:
   }
 
   virtual std::unique_ptr<Command> createCommand(
-      const std::string& name) override {
+      StringRef name) override {
     return std::make_unique<ShellCommand>(system, name);
   }
 };
@@ -1059,8 +1066,8 @@ class ClangShellCommand : public ExternalCommand {
 public:
   using ExternalCommand::ExternalCommand;
   
-  virtual bool configureAttribute(const std::string& name,
-                                  const std::string& value) override {
+  virtual bool configureAttribute(StringRef name,
+                                  StringRef value) override {
     if (name == "args") {
       args = value;
     } else if (name == "deps") {
@@ -1081,7 +1088,7 @@ public:
     if (getDescription().empty()) {
       fprintf(stdout, "%s\n", args.c_str());
     } else {
-      fprintf(stdout, "%s\n", getDescription().c_str());
+      fprintf(stdout, "%s\n", getDescription().str().c_str());
     }
     fflush(stdout);
 
@@ -1108,11 +1115,11 @@ class ClangTool : public Tool {
   BuildSystemImpl& system;
 
 public:
-  ClangTool(BuildSystemImpl& system, const std::string& name)
+  ClangTool(BuildSystemImpl& system, StringRef name)
       : Tool(name), system(system) {}
 
-  virtual bool configureAttribute(const std::string& name,
-                                  const std::string& value) override {
+  virtual bool configureAttribute(StringRef name,
+                                  StringRef value) override {
     system.error(system.getMainFilename(),
                  "unexpected attribute: '" + name + "'");
 
@@ -1121,7 +1128,7 @@ public:
   }
 
   virtual std::unique_ptr<Command> createCommand(
-      const std::string& name) override {
+      StringRef name) override {
     return std::make_unique<ClangShellCommand>(system, name);
   }
 };
@@ -1136,16 +1143,16 @@ void BuildSystemFileDelegate::setFileContentsBeingParsed(StringRef buffer) {
   getSystemDelegate().setFileContentsBeingParsed(buffer);
 }
 
-void BuildSystemFileDelegate::error(const std::string& filename,
+void BuildSystemFileDelegate::error(StringRef filename,
                                     const Token& at,
-                                    const std::string& message) {
+                                    const Twine& message) {
   // Delegate to the system delegate.
   auto atSystemToken = BuildSystemDelegate::Token{at.start, at.length};
   system.error(filename, atSystemToken, message);
 }
 
 bool
-BuildSystemFileDelegate::configureClient(const std::string& name,
+BuildSystemFileDelegate::configureClient(StringRef name,
                                          uint32_t version,
                                          const property_list_type& properties) {
   // The client must match the configured name of the build system.
@@ -1163,7 +1170,7 @@ BuildSystemFileDelegate::configureClient(const std::string& name,
 }
 
 std::unique_ptr<Tool>
-BuildSystemFileDelegate::lookupTool(const std::string& name) {
+BuildSystemFileDelegate::lookupTool(StringRef name) {
   // First, give the client an opportunity to create the tool.
   auto tool = getSystemDelegate().lookupTool(name);
   if (tool)
@@ -1181,16 +1188,16 @@ BuildSystemFileDelegate::lookupTool(const std::string& name) {
   return nullptr;
 }
 
-void BuildSystemFileDelegate::loadedTarget(const std::string& name,
+void BuildSystemFileDelegate::loadedTarget(StringRef name,
                                            const Target& target) {
 }
 
-void BuildSystemFileDelegate::loadedCommand(const std::string& name,
+void BuildSystemFileDelegate::loadedCommand(StringRef name,
                                             const Command& command) {
 }
 
 std::unique_ptr<Node>
-BuildSystemFileDelegate::lookupNode(const std::string& name,
+BuildSystemFileDelegate::lookupNode(StringRef name,
                                     bool isImplicit) {
   return system.lookupNode(name, isImplicit);
 }
@@ -1200,7 +1207,7 @@ BuildSystemFileDelegate::lookupNode(const std::string& name,
 #pragma mark - BuildSystem
 
 BuildSystem::BuildSystem(BuildSystemDelegate& delegate,
-                         const std::string& mainFilename)
+                         StringRef mainFilename)
     : impl(new BuildSystemImpl(*this, delegate, mainFilename))
 {
 }
@@ -1213,16 +1220,16 @@ BuildSystemDelegate& BuildSystem::getDelegate() {
   return static_cast<BuildSystemImpl*>(impl)->getDelegate();
 }
 
-bool BuildSystem::attachDB(const std::string& path,
+bool BuildSystem::attachDB(StringRef path,
                                 std::string* error_out) {
   return static_cast<BuildSystemImpl*>(impl)->attachDB(path, error_out);
 }
 
-bool BuildSystem::enableTracing(const std::string& path,
+bool BuildSystem::enableTracing(StringRef path,
                                 std::string* error_out) {
   return static_cast<BuildSystemImpl*>(impl)->enableTracing(path, error_out);
 }
 
-bool BuildSystem::build(const std::string& name) {
+bool BuildSystem::build(StringRef name) {
   return static_cast<BuildSystemImpl*>(impl)->build(name);
 }

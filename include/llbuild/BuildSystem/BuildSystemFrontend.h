@@ -82,8 +82,8 @@ private:
 
   /// Provides a default error implementation which will delegate to the
   /// provided source manager. Cannot be overriden by subclasses.
-  virtual void error(const std::string& filename, const Token& at,
-                     const std::string& message) override;
+  virtual void error(StringRef filename, const Token& at,
+                     const Twine& message) override;
   
 public:
   /// Create a frontend delegate.
@@ -94,14 +94,13 @@ public:
   /// \param version The version of the build system client.
   BuildSystemFrontendDelegate(llvm::SourceMgr& sourceMgr,
                               const BuildSystemInvocation& invocation,
-                              const std::string& name,
+                              StringRef name,
                               uint32_t version);
   virtual ~BuildSystemFrontendDelegate();
   
   /// Called by the build system to get a tool definition, must be provided by
   /// subclasses.
-  virtual std::unique_ptr<Tool>
-  lookupTool(const std::string& name) override = 0;
+  virtual std::unique_ptr<Tool> lookupTool(StringRef name) override = 0;
 
   /// Provides an appropriate execution queue based on the invocation options.
   virtual std::unique_ptr<BuildExecutionQueue> createExecutionQueue() override;

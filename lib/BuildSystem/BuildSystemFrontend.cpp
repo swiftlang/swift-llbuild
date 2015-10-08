@@ -132,7 +132,7 @@ struct BuildSystemFrontendDelegateImpl {
 BuildSystemFrontendDelegate::
 BuildSystemFrontendDelegate(llvm::SourceMgr& sourceMgr,
                             const BuildSystemInvocation& invocation,
-                            const std::string& name,
+                            StringRef name,
                             uint32_t version)
     : BuildSystemDelegate(name, version),
       impl(new BuildSystemFrontendDelegateImpl(sourceMgr, invocation))
@@ -175,9 +175,9 @@ BuildSystemFrontendDelegate::error(const Twine& message) {
 }
 
 void
-BuildSystemFrontendDelegate::error(const std::string& filename,
+BuildSystemFrontendDelegate::error(StringRef filename,
                                    const Token& at,
-                                   const std::string& message) {
+                                   const Twine& message) {
   auto impl = static_cast<BuildSystemFrontendDelegateImpl*>(this->impl);
   
   ++impl->numErrors;

@@ -41,12 +41,12 @@ private:
   uint32_t version;
   
 public:
-  BuildSystemDelegate(const std::string& name, uint32_t version)
+  BuildSystemDelegate(StringRef name, uint32_t version)
       : name(name), version(version) {}
   virtual ~BuildSystemDelegate();
 
   /// Called by the build system to get the client name.
-  const std::string& getName() const { return name; }
+  StringRef getName() const { return name; }
 
   /// Called by the build system to get the current client version.
   uint32_t getVersion() const { return version; }
@@ -62,9 +62,9 @@ public:
   /// no location is associated.
   ///
   /// \param message The diagnostic message.
-  virtual void error(const std::string& filename,
+  virtual void error(StringRef filename,
                      const Token& at,
-                     const std::string& message) = 0;
+                     const Twine& message) = 0;
 
   /// Called by the build system to get a tool definition.
   ///
@@ -74,7 +74,7 @@ public:
   ///
   /// \param name The name of the tool to lookup.
   /// \returns The tool to use on success, or otherwise nil.
-  virtual std::unique_ptr<Tool> lookupTool(const std::string& name) = 0;
+  virtual std::unique_ptr<Tool> lookupTool(StringRef name) = 0;
 
   /// Called by the build system to get create the object used to dispatch work.
   virtual std::unique_ptr<BuildExecutionQueue> createExecutionQueue() = 0;
@@ -99,7 +99,7 @@ public:
   ///
   /// \arg mainFilename The path of the main build file.
   explicit BuildSystem(BuildSystemDelegate& delegate,
-                       const std::string& mainFilename);
+                       StringRef mainFilename);
   ~BuildSystem();
 
   /// Return the delegate the engine was configured with.
@@ -111,17 +111,17 @@ public:
   /// Attach (or create) the database at the given path.
   ///
   /// \returns True on success.
-  bool attachDB(const std::string& path, std::string* error_out);
+  bool attachDB(StringRef path, std::string* error_out);
 
   /// Enable low-level engine tracing into the given output file.
   ///
   /// \returns True on success.
-  bool enableTracing(const std::string& path, std::string* error_out);
+  bool enableTracing(StringRef path, std::string* error_out);
 
   /// Build the named target.
   ///
   /// \returns True on success.
-  bool build(const std::string& target);
+  bool build(StringRef target);
 
   /// @}
 };

@@ -28,7 +28,7 @@ public:
       : BuildSystemFrontendDelegate(sourceMgr, invocation,
                                     "swift-build", /*version=*/0) {}
   
-  virtual std::unique_ptr<Tool> lookupTool(const std::string& name) override {
+  virtual std::unique_ptr<Tool> lookupTool(StringRef name) override {
     // We do not support any non-built-in tools.
     return nullptr;
   }

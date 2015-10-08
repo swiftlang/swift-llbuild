@@ -46,23 +46,23 @@ public:
   
   virtual void setFileContentsBeingParsed(StringRef buffer) override;
   
-  virtual void error(const std::string& filename,
+  virtual void error(StringRef filename,
                      const Token& at,
-                     const std::string& message) override;
+                     const Twine& message) override;
 
-  virtual bool configureClient(const std::string& name,
+  virtual bool configureClient(StringRef name,
                                uint32_t version,
                                const property_list_type& properties) override;
 
-  virtual std::unique_ptr<Tool> lookupTool(const std::string& name) override;
+  virtual std::unique_ptr<Tool> lookupTool(StringRef name) override;
 
-  virtual void loadedTarget(const std::string& name,
+  virtual void loadedTarget(StringRef name,
                             const Target& target) override;
 
-  virtual std::unique_ptr<Node> lookupNode(const std::string& name,
+  virtual std::unique_ptr<Node> lookupNode(StringRef name,
                                            bool isImplicit) override;
 
-  virtual void loadedCommand(const std::string& name,
+  virtual void loadedCommand(StringRef name,
                              const Command& command) override;
 };
 
@@ -70,13 +70,13 @@ class ParseDummyNode : public Node {
   ParseBuildFileDelegate& delegate;
   
 public:
-  ParseDummyNode(ParseBuildFileDelegate& delegate, const std::string& name)
+  ParseDummyNode(ParseBuildFileDelegate& delegate, StringRef name)
       : Node(name), delegate(delegate) {}
   
-  virtual bool configureAttribute(const std::string& name,
-                                  const std::string& value) override {
+  virtual bool configureAttribute(StringRef name,
+                                  StringRef value) override {
     if (delegate.shouldShowOutput()) {
-      printf("  -- '%s': '%s'\n", name.c_str(), value.c_str());
+      printf("  -- '%s': '%s'\n", name.str().c_str(), value.str().c_str());
     }
     return true;
   }
@@ -86,12 +86,12 @@ class ParseDummyCommand : public Command {
   ParseBuildFileDelegate& delegate;
   
 public:
-  ParseDummyCommand(ParseBuildFileDelegate& delegate, const std::string& name)
+  ParseDummyCommand(ParseBuildFileDelegate& delegate, StringRef name)
       : Command(name), delegate(delegate) {}
 
-  virtual void configureDescription(const std::string& description) override {
+  virtual void configureDescription(StringRef description) override {
     if (delegate.shouldShowOutput()) {
-      printf("  -- 'description': '%s'", description.c_str());
+      printf("  -- 'description': '%s'", description.str().c_str());
     }
   }
   
@@ -100,7 +100,7 @@ public:
       bool first = true;
       printf("  -- 'inputs': [");
       for (const auto& node: inputs) {
-        printf("%s'%s'", first ? "" : ", ", node->getName().c_str());
+        printf("%s'%s'", first ? "" : ", ", node->getName().str().c_str());
         first = false;
       }
       printf("]\n");
@@ -112,17 +112,17 @@ public:
       bool first = true;
       printf("  -- 'outputs': [");
       for (const auto& node: outputs) {
-        printf("%s'%s'", first ? "" : ", ", node->getName().c_str());
+        printf("%s'%s'", first ? "" : ", ", node->getName().str().c_str());
         first = false;
       }
       printf("]\n");
     }
   }
 
-  virtual bool configureAttribute(const std::string& name,
-                                  const std::string& value) override {
+  virtual bool configureAttribute(StringRef name,
+                                  StringRef value) override {
     if (delegate.shouldShowOutput()) {
-      printf("  -- '%s': '%s'\n", name.c_str(), value.c_str());
+      printf("  -- '%s': '%s'\n", name.str().c_str(), value.str().c_str());
     }
     return true;
   }
@@ -145,22 +145,22 @@ class ParseDummyTool : public Tool {
   ParseBuildFileDelegate& delegate;
   
 public:
-  ParseDummyTool(ParseBuildFileDelegate& delegate, const std::string& name)
+  ParseDummyTool(ParseBuildFileDelegate& delegate, StringRef name)
       : Tool(name), delegate(delegate) {}
   
-  virtual bool configureAttribute(const std::string& name,
-                                  const std::string& value) override {
+  virtual bool configureAttribute(StringRef name,
+                                  StringRef value) override {
     if (delegate.shouldShowOutput()) {
-      printf("  -- '%s': '%s'\n", name.c_str(), value.c_str());
+      printf("  -- '%s': '%s'\n", name.str().c_str(), value.str().c_str());
     }
     return true;
   }
 
   virtual std::unique_ptr<Command> createCommand(
-      const std::string& name) override {
+      StringRef name) override {
     if (delegate.shouldShowOutput()) {
-      printf("command('%s')\n", name.c_str());
-      printf("  -- 'tool': '%s')\n", getName().c_str());
+      printf("command('%s')\n", name.str().c_str());
+      printf("  -- 'tool': '%s')\n", getName().str().c_str());
     }
 
     return std::make_unique<ParseDummyCommand>(delegate, name);
@@ -171,23 +171,25 @@ void ParseBuildFileDelegate::setFileContentsBeingParsed(StringRef buffer) {
   bufferBeingParsed = buffer;
 }
 
-void ParseBuildFileDelegate::error(const std::string& filename,
+void ParseBuildFileDelegate::error(StringRef filename,
                                    const Token& at,
-                                   const std::string& message) {
+                                   const Twine& message) {
   if (at.start) {
-    util::emitError(filename, message, at.start, at.length, bufferBeingParsed);
+    util::emitError(filename, message.str(), at.start, at.length,
+                    bufferBeingParsed);
   } else {
-    fprintf(stderr, "%s: error: %s\n", filename.c_str(), message.c_str());
+    fprintf(stderr, "%s: error: %s\n", filename.str().c_str(),
+            message.str().c_str());
   }
 }
 
 bool
-ParseBuildFileDelegate::configureClient(const std::string& name,
+ParseBuildFileDelegate::configureClient(StringRef name,
                                         uint32_t version,
                                         const property_list_type& properties) {
   if (showOutput) {
     // Dump the client information.
-    printf("client ('%s', version: %u)\n", name.c_str(), version);
+    printf("client ('%s', version: %u)\n", name.str().c_str(), version);
     for (const auto& property: properties) {
       printf("  -- '%s': '%s'\n", property.first.c_str(),
              property.second.c_str());
@@ -198,24 +200,24 @@ ParseBuildFileDelegate::configureClient(const std::string& name,
 }
 
 std::unique_ptr<Tool>
-ParseBuildFileDelegate::lookupTool(const std::string& name) {
+ParseBuildFileDelegate::lookupTool(StringRef name) {
   if (showOutput) {
-    printf("tool('%s')\n", name.c_str());
+    printf("tool('%s')\n", name.str().c_str());
   }
 
   return std::make_unique<ParseDummyTool>(*this, name);
 }
 
-void ParseBuildFileDelegate::loadedTarget(const std::string& name,
+void ParseBuildFileDelegate::loadedTarget(StringRef name,
                                           const Target& target) {
   if (showOutput) {
-    printf("target('%s')\n", target.getName().c_str());
+    printf("target('%s')\n", target.getName().str().c_str());
 
     // Print the nodes in the target.
     bool first = true;
     printf(" -- nodes: [");
     for (const auto& node: target.getNodes()) {
-      printf("%s'%s'", first ? "" : ", ", node->getName().c_str());
+      printf("%s'%s'", first ? "" : ", ", node->getName().str().c_str());
       first = false;
     }
     printf("]\n");
@@ -223,21 +225,21 @@ void ParseBuildFileDelegate::loadedTarget(const std::string& name,
 }
 
 std::unique_ptr<Node>
-ParseBuildFileDelegate::lookupNode(const std::string& name,
+ParseBuildFileDelegate::lookupNode(StringRef name,
                                    bool isImplicit) {
   if (!isImplicit) {
     if (showOutput) {
-      printf("node('%s')\n", name.c_str());
+      printf("node('%s')\n", name.str().c_str());
     }
   }
 
   return std::make_unique<ParseDummyNode>(*this, name);
 }
 
-void ParseBuildFileDelegate::loadedCommand(const std::string& name,
+void ParseBuildFileDelegate::loadedCommand(StringRef name,
                                         const Command& command) {
   if (showOutput) {
-    printf("  -- -- loaded command('%s')\n", command.getName().c_str());
+    printf("  -- -- loaded command('%s')\n", command.getName().str().c_str());
   }
 }
 
@@ -300,7 +302,7 @@ public:
       : BuildSystemFrontendDelegate(sourceMgr, invocation,
                                     "basic", /*version=*/0) {}
   
-  virtual std::unique_ptr<Tool> lookupTool(const std::string& name) override {
+  virtual std::unique_ptr<Tool> lookupTool(StringRef name) override {
     // We do not support any non-built-in tools.
     return nullptr;
   }
