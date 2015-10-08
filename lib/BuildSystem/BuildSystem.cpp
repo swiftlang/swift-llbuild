@@ -178,7 +178,7 @@ public:
     return buildSystem;
   }
 
-  BuildSystemDelegate& getDelegate() {
+  BuildSystemDelegate& getDelegate() override {
     return delegate;
   }
 
@@ -806,8 +806,6 @@ public:
   virtual void provideValue(BuildSystemCommandInterface& bsci, Task*,
                             uintptr_t inputID,
                             const BuildValue& value) override {
-    auto& system = getBuildSystem(bsci.getBuildEngine());
-    
     // Process the input value to see if we should skip this command.
 
     // All direct inputs should be individual node values.
@@ -823,19 +821,17 @@ public:
         hasMissingInput = true;
 
         // FIXME: Design the logging and status output APIs.
-        system.error(system.getMainFilename(),
-                     (Twine("missing input '") + inputs[inputID]->getName() +
-                      "' and no rule to build it"));
+        bsci.getDelegate().error(
+            "", {}, (Twine("missing input '") + inputs[inputID]->getName() +
+                     "' and no rule to build it"));
       }
     }
   }
 
   virtual void inputsAvailable(BuildSystemCommandInterface& bsci,
                                Task* task) override {
-    auto& system = getBuildSystem(bsci.getBuildEngine());
-    
     // If the build should cancel, do nothing.
-    if (system.getDelegate().isCancelled()) {
+    if (bsci.getDelegate().isCancelled()) {
       bsci.taskIsComplete(task, BuildValue::makeSkippedCommand());
       return;
     }
@@ -845,12 +841,12 @@ public:
       // If this command had a failed input, treat it as having failed.
       if (hasMissingInput) {
         // FIXME: Design the logging and status output APIs.
-        system.error(system.getMainFilename(),
-                     (Twine("cannot build '") + outputs[0]->getName() +
-                      "' due to missing input"));
+        bsci.getDelegate().error(
+            "", {}, (Twine("cannot build '") + outputs[0]->getName() +
+                     "' due to missing input"));
 
         // Report the command failure.
-        system.getDelegate().hadCommandFailure();
+        bsci.getDelegate().hadCommandFailure();
       }
 
       bsci.taskIsComplete(task, BuildValue::makeSkippedCommand());
@@ -862,13 +858,11 @@ public:
     // (rdar://problem/22165130).
 #ifndef __clang_analyzer__
     auto fn = [this, &bsci=bsci, task](QueueJobContext* context) {
-      auto& system = getBuildSystem(bsci.getBuildEngine());
-    
       // Execute the command.
       if (!executeExternalCommand(bsci, task, context)) {
         // If the command failed, the result is failure.
         bsci.taskIsComplete(task, BuildValue::makeFailedCommand());
-        system.getDelegate().hadCommandFailure();
+        bsci.getDelegate().hadCommandFailure();
         return;
       }
 

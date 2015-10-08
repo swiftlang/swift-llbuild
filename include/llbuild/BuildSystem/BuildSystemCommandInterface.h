@@ -25,6 +25,7 @@ namespace buildsystem {
 
 class BuildExecutionQueue;
 class BuildKey;
+class BuildSystemDelegate;
 class BuildValue;
 class QueueJob;
 
@@ -40,6 +41,8 @@ public:
   /// @name Accessors
   /// @{
 
+  virtual BuildSystemDelegate& getDelegate() = 0;
+  
   virtual core::BuildEngine& getBuildEngine() = 0;
 
   virtual BuildExecutionQueue& getExecutionQueue() = 0;
