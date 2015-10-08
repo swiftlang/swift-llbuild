@@ -4,5 +4,6 @@ add_llbuild_library(llbuildBuildSystem
   BuildSystem.cpp
   BuildSystemFrontend.cpp
   BuildValue.cpp
+  ExternalCommand.cpp
   LaneBasedExecutionQueue.cpp
   )
