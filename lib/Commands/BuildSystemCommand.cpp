@@ -13,27 +13,22 @@
 #include "llbuild/Commands/Commands.h"
 
 #include "llbuild/Basic/LLVM.h"
-#include "llbuild/BuildSystem/BuildExecutionQueue.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildSystem.h"
+#include "llbuild/BuildSystem/BuildSystemFrontend.h"
 #include "llbuild/BuildSystem/BuildValue.h"
 
-#include "llvm/Support/Path.h"
 #include "llvm/Support/SourceMgr.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include "CommandUtil.h"
 
-#include <atomic>
 #include <cerrno>
 
 using namespace llbuild;
 using namespace llbuild::commands;
 using namespace llbuild::core;
 using namespace llbuild::buildsystem;
-
-extern "C" {
-  extern char **environ;
-}
 
 namespace {
 
@@ -298,204 +293,33 @@ static int executeParseCommand(std::vector<std::string> args) {
 
 /* Build Command */
 
-class BuildSystemInvocation {
+class BasicBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
 public:
-  /// Whether command usage should be printed.
-  bool showUsage = false;
-
-  /// Whether to use a serial build.
-  bool useSerialBuild = false;
-  
-  /// The path of the database file to use, if any.
-  std::string dbPath = "build.db";
-
-  /// The path of a directory to change into before anything else, if any.
-  std::string chdirPath = "";
-
-  /// The name of the build file to use.
-  std::string buildFilePath = "build.llbuild";
-
-  /// The name of the build trace output file to use, if any.
-  std::string traceFilePath = "";
-
-  /// The positional arguments.
-  std::vector<std::string> positionalArgs;
-
-  /// Whether there were any parsing errors.
-  bool hadErrors = false;
-  
-public:
-  /// Parse the invocation parameters from the given arguments.
-  ///
-  /// \param sourceMgr The source manager to use for diagnostics.
-  void parse(llvm::ArrayRef<std::string> args, llvm::SourceMgr& sourceMgr);
-};
-
-void BuildSystemInvocation::parse(llvm::ArrayRef<std::string> args,
-                                  llvm::SourceMgr& sourceMgr) {
-  auto error = [&](const Twine &message) {
-    sourceMgr.PrintMessage(llvm::SMLoc{}, llvm::SourceMgr::DK_Error, message);
-    hadErrors = true;
-  };
-
-  while (!args.empty()) {
-    const auto& option = args.front();
-    args = args.slice(1);
-
-    if (option == "-") {
-      for (const auto& arg: args) {
-        positionalArgs.push_back(arg);
-      }
-      break;
-    }
-
-    if (!option.empty() && option[0] != '-') {
-      positionalArgs.push_back(option);
-      continue;
-    }
-    
-    if (option == "--help") {
-      showUsage = true;
-      break;
-    } else if (option == "--no-db") {
-      dbPath = "";
-    } else if (option == "--db") {
-      if (args.empty()) {
-        error("missing argument to '" + option + "'");
-        break;
-      }
-      dbPath = args[0];
-      args = args.slice(1);
-    } else if (option == "-C" || option == "--chdir") {
-      if (args.empty()) {
-        error("missing argument to '" + option + "'");
-        break;
-      }
-      chdirPath = args[0];
-      args = args.slice(1);
-    } else if (option == "-f") {
-      if (args.empty()) {
-        error("missing argument to '" + option + "'");
-        break;
-      }
-      buildFilePath = args[0];
-      args = args.slice(1);
-    } else if (option == "--serial") {
-      useSerialBuild = true;
-    } else if (option == "--trace") {
-      if (args.empty()) {
-        error("missing argument to '" + option + "'");
-        break;
-      }
-      traceFilePath = args[0];
-      args = args.slice(1);
-    } else {
-      error("invalid option '" + option + "'");
-      break;
-    }
-  }
-}
-
-class BuildCommandDelegate : public BuildSystemDelegate {
-  bool useSerialBuild;
-  StringRef bufferBeingParsed;
-
-  /// The number of reported errors.
-  std::atomic<unsigned> numErrors{0};
-
-  /// The number of failed commands.
-  std::atomic<unsigned> numFailedCommands{0};
-  
-public:
-  BuildCommandDelegate(bool useSerialBuild)
-      : BuildSystemDelegate("basic", /*version=*/0),
-        useSerialBuild(useSerialBuild) {}
-
-  void setFileContentsBeingParsed(StringRef buffer) override {
-    bufferBeingParsed = buffer;
-  }
-
-  unsigned getNumErrors() {
-    return numErrors;
-  }
-
-  unsigned getNumFailedCommands() {
-    return numFailedCommands;
-  }
-  
-  virtual void error(const std::string& filename,
-                     const Token& at,
-                     const std::string& message) override {
-    ++numErrors;
-    
-    if (at.start) {
-      util::emitError(filename, message, at.start, at.length,
-                      bufferBeingParsed);
-    } else {
-      fprintf(stderr, "%s: error: %s\n", filename.c_str(), message.c_str());
-    }
-  }
+  BasicBuildSystemFrontendDelegate(llvm::SourceMgr& sourceMgr,
+                                   const BuildSystemInvocation& invocation)
+      : BuildSystemFrontendDelegate(sourceMgr, invocation,
+                                    "basic", /*version=*/0) {}
   
   virtual std::unique_ptr<Tool> lookupTool(const std::string& name) override {
     // We do not support any non-built-in tools.
     return nullptr;
   }
-
-  virtual std::unique_ptr<BuildExecutionQueue> createExecutionQueue() override {
-    if (useSerialBuild) {
-      return std::unique_ptr<BuildExecutionQueue>(
-          createLaneBasedExecutionQueue(1));
-    }
-    
-    // Get the number of CPUs to use.
-    long numCPUs = sysconf(_SC_NPROCESSORS_ONLN);
-    unsigned numLanes;
-    if (numCPUs < 0) {
-      error("<unknown>", {}, "unable to detect number of CPUs");
-      numLanes = 1;
-    } else {
-      numLanes = numCPUs + 2;
-    }
-    
-    return std::unique_ptr<BuildExecutionQueue>(
-        createLaneBasedExecutionQueue(numLanes));
-  }
-
-  virtual bool isCancelled() override {
-    // Stop the build after any command failures.
-    return numFailedCommands > 0;
-  }
-
-  virtual void hadCommandFailure() override{
-    // Increment the failed command count.
-    ++numFailedCommands;
-  }
 };
 
 static void buildUsage(int exitCode) {
-  int optionWidth = 20;
+  int optionWidth = 25;
   fprintf(stderr, "Usage: %s buildsystem build [options] <path> [<target>]\n",
           getProgramName());
   fprintf(stderr, "\nOptions:\n");
-  fprintf(stderr, "  %-*s %s\n", optionWidth, "--help",
-          "show this help message and exit");
-  fprintf(stderr, "  %-*s %s\n", optionWidth, "-C <PATH>, --chdir <PATH>",
-          "change directory to PATH before building");
-  fprintf(stderr, "  %-*s %s\n", optionWidth, "--no-db",
-          "disable use of a build database");
-  fprintf(stderr, "  %-*s %s\n", optionWidth, "--db <PATH>",
-          "enable building against the database at PATH [default='build.db']");
-  fprintf(stderr, "  %-*s %s\n", optionWidth, "-f <PATH>",
-          "load the build task file at PATH [default='build.llbuild']");
-  fprintf(stderr, "  %-*s %s\n", optionWidth, "--serial",
-          "Do not build in parallel");
-  fprintf(stderr, "  %-*s %s\n", optionWidth, "--trace <PATH>",
-          "trace build engine operation to PATH");
+  BuildSystemInvocation::getUsage(optionWidth, llvm::errs());
   ::exit(exitCode);
 }
 
 static int executeBuildCommand(std::vector<std::string> args) {
+  // The source manager to use for diagnostics.
   llvm::SourceMgr sourceMgr;
+
+  // Create the invocation.
   BuildSystemInvocation invocation{};
 
   // Initialize defaults.
@@ -516,76 +340,17 @@ static int executeBuildCommand(std::vector<std::string> args) {
     buildUsage(1);
   }
 
-  // Honor the --chdir option, if used.
-  if (!invocation.chdirPath.empty()) {
-    if (::chdir(invocation.chdirPath.c_str()) < 0) {
-      fprintf(stderr, "%s: error: unable to honor --chdir: %s\n",
-              getProgramName(), strerror(errno));
-      return 1;
-    }
-
-    // Print a message about the changed directory. The exact format here is
-    // important, it is recognized by other tools (like Emacs).
-    fprintf(stdout, "%s: Entering directory `%s'\n", getProgramName(),
-            invocation.chdirPath.c_str());
-    fflush(stdout);
-  }
-
-  BuildCommandDelegate delegate(invocation.useSerialBuild);
-  BuildSystem system(delegate, invocation.buildFilePath);
-
-  // Enable tracing, if requested.
-  if (!invocation.traceFilePath.empty()) {
-    std::string error;
-    if (!system.enableTracing(invocation.traceFilePath, &error)) {
-      fprintf(stderr, "error: %s: unable to enable tracing: %s",
-              getProgramName(), error.c_str());
-      return 1;
-    }
-  }
-
-  // Attach the database.
-  if (!invocation.dbPath.empty()) {
-    // If the database path is relative, always make it relative to the input
-    // file.
-    if (llvm::sys::path::has_relative_path(invocation.dbPath)) {
-      SmallString<256> tmp;
-      llvm::sys::path::append(
-          tmp, llvm::sys::path::parent_path(invocation.buildFilePath),
-          invocation.dbPath);
-      invocation.dbPath = tmp.str();
-    }
-    
-    std::string error;
-    if (!system.attachDB(invocation.dbPath, &error)) {
-      fprintf(stderr, "error: %s: unable to attach DB: %s\n", getProgramName(),
-              error.c_str());
-      return 1;
-    }
-  }
-
   // Select the target to build.
   std::string targetToBuild =
     invocation.positionalArgs.empty() ? "" : invocation.positionalArgs[0];
 
-  // If something unspecified failed about the build, return an error.
-  if (!system.build(targetToBuild)) {
+  // Create the frontend object.
+  BasicBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
+  BuildSystemFrontend frontend(delegate, invocation);
+  if (!frontend.build(targetToBuild)) {
     return 1;
   }
 
-  // If there were failed commands, report the count and exit with an error
-  // status.
-  if (delegate.getNumFailedCommands()) {
-    fprintf(stderr, "%s: error: build had %d command failures\n",
-            getProgramName(), delegate.getNumFailedCommands());
-    return 1;
-  }
-
-  // If there were any other reported errors, exit with an error status.
-  if (delegate.getNumErrors()) {
-    return 1;
-  }
-  
   return 0;
 }
 

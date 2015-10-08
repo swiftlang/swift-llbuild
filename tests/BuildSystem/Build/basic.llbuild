@@ -24,6 +24,7 @@
 # Check that a null build does nothing.
 #
 # RUN: %{llbuild} buildsystem build --chdir %t.build > %t2.out
+# RUN: echo "PREVENT-EMPTY-FILE" >> %t2.out
 # RUN: %{FileCheck} < %t2.out %s --check-prefix=CHECK-REBUILD
 #
 # CHECK-REBUILD-NOT: cp input output
