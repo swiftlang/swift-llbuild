@@ -127,6 +127,7 @@
 		E1A2251919F99ECB0059043E /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
 		E1A2251A19F99ECD0059043E /* libllbuildNinja.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243619F9970D0059043E /* libllbuildNinja.a */; };
 		E1AAD28A1BC609F600F54680 /* BuildSystemFrontend.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1AAD2891BC609F600F54680 /* BuildSystemFrontend.cpp */; };
+		E1AAD28E1BC65A1900F54680 /* BuildNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1AAD28D1BC65A1900F54680 /* BuildNode.cpp */; };
 		E1ADC23E1A85938C00D5387C /* C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1ADC2311A85922F00D5387C /* C-API.cpp */; };
 		E1ADC23F1A8593AD00D5387C /* llbuild.h in Headers */ = {isa = PBXBuildFile; fileRef = E1ADC2351A8592AA00D5387C /* llbuild.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		E1B838D21B52E86E00DB876B /* Allocator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1B838A71B52E85400DB876B /* Allocator.cpp */; };
@@ -695,6 +696,7 @@
 		E1A2255119F9A74B0059043E /* execute-lit-tests.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "execute-lit-tests.sh"; sourceTree = "<group>"; };
 		E1AAD2891BC609F600F54680 /* BuildSystemFrontend.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildSystemFrontend.cpp; sourceTree = "<group>"; };
 		E1AAD28B1BC60A0F00F54680 /* BuildSystemFrontend.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildSystemFrontend.h; sourceTree = "<group>"; };
+		E1AAD28D1BC65A1900F54680 /* BuildNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildNode.cpp; sourceTree = "<group>"; };
 		E1ADC2301A85922F00D5387C /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1ADC2311A85922F00D5387C /* C-API.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "C-API.cpp"; sourceTree = "<group>"; };
 		E1ADC2341A85928100D5387C /* README.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.txt; sourceTree = "<group>"; };
@@ -1584,6 +1586,7 @@
 				E1B8395C1B541C4300DB876B /* Headers */,
 				E1B8395A1B541C1F00DB876B /* CMakeLists.txt */,
 				E1B839591B541C1F00DB876B /* BuildFile.cpp */,
+				E1AAD28D1BC65A1900F54680 /* BuildNode.cpp */,
 				E104FAFF1B6568E0005C68A0 /* BuildSystem.cpp */,
 				E1AAD2891BC609F600F54680 /* BuildSystemFrontend.cpp */,
 				E1FC67F81BB1F417004EBC54 /* BuildValue.cpp */,
@@ -2491,6 +2494,7 @@
 			files = (
 				E1AAD28A1BC609F600F54680 /* BuildSystemFrontend.cpp in Sources */,
 				E1066C081BC5ACAB00B892CE /* LaneBasedExecutionQueue.cpp in Sources */,
+				E1AAD28E1BC65A1900F54680 /* BuildNode.cpp in Sources */,
 				E1FC67F91BB1F427004EBC54 /* BuildValue.cpp in Sources */,
 				E1B8395E1B541C5900DB876B /* BuildFile.cpp in Sources */,
 				E104FB001B6568E0005C68A0 /* BuildSystem.cpp in Sources */,

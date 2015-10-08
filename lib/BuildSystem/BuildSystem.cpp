@@ -22,6 +22,7 @@
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildKey.h"
+#include "llbuild/BuildSystem/BuildNode.h"
 #include "llbuild/BuildSystem/BuildValue.h"
 
 #include "llvm/ADT/StringRef.h"
@@ -44,7 +45,6 @@ BuildSystemCommandInterface::~BuildSystemCommandInterface() {}
 
 namespace {
 
-class BuildNode;
 class BuildSystemImpl;
 
 /// The delegate used to load the build file for use by a build system.
@@ -232,45 +232,6 @@ public:
 };
 
 #pragma mark - BuildSystem engine integration
-
-#pragma mark - BuildNode implementation
-
-// FIXME: Figure out how this is going to be organized.
-class BuildNode : public Node {
-  /// Whether or not this node is "virtual" (i.e., not a filesystem path).
-  bool virtualNode;
-
-public:
-  explicit BuildNode(StringRef name, bool isVirtual)
-      : Node(name), virtualNode(isVirtual) {}
-
-  bool isVirtual() const { return virtualNode; }
-
-  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
-                                  StringRef value) override {
-    if (name == "is-virtual") {
-      if (value == "true") {
-        virtualNode = true;
-      } else if (value == "false") {
-        virtualNode = false;
-      } else {
-        ctx.error("invalid value: '" + value + "' for attribute '"
-                  + name + "'");
-        return false;
-      }
-      return true;
-    }
-    
-    // We don't support any other custom attributes.
-    ctx.error("unexpected attribute: '" + name + "'");
-    return false;
-  }
-
-  FileInfo getFileInfo() const {
-    assert(!isVirtual());
-    return FileInfo::getInfoForPath(getName());
-  }
-};
 
 #pragma mark - Task implementations
 
