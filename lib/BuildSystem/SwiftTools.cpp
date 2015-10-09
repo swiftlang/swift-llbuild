@@ -19,8 +19,12 @@
 #include "llbuild/BuildSystem/BuildSystemCommandInterface.h"
 #include "llbuild/BuildSystem/ExternalCommand.h"
 
+#include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Twine.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Path.h"
+#include "llvm/Support/raw_ostream.h"
 
 using namespace llbuild;
 using namespace llbuild::buildsystem;
@@ -39,6 +43,14 @@ class SwiftCompilerShellCommand : public ExternalCommand {
   // FIXME: This should be an actual list.
   std::string sourcesList;
 
+  /// The list of objects (combined).
+  //
+  // FIXME: This should be an actual list.
+  std::string objectsList;
+
+  /// The directory in which to store temporary files.
+  std::string tempsPath;
+
   /// Additional arguments, as a string.
   //
   // FIXME: This should be an actual list.
@@ -49,6 +61,8 @@ class SwiftCompilerShellCommand : public ExternalCommand {
     result ^= basic::hashString(executable);
     result ^= basic::hashString(moduleName);
     result ^= basic::hashString(sourcesList);
+    result ^= basic::hashString(objectsList);
+    result ^= basic::hashString(tempsPath);
     result ^= basic::hashString(otherArgs);
     return result;
   }
@@ -64,6 +78,10 @@ public:
       moduleName = value;
     } else if (name == "sources") {
       sourcesList = value;
+    } else if (name == "objects") {
+      objectsList = value;
+    } else if (name == "temps-path") {
+      tempsPath = value;
     } else if (name == "other-args") {
       otherArgs = value;
     } else {
@@ -73,12 +91,80 @@ public:
     return true;
   }
 
+  bool writeOutputFileMap(BuildSystemCommandInterface& bsci,
+                          StringRef outputFileMapPath,
+                          ArrayRef<StringRef> sources,
+                          ArrayRef<StringRef> objects) const {
+    // FIXME: We need to properly escape everything we write here.
+    assert(sources.size() == objects.size());
+    
+    SmallString<16> data;
+    std::error_code ec;
+    llvm::raw_fd_ostream os(outputFileMapPath, ec,
+                            llvm::sys::fs::OpenFlags::F_Text);
+    if (ec) {
+      bsci.getDelegate().error(
+          "", {},
+          "unable to create output file map: '" + outputFileMapPath + "'");
+      return false;
+    }
+
+    os << "{\n";
+    
+    // Write the master file dependencies entry.
+    SmallString<16> masterDepsPath;
+    llvm::sys::path::append(masterDepsPath, tempsPath, "master.swiftdeps");
+    os << "  \"\": {\n";
+    os << "    \"swift-dependencies\": \"" << masterDepsPath << "\"\n";
+    os << "  },\n";
+
+    // Write out the entries for each source file.
+    for (unsigned i = 0; i != sources.size(); ++i) {
+      auto source = sources[i];
+      auto object = objects[i];
+      auto sourceStem = llvm::sys::path::stem(source);
+      SmallString<16> depsPath;
+      llvm::sys::path::append(depsPath, tempsPath, sourceStem + ".d");
+      SmallString<16> partialModulePath;
+      llvm::sys::path::append(partialModulePath, tempsPath,
+                              sourceStem + "~partial.swiftmodule");
+      SmallString<16> swiftDepsPath;
+      llvm::sys::path::append(swiftDepsPath, tempsPath,
+                              sourceStem + ".swiftdeps");
+
+      os << "  \"" << source << "\": {\n";
+      os << "    \"dependencies\": \"" << depsPath << "\",\n";
+      os << "    \"object\": \"" << object << "\",\n";
+      os << "    \"swiftmodule\": \"" << partialModulePath << "\",\n";
+      os << "    \"swift-dependencies\": \"" << swiftDepsPath << "\"\n";
+      os << "  }" << ((i + 1) < sources.size() ? "," : "") << "\n";
+    }
+    
+    os << "}\n";
+    
+    os.close();
+
+    return true;
+  }
+  
   virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
                                       core::Task* task,
                                       QueueJobContext* context) override {
     // FIXME: Need to add support for required parameters.
+    if (sourcesList.empty()) {
+      bsci.getDelegate().error("", {}, "no configured 'sources'");
+      return false;
+    }
+    if (objectsList.empty()) {
+      bsci.getDelegate().error("", {}, "no configured 'objects'");
+      return false;
+    }
     if (moduleName.empty()) {
       bsci.getDelegate().error("", {}, "no configured 'module-name'");
+      return false;
+    }
+    if (tempsPath.empty()) {
+      bsci.getDelegate().error("", {}, "no configured 'temps-path'");
       return false;
     }
 
@@ -86,11 +172,47 @@ public:
     SmallVector<StringRef, 32> sources;
     StringRef(sourcesList).split(sources, " ", /*MaxSplit=*/-1,
                                  /*KeepEmpty=*/false);
+
+    // Get the list of objects.
+    SmallVector<StringRef, 32> objects;
+    StringRef(objectsList).split(objects, " ", /*MaxSplit=*/-1,
+                                 /*KeepEmpty=*/false);
+    if (sources.size() != objects.size()) {
+      bsci.getDelegate().error(
+          "", {}, "'sources' and 'objects' are not the same size");
+      return false;
+    }
+
+    // Ensure the temporary directory exists.
+    //
+    // We ignore failures here, and just let things that depend on this fail.
+    //
+    // FIXME: This should really be done using an additional implicit input, so
+    // it only happens once per build.
+    (void)llvm::sys::fs::create_directories(tempsPath, /*ignoreExisting=*/true);
+    
+    // Construct the output file map.
+    SmallString<16> outputFileMapPath;
+    llvm::sys::path::append(
+        outputFileMapPath, tempsPath, "output-file-map.json");
+
+    if (!writeOutputFileMap(bsci, outputFileMapPath, sources, objects))
+      return false;
     
     // Form the complete command.
-    std::string command = executable + " -module-name " + moduleName +
-      " -c " + sourcesList + " " + otherArgs;
-    
+    SmallString<256> command;
+    llvm::raw_svector_ostream commandOS(command);
+    commandOS << executable;
+    commandOS << " " << "-module-name" << " " << moduleName;
+    commandOS << " " << "-incremental" << " " << "-emit-dependencies";
+    commandOS << " " << "-output-file-map" << " " << outputFileMapPath;
+    commandOS << " " << "-c";
+    for (const auto& source: sources) {
+      commandOS << " " << source;
+    }
+    commandOS << " " << otherArgs;
+    commandOS.flush();
+      
     // Log the command.
     //
     // FIXME: Design the logging and status output APIs.

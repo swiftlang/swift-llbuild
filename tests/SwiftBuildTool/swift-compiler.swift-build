@@ -4,10 +4,19 @@
 # RUN: mkdir -p %t.build
 # RUN: touch %t.build/input
 # RUN: cp %s %t.build/build.swift-build
-# RUN: %{swift-build-tool} --chdir %t.build > %t.out
-# RUN: %{FileCheck} < %t.out %s
+# RUN: %{swift-build-tool} --no-db --chdir %t.build > %t.out
+# RUN: %{swift-build-tool} --no-db -v --chdir %t.build > %t-verbose.out
+# RUN: %{FileCheck} --input-file=%t.out %s
+# RUN: %{FileCheck} --check-prefix=CHECK-VERBOSE --input-file=%t-verbose.out %s
 #
 # CHECK: Compiling Swift Module 'Foo'
+# CHECK-VERBOSE: swiftc -module-name Foo -incremental -emit-dependencies -output-file-map temps/output-file-map.json -c s1.swift s2.swift
+
+# Sanity check the output file map.
+#
+# RUN: %{FileCheck} --check-prefix=CHECK-OUTPUT-FILE-MAP --input-file=%t.build/temps/output-file-map.json %s
+# CHECK-OUTPUT-FILE-MAP: "s1.swift": {
+# CHECK-OUTPUT-FILE-MAP-NEXT: "dependencies": "temps/s1.d"
 
 client:
   name: swift-build
@@ -23,4 +32,6 @@ commands:
     module-name: Foo
     # FIXME: This needs to be a list.
     sources: s1.swift s2.swift
+    objects: s1.o s2.o
     other-args: -OTHERARG
+    temps-path: temps
