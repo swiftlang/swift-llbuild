@@ -12,6 +12,9 @@
 
 # CHECK: [1/1] ./check-open-fds
 # CHECK: open FDs: [0, 1, 2]
+#
+# FIXME: Disabled on Linux for the time being, we don't support closing extra file descriptors.
+# REQUIRES: platform=Darwin
 
 rule CHECKFDS
      command = ./check-open-fds
