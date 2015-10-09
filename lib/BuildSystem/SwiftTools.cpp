@@ -37,6 +37,9 @@ class SwiftCompilerShellCommand : public ExternalCommand {
   
   /// The name of the module.
   std::string moduleName;
+  
+  /// The path of the output module.
+  std::string moduleOutputPath;
 
   /// The list of sources (combined).
   //
@@ -76,6 +79,8 @@ public:
       executable = value;
     } else if (name == "module-name") {
       moduleName = value;
+    } else if (name == "module-output-path") {
+      moduleOutputPath = value;
     } else if (name == "sources") {
       sourcesList = value;
     } else if (name == "objects") {
@@ -205,6 +210,10 @@ public:
     commandOS << executable;
     commandOS << " " << "-module-name" << " " << moduleName;
     commandOS << " " << "-incremental" << " " << "-emit-dependencies";
+    if (!moduleOutputPath.empty()) {
+      commandOS << " " << "-emit-module"
+                << " " << "-emit-module-path" << " " << moduleOutputPath;
+    }
     commandOS << " " << "-output-file-map" << " " << outputFileMapPath;
     commandOS << " " << "-c";
     for (const auto& source: sources) {
