@@ -6,6 +6,7 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
+# RUN: ln -s %S/Inputs %t.build/Inputs
 
 
 # Check that the initial build creates 'output' properly, even though 'input'
@@ -59,7 +60,7 @@
 # CHECK-OUTPUT-WITH-NEW-INPUT: input size: 1
 
 rule GETSIZE
-     command = if [ -f $in ]; then echo "input size: $$(stat -f '%z' $in)"; else echo "input does not exist"; fi > $out
+     command = if [ -f $in ]; then echo "input size: $$(Inputs/get-file-size $in)"; else echo "input does not exist"; fi > $out
      description = SIZING $in TO $out
 
 build input: phony
