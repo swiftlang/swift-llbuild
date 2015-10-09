@@ -12,8 +12,8 @@
 #
 # CHECK-FAILURE: cp input output-1
 # CHECK-FAILURE-NOT: cp output-1 output
-# CHECK-FAILURE-ERR: cp: input: No such file or directory
-# CHECK-FAILURE-ERR-NOT: cp: output-1: No such file or directory
+# CHECK-FAILURE-ERR: cp: {{.*}}input{{.*}}: No such file or directory
+# CHECK-FAILURE-ERR-NOT: cp: {{.*}}output-1{{.*}}: No such file or directory
 
 
 # Rebuild and verify the command reruns.
@@ -22,7 +22,7 @@
 # RUN: test ! -f %t.build/output
 # RUN: %{FileCheck} %s --input-file %t2.err --check-prefix=CHECK-FAILURE-REBUILD-ERR
 #
-# CHECK-FAILURE-REBUILD-ERR: cp: {{.*}}: No such file or directory
+# CHECK-FAILURE-REBUILD-ERR: cp: {{.*}}input{{.*}}: No such file or directory
 
 
 # Create the missing input, and verify everything works. Aside from the obvious,
