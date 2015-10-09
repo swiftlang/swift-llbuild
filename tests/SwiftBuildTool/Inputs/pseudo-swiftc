@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+
+import argparse
+import json
+import sys
+
+def main():
+    parser = argparse.ArgumentParser(description='Fake Swift Compiler.')
+    parser.add_argument('--add-dep', type=str, nargs='+')
+    parser.add_argument('-module-name', type=str)
+    parser.add_argument('-output-file-map', type=str)
+    parser.add_argument('-incremental', action='store_true')
+    parser.add_argument('-emit-module', action='store_true')
+    parser.add_argument('-emit-module-path', type=str)
+    parser.add_argument('-emit-dependencies', action='store_true')
+    parser.add_argument('-I', type=str)
+    parser.add_argument('-O', type=str)
+    parser.add_argument('-c', dest="compile", action='store_true')
+    parser.add_argument('sources', type=str, nargs='+')
+    args = parser.parse_args()
+
+    # Parse the output file map.
+    with open(args.output_file_map) as f:
+        output_file_map = json.load(f)
+
+    # Write dummy outputs.
+    for key,item in output_file_map.items():
+        if key == "":
+            continue
+
+        deps = item["dependencies"]
+        object = item["object"]
+        with open(object, "w") as f:
+            f.write("<dummy>")
+
+        # Write dummy dependencies.
+        with open(deps, "w") as f:
+            f.write("%s: %s\n" % (object, ' '.join(args.add_dep or [])))
+
+if __name__ == '__main__':
+    main()

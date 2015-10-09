@@ -2,7 +2,6 @@
 #
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
-# RUN: touch %t.build/input
 # RUN: cp %s %t.build/build.swift-build
 # RUN: %{swift-build-tool} --chdir %t.build > %t.out
 # RUN: %{FileCheck} < %t.out %s

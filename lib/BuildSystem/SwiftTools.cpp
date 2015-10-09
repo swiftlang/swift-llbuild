@@ -16,13 +16,16 @@
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
 #include "llbuild/BuildSystem/BuildFile.h"
+#include "llbuild/BuildSystem/BuildKey.h"
 #include "llbuild/BuildSystem/BuildSystemCommandInterface.h"
 #include "llbuild/BuildSystem/ExternalCommand.h"
+#include "llbuild/Core/MakefileDepsParser.h"
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/FileSystem.h"
+#include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -108,7 +111,8 @@ public:
   bool writeOutputFileMap(BuildSystemCommandInterface& bsci,
                           StringRef outputFileMapPath,
                           ArrayRef<StringRef> sources,
-                          ArrayRef<StringRef> objects) const {
+                          ArrayRef<StringRef> objects,
+                          std::vector<std::string>& depsFiles_out) const {
     // FIXME: We need to properly escape everything we write here.
     assert(sources.size() == objects.size());
     
@@ -145,7 +149,8 @@ public:
       SmallString<16> swiftDepsPath;
       llvm::sys::path::append(swiftDepsPath, tempsPath,
                               sourceStem + ".swiftdeps");
-
+      depsFiles_out.push_back(depsPath.str());
+      
       os << "  \"" << source << "\": {\n";
       os << "    \"dependencies\": \"" << depsPath << "\",\n";
       os << "    \"object\": \"" << object << "\",\n";
@@ -160,7 +165,65 @@ public:
 
     return true;
   }
-  
+
+  bool processDiscoveredDependencies(BuildSystemCommandInterface& bsci,
+                                     core::Task* task, StringRef depsPath) {
+    // Read the dependencies file.
+    auto res = llvm::MemoryBuffer::getFile(depsPath);
+    if (auto ec = res.getError()) {
+      bsci.getDelegate().error(
+          "", {},
+          "unable to open dependencies file '" + depsPath +
+          "' (" + ec.message() + ")");
+      return false;
+    }
+    std::unique_ptr<llvm::MemoryBuffer> input(res->release());
+
+    // Parse the output.
+    //
+    // We just ignore the rule, and add any dependency that we encounter in the
+    // file.
+    struct DepsActions : public core::MakefileDepsParser::ParseActions {
+      BuildSystemCommandInterface& bsci;
+      core::Task* task;
+      StringRef depsPath;
+      unsigned numErrors{0};
+      unsigned ruleNumber{0};
+      
+      DepsActions(BuildSystemCommandInterface& bsci, core::Task* task,
+                  StringRef depsPath)
+          : bsci(bsci), task(task), depsPath(depsPath) {}
+
+      virtual void error(const char* message, uint64_t position) override {
+        bsci.getDelegate().error(
+            "", {},
+            "error reading dependency file: '" + depsPath + "' (" +
+            std::string(message) + ")");
+        ++numErrors;
+      }
+
+      virtual void actOnRuleDependency(const char* dependency,
+                                       uint64_t length) override {
+        // Only process dependencies for the first rule (the output file), the
+        // rest are identical.
+        if (ruleNumber == 0) {
+          bsci.taskDiscoveredDependency(
+              task, BuildKey::makeNode(StringRef(dependency, length)));
+        }
+      }
+
+      virtual void actOnRuleStart(const char* name, uint64_t length) override {}
+      virtual void actOnRuleEnd() override {
+        ++ruleNumber;
+      }
+    };
+
+    DepsActions actions(bsci, task, depsPath);
+    core::MakefileDepsParser(input->getBufferStart(), input->getBufferSize(),
+                             actions).parse();
+    return actions.numErrors == 0;
+  }
+
   virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
                                       core::Task* task,
                                       QueueJobContext* context) override {
@@ -215,7 +278,9 @@ public:
     llvm::sys::path::append(
         outputFileMapPath, tempsPath, "output-file-map.json");
 
-    if (!writeOutputFileMap(bsci, outputFileMapPath, sources, objects))
+    std::vector<std::string> depsFiles;
+    if (!writeOutputFileMap(bsci, outputFileMapPath, sources, objects,
+                            depsFiles))
       return false;
     
     // Form the complete command.
@@ -258,6 +323,12 @@ public:
       return false;
     }
 
+    // Load all of the discovered dependencies.
+    for (const auto& depsPath: depsFiles) {
+      if (!processDiscoveredDependencies(bsci, task, depsPath))
+        return false;
+    }
+    
     return true;
   }
 };

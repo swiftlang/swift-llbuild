@@ -1,0 +1,42 @@
+# Check that we properly pick up dependencies from the Swift compiler.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: touch %t.build/input
+# RUN: sed -e "s#SOURCEDIR#%S#g" -e "s#TMPDIR#%t#g" < %s > %t.build/build.swift-build
+# RUN: %{swift-build-tool} -v --chdir %t.build > %t.out
+# RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file %t.out %s
+#
+# CHECK-INITIAL: {{.*}}/pseudo-swiftc
+
+# Check that the next build is null.
+#
+# RUN: %{swift-build-tool} -v --chdir %t.build > %t.out
+# RUN: echo "END-OF-INPUT" >> %t.out
+# RUN: %{FileCheck} --check-prefix=CHECK-NULL --input-file %t.out %s
+#
+# CHECK-NULL-NOT: swiftc
+
+# Modify the input and check that things rebuild.
+#
+# RUN: echo "mod" >> %t.build/input
+# RUN: %{swift-build-tool} -v --chdir %t.build > %t.out
+# RUN: %{FileCheck} --check-prefix=CHECK-REBUILD --input-file %t.out %s
+#
+# CHECK-REBUILD: {{.*}}/pseudo-swiftc
+
+client:
+  name: swift-build
+
+targets:
+  "": ["<output>"]
+
+commands:
+  C1:
+    tool: swift-compiler
+    outputs: ["<output>"]
+    executable: SOURCEDIR/Inputs/pseudo-swiftc --add-dep TMPDIR.build/input
+    module-name: Foo
+    sources: input.swift
+    objects: output.o
+    temps-path: temps
