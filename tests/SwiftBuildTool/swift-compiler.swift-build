@@ -10,7 +10,7 @@
 # RUN: %{FileCheck} --check-prefix=CHECK-VERBOSE --input-file=%t-verbose.out %s
 #
 # CHECK: Compiling Swift Module 'Foo'
-# CHECK-VERBOSE: swiftc -module-name Foo -incremental -emit-dependencies -emit-module -emit-module-path Foo.swiftmodule -output-file-map temps/output-file-map.json -c s1.swift s2.swift
+# CHECK-VERBOSE: swiftc -module-name Foo -incremental -emit-dependencies -emit-module -emit-module-path Foo.swiftmodule -output-file-map temps/output-file-map.json -c s1.swift s2.swift -Iimport-A -Iimport-B -OTHERARG
 
 # Sanity check the output file map.
 #
@@ -33,6 +33,7 @@ commands:
     module-output-path: Foo.swiftmodule
     # FIXME: This needs to be a list.
     sources: s1.swift s2.swift
+    import-paths: import-A import-B
     objects: s1.o s2.o
     other-args: -OTHERARG
     temps-path: temps

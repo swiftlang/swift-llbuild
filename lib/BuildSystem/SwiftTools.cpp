@@ -51,6 +51,11 @@ class SwiftCompilerShellCommand : public ExternalCommand {
   // FIXME: This should be an actual list.
   std::string objectsList;
 
+  /// The list of import paths (combined).
+  //
+  // FIXME: This should be an actual list.
+  std::string importPaths;
+
   /// The directory in which to store temporary files.
   std::string tempsPath;
 
@@ -63,8 +68,10 @@ class SwiftCompilerShellCommand : public ExternalCommand {
     uint64_t result = ExternalCommand::getSignature();
     result ^= basic::hashString(executable);
     result ^= basic::hashString(moduleName);
+    result ^= basic::hashString(moduleOutputPath);
     result ^= basic::hashString(sourcesList);
     result ^= basic::hashString(objectsList);
+    result ^= basic::hashString(importPaths);
     result ^= basic::hashString(tempsPath);
     result ^= basic::hashString(otherArgs);
     return result;
@@ -85,6 +92,8 @@ public:
       sourcesList = value;
     } else if (name == "objects") {
       objectsList = value;
+    } else if (name == "import-paths") {
+      importPaths = value;
     } else if (name == "temps-path") {
       tempsPath = value;
     } else if (name == "other-args") {
@@ -188,6 +197,11 @@ public:
       return false;
     }
 
+    // Get the list of objects.
+    SmallVector<StringRef, 32> imports;
+    StringRef(importPaths).split(imports, " ", /*MaxSplit=*/-1,
+                                 /*KeepEmpty=*/false);
+
     // Ensure the temporary directory exists.
     //
     // We ignore failures here, and just let things that depend on this fail.
@@ -219,7 +233,12 @@ public:
     for (const auto& source: sources) {
       commandOS << " " << source;
     }
-    commandOS << " " << otherArgs;
+    for (const auto& import: imports) {
+      commandOS << " " << "-I" << import;
+    }
+    if (!otherArgs.empty()) {
+      commandOS << " " << otherArgs;
+    }
     commandOS.flush();
       
     // Log the command.
