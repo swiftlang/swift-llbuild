@@ -16,17 +16,17 @@ rule rule
 # Check identifier specific cases in bindings, for all the other contexts.
 # CHECK: actOnBeginBuildDecl(/*Name=*/"rule", /*Outputs=*/["foo"], /*Inputs=*/["baz"]
 build foo: rule baz
-    # CHECK: actOnBuildBindingDecl(/*Decl=*/0x0, /*Name=*/"rule", /*Value=*/"a")
+    # CHECK: actOnBuildBindingDecl(/*Decl=*/{{.*}}, /*Name=*/"rule", /*Value=*/"a")
     rule = a
-    # CHECK: actOnBuildBindingDecl(/*Decl=*/0x0, /*Name=*/"pool", /*Value=*/"pool")
+    # CHECK: actOnBuildBindingDecl(/*Decl=*/{{.*}}, /*Name=*/"pool", /*Value=*/"pool")
     pool = pool
-    # CHECK: actOnBuildBindingDecl(/*Decl=*/0x0, /*Name=*/"build", /*Value=*/"a")
+    # CHECK: actOnBuildBindingDecl(/*Decl=*/{{.*}}, /*Name=*/"build", /*Value=*/"a")
     build = a
-    # CHECK: actOnBuildBindingDecl(/*Decl=*/0x0, /*Name=*/"default", /*Value=*/"a")
+    # CHECK: actOnBuildBindingDecl(/*Decl=*/{{.*}}, /*Name=*/"default", /*Value=*/"a")
     default = a
-    # CHECK: actOnBuildBindingDecl(/*Decl=*/0x0, /*Name=*/"include", /*Value=*/"a")
+    # CHECK: actOnBuildBindingDecl(/*Decl=*/{{.*}}, /*Name=*/"include", /*Value=*/"a")
     include = a
-    # CHECK: actOnBuildBindingDecl(/*Decl=*/0x0, /*Name=*/"subninja", /*Value=*/"a")
+    # CHECK: actOnBuildBindingDecl(/*Decl=*/{{.*}}, /*Name=*/"subninja", /*Value=*/"a")
     subninja = a
     # This trailing blank line tests we switch out of identifier specific mode for the next decl
     #
