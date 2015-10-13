@@ -30,3 +30,8 @@ build build.ninja: GENERATOR
 build output-1: CP input-1
 build output-2: CP input-2
 build output: CAT output-1 output-2
+
+
+# This test is disabled pending investigation of CI flakiness (rdar://problem/23089862)
+#
+# REQUIRES: disabled
