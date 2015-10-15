@@ -14,18 +14,13 @@
 
 #include "llbuild/Basic/LLVM.h"
 
-#include <string>
+#include "llvm/ADT/Hashing.h"
 
 namespace llbuild {
 namespace basic {
 
 uint64_t hashString(StringRef value) {
-  // FIXME: Replace with a real hash function.
-  uint64_t Result = Value.size();
-  for (auto Char: Value) {
-    Result = Result * 37 + Char;
-  }
-  return Result;
+  return hash_value(value);
 }
 
 }
