@@ -850,6 +850,9 @@ private:
         assert(request.taskInfo->forRuleInfo);
         successors.push_back(&request.taskInfo->forRuleInfo->rule);
       }
+      for (const auto& request: taskInfo.deferredScanRequests) {
+        successors.push_back(&request.inputRuleInfo->rule);
+      }
       graph.insert({ &taskInfo.forRuleInfo->rule, successors });
     }
 
