@@ -586,6 +586,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
   }
 
   assert(0 && "invalid key type");
+  abort();
 }
 
 void BuildSystemEngineDelegate::cycleDetected(const std::vector<Rule*>& cycle) {
