@@ -66,6 +66,9 @@ class SwiftCompilerShellCommand : public ExternalCommand {
   //
   // FIXME: This should be an actual list.
   std::string otherArgs;
+
+  /// Whether the sources are part of a library or not.
+  bool isLibrary = false;
   
   virtual uint64_t getSignature() override {
     uint64_t result = ExternalCommand::getSignature();
@@ -77,6 +80,7 @@ class SwiftCompilerShellCommand : public ExternalCommand {
     result ^= basic::hashString(importPaths);
     result ^= basic::hashString(tempsPath);
     result ^= basic::hashString(otherArgs);
+    result ^= isLibrary;
     return result;
   }
 
@@ -99,6 +103,13 @@ public:
       importPaths = value;
     } else if (name == "temps-path") {
       tempsPath = value;
+    } else if (name == "is-library") {
+      if (value != "true" && value != "false") {
+        ctx.error("invalid value: '" + value + "' for attribute '" +
+                  name + "'");
+        return false;
+      }
+      isLibrary = value == "true";
     } else if (name == "other-args") {
       otherArgs = value;
     } else {
@@ -294,6 +305,9 @@ public:
                 << " " << "-emit-module-path" << " " << moduleOutputPath;
     }
     commandOS << " " << "-output-file-map" << " " << outputFileMapPath;
+    if (isLibrary) {
+      commandOS << " " << "-parse-as-library";
+    }
     commandOS << " " << "-c";
     for (const auto& source: sources) {
       commandOS << " " << source;
