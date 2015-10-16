@@ -43,7 +43,7 @@ commands:
 
 # CHECK-VERSION-2-NOT: output
 # CHECK-VERSION-2: END-OF-FILE
-# CHECK-VERSION-2-ERR: error: cycle detected while building
+# CHECK-VERSION-2-ERR: error: cycle detected while building: command 'output' -> node '<output-1>' -> command 'output-1' -> node '<output>' -> command 'output'
 client:
   name: basic
 

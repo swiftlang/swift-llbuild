@@ -26,8 +26,10 @@
 #include "llbuild/BuildSystem/BuildValue.h"
 #include "llbuild/BuildSystem/ExternalCommand.h"
 
+#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include <memory>
 
@@ -482,10 +484,9 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
   auto key = BuildKey::fromData(keyData);
 
   switch (key.getKind()) {
-  default:
-    assert(0 && "invalid key");
-    abort();
-
+  case BuildKey::Kind::Unknown:
+    break;
+    
   case BuildKey::Kind::Command: {
     // Find the comand.
     auto it = getBuildFile().getCommands().find(key.getCommandName());
@@ -583,10 +584,40 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     };
   }
   }
+
+  assert(0 && "invalid key type");
 }
 
-void BuildSystemEngineDelegate::cycleDetected(const std::vector<Rule*>& items) {
-  system.error(system.getMainFilename(), "cycle detected while building");
+void BuildSystemEngineDelegate::cycleDetected(const std::vector<Rule*>& cycle) {
+  // Compute a description of the cycle path.
+  SmallString<256> message;
+  llvm::raw_svector_ostream os(message);
+  os << "cycle detected while building: ";
+  bool first = true;
+  for (const auto* rule: cycle) {
+    if (!first)
+      os << " -> ";
+
+    // Convert to a build key.
+    auto key = BuildKey::fromData(rule->key);
+    switch (key.getKind()) {
+    case BuildKey::Kind::Unknown:
+      os << "((unknown))";
+      break;
+    case BuildKey::Kind::Command:
+      os << "command '" << key.getCommandName() << "'";
+      break;
+    case BuildKey::Kind::Node:
+      os << "node '" << key.getNodeName() << "'";
+      break;
+    case BuildKey::Kind::Target:
+      os << "target '" << key.getTargetName() << "'";
+      break;
+    }
+    first = false;
+  }
+  
+  system.error(system.getMainFilename(), os.str());
 }
 
 #pragma mark - BuildSystemImpl implementation
