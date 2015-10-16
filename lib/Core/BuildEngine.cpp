@@ -842,6 +842,7 @@ private:
   void reportCycle() {
     // Gather all of the successor relationships.
     std::unordered_map<Rule*, std::vector<Rule*>> graph;
+    std::vector<RuleScanRecord *> activeRuleScanRecords;
     for (const auto& it: taskInfos) {
       const TaskInfo& taskInfo = it.second;
       assert(taskInfo.forRuleInfo);
@@ -851,11 +852,44 @@ private:
         successors.push_back(&request.taskInfo->forRuleInfo->rule);
       }
       for (const auto& request: taskInfo.deferredScanRequests) {
-        successors.push_back(&request.inputRuleInfo->rule);
+        // Add the sucessor for the deferred relationship itself.
+        successors.push_back(&request.ruleInfo->rule);
+          
+        // Add the active rule scan record which needs to be traversed.
+        assert(request.ruleInfo->isScanning());
+        activeRuleScanRecords.push_back(
+            request.ruleInfo->getPendingScanRecord());
       }
       graph.insert({ &taskInfo.forRuleInfo->rule, successors });
     }
-
+      
+    // Gather dependencies from all of the active scan records.
+    std::unordered_set<const RuleScanRecord*> visitedRuleScanRecords;
+    while (!activeRuleScanRecords.empty()) {
+      const auto* record = activeRuleScanRecords.back();
+      activeRuleScanRecords.pop_back();
+          
+      // Mark the record and ignore it if not scanned.
+      if (!visitedRuleScanRecords.insert(record).second)
+        continue;
+          
+      // For each paused request, add the dependency.
+      for (const auto& request: record->pausedInputRequests) {
+        graph[&request.inputRuleInfo->rule].push_back(
+            &request.taskInfo->forRuleInfo->rule);
+      }
+          
+      // Process the deferred scan requests.
+      for (const auto& request: record->deferredScanRequests) {
+        // Add the sucessor for the deferred relationship itself.
+        graph[&request.inputRuleInfo->rule].push_back(&request.ruleInfo->rule);
+              
+        // Add the active rule scan record which needs to be traversed.
+        assert(request.ruleInfo->isScanning());
+        activeRuleScanRecords.push_back(
+            request.ruleInfo->getPendingScanRecord());
+      }
+    }
     // Find the cycle, which should be reachable from any remaining node.
     //
     // FIXME: Need a setvector.
