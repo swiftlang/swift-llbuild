@@ -1,7 +1,7 @@
 # RUN: %{llbuild} --version > %t.out
 # RUN: %{FileCheck} --check-prefix=CHECK-VERSION < %t.out %s
 #
-# CHECK-VERSION: LLBuild version
+# CHECK-VERSION: llbuild version
 
 
 # RUN: %{llbuild} --help 2> %t.err

@@ -37,7 +37,7 @@ Swift conventions.
     The core build engine implementation. Depends on **Basic**.
 
   **BuildFile**
-    The "LLBuild"-native build description file format support. Depends on
+    The "llbuild"-native build description file format support. Depends on
     **Basic**, **Core**.
 
   **Ninja**

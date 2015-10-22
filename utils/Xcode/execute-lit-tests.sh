@@ -6,6 +6,6 @@ set -e
 # installed.
 LIT="python -m lit.main"
 
-echo "note: running LLBuild tests..."
+echo "note: running llbuild tests..."
 echo "note: using lit: '${LIT}'"
 ${LIT} -sv --no-progress "${BUILT_PRODUCTS_DIR}/tests"

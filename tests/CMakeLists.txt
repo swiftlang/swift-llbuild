@@ -37,7 +37,7 @@ if(PYTHONINTERP_FOUND)
 
   add_custom_target(test-llbuild
     COMMAND ${lit_command} ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Running LLBuild tests..."
+    COMMENT "Running llbuild tests..."
     ${cmake_3_2_USES_TERMINAL})
   set_target_properties(test-llbuild PROPERTIES FOLDER "Tests")
 

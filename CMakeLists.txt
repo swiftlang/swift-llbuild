@@ -16,7 +16,7 @@ endif()
 include(CMakeParseArguments)
 include(CheckCXXCompilerFlag)
 
-project(LLBuild)
+project(llbuild)
 
 # Add path for custom modules
 set(CMAKE_MODULE_PATH
