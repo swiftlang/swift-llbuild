@@ -81,6 +81,9 @@
 		E147DF0E1BA81D330032D08E /* libgtest_main.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A224E619F99C580059043E /* libgtest_main.a */; };
 		E147DF0F1BA81D330032D08E /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
 		E147DF1A1BA81D5A0032D08E /* SerialQueueTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E147DF191BA81D4E0032D08E /* SerialQueueTest.cpp */; };
+		E14C2CEF1BDAAD070033CA2A /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
+		E14C2CF01BDAAD1E0033CA2A /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
+		E14C2CF11BDAAD210033CA2A /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
 		E15B6EC41B546A1600643066 /* ConvertUTF.c in Sources */ = {isa = PBXBuildFile; fileRef = E15B6EC21B546A0D00643066 /* ConvertUTF.c */; };
 		E15B6EC51B546A1600643066 /* ConvertUTFWrapper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E15B6EC31B546A0D00643066 /* ConvertUTFWrapper.cpp */; };
 		E15B6EC71B546A2C00643066 /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
@@ -934,6 +937,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E14C2CF01BDAAD1E0033CA2A /* libcurses.dylib in Frameworks */,
+				E14C2CF11BDAAD210033CA2A /* libsqlite3.dylib in Frameworks */,
+				E14C2CEF1BDAAD070033CA2A /* libllvmSupport.a in Frameworks */,
 				E1A2250419F99E280059043E /* libgtest.a in Frameworks */,
 				E1A2250319F99E240059043E /* libgtest_main.a in Frameworks */,
 				E1A2251619F99EB60059043E /* libllbuildBasic.a in Frameworks */,
