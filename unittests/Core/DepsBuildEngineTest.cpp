@@ -12,7 +12,11 @@
 
 #include "llbuild/Core/BuildEngine.h"
 
+#include "llbuild/Basic/LLVM.h"
 #include "llbuild/Core/BuildDB.h"
+#include "llvm/ADT/SmallString.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/FileSystem.h"
 
 #include "gtest/gtest.h"
 
@@ -224,4 +228,60 @@ TEST(DepsBuildEngineTest, BogusConcurrentDepScan) {
   EXPECT_EQ("output", builtKeys[2]);
   EXPECT_EQ("input-3", builtKeys[3]);
 }
+
+TEST(DepsBuildEngineTest, KeysWithNull) {
+  // Check build engine support for keys with embedded null characters.
+  std::vector<std::string> builtKeys;
+  SimpleBuildEngineDelegate delegate;
+
+  // Create a temporary file.
+  llvm::SmallString<256> dbPath;
+  auto ec = llvm::sys::fs::createTemporaryFile("build", "db", dbPath);
+  EXPECT_EQ(bool(ec), false);
+
+  fprintf(stderr, "using db: %s\n", dbPath.c_str());
+  for (int iteration = 0; iteration < 2; ++iteration) {
+    fprintf(stderr, "iteration: %d\n", iteration);
+    
+    core::BuildEngine engine(delegate);
+    // FIXME: Don't put database in temp.
+    std::string error;
+    engine.attachDB(createSQLiteBuildDB(dbPath, 1, &error));
+
+    std::string inputA{"i\0A", 3};
+    std::string inputB{"i\0B", 3};
+    engine.addRule({
+        inputA,
+        simpleAction({}, [&] (const std::vector<int>& inputs) {
+            builtKeys.push_back(inputA);
+            return 2; }) });
+    engine.addRule({
+        inputB,
+        simpleAction({}, [&] (const std::vector<int>& inputs) {
+            builtKeys.push_back(inputB);
+            return 3; }) });
+    engine.addRule({
+        "output",
+        simpleAction({ inputA, inputB }, [&] (const std::vector<int>& inputs) {
+            assert(inputs.size() == 2);
+            builtKeys.push_back("output");
+            return inputs[0] * inputs[1]; }) });
+
+    // Run the build.
+    builtKeys.clear();
+    EXPECT_EQ(2 * 3, intFromValue(engine.build("output")));
+    if (iteration == 0) {
+      EXPECT_EQ(3U, builtKeys.size());
+      EXPECT_EQ(inputA, builtKeys[0]);
+      EXPECT_EQ(inputB, builtKeys[1]);
+      EXPECT_EQ("output", builtKeys[2]);
+    } else {
+      EXPECT_EQ(0U, builtKeys.size());
+    }
+  }
+
+  ec = llvm::sys::fs::remove(dbPath.str());
+  EXPECT_EQ(bool(ec), false);
+}
+
 }

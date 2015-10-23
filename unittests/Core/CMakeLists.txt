@@ -5,4 +5,4 @@ add_llbuild_unittest(CoreTests
   MakefileDepsParserTest.cpp
   )
 
-target_link_libraries(CoreTests llbuildCore)
+target_link_libraries(CoreTests llbuildCore llvmSupport sqlite3 curses)

@@ -280,7 +280,7 @@ public:
     result = sqlite3_clear_bindings(findRuleResultStmt);
     assert(result == SQLITE_OK);
     result = sqlite3_bind_text(findRuleResultStmt, /*index=*/1,
-                               rule.key.c_str(), -1,
+                               rule.key.data(), rule.key.size(),
                                SQLITE_STATIC);
     assert(result == SQLITE_OK);
 
@@ -321,7 +321,9 @@ public:
       }
       assert(sqlite3_column_count(findRuleDependenciesStmt) == 1);
       result_out->dependencies.push_back(
-        (const char*)sqlite3_column_text(findRuleDependenciesStmt, 0));
+          std::string(
+              (const char*)sqlite3_column_text(findRuleDependenciesStmt, 0),
+              sqlite3_column_bytes(findRuleDependenciesStmt, 0)));
     }
 
     return true;
@@ -364,8 +366,8 @@ public:
     assert(result == SQLITE_OK);
     result = sqlite3_clear_bindings(findIDForKeyInRuleResultsStmt);
     assert(result == SQLITE_OK);
-    result = sqlite3_bind_text(findIDForKeyInRuleResultsStmt,
-                               /*index=*/1, rule.key.c_str(), -1,
+    result = sqlite3_bind_text(findIDForKeyInRuleResultsStmt, /*index=*/1,
+                               rule.key.data(), rule.key.size(),
                                SQLITE_STATIC);
     assert(result == SQLITE_OK);
 
@@ -415,7 +417,7 @@ public:
     result = sqlite3_clear_bindings(insertIntoRuleResultsStmt);
     assert(result == SQLITE_OK);
     result = sqlite3_bind_text(insertIntoRuleResultsStmt, /*index=*/1,
-                               rule.key.c_str(), -1,
+                               rule.key.data(), rule.key.size(),
                                SQLITE_STATIC);
     assert(result == SQLITE_OK);
     result = sqlite3_bind_blob(insertIntoRuleResultsStmt, /*index=*/2,
@@ -446,7 +448,7 @@ public:
                                   ruleID);
       assert(result == SQLITE_OK);
       result = sqlite3_bind_text(insertIntoRuleDependenciesStmt, /*index=*/2,
-                                 dependency.c_str(), -1,
+                                 dependency.data(), dependency.size(),
                                  SQLITE_STATIC);
       assert(result == SQLITE_OK);
       result = sqlite3_step(insertIntoRuleDependenciesStmt);
