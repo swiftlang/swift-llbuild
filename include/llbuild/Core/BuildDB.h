@@ -13,6 +13,9 @@
 #ifndef LLBUILD_CORE_BUILDDB_H
 #define LLBUILD_CORE_BUILDDB_H
 
+#include "llbuild/Basic/LLVM.h"
+#include "llvm/ADT/StringRef.h"
+
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -71,7 +74,7 @@ public:
 /// client to allow batch changes to the stored build results; if the stored
 /// schema does not match the provided version the database will be cleared upon
 /// opening.
-std::unique_ptr<BuildDB> createSQLiteBuildDB(const std::string& path,
+std::unique_ptr<BuildDB> createSQLiteBuildDB(StringRef path,
                                              uint32_t clientSchemaVersion,
                                              std::string* error_out);
 

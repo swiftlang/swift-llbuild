@@ -42,10 +42,10 @@ public:
       close();
   }
 
-  bool open(const std::string& path, uint32_t clientSchemaVersion,
+  bool open(StringRef path, uint32_t clientSchemaVersion,
             std::string *error_out) {
     assert(!db);
-    int result = sqlite3_open(path.c_str(), &db);
+    int result = sqlite3_open(path.str().c_str(), &db);
     if (result != SQLITE_OK) {
       // FIXME: Provide better error messages.
       *error_out = "unable to open database";
@@ -81,7 +81,7 @@ public:
     if (version != currentSchemaVersion ||
         clientVersion != clientSchemaVersion) {
       // Always recreate the database from scratch when the schema changes.
-      result = unlink(path.c_str());
+      result = unlink(path.str().c_str());
       if (result == -1) {
         if (errno != ENOENT) {
           *error_out = std::string("unable to unlink existing database: ") +
@@ -91,7 +91,7 @@ public:
         }
       } else {
         // If the remove was successful, reopen the database.
-        int result = sqlite3_open(path.c_str(), &db);
+        int result = sqlite3_open(path.str().c_str(), &db);
         if (result != SQLITE_OK) {
           // FIXME: Provide better error messages.
           *error_out = "unable to open database";
@@ -478,7 +478,7 @@ public:
 
 }
 
-std::unique_ptr<BuildDB> core::createSQLiteBuildDB(const std::string& path,
+std::unique_ptr<BuildDB> core::createSQLiteBuildDB(StringRef path,
                                                    uint32_t clientSchemaVersion,
                                                    std::string* error_out) {
   auto db = std::make_unique<SQLiteBuildDB>();
