@@ -11,6 +11,10 @@
 # CHECK: [1/{{.*}}] GENERATE MANIFEST
 # CHECK: [1/{{.*}}] cat input > output
 
+# FIXME: This test fails non-deterministically on Linux, we need to investigate (rdar://problem/23239574).
+#
+# REQUIRES: platform=Darwin
+
 rule GENERATE_MANIFEST
      command = echo "build output: CAT input" >> build.ninja
      description = GENERATE MANIFEST
