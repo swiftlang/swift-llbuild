@@ -391,6 +391,14 @@ class ProducedNodeTask : public Task {
   Node& node;
   BuildValue nodeResult;
   Command* producingCommand = nullptr;
+
+  // Build specific data.
+  //
+  // FIXME: We should probably factor this out somewhere else, so we can enforce
+  // it is never used when initialized incorrectly.
+
+  // Whether this is a node we are unable to produce.
+  bool isInvalid = false;
   
   virtual void start(BuildEngine& engine) override {
     // Request the producer command.
@@ -402,10 +410,14 @@ class ProducedNodeTask : public Task {
       return;
     }
 
-    // FIXME: Delegate to the client to select the appropriate producer if
-    // there are more than one.
-    assert(0 && "FIXME: not implemented (support for non-unary producers");
-    abort();
+    // We currently do not support building nodes which have multiple producers.
+    auto producerA = node.getProducers()[0];
+    auto producerB = node.getProducers()[1];
+    getBuildSystem(engine).error(
+        "", "unable to build node: '" + node.getName() + "' (node is produced "
+        "by multiple commands; e.g., '" + producerA->getName() + "' and '" +
+        producerB->getName() + "')");
+    isInvalid = true;
   }
 
   virtual void providePriorValue(BuildEngine&,
@@ -422,6 +434,11 @@ class ProducedNodeTask : public Task {
   }
 
   virtual void inputsAvailable(BuildEngine& engine) override {
+    if (isInvalid) {
+      engine.taskIsComplete(this, BuildValue::makeFailedInput().toData());
+      return;
+    }
+    
     assert(!nodeResult.isInvalid());
     
     // Complete the task immediately.
@@ -433,6 +450,11 @@ public:
       : node(node), nodeResult(BuildValue::makeInvalid()) {}
   
   static bool isResultValid(Node& node, const BuildValue& value) {
+    // If the result was failure, we always need to rebuild (it may produce an
+    // error).
+    if (value.isFailedInput())
+      return false;
+
     // The produced node result itself doesn't need any synchronization.
     return true;
   }
