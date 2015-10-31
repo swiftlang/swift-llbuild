@@ -566,6 +566,12 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     };
   }
 
+  case BuildKey::Kind::CustomTask:
+    // FIXME: Implement.
+    assert(0 && "FIXME: not implemented (support for non-unary producers");
+    abort();
+    break;
+
   case BuildKey::Kind::Node: {
     // Find the node.
     auto it = getBuildFile().getNodes().find(key.getNodeName());
@@ -664,6 +670,10 @@ void BuildSystemEngineDelegate::cycleDetected(const std::vector<Rule*>& cycle) {
       break;
     case BuildKey::Kind::Command:
       os << "command '" << key.getCommandName() << "'";
+      break;
+    case BuildKey::Kind::CustomTask:
+      os << "comand '" << key.getCustomTaskCommandName() << "' custom task '"
+         << key.getCustomTaskName() << "'";
       break;
     case BuildKey::Kind::Node:
       os << "node '" << key.getNodeName() << "'";
