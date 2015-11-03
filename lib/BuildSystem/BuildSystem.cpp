@@ -497,6 +497,33 @@ public:
 
 #pragma mark - BuildSystemEngineDelegate implementation
 
+/// This is a synthesized task used to represent a missing command.
+///
+/// This command is used in cases where a command has been removed from the
+/// manifest, but can still be found during an incremental rebuild. This command
+/// is used to inject an invalid value thus forcing downstream clients to
+/// rebuild.
+class MissingCommandTask : public Task {
+private:
+  virtual void start(BuildEngine& engine) override { }
+  virtual void providePriorValue(BuildEngine& engine,
+                                 const ValueType& valueData) override { }
+
+  virtual void provideValue(BuildEngine& engine, uintptr_t inputID,
+                            const ValueType& valueData) override { }
+
+  virtual void inputsAvailable(BuildEngine& engine) override {
+    // A missing command always builds to an invalid value, and forces
+    // downstream clients to be rebuilt (at which point they will presumably see
+    // the command is no longer used).
+    return engine.taskIsComplete(this, BuildValue::makeInvalid().toData(),
+                                 /*forceChange=*/true);
+  }
+
+public:
+  using Task::Task;
+};
+
 BuildFile& BuildSystemEngineDelegate::getBuildFile() {
   return system.getBuildFile();
 }
@@ -513,8 +540,16 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     // Find the comand.
     auto it = getBuildFile().getCommands().find(key.getCommandName());
     if (it == getBuildFile().getCommands().end()) {
-      assert(0 && "unexpected request for missing command");
-      abort();
+      return Rule{
+        keyData,
+        /*Action=*/ [](BuildEngine& engine) -> Task* {
+          return engine.registerTask(new MissingCommandTask());
+        },
+        /*IsValid=*/ [](const Rule& rule, const ValueType& value) -> bool {
+          // The cached result for a missing command is never valid.
+          return false;
+        }
+      };
     }
 
     // Create the rule for the command.
