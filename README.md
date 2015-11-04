@@ -1,12 +1,11 @@
-=========
- llbuild
-=========
+llbuild
+=======
 
 A low-level build system.
 
 
 Development Notes
-=================
+-----------------
 
 The project is set up in the following fashion, generally following LLVM and
 Swift conventions.

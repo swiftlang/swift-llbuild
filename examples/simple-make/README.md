@@ -1,6 +1,5 @@
-=============
- Simple Make
-=============
+Simple Make
+===========
 
 This is a demonstration of how to use ``llbuild`` to construct a simple build
 system that compiles all of the source files in a directory into one executable.
@@ -15,7 +14,7 @@ kind of framework.
 
 
 Installing
-==========
+----------
 
 To run these examples, you will need:
 
@@ -53,7 +52,7 @@ The easiest way to accomplish this is with::
 
 
 Examples
-========
+--------
 
 The specific examples are:
 
