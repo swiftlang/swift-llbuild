@@ -80,6 +80,9 @@ public:
 
     if (version != currentSchemaVersion ||
         clientVersion != clientSchemaVersion) {
+      // Close the database before we try to recreate it.
+      sqlite3_close(db);
+
       // Always recreate the database from scratch when the schema changes.
       result = unlink(path.str().c_str());
       if (result == -1) {
@@ -99,14 +102,19 @@ public:
         }
       }
 
+      // Create the schema in a single transaction.
+      result = sqlite3_exec(db, "BEGIN IMMEDIATE;", nullptr, nullptr, &cError);
+
       // Create the info table.
-      result = sqlite3_exec(
-        db, ("CREATE TABLE info ("
-             "id INTEGER PRIMARY KEY, "
-             "version INTEGER, "
-             "client_version INTEGER, "
-             "iteration INTEGER);"),
-        nullptr, nullptr, &cError);
+      if (result == SQLITE_OK) {
+	result = sqlite3_exec(
+          db, ("CREATE TABLE info ("
+	       "id INTEGER PRIMARY KEY, "
+	       "version INTEGER, "
+	       "client_version INTEGER, "
+	       "iteration INTEGER);"),
+	  nullptr, nullptr, &cError);
+      }
       if (result == SQLITE_OK) {
         char* query = sqlite3_mprintf(
           "INSERT INTO info VALUES (0, %d, %d, 0);",
@@ -149,6 +157,11 @@ public:
         result = sqlite3_exec(
           db, "CREATE UNIQUE INDEX rule_results_idx ON rule_results (key);",
           nullptr, nullptr, &cError);
+      }
+
+      // Sync changes to disk.
+      if (result == SQLITE_OK) {
+	result = sqlite3_exec(db, "END;", nullptr, nullptr, &cError);
       }
 
       if (result != SQLITE_OK) {
