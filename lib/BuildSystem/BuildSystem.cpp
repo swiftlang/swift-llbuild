@@ -26,6 +26,7 @@
 #include "llbuild/BuildSystem/BuildValue.h"
 #include "llbuild/BuildSystem/ExternalCommand.h"
 
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/MemoryBuffer.h"
@@ -693,7 +694,7 @@ void BuildSystemEngineDelegate::cycleDetected(const std::vector<Rule*>& cycle) {
 std::unique_ptr<BuildNode>
 BuildSystemImpl::lookupNode(StringRef name, bool isImplicit) {
   bool isVirtual = !name.empty() && name[0] == '<' && name.back() == '>';
-  return std::make_unique<BuildNode>(name, isVirtual);
+  return llvm::make_unique<BuildNode>(name, isVirtual);
 }
 
 bool BuildSystemImpl::build(StringRef target) {
@@ -741,7 +742,7 @@ public:
   }
 
   virtual std::unique_ptr<Command> createCommand(StringRef name) override {
-    return std::make_unique<PhonyCommand>(name);
+    return llvm::make_unique<PhonyCommand>(name);
   }
 };
 
@@ -800,7 +801,7 @@ public:
   }
 
   virtual std::unique_ptr<Command> createCommand(StringRef name) override {
-    return std::make_unique<ShellCommand>(name);
+    return llvm::make_unique<ShellCommand>(name);
   }
 };
 
@@ -928,7 +929,7 @@ public:
   }
 
   virtual std::unique_ptr<Command> createCommand(StringRef name) override {
-    return std::make_unique<ClangShellCommand>(name);
+    return llvm::make_unique<ClangShellCommand>(name);
   }
 };
 
@@ -978,11 +979,11 @@ BuildSystemFileDelegate::lookupTool(StringRef name) {
 
   // Otherwise, look for one of the builtin tool definitions.
   if (name == "shell") {
-    return std::make_unique<ShellTool>(name);
+    return llvm::make_unique<ShellTool>(name);
   } else if (name == "phony") {
-    return std::make_unique<PhonyTool>(name);
+    return llvm::make_unique<PhonyTool>(name);
   } else if (name == "clang") {
-    return std::make_unique<ClangTool>(name);
+    return llvm::make_unique<ClangTool>(name);
   }
 
   return nullptr;

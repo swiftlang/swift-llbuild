@@ -14,6 +14,7 @@
 
 #include "llbuild/Basic/LLVM.h"
 
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/YAMLParser.h"
@@ -396,7 +397,7 @@ class BuildFileImpl {
           entry.getValue());
 
       // Create the target.
-      auto target = std::make_unique<Target>(name);
+      auto target = llvm::make_unique<Target>(name);
 
       // Add all of the nodes.
       for (auto& node: *nodes) {

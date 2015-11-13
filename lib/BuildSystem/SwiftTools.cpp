@@ -22,6 +22,7 @@
 #include "llbuild/Core/MakefileDepsParser.h"
 
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/FileSystem.h"
@@ -359,11 +360,11 @@ public:
   }
 
   virtual std::unique_ptr<Command> createCommand(StringRef name) override {
-    return std::make_unique<SwiftCompilerShellCommand>(name);
+    return llvm::make_unique<SwiftCompilerShellCommand>(name);
   }
 };
 }
 
 std::unique_ptr<Tool> buildsystem::createSwiftCompilerTool(StringRef name) {
-  return std::make_unique<SwiftCompilerTool>(name);
+  return llvm::make_unique<SwiftCompilerTool>(name);
 }

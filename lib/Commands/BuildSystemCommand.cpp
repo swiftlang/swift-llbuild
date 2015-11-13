@@ -18,6 +18,7 @@
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
 #include "llbuild/BuildSystem/BuildValue.h"
 
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -163,7 +164,7 @@ public:
       printf("  -- 'tool': '%s')\n", getName().str().c_str());
     }
 
-    return std::make_unique<ParseDummyCommand>(delegate, name);
+    return llvm::make_unique<ParseDummyCommand>(delegate, name);
   }
 };
 
@@ -206,7 +207,7 @@ ParseBuildFileDelegate::lookupTool(StringRef name) {
     printf("tool('%s')\n", name.str().c_str());
   }
 
-  return std::make_unique<ParseDummyTool>(*this, name);
+  return llvm::make_unique<ParseDummyTool>(*this, name);
 }
 
 void ParseBuildFileDelegate::loadedTarget(StringRef name,
@@ -234,7 +235,7 @@ ParseBuildFileDelegate::lookupNode(StringRef name,
     }
   }
 
-  return std::make_unique<ParseDummyNode>(*this, name);
+  return llvm::make_unique<ParseDummyNode>(*this, name);
 }
 
 void ParseBuildFileDelegate::loadedCommand(StringRef name,

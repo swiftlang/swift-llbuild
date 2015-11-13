@@ -14,6 +14,8 @@
 
 #include "llbuild/Core/BuildEngine.h"
 
+#include "llvm/ADT/STLExtras.h"
+
 #include <cassert>
 #include <cerrno>
 #include <cstring>
@@ -496,7 +498,7 @@ public:
 std::unique_ptr<BuildDB> core::createSQLiteBuildDB(StringRef path,
                                                    uint32_t clientSchemaVersion,
                                                    std::string* error_out) {
-  auto db = std::make_unique<SQLiteBuildDB>();
+  auto db = llvm::make_unique<SQLiteBuildDB>();
   if (!db->open(path, clientSchemaVersion, error_out))
     return nullptr;
 

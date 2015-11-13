@@ -17,6 +17,8 @@
 #include "llbuild/Ninja/ManifestLoader.h"
 #include "llbuild/Ninja/Parser.h"
 
+#include "llvm/ADT/STLExtras.h"
+
 #include <iostream>
 #include <sstream>
 
@@ -152,7 +154,7 @@ bool util::readFileContents(std::string path,
   fseek(fp, 0, SEEK_SET);
 
   // Read the file contents.
-  auto data = std::make_unique<char[]>(size);
+  auto data = llvm::make_unique<char[]>(size);
   uint64_t pos = 0;
   while (pos < size) {
     // Read data into the buffer.

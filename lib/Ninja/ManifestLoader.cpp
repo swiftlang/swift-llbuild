@@ -12,12 +12,13 @@
 
 #include "llbuild/Ninja/ManifestLoader.h"
 
-#include "llvm/ADT/SmallString.h"
-#include "llvm/Support/raw_ostream.h"
-
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/Ninja/Lexer.h"
 #include "llbuild/Ninja/Parser.h"
+
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/SmallString.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include <cstdlib>
 #include <vector>
@@ -101,7 +102,7 @@ public:
       return false;
 
     // Push a new entry onto the include stack.
-    auto fileParser = std::make_unique<Parser>(data.get(), length, *this);
+    auto fileParser = llvm::make_unique<Parser>(data.get(), length, *this);
     includeStack.push_back(IncludeEntry(filename, std::move(data),
                                         std::move(fileParser),
                                         bindings));

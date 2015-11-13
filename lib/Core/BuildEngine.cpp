@@ -14,6 +14,8 @@
 
 #include "llbuild/Core/BuildDB.h"
 
+#include "llvm/ADT/STLExtras.h"
+
 #include "BuildEngineTrace.h"
 
 #include <algorithm>
@@ -21,6 +23,7 @@
 #include <cstdio>
 #include <condition_variable>
 #include <iostream>
+#include <memory>
 #include <mutex>
 #include <thread>
 #include <unordered_map>
@@ -1072,7 +1075,7 @@ public:
   }
 
   bool enableTracing(const std::string& filename, std::string* error_out) {
-    auto trace = std::make_unique<BuildEngineTrace>();
+    auto trace = llvm::make_unique<BuildEngineTrace>();
 
     if (!trace->open(filename, error_out))
       return false;

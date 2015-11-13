@@ -12,6 +12,8 @@
 
 #include "llbuild/Basic/SerialQueue.h"
 
+#include "llvm/ADT/STLExtras.h"
+
 #include <cassert>
 #include <condition_variable>
 #include <deque>
@@ -76,7 +78,7 @@ class SerialQueueImpl {
 public:
   SerialQueueImpl() {
     // Ensure the queue is fully initialized before creating the worker thread.
-    operationsThread = std::make_unique<std::thread>(
+    operationsThread = llvm::make_unique<std::thread>(
         &SerialQueueImpl::run, this);
   }
 
