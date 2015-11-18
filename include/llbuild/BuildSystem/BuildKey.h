@@ -16,6 +16,9 @@
 #include "llbuild/Basic/Compiler.h"
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/Core/BuildEngine.h"
+#include "llbuild/BuildSystem/BuildFile.h"
+
+#include "llvm/ADT/StringRef.h"
 
 namespace llbuild {
 namespace buildsystem {
@@ -42,6 +45,7 @@ public:
     /// An invalid key kind.
     Unknown,
   };
+  static StringRef stringForKind(Kind);
 
 private:
   /// The actual key data.
@@ -184,6 +188,13 @@ public:
   }
 
   const core::KeyType toData() const { return getKeyData(); }
+
+  /// @}
+
+  /// @name Debug Support
+  /// @{
+
+  void dump(raw_ostream& OS) const;
 
   /// @}
 };

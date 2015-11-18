@@ -36,17 +36,17 @@ StringRef BuildValue::stringForKind(BuildValue::Kind kind) {
   return "<unknown>";
 }
   
-void BuildValue::dump(raw_ostream& OS) const {
-  OS << "BuildValue(" << stringForKind(kind);
+void BuildValue::dump(raw_ostream& os) const {
+  os << "BuildValue(" << stringForKind(kind);
   if (isExistingInput() || isSuccessfulCommand()) {
-    OS << ", outputInfos=[";
+    os << ", outputInfos=[";
     for (unsigned i = 0; i != getNumOutputs(); ++i) {
       auto& info = getNthOutputInfo(i);
-      if (i != 0) OS << ", ";
+      if (i != 0) os << ", ";
       if (info.isMissing()) {
-        OS << "FileInfo{/*missing*/}";
+        os << "FileInfo{/*missing*/}";
       } else {
-        OS << "FileInfo{"
+        os << "FileInfo{"
            << "dev=" << info.device
            << ", inode=" << info.inode
            << ", size=" << info.size
@@ -54,7 +54,7 @@ void BuildValue::dump(raw_ostream& OS) const {
            << ":" << info.modTime.nanoseconds << "}";
       }
     }
-    OS << "]";
+    os << "]";
   }
-  OS << ")";
+  os << ")";
 }

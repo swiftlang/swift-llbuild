@@ -1,5 +1,6 @@
 add_llbuild_library(llbuildBuildSystem
   BuildFile.cpp
+  BuildKey.cpp
   BuildNode.cpp
   BuildSystem.cpp
   BuildSystemFrontend.cpp

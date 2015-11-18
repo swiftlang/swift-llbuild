@@ -189,6 +189,7 @@
 		E1E221071A00689C00957481 /* BuildDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E221051A0067F800957481 /* BuildDB.cpp */; };
 		E1E221091A00B82100957481 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
 		E1E2210C1A015B9E00957481 /* SQLiteBuildDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E2210B1A015B9E00957481 /* SQLiteBuildDB.cpp */; };
+		E1E4A5B41BFC1394001BFFC4 /* BuildKey.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E4A5B31BFC1394001BFFC4 /* BuildKey.cpp */; };
 		E1FC67F91BB1F427004EBC54 /* BuildValue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1FC67F81BB1F417004EBC54 /* BuildValue.cpp */; };
 		E1FE53411AB1346700041B8E /* Hashing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1FE53401AB1343B00041B8E /* Hashing.cpp */; };
 /* End PBXBuildFile section */
@@ -597,7 +598,6 @@
 		E147DF161BA81D330032D08E /* BasicTests */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = BasicTests; sourceTree = BUILT_PRODUCTS_DIR; };
 		E147DF181BA81D4E0032D08E /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E147DF191BA81D4E0032D08E /* SerialQueueTest.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = SerialQueueTest.cpp; sourceTree = "<group>"; };
-		E153EBBA1A1E94CD00F93337 /* llbuild-test-tools */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "llbuild-test-tools"; sourceTree = "<group>"; };
 		E15B6EC21B546A0D00643066 /* ConvertUTF.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ConvertUTF.c; sourceTree = "<group>"; };
 		E15B6EC31B546A0D00643066 /* ConvertUTFWrapper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ConvertUTFWrapper.cpp; sourceTree = "<group>"; };
 		E15B6EC61B546A2C00643066 /* libcurses.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcurses.dylib; path = usr/lib/libcurses.dylib; sourceTree = SDKROOT; };
@@ -617,7 +617,7 @@
 		E19D79931A15D9F5002604FB /* MakefileDepsParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MakefileDepsParser.h; sourceTree = "<group>"; };
 		E19D79941A15DA06002604FB /* MakefileDepsParserTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MakefileDepsParserTest.cpp; sourceTree = "<group>"; };
 		E1A223FB19F990E60059043E /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
-		E1A223FC19F990E60059043E /* README.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.txt; sourceTree = "<group>"; };
+		E1A223FC19F990E60059043E /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		E1A2240019F991350059043E /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1A2240219F991350059043E /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1A2240319F991350059043E /* llbuild.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = llbuild.cpp; sourceTree = "<group>"; };
@@ -643,7 +643,7 @@
 		E1A2241C19F991530059043E /* Manifest.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Manifest.cpp; sourceTree = "<group>"; };
 		E1A2241D19F991530059043E /* ManifestLoader.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ManifestLoader.cpp; sourceTree = "<group>"; };
 		E1A2241E19F991530059043E /* Parser.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Parser.cpp; sourceTree = "<group>"; };
-		E1A2241F19F991530059043E /* README.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = README.txt; sourceTree = "<group>"; };
+		E1A2241F19F991530059043E /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		E1A2242519F991B40059043E /* libllbuildBasic.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libllbuildBasic.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1A2242E19F997050059043E /* libllbuildCommands.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libllbuildCommands.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1A2243619F9970D0059043E /* libllbuildNinja.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libllbuildNinja.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -703,7 +703,7 @@
 		E1A224E619F99C580059043E /* libgtest_main.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libgtest_main.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1A224EF19F99D880059043E /* CoreTests */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = CoreTests; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1A2250119F99DFD0059043E /* NinjaTests */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = NinjaTests; sourceTree = BUILT_PRODUCTS_DIR; };
-		E1A2254F19F9A74B0059043E /* README.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.txt; sourceTree = "<group>"; };
+		E1A2254F19F9A74B0059043E /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		E1A2255019F9A74B0059043E /* create-lit-site-cfg.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "create-lit-site-cfg.sh"; sourceTree = "<group>"; };
 		E1A2255119F9A74B0059043E /* execute-lit-tests.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "execute-lit-tests.sh"; sourceTree = "<group>"; };
 		E1AAD2891BC609F600F54680 /* BuildSystemFrontend.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildSystemFrontend.cpp; sourceTree = "<group>"; };
@@ -713,7 +713,7 @@
 		E1AAD2911BC65B5000F54680 /* SwiftTools.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SwiftTools.cpp; sourceTree = "<group>"; };
 		E1ADC2301A85922F00D5387C /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1ADC2311A85922F00D5387C /* C-API.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "C-API.cpp"; sourceTree = "<group>"; };
-		E1ADC2341A85928100D5387C /* README.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.txt; sourceTree = "<group>"; };
+		E1ADC2341A85928100D5387C /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		E1ADC2351A8592AA00D5387C /* llbuild.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = llbuild.h; sourceTree = "<group>"; };
 		E1ADC23A1A85936400D5387C /* libllbuild.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libllbuild.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1B49EF91B6BD45D0031AFC2 /* BuildSystemCommandInterface.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildSystemCommandInterface.h; sourceTree = "<group>"; };
@@ -847,6 +847,7 @@
 		E1E221051A0067F800957481 /* BuildDB.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildDB.cpp; sourceTree = "<group>"; };
 		E1E221081A00B82100957481 /* libsqlite3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsqlite3.dylib; path = usr/lib/libsqlite3.dylib; sourceTree = SDKROOT; };
 		E1E2210B1A015B9E00957481 /* SQLiteBuildDB.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SQLiteBuildDB.cpp; sourceTree = "<group>"; };
+		E1E4A5B31BFC1394001BFFC4 /* BuildKey.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildKey.cpp; sourceTree = "<group>"; };
 		E1FC67F81BB1F417004EBC54 /* BuildValue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildValue.cpp; sourceTree = "<group>"; };
 		E1FE53401AB1343B00041B8E /* Hashing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Hashing.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -1067,7 +1068,6 @@
 		E1A223E819F98F1C0059043E = {
 			isa = PBXGroup;
 			children = (
-				E153EBBA1A1E94CD00F93337 /* llbuild-test-tools */,
 				E1A223FD19F990F10059043E /* products */,
 				E1A2240419F991530059043E /* lib */,
 				E19C3FD51B98C1A70035E1AA /* tests */,
@@ -1075,7 +1075,7 @@
 				E1A224B219F998D40059043E /* unittests */,
 				E1A2246A19F998C30059043E /* utils */,
 				E1A223FB19F990E60059043E /* CMakeLists.txt */,
-				E1A223FC19F990E60059043E /* README.txt */,
+				E1A223FC19F990E60059043E /* README.md */,
 				E1A223F219F98F1C0059043E /* Products */,
 				E13B5E411A00395300EA0405 /* Frameworks */,
 			);
@@ -1193,7 +1193,7 @@
 			isa = PBXGroup;
 			children = (
 				E1A2246019F9980B0059043E /* Headers */,
-				E1A2241F19F991530059043E /* README.txt */,
+				E1A2241F19F991530059043E /* README.md */,
 				E1A2241A19F991530059043E /* CMakeLists.txt */,
 				E1A2241B19F991530059043E /* Lexer.cpp */,
 				E1A2241C19F991530059043E /* Manifest.cpp */,
@@ -1386,7 +1386,7 @@
 			isa = PBXGroup;
 			children = (
 				E10D5CDB19FEBF6A00211ED4 /* LitXCTestAdaptor */,
-				E1A2254F19F9A74B0059043E /* README.txt */,
+				E1A2254F19F9A74B0059043E /* README.md */,
 				E17C29F31B5AC2A700C12DA9 /* build-sphinx-docs.sh */,
 				E17C29E41B5AAA2F00C12DA9 /* create-target-link.sh */,
 				E1A2255019F9A74B0059043E /* create-lit-site-cfg.sh */,
@@ -1413,7 +1413,7 @@
 			isa = PBXGroup;
 			children = (
 				E1ADC2331A85925800D5387C /* llbuild */,
-				E1ADC2341A85928100D5387C /* README.txt */,
+				E1ADC2341A85928100D5387C /* README.md */,
 			);
 			name = "Public API";
 			path = "public-api";
@@ -1603,6 +1603,7 @@
 				E1B8395C1B541C4300DB876B /* Headers */,
 				E1B8395A1B541C1F00DB876B /* CMakeLists.txt */,
 				E1B839591B541C1F00DB876B /* BuildFile.cpp */,
+				E1E4A5B31BFC1394001BFFC4 /* BuildKey.cpp */,
 				E1AAD28D1BC65A1900F54680 /* BuildNode.cpp */,
 				E104FAFF1B6568E0005C68A0 /* BuildSystem.cpp */,
 				E1AAD2891BC609F600F54680 /* BuildSystemFrontend.cpp */,
@@ -2518,6 +2519,7 @@
 				E1AAD28E1BC65A1900F54680 /* BuildNode.cpp in Sources */,
 				E1FC67F91BB1F427004EBC54 /* BuildValue.cpp in Sources */,
 				E1AAD2921BC65B5000F54680 /* SwiftTools.cpp in Sources */,
+				E1E4A5B41BFC1394001BFFC4 /* BuildKey.cpp in Sources */,
 				E1B8395E1B541C5900DB876B /* BuildFile.cpp in Sources */,
 				E104FB001B6568E0005C68A0 /* BuildSystem.cpp in Sources */,
 			);
