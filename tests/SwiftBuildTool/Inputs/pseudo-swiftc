@@ -2,6 +2,8 @@
 
 import argparse
 import json
+import os
+import pipes
 import sys
 
 def main():
@@ -17,26 +19,47 @@ def main():
     parser.add_argument('-I', type=str)
     parser.add_argument('-O', type=str)
     parser.add_argument('-c', dest="compile", action='store_true')
-    parser.add_argument('sources', type=str, nargs='+')
+    parser.add_argument('-###', dest="show_commands", action='store_true')
+    parser.add_argument('-v', dest="verbose", action='store_true')
+    parser.add_argument('--version', dest="version", action='store_true')
+    parser.add_argument('sources', type=str, nargs='*')
     args = parser.parse_args()
 
     # Parse the output file map.
-    with open(args.output_file_map) as f:
-        output_file_map = json.load(f)
+    if args.output_file_map:
+        with open(args.output_file_map) as f:
+            output_file_map = json.load(f)
+    else:
+        output_file_map = None
 
+    # If run in verbose mode, print a fake version.
+    if args.verbose or args.version:
+        print "Pseudo Swift version 1.2.3 (%s)" % (
+            os.environ.get("PSEUDO_SWIFT_VERSION", "12.1"),)
+        print("Target: bla bla bla")
+        if args.version:
+            return
+    
+    # If run in show commands mode, print some dummy output.
+    if args.show_commands:
+        print ' '.join(map(pipes.quote, [
+            sys.argv[0], "-frontend", "...blablabla..."]))
+        return
+        
     # Write dummy outputs.
-    for key,item in output_file_map.items():
-        if key == "":
-            continue
+    if output_file_map is not None:
+        for key,item in output_file_map.items():
+            if key == "":
+                continue
 
-        deps = item["dependencies"]
-        object = item["object"]
-        with open(object, "w") as f:
-            f.write("<dummy>")
+            deps = item["dependencies"]
+            object = item["object"]
+            with open(object, "w") as f:
+                f.write("<dummy>")
 
-        # Write dummy dependencies.
-        with open(deps, "w") as f:
-            f.write("%s: %s\n" % (object, ' '.join(args.add_dep or [])))
+            # Write dummy dependencies.
+            with open(deps, "w") as f:
+                f.write("%s: %s\n" % (object, ' '.join(args.add_dep or [])))
 
 if __name__ == '__main__':
     main()

@@ -17,6 +17,7 @@
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildKey.h"
+#include "llbuild/BuildSystem/BuildValue.h"
 #include "llbuild/BuildSystem/BuildSystemCommandInterface.h"
 #include "llbuild/BuildSystem/ExternalCommand.h"
 #include "llbuild/Core/MakefileDepsParser.h"
@@ -31,9 +32,91 @@
 #include "llvm/Support/raw_ostream.h"
 
 using namespace llbuild;
+using namespace llbuild::core;
 using namespace llbuild::buildsystem;
 
 namespace {
+
+class SwiftGetVersionCommand : public Command {
+  std::string executable;
+  
+public:
+  SwiftGetVersionCommand(const BuildKey& key)
+      : Command("swift-get-version"), executable(key.getCustomTaskData()) {
+  }
+
+  // FIXME: Should create a CustomCommand class, to avoid all the boilerplate
+  // required implementations.
+  
+  virtual void configureDescription(const ConfigureContext&,
+                                    StringRef value) override { }
+  virtual void configureInputs(const ConfigureContext&,
+                               const std::vector<Node*>& value) override { }
+  virtual void configureOutputs(const ConfigureContext&,
+                                const std::vector<Node*>& value) override { }
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  StringRef value) override {
+    return false;
+  }
+  virtual BuildValue getResultForOutput(Node* node,
+                                        const BuildValue& value) override {
+    // This method should never be called on a custom command.
+    llvm_unreachable("unexpected");
+    return BuildValue::makeInvalid();
+  }
+  
+  virtual bool isResultValid(const BuildValue& value) override {
+    // Always rebuild this task.
+    return false;
+  }
+
+  virtual void start(BuildSystemCommandInterface& bsci,
+                     core::Task* task) override { }
+  virtual void providePriorValue(BuildSystemCommandInterface&, core::Task*,
+                                 const BuildValue&) override { }
+  virtual void provideValue(BuildSystemCommandInterface& bsci, core::Task*,
+                            uintptr_t inputID,
+                            const BuildValue& value) override { }
+
+  virtual void inputsAvailable(BuildSystemCommandInterface& bsci,
+                               core::Task* task) override {
+    // Dispatch a task to query the compiler version.
+    auto fn = [this, &bsci=bsci, task=task](QueueJobContext* context) {
+      // Construct the command line used to query the swift compiler version.
+      //
+      // FIXME: Need a decent subprocess interface.
+      SmallString<256> command;
+      llvm::raw_svector_ostream commandOS(command);
+      commandOS << executable;
+      commandOS << " " << "--version";
+
+      // Read the result.
+      FILE *fp = ::popen(commandOS.str().str().c_str(), "r");
+      SmallString<4096> result;
+      if (fp) {
+        char buf[4096];
+        for (;;) {
+          ssize_t numRead = fread(buf, 1, sizeof(buf), fp);
+          if (numRead == 0) {
+            // FIXME: Error handling.
+            break;
+          }
+          result.append(StringRef(buf, numRead));
+          pclose(fp);
+        }
+      }
+
+      // For now, we can get away with just encoding this as a successful
+      // command and relying on the signature to detect changes.
+      //
+      // FIXME: We should support BuildValues with arbitrary payloads.
+      bsci.taskIsComplete(task, BuildValue::makeSuccessfulCommand(
+                              basic::FileInfo{}, basic::hashString(result)));
+    };
+    bsci.addJob({ this, std::move(fn) });
+    return;
+  }
+};
 
 class SwiftCompilerShellCommand : public ExternalCommand {
   /// The compiler command to invoke.
@@ -236,6 +319,39 @@ public:
     return actions.numErrors == 0;
   }
 
+  /// Overridden start to also introduce a dependency on the Swift compiler
+  /// version.
+  virtual void start(BuildSystemCommandInterface& bsci,
+                     core::Task* task) override {
+    ExternalCommand::start(bsci, task);
+    
+    // The Swift compiler version is also an input.
+    //
+    // FIXME: We need to fix the input ID situation, this is not extensible. We
+    // either have to build a registration of the custom tasks so they can divy
+    // up the input ID namespace, or we should just use the keys. Probably move
+    // to just using the keys, unless there is a place where that is really not
+    // cheap.
+    auto getVersionKey = BuildKey::makeCustomTask(
+        "swift-get-version", executable);
+    bsci.taskNeedsInput(task, getVersionKey,
+                        core::BuildEngine::kMaximumInputID - 1);
+  }
+
+  /// Overridden to access the Swift compiler version.
+  virtual void provideValue(BuildSystemCommandInterface& bsci,
+                            core::Task* task,
+                            uintptr_t inputID,
+                            const BuildValue& value) override {
+    // We can ignore the 'swift-get-version' input, it is just used to detect
+    // that we need to rebuild.
+    if (inputID == core::BuildEngine::kMaximumInputID - 1) {
+      return;
+    }
+    
+    ExternalCommand::provideValue(bsci, task, inputID, value);
+  }
+
   virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
                                       core::Task* task,
                                       QueueJobContext* context) override {
@@ -361,6 +477,15 @@ public:
 
   virtual std::unique_ptr<Command> createCommand(StringRef name) override {
     return llvm::make_unique<SwiftCompilerShellCommand>(name);
+  }
+
+  virtual std::unique_ptr<Command>
+  createCustomCommand(const BuildKey& key) override {
+    if (key.getCustomTaskName() == "swift-get-version" ) {
+      return llvm::make_unique<SwiftGetVersionCommand>(key);
+    }
+
+    return nullptr;
   }
 };
 }
