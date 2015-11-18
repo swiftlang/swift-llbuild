@@ -34,6 +34,10 @@ Command::~Command() {}
 
 Tool::~Tool() {}
 
+std::unique_ptr<Command> Tool::createCustomCommand(const BuildKey& key) {
+  return nullptr;
+}
+
 #pragma mark - BuildFile implementation
 
 namespace {

@@ -38,6 +38,7 @@ typedef std::vector<std::pair<std::string, std::string>> property_list_type;
 
 class BuildFileDelegate;
 class BuildSystemCommandInterface;
+class BuildKey;
 class BuildValue;
 class Command;
 class Node;
@@ -86,6 +87,15 @@ public:
   ///
   /// \param name - The name of the command.
   virtual std::unique_ptr<Command> createCommand(StringRef name) = 0;
+
+  /// Called by the build system to create a custom command with the given name.
+  ///
+  /// The tool should return null if it does not understand how to create the
+  /// a custom command for the given key.
+  ///
+  /// \param key - The custom build key to create a command ofr.
+  /// \returns The command to use, or null.
+  virtual std::unique_ptr<Command> createCustomCommand(const BuildKey& key);
 };
 
 /// Each Target declares a name that can be used to reference it, and a list of

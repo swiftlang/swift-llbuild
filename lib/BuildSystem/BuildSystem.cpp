@@ -94,7 +94,10 @@ class BuildSystemEngineDelegate : public BuildEngineDelegate {
 
   // FIXME: This is an inefficent map, the string is duplicated.
   std::unordered_map<std::string, std::unique_ptr<BuildNode>> dynamicNodes;
-  
+
+  /// The custom tasks which are owned by the build system.
+  std::vector<std::unique_ptr<Command>> customTasks;
+
   BuildFile& getBuildFile();
 
   virtual Rule lookupRule(const KeyType& keyData) override;
@@ -541,6 +544,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     // Find the comand.
     auto it = getBuildFile().getCommands().find(key.getCommandName());
     if (it == getBuildFile().getCommands().end()) {
+      // If there is no such command, produce an error task.
       return Rule{
         keyData,
         /*Action=*/ [](BuildEngine& engine) -> Task* {
@@ -567,12 +571,47 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     };
   }
 
-  case BuildKey::Kind::CustomTask:
-    // FIXME: Implement.
-    assert(0 && "FIXME: not implemented (support for non-unary producers");
-    abort();
-    break;
+  case BuildKey::Kind::CustomTask: {
+    // Search for a tool which knows how to create the given custom task.
+    //
+    // FIXME: We should most likely have some kind of registration process so we
+    // can do an efficient query here, but exactly how this should look isn't
+    // clear yet.
+    for (const auto& it: getBuildFile().getTools()) {
+      auto result = it.second->createCustomCommand(key);
+      if (!result) continue;
 
+      // Save the custom command.
+      customTasks.emplace_back(std::move(result));
+      Command *command = customTasks.back().get();
+      
+      return Rule{
+        keyData,
+        /*Action=*/ [command](BuildEngine& engine) -> Task* {
+          return engine.registerTask(new CommandTask(*command));
+        },
+        /*IsValid=*/ [command](const Rule& rule,
+                               const ValueType& value) -> bool {
+          return CommandTask::isResultValid(
+              *command, BuildValue::fromData(value));
+        }
+      };
+    }
+    
+    // We were unable to create an appropriate custom command, produce an error
+    // task.
+    return Rule{
+      keyData,
+      /*Action=*/ [](BuildEngine& engine) -> Task* {
+        return engine.registerTask(new MissingCommandTask());
+      },
+      /*IsValid=*/ [](const Rule& rule, const ValueType& value) -> bool {
+        // The cached result for a missing command is never valid.
+        return false;
+      }
+    };
+  }
+    
   case BuildKey::Kind::Node: {
     // Find the node.
     auto it = getBuildFile().getNodes().find(key.getNodeName());
