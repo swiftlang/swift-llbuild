@@ -673,8 +673,7 @@ void BuildSystemEngineDelegate::cycleDetected(const std::vector<Rule*>& cycle) {
       os << "command '" << key.getCommandName() << "'";
       break;
     case BuildKey::Kind::CustomTask:
-      os << "comand '" << key.getCustomTaskCommandName() << "' custom task '"
-         << key.getCustomTaskName() << "'";
+      os << "custom task '" << key.getCustomTaskName() << "'";
       break;
     case BuildKey::Kind::Node:
       os << "node '" << key.getNodeName() << "'";

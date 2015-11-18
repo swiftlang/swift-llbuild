@@ -40,8 +40,8 @@ void BuildKey::dump(raw_ostream& os) const {
     break;
   }
   case Kind::CustomTask: {
-    os << ", commandName='" << getCustomTaskCommandName() << "'";
     os << ", name='" << getCustomTaskName() << "'";
+    os << ", dataSize='" << getCustomTaskData().size() << "'";
     break;
   }
   case Kind::Node: {

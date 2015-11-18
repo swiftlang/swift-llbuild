@@ -58,26 +58,19 @@ private:
     key.push_back(kindCode);
     key.append(str.begin(), str.end());
   }
-  BuildKey(char kindCode, StringRef commandName, StringRef taskName,
-           StringRef taskData) {
+  BuildKey(char kindCode, StringRef name, StringRef data) {
     // FIXME: We need good support infrastructure for binary encoding.
-    uint32_t commandNameSize = commandName.size();
-    uint32_t taskNameSize = taskName.size();
-    uint32_t taskDataSize = taskData.size();
-    key.resize(1 + 2*sizeof(uint32_t) + commandNameSize + taskNameSize +
-               taskDataSize);
+    uint32_t nameSize = name.size();
+    uint32_t dataSize = data.size();
+    key.resize(1 + sizeof(uint32_t) + nameSize + dataSize);
     uint32_t pos = 0;
     key[pos] = kindCode; pos += 1;
-    memcpy(&key[pos], &commandNameSize, sizeof(uint32_t));
+    memcpy(&key[pos], &nameSize, sizeof(uint32_t));
     pos += sizeof(uint32_t);
-    memcpy(&key[pos], &taskNameSize, sizeof(uint32_t));
-    pos += sizeof(uint32_t);
-    memcpy(&key[pos], commandName.data(), commandNameSize);
-    pos += commandNameSize;
-    memcpy(&key[pos], taskName.data(), taskNameSize);
-    pos += taskNameSize;
-    memcpy(&key[pos], taskData.data(), taskDataSize);
-    pos += taskDataSize;
+    memcpy(&key[pos], name.data(), nameSize);
+    pos += nameSize;
+    memcpy(&key[pos], data.data(), dataSize);
+    pos += dataSize;
     assert(key.size() == pos);
   }
 
@@ -91,9 +84,8 @@ public:
   }
 
   /// Create a key for computing a custom task (manged by a particular command).
-  static BuildKey makeCustomTask(StringRef commandName, StringRef taskName,
-                                 StringRef taskData) {
-    return BuildKey('X', commandName, taskName, taskData);
+  static BuildKey makeCustomTask(StringRef name, StringRef taskData) {
+    return BuildKey('X', name, taskData);
   }
 
   /// Create a key for computing a node result.
@@ -138,32 +130,19 @@ public:
     return StringRef(key.data()+1, key.size()-1);
   }
 
-  StringRef getCustomTaskCommandName() const {
-    assert(isCustomTask());
-    uint32_t commandSize;
-    memcpy(&commandSize, &key[1], sizeof(uint32_t));
-    return StringRef(&key[1 + 2*sizeof(uint32_t)], commandSize);
-  }
-
   StringRef getCustomTaskName() const {
     assert(isCustomTask());
-    uint32_t commandSize;
-    memcpy(&commandSize, &key[1], sizeof(uint32_t));
-    uint32_t taskNameSize;
-    memcpy(&taskNameSize, &key[1 + sizeof(uint32_t)], sizeof(uint32_t));
-    return StringRef(&key[1 + 2*sizeof(uint32_t) + commandSize], taskNameSize);
+    uint32_t nameSize;
+    memcpy(&nameSize, &key[1], sizeof(uint32_t));
+    return StringRef(&key[1 + sizeof(uint32_t)], nameSize);
   }
 
   StringRef getCustomTaskData() const {
     assert(isCustomTask());
-    uint32_t commandSize;
-    memcpy(&commandSize, &key[1], sizeof(uint32_t));
-    uint32_t taskNameSize;
-    memcpy(&taskNameSize, &key[1 + sizeof(uint32_t)], sizeof(uint32_t));
-    uint32_t taskDataSize =
-      key.size() - 1 - 2*sizeof(uint32_t) - commandSize - taskNameSize;
-    return StringRef(&key[1 + 2*sizeof(uint32_t) + commandSize + taskNameSize],
-                     taskDataSize);
+    uint32_t nameSize;
+    memcpy(&nameSize, &key[1], sizeof(uint32_t));
+    uint32_t dataSize = key.size() - 1 - sizeof(uint32_t) - nameSize;
+    return StringRef(&key[1 + sizeof(uint32_t) + nameSize], dataSize);
   }
 
   StringRef getNodeName() const {
