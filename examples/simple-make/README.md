@@ -28,28 +28,29 @@ To run these examples, you will need:
 
 The easiest way to accomplish this is with::
 
-  # Configure and build ``llbuild`` in the expected location.
-  cd path/to/llbuild
-  mkdir -p build
-  cd build
-  cmake -G Ninja ..
-  ninja
-  
-  # Install virtualenv, if not present.
-  sudo easy_install virtualenv
+~~~ shell
+# Configure and build llbuild in the expected location.
+cd path/to/llbuild
+mkdir -p build
+cd build
+cmake -G Ninja ..
+ninja
 
-  # Create a virtualenv and install ``cffi`` into it.
-  #
-  # We set CFLAGS to work around CFFI not properly getting the right include
-  # paths if there is no root SDK.
-  cd path/to/llbuild/examples/simple-make
-  virtualenv venv
-  env CFLAGS="-I$(xcrun --show-sdk-path)/usr/include/ffi" venv/bin/pip install cffi
-  source venv/bin/activate
+# Install virtualenv, if not present.
+sudo easy_install virtualenv
 
-  # Ensure Python can find the ``llbuild`` module.
-  export PYTHONPATH=path/to/llbuild/bindings/python
+# Create a virtualenv and install ``cffi`` into it.
+#
+# We set CFLAGS to work around CFFI not properly getting the right include
+# paths if there is no root SDK.
+cd path/to/llbuild/examples/simple-make
+virtualenv venv
+env CFLAGS="-I$(xcrun --show-sdk-path)/usr/include/ffi" venv/bin/pip install cffi
+source venv/bin/activate
 
+# Ensure Python can find the ``llbuild`` module.
+export PYTHONPATH=path/to/llbuild/bindings/python
+~~~
 
 Examples
 --------
