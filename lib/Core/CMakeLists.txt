@@ -2,9 +2,6 @@ add_llbuild_library(llbuildCore
   BuildDB.cpp
   BuildEngine.cpp
   BuildEngineTrace.cpp
-  DependencyCommand.cpp
-  DependencyGraph.cpp
-  DependencyNode.cpp
   MakefileDepsParser.cpp
   SQLiteBuildDB.cpp
 )

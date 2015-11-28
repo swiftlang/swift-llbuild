@@ -103,9 +103,6 @@
 		E1A2244519F997470059043E /* NinjaCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241019F991530059043E /* NinjaCommand.cpp */; };
 		E1A2244619F9974A0059043E /* BuildEngine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241219F991530059043E /* BuildEngine.cpp */; };
 		E1A2244719F9974D0059043E /* BuildEngineTrace.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241319F991530059043E /* BuildEngineTrace.cpp */; };
-		E1A2244819F9974F0059043E /* DependencyCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241619F991530059043E /* DependencyCommand.cpp */; };
-		E1A2244919F997510059043E /* DependencyGraph.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241719F991530059043E /* DependencyGraph.cpp */; };
-		E1A2244A19F997530059043E /* DependencyNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241819F991530059043E /* DependencyNode.cpp */; };
 		E1A2244B19F997850059043E /* Lexer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241B19F991530059043E /* Lexer.cpp */; };
 		E1A2244C19F997890059043E /* Manifest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241C19F991530059043E /* Manifest.cpp */; };
 		E1A2244D19F9978A0059043E /* ManifestLoader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241D19F991530059043E /* ManifestLoader.cpp */; };
@@ -119,7 +116,6 @@
 		E1A224E119F99B270059043E /* gtest-all.cc in Sources */ = {isa = PBXBuildFile; fileRef = E1A2248B19F998C30059043E /* gtest-all.cc */; };
 		E1A224EA19F99C650059043E /* TestMain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2246F19F998C30059043E /* TestMain.cpp */; };
 		E1A224F619F99D940059043E /* BuildEngineTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A224B519F998D40059043E /* BuildEngineTest.cpp */; };
-		E1A224F719F99D9A0059043E /* DependencyGraphTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A224B719F998D40059043E /* DependencyGraphTest.cpp */; };
 		E1A2250219F99E1C0059043E /* LexerTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A224BA19F998D40059043E /* LexerTest.cpp */; };
 		E1A2250319F99E240059043E /* libgtest_main.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A224E619F99C580059043E /* libgtest_main.a */; };
 		E1A2250419F99E280059043E /* libgtest.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A224DD19F99B0E0059043E /* libgtest.a */; };
@@ -635,9 +631,6 @@
 		E1A2241319F991530059043E /* BuildEngineTrace.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = BuildEngineTrace.cpp; sourceTree = "<group>"; };
 		E1A2241419F991530059043E /* BuildEngineTrace.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildEngineTrace.h; sourceTree = "<group>"; };
 		E1A2241519F991530059043E /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
-		E1A2241619F991530059043E /* DependencyCommand.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = DependencyCommand.cpp; sourceTree = "<group>"; };
-		E1A2241719F991530059043E /* DependencyGraph.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = DependencyGraph.cpp; sourceTree = "<group>"; };
-		E1A2241819F991530059043E /* DependencyNode.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = DependencyNode.cpp; sourceTree = "<group>"; };
 		E1A2241A19F991530059043E /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1A2241B19F991530059043E /* Lexer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Lexer.cpp; sourceTree = "<group>"; };
 		E1A2241C19F991530059043E /* Manifest.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Manifest.cpp; sourceTree = "<group>"; };
@@ -651,9 +644,6 @@
 		E1A2245119F997D40059043E /* Version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Version.h; sourceTree = "<group>"; };
 		E1A2245519F997E80059043E /* Commands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Commands.h; sourceTree = "<group>"; };
 		E1A2245819F997FE0059043E /* BuildEngine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuildEngine.h; sourceTree = "<group>"; };
-		E1A2245919F997FE0059043E /* DependencyCommand.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DependencyCommand.h; sourceTree = "<group>"; };
-		E1A2245A19F997FE0059043E /* DependencyGraph.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DependencyGraph.h; sourceTree = "<group>"; };
-		E1A2245B19F997FE0059043E /* DependencyNode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DependencyNode.h; sourceTree = "<group>"; };
 		E1A2246119F9980B0059043E /* Lexer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Lexer.h; sourceTree = "<group>"; };
 		E1A2246219F9980B0059043E /* Manifest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Manifest.h; sourceTree = "<group>"; };
 		E1A2246419F9980B0059043E /* ManifestLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ManifestLoader.h; sourceTree = "<group>"; };
@@ -695,7 +685,6 @@
 		E1A224B319F998D40059043E /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1A224B519F998D40059043E /* BuildEngineTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildEngineTest.cpp; sourceTree = "<group>"; };
 		E1A224B619F998D40059043E /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
-		E1A224B719F998D40059043E /* DependencyGraphTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DependencyGraphTest.cpp; sourceTree = "<group>"; };
 		E1A224B919F998D40059043E /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1A224BA19F998D40059043E /* LexerTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LexerTest.cpp; sourceTree = "<group>"; };
 		E1A224C319F999B80059043E /* llbuild */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = llbuild; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1180,9 +1169,6 @@
 				E1A2241219F991530059043E /* BuildEngine.cpp */,
 				E1A2241319F991530059043E /* BuildEngineTrace.cpp */,
 				E1A2241419F991530059043E /* BuildEngineTrace.h */,
-				E1A2241619F991530059043E /* DependencyCommand.cpp */,
-				E1A2241719F991530059043E /* DependencyGraph.cpp */,
-				E1A2241819F991530059043E /* DependencyNode.cpp */,
 				E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */,
 				E1E2210B1A015B9E00957481 /* SQLiteBuildDB.cpp */,
 			);
@@ -1231,9 +1217,6 @@
 			children = (
 				E1E221041A0067EF00957481 /* BuildDB.h */,
 				E1A2245819F997FE0059043E /* BuildEngine.h */,
-				E1A2245919F997FE0059043E /* DependencyCommand.h */,
-				E1A2245A19F997FE0059043E /* DependencyGraph.h */,
-				E1A2245B19F997FE0059043E /* DependencyNode.h */,
 				E19D79931A15D9F5002604FB /* MakefileDepsParser.h */,
 			);
 			name = Headers;
@@ -1366,7 +1349,6 @@
 			children = (
 				E1A224B619F998D40059043E /* CMakeLists.txt */,
 				E1A224B519F998D40059043E /* BuildEngineTest.cpp */,
-				E1A224B719F998D40059043E /* DependencyGraphTest.cpp */,
 				E10FE0D61B7313D50059D086 /* DepsBuildEngineTest.cpp */,
 				E19D79941A15DA06002604FB /* MakefileDepsParserTest.cpp */,
 			);
@@ -2407,13 +2389,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				E1E2210C1A015B9E00957481 /* SQLiteBuildDB.cpp in Sources */,
-				E1A2244A19F997530059043E /* DependencyNode.cpp in Sources */,
 				E1A2244619F9974A0059043E /* BuildEngine.cpp in Sources */,
 				E1E221071A00689C00957481 /* BuildDB.cpp in Sources */,
 				E1A2244719F9974D0059043E /* BuildEngineTrace.cpp in Sources */,
-				E1A2244819F9974F0059043E /* DependencyCommand.cpp in Sources */,
 				E19D79921A15D9E6002604FB /* MakefileDepsParser.cpp in Sources */,
-				E1A2244919F997510059043E /* DependencyGraph.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2448,7 +2427,6 @@
 				E19D79951A15DA06002604FB /* MakefileDepsParserTest.cpp in Sources */,
 				E1A224F619F99D940059043E /* BuildEngineTest.cpp in Sources */,
 				E10FE0D71B7313D50059D086 /* DepsBuildEngineTest.cpp in Sources */,
-				E1A224F719F99D9A0059043E /* DependencyGraphTest.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
