@@ -5,7 +5,8 @@
 Generic
 =======
 
-* It would be nice to have some basic infrastructure for handling command line parsing better.
+* It would be nice to have some basic infrastructure for handling command line
+  parsing better.
 
 * It would be nice to have some infrastructure for statistics (a la LLVM).
 
@@ -106,8 +107,6 @@ Ninja Specific
 
 Tasks for Usable Tool
 ---------------------
-
-* Buffer command output.
 
 * Implement path normalization (for Nodes as well as things like imported
   dependencies from compiler output).
