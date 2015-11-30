@@ -26,6 +26,7 @@
 #include "llbuild/BuildSystem/BuildValue.h"
 #include "llbuild/BuildSystem/ExternalCommand.h"
 
+#include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
@@ -801,11 +802,13 @@ public:
 #pragma mark - ShellTool implementation
 
 class ShellCommand : public ExternalCommand {
-  std::string args;
+  std::vector<std::string> args;
 
   virtual uint64_t getSignature() override {
     uint64_t result = ExternalCommand::getSignature();
-    result ^= basic::hashString(args);
+    for (const auto& arg: args) {
+      result ^= basic::hashString(arg);
+    }
     return result;
   }
   
@@ -815,16 +818,28 @@ public:
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
     if (name == "args") {
-      args = value;
+      // When provided as a scalar string, we default to executing using the
+      // shell.
+      args.clear();
+      args.push_back("/bin/sh");
+      args.push_back("-c");
+      args.push_back(value);
     } else {
       return ExternalCommand::configureAttribute(ctx, name, value);
     }
 
     return true;
   }
+  
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   ArrayRef<StringRef> values) override {
-    return ExternalCommand::configureAttribute(ctx, name, values);
+    if (name == "args") {
+      args = std::vector<std::string>(values.begin(), values.end());
+    } else {
+      return ExternalCommand::configureAttribute(ctx, name, values);
+    }
+
+    return true;
   }
 
   virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
@@ -834,14 +849,29 @@ public:
     //
     // FIXME: Design the logging and status output APIs.
     if (bsci.getDelegate().showVerboseStatus() || getDescription().empty()) {
-      fprintf(stdout, "%s\n", args.c_str());
+      SmallString<256> command;
+      llvm::raw_svector_ostream commandOS(command);
+      bool first = true;
+      for (const auto& arg: args) {
+        if (!first) commandOS << " ";
+        first = false;
+        // FIXME: This isn't correct, we need utilities for doing shell quoting.
+        if (arg.find(' ') != StringRef::npos) {
+          commandOS << '"' << arg << '"';
+        } else {
+          commandOS << arg;
+        }
+      }
+      commandOS.flush();
+      fprintf(stdout, "%s\n", command.c_str());
     } else {
       fprintf(stdout, "%s\n", getDescription().str().c_str());
     }
     fflush(stdout);
 
     // Execute the command.
-    return bsci.getExecutionQueue().executeShellCommand(context, args);
+    return bsci.getExecutionQueue().executeProcess(
+        context, std::vector<StringRef>(args.begin(), args.end()));
   }
 };
 

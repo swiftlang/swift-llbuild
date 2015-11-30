@@ -2,13 +2,13 @@
 #
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
-# RUN: touch %t.build/input
+# RUN: touch "%t.build/input A"
 # RUN: cp %s %t.build/build.llbuild
 # RUN: %{llbuild} buildsystem build --chdir %t.build --trace %t.trace > %t.out
 # RUN: %{FileCheck} < %t.out %s
-# RUN: diff %t.build/input %t.build/output
+# RUN: diff "%t.build/input A" %t.build/output
 #
-# CHECK: cp input output
+# CHECK: cp "input A" output
 
 # Check the engine trace.
 #
@@ -18,7 +18,7 @@
 # CHECK-TRACE: "new-rule", "R1", "T"
 # CHECK-TRACE: "new-rule", "R2", "Noutput"
 # CHECK-TRACE: "new-rule", "R3", "Ccp-output"
-# CHECK-TRACE: "new-rule", "R4", "Ninput"
+# CHECK-TRACE: "new-rule", "R4", "Ninput A"
 # CHECK-TRACE: "build-ended"
 
 # Check that a null build does nothing.
@@ -27,25 +27,25 @@
 # RUN: echo "PREVENT-EMPTY-FILE" >> %t2.out
 # RUN: %{FileCheck} < %t2.out %s --check-prefix=CHECK-REBUILD
 #
-# CHECK-REBUILD-NOT: cp input output
+# CHECK-REBUILD-NOT: cp "input A" output
 
 # Check that we properly copy the output when the input changes.
 #
-# RUN: echo mod >> %t.build/input
+# RUN: echo mod >> "%t.build/input A"
 # RUN: %{llbuild} buildsystem build --chdir %t.build > %t3.out
 # RUN: %{FileCheck} < %t3.out %s --check-prefix=CHECK-REBUILD-MODIFIED
-# RUN: diff %t.build/input %t.build/output
+# RUN: diff "%t.build/input A" %t.build/output
 #
-# CHECK-REBUILD-MODIFIED: cp input output
+# CHECK-REBUILD-MODIFIED: cp "input A" output
 
 # Check that we properly copy the output when the output isn't present.
 #
 # RUN: rm -rf %t.build/output
 # RUN: %{llbuild} buildsystem build --chdir %t.build > %t4.out
 # RUN: %{FileCheck} < %t4.out %s --check-prefix=CHECK-REBUILD-OUTPUT-REMOVED
-# RUN: diff %t.build/input %t.build/output
+# RUN: diff "%t.build/input A" %t.build/output
 #
-# CHECK-REBUILD-OUTPUT-REMOVED: cp input output
+# CHECK-REBUILD-OUTPUT-REMOVED: cp "input A" output
 
 client:
   name: basic
@@ -56,7 +56,7 @@ targets:
 commands:
   cp-output:
     tool: shell
-    inputs: ["input"]
+    inputs: ["input A"]
     outputs: ["output"]
     # FIXME: Design a limited mechanism for substitution. Might be tool specific.
-    args: cp input output
+    args: ["/bin/cp", "input A", "output"]
