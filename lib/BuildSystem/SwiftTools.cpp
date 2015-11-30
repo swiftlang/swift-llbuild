@@ -428,30 +428,33 @@ public:
       return false;
     
     // Form the complete command.
-    SmallString<256> command;
-    llvm::raw_svector_ostream commandOS(command);
-    commandOS << executable;
-    commandOS << " " << "-module-name" << " " << moduleName;
-    commandOS << " " << "-incremental" << " " << "-emit-dependencies";
+    std::vector<StringRef> commandLine;
+    commandLine.push_back(executable);
+    commandLine.push_back("-module-name");
+    commandLine.push_back(moduleName);
+    commandLine.push_back("-incremental");
+    commandLine.push_back("-emit-dependencies");
     if (!moduleOutputPath.empty()) {
-      commandOS << " " << "-emit-module"
-                << " " << "-emit-module-path" << " " << moduleOutputPath;
+      commandLine.push_back("-emit-module");
+      commandLine.push_back("-emit-module-path");
+      commandLine.push_back(moduleOutputPath);
     }
-    commandOS << " " << "-output-file-map" << " " << outputFileMapPath;
+    commandLine.push_back("-output-file-map");
+    commandLine.push_back(outputFileMapPath);
     if (isLibrary) {
-      commandOS << " " << "-parse-as-library";
+      commandLine.push_back("-parse-as-library");
     }
-    commandOS << " " << "-c";
+    commandLine.push_back("-c");
     for (const auto& source: sourcesList) {
-      commandOS << " " << source;
+      commandLine.push_back(source);
     }
     for (const auto& import: importPaths) {
-      commandOS << " " << "-I" << import;
+      commandLine.push_back("-I");
+      commandLine.push_back(import);
     }
     for (const auto& arg: otherArgs) {
-      commandOS << " " << arg;
+      commandLine.push_back(arg);
     }
-    commandOS.flush();
       
     // Log the command.
     //
@@ -460,12 +463,26 @@ public:
       fprintf(stdout, "Compiling Swift Module '%s' (%d sources)\n",
               moduleName.c_str(), int(sourcesList.size()));
     } else {
+      SmallString<256> command;
+      llvm::raw_svector_ostream commandOS(command);
+      bool first = true;
+      for (const auto& arg: commandLine) {
+        if (!first) commandOS << " ";
+        first = false;
+        // FIXME: This isn't correct, we need utilities for doing shell quoting.
+        if (arg.find(' ') != StringRef::npos) {
+          commandOS << '"' << arg << '"';
+        } else {
+          commandOS << arg;
+        }
+      }
+      commandOS.flush();
       fprintf(stdout, "%s\n", command.c_str());
     }
     fflush(stdout);
 
     // Execute the command.
-    if (!bsci.getExecutionQueue().executeShellCommand(context, command)) {
+    if (!bsci.getExecutionQueue().executeProcess(context, commandLine)) {
       // If the command failed, there is no need to gather dependencies.
       return false;
     }

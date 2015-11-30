@@ -43,7 +43,7 @@ commands:
   C1:
     tool: swift-compiler
     outputs: ["<output>"]
-    executable: SOURCEDIR/Inputs/pseudo-swiftc --add-dep TMPDIR.build/input
+    executable: SOURCEDIR/Inputs/pseudo-swiftc
     module-name: Foo
     sources: input.swift
     objects: output.o

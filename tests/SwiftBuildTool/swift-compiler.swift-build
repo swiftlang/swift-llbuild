@@ -9,13 +9,14 @@
 # RUN: %{FileCheck} --check-prefix=CHECK-VERBOSE --input-file=%t-verbose.out %s
 #
 # CHECK: Compiling Swift Module 'Foo'
-# CHECK-VERBOSE: swiftc -module-name Foo -incremental -emit-dependencies -emit-module -emit-module-path Foo.swiftmodule -output-file-map temps/output-file-map.json -parse-as-library -c s1.swift s2.swift -Iimport-A -Iimport-B -Onone
+# FIXME: This should quote output paths.
+# CHECK-VERBOSE: swiftc -module-name Foo -incremental -emit-dependencies -emit-module -emit-module-path Foo.swiftmodule -output-file-map temps/output-file-map.json -parse-as-library -c "s 1.swift" "s 2.swift" -I "import A" -I "import B" -Onone -I "path with spaces"
 
 # Sanity check the output file map.
 #
 # RUN: %{FileCheck} --check-prefix=CHECK-OUTPUT-FILE-MAP --input-file=%t.build/temps/output-file-map.json %s
-# CHECK-OUTPUT-FILE-MAP: "s1.swift": {
-# CHECK-OUTPUT-FILE-MAP-NEXT: "dependencies": "temps/s1.d"
+# CHECK-OUTPUT-FILE-MAP: "s 1.swift": {
+# CHECK-OUTPUT-FILE-MAP-NEXT: "dependencies": "temps/s 1.d"
 
 client:
   name: swift-build
@@ -30,9 +31,10 @@ commands:
     executable: SOURCEDIR/Inputs/pseudo-swiftc
     module-name: Foo
     module-output-path: Foo.swiftmodule
-    sources: ["s1.swift", "s2.swift"]
-    import-paths: ["import-A", "import-B"]
+    sources: ["s 1.swift", "s 2.swift"]
+    import-paths: ["import A", "import B"]
+    # FIXME: We can't use spaces in filenames here yet, because of a Swift compiler bug.
     objects: ["s1.o", "s2.o"]
-    other-args: ["-Onone"]
+    other-args: ["-Onone", "-I", "path with spaces"]
     temps-path: temps
     is-library: true
