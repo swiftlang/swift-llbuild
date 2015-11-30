@@ -40,6 +40,8 @@ public:
 
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override;
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  ArrayRef<StringRef> values) override;
 
   basic::FileInfo getFileInfo() const;
 };

@@ -82,6 +82,8 @@ public:
 
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override;
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  ArrayRef<StringRef> values) override;
 
   virtual BuildValue getResultForOutput(Node* node,
                                         const BuildValue& value) override;

@@ -358,23 +358,46 @@ class BuildFileImpl {
         auto key = valueEntry.getKey();
         auto value = valueEntry.getValue();
         
-        // All keys and values must be scalar.
+        // All keys must be scalar.
         if (key->getType() != llvm::yaml::Node::NK_Scalar) {
           error(key, "invalid key type for tool in 'tools' map");
           continue;
         }
-        if (value->getType() != llvm::yaml::Node::NK_Scalar) {
-          error(value, "invalid value type for tool in 'tools' map");
-          continue;
-        }
 
-        if (!tool->configureAttribute(
-                getContext(key),
+        // All values should be strings or sequences of strings, currently.
+        if (value->getType() == llvm::yaml::Node::NK_Sequence) {
+          std::vector<std::string> values;
+          for (auto& node: *static_cast<llvm::yaml::SequenceNode*>(value)) {
+            if (node.getType() != llvm::yaml::Node::NK_Scalar) {
+              error(&node, "invalid value type for tool in 'tools' map");
+              continue;
+            }
+            values.push_back(
                 stringFromScalarNode(
-                    static_cast<llvm::yaml::ScalarNode*>(key)),
-                stringFromScalarNode(
-                    static_cast<llvm::yaml::ScalarNode*>(value)))) {
-          return false;
+                    static_cast<llvm::yaml::ScalarNode*>(&node)));
+          }
+
+          if (!tool->configureAttribute(
+                  getContext(key),
+                  stringFromScalarNode(
+                      static_cast<llvm::yaml::ScalarNode*>(key)),
+                  std::vector<StringRef>(values.begin(), values.end()))) {
+            return false;
+          }
+        } else {
+          if (value->getType() != llvm::yaml::Node::NK_Scalar) {
+            error(value, "invalid value type for tool in 'tools' map");
+            continue;
+          }
+
+          if (!tool->configureAttribute(
+                  getContext(key),
+                  stringFromScalarNode(
+                      static_cast<llvm::yaml::ScalarNode*>(key)),
+                  stringFromScalarNode(
+                      static_cast<llvm::yaml::ScalarNode*>(value)))) {
+            return false;
+          }
         }
       }
     }
@@ -462,18 +485,41 @@ class BuildFileImpl {
           error(key, "invalid key type for node in 'nodes' map");
           continue;
         }
-        if (value->getType() != llvm::yaml::Node::NK_Scalar) {
-          error(value, "invalid value type for node in 'nodes' map");
-          continue;
-        }
 
-        if (!node->configureAttribute(
-                getContext(key),
+        // All values should be strings or sequences of strings, currently.
+        if (value->getType() == llvm::yaml::Node::NK_Sequence) {
+          std::vector<std::string> values;
+          for (auto& node: *static_cast<llvm::yaml::SequenceNode*>(value)) {
+            if (node.getType() != llvm::yaml::Node::NK_Scalar) {
+              error(&node, "invalid value type for node in 'nodes' map");
+              continue;
+            }
+            values.push_back(
                 stringFromScalarNode(
-                    static_cast<llvm::yaml::ScalarNode*>(key)),
-                stringFromScalarNode(
-                    static_cast<llvm::yaml::ScalarNode*>(value)))) {
-          return false;
+                    static_cast<llvm::yaml::ScalarNode*>(&node)));
+          }
+
+          if (!node->configureAttribute(
+                  getContext(key),
+                  stringFromScalarNode(
+                      static_cast<llvm::yaml::ScalarNode*>(key)),
+                  std::vector<StringRef>(values.begin(), values.end()))) {
+            return false;
+          }
+        } else {
+          if (value->getType() != llvm::yaml::Node::NK_Scalar) {
+            error(value, "invalid value type for node in 'nodes' map");
+            continue;
+          }
+        
+          if (!node->configureAttribute(
+                  getContext(key),
+                  stringFromScalarNode(
+                      static_cast<llvm::yaml::ScalarNode*>(key)),
+                  stringFromScalarNode(
+                      static_cast<llvm::yaml::ScalarNode*>(value)))) {
+            return false;
+          }
         }
       }
     }
@@ -610,18 +656,40 @@ class BuildFileImpl {
             error(key, "invalid key type in 'commands' map");
             continue;
           }
-          if (value->getType() != llvm::yaml::Node::NK_Scalar) {
-            error(value, "invalid value type in 'commands' map");
-            continue;
-          }
 
-          if (!command->configureAttribute(
-                  getContext(key),
+          if (value->getType() == llvm::yaml::Node::NK_Sequence) {
+            std::vector<std::string> values;
+            for (auto& node: *static_cast<llvm::yaml::SequenceNode*>(value)) {
+              if (node.getType() != llvm::yaml::Node::NK_Scalar) {
+                error(&node, "invalid value type for command in 'commands' map");
+                continue;
+              }
+              values.push_back(
                   stringFromScalarNode(
-                      static_cast<llvm::yaml::ScalarNode*>(key)),
-                  stringFromScalarNode(
-                      static_cast<llvm::yaml::ScalarNode*>(value)))) {
-            return false;
+                      static_cast<llvm::yaml::ScalarNode*>(&node)));
+            }
+
+            if (!command->configureAttribute(
+                    getContext(key),
+                    stringFromScalarNode(
+                        static_cast<llvm::yaml::ScalarNode*>(key)),
+                    std::vector<StringRef>(values.begin(), values.end()))) {
+              return false;
+            }
+          } else {
+            if (value->getType() != llvm::yaml::Node::NK_Scalar) {
+              error(value, "invalid value type for command in 'commands' map");
+              continue;
+            }
+            
+            if (!command->configureAttribute(
+                    getContext(key),
+                    stringFromScalarNode(
+                        static_cast<llvm::yaml::ScalarNode*>(key)),
+                    stringFromScalarNode(
+                        static_cast<llvm::yaml::ScalarNode*>(value)))) {
+              return false;
+            }
           }
         }
       }

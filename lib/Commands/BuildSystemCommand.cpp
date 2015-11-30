@@ -81,6 +81,20 @@ public:
     }
     return true;
   }
+  
+  virtual bool configureAttribute(const ConfigureContext&, StringRef name,
+                                  ArrayRef<StringRef> values) override {
+    if (delegate.shouldShowOutput()) {
+      printf("  -- '%s': [", name.str().c_str());
+      bool first = true;
+      for (const auto& value: values) {
+        printf("%s'%s'", first ? "" : ", ", value.str().c_str());
+        first = false;
+      }
+      printf("]\n");
+    }
+    return true;
+  }
 };
 
 class ParseDummyCommand : public Command {
@@ -127,6 +141,19 @@ public:
     }
     return true;
   }
+  virtual bool configureAttribute(const ConfigureContext&, StringRef name,
+                                  ArrayRef<StringRef> values) override {
+    if (delegate.shouldShowOutput()) {
+      printf("  -- '%s': [", name.str().c_str());
+      bool first = true;
+      for (const auto& value: values) {
+        printf("%s'%s'", first ? "" : ", ", value.str().c_str());
+        first = false;
+      }
+      printf("]\n");
+    }
+    return true;
+  }
 
   virtual BuildValue getResultForOutput(Node* node,
                                         const BuildValue& value) override {
@@ -153,6 +180,19 @@ public:
                                   StringRef value) override {
     if (delegate.shouldShowOutput()) {
       printf("  -- '%s': '%s'\n", name.str().c_str(), value.str().c_str());
+    }
+    return true;
+  }
+  virtual bool configureAttribute(const ConfigureContext&, StringRef name,
+                                  ArrayRef<StringRef> values) override {
+    if (delegate.shouldShowOutput()) {
+      printf("  -- '%s': [", name.str().c_str());
+      bool first = true;
+      for (const auto& value: values) {
+        printf("%s'%s'", first ? "" : ", ", value.str().c_str());
+        first = false;
+      }
+      printf("]\n");
     }
     return true;
   }

@@ -82,6 +82,9 @@ public:
   /// Called by the build file loader to configure a specified tool property.
   virtual bool configureAttribute(const ConfigureContext&, StringRef name,
                                   StringRef value) = 0;
+  /// Called by the build file loader to configure a specified tool property.
+  virtual bool configureAttribute(const ConfigureContext&, StringRef name,
+                                  ArrayRef<StringRef> values) = 0;
 
   /// Called by the build file loader to create a command which uses this tool.
   ///
@@ -144,6 +147,9 @@ public:
   /// Called by the build file loader to configure a specified node property.
   virtual bool configureAttribute(const ConfigureContext&, StringRef name,
                                   StringRef value) = 0;
+  /// Called by the build file loader to configure a specified node property.
+  virtual bool configureAttribute(const ConfigureContext&, StringRef name,
+                                  ArrayRef<StringRef> values) = 0;
 };
 
 /// Abstract command definition used by the build file.
@@ -179,6 +185,8 @@ public:
   /// Called by the build file loader to configure a specified command property.
   virtual bool configureAttribute(const ConfigureContext&, StringRef name,
                                   StringRef value) = 0;
+  virtual bool configureAttribute(const ConfigureContext&, StringRef name,
+                                  ArrayRef<StringRef> values) = 0;
 
   /// @}
 

@@ -15,6 +15,7 @@
 #include "llbuild/Basic/FileInfo.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 
+#include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/Twine.h"
 
 using namespace llbuild;
@@ -22,7 +23,7 @@ using namespace llbuild::basic;
 using namespace llbuild::buildsystem;
 
 bool BuildNode::configureAttribute(const ConfigureContext& ctx, StringRef name,
-                                  StringRef value) {
+                                   StringRef value) {
   if (name == "is-virtual") {
     if (value == "true") {
       virtualNode = true;
@@ -36,6 +37,13 @@ bool BuildNode::configureAttribute(const ConfigureContext& ctx, StringRef name,
     return true;
   }
     
+  // We don't support any other custom attributes.
+  ctx.error("unexpected attribute: '" + name + "'");
+  return false;
+}
+
+bool BuildNode::configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                   ArrayRef<StringRef> values) {
   // We don't support any other custom attributes.
   ctx.error("unexpected attribute: '" + name + "'");
   return false;

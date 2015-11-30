@@ -62,7 +62,7 @@ nodes:
 # CHECK:  -- 'tool': 'cc'
 # CHECK:  -- 'inputs': ['hello.c']
 # CHECK:  -- 'outputs': ['hello.o']
-# CHECK:  -- 'args': '-O0'
+# CHECK:  -- 'args': ['-O0']
 commands:
   link-hello:
     tool: link
@@ -73,4 +73,4 @@ commands:
     tool: cc
     inputs: ["hello.c"]
     outputs: ["hello.o"]
-    args: -O0
+    args: ["-O0"]

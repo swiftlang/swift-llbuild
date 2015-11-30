@@ -778,6 +778,12 @@ public:
     ctx.error("unexpected attribute: '" + name + "'");
     return false;
   }
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  ArrayRef<StringRef> values) override {
+    // No supported configuration attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
 
   virtual std::unique_ptr<Command> createCommand(StringRef name) override {
     return llvm::make_unique<PhonyCommand>(name);
@@ -808,6 +814,10 @@ public:
 
     return true;
   }
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  ArrayRef<StringRef> values) override {
+    return ExternalCommand::configureAttribute(ctx, name, values);
+  }
 
   virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
                                       Task* task,
@@ -833,6 +843,12 @@ public:
 
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  ArrayRef<StringRef> values) override {
     // No supported attributes.
     ctx.error("unexpected attribute: '" + name + "'");
     return false;
@@ -922,6 +938,10 @@ public:
 
     return true;
   }
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  ArrayRef<StringRef> values) override {
+    return ExternalCommand::configureAttribute(ctx, name, values);
+  }
 
   virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
                                       Task* task,
@@ -961,6 +981,12 @@ public:
 
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  ArrayRef<StringRef> values) override {
     // No supported attributes.
     ctx.error("unexpected attribute: '" + name + "'");
     return false;

@@ -23,7 +23,7 @@ tools:
         ["bad", "key"]: "bad"
         # CHECK-ERR-NOT: error:
         # CHECK-ERR: error: invalid value type for tool in 'tools' map
-        bad: ["bad", "value"]
+        bad: {"bad": "value"}
   good:
         parameter: value
         
@@ -53,7 +53,7 @@ nodes:
         ["bad", "key"]: "bad"
         # CHECK-ERR-NOT: error:
         # CHECK-ERR: error: invalid value type for node in 'nodes' map
-        bad: ["bad", "value"]
+        bad: {"bad": "value"}
 
 commands:
         # CHECK-ERR-NOT: error:
@@ -101,5 +101,5 @@ commands:
         # CHECK-ERR: error: invalid key type in 'commands' map
         ["bad", "key"]: value
         # CHECK-ERR-NOT: error:
-        # CHECK-ERR: error: invalid value type in 'commands' map
+        # CHECK-ERR: error: invalid value type for command in 'commands' map
         value: { "bad": "value" }
