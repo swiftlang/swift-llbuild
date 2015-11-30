@@ -14,6 +14,7 @@
 
 #include "llbuild/Basic/LLVM.h"
 
+#include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/SmallString.h"
 
 #include <atomic>
@@ -108,8 +109,8 @@ public:
     readyJobsCondition.notify_one();
   }
 
-  virtual bool executeShellCommand(QueueJobContext*,
-                                   StringRef command) override {
+  virtual bool executeProcess(QueueJobContext*,
+                              ArrayRef<StringRef> commandLine) override {
     // Initialize the spawn attributes.
     posix_spawnattr_t attributes;
     posix_spawnattr_init(&attributes);
@@ -166,18 +167,19 @@ public:
     posix_spawn_file_actions_adddup2(&fileActions, 2, 2);
 
     // Spawn the command.
-    SmallString<1024> commandCStr(command);
-    const char* args[4];
-    args[0] = "/bin/sh";
-    args[1] = "-c";
-    args[2] = commandCStr.c_str();
-    args[3] = nullptr;
+    std::vector<std::string> argsStorage(
+        commandLine.begin(), commandLine.end());
+    std::vector<const char*> args(argsStorage.size() + 1);
+    for (size_t i = 0; i != argsStorage.size(); ++i) {
+      args[i] = argsStorage[i].c_str();
+    }
+    args[argsStorage.size()] = nullptr;
 
     // FIXME: Need to track spawned processes for the purposes of cancellation.
     
     pid_t pid;
     if (posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
-                    /*attrp=*/&attributes, const_cast<char**>(args),
+                    /*attrp=*/&attributes, const_cast<char**>(args.data()),
                     ::environ) != 0) {
       // FIXME: Error handling.
       fprintf(stderr, "error: unable to spawn process (%s)", strerror(errno));

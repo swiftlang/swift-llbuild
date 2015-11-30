@@ -79,6 +79,22 @@ public:
   ///
   /// @{
 
+  /// Execute the given command line.
+  ///
+  /// This will launch and execute the given command line and wait for it to
+  /// complete.
+  ///
+  /// \param context The context object passed to the job's worker function.
+  /// \param commandLine The command line to execute.
+  /// \returns True on success.
+  //
+  // FIXME: This interface will need to get more complicated, and provide the
+  // command result and facilities for dealing with the output.
+  virtual bool executeProcess(QueueJobContext* context,
+                              ArrayRef<StringRef> commandLine) = 0;
+  
+  /// @}
+
   /// Execute the given command using "/bin/sh".
   ///
   /// This will launch and execute the given command line and wait for it to
@@ -90,10 +106,8 @@ public:
   //
   // FIXME: This interface will need to get more complicated, and provide the
   // command result and facilities for dealing with the output.
-  virtual bool executeShellCommand(QueueJobContext* context,
-                                   StringRef command) = 0;
-  
-  /// @}
+  bool executeShellCommand(QueueJobContext* context, StringRef command);
+
 };
 
 /// Create an execution queue that schedules jobs to individual lanes with a

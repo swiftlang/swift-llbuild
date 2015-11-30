@@ -41,6 +41,14 @@ using namespace llbuild::buildsystem;
 
 BuildExecutionQueue::~BuildExecutionQueue() {}
 
+bool BuildExecutionQueue::executeShellCommand(QueueJobContext* context,
+                                              StringRef command) {
+  SmallString<1024> commandStorage(command);
+  std::vector<StringRef> commandLine(
+      { "/bin/sh", "-c", commandStorage.c_str() });
+  return executeProcess(context, commandLine);
+}
+
 BuildSystemDelegate::~BuildSystemDelegate() {}
 
 BuildSystemCommandInterface::~BuildSystemCommandInterface() {}
