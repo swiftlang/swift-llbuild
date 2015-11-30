@@ -30,10 +30,9 @@ commands:
     executable: SOURCEDIR/Inputs/pseudo-swiftc
     module-name: Foo
     module-output-path: Foo.swiftmodule
-    # FIXME: This needs to be a list.
-    sources: s1.swift s2.swift
-    import-paths: import-A import-B
-    objects: s1.o s2.o
-    other-args: -Onone
+    sources: ["s1.swift", "s2.swift"]
+    import-paths: ["import-A", "import-B"]
+    objects: ["s1.o", "s2.o"]
+    other-args: ["-Onone"]
     temps-path: temps
     is-library: true

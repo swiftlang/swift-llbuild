@@ -133,27 +133,19 @@ class SwiftCompilerShellCommand : public ExternalCommand {
   std::string moduleOutputPath;
 
   /// The list of sources (combined).
-  //
-  // FIXME: This should be an actual list.
-  std::string sourcesList;
+  std::vector<std::string> sourcesList;
 
   /// The list of objects (combined).
-  //
-  // FIXME: This should be an actual list.
-  std::string objectsList;
+  std::vector<std::string> objectsList;
 
   /// The list of import paths (combined).
-  //
-  // FIXME: This should be an actual list.
-  std::string importPaths;
+  std::vector<std::string> importPaths;
 
   /// The directory in which to store temporary files.
   std::string tempsPath;
 
   /// Additional arguments, as a string.
-  //
-  // FIXME: This should be an actual list.
-  std::string otherArgs;
+  std::vector<std::string> otherArgs;
 
   /// Whether the sources are part of a library or not.
   bool isLibrary = false;
@@ -163,11 +155,19 @@ class SwiftCompilerShellCommand : public ExternalCommand {
     result ^= basic::hashString(executable);
     result ^= basic::hashString(moduleName);
     result ^= basic::hashString(moduleOutputPath);
-    result ^= basic::hashString(sourcesList);
-    result ^= basic::hashString(objectsList);
-    result ^= basic::hashString(importPaths);
+    for (const auto& item: sourcesList) {
+      result ^= basic::hashString(item);
+    }
+    for (const auto& item: objectsList) {
+      result ^= basic::hashString(item);
+    }
+    for (const auto& item: importPaths) {
+      result ^= basic::hashString(item);
+    }
     result ^= basic::hashString(tempsPath);
-    result ^= basic::hashString(otherArgs);
+    for (const auto& item: otherArgs) {
+      result ^= basic::hashString(item);
+    }
     result ^= isLibrary;
     return result;
   }
@@ -184,11 +184,20 @@ public:
     } else if (name == "module-output-path") {
       moduleOutputPath = value;
     } else if (name == "sources") {
-      sourcesList = value;
+      SmallVector<StringRef, 32> sources;
+      StringRef(value).split(sources, " ", /*MaxSplit=*/-1,
+                             /*KeepEmpty=*/false);
+      sourcesList = std::vector<std::string>(sources.begin(), sources.end());
     } else if (name == "objects") {
-      objectsList = value;
+      SmallVector<StringRef, 32> objects;
+      StringRef(value).split(objects, " ", /*MaxSplit=*/-1,
+                             /*KeepEmpty=*/false);
+      objectsList = std::vector<std::string>(objects.begin(), objects.end());
     } else if (name == "import-paths") {
-      importPaths = value;
+      SmallVector<StringRef, 32> imports;
+      StringRef(value).split(imports, " ", /*MaxSplit=*/-1,
+                             /*KeepEmpty=*/false);
+      importPaths = std::vector<std::string>(imports.begin(), imports.end());
     } else if (name == "temps-path") {
       tempsPath = value;
     } else if (name == "is-library") {
@@ -199,25 +208,39 @@ public:
       }
       isLibrary = value == "true";
     } else if (name == "other-args") {
-      otherArgs = value;
+      SmallVector<StringRef, 32> args;
+      StringRef(value).split(args, " ", /*MaxSplit=*/-1,
+                             /*KeepEmpty=*/false);
+      otherArgs = std::vector<std::string>(args.begin(), args.end());
     } else {
       return ExternalCommand::configureAttribute(ctx, name, value);
     }
 
     return true;
   }
+  
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   ArrayRef<StringRef> values) override {
+    if (name == "sources") {
+      sourcesList = std::vector<std::string>(values.begin(), values.end());
+    } else if (name == "objects") {
+      objectsList = std::vector<std::string>(values.begin(), values.end());
+    } else if (name == "import-paths") {
+      importPaths = std::vector<std::string>(values.begin(), values.end());
+    } else if (name == "other-args") {
+      otherArgs = std::vector<std::string>(values.begin(), values.end());
+    } else {
       return ExternalCommand::configureAttribute(ctx, name, values);
+    }
+    
+    return true;
   }
 
   bool writeOutputFileMap(BuildSystemCommandInterface& bsci,
                           StringRef outputFileMapPath,
-                          ArrayRef<StringRef> sources,
-                          ArrayRef<StringRef> objects,
                           std::vector<std::string>& depsFiles_out) const {
     // FIXME: We need to properly escape everything we write here.
-    assert(sources.size() == objects.size());
+    assert(sourcesList.size() == objectsList.size());
     
     SmallString<16> data;
     std::error_code ec;
@@ -240,9 +263,9 @@ public:
     os << "  },\n";
 
     // Write out the entries for each source file.
-    for (unsigned i = 0; i != sources.size(); ++i) {
-      auto source = sources[i];
-      auto object = objects[i];
+    for (unsigned i = 0; i != sourcesList.size(); ++i) {
+      auto source = sourcesList[i];
+      auto object = objectsList[i];
       auto sourceStem = llvm::sys::path::stem(source);
       SmallString<16> depsPath;
       llvm::sys::path::append(depsPath, tempsPath, sourceStem + ".d");
@@ -259,7 +282,7 @@ public:
       os << "    \"object\": \"" << object << "\",\n";
       os << "    \"swiftmodule\": \"" << partialModulePath << "\",\n";
       os << "    \"swift-dependencies\": \"" << swiftDepsPath << "\"\n";
-      os << "  }" << ((i + 1) < sources.size() ? "," : "") << "\n";
+      os << "  }" << ((i + 1) < sourcesList.size() ? "," : "") << "\n";
     }
     
     os << "}\n";
@@ -381,25 +404,11 @@ public:
       return false;
     }
 
-    // Get the list of sources.
-    SmallVector<StringRef, 32> sources;
-    StringRef(sourcesList).split(sources, " ", /*MaxSplit=*/-1,
-                                 /*KeepEmpty=*/false);
-
-    // Get the list of objects.
-    SmallVector<StringRef, 32> objects;
-    StringRef(objectsList).split(objects, " ", /*MaxSplit=*/-1,
-                                 /*KeepEmpty=*/false);
-    if (sources.size() != objects.size()) {
+    if (sourcesList.size() != objectsList.size()) {
       bsci.getDelegate().error(
           "", {}, "'sources' and 'objects' are not the same size");
       return false;
     }
-
-    // Get the list of objects.
-    SmallVector<StringRef, 32> imports;
-    StringRef(importPaths).split(imports, " ", /*MaxSplit=*/-1,
-                                 /*KeepEmpty=*/false);
 
     // Ensure the temporary directory exists.
     //
@@ -415,8 +424,7 @@ public:
         outputFileMapPath, tempsPath, "output-file-map.json");
 
     std::vector<std::string> depsFiles;
-    if (!writeOutputFileMap(bsci, outputFileMapPath, sources, objects,
-                            depsFiles))
+    if (!writeOutputFileMap(bsci, outputFileMapPath, depsFiles))
       return false;
     
     // Form the complete command.
@@ -434,14 +442,14 @@ public:
       commandOS << " " << "-parse-as-library";
     }
     commandOS << " " << "-c";
-    for (const auto& source: sources) {
+    for (const auto& source: sourcesList) {
       commandOS << " " << source;
     }
-    for (const auto& import: imports) {
+    for (const auto& import: importPaths) {
       commandOS << " " << "-I" << import;
     }
-    if (!otherArgs.empty()) {
-      commandOS << " " << otherArgs;
+    for (const auto& arg: otherArgs) {
+      commandOS << " " << arg;
     }
     commandOS.flush();
       
@@ -450,7 +458,7 @@ public:
     // FIXME: Design the logging and status output APIs.
     if (!bsci.getDelegate().showVerboseStatus()) {
       fprintf(stdout, "Compiling Swift Module '%s' (%d sources)\n",
-              moduleName.c_str(), int(sources.size()));
+              moduleName.c_str(), int(sourcesList.size()));
     } else {
       fprintf(stdout, "%s\n", command.c_str());
     }
