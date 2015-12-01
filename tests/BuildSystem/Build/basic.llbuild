@@ -59,4 +59,4 @@ commands:
     inputs: ["input A"]
     outputs: ["output"]
     # FIXME: Design a limited mechanism for substitution. Might be tool specific.
-    args: ["/bin/cp", "input A", "output"]
+    args: ["cp", "input A", "output"]

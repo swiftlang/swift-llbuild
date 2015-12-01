@@ -16,6 +16,8 @@
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/SmallString.h"
+#include "llvm/Support/Path.h"
+#include "llvm/Support/Program.h"
 
 #include <atomic>
 #include <condition_variable>
@@ -166,7 +168,7 @@ public:
     posix_spawn_file_actions_adddup2(&fileActions, 1, 1);
     posix_spawn_file_actions_adddup2(&fileActions, 2, 2);
 
-    // Spawn the command.
+    // For the complete C-string command line.
     std::vector<std::string> argsStorage(
         commandLine.begin(), commandLine.end());
     std::vector<const char*> args(argsStorage.size() + 1);
@@ -175,6 +177,19 @@ public:
     }
     args[argsStorage.size()] = nullptr;
 
+    // Resolve the executable path, if necessary.
+    //
+    // FIXME: This should be cached.
+    if (!llvm::sys::path::is_absolute(args[0])) {
+      auto res = llvm::sys::findProgramByName(args[0]);
+      if (!res.getError()) {
+        argsStorage[0] = *res;
+        args[0] = argsStorage[0].c_str();
+      }
+    }
+      
+    // Spawn the command.
+    //
     // FIXME: Need to track spawned processes for the purposes of cancellation.
     
     pid_t pid;
@@ -182,7 +197,7 @@ public:
                     /*attrp=*/&attributes, const_cast<char**>(args.data()),
                     ::environ) != 0) {
       // FIXME: Error handling.
-      fprintf(stderr, "error: unable to spawn process (%s)", strerror(errno));
+      fprintf(stderr, "error: unable to spawn process (%s)\n", strerror(errno));
       return false;
     }
 
@@ -195,7 +210,7 @@ public:
       result = waitpid(pid, &status, 0);
     if (result == -1) {
       // FIXME: Error handling.
-      fprintf(stderr, "error: unable to wait for process (%s)",
+      fprintf(stderr, "error: unable to wait for process (%s)\n",
               strerror(errno));
       return false;
     }
