@@ -39,7 +39,7 @@ be implemented in Clang.
 
 llbuild is designed to allow construction of more feature rich build
 environments which can integrate external tools like the compiler using an
-API/library-based approach, instead of a purely command line interace. We
+API/library-based approach, instead of a purely command line interface. We
 believe that by allowing the build system and the tools it invokes to directly
 communicate and to be co-designed we can unlock additional optimization
 opportunities and build more robust, easy-to-use build systems.
@@ -85,7 +85,7 @@ we hope to tackle are:
 
 - [ ] Support for using file signatures instead of timestamps for change detection.
 
-- [ ] Suppport richer data types for communication between tasks.
+- [ ] Support richer data types for communication between tasks.
 
   Tasks currently only compute a single scalar blob of data as their result. We
   would like to support richer data types for tasks results, for example tasks
@@ -96,7 +96,7 @@ we hope to tackle are:
 - [ ] Support a more sophisticated database implementation.
 
   The current implementation uses a SQLite3 database for storing build
-  results. This was a pragmatic choice for bringup, but it can be a performance
+  results. This was a pragmatic choice for bring up, but it can be a performance
   bottleneck for some applications, and we do not need the flexibility of a full
   SQL database. We would like to evaluate the tradeoffs of designing a custom
   solution for llbuild.
@@ -129,7 +129,7 @@ FAQ
 
 *Q. Why does llbuild include some parts of LLVM?*
 
-A. As a low-level, embeddedable component, we want llbuild itself to have a
+A. As a low-level, embeddable component, we want llbuild itself to have a
 simple build process without any significant build time dependencies. However,
 we also wanted to take advantage of some of the data structures and support
 facilities that have been developed for LLVM. For now, our solution is to
