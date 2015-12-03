@@ -25,6 +25,59 @@ llbuild currently includes:
 - [x] Library-based design intended to support embedding and reuse.
 
 
+Usage
+-----
+
+The project currently produces three top-level products; `llbuild`, `swift-build-tool`,
+and `libllbuild`.
+
+### `llbuild` Command Line Tool
+
+The `llbuild` tool provides a command line interface to various feature of the
+llbuild libraries. It has several subtools available, see `llbuild --help` for
+more information. The most important subtool is the Ninja build support:
+
+#### Ninja Build Support
+
+You can use `llbuild` to build Ninja-based projects using:
+
+```shell
+$ llbuild ninja build
+```
+
+This tool supports a subset of the command line arguments supported by Ninja
+itself, to allow it to be used as a compatible replacement, even by tools like
+CMake that depend on particular Ninja command line flags during their
+configuration process.
+
+As a convenience, if you invoke `llbuild` via a symlink called `ninja` then it
+will automatically use this subtool. This supports installing llbuild as `ninja`
+into your `PATH` and then using it as an alternative to Ninja for building
+arbitrary projects (like LLVM, Clang, and Swift). This is also how we self-host
+`llbuild` (via the CMake Ninja generator).
+
+The `llbuild ninja` subtool also provides additional commands which are
+primarily only useful for developers interested in working on the Ninja
+support. These commands allow testing the lexer, parser, and manifest loading
+features independently and are used as part of the test suite.
+
+### `swift-build-tool` Command Line Tool
+
+The `swift-build-tool` product is the command line interface to the build system
+used by the [Swift Package Manager](https://swift.org/package-manager/). It is
+built as part of the [Swift](https://swift.org) project build and incorporated
+into the snapshots).
+
+### `libllbuild` Library
+
+The `libllbuild` library exposes a C API for the llbuild libraries, which can be
+used directly by third-parties or to build additional language bindings. See
+[bindings](bindings/) for example Swift and Python bindings that use this
+library.
+
+Currently, there are only bindings for the Core engine APIs.
+
+
 Motivation
 ----------
 
