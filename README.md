@@ -68,7 +68,7 @@ used by the [Swift Package Manager](https://swift.org/package-manager/). It is
 built as part of the [Swift](https://swift.org) project build and incorporated
 into the Swift language snapshots.
 
-This tool is built on top of the [BuildSystem](buildsystem/) library.
+This tool is built on top of the [BuildSystem](docs/buildsystem.rst) library.
 
 ### `libllbuild` Library
 
