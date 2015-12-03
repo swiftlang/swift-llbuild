@@ -5,11 +5,11 @@ llbuild
 
 **llbuild** is a set of libraries for building build systems. Unlike most build
 system projects which focus on the syntax for describing the build, llbuild is
-designed around the goal of constructing a reusable, flexible, and scalable
-general purpose *build engine* capable of solving many "build system"-like
-problems. The project also includes additional libraries on top of that engine
-which provide support for constructing *bespoke* build systems (like `swift
-build`) or for building from Ninja manifests.
+designed around a reusable, flexible, and scalable general purpose *build
+engine* capable of solving many "build system"-like problems. The project also
+includes additional libraries on top of that engine which provide support for
+constructing *bespoke* build systems (like `swift build`) or for building from
+Ninja manifests.
 
 llbuild currently includes:
 
@@ -29,20 +29,19 @@ Motivation
 ----------
 
 The design of llbuild is a continuation of the LLVM philosophy of applying
-library-based design to traditional developers
-tools. [Clang](http://clang.llvm.org) has followed this approach to deliver a
-high performance compiler and assembler while also enabling new tools like
+library-based design to traditional developer tools.
+[Clang](http://clang.llvm.org) has followed this approach to deliver a high
+performance compiler and assembler while also enabling new tools like
 clang-format or the libclang interfaces for code completion and
 indexing. However, the rigid command line interface between traditional build
 systems and the compiler still limits the optimizations and features which can
 be implemented in Clang.
 
 llbuild is designed to allow construction of more feature rich build
-environments which can integrate external tools like the compiler using an
-API/library-based approach, instead of a purely command line interface. We
-believe that by allowing the build system and the tools it invokes to directly
-communicate and to be co-designed we can unlock additional optimization
-opportunities and build more robust, easy-to-use build systems.
+environments which integrate external tools -- like the compiler -- using APIs
+instead of command line interfaces. By allowing the build system and tools to
+communicate directly and to be co-designed, we believe we can unlock additional
+optimization opportunities and create more robust, easy-to-use build systems.
 
 
 Philosophy
@@ -87,7 +86,7 @@ we hope to tackle are:
 
 - [ ] Support richer data types for communication between tasks.
 
-  Tasks currently only compute a single scalar blob of data as their result. We
+  Tasks currently only compute a single scalar value as their result. We
   would like to support richer data types for tasks results, for example tasks
   should be able to compute sets of results, and have the engine automatically
   communicate the addition or removal of individual items in the set to
@@ -108,12 +107,11 @@ we hope to tackle are:
 
 - [ ] Support automatic auditing of build consistency.
 
-  One of the most frequent problems with build systems is when an undeclared
-  input or misbehaving tool causes the build results to be inconsistent or vary
-  from build to build. We would like llbuild to include tools for automatically
-  diagnosing such situations, for example by periodically or speculatively
-  rebuilding items which are not expected to have changed and comparing the
-  results.
+  Few build systems diagnose problems effectively. Frequently, undeclared inputs
+  or misbehaving tools can cause inconsistent build results. We would like
+  llbuild to automatically diagnose these problems, for example by periodically or
+  speculatively rebuilding items which are not expected to have changed and
+  comparing the results.
 
 - [ ] Performance tuning of core engine queues.
 
@@ -122,17 +120,6 @@ we hope to tackle are:
   like to investigate moving the shared queues to using a lock-free data
   structure and to micro-optimize the queues in general, in order to support
   very fine-grained task subdivisions without negatively impacting performance.
-
-
-License
--------
-
-Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors.
-Licensed under Apache License v2.0 with Runtime Library Exception.
-
-See http://swift.org/LICENSE.txt for license information.
-
-See http://swift.org/CONTRIBUTORS.txt for Swift project authors.
 
 
 FAQ
@@ -175,3 +162,14 @@ llbuild is heavily influenced by modern build systems like
 Mitchell for his work describing the Shake algorithm which provided the
 inspiration for the mechanism llbuild uses to allow additional work to be
 discovered on the fly.
+
+
+License
+-------
+
+Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors.
+Licensed under Apache License v2.0 with Runtime Library Exception.
+
+See http://swift.org/LICENSE.txt for license information.
+
+See http://swift.org/CONTRIBUTORS.txt for Swift project authors.
