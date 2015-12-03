@@ -59,14 +59,16 @@ arbitrary projects (like LLVM, Clang, and Swift). This is also how we self-host
 The `llbuild ninja` subtool also provides additional commands which are
 primarily only useful for developers interested in working on the Ninja
 support. These commands allow testing the lexer, parser, and manifest loading
-features independently and are used as part of the test suite.
+components independently and are used as part of the test suite.
 
 ### `swift-build-tool` Command Line Tool
 
 The `swift-build-tool` product is the command line interface to the build system
 used by the [Swift Package Manager](https://swift.org/package-manager/). It is
 built as part of the [Swift](https://swift.org) project build and incorporated
-into the snapshots).
+into the Swift language snapshots.
+
+This tool is built on top of the [BuildSystem](buildsystem/) library.
 
 ### `libllbuild` Library
 
@@ -75,7 +77,8 @@ used directly by third-parties or to build additional language bindings. See
 [bindings](bindings/) for example Swift and Python bindings that use this
 library.
 
-Currently, there are only bindings for the Core engine APIs.
+Currently, there are only bindings for the Core engine APIs. We intend to add
+support for the other libraries over time.
 
 
 Motivation
