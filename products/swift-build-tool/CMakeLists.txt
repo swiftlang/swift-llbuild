@@ -11,4 +11,5 @@ target_link_libraries(swift-build-tool
   )
 
 install(TARGETS swift-build-tool
+        COMPONENT swift-build-tool
         DESTINATION bin)
