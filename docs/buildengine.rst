@@ -24,7 +24,7 @@ discard the order-only input request once satisfied.
 Parallelism
 ===========
 
-There are two obvious approachs to introducing parallelism into the core build
+There are two obvious approaches to introducing parallelism into the core build
 engine.
 
 1. The first approach (which is taken currently) changes the task definition so
@@ -64,7 +64,7 @@ Recursive Dependency Scanning
 -----------------------------
 
 The current design of the engine handles dependency scanning in the same manner
-as other tasks, it assocates a scan request with a rule and then enqueues the
+as other tasks, it associates a scan request with a rule and then enqueues the
 actual scanning work so that it can proceed in parallel with other work.
 
 Currently, the dependency scanning processes each input for an individual rule
