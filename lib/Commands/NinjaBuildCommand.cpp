@@ -85,7 +85,7 @@ static void usage(int exitCode=1) {
           "show this help message and exit");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--version",
           "print the Ninja compatible version number");
-  fprintf(stderr, "  %-*s %s\n", optionWidth, "--simulate",
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "-n, --dry-run",
           "simulate the build, assuming commands succeed");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "-C, --chdir <PATH>",
           "change directory to PATH before anything else");
@@ -412,7 +412,7 @@ public:
   bool quiet = false;
   /// Whether the build is being "simulated", in which case commands won't be
   /// run and inputs will be assumed to exist.
-  bool simulate = false;
+  bool dryRun = false;
   /// Whether to use strict mode.
   bool strict = false;
   /// Whether output should use verbose mode.
@@ -988,7 +988,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
 
       // If we are simulating the build, just print the description and
       // complete.
-      if (context.simulate) {
+      if (context.dryRun) {
         if (!context.quiet)
           writeDescription(context, command);
         return completeTask(BuildValue::makeSkippedCommand());
@@ -1409,7 +1409,7 @@ static core::Task* buildInput(BuildContext& context, ninja::Node* input) {
     virtual void start(core::BuildEngine& engine) override { }
 
     virtual void inputsAvailable(core::BuildEngine& engine) override {
-      if (context.simulate) {
+      if (context.dryRun) {
         engine.taskIsComplete(
           this, BuildValue::makeExistingInput({}).toValue());
         return;
@@ -1646,7 +1646,7 @@ core::Rule NinjaBuildEngineDelegate::lookupRule(const core::KeyType& key) {
     },
     [&, node] (const core::Rule&, const core::ValueType& value) {
       // If simulating, assume cached results are valid.
-      if (context->simulate)
+      if (context->dryRun)
         return true;
 
       return buildInputIsResultValid(node, value);
@@ -1684,7 +1684,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
   // Create a context for the build.
   bool autoRegenerateManifest = true;
   bool quiet = false;
-  bool simulate = false;
+  bool dryRun = false;
   bool strict = false;
   bool useParallelBuild = true;
   bool verbose = false;
@@ -1704,8 +1704,8 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       return 0;
     } else if (option == "--help") {
       usage(/*exitCode=*/0);
-    } else if (option == "--simulate") {
-      simulate = true;
+    } else if (option == "-n" || option == "--dry-run") {
+      dryRun = true;
     } else if (option == "--quiet") {
       quiet = true;
     } else if (option == "-C" || option == "--chdir") {
@@ -1823,7 +1823,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
 
     context.numFailedCommandsToTolerate = numFailedCommandsToTolerate;
     context.quiet = quiet;
-    context.simulate = simulate;
+    context.dryRun = dryRun;
     context.strict = strict;
     context.verbose = verbose;
 
@@ -1933,7 +1933,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
               [=, &context] (const core::Rule& rule,
                              const core::ValueType value) {
               // If simulating, assume cached results are valid.
-              if (context.simulate)
+              if (context.dryRun)
                 return true;
 
               return buildCommandIsResultValid(command, value);
@@ -1965,7 +1965,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
           },
           [=, &context] (const core::Rule& rule, const core::ValueType value) {
             // If simulating, assume cached results are valid.
-            if (context.simulate)
+            if (context.dryRun)
               return true;
 
             return buildCommandIsResultValid(command, value);
@@ -1986,7 +1986,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
             [=, &context] (const core::Rule& rule,
                            const core::ValueType value) {
               // If simulating, assume cached results are valid.
-              if (context.simulate)
+              if (context.dryRun)
                 return true;
 
               return selectCompositeIsResultValid(command, value);
