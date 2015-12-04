@@ -46,13 +46,6 @@ FileInfo FileInfo::getInfoForPath(const std::string& path) {
   result.modTime.seconds = seconds;
   result.modTime.nanoseconds = nanoseconds;
 
-  // Verify we didn't truncate any values.
-  assert(result.device == (unsigned)buf.st_dev &&
-         result.inode == (unsigned)buf.st_ino &&
-         result.size == (unsigned)buf.st_size &&
-         result.modTime.seconds == (unsigned)seconds &&
-         result.modTime.nanoseconds == (unsigned)nanoseconds);
-
   // Enforce we never accidentally create our sentinel missing file value.
   if (result.isMissing()) {
     result.modTime.nanoseconds = 1;
