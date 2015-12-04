@@ -6,7 +6,7 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
-# RUN: env EXTRAKEY=foobar %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
+# RUN: env EXTRAKEY=foobar %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --input-file=%t1.out %s
 #
 # CHECK: EXTRAKEY=foobar

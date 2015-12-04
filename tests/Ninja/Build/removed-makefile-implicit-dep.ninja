@@ -5,7 +5,7 @@
 # RUN: ln -s %s %t.build/build.ninja
 # RUN: echo "header-1" > %t.build/header-1
 # RUN: echo "input-1" > %t.build/input-1
-# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file=%t1.out %s
 
 # Check the first build.
@@ -16,7 +16,7 @@
 # Check a build that removes the header.
 #
 # RUN: rm %t.build/header-1
-# RUN: %{llbuild} ninja build --strict --no-parallel --chdir %t.build &> %t2.out
+# RUN: %{llbuild} ninja build --strict --jobs 1 --chdir %t.build &> %t2.out
 # RUN: %{FileCheck} --check-prefix=CHECK-AFTER-REMOVAL --input-file=%t2.out %s
 #
 # CHECK-AFTER-REMOVAL-NOT: missing input 'header-1'

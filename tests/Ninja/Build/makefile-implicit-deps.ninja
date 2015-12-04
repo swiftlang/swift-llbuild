@@ -10,7 +10,7 @@
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
 # RUN: touch -r / %t.build/header-1 %t.build/input-1
-# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file=%t1.out %s
 
 # Check the first build.
@@ -21,7 +21,7 @@
 # Check a build that modifies the header.
 #
 # RUN: echo "mod" >> %t.build/header-1
-# RUN: %{llbuild} ninja build --strict --no-parallel --chdir %t.build &> %t2.out
+# RUN: %{llbuild} ninja build --strict --jobs 1 --chdir %t.build &> %t2.out
 # RUN: %{FileCheck} --check-prefix=CHECK-AFTER-MOD --input-file=%t2.out %s
 #
 # CHECK-AFTER-MOD: [1/{{.*}}] "CC output-1"
@@ -34,7 +34,7 @@
 #
 # RUN: touch -r / %t.build/header-1
 # RUN: echo "xxx" >> %t.build/output-1
-# RUN: %{llbuild} ninja build --strict --no-parallel --chdir %t.build &> %t2.out
+# RUN: %{llbuild} ninja build --strict --jobs 1 --chdir %t.build &> %t2.out
 # RUN: %{FileCheck} --check-prefix=CHECK-AFTER-OUTPUT-MOD --input-file=%t2.out %s
 #
 # FIXME: This build currently will actually rerun the command, but this test is
@@ -46,7 +46,7 @@
 # Check another build that modifies the header.
 #
 # RUN: echo "mod-2" >> %t.build/header-1
-# RUN: %{llbuild} ninja build --strict --no-parallel --chdir %t.build &> %t2.out
+# RUN: %{llbuild} ninja build --strict --jobs 1 --chdir %t.build &> %t2.out
 # RUN: %{FileCheck} --check-prefix=CHECK-AFTER-SECOND-MOD --input-file=%t2.out %s
 #
 # CHECK-AFTER-SECOND-MOD: [1/{{.*}}] "CC output-1"

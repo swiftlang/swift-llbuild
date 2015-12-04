@@ -97,12 +97,10 @@ static void usage(int exitCode=1) {
           "load the manifest at PATH [default='build.ninja']");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "-k <N>",
           "keep building until N commands fail [default=1]");
-  fprintf(stderr, "  %-*s %s\n", optionWidth, "--no-parallel",
-          "build commands serially");
-  fprintf(stderr, "  %-*s %s\n", optionWidth, "--parallel",
-          "build commands in parallel [default]");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "-t, --tool <TOOL>",
           "run a ninja tool. use 'list' to list available tools.");
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "-j, --jobs <JOBS>",
+          "number of jobs to build in parallel [default=cpu dependent]");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--no-regenerate",
           "disable manifest auto-regeneration");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--dump-graph <PATH>",
@@ -1692,8 +1690,8 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
   bool quiet = false;
   bool simulate = false;
   bool strict = false;
-  bool useParallelBuild = true;
   bool verbose = false;
+  unsigned numJobsInParallel = 0;
   unsigned numFailedCommandsToTolerate = 1;
   float maximumLoadAverage = 0.0;
   std::vector<std::string> debugTools;
@@ -1764,10 +1762,6 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
           usage();
       }
       args.erase(args.begin());
-    } else if (option == "--no-parallel") {
-      useParallelBuild = false;
-    } else if (option == "--parallel") {
-      useParallelBuild = true;
     } else if (option == "-l") {
       if (args.empty()) {
         fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
@@ -1776,6 +1770,20 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       }
       char *end;
       maximumLoadAverage = ::strtod(args[0].c_str(), &end);
+      if (*end != '\0') {
+          fprintf(stderr, "%s: error: invalid argument '%s' to '%s'\n\n",
+                  getProgramName(), args[0].c_str(), option.c_str());
+          usage();
+      }
+      args.erase(args.begin());
+    } else if (option == "-j" || option == "--jobs") {
+      if (args.empty()) {
+        fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
+                getProgramName(), option.c_str());
+        usage();
+      }
+      char *end;
+      numJobsInParallel = ::strtol(args[0].c_str(), &end, 10);
       if (*end != '\0') {
           fprintf(stderr, "%s: error: invalid argument '%s' to '%s'\n\n",
                   getProgramName(), args[0].c_str(), option.c_str());
@@ -1901,11 +1909,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     //
     // FIXME: Do a serious analysis of scheduling, including ideally an active
     // scheduler in the execution queue.
-    unsigned numJobs;
-    bool useLIFO = false;
-    if (!useParallelBuild) {
-      numJobs = 1;
-    } else {
+    if (numJobsInParallel == 0) {
       long numCPUs = sysconf(_SC_NPROCESSORS_ONLN);
       if (numCPUs < 0) {
         context.emitError("unable to detect number of CPUs (%s)",
@@ -1913,10 +1917,10 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
         return 1;
       }
 
-      numJobs = numCPUs + 2;
-      useLIFO = true;
+      numJobsInParallel = numCPUs + 2;
     }
-    context.jobQueue.reset(new BuildExecutionQueue(numJobs, useLIFO));
+    bool useLIFO = (numJobsInParallel > 1);
+    context.jobQueue.reset(new BuildExecutionQueue(numJobsInParallel, useLIFO));
 
     // Load the manifest.
     BuildManifestActions actions(context);

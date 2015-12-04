@@ -5,7 +5,7 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
-# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build --no-db &> %t1.out || true
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build --no-db &> %t1.out || true
 # RUN: %{FileCheck} --check-prefix CHECK-DEFAULT --input-file %t1.out %s
 #
 # CHECK-DEFAULT: [1/{{.*}}] echo > output-0
@@ -18,7 +18,7 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
-# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build --no-db -k 2 &> %t2.out || true
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build --no-db -k 2 &> %t2.out || true
 # RUN: %{FileCheck} --check-prefix CHECK-TWO --input-file %t2.out %s
 #
 # CHECK-TWO: [1/{{.*}}] echo > output-0
@@ -33,7 +33,7 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
-# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build --no-db -k 0 &> %t3.out || true
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build --no-db -k 0 &> %t3.out || true
 # RUN: %{FileCheck} --check-prefix CHECK-UNLIMITED --input-file %t3.out %s
 #
 # CHECK-UNLIMITED: [1/{{.*}}] echo > output-0

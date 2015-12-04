@@ -6,7 +6,7 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
-# RUN: /bin/sh -c "%{llbuild} ninja build --no-parallel --chdir %t.build --no-db; echo \"exit code: $?\"" &> %t1.out
+# RUN: /bin/sh -c "%{llbuild} ninja build --jobs 1 --chdir %t.build --no-db; echo \"exit code: $?\"" &> %t1.out
 # RUN: %{FileCheck} < %t1.out %s
 #
 # CHECK: error:{{.*}} missing input 'input-1' and no rule to build it

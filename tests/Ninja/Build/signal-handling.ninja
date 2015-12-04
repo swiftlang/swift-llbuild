@@ -5,7 +5,7 @@
 # RUN: cp %s %t.build/build.ninja
 # RUN: cp %S/Inputs/wait-for-file %t.build
 # RUN: /bin/sh -c \
-# RUN:   "%{llbuild} ninja build --no-parallel --chdir %t.build &> %t.out & \
+# RUN:   "%{llbuild} ninja build --jobs 1 --chdir %t.build &> %t.out & \
 # RUN:    echo $! > %t.build/llbuild.pid; \
 # RUN:    wait $(cat %t.build/llbuild.pid)" || true
 # RUN: %{FileCheck} --input-file %t.out %s

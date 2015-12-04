@@ -5,14 +5,14 @@
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
 # RUN: touch %t.build/output
-# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix CHECK-FIRST --input-file %t1.out %s
 #
 # CHECK-FIRST: [1/{{.*}}] date > output
 
 # Running again should do nothing.
 #
-# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t2.out
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t2.out
 # RUN: %{FileCheck} --check-prefix CHECK-SECOND --input-file %t2.out %s
 #
 # CHECK-SECOND-NOT: date

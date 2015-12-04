@@ -15,7 +15,7 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
-# RUN: %{llbuild} ninja build --no-db --no-parallel --chdir %t.build &> %t1.out
+# RUN: %{llbuild} ninja build --no-db --jobs 1 --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --input-file %t1.out %s
 #
 # CHECK: llbuild: note: no work to do.
