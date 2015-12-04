@@ -115,6 +115,10 @@ static void usage(int exitCode=1) {
           "don't show information on executed commands");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "-v, --verbose",
           "show full invocation for executed commands");
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "-l <N>",
+          "start jobs only when load average is below N [not implemented]");
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "-d <TOOL>",
+          "enable debugging tool TOOL. 'list' for available [not implemented]");
   ::exit(exitCode);
 }
 
@@ -1689,6 +1693,8 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
   bool useParallelBuild = true;
   bool verbose = false;
   unsigned numFailedCommandsToTolerate = 1;
+  float maximumLoadAverage = 0.0;
+  std::vector<std::string> debugTools;
 
   while (!args.empty() && args[0][0] == '-') {
     const std::string option = args[0];
@@ -1760,6 +1766,20 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       useParallelBuild = false;
     } else if (option == "--parallel") {
       useParallelBuild = true;
+    } else if (option == "-l") {
+      if (args.empty()) {
+        fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
+                getProgramName(), option.c_str());
+        usage();
+      }
+      char *end;
+      maximumLoadAverage = ::strtod(args[0].c_str(), &end);
+      if (*end != '\0') {
+          fprintf(stderr, "%s: error: invalid argument '%s' to '%s'\n\n",
+                  getProgramName(), args[0].c_str(), option.c_str());
+          usage();
+      }
+      args.erase(args.begin());
     } else if (option == "--no-regenerate") {
       autoRegenerateManifest = false;
     } else if (option == "--profile") {
@@ -1780,6 +1800,14 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       }
       customTool = args[0];
       args.erase(args.begin());
+    } else if (option == "-d") {
+      if (args.empty()) {
+        fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
+                getProgramName(), option.c_str());
+        usage();
+      }
+      debugTools.push_back(args[0]);
+      args.erase(args.begin());
     } else if (option == "--trace") {
       if (args.empty()) {
         fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
@@ -1795,6 +1823,16 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
               getProgramName(), option.c_str());
       usage();
     }
+  }
+
+  if (maximumLoadAverage > 0.0) {
+    fprintf(stderr, "%s: warning: maximum load average %.8g not implemented\n",
+            getProgramName(), maximumLoadAverage);
+  }
+
+  if (!debugTools.empty()) {
+    fprintf(stderr, "%s: warning: debug tools not implemented\n",
+            getProgramName());
   }
 
   // Honor the --chdir option, if used.
