@@ -101,6 +101,8 @@ static void usage(int exitCode=1) {
           "build commands serially");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--parallel",
           "build commands in parallel [default]");
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "-t, --tool <TOOL>",
+          "run a ninja tool. use 'list' to list available tools.");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--no-regenerate",
           "disable manifest auto-regeneration");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--dump-graph <PATH>",
@@ -1772,7 +1774,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       args.erase(args.begin());
     } else if (option == "--strict") {
       strict = true;
-    } else if (option == "-t") {
+    } else if (option == "-t" || option == "--tool") {
       if (args.empty()) {
         fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
                 getProgramName(), option.c_str());
@@ -1810,6 +1812,32 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     fprintf(stdout, "%s: Entering directory `%s'\n", getProgramName(),
             chdirPath.c_str());
     fflush(stdout);
+  }
+
+  if (!customTool.empty()) {
+    std::vector<std::string> availableTools = {
+      "targets",
+      "list",
+    };
+
+    if (std::find(availableTools.begin(), availableTools.end(), customTool) ==
+        availableTools.end()) {
+        fprintf(stderr, "error: unknown tool '%s'\n", customTool.c_str());
+        return 1;
+    } else if (customTool == "list") {
+      if (!args.empty()) {
+        fprintf(stderr, "error: unsupported arguments to tool '%s'\n",
+                customTool.c_str());
+        return 1;
+      }
+
+      fprintf(stdout, "available ninja tools:\n");
+      for (const auto& tool: availableTools) {
+        fprintf(stdout, "  %s\n", tool.c_str());
+      }
+
+      return 0;
+    }
   }
 
   // Run up to two iterations, the first one loads the manifest and rebuilds it
@@ -1863,32 +1891,27 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       return 1;
     }
 
-    // Run the custom tool, if specified.
-    if (!customTool.empty()) {
-      if (customTool == "targets") {
-        if (args.size() != 1 || args[0] != "all") {
-          if (args.empty()) {
-            context.emitError("unsupported arguments to tool '%s'",
-                              customTool.c_str());
-          } else {
-            context.emitError("unsupported argument to tool '%s': '%s'",
-                              customTool.c_str(), args[0].c_str());
-          }
-          return 1;
+    // Run the targets tool, if specified.
+    if (!customTool.empty() && customTool == "targets") {
+      if (args.size() != 1 || args[0] != "all") {
+        if (args.empty()) {
+          context.emitError("unsupported arguments to tool '%s'",
+                            customTool.c_str());
+        } else {
+          context.emitError("unsupported argument to tool '%s': '%s'",
+                            customTool.c_str(), args[0].c_str());
         }
-
-        for (const auto command: context.manifest->getCommands()) {
-          for (const auto& output: command->getOutputs()) {
-            fprintf(stdout, "%s: %s\n", output->getPath().c_str(),
-                    command->getRule()->getName().c_str());
-          }
-        }
-
-        return 0;
-      } else {
-        context.emitError("unknown tool '%s'", customTool.c_str());
         return 1;
       }
+
+      for (const auto command: context.manifest->getCommands()) {
+        for (const auto& output: command->getOutputs()) {
+          fprintf(stdout, "%s: %s\n", output->getPath().c_str(),
+                  command->getRule()->getName().c_str());
+        }
+      }
+
+      return 0;
     }
 
     // Otherwise, run the build.
