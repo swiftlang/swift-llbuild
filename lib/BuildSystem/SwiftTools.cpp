@@ -86,6 +86,9 @@ public:
                                core::Task* task) override {
     // Dispatch a task to query the compiler version.
     auto fn = [this, &bsci=bsci, task=task](QueueJobContext* context) {
+    // Suppress static analyzer false positive on generalized lambda capture
+    // (rdar://problem/22165130).
+#ifndef __clang_analyzer__
       // Construct the command line used to query the swift compiler version.
       //
       // FIXME: Need a decent subprocess interface.
@@ -116,6 +119,7 @@ public:
       // FIXME: We should support BuildValues with arbitrary payloads.
       bsci.taskIsComplete(task, BuildValue::makeSuccessfulCommand(
                               basic::FileInfo{}, basic::hashString(result)));
+#endif
     };
     bsci.addJob({ this, std::move(fn) });
     return;
