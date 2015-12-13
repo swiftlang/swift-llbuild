@@ -18,6 +18,17 @@ Swift conventions.
   * Both exceptions and RTTI are **disallowed**.
 
 
+* Dependencies:
+
+  * llbuild depends on having a C++14 compatible compiler (although
+    we do maintain some workarounds to support older versions of GCC/libstdc++
+    that were not fully compliant).
+
+  * llbuild depends on having `lit` and `FileCheck` available for executing our
+    tests. Currently, the CMake system requires that these dependencies be
+    satisfied to complete.
+
+
 * The project is divided into conceptually distinct layers, which are organized
   into distinct "libraries" under `lib/`. The current set of libraries, and
   their dependencies, is:
