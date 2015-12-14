@@ -443,7 +443,7 @@ class ProducedNodeTask : public Task {
 
     // Extract the node result from the command.
     assert(producingCommand);
-    nodeResult = std::move(producingCommand->getResultForOutput(&node, value));
+    nodeResult = producingCommand->getResultForOutput(&node, value);
   }
 
   virtual void inputsAvailable(BuildEngine& engine) override {
@@ -1075,9 +1075,9 @@ BuildSystemFileDelegate::configureClient(const ConfigureContext&,
 std::unique_ptr<Tool>
 BuildSystemFileDelegate::lookupTool(StringRef name) {
   // First, give the client an opportunity to create the tool.
-  auto tool = getSystemDelegate().lookupTool(name);
-  if (tool)
-    return std::move(tool);
+  if (auto tool = getSystemDelegate().lookupTool(name)) {
+    return tool;
+  }
 
   // Otherwise, look for one of the builtin tool definitions.
   if (name == "shell") {
