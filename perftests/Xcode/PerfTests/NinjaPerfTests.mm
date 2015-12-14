@@ -86,7 +86,7 @@ static void ExecuteShellCommand(const char *String) {
                              dbPath].UTF8String);
         
         llbuild::commands::executeNinjaCommand({
-            "build", "--quiet", "--no-parallel", "--simulate",
+            "build", "--quiet", "--no-parallel", "--dry-run",
             "--db", dbPath.UTF8String, "-f", ninjaPath.UTF8String, TargetName });
     }];
 }
@@ -124,7 +124,7 @@ static void ExecuteShellCommand(const char *String) {
     ExecuteShellCommand([NSString stringWithFormat:@"rm -f \"%@\"",
                          dbPath].UTF8String);
     llbuild::commands::executeNinjaCommand({
-        "build", "--quiet", "--no-parallel", "--simulate",
+        "build", "--quiet", "--no-parallel", "--dry-run",
         "--db", dbPath.UTF8String, "-f", ninjaPath.UTF8String, TargetName });
     
     // Test the null build performance, each run of which will reuse the initial
@@ -133,7 +133,7 @@ static void ExecuteShellCommand(const char *String) {
     [self measureBlock:^{
         for (int i = 0; i != 10; ++i) {
             llbuild::commands::executeNinjaCommand({
-                "build", "--quiet", "--no-parallel", "--simulate",
+                "build", "--quiet", "--no-parallel", "--dry-run",
                 "--db", dbPath.UTF8String, "-f", ninjaPath.UTF8String, TargetName });
         }
     }];
