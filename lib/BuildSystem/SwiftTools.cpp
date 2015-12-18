@@ -466,6 +466,8 @@ public:
     if (!bsci.getDelegate().showVerboseStatus()) {
       fprintf(stdout, "Compiling Swift Module '%s' (%d sources)\n",
               moduleName.c_str(), int(sourcesList.size()));
+    } else if (bsci.getDelegate().verbosityLevel() > 1) {
+        commandLine.push_back("-v");
     } else {
       SmallString<256> command;
       llvm::raw_svector_ostream commandOS(command);

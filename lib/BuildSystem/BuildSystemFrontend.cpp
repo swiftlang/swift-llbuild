@@ -103,7 +103,7 @@ void BuildSystemInvocation::parse(llvm::ArrayRef<std::string> args,
     } else if (option == "--serial") {
       useSerialBuild = true;
     } else if (option == "-v" || option == "--verbose") {
-      showVerboseStatus = true;
+      verbosityLevel += 1;
     } else if (option == "--trace") {
       if (args.empty()) {
         error("missing argument to '" + option + "'");
@@ -258,7 +258,13 @@ void BuildSystemFrontendDelegate::hadCommandFailure() {
 bool BuildSystemFrontendDelegate::showVerboseStatus() {
   auto impl = static_cast<BuildSystemFrontendDelegateImpl*>(this->impl);
   
-  return impl->invocation.showVerboseStatus;
+  return impl->invocation.verbosityLevel > 0;
+}
+
+unsigned int BuildSystemFrontendDelegate::verbosityLevel() {
+    auto impl = static_cast<BuildSystemFrontendDelegateImpl*>(this->impl);
+  
+    return impl->invocation.verbosityLevel;
 }
 
 #pragma mark - BuildSystemFrontend implementation

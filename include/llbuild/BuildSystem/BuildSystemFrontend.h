@@ -118,6 +118,10 @@ public:
   /// option.
   virtual bool showVerboseStatus() override;
 
+  /// Provides a default implementation that is connected to a command line
+  /// option.
+  virtual unsigned int verbosityLevel() override;
+
   /// @name Frontend-specific APIs
   /// @{
 
@@ -147,8 +151,9 @@ public:
   /// Whether command usage should be printed.
   bool showUsage = false;
 
-  /// Whether to show verbose output.
-  bool showVerboseStatus = false;
+  /// Whether to show verbose output, values greater than 0 indicate
+  /// verbose output. The larger the value the more verbose.
+  unsigned int verbosityLevel = 0;
 
   /// Whether to use a serial build.
   bool useSerialBuild = false;

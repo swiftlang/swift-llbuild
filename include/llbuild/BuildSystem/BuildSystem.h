@@ -93,6 +93,8 @@ public:
   /// Called to determine whether to show verbose status.
   virtual bool showVerboseStatus() = 0;
 
+  virtual unsigned int verbosityLevel() = 0;
+
   /// @}
 };
 
