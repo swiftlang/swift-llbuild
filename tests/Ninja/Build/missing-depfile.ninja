@@ -3,7 +3,7 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
-# RUN: %{llbuild} ninja build --strict --no-parallel --chdir %t.build --no-db &> %t1.out || true
+# RUN: %{llbuild} ninja build --strict --jobs 1 --chdir %t.build --no-db &> %t1.out || true
 # RUN: %{FileCheck} --check-prefix CHECK-STRICT --input-file %t1.out %s
 #
 # CHECK-STRICT: [1/{{.*}}] true
@@ -12,7 +12,7 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
-# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build --no-db &> %t2.out
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build --no-db &> %t2.out
 # RUN: %{FileCheck} --check-prefix CHECK-NONSTRICT --input-file %t2.out %s
 #
 # CHECK-NONSTRICT: [1/{{.*}}] true

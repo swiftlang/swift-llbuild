@@ -4,7 +4,7 @@
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
 # RUN: touch %t.build/config.ninja
-# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix CHECK-FIRST --input-file %t1.out %s
 #
 # CHECK-FIRST-NOT: echo
@@ -13,7 +13,7 @@
 # Running again after changing the generator flags should not rebuild.
 #
 # RUN: echo "echo_flags = foo" > %t.build/config.ninja
-# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t2.out
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t2.out
 # RUN: %{FileCheck} --check-prefix CHECK-SECOND --input-file %t2.out %s
 #
 # CHECK-SECOND-NOT: echo

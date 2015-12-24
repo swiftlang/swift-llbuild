@@ -4,7 +4,7 @@
 # RUN: mkdir -p %t.build
 # RUN: touch -r / %t.build/input-1 %t.build/input-2
 # RUN: cp %s %t.build/build.ninja
-# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix=CHECK-INITIAL < %t1.out %s
 #
 # CHECK-INITIAL: [1/3] cp input-2 output-2
@@ -12,7 +12,7 @@
 # CHECK-INITIAL: [3/3] cat output-1 output-2 > output
 
 # RUN: echo "mod" > %t.build/input-1
-# RUN: %{llbuild} ninja build --strict --no-parallel --chdir %t.build &> %t1.out
+# RUN: %{llbuild} ninja build --strict --jobs 1 --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix=CHECK-INCREMENTAL < %t1.out %s
 #
 # CHECK-INCREMENTAL: [1/2] cp input-1 output-1

@@ -3,7 +3,7 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
-# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build --no-db
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build --no-db
 # RUN: test ! -f %t.build/build.db
 
 build output: phony

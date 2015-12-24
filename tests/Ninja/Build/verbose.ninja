@@ -3,9 +3,9 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
-# RUN: %{llbuild} ninja build --no-parallel -v --chdir %t.build &> %t.out
+# RUN: %{llbuild} ninja build --jobs 1 -v --chdir %t.build &> %t.out
 # RUN: %{FileCheck} --check-prefix=CHECK-VERBOSE --input-file %t.out %s
-# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t.out
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t.out
 # RUN: %{FileCheck} --check-prefix=CHECK-NORMAL --input-file %t.out %s
 
 # CHECK-VERBOSE: [1/{{.*}}] echo some custom command

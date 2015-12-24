@@ -9,7 +9,7 @@
 # RUN: echo "input-1" > %t.build/input-1
 # RUN: echo "input-2" > %t.build/input-2
 # RUN: echo "input-3" > %t.build/input-3
-# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file=%t1.out %s
 # RUN: %{FileCheck} --check-prefix=CHECK-INITIAL-OUTPUT --input-file=%t.build/output %s
 
@@ -31,7 +31,7 @@
 # output should rebuild, since the dependencies are order only.
 #
 # RUN: echo "input-1-mod" >> %t.build/input-1
-# RUN: %{llbuild} ninja build --strict --no-parallel --chdir %t.build &> %t2.out
+# RUN: %{llbuild} ninja build --strict --jobs 1 --chdir %t.build &> %t2.out
 # RUN: %{FileCheck} --check-prefix=CHECK-AFTER-MOD --input-file=%t2.out %s
 
 # Check the second build.

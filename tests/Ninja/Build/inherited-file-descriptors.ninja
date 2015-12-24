@@ -7,7 +7,7 @@
 # RUN: mkdir -p %t.build
 # RUN: ln -s %S/Inputs/check-open-fds %t.build
 # RUN: ln -s %s %t.build/build.ninja
-# RUN: /bin/sh -c "%{llbuild} ninja build --no-parallel --no-db --chdir %t.build 4< /dev/null" &> %t.out
+# RUN: /bin/sh -c "%{llbuild} ninja build --jobs 1 --no-db --chdir %t.build 4< /dev/null" &> %t.out
 # RUN: %{FileCheck} < %t.out %s
 
 # CHECK: [1/1] ./check-open-fds

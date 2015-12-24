@@ -5,7 +5,7 @@
 # RUN: mkdir -p %t.build
 # RUN: touch %t.build/input
 # RUN: cp %s %t.build/build.ninja
-# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} < %t1.out %s
 
 # CHECK: [1/{{.*}}] GENERATE MANIFEST

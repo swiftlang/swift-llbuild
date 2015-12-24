@@ -8,7 +8,7 @@
 # RUN: cp %S/Inputs/split-numbers %t.build
 # RUN: cp %s %t.build/build.ninja
 # RUN: touch %t.build/input
-# RUN: %{llbuild} ninja build --no-parallel --chdir %t.build &> %t1.out
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix CHECK-INITIAL --input-file %t1.out %s
 #
 # CHECK-INITIAL: [1/{{.*}}] ./split-numbers < input odd even
@@ -18,7 +18,7 @@
 # Add an even number, and check that only the even side rebuilds.
 # 
 # RUN: echo 0 >> %t.build/input
-# RUN: %{llbuild} ninja build --strict --no-parallel --chdir %t.build &> %t2.out
+# RUN: %{llbuild} ninja build --strict --jobs 1 --chdir %t.build &> %t2.out
 # RUN: %{FileCheck} --check-prefix CHECK-UPDATE-EVEN --input-file %t2.out %s
 #
 # CHECK-UPDATE-EVEN: [1/{{.*}}] ./split-numbers < input odd even
@@ -30,7 +30,7 @@
 # Add an odd number, and check that only the odd side rebuilds.
 # 
 # RUN: echo 1 >> %t.build/input
-# RUN: %{llbuild} ninja build --strict --no-parallel --chdir %t.build &> %t3.out
+# RUN: %{llbuild} ninja build --strict --jobs 1 --chdir %t.build &> %t3.out
 # RUN: %{FileCheck} --check-prefix CHECK-UPDATE-ODD --input-file %t3.out %s
 #
 # CHECK-UPDATE-ODD: [1/{{.*}}] ./split-numbers < input odd even
