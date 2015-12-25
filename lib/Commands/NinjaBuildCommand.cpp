@@ -1790,6 +1790,14 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
           usage();
       }
       args.erase(args.begin());
+    } else if (StringRef(option).startswith("-j")) {
+      char *end;
+      numJobsInParallel = ::strtol(&option[2], &end, 10);
+      if (*end != '\0') {
+          fprintf(stderr, "%s: error: invalid argument '%s' to '-j'\n\n",
+                  getProgramName(), &option[2]);
+          usage();
+      }
     } else if (option == "--no-regenerate") {
       autoRegenerateManifest = false;
     } else if (option == "--profile") {
