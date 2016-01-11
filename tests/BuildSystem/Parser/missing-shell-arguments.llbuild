@@ -1,0 +1,14 @@
+# Check error handling.
+#
+# RUN: %{llbuild} buildsystem build --no-db -f %s > %t.out 2> %t.err || true
+# RUN: %{FileCheck} --check-prefix CHECK-ERR --input-file %t.err %s
+
+client:
+  name: basic
+  
+
+commands:
+  C0:
+        tool: shell
+        # CHECK-ERR: error: invalid arguments for command 'C0'
+        args: []

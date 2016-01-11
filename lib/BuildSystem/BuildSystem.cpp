@@ -834,6 +834,12 @@ public:
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   ArrayRef<StringRef> values) override {
     if (name == "args") {
+      // Diagnose missing arguments.
+      if (values.empty()) {
+        ctx.error("invalid arguments for command '" + getName() + "'");
+        return false;
+      }
+      
       args = std::vector<std::string>(values.begin(), values.end());
     } else {
       return ExternalCommand::configureAttribute(ctx, name, values);
