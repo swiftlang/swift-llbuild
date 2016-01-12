@@ -169,6 +169,7 @@
 		E1B8395E1B541C5900DB876B /* BuildFile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1B839591B541C1F00DB876B /* BuildFile.cpp */; };
 		E1B8395F1B541C6400DB876B /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
 		E1B839651B5420F500DB876B /* BuildSystemCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1B839641B5420F500DB876B /* BuildSystemCommand.cpp */; };
+		E1BE0AA61C458EB000AD0883 /* BuildExecutionQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1BE0AA51C458EB000AD0883 /* BuildExecutionQueue.cpp */; };
 		E1C404B11A0308F3003392BA /* NinjaPerfTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = E1C404B01A0308F3003392BA /* NinjaPerfTests.mm */; };
 		E1C404B91A030A1D003392BA /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
 		E1C404BA1A030A1D003392BA /* libllbuildCommands.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242E19F997050059043E /* libllbuildCommands.a */; };
@@ -825,6 +826,7 @@
 		E1B8395A1B541C1F00DB876B /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1B8395D1B541C4300DB876B /* BuildFile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuildFile.h; sourceTree = "<group>"; };
 		E1B839641B5420F500DB876B /* BuildSystemCommand.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildSystemCommand.cpp; sourceTree = "<group>"; };
+		E1BE0AA51C458EB000AD0883 /* BuildExecutionQueue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildExecutionQueue.cpp; sourceTree = "<group>"; };
 		E1C404AC1A0308F3003392BA /* PerfTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PerfTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1C404AF1A0308F3003392BA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E1C404B01A0308F3003392BA /* NinjaPerfTests.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = NinjaPerfTests.mm; sourceTree = "<group>"; };
@@ -1584,6 +1586,7 @@
 			children = (
 				E1B8395C1B541C4300DB876B /* Headers */,
 				E1B8395A1B541C1F00DB876B /* CMakeLists.txt */,
+				E1BE0AA51C458EB000AD0883 /* BuildExecutionQueue.cpp */,
 				E1B839591B541C1F00DB876B /* BuildFile.cpp */,
 				E1E4A5B31BFC1394001BFFC4 /* BuildKey.cpp */,
 				E1AAD28D1BC65A1900F54680 /* BuildNode.cpp */,
@@ -2496,6 +2499,7 @@
 				E1AAD2901BC65AB200F54680 /* ExternalCommand.cpp in Sources */,
 				E1AAD28E1BC65A1900F54680 /* BuildNode.cpp in Sources */,
 				E1FC67F91BB1F427004EBC54 /* BuildValue.cpp in Sources */,
+				E1BE0AA61C458EB000AD0883 /* BuildExecutionQueue.cpp in Sources */,
 				E1AAD2921BC65B5000F54680 /* SwiftTools.cpp in Sources */,
 				E1E4A5B41BFC1394001BFFC4 /* BuildKey.cpp in Sources */,
 				E1B8395E1B541C5900DB876B /* BuildFile.cpp in Sources */,

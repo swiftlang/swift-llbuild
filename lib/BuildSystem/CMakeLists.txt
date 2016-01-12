@@ -1,4 +1,5 @@
 add_llbuild_library(llbuildBuildSystem
+  BuildExecutionQueue.cpp
   BuildFile.cpp
   BuildKey.cpp
   BuildNode.cpp
