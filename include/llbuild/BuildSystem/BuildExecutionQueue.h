@@ -23,6 +23,7 @@
 namespace llbuild {
 namespace buildsystem {
 
+class BuildExecutionQueueDelegate;
 class Command;
 
 /// Opaque type which allows the queue implementation to maintain additional
@@ -65,10 +66,20 @@ class BuildExecutionQueue {
     LLBUILD_DELETED_FUNCTION;
   BuildExecutionQueue &operator=(BuildExecutionQueue&& rhs)
     LLBUILD_DELETED_FUNCTION;
+
+  BuildExecutionQueueDelegate& delegate;
   
 public:
-  BuildExecutionQueue() {}
+  BuildExecutionQueue(BuildExecutionQueueDelegate& delegate);
   virtual ~BuildExecutionQueue();
+
+  /// @name Accessors
+  /// @{
+
+  BuildExecutionQueueDelegate& getDelegate() { return delegate; }
+  const BuildExecutionQueueDelegate& getDelegate() const { return delegate; }
+
+  /// @}
 
   /// Add a job to be executed.
   virtual void addJob(QueueJob job) = 0;
@@ -114,9 +125,56 @@ public:
 
 };
 
+/// Delegate interface for execution queue status.
+class BuildExecutionQueueDelegate {
+  // DO NOT COPY
+  BuildExecutionQueueDelegate(const BuildExecutionQueueDelegate&)
+    LLBUILD_DELETED_FUNCTION;
+  void operator=(const BuildExecutionQueueDelegate&)
+    LLBUILD_DELETED_FUNCTION;
+  BuildExecutionQueueDelegate &operator=(BuildExecutionQueueDelegate&& rhs)
+    LLBUILD_DELETED_FUNCTION;
+
+public:
+  BuildExecutionQueueDelegate() {}
+  virtual ~BuildExecutionQueueDelegate();
+
+  /// Invoked synchronously when a command's job has been started.
+  ///
+  /// The queue guarantees that any commandStart() call will be paired with
+  /// exactly one \see commandFinished() call.
+  //
+  // FIXME: We may eventually want to allow the individual job to provide some
+  // additional context here, for complex commands.
+  //
+  // FIXME: Design a way to communicate the "lane" here, for use in "super
+  // console" like UIs.
+  virtual void commandStarted(Command*) = 0;
+
+  /// Invoked synchronously when a command's job has been finished.
+  virtual void commandFinished(Command*) = 0;
+
+  /// Invoked synchronously when a command's job has started executing an
+  /// external process.
+  ///
+  /// The queue guarantees that any commandStartedProcess() call will be paired
+  /// with exactly one \see commandFinishedProcess() call.
+  virtual void commandStartedProcess(Command*) = 0;
+  
+  /// Invoked synchronously when a command's job has finished executing an
+  /// external process.
+  ///
+  /// \param exitStatus - The exit status of the process.
+  //
+  // FIXME: Need to include additional information on the status here, e.g., the
+  // signal status, and the process output (if buffering).
+  virtual void commandFinishedProcess(Command*, int exitStatus) = 0;
+};
+
 /// Create an execution queue that schedules jobs to individual lanes with a
 /// capped limit on the number of concurrent lanes.
-BuildExecutionQueue *createLaneBasedExecutionQueue(int numLanes);
+BuildExecutionQueue *createLaneBasedExecutionQueue(
+    BuildExecutionQueueDelegate& delegate, int numLanes);
 
 }
 }

@@ -29,6 +29,14 @@ class BuildExecutionQueue;
 class Tool;
   
 class BuildSystemDelegate {
+  // DO NOT COPY
+  BuildSystemDelegate(const BuildSystemDelegate&)
+    LLBUILD_DELETED_FUNCTION;
+  void operator=(const BuildSystemDelegate&)
+    LLBUILD_DELETED_FUNCTION;
+  BuildSystemDelegate &operator=(BuildSystemDelegate&& rhs)
+    LLBUILD_DELETED_FUNCTION;
+  
 public:
     /// Minimal token object representing the range where a diagnostic occurred.
   struct Token {

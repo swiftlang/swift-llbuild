@@ -122,6 +122,23 @@ void BuildSystemInvocation::parse(llvm::ArrayRef<std::string> args,
 
 namespace {
 
+class BuildSystemFrontendExecutionQueueDelegate
+  : public BuildExecutionQueueDelegate
+{
+public:
+  virtual void commandStarted(Command*) override {
+  }
+
+  virtual void commandFinished(Command*) override {
+  }
+
+  virtual void commandStartedProcess(Command*) override {
+  }
+  
+  virtual void commandFinishedProcess(Command*, int exitStatus) override {
+  }
+};
+
 struct BuildSystemFrontendDelegateImpl {
   llvm::SourceMgr& sourceMgr;
   const BuildSystemInvocation& invocation;
@@ -130,6 +147,8 @@ struct BuildSystemFrontendDelegateImpl {
   std::atomic<unsigned> numErrors{0};
   std::atomic<unsigned> numFailedCommands{0};
 
+  BuildSystemFrontendExecutionQueueDelegate executionQueueDelegate;
+  
   BuildSystemFrontendDelegateImpl(llvm::SourceMgr& sourceMgr,
                                   const BuildSystemInvocation& invocation)
       : sourceMgr(sourceMgr), invocation(invocation) {}
@@ -226,7 +245,7 @@ BuildSystemFrontendDelegate::createExecutionQueue() {
   
   if (impl->invocation.useSerialBuild) {
     return std::unique_ptr<BuildExecutionQueue>(
-        createLaneBasedExecutionQueue(1));
+        createLaneBasedExecutionQueue(impl->executionQueueDelegate, 1));
   }
     
   // Get the number of CPUs to use.
@@ -240,7 +259,7 @@ BuildSystemFrontendDelegate::createExecutionQueue() {
   }
     
   return std::unique_ptr<BuildExecutionQueue>(
-      createLaneBasedExecutionQueue(numLanes));
+      createLaneBasedExecutionQueue(impl->executionQueueDelegate, numLanes));
 }
 
 bool BuildSystemFrontendDelegate::isCancelled() {

@@ -21,6 +21,11 @@
 using namespace llbuild;
 using namespace llbuild::buildsystem;
 
+BuildExecutionQueue::BuildExecutionQueue(BuildExecutionQueueDelegate& delegate)
+    : delegate(delegate)
+{
+}
+
 BuildExecutionQueue::~BuildExecutionQueue() {
 }
 
@@ -30,4 +35,7 @@ bool BuildExecutionQueue::executeShellCommand(QueueJobContext* context,
   std::vector<StringRef> commandLine(
       { "/bin/sh", "-c", commandStorage.c_str() });
   return executeProcess(context, commandLine);
+}
+
+BuildExecutionQueueDelegate::~BuildExecutionQueueDelegate() {
 }

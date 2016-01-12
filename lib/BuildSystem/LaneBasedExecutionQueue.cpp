@@ -43,6 +43,10 @@ extern "C" {
 
 namespace {
 
+struct LaneBasedExecutionQueueJobContext {
+  QueueJob& job;
+};
+
 /// Build execution queue.
 //
 // FIXME: Consider trying to share this with the Ninja implementation.
@@ -81,13 +85,18 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
         break;
 
       // Process the job.
-      QueueJobContext* context = nullptr;
-      job.execute(context);
+      LaneBasedExecutionQueueJobContext context{ job };
+      getDelegate().commandStarted(job.getForCommand());
+      job.execute(reinterpret_cast<QueueJobContext*>(&context));
+      getDelegate().commandFinished(job.getForCommand());
     }
   }
 
 public:
-  LaneBasedExecutionQueue(unsigned numLanes) : numLanes(numLanes) {
+  LaneBasedExecutionQueue(BuildExecutionQueueDelegate& delegate,
+                          unsigned numLanes)
+      : BuildExecutionQueue(delegate), numLanes(numLanes)
+  {
     for (unsigned i = 0; i != numLanes; ++i) {
       lanes.push_back(std::unique_ptr<std::thread>(
                           new std::thread(
@@ -111,8 +120,12 @@ public:
     readyJobsCondition.notify_one();
   }
 
-  virtual bool executeProcess(QueueJobContext*,
+  virtual bool executeProcess(QueueJobContext* opaqueContext,
                               ArrayRef<StringRef> commandLine) override {
+    LaneBasedExecutionQueueJobContext& context =
+      *reinterpret_cast<LaneBasedExecutionQueueJobContext*>(opaqueContext);
+    getDelegate().commandStartedProcess(context.job.getForCommand());
+    
     // Initialize the spawn attributes.
     posix_spawnattr_t attributes;
     posix_spawnattr_init(&attributes);
@@ -123,21 +136,21 @@ public:
     posix_spawnattr_setsigmask(&attributes, &noSignals);
 
     // Reset all signals to default behavior.
-      //
-      // On Linux, this can only be used to reset signals that are legal to
-      // modify, so we have to take care about the set we use.
+    //
+    // On Linux, this can only be used to reset signals that are legal to
+    // modify, so we have to take care about the set we use.
 #if defined(__linux__)
-      sigset_t mostSignals;
-      sigemptyset(&mostSignals);
-      for (int i = 1; i < SIGUNUSED; ++i) {
-        if (i == SIGKILL || i == SIGSTOP) continue;
-        sigaddset(&mostSignals, i);
-      }
-      posix_spawnattr_setsigdefault(&attributes, &mostSignals);
+    sigset_t mostSignals;
+    sigemptyset(&mostSignals);
+    for (int i = 1; i < SIGUNUSED; ++i) {
+      if (i == SIGKILL || i == SIGSTOP) continue;
+      sigaddset(&mostSignals, i);
+    }
+    posix_spawnattr_setsigdefault(&attributes, &mostSignals);
 #else
-      sigset_t allSignals;
-      sigfillset(&allSignals);
-      posix_spawnattr_setsigdefault(&attributes, &allSignals);
+    sigset_t allSignals;
+    sigfillset(&allSignals);
+    posix_spawnattr_setsigdefault(&attributes, &allSignals);
 #endif      
 
     // Establish a separate process group.
@@ -168,7 +181,7 @@ public:
     posix_spawn_file_actions_adddup2(&fileActions, 1, 1);
     posix_spawn_file_actions_adddup2(&fileActions, 2, 2);
 
-    // For the complete C-string command line.
+    // Form the complete C-string command line.
     std::vector<std::string> argsStorage(
         commandLine.begin(), commandLine.end());
     std::vector<const char*> args(argsStorage.size() + 1);
@@ -198,6 +211,8 @@ public:
                     ::environ) != 0) {
       // FIXME: Error handling.
       fprintf(stderr, "error: unable to spawn process (%s)\n", strerror(errno));
+      // FIXME: Communicate error status appropriately.
+      getDelegate().commandFinishedProcess(context.job.getForCommand(), -1);
       return false;
     }
 
@@ -212,10 +227,13 @@ public:
       // FIXME: Error handling.
       fprintf(stderr, "error: unable to wait for process (%s)\n",
               strerror(errno));
+      // FIXME: Communicate error status appropriately.
+      getDelegate().commandFinishedProcess(context.job.getForCommand(), -1);
       return false;
     }
 
     // If the child failed, show the full command and the output.
+    getDelegate().commandFinishedProcess(context.job.getForCommand(), status);
     return (status == 0);
   }
 };
@@ -223,6 +241,7 @@ public:
 }
 
 BuildExecutionQueue*
-llbuild::buildsystem::createLaneBasedExecutionQueue(int numLanes) {
-  return new LaneBasedExecutionQueue(numLanes);
+llbuild::buildsystem::createLaneBasedExecutionQueue(
+    BuildExecutionQueueDelegate& delegate, int numLanes) {
+  return new LaneBasedExecutionQueue(delegate, numLanes);
 }
