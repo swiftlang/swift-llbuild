@@ -24,6 +24,10 @@ namespace llbuild {
 namespace buildsystem {
 
 class Command;
+
+/// Opaque type which allows the queue implementation to maintain additional
+/// state and associate subsequent requests (e.g., \see executeProcess()) with
+/// the dispatching job.
 struct QueueJobContext;
 
 /// Wrapper for individual pieces of work that are added to the execution queue.
