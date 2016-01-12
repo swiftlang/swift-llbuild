@@ -104,13 +104,15 @@ public:
   ParseDummyCommand(ParseBuildFileDelegate& delegate, StringRef name)
       : Command(name), delegate(delegate) {}
 
-  virtual void configureDescription(const ConfigureContext&, StringRef description) override {
+  virtual void configureDescription(const ConfigureContext&,
+                                    StringRef description) override {
     if (delegate.shouldShowOutput()) {
       printf("  -- 'description': '%s'", description.str().c_str());
     }
   }
   
-  virtual void configureInputs(const ConfigureContext&, const std::vector<Node*>& inputs) override {
+  virtual void configureInputs(const ConfigureContext&,
+                               const std::vector<Node*>& inputs) override {
     if (delegate.shouldShowOutput()) {
       bool first = true;
       printf("  -- 'inputs': [");
@@ -122,7 +124,8 @@ public:
     }
   }
 
-  virtual void configureOutputs(const ConfigureContext&, const std::vector<Node*>& outputs) override {
+  virtual void configureOutputs(const ConfigureContext&,
+                                const std::vector<Node*>& outputs) override {
     if (delegate.shouldShowOutput()) {
       bool first = true;
       printf("  -- 'outputs': [");
@@ -319,7 +322,8 @@ static int executeParseCommand(std::vector<std::string> args) {
   }
 
   if (args.size() != 1) {
-    fprintf(stderr, "error: %s: invalid number of arguments\n", getProgramName());
+    fprintf(stderr, "error: %s: invalid number of arguments\n",
+            getProgramName());
     parseUsage(1);
   }
 
