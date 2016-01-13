@@ -759,6 +759,14 @@ class PhonyCommand : public ExternalCommand {
 public:
   using ExternalCommand::ExternalCommand;
 
+  virtual void getShortDescription(SmallVectorImpl<char> &result) override {
+    llvm::raw_svector_ostream(result) << getName();
+  }
+
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
+    llvm::raw_svector_ostream(result) << getName();
+  }
+
   virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
                                       Task* task,
                                       QueueJobContext* context) override {
@@ -804,6 +812,25 @@ class ShellCommand : public ExternalCommand {
   
 public:
   using ExternalCommand::ExternalCommand;
+
+  virtual void getShortDescription(SmallVectorImpl<char> &result) override {
+    llvm::raw_svector_ostream(result) << getDescription();
+  }
+
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
+    llvm::raw_svector_ostream os(result);
+    bool first = true;
+    for (const auto& arg: args) {
+      if (!first) os << " ";
+      first = false;
+      // FIXME: This isn't correct, we need utilities for doing shell quoting.
+      if (arg.find(' ') != StringRef::npos) {
+        os << '"' << arg << '"';
+      } else {
+        os << arg;
+      }
+    }
+  }
   
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
@@ -846,19 +873,7 @@ public:
     // FIXME: Design the logging and status output APIs.
     if (bsci.getDelegate().showVerboseStatus() || getDescription().empty()) {
       SmallString<256> command;
-      llvm::raw_svector_ostream commandOS(command);
-      bool first = true;
-      for (const auto& arg: args) {
-        if (!first) commandOS << " ";
-        first = false;
-        // FIXME: This isn't correct, we need utilities for doing shell quoting.
-        if (arg.find(' ') != StringRef::npos) {
-          commandOS << '"' << arg << '"';
-        } else {
-          commandOS << arg;
-        }
-      }
-      commandOS.flush();
+      getVerboseDescription(command);
       fprintf(stdout, "%s\n", command.c_str());
     } else {
       fprintf(stdout, "%s\n", getDescription().str().c_str());
@@ -959,6 +974,14 @@ class ClangShellCommand : public ExternalCommand {
 
 public:
   using ExternalCommand::ExternalCommand;
+
+  virtual void getShortDescription(SmallVectorImpl<char> &result) override {
+    llvm::raw_svector_ostream(result) << getDescription();
+  }
+
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
+    llvm::raw_svector_ostream(result) << args;
+  }
   
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {

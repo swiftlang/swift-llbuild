@@ -47,7 +47,16 @@ public:
 
   // FIXME: Should create a CustomCommand class, to avoid all the boilerplate
   // required implementations.
-  
+
+  virtual void getShortDescription(SmallVectorImpl<char> &result) override {
+    llvm::raw_svector_ostream(result) << "Checking Swift Compiler Version";
+  }
+
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
+    llvm::raw_svector_ostream(result) << '"' << executable << '"'
+                                      << " --version";
+  }
+
   virtual void configureDescription(const ConfigureContext&,
                                     StringRef value) override { }
   virtual void configureInputs(const ConfigureContext&,
@@ -214,6 +223,33 @@ class SwiftCompilerShellCommand : public ExternalCommand {
   
 public:
   using ExternalCommand::ExternalCommand;
+
+  virtual void getShortDescription(SmallVectorImpl<char> &result) override {
+      llvm::raw_svector_ostream(result)
+        << "Compiling Swift Module '" << moduleName
+        << "' (" << sourcesList.size() << " sources)";
+  }
+
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
+    SmallString<64> outputFileMapPath;
+    getOutputFileMapPath(outputFileMapPath);
+    
+    std::vector<StringRef> commandLine;
+    constructCommandLineArgs(outputFileMapPath, commandLine);
+    
+    llvm::raw_svector_ostream os(result);
+    bool first = true;
+    for (const auto& arg: commandLine) {
+      if (!first) os << " ";
+      first = false;
+      // FIXME: This isn't correct, we need utilities for doing shell quoting.
+      if (arg.find(' ') != StringRef::npos) {
+        os << '"' << arg << '"';
+      } else {
+        os << arg;
+      }
+    }
+  }
   
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
@@ -478,19 +514,7 @@ public:
               moduleName.c_str(), int(sourcesList.size()));
     } else {
       SmallString<256> command;
-      llvm::raw_svector_ostream commandOS(command);
-      bool first = true;
-      for (const auto& arg: commandLine) {
-        if (!first) commandOS << " ";
-        first = false;
-        // FIXME: This isn't correct, we need utilities for doing shell quoting.
-        if (arg.find(' ') != StringRef::npos) {
-          commandOS << '"' << arg << '"';
-        } else {
-          commandOS << arg;
-        }
-      }
-      commandOS.flush();
+      getVerboseDescription(command);
       fprintf(stdout, "%s\n", command.c_str());
     }
     fflush(stdout);

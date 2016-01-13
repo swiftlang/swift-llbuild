@@ -167,6 +167,25 @@ public:
 
   StringRef getName() const { return name; }
 
+  /// @name Command Information
+  /// @{
+  //
+  // FIXME: These probably don't belong here, clients generally can just manage
+  // the information from their commands directly and our predefined interfaces
+  // won't necessarily match what they want. However, we use them now to allow
+  // extracting generic status information from the builtin commands. An
+  // alternate solution would be to simply expose those command classes directly
+  // and provide some kind of dynamic dispatching mechanism (llvm::cast<>, for
+  // example) over commands.
+
+  /// Get a short description of the command, for use in status reporting.
+  virtual void getShortDescription(SmallVectorImpl<char> &result) = 0;
+
+  /// Get a verbose description of the command, for use in status reporting.
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) = 0;
+  
+  /// @}
+
   /// @name File Loading
   /// @{
 

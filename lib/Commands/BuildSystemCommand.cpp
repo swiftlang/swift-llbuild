@@ -104,6 +104,14 @@ public:
   ParseDummyCommand(ParseBuildFileDelegate& delegate, StringRef name)
       : Command(name), delegate(delegate) {}
 
+  virtual void getShortDescription(SmallVectorImpl<char> &result) override {
+    llvm::raw_svector_ostream(result) << "<dummy command>";
+  }
+
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
+    llvm::raw_svector_ostream(result) << "<dummy command>";
+  }
+
   virtual void configureDescription(const ConfigureContext&,
                                     StringRef description) override {
     if (delegate.shouldShowOutput()) {
