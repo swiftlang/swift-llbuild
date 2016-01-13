@@ -86,8 +86,8 @@ public:
                                core::Task* task) override {
     // Dispatch a task to query the compiler version.
     auto fn = [this, &bsci=bsci, task=task](QueueJobContext* context) {
-    // Suppress static analyzer false positive on generalized lambda capture
-    // (rdar://problem/22165130).
+      // Suppress static analyzer false positive on generalized lambda capture
+      // (rdar://problem/22165130).
 #ifndef __clang_analyzer__
       // Construct the command line used to query the swift compiler version.
       //
@@ -176,6 +176,45 @@ class SwiftCompilerShellCommand : public ExternalCommand {
     return result;
   }
 
+  /// Get the path to use for the output file map.
+  void getOutputFileMapPath(SmallVectorImpl<char>& result) const {
+    llvm::sys::path::append(result, tempsPath, "output-file-map.json");
+  }
+    
+  /// Compute the complete set of command line arguments to invoke swift with.
+  void constructCommandLineArgs(std::vector<StringRef>& result) const {
+    result.push_back(executable);
+    result.push_back("-module-name");
+    result.push_back(moduleName);
+    result.push_back("-incremental");
+    result.push_back("-emit-dependencies");
+    if (!moduleOutputPath.empty()) {
+      result.push_back("-emit-module");
+      result.push_back("-emit-module-path");
+      result.push_back(moduleOutputPath);
+    }
+    
+    SmallString<16> outputFileMapPath;
+    getOutputFileMapPath(outputFileMapPath);
+    result.push_back("-output-file-map");
+    result.push_back(outputFileMapPath);
+    
+    if (isLibrary) {
+      result.push_back("-parse-as-library");
+    }
+    result.push_back("-c");
+    for (const auto& source: sourcesList) {
+      result.push_back(source);
+    }
+    for (const auto& import: importPaths) {
+      result.push_back("-I");
+      result.push_back(import);
+    }
+    for (const auto& arg: otherArgs) {
+      result.push_back(arg);
+    }
+  }
+  
 public:
   using ExternalCommand::ExternalCommand;
   
@@ -241,8 +280,10 @@ public:
   }
 
   bool writeOutputFileMap(BuildSystemCommandInterface& bsci,
-                          StringRef outputFileMapPath,
                           std::vector<std::string>& depsFiles_out) const {
+    SmallString<16> outputFileMapPath;
+    getOutputFileMapPath(outputFileMapPath);
+    
     // FIXME: We need to properly escape everything we write here.
     assert(sourcesList.size() == objectsList.size());
     
@@ -422,43 +463,14 @@ public:
     // it only happens once per build.
     (void)llvm::sys::fs::create_directories(tempsPath, /*ignoreExisting=*/true);
     
-    // Construct the output file map.
-    SmallString<16> outputFileMapPath;
-    llvm::sys::path::append(
-        outputFileMapPath, tempsPath, "output-file-map.json");
-
-    std::vector<std::string> depsFiles;
-    if (!writeOutputFileMap(bsci, outputFileMapPath, depsFiles))
-      return false;
-    
     // Form the complete command.
     std::vector<StringRef> commandLine;
-    commandLine.push_back(executable);
-    commandLine.push_back("-module-name");
-    commandLine.push_back(moduleName);
-    commandLine.push_back("-incremental");
-    commandLine.push_back("-emit-dependencies");
-    if (!moduleOutputPath.empty()) {
-      commandLine.push_back("-emit-module");
-      commandLine.push_back("-emit-module-path");
-      commandLine.push_back(moduleOutputPath);
-    }
-    commandLine.push_back("-output-file-map");
-    commandLine.push_back(outputFileMapPath);
-    if (isLibrary) {
-      commandLine.push_back("-parse-as-library");
-    }
-    commandLine.push_back("-c");
-    for (const auto& source: sourcesList) {
-      commandLine.push_back(source);
-    }
-    for (const auto& import: importPaths) {
-      commandLine.push_back("-I");
-      commandLine.push_back(import);
-    }
-    for (const auto& arg: otherArgs) {
-      commandLine.push_back(arg);
-    }
+    constructCommandLineArgs(commandLine);
+
+    // Write the output file map.
+    std::vector<std::string> depsFiles;
+    if (!writeOutputFileMap(bsci, depsFiles))
+      return false;
       
     // Log the command.
     //
