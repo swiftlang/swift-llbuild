@@ -182,7 +182,8 @@ class SwiftCompilerShellCommand : public ExternalCommand {
   }
     
   /// Compute the complete set of command line arguments to invoke swift with.
-  void constructCommandLineArgs(std::vector<StringRef>& result) const {
+  void constructCommandLineArgs(StringRef outputFileMapPath,
+                                std::vector<StringRef>& result) const {
     result.push_back(executable);
     result.push_back("-module-name");
     result.push_back(moduleName);
@@ -193,12 +194,8 @@ class SwiftCompilerShellCommand : public ExternalCommand {
       result.push_back("-emit-module-path");
       result.push_back(moduleOutputPath);
     }
-    
-    SmallString<16> outputFileMapPath;
-    getOutputFileMapPath(outputFileMapPath);
     result.push_back("-output-file-map");
     result.push_back(outputFileMapPath);
-    
     if (isLibrary) {
       result.push_back("-parse-as-library");
     }
@@ -280,10 +277,8 @@ public:
   }
 
   bool writeOutputFileMap(BuildSystemCommandInterface& bsci,
+                          StringRef outputFileMapPath,
                           std::vector<std::string>& depsFiles_out) const {
-    SmallString<16> outputFileMapPath;
-    getOutputFileMapPath(outputFileMapPath);
-    
     // FIXME: We need to properly escape everything we write here.
     assert(sourcesList.size() == objectsList.size());
     
@@ -462,14 +457,17 @@ public:
     // FIXME: This should really be done using an additional implicit input, so
     // it only happens once per build.
     (void)llvm::sys::fs::create_directories(tempsPath, /*ignoreExisting=*/true);
+
+    SmallString<64> outputFileMapPath;
+    getOutputFileMapPath(outputFileMapPath);
     
     // Form the complete command.
     std::vector<StringRef> commandLine;
-    constructCommandLineArgs(commandLine);
+    constructCommandLineArgs(outputFileMapPath, commandLine);
 
     // Write the output file map.
     std::vector<std::string> depsFiles;
-    if (!writeOutputFileMap(bsci, depsFiles))
+    if (!writeOutputFileMap(bsci, outputFileMapPath, depsFiles))
       return false;
       
     // Log the command.
