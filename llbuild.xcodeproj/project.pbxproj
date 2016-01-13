@@ -170,6 +170,7 @@
 		E1B8395F1B541C6400DB876B /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
 		E1B839651B5420F500DB876B /* BuildSystemCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1B839641B5420F500DB876B /* BuildSystemCommand.cpp */; };
 		E1BE0AA61C458EB000AD0883 /* BuildExecutionQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1BE0AA51C458EB000AD0883 /* BuildExecutionQueue.cpp */; };
+		E1BE0AAE1C46F94000AD0883 /* core.h in Headers */ = {isa = PBXBuildFile; fileRef = E1BE0AAD1C46F93000AD0883 /* core.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		E1C404B11A0308F3003392BA /* NinjaPerfTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = E1C404B01A0308F3003392BA /* NinjaPerfTests.mm */; };
 		E1C404B91A030A1D003392BA /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
 		E1C404BA1A030A1D003392BA /* libllbuildCommands.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242E19F997050059043E /* libllbuildCommands.a */; };
@@ -827,6 +828,7 @@
 		E1B8395D1B541C4300DB876B /* BuildFile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuildFile.h; sourceTree = "<group>"; };
 		E1B839641B5420F500DB876B /* BuildSystemCommand.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildSystemCommand.cpp; sourceTree = "<group>"; };
 		E1BE0AA51C458EB000AD0883 /* BuildExecutionQueue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildExecutionQueue.cpp; sourceTree = "<group>"; };
+		E1BE0AAD1C46F93000AD0883 /* core.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core.h; sourceTree = "<group>"; };
 		E1C404AC1A0308F3003392BA /* PerfTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PerfTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1C404AF1A0308F3003392BA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E1C404B01A0308F3003392BA /* NinjaPerfTests.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = NinjaPerfTests.mm; sourceTree = "<group>"; };
@@ -1406,6 +1408,7 @@
 		E1ADC2331A85925800D5387C /* llbuild */ = {
 			isa = PBXGroup;
 			children = (
+				E1BE0AAD1C46F93000AD0883 /* core.h */,
 				E1ADC2351A8592AA00D5387C /* llbuild.h */,
 			);
 			path = llbuild;
@@ -1741,6 +1744,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E1D191CA1B472440000C4E95 /* llbuild.h in Headers */,
+				E1BE0AAE1C46F94000AD0883 /* core.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
