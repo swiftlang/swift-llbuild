@@ -14,6 +14,7 @@
 
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
+#include "llbuild/BuildSystem/BuildFile.h"
 
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/Format.h"
@@ -122,17 +123,42 @@ void BuildSystemInvocation::parse(llvm::ArrayRef<std::string> args,
 
 namespace {
 
+struct BuildSystemFrontendDelegateImpl;
+
 class BuildSystemFrontendExecutionQueueDelegate
-  : public BuildExecutionQueueDelegate
-{
+      : public BuildExecutionQueueDelegate {
+  BuildSystemFrontendDelegateImpl &delegateImpl;
+
+  bool showVerboseOutput() const;
+  
 public:
+  BuildSystemFrontendExecutionQueueDelegate(
+          BuildSystemFrontendDelegateImpl& delegateImpl)
+      : delegateImpl(delegateImpl) { }
+  
   virtual void commandStarted(Command*) override {
   }
 
   virtual void commandFinished(Command*) override {
   }
 
-  virtual void commandStartedProcess(Command*) override {
+  virtual void commandStartedProcess(Command* command) override {
+    // Log the command.
+    //
+    // FIXME: Design the logging and status output APIs.
+    SmallString<64> description;
+    if (showVerboseOutput()) {
+      command->getVerboseDescription(description);
+    } else {
+      command->getShortDescription(description);
+
+      // If the short description is empty, always show the verbose one.
+      if (description.empty()) {
+        command->getVerboseDescription(description);
+      }
+    }
+    fprintf(stdout, "%s\n", description.c_str());
+    fflush(stdout);
   }
   
   virtual void commandFinishedProcess(Command*, int exitStatus) override {
@@ -151,8 +177,13 @@ struct BuildSystemFrontendDelegateImpl {
   
   BuildSystemFrontendDelegateImpl(llvm::SourceMgr& sourceMgr,
                                   const BuildSystemInvocation& invocation)
-      : sourceMgr(sourceMgr), invocation(invocation) {}
+      : sourceMgr(sourceMgr), invocation(invocation),
+        executionQueueDelegate(*this) {}
 };
+
+bool BuildSystemFrontendExecutionQueueDelegate::showVerboseOutput() const {
+  return delegateImpl.invocation.showVerboseStatus;
+}
 
 }
 

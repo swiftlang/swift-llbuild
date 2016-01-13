@@ -868,18 +868,6 @@ public:
   virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
                                       Task* task,
                                       QueueJobContext* context) override {
-    // Log the command.
-    //
-    // FIXME: Design the logging and status output APIs.
-    if (bsci.getDelegate().showVerboseStatus() || getDescription().empty()) {
-      SmallString<256> command;
-      getVerboseDescription(command);
-      fprintf(stdout, "%s\n", command.c_str());
-    } else {
-      fprintf(stdout, "%s\n", getDescription().str().c_str());
-    }
-    fflush(stdout);
-
     // Execute the command.
     return bsci.getExecutionQueue().executeProcess(
         context, std::vector<StringRef>(args.begin(), args.end()));
@@ -1003,16 +991,6 @@ public:
   virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
                                       Task* task,
                                       QueueJobContext* context) override {
-    // Log the command.
-    //
-    // FIXME: Design the logging and status output APIs.
-    if (getDescription().empty()) {
-      fprintf(stdout, "%s\n", args.c_str());
-    } else {
-      fprintf(stdout, "%s\n", getDescription().str().c_str());
-    }
-    fflush(stdout);
-
     // Execute the command.
     if (!bsci.getExecutionQueue().executeShellCommand(context, args)) {
       // If the command failed, there is no need to gather dependencies.

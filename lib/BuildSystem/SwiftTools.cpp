@@ -505,19 +505,6 @@ public:
     std::vector<std::string> depsFiles;
     if (!writeOutputFileMap(bsci, outputFileMapPath, depsFiles))
       return false;
-      
-    // Log the command.
-    //
-    // FIXME: Design the logging and status output APIs.
-    if (!bsci.getDelegate().showVerboseStatus()) {
-      fprintf(stdout, "Compiling Swift Module '%s' (%d sources)\n",
-              moduleName.c_str(), int(sourcesList.size()));
-    } else {
-      SmallString<256> command;
-      getVerboseDescription(command);
-      fprintf(stdout, "%s\n", command.c_str());
-    }
-    fflush(stdout);
 
     // Execute the command.
     if (!bsci.getExecutionQueue().executeProcess(context, commandLine)) {
