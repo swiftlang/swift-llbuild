@@ -1,5 +1,6 @@
 add_llbuild_library(libllbuild
   C-API.cpp
+  Core-C-API.cpp
   SHARED
   OUTPUT_NAME llbuild)
 

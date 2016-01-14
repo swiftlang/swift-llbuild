@@ -184,6 +184,7 @@
 		E1D191CD1B472560000C4E95 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
 		E1DB70221A85978100891F4D /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
 		E1DB70231A85978900891F4D /* libllbuildCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243E19F997150059043E /* libllbuildCore.a */; };
+		E1DD22751C47259900555A5D /* Core-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1DD22741C47259900555A5D /* Core-C-API.cpp */; };
 		E1E221071A00689C00957481 /* BuildDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E221051A0067F800957481 /* BuildDB.cpp */; };
 		E1E221091A00B82100957481 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
 		E1E2210C1A015B9E00957481 /* SQLiteBuildDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E2210B1A015B9E00957481 /* SQLiteBuildDB.cpp */; };
@@ -836,6 +837,7 @@
 		E1D191B81B472305000C4E95 /* llbuild-module.modulemap */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.module-map"; path = "llbuild-module.modulemap"; sourceTree = "<group>"; };
 		E1D191BE1B47232B000C4E95 /* llbuild.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = llbuild.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1D191C61B472372000C4E95 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		E1DD22741C47259900555A5D /* Core-C-API.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "Core-C-API.cpp"; sourceTree = "<group>"; };
 		E1E221041A0067EF00957481 /* BuildDB.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuildDB.h; sourceTree = "<group>"; };
 		E1E221051A0067F800957481 /* BuildDB.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildDB.cpp; sourceTree = "<group>"; };
 		E1E221081A00B82100957481 /* libsqlite3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsqlite3.dylib; path = usr/lib/libsqlite3.dylib; sourceTree = SDKROOT; };
@@ -1391,6 +1393,7 @@
 				E1ADC2321A85923800D5387C /* Public API */,
 				E1ADC2301A85922F00D5387C /* CMakeLists.txt */,
 				E1ADC2311A85922F00D5387C /* C-API.cpp */,
+				E1DD22741C47259900555A5D /* Core-C-API.cpp */,
 			);
 			path = libllbuild;
 			sourceTree = "<group>";
@@ -2450,6 +2453,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E1ADC23E1A85938C00D5387C /* C-API.cpp in Sources */,
+				E1DD22751C47259900555A5D /* Core-C-API.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
