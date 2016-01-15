@@ -74,6 +74,9 @@
 		E10D5CE619FEF40100211ED4 /* LitTests.py in Resources */ = {isa = PBXBuildFile; fileRef = E10D5CE519FEF40100211ED4 /* LitTests.py */; };
 		E10FE0D71B7313D50059D086 /* DepsBuildEngineTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E10FE0D61B7313D50059D086 /* DepsBuildEngineTest.cpp */; };
 		E11470941B7555FA00ED84CF /* FileInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E11470931B7554F800ED84CF /* FileInfo.cpp */; };
+		E12BFF181C4972D900B8D20F /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
+		E12BFF191C4972E000B8D20F /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
+		E12BFF1A1C4972F000B8D20F /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
 		E12E12A91AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E12E12A71AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp */; };
 		E12E12AA1AD50AE600ACE7B3 /* CommandLineStatusOutput.h in Headers */ = {isa = PBXBuildFile; fileRef = E12E12A81AD50AE500ACE7B3 /* CommandLineStatusOutput.h */; };
 		E147DEFB1BA81CF70032D08E /* SerialQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E147DEFA1BA81CF70032D08E /* SerialQueue.cpp */; };
@@ -208,6 +211,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = E1B838981B52E7DE00DB876B;
 			remoteInfo = llvmSupport;
+		};
+		E12BFF161C4972C100B8D20F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1ADC2391A85936400D5387C;
+			remoteInfo = libllbuild;
 		};
 		E147DF001BA81D330032D08E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -970,6 +980,9 @@
 				E1B8393A1B52E8C100DB876B /* libllvmSupport.a in Frameworks */,
 				E1DB70221A85978100891F4D /* libllbuildBasic.a in Frameworks */,
 				E1DB70231A85978900891F4D /* libllbuildCore.a in Frameworks */,
+				E12BFF1A1C4972F000B8D20F /* libllbuildBuildSystem.a in Frameworks */,
+				E12BFF181C4972D900B8D20F /* libsqlite3.dylib in Frameworks */,
+				E12BFF191C4972E000B8D20F /* libcurses.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1774,6 +1787,7 @@
 				E147DF1E1BA81DB80032D08E /* PBXTargetDependency */,
 				E18043781A001E7600662FE7 /* PBXTargetDependency */,
 				E180437A1A001E7700662FE7 /* PBXTargetDependency */,
+				E12BFF171C4972C100B8D20F /* PBXTargetDependency */,
 			);
 			name = LitXCTestAdaptor;
 			productName = "llbuild Tests";
@@ -2550,6 +2564,11 @@
 			target = E1B838981B52E7DE00DB876B /* llvmSupport */;
 			targetProxy = E104FAFC1B655C3C005C68A0 /* PBXContainerItemProxy */;
 		};
+		E12BFF171C4972C100B8D20F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1ADC2391A85936400D5387C /* libllbuild */;
+			targetProxy = E12BFF161C4972C100B8D20F /* PBXContainerItemProxy */;
+		};
 		E147DEFF1BA81D330032D08E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = E1A224DC19F99B0E0059043E /* gtest */;
@@ -3211,6 +3230,7 @@
 			buildSettings = {
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				EXECUTABLE_PREFIX = lib;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/public-api";
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/lib";
@@ -3226,6 +3246,7 @@
 			buildSettings = {
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				EXECUTABLE_PREFIX = lib;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/public-api";
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/lib";
