@@ -219,6 +219,20 @@
 			remoteGlobalIDString = E1ADC2391A85936400D5387C;
 			remoteInfo = libllbuild;
 		};
+		E12BFF1B1C4975EB00B8D20F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1B838981B52E7DE00DB876B;
+			remoteInfo = llvmSupport;
+		};
+		E12BFF1D1C4975F000B8D20F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1B839481B541BFD00DB876B;
+			remoteInfo = llbuildBuildSystem;
+		};
 		E147DF001BA81D330032D08E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
@@ -2019,6 +2033,8 @@
 			dependencies = (
 				E1E15C531A859732002CD50D /* PBXTargetDependency */,
 				E1E15C571A859735002CD50D /* PBXTargetDependency */,
+				E12BFF1E1C4975F000B8D20F /* PBXTargetDependency */,
+				E12BFF1C1C4975EB00B8D20F /* PBXTargetDependency */,
 			);
 			name = libllbuild;
 			productName = libllbuild;
@@ -2568,6 +2584,16 @@
 			isa = PBXTargetDependency;
 			target = E1ADC2391A85936400D5387C /* libllbuild */;
 			targetProxy = E12BFF161C4972C100B8D20F /* PBXContainerItemProxy */;
+		};
+		E12BFF1C1C4975EB00B8D20F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1B838981B52E7DE00DB876B /* llvmSupport */;
+			targetProxy = E12BFF1B1C4975EB00B8D20F /* PBXContainerItemProxy */;
+		};
+		E12BFF1E1C4975F000B8D20F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1B839481B541BFD00DB876B /* llbuildBuildSystem */;
+			targetProxy = E12BFF1D1C4975F000B8D20F /* PBXContainerItemProxy */;
 		};
 		E147DEFF1BA81D330032D08E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
