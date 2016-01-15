@@ -28,7 +28,10 @@
 /// Get the full version of the llbuild library.
 LLBUILD_EXPORT const char* llb_get_full_version_string(void);
 
-// The core engine APIs.
+// The Core component.
 #include "core.h"
+
+// The BuildSystem component.
+#include "buildsystem.h"
 
 #endif

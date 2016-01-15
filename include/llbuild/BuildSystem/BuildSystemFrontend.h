@@ -64,7 +64,7 @@ public:
   /// @name Client API
   /// @{
 
-  /// Build the named target using the specified by the invocation parameters.
+  /// Build the named target using the specified invocation parameters.
   ///
   /// \returns True on success, or false if there were errors.
   bool build(StringRef targetToBuild);
@@ -159,10 +159,10 @@ public:
   /// The path of a directory to change into before anything else, if any.
   std::string chdirPath = "";
 
-  /// The name of the build file to use.
+  /// The path of the build file to use.
   std::string buildFilePath = "build.llbuild";
 
-  /// The name of the build trace output file to use, if any.
+  /// The path of the build trace output file to use, if any.
   std::string traceFilePath = "";
 
   /// The positional arguments.

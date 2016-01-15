@@ -1,4 +1,5 @@
 add_llbuild_library(libllbuild
+  BuildSystem-C-API.cpp
   C-API.cpp
   Core-C-API.cpp
   SHARED
@@ -7,9 +8,12 @@ add_llbuild_library(libllbuild
 set_property(TARGET libllbuild PROPERTY MACOSX_RPATH ON)
 
 target_link_libraries(libllbuild
+  llbuildBuildSystem
   llbuildCore
   llbuildBasic
+  llvmSupport
   sqlite3
+  curses
   )
 
 include_directories(BEFORE

@@ -10,7 +10,7 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// These are the C API interfaces to the llbuild Core subsystem.
+// These are the C API interfaces to the llbuild Core component.
 //
 //===----------------------------------------------------------------------===//
 
