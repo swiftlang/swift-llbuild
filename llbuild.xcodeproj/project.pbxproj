@@ -77,6 +77,8 @@
 		E1192CED1C49D84500F85890 /* buildsystem.h in Headers */ = {isa = PBXBuildFile; fileRef = E1192CEC1C49D84500F85890 /* buildsystem.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		E1192CEE1C49DBA600F85890 /* BuildSystem-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1DD22761C472A3F00555A5D /* BuildSystem-C-API.cpp */; };
 		E1192CEF1C49DBA900F85890 /* Core-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1DD22741C47259900555A5D /* Core-C-API.cpp */; };
+		E1192CF11C49DC3300F85890 /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
+		E1192CF21C49DC4F00F85890 /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
 		E12BFF181C4972D900B8D20F /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
 		E12BFF191C4972E000B8D20F /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
 		E12BFF1A1C4972F000B8D20F /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
@@ -214,6 +216,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = E1B838981B52E7DE00DB876B;
 			remoteInfo = llvmSupport;
+		};
+		E1192CF31C49DC6500F85890 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1B839481B541BFD00DB876B;
+			remoteInfo = llbuildBuildSystem;
 		};
 		E12BFF161C4972C100B8D20F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -1037,10 +1046,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E1D191CD1B472560000C4E95 /* libsqlite3.dylib in Frameworks */,
 				E1B839471B52EAAE00DB876B /* libllvmSupport.a in Frameworks */,
 				E1D191CB1B472554000C4E95 /* libllbuildBasic.a in Frameworks */,
 				E1D191CC1B472554000C4E95 /* libllbuildCore.a in Frameworks */,
+				E1192CF11C49DC3300F85890 /* libllbuildBuildSystem.a in Frameworks */,
+				E1D191CD1B472560000C4E95 /* libsqlite3.dylib in Frameworks */,
+				E1192CF21C49DC4F00F85890 /* libcurses.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2117,8 +2128,9 @@
 			);
 			dependencies = (
 				E1B839461B52EAA900DB876B /* PBXTargetDependency */,
-				E1B839441B52EAA500DB876B /* PBXTargetDependency */,
 				E1B839421B52EA9E00DB876B /* PBXTargetDependency */,
+				E1B839441B52EAA500DB876B /* PBXTargetDependency */,
+				E1192CF41C49DC6500F85890 /* PBXTargetDependency */,
 			);
 			name = "llbuild-framework";
 			productName = "llbuild-framework";
@@ -2587,6 +2599,11 @@
 			isa = PBXTargetDependency;
 			target = E1B838981B52E7DE00DB876B /* llvmSupport */;
 			targetProxy = E104FAFC1B655C3C005C68A0 /* PBXContainerItemProxy */;
+		};
+		E1192CF41C49DC6500F85890 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1B839481B541BFD00DB876B /* llbuildBuildSystem */;
+			targetProxy = E1192CF31C49DC6500F85890 /* PBXContainerItemProxy */;
 		};
 		E12BFF171C4972C100B8D20F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
