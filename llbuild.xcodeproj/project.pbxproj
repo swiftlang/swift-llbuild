@@ -74,10 +74,12 @@
 		E10D5CE619FEF40100211ED4 /* LitTests.py in Resources */ = {isa = PBXBuildFile; fileRef = E10D5CE519FEF40100211ED4 /* LitTests.py */; };
 		E10FE0D71B7313D50059D086 /* DepsBuildEngineTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E10FE0D61B7313D50059D086 /* DepsBuildEngineTest.cpp */; };
 		E11470941B7555FA00ED84CF /* FileInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E11470931B7554F800ED84CF /* FileInfo.cpp */; };
+		E1192CED1C49D84500F85890 /* buildsystem.h in Headers */ = {isa = PBXBuildFile; fileRef = E1192CEC1C49D84500F85890 /* buildsystem.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E1192CEE1C49DBA600F85890 /* BuildSystem-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1DD22761C472A3F00555A5D /* BuildSystem-C-API.cpp */; };
+		E1192CEF1C49DBA900F85890 /* Core-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1DD22741C47259900555A5D /* Core-C-API.cpp */; };
 		E12BFF181C4972D900B8D20F /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
 		E12BFF191C4972E000B8D20F /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
 		E12BFF1A1C4972F000B8D20F /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
-		E1192CED1C49D84500F85890 /* buildsystem.h in Headers */ = {isa = PBXBuildFile; fileRef = E1192CEC1C49D84500F85890 /* buildsystem.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		E12E12A91AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E12E12A71AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp */; };
 		E12E12AA1AD50AE600ACE7B3 /* CommandLineStatusOutput.h in Headers */ = {isa = PBXBuildFile; fileRef = E12E12A81AD50AE500ACE7B3 /* CommandLineStatusOutput.h */; };
 		E147DEFB1BA81CF70032D08E /* SerialQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E147DEFA1BA81CF70032D08E /* SerialQueue.cpp */; };
@@ -2568,6 +2570,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				E1D191C91B472437000C4E95 /* C-API.cpp in Sources */,
+				E1192CEE1C49DBA600F85890 /* BuildSystem-C-API.cpp in Sources */,
+				E1192CEF1C49DBA900F85890 /* Core-C-API.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
