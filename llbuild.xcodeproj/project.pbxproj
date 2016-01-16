@@ -77,6 +77,7 @@
 		E12BFF181C4972D900B8D20F /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
 		E12BFF191C4972E000B8D20F /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
 		E12BFF1A1C4972F000B8D20F /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
+		E1192CED1C49D84500F85890 /* buildsystem.h in Headers */ = {isa = PBXBuildFile; fileRef = E1192CEC1C49D84500F85890 /* buildsystem.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		E12E12A91AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E12E12A71AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp */; };
 		E12E12AA1AD50AE600ACE7B3 /* CommandLineStatusOutput.h in Headers */ = {isa = PBXBuildFile; fileRef = E12E12A81AD50AE500ACE7B3 /* CommandLineStatusOutput.h */; };
 		E147DEFB1BA81CF70032D08E /* SerialQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E147DEFA1BA81CF70032D08E /* SerialQueue.cpp */; };
@@ -614,6 +615,7 @@
 		E11470911B7517C800ED84CF /* BuildValue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuildValue.h; sourceTree = "<group>"; };
 		E11470921B752E7000ED84CF /* BuildKey.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildKey.h; sourceTree = "<group>"; };
 		E11470931B7554F800ED84CF /* FileInfo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FileInfo.cpp; sourceTree = "<group>"; };
+		E1192CEC1C49D84500F85890 /* buildsystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = buildsystem.h; sourceTree = "<group>"; };
 		E12E12A71AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CommandLineStatusOutput.cpp; sourceTree = "<group>"; };
 		E12E12A81AD50AE500ACE7B3 /* CommandLineStatusOutput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CommandLineStatusOutput.h; sourceTree = "<group>"; };
 		E147DEFA1BA81CF70032D08E /* SerialQueue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SerialQueue.cpp; sourceTree = "<group>"; };
@@ -1441,6 +1443,7 @@
 		E1ADC2331A85925800D5387C /* llbuild */ = {
 			isa = PBXGroup;
 			children = (
+				E1192CEC1C49D84500F85890 /* buildsystem.h */,
 				E1BE0AAD1C46F93000AD0883 /* core.h */,
 				E1ADC2351A8592AA00D5387C /* llbuild.h */,
 			);
@@ -1778,6 +1781,7 @@
 			files = (
 				E1D191CA1B472440000C4E95 /* llbuild.h in Headers */,
 				E1BE0AAE1C46F94000AD0883 /* core.h in Headers */,
+				E1192CED1C49D84500F85890 /* buildsystem.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
