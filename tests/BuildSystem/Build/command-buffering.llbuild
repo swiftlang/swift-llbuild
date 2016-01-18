@@ -1,0 +1,57 @@
+# Verify that we buffer command output, by using the same trick as our parallel test.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.llbuild
+# RUN: cp %S/Inputs/wait-for-file %t.build
+# RUN: %{llbuild} buildsystem build --chdir %t.build --no-db &> %t.out
+# RUN: %{FileCheck} --check-prefix=CHECK-A --input-file %t.out %s
+# RUN: %{FileCheck} --check-prefix=CHECK-B --input-file %t.out %s
+#
+# CHECK-A: [A] touching B semaphore
+# CHECK-A-NEXT: [A] waiting for A semaphore
+# CHECK-A-NEXT: waiting for file 'node-A-semaphore'
+# CHECK-A-NEXT: file exists
+# CHECK-A-NEXT: [A] done
+#
+# CHECK-B: [B] touching A semaphore
+# CHECK-B-NEXT: [B] waiting for B semaphore
+# CHECK-B-NEXT: waiting for file 'node-B-semaphore'
+# CHECK-B-NEXT: file exists
+# CHECK-B-NEXT: [B] done
+
+client:
+  name: basic
+
+targets:
+  "": ["<node-A>", "<node-B>"]
+
+commands:
+  "<cleanup>":
+    tool: shell
+    outputs: ["<cleanup>"]
+    args: "rm -f node-{A,B}-semaphore"
+    
+  node-A:
+    tool: shell
+    inputs: ["<cleanup>"]
+    outputs: ["<node-A>"]
+    description: "<node-A>"
+    args:
+      echo "[A] touching B semaphore" &&
+      touch node-B-semaphore &&
+      echo "[A] waiting for A semaphore" &&
+      ./wait-for-file node-A-semaphore &&
+      echo "[A] done"
+  
+  node-B:
+    tool: shell
+    inputs: ["<cleanup>"]
+    outputs: ["<node-B>"]
+    description: "<node-B>"
+    args:
+      echo "[B] touching A semaphore" &&
+      touch node-A-semaphore &&
+      echo "[B] waiting for B semaphore" &&
+      ./wait-for-file node-B-semaphore &&
+      echo "[B] done"

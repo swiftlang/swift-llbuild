@@ -177,6 +177,13 @@ public:
   /// to be unique from when it has been provided here to when it has been
   /// provided to the \see commandProcessFinished() call.
   virtual void commandProcessStarted(Command*, ProcessHandle handle) = 0;
+
+  /// Called to report a command processes' (merged) standard output and error.
+  ///
+  /// \param handle - The process handle.
+  /// \param data - The process output.
+  virtual void commandProcessHadOutput(Command*, ProcessHandle handle,
+                                       StringRef data) = 0;
   
   /// Called when a command's job has finished executing an external process.
   ///

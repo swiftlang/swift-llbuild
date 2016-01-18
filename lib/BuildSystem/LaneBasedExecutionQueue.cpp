@@ -126,7 +126,10 @@ public:
     // are communicating with the delegate.
     struct BuildExecutionQueueDelegate::ProcessHandle handle;
     handle.id = reinterpret_cast<uintptr_t>(&handle);
-    
+
+    // Whether or not we are capturing output.
+    const bool shouldCaptureOutput = true;
+
     LaneBasedExecutionQueueJobContext& context =
       *reinterpret_cast<LaneBasedExecutionQueueJobContext*>(opaqueContext);
     getDelegate().commandProcessStarted(context.job.getForCommand(), handle);
@@ -183,8 +186,31 @@ public:
     // Open /dev/null as stdin.
     posix_spawn_file_actions_addopen(
         &fileActions, 0, "/dev/null", O_RDONLY, 0);
-    posix_spawn_file_actions_adddup2(&fileActions, 1, 1);
-    posix_spawn_file_actions_adddup2(&fileActions, 2, 2);
+
+    // If we are capturing output, create a pipe and appropriate spawn actions.
+    int outputPipe[2]{ -1, -1 };
+    if (shouldCaptureOutput) {
+      if (::pipe(outputPipe) < 0) {
+        // FIXME: Error handling.
+        fprintf(stderr, "error: unable to spawn process (%s)\n",
+                strerror(errno));
+        getDelegate().commandProcessFinished(context.job.getForCommand(),
+                                             handle, -1);
+        return false;
+      }
+
+      // Open the write end of the pipe as stdout and stderr.
+      posix_spawn_file_actions_adddup2(&fileActions, outputPipe[1], 1);
+      posix_spawn_file_actions_adddup2(&fileActions, outputPipe[1], 2);
+
+      // Close the read and write ends of the pipe.
+      posix_spawn_file_actions_addclose(&fileActions, outputPipe[0]);
+      posix_spawn_file_actions_addclose(&fileActions, outputPipe[1]);
+    } else {
+      // Otherwise, propagate the current stdout/stderr.
+      posix_spawn_file_actions_adddup2(&fileActions, 1, 1);
+      posix_spawn_file_actions_adddup2(&fileActions, 2, 2);
+    }
 
     // Form the complete C-string command line.
     std::vector<std::string> argsStorage(
@@ -225,6 +251,33 @@ public:
     posix_spawn_file_actions_destroy(&fileActions);
     posix_spawnattr_destroy(&attributes);
 
+    // Read the command output, if capturing.
+    SmallString<1024> outputData;
+    if (shouldCaptureOutput) {
+      // Close the write end of the output pipe.
+      ::close(outputPipe[1]);
+
+      // Read all the data from the output pipe.
+      while (true) {
+        char buf[4096];
+        ssize_t numBytes = read(outputPipe[0], buf, sizeof(buf));
+        if (numBytes < 0) {
+          // FIXME: Error handling.
+          fprintf(stderr, "error: unable to read from output pipe (%s)\n",
+                  strerror(errno));
+          break;
+        }
+
+        if (numBytes == 0)
+          break;
+
+        outputData.insert(outputData.end(), &buf[0], &buf[numBytes]);
+      }
+
+      // Close the read end of the pipe.
+      ::close(outputPipe[0]);
+    }
+    
     // Wait for the command to complete.
     int status, result = waitpid(pid, &status, 0);
     while (result == -1 && errno == EINTR)
@@ -239,6 +292,12 @@ public:
       return false;
     }
 
+    // Notify the client of the output, if buffering.
+    if (shouldCaptureOutput) {
+      getDelegate().commandProcessHadOutput(context.job.getForCommand(), handle,
+                                            outputData);
+    }
+    
     // Notify of the process completion.
     getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
                                          status);

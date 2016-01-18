@@ -161,6 +161,13 @@ public:
     fprintf(stdout, "%s\n", description.c_str());
     fflush(stdout);
   }
+  
+  virtual void commandProcessHadOutput(Command* command, ProcessHandle handle,
+                                       StringRef data) override {
+    // FIXME: Design the logging and status output APIs.
+    fwrite(data.data(), data.size(), 1, stdout);
+    fflush(stdout);
+  }
 
   virtual void commandProcessFinished(Command*, ProcessHandle handle,
                                       int exitStatus) override {

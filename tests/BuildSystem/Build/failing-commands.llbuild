@@ -5,24 +5,23 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.llbuild
-# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.out 2> %t.err || true
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.out || true
 # RUN: test ! -f %t.build/output
 # RUN: %{FileCheck} %s --input-file %t.out --check-prefix=CHECK-FAILURE
-# RUN: %{FileCheck} %s --input-file %t.err --check-prefix=CHECK-FAILURE-ERR
 #
 # CHECK-FAILURE: cp input output-1
+# CHECK-FAILURE: cp: {{.*}}input{{.*}}: No such file or directory
 # CHECK-FAILURE-NOT: cp output-1 output
-# CHECK-FAILURE-ERR: cp: {{.*}}input{{.*}}: No such file or directory
-# CHECK-FAILURE-ERR-NOT: cp: {{.*}}output-1{{.*}}: No such file or directory
+# CHECK-FAILURE-NOT: cp: {{.*}}output-1{{.*}}: No such file or directory
 
 
 # Rebuild and verify the command reruns.
 #
-# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t2.out 2> %t2.err || true
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t2.out || true
 # RUN: test ! -f %t.build/output
-# RUN: %{FileCheck} %s --input-file %t2.err --check-prefix=CHECK-FAILURE-REBUILD-ERR
+# RUN: %{FileCheck} %s --input-file %t2.out --check-prefix=CHECK-FAILURE-REBUILD
 #
-# CHECK-FAILURE-REBUILD-ERR: cp: {{.*}}input{{.*}}: No such file or directory
+# CHECK-FAILURE-REBUILD: cp: {{.*}}input{{.*}}: No such file or directory
 
 
 # Create the missing input, and verify everything works. Aside from the obvious,
