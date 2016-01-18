@@ -4,7 +4,7 @@
 # RUN: mkdir -p %t.build
 # RUN: touch "%t.build/input A"
 # RUN: cp %s %t.build/build.llbuild
-# RUN: %{llbuild} buildsystem build --chdir %t.build --trace %t.trace > %t.out
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build --trace %t.trace > %t.out
 # RUN: %{FileCheck} < %t.out %s
 # RUN: diff "%t.build/input A" %t.build/output
 #
@@ -23,7 +23,7 @@
 
 # Check that a null build does nothing.
 #
-# RUN: %{llbuild} buildsystem build --chdir %t.build > %t2.out
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t2.out
 # RUN: echo "PREVENT-EMPTY-FILE" >> %t2.out
 # RUN: %{FileCheck} < %t2.out %s --check-prefix=CHECK-REBUILD
 #
@@ -32,7 +32,7 @@
 # Check that we properly copy the output when the input changes.
 #
 # RUN: echo mod >> "%t.build/input A"
-# RUN: %{llbuild} buildsystem build --chdir %t.build > %t3.out
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t3.out
 # RUN: %{FileCheck} < %t3.out %s --check-prefix=CHECK-REBUILD-MODIFIED
 # RUN: diff "%t.build/input A" %t.build/output
 #
@@ -41,7 +41,7 @@
 # Check that we properly copy the output when the output isn't present.
 #
 # RUN: rm -rf %t.build/output
-# RUN: %{llbuild} buildsystem build --chdir %t.build > %t4.out
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t4.out
 # RUN: %{FileCheck} < %t4.out %s --check-prefix=CHECK-REBUILD-OUTPUT-REMOVED
 # RUN: diff "%t.build/input A" %t.build/output
 #

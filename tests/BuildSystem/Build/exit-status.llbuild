@@ -3,13 +3,13 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.llbuild
-# RUN: /bin/sh -c "%{llbuild} buildsystem build --chdir %t.build; echo \"exit code: $?\"" > %t.out
+# RUN: /bin/sh -c "%{llbuild} buildsystem build --serial --chdir %t.build; echo \"exit code: $?\"" > %t.out
 # RUN: %{FileCheck} < %t.out %s
 
 # Check that we error on invalid build files.
 #
 # RUN: echo "bogus" > %t.build/bogus.llbuild
-# RUN: /bin/sh -c "%{llbuild} buildsystem build --chdir %t.build -f bogus.llbuild; echo \"exit code: $?\"" > %t.out
+# RUN: /bin/sh -c "%{llbuild} buildsystem build --serial --chdir %t.build -f bogus.llbuild; echo \"exit code: $?\"" > %t.out
 # RUN: %{FileCheck} < %t.out %s
 
 # CHECK: exit code: 1

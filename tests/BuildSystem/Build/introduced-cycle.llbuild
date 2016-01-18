@@ -6,11 +6,11 @@
 # RUN: mkdir -p %t.build
 #
 # RUN: grep -A1000 "VERSION-BEGIN-[1]" %s | grep -B10000 "VERSION-END-1" | grep -ve '^--$' > %t.build/build-1.llbuild
-# RUN: %{llbuild} buildsystem build --chdir %t.build -f build-1.llbuild > %t1.out
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build -f build-1.llbuild > %t1.out
 # RUN: %{FileCheck} --check-prefix CHECK-VERSION-1 --input-file %t1.out %s
 #
 # RUN: grep -A1000 "VERSION-BEGIN-[2]" %s | grep -B10000 "VERSION-END-2" | grep -ve '^--$' > %t.build/build-2.llbuild
-# RUN: %{llbuild} buildsystem build --chdir %t.build -f build-2.llbuild > %t2.out 2> %t2.err || true
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build -f build-2.llbuild > %t2.out 2> %t2.err || true
 # RUN: echo "END-OF-FILE" >> %t2.out
 # RUN: %{FileCheck} --check-prefix CHECK-VERSION-2 --input-file %t2.out %s
 # RUN: %{FileCheck} --check-prefix CHECK-VERSION-2-ERR --input-file %t2.err %s

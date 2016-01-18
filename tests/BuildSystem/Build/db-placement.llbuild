@@ -4,7 +4,7 @@
 # RUN: mkdir -p %t.build/subdir
 # RUN: cp %s %t.build/subdir/build.llbuild
 # RUN: touch %t.build/subdir/input
-# RUN: %{llbuild} buildsystem build --chdir %t.build -f subdir/build.llbuild > %t.out
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build -f subdir/build.llbuild > %t.out
 # RUN: %{FileCheck} --input-file %t.out %s
 # RUN: test -f %t.build/subdir/build.db
 #

@@ -4,7 +4,7 @@
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.llbuild
 # RUN: echo "INITIAL" > %t.build/input-1
-# RUN: %{llbuild} buildsystem build --chdir %t.build > %t.out
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.out
 # RUN: test -f %t.build/output-1
 # RUN: %{FileCheck} --check-prefix=CHECK-INITIAL-OUTPUT-1 --input-file %t.build/output-1 %s
 # RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file %t.out %s
@@ -18,7 +18,7 @@
 # Verify that a rebuild after modifying the input performs as expected.
 #
 # RUN: echo "REBUILD" >> %t.build/input-1
-# RUN: %{llbuild} buildsystem build --chdir %t.build > %t.out
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.out
 # RUN: test -f %t.build/output-1
 # RUN: %{FileCheck} --check-prefix=CHECK-REBUILD-OUTPUT-1 --input-file %t.build/output-1 %s
 # RUN: %{FileCheck} --check-prefix=CHECK-REBUILD --input-file %t.out %s

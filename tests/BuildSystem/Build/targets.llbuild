@@ -5,12 +5,12 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.llbuild
-# RUN: %{llbuild} buildsystem build --chdir %t.build > %t-A.out
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t-A.out
 # RUN: %{FileCheck} --input-file %t-A.out %s --check-prefix=CHECK-A
 #
 # CHECK-A: echo target-A
 
-# RUN: %{llbuild} buildsystem build --chdir %t.build B > %t-B.out
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build B > %t-B.out
 # RUN: %{FileCheck} --input-file %t-B.out %s --check-prefix=CHECK-B
 #
 # CHECK-B: echo target-B
