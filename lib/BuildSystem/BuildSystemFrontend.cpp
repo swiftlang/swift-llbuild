@@ -142,7 +142,7 @@ public:
   virtual void commandFinished(Command*) override {
   }
 
-  virtual void commandStartedProcess(Command* command,
+  virtual void commandProcessStarted(Command* command,
                                      ProcessHandle handle) override {
     // Log the command.
     //
@@ -162,7 +162,7 @@ public:
     fflush(stdout);
   }
 
-  virtual void commandFinishedProcess(Command*, ProcessHandle handle,
+  virtual void commandProcessFinished(Command*, ProcessHandle handle,
                                       int exitStatus) override {
   }
 };

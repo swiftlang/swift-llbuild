@@ -127,6 +127,10 @@ public:
 };
 
 /// Delegate interface for execution queue status.
+///
+/// All delegate interfaces are invoked synchronously by the execution queue,
+/// and should defer any long running operations to avoid blocking the queue
+/// unnecessarily.
 class BuildExecutionQueueDelegate {
   // DO NOT COPY
   BuildExecutionQueueDelegate(const BuildExecutionQueueDelegate&)
@@ -147,7 +151,7 @@ public:
   BuildExecutionQueueDelegate() {}
   virtual ~BuildExecutionQueueDelegate();
 
-  /// Invoked synchronously when a command's job has been started.
+  /// Called when a command's job has been started.
   ///
   /// The queue guarantees that any commandStart() call will be paired with
   /// exactly one \see commandFinished() call.
@@ -162,21 +166,19 @@ public:
   /// Invoked synchronously when a command's job has been finished.
   virtual void commandFinished(Command*) = 0;
 
-  /// Invoked synchronously when a command's job has started executing an
-  /// external process.
+  /// Called when a command's job has started executing an external process.
   ///
-  /// The queue guarantees that any commandStartedProcess() call will be paired
-  /// with exactly one \see commandFinishedProcess() call.
+  /// The queue guarantees that any commandProcessStarted() call will be paired
+  /// with exactly one \see commandProcessFinished() call.
   ///
   /// \param handle - A unique handle used in subsequent delegate calls to
   /// identify the process. This handle should only be used to associate
   /// different status calls relating to the same process. It is only guaranteed
   /// to be unique from when it has been provided here to when it has been
-  /// provided to the \see commandFinishedProcess() call.
-  virtual void commandStartedProcess(Command*, ProcessHandle handle) = 0;
+  /// provided to the \see commandProcessFinished() call.
+  virtual void commandProcessStarted(Command*, ProcessHandle handle) = 0;
   
-  /// Invoked synchronously when a command's job has finished executing an
-  /// external process.
+  /// Called when a command's job has finished executing an external process.
   ///
   /// \param handle - The handle used to identify the process. This handle will
   /// become invalid as soon as the client returns from this API call.
@@ -185,7 +187,7 @@ public:
   //
   // FIXME: Need to include additional information on the status here, e.g., the
   // signal status, and the process output (if buffering).
-  virtual void commandFinishedProcess(Command*, ProcessHandle handle,
+  virtual void commandProcessFinished(Command*, ProcessHandle handle,
                                       int exitStatus) = 0;
 };
 

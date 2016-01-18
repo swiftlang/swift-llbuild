@@ -129,7 +129,7 @@ public:
     
     LaneBasedExecutionQueueJobContext& context =
       *reinterpret_cast<LaneBasedExecutionQueueJobContext*>(opaqueContext);
-    getDelegate().commandStartedProcess(context.job.getForCommand(), handle);
+    getDelegate().commandProcessStarted(context.job.getForCommand(), handle);
     
     // Initialize the spawn attributes.
     posix_spawnattr_t attributes;
@@ -217,7 +217,7 @@ public:
       // FIXME: Error handling.
       fprintf(stderr, "error: unable to spawn process (%s)\n", strerror(errno));
       // FIXME: Communicate error status appropriately.
-      getDelegate().commandFinishedProcess(context.job.getForCommand(), handle,
+      getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
                                            -1);
       return false;
     }
@@ -234,13 +234,13 @@ public:
       fprintf(stderr, "error: unable to wait for process (%s)\n",
               strerror(errno));
       // FIXME: Communicate error status appropriately.
-      getDelegate().commandFinishedProcess(context.job.getForCommand(), handle,
+      getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
                                            -1);
       return false;
     }
 
-    // If the child failed, show the full command and the output.
-    getDelegate().commandFinishedProcess(context.job.getForCommand(), handle,
+    // Notify of the process completion.
+    getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
                                          status);
     return (status == 0);
   }
