@@ -142,7 +142,8 @@ public:
   virtual void commandFinished(Command*) override {
   }
 
-  virtual void commandStartedProcess(Command* command) override {
+  virtual void commandStartedProcess(Command* command,
+                                     ProcessHandle handle) override {
     // Log the command.
     //
     // FIXME: Design the logging and status output APIs.
@@ -160,8 +161,9 @@ public:
     fprintf(stdout, "%s\n", description.c_str());
     fflush(stdout);
   }
-  
-  virtual void commandFinishedProcess(Command*, int exitStatus) override {
+
+  virtual void commandFinishedProcess(Command*, ProcessHandle handle,
+                                      int exitStatus) override {
   }
 };
 

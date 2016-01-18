@@ -122,9 +122,14 @@ public:
 
   virtual bool executeProcess(QueueJobContext* opaqueContext,
                               ArrayRef<StringRef> commandLine) override {
+    // Assign a process handle, which just needs to be unique for as long as we
+    // are communicating with the delegate.
+    struct BuildExecutionQueueDelegate::ProcessHandle handle;
+    handle.id = reinterpret_cast<uintptr_t>(&handle);
+    
     LaneBasedExecutionQueueJobContext& context =
       *reinterpret_cast<LaneBasedExecutionQueueJobContext*>(opaqueContext);
-    getDelegate().commandStartedProcess(context.job.getForCommand());
+    getDelegate().commandStartedProcess(context.job.getForCommand(), handle);
     
     // Initialize the spawn attributes.
     posix_spawnattr_t attributes;
@@ -212,7 +217,8 @@ public:
       // FIXME: Error handling.
       fprintf(stderr, "error: unable to spawn process (%s)\n", strerror(errno));
       // FIXME: Communicate error status appropriately.
-      getDelegate().commandFinishedProcess(context.job.getForCommand(), -1);
+      getDelegate().commandFinishedProcess(context.job.getForCommand(), handle,
+                                           -1);
       return false;
     }
 
@@ -228,12 +234,14 @@ public:
       fprintf(stderr, "error: unable to wait for process (%s)\n",
               strerror(errno));
       // FIXME: Communicate error status appropriately.
-      getDelegate().commandFinishedProcess(context.job.getForCommand(), -1);
+      getDelegate().commandFinishedProcess(context.job.getForCommand(), handle,
+                                           -1);
       return false;
     }
 
     // If the child failed, show the full command and the output.
-    getDelegate().commandFinishedProcess(context.job.getForCommand(), status);
+    getDelegate().commandFinishedProcess(context.job.getForCommand(), handle,
+                                         status);
     return (status == 0);
   }
 };

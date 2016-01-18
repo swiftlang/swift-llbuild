@@ -18,6 +18,7 @@
 
 #include "llvm/ADT/StringRef.h"
 
+#include <cstdint>
 #include <functional>
 
 namespace llbuild {
@@ -136,6 +137,13 @@ class BuildExecutionQueueDelegate {
     LLBUILD_DELETED_FUNCTION;
 
 public:
+  /// Handle used to communicate information about a launched process.
+  struct ProcessHandle {
+    /// Opaque ID.
+    uintptr_t id;
+  };
+  
+public:
   BuildExecutionQueueDelegate() {}
   virtual ~BuildExecutionQueueDelegate();
 
@@ -159,16 +167,26 @@ public:
   ///
   /// The queue guarantees that any commandStartedProcess() call will be paired
   /// with exactly one \see commandFinishedProcess() call.
-  virtual void commandStartedProcess(Command*) = 0;
+  ///
+  /// \param handle - A unique handle used in subsequent delegate calls to
+  /// identify the process. This handle should only be used to associate
+  /// different status calls relating to the same process. It is only guaranteed
+  /// to be unique from when it has been provided here to when it has been
+  /// provided to the \see commandFinishedProcess() call.
+  virtual void commandStartedProcess(Command*, ProcessHandle handle) = 0;
   
   /// Invoked synchronously when a command's job has finished executing an
   /// external process.
+  ///
+  /// \param handle - The handle used to identify the process. This handle will
+  /// become invalid as soon as the client returns from this API call.
   ///
   /// \param exitStatus - The exit status of the process.
   //
   // FIXME: Need to include additional information on the status here, e.g., the
   // signal status, and the process output (if buffering).
-  virtual void commandFinishedProcess(Command*, int exitStatus) = 0;
+  virtual void commandFinishedProcess(Command*, ProcessHandle handle,
+                                      int exitStatus) = 0;
 };
 
 /// Create an execution queue that schedules jobs to individual lanes with a
