@@ -139,39 +139,36 @@ public:
       : delegateImpl(delegateImpl) { }
   
   virtual void commandStarted(Command* command) override {
-    // FIXME: This doesn't belong here, it shouldn't be a property of the
-    // execution queue delegate that the system status APIs are honored.
-    getSystem().getDelegate().commandStarted(command);
+    static_cast<BuildSystemFrontendDelegate*>(&getSystem().getDelegate())->
+      commandStarted(command);
   }
 
   virtual void commandFinished(Command* command) override {
-    // FIXME: This doesn't belong here, it shouldn't be a property of the
-    // execution queue delegate that the system status APIs are honored.
-    getSystem().getDelegate().commandFinished(command);
+    static_cast<BuildSystemFrontendDelegate*>(&getSystem().getDelegate())->
+      commandFinished(command);
   }
 
   virtual void commandProcessStarted(Command* command,
                                      ProcessHandle handle) override {
-    // FIXME: This doesn't belong here, it shouldn't be a property of the
-    // execution queue delegate that the system status APIs are honored.
-    getSystem().getDelegate().commandProcessStarted(
-        command, BuildSystemDelegate::ProcessHandle { handle.id });
+    static_cast<BuildSystemFrontendDelegate*>(&getSystem().getDelegate())->
+      commandProcessStarted(
+          command, BuildSystemFrontendDelegate::ProcessHandle { handle.id });
   }
   
   virtual void commandProcessHadOutput(Command* command, ProcessHandle handle,
                                        StringRef data) override {
-    // FIXME: This doesn't belong here, it shouldn't be a property of the
-    // execution queue delegate that the system status APIs are honored.
-    getSystem().getDelegate().commandProcessHadOutput(
-        command, BuildSystemDelegate::ProcessHandle { handle.id }, data);
+    static_cast<BuildSystemFrontendDelegate*>(&getSystem().getDelegate())->
+      commandProcessHadOutput(
+          command, BuildSystemFrontendDelegate::ProcessHandle { handle.id },
+          data);
   }
 
   virtual void commandProcessFinished(Command* command, ProcessHandle handle,
                                       int exitStatus) override {
-    // FIXME: This doesn't belong here, it shouldn't be a property of the
-    // execution queue delegate that the system status APIs are honored.
-    getSystem().getDelegate().commandProcessFinished(
-        command, BuildSystemDelegate::ProcessHandle { handle.id }, exitStatus);
+    static_cast<BuildSystemFrontendDelegate*>(&getSystem().getDelegate())->
+      commandProcessFinished(
+          command, BuildSystemFrontendDelegate::ProcessHandle { handle.id },
+          exitStatus);
   }
 };
 

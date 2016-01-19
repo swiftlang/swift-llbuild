@@ -76,6 +76,13 @@ public:
 class BuildSystemFrontendDelegate : public BuildSystemDelegate {
   friend class BuildSystemFrontend;
   
+public:
+  /// Handle used to communicate information about a launched process.
+  struct ProcessHandle {
+    /// Opaque ID.
+    uintptr_t id;
+  };
+  
 private:
   void* impl;
 
@@ -124,27 +131,59 @@ public:
   
   /// @}
 
-  /// @name Default Status Reporting APIs
+  /// @name Status Reporting APIs
   ///
   /// The frontend provides default implementations of these methods which
   /// report the status to stdout. Clients should override if they wish to
   /// direct the status elsewhere.
   ///
-  /// \see BuildSystemDelegate for information on the APIs.
-  ///
   /// @{
 
-  virtual void commandStarted(Command*) override;
+  /// Called when a command's job has been started.
+  ///
+  /// The queue guarantees that any commandStart() call will be paired with
+  /// exactly one \see commandFinished() call.
+  //
+  // FIXME: We may eventually want to allow the individual job to provide some
+  // additional context here, for complex commands.
+  //
+  // FIXME: Design a way to communicate the "lane" here, for use in "super
+  // console" like UIs.
+  virtual void commandStarted(Command*);
 
-  virtual void commandFinished(Command*) override;
+  /// Called when a command's job has been finished.
+  virtual void commandFinished(Command*);
 
-  virtual void commandProcessStarted(Command*, ProcessHandle handle) override;
+  /// Called when a command's job has started executing an external process.
+  ///
+  /// The queue guarantees that any commandProcessStarted() call will be paired
+  /// with exactly one \see commandProcessFinished() call.
+  ///
+  /// \param handle - A unique handle used in subsequent delegate calls to
+  /// identify the process. This handle should only be used to associate
+  /// different status calls relating to the same process. It is only guaranteed
+  /// to be unique from when it has been provided here to when it has been
+  /// provided to the \see commandProcessFinished() call.
+  virtual void commandProcessStarted(Command*, ProcessHandle handle);
 
+  /// Called to report a command processes' (merged) standard output and error.
+  ///
+  /// \param handle - The process handle.
+  /// \param data - The process output.
   virtual void commandProcessHadOutput(Command*, ProcessHandle handle,
-                                       StringRef data) override;
+                                       StringRef data);
   
+  /// Called when a command's job has finished executing an external process.
+  ///
+  /// \param handle - The handle used to identify the process. This handle will
+  /// become invalid as soon as the client returns from this API call.
+  ///
+  /// \param exitStatus - The exit status of the process.
+  //
+  // FIXME: Need to include additional information on the status here, e.g., the
+  // signal status, and the process output (if buffering).
   virtual void commandProcessFinished(Command*, ProcessHandle handle,
-                                      int exitStatus) override;
+                                      int exitStatus);
 
   /// @}
   
