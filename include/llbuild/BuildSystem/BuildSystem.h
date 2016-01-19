@@ -105,9 +105,6 @@ public:
   /// @name Status Reporting APIs
   /// @{
 
-  /// Called to determine whether to show verbose status.
-  virtual bool showVerboseStatus() = 0;
-
   /// Called when a command's job has been started.
   ///
   /// The queue guarantees that any commandStart() call will be paired with

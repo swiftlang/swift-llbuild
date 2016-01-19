@@ -329,13 +329,6 @@ void BuildSystemFrontendDelegate::hadCommandFailure() {
   ++impl->numFailedCommands;
 }
 
-bool BuildSystemFrontendDelegate::showVerboseStatus() {
-  auto impl = static_cast<BuildSystemFrontendDelegateImpl*>(this->impl);
-  
-  return impl->invocation.showVerboseStatus;
-}
-
-
 void BuildSystemFrontendDelegate::commandStarted(Command*) {
 }
 
