@@ -74,6 +74,8 @@ public:
 
 /// The frontend-specific delegate, which provides some shared behaviors.
 class BuildSystemFrontendDelegate : public BuildSystemDelegate {
+  friend class BuildSystemFrontend;
+  
 private:
   void* impl;
 
@@ -126,8 +128,34 @@ public:
   
   /// @}
 
+  /// @name Default Status Reporting APIs
+  ///
+  /// The frontend provides default implementations of these methods which
+  /// report the status to stdout. Clients should override if they wish to
+  /// direct the status elsewhere.
+  ///
+  /// \see BuildSystemDelegate for information on the APIs.
+  ///
+  /// @{
+
+  virtual void commandStarted(Command*) override;
+
+  virtual void commandFinished(Command*) override;
+
+  virtual void commandProcessStarted(Command*, ProcessHandle handle) override;
+
+  virtual void commandProcessHadOutput(Command*, ProcessHandle handle,
+                                       StringRef data) override;
+  
+  virtual void commandProcessFinished(Command*, ProcessHandle handle,
+                                      int exitStatus) override;
+
+  /// @}
+  
   /// @name Accessors
   /// @{
+
+  BuildSystemFrontend& getFrontend();
 
   llvm::SourceMgr& getSourceMgr();
 

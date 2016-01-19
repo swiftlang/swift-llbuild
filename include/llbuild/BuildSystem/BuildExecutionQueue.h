@@ -163,7 +163,7 @@ public:
   // console" like UIs.
   virtual void commandStarted(Command*) = 0;
 
-  /// Invoked synchronously when a command's job has been finished.
+  /// Called when a command's job has been finished.
   virtual void commandFinished(Command*) = 0;
 
   /// Called when a command's job has started executing an external process.

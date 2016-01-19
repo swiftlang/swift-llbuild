@@ -128,49 +128,50 @@ struct BuildSystemFrontendDelegateImpl;
 class BuildSystemFrontendExecutionQueueDelegate
       : public BuildExecutionQueueDelegate {
   BuildSystemFrontendDelegateImpl &delegateImpl;
-
-  bool showVerboseOutput() const;
   
+  bool showVerboseOutput() const;
+
+  BuildSystem& getSystem() const;
+    
 public:
   BuildSystemFrontendExecutionQueueDelegate(
           BuildSystemFrontendDelegateImpl& delegateImpl)
       : delegateImpl(delegateImpl) { }
   
-  virtual void commandStarted(Command*) override {
+  virtual void commandStarted(Command* command) override {
+    // FIXME: This doesn't belong here, it shouldn't be a property of the
+    // execution queue delegate that the system status APIs are honored.
+    getSystem().getDelegate().commandStarted(command);
   }
 
-  virtual void commandFinished(Command*) override {
+  virtual void commandFinished(Command* command) override {
+    // FIXME: This doesn't belong here, it shouldn't be a property of the
+    // execution queue delegate that the system status APIs are honored.
+    getSystem().getDelegate().commandFinished(command);
   }
 
   virtual void commandProcessStarted(Command* command,
                                      ProcessHandle handle) override {
-    // Log the command.
-    //
-    // FIXME: Design the logging and status output APIs.
-    SmallString<64> description;
-    if (showVerboseOutput()) {
-      command->getVerboseDescription(description);
-    } else {
-      command->getShortDescription(description);
-
-      // If the short description is empty, always show the verbose one.
-      if (description.empty()) {
-        command->getVerboseDescription(description);
-      }
-    }
-    fprintf(stdout, "%s\n", description.c_str());
-    fflush(stdout);
+    // FIXME: This doesn't belong here, it shouldn't be a property of the
+    // execution queue delegate that the system status APIs are honored.
+    getSystem().getDelegate().commandProcessStarted(
+        command, BuildSystemDelegate::ProcessHandle { handle.id });
   }
   
   virtual void commandProcessHadOutput(Command* command, ProcessHandle handle,
                                        StringRef data) override {
-    // FIXME: Design the logging and status output APIs.
-    fwrite(data.data(), data.size(), 1, stdout);
-    fflush(stdout);
+    // FIXME: This doesn't belong here, it shouldn't be a property of the
+    // execution queue delegate that the system status APIs are honored.
+    getSystem().getDelegate().commandProcessHadOutput(
+        command, BuildSystemDelegate::ProcessHandle { handle.id }, data);
   }
 
-  virtual void commandProcessFinished(Command*, ProcessHandle handle,
+  virtual void commandProcessFinished(Command* command, ProcessHandle handle,
                                       int exitStatus) override {
+    // FIXME: This doesn't belong here, it shouldn't be a property of the
+    // execution queue delegate that the system status APIs are honored.
+    getSystem().getDelegate().commandProcessFinished(
+        command, BuildSystemDelegate::ProcessHandle { handle.id }, exitStatus);
   }
 };
 
@@ -183,6 +184,9 @@ struct BuildSystemFrontendDelegateImpl {
   std::atomic<unsigned> numFailedCommands{0};
 
   BuildSystemFrontendExecutionQueueDelegate executionQueueDelegate;
+
+  BuildSystemFrontend* frontend = nullptr;
+  BuildSystem* system = nullptr;
   
   BuildSystemFrontendDelegateImpl(llvm::SourceMgr& sourceMgr,
                                   const BuildSystemInvocation& invocation)
@@ -192,6 +196,11 @@ struct BuildSystemFrontendDelegateImpl {
 
 bool BuildSystemFrontendExecutionQueueDelegate::showVerboseOutput() const {
   return delegateImpl.invocation.showVerboseStatus;
+}
+
+BuildSystem& BuildSystemFrontendExecutionQueueDelegate::getSystem() const {
+  assert(delegateImpl.system);
+  return *delegateImpl.system;
 }
 
 }
@@ -216,6 +225,12 @@ BuildSystemFrontendDelegate::setFileContentsBeingParsed(StringRef buffer) {
   auto impl = static_cast<BuildSystemFrontendDelegateImpl*>(this->impl);
 
   impl->bufferBeingParsed = buffer;
+}
+
+BuildSystemFrontend& BuildSystemFrontendDelegate::getFrontend() {
+  auto impl = static_cast<BuildSystemFrontendDelegateImpl*>(this->impl);
+  
+  return *impl->frontend;
 }
 
 llvm::SourceMgr& BuildSystemFrontendDelegate::getSourceMgr() {
@@ -320,6 +335,46 @@ bool BuildSystemFrontendDelegate::showVerboseStatus() {
   return impl->invocation.showVerboseStatus;
 }
 
+
+void BuildSystemFrontendDelegate::commandStarted(Command*) {
+}
+
+void BuildSystemFrontendDelegate::commandFinished(Command*) {
+}
+
+void BuildSystemFrontendDelegate::commandProcessStarted(Command* command,
+                                                        ProcessHandle handle) {
+  // Log the command.
+  //
+  // FIXME: Design the logging and status output APIs.
+  SmallString<64> description;
+  if (getFrontend().getInvocation().showVerboseStatus) {
+    command->getVerboseDescription(description);
+  } else {
+    command->getShortDescription(description);
+
+    // If the short description is empty, always show the verbose one.
+    if (description.empty()) {
+      command->getVerboseDescription(description);
+    }
+  }
+  fprintf(stdout, "%s\n", description.c_str());
+  fflush(stdout);
+}
+  
+void BuildSystemFrontendDelegate::
+commandProcessHadOutput(Command* command, ProcessHandle handle,
+                        StringRef data) {
+  // FIXME: Design the logging and status output APIs.
+  fwrite(data.data(), data.size(), 1, stdout);
+  fflush(stdout);
+}
+
+void BuildSystemFrontendDelegate::
+commandProcessFinished(Command*, ProcessHandle handle,
+                       int exitStatus) {
+}
+
 #pragma mark - BuildSystemFrontend implementation
 
 BuildSystemFrontend::
@@ -327,6 +382,10 @@ BuildSystemFrontend(BuildSystemFrontendDelegate& delegate,
                     const BuildSystemInvocation& invocation)
     : delegate(delegate), invocation(invocation)
 {
+  auto delegateImpl =
+    static_cast<BuildSystemFrontendDelegateImpl*>(delegate.impl);
+
+  delegateImpl->frontend = this;
 }
 
 bool BuildSystemFrontend::build(StringRef targetToBuild) {
@@ -341,6 +400,13 @@ bool BuildSystemFrontend::build(StringRef targetToBuild) {
   // Create the build system.
   BuildSystem system(delegate, invocation.buildFilePath);
 
+  // Register the system back pointer.
+  //
+  // FIXME: Eliminate this.
+  auto delegateImpl =
+    static_cast<BuildSystemFrontendDelegateImpl*>(delegate.impl);
+  delegateImpl->system = &system;
+  
   // Enable tracing, if requested.
   if (!invocation.traceFilePath.empty()) {
     std::string error;
