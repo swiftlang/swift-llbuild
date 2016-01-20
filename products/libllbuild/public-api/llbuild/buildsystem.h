@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors
+// Copyright (c) 2015 - 2016 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -98,6 +98,25 @@ llb_buildsystem_build(llb_buildsystem_t* system, const llb_data_t* key);
 LLBUILD_EXPORT void
 llb_buildsystem_command_get_name(llb_buildsystem_command_t* command,
                                  llb_data_t* key_out);
+
+/// Get the description for the given command.
+///
+/// \returns The command description, as a new C string. The client is
+/// resonpsible for calling \see free() on the result.
+//
+// FIXME: This API most likely doesn't belong.
+LLBUILD_EXPORT char*
+llb_buildsystem_command_get_description(llb_buildsystem_command_t* command);
+
+/// Get the verbose description for the given command.
+///
+/// \returns The verbose command description, as a new C string. The client is
+/// resonpsible for calling \see free() on the result.
+//
+// FIXME: This API most likely doesn't belong.
+LLBUILD_EXPORT char*
+llb_buildsystem_command_get_verbose_description(
+    llb_buildsystem_command_t* command);
 
 /// @}
 

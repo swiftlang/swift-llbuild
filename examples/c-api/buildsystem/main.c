@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors
+// Copyright (c) 2015 - 2016 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -34,9 +34,12 @@ static const char* basename(const char* path) {
 
 static void command_started(void* context,
                             llb_buildsystem_command_t* command) {
+  char* description = llb_buildsystem_command_get_description(command);
   llb_data_t name;
   llb_buildsystem_command_get_name(command, &name);
-  printf("%s: %.*s\n", __FUNCTION__, (int)name.length, name.data);
+  printf("%s: %.*s -- %s\n", __FUNCTION__, (int)name.length, name.data,
+         description);
+  free(description);
 }
 
 static void command_finished(void* context,

@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors
+// Copyright (c) 2015 - 2016 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -17,6 +17,7 @@
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
 #include "llbuild/Core/BuildEngine.h"
 
+#include "llvm/ADT/SmallString.h"
 #include "llvm/Support/SourceMgr.h"
 
 #include <cassert>
@@ -157,4 +158,22 @@ void llb_buildsystem_command_get_name(llb_buildsystem_command_t* command_p,
   auto name = command->getName();
   key_out->length = name.size();
   key_out->data = (const uint8_t*) name.data();
+}
+
+char* llb_buildsystem_command_get_description(
+    llb_buildsystem_command_t* command_p) {
+  auto command = (Command*) command_p;
+
+  SmallString<256> result;
+  command->getShortDescription(result);
+  return strdup(result.c_str());
+}
+
+char* llb_buildsystem_command_get_verbose_description(
+    llb_buildsystem_command_t* command_p) {
+  auto command = (Command*) command_p;
+
+  SmallString<256> result;
+  command->getVerboseDescription(result);
+  return strdup(result.c_str());
 }

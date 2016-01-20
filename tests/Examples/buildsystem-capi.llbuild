@@ -1,10 +1,10 @@
 # Check that the BuildSystem C API example builds and runs correctly.
 #
-# RUN: cc -o %t.exe %{srcroot}/examples/c-api/buildsystem/main.c -I %{srcroot}/products/libllbuild/public-api -lllbuild -L %{llbuild-lib-dir}
+# RUN: cc -o %t.exe %{srcroot}/examples/c-api/buildsystem/main.c -I %{srcroot}/products/libllbuild/public-api -lllbuild -L %{llbuild-lib-dir} -Werror
 # RUN: env LD_LIBRARY_PATH=%{llbuild-lib-dir} %t.exe %s > %t.out
 # RUN: %{FileCheck} %s --input-file %t.out
 #
-# CHECK: command_started: <hello>
+# CHECK: command_started: <hello> -- HELLO
 # CHECK: command_finished: <hello>
 # CHECK: command_started: <all>
 # CHECK: command_finished: <all>
@@ -26,3 +26,4 @@ commands:
     tool: shell
     args: ["echo", "Hello, world!"]
     outputs: ["<hello>"]
+    description: HELLO
