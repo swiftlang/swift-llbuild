@@ -4,8 +4,10 @@
 # RUN: env LD_LIBRARY_PATH=%{llbuild-lib-dir} %t.exe %s > %t.out
 # RUN: %{FileCheck} %s --input-file %t.out
 #
-# CHECK: Hello
-# CHECK-NEXT: Hello, world!
+# CHECK: command_started: <hello>
+# CHECK: command_finished: <hello>
+# CHECK: command_started: <all>
+# CHECK: command_finished: <all>
 
 client:
   name: basic

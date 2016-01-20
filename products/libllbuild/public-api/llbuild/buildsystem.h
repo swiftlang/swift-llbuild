@@ -30,6 +30,12 @@
 /// Opaque handle to a build system.
 typedef struct llb_buildsystem_t_ llb_buildsystem_t;
 
+/// Opaque handle to a build system command.
+typedef struct llb_buildsystem_command_t_ llb_buildsystem_command_t;
+
+/// Opaque handle to a build system command's launched process.
+typedef struct llb_buildsystem_process_t_ llb_buildsystem_process_t;
+
 /// Invocation parameters for a build system.
 typedef struct llb_buildsystem_invocation_t_ llb_buildsystem_invocation_t;
 struct llb_buildsystem_invocation_t_ {
@@ -55,6 +61,22 @@ struct llb_buildsystem_invocation_t_ {
 typedef struct llb_buildsystem_delegate_t_ {
     /// User context pointer.
     void* context;
+
+    void (*command_started)(void* context, llb_buildsystem_command_t* command);
+
+    void (*command_finished)(void* context, llb_buildsystem_command_t* command);
+
+    void (*command_process_started)(void* context,
+                                    llb_buildsystem_command_t* command,
+                                    llb_buildsystem_process_t* process);
+    void (*command_process_had_output)(void* context,
+                                       llb_buildsystem_command_t* command,
+                                       llb_buildsystem_process_t* process,
+                                       const llb_data_t* data);
+    void (*command_process_finished)(void* context,
+                                     llb_buildsystem_command_t* command,
+                                     llb_buildsystem_process_t* process,
+                                     int exit_status);
 } llb_buildsystem_delegate_t;
 
 /// Create a new build system instance.
@@ -69,6 +91,13 @@ llb_buildsystem_destroy(llb_buildsystem_t* system);
 /// Build the named target.
 LLBUILD_EXPORT bool
 llb_buildsystem_build(llb_buildsystem_t* system, const llb_data_t* key);
+
+/// Get the name of the given command.
+///
+/// \param key_out - On return, contains a pointer to the name of the command.
+LLBUILD_EXPORT void
+llb_buildsystem_command_get_name(llb_buildsystem_command_t* command,
+                                 llb_data_t* key_out);
 
 /// @}
 
