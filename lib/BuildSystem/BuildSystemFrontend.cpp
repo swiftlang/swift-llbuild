@@ -155,6 +155,14 @@ public:
           command, BuildSystemFrontendDelegate::ProcessHandle { handle.id });
   }
   
+  virtual void commandProcessHadError(Command* command, ProcessHandle handle,
+                                      const Twine& message) override {
+    static_cast<BuildSystemFrontendDelegate*>(&getSystem().getDelegate())->
+      commandProcessHadError(
+          command, BuildSystemFrontendDelegate::ProcessHandle { handle.id },
+          message);
+  }
+  
   virtual void commandProcessHadOutput(Command* command, ProcessHandle handle,
                                        StringRef data) override {
     static_cast<BuildSystemFrontendDelegate*>(&getSystem().getDelegate())->
@@ -350,6 +358,17 @@ void BuildSystemFrontendDelegate::commandProcessStarted(Command* command,
   }
   fprintf(stdout, "%s\n", description.c_str());
   fflush(stdout);
+}
+  
+void BuildSystemFrontendDelegate::
+commandProcessHadError(Command* command, ProcessHandle handle,
+                       const Twine& message) {
+  SmallString<256> buffer;
+  auto str = message.toStringRef(buffer);
+  
+  // FIXME: Design the logging and status output APIs.
+  fwrite(str.data(), str.size(), 1, stderr);
+  fflush(stderr);
 }
   
 void BuildSystemFrontendDelegate::

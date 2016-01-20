@@ -191,9 +191,9 @@ public:
     int outputPipe[2]{ -1, -1 };
     if (shouldCaptureOutput) {
       if (::pipe(outputPipe) < 0) {
-        // FIXME: Error handling.
-        fprintf(stderr, "error: unable to spawn process (%s)\n",
-                strerror(errno));
+        getDelegate().commandProcessHadError(
+            context.job.getForCommand(), handle,
+            Twine("unable to open output pipe (") + strerror(errno) + ")");
         getDelegate().commandProcessFinished(context.job.getForCommand(),
                                              handle, -1);
         return false;
@@ -240,9 +240,9 @@ public:
     if (posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
                     /*attrp=*/&attributes, const_cast<char**>(args.data()),
                     ::environ) != 0) {
-      // FIXME: Error handling.
-      fprintf(stderr, "error: unable to spawn process (%s)\n", strerror(errno));
-      // FIXME: Communicate error status appropriately.
+      getDelegate().commandProcessHadError(
+          context.job.getForCommand(), handle,
+          Twine("unable to spawn process (") + strerror(errno) + ")");
       getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
                                            -1);
       return false;
@@ -262,9 +262,9 @@ public:
         char buf[4096];
         ssize_t numBytes = read(outputPipe[0], buf, sizeof(buf));
         if (numBytes < 0) {
-          // FIXME: Error handling.
-          fprintf(stderr, "error: unable to read from output pipe (%s)\n",
-                  strerror(errno));
+          getDelegate().commandProcessHadError(
+              context.job.getForCommand(), handle,
+              Twine("unable to read process output (") + strerror(errno) + ")");
           break;
         }
 
@@ -283,10 +283,9 @@ public:
     while (result == -1 && errno == EINTR)
       result = waitpid(pid, &status, 0);
     if (result == -1) {
-      // FIXME: Error handling.
-      fprintf(stderr, "error: unable to wait for process (%s)\n",
-              strerror(errno));
-      // FIXME: Communicate error status appropriately.
+      getDelegate().commandProcessHadError(
+          context.job.getForCommand(), handle,
+          Twine("unable to wait for process (") + strerror(errno) + ")");
       getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
                                            -1);
       return false;
@@ -299,6 +298,8 @@ public:
     }
     
     // Notify of the process completion.
+    //
+    // FIXME: Need to communicate more information on the process exit status.
     getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
                                          status);
     return (status == 0);

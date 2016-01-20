@@ -166,6 +166,15 @@ public:
   /// provided to the \see commandProcessFinished() call.
   virtual void commandProcessStarted(Command*, ProcessHandle handle);
 
+  /// Called to report an error in the management of a command process.
+  ///
+  /// \param handle - The process handle.
+  /// \param message - The error message.
+  //
+  // FIXME: Need to move to more structured error handling.
+  virtual void commandProcessHadError(Command*, ProcessHandle handle,
+                                       const Twine& message);
+
   /// Called to report a command processes' (merged) standard output and error.
   ///
   /// \param handle - The process handle.

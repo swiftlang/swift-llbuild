@@ -178,6 +178,15 @@ public:
   /// provided to the \see commandProcessFinished() call.
   virtual void commandProcessStarted(Command*, ProcessHandle handle) = 0;
 
+  /// Called to report an error in the management of a command process.
+  ///
+  /// \param handle - The process handle.
+  /// \param message - The error message.
+  //
+  // FIXME: Need to move to more structured error handling.
+  virtual void commandProcessHadError(Command*, ProcessHandle handle,
+                                      const Twine& message) = 0;
+
   /// Called to report a command processes' (merged) standard output and error.
   ///
   /// \param handle - The process handle.
@@ -190,7 +199,8 @@ public:
   /// \param handle - The handle used to identify the process. This handle will
   /// become invalid as soon as the client returns from this API call.
   ///
-  /// \param exitStatus - The exit status of the process.
+  /// \param exitStatus - The exit status of the process, or -1 if an error was
+  /// encountered.
   //
   // FIXME: Need to include additional information on the status here, e.g., the
   // signal status, and the process output (if buffering).
