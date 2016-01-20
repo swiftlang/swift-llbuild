@@ -65,6 +65,18 @@ public:
         (llb_buildsystem_process_t*) handle.id);
   }
 
+  virtual void commandProcessHadError(Command* command, ProcessHandle handle,
+                                      const Twine& message) override {
+    SmallString<256> data;
+    message.toVector(data);
+    llb_data_t cData{ data.size(), (const uint8_t*) data.data() };
+    cAPIDelegate.command_process_had_error(
+        cAPIDelegate.context,
+        (llb_buildsystem_command_t*) command,
+        (llb_buildsystem_process_t*) handle.id,
+        &cData);
+  }
+
   virtual void commandProcessHadOutput(Command* command, ProcessHandle handle,
                                        StringRef data) override {
     llb_data_t cData{ data.size(), (const uint8_t*) data.data() };
@@ -134,6 +146,7 @@ llb_buildsystem_t* llb_buildsystem_create(
   assert(delegate.command_started);
   assert(delegate.command_finished);
   assert(delegate.command_process_started);
+  assert(delegate.command_process_had_error);
   assert(delegate.command_process_had_output);
   assert(delegate.command_process_finished);
          

@@ -54,6 +54,16 @@ static void command_process_started(void* context,
                                     llb_buildsystem_process_t* process) {
 }
 
+static void command_process_had_error(void* context,
+                                       llb_buildsystem_command_t* command,
+                                       llb_buildsystem_process_t* process,
+                                       const llb_data_t* data) {
+  llb_data_t name;
+  llb_buildsystem_command_get_name(command, &name);
+  printf("%s: %.*s\n", __FUNCTION__, (int)name.length, name.data);
+  fwrite(data->data, data->length, 1, stdout);
+}
+
 static void command_process_had_output(void* context,
                                        llb_buildsystem_command_t* command,
                                        llb_buildsystem_process_t* process,
@@ -89,6 +99,7 @@ int main(int argc, char **argv) {
   delegate.command_started = command_started;
   delegate.command_finished = command_finished;
   delegate.command_process_started = command_process_started;
+  delegate.command_process_had_error = command_process_had_error;
   delegate.command_process_had_output = command_process_had_output;
   delegate.command_process_finished = command_process_finished;
     

@@ -69,6 +69,10 @@ typedef struct llb_buildsystem_delegate_t_ {
     void (*command_process_started)(void* context,
                                     llb_buildsystem_command_t* command,
                                     llb_buildsystem_process_t* process);
+    void (*command_process_had_error)(void* context,
+                                       llb_buildsystem_command_t* command,
+                                       llb_buildsystem_process_t* process,
+                                       const llb_data_t* data);
     void (*command_process_had_output)(void* context,
                                        llb_buildsystem_command_t* command,
                                        llb_buildsystem_process_t* process,
