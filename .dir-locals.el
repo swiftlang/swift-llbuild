@@ -27,4 +27,15 @@
   ;; dir-locals evaluates the variables before it evaluates the eval list.
   (eval .
         (if (assoc "llbuild" c-style-alist)
+            (c-set-style "llbuild"))))
+
+ (c-mode
+  ;; Load the llbuild style, if available.
+  ;;
+  ;; We have to do deferred loading of the style like this (instead of just
+  ;; setting the c-file-style variable, so that this works even when we are
+  ;; auto-loading llbuild-project-settings. Otherwise, that would fail since
+  ;; dir-locals evaluates the variables before it evaluates the eval list.
+  (eval .
+        (if (assoc "llbuild" c-style-alist)
             (c-set-style "llbuild")))))
