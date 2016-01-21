@@ -106,6 +106,30 @@ class CAPIBuildSystem {
 
   std::unique_ptr<CAPIBuildSystemFrontendDelegate> frontendDelegate;
   std::unique_ptr<BuildSystemFrontend> frontend;
+
+  void handleDiagnostic(const llvm::SMDiagnostic& diagnostic) {
+    llb_buildsystem_diagnostic_kind_t kind;
+    switch (diagnostic.getKind()) {
+    case llvm::SourceMgr::DK_Error:
+      kind = llb_buildsystem_diagnostic_kind_error;
+      break;
+    case llvm::SourceMgr::DK_Warning:
+      kind = llb_buildsystem_diagnostic_kind_warning;
+      break;
+    case llvm::SourceMgr::DK_Note:
+      kind = llb_buildsystem_diagnostic_kind_note;
+      break;
+    }
+
+    // FIXME: We don't currently expose the caret diagnostic information, or
+    // fixits. llbuild does currently make use of the caret diagnostics for
+    // reporting problems in build manifest files...
+    cAPIDelegate.handle_diagnostic(
+        cAPIDelegate.context, kind,
+        diagnostic.getFilename().str().c_str(),
+        diagnostic.getLineNo(), diagnostic.getColumnNo(),
+        diagnostic.getMessage().str().c_str());
+  }
   
 public:
   CAPIBuildSystem(llb_buildsystem_delegate_t delegate,
@@ -119,6 +143,13 @@ public:
     invocation.useSerialBuild = cAPIInvocation.useSerialBuild;
     invocation.showVerboseStatus = cAPIInvocation.showVerboseStatus;
 
+    // Register a custom diagnostic handler with the source manager.
+    sourceMgr.setDiagHandler([](const llvm::SMDiagnostic& diagnostic,
+                                void* context) {
+        auto system = (CAPIBuildSystem*) context;
+        system->handleDiagnostic(diagnostic);
+      }, this);
+    
     // Allocate the frontend delegate.
     frontendDelegate.reset(
         // FIXME: Need to get the client name and schema version from
@@ -139,10 +170,25 @@ public:
 
 };
 
+const char* llb_buildsystem_diagnostic_kind_get_name(
+    llb_buildsystem_diagnostic_kind_t kind) {
+  switch (kind) {
+  case llb_buildsystem_diagnostic_kind_note:
+    return "note";
+  case llb_buildsystem_diagnostic_kind_warning:
+    return "warning";
+  case llb_buildsystem_diagnostic_kind_error:
+    return "error";
+  default:
+    return "<unknown>";
+  }
+}
+
 llb_buildsystem_t* llb_buildsystem_create(
     llb_buildsystem_delegate_t delegate,
     llb_buildsystem_invocation_t invocation) {
   // Check that all required methods are provided.
+  assert(delegate.handle_diagnostic);
   assert(delegate.command_started);
   assert(delegate.command_finished);
   assert(delegate.command_process_started);

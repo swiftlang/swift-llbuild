@@ -32,6 +32,14 @@ static const char* basename(const char* path) {
   return result ? result : path;
 }
 
+static void handle_diagnostic(void* context,
+                              llb_buildsystem_diagnostic_kind_t kind,
+                              const char* filename, int line, int column,
+                              const char* message) {
+  const char* kindName = llb_buildsystem_diagnostic_kind_get_name(kind);
+  printf("%s:%d: %s: %s\n", filename, line, kindName, message);
+}
+
 static void command_started(void* context,
                             llb_buildsystem_command_t* command) {
   char* description = llb_buildsystem_command_get_description(command);
@@ -96,6 +104,7 @@ int main(int argc, char **argv) {
   // Create a build system delegate.
   llb_buildsystem_delegate_t delegate = {};
   delegate.context = NULL;
+  delegate.handle_diagnostic = handle_diagnostic;
   delegate.command_started = command_started;
   delegate.command_finished = command_finished;
   delegate.command_process_started = command_process_started;

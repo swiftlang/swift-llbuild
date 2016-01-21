@@ -24,6 +24,22 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/// @name Diagnostics
+/// @{
+
+typedef enum {
+  llb_buildsystem_diagnostic_kind_note,
+  llb_buildsystem_diagnostic_kind_warning,
+  llb_buildsystem_diagnostic_kind_error,
+} llb_buildsystem_diagnostic_kind_t;
+
+/// Get the name of the diagnostic kind.
+LLBUILD_EXPORT const char*
+llb_buildsystem_diagnostic_kind_get_name(
+    llb_buildsystem_diagnostic_kind_t kind);
+
+/// @}
+
 /// @name Build System
 /// @{
 
@@ -39,48 +55,92 @@ typedef struct llb_buildsystem_process_t_ llb_buildsystem_process_t;
 /// Invocation parameters for a build system.
 typedef struct llb_buildsystem_invocation_t_ llb_buildsystem_invocation_t;
 struct llb_buildsystem_invocation_t_ {
-    /// The path of the build file to use.
-    const char* buildFilePath;
+  /// The path of the build file to use.
+  const char* buildFilePath;
     
-    /// The path of the database file to use, if any.
-    const char* dbPath;
+  /// The path of the database file to use, if any.
+  const char* dbPath;
 
-    /// The path of the build trace output file to use, if any.
-    const char* traceFilePath;
+  /// The path of the build trace output file to use, if any.
+  const char* traceFilePath;
     
-    /// Whether to show verbose output.
-    //
-    // FIXME: This doesn't belong here, move once the status is fully delegated.
-    bool showVerboseStatus;
+  /// Whether to show verbose output.
+  //
+  // FIXME: This doesn't belong here, move once the status is fully delegated.
+  bool showVerboseStatus;
     
-    /// Whether to use a serial build.
-    bool useSerialBuild;
+  /// Whether to use a serial build.
+  bool useSerialBuild;
 };
-
+  
 /// Delegate structure for callbacks required by the build system.
 typedef struct llb_buildsystem_delegate_t_ {
-    /// User context pointer.
-    void* context;
+  /// User context pointer.
+  void* context;
 
-    void (*command_started)(void* context, llb_buildsystem_command_t* command);
+  /// Called to report an unassociated diagnostic from the build system.
+  ///
+  /// \Xparam kind - The kind of diagnostic.
+  /// \Xparam filename - The filename associated with the diagnostic, if any.
+  /// \Xparam line - The line number associated with the diagnostic, if any.
+  /// \Xparam column - The line number associated with the diagnostic, if any.
+  /// \Xparam message - The diagnostic message, as a C string.
+  void (*handle_diagnostic)(void* context,
+                            llb_buildsystem_diagnostic_kind_t kind,
+                            const char* filename, int line, int column,
+                            const char* message);
+                       
+  /// Called when a command's job has been started.
+  ///
+  /// The system guarantees that any commandStart() call will be paired with
+  /// exactly one \see commandFinished() call.
+  void (*command_started)(void* context, llb_buildsystem_command_t* command);
 
-    void (*command_finished)(void* context, llb_buildsystem_command_t* command);
+  /// Called when a command's job has been finished.
+  void (*command_finished)(void* context, llb_buildsystem_command_t* command);
 
-    void (*command_process_started)(void* context,
+  /// Called when a command's job has started executing an external process.
+  ///
+  /// The system guarantees that any commandProcessStarted() call will be paired
+  /// with exactly one \see commandProcessFinished() call.
+  ///
+  /// \Xparam process - A unique handle used in subsequent delegate calls to
+  /// identify the process. This handle should only be used to associate
+  /// different status calls relating to the same process. It is only guaranteed
+  /// to be unique from when it has been provided here to when it has been
+  /// provided to the \see commandProcessFinished() call.
+  void (*command_process_started)(void* context,
+                                  llb_buildsystem_command_t* command,
+                                  llb_buildsystem_process_t* process);
+
+  /// Called to report an error in the management of a command process.
+  ///
+  /// \Xparam process - The process handle.
+  /// \Xparam data - The error message.
+  void (*command_process_had_error)(void* context,
                                     llb_buildsystem_command_t* command,
-                                    llb_buildsystem_process_t* process);
-    void (*command_process_had_error)(void* context,
-                                       llb_buildsystem_command_t* command,
-                                       llb_buildsystem_process_t* process,
-                                       const llb_data_t* data);
-    void (*command_process_had_output)(void* context,
-                                       llb_buildsystem_command_t* command,
-                                       llb_buildsystem_process_t* process,
-                                       const llb_data_t* data);
-    void (*command_process_finished)(void* context,
+                                    llb_buildsystem_process_t* process,
+                                    const llb_data_t* data);
+  
+  /// Called to report a command processes' (merged) standard output and error.
+  ///
+  /// \Xparam process - The process handle.
+  /// \Xparam data - The process output.
+  void (*command_process_had_output)(void* context,
                                      llb_buildsystem_command_t* command,
                                      llb_buildsystem_process_t* process,
-                                     int exit_status);
+                                     const llb_data_t* data);
+  
+  /// Called when a command's job has finished executing an external process.
+  ///
+  /// \Xparam process - The handle used to identify the process. This handle
+  /// will become invalid as soon as the client returns from this API call.
+  ///
+  /// \Xparam exitStatus - The exit status of the process.
+  void (*command_process_finished)(void* context,
+                                   llb_buildsystem_command_t* command,
+                                   llb_buildsystem_process_t* process,
+                                   int exit_status);
 } llb_buildsystem_delegate_t;
 
 /// Create a new build system instance.

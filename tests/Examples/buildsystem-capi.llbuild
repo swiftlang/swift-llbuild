@@ -6,8 +6,8 @@
 #
 # CHECK: command_started: <hello> -- HELLO
 # CHECK: command_finished: <hello>
-# CHECK: command_started: <all>
-# CHECK: command_finished: <all>
+# CHECK: command_started: <error> -- FAILING-COMMAND
+# CHECK: <unknown>:0: error: build had 1 command failure
 
 client:
   name: basic
@@ -19,7 +19,7 @@ targets:
 commands:
   "<all>":
     tool: phony
-    inputs: ["<hello>"]
+    inputs: ["<error>"]
     outputs: ["<all>"]
 
   "<hello>":
@@ -27,3 +27,10 @@ commands:
     args: ["echo", "Hello, world!"]
     outputs: ["<hello>"]
     description: HELLO
+
+  "<error>":
+    tool: shell
+    args: ["false"]
+    inputs: ["<hello>"]
+    outputs: ["<error>"]
+    description: FAILING-COMMAND

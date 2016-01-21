@@ -141,7 +141,7 @@ public:
 
   /// Called when a command's job has been started.
   ///
-  /// The queue guarantees that any commandStart() call will be paired with
+  /// The system guarantees that any commandStart() call will be paired with
   /// exactly one \see commandFinished() call.
   //
   // FIXME: We may eventually want to allow the individual job to provide some
@@ -156,7 +156,7 @@ public:
 
   /// Called when a command's job has started executing an external process.
   ///
-  /// The queue guarantees that any commandProcessStarted() call will be paired
+  /// The system guarantees that any commandProcessStarted() call will be paired
   /// with exactly one \see commandProcessFinished() call.
   ///
   /// \param handle - A unique handle used in subsequent delegate calls to
