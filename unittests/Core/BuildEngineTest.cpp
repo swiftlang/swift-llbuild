@@ -204,14 +204,14 @@ TEST(BuildEngineTest, veryBasicIncremental) {
       "value-A", simpleAction({}, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("value-A");
           return valueA; }),
-      [&](const Rule& rule, const ValueType value) {
+      [&](core::BuildEngine&, const Rule& rule, const ValueType value) {
         return valueA == intFromValue(value);
       } });
   engine.addRule({
       "value-B", simpleAction({}, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("value-B");
           return valueB; }),
-      [&](const Rule& rule, const ValueType& value) {
+      [&](core::BuildEngine&, const Rule& rule, const ValueType& value) {
         return valueB == intFromValue(value);
       } });
   engine.addRule({
@@ -270,14 +270,14 @@ TEST(BuildEngineTest, basicIncremental) {
       "value-A", simpleAction({}, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("value-A");
           return valueA; }),
-      [&](const Rule& rule, const ValueType& value) {
+      [&](core::BuildEngine&, const Rule& rule, const ValueType& value) {
         return valueA == intFromValue(value);
       } });
   engine.addRule({
       "value-B", simpleAction({}, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("value-B");
           return valueB; }),
-      [&](const Rule& rule, const ValueType& value) {
+      [&](core::BuildEngine&, const Rule& rule, const ValueType& value) {
         return valueB == intFromValue(value);
       } });
   engine.addRule({
@@ -426,7 +426,7 @@ TEST(BuildEngineTest, incrementalDependency) {
   engine.addRule({
       "value-A", simpleAction({}, [&] (const std::vector<int>& inputs) {
           return valueA; }),
-      [&](const Rule& rule, const ValueType& value) {
+      [&](core::BuildEngine&, const Rule& rule, const ValueType& value) {
         return valueA == intFromValue(value);
       } });
   engine.addRule({
@@ -480,7 +480,7 @@ TEST(BuildEngineTest, deepDependencyScanningStack) {
           simpleAction({},
                        [&] (const std::vector<int>& inputs) {
                          return lastInputValue; }),
-          [&](const Rule& rule, const ValueType& value) {
+          [&](core::BuildEngine&, const Rule& rule, const ValueType& value) {
             // FIXME: Once we have custom ValueType objects, we would like to
             // have timestamps on the value and just compare to a timestamp
             // (similar to what we would do for a file).
@@ -542,7 +542,7 @@ TEST(BuildEngineTest, discoveredDependencies) {
                      builtKeys.push_back("value-A");
                      return valueA;
                    }),
-      [&](const Rule& rule, const ValueType& value) {
+      [&](BuildEngine&, const Rule& rule, const ValueType& value) {
         return valueA == intFromValue(value);
       } });
   engine.addRule({
@@ -552,7 +552,7 @@ TEST(BuildEngineTest, discoveredDependencies) {
                      builtKeys.push_back("value-B");
                      return valueB;
                    }),
-      [&](const Rule& rule, const ValueType& value) {
+      [&](BuildEngine&, const Rule& rule, const ValueType& value) {
         return valueB == intFromValue(value);
       } });
   engine.addRule({
@@ -597,7 +597,7 @@ TEST(BuildEngineTest, unchangedOutputs) {
       simpleAction({}, [&] (const std::vector<int>& inputs) {
         builtKeys.push_back("value");
         return 2; }),
-      [&](const Rule& rule, const ValueType& value) {
+      [&](BuildEngine&, const Rule& rule, const ValueType& value) {
         // Always rebuild
         return false;
       } });
@@ -637,7 +637,7 @@ TEST(BuildEngineTest, StatusCallbacks) {
       simpleAction({}, [&] (const std::vector<int>& inputs) {
           return 2; }),
       nullptr,
-      [&] (core::Rule::StatusKind status) {
+      [&] (BuildEngine&, core::Rule::StatusKind status) {
         if (status == core::Rule::StatusKind::IsScanning) {
           ++numScanned;
         } else {
@@ -652,7 +652,7 @@ TEST(BuildEngineTest, StatusCallbacks) {
                      return inputs[0] * 3;
                    }),
       nullptr,
-      [&] (core::Rule::StatusKind status) {
+      [&] (BuildEngine&, core::Rule::StatusKind status) {
         if (status == core::Rule::StatusKind::IsScanning) {
           ++numScanned;
         } else {

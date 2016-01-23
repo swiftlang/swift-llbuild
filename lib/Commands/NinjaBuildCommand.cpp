@@ -1648,7 +1648,8 @@ core::Rule NinjaBuildEngineDelegate::lookupRule(const core::KeyType& key) {
       [&, node] (core::BuildEngine&) {
       return buildInput(*context, node);
     },
-    [&, node] (const core::Rule&, const core::ValueType& value) {
+    [&, node] (core::BuildEngine&, const core::Rule&,
+               const core::ValueType& value) {
       // If simulating, assume cached results are valid.
       if (context->simulate)
         return true;
@@ -2000,18 +2001,18 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       if (command->getOutputs().size() == 1) {
         context.engine.addRule({
             command->getOutputs()[0]->getPath(),
-            [=, &context] (core::BuildEngine& engine) {
+            [=, &context](core::BuildEngine& engine) {
               return buildCommand(context, command);
             },
-              [=, &context] (const core::Rule& rule,
-                             const core::ValueType value) {
+            [=, &context](core::BuildEngine&, const core::Rule& rule,
+                          const core::ValueType value) {
               // If simulating, assume cached results are valid.
               if (context.simulate)
                 return true;
 
               return buildCommandIsResultValid(command, value);
             },
-            [=, &context](core::Rule::StatusKind status) {
+            [=, &context](core::BuildEngine&, core::Rule::StatusKind status) {
               updateCommandStatus(context, command, status);
             } });
         continue;
@@ -2033,17 +2034,18 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       // outputs.
       context.engine.addRule({
           compositeRuleName,
-          [=, &context] (core::BuildEngine& engine) {
+          [=, &context](core::BuildEngine& engine) {
             return buildCommand(context, command);
           },
-          [=, &context] (const core::Rule& rule, const core::ValueType value) {
+          [=, &context](core::BuildEngine&, const core::Rule& rule,
+                        const core::ValueType value) {
             // If simulating, assume cached results are valid.
             if (context.simulate)
               return true;
 
             return buildCommandIsResultValid(command, value);
           },
-          [=, &context](core::Rule::StatusKind status) {
+          [=, &context](core::BuildEngine&, core::Rule::StatusKind status) {
             updateCommandStatus(context, command, status);
           } });
 
@@ -2056,7 +2058,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
               return selectCompositeBuildResult(context, command, i,
                                                 compositeRuleName);
             },
-            [=, &context] (const core::Rule& rule,
+            [=, &context] (core::BuildEngine&, const core::Rule& rule,
                            const core::ValueType value) {
               // If simulating, assume cached results are valid.
               if (context.simulate)
@@ -2138,10 +2140,10 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       // Create a dummy rule to build all targets.
       context.engine.addRule({
           "<<build>>",
-          [&] (core::BuildEngine&) {
+          [&](core::BuildEngine&) {
             return buildTargets(context, targetsToBuild);
           },
-          [&] (const core::Rule&, const core::ValueType&) {
+          [&](core::BuildEngine&, const core::Rule&, const core::ValueType&) {
             // Always rebuild the dummy rule.
             return false;
           } });

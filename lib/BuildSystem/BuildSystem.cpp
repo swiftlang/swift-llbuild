@@ -555,7 +555,8 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
         /*Action=*/ [](BuildEngine& engine) -> Task* {
           return engine.registerTask(new MissingCommandTask());
         },
-        /*IsValid=*/ [](const Rule& rule, const ValueType& value) -> bool {
+        /*IsValid=*/ [](BuildEngine&, const Rule& rule,
+                        const ValueType& value) -> bool {
           // The cached result for a missing command is never valid.
           return false;
         }
@@ -569,7 +570,8 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       /*Action=*/ [command](BuildEngine& engine) -> Task* {
         return engine.registerTask(new CommandTask(*command));
       },
-      /*IsValid=*/ [command](const Rule& rule, const ValueType& value) -> bool {
+      /*IsValid=*/ [command](BuildEngine&, const Rule& rule,
+                             const ValueType& value) -> bool {
         return CommandTask::isResultValid(
             *command, BuildValue::fromData(value));
       }
@@ -595,7 +597,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
         /*Action=*/ [command](BuildEngine& engine) -> Task* {
           return engine.registerTask(new CommandTask(*command));
         },
-        /*IsValid=*/ [command](const Rule& rule,
+        /*IsValid=*/ [command](BuildEngine&, const Rule& rule,
                                const ValueType& value) -> bool {
           return CommandTask::isResultValid(
               *command, BuildValue::fromData(value));
@@ -610,7 +612,8 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       /*Action=*/ [](BuildEngine& engine) -> Task* {
         return engine.registerTask(new MissingCommandTask());
       },
-      /*IsValid=*/ [](const Rule& rule, const ValueType& value) -> bool {
+      /*IsValid=*/ [](BuildEngine&, const Rule& rule,
+                      const ValueType& value) -> bool {
         // The cached result for a missing command is never valid.
         return false;
       }
@@ -650,7 +653,8 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
         /*Action=*/ [node](BuildEngine& engine) -> Task* {
           return engine.registerTask(new InputNodeTask(*node));
         },
-        /*IsValid=*/ [node](const Rule& rule, const ValueType& value) -> bool {
+        /*IsValid=*/ [node](BuildEngine&, const Rule& rule,
+                            const ValueType& value) -> bool {
           return InputNodeTask::isResultValid(
               *node, BuildValue::fromData(value));
         }
@@ -663,7 +667,8 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       /*Action=*/ [node](BuildEngine& engine) -> Task* {
         return engine.registerTask(new ProducedNodeTask(*node));
       },
-      /*IsValid=*/ [node](const Rule& rule, const ValueType& value) -> bool {
+      /*IsValid=*/ [node](BuildEngine&, const Rule& rule,
+                          const ValueType& value) -> bool {
         return ProducedNodeTask::isResultValid(
             *node, BuildValue::fromData(value));
       }
@@ -686,7 +691,8 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
         /*Action=*/ [target](BuildEngine& engine) -> Task* {
         return engine.registerTask(new TargetTask(*target));
       },
-      /*IsValid=*/ [target](const Rule& rule, const ValueType& value) -> bool {
+      /*IsValid=*/ [target](BuildEngine&, const Rule& rule,
+                            const ValueType& value) -> bool {
         return TargetTask::isResultValid(*target, BuildValue::fromData(value));
       }
     };

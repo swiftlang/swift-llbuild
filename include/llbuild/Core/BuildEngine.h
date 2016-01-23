@@ -171,10 +171,11 @@ public:
   /// state managed externally to the build engine. For example, a rule which
   /// computes something on the file system may use this to verify that the
   /// computed output has not changed since it was built.
-  std::function<bool(const Rule&, const ValueType&)> isResultValid;
+  std::function<bool(BuildEngine&, const Rule&,
+                     const ValueType&)> isResultValid;
 
   /// Called to indicate a change in the rule status.
-  std::function<void(StatusKind)> updateStatus;
+  std::function<void(BuildEngine&, StatusKind)> updateStatus;
 };
 
 /// Delegate interface for use with the build engine.

@@ -352,7 +352,7 @@ private:
 
     // Report the status change.
     if (ruleInfo.rule.updateStatus)
-      ruleInfo.rule.updateStatus(Rule::StatusKind::IsScanning);
+      ruleInfo.rule.updateStatus(buildEngine, Rule::StatusKind::IsScanning);
 
     // If the rule has never been run, it needs to run.
     if (ruleInfo.result.builtAt == 0) {
@@ -364,7 +364,8 @@ private:
 
     // If the rule indicates its computed value is out of date, it needs to run.
     if (ruleInfo.rule.isResultValid &&
-        !ruleInfo.rule.isResultValid(ruleInfo.rule, ruleInfo.result.value)) {
+        !ruleInfo.rule.isResultValid(buildEngine, ruleInfo.rule,
+                                     ruleInfo.result.value)) {
       if (trace)
         trace->ruleNeedsToRunBecauseInvalidValue(&ruleInfo.rule);
       ruleInfo.state = RuleInfo::StateKind::NeedsToRun;
@@ -417,7 +418,7 @@ private:
 
       // Report the status change.
       if (ruleInfo.rule.updateStatus)
-        ruleInfo.rule.updateStatus(Rule::StatusKind::IsUpToDate);
+        ruleInfo.rule.updateStatus(buildEngine, Rule::StatusKind::IsUpToDate);
 
       return true;
     }
@@ -762,7 +763,8 @@ private:
 
         // Report the status change.
         if (ruleInfo->rule.updateStatus)
-          ruleInfo->rule.updateStatus(Rule::StatusKind::IsComplete);
+          ruleInfo->rule.updateStatus(buildEngine,
+                                      Rule::StatusKind::IsComplete);
 
         // Add all of the task's discovered dependencies.
         //

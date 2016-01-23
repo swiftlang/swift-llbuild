@@ -160,8 +160,8 @@ static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
           simpleAction({},
                        [&] (const std::vector<int>& Inputs) {
                          return LastInputValue; }),
-          [&](const Rule& rule, const ValueType& Value) {
-            return LastInputValue == IntFromValue(Value);
+          [&](BuildEngine&, const Rule& rule, const ValueType& Value) {
+              return LastInputValue == IntFromValue(Value);
           } });
     }
   }
@@ -241,7 +241,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
             simpleAction({},
                          [&] (const std::vector<int>& Inputs) {
                            return LastInputValue; }),
-            [&](const Rule& rule, const ValueType& Value) {
+            [&](BuildEngine&, const Rule& rule, const ValueType& Value) {
               return LastInputValue == IntFromValue(Value);
             } });
       }
@@ -338,7 +338,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
             simpleAction({},
                          [&] (const std::vector<int>& Inputs) {
                            return LastInputValue; }),
-            [&](const Rule& rule, const ValueType& Value) {
+            [&](BuildEngine&, const Rule& rule, const ValueType& Value) {
               return LastInputValue == IntFromValue(Value);
             } });
       }

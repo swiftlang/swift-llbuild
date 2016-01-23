@@ -133,7 +133,7 @@ TEST(DepsBuildEngineTest, BogusConcurrentDepScan) {
       simpleAction({}, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("dir-list-input");
           return dirListValue; }),
-      [&](const Rule& rule, const ValueType& value) {
+      [&](BuildEngine&, const Rule& rule, const ValueType& value) {
         // Always rebuild
         return false;
       } });
@@ -150,7 +150,7 @@ TEST(DepsBuildEngineTest, BogusConcurrentDepScan) {
       simpleAction({}, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("input-2");
           return 5; }),
-      [&](const Rule& rule, const ValueType& value) {
+      [&](BuildEngine&, const Rule& rule, const ValueType& value) {
         // Always rebuild
         return false;
       } });
@@ -159,7 +159,7 @@ TEST(DepsBuildEngineTest, BogusConcurrentDepScan) {
       simpleAction({}, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("input-3");
           return 7; }),
-      [&](const Rule& rule, const ValueType& value) {
+      [&](BuildEngine&, const Rule& rule, const ValueType& value) {
         // Always rebuild
         return false;
       } });

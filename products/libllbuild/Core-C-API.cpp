@@ -48,9 +48,11 @@ class CAPIBuildEngineDelegate : public BuildEngineDelegate {
     // handle created by the C API.
     assert(rule.create_task && "client failed to initialize rule");
 
-    std::function<bool(const Rule&, const ValueType&)> isResultValid;
+    std::function<bool(BuildEngine&, const Rule&,
+                       const ValueType&)> isResultValid;
     if (rule.is_result_valid) {
-      isResultValid = [rule, engineContext] (const Rule& nativeRule,
+      isResultValid = [rule, engineContext] (BuildEngine&,
+                                             const Rule& nativeRule,
                                              const ValueType& value) {
         // FIXME: Why do we pass the rule here, it is redundant. NativeRule
         // should be == rule here.
@@ -60,9 +62,10 @@ class CAPIBuildEngineDelegate : public BuildEngineDelegate {
       };
     }
 
-    std::function<void(Rule::StatusKind)> updateStatus;
+    std::function<void(BuildEngine&, Rule::StatusKind)> updateStatus;
     if (rule.update_status) {
-      updateStatus = [rule, engineContext] (Rule::StatusKind kind) {
+      updateStatus = [rule, engineContext] (BuildEngine&,
+                                            Rule::StatusKind kind) {
         return rule.update_status(rule.context, engineContext,
                                   (llb_rule_status_kind_t)kind);
       };
