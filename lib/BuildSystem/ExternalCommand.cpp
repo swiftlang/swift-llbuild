@@ -107,7 +107,7 @@ getResultForOutput(Node* node, const BuildValue& value) {
   return BuildValue::makeExistingInput(info);
 }
   
-bool ExternalCommand::isResultValid(const BuildValue& value) {
+bool ExternalCommand::isResultValid(BuildSystem& system, const BuildValue& value) {
   // If the prior value wasn't for a successful command, recompute.
   if (!value.isSuccessfulCommand())
     return false;

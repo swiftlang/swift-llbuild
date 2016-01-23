@@ -43,6 +43,7 @@ namespace buildsystem {
 typedef std::vector<std::pair<std::string, std::string>> property_list_type;
 
 class BuildFileDelegate;
+class BuildSystem;
 class BuildSystemCommandInterface;
 class BuildKey;
 class BuildValue;
@@ -242,7 +243,7 @@ public:
   ///
   /// @{
 
-  virtual bool isResultValid(const BuildValue& value) = 0;
+  virtual bool isResultValid(BuildSystem& system, const BuildValue& value) = 0;
   
   virtual void start(BuildSystemCommandInterface&, core::Task*) = 0;
 

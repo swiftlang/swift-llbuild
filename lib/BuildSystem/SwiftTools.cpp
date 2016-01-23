@@ -79,7 +79,7 @@ public:
     return BuildValue::makeInvalid();
   }
   
-  virtual bool isResultValid(const BuildValue& value) override {
+  virtual bool isResultValid(BuildSystem&, const BuildValue& value) override {
     // Always rebuild this task.
     return false;
   }

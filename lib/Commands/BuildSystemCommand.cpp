@@ -176,7 +176,7 @@ public:
                                         const BuildValue& value) override {
     return BuildValue::makeMissingInput();
   }
-  virtual bool isResultValid(const BuildValue&) override { return false; }
+  virtual bool isResultValid(BuildSystem&, const BuildValue&) override { return false; }
   virtual void start(BuildSystemCommandInterface&, Task*) override {}
   virtual void providePriorValue(BuildSystemCommandInterface&, Task*,
                                  const BuildValue&) override {}

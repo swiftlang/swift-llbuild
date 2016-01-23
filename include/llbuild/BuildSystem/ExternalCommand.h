@@ -24,13 +24,14 @@
 namespace llbuild {
 namespace core {
 
-class Task;;
+class Task;
   
 }
   
 namespace buildsystem {
 
 class BuildNode;
+class BuildSystem;
 struct QueueJobContext;
   
 /// This is a base class for defining commands which are run externally to the
@@ -88,7 +89,7 @@ public:
   virtual BuildValue getResultForOutput(Node* node,
                                         const BuildValue& value) override;
   
-  virtual bool isResultValid(const BuildValue& value) override;
+  virtual bool isResultValid(BuildSystem&, const BuildValue& value) override;
 
   virtual void start(BuildSystemCommandInterface& bsci,
                      core::Task* task) override;
