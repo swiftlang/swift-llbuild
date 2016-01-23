@@ -27,6 +27,16 @@
 /// @name Diagnostics
 /// @{
 
+/// A fine-grained timestamp.
+///
+/// Although phrased as a time, this value is uninterpreted by llbuild. The
+/// client may represent time in any fashion intended to preserve uniqueness.
+typedef struct llb_fs_timestamp_t_ {
+    uint64_t seconds;
+    uint64_t nanoseconds;
+} llb_fs_timestamp_t;
+
+/// Information on the status of a file.
 typedef struct llb_fs_file_info_t_ {
   /// A unique identifier for the device containing the file.
   uint64_t device;
@@ -38,13 +48,7 @@ typedef struct llb_fs_file_info_t_ {
   uint64_t size;
 
   /// An indication of the last modification time.
-  ///
-  /// Although phrased as a time, this value is uninterpreted by llbuild. The
-  /// client may represent time in any fashion intended to preserve uniqueness.
-  struct {
-    uint64_t seconds;
-    uint64_t nanoseconds;
-  } mod_time;
+  llb_fs_timestamp_t mod_time;
 } llb_fs_file_info_t;
 
 /// @}
