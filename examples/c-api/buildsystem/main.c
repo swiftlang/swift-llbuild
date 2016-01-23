@@ -21,6 +21,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <sys/stat.h>
+
 static const char* progname;
 static void usage() {
   fprintf(stderr, "usage: %s <build file path>\n", progname);
@@ -30,6 +32,49 @@ static void usage() {
 static const char* basename(const char* path) {
   const char* result = strrchr(path, '/');
   return result ? result : path;
+}
+
+static bool fs_get_file_contents(void* context, const char* path,
+                                 llb_data_t* data_out) {
+  printf(" -- read file contents: %s\n", path);
+
+  FILE *fp = fopen(path, "rb");
+  if (!fp) {
+    return false;
+  }
+  
+  fseek(fp, 0, SEEK_END);
+  long size = ftell(fp);
+  fseek(fp, 0, SEEK_SET);
+  uint8_t* buffer = malloc(size);
+  if (!buffer) {
+    return false;
+  }
+  data_out->data = buffer;
+  data_out->length = size;
+  int n = fread(buffer, 1, size, fp);
+  if (n != size) {
+    return false;
+  }
+
+  return true;
+}
+
+static void fs_get_file_info(void* context, const char* path,
+                             llb_fs_file_info_t* file_info_out) {
+  printf(" -- stat: %s\n", path);
+
+  struct stat buf;
+  if (stat(path, &buf) != 0) {
+    memset(file_info_out, 0, sizeof(*file_info_out));
+    return;
+  }
+
+  file_info_out->device = buf.st_dev;
+  file_info_out->inode = buf.st_ino;
+  file_info_out->size = buf.st_size;
+  file_info_out->mod_time.seconds = buf.st_mtimespec.tv_sec;
+  file_info_out->mod_time.nanoseconds = 0;
 }
 
 static void handle_diagnostic(void* context,
@@ -104,6 +149,8 @@ int main(int argc, char **argv) {
   // Create a build system delegate.
   llb_buildsystem_delegate_t delegate = {};
   delegate.context = NULL;
+  delegate.fs_get_file_contents = fs_get_file_contents;
+  delegate.fs_get_file_info = fs_get_file_info;
   delegate.handle_diagnostic = handle_diagnostic;
   delegate.command_started = command_started;
   delegate.command_finished = command_finished;

@@ -4,6 +4,8 @@
 # RUN: env LD_LIBRARY_PATH=%{llbuild-lib-dir} %t.exe %s > %t.out
 # RUN: %{FileCheck} %s --input-file %t.out
 #
+# CHECK: -- read file contents: {{.*}}/buildsystem-capi.llbuild
+# CHECK: -- stat: /
 # CHECK: command_started: <hello> -- HELLO
 # CHECK: command_finished: <hello>
 # CHECK: command_started: <error> -- FAILING-COMMAND
@@ -25,6 +27,7 @@ commands:
   "<hello>":
     tool: shell
     args: ["echo", "Hello, world!"]
+    inputs: ["/"]
     outputs: ["<hello>"]
     description: HELLO
 

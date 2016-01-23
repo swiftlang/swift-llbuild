@@ -27,6 +27,31 @@
 /// @name Diagnostics
 /// @{
 
+typedef struct llb_fs_file_info_t_ {
+  /// A unique identifier for the device containing the file.
+  uint64_t device;
+
+  /// A unique identifier for the file on the device.
+  uint64_t inode;
+
+  /// The size of the file.
+  uint64_t size;
+
+  /// An indication of the last modification time.
+  ///
+  /// Although phrased as a time, this value is uninterpreted by llbuild. The
+  /// client may represent time in any fashion intended to preserve uniqueness.
+  struct {
+    uint64_t seconds;
+    uint64_t nanoseconds;
+  } mod_time;
+} llb_fs_file_info_t;
+
+/// @}
+
+/// @name Diagnostics
+/// @{
+
 typedef enum {
   llb_buildsystem_diagnostic_kind_note,
   llb_buildsystem_diagnostic_kind_warning,
@@ -78,13 +103,44 @@ typedef struct llb_buildsystem_delegate_t_ {
   /// User context pointer.
   void* context;
 
+  /// @name FileSystem APIs
+  ///
+  /// These are optional callbacks, which can be provided by the client to
+  /// support virtualization or testing of the system. If not defined, the build
+  /// system will directly access the local disk for file operations.
+  ///
+  /// @{
+
+  /// Get the file contents for the given path.
+  ///
+  /// The contents *MUST* be returned in a new buffer allocated with \see
+  /// malloc().
+  ///
+  /// Xparam path The path to provide the contents for.
+  ///
+  /// Xparam data_out On success, this should be filled in with a pointer to
+  /// the newly created buffer containing the contents, and with the contents
+  /// size.
+  ///
+  /// \\returns True on success.
+  //
+  //
+  // FIXME: Design clean data types for clients to return unowned/unowned
+  // memory.
+  bool (*fs_get_file_contents)(void* context, const char* path,
+                               llb_data_t* data_out);
+
+  /// Get the file information for the given path.
+  void (*fs_get_file_info)(void* context, const char* path,
+                           llb_fs_file_info_t* data_out);
+  
   /// Called to report an unassociated diagnostic from the build system.
   ///
-  /// \Xparam kind - The kind of diagnostic.
-  /// \Xparam filename - The filename associated with the diagnostic, if any.
-  /// \Xparam line - The line number associated with the diagnostic, if any.
-  /// \Xparam column - The line number associated with the diagnostic, if any.
-  /// \Xparam message - The diagnostic message, as a C string.
+  /// Xparam kind The kind of diagnostic.
+  /// Xparam filename The filename associated with the diagnostic, if any.
+  /// Xparam lin The line number associated with the diagnostic, if any.
+  /// Xparam column The line number associated with the diagnostic, if any.
+  /// Xparam message The diagnostic message, as a C string.
   void (*handle_diagnostic)(void* context,
                             llb_buildsystem_diagnostic_kind_t kind,
                             const char* filename, int line, int column,
@@ -104,7 +160,7 @@ typedef struct llb_buildsystem_delegate_t_ {
   /// The system guarantees that any commandProcessStarted() call will be paired
   /// with exactly one \see commandProcessFinished() call.
   ///
-  /// \Xparam process - A unique handle used in subsequent delegate calls to
+  /// Xparam process A unique handle used in subsequent delegate calls to
   /// identify the process. This handle should only be used to associate
   /// different status calls relating to the same process. It is only guaranteed
   /// to be unique from when it has been provided here to when it has been
@@ -115,8 +171,8 @@ typedef struct llb_buildsystem_delegate_t_ {
 
   /// Called to report an error in the management of a command process.
   ///
-  /// \Xparam process - The process handle.
-  /// \Xparam data - The error message.
+  /// Xparam process The process handle.
+  /// Xparam data The error message.
   void (*command_process_had_error)(void* context,
                                     llb_buildsystem_command_t* command,
                                     llb_buildsystem_process_t* process,
@@ -124,8 +180,8 @@ typedef struct llb_buildsystem_delegate_t_ {
   
   /// Called to report a command processes' (merged) standard output and error.
   ///
-  /// \Xparam process - The process handle.
-  /// \Xparam data - The process output.
+  /// Xparam process The process handle.
+  /// Xparam data The process output.
   void (*command_process_had_output)(void* context,
                                      llb_buildsystem_command_t* command,
                                      llb_buildsystem_process_t* process,
@@ -133,10 +189,10 @@ typedef struct llb_buildsystem_delegate_t_ {
   
   /// Called when a command's job has finished executing an external process.
   ///
-  /// \Xparam process - The handle used to identify the process. This handle
+  /// Xparam process The handle used to identify the process. This handle
   /// will become invalid as soon as the client returns from this API call.
   ///
-  /// \Xparam exitStatus - The exit status of the process.
+  /// Xparam exitStatus The exit status of the process.
   void (*command_process_finished)(void* context,
                                    llb_buildsystem_command_t* command,
                                    llb_buildsystem_process_t* process,
@@ -158,7 +214,7 @@ llb_buildsystem_build(llb_buildsystem_t* system, const llb_data_t* key);
 
 /// Get the name of the given command.
 ///
-/// \param key_out - On return, contains a pointer to the name of the command.
+/// \param key_out On return, contains a pointer to the name of the command.
 LLBUILD_EXPORT void
 llb_buildsystem_command_get_name(llb_buildsystem_command_t* command,
                                  llb_data_t* key_out);

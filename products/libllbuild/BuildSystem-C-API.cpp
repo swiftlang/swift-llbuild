@@ -31,19 +31,72 @@ using namespace llbuild::buildsystem;
 
 namespace {
 
+class CAPIFileSystem : public basic::FileSystem {
+  llb_buildsystem_delegate_t cAPIDelegate;
+  std::unique_ptr<basic::FileSystem> localFileSystem;
+  
+public:
+  CAPIFileSystem(llb_buildsystem_delegate_t delegate)
+      : cAPIDelegate(delegate),
+        localFileSystem(basic::createLocalFileSystem()) { }
+
+  virtual std::unique_ptr<llvm::MemoryBuffer>
+  getFileContents(const std::string& path) override {
+    if (!cAPIDelegate.fs_get_file_contents) {
+      return localFileSystem->getFileContents(path);
+    }
+    
+    llb_data_t data;
+    if (!cAPIDelegate.fs_get_file_contents(cAPIDelegate.context, path.c_str(),
+                                           &data)) {
+      return nullptr;
+    }
+
+    // Create a new memory buffer to copy the data to.
+    //
+    // FIXME: This is an unfortunate amount of copying.
+    auto result = llvm::MemoryBuffer::getNewUninitMemBuffer(data.length, path);
+    memcpy((char*)result->getBufferStart(), data.data, data.length);
+
+    // Release the client memory.
+    //
+    // FIXME: This is gross, come up with a general purpose solution.
+    free((char*)data.data);
+
+    return result;
+  }
+
+  virtual basic::FileInfo getFileInfo(const std::string& path) override {
+    if (!cAPIDelegate.fs_get_file_info) {
+      return localFileSystem->getFileInfo(path);
+    }
+
+    llb_fs_file_info_t file_info;
+    cAPIDelegate.fs_get_file_info(cAPIDelegate.context, path.c_str(),
+                                  &file_info);
+
+    basic::FileInfo result{};
+    result.device = file_info.device;
+    result.inode = file_info.inode;
+    result.size = file_info.size;
+    result.modTime.seconds = file_info.mod_time.seconds;;
+    result.modTime.nanoseconds = file_info.mod_time.nanoseconds;
+    return result;
+  }
+};
+  
 class CAPIBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
   llb_buildsystem_delegate_t cAPIDelegate;
-  std::unique_ptr<basic::FileSystem> fileSystem;
+  CAPIFileSystem fileSystem;
   
 public:
   CAPIBuildSystemFrontendDelegate(llvm::SourceMgr& sourceMgr,
                                   BuildSystemInvocation& invocation,
                                   llb_buildsystem_delegate_t delegate)
       : BuildSystemFrontendDelegate(sourceMgr, invocation, "basic", 0),
-        cAPIDelegate(delegate),
-        fileSystem(basic::createLocalFileSystem()) { }
+        cAPIDelegate(delegate), fileSystem(delegate) { }
 
-  virtual basic::FileSystem& getFileSystem() override { return *fileSystem; }
+  virtual basic::FileSystem& getFileSystem() override { return fileSystem; }
   
   virtual std::unique_ptr<Tool> lookupTool(StringRef name) override {
     // No support for custom tools yet.
