@@ -12,6 +12,7 @@
 
 #include "llbuild/Commands/Commands.h"
 
+#include "llbuild/Basic/FileSystem.h"
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildSystem.h"
@@ -38,12 +39,17 @@ namespace {
 class ParseBuildFileDelegate : public BuildFileDelegate {
   bool showOutput;
   StringRef bufferBeingParsed;
+  std::unique_ptr<basic::FileSystem> fileSystem;
   
 public:
-  ParseBuildFileDelegate(bool showOutput) : showOutput(showOutput) {}
+  ParseBuildFileDelegate(bool showOutput)
+      : showOutput(showOutput),
+        fileSystem(basic::createLocalFileSystem()) {}
   ~ParseBuildFileDelegate() {}
 
   virtual bool shouldShowOutput() { return showOutput; }
+
+  virtual basic::FileSystem& getFileSystem() override { return *fileSystem; }
   
   virtual void setFileContentsBeingParsed(StringRef buffer) override;
   

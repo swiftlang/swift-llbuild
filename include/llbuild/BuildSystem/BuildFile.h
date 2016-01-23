@@ -25,6 +25,12 @@
 #include <vector>
 
 namespace llbuild {
+namespace basic {
+
+class FileSystem;
+
+}
+
 namespace core {
 
 class Task;
@@ -255,7 +261,12 @@ class BuildFileDelegate {
 public:
   virtual ~BuildFileDelegate();
 
+  /// Get the file system to use for access.
+  virtual basic::FileSystem& getFileSystem() = 0;
+  
   /// Called by the build file loader to register the current file contents.
+  //
+  // FIXME: This is a total hack, and should be cleaned up.
   virtual void setFileContentsBeingParsed(StringRef buffer) = 0;
 
   /// Called by the build file loader to report an error.

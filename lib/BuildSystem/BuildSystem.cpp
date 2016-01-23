@@ -14,6 +14,7 @@
 #include "llbuild/BuildSystem/BuildSystemCommandInterface.h"
 
 #include "llbuild/Basic/FileInfo.h"
+#include "llbuild/Basic/FileSystem.h"
 #include "llbuild/Basic/Hashing.h"
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/Core/BuildDB.h"
@@ -53,16 +54,22 @@ class BuildSystemImpl;
 /// The delegate used to load the build file for use by a build system.
 class BuildSystemFileDelegate : public BuildFileDelegate {
   BuildSystemImpl& system;
+
+  std::unique_ptr<FileSystem> fileSystem;
   
 public:
   BuildSystemFileDelegate(BuildSystemImpl& system)
-      : BuildFileDelegate(), system(system) {}
+      : BuildFileDelegate(), system(system),
+        fileSystem(basic::createLocalFileSystem()) {}
 
   BuildSystemDelegate& getSystemDelegate();
 
   /// @name Delegate Implementation
   /// @{
 
+  // FIXME: Proxy this.
+  virtual FileSystem& getFileSystem() override { return *fileSystem; }
+  
   virtual void setFileContentsBeingParsed(StringRef buffer) override;
   
   virtual void error(StringRef filename,

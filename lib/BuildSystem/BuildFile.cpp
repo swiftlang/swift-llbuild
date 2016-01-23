@@ -12,6 +12,7 @@
 
 #include "llbuild/BuildSystem/BuildFile.h"
 
+#include "llbuild/Basic/FileSystem.h"
 #include "llbuild/Basic/LLVM.h"
 
 #include "llvm/ADT/STLExtras.h"
@@ -722,14 +723,12 @@ public:
     //
     // FIXME: Lift the file access into the delegate, like we do for Ninja.
     llvm::SourceMgr sourceMgr;
-    auto res = llvm::MemoryBuffer::getFile(
-        mainFilename);
-    if (auto ec = res.getError()) {
-      error("unable to open '" + mainFilename + "' (" + ec.message() + ")");
+    auto input = delegate.getFileSystem().getFileContents(mainFilename);
+    if (!input) {
+      error("unable to open '" + mainFilename + "'");
       return false;
     }
 
-    std::unique_ptr<llvm::MemoryBuffer> input(res->release());
     delegate.setFileContentsBeingParsed(input->getBuffer());
 
     // Create a YAML parser.
