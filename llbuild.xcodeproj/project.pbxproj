@@ -84,6 +84,10 @@
 		E12BFF1A1C4972F000B8D20F /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
 		E12E12A91AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E12E12A71AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp */; };
 		E12E12AA1AD50AE600ACE7B3 /* CommandLineStatusOutput.h in Headers */ = {isa = PBXBuildFile; fileRef = E12E12A81AD50AE500ACE7B3 /* CommandLineStatusOutput.h */; };
+		E138129E1C536D0E000092C0 /* FileSystem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E138129D1C536D0E000092C0 /* FileSystem.cpp */; };
+		E13812A21C53708E000092C0 /* FileSystemTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E13812A11C53708E000092C0 /* FileSystemTest.cpp */; };
+		E13812A31C5370A4000092C0 /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
+		E13812A41C5370B3000092C0 /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
 		E147DEFB1BA81CF70032D08E /* SerialQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E147DEFA1BA81CF70032D08E /* SerialQueue.cpp */; };
 		E147DF0D1BA81D330032D08E /* libgtest.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A224DD19F99B0E0059043E /* libgtest.a */; };
 		E147DF0E1BA81D330032D08E /* libgtest_main.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A224E619F99C580059043E /* libgtest_main.a */; };
@@ -244,6 +248,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = E1B839481B541BFD00DB876B;
 			remoteInfo = llbuildBuildSystem;
+		};
+		E138129F1C537071000092C0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1B838981B52E7DE00DB876B;
+			remoteInfo = llvmSupport;
 		};
 		E147DF001BA81D330032D08E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -629,6 +640,9 @@
 		E1192CEC1C49D84500F85890 /* buildsystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = buildsystem.h; sourceTree = "<group>"; };
 		E12E12A71AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CommandLineStatusOutput.cpp; sourceTree = "<group>"; };
 		E12E12A81AD50AE500ACE7B3 /* CommandLineStatusOutput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CommandLineStatusOutput.h; sourceTree = "<group>"; };
+		E138129C1C536CFC000092C0 /* FileSystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FileSystem.h; sourceTree = "<group>"; };
+		E138129D1C536D0E000092C0 /* FileSystem.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FileSystem.cpp; sourceTree = "<group>"; };
+		E13812A11C53708E000092C0 /* FileSystemTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FileSystemTest.cpp; sourceTree = "<group>"; };
 		E147DEFA1BA81CF70032D08E /* SerialQueue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SerialQueue.cpp; sourceTree = "<group>"; };
 		E147DEFC1BA81D0E0032D08E /* SerialQueue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SerialQueue.h; sourceTree = "<group>"; };
 		E147DEFD1BA81D0E0032D08E /* Hashing.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Hashing.h; sourceTree = "<group>"; };
@@ -899,9 +913,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E13812A41C5370B3000092C0 /* libcurses.dylib in Frameworks */,
 				E147DF0D1BA81D330032D08E /* libgtest.a in Frameworks */,
 				E147DF0E1BA81D330032D08E /* libgtest_main.a in Frameworks */,
 				E147DF0F1BA81D330032D08E /* libllbuildBasic.a in Frameworks */,
+				E13812A31C5370A4000092C0 /* libllvmSupport.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1090,6 +1106,7 @@
 			isa = PBXGroup;
 			children = (
 				E147DF181BA81D4E0032D08E /* CMakeLists.txt */,
+				E13812A11C53708E000092C0 /* FileSystemTest.cpp */,
 				E147DF191BA81D4E0032D08E /* SerialQueueTest.cpp */,
 			);
 			path = Basic;
@@ -1185,6 +1202,7 @@
 				E1A2244F19F997D40059043E /* Headers */,
 				E1A2240619F991530059043E /* CMakeLists.txt */,
 				E11470931B7554F800ED84CF /* FileInfo.cpp */,
+				E138129D1C536D0E000092C0 /* FileSystem.cpp */,
 				E1FE53401AB1343B00041B8E /* Hashing.cpp */,
 				E147DEFA1BA81CF70032D08E /* SerialQueue.cpp */,
 				E1A2240719F991530059043E /* Version.cpp */,
@@ -1244,6 +1262,7 @@
 			children = (
 				E182BE111ABA2B8D001840AD /* Compiler.h */,
 				E11470901B75160400ED84CF /* FileInfo.h */,
+				E138129C1C536CFC000092C0 /* FileSystem.h */,
 				E147DEFD1BA81D0E0032D08E /* Hashing.h */,
 				E1066C091BC5BCE700B892CE /* LLVM.h */,
 				E147DEFC1BA81D0E0032D08E /* SerialQueue.h */,
@@ -1839,6 +1858,7 @@
 			dependencies = (
 				E147DEFF1BA81D330032D08E /* PBXTargetDependency */,
 				E147DF011BA81D330032D08E /* PBXTargetDependency */,
+				E13812A01C537071000092C0 /* PBXTargetDependency */,
 				E147DF031BA81D330032D08E /* PBXTargetDependency */,
 			);
 			name = BasicTests;
@@ -2398,6 +2418,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E13812A21C53708E000092C0 /* FileSystemTest.cpp in Sources */,
 				E147DF1A1BA81D5A0032D08E /* SerialQueueTest.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -2415,6 +2436,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E1FE53411AB1346700041B8E /* Hashing.cpp in Sources */,
+				E138129E1C536D0E000092C0 /* FileSystem.cpp in Sources */,
 				E11470941B7555FA00ED84CF /* FileInfo.cpp in Sources */,
 				E147DEFB1BA81CF70032D08E /* SerialQueue.cpp in Sources */,
 				E1A224BE19F9995E0059043E /* Version.cpp in Sources */,
@@ -2619,6 +2641,11 @@
 			isa = PBXTargetDependency;
 			target = E1B839481B541BFD00DB876B /* llbuildBuildSystem */;
 			targetProxy = E12BFF1D1C4975F000B8D20F /* PBXContainerItemProxy */;
+		};
+		E13812A01C537071000092C0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1B838981B52E7DE00DB876B /* llvmSupport */;
+			targetProxy = E138129F1C537071000092C0 /* PBXContainerItemProxy */;
 		};
 		E147DEFF1BA81D330032D08E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
