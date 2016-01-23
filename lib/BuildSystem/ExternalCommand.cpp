@@ -102,7 +102,7 @@ getResultForOutput(Node* node, const BuildValue& value) {
 
   auto& info = value.getNthOutputInfo(idx);
   if (info.isMissing())
-    return BuildValue::makeMissingInput();
+    return BuildValue::makeMissingOutput();
     
   return BuildValue::makeExistingInput(info);
 }
@@ -165,11 +165,17 @@ void ExternalCommand::provideValue(BuildSystemCommandInterface& bsci,
   // All direct inputs should be individual node values.
   assert(!value.hasMultipleOutputs());
   assert(value.isExistingInput() || value.isMissingInput() ||
-         value.isFailedInput() || value.isVirtualInput());
+         value.isMissingOutput() || value.isFailedInput() ||
+         value.isVirtualInput());
 
-  // If the value is not an existing or virtual input, then we shouldn't run
-  // this command.
-  if (!value.isExistingInput() && !value.isVirtualInput()) {
+  // If the value is not an existing or virtual input, or a missing output, then
+  // we shouldn't run this command.
+  //
+  // Note that we explicitly allow running the command against a missing output,
+  // under the expectation that responsibility for reporting this situation
+  // falls to the command.
+  if (!value.isExistingInput() && !value.isVirtualInput() &&
+      !value.isMissingOutput()) {
     shouldSkip = true;
     if (value.isMissingInput()) {
       hasMissingInput = true;

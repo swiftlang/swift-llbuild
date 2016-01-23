@@ -1,22 +1,31 @@
-# Check reporting of missing inputs.
+# Check reporting of missing inputs (including missing inputs produced by other
+# commands).
 
 # Run an initial build which fails on the command.
 #
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.llbuild
-# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.out 2> %t.err || true
-# RUN: %{FileCheck} %s --input-file %t.err --check-prefix=CHECK-FAILURE-ERR
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build &> %t.out || true
+# RUN: %{FileCheck} %s --input-file %t.out --check-prefix=CHECK-FAILURE
 #
-# CHECK-FAILURE-ERR: missing input 'input' and no rule to build it
-# CHECK-FAILURE-ERR: cannot build 'output-1' due to missing input
+# CHECK-FAILURE: missing input 'input' and no rule to build it
+# CHECK-FAILURE: cannot build 'output-1' due to missing input
+# CHECK-FAILURE-NOT: missing input 'output-2' and no rule to build it
 
 # RUN: touch %t.build/input
-# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t2.out 2> %t2.err || true
-# RUN: %{FileCheck} %s --input-file %t2.err --check-prefix=CHECK-FAILURE-2-ERR
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build &> %t2.out || true
+# RUN: %{FileCheck} %s --input-file %t2.out --check-prefix=CHECK-FAILURE-2
 #
-# CHECK-FAILURE-2-ERR: missing input 'output-2' and no rule to build it
-# CHECK-FAILURE-2-ERR: cannot build 'output-2B' due to missing input
+# At this point, we have unblocked the commands, and commands are allowed to run
+# against missing outputs of previous commands (under the expectation that the
+# commands themselves will diagnose errors). This approach allows transparent
+# support of commands which may not produce an output (as long as the consumer
+# is prepared to handle this), but we could also diagnose missing outputs as a
+# response to the producing command to get stronger consistency checking.
+#
+# CHECK-FAILURE-2-NOT: missing input 'output-2' and no rule to build it
+# CHECK-FAILURE-2: cp: {{.*}}output-2{{.*}}: No such file
 
 client:
   name: basic

@@ -46,6 +46,10 @@ class BuildValue {
     /// A value produced by a missing input file.
     MissingInput,
 
+    /// A value produced by a command which succeeded, but whose output was
+    /// missing.
+    MissingOutput,
+
     /// A value for a produced output whose command failed.
     FailedInput,
 
@@ -157,6 +161,9 @@ public:
   static BuildValue makeMissingInput() {
     return BuildValue(Kind::MissingInput);
   }
+  static BuildValue makeMissingOutput() {
+    return BuildValue(Kind::MissingOutput);
+  }
   static BuildValue makeFailedInput() {
     return BuildValue(Kind::FailedInput);
   }
@@ -183,6 +190,8 @@ public:
   bool isVirtualInput() const { return kind == Kind::VirtualInput; }
   bool isExistingInput() const { return kind == Kind::ExistingInput; }
   bool isMissingInput() const { return kind == Kind::MissingInput; }
+
+  bool isMissingOutput() const { return kind == Kind::MissingOutput; }
   bool isFailedInput() const { return kind == Kind::FailedInput; }
   bool isSuccessfulCommand() const {return kind == Kind::SuccessfulCommand; }
   bool isFailedCommand() const { return kind == Kind::FailedCommand; }

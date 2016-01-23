@@ -26,6 +26,7 @@ StringRef BuildValue::stringForKind(BuildValue::Kind kind) {
     CASE(VirtualInput);
     CASE(ExistingInput);
     CASE(MissingInput);
+    CASE(MissingOutput);
     CASE(FailedInput);
     CASE(SuccessfulCommand);
     CASE(FailedCommand);

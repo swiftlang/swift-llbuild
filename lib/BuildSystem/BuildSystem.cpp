@@ -364,6 +364,7 @@ public:
       return value.isVirtualInput();
     
     // If the previous value wasn't for an existing input, always recompute.
+    assert(value.isExistingInput() || value.isMissingInput());
     if (!value.isExistingInput())
       return false;
 
