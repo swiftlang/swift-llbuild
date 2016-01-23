@@ -12,6 +12,7 @@
 
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
 
+#include "llbuild/Basic/FileSystem.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/SwiftTools.h"
 
@@ -23,11 +24,16 @@ using namespace llbuild;
 using namespace llbuild::buildsystem;
 
 class BasicBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
+  std::unique_ptr<basic::FileSystem> fileSystem;
+    
 public:
   BasicBuildSystemFrontendDelegate(llvm::SourceMgr& sourceMgr,
                                    const BuildSystemInvocation& invocation)
-      : BuildSystemFrontendDelegate(sourceMgr, invocation,
-                                    "swift-build", /*version=*/0) {}
+    : BuildSystemFrontendDelegate(sourceMgr, invocation,
+                                  "swift-build", /*version=*/0),
+      fileSystem(basic::createLocalFileSystem()) {}
+
+  virtual basic::FileSystem& getFileSystem() override { return *fileSystem; }
   
   virtual std::unique_ptr<Tool> lookupTool(StringRef name) override {
     if (name == "swift-compiler") {

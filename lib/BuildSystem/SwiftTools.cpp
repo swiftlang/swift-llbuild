@@ -12,6 +12,7 @@
 
 #include "llbuild/BuildSystem/SwiftTools.h"
 
+#include "llbuild/Basic/FileSystem.h"
 #include "llbuild/Basic/Hashing.h"
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
@@ -371,15 +372,13 @@ public:
   bool processDiscoveredDependencies(BuildSystemCommandInterface& bsci,
                                      core::Task* task, StringRef depsPath) {
     // Read the dependencies file.
-    auto res = llvm::MemoryBuffer::getFile(depsPath);
-    if (auto ec = res.getError()) {
+    auto input = bsci.getDelegate().getFileSystem().getFileContents(depsPath);
+    if (!input) {
       bsci.getDelegate().error(
           "", {},
-          "unable to open dependencies file '" + depsPath +
-          "' (" + ec.message() + ")");
+          "unable to open dependencies file '" + depsPath + "'");
       return false;
     }
-    std::unique_ptr<llvm::MemoryBuffer> input(res->release());
 
     // Parse the output.
     //

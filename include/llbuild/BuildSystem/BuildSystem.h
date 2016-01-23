@@ -23,6 +23,12 @@
 #include <string>
 
 namespace llbuild {
+namespace basic {
+
+class FileSystem;
+
+}
+
 namespace buildsystem {
 
 class BuildExecutionQueue;
@@ -60,7 +66,12 @@ public:
   /// Called by the build system to get the current client version.
   uint32_t getVersion() const { return version; }
 
+  /// Get the file system to use for access.
+  virtual basic::FileSystem& getFileSystem() = 0;
+
   /// Called by the build file loader to register the current file contents.
+  //
+  // FIXME: This is a total hack, and should be cleaned up.
   virtual void setFileContentsBeingParsed(StringRef buffer) = 0;
 
   /// Called by the build file loader to report an error.

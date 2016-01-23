@@ -12,6 +12,7 @@
 
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
 
+#include "llbuild/Basic/FileSystem.h"
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
 #include "llbuild/BuildSystem/BuildFile.h"
@@ -279,15 +280,15 @@ BuildSystemFrontendDelegate::error(StringRef filename,
   if (!filename.empty() && at.start) {
     // FIXME: We ignore errors here, for now, this will be resolved when we move
     // to SourceMgr completely.
-    auto buffer = llvm::MemoryBuffer::getFile(filename);
-    if (!buffer.getError()) {
+    auto buffer = getFileSystem().getFileContents(filename);
+    if (buffer) {
       unsigned offset = at.start - impl->bufferBeingParsed.data();
-      if (offset + at.length < (*buffer)->getBufferSize()) {
+      if (offset + at.length < buffer->getBufferSize()) {
         range.Start = loc = llvm::SMLoc::getFromPointer(
-            (*buffer)->getBufferStart() + offset);
+            buffer->getBufferStart() + offset);
         range.End = llvm::SMLoc::getFromPointer(
-            (*buffer)->getBufferStart() + (offset + at.length));
-        getSourceMgr().AddNewSourceBuffer(std::move(*buffer), llvm::SMLoc{});
+            buffer->getBufferStart() + (offset + at.length));
+        getSourceMgr().AddNewSourceBuffer(std::move(buffer), llvm::SMLoc{});
       }
     }
   }

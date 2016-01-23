@@ -13,6 +13,7 @@
 // Include the public API.
 #include <llbuild/llbuild.h>
 
+#include "llbuild/Basic/FileSystem.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
 #include "llbuild/Core/BuildEngine.h"
@@ -32,13 +33,17 @@ namespace {
 
 class CAPIBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
   llb_buildsystem_delegate_t cAPIDelegate;
+  std::unique_ptr<basic::FileSystem> fileSystem;
   
 public:
   CAPIBuildSystemFrontendDelegate(llvm::SourceMgr& sourceMgr,
                                   BuildSystemInvocation& invocation,
                                   llb_buildsystem_delegate_t delegate)
       : BuildSystemFrontendDelegate(sourceMgr, invocation, "basic", 0),
-        cAPIDelegate(delegate) { }
+        cAPIDelegate(delegate),
+        fileSystem(basic::createLocalFileSystem()) { }
+
+  virtual basic::FileSystem& getFileSystem() override { return *fileSystem; }
   
   virtual std::unique_ptr<Tool> lookupTool(StringRef name) override {
     // No support for custom tools yet.

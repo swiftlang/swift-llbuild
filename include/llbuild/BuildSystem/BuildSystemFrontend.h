@@ -29,6 +29,12 @@ class SourceMgr;
 }
 
 namespace llbuild {
+namespace basic {
+
+class FileSystem;
+
+}
+
 namespace buildsystem {
 
 class BuildSystemFrontendDelegate;
@@ -106,7 +112,10 @@ public:
                               StringRef name,
                               uint32_t version);
   virtual ~BuildSystemFrontendDelegate();
-  
+
+  /// Get the file system to use for access.
+  virtual basic::FileSystem& getFileSystem() override = 0;
+
   /// Called by the build system to get a tool definition, must be provided by
   /// subclasses.
   virtual std::unique_ptr<Tool> lookupTool(StringRef name) override = 0;

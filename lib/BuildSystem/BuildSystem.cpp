@@ -55,20 +55,18 @@ class BuildSystemImpl;
 class BuildSystemFileDelegate : public BuildFileDelegate {
   BuildSystemImpl& system;
 
-  std::unique_ptr<FileSystem> fileSystem;
-  
 public:
   BuildSystemFileDelegate(BuildSystemImpl& system)
-      : BuildFileDelegate(), system(system),
-        fileSystem(basic::createLocalFileSystem()) {}
+      : BuildFileDelegate(), system(system) {}
 
   BuildSystemDelegate& getSystemDelegate();
 
   /// @name Delegate Implementation
   /// @{
 
-  // FIXME: Proxy this.
-  virtual FileSystem& getFileSystem() override { return *fileSystem; }
+  virtual FileSystem& getFileSystem() override {
+    return getSystemDelegate().getFileSystem();
+  }
   
   virtual void setFileContentsBeingParsed(StringRef buffer) override;
   
@@ -920,16 +918,15 @@ class ClangShellCommand : public ExternalCommand {
   }
 
   bool processDiscoveredDependencies(BuildSystemCommandInterface& bsci,
-                                      Task* task,
-                                      QueueJobContext* context) {
+                                     Task* task,
+                                     QueueJobContext* context) {
     // Read the dependencies file.
-    auto res = llvm::MemoryBuffer::getFile(depsPath);
-    if (auto ec = res.getError()) {
+    auto input = bsci.getDelegate().getFileSystem().getFileContents(depsPath);
+    if (!input) {
       getBuildSystem(bsci.getBuildEngine()).error(
-          depsPath, "unable to open dependencies file (" + ec.message() + ")");
+          depsPath, "unable to open dependencies file (" + depsPath + ")");
       return false;
     }
-    std::unique_ptr<llvm::MemoryBuffer> input(res->release());
 
     // Parse the output.
     //

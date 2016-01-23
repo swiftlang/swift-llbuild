@@ -356,12 +356,17 @@ static int executeParseCommand(std::vector<std::string> args) {
 /* Build Command */
 
 class BasicBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
+  std::unique_ptr<basic::FileSystem> fileSystem;
+  
 public:
   BasicBuildSystemFrontendDelegate(llvm::SourceMgr& sourceMgr,
                                    const BuildSystemInvocation& invocation)
       : BuildSystemFrontendDelegate(sourceMgr, invocation,
-                                    "basic", /*version=*/0) {}
-  
+                                    "basic", /*version=*/0),
+        fileSystem(basic::createLocalFileSystem()) {}
+
+  virtual basic::FileSystem& getFileSystem() override { return *fileSystem; }
+
   virtual std::unique_ptr<Tool> lookupTool(StringRef name) override {
     // We do not support any non-built-in tools.
     return nullptr;
