@@ -368,6 +368,7 @@ commandProcessHadError(Command* command, ProcessHandle handle,
   
   // FIXME: Design the logging and status output APIs.
   fwrite(str.data(), str.size(), 1, stderr);
+  fputc('\n', stderr);
   fflush(stderr);
 }
   
