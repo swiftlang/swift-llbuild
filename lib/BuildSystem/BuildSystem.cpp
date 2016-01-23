@@ -351,7 +351,8 @@ class InputNodeTask : public Task {
     //
     // FIXME: This needs to delegate, since we want to have a notion of
     // different node types.
-    auto info = node.getFileInfo();
+    auto info = node.getFileInfo(
+        getBuildSystem(engine).getDelegate().getFileSystem());
     if (info.isMissing()) {
       engine.taskIsComplete(this, BuildValue::makeMissingInput().toData());
       return;
@@ -384,7 +385,8 @@ public:
     //
     // We can solve this by caching ourselves but I wonder if it is something
     // the engine should support more naturally.
-    auto info = node.getFileInfo();
+    auto info = node.getFileInfo(
+        getBuildSystem(engine).getDelegate().getFileSystem());
     if (info.isMissing())
       return false;
 

@@ -13,6 +13,7 @@
 #include "llbuild/BuildSystem/BuildNode.h"
 
 #include "llbuild/Basic/FileInfo.h"
+#include "llbuild/Basic/FileSystem.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 
 #include "llvm/ADT/ArrayRef.h"
@@ -49,7 +50,7 @@ bool BuildNode::configureAttribute(const ConfigureContext& ctx, StringRef name,
   return false;
 }
 
-FileInfo BuildNode::getFileInfo() const {
+FileInfo BuildNode::getFileInfo(basic::FileSystem& fileSystem) const {
   assert(!isVirtual());
-  return FileInfo::getInfoForPath(getName());
+  return fileSystem.getFileInfo(getName());
 }

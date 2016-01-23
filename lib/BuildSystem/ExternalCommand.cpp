@@ -107,7 +107,8 @@ getResultForOutput(Node* node, const BuildValue& value) {
   return BuildValue::makeExistingInput(info);
 }
   
-bool ExternalCommand::isResultValid(BuildSystem& system, const BuildValue& value) {
+bool ExternalCommand::isResultValid(BuildSystem& system,
+                                    const BuildValue& value) {
   // If the prior value wasn't for a successful command, recompute.
   if (!value.isSuccessfulCommand())
     return false;
@@ -125,7 +126,7 @@ bool ExternalCommand::isResultValid(BuildSystem& system, const BuildValue& value
       continue;
       
     // Always rebuild if the output is missing.
-    auto info = node->getFileInfo();
+    auto info = node->getFileInfo(system.getDelegate().getFileSystem());
     if (info.isMissing())
       return false;
 
@@ -234,7 +235,8 @@ void ExternalCommand::inputsAvailable(BuildSystemCommandInterface& bsci,
       if (node->isVirtual()) {
         outputInfos.push_back(FileInfo{});
       } else {
-        outputInfos.push_back(node->getFileInfo());
+        outputInfos.push_back(node->getFileInfo(
+                                  bsci.getDelegate().getFileSystem()));
       }
     }
       

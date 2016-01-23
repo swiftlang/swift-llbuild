@@ -22,7 +22,8 @@ namespace llbuild {
 namespace basic {
   
 struct FileInfo;
-  
+class FileSystem;
+
 }
   
 namespace buildsystem {
@@ -43,7 +44,7 @@ public:
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   ArrayRef<StringRef> values) override;
 
-  basic::FileInfo getFileInfo() const;
+  basic::FileInfo getFileInfo(basic::FileSystem&) const;
 };
 
 }
