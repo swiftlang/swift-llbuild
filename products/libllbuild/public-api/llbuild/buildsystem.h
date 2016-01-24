@@ -204,6 +204,9 @@ typedef struct llb_buildsystem_delegate_t_ {
 } llb_buildsystem_delegate_t;
 
 /// Create a new build system instance.
+///
+/// The C-string members of the invocation structure are immediately copied upon
+/// construction of the build system, and can safely be released upon return.
 LLBUILD_EXPORT llb_buildsystem_t*
 llb_buildsystem_create(llb_buildsystem_delegate_t delegate,
                        llb_buildsystem_invocation_t invocation);
