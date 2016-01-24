@@ -2,12 +2,16 @@
 #
 # RUN: cc -o %t.exe %{srcroot}/examples/c-api/buildsystem/main.c -I %{srcroot}/products/libllbuild/public-api -lllbuild -L %{llbuild-lib-dir} -Werror
 # RUN: env LD_LIBRARY_PATH=%{llbuild-lib-dir} %t.exe %s > %t.out
+# RUN: cat %t.out
 # RUN: %{FileCheck} %s --input-file %t.out
 #
 # CHECK: -- read file contents: {{.*}}/buildsystem-capi.llbuild
 # CHECK: -- stat: /
 # CHECK: command_started: <hello> -- HELLO
 # CHECK: command_finished: <hello>
+# CHECK: command_started: <fancy-thing>
+# CHECK: fancy_command_execute_command
+# CHECK: command_finished: <fancy-thing>
 # CHECK: command_started: <error> -- FAILING-COMMAND
 # CHECK: <unknown>:0: error: build had 1 command failure
 
@@ -35,12 +39,12 @@ commands:
 
   "<fancy-thing>":
     tool: fancy
-    inputs: []
+    inputs: ["<hello>"]
     outputs: ["<fancy-thing>"]
     
   "<error>":
     tool: shell
     args: ["false"]
-    inputs: ["<hello>"]
+    inputs: ["<hello>", "<fancy-thing>"]
     outputs: ["<error>"]
     description: FAILING-COMMAND

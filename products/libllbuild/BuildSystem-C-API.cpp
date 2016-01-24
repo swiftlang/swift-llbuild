@@ -15,6 +15,7 @@
 
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/BuildSystem/BuildFile.h"
+#include "llbuild/BuildSystem/BuildSystemCommandInterface.h"
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
 #include "llbuild/BuildSystem/ExternalCommand.h"
 #include "llbuild/Core/BuildEngine.h"
@@ -276,10 +277,11 @@ class CAPIExternalCommand : public ExternalCommand {
 
   virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
                                       core::Task* task,
-                                      QueueJobContext* context) override {
-    // FIXME: Implement.
-    (void)cAPIDelegate;
-    return false;
+                                      QueueJobContext* job_context) override {
+    return cAPIDelegate.execute_command(
+        cAPIDelegate.context, (llb_buildsystem_command_t*)this,
+        (llb_buildsystem_command_interface_t*)&bsci,
+        (llb_task_t*)task, (llb_buildsystem_queue_job_context_t*)job_context);
   }
 
 public:

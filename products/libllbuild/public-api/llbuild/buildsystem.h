@@ -292,31 +292,25 @@ typedef struct llb_buildsystem_key_t_
 typedef struct llb_buildsystem_value_t_
   llb_buildsystem_value_t;
 
-typedef struct llb_buildsystem_command_interface_t_ {
-  void* context;
-  
-  void (*task_needs_input)(void* context, llb_task_t* task,
-                           const llb_buildsystem_key_t* key,
-                           uintptr_t input_id);
-
-  void (*task_must_follow)(void* context, llb_task_t* task,
-                           const llb_buildsystem_key_t* key);
-
-  void (*task_discovered_dependency)(void* context, llb_task_t* task,
-                                     const llb_buildsystem_key_t* key);
-
-  void (*task_is_complete)(void* context, llb_task_t* task,
-                           const llb_buildsystem_value_t* value,
-                           bool force_change);
-} llb_buildsystem_command_interface_t;
+/// Opaque handle to the interfaces for a running command.
+//
+// FIXME: Find a better name for this, it is too long.
+typedef struct llb_buildsystem_command_interface_t_
+  llb_buildsystem_command_interface_t;
   
 /// Delegate structure for callbacks required by an external build command.
 typedef struct llb_buildsystem_external_command_delegate_t_ {
   /// User context pointer.
   void* context;
 
-  /// Called by the build system when the command should execute.
-  bool (*execute_command)(void* context,
+  /// Called by the build system's execution queue after the command's inputs
+  /// are available and the execution queue is ready to schedule the command.
+  ///
+  /// This function is responsible for completing the work and notifying the
+  /// system using the command interface. It can add additional work onto the
+  /// execution queue, so long as it arranges to only notify the system of
+  /// completion once all that work is complete.
+  bool (*execute_command)(void* context, llb_buildsystem_command_t* command,
                           llb_buildsystem_command_interface_t* bsci,
                           llb_task_t* task,
                           llb_buildsystem_queue_job_context_t* job_context);

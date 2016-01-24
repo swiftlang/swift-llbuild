@@ -38,9 +38,11 @@ static const char* basename(const char* path) {
 
 static bool
 fancy_command_execute_command(
-    void *context, llb_buildsystem_command_interface_t* bsci, llb_task_t* task,
-    llb_buildsystem_queue_job_context_t* job_context) {
-  return false;
+    void *context, llb_buildsystem_command_t* command,
+    llb_buildsystem_command_interface_t* bsci, llb_task_t* task,
+    llb_buildsystem_queue_job_context_t* job) {
+  printf("%s\n", __FUNCTION__);
+  return true;
 }
 
 // "Fancy" Tool Implementation
