@@ -24,7 +24,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/// @name Diagnostics
+/// @name File System Behaviors
 /// @{
 
 /// A fine-grained timestamp.
@@ -69,7 +69,7 @@ llb_buildsystem_diagnostic_kind_get_name(
 
 /// @}
 
-/// @name Build System
+/// @name Build System APIs
 /// @{
 
 /// Opaque handle to a build system.
@@ -77,6 +77,9 @@ typedef struct llb_buildsystem_t_ llb_buildsystem_t;
 
 /// Opaque handle to a build system command.
 typedef struct llb_buildsystem_command_t_ llb_buildsystem_command_t;
+
+/// Opaque handle to a build system tool.
+typedef struct llb_buildsystem_tool_t_ llb_buildsystem_tool_t;
 
 /// Opaque handle to a build system command's launched process.
 typedef struct llb_buildsystem_process_t_ llb_buildsystem_process_t;
@@ -137,7 +140,25 @@ typedef struct llb_buildsystem_delegate_t_ {
   /// Get the file information for the given path.
   void (*fs_get_file_info)(void* context, const char* path,
                            llb_fs_file_info_t* data_out);
+
+  /// @}
+
+  /// @name Build System Behaviors
+  /// @{  
+
+  /// Called by the build system to get an instance of the custom tool for the
+  /// given name.
+  ///
+  /// Xreturns If the tool is recognized, the client should return an instance
+  /// of the tool created with \see llb_buildsystem_create_tool(). If the tool
+  /// is not recognized, the client should return null.
+  llb_buildsystem_tool_t* (*lookup_tool)(void* context, const llb_data_t* name);
   
+  /// @}
+
+  /// @name Diagnostic & Status APIs
+  /// @{  
+
   /// Called to report an unassociated diagnostic from the build system.
   ///
   /// Xparam kind The kind of diagnostic.
@@ -201,6 +222,8 @@ typedef struct llb_buildsystem_delegate_t_ {
                                    llb_buildsystem_command_t* command,
                                    llb_buildsystem_process_t* process,
                                    int exit_status);
+  
+  /// @}
 } llb_buildsystem_delegate_t;
 
 /// Create a new build system instance.
@@ -218,6 +241,44 @@ llb_buildsystem_destroy(llb_buildsystem_t* system);
 /// Build the named target.
 LLBUILD_EXPORT bool
 llb_buildsystem_build(llb_buildsystem_t* system, const llb_data_t* key);
+
+/// @}
+
+/// @name Tool APIs
+/// @{
+
+/// Delegate structure for callbacks required by a build tool.
+typedef struct llb_buildsystem_tool_delegate_t_ {
+  /// User context pointer.
+  void* context;
+
+  // FIXME: Need to support configuration behaviors.
+  
+  /// Called by the build system to create an individual command with this tool
+  /// type.
+  ///
+  /// Xparam The name of the command to create.
+  /// Xreturns If the tool is recognized, the client should return an instance
+  /// of the tool created with \see llb_buildsystem_create_tool(). If the tool
+  /// is not recognized, the client should return null.
+  llb_buildsystem_command_t* (*create_command)(void* context,
+                                               const llb_data_t* name);
+
+  // FIXME: Support dynamic tool commands.
+} llb_buildsystem_tool_delegate_t;
+
+/// Create a new tool instance.
+///
+/// A tool is the top-level entity responsible for defining custom build system
+/// behaviors. Once defined, tools may be used to define new types of commands.
+LLBUILD_EXPORT llb_buildsystem_tool_t*
+llb_buildsystem_tool_create(const llb_data_t* name,
+                            llb_buildsystem_tool_delegate_t delegate);
+
+/// @}
+
+/// @name Command APIs
+/// @{
 
 /// Get the name of the given command.
 ///

@@ -103,7 +103,7 @@ public:
   /// The tool should return null if it does not understand how to create the
   /// a custom command for the given key.
   ///
-  /// \param key - The custom build key to create a command ofr.
+  /// \param key - The custom build key to create a command for.
   /// \returns The command to use, or null.
   virtual std::unique_ptr<Command> createCustomCommand(const BuildKey& key);
 };

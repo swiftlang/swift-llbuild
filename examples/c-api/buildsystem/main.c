@@ -34,6 +34,15 @@ static const char* basename(const char* path) {
   return result ? result : path;
 }
 
+// "Fancy" Tool Implementation
+
+static llb_buildsystem_command_t*
+fancy_tool_create_command(void *context, const llb_data_t* name) {
+  return NULL;
+}
+
+// Build System Implementation
+
 static bool fs_get_file_contents(void* context, const char* path,
                                  llb_data_t* data_out) {
   printf(" -- read file contents: %s\n", path);
@@ -75,6 +84,17 @@ static void fs_get_file_info(void* context, const char* path,
   file_info_out->size = buf.st_size;
   file_info_out->mod_time.seconds = buf.st_mtimespec.tv_sec;
   file_info_out->mod_time.nanoseconds = 0;
+}
+
+static llb_buildsystem_tool_t* lookup_tool(void *context,
+                                           const llb_data_t* name) {
+  if (name->length == 5 && memcmp(name->data, "fancy", 5) == 0) {
+    llb_buildsystem_tool_delegate_t delegate = {};
+    delegate.create_command = fancy_tool_create_command;
+    return llb_buildsystem_tool_create(name, delegate);
+  }
+
+  return NULL;
 }
 
 static void handle_diagnostic(void* context,
@@ -151,6 +171,7 @@ int main(int argc, char **argv) {
   delegate.context = NULL;
   delegate.fs_get_file_contents = fs_get_file_contents;
   delegate.fs_get_file_info = fs_get_file_info;
+  delegate.lookup_tool = lookup_tool;
   delegate.handle_diagnostic = handle_diagnostic;
   delegate.command_started = command_started;
   delegate.command_finished = command_finished;

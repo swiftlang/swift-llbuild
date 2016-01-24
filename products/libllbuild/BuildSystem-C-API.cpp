@@ -99,8 +99,17 @@ public:
   virtual basic::FileSystem& getFileSystem() override { return fileSystem; }
   
   virtual std::unique_ptr<Tool> lookupTool(StringRef name) override {
-    // No support for custom tools yet.
-    return {};
+    if (!cAPIDelegate.lookup_tool) {
+      return nullptr;
+    }
+    
+    llb_data_t cName{ name.size(), (const uint8_t*) name.data() };
+    auto tool = cAPIDelegate.lookup_tool(cAPIDelegate.context, &cName);
+    if (!tool) {
+      return nullptr;
+    }
+
+    return std::unique_ptr<Tool>((Tool*)tool);
   }
 
   virtual void commandStarted(Command* command) override {
@@ -216,9 +225,6 @@ public:
 
     // Allocate the actual frontend.
     frontend.reset(new BuildSystemFrontend(*frontendDelegate, invocation));
-
-    // Suppress unused warning, for now.
-    (void)cAPIDelegate;
   }
 
   BuildSystemFrontend& getFrontend() {
@@ -226,7 +232,42 @@ public:
   }
 };
 
+class CAPITool : public Tool {
+  llb_buildsystem_tool_delegate_t cAPIDelegate;
+  
+public:
+  CAPITool(StringRef name, llb_buildsystem_tool_delegate_t delegate)
+      : Tool(name), cAPIDelegate(delegate) {}
+
+  virtual bool configureAttribute(const ConfigureContext& context,
+                                  StringRef name,
+                                  StringRef value) override {
+    // FIXME: Support custom attributes in client tools.
+    return false;
+  }
+  
+  virtual bool configureAttribute(const ConfigureContext& context,
+                                  StringRef name,
+                                  ArrayRef<StringRef> values) override {
+    // FIXME: Support custom attributes in client tools.
+    return false;
+  }
+
+  virtual std::unique_ptr<Command> createCommand(StringRef name) override {
+    llb_data_t cName{ name.size(), (const uint8_t*) name.data() };
+    return std::unique_ptr<Command>(
+        (Command*) cAPIDelegate.create_command(cAPIDelegate.context, &cName));
+  }
+
+  virtual std::unique_ptr<Command>
+  createCustomCommand(const BuildKey& key) override {
+    // FIXME: Support dynamic commands in client tools.
+    
+    return Tool::createCustomCommand(key);
+  }
 };
+
+}
 
 const char* llb_buildsystem_diagnostic_kind_get_name(
     llb_buildsystem_diagnostic_kind_t kind) {
@@ -259,6 +300,15 @@ llb_buildsystem_t* llb_buildsystem_create(
 
 void llb_buildsystem_destroy(llb_buildsystem_t* system) {
   delete (CAPIBuildSystem*)system;
+}
+
+llb_buildsystem_tool_t*
+llb_buildsystem_tool_create(const llb_data_t* name,
+                            llb_buildsystem_tool_delegate_t delegate) {
+  // Check that all required methods are provided.
+  assert(delegate.create_command);
+  return (llb_buildsystem_tool_t*) new CAPITool(
+      StringRef((const char*)name->data, name->length), delegate);
 }
 
 bool llb_buildsystem_build(llb_buildsystem_t* system_p, const llb_data_t* key) {
