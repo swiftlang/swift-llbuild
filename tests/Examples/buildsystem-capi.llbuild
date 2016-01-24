@@ -33,6 +33,11 @@ commands:
     outputs: ["<hello>"]
     description: HELLO
 
+  "<fancy-thing>":
+    tool: fancy
+    inputs: []
+    outputs: ["<fancy-thing>"]
+    
   "<error>":
     tool: shell
     args: ["false"]

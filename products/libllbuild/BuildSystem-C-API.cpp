@@ -16,10 +16,12 @@
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
+#include "llbuild/BuildSystem/ExternalCommand.h"
 #include "llbuild/Core/BuildEngine.h"
 
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/SourceMgr.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include <cassert>
 #include <memory>
@@ -267,6 +269,36 @@ public:
   }
 };
 
+class CAPIExternalCommand : public ExternalCommand {
+  // FIXME: This is incredibly wasteful to copy everywhere. Rephrase things so
+  // that the delegates are const and we just carry the context pointer around.
+  llb_buildsystem_external_command_delegate_t cAPIDelegate;
+
+  virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
+                                      core::Task* task,
+                                      QueueJobContext* context) override {
+    // FIXME: Implement.
+    (void)cAPIDelegate;
+    return false;
+  }
+
+public:
+  CAPIExternalCommand(StringRef name,
+                      llb_buildsystem_external_command_delegate_t delegate)
+      : ExternalCommand(name), cAPIDelegate(delegate) {}
+
+
+  virtual void getShortDescription(SmallVectorImpl<char> &result) override {
+    // FIXME: Provide client control.
+    llvm::raw_svector_ostream(result) << getName();
+  }
+
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
+    // FIXME: Provide client control.
+    llvm::raw_svector_ostream(result) << getName();
+  }
+};
+
 }
 
 const char* llb_buildsystem_diagnostic_kind_get_name(
@@ -316,6 +348,17 @@ bool llb_buildsystem_build(llb_buildsystem_t* system_p, const llb_data_t* key) {
 
   return system->getFrontend().build(
       core::KeyType((const char*)key->data, key->length));
+}
+
+llb_buildsystem_command_t*
+llb_buildsystem_external_command_create(
+    const llb_data_t* name,
+    llb_buildsystem_external_command_delegate_t delegate) {
+  // Check that all required methods are provided.
+  assert(delegate.execute_command);
+  
+  return (llb_buildsystem_command_t*) new CAPIExternalCommand(
+      StringRef((const char*)name->data, name->length), delegate);
 }
 
 void llb_buildsystem_command_get_name(llb_buildsystem_command_t* command_p,

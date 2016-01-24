@@ -34,11 +34,23 @@ static const char* basename(const char* path) {
   return result ? result : path;
 }
 
+// "Fancy" Command Implementation
+
+static bool
+fancy_command_execute_command(
+    void *context, llb_buildsystem_command_interface_t* bsci, llb_task_t* task,
+    llb_buildsystem_queue_job_context_t* job_context) {
+  return false;
+}
+
 // "Fancy" Tool Implementation
 
 static llb_buildsystem_command_t*
 fancy_tool_create_command(void *context, const llb_data_t* name) {
-  return NULL;
+  llb_buildsystem_external_command_delegate_t delegate;
+  delegate.context = NULL;
+  delegate.execute_command = fancy_command_execute_command;
+  return llb_buildsystem_external_command_create(name, delegate);
 }
 
 // Build System Implementation

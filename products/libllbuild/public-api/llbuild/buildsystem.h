@@ -280,6 +280,62 @@ llb_buildsystem_tool_create(const llb_data_t* name,
 /// @name Command APIs
 /// @{
 
+/// Opaque handle to a queue job context.
+typedef struct llb_buildsystem_queue_job_context_t_
+  llb_buildsystem_queue_job_context_t;
+
+/// Opaque handle to a build key.
+typedef struct llb_buildsystem_key_t_
+  llb_buildsystem_key_t;
+
+/// Opaque handle to a build value.
+typedef struct llb_buildsystem_value_t_
+  llb_buildsystem_value_t;
+
+typedef struct llb_buildsystem_command_interface_t_ {
+  void* context;
+  
+  void (*task_needs_input)(void* context, llb_task_t* task,
+                           const llb_buildsystem_key_t* key,
+                           uintptr_t input_id);
+
+  void (*task_must_follow)(void* context, llb_task_t* task,
+                           const llb_buildsystem_key_t* key);
+
+  void (*task_discovered_dependency)(void* context, llb_task_t* task,
+                                     const llb_buildsystem_key_t* key);
+
+  void (*task_is_complete)(void* context, llb_task_t* task,
+                           const llb_buildsystem_value_t* value,
+                           bool force_change);
+} llb_buildsystem_command_interface_t;
+  
+/// Delegate structure for callbacks required by an external build command.
+typedef struct llb_buildsystem_external_command_delegate_t_ {
+  /// User context pointer.
+  void* context;
+
+  /// Called by the build system when the command should execute.
+  bool (*execute_command)(void* context,
+                          llb_buildsystem_command_interface_t* bsci,
+                          llb_task_t* task,
+                          llb_buildsystem_queue_job_context_t* job_context);
+} llb_buildsystem_external_command_delegate_t;
+
+/// Create a new external command instance.
+///
+/// An external command is one which is run externally to the build system (not
+/// necessarily out of process) and which interacts using the standard notions
+/// of files and virtual nodes.
+///
+/// It defines common base behaviors which make sense for all such tools (for
+/// example, capturing the signatures of output nodes and a standard behavior
+/// for determining when the command needs to be recomputed).
+LLBUILD_EXPORT llb_buildsystem_command_t*
+llb_buildsystem_external_command_create(
+    const llb_data_t* name,
+    llb_buildsystem_external_command_delegate_t delegate);
+
 /// Get the name of the given command.
 ///
 /// \param key_out On return, contains a pointer to the name of the command.
