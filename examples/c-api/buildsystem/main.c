@@ -96,7 +96,7 @@ static void fs_get_file_info(void* context, const char* path,
   file_info_out->device = buf.st_dev;
   file_info_out->inode = buf.st_ino;
   file_info_out->size = buf.st_size;
-  file_info_out->mod_time.seconds = buf.st_mtimespec.tv_sec;
+  file_info_out->mod_time.seconds = buf.st_mtime;
   file_info_out->mod_time.nanoseconds = 0;
 }
 
