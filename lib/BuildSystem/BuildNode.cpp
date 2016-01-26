@@ -50,6 +50,14 @@ bool BuildNode::configureAttribute(const ConfigureContext& ctx, StringRef name,
   return false;
 }
 
+bool BuildNode::configureAttribute(
+    const ConfigureContext& ctx, StringRef name,
+    ArrayRef<std::pair<StringRef, StringRef>> values) {
+  // We don't support any other custom attributes.
+  ctx.error("unexpected attribute: '" + name + "'");
+  return false;
+}
+
 FileInfo BuildNode::getFileInfo(basic::FileSystem& fileSystem) const {
   assert(!isVirtual());
   return fileSystem.getFileInfo(getName());

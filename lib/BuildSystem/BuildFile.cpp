@@ -365,8 +365,40 @@ class BuildFileImpl {
           continue;
         }
 
-        // All values should be strings or sequences of strings, currently.
-        if (value->getType() == llvm::yaml::Node::NK_Sequence) {
+
+        auto attribute = stringFromScalarNode(
+            static_cast<llvm::yaml::ScalarNode*>(key));
+
+        if (value->getType() == llvm::yaml::Node::NK_Mapping) {
+          std::vector<std::pair<std::string, std::string>> values;
+          for (auto& entry: *static_cast<llvm::yaml::MappingNode*>(value)) {
+            // Every key must be scalar.
+            if (entry.getKey()->getType() != llvm::yaml::Node::NK_Scalar) {
+              error(entry.getKey(), ("invalid key type for '" + attribute +
+                                     "' in 'tools' map"));
+              continue;
+            }
+            // Every value must be scalar.
+            if (entry.getValue()->getType() != llvm::yaml::Node::NK_Scalar) {
+              error(entry.getKey(), ("invalid value type for '" + attribute +
+                                     "' in 'tools' map"));
+              continue;
+            }
+
+            std::string key = stringFromScalarNode(
+                static_cast<llvm::yaml::ScalarNode*>(entry.getKey()));
+            std::string value = stringFromScalarNode(
+                static_cast<llvm::yaml::ScalarNode*>(entry.getValue()));
+            values.push_back(std::make_pair(key, value));
+          }
+
+          if (!tool->configureAttribute(
+                  getContext(key), attribute,
+                  std::vector<std::pair<StringRef, StringRef>>(
+                      values.begin(), values.end()))) {
+            return false;
+          }
+        } else if (value->getType() == llvm::yaml::Node::NK_Sequence) {
           std::vector<std::string> values;
           for (auto& node: *static_cast<llvm::yaml::SequenceNode*>(value)) {
             if (node.getType() != llvm::yaml::Node::NK_Scalar) {
@@ -379,9 +411,7 @@ class BuildFileImpl {
           }
 
           if (!tool->configureAttribute(
-                  getContext(key),
-                  stringFromScalarNode(
-                      static_cast<llvm::yaml::ScalarNode*>(key)),
+                  getContext(key), attribute,
                   std::vector<StringRef>(values.begin(), values.end()))) {
             return false;
           }
@@ -392,9 +422,7 @@ class BuildFileImpl {
           }
 
           if (!tool->configureAttribute(
-                  getContext(key),
-                  stringFromScalarNode(
-                      static_cast<llvm::yaml::ScalarNode*>(key)),
+                  getContext(key), attribute,
                   stringFromScalarNode(
                       static_cast<llvm::yaml::ScalarNode*>(value)))) {
             return false;
@@ -481,14 +509,45 @@ class BuildFileImpl {
         auto key = valueEntry.getKey();
         auto value = valueEntry.getValue();
         
-        // All keys and values must be scalar.
+        // All keys must be scalar.
         if (key->getType() != llvm::yaml::Node::NK_Scalar) {
           error(key, "invalid key type for node in 'nodes' map");
           continue;
         }
 
-        // All values should be strings or sequences of strings, currently.
-        if (value->getType() == llvm::yaml::Node::NK_Sequence) {
+        auto attribute = stringFromScalarNode(
+            static_cast<llvm::yaml::ScalarNode*>(key));
+
+        if (value->getType() == llvm::yaml::Node::NK_Mapping) {
+          std::vector<std::pair<std::string, std::string>> values;
+          for (auto& entry: *static_cast<llvm::yaml::MappingNode*>(value)) {
+            // Every key must be scalar.
+            if (entry.getKey()->getType() != llvm::yaml::Node::NK_Scalar) {
+              error(entry.getKey(), ("invalid key type for '" + attribute +
+                                     "' in 'nodes' map"));
+              continue;
+            }
+            // Every value must be scalar.
+            if (entry.getValue()->getType() != llvm::yaml::Node::NK_Scalar) {
+              error(entry.getKey(), ("invalid value type for '" + attribute +
+                                     "' in 'nodes' map"));
+              continue;
+            }
+
+            std::string key = stringFromScalarNode(
+                static_cast<llvm::yaml::ScalarNode*>(entry.getKey()));
+            std::string value = stringFromScalarNode(
+                static_cast<llvm::yaml::ScalarNode*>(entry.getValue()));
+            values.push_back(std::make_pair(key, value));
+          }
+
+          if (!node->configureAttribute(
+                  getContext(key), attribute,
+                  std::vector<std::pair<StringRef, StringRef>>(
+                      values.begin(), values.end()))) {
+            return false;
+          }
+        } else if (value->getType() == llvm::yaml::Node::NK_Sequence) {
           std::vector<std::string> values;
           for (auto& node: *static_cast<llvm::yaml::SequenceNode*>(value)) {
             if (node.getType() != llvm::yaml::Node::NK_Scalar) {
@@ -501,9 +560,7 @@ class BuildFileImpl {
           }
 
           if (!node->configureAttribute(
-                  getContext(key),
-                  stringFromScalarNode(
-                      static_cast<llvm::yaml::ScalarNode*>(key)),
+                  getContext(key), attribute,
                   std::vector<StringRef>(values.begin(), values.end()))) {
             return false;
           }
@@ -514,9 +571,7 @@ class BuildFileImpl {
           }
         
           if (!node->configureAttribute(
-                  getContext(key),
-                  stringFromScalarNode(
-                      static_cast<llvm::yaml::ScalarNode*>(key)),
+                  getContext(key), attribute,
                   stringFromScalarNode(
                       static_cast<llvm::yaml::ScalarNode*>(value)))) {
             return false;
@@ -650,15 +705,47 @@ class BuildFileImpl {
               getContext(key), stringFromScalarNode(
                   static_cast<llvm::yaml::ScalarNode*>(value)));
         } else {
-          // Otherwise, it should be an attribute string key value pair.
+          // Otherwise, it should be an attribute assignment.
           
-          // All keys and values must be scalar.
+          // All keys must be scalar.
           if (key->getType() != llvm::yaml::Node::NK_Scalar) {
             error(key, "invalid key type in 'commands' map");
             continue;
           }
 
-          if (value->getType() == llvm::yaml::Node::NK_Sequence) {
+          auto attribute = stringFromScalarNode(
+              static_cast<llvm::yaml::ScalarNode*>(key));
+
+          if (value->getType() == llvm::yaml::Node::NK_Mapping) {
+            std::vector<std::pair<std::string, std::string>> values;
+            for (auto& entry: *static_cast<llvm::yaml::MappingNode*>(value)) {
+              // Every key must be scalar.
+              if (entry.getKey()->getType() != llvm::yaml::Node::NK_Scalar) {
+                error(entry.getKey(), ("invalid key type for '" + attribute +
+                                       "' in 'commands' map"));
+                continue;
+              }
+              // Every value must be scalar.
+              if (entry.getValue()->getType() != llvm::yaml::Node::NK_Scalar) {
+                error(entry.getKey(), ("invalid value type for '" + attribute +
+                                       "' in 'commands' map"));
+                continue;
+              }
+
+              std::string key = stringFromScalarNode(
+                  static_cast<llvm::yaml::ScalarNode*>(entry.getKey()));
+              std::string value = stringFromScalarNode(
+                  static_cast<llvm::yaml::ScalarNode*>(entry.getValue()));
+              values.push_back(std::make_pair(key, value));
+            }
+
+            if (!command->configureAttribute(
+                    getContext(key), attribute,
+                    std::vector<std::pair<StringRef, StringRef>>(
+                        values.begin(), values.end()))) {
+              return false;
+            }
+          } else if (value->getType() == llvm::yaml::Node::NK_Sequence) {
             std::vector<std::string> values;
             for (auto& node: *static_cast<llvm::yaml::SequenceNode*>(value)) {
               if (node.getType() != llvm::yaml::Node::NK_Scalar) {
@@ -671,9 +758,7 @@ class BuildFileImpl {
             }
 
             if (!command->configureAttribute(
-                    getContext(key),
-                    stringFromScalarNode(
-                        static_cast<llvm::yaml::ScalarNode*>(key)),
+                    getContext(key), attribute,
                     std::vector<StringRef>(values.begin(), values.end()))) {
               return false;
             }
@@ -684,9 +769,7 @@ class BuildFileImpl {
             }
             
             if (!command->configureAttribute(
-                    getContext(key),
-                    stringFromScalarNode(
-                        static_cast<llvm::yaml::ScalarNode*>(key)),
+                    getContext(key), attribute,
                     stringFromScalarNode(
                         static_cast<llvm::yaml::ScalarNode*>(value)))) {
               return false;

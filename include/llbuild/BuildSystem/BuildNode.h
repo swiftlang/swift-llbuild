@@ -43,6 +43,9 @@ public:
                                   StringRef value) override;
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   ArrayRef<StringRef> values) override;
+  virtual bool configureAttribute(
+      const ConfigureContext& ctx, StringRef name,
+      ArrayRef<std::pair<StringRef, StringRef>> values) override;
 
   basic::FileInfo getFileInfo(basic::FileSystem&) const;
 };

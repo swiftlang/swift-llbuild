@@ -87,7 +87,6 @@ public:
     }
     return true;
   }
-  
   virtual bool configureAttribute(const ConfigureContext&, StringRef name,
                                   ArrayRef<StringRef> values) override {
     if (delegate.shouldShowOutput()) {
@@ -98,6 +97,19 @@ public:
         first = false;
       }
       printf("]\n");
+    }
+    return true;
+  }
+  virtual bool configureAttribute(
+      const ConfigureContext&, StringRef name,
+      ArrayRef<std::pair<StringRef, StringRef>> values) override {
+    if (delegate.shouldShowOutput()) {
+      printf("  -- '%s': {\n", name.str().c_str());
+      for (const auto& value: values) {
+        printf("  --   '%s': '%s'\n", value.first.str().c_str(),
+               value.second.str().c_str());
+      }
+      printf("  -- }\n");
     }
     return true;
   }
@@ -171,12 +183,27 @@ public:
     }
     return true;
   }
+  virtual bool configureAttribute(
+      const ConfigureContext&, StringRef name,
+      ArrayRef<std::pair<StringRef, StringRef>> values) override {
+    if (delegate.shouldShowOutput()) {
+      printf("  -- '%s': {\n", name.str().c_str());
+      for (const auto& value: values) {
+        printf("  --   '%s': '%s'\n", value.first.str().c_str(),
+               value.second.str().c_str());
+      }
+      printf("  -- }\n");
+    }
+    return true;
+  }
 
   virtual BuildValue getResultForOutput(Node* node,
                                         const BuildValue& value) override {
     return BuildValue::makeMissingInput();
   }
-  virtual bool isResultValid(BuildSystem&, const BuildValue&) override { return false; }
+  virtual bool isResultValid(BuildSystem&, const BuildValue&) override {
+    return false;
+  }
   virtual void start(BuildSystemCommandInterface&, Task*) override {}
   virtual void providePriorValue(BuildSystemCommandInterface&, Task*,
                                  const BuildValue&) override {}
@@ -210,6 +237,19 @@ public:
         first = false;
       }
       printf("]\n");
+    }
+    return true;
+  }
+  virtual bool configureAttribute(
+      const ConfigureContext&, StringRef name,
+      ArrayRef<std::pair<StringRef, StringRef>> values) override {
+    if (delegate.shouldShowOutput()) {
+      printf("  -- '%s': {\n", name.str().c_str());
+      for (const auto& value: values) {
+        printf("  --   '%s': '%s'", value.first.str().c_str(),
+               value.second.str().c_str());
+      }
+      printf("  -- }\n");
     }
     return true;
   }

@@ -26,12 +26,17 @@ client:
 # CHECK:  -- 'cwd': '/tmp/example'
 # CHECK: tool('link')
 # CHECK:  -- 'cwd': '/tmp/example'
+# CHECK:  -- 'extra-map': {
+# CHECK:  --   'key': 'value'
+# CHECK:  -- }
 tools:
   cc:
     enable-dependencies: True
     cwd: /tmp/example
   link:
     cwd: /tmp/example
+    extra-map:
+      key: value
 
 # Define the targets.
 #
@@ -44,11 +49,16 @@ targets:
 #
 # CHECK: node('hello.o')
 # CHECK:  -- 'hash-content': 'True'
+# CHECK:  -- 'extra-map': {
+# CHECK:  --   'key': 'value'
+# CHECK:  -- }
 nodes:
   hello:
     hash-content: True
   hello.o:
     hash-content: True
+    extra-map:
+      key: value
 
 # Define the commands.
 #
@@ -63,6 +73,9 @@ nodes:
 # CHECK:  -- 'inputs': ['hello.c']
 # CHECK:  -- 'outputs': ['hello.o']
 # CHECK:  -- 'args': ['-O0']
+# CHECK:  -- 'extra-map': {
+# CHECK:  --   'key': 'value'
+# CHECK:  -- }
 commands:
   link-hello:
     tool: link
@@ -74,3 +87,5 @@ commands:
     inputs: ["hello.c"]
     outputs: ["hello.o"]
     args: ["-O0"]
+    extra-map:
+      key: value

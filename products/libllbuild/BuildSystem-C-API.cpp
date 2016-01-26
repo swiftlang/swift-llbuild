@@ -256,6 +256,13 @@ public:
     return false;
   }
 
+  virtual bool configureAttribute(
+      const ConfigureContext& ctx, StringRef name,
+      ArrayRef<std::pair<StringRef, StringRef>> values) override {
+    // FIXME: Support custom attributes in client tools.
+    return false;
+  }
+
   virtual std::unique_ptr<Command> createCommand(StringRef name) override {
     llb_data_t cName{ name.size(), (const uint8_t*) name.data() };
     return std::unique_ptr<Command>(

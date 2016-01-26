@@ -74,6 +74,12 @@ configureAttribute(const ConfigureContext& ctx, StringRef name,
   ctx.error("unexpected attribute: '" + name + "'");
   return false;
 }
+bool ExternalCommand::configureAttribute(
+    const ConfigureContext& ctx, StringRef name,
+    ArrayRef<std::pair<StringRef, StringRef>> values) {
+  ctx.error("unexpected attribute: '" + name + "'");
+  return false;
+}
 
 BuildValue ExternalCommand::
 getResultForOutput(Node* node, const BuildValue& value) {

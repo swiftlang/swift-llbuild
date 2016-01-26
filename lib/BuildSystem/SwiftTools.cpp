@@ -66,10 +66,21 @@ public:
                                 const std::vector<Node*>& value) override { }
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
     return false;
   }
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   ArrayRef<StringRef> values) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+  virtual bool configureAttribute(
+      const ConfigureContext& ctx, StringRef name,
+      ArrayRef<std::pair<StringRef, StringRef>> values) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
     return false;
   }
   virtual BuildValue getResultForOutput(Node* node,
@@ -313,6 +324,12 @@ public:
     return true;
   }
 
+  virtual bool configureAttribute(
+      const ConfigureContext& ctx, StringRef name,
+      ArrayRef<std::pair<StringRef, StringRef>> values) override {
+    return ExternalCommand::configureAttribute(ctx, name, values);
+  }
+
   bool writeOutputFileMap(BuildSystemCommandInterface& bsci,
                           StringRef outputFileMapPath,
                           std::vector<std::string>& depsFiles_out) const {
@@ -533,6 +550,13 @@ public:
   }
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   ArrayRef<StringRef> values) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+  virtual bool configureAttribute(
+      const ConfigureContext&ctx, StringRef name,
+      ArrayRef<std::pair<StringRef, StringRef>> values) override {
     // No supported attributes.
     ctx.error("unexpected attribute: '" + name + "'");
     return false;
