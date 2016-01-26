@@ -29,6 +29,11 @@ BuildExecutionQueue::BuildExecutionQueue(BuildExecutionQueueDelegate& delegate)
 BuildExecutionQueue::~BuildExecutionQueue() {
 }
 
+bool BuildExecutionQueue::executeProcess(
+    QueueJobContext* context, ArrayRef<StringRef> commandLine) {
+  return executeProcess(context, commandLine, {});
+}
+
 bool BuildExecutionQueue::executeShellCommand(QueueJobContext* context,
                                               StringRef command) {
   SmallString<1024> commandStorage(command);

@@ -281,31 +281,62 @@ Builtin Tools
 The build system provides several built-in tool definitions which are available
 regardless of the client.
 
-The following tools are currently built in:
+The following tools are currently built in.
 
 Phony Tool
-  **Identifier**: *phony*
+----------
 
-  A dummy tool, used for imposing ordering and grouping between input and output
-  nodes.
+**Identifier**: *phony*
 
-  No attributes are supported other than the common keys.
+A dummy tool, used for imposing ordering and grouping between input and output
+nodes.
+
+No attributes are supported other than the common keys.
 
 Shell Tool
-  **Identifier**: *shell*
+----------
 
-  A tool used to invoke shell commands.
- 
-  This tool supports an "args" key used to provide the shell command to be run
-  (using ``/bin/sh -c``).
+**Identifier**: *shell*
+
+A tool used to invoke shell commands. This tool only supports defining
+attributes on commands, and not at the tool level.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 80
+
+   * - Name
+     - Description
+
+   * - args
+     - A string or string list indicating the command line to be executed. If a
+       single string is provided, it will be executed using ``/bin/sh -c``.
+
+   * - env
+     - A mapping of keys and values defining the environment to pass to the
+       launched process. If provided, **only** the entries in this mapping will
+       be exposed in the process environment. If not provided, the process will
+       inherit the environment from the client.
 
 Clang Tool
-  **Identifier**: *clang*
+----------
 
-  A tool used to invoke the Clang compiler.
- 
-  This tool supports an "args" key used to provide the shell command to be run
-  (using ``/bin/sh -c``), as well as a "deps" key which specified the path to a
-  Makefile fragment (presumed to be output by the compiler) specifying
-  additional discovered dependencies for the output.
+**Identifier**: *clang*
+
+A tool used to invoke the Clang compiler.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 80
+
+   * - Name
+     - Description
+
+   * - args
+     - A string or string list indicating the command line to be executed. If a
+       single string is provided, it will be executed using ``/bin/sh -c``.
+
+   * - deps
+     - The path to a Makefile fragment (presumed to be output by the compiler)
+       specifying additional discovered dependencies for the output.
 

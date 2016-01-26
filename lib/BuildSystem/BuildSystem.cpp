@@ -30,6 +30,7 @@
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallString.h"
+#include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/raw_ostream.h"
@@ -827,8 +828,12 @@ public:
 #pragma mark - ShellTool implementation
 
 class ShellCommand : public ExternalCommand {
+  /// The command line arguments.
   std::vector<std::string> args;
 
+  /// The environment to use. If empty, the environment will be inherited.
+  llvm::StringMap<std::string> env;
+  
   virtual uint64_t getSignature() override {
     uint64_t result = ExternalCommand::getSignature();
     for (const auto& arg: args) {
@@ -895,15 +900,31 @@ public:
   virtual bool configureAttribute(
       const ConfigureContext& ctx, StringRef name,
       ArrayRef<std::pair<StringRef, StringRef>> values) override {
-    return ExternalCommand::configureAttribute(ctx, name, values);
+    if (name == "env") {
+      env.clear();
+      for (const auto& entry: values) {
+        env[entry.first] = entry.second;
+      }
+    } else {
+      return ExternalCommand::configureAttribute(ctx, name, values);
+    }
+
+    return true;
   }
 
   virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
                                       Task* task,
                                       QueueJobContext* context) override {
+    std::vector<std::pair<StringRef, StringRef>> environment;
+    for (const auto& it: env) {
+      environment.push_back({ it.getKey(), it.getValue() });
+    }
+    
     // Execute the command.
     return bsci.getExecutionQueue().executeProcess(
-        context, std::vector<StringRef>(args.begin(), args.end()));
+        context,
+        std::vector<StringRef>(args.begin(), args.end()),
+        environment);;
   }
 };
 

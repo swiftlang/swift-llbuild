@@ -5,27 +5,30 @@
 # RUN: touch "%t.build/input A"
 # RUN: cp %s %t.build/build.llbuild
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build --trace %t.trace > %t.out
-# RUN: %{FileCheck} < %t.out %s
+# RUN: %{FileCheck} --input-file=%t.out %s
 # RUN: diff "%t.build/input A" %t.build/output
 #
+# CHECK: /usr/bin/env
+# CHECK-NOT: PATH=
+# CHECK: ENV_KEY=ENV_VALUE
 # CHECK: cp "input A" output
 
 # Check the engine trace.
 #
-# RUN: %{FileCheck} < %t.trace %s --check-prefix CHECK-TRACE
+# RUN: %{FileCheck} --input-file=%t.trace %s --check-prefix CHECK-TRACE
 #
 # CHECK-TRACE: "build-started"
 # CHECK-TRACE: "new-rule", "R1", "T"
 # CHECK-TRACE: "new-rule", "R2", "Noutput"
 # CHECK-TRACE: "new-rule", "R3", "Ccp-output"
-# CHECK-TRACE: "new-rule", "R4", "Ninput A"
+# CHECK-TRACE: "new-rule", "R4", "N<env>"
 # CHECK-TRACE: "build-ended"
 
 # Check that a null build does nothing.
 #
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t2.out
 # RUN: echo "PREVENT-EMPTY-FILE" >> %t2.out
-# RUN: %{FileCheck} < %t2.out %s --check-prefix=CHECK-REBUILD
+# RUN: %{FileCheck} --input-file=%t2.out %s --check-prefix=CHECK-REBUILD
 #
 # CHECK-REBUILD-NOT: cp "input A" output
 
@@ -33,7 +36,7 @@
 #
 # RUN: echo mod >> "%t.build/input A"
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t3.out
-# RUN: %{FileCheck} < %t3.out %s --check-prefix=CHECK-REBUILD-MODIFIED
+# RUN: %{FileCheck} --input-file=%t3.out %s --check-prefix=CHECK-REBUILD-MODIFIED
 # RUN: diff "%t.build/input A" %t.build/output
 #
 # CHECK-REBUILD-MODIFIED: cp "input A" output
@@ -42,7 +45,7 @@
 #
 # RUN: rm -rf %t.build/output
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t4.out
-# RUN: %{FileCheck} < %t4.out %s --check-prefix=CHECK-REBUILD-OUTPUT-REMOVED
+# RUN: %{FileCheck} --input-file=%t4.out %s --check-prefix=CHECK-REBUILD-OUTPUT-REMOVED
 # RUN: diff "%t.build/input A" %t.build/output
 #
 # CHECK-REBUILD-OUTPUT-REMOVED: cp "input A" output
@@ -54,9 +57,18 @@ targets:
   "": ["output"]
 
 commands:
+  "<env>":
+    tool: shell
+    outputs: ["<env>"]
+    args: ["/usr/bin/env"]
+    env:
+      ENV_KEY: ENV_VALUE
+    
   cp-output:
     tool: shell
-    inputs: ["input A"]
+    inputs: ["input A", "<env>"]
     outputs: ["output"]
     # FIXME: Design a limited mechanism for substitution. Might be tool specific.
     args: ["cp", "input A", "output"]
+
+  

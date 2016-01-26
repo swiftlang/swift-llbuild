@@ -101,15 +101,26 @@ public:
   /// complete.
   ///
   /// \param context The context object passed to the job's worker function.
+  ///
   /// \param commandLine The command line to execute.
+  ///
+  /// \param environment The environment to launch with. If empty, the process
+  /// environment will be inherited.
+  ///
   /// \returns True on success.
   //
   // FIXME: This interface will need to get more complicated, and provide the
   // command result and facilities for dealing with the output.
-  virtual bool executeProcess(QueueJobContext* context,
-                              ArrayRef<StringRef> commandLine) = 0;
-  
+  virtual bool
+  executeProcess(QueueJobContext* context,
+                 ArrayRef<StringRef> commandLine,
+                 ArrayRef<std::pair<StringRef, StringRef>> environment) = 0;
+
   /// @}
+
+  /// Execute the given command, using an inherited environment.
+  bool executeProcess(QueueJobContext* context,
+                      ArrayRef<StringRef> commandLine);
 
   /// Execute the given command using "/bin/sh".
   ///

@@ -120,8 +120,11 @@ public:
     readyJobsCondition.notify_one();
   }
 
-  virtual bool executeProcess(QueueJobContext* opaqueContext,
-                              ArrayRef<StringRef> commandLine) override {
+  virtual bool
+  executeProcess(QueueJobContext* opaqueContext,
+                 ArrayRef<StringRef> commandLine,
+                 ArrayRef<std::pair<StringRef,
+                                    StringRef>> environment) override {
     // Assign a process handle, which just needs to be unique for as long as we
     // are communicating with the delegate.
     struct BuildExecutionQueueDelegate::ProcessHandle handle;
@@ -221,6 +224,28 @@ public:
     }
     args[argsStorage.size()] = nullptr;
 
+    // Form the complete environment.
+    std::vector<std::string> envStorage;
+    for (const auto& entry: environment) {
+      SmallString<256> assignment;
+      assignment += entry.first;
+      assignment += '=';
+      assignment += entry.second;
+      assignment += '\0';
+      envStorage.emplace_back(assignment.str());
+    }
+    std::vector<const char*> env(environment.size() + 1);
+    char* const* envp = nullptr;
+    if (environment.empty()) {
+      envp = ::environ;
+    } else {
+      for (size_t i = 0; i != envStorage.size(); ++i) {
+        env[i] = envStorage[i].c_str();
+      }
+      env[envStorage.size()] = nullptr;
+      envp = const_cast<char**>(env.data());
+    }
+
     // Resolve the executable path, if necessary.
     //
     // FIXME: This should be cached.
@@ -239,7 +264,7 @@ public:
     pid_t pid;
     if (posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
                     /*attrp=*/&attributes, const_cast<char**>(args.data()),
-                    ::environ) != 0) {
+                    envp) != 0) {
       getDelegate().commandProcessHadError(
           context.job.getForCommand(), handle,
           Twine("unable to spawn process (") + strerror(errno) + ")");

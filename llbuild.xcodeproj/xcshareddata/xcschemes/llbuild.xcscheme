@@ -122,7 +122,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "&quot;buildsystem&quot; &quot;build&quot; &quot;--no-db&quot; &quot;--serial&quot; &quot;--chdir&quot; &quot;/Volumes/Data/ddunbar/public/llbuild/build/tests/BuildSystem/Build/Output/missing-outputs.llbuild.tmp.build&quot;"
+            argument = "&quot;buildsystem&quot; &quot;build&quot; &quot;--no-db&quot; &quot;--serial&quot; &quot;--chdir&quot; &quot;/Volumes/Data/ddunbar/public/llbuild/build/tests/BuildSystem/Build/Output/basic.llbuild.tmp.build&quot;"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
