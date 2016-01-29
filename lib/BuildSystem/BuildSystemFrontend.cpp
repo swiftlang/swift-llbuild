@@ -298,6 +298,7 @@ BuildSystemFrontendDelegate::error(StringRef filename,
   } else {
     getSourceMgr().PrintMessage(loc, llvm::SourceMgr::DK_Error, message);
   }
+  fflush(stderr);
 }
 
 std::unique_ptr<BuildExecutionQueue>
