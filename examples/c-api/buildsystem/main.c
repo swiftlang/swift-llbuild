@@ -42,6 +42,7 @@ fancy_command_execute_command(
     llb_buildsystem_command_interface_t* bsci, llb_task_t* task,
     llb_buildsystem_queue_job_context_t* job) {
   printf("%s\n", __FUNCTION__);
+  fflush(stdout);
   return true;
 }
 
@@ -60,6 +61,7 @@ fancy_tool_create_command(void *context, const llb_data_t* name) {
 static bool fs_get_file_contents(void* context, const char* path,
                                  llb_data_t* data_out) {
   printf(" -- read file contents: %s\n", path);
+  fflush(stdout);
 
   FILE *fp = fopen(path, "rb");
   if (!fp) {
@@ -86,6 +88,7 @@ static bool fs_get_file_contents(void* context, const char* path,
 static void fs_get_file_info(void* context, const char* path,
                              llb_fs_file_info_t* file_info_out) {
   printf(" -- stat: %s\n", path);
+  fflush(stdout);
 
   struct stat buf;
   if (stat(path, &buf) != 0) {
@@ -117,6 +120,7 @@ static void handle_diagnostic(void* context,
                               const char* message) {
   const char* kindName = llb_buildsystem_diagnostic_kind_get_name(kind);
   printf("%s:%d: %s: %s\n", filename, line, kindName, message);
+  fflush(stdout);
 }
 
 static void command_started(void* context,
@@ -127,6 +131,7 @@ static void command_started(void* context,
   printf("%s: %.*s -- %s\n", __FUNCTION__, (int)name.length, name.data,
          description);
   free(description);
+  fflush(stdout);
 }
 
 static void command_finished(void* context,
@@ -134,6 +139,7 @@ static void command_finished(void* context,
   llb_data_t name;
   llb_buildsystem_command_get_name(command, &name);
   printf("%s: %.*s\n", __FUNCTION__, (int)name.length, name.data);
+  fflush(stdout);
 }
 
 static void command_process_started(void* context,
@@ -149,6 +155,7 @@ static void command_process_had_error(void* context,
   llb_buildsystem_command_get_name(command, &name);
   printf("%s: %.*s\n", __FUNCTION__, (int)name.length, name.data);
   fwrite(data->data, data->length, 1, stdout);
+  fflush(stdout);
 }
 
 static void command_process_had_output(void* context,
@@ -159,6 +166,7 @@ static void command_process_had_output(void* context,
   llb_buildsystem_command_get_name(command, &name);
   printf("%s: %.*s\n", __FUNCTION__, (int)name.length, name.data);
   fwrite(data->data, data->length, 1, stdout);
+  fflush(stdout);
 }
 
 static void command_process_finished(void* context,
@@ -179,6 +187,7 @@ int main(int argc, char **argv) {
   // Create an invocation.
   llb_buildsystem_invocation_t invocation = {};
   invocation.buildFilePath = buildFilePath;
+  invocation.useSerialBuild = true;
 
   // Create a build system delegate.
   llb_buildsystem_delegate_t delegate = {};
