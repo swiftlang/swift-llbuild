@@ -227,9 +227,10 @@ void ExternalCommand::inputsAvailable(BuildSystemCommandInterface& bsci,
   auto fn = [this, &bsci=bsci, task](QueueJobContext* context) {
     // Execute the command.
     if (!executeExternalCommand(bsci, task, context)) {
+      bsci.getDelegate().hadCommandFailure();
+
       // If the command failed, the result is failure.
       bsci.taskIsComplete(task, BuildValue::makeFailedCommand());
-      bsci.getDelegate().hadCommandFailure();
       return;
     }
 
