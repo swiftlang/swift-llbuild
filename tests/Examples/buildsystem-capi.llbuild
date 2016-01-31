@@ -14,11 +14,6 @@
 # CHECK: command_finished: <fancy-thing>
 # CHECK: command_started: <error> -- FAILING-COMMAND
 # CHECK: <unknown>:0: error: build had 1 command failure
-#
-# FIXME: Temporarily disabled, this test sometimes fails to print the SourceMgr
-# issued diagnostic (the final error) during tests on 14.04.
-#
-# REQUIRES: disabled
 
 client:
   name: basic
