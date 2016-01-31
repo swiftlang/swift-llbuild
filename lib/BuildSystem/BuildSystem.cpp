@@ -137,7 +137,8 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
   /// The build engine.
   BuildEngine buildEngine;
 
-  /// The execution queue.
+  /// The execution queue reference; this is only valid while a build is
+  /// actually in progress.
   std::unique_ptr<BuildExecutionQueue> executionQueue;
 
   /// @name BuildSystemCommandInterface Implementation
@@ -148,6 +149,7 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
   }
   
   virtual BuildExecutionQueue& getExecutionQueue() override {
+    assert(executionQueue.get());
     return *executionQueue;
   }
 
@@ -184,7 +186,7 @@ public:
         mainFilename(mainFilename),
         fileDelegate(*this), buildFile(mainFilename, fileDelegate),
         engineDelegate(*this), buildEngine(engineDelegate),
-        executionQueue(delegate.createExecutionQueue()) {}
+        executionQueue() {}
 
   BuildSystem& getBuildSystem() {
     return buildSystem;
@@ -768,8 +770,18 @@ bool BuildSystemImpl::build(StringRef target) {
     return false;
   }    
 
+  // Create the execution queue.
+  executionQueue = std::move(delegate.createExecutionQueue());
+
   // Build the target.
   getBuildEngine().build(BuildKey::makeTarget(target).toData());
+
+  // Release the execution queue, impicitly waiting for it to complete. The
+  // asynchronous nature of the engine callbacks means it is possible for the
+  // queue to have notified the engine of the last task completion, but still
+  // have other work to perform (e.g., informing the client of command
+  // completion).
+  executionQueue.reset();
 
   return true;
 }
