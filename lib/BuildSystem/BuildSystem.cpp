@@ -771,7 +771,7 @@ bool BuildSystemImpl::build(StringRef target) {
   }    
 
   // Create the execution queue.
-  executionQueue = std::move(delegate.createExecutionQueue());
+  executionQueue = delegate.createExecutionQueue();
 
   // Build the target.
   getBuildEngine().build(BuildKey::makeTarget(target).toData());
