@@ -91,13 +91,14 @@ public:
 class CAPIBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
   llb_buildsystem_delegate_t cAPIDelegate;
   CAPIFileSystem fileSystem;
-  
+  std::atomic<bool> isCancelled_;
+
 public:
   CAPIBuildSystemFrontendDelegate(llvm::SourceMgr& sourceMgr,
                                   BuildSystemInvocation& invocation,
                                   llb_buildsystem_delegate_t delegate)
       : BuildSystemFrontendDelegate(sourceMgr, invocation, "basic", 0),
-        cAPIDelegate(delegate), fileSystem(delegate) { }
+        cAPIDelegate(delegate), fileSystem(delegate), isCancelled_(false) { }
 
   virtual basic::FileSystem& getFileSystem() override { return fileSystem; }
   
@@ -113,6 +114,25 @@ public:
     }
 
     return std::unique_ptr<Tool>((Tool*)tool);
+  }
+
+  virtual bool isCancelled() override {
+    fprintf(stderr, "%s? %d\n", __PRETTY_FUNCTION__, (int)isCancelled_);
+    return isCancelled_;
+  }
+
+  virtual void hadCommandFailure() override {
+    // Call the base implementation.
+    BuildSystemFrontendDelegate::hadCommandFailure();
+
+    // Report the command failure, if the client provided an appropriate
+    // callback.
+    if (cAPIDelegate.had_command_failure) {
+      cAPIDelegate.had_command_failure(cAPIDelegate.context);
+    } else {
+      // Otherwise, the default behavior is to immediately cancel.
+      cancel();
+    }
   }
 
   virtual void commandStarted(Command* command) override {
@@ -164,6 +184,20 @@ public:
         (llb_buildsystem_command_t*) command,
         (llb_buildsystem_process_t*) handle.id,
         exitStatus);
+  }
+
+  /// Reset mutable build state before a new build operation.
+  void resetForBuild() {
+    isCancelled_ = false;
+  }
+
+  /// Request cancellation of any current build.
+  void cancel() {
+    // FIXME: We need to implement BuildSystem layer support for real
+    // cancellation (including task and subprocess termination).
+
+    // FIXME: We should audit that a build is happening.
+    isCancelled_ = true;
   }
 };
 
@@ -232,6 +266,19 @@ public:
 
   BuildSystemFrontend& getFrontend() {
     return *frontend;
+  }
+
+  bool build(const core::KeyType& key) {
+    // Reset mutable build state.
+    frontendDelegate->resetForBuild();
+
+    // FIXME: We probably should return a context to represent the running
+    // build, instead of keeping state (like cancellation) in the delegate).
+    return getFrontend().build(key);
+  }
+
+  void cancel() {
+    frontendDelegate->cancel();
   }
 };
 
@@ -354,9 +401,12 @@ llb_buildsystem_tool_create(const llb_data_t* name,
 
 bool llb_buildsystem_build(llb_buildsystem_t* system_p, const llb_data_t* key) {
   CAPIBuildSystem* system = (CAPIBuildSystem*) system_p;
+  return system->build(core::KeyType((const char*)key->data, key->length));
+}
 
-  return system->getFrontend().build(
-      core::KeyType((const char*)key->data, key->length));
+void llb_buildsystem_cancel(llb_buildsystem_t* system_p) {
+  CAPIBuildSystem* system = (CAPIBuildSystem*) system_p;
+  system->cancel();
 }
 
 llb_buildsystem_command_t*

@@ -170,7 +170,21 @@ typedef struct llb_buildsystem_delegate_t_ {
                             llb_buildsystem_diagnostic_kind_t kind,
                             const char* filename, int line, int column,
                             const char* message);
-                       
+
+  /// Called to report any form of command failure.
+  ///
+  /// This can may be called to report the failure of a command which has
+  /// executed, but may also be used to report the inability of a command to
+  /// run. It is expected to be used by the client in making decisions with
+  /// regard to cancelling the build.
+  ///
+  /// This callback is optional. If not provided, the build will automatically
+  /// be cancelled after the first failure.
+  //
+  // FIXME: Clean this up, we should be able to come up with a better definition
+  // & API organization.
+  void (*had_command_failure)(void* context);
+  
   /// Called when a command's job has been started.
   ///
   /// The system guarantees that any commandStart() call will be paired with
@@ -239,8 +253,17 @@ LLBUILD_EXPORT void
 llb_buildsystem_destroy(llb_buildsystem_t* system);
 
 /// Build the named target.
+///
+/// It is an unchecked error for the client to request multiple builds
+/// concurrently.
 LLBUILD_EXPORT bool
 llb_buildsystem_build(llb_buildsystem_t* system, const llb_data_t* key);
+
+/// Cancel any ongoing build.
+///
+/// This method may be called from any thread.
+LLBUILD_EXPORT void
+llb_buildsystem_cancel(llb_buildsystem_t* system);
 
 /// @}
 

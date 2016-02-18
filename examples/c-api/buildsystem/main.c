@@ -123,6 +123,11 @@ static void handle_diagnostic(void* context,
   fflush(stdout);
 }
 
+static void had_command_failure(void* context_p) {
+  printf("%s\n", __FUNCTION__);
+  fflush(stdout);
+}
+
 static void command_started(void* context,
                             llb_buildsystem_command_t* command) {
   char* description = llb_buildsystem_command_get_description(command);
@@ -196,6 +201,7 @@ int main(int argc, char **argv) {
   delegate.fs_get_file_info = fs_get_file_info;
   delegate.lookup_tool = lookup_tool;
   delegate.handle_diagnostic = handle_diagnostic;
+  delegate.had_command_failure = had_command_failure;
   delegate.command_started = command_started;
   delegate.command_finished = command_finished;
   delegate.command_process_started = command_process_started;

@@ -13,6 +13,7 @@
 # CHECK: fancy_command_execute_command
 # CHECK: command_finished: <fancy-thing>
 # CHECK: command_started: <error> -- FAILING-COMMAND
+# CHECK: had_command_failure
 # CHECK: <unknown>:0: error: build had 1 command failure
 
 client:
