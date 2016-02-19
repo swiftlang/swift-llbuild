@@ -118,7 +118,6 @@ public:
   }
 
   virtual bool isCancelled() override {
-    fprintf(stderr, "%s? %d\n", __PRETTY_FUNCTION__, (int)isCancelled_);
     return isCancelled_;
   }
 
