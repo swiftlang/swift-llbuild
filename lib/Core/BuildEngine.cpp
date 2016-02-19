@@ -209,7 +209,11 @@ class BuildEngineImpl {
   // table.
   std::unordered_map<KeyType, RuleInfo> ruleInfos;
 
-  /// The set of pending tasks.
+  /// Information tracked for executing tasks.
+  //
+  // FIXME: Keeping this in a side table is very inefficient, we always have to
+  // look it up. It might make much more sense to require the Task to have a
+  // private field available for our use to store this.
   struct TaskInfo {
     TaskInfo(Task* task) : task(task) {}
 
@@ -248,7 +252,14 @@ class BuildEngineImpl {
     }
 #endif    
   };
+
+  /// The tracked information for executing tasks.
+  ///
+  /// Access to this must be protected via \see taskInfosMutex.
   std::unordered_map<Task*, TaskInfo> taskInfos;
+
+  /// The mutex that protects the task info map.
+  std::mutex taskInfosMutex;
 
   /// The queue of tasks ready to be finalized.
   std::vector<TaskInfo*> readyTaskInfos;
@@ -257,7 +268,7 @@ class BuildEngineImpl {
   unsigned numOutstandingUnfinishedTasks = 0;
 
   /// The queue of tasks which are complete, accesses to this member variable
-  /// must be protected via \see FinishedTaskInfosMutex.
+  /// must be protected via \see finishedTaskInfosMutex.
   std::vector<TaskInfo*> finishedTaskInfos;
 
   /// The mutex that protects finished task infos.
@@ -430,10 +441,8 @@ private:
     Task* task = ruleInfo.rule.action(buildEngine);
 
     // Find the task info for this task.
-    auto it = taskInfos.find(task);
-    assert(it != taskInfos.end() &&
-           "rule action returned an unregistered task");
-    TaskInfo* taskInfo = &it->second;
+    auto taskInfo = getTaskInfo(task);
+    assert(taskInfo && "rule action returned an unregistered task");
     taskInfo->forRuleInfo = &ruleInfo;
 
     if (trace)
@@ -811,9 +820,12 @@ private:
         --numOutstandingUnfinishedTasks;
 
         // Delete the pending task.
-        auto it = taskInfos.find(taskInfo->task.get());
-        assert(it != taskInfos.end());
-        taskInfos.erase(it);
+        {
+          std::lock_guard<std::mutex> guard(taskInfosMutex);
+          auto it = taskInfos.find(taskInfo->task.get());
+          assert(it != taskInfos.end());
+          taskInfos.erase(it);
+        }
       }
 
       // If we haven't done any other work at this point but we have pending
@@ -985,6 +997,12 @@ public:
     return addRule(delegate.lookupRule(key));
   }
 
+  TaskInfo* getTaskInfo(Task* task) {
+    std::lock_guard<std::mutex> guard(taskInfosMutex);
+    auto it = taskInfos.find(task);
+    return it == taskInfos.end() ? nullptr : &it->second;
+  }
+  
   /// @name Rule Definition
   /// @{
 
@@ -1128,10 +1146,7 @@ public:
   }
 
   void addTaskInputRequest(Task* task, const KeyType& key, uintptr_t inputID) {
-    auto taskinfo_it = taskInfos.find(task);
-    assert(taskinfo_it != taskInfos.end() &&
-           "cannot request inputs for an unknown task");
-    TaskInfo* taskInfo = &taskinfo_it->second;
+    auto taskInfo = getTaskInfo(task);
 
     // Validate that the task is in a valid state to request inputs.
     if (!taskInfo->forRuleInfo->isInProgressWaiting()) {
@@ -1152,9 +1167,12 @@ public:
   /// @{
 
   Task* registerTask(Task* task) {
-    auto result = taskInfos.emplace(task, TaskInfo(task));
-    assert(result.second && "task already registered");
-    (void)result;
+    {
+      std::lock_guard<std::mutex> guard(taskInfosMutex);
+      auto result = taskInfos.emplace(task, TaskInfo(task));
+      assert(result.second && "task already registered");
+      (void)result;
+    }
     return task;
   }
 
@@ -1175,12 +1193,8 @@ public:
 
   void taskDiscoveredDependency(Task* task, const KeyType& key) {
     // Find the task info.
-    //
-    // FIXME: This is not safe.
-    auto taskinfo_it = taskInfos.find(task);
-    assert(taskinfo_it != taskInfos.end() &&
-           "cannot request inputs for an unknown task");
-    TaskInfo* taskInfo = &taskinfo_it->second;
+    auto taskInfo = getTaskInfo(task);
+    assert(taskInfo && "cannot request inputs for an unknown task");
 
     if (!taskInfo->forRuleInfo->isInProgressComputing()) {
       // FIXME: Error handling.
@@ -1195,11 +1209,8 @@ public:
     // FIXME: We should flag the task to ensure this is only called once, and
     // that no other API calls are made once complete.
 
-    // FIXME: This is not safe.
-    auto taskinfo_it = taskInfos.find(task);
-    assert(taskinfo_it != taskInfos.end() &&
-           "cannot request inputs for an unknown task");
-    TaskInfo* taskInfo = &taskinfo_it->second;
+    auto taskInfo = getTaskInfo(task);
+    assert(taskInfo && "cannot request inputs for an unknown task");
 
     if (!taskInfo->forRuleInfo->isInProgressComputing()) {
       // FIXME: Error handling.
