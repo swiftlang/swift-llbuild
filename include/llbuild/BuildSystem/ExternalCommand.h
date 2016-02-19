@@ -42,6 +42,9 @@ class ExternalCommand : public Command {
   std::vector<BuildNode*> outputs;
   std::string description;
 
+  /// Whether to allow missing inputs.
+  bool allowMissingInputs = false;
+
   // Build specific data.
   //
   // FIXME: We should probably factor this out somewhere else, so we can enforce

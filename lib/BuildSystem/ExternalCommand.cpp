@@ -37,6 +37,9 @@ uint64_t ExternalCommand::getSignature() {
   for (const auto* output: outputs) {
     result ^= basic::hashString(output->getName());
   }
+  if (allowMissingInputs) {
+    result = ~result;
+  }
   return result;
 }
 
@@ -44,7 +47,7 @@ void ExternalCommand::configureDescription(const ConfigureContext&,
                                            StringRef value) {
   description = value;
 }
-  
+
 void ExternalCommand::
 configureInputs(const ConfigureContext&,
                 const std::vector<Node*>& value) {
@@ -65,8 +68,18 @@ configureOutputs(const ConfigureContext&, const std::vector<Node*>& value) {
 bool ExternalCommand::
 configureAttribute(const ConfigureContext& ctx, StringRef name,
                    StringRef value) {
-  ctx.error("unexpected attribute: '" + name + "'");
-  return false;
+  if (name == "allow-missing-inputs") {
+    if (value != "true" && value != "false") {
+      ctx.error("invalid value: '" + value + "' for attribute '" +
+                name + "'");
+      return false;
+    }
+    allowMissingInputs = value == "true";
+    return true;
+  } else {
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
 }
 bool ExternalCommand::
 configureAttribute(const ConfigureContext& ctx, StringRef name,
@@ -175,14 +188,31 @@ void ExternalCommand::provideValue(BuildSystemCommandInterface& bsci,
          value.isMissingOutput() || value.isFailedInput() ||
          value.isVirtualInput());
 
-  // If the value is not an existing or virtual input, or a missing output, then
-  // we shouldn't run this command.
-  //
-  // Note that we explicitly allow running the command against a missing output,
-  // under the expectation that responsibility for reporting this situation
-  // falls to the command.
-  if (!value.isExistingInput() && !value.isVirtualInput() &&
-      !value.isMissingOutput()) {
+  // Predicate for whether the input should cause the command to skip.
+  auto shouldSkipForInput = [&] {
+    // If the value is an existing or virtual input, we are always good.
+    if (value.isExistingInput() || value.isVirtualInput())
+      return false;
+
+    // We explicitly allow running the command against a missing output, under
+    // the expectation that responsibility for reporting this situation falls to
+    // the command.
+    //
+    // FIXME: Eventually, it might be nice to harden the format so that we know
+    // when an output was actually required versus optional.
+    if (value.isMissingOutput())
+      return false;
+
+    // If the value is a missing input, but those are allowed, it is ok.
+    if (allowMissingInputs && value.isMissingInput())
+      return false;
+
+    // For anything else, this is an error and the command should be skipped.
+    return true;
+  };
+
+  // Check if we need to skip the command because of this input.
+  if (shouldSkipForInput()) {
     shouldSkip = true;
     if (value.isMissingInput()) {
       hasMissingInput = true;

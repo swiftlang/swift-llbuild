@@ -374,12 +374,7 @@ public:
     if (node.isVirtual())
       return value.isVirtualInput();
     
-    // If the previous value wasn't for an existing input, always recompute.
-    assert(value.isExistingInput() || value.isMissingInput());
-    if (!value.isExistingInput())
-      return false;
-
-    // Otherwise, the result is valid if the path exists and the file
+    // The result is valid if the exists matches the value type and the file
     // information remains the same.
     //
     // FIXME: This is inefficient, we will end up doing the stat twice, once
@@ -390,10 +385,11 @@ public:
     // the engine should support more naturally.
     auto info = node.getFileInfo(
         getBuildSystem(engine).getDelegate().getFileSystem());
-    if (info.isMissing())
-      return false;
-
-    return value.getOutputInfo() == info;
+    if (info.isMissing()) {
+      return value.isMissingInput();
+    } else {
+      return value.isExistingInput() && value.getOutputInfo() == info;
+    }
   }
 };
 
@@ -851,6 +847,7 @@ class ShellCommand : public ExternalCommand {
     for (const auto& arg: args) {
       result ^= basic::hashString(arg);
     }
+    // FIXME: Need to take environment signature.
     return result;
   }
   

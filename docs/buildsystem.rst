@@ -318,6 +318,10 @@ attributes on commands, and not at the tool level.
        be exposed in the process environment. If not provided, the process will
        inherit the environment from the client.
 
+   * - allow-missing-inputs
+     - A boolean value, indicating whether the commands should be allowed to run
+       even if it has missing input files. The default is false.
+
 Clang Tool
 ----------
 

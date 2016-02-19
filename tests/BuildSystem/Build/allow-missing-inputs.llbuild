@@ -1,0 +1,44 @@
+# Check the handling of "allow-missing-inputs.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.llbuild
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build &> %t.out
+# RUN: %{FileCheck} %s --input-file %t.out
+#
+# CHECK: TEST INPUT EXISTENCE
+# CHECK-NEXT: INPUT DOES NOT EXIST
+
+# Verify that we get a null build, despite the input missing (its state has not changed).
+#
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build &> %t.rebuild.out
+# RUN: echo "<<eof>>" >> %t.rebuild.out
+# RUN: %{FileCheck} %s --check-prefix=CHECK-REBUILD --input-file %t.rebuild.out
+#
+# CHECK-REBUILD-NOT: TEST INPUT EXISTENCE
+# CHECK-REBUILD-NOT: INPUT DOES NOT EXIST
+# CHECK-REBUILD: <<eof>>
+
+# Verify that we *do* rebuild if we make the input appear.
+#
+# RUN: touch %t.build/input
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build &> %t.after-create.out
+# RUN: %{FileCheck} %s --check-prefix=CHECK-AFTER-CREATE --input-file %t.after-create.out
+#
+# CHECK-AFTER-CREATE: TEST INPUT EXISTENCE
+# CHECK-AFTER-CREATE: INPUT DOES EXIST
+
+client:
+  name: basic
+
+targets:
+  "": ["<all>"]
+
+commands:
+  C1:
+    tool: shell
+    inputs: ["input"]
+    outputs: ["<all>"]
+    description: TEST INPUT EXISTENCE
+    args: test -f input && echo "INPUT DOES EXIST" || echo "INPUT DOES NOT EXIST"
+    allow-missing-inputs: true
