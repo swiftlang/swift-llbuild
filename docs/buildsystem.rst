@@ -337,8 +337,7 @@ A tool used to invoke the Clang compiler.
      - Description
 
    * - args
-     - A string or string list indicating the command line to be executed. If a
-       single string is provided, it will be executed using ``/bin/sh -c``.
+     - A string indicating the command line to be executed.
 
    * - deps
      - The path to a Makefile fragment (presumed to be output by the compiler)
