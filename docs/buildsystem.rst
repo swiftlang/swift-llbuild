@@ -344,3 +344,53 @@ A tool used to invoke the Clang compiler.
      - The path to a Makefile fragment (presumed to be output by the compiler)
        specifying additional discovered dependencies for the output.
 
+Swift Compiler Tool
+-------------------
+
+**Identifier**: *swift-compiler*
+
+A tool used to invoke the Swift compiler.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 80
+
+   * - Name
+     - Description
+
+   * - executable
+     - A string indicating the path to a ``swiftc`` compiler that will be used
+       to compile Swift code.
+
+   * - module-name
+     - A string indicating the name of the ``.swiftmodule`` to be output.
+
+   * - module-output-path
+     - A string indicating the path at which to output the built
+       ``.swiftmodule``.
+
+   * - sources
+     - A string or string list indicating the paths of Swift source files to be
+       compiled.
+
+   * - objects
+     - A string or string list indicating the paths of object files to be
+       linked when compiling the source files.
+
+   * - import-paths
+     - A string or string list indicating the path at which other imported
+       Swift modules exist.
+
+   * - temps-path
+     - A string indicating the path at which temporary build files are to be
+       placed.
+
+   * - is-library
+     - A boolean indicating whether the source files should be compiled as a
+       library or an executable. Specify ``true`` for a library, ``false``
+       for an executable.
+
+   * - other-args
+     - A string or string list indicating other arguments passed to the
+       ``swiftc`` executable. Examples of individual values include
+       ``"-enable-testing"`` or ``"-Onone"``.
