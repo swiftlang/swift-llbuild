@@ -349,7 +349,19 @@ Swift Compiler Tool
 
 **Identifier**: *swift-compiler*
 
-A tool used to invoke the Swift compiler.
+A tool used to invoke the Swift compiler. This tool handles the construction of
+the additional arguments necessary to invoke the Swift compiler directly for use
+with incremental dependencies (e.g., creating the "output file map"), and it
+will automatically track the discovered dependencies from the Swift compiler
+(e.g., the header files used via the Clang importer).
+
+.. note::
+    FIXME: For now, clients are expected to pass a `-j` argument to the compiler
+    explicitly if concurrent compilation is deired. In the future we expect the
+    build system and compiler to have a two-way communication to share the
+    system resources efficiently, so that the build system is capable of
+    understanding the level of parallelism that is actively being used by th
+    compiler.
 
 .. list-table::
    :header-rows: 1
