@@ -355,6 +355,10 @@ with incremental dependencies (e.g., creating the "output file map"), and it
 will automatically track the discovered dependencies from the Swift compiler
 (e.g., the header files used via the Clang importer).
 
+Commands using the Swift compiler also include an automatic dependency on the
+exact version of the Swift compiler in use (as reported by ``swiftc
+--version``).
+
 .. note::
     FIXME: For now, clients are expected to pass a `-j` argument to the compiler
     explicitly if concurrent compilation is deired. In the future we expect the
