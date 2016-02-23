@@ -434,7 +434,7 @@ bool BuildSystemFrontend::build(StringRef targetToBuild) {
     // file.
     SmallString<256> tmp;
     StringRef dbPath = invocation.dbPath;
-    if (llvm::sys::path::has_relative_path(invocation.dbPath)) {
+    if (llvm::sys::path::is_relative(invocation.dbPath) && dbPath.find("://") == StringRef::npos && !dbPath.startswith(":")) {
       llvm::sys::path::append(
           tmp, llvm::sys::path::parent_path(invocation.buildFilePath),
           invocation.dbPath);
