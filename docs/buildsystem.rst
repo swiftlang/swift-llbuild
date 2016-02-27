@@ -375,7 +375,7 @@ exact version of the Swift compiler in use (as reported by ``swiftc
 .. note::
 
    FIXME: For now, clients are expected to pass a `-j` argument to the compiler
-   explicitly if concurrent compilation is deired. In the future we expect the
+   explicitly if concurrent compilation is desired. In the future we expect the
    build system and compiler to have a two-way communication to share the system
    resources efficiently, so that the build system is capable of understanding
    the level of parallelism that is actively being used by the compiler.
