@@ -255,8 +255,17 @@ void ExternalCommand::inputsAvailable(BuildSystemCommandInterface& bsci,
   // (rdar://problem/22165130).
 #ifndef __clang_analyzer__
   auto fn = [this, &bsci=bsci, task](QueueJobContext* context) {
-    // Execute the command.
-    if (!executeExternalCommand(bsci, task, context)) {
+    // Notify the client the actual command body is going to run.
+    bsci.getDelegate().commandStarted(this);
+
+    // Invoke the external command.
+    auto result = executeExternalCommand(bsci, task, context);
+    
+    // Notify the client the command is complete.
+    bsci.getDelegate().commandFinished(this);
+    
+    // Process the result.
+    if (!result) {
       bsci.getDelegate().hadCommandFailure();
 
       // If the command failed, the result is failure.

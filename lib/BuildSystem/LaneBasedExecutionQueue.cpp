@@ -86,9 +86,9 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
 
       // Process the job.
       LaneBasedExecutionQueueJobContext context{ job };
-      getDelegate().commandStarted(job.getForCommand());
+      getDelegate().commandJobStarted(job.getForCommand());
       job.execute(reinterpret_cast<QueueJobContext*>(&context));
-      getDelegate().commandFinished(job.getForCommand());
+      getDelegate().commandJobFinished(job.getForCommand());
     }
   }
 

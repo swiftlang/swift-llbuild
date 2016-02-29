@@ -164,7 +164,7 @@ public:
 
   /// Called when a command's job has been started.
   ///
-  /// The queue guarantees that any commandStart() call will be paired with
+  /// The queue guarantees that any commandStarted() call will be paired with
   /// exactly one \see commandFinished() call.
   //
   // FIXME: We may eventually want to allow the individual job to provide some
@@ -172,10 +172,18 @@ public:
   //
   // FIXME: Design a way to communicate the "lane" here, for use in "super
   // console" like UIs.
-  virtual void commandStarted(Command*) = 0;
+  virtual void commandJobStarted(Command*) = 0;
 
   /// Called when a command's job has been finished.
-  virtual void commandFinished(Command*) = 0;
+  ///
+  /// NOTE: This callback is invoked by the quee without any understanding of
+  /// how the command is tied to the engine. In particular, it is almost always
+  /// the case that the command will have already completed from the perspective
+  /// of the low-level engine (and its dependents may have started
+  /// executing). Clients which want to understand when a command is complete
+  /// before the engine has been notified as such should use \see
+  /// BuildSystem::commandFinished().
+  virtual void commandJobFinished(Command*) = 0;
 
   /// Called when a command's job has started executing an external process.
   ///

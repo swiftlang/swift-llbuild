@@ -148,6 +148,15 @@ public:
   ///
   /// @{
 
+  /// Called by the build system to report that a declared command has started.
+  ///
+  /// The system guarantees that all such calls will be paired with a
+  /// corresponding \see commandFinished() call.
+  virtual void commandStarted(Command*) override;
+
+  /// Called by the build system to report a command has completed.
+  virtual void commandFinished(Command*) override;
+
   /// Called when a command's job has been started.
   ///
   /// The system guarantees that any commandStart() call will be paired with
@@ -158,10 +167,10 @@ public:
   //
   // FIXME: Design a way to communicate the "lane" here, for use in "super
   // console" like UIs.
-  virtual void commandStarted(Command*);
+  virtual void commandJobStarted(Command*);
 
   /// Called when a command's job has been finished.
-  virtual void commandFinished(Command*);
+  virtual void commandJobFinished(Command*);
 
   /// Called when a command's job has started executing an external process.
   ///

@@ -139,14 +139,14 @@ public:
           BuildSystemFrontendDelegateImpl& delegateImpl)
       : delegateImpl(delegateImpl) { }
   
-  virtual void commandStarted(Command* command) override {
+  virtual void commandJobStarted(Command* command) override {
     static_cast<BuildSystemFrontendDelegate*>(&getSystem().getDelegate())->
-      commandStarted(command);
+      commandJobStarted(command);
   }
 
-  virtual void commandFinished(Command* command) override {
+  virtual void commandJobFinished(Command* command) override {
     static_cast<BuildSystemFrontendDelegate*>(&getSystem().getDelegate())->
-      commandFinished(command);
+      commandJobFinished(command);
   }
 
   virtual void commandProcessStarted(Command* command,
@@ -340,6 +340,12 @@ void BuildSystemFrontendDelegate::commandStarted(Command*) {
 }
 
 void BuildSystemFrontendDelegate::commandFinished(Command*) {
+}
+
+void BuildSystemFrontendDelegate::commandJobStarted(Command*) {
+}
+
+void BuildSystemFrontendDelegate::commandJobFinished(Command*) {
 }
 
 void BuildSystemFrontendDelegate::commandProcessStarted(Command* command,
