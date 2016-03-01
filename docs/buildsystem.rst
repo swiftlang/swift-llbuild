@@ -293,6 +293,19 @@ nodes.
 
 No attributes are supported other than the common keys.
 
+Mkdir Tool
+----------
+
+**Identifier**: *mkdir*
+
+This tool is used to recursively create directories, with appropriate dependency
+tracking. This tool should be used when clients only care about the existence of
+the directory, not any other aspects of it. In particular, it ignores changes to
+the directory timestamp when consider whether to run.
+
+No attributes are supported other than the common keys. No inputs may be
+declared, and the sole output should be the node for the path to create.
+
 Shell Tool
 ----------
 

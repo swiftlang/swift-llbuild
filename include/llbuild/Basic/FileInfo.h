@@ -82,6 +82,9 @@ struct FileInfo {
             modTime.seconds == 0 && modTime.nanoseconds == 0);
   }
 
+  /// Check if the FileInfo corresponds to a directory.
+  bool isDirectory() const;
+  
   bool operator==(const FileInfo& rhs) const {
     return (device == rhs.device &&
             inode == rhs.inode &&

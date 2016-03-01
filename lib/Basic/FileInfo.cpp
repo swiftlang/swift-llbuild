@@ -19,6 +19,10 @@
 using namespace llbuild;
 using namespace llbuild::basic;
 
+bool FileInfo::isDirectory() const {
+  return mode & S_IFDIR;
+}
+
 /// Get the information to represent the state of the given node in the file
 /// system.
 ///

@@ -32,6 +32,7 @@
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -1126,6 +1127,215 @@ public:
   }
 };
 
+#pragma mark - MkdirTool implementation
+
+class MkdirCommand : public Command {
+  BuildNode* output = nullptr;
+
+  /// The command description.
+  //
+  // FIXME: This seems wasteful.
+  std::string description;
+
+  virtual uint64_t getSignature() {
+    return basic::hashString(output->getName());
+  }
+
+  virtual void configureDescription(const ConfigureContext&,
+                                    StringRef value) override {
+    description = value;
+  }
+
+  virtual void getShortDescription(SmallVectorImpl<char> &result) override {
+    llvm::raw_svector_ostream(result) << description;
+  }
+
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
+    llvm::raw_svector_ostream os(result);
+    os << "mkdir ";
+    // FIXME: This isn't correct, we need utilities for doing shell quoting.
+    if (StringRef(output->getName()).find(' ') != StringRef::npos) {
+      os << '"' << output->getName() << '"';
+    } else {
+      os << output->getName();
+    }
+  }
+  
+  virtual void configureInputs(const ConfigureContext& ctx,
+                               const std::vector<Node*>& value) override {
+    ctx.error("unexpected explicit input: '" + value[0]->getName() + "'");
+  }
+
+  virtual void configureOutputs(const ConfigureContext& ctx,
+                                const std::vector<Node*>& value) override {
+    if (value.size() == 1) {
+      output = static_cast<BuildNode*>(value[0]);
+      if (output->isVirtual()) {
+        ctx.error("unexpected virtual output");
+      }
+    } else if (value.empty()) {
+      ctx.error("missing declared output");
+    } else {
+      ctx.error("unexpected explicit output: '" + value[1]->getName() + "'");
+    }
+  }
+  
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  StringRef value) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  ArrayRef<StringRef> values) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+  virtual bool configureAttribute(
+      const ConfigureContext& ctx, StringRef name,
+      ArrayRef<std::pair<StringRef, StringRef>> values) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+
+  virtual BuildValue getResultForOutput(Node* node,
+                                        const BuildValue& value) override {
+    // If the value was a failed or skipped command, propagate the failure.
+    if (value.isFailedCommand() || value.isSkippedCommand())
+      return BuildValue::makeFailedInput();
+
+    // Otherwise, we should have a successful command -- return the actual
+    // result for the output.
+    assert(value.isSuccessfulCommand());
+
+    return BuildValue::makeExistingInput(value.getOutputInfo());
+  }
+
+  virtual bool isResultValid(BuildSystem& system,
+                             const BuildValue& value) override {
+    // If the prior value wasn't for a successful command, recompute.
+    if (!value.isSuccessfulCommand())
+      return false;
+
+    // Otherwise, the result is valid if the directory still exists.
+    auto info = output->getFileInfo(system.getDelegate().getFileSystem());
+    if (info.isMissing())
+      return false;
+
+    // If the item is not a directory, it needs to be recreated.
+    if (!info.isDirectory())
+      return false;
+
+    // FIXME: We should strictly enforce the integrity of this validity routine
+    // by ensuring that the build result for this command does not fully encode
+    // the file info, but rather just encodes its success. As is, we are leaking
+    // out the details of the file info (like the timestamp), but not rerunning
+    // when they change. This is by design for this command, but it would still
+    // be nice to be strict about it.
+    
+    return true;
+  }
+  
+  virtual void start(BuildSystemCommandInterface& bsci,
+                     core::Task* task) override {
+    // Unused, although eventually we would like to use the system itself to
+    // manage recursive directory creation.
+  }
+
+  virtual void providePriorValue(BuildSystemCommandInterface&, core::Task*,
+                                 const BuildValue& value) override {
+    // Ignored.
+  }
+
+  virtual void provideValue(BuildSystemCommandInterface&, core::Task*,
+                            uintptr_t inputID,
+                            const BuildValue& value) override {
+    assert(0 && "unexpected API call");
+  }
+
+  virtual void inputsAvailable(BuildSystemCommandInterface& bsci,
+                               core::Task* task) override {
+    // If the build should cancel, do nothing.
+    if (bsci.getDelegate().isCancelled()) {
+      bsci.taskIsComplete(task, BuildValue::makeSkippedCommand());
+      return;
+    }
+    
+    auto fn = [this, &bsci=bsci, task](QueueJobContext* context) {
+      // Notify the client the actual command body is going to run.
+      bsci.getDelegate().commandStarted(this);
+      
+      // Create the directory.
+      //
+      // FIXME: Need to use the filesystem interfaces.
+      auto success = true;
+      if (llvm::sys::fs::create_directories(output->getName())) {
+        getBuildSystem(bsci.getBuildEngine()).error(
+            "", "unable to create directory '" + output->getName() + "'");
+        success = false;
+      }
+      
+      // FIXME: On failure, should try to unlink the output if it exists, and
+      // retry.
+      
+      // Notify the client the command is complete.
+      bsci.getDelegate().commandFinished(this);
+    
+      // Process the result.
+      if (!success) {
+        bsci.getDelegate().hadCommandFailure();
+        bsci.taskIsComplete(task, BuildValue::makeFailedCommand());
+        return;
+      }
+
+      // Capture the file information of the output.
+      //
+      // FIXME: This isn't really right, \see isResultValid().
+      FileInfo outputInfo = output->getFileInfo(
+          bsci.getDelegate().getFileSystem());
+      
+      // Complete with a successful result.
+      bsci.taskIsComplete(
+          task, BuildValue::makeSuccessfulCommand(outputInfo, getSignature()));
+    };
+    bsci.addJob({ this, std::move(fn) });
+  }
+
+public:
+  using Command::Command;
+};
+
+class MkdirTool : public Tool {
+public:
+  using Tool::Tool;
+
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  StringRef value) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  ArrayRef<StringRef> values) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+  virtual bool configureAttribute(
+      const ConfigureContext& ctx, StringRef name,
+      ArrayRef<std::pair<StringRef, StringRef>> values) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+
+  virtual std::unique_ptr<Command> createCommand(StringRef name) override {
+    return llvm::make_unique<MkdirCommand>(name);
+  }
+};
+
 #pragma mark - BuildSystemFileDelegate
 
 BuildSystemDelegate& BuildSystemFileDelegate::getSystemDelegate() {
@@ -1177,6 +1387,8 @@ BuildSystemFileDelegate::lookupTool(StringRef name) {
     return llvm::make_unique<PhonyTool>(name);
   } else if (name == "clang") {
     return llvm::make_unique<ClangTool>(name);
+  } else if (name == "mkdir") {
+    return llvm::make_unique<MkdirTool>(name);
   }
 
   return nullptr;

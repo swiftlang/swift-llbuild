@@ -1,0 +1,58 @@
+# Check the 'mkdir' tool.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.llbuild
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.out
+# RUN: %{FileCheck} --input-file=%t.out %s
+#
+# CHECK: MKDIR
+# CHECK: MUTATE
+
+
+# Check that a null build does nothing.
+#
+# RUN: echo "START." > %t2.out
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build >> %t2.out
+# RUN: echo "EOF" >> %t2.out
+# RUN: %{FileCheck} --input-file=%t2.out %s --check-prefix=CHECK-REBUILD
+#
+# CHECK-REBUILD: START
+# CHECK-REBUILD-NOT: MKDIR
+# CHECK-REBUILD-NOT: MUTATE
+# CHECK-REBUILD-NEXT: EOF
+
+
+# Ensure the directory is recreated if necessary.
+#
+# RUN: rm -rf %t.build/subdir
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t3.out
+# RUN: %{FileCheck} --input-file=%t3.out %s --check-prefix=CHECK-RECREATE
+#
+# CHECK-RECREATE: MKDIR
+# CHECK-RECREATE: MUTATE
+
+client:
+  name: basic
+
+targets:
+  "": ["<all>"]
+
+commands:
+  C.all:
+    tool: phony
+    inputs: ["subdir/subdir2/thing.txt"]
+    outputs: ["<all>"]
+  C.mkdir:
+    tool: mkdir
+    description: MKDIR
+    outputs: ["subdir/subdir2"]
+  C.mutate:
+    tool: shell
+    description: MUTATE
+    inputs: ["subdir/subdir2"]
+    outputs: ["subdir/subdir2/thing.txt"]
+    # We use touch -r here to ensure the directory time is modified to something different.
+    args: touch subdir/subdir2/thing.txt && touch -r / subdir subdir/subdir2
+
+  
