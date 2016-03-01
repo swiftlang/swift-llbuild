@@ -35,6 +35,7 @@ FileInfo FileInfo::getInfoForPath(const std::string& path) {
 
   result.device = buf.st_dev;
   result.inode = buf.st_ino;
+  result.mode = buf.st_mode;
   result.size = buf.st_size;
 #if defined(__APPLE__)
   auto seconds = buf.st_mtimespec.tv_sec;

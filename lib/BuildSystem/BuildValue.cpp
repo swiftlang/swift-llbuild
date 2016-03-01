@@ -50,6 +50,7 @@ void BuildValue::dump(raw_ostream& os) const {
         os << "FileInfo{"
            << "dev=" << info.device
            << ", inode=" << info.inode
+           << ", mode=" << info.mode
            << ", size=" << info.size
            << ", modTime=(" << info.modTime.seconds
            << ":" << info.modTime.nanoseconds << "}";

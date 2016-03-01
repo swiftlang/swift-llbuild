@@ -44,6 +44,9 @@ typedef struct llb_fs_file_info_t_ {
   /// A unique identifier for the file on the device.
   uint64_t inode;
 
+  /// The file mode information, as used by stat(2).
+  uint64_t mode;
+
   /// The size of the file.
   uint64_t size;
 

@@ -63,16 +63,22 @@ struct FileTimestamp {
 ///
 /// This structure is intentionally sized to have no packing holes.
 struct FileInfo {
+  /// The device number.
   uint64_t device;
+  /// The inode number.
   uint64_t inode;
+  /// The mode flags of the file.
+  uint64_t mode;
+  /// The size of the file.
   uint64_t size;
+  /// The modification time of the file.
   FileTimestamp modTime;
 
   /// Check if this is a FileInfo representing a missing file.
   bool isMissing() const {
     // We use an all-zero FileInfo as a sentinel, under the assumption this can
     // never exist in normal circumstances.
-    return (device == 0 && inode == 0 && size == 0 &&
+    return (device == 0 && inode == 0 && mode == 0 && size == 0 &&
             modTime.seconds == 0 && modTime.nanoseconds == 0);
   }
 
