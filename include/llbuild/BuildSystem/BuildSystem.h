@@ -56,6 +56,14 @@ private:
   uint32_t version;
   
 public:
+  /// Configure the client properties.
+  ///
+  /// \param name An identifier for the client system.
+  ///
+  /// \param version A version number to identify the schema the client is
+  /// using, and changes to the schema version number will result in
+  /// invalidation of all cached build results. NOTE: Currently, this is limited
+  /// to a 16-bit number as an implementation detail.
   BuildSystemDelegate(StringRef name, uint32_t version)
       : name(name), version(version) {}
   virtual ~BuildSystemDelegate();

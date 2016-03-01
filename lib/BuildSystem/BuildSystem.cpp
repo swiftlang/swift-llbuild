@@ -117,6 +117,9 @@ public:
 };
 
 class BuildSystemImpl : public BuildSystemCommandInterface {
+  /// The internal schema version.
+  static const uint32_t internalSchemaVersion = 1;
+  
   BuildSystem& buildSystem;
 
   /// The delegate the BuildSystem was configured with.
@@ -220,6 +223,14 @@ public:
   std::unique_ptr<BuildNode> lookupNode(StringRef name,
                                         bool isImplicit);
 
+  uint32_t getMergedSchemaVersion() {
+    // FIXME: Find a cleaner strategy for merging the internal schema version
+    // with that from the client.
+    auto clientVersion = delegate.getVersion();
+    assert(clientVersion <= (1 << 16) && "unsupported client verison");
+    return internalSchemaVersion + (clientVersion << 16);
+  }
+  
   /// @name Client API
   /// @{
 
@@ -227,7 +238,7 @@ public:
     // FIXME: How do we pass the client schema version here, if we haven't
     // loaded the file yet.
     std::unique_ptr<core::BuildDB> db(
-        core::createSQLiteBuildDB(filename, delegate.getVersion(),
+        core::createSQLiteBuildDB(filename, getMergedSchemaVersion(),
                                   error_out));
     if (!db)
       return false;
