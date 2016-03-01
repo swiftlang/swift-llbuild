@@ -58,6 +58,39 @@ class IDEActivityLogUnitTestSection(IDEActivityLogSection):
         result["performanceTestOutput"] = ds.readString()
         return result
     
+class IDEActivityLogMessage(object):
+    @classmethod
+    def deserializeObject(cls, ds):
+        result = collections.OrderedDict()
+        result["title"] = ds.readString()
+        result["shortTitle"] = ds.readString()
+        result["timeEmitted"] = ds.readInt()
+        result["rangeInSectionText"] = ds.readInt()
+        result["rangeInSectionTextLength"] = ds.readInt()
+        result["submessages"] = ds.readObjectList()
+        result["severity"] = ds.readInt()
+        result["typeIdentString"] = ds.readString()
+        result["location"] = ds.readObject()
+        result["category"] = ds.readString()
+        result["secondaryLocations"] = ds.readObjectList()
+        result["additionalDescription"] = ds.readObject()
+        return result
+    
+class DVTTextDocumentLocation(object):
+    @classmethod
+    def deserializeObject(cls, ds):
+        result = collections.OrderedDict()
+        result["documentURLString"] = ds.readString()
+        result["timestamp"] = ds.readDouble()
+        result["startingLineNumber"] = ds.readInt()
+        result["startingColumnNumber"] = ds.readInt()
+        result["endingLineNumber"] = ds.readInt()
+        result["endingColumnNumber"] = ds.readInt()
+        result["characterRange"] = ds.readInt()
+        result["characterRangeLength"] = ds.readInt()
+        result["locationEncoding"] = ds.readInt()
+        return result
+    
 class SLFDeserializer(object):    
     def __init__(self, file):
         self.file = file
