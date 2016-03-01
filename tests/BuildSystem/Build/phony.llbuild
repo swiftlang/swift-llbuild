@@ -8,6 +8,9 @@
 #
 # CHECK: THING1
 # CHECK: THING2
+#
+# We shouldn't report anything about the phony command.
+# CHECK-NOT: output
 
 client:
   name: basic

@@ -193,6 +193,10 @@ public:
   // and provide some kind of dynamic dispatching mechanism (llvm::cast<>, for
   // example) over commands.
 
+  /// Controls whether the default status reporting shows status for the
+  /// command.
+  virtual bool shouldShowStatus() { return true; }
+  
   /// Get a short description of the command, for use in status reporting.
   virtual void getShortDescription(SmallVectorImpl<char> &result) = 0;
 

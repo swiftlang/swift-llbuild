@@ -336,20 +336,12 @@ void BuildSystemFrontendDelegate::hadCommandFailure() {
   ++impl->numFailedCommands;
 }
 
-void BuildSystemFrontendDelegate::commandStarted(Command*) {
-}
-
-void BuildSystemFrontendDelegate::commandFinished(Command*) {
-}
-
-void BuildSystemFrontendDelegate::commandJobStarted(Command*) {
-}
-
-void BuildSystemFrontendDelegate::commandJobFinished(Command*) {
-}
-
-void BuildSystemFrontendDelegate::commandProcessStarted(Command* command,
-                                                        ProcessHandle handle) {
+void BuildSystemFrontendDelegate::commandStarted(Command* command) {
+  // Don't report status if opted out by the command.
+  if (!command->shouldShowStatus()) {
+    return;
+  }
+  
   // Log the command.
   //
   // FIXME: Design the logging and status output APIs.
@@ -366,6 +358,19 @@ void BuildSystemFrontendDelegate::commandProcessStarted(Command* command,
   }
   fprintf(stdout, "%s\n", description.c_str());
   fflush(stdout);
+}
+
+void BuildSystemFrontendDelegate::commandFinished(Command*) {
+}
+
+void BuildSystemFrontendDelegate::commandJobStarted(Command*) {
+}
+
+void BuildSystemFrontendDelegate::commandJobFinished(Command*) {
+}
+
+void BuildSystemFrontendDelegate::commandProcessStarted(Command*,
+                                                        ProcessHandle) {
 }
   
 void BuildSystemFrontendDelegate::

@@ -799,6 +799,8 @@ class PhonyCommand : public ExternalCommand {
 public:
   using ExternalCommand::ExternalCommand;
 
+  virtual bool shouldShowStatus() override { return false; }
+
   virtual void getShortDescription(SmallVectorImpl<char> &result) override {
     llvm::raw_svector_ostream(result) << getName();
   }
