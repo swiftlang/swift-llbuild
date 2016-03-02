@@ -160,6 +160,9 @@ bool ExternalCommand::isResultValid(BuildSystem& system,
 
 void ExternalCommand::start(BuildSystemCommandInterface& bsci,
                             core::Task* task) {
+  // Notify the client the command is preparing to run.
+  bsci.getDelegate().commandPreparing(this);
+    
   // Initialize the build state.
   shouldSkip = false;
   hasMissingInput = false;

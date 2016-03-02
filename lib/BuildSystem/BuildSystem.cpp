@@ -1240,8 +1240,11 @@ class MkdirCommand : public Command {
   
   virtual void start(BuildSystemCommandInterface& bsci,
                      core::Task* task) override {
-    // Unused, although eventually we would like to use the system itself to
-    // manage recursive directory creation.
+    // Notify the client the command is preparing to run.
+    bsci.getDelegate().commandPreparing(this);
+
+    // Eventually we would like to use the system itself to manage recursive
+    // directory creation.
   }
 
   virtual void providePriorValue(BuildSystemCommandInterface&, core::Task*,

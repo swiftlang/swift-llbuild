@@ -148,6 +148,13 @@ public:
   ///
   /// @{
 
+  /// Called by the build system to report that a declared command is preparing
+  /// to run.
+  ///
+  /// The system guarantees that all such calls will be paired with a
+  /// corresponding \see commandFinished() call.
+  virtual void commandPreparing(Command*) override;
+
   /// Called by the build system to report that a declared command has started.
   ///
   /// The system guarantees that all such calls will be paired with a

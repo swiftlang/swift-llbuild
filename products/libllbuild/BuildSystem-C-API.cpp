@@ -136,55 +136,75 @@ public:
     }
   }
 
+  virtual void commandPreparing(Command* command) override {
+    if (cAPIDelegate.command_preparing) {
+      cAPIDelegate.command_preparing(
+          cAPIDelegate.context,
+          (llb_buildsystem_command_t*) command);
+    }
+  }
+
   virtual void commandStarted(Command* command) override {
-    cAPIDelegate.command_started(
-        cAPIDelegate.context,
-        (llb_buildsystem_command_t*) command);
+    if (cAPIDelegate.command_started) {
+      cAPIDelegate.command_started(
+          cAPIDelegate.context,
+          (llb_buildsystem_command_t*) command);
+    }
   }
 
   virtual void commandFinished(Command* command) override {
-    cAPIDelegate.command_finished(
-        cAPIDelegate.context,
-        (llb_buildsystem_command_t*) command);
+    if (cAPIDelegate.command_finished) {
+      cAPIDelegate.command_finished(
+          cAPIDelegate.context,
+          (llb_buildsystem_command_t*) command);
+    }
   }
 
   virtual void commandProcessStarted(Command* command,
                                      ProcessHandle handle) override {
-    cAPIDelegate.command_process_started(
-        cAPIDelegate.context,
-        (llb_buildsystem_command_t*) command,
-        (llb_buildsystem_process_t*) handle.id);
+    if (cAPIDelegate.command_process_started) {
+      cAPIDelegate.command_process_started(
+          cAPIDelegate.context,
+          (llb_buildsystem_command_t*) command,
+          (llb_buildsystem_process_t*) handle.id);
+    }
   }
 
   virtual void commandProcessHadError(Command* command, ProcessHandle handle,
                                       const Twine& message) override {
-    SmallString<256> data;
-    message.toVector(data);
-    llb_data_t cData{ data.size(), (const uint8_t*) data.data() };
-    cAPIDelegate.command_process_had_error(
-        cAPIDelegate.context,
-        (llb_buildsystem_command_t*) command,
-        (llb_buildsystem_process_t*) handle.id,
-        &cData);
+    if (cAPIDelegate.command_process_had_error) {
+      SmallString<256> data;
+      message.toVector(data);
+      llb_data_t cData{ data.size(), (const uint8_t*) data.data() };
+      cAPIDelegate.command_process_had_error(
+          cAPIDelegate.context,
+          (llb_buildsystem_command_t*) command,
+          (llb_buildsystem_process_t*) handle.id,
+          &cData);
+    }
   }
 
   virtual void commandProcessHadOutput(Command* command, ProcessHandle handle,
                                        StringRef data) override {
-    llb_data_t cData{ data.size(), (const uint8_t*) data.data() };
-    cAPIDelegate.command_process_had_output(
-        cAPIDelegate.context,
-        (llb_buildsystem_command_t*) command,
-        (llb_buildsystem_process_t*) handle.id,
-        &cData);
+    if (cAPIDelegate.command_process_had_output) {
+      llb_data_t cData{ data.size(), (const uint8_t*) data.data() };
+      cAPIDelegate.command_process_had_output(
+          cAPIDelegate.context,
+          (llb_buildsystem_command_t*) command,
+          (llb_buildsystem_process_t*) handle.id,
+          &cData);
+    }
   }
   
   virtual void commandProcessFinished(Command* command, ProcessHandle handle,
                                       int exitStatus) override {
-    cAPIDelegate.command_process_finished(
-        cAPIDelegate.context,
-        (llb_buildsystem_command_t*) command,
-        (llb_buildsystem_process_t*) handle.id,
-        exitStatus);
+    if (cAPIDelegate.command_process_finished) {
+      cAPIDelegate.command_process_finished(
+          cAPIDelegate.context,
+          (llb_buildsystem_command_t*) command,
+          (llb_buildsystem_process_t*) handle.id,
+          exitStatus);
+    }
   }
 
   /// Reset mutable build state before a new build operation.

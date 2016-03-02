@@ -115,6 +115,21 @@ public:
   /// Called by the build system to report a command failure.
   virtual void hadCommandFailure() = 0;
 
+  /// Called by the build system to report that a declared command is preparing
+  /// to run.
+  ///
+  /// This method is called before the command starts, when the system has
+  /// identified that it will eventually need to run (after all of its inputs
+  /// have been satisfied).
+  ///
+  /// The system guarantees that all such calls will be paired with a
+  /// corresponding \see commandFinished() call.
+  ///
+  /// The system only makes this callback for commands explicitly declared in
+  /// the build manifest (i.e., not for any work implicitly spawned by those
+  /// commands).
+  virtual void commandPreparing(Command*) = 0;
+
   /// Called by the build system to report that a declared command has started.
   ///
   /// The system guarantees that all such calls will be paired with a

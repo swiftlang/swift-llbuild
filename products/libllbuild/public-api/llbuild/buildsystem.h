@@ -188,25 +188,31 @@ typedef struct llb_buildsystem_delegate_t_ {
   // & API organization.
   void (*had_command_failure)(void* context);
   
-  /// Called when a command's job has been started.
+  /// Called when a command is preparing to run.
+  ///
+  /// The system guarantees that any command_preparing() call will be paired
+  /// with exactly one \see command_finished() call.
+  void (*command_preparing)(void* context, llb_buildsystem_command_t* command);
+
+  /// Called when a command has been started.
   ///
   /// The system guarantees that any commandStart() call will be paired with
-  /// exactly one \see commandFinished() call.
+  /// exactly one \see command_finished() call.
   void (*command_started)(void* context, llb_buildsystem_command_t* command);
 
-  /// Called when a command's job has been finished.
+  /// Called when a command has been finished.
   void (*command_finished)(void* context, llb_buildsystem_command_t* command);
 
   /// Called when a command's job has started executing an external process.
   ///
   /// The system guarantees that any commandProcessStarted() call will be paired
-  /// with exactly one \see commandProcessFinished() call.
+  /// with exactly one \see command_process_finished() call.
   ///
   /// Xparam process A unique handle used in subsequent delegate calls to
   /// identify the process. This handle should only be used to associate
   /// different status calls relating to the same process. It is only guaranteed
   /// to be unique from when it has been provided here to when it has been
-  /// provided to the \see commandProcessFinished() call.
+  /// provided to the \see command_process_finished() call.
   void (*command_process_started)(void* context,
                                   llb_buildsystem_command_t* command,
                                   llb_buildsystem_process_t* process);

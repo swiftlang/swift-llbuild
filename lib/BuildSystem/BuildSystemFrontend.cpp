@@ -336,6 +336,9 @@ void BuildSystemFrontendDelegate::hadCommandFailure() {
   ++impl->numFailedCommands;
 }
 
+void BuildSystemFrontendDelegate::commandPreparing(Command*) {
+}
+
 void BuildSystemFrontendDelegate::commandStarted(Command* command) {
   // Don't report status if opted out by the command.
   if (!command->shouldShowStatus()) {
