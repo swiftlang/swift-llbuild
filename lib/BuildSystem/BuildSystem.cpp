@@ -555,6 +555,20 @@ BuildFile& BuildSystemEngineDelegate::getBuildFile() {
   return system.getBuildFile();
 }
 
+static BuildSystemDelegate::CommandStatusKind
+convertStatusKind(core::Rule::StatusKind kind) {
+  switch (kind) {
+  case core::Rule::StatusKind::IsScanning:
+    return BuildSystemDelegate::CommandStatusKind::IsScanning;
+  case core::Rule::StatusKind::IsUpToDate:
+    return BuildSystemDelegate::CommandStatusKind::IsUpToDate;
+  case core::Rule::StatusKind::IsComplete:
+    return BuildSystemDelegate::CommandStatusKind::IsComplete;
+  }
+  assert(0 && "unknown status kind");
+  return BuildSystemDelegate::CommandStatusKind::IsScanning;
+}
+
 Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
   // Decode the key.
   auto key = BuildKey::fromData(keyData);
@@ -592,6 +606,11 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
                              const ValueType& value) -> bool {
         return CommandTask::isResultValid(
             engine, *command, BuildValue::fromData(value));
+      },
+      /*UpdateStatus=*/ [command](BuildEngine& engine,
+                                  core::Rule::StatusKind status) {
+        return ::getBuildSystem(engine).getDelegate().commandStatusChanged(
+            command, convertStatusKind(status));
       }
     };
   }

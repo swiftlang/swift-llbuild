@@ -148,6 +148,10 @@ public:
   ///
   /// @{
 
+  /// Called by the build system to report that a declared command's state is
+  /// changing.
+  virtual void commandStatusChanged(Command*, CommandStatusKind) override;
+
   /// Called by the build system to report that a declared command is preparing
   /// to run.
   ///

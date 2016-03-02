@@ -136,6 +136,30 @@ public:
     }
   }
 
+  static llb_buildsystem_command_status_kind_t
+  convertStatusKind(BuildSystemDelegate::CommandStatusKind kind) {
+    switch (kind) {
+    case BuildSystemDelegate::CommandStatusKind::IsScanning:
+      return llb_buildsystem_command_status_kind_is_scanning;
+    case BuildSystemDelegate::CommandStatusKind::IsUpToDate:
+      return llb_buildsystem_command_status_kind_is_up_to_date;
+    case BuildSystemDelegate::CommandStatusKind::IsComplete:
+      return llb_buildsystem_command_status_kind_is_complete;
+    }
+    assert(0 && "unknown status kind");
+    return llb_buildsystem_command_status_kind_is_scanning;
+  }
+  
+  virtual void
+  commandStatusChanged(Command* command,
+                       BuildSystemDelegate::CommandStatusKind kind) override {
+    if (cAPIDelegate.command_status_changed) {
+      cAPIDelegate.command_status_changed(
+          cAPIDelegate.context, (llb_buildsystem_command_t*) command,
+          convertStatusKind(kind));
+    }
+  }
+
   virtual void commandPreparing(Command* command) override {
     if (cAPIDelegate.command_preparing) {
       cAPIDelegate.command_preparing(

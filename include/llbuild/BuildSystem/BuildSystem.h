@@ -45,6 +45,20 @@ class BuildSystemDelegate {
     LLBUILD_DELETED_FUNCTION;
   
 public:
+  /// Command status change event kinds.
+  ///
+  /// This must be kept in sync with core::Rule::StatusKind.
+  enum class CommandStatusKind {
+    /// Indicates the command is being scanned.
+    IsScanning = 0,
+
+    /// Indicates the command is up-to-date, and doesn't need to run.
+    IsUpToDate = 1,
+
+    /// Indicates the command was run, and is now complete.
+    IsComplete = 2
+  };
+
   /// Minimal token object representing the range where a diagnostic occurred.
   struct Token {
     const char* start;
@@ -114,6 +128,13 @@ public:
   
   /// Called by the build system to report a command failure.
   virtual void hadCommandFailure() = 0;
+
+  /// Called by the build system to report that a declared command's state is
+  /// changing.
+  //
+  // FIXME: This API is now gross, there shouldn't be one generic status changed
+  // method and three individual other state change methods.
+  virtual void commandStatusChanged(Command*, CommandStatusKind) = 0;
 
   /// Called by the build system to report that a declared command is preparing
   /// to run.

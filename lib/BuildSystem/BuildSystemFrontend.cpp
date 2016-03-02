@@ -336,6 +336,10 @@ void BuildSystemFrontendDelegate::hadCommandFailure() {
   ++impl->numFailedCommands;
 }
 
+void BuildSystemFrontendDelegate::commandStatusChanged(Command*,
+                                                       CommandStatusKind) {
+}
+
 void BuildSystemFrontendDelegate::commandPreparing(Command*) {
 }
 

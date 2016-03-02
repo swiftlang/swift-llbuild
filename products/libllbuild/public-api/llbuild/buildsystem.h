@@ -87,6 +87,25 @@ typedef struct llb_buildsystem_tool_t_ llb_buildsystem_tool_t;
 /// Opaque handle to a build system command's launched process.
 typedef struct llb_buildsystem_process_t_ llb_buildsystem_process_t;
 
+/// Status change event kinds.
+typedef enum {
+  /// Indicates the command is being scanned to determine if it needs to run.
+  ///
+  /// This type will always precede the other types for any particular
+  /// command. Once scanning begins for a command, it is guaranteed to be
+  /// followed by either an "is-up-to-date" or "is-complete" event.
+  llb_buildsystem_command_status_kind_is_scanning = 0,
+
+  /// Indicates the command is up-to-date, and does not need to run.
+  llb_buildsystem_command_status_kind_is_up_to_date = 1,
+
+  /// Indicates the command was run, and is now complete.
+  ///
+  /// The actual preparation and start of the command are handled via other
+  /// individual delegate callbacks, and not status change events.
+  llb_buildsystem_command_status_kind_is_complete = 2,
+} llb_buildsystem_command_status_kind_t;
+
 /// Invocation parameters for a build system.
 typedef struct llb_buildsystem_invocation_t_ llb_buildsystem_invocation_t;
 struct llb_buildsystem_invocation_t_ {
@@ -187,7 +206,16 @@ typedef struct llb_buildsystem_delegate_t_ {
   // FIXME: Clean this up, we should be able to come up with a better definition
   // & API organization.
   void (*had_command_failure)(void* context);
-  
+
+  /// Called to report a status change for a command.
+  ///
+  /// The possible status changes -- and their invariants with respect to other
+  /// notifications -- are defined in \see
+  /// llb_buildsystem_command_status_kind_t.
+  void (*command_status_changed)(void* context,
+                                 llb_buildsystem_command_t* command,
+                                 llb_buildsystem_command_status_kind_t kind);
+
   /// Called when a command is preparing to run.
   ///
   /// The system guarantees that any command_preparing() call will be paired
