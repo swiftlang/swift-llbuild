@@ -264,7 +264,7 @@ class BuildEngineImpl {
   /// The queue of tasks ready to be finalized.
   std::vector<TaskInfo*> readyTaskInfos;
 
-  /// The number tasks which have been readied but not yet finished.
+  /// The number of tasks which have been readied but not yet finished.
   unsigned numOutstandingUnfinishedTasks = 0;
 
   /// The queue of tasks which are complete, accesses to this member variable
@@ -284,7 +284,7 @@ private:
   /// The execution of a single build may use a substantial amount of
   /// additional memory in recording the bookkeeping information used to do
   /// dependency scanning. While we could keep this information adjacent to
-  /// every \see RuleInfo, that adds up to a substantial check of memory which
+  /// every \see RuleInfo, that adds up to a substantial chunk of memory which
   /// is wasted except during dependency scanning.
   ///
   /// Instead, we allocate \see RuleScanRecord objects for each rule only as it
