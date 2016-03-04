@@ -90,18 +90,18 @@ public:
   }
 
   virtual basic::FileInfo getLinkInfo(const std::string& path) override {
-    if (!cAPIDelegate.fs_get_link_info) {
-      // Fall back to the file info, if available.
-      if (cAPIDelegate.fs_get_file_info) {
-        return getFileInfo(path);
-      } else {
-        return localFileSystem->getLinkInfo(path);
-      }
+    if (!cAPIDelegate.fs_get_link_info && !cAPIDelegate.fs_get_file_info) {
+      return localFileSystem->getLinkInfo(path);
     }
 
     llb_fs_file_info_t file_info;
-    cAPIDelegate.fs_get_link_info(cAPIDelegate.context, path.c_str(),
-                                  &file_info);
+    if (cAPIDelegate.fs_get_link_info) {
+      cAPIDelegate.fs_get_link_info(cAPIDelegate.context, path.c_str(),
+                                    &file_info);
+    } else {
+      cAPIDelegate.fs_get_file_info(cAPIDelegate.context, path.c_str(),
+                                    &file_info);
+    }
 
     basic::FileInfo result{};
     result.device = file_info.device;
