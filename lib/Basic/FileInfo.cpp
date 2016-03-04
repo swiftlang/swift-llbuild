@@ -28,10 +28,12 @@ bool FileInfo::isDirectory() const {
 ///
 /// \param info_out [out] On success, the important path information.
 /// \returns True if information on the path was found.
-FileInfo FileInfo::getInfoForPath(const std::string& path) {
+FileInfo FileInfo::getInfoForPath(const std::string& path, bool asLink) {
   FileInfo result;
   struct ::stat buf;
-  if (::stat(path.c_str(), &buf) != 0) {
+  auto statResult =
+    asLink ? ::lstat(path.c_str(), &buf) : ::stat(path.c_str(), &buf);
+  if (statResult != 0) {
     memset(&result, 0, sizeof(result));
     assert(result.isMissing());
     return result;

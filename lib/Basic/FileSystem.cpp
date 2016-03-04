@@ -42,6 +42,10 @@ public:
   virtual FileInfo getFileInfo(const std::string& path) override {
     return FileInfo::getInfoForPath(path);
   }
+  
+  virtual FileInfo getLinkInfo(const std::string& path) override {
+    return FileInfo::getInfoForPath(path, /*isLink:*/ true);
+  }
 };
   
 }

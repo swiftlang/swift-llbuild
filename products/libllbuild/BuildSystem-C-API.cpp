@@ -88,6 +88,26 @@ public:
     result.modTime.nanoseconds = file_info.mod_time.nanoseconds;
     return result;
   }
+
+  virtual basic::FileInfo getLinkInfo(const std::string& path) override {
+    if (!cAPIDelegate.fs_get_link_info) {
+      // If not provided, fall back to using the file info.
+      return getFileInfo(path);
+    }
+
+    llb_fs_file_info_t file_info;
+    cAPIDelegate.fs_get_link_info(cAPIDelegate.context, path.c_str(),
+                                  &file_info);
+
+    basic::FileInfo result{};
+    result.device = file_info.device;
+    result.inode = file_info.inode;
+    result.mode = file_info.mode;
+    result.size = file_info.size;
+    result.modTime.seconds = file_info.mod_time.seconds;;
+    result.modTime.nanoseconds = file_info.mod_time.nanoseconds;
+    return result;
+  }
 };
   
 class CAPIBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {

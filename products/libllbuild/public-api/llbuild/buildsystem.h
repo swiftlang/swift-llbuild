@@ -163,6 +163,11 @@ typedef struct llb_buildsystem_delegate_t_ {
   void (*fs_get_file_info)(void* context, const char* path,
                            llb_fs_file_info_t* data_out);
 
+  /// Get the file information for the given path, without looking through
+  /// symbolic links.
+  void (*fs_get_link_info)(void* context, const char* path,
+                           llb_fs_file_info_t* data_out);
+
   /// @}
 
   /// @name Build System Behaviors

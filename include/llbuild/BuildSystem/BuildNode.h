@@ -48,6 +48,7 @@ public:
       ArrayRef<std::pair<StringRef, StringRef>> values) override;
 
   basic::FileInfo getFileInfo(basic::FileSystem&) const;
+  basic::FileInfo getLinkInfo(basic::FileSystem&) const;
 };
 
 }

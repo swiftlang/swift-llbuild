@@ -54,6 +54,13 @@ public:
   /// \returns The FileInfo for the given path, which will be missing if the
   /// path does not exist (or any error was encountered).
   virtual FileInfo getFileInfo(const std::string& path) = 0;
+  
+  /// Get the information to represent the state of the given path in the file
+  /// system, without looking through symbolic links.
+  ///
+  /// \returns The FileInfo for the given path, which will be missing if the
+  /// path does not exist (or any error was encountered).
+  virtual FileInfo getLinkInfo(const std::string& path) = 0;
 };
 
 /// Create a FileSystem instance suitable for accessing the local filesystem.

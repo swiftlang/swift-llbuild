@@ -98,9 +98,12 @@ struct FileInfo {
   /// Get the information to represent the state of the given node in the file
   /// system.
   ///
+  /// \param asLink If yes, checks the information for the file path without
+  /// looking through symbolic links.
+  ///
   /// \returns The FileInfo for the given path, which will be missing if the
   /// path does not exist (or any error was encountered).
-  static FileInfo getInfoForPath(const std::string& path);
+  static FileInfo getInfoForPath(const std::string& path, bool asLink = false);
 };
 
 }
