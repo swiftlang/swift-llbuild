@@ -38,6 +38,8 @@
 
 #include <memory>
 
+#include <unistd.h>
+
 using namespace llbuild;
 using namespace llbuild::basic;
 using namespace llbuild::core;
@@ -1171,7 +1173,7 @@ class MkdirCommand : public Command {
 
   virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
     llvm::raw_svector_ostream os(result);
-    os << "mkdir ";
+    os << "mkdir -p ";
     // FIXME: This isn't correct, we need utilities for doing shell quoting.
     if (StringRef(output->getName()).find(' ') != StringRef::npos) {
       os << '"' << output->getName() << '"';
@@ -1358,6 +1360,211 @@ public:
   }
 };
 
+#pragma mark - SymlinkTool implementation
+
+class SymlinkCommand : public Command {
+  BuildNode* output = nullptr;
+
+  /// The command description.
+  std::string description;
+
+  /// The contents to write at the output path.
+  std::string contents;
+
+  virtual uint64_t getSignature() {
+    return basic::hashString(output->getName()) ^ basic::hashString(contents);
+  }
+
+  virtual void configureDescription(const ConfigureContext&,
+                                    StringRef value) override {
+    description = value;
+  }
+
+  virtual void getShortDescription(SmallVectorImpl<char> &result) override {
+    llvm::raw_svector_ostream(result) << description;
+  }
+
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
+    llvm::raw_svector_ostream os(result);
+    os << "ln -sfh ";
+    // FIXME: This isn't correct, we need utilities for doing shell quoting.
+    if (StringRef(output->getName()).find(' ') != StringRef::npos) {
+      os << '"' << output->getName() << '"';
+    } else {
+      os << output->getName();
+    }
+  }
+  
+  virtual void configureInputs(const ConfigureContext& ctx,
+                               const std::vector<Node*>& value) override {
+    ctx.error("unexpected explicit input: '" + value[0]->getName() + "'");
+  }
+
+  virtual void configureOutputs(const ConfigureContext& ctx,
+                                const std::vector<Node*>& value) override {
+    if (value.size() == 1) {
+      output = static_cast<BuildNode*>(value[0]);
+      if (output->isVirtual()) {
+        ctx.error("unexpected virtual output");
+      }
+    } else if (value.empty()) {
+      ctx.error("missing declared output");
+    } else {
+      ctx.error("unexpected explicit output: '" + value[1]->getName() + "'");
+    }
+  }
+  
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  StringRef value) override {
+    if (name == "contents") {
+      contents = value;
+      return true;
+    } else {
+      ctx.error("unexpected attribute: '" + name + "'");
+      return false;
+    }
+  }
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  ArrayRef<StringRef> values) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+  virtual bool configureAttribute(
+      const ConfigureContext& ctx, StringRef name,
+      ArrayRef<std::pair<StringRef, StringRef>> values) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+
+  virtual BuildValue getResultForOutput(Node* node,
+                                        const BuildValue& value) override {
+    // If the value was a failed or skipped command, propagate the failure.
+    if (value.isFailedCommand() || value.isSkippedCommand())
+      return BuildValue::makeFailedInput();
+
+    // Otherwise, we should have a successful command -- return the actual
+    // result for the output.
+    assert(value.isSuccessfulCommand());
+
+    return BuildValue::makeExistingInput(value.getOutputInfo());
+  }
+
+  virtual bool isResultValid(BuildSystem& system,
+                             const BuildValue& value) override {
+    // If the prior value wasn't for a successful command, recompute.
+    if (!value.isSuccessfulCommand())
+      return false;
+
+    // Otherwise, assume the result is valid if its link status matches the
+    // previous one.
+    auto info = output->getLinkInfo(system.getDelegate().getFileSystem());
+    if (info.isMissing())
+      return false;
+
+    return info == value.getOutputInfo();
+  }
+  
+  virtual void start(BuildSystemCommandInterface& bsci,
+                     core::Task* task) override {
+    // Notify the client the command is preparing to run.
+    bsci.getDelegate().commandPreparing(this);
+  }
+
+  virtual void providePriorValue(BuildSystemCommandInterface&, core::Task*,
+                                 const BuildValue& value) override {
+    // Ignored.
+  }
+
+  virtual void provideValue(BuildSystemCommandInterface&, core::Task*,
+                            uintptr_t inputID,
+                            const BuildValue& value) override {
+    assert(0 && "unexpected API call");
+  }
+
+  virtual void inputsAvailable(BuildSystemCommandInterface& bsci,
+                               core::Task* task) override {
+    // If the build should cancel, do nothing.
+    if (bsci.getDelegate().isCancelled()) {
+      bsci.taskIsComplete(task, BuildValue::makeSkippedCommand());
+      return;
+    }
+    
+    auto fn = [this, &bsci=bsci, task](QueueJobContext* context) {
+      // Notify the client the actual command body is going to run.
+      bsci.getDelegate().commandStarted(this);
+
+      // Create the symbolic link (note that despite the poorly chosen LLVM
+      // name, this is a symlink).
+      //
+      // FIXME: Need to use the filesystem interfaces.
+      auto success = true;
+      if (llvm::sys::fs::create_link(contents, output->getName())) {
+        // On failure, we attempt to unlink the file and retry.
+        ::unlink(output->getName().str().c_str());
+        
+        if (llvm::sys::fs::create_link(contents, output->getName())) {
+          getBuildSystem(bsci.getBuildEngine()).error(
+              "", "unable to create symlink at '" + output->getName() + "'");
+          success = false;
+        }
+      }
+      
+      // Notify the client the command is complete.
+      bsci.getDelegate().commandFinished(this);
+    
+      // Process the result.
+      if (!success) {
+        bsci.getDelegate().hadCommandFailure();
+        bsci.taskIsComplete(task, BuildValue::makeFailedCommand());
+        return;
+      }
+
+      // Capture the *link* information of the output.
+      FileInfo outputInfo = output->getLinkInfo(
+          bsci.getDelegate().getFileSystem());
+      
+      // Complete with a successful result.
+      bsci.taskIsComplete(
+          task, BuildValue::makeSuccessfulCommand(outputInfo, getSignature()));
+    };
+    bsci.addJob({ this, std::move(fn) });
+  }
+
+public:
+  using Command::Command;
+};
+
+class SymlinkTool : public Tool {
+public:
+  using Tool::Tool;
+
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  StringRef value) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  ArrayRef<StringRef> values) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+  virtual bool configureAttribute(
+      const ConfigureContext& ctx, StringRef name,
+      ArrayRef<std::pair<StringRef, StringRef>> values) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+
+  virtual std::unique_ptr<Command> createCommand(StringRef name) override {
+    return llvm::make_unique<SymlinkCommand>(name);
+  }
+};
+
 #pragma mark - BuildSystemFileDelegate
 
 BuildSystemDelegate& BuildSystemFileDelegate::getSystemDelegate() {
@@ -1411,6 +1618,8 @@ BuildSystemFileDelegate::lookupTool(StringRef name) {
     return llvm::make_unique<ClangTool>(name);
   } else if (name == "mkdir") {
     return llvm::make_unique<MkdirTool>(name);
+  } else if (name == "symlink") {
+    return llvm::make_unique<SymlinkTool>(name);
   }
 
   return nullptr;

@@ -306,6 +306,38 @@ the directory timestamp when consider whether to run.
 No attributes are supported other than the common keys. No inputs may be
 declared, and the sole output should be the node for the path to create.
 
+Symlink Tool
+------------
+
+**Identifier**: *symlink*
+
+This tool is used to create a symbolic link at a particular location, with
+appropriate dependency tracking. Due to the nature of symbolic links it is
+important to use this tool when creating links during a build, as opposed to the
+usuall `shell` tool. The reason why is that the build system will, by default,
+use `stat(2)` to examine the contents of output files for the purposes of
+evaluating the build state. In the case of a symbolic link this is incorrect, as
+it will retrieve the status information of the target, not the link itself. This
+may lead to unnecessary recreation of the link (and triggering of subsequent
+work).
+
+.. note::
+
+   The issue here may be encountered by any other tool which needs to create
+   symbolic links during the build. We do not yet expose this as a general
+   purpose feature available to any command, but that may be a desirable feature
+   in the future.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 80
+
+   * - Name
+     - Description
+
+   * - contents
+     - The contents (i.e., path to the source) of the symlink.
+
 Shell Tool
 ----------
 
