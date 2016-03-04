@@ -91,8 +91,12 @@ public:
 
   virtual basic::FileInfo getLinkInfo(const std::string& path) override {
     if (!cAPIDelegate.fs_get_link_info) {
-      // If not provided, fall back to using the file info.
-      return getFileInfo(path);
+      // Fall back to the file info, if available.
+      if (cAPIDelegate.fs_get_file_info) {
+        return getFileInfo(path);
+      } else {
+        return localFileSystem->getLinkInfo(path);
+      }
     }
 
     llb_fs_file_info_t file_info;
