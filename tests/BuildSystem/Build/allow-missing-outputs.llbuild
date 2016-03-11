@@ -1,0 +1,53 @@
+# Check that commands with missing output files are handle properly for
+# incremental builds. This relies on commands themselves to behave correctly and
+# diagnose missing required inputs, but otherwise allows supporting commands
+# which "may" generate output files.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.llbuild
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build &> %t.out
+# RUN: test -f %t.build/output-1
+# RUN: %{FileCheck} %s --input-file %t.out
+#
+# CHECK: TOUCH
+
+# Verify that we get a null build, despite the output missing (its state has not changed).
+#
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build &> %t.rebuild.out
+# RUN: echo "<<eof>>" >> %t.rebuild.out
+# RUN: test -f %t.build/output-1
+# RUN: %{FileCheck} %s --check-prefix=CHECK-REBUILD --input-file %t.rebuild.out
+#
+# CHECK-REBUILD-NOT: TOUCH
+# CHECK-REBUILD: <<eof>>
+
+# Verify that we *do* rebuild if we make the other output appear.
+#
+# FIXME: CONSISTENCY: This masks a build inconsistency -- if the command claimed
+# the output, but didn't itself write it. We should really be removing or hiding
+# the command output files to ensure consistency.
+#
+# RUN: touch %t.build/output-2
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build &> %t.after-create.out
+# RUN: test -f %t.build/output-2
+# RUN: %{FileCheck} %s --check-prefix=CHECK-AFTER-CREATE --input-file %t.after-create.out
+#
+# CHECK-AFTER-CREATE: TOUCH
+
+client:
+  name: basic
+
+targets:
+  "": ["<all>"]
+
+commands:
+  C.all:
+    tool: phony
+    inputs: ["output-1"]
+    outputs: ["<all>"]
+  C.command-with-missing-output:
+    tool: shell
+    description: TOUCH
+    args: ["touch", "output-1"]
+    outputs: ["output-1", "output-2"]

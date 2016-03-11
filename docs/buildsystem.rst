@@ -367,6 +367,26 @@ attributes on commands, and not at the tool level.
      - A boolean value, indicating whether the commands should be allowed to run
        even if it has missing input files. The default is false.
 
+
+By default, shell commands will be rerun any time an input is changed, or an
+output's state does not match that of the last time the command was ran. Unlike
+tools like *make*, the build system by default will rerun the command on **any**
+change to the output file -- even if the output file was just regenerated. This
+is under the assumption that the build system can only truly know that a file
+was produced correctly if it produces it directly.
+
+.. note::
+
+   One useful behavior not currently supported is the ability to modify and
+   rerun individual commands. When using tools like *make* or *ninja*, the build
+   system transparently allows this, which can be useful when experimenting with
+   individual build flags. However, by design this breaks the consistency of the
+   build -- it is no longer strictly determined by the inputs.
+
+   We currently do not support that behavior directly, but may in the future add
+   additional options for developers needing to experiment at that level.
+
+       
 Clang Tool
 ----------
 

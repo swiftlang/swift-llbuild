@@ -1,4 +1,4 @@
-# Check the handling of "allow-missing-inputs.
+# Check the handling of "allow-missing-inputs".
 
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build

@@ -144,12 +144,21 @@ bool ExternalCommand::isResultValid(BuildSystem& system,
     if (node->isVirtual())
       continue;
       
-    // Always rebuild if the output is missing.
+    // Rebuild if the output information has changed.
+    //
+    // We intentionally allow missing outputs here, as long as they haven't
+    // changed. This is under the assumption that the commands themselves are
+    // behaving correctly when the exit successfully, and that downstrema
+    // commands would diagnose required missing inputs.
+    //
+    // FIXME: CONSISTENCY: One consistency issue in this model currently is that
+    // if the output was missing, then appears, nothing will remove it; that
+    // results in an inconsistent build. What would be nice if we supported
+    // per-edge annotations on whether an output was optional -- in that case we
+    // could enforce and error on the missing output if not annotated, and we
+    // could enable behavior to remove such output files if annotated prior to
+    // running the command.
     auto info = node->getFileInfo(system.getDelegate().getFileSystem());
-    if (info.isMissing())
-      return false;
-
-    // Otherwise, the result is valid if the file information has not changed.
     if (value.getNthOutputInfo(i) != info)
       return false;
   }
