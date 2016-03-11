@@ -6,9 +6,11 @@
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.out
 # RUN: test -d %t.build/subdir
 # RUN: test -f %t.build/subdir/file
+# RUN: test -L %t.build/subdir-2/symlink
 # RUN: %{FileCheck} --input-file=%t.out %s
 #
 # CHECK: TOUCH
+# CHECK: SYMLINK
 
 client:
   name: basic
@@ -19,10 +21,15 @@ targets:
 commands:
   C.all:
     tool: phony
-    inputs: ["subdir/file"]
+    inputs: ["subdir/file", "subdir-2/symlink"]
     outputs: ["<all>"]
   C.touch:
     tool: shell
     description: TOUCH
     args: ["touch", "subdir/file"]
     outputs: ["subdir/file"]
+  C.symlink:
+    tool: symlink
+    description: SYMLINK
+    outputs: ["subdir-2/symlink"]
+    contents: ignored

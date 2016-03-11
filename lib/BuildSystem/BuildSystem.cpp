@@ -34,6 +34,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
 
 #include <memory>
@@ -1494,6 +1495,18 @@ class SymlinkCommand : public Command {
     auto fn = [this, &bsci=bsci, task](QueueJobContext* context) {
       // Notify the client the actual command body is going to run.
       bsci.getDelegate().commandStarted(this);
+
+      // Create the directory containing the symlink, if necessary.
+      //
+      // FIXME: Shared behavior with ExternalCommand.
+      //
+      // FIXME: Need to use the filesystem interfaces.
+      {
+        auto parent = llvm::sys::path::parent_path(output->getName());
+        if (!parent.empty()) {
+          (void) llvm::sys::fs::create_directories(parent);
+        }
+      }
 
       // Create the symbolic link (note that despite the poorly chosen LLVM
       // name, this is a symlink).

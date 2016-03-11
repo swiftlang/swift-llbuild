@@ -272,7 +272,7 @@ void ExternalCommand::inputsAvailable(BuildSystemCommandInterface& bsci,
     // Notify the client the actual command body is going to run.
     bsci.getDelegate().commandStarted(this);
 
-    // Create the directories for all file outputs.
+    // Create the directories for the directories containing file outputs.
     //
     // FIXME: Implement a shared cache for this, to reduce the number of
     // syscalls required to make this happen.
