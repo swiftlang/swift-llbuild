@@ -24,6 +24,8 @@
 #include "llbuild/Basic/LLVM.h"
 
 #include "llvm/ADT/Twine.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Path.h"
 
 using namespace llbuild;
 using namespace llbuild::basic;
@@ -270,6 +272,23 @@ void ExternalCommand::inputsAvailable(BuildSystemCommandInterface& bsci,
     // Notify the client the actual command body is going to run.
     bsci.getDelegate().commandStarted(this);
 
+    // Create the directories for all file outputs.
+    //
+    // FIXME: Implement a shared cache for this, to reduce the number of
+    // syscalls required to make this happen.
+    for (auto* node: outputs) {
+      if (!node->isVirtual()) {
+        // Attempt to create the directory; we ignore errors here under the
+        // assumption the command will diagnose the situation if necessary.
+        //
+        // FIXME: Need to use the filesystem interfaces.
+        auto parent = llvm::sys::path::parent_path(node->getName());
+        if (!parent.empty()) {
+          (void) llvm::sys::fs::create_directories(parent);
+        }
+      }
+    }
+    
     // Invoke the external command.
     auto result = executeExternalCommand(bsci, task, context);
     

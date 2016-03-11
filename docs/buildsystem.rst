@@ -367,13 +367,15 @@ attributes on commands, and not at the tool level.
      - A boolean value, indicating whether the commands should be allowed to run
        even if it has missing input files. The default is false.
 
+The build system will automatically create the directories containing each of
+the output files prior to running the command.
 
-By default, shell commands will be rerun any time an input is changed, or an
-output's state does not match that of the last time the command was ran. Unlike
-tools like *make*, the build system by default will rerun the command on **any**
-change to the output file -- even if the output file was just regenerated. This
-is under the assumption that the build system can only truly know that a file
-was produced correctly if it produces it directly.
+Shell commands will be rerun any time an input is changed, or an output's state
+does not match that of the last time the command was ran. Unlike tools like
+*make*, the build system by default will rerun the command on **any** change to
+the output file -- even if the output file was just regenerated. This is under
+the assumption that the build system can only truly know that a file was
+produced correctly if it produces it directly.
 
 .. note::
 
