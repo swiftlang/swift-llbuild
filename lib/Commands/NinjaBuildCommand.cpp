@@ -564,10 +564,10 @@ public:
     // Create a pipe and thread to watch for signals.
     assert(BuildContext::signalWatchingPipe[0] == -1 &&
            BuildContext::signalWatchingPipe[1] == -1);
-    new std::thread(&BuildContext::signalWaitThread, this);
     if (::pipe(BuildContext::signalWatchingPipe) < 0) {
       perror("pipe");
     }
+    new std::thread(&BuildContext::signalWaitThread, this);
   }
 
   ~BuildContext() {
