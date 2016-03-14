@@ -428,6 +428,10 @@ attributes on commands, and not at the tool level.
               rule. The rule target is ignored by the build system, and the
               dependencies of the rule are treated as dependencies of the
               command which ran.
+       
+          * - dependency-info
+            - The file should be in the "dependency info" format used by some
+              Darwin tools (like `ld`).
 
 The build system will automatically create the directories containing each of
 the output files prior to running the command.

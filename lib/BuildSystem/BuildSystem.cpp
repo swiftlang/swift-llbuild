@@ -19,6 +19,7 @@
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/BuildEngine.h"
+#include "llbuild/Core/DependencyInfoParser.h"
 #include "llbuild/Core/MakefileDepsParser.h"
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
 #include "llbuild/BuildSystem/BuildFile.h"
@@ -882,6 +883,9 @@ class ShellCommand : public ExternalCommand {
     /// compilers, wherein the dependencies of the first target are treated as
     /// dependencies of the command.
     Makefile,
+
+    /// Darwin's DependencyInfo format.
+    DependencyInfo,
   };
   
   /// The command line arguments.
@@ -937,6 +941,10 @@ class ShellCommand : public ExternalCommand {
     case DepsStyle::Makefile:
       return processMakefileDiscoveredDependencies(
           bsci, task, context, input.get());
+
+    case DepsStyle::DependencyInfo:
+      return processDependencyInfoDiscoveredDependencies(
+          bsci, task, context, input.get());
     }
 
     llvm::report_fatal_error("unknown dependencies style");
@@ -983,6 +991,47 @@ class ShellCommand : public ExternalCommand {
     return actions.numErrors == 0;
   }
 
+  bool
+  processDependencyInfoDiscoveredDependencies(BuildSystemCommandInterface& bsci,
+                                              Task* task,
+                                              QueueJobContext* context,
+                                              llvm::MemoryBuffer* input) {
+    // Parse the output.
+    //
+    // We just ignore the rule, and add any dependency that we encounter in the
+    // file.
+    struct DepsActions : public core::DependencyInfoParser::ParseActions {
+      BuildSystemCommandInterface& bsci;
+      Task* task;
+      ShellCommand* command;
+      unsigned numErrors{0};
+
+      DepsActions(BuildSystemCommandInterface& bsci, Task* task,
+                  ShellCommand* command)
+          : bsci(bsci), task(task), command(command) {}
+
+      virtual void error(const char* message, uint64_t position) override {
+        getBuildSystem(bsci.getBuildEngine()).error(
+            command->depsPath,
+            "error reading dependency file: " + std::string(message));
+        ++numErrors;
+      }
+
+      // Ignore everything but actual inputs.
+      virtual void actOnVersion(StringRef) override { }
+      virtual void actOnMissing(StringRef) override { }
+      virtual void actOnOutput(StringRef) override { }
+
+      virtual void actOnInput(StringRef name) override {
+        bsci.taskDiscoveredDependency(task, BuildKey::makeNode(name));
+      }
+    };
+
+    DepsActions actions(bsci, task, this);
+    core::DependencyInfoParser(input->getBuffer(), actions).parse();
+    return actions.numErrors == 0;
+  }
+
 public:
   using ExternalCommand::ExternalCommand;
 
@@ -1019,6 +1068,8 @@ public:
     } else if (name == "deps-style") {
       if (value == "makefile") {
         depsStyle = DepsStyle::Makefile;
+      } else if (value == "dependency-info") {
+        depsStyle = DepsStyle::DependencyInfo;
       } else {
         ctx.error("unknown 'deps-style': '" + value + "'");
         return false;
