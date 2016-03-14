@@ -386,6 +386,49 @@ attributes on commands, and not at the tool level.
           produced by such a tool will inherit the behavior that they do not
           re-run if the output is only mutated (not recreated).
 
+   * - deps
+     - The path to an output file of the command which will contain information
+       on the exact dependencies used by the command when it ran. This can be
+       used as a way to avoid the need to specify all dependencies up-front, in
+       particular for use in situations like compiling C source code where it is
+       hard to predict the exact set of headers which may be needed in advance.
+
+       This mechanism works based on the following observations:
+
+       * If a command has never run before, it will always need to be run, so it
+         is often safe to not know the complete set of dependencies up front.
+
+       * Once the command has run, if it tells us the exact set of dependencies
+         it used then we can end up with precise information on the required
+         dependencies, in order to rebuild it correctly in the future.
+
+       Note that these observations are only true **if** all of the needed
+       dependencies are already present. If those dependencies are themselves
+       computed by some other task in the build system (e.g., a generated
+       header) then the client is responsible for making sure that those inputs
+       will have been produced first.
+
+       The exact format of the output file is specified via the separate
+       `deps-style` key.
+
+   * - deps-style
+     
+     - Specifies the kind of dependency format used for the file at `deps`, if
+       specified. Currently supported options are:
+
+       .. list-table::
+          :header-rows: 1
+          :widths: 20 80
+       
+          * - Name
+            - Description
+       
+          * - makefile
+            - The file should be a Makefile-fragment which specifies a single
+              rule. The rule target is ignored by the build system, and the
+              dependencies of the rule are treated as dependencies of the
+              command which ran.
+
 The build system will automatically create the directories containing each of
 the output files prior to running the command.
 
