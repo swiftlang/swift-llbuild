@@ -7,7 +7,6 @@
 # RUN: %{FileCheck} %s --input-file %t.out
 #
 # CHECK: TOUCH
-# CHECK: OUTPUT-DOWNSTREAM
 
 # Verify that we get a null build.
 #
@@ -16,11 +15,9 @@
 # RUN: %{FileCheck} %s --check-prefix=CHECK-REBUILD --input-file %t.rebuild.out
 #
 # CHECK-REBUILD-NOT: TOUCH
-# CHECK-REBUILD-NOT: OUTPUT-DOWNSTREAM
 # CHECK-REBUILD: <<eof>>
 
-# Verify that we don't run the command if its output changes, but that we do run
-# something downstream of it.
+# Verify that we don't run the command if its output changes.
 #
 # RUN: touch -r /dev/null %t.build/output
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build &> %t.after-modify.out
@@ -28,7 +25,6 @@
 # RUN: %{FileCheck} %s --check-prefix=CHECK-AFTER-MODIFY --input-file %t.after-modify.out
 #
 # CHECK-AFTER-MODIFY-NOT: TOUCH
-# CHECK-AFTER-MODIFY: OUTPUT-DOWNSTREAM
 # CHECK-AFTER-MODIFY: <<eof>>
 
 # Verify that we do get a rebuild if we remove the output.
@@ -50,7 +46,7 @@ targets:
 commands:
   C.all:
     tool: phony
-    inputs: ["<downstream>"]
+    inputs: ["output"]
     outputs: ["<all>"]
   C.command-with-modified-output:
     tool: shell
@@ -58,9 +54,3 @@ commands:
     args: ["touch", "output"]
     outputs: ["output"]
     allow-modified-outputs: true
-  C.output-downstream:
-    tool: shell
-    description: OUTPUT-DOWNSTREAM
-    args: ["true"]
-    inputs: ["output"]
-    outputs: ["<downstream>"]
