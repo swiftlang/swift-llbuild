@@ -45,17 +45,42 @@ class ExternalCommand : public Command {
   /// Whether to allow missing inputs.
   bool allowMissingInputs = false;
 
+  /// Whether to allow modified outputs.
+  //
+  // FIXME: This is currently useful as a mechanism for defining builds in which
+  // an output is intentionally modified by another command. However, this isn't
+  // a very robust mechanism, and we should ultimately move to a model whereby
+  // we can reconstruct exactly the state of each individual command (by having
+  // a durable storage for the outputs outside of the file system).
+  bool allowModifiedOutputs = false;
+
   // Build specific data.
   //
   // FIXME: We should probably factor this out somewhere else, so we can enforce
   // it is never used when initialized incorrectly.
 
+  /// The previous build result command signature, if available.
+  uint64_t priorResultCommandSignature;
+  
   /// If true, the command should be skipped (because of an error in an input).
   bool shouldSkip = false;
 
   /// If true, the command had a missing input (this implies ShouldSkip is
   /// true).
   bool hasMissingInput = false;
+
+  /// If true, the command can legally be updated if the output state allows it.
+  bool canUpdateIfNewer = true;
+
+  /// Whether a prior result has been found.
+  bool hasPriorResult = false;
+  
+  /// Compute the output result for the command.
+  BuildValue computeCommandResult(BuildSystemCommandInterface& bsci);
+
+  /// Check if it is legal to only update the result (versus rerunning)
+  /// because the outputs are newer than all of the inputs.
+  bool canUpdateIfNewerWithResult(const BuildValue& result);
 
 protected:
   const std::vector<BuildNode*>& getInputs() { return inputs; }

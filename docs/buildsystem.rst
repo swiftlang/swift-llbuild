@@ -367,6 +367,25 @@ attributes on commands, and not at the tool level.
      - A boolean value, indicating whether the commands should be allowed to run
        even if it has missing input files. The default is false.
 
+   * - allow-modified-outputs
+     - A boolean value, indicating whether the a command's outputs are allowed
+       to be modified independently from the command without invalidating the
+       result. The default is false.
+
+       This can be useful when it is necessary to define builds in which one
+       command modifies the state of another command (e.g., a common example is
+       running something like a `strip` tool directly on the output of a link
+       step).
+
+       The command will be rerun if the outputs are missing, but will not
+       otherwise rerun the command if the output has only changed state.
+
+       .. note::
+
+          This is an experimental feature; commands downstream of outputs
+          produced by such a tool will inherit the behavior that they do not
+          re-run if the output is only mutated (not recreated).
+
 The build system will automatically create the directories containing each of
 the output files prior to running the command.
 

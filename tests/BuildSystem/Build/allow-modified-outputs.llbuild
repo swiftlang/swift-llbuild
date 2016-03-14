@@ -1,0 +1,66 @@
+# Check handling of `allow-modified-outputs` flag.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.llbuild
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build &> %t.out
+# RUN: %{FileCheck} %s --input-file %t.out
+#
+# CHECK: TOUCH
+# CHECK: OUTPUT-DOWNSTREAM
+
+# Verify that we get a null build.
+#
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build &> %t.rebuild.out
+# RUN: echo "<<eof>>" >> %t.rebuild.out
+# RUN: %{FileCheck} %s --check-prefix=CHECK-REBUILD --input-file %t.rebuild.out
+#
+# CHECK-REBUILD-NOT: TOUCH
+# CHECK-REBUILD-NOT: OUTPUT-DOWNSTREAM
+# CHECK-REBUILD: <<eof>>
+
+# Verify that we don't run the command if its output changes, but that we do run
+# something downstream of it.
+#
+# RUN: touch -r /dev/null %t.build/output
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build &> %t.after-modify.out
+# RUN: echo "<<eof>>" >> %t.after-modify.out
+# RUN: %{FileCheck} %s --check-prefix=CHECK-AFTER-MODIFY --input-file %t.after-modify.out
+#
+# CHECK-AFTER-MODIFY-NOT: TOUCH
+# CHECK-AFTER-MODIFY: OUTPUT-DOWNSTREAM
+# CHECK-AFTER-MODIFY: <<eof>>
+
+# Verify that we do get a rebuild if we remove the output.
+#
+# RUN: rm %t.build/output
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build &> %t.after-remove.out
+# RUN: echo "<<eof>>" >> %t.after-remove.out
+# RUN: %{FileCheck} %s --check-prefix=CHECK-AFTER-REMOVE --input-file %t.after-remove.out
+#
+# CHECK-AFTER-REMOVE: TOUCH
+# CHECK-AFTER-REMOVE: <<eof>>
+
+client:
+  name: basic
+
+targets:
+  "": ["<all>"]
+
+commands:
+  C.all:
+    tool: phony
+    inputs: ["<downstream>"]
+    outputs: ["<all>"]
+  C.command-with-modified-output:
+    tool: shell
+    description: TOUCH
+    args: ["touch", "output"]
+    outputs: ["output"]
+    allow-modified-outputs: true
+  C.output-downstream:
+    tool: shell
+    description: OUTPUT-DOWNSTREAM
+    args: ["true"]
+    inputs: ["output"]
+    outputs: ["<downstream>"]

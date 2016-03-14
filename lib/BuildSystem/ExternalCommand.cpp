@@ -40,7 +40,10 @@ uint64_t ExternalCommand::getSignature() {
     result ^= basic::hashString(output->getName());
   }
   if (allowMissingInputs) {
-    result = ~result;
+    result ^= 0x1;
+  }
+  if (allowModifiedOutputs) {
+    result ^= 0x2;
   }
   return result;
 }
@@ -77,6 +80,14 @@ configureAttribute(const ConfigureContext& ctx, StringRef name,
       return false;
     }
     allowMissingInputs = value == "true";
+    return true;
+  } else if (name == "allow-modified-outputs") {
+    if (value != "true" && value != "false") {
+      ctx.error("invalid value: '" + value + "' for attribute '" +
+                name + "'");
+      return false;
+    }
+    allowModifiedOutputs = value == "true";
     return true;
   } else {
     ctx.error("unexpected attribute: '" + name + "'");
@@ -150,7 +161,7 @@ bool ExternalCommand::isResultValid(BuildSystem& system,
     //
     // We intentionally allow missing outputs here, as long as they haven't
     // changed. This is under the assumption that the commands themselves are
-    // behaving correctly when the exit successfully, and that downstrema
+    // behaving correctly when they exit successfully, and that downstream
     // commands would diagnose required missing inputs.
     //
     // FIXME: CONSISTENCY: One consistency issue in this model currently is that
@@ -187,7 +198,11 @@ void ExternalCommand::start(BuildSystemCommandInterface& bsci,
 
 void ExternalCommand::providePriorValue(BuildSystemCommandInterface&,
                                         core::Task*,
-                                        const BuildValue&) {
+                                        const BuildValue& value) {
+  if (value.isSuccessfulCommand()) {
+    hasPriorResult = true;
+    priorResultCommandSignature = value.getCommandSignature();
+  }
 }
 
 void ExternalCommand::provideValue(BuildSystemCommandInterface& bsci,
@@ -236,7 +251,46 @@ void ExternalCommand::provideValue(BuildSystemCommandInterface& bsci,
           "", {}, (Twine("missing input '") + inputs[inputID]->getName() +
                    "' and no rule to build it"));
     }
+  } else {
+    // If there is a missing input file (from a successful command), we always
+    // need to run the command.
+    if (value.isMissingOutput())
+      canUpdateIfNewer = false;
   }
+}
+
+bool ExternalCommand::canUpdateIfNewerWithResult(const BuildValue& result) {
+  // Unless `allowModifiedOutputs` is specified, we always need to update if
+  // ran.
+  if (!allowModifiedOutputs)
+    return false;
+
+  // If it was specified, then we can update if all of our outputs simply exist.
+  for (unsigned i = 0, e = result.getNumOutputs(); i != e; ++i) {
+    const FileInfo& outputInfo = result.getNthOutputInfo(i);
+
+    // If the output is missing, we need to rebuild.
+    if (outputInfo.isMissing())
+      return false;
+  }
+  return true;
+}
+
+BuildValue
+ExternalCommand::computeCommandResult(BuildSystemCommandInterface& bsci) {
+  // Capture the file information for each of the output nodes.
+  //
+  // FIXME: We need to delegate to the node here.
+  SmallVector<FileInfo, 8> outputInfos;
+  for (auto* node: outputs) {
+    if (node->isVirtual()) {
+      outputInfos.push_back(FileInfo{});
+    } else {
+      outputInfos.push_back(node->getFileInfo(
+                                bsci.getDelegate().getFileSystem()));
+    }
+  }
+  return BuildValue::makeSuccessfulCommand(outputInfos, getSignature());
 }
 
 void ExternalCommand::inputsAvailable(BuildSystemCommandInterface& bsci,
@@ -264,6 +318,16 @@ void ExternalCommand::inputsAvailable(BuildSystemCommandInterface& bsci,
     return;
   }
   assert(!hasMissingInput);
+
+  // If it is legal to simply update the command, then see if we can do so.
+  if (canUpdateIfNewer &&
+      hasPriorResult && priorResultCommandSignature == getSignature()) {
+    BuildValue result = computeCommandResult(bsci);
+    if (canUpdateIfNewerWithResult(result)) {
+      bsci.taskIsComplete(task, result);
+      return;
+    }
+  }
     
   // Suppress static analyzer false positive on generalized lambda capture
   // (rdar://problem/22165130).
@@ -304,22 +368,8 @@ void ExternalCommand::inputsAvailable(BuildSystemCommandInterface& bsci,
       return;
     }
 
-    // Capture the file information for each of the output nodes.
-    //
-    // FIXME: We need to delegate to the node here.
-    SmallVector<FileInfo, 8> outputInfos;
-    for (auto* node: outputs) {
-      if (node->isVirtual()) {
-        outputInfos.push_back(FileInfo{});
-      } else {
-        outputInfos.push_back(node->getFileInfo(
-                                  bsci.getDelegate().getFileSystem()));
-      }
-    }
-      
     // Otherwise, complete with a successful result.
-    bsci.taskIsComplete(
-        task, BuildValue::makeSuccessfulCommand(outputInfos, getSignature()));
+    bsci.taskIsComplete(task, computeCommandResult(bsci));
   };
   bsci.addJob({ this, std::move(fn) });
 #endif
