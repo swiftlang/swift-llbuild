@@ -109,6 +109,8 @@
 		E171538D1A0BF702004CD598 /* CorePerfTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = E171538C1A0BF702004CD598 /* CorePerfTests.mm */; };
 		E19D79921A15D9E6002604FB /* MakefileDepsParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */; };
 		E19D79951A15DA06002604FB /* MakefileDepsParserTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E19D79941A15DA06002604FB /* MakefileDepsParserTest.cpp */; };
+		E1A0B0FF1C971582006DA08F /* DependencyInfoParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B0FE1C971581006DA08F /* DependencyInfoParser.cpp */; };
+		E1A0B1011C9717BA006DA08F /* DependencyInfoParserTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B1001C9717BA006DA08F /* DependencyInfoParserTest.cpp */; };
 		E1A2244219F9973F0059043E /* BuildEngineCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240A19F991530059043E /* BuildEngineCommand.cpp */; };
 		E1A2244319F997410059043E /* CommandUtil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240C19F991530059043E /* CommandUtil.cpp */; };
 		E1A2244419F997450059043E /* NinjaBuildCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240E19F991530059043E /* NinjaBuildCommand.cpp */; };
@@ -667,6 +669,8 @@
 		E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MakefileDepsParser.cpp; sourceTree = "<group>"; };
 		E19D79931A15D9F5002604FB /* MakefileDepsParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MakefileDepsParser.h; sourceTree = "<group>"; };
 		E19D79941A15DA06002604FB /* MakefileDepsParserTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MakefileDepsParserTest.cpp; sourceTree = "<group>"; };
+		E1A0B0FE1C971581006DA08F /* DependencyInfoParser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DependencyInfoParser.cpp; sourceTree = "<group>"; };
+		E1A0B1001C9717BA006DA08F /* DependencyInfoParserTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DependencyInfoParserTest.cpp; sourceTree = "<group>"; };
 		E1A223FB19F990E60059043E /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1A223FC19F990E60059043E /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		E1A2240019F991350059043E /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
@@ -1237,6 +1241,7 @@
 				E1A2241219F991530059043E /* BuildEngine.cpp */,
 				E1A2241319F991530059043E /* BuildEngineTrace.cpp */,
 				E1A2241419F991530059043E /* BuildEngineTrace.h */,
+				E1A0B0FE1C971581006DA08F /* DependencyInfoParser.cpp */,
 				E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */,
 				E1E2210B1A015B9E00957481 /* SQLiteBuildDB.cpp */,
 			);
@@ -1418,6 +1423,7 @@
 			children = (
 				E1A224B619F998D40059043E /* CMakeLists.txt */,
 				E1A224B519F998D40059043E /* BuildEngineTest.cpp */,
+				E1A0B1001C9717BA006DA08F /* DependencyInfoParserTest.cpp */,
 				E10FE0D61B7313D50059D086 /* DepsBuildEngineTest.cpp */,
 				E19D79941A15DA06002604FB /* MakefileDepsParserTest.cpp */,
 			);
@@ -2472,6 +2478,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E1E2210C1A015B9E00957481 /* SQLiteBuildDB.cpp in Sources */,
+				E1A0B0FF1C971582006DA08F /* DependencyInfoParser.cpp in Sources */,
 				E1A2244619F9974A0059043E /* BuildEngine.cpp in Sources */,
 				E1E221071A00689C00957481 /* BuildDB.cpp in Sources */,
 				E1A2244719F9974D0059043E /* BuildEngineTrace.cpp in Sources */,
@@ -2508,6 +2515,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E19D79951A15DA06002604FB /* MakefileDepsParserTest.cpp in Sources */,
+				E1A0B1011C9717BA006DA08F /* DependencyInfoParserTest.cpp in Sources */,
 				E1A224F619F99D940059043E /* BuildEngineTest.cpp in Sources */,
 				E10FE0D71B7313D50059D086 /* DepsBuildEngineTest.cpp in Sources */,
 			);
