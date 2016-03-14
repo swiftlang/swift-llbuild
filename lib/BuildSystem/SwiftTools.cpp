@@ -130,8 +130,8 @@ public:
             break;
           }
           result.append(StringRef(buf, numRead));
-          pclose(fp);
         }
+        pclose(fp);
       }
 
       // For now, we can get away with just encoding this as a successful
