@@ -39,7 +39,7 @@ commands:
     inputs: ["input-1"]
     outputs: ["output-1"]
     # See `DependencyInfoParser` for information on the format.
-    args: "printf \"\\x00VERSION\\x00\\x10input-1\\x00\\x10header-1\\x00\" > output-1.d && cat input-1 header-1 > output-1"
+    args: "env printf '\\0VERSION\\0\\020input-1\\00\\020header-1\\00' > output-1.d && cat input-1 header-1 > output-1"
     description: CC output-1
     deps: output-1.d
     deps-style: dependency-info
