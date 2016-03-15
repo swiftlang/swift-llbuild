@@ -895,7 +895,7 @@ class ShellCommand : public ExternalCommand {
   llvm::StringMap<std::string> env;
   
   /// The path to the dependency output file, if used.
-  std::string depsPath = "";
+  SmallVector<std::string, 1> depsPaths{};
 
   /// The style of dependencies used.
   DepsStyle depsStyle = DepsStyle::Unused;
@@ -909,7 +909,9 @@ class ShellCommand : public ExternalCommand {
       result ^= basic::hashString(entry.getKey());
       result ^= basic::hashString(entry.getValue());
     }
-    result ^= basic::hashString(depsPath);
+    for (const auto& path: depsPaths) {
+      result ^= basic::hashString(path);
+    }
     result ^= int(depsStyle);
     return result;
   }
@@ -925,34 +927,43 @@ class ShellCommand : public ExternalCommand {
           "", "missing required 'deps-style' specifier");
       return false;
     }
-    
-    // Read the dependencies file.
-    auto input = bsci.getDelegate().getFileSystem().getFileContents(depsPath);
-    if (!input) {
-      getBuildSystem(bsci.getBuildEngine()).error(
-          depsPath, "unable to open dependencies file (" + depsPath + ")");
-      return false;
+
+    for (const auto& depsPath: depsPaths) {
+      // Read the dependencies file.
+      auto input = bsci.getDelegate().getFileSystem().getFileContents(depsPath);
+      if (!input) {
+        getBuildSystem(bsci.getBuildEngine()).error(
+            depsPath, "unable to open dependencies file (" + depsPath + ")");
+        return false;
+      }
+
+      switch (depsStyle) {
+      case DepsStyle::Unused:
+        assert(0 && "unreachable");
+
+      case DepsStyle::Makefile:
+        if (!processMakefileDiscoveredDependencies(
+                bsci, task, context, depsPath, input.get()))
+          return false;
+        continue;
+
+      case DepsStyle::DependencyInfo:
+        if (!processDependencyInfoDiscoveredDependencies(
+                bsci, task, context, depsPath, input.get()))
+          return false;
+        continue;
+      }
+      
+      llvm::report_fatal_error("unknown dependencies style");
     }
 
-    switch (depsStyle) {
-    case DepsStyle::Unused:
-      assert(0 && "unreachable");
-
-    case DepsStyle::Makefile:
-      return processMakefileDiscoveredDependencies(
-          bsci, task, context, input.get());
-
-    case DepsStyle::DependencyInfo:
-      return processDependencyInfoDiscoveredDependencies(
-          bsci, task, context, input.get());
-    }
-
-    llvm::report_fatal_error("unknown dependencies style");
+    return true;
   }
 
   bool processMakefileDiscoveredDependencies(BuildSystemCommandInterface& bsci,
                                              Task* task,
                                              QueueJobContext* context,
+                                             StringRef depsPath,
                                              llvm::MemoryBuffer* input) {
     // Parse the output.
     //
@@ -962,16 +973,16 @@ class ShellCommand : public ExternalCommand {
       BuildSystemCommandInterface& bsci;
       Task* task;
       ShellCommand* command;
+      StringRef depsPath;
       unsigned numErrors{0};
 
       DepsActions(BuildSystemCommandInterface& bsci, Task* task,
-                  ShellCommand* command)
-          : bsci(bsci), task(task), command(command) {}
+                  ShellCommand* command, StringRef depsPath)
+          : bsci(bsci), task(task), command(command), depsPath(depsPath) {}
 
       virtual void error(const char* message, uint64_t position) override {
         getBuildSystem(bsci.getBuildEngine()).error(
-            command->depsPath,
-            "error reading dependency file: " + std::string(message));
+            depsPath, "error reading dependency file: " + std::string(message));
         ++numErrors;
       }
 
@@ -985,7 +996,7 @@ class ShellCommand : public ExternalCommand {
       virtual void actOnRuleEnd() override {}
     };
 
-    DepsActions actions(bsci, task, this);
+    DepsActions actions(bsci, task, this, depsPath);
     core::MakefileDepsParser(input->getBufferStart(), input->getBufferSize(),
                              actions).parse();
     return actions.numErrors == 0;
@@ -995,6 +1006,7 @@ class ShellCommand : public ExternalCommand {
   processDependencyInfoDiscoveredDependencies(BuildSystemCommandInterface& bsci,
                                               Task* task,
                                               QueueJobContext* context,
+                                              StringRef depsPath,
                                               llvm::MemoryBuffer* input) {
     // Parse the output.
     //
@@ -1004,16 +1016,16 @@ class ShellCommand : public ExternalCommand {
       BuildSystemCommandInterface& bsci;
       Task* task;
       ShellCommand* command;
+      StringRef depsPath;
       unsigned numErrors{0};
 
       DepsActions(BuildSystemCommandInterface& bsci, Task* task,
-                  ShellCommand* command)
-          : bsci(bsci), task(task), command(command) {}
+                  ShellCommand* command, StringRef depsPath)
+          : bsci(bsci), task(task), command(command), depsPath(depsPath) {}
 
       virtual void error(const char* message, uint64_t position) override {
         getBuildSystem(bsci.getBuildEngine()).error(
-            command->depsPath,
-            "error reading dependency file: " + std::string(message));
+            depsPath, "error reading dependency file: " + std::string(message));
         ++numErrors;
       }
 
@@ -1027,7 +1039,7 @@ class ShellCommand : public ExternalCommand {
       }
     };
 
-    DepsActions actions(bsci, task, this);
+    DepsActions actions(bsci, task, this, depsPath);
     core::DependencyInfoParser(input->getBuffer(), actions).parse();
     return actions.numErrors == 0;
   }
@@ -1064,7 +1076,8 @@ public:
       args.push_back("-c");
       args.push_back(value);
     } else if (name == "deps") {
-      depsPath = value;
+      depsPaths.clear();
+      depsPaths.emplace_back(value);
     } else if (name == "deps-style") {
       if (value == "makefile") {
         depsStyle = DepsStyle::Makefile;
@@ -1092,6 +1105,9 @@ public:
       }
       
       args = std::vector<std::string>(values.begin(), values.end());
+    } else if (name == "deps") {
+      depsPaths.clear();
+      depsPaths.insert(depsPaths.begin(), values.begin(), values.end());
     } else {
       return ExternalCommand::configureAttribute(ctx, name, values);
     }
@@ -1131,7 +1147,7 @@ public:
     }
     
     // Collect the discovered dependencies, if used.
-    if (!depsPath.empty()) {
+    if (!depsPaths.empty()) {
       if (!processDiscoveredDependencies(bsci, task, context)) {
         // If we were unable to process the dependencies output, report a
         // failure.

@@ -411,6 +411,10 @@ attributes on commands, and not at the tool level.
        The exact format of the output file is specified via the separate
        `deps-style` key.
 
+       This option also supports being passed multiple output file paths, for
+       clients where it is more convenient to produce several distinct
+       dependencies output files.
+
    * - deps-style
      
      - Specifies the kind of dependency format used for the file at `deps`, if
