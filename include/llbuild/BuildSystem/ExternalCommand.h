@@ -54,6 +54,9 @@ class ExternalCommand : public Command {
   // a durable storage for the outputs outside of the file system).
   bool allowModifiedOutputs = false;
 
+  /// Whether to treat the command as always being out-of-date.
+  bool alwaysOutOfDate = false;
+
   // Build specific data.
   //
   // FIXME: We should probably factor this out somewhere else, so we can enforce

@@ -45,6 +45,9 @@ uint64_t ExternalCommand::getSignature() {
   if (allowModifiedOutputs) {
     result ^= 0x2;
   }
+  if (alwaysOutOfDate) {
+    result ^= 0x4;
+  }
   return result;
 }
 
@@ -88,6 +91,14 @@ configureAttribute(const ConfigureContext& ctx, StringRef name,
       return false;
     }
     allowModifiedOutputs = value == "true";
+    return true;
+  } else if (name == "always-out-of-date") {
+    if (value != "true" && value != "false") {
+      ctx.error("invalid value: '" + value + "' for attribute '" +
+                name + "'");
+      return false;
+    }
+    alwaysOutOfDate = value == "true";
     return true;
   } else {
     ctx.error("unexpected attribute: '" + name + "'");
@@ -141,6 +152,10 @@ getResultForOutput(Node* node, const BuildValue& value) {
   
 bool ExternalCommand::isResultValid(BuildSystem& system,
                                     const BuildValue& value) {
+  // Treat the command as always out-of-date, if requested.
+  if (alwaysOutOfDate)
+    return false;
+      
   // If the prior value wasn't for a successful command, recompute.
   if (!value.isSuccessfulCommand())
     return false;

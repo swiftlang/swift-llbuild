@@ -386,6 +386,10 @@ attributes on commands, and not at the tool level.
           produced by such a tool will inherit the behavior that they do not
           re-run if the output is only mutated (not recreated).
 
+   * - always-out-of-date
+     - A boolean value, indicating whether the commands should be treated as
+       being always out-of-date. The default is false.
+          
    * - deps
      - The path to an output file of the command which will contain information
        on the exact dependencies used by the command when it ran. This can be
