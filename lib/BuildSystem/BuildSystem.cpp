@@ -1764,6 +1764,94 @@ public:
   }
 };
 
+#pragma mark - ArchiveTool implementation
+
+class ArchiveShellCommand : public ExternalCommand {
+
+  virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
+                                      Task* task,
+                                      QueueJobContext* context) override {
+    // First delete the current archive
+    // FIXME instead insert, update and remove files from the archive
+    if (llvm::sys::fs::remove(getArchiveName(), /*IgnoreNonExisting*/ true)) {
+      return false;
+    }
+
+    // Create archive
+    auto args = getArgs();
+    if (!bsci.getExecutionQueue().executeProcess(context, std::vector<StringRef>(args.begin(), args.end()))) {
+      return false;
+    }
+
+    return true;
+  }
+
+  virtual void getShortDescription(SmallVectorImpl<char> &result) override {
+    llvm::raw_svector_ostream(result) << "Archiving " << getArchiveName();
+  }
+
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
+    llvm::raw_svector_ostream stream(result);
+    for (const auto& arg: getArgs()) {
+      stream << arg << " ";
+    }
+  }
+
+  std::string getArchiveName() {
+    for (auto output: getOutputs()) {
+        if (!output->isVirtual()) {
+            return output->getName();
+        }
+    }
+    return ""; //TODO fatalError
+  }
+
+  std::vector<std::string> getArgs() {
+    std::vector<std::string> args;
+    args.push_back("ar");
+    args.push_back("cr");
+    args.push_back(getArchiveName());
+    for (const auto& input: getInputs()) {
+        if (!input->isVirtual()) {
+            args.push_back(input->getName());
+        }
+    }
+    return args;
+  }
+
+public:
+  using ExternalCommand::ExternalCommand;
+};
+
+class ArchiveTool : public Tool {
+public:
+  using Tool::Tool;
+
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  StringRef value) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  ArrayRef<StringRef> values) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+  virtual bool configureAttribute(
+      const ConfigureContext& ctx, StringRef name,
+      ArrayRef<std::pair<StringRef, StringRef>> values) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+
+  virtual std::unique_ptr<Command> createCommand(StringRef name) override {
+    return llvm::make_unique<ArchiveShellCommand>(name);
+  }
+};
+
 #pragma mark - BuildSystemFileDelegate
 
 BuildSystemDelegate& BuildSystemFileDelegate::getSystemDelegate() {
@@ -1819,6 +1907,8 @@ BuildSystemFileDelegate::lookupTool(StringRef name) {
     return llvm::make_unique<MkdirTool>(name);
   } else if (name == "symlink") {
     return llvm::make_unique<SymlinkTool>(name);
+  } else if (name == "archive") {
+    return llvm::make_unique<ArchiveTool>(name);
   }
 
   return nullptr;
