@@ -137,18 +137,21 @@ public:
       if (result == SQLITE_OK) {
         // Create the table used for storing rule dependencies.
         //
-        // In order to reduce duplication, we use a WITHOUT ROWID table with a
-        // composite key on the rule_id and the dependency key. This allows us
-        // to use the table itself to perform efficient queries for all of the
-        // keys associated with a particular rule_id, and by doing so avoid
-        // having an ancillary index with duplicate data.
+        // In order to reduce duplication, we use a WITHOUT ROWID (if available)
+        // table with a composite key on the rule_id and the dependency
+        // key. This allows us to use the table itself to perform efficient
+        // queries for all of the keys associated with a particular rule_id, and
+        // by doing so avoid having an ancillary index with duplicate data.
         result = sqlite3_exec(
           db, ("CREATE TABLE rule_dependencies ("
                "rule_id INTEGER, "
                "key STRING, "
                "PRIMARY KEY (rule_id, key) "
                "FOREIGN KEY(rule_id) REFERENCES rule_info(id)) "
-               "WITHOUT ROWID;"),
+#if SQLITE_VERSION_NUMBER >= 3008002
+               "WITHOUT ROWID"
+#endif
+               ";"),
           nullptr, nullptr, &cError);
       }
 
