@@ -1,0 +1,53 @@
+# Check the 'archive' tool.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.llbuild
+# RUN: mkdir -p %t.build/archive-target
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.out
+# RUN: test -f %t.build/foo
+# RUN: test -f %t.build/archive-target/file
+# RUN: %{FileCheck} --input-file=%t.out %s
+#
+# CHECK: MUTATE
+# CHECK: Archiving foo
+
+
+# Check that a null build does nothing.
+#
+# RUN: echo "START." > %t2.out
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build >> %t2.out
+# RUN: echo "EOF" >> %t2.out
+# RUN: %{FileCheck} --input-file=%t2.out %s --check-prefix=CHECK-REBUILD
+#
+# CHECK-REBUILD: START
+# CHECK-REBUILD-NOT: Archiving foo
+# CHECK-REBUILD-NOT: MUTATE
+# CHECK-REBUILD-NEXT: EOF
+
+
+# Ensure the archive is recreated if necessary.
+#
+# RUN: rm -rf %t.build/foo
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t3.out
+# RUN: %{FileCheck} --input-file=%t3.out %s --check-prefix=CHECK-RECREATE
+#
+# CHECK-RECREATE: Archiving foo
+
+client:
+  name: basic
+
+targets:
+  "": [foo]
+
+commands:
+  C.archive:
+    tool: archive
+    inputs: [archive-target/file]
+    outputs: [foo]
+  C.mutate:
+    tool: shell
+    description: MUTATE
+    outputs: [archive-target/file]
+    # We use touch -r here to ensure the file time is modified to something different than the symlink.
+    args: touch archive-target/file && touch -r / archive-target
