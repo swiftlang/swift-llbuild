@@ -1768,12 +1768,15 @@ public:
 
 class ArchiveShellCommand : public ExternalCommand {
 
+  std::string archiveName;
+  std::vector<std::string> archiveInputs;
+
   virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
                                       Task* task,
                                       QueueJobContext* context) override {
     // First delete the current archive
-    // FIXME instead insert, update and remove files from the archive
-    if (llvm::sys::fs::remove(getArchiveName(), /*IgnoreNonExisting*/ true)) {
+    // TODO instead insert, update and remove files from the archive
+    if (llvm::sys::fs::remove(archiveName, /*IgnoreNonExisting*/ true)) {
       return false;
     }
 
@@ -1787,35 +1790,59 @@ class ArchiveShellCommand : public ExternalCommand {
   }
 
   virtual void getShortDescription(SmallVectorImpl<char> &result) override {
-    llvm::raw_svector_ostream(result) << "Archiving " << getArchiveName();
+    llvm::raw_svector_ostream(result) << "Archiving " << archiveName;
   }
 
   virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
     llvm::raw_svector_ostream stream(result);
+    bool first = true;
     for (const auto& arg: getArgs()) {
-      stream << arg << " ";
+      stream << arg;
+      if (!first) {
+        stream << " ";
+        first = false;
+      }
     }
   }
+  
+  virtual void configureInputs(const ConfigureContext& ctx,
+                                const std::vector<Node*>& value) override {
+    ExternalCommand::configureInputs(ctx, value);
 
-  std::string getArchiveName() {
-    for (auto output: getOutputs()) {
-        if (!output->isVirtual()) {
-            return output->getName();
-        }
+    for (const auto& input: getInputs()) {
+      if (!input->isVirtual()) {
+        archiveInputs.push_back(input->getName());
+      }
     }
-    return ""; //TODO fatalError
+    if (archiveInputs.empty()) {
+      ctx.error("missing expected input");
+    }
+  }
+  
+  virtual void configureOutputs(const ConfigureContext& ctx,
+                                const std::vector<Node*>& value) override {
+    ExternalCommand::configureOutputs(ctx, value);
+
+    for (const auto& output: getOutputs()) {
+      if (!output->isVirtual()) {
+        if (archiveName.empty()) {
+          archiveName = output->getName();
+        } else {
+          ctx.error("unexpected explicit output: " + output->getName());
+        }
+      }
+    }
+    if (archiveName.empty()) {
+      ctx.error("missing expected output");
+    }
   }
 
   std::vector<std::string> getArgs() {
     std::vector<std::string> args;
     args.push_back("ar");
     args.push_back("cr");
-    args.push_back(getArchiveName());
-    for (const auto& input: getInputs()) {
-        if (!input->isVirtual()) {
-            args.push_back(input->getName());
-        }
-    }
+    args.push_back(archiveName);
+    args.insert(args.end(), archiveInputs.begin(), archiveInputs.end());
     return args;
   }
 
