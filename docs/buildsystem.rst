@@ -564,3 +564,21 @@ exact version of the Swift compiler in use (as reported by ``swiftc
      - A string or string list indicating other arguments passed to the
        ``swiftc`` executable. Examples of individual values include
        ``"-enable-testing"`` or ``"-Onone"``.
+
+Archive Tool
+------------
+
+**Identifier**: *archive*
+
+A tool used to create an archive (``.a``)
+
+All non-virtual inputs are archived. Only one non-virtual output may be
+specified, this is inferred to be the archive file that this tool produces.
+
+A typical use for this tool is creating static libraries.
+
+.. note::
+
+   FIXME: currently the archive is always recreated entirely, it would be
+   preferable in future to correctly update/delete/create the archive file
+   as required.
