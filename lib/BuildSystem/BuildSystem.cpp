@@ -1790,7 +1790,11 @@ class ArchiveShellCommand : public ExternalCommand {
   }
 
   virtual void getShortDescription(SmallVectorImpl<char> &result) override {
-    llvm::raw_svector_ostream(result) << "Archiving " << archiveName;
+    auto desc = getDescription();
+    if (desc.empty()) {
+      desc = "Archiving " + archiveName;
+    }
+    llvm::raw_svector_ostream(result) << desc;
   }
 
   virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
