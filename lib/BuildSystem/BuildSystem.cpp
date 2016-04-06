@@ -1764,6 +1764,125 @@ public:
   }
 };
 
+#pragma mark - ArchiveTool implementation
+
+class ArchiveShellCommand : public ExternalCommand {
+
+  std::string archiveName;
+  std::vector<std::string> archiveInputs;
+
+  virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
+                                      Task* task,
+                                      QueueJobContext* context) override {
+    // First delete the current archive
+    // TODO instead insert, update and remove files from the archive
+    if (llvm::sys::fs::remove(archiveName, /*IgnoreNonExisting*/ true)) {
+      return false;
+    }
+
+    // Create archive
+    auto args = getArgs();
+    if (!bsci.getExecutionQueue().executeProcess(context, std::vector<StringRef>(args.begin(), args.end()))) {
+      return false;
+    }
+
+    return true;
+  }
+
+  virtual void getShortDescription(SmallVectorImpl<char> &result) override {
+    auto desc = getDescription();
+    if (desc.empty()) {
+      desc = "Archiving " + archiveName;
+    }
+    llvm::raw_svector_ostream(result) << desc;
+  }
+
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
+    llvm::raw_svector_ostream stream(result);
+    bool first = true;
+    for (const auto& arg: getArgs()) {
+      stream << arg;
+      if (!first) {
+        stream << " ";
+        first = false;
+      }
+    }
+  }
+  
+  virtual void configureInputs(const ConfigureContext& ctx,
+                                const std::vector<Node*>& value) override {
+    ExternalCommand::configureInputs(ctx, value);
+
+    for (const auto& input: getInputs()) {
+      if (!input->isVirtual()) {
+        archiveInputs.push_back(input->getName());
+      }
+    }
+    if (archiveInputs.empty()) {
+      ctx.error("missing expected input");
+    }
+  }
+  
+  virtual void configureOutputs(const ConfigureContext& ctx,
+                                const std::vector<Node*>& value) override {
+    ExternalCommand::configureOutputs(ctx, value);
+
+    for (const auto& output: getOutputs()) {
+      if (!output->isVirtual()) {
+        if (archiveName.empty()) {
+          archiveName = output->getName();
+        } else {
+          ctx.error("unexpected explicit output: " + output->getName());
+        }
+      }
+    }
+    if (archiveName.empty()) {
+      ctx.error("missing expected output");
+    }
+  }
+
+  std::vector<std::string> getArgs() {
+    std::vector<std::string> args;
+    args.push_back("ar");
+    args.push_back("cr");
+    args.push_back(archiveName);
+    args.insert(args.end(), archiveInputs.begin(), archiveInputs.end());
+    return args;
+  }
+
+public:
+  using ExternalCommand::ExternalCommand;
+};
+
+class ArchiveTool : public Tool {
+public:
+  using Tool::Tool;
+
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  StringRef value) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  ArrayRef<StringRef> values) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+  virtual bool configureAttribute(
+      const ConfigureContext& ctx, StringRef name,
+      ArrayRef<std::pair<StringRef, StringRef>> values) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+
+  virtual std::unique_ptr<Command> createCommand(StringRef name) override {
+    return llvm::make_unique<ArchiveShellCommand>(name);
+  }
+};
+
 #pragma mark - BuildSystemFileDelegate
 
 BuildSystemDelegate& BuildSystemFileDelegate::getSystemDelegate() {
@@ -1819,6 +1938,8 @@ BuildSystemFileDelegate::lookupTool(StringRef name) {
     return llvm::make_unique<MkdirTool>(name);
   } else if (name == "symlink") {
     return llvm::make_unique<SymlinkTool>(name);
+  } else if (name == "archive") {
+    return llvm::make_unique<ArchiveTool>(name);
   }
 
   return nullptr;
