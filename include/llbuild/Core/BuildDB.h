@@ -52,8 +52,8 @@ public:
   /// Update the stored result for a rule.
   ///
   /// The BuildEngine does not enforce that the dependencies for a Rule are
-  /// uniqu. However, duplicate dependencies have no semantic meaning for the
-  /// engine, and the database may elect to discard them for storage.
+  /// unique. However, duplicate dependencies have no semantic meaning for the
+  /// engine, and the database may elect to discard them from storage.
   virtual void setRuleResult(const Rule& rule, const Result& result) = 0;
 
   /// Called by the build engine to indicate that a build has started.
