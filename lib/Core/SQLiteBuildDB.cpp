@@ -109,13 +109,13 @@ public:
 
       // Create the info table.
       if (result == SQLITE_OK) {
-	result = sqlite3_exec(
+        result = sqlite3_exec(
           db, ("CREATE TABLE info ("
-	       "id INTEGER PRIMARY KEY, "
-	       "version INTEGER, "
-	       "client_version INTEGER, "
-	       "iteration INTEGER);"),
-	  nullptr, nullptr, &cError);
+               "id INTEGER PRIMARY KEY, "
+               "version INTEGER, "
+               "client_version INTEGER, "
+               "iteration INTEGER);"),
+          nullptr, nullptr, &cError);
       }
       if (result == SQLITE_OK) {
         char* query = sqlite3_mprintf(
@@ -166,7 +166,7 @@ public:
 
       // Sync changes to disk.
       if (result == SQLITE_OK) {
-	result = sqlite3_exec(db, "END;", nullptr, nullptr, &cError);
+        result = sqlite3_exec(db, "END;", nullptr, nullptr, &cError);
       }
 
       if (result != SQLITE_OK) {
