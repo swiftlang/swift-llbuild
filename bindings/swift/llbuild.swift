@@ -26,9 +26,9 @@ private func stringFromData(data: llb_data_t) -> String {
   return String([UInt8](UnsafeBufferPointer(start: data.data, count: Int(data.length))))
 }
 
-private func stringFromUInt8Array(var data: [UInt8]) -> String {
+private func stringFromUInt8Array(data: [UInt8]) -> String {
   // Convert as a UTF8 string, if possible.
-  let tmp = NSData(bytes: &data, length: Int(data.count))
+  let tmp = NSData(bytes: data, length: data.count)
   if let str = NSString(data: tmp, encoding: NSUTF8StringEncoding) {
     return String(str)
   }
@@ -468,7 +468,7 @@ public class BuildEngine {
   }
   
   private func lookupRule(key: UnsafePointer<llb_data_t>, _ ruleOut: UnsafeMutablePointer<llb_rule_t>) {
-    ++numRules
+    numRules += 1
     
     // Get the rule from the client.
     let rule = delegate.lookupRule(Key.fromInternalData(key.memory))
