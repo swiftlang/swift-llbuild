@@ -66,6 +66,8 @@ public:
   virtual void loadedTarget(StringRef name,
                             const Target& target) override;
 
+  virtual void loadedDefaultTarget(StringRef target) override;
+  
   virtual std::unique_ptr<Node> lookupNode(StringRef name,
                                            bool isImplicit) override;
 
@@ -320,6 +322,12 @@ void ParseBuildFileDelegate::loadedTarget(StringRef name,
       first = false;
     }
     printf("]\n");
+  }
+}
+  
+void ParseBuildFileDelegate::loadedDefaultTarget(StringRef target) {
+  if (showOutput) {
+    printf("default_target('%s')\n", target.str().c_str());
   }
 }
 

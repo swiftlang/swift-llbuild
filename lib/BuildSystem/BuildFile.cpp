@@ -114,6 +114,9 @@ class BuildFileImpl {
   /// The set of all declared targets.
   BuildFile::target_set targets;
 
+  /// Default target name
+  std::string defaultTarget;
+
   /// The set of all declared nodes.
   BuildFile::node_set nodes;
 
@@ -247,6 +250,20 @@ class BuildFileImpl {
 
       if (!parseTargetsMapping(
               static_cast<llvm::yaml::MappingNode*>(it->getValue()))) {
+        return false;
+      }
+      ++it;
+    }
+
+    // Parse the default target, if present.
+    if (it != mapping->end() && nodeIsScalarString(it->getKey(), "default")) {
+      if (it->getValue()->getType() != llvm::yaml::Node::NK_Scalar) {
+        error(it->getValue(), "unexpected 'default' target value (expected scalar)");
+        return false;
+      }
+
+      if (!parseDefaultTarget(
+              static_cast<llvm::yaml::ScalarNode*>(it->getValue()))) {
         return false;
       }
       ++it;
@@ -476,6 +493,20 @@ class BuildFileImpl {
       // Add the target to the targets map.
       targets[name] = std::move(target);
     }
+
+    return true;
+  }
+
+  bool parseDefaultTarget(llvm::yaml::ScalarNode* entry) {
+    std::string target = stringFromScalarNode(entry);
+
+    if (targets.find(target) == targets.end()) {
+      error(entry, "invalid default target, a default target should be in targets");
+      return false;
+    }
+
+    defaultTarget = target;
+    delegate.loadedDefaultTarget(defaultTarget);
 
     return true;
   }
@@ -844,6 +875,8 @@ public:
 
   const BuildFile::target_set& getTargets() const { return targets; }
 
+  const StringRef getDefaultTarget() const { return defaultTarget; }
+
   const BuildFile::command_set& getCommands() const { return commands; }
 
   const BuildFile::tool_set& getTools() const { return tools; }
@@ -875,6 +908,10 @@ const BuildFile::node_set& BuildFile::getNodes() const {
 
 const BuildFile::target_set& BuildFile::getTargets() const {
   return static_cast<BuildFileImpl*>(impl)->getTargets();
+}
+
+const StringRef BuildFile::getDefaultTarget() const {
+  return static_cast<BuildFileImpl*>(impl)->getDefaultTarget();
 }
 
 const BuildFile::command_set& BuildFile::getCommands() const {

@@ -321,6 +321,10 @@ public:
   /// definition has been loaded.
   virtual void loadedTarget(StringRef name, const Target& target) = 0;
 
+  /// Called by the build file loader to inform the client that a default
+  /// target has been loaded.
+  virtual void loadedDefaultTarget(StringRef target) = 0;
+
   /// Called by the build file loader to inform the client that a command
   /// has been fully loaded.
   virtual void loadedCommand(StringRef name, const Command& command) = 0;
@@ -385,6 +389,9 @@ public:
 
   /// Get the set of declared targets for the file.
   const target_set& getTargets() const;
+
+  /// Get the default target.
+  const StringRef getDefaultTarget() const;
 
   /// Get the set of declared commands for the file.
   const command_set& getCommands() const;

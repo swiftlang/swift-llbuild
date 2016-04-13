@@ -18,7 +18,7 @@
 # RUN: %{FileCheck} --input-file=%t.trace %s --check-prefix CHECK-TRACE
 #
 # CHECK-TRACE: "build-started"
-# CHECK-TRACE: "new-rule", "R1", "T"
+# CHECK-TRACE: "new-rule", "R1", "Tbasic"
 # CHECK-TRACE: "new-rule", "R2", "Noutput"
 # CHECK-TRACE: "new-rule", "R3", "Ccp-output"
 # CHECK-TRACE: "new-rule", "R4", "N<env>"
@@ -54,7 +54,9 @@ client:
   name: basic
 
 targets:
-  "": ["output"]
+  basic: ["output"]
+# define the default target to execute when this manifest is loaded.
+default: basic
 
 commands:
   "<env>":
