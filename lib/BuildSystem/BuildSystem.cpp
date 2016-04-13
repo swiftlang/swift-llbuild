@@ -90,6 +90,8 @@ public:
   virtual void loadedTarget(StringRef name,
                             const Target& target) override;
 
+  virtual void loadedDefaultTarget(StringRef target) override;
+
   virtual void loadedCommand(StringRef name,
                              const Command& target) override;
 
@@ -804,6 +806,12 @@ bool BuildSystemImpl::build(StringRef target) {
 
   // Create the execution queue.
   executionQueue = delegate.createExecutionQueue();
+
+  // If target name is not passed then we try to load the default target name
+  // from manifest file
+  if (target.empty()) {
+    target = getBuildFile().getDefaultTarget();
+  }
 
   // Build the target.
   getBuildEngine().build(BuildKey::makeTarget(target).toData());
@@ -1947,6 +1955,9 @@ BuildSystemFileDelegate::lookupTool(StringRef name) {
 
 void BuildSystemFileDelegate::loadedTarget(StringRef name,
                                            const Target& target) {
+}
+
+void BuildSystemFileDelegate::loadedDefaultTarget(StringRef target) {
 }
 
 void BuildSystemFileDelegate::loadedCommand(StringRef name,

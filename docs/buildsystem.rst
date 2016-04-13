@@ -122,6 +122,9 @@ A small example build file is below:
   targets:
     hello: ["hello"]
   
+  # Define the default target to execute.
+  default: hello
+  
   # Define properties on nodes.
   nodes:
     hello.o:
@@ -171,9 +174,10 @@ present.
   This section defines top-level targets which can be used to group commands
   which should be build together for a particular purpose. This typically would
   include definitions for all of the things a user might want to build directly.
+  
+* ``Default`` Definitions (`default` key)
 
-  The default target to build can be specified by including an entry for the
-  empty string (`""`).
+  This section defines the default target to build when manifest is loaded.
   
 * ``Node`` Definitions (`nodes` key)
 
