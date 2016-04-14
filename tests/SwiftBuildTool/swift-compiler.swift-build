@@ -8,7 +8,7 @@
 # RUN: %{FileCheck} --input-file=%t.out %s
 # RUN: %{FileCheck} --check-prefix=CHECK-VERBOSE --input-file=%t-verbose.out %s
 #
-# CHECK: Compiling Swift Module 'Foo'
+# CHECK: Compile Swift Module 'Foo'
 # FIXME: This should quote output paths.
 # CHECK-VERBOSE: swiftc -module-name Foo -incremental -emit-dependencies -emit-module -emit-module-path Foo.swiftmodule -output-file-map temps/output-file-map.json -parse-as-library -c "s 1.swift" "s 2.swift" -I "import A" -I "import B" -Onone -I "path with spaces"
 
