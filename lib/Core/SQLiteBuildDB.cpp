@@ -192,11 +192,6 @@ public:
       db, findKeyIDForKeyStmtSQL,
       -1, &findKeyIDForKeyStmt, nullptr);
     assert(result == SQLITE_OK);
-
-    result = sqlite3_prepare_v2(
-      db, findKeyForKeyIDStmtSQL,
-      -1, &findKeyForKeyIDStmt, nullptr);
-    assert(result == SQLITE_OK);
     
     result = sqlite3_prepare_v2(
       db, findIDForKeyInRuleResultsStmtSQL,
@@ -250,7 +245,6 @@ public:
     assert(db);
 
     // Destroy prepared statements.
-    sqlite3_finalize(findKeyForKeyIDStmt);
     sqlite3_finalize(findKeyIDForKeyStmt);
     sqlite3_finalize(findRuleDependenciesStmt);
     sqlite3_finalize(findRuleResultStmt);
@@ -411,36 +405,6 @@ public:
   static constexpr const char *deleteFromRuleDependenciesStmtSQL =
     "DELETE FROM rule_dependencies WHERE rule_id == ?;";
   sqlite3_stmt* deleteFromRuleDependenciesStmt = nullptr;
-
-  static constexpr const char *findKeyForKeyIDStmtSQL =
-  "SELECT key FROM key_names "
-  "WHERE id == ? LIMIT 1;";
-  sqlite3_stmt* findKeyForKeyIDStmt = nullptr;
-
-  /// Return the key for a given keyID, keyID should exist in database.
-  KeyType keyForKeyID(uint64_t keyID) {
-    int result;
-    result = sqlite3_reset(findKeyForKeyIDStmt);
-    assert(result == SQLITE_OK);
-    result = sqlite3_clear_bindings(findKeyForKeyIDStmt);
-    assert(result == SQLITE_OK);
-    result = sqlite3_bind_int64(findKeyForKeyIDStmt, /*index=*/1,
-                               keyID);
-    assert(result == SQLITE_OK);
-    
-    KeyType key{};
-    
-    result = sqlite3_step(findKeyForKeyIDStmt);
-    if (result == SQLITE_DONE) {
-      abort();
-    } else if (result == SQLITE_ROW) {
-      assert(sqlite3_column_count(findKeyForKeyIDStmt) == 1);
-      return std::string(
-                (const char*)sqlite3_column_text(findKeyForKeyIDStmt, 0),
-                sqlite3_column_bytes(findKeyForKeyIDStmt, 0));
-    }
-    abort();
-  }
 
   static constexpr const char *findKeyIDForKeyStmtSQL =
   "SELECT id FROM key_names "
