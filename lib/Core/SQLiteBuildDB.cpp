@@ -321,8 +321,8 @@ public:
   sqlite3_stmt* findRuleResultStmt = nullptr;
 
   static constexpr const char *findRuleDependenciesStmtSQL =
-    "SELECT key_id FROM rule_dependencies "
-    "WHERE rule_id == ?;";
+  "SELECT key FROM key_names INNER JOIN rule_dependencies "
+  "ON key_names.id = rule_dependencies.key_id WHERE rule_id == ?;";
   sqlite3_stmt* findRuleDependenciesStmt = nullptr;
 
   virtual bool lookupRuleResult(const Rule& rule, Result* result_out) override {
@@ -359,6 +359,8 @@ public:
     result_out->computedAt = sqlite3_column_int64(findRuleResultStmt, 3);
 
     // Look up all the rule dependencies.
+    // To lookup the dependencies efficiently we use an INNER JOIN query
+    // otherwise we need to run two queries to find the keys which is slow.
     result = sqlite3_reset(findRuleDependenciesStmt);
     assert(result == SQLITE_OK);
     result = sqlite3_clear_bindings(findRuleDependenciesStmt);
@@ -376,8 +378,9 @@ public:
         abort();
       }
       assert(sqlite3_column_count(findRuleDependenciesStmt) == 1);
-      uint64_t dependencyKeyID = sqlite3_column_int64(findRuleDependenciesStmt, 0);
-      result_out->dependencies.push_back(keyForKeyID(dependencyKeyID));
+      result_out->dependencies.push_back(std::string(
+                (const char*)sqlite3_column_text(findRuleDependenciesStmt, 0),
+                sqlite3_column_bytes(findRuleDependenciesStmt, 0)));
     }
 
     return true;
