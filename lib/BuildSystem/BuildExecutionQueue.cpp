@@ -30,8 +30,8 @@ BuildExecutionQueue::~BuildExecutionQueue() {
 }
 
 bool BuildExecutionQueue::executeProcess(
-    QueueJobContext* context, ArrayRef<StringRef> commandLine) {
-  return executeProcess(context, commandLine, {});
+    QueueJobContext* context, ArrayRef<StringRef> commandLine, std::function<void(StringRef)> partialOutputCallback) {
+  return executeProcess(context, commandLine, {}, partialOutputCallback);
 }
 
 bool BuildExecutionQueue::executeShellCommand(QueueJobContext* context,

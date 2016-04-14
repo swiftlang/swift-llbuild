@@ -174,7 +174,7 @@ class SwiftCompilerShellCommand : public ExternalCommand {
 
   /// Whether the sources are part of a library or not.
   bool isLibrary = false;
-  
+
   virtual uint64_t getSignature() override {
     uint64_t result = ExternalCommand::getSignature();
     result ^= basic::hashString(executable);
@@ -231,6 +231,8 @@ class SwiftCompilerShellCommand : public ExternalCommand {
     for (const auto& arg: otherArgs) {
       result.push_back(arg);
     }
+
+    result.push_back("-parseable-output");
   }
   
 public:
@@ -523,7 +525,10 @@ public:
       return false;
 
     // Execute the command.
-    if (!bsci.getExecutionQueue().executeProcess(context, commandLine)) {
+
+    auto handler = std::bind(&SwiftCompilerShellCommand::partialOutputAvailable, this, std::placeholders::_1);
+
+    if (!bsci.getExecutionQueue().executeProcess(context, commandLine, handler)) {
       // If the command failed, there is no need to gather dependencies.
       return false;
     }
@@ -535,6 +540,50 @@ public:
     }
     
     return true;
+  }
+
+  std::string previousOutput;
+  ssize_t numBytes = 0;
+
+  void partialOutputAvailable(StringRef partialOutput) {
+    previousOutput.append(partialOutput);
+
+    do {
+      if (numBytes == 0) {
+        auto newLinePos = previousOutput.find("\n");
+        // Don't even have the first line yet.
+        if (newLinePos == std::string::npos) {
+          return;
+        }
+
+        StringRef numBytesString = previousOutput.substr(0, newLinePos);
+        if (StringRef(numBytesString).getAsInteger(10, numBytes)) {
+          numBytes = 0;
+          // Couldn't get number of bytes.
+          // Probably due to a compiler crash or bad output?
+          return;
+        }
+
+        // Remove the message length string.
+        previousOutput = previousOutput.substr(newLinePos+1, previousOutput.size());
+      }
+
+      // See if we have enough output to parse.
+      if (previousOutput.size() >= numBytes) {
+        StringRef legibleJSON = previousOutput.substr(0, numBytes);
+
+        // Do something with JSON.
+        std::string sep = "\n--------------------\n";
+        fwrite(sep.data(), sep.size(), 1, stdout);
+        fflush(stdout);
+        fwrite(legibleJSON.data(), legibleJSON.size(), 1, stdout);
+        fflush(stdout);
+
+        // Remove the JSON which we just read.
+        previousOutput = previousOutput.substr(numBytes+1, previousOutput.size());
+        numBytes = 0;
+      }
+    } while(numBytes == 0);
   }
 };
 

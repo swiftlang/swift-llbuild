@@ -114,13 +114,16 @@ public:
   virtual bool
   executeProcess(QueueJobContext* context,
                  ArrayRef<StringRef> commandLine,
-                 ArrayRef<std::pair<StringRef, StringRef>> environment) = 0;
+                 ArrayRef<std::pair<StringRef, StringRef>> environment,
+                 std::function<void(StringRef)> partialOutputCallback = nullptr) = 0;
 
   /// @}
 
   /// Execute the given command, using an inherited environment.
   bool executeProcess(QueueJobContext* context,
-                      ArrayRef<StringRef> commandLine);
+                      ArrayRef<StringRef> commandLine,
+                      std::function<void(StringRef)> partialOutputCallback = nullptr
+                      );
 
   /// Execute the given command using "/bin/sh".
   ///
