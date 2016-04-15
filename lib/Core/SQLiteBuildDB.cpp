@@ -310,8 +310,8 @@ public:
   sqlite3_stmt* deleteFromKeysStmt = nullptr;
   
   static constexpr const char *findRuleResultStmtSQL =
-    "SELECT id, value, built_at, computed_at FROM rule_results "
-    "WHERE key_id == ? LIMIT 1;";
+  "SELECT rule_results.id, value, built_at, computed_at FROM rule_results "
+  "INNER JOIN key_names ON key_names.id = rule_results.key_id WHERE key == ?;";
   sqlite3_stmt* findRuleResultStmt = nullptr;
 
   static constexpr const char *findRuleDependenciesStmtSQL =
@@ -324,14 +324,14 @@ public:
 
     // Fetch the basic rule information.
     int result;
-    uint64_t keyID = getOrInsertKey(rule.key);
 
     result = sqlite3_reset(findRuleResultStmt);
     assert(result == SQLITE_OK);
     result = sqlite3_clear_bindings(findRuleResultStmt);
     assert(result == SQLITE_OK);
-    result = sqlite3_bind_int64(findRuleResultStmt, /*index=*/1,
-                               keyID);
+    result = sqlite3_bind_text(findRuleResultStmt, /*index=*/1,
+                               rule.key.data(), rule.key.size(),
+                               SQLITE_STATIC);
     assert(result == SQLITE_OK);
 
     // If the rule wasn't found, we are done.
@@ -446,6 +446,7 @@ public:
     result = sqlite3_bind_text(insertIntoKeysStmt, /*index=*/1,
                                key.data(), key.size(),
                                SQLITE_STATIC);
+    assert(result == SQLITE_OK);
     result = sqlite3_step(insertIntoKeysStmt);
     if (result != SQLITE_DONE)
       abort();
