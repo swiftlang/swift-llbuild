@@ -446,6 +446,7 @@ public:
     result = sqlite3_bind_text(insertIntoKeysStmt, /*index=*/1,
                                key.data(), key.size(),
                                SQLITE_STATIC);
+    assert(result == SQLITE_OK);
     result = sqlite3_step(insertIntoKeysStmt);
     if (result != SQLITE_DONE)
       abort();
