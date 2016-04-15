@@ -545,7 +545,7 @@ public:
       result = sqlite3_bind_int64(insertIntoRuleDependenciesStmt, /*index=*/1,
                                   ruleID);
       assert(result == SQLITE_OK);
-      uint64_t dependencyKeyID = getOrInsertKey(dependency.data());
+      uint64_t dependencyKeyID = getOrInsertKey(dependency);
       result = sqlite3_bind_int64(insertIntoRuleDependenciesStmt, /*index=*/2,
                                  dependencyKeyID);
       assert(result == SQLITE_OK);
