@@ -38,6 +38,6 @@
 rule CAT
      command = cat ${in} > $out
 
-build output: CAT input-1 input-2
+build output: CAT input-2 input-1
 
 default output
