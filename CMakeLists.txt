@@ -16,6 +16,12 @@ endif()
 include(CMakeParseArguments)
 include(CheckCXXCompilerFlag)
 
+# Get the SDK path for OSX.
+execute_process(
+    COMMAND xcrun --sdk macosx --show-sdk-path
+    OUTPUT_VARIABLE CMAKE_OSX_SYSROOT
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+
 project(llbuild)
 
 # Add path for custom modules
