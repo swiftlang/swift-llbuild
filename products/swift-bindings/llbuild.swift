@@ -11,13 +11,13 @@
 import Foundation
 import llbuild
 
-enum DatabaseError: ErrorType {
+enum DatabaseError: ErrorProtocol {
   case AttachFailure(message: String)
 }
 
 private func stringFromData(data: llb_data_t) -> String {
   // Convert as a UTF8 string, if possible.
-  let tmp = NSData(bytes: unsafeBitCast(data.data, UnsafePointer<Void>.self), length: Int(data.length))
+  let tmp = NSData(bytes: unsafeBitCast(data.data, to: UnsafePointer<Void>.self), length: Int(data.length))
   if let str = NSString(data: tmp, encoding: NSUTF8StringEncoding) {
     return String(str)
   }
@@ -26,7 +26,7 @@ private func stringFromData(data: llb_data_t) -> String {
   return String([UInt8](UnsafeBufferPointer(start: data.data, count: Int(data.length))))
 }
 
-private func stringFromUInt8Array(data: [UInt8]) -> String {
+private func stringFromUInt8Array(_ data: [UInt8]) -> String {
   // Convert as a UTF8 string, if possible.
   let tmp = NSData(bytes: data, length: data.count)
   if let str = NSString(data: tmp, encoding: NSUTF8StringEncoding) {
@@ -69,12 +69,12 @@ public struct Key: CustomStringConvertible, Equatable, Hashable {
   }
 
   /// Create a Key object from an llb_data_t.
-  private static func fromInternalData(data: llb_data_t) -> Key {
+  private static func fromInternalData(_ data: llb_data_t) -> Key {
     return Key([UInt8](UnsafeBufferPointer(start: data.data, count: Int(data.length))))
   }
 
   /// Provide a Key contents as an llb_data_t pointer.
-  private func withInternalDataPtr<T>(@noescape closure: (UnsafePointer<llb_data_t>) -> T) -> T {
+  private func withInternalDataPtr<T>(closure: @noescape (UnsafePointer<llb_data_t>) -> T) -> T {
     return data.withUnsafeBufferPointer { (dataPtr: UnsafeBufferPointer<UInt8>) -> T in
         var value = llb_data_t(length: UInt64(self.data.count), data: dataPtr.baseAddress)
         return withUnsafePointer(&value, closure)
@@ -103,12 +103,12 @@ public struct Value: CustomStringConvertible {
   }
     
   /// Create a Value object from an llb_data_t.
-  private static func fromInternalData(data: llb_data_t) -> Value {
+  private static func fromInternalData(_ data: llb_data_t) -> Value {
     return Value([UInt8](UnsafeBufferPointer(start: data.data, count: Int(data.length))))
   }
 
   /// Provide a Value contents as an llb_data_t pointer.
-  private func withInternalDataPtr<T>(@noescape closure: (UnsafePointer<llb_data_t>) -> T) -> T {
+  private func withInternalDataPtr<T>(closure: @noescape (UnsafePointer<llb_data_t>) -> T) -> T {
     return data.withUnsafeBufferPointer { (dataPtr: UnsafeBufferPointer<UInt8>) -> T in
         var value = llb_data_t(length: UInt64(self.data.count), data: dataPtr.baseAddress)
         return withUnsafePointer(&value, closure)
@@ -121,7 +121,7 @@ public struct Value: CustomStringConvertible {
   /// use. The structure *must* be filled in by the closure.
   ///
   /// \return The output Value.
-  private static func fromInternalDataOutputPtr(@noescape closure: (UnsafeMutablePointer<llb_data_t>) -> Void) -> Value {
+  private static func fromInternalDataOutputPtr(closure: @noescape (UnsafeMutablePointer<llb_data_t>) -> Void) -> Value {
     var data = llb_data_t()
     withUnsafeMutablePointer(&data, closure)
     return Value.fromInternalData(data)
@@ -163,16 +163,16 @@ public protocol Rule {
   /// state managed externally to the build engine. For example, a rule which
   /// computes something on the file system may use this to verify that the
   /// computed output has not changed since it was built.
-  func isResultValid(priorValue: Value) -> Bool
+  func isResultValid(_ priorValue: Value) -> Bool
 
   /// Called to indicate a change in the rule status.
-  func updateStatus(status: RuleStatus)
+  func updateStatus(_ status: RuleStatus)
 }
 
 /// Protocol extension for default Rule methods.
 public extension Rule {
-  final func isResultValid(priorValue: Value) -> Bool { return true }
-  final func updateStatus(status: RuleStatus) { }
+  final func isResultValid(_ priorValue: Value) -> Bool { return true }
+  final func updateStatus(_ status: RuleStatus) { }
 }
 
 /// A task object represents an abstract in-progress computation in the build
@@ -200,7 +200,7 @@ public extension Rule {
 /// TaskBuildEngine.taskIsComplete().
 public protocol Task {
   /// Executed by the build engine when the task should be started.
-  func start(engine: TaskBuildEngine)
+  func start(_ engine: TaskBuildEngine)
 
   /// Invoked by the build engine to provide an input value as it becomes
   /// available.
@@ -210,7 +210,7 @@ public protocol Task {
   /// TaskBuildEngine.taskNeedsInput().
   ///
   /// \param value The computed value for the given input.
-  func provideValue(engine: TaskBuildEngine, inputID: Int, value: Value)
+  func provideValue(_ engine: TaskBuildEngine, inputID: Int, value: Value)
 
   /// Executed by the build engine to indicate that all inputs have been
   /// provided, and the task should begin its computation.
@@ -220,7 +220,7 @@ public protocol Task {
   ///
   /// It is an error for any client to request an additional input for a task
   /// after the last requested input has been provided by the build engine.
-  func inputsAvailable(engine: TaskBuildEngine)
+  func inputsAvailable(_ engine: TaskBuildEngine)
 }
 
 /// Delegate interface for use with the build engine.
@@ -232,7 +232,7 @@ public protocol BuildEngineDelegate {
   /// Task through mechanisms such as \see TaskBuildEngine.taskNeedsInput(). If a
   /// requested Key cannot be supplied, the delegate should provide a dummy rule
   /// that the client can translate into an error.
-  func lookupRule(key: Key) -> Rule
+  func lookupRule(_ key: Key) -> Rule
 }
 
 /// Wrapper to allow passing an opaque pointer to a protocol type.
@@ -260,7 +260,7 @@ public protocol TaskBuildEngine {
   ///
   /// \param inputID An arbitrary value that may be provided by the client to
   /// use in efficiently associating this input.
-  func taskNeedsInput(key: Key, inputID: Int)
+  func taskNeedsInput(_ key: Key, inputID: Int)
 
   /// Specify that the task must be built subsequent to the computation of \arg
   /// key.
@@ -268,7 +268,7 @@ public protocol TaskBuildEngine {
   /// The value of the computation of \arg key is not available to the task, and
   /// the only guarantee the engine provides is that if \arg key is computed
   /// during a build, then task will not be computed until after it.
-  func taskMustFollow(key: Key)
+  func taskMustFollow(_ key: Key)
 
   /// Inform the engine of an input dependency that was discovered by the task
   /// during its execution, a la compiler generated dependency files.
@@ -290,7 +290,7 @@ public protocol TaskBuildEngine {
   /// It is legal to call this method from any thread, but the caller is
   /// responsible for ensuring that it is never called concurrently for the same
   /// task.
-  func taskDiscoveredDependency(key: Key)
+  func taskDiscoveredDependency(_ key: Key)
 
   /// Indicate that the task has completed and provide its resulting value.
   ///
@@ -301,14 +301,14 @@ public protocol TaskBuildEngine {
   /// \param forceChange If true, treat the value as changed and trigger
   /// dependents to rebuild, even if the value itself is not different from the
   /// prior result.
-  func taskIsComplete(result: Value, forceChange: Bool)
+  func taskIsComplete(_ result: Value, forceChange: Bool)
 }
 
 /// Single concrete implementation of the TaskBuildEngine protocol.
 private class TaskWrapper: CustomStringConvertible, TaskBuildEngine {
   let engine: BuildEngine
   let task: Task
-  var taskInternal: COpaquePointer = nil
+  var taskInternal: OpaquePointer?
 
   var description: String {
     return "<TaskWrapper engine:\(engine), task:\(task)>"
@@ -319,19 +319,19 @@ private class TaskWrapper: CustomStringConvertible, TaskBuildEngine {
     self.task = task
   }
 
-  func taskNeedsInput(key: Key, inputID: Int) {
+  func taskNeedsInput(_ key: Key, inputID: Int) {
     engine.taskNeedsInput(self, key: key, inputID: inputID)
   }
 
-  func taskMustFollow(key: Key) {
+  func taskMustFollow(_ key: Key) {
     engine.taskMustFollow(self, key: key)
   }
 
-  func taskDiscoveredDependency(key: Key) {
+  func taskDiscoveredDependency(_ key: Key) {
     engine.taskDiscoveredDependency(self, key: key)
   }
 
-  func taskIsComplete(result: Value, forceChange: Bool = false) {
+  func taskIsComplete(_ result: Value, forceChange: Bool = false) {
     engine.taskIsComplete(self, result: result, forceChange: forceChange)
   }
 }
@@ -362,7 +362,7 @@ public class BuildEngine {
   private var delegate: BuildEngineDelegate
 
   /// The internal llbuild build engine.
-  private var _engine: COpaquePointer = nil
+  private var _engine: OpaquePointer?
     
   /// Our llbuild engine delegate object.
   private var _delegate = llb_buildengine_delegate_t()
@@ -374,7 +374,8 @@ public class BuildEngine {
     self.delegate = delegate
 
     // Initialize the delegate.
-    _delegate.context = unsafeBitCast(Unmanaged.passUnretained(self).toOpaque(), UnsafeMutablePointer<Void>.self)
+    _delegate.context = unsafeBitCast(Unmanaged.passUnretained(self), to: UnsafeMutablePointer<Void>.self)
+
     _delegate.lookup_rule = { BuildEngine.toEngine($0).lookupRule($1, $2) }
     // FIXME: Include cycleDetected callback.
 
@@ -407,15 +408,17 @@ public class BuildEngine {
   /// it is an error to attach a database after adding rules or initiating any
   /// builds, or to attempt to attach multiple databases.
   public func attachDB(path: String, schemaVersion: Int = 0) throws {
-    let errorPtr = UnsafeMutablePointer<UnsafeMutablePointer<Int8>>.alloc(1)
-    defer { errorPtr.destroy() }
+    let errorPtr = UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>(allocatingCapacity: 1)
+    defer { errorPtr.deinitialize(count: 1) }
 
     // FIXME: Why do I have to name the closure signature here?
     var errorMsgOpt: String? = nil
     Key(path).withInternalDataPtr { (ptr) -> Void in
       if !llb_buildengine_attach_db(self._engine, ptr, UInt32(schemaVersion), errorPtr) {
         // If there was an error, report it.
-        errorMsgOpt = String.fromCString(errorPtr.memory)!
+        if let errorPointee = errorPtr.pointee {
+            errorMsgOpt = String(cString: errorPointee)
+        }
       }
     }
     // Throw the error, if found.
@@ -426,25 +429,25 @@ public class BuildEngine {
 
   /// MARK: Internal Task-Only API
 
-  private func taskNeedsInput(taskWrapper: TaskWrapper, key: Key, inputID: Int) {
+  private func taskNeedsInput(_ taskWrapper: TaskWrapper, key: Key, inputID: Int) {
     key.withInternalDataPtr { keyPtr in
       llb_buildengine_task_needs_input(self._engine, taskWrapper.taskInternal, keyPtr, UInt(inputID))
     }
   }
 
-  private func taskMustFollow(taskWrapper: TaskWrapper, key: Key) {
+  private func taskMustFollow(_ taskWrapper: TaskWrapper, key: Key) {
     key.withInternalDataPtr { keyPtr in
       llb_buildengine_task_must_follow(self._engine, taskWrapper.taskInternal, keyPtr)
     }
   }
 
-  private func taskDiscoveredDependency(taskWrapper: TaskWrapper, key: Key) {
+  private func taskDiscoveredDependency(_ taskWrapper: TaskWrapper, key: Key) {
     key.withInternalDataPtr { keyPtr in
       llb_buildengine_task_discovered_dependency(self._engine, taskWrapper.taskInternal, keyPtr)
     }
   }
 
-  private func taskIsComplete(taskWrapper: TaskWrapper, result: Value, forceChange: Bool = false) {
+  private func taskIsComplete(_ taskWrapper: TaskWrapper, result: Value, forceChange: Bool = false) {
     result.withInternalDataPtr { dataPtr in
       llb_buildengine_task_is_complete(self._engine, taskWrapper.taskInternal, dataPtr, forceChange)
     }
@@ -453,40 +456,40 @@ public class BuildEngine {
   /// MARK: Internal Delegate Implementation
 
   /// Helper function for getting the engine from the delegate context.
-  static private func toEngine(context: UnsafeMutablePointer<Void>) -> BuildEngine {
-    return Unmanaged<BuildEngine>.fromOpaque(unsafeBitCast(context, COpaquePointer.self)).takeUnretainedValue()
+  static private func toEngine(_ context: UnsafeMutablePointer<Void>) -> BuildEngine {
+    return Unmanaged<BuildEngine>.fromOpaque(unsafeBitCast(context, to: OpaquePointer.self)).takeUnretainedValue()
   }
 
   /// Helper function for getting the rule from a rule delegate context.
-  static private func toRule(context: UnsafeMutablePointer<Void>) -> Rule {
-    return Unmanaged<Wrapper<Rule>>.fromOpaque(unsafeBitCast(context, COpaquePointer.self)).takeUnretainedValue().item
+  static private func toRule(_ context: UnsafeMutablePointer<Void>) -> Rule {
+    return Unmanaged<Wrapper<Rule>>.fromOpaque(unsafeBitCast(context, to: OpaquePointer.self)).takeUnretainedValue().item
   }
 
   /// Helper function for getting the task from a task delegate context.
-  static private func toTaskWrapper(context: UnsafeMutablePointer<Void>) -> TaskWrapper {
-    return Unmanaged<TaskWrapper>.fromOpaque(unsafeBitCast(context, COpaquePointer.self)).takeUnretainedValue()
+  static private func toTaskWrapper(_ context: UnsafeMutablePointer<Void>) -> TaskWrapper {
+    return Unmanaged<TaskWrapper>.fromOpaque(unsafeBitCast(context, to: OpaquePointer.self)).takeUnretainedValue()
   }
   
-  private func lookupRule(key: UnsafePointer<llb_data_t>, _ ruleOut: UnsafeMutablePointer<llb_rule_t>) {
+  private func lookupRule(_ key: UnsafePointer<llb_data_t>, _ ruleOut: UnsafeMutablePointer<llb_rule_t>) {
     numRules += 1
     
     // Get the rule from the client.
-    let rule = delegate.lookupRule(Key.fromInternalData(key.memory))
+    let rule = delegate.lookupRule(Key.fromInternalData(key.pointee))
 
     // Fill in the output structure.
     //
     // FIXME: We need a deallocation callback in order to ensure this is released.
-    ruleOut.memory.context = unsafeBitCast(Unmanaged.passRetained(Wrapper(rule)).toOpaque(), UnsafeMutablePointer<Void>.self)
-    ruleOut.memory.create_task = { (context, engineContext) -> COpaquePointer in
+    ruleOut.pointee.context = unsafeBitCast(Unmanaged.passRetained(Wrapper(rule)), to: UnsafeMutablePointer<Void>.self)
+    ruleOut.pointee.create_task = { (context, engineContext) -> OpaquePointer! in
       let rule = BuildEngine.toRule(context)
       let engine = BuildEngine.toEngine(engineContext)
       return engine.ruleCreateTask(rule)
     }
-    ruleOut.memory.is_result_valid = { (context, engineContext, internalRule, value) -> Bool in
+    ruleOut.pointee.is_result_valid = { (context, engineContext, internalRule, value) -> Bool in
       let rule = BuildEngine.toRule(context)
-      return rule.isResultValid(Value.fromInternalData(value.memory))
+      return rule.isResultValid(Value.fromInternalData(value.pointee))
     }
-    ruleOut.memory.update_status =  { (context, engineContext, status) in
+    ruleOut.pointee.update_status =  { (context, engineContext, status) in
       let rule = BuildEngine.toRule(context)
       let status = { (kind: llb_rule_status_kind_t) -> RuleStatus in
         switch kind.rawValue {
@@ -500,7 +503,7 @@ public class BuildEngine {
     }
   }
 
-  private func ruleCreateTask(rule: Rule) -> COpaquePointer {
+  private func ruleCreateTask(_ rule: Rule) -> OpaquePointer {
     // Create the task.
     let task = rule.createTask()
 
@@ -516,14 +519,14 @@ public class BuildEngine {
     // FIXME: Separate the delegate from the context pointer.
     var taskDelegate = llb_task_delegate_t()
     // FIXME: We need a deallocation callback in order to ensure this is released.
-    taskDelegate.context = unsafeBitCast(Unmanaged.passRetained(taskWrapper).toOpaque(), UnsafeMutablePointer<Void>.self)
+    taskDelegate.context = unsafeBitCast(Unmanaged.passRetained(taskWrapper), to: UnsafeMutablePointer<Void>.self)
     taskDelegate.start = { (context, engineContext, internalTask) in
       let taskWrapper = BuildEngine.toTaskWrapper(context)
       taskWrapper.task.start(taskWrapper)
     }
     taskDelegate.provide_value = { (context, engineContext, internalTask, inputID, value) in
       let taskWrapper = BuildEngine.toTaskWrapper(context)
-      taskWrapper.task.provideValue(taskWrapper, inputID: Int(inputID), value: Value.fromInternalData(value.memory))
+      taskWrapper.task.provideValue(taskWrapper, inputID: Int(inputID), value: Value.fromInternalData(value.pointee))
     }
     taskDelegate.inputs_available = { (context, engineContext, internalTask) in
       let taskWrapper = BuildEngine.toTaskWrapper(context)
