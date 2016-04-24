@@ -67,6 +67,7 @@ set(LLBUILD_LIBRARY_OUTPUT_INTDIR ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR
 
 find_package(Lit REQUIRED)
 find_package(FileCheck REQUIRED)
+find_package(Swiftc QUIET)
 
 ###
 # Setup compiler and project build settings

@@ -1,7 +1,7 @@
 # Check basic 'core' functionality of the swift bindings
 #
 # REQUIRES: platform=Darwin
-# RUN: env TOOLCHAINS=swift xcrun -sdk macosx swiftc %{srcroot}/examples/swift-bindings/core/basic.swift -I %{srcroot}/build/products/swift-bindings -I %{srcroot}/products/libllbuild/public-api -Xlinker %{llbuild-lib-dir}/swift-bindings.dylib -o %t.exe
+# RUN: %{swiftc} -sdk %{osx_sysroot} %{srcroot}/examples/swift-bindings/core/basic.swift -I %{srcroot}/build/products/swift-bindings -I %{srcroot}/products/libllbuild/public-api -Xlinker %{llbuild-lib-dir}/swift-bindings.dylib -o %t.exe
 # RUN: env LD_LIBRARY_PATH=%{llbuild-lib-dir} %t.exe %s > %t.out
 # RUN: cat %t.out
 # RUN: %{FileCheck} %s --input-file %t.out
