@@ -67,7 +67,17 @@ set(LLBUILD_LIBRARY_OUTPUT_INTDIR ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR
 
 find_package(Lit REQUIRED)
 find_package(FileCheck REQUIRED)
-find_package(Swiftc QUIET)
+
+# Fine swiftc on OSX using `xcrun --find swiftc` and `find_package` on Linux.
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  execute_process(
+      COMMAND xcrun --find swiftc
+      OUTPUT_VARIABLE SWIFTC_EXECUTABLE
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+  set(SWIFTC_FOUND TRUE)
+else()
+  find_package(Swiftc QUIET)
+endif()
 
 # Check if we have correct swift version for bindings.
 if (SWIFTC_FOUND)
