@@ -9,7 +9,6 @@
 // This file contains Swift bindings for the llbuild C API.
 
 import Foundation
-import llbuild
 
 enum DatabaseError: ErrorProtocol {
   case AttachFailure(message: String)

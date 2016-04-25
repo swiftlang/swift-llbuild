@@ -12,6 +12,9 @@ config.llbuild_lib_dir = "@LLBUILD_LIBS_DIR@"
 
 # Tools found by the build system.
 config.filecheck_path = "@FILECHECK_EXECUTABLE@"
+config.swiftc_path = "@SWIFTC_EXECUTABLE@"
+config.swiftc_found = "@SWIFTC_FOUND@"
+config.osx_sysroot = "@CMAKE_OSX_SYSROOT@"
 
 # Support substitution of the tools_dir with user parameters. This is
 # used when we can't determine the tool dir at configuration time.

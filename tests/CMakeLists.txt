@@ -33,7 +33,7 @@ if(PYTHONINTERP_FOUND)
     --param build_mode=${build_mode})
 
   set(test_target_dependencies
-    llbuild libllbuild swift-build-tool UnitTests)
+    llbuild libllbuild swift-bindings swift-build-tool UnitTests)
 
   add_custom_target(test-llbuild
     COMMAND ${lit_command} ${CMAKE_CURRENT_BINARY_DIR}

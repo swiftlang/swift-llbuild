@@ -16,6 +16,12 @@ endif()
 include(CMakeParseArguments)
 include(CheckCXXCompilerFlag)
 
+# Get the SDK path for OSX.
+execute_process(
+    COMMAND xcrun --sdk macosx --show-sdk-path
+    OUTPUT_VARIABLE CMAKE_OSX_SYSROOT
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+
 project(llbuild)
 
 # Add path for custom modules
@@ -61,6 +67,29 @@ set(LLBUILD_LIBRARY_OUTPUT_INTDIR ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR
 
 find_package(Lit REQUIRED)
 find_package(FileCheck REQUIRED)
+
+# Fine swiftc on OSX using `xcrun --find swiftc` and `find_package` on Linux.
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  execute_process(
+      COMMAND xcrun --find swiftc
+      OUTPUT_VARIABLE SWIFTC_EXECUTABLE
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+  set(SWIFTC_FOUND TRUE)
+else()
+  find_package(Swiftc QUIET)
+endif()
+
+# Check if we have correct swift version for bindings.
+if (SWIFTC_FOUND)
+  execute_process(
+      COMMAND ${SWIFTC_EXECUTABLE} --version
+      OUTPUT_VARIABLE SWIFTC_VERSION
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if (NOT SWIFTC_VERSION MATCHES "(.*)Swift version 3.0(.*)")
+    set(SWIFTC_EXECUTABLE)
+    set(SWIFTC_FOUND FALSE)
+  endif()
+endif()
 
 ###
 # Setup compiler and project build settings
