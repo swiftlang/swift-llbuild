@@ -2329,7 +2329,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/utils/Xcode/build-sphinx-docs.sh\"";
+			shellScript = "env LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 \"${SRCROOT}/utils/Xcode/build-sphinx-docs.sh\"";
 			showEnvVarsInLog = 0;
 		};
 		E18043371A00125500662FE7 /* Create 'lit.site.cfg' */ = {
