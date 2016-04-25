@@ -948,6 +948,7 @@ class ShellCommand : public ExternalCommand {
       switch (depsStyle) {
       case DepsStyle::Unused:
         assert(0 && "unreachable");
+        break;
 
       case DepsStyle::Makefile:
         if (!processMakefileDiscoveredDependencies(
