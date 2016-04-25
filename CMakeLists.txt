@@ -69,6 +69,18 @@ find_package(Lit REQUIRED)
 find_package(FileCheck REQUIRED)
 find_package(Swiftc QUIET)
 
+# Check if we have correct swift version for bindings.
+if (SWIFTC_FOUND)
+  execute_process(
+      COMMAND ${SWIFTC_EXECUTABLE} --version
+      OUTPUT_VARIABLE SWIFTC_VERSION
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if (NOT SWIFTC_VERSION MATCHES "(.*)Swift version 3.0(.*)")
+    set(SWIFTC_EXECUTABLE)
+    set(SWIFTC_FOUND FALSE)
+  endif()
+endif()
+
 ###
 # Setup compiler and project build settings
 
