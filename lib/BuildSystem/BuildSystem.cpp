@@ -1146,11 +1146,20 @@ public:
     for (const auto& it: env) {
       environment.push_back({ it.getKey(), it.getValue() });
     }
-    
+   
+    auto outputCallback = [](StringRef data) {
+      fwrite(data.data(), data.size(), 1, stdout);
+      fflush(stdout);
+    };
+    auto errorCallback = [](StringRef data) {
+      fwrite(data.data(), data.size(), 1, stderr);
+      fflush(stderr);
+    };
+
     // Execute the command.
     if (!bsci.getExecutionQueue().executeProcess(
             context, std::vector<StringRef>(args.begin(), args.end()),
-            environment)) {
+            environment, outputCallback, errorCallback)) {
       // If the command failed, there is no need to gather dependencies.
       return false;
     }
@@ -1789,9 +1798,19 @@ class ArchiveShellCommand : public ExternalCommand {
       return false;
     }
 
+    auto outputCallback = [](StringRef data) {
+      fwrite(data.data(), data.size(), 1, stdout);
+      fflush(stdout);
+    };
+    auto errorCallback = [](StringRef data) {
+      fwrite(data.data(), data.size(), 1, stderr);
+      fflush(stderr);
+    };
+
     // Create archive
     auto args = getArgs();
-    if (!bsci.getExecutionQueue().executeProcess(context, std::vector<StringRef>(args.begin(), args.end()))) {
+    if (!bsci.getExecutionQueue().executeProcess(context, std::vector<StringRef>(args.begin(), args.end()),
+                                                 {}, outputCallback, errorCallback)) {
       return false;
     }
 

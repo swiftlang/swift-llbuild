@@ -164,14 +164,6 @@ public:
           message);
   }
   
-  virtual void commandProcessHadOutput(Command* command, ProcessHandle handle,
-                                       StringRef data) override {
-    static_cast<BuildSystemFrontendDelegate*>(&getSystem().getDelegate())->
-      commandProcessHadOutput(
-          command, BuildSystemFrontendDelegate::ProcessHandle { handle.id },
-          data);
-  }
-
   virtual void commandProcessFinished(Command* command, ProcessHandle handle,
                                       int exitStatus) override {
     static_cast<BuildSystemFrontendDelegate*>(&getSystem().getDelegate())->
@@ -390,14 +382,6 @@ commandProcessHadError(Command* command, ProcessHandle handle,
   fwrite(str.data(), str.size(), 1, stderr);
   fputc('\n', stderr);
   fflush(stderr);
-}
-  
-void BuildSystemFrontendDelegate::
-commandProcessHadOutput(Command* command, ProcessHandle handle,
-                        StringRef data) {
-  // FIXME: Design the logging and status output APIs.
-  fwrite(data.data(), data.size(), 1, stdout);
-  fflush(stdout);
 }
 
 void BuildSystemFrontendDelegate::

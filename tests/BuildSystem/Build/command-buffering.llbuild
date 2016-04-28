@@ -9,16 +9,16 @@
 # RUN: %{FileCheck} --check-prefix=CHECK-B --input-file %t.out %s
 #
 # CHECK-A: [A] touching B semaphore
-# CHECK-A-NEXT: [A] waiting for A semaphore
-# CHECK-A-NEXT: waiting for file 'node-A-semaphore'
-# CHECK-A-NEXT: file exists
-# CHECK-A-NEXT: [A] done
+# CHECK-A: [A] waiting for A semaphore
+# CHECK-A: waiting for file 'node-A-semaphore'
+# CHECK-A: file exists
+# CHECK-A: [A] done
 #
 # CHECK-B: [B] touching A semaphore
-# CHECK-B-NEXT: [B] waiting for B semaphore
-# CHECK-B-NEXT: waiting for file 'node-B-semaphore'
-# CHECK-B-NEXT: file exists
-# CHECK-B-NEXT: [B] done
+# CHECK-B: [B] waiting for B semaphore
+# CHECK-B: waiting for file 'node-B-semaphore'
+# CHECK-B: file exists
+# CHECK-B: [B] done
 
 client:
   name: basic

@@ -124,7 +124,9 @@ public:
   executeProcess(QueueJobContext* opaqueContext,
                  ArrayRef<StringRef> commandLine,
                  ArrayRef<std::pair<StringRef,
-                                    StringRef>> environment) override {
+                                    StringRef>> environment,
+                 std::function<void(StringRef)> hasPartialOutput,   
+                 std::function<void(StringRef)> hasPartialError) override {
     // Assign a process handle, which just needs to be unique for as long as we
     // are communicating with the delegate.
     struct BuildExecutionQueueDelegate::ProcessHandle handle;
@@ -192,6 +194,7 @@ public:
 
     // If we are capturing output, create a pipe and appropriate spawn actions.
     int outputPipe[2]{ -1, -1 };
+    int stderrPipe[2]{ -1, -1 };
     if (shouldCaptureOutput) {
       if (::pipe(outputPipe) < 0) {
         getDelegate().commandProcessHadError(
@@ -202,11 +205,22 @@ public:
         return false;
       }
 
+      if (::pipe(stderrPipe) < 0) {
+        getDelegate().commandProcessHadError(
+            context.job.getForCommand(), handle,
+            Twine("unable to open stderr pipe (") + strerror(errno) + ")");
+        getDelegate().commandProcessFinished(context.job.getForCommand(),
+                                             handle, -1);
+        return false;
+      }
+
       // Open the write end of the pipe as stdout and stderr.
       posix_spawn_file_actions_adddup2(&fileActions, outputPipe[1], 1);
-      posix_spawn_file_actions_adddup2(&fileActions, outputPipe[1], 2);
+      posix_spawn_file_actions_adddup2(&fileActions, stderrPipe[1], 2);
 
       // Close the read and write ends of the pipe.
+      posix_spawn_file_actions_addclose(&fileActions, stderrPipe[0]);
+      posix_spawn_file_actions_addclose(&fileActions, stderrPipe[1]);
       posix_spawn_file_actions_addclose(&fileActions, outputPipe[0]);
       posix_spawn_file_actions_addclose(&fileActions, outputPipe[1]);
     } else {
@@ -277,30 +291,71 @@ public:
     posix_spawnattr_destroy(&attributes);
 
     // Read the command output, if capturing.
-    SmallString<1024> outputData;
     if (shouldCaptureOutput) {
       // Close the write end of the output pipe.
       ::close(outputPipe[1]);
+      ::close(stderrPipe[1]);
 
-      // Read all the data from the output pipe.
+      // Set the output and stderr pipes to non-blocking.
+      if (!setNonBlockingFlag(outputPipe[0], context, handle))
+        return false;
+      if (!setNonBlockingFlag(stderrPipe[0], context, handle)) 
+        return false;
+
+      // We use select() to determine which fd has output ready to be read. Once select()
+      // returns we read whichever (or both) fd has data available in non-blocking mode.
+      // We stop watching a fd once it has read all of the data i.e. read() returns 0.
+      // When all of the fds are done being watched we can exit the loop.
+      bool watchingStdout = true, watchingStderr = true;
       while (true) {
-        char buf[4096];
-        ssize_t numBytes = read(outputPipe[0], buf, sizeof(buf));
-        if (numBytes < 0) {
+        fd_set readSet;
+        FD_ZERO(&readSet);
+        int maxFD = 0;
+        // If we're watching a fd, add it to the readSet and determine the maxFD for select().
+        if (watchingStdout) { 
+          FD_SET(outputPipe[0], &readSet); 
+          maxFD = outputPipe[0]; 
+        }
+        if (watchingStderr) { 
+          FD_SET(stderrPipe[0], &readSet); 
+          maxFD = std::max(stderrPipe[0], maxFD);
+        }
+        
+        int selectResult = select(maxFD + 1, &readSet, nullptr, nullptr, nullptr);
+        assert(selectResult != 0); 
+
+        if (selectResult < 0) {
+          if (errno == EINTR) continue; // Interrupted. Try again.
           getDelegate().commandProcessHadError(
               context.job.getForCommand(), handle,
-              Twine("unable to read process output (") + strerror(errno) + ")");
+              Twine("unable to select() while reading from subprocess (") + strerror(errno) + ")");
           break;
         }
 
-        if (numBytes == 0)
-          break;
+        // Read the FD and stop watching it if all the data has been read.
+        // If after a read we're still watching that fd, make sure we got EWOULDBLOCK from read().
+        if (FD_ISSET(outputPipe[0], &readSet)) {
+          FD_CLR(outputPipe[0], &readSet);
+          auto read = readFd(outputPipe[0], hasPartialOutput, context, handle);
+          if (read.getError())
+            break;
+          watchingStdout = !*read;
+        }
 
-        outputData.insert(outputData.end(), &buf[0], &buf[numBytes]);
+        if (FD_ISSET(stderrPipe[0], &readSet)) {
+          FD_CLR(stderrPipe[0], &readSet);
+          auto read = readFd(stderrPipe[0], hasPartialError, context, handle);
+          if (read.getError())
+            break;
+          watchingStderr = !*read;
+        }
+
+        // Both fd done, can exit loop now.
+        if (!watchingStdout && !watchingStderr) break;
       }
-
       // Close the read end of the pipe.
       ::close(outputPipe[0]);
+      ::close(stderrPipe[0]);
     }
     
     // Wait for the command to complete.
@@ -316,18 +371,62 @@ public:
       return false;
     }
 
-    // Notify the client of the output, if buffering.
-    if (shouldCaptureOutput) {
-      getDelegate().commandProcessHadOutput(context.job.getForCommand(), handle,
-                                            outputData);
-    }
-    
     // Notify of the process completion.
     //
     // FIXME: Need to communicate more information on the process exit status.
     getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
                                          status);
     return (status == 0);
+  }
+
+  // Reads a fd and executes callback on each read 
+  // until either EOF is encountered or have read all
+  // available data for now.
+  // Returns true if EOF is found and fd should be closed.
+  // Returns false if read all available data for now.
+  llvm::ErrorOr<bool> readFd(int& fd, 
+              std::function<void(StringRef)> callback,
+              LaneBasedExecutionQueueJobContext& context,
+              struct BuildExecutionQueueDelegate::ProcessHandle& handle) {
+    while (true) {
+      char buf[4096];
+      ssize_t numBytes = read(fd, buf, sizeof(buf));
+      // EOF.
+      if (numBytes == 0) {
+        break;
+      } else if (numBytes < 0) {
+        if (errno == EWOULDBLOCK)
+          return false;
+        else {
+          getDelegate().commandProcessHadError(
+              context.job.getForCommand(), handle,
+              Twine("Error while reading from spawned process (") + strerror(errno) + ")");
+          return errno;
+        }
+      }
+      if (callback) {
+        callback(StringRef(buf, numBytes));
+      } 
+    }
+    return true;
+  }
+
+  // Sets O_NONBLOCK flag in a fd.
+  // Returns true on success.
+  // Returns false and reports error on failure.
+  bool setNonBlockingFlag(int& fd,
+                          LaneBasedExecutionQueueJobContext& context,
+                          struct BuildExecutionQueueDelegate::ProcessHandle& handle) {
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) {
+      getDelegate().commandProcessHadError(
+          context.job.getForCommand(), handle,
+          Twine("unable to set the non-blocking flag in fd (") + strerror(errno) + ")");
+      getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
+          -1);
+      return false;
+    }
+    return true;
   }
 };
 

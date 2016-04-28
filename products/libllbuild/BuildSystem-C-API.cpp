@@ -232,17 +232,17 @@ public:
     }
   }
 
-  virtual void commandProcessHadOutput(Command* command, ProcessHandle handle,
-                                       StringRef data) override {
-    if (cAPIDelegate.command_process_had_output) {
-      llb_data_t cData{ data.size(), (const uint8_t*) data.data() };
-      cAPIDelegate.command_process_had_output(
-          cAPIDelegate.context,
-          (llb_buildsystem_command_t*) command,
-          (llb_buildsystem_process_t*) handle.id,
-          &cData);
-    }
-  }
+  //virtual void commandProcessHadOutput(Command* command, ProcessHandle handle,
+  //                                     StringRef data) override {
+  //  if (cAPIDelegate.command_process_had_output) {
+  //    llb_data_t cData{ data.size(), (const uint8_t*) data.data() };
+  //    cAPIDelegate.command_process_had_output(
+  //        cAPIDelegate.context,
+  //        (llb_buildsystem_command_t*) command,
+  //        (llb_buildsystem_process_t*) handle.id,
+  //        &cData);
+  //  }
+  //}
   
   virtual void commandProcessFinished(Command* command, ProcessHandle handle,
                                       int exitStatus) override {

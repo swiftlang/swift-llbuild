@@ -107,6 +107,12 @@ public:
   /// \param environment The environment to launch with. If empty, the process
   /// environment will be inherited.
   ///
+  /// \param hasPartialOutput Callback for stdout. Might be called multiple
+  /// times as output from output stream is available.
+  ///
+  /// \param hasPartialError Callback for stderr. Might be called multiple
+  /// times as output from error stream is available.
+  ///
   /// \returns True on success.
   //
   // FIXME: This interface will need to get more complicated, and provide the
@@ -114,7 +120,9 @@ public:
   virtual bool
   executeProcess(QueueJobContext* context,
                  ArrayRef<StringRef> commandLine,
-                 ArrayRef<std::pair<StringRef, StringRef>> environment) = 0;
+                 ArrayRef<std::pair<StringRef, StringRef>> environment,
+                 std::function<void(StringRef)> hasPartialOutput = nullptr,
+                 std::function<void(StringRef)> hasPartialError = nullptr) = 0;
 
   /// @}
 
@@ -206,13 +214,6 @@ public:
   virtual void commandProcessHadError(Command*, ProcessHandle handle,
                                       const Twine& message) = 0;
 
-  /// Called to report a command processes' (merged) standard output and error.
-  ///
-  /// \param handle - The process handle.
-  /// \param data - The process output.
-  virtual void commandProcessHadOutput(Command*, ProcessHandle handle,
-                                       StringRef data) = 0;
-  
   /// Called when a command's job has finished executing an external process.
   ///
   /// \param handle - The handle used to identify the process. This handle will

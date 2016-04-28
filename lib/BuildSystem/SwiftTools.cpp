@@ -566,8 +566,16 @@ public:
     if (!writeOutputFileMap(bsci, outputFileMapPath, depsFiles))
       return false;
 
+    auto outputCallback = [](StringRef data) {
+      fwrite(data.data(), data.size(), 1, stdout);
+      fflush(stdout);
+    };
+    auto errorCallback = [](StringRef data) {
+      fwrite(data.data(), data.size(), 1, stderr);
+      fflush(stderr);
+    };
     // Execute the command.
-    if (!bsci.getExecutionQueue().executeProcess(context, commandLine)) {
+    if (!bsci.getExecutionQueue().executeProcess(context, commandLine, {}, outputCallback, errorCallback)) {
       // If the command failed, there is no need to gather dependencies.
       return false;
     }
