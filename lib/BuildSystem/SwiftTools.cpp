@@ -31,6 +31,8 @@
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/SourceMgr.h"
+#include "llvm/Support/YAMLParser.h"
 
 using namespace llbuild;
 using namespace llbuild::core;
@@ -147,6 +149,8 @@ public:
   }
 };
 
+class SwiftCompilerOutputMessage;
+    
 class SwiftCompilerShellCommand : public ExternalCommand {
   /// The compiler command to invoke.
   std::string executable = "swiftc";
@@ -174,7 +178,11 @@ class SwiftCompilerShellCommand : public ExternalCommand {
 
   /// Whether the sources are part of a library or not.
   bool isLibrary = false;
-  
+
+  /// Contains the "began" messages produced by swiftc's parseable-output
+  /// mapped to their pid.
+  std::unordered_map<int32_t, SwiftCompilerOutputMessage> outputmap;
+
   virtual uint64_t getSignature() override {
     uint64_t result = ExternalCommand::getSignature();
     result ^= basic::hashString(executable);
@@ -231,6 +239,8 @@ class SwiftCompilerShellCommand : public ExternalCommand {
     for (const auto& arg: otherArgs) {
       result.push_back(arg);
     }
+
+    result.push_back("-parseable-output");
   }
   
 public:
@@ -523,7 +533,10 @@ public:
       return false;
 
     // Execute the command.
-    if (!bsci.getExecutionQueue().executeProcess(context, commandLine)) {
+
+    auto handler = std::bind(&SwiftCompilerShellCommand::partialOutputAvailable, this, std::placeholders::_1);
+
+    if (!bsci.getExecutionQueue().executeProcess(context, commandLine, handler)) {
       // If the command failed, there is no need to gather dependencies.
       return false;
     }
@@ -536,6 +549,48 @@ public:
     
     return true;
   }
+
+  std::string previousOutput;
+  ssize_t numBytes = 0;
+
+  void partialOutputAvailable(StringRef partialOutput) {
+    previousOutput.append(partialOutput);
+
+    do {
+      if (numBytes == 0) {
+        auto newLinePos = previousOutput.find("\n");
+        // Don't even have the first line yet.
+        if (newLinePos == std::string::npos) {
+          return;
+        }
+
+        StringRef numBytesString = previousOutput.substr(0, newLinePos);
+        if (StringRef(numBytesString).getAsInteger(10, numBytes)) {
+          numBytes = 0;
+          // Couldn't get number of bytes.
+          // Probably due to a compiler crash or bad output?
+          return;
+        }
+        // Remove the message length string.
+        previousOutput = previousOutput.substr(newLinePos+1, previousOutput.size()-numBytesString.size()-1);
+      }
+
+      // See if we have enough output to parse.
+      if (previousOutput.size() >= numBytes) {
+        std::string json = previousOutput.substr(0, numBytes);
+        parseCompilerOutputAndDisplay(json);
+        // Remove the JSON which we just read.
+        if (numBytes == previousOutput.size()) {
+          previousOutput = "";
+        } else {
+          previousOutput = previousOutput.substr(numBytes+1, previousOutput.size());
+        }
+        numBytes = 0;
+      }
+    } while(numBytes == 0);
+  }
+
+  void parseCompilerOutputAndDisplay(std::string jsonString);
 };
 
 class SwiftCompilerTool : public Tool {
@@ -575,8 +630,322 @@ public:
     return nullptr;
   }
 };
+
+class SwiftCompilerOutputMessage {
+public:
+  using Inputs_t = std::vector<std::string>;
+  enum class Kind {
+    Began = 0,
+    Finished,
+    Signalled,
+  };
+  
+private:
+  Kind kind;
+  std::string name;
+  std::string command;
+  Inputs_t  inputs;
+  std::string output;
+  int32_t pid;
+  int32_t exitStatus;
+  
+public:
+  Kind getKind() const  { return kind; }
+  void setKind(Kind kind) { this->kind = kind; }
+  
+  StringRef getName() const { return name; }
+  void setName(StringRef name) { this->name = name; }
+  
+  StringRef getCommand() const { return command; }
+  void setCommand(StringRef command) {
+    assert(kind == Kind::Began);
+    this->command = command;
+  }
+  
+  Inputs_t getInputs() const {
+    assert(kind == Kind::Began);
+    return inputs;
+  }
+  void setInputs(Inputs_t inputs) {
+    assert(kind == Kind::Began);
+    this->inputs = inputs;
+  }
+  
+  StringRef getOutput(){
+    return output;
+  }
+  void setOutput(StringRef output) {
+    this->output = output;
+  }
+  
+  uint32_t getPid() { return pid; }
+  void setPid(uint32_t pid) {
+    assert(kind == Kind::Began || kind == Kind::Finished);
+    this->pid = pid;
+  }
+  
+  uint32_t getExitStatus() { return exitStatus; }
+  void setExitStatus(uint32_t exitStatus) {
+    assert(kind == Kind::Finished);
+    this->exitStatus = exitStatus;
+  }
+};
+
+class SwiftCompilerOutputParserHelper {
+  StringRef jsonString;
+  using Kind = SwiftCompilerOutputMessage::Kind;
+public:
+  SwiftCompilerOutputParserHelper(StringRef jsonString): jsonString(jsonString) {}
+  
+  void error(StringRef error) {
+    llvm::errs() << error;
+  }
+  
+  std::string stringFromScalarNode(llvm::yaml::ScalarNode* scalar) {
+    SmallString<256> storage;
+    return scalar->getValue(storage).str();
+  }
+  
+  bool nodeIsScalarString(llvm::yaml::Node* node, StringRef name) {
+    if (node->getType() != llvm::yaml::Node::NK_Scalar)
+      return false;
+    
+    return stringFromScalarNode(
+                                static_cast<llvm::yaml::ScalarNode*>(node)) == name;
+  }
+  
+  bool parseKind(llvm::yaml::ScalarNode* entry, Kind* kind_out) {
+    auto kindString = stringFromScalarNode(entry);
+    if (kindString == "began") {
+      *kind_out = Kind::Began;
+      return true;
+    } else if (kindString == "finished") {
+      *kind_out = Kind::Finished;
+      return true;
+    }
+    return false;
+  }
+  
+  bool parseInteger(llvm::yaml::ScalarNode* entry, int64_t* out) {
+    SmallString<256> storage;
+    auto str = entry->getValue(storage);
+    
+    if (str.endswith("\n")) { // FIXME: why is this needed?
+      str = str.substr(0, str.size()-1);
+    }
+    return !str.getAsInteger(10, *out);
+  }
+  
+  bool parseInputs(llvm::yaml::SequenceNode* entries, std::vector<std::string>* inputs_out) {
+    for (auto& node: *entries) {
+      if (node.getType() != llvm::yaml::Node::NK_Scalar) {
+        error("unexpected 'inputs' value (expected scalar)");
+        return false;
+      }
+      inputs_out->push_back(stringFromScalarNode(static_cast<llvm::yaml::ScalarNode*>(&node)));
+    }
+    return true;
+  }
+  
+  bool parseRootNode(llvm::yaml::Node* node, SwiftCompilerOutputMessage& message_out) {
+    if (node->getType() != llvm::yaml::Node::NK_Mapping) {
+      error("unexpected top-level node");
+      return false;
+    }
+    
+    auto mapping = static_cast<llvm::yaml::MappingNode*>(node);
+    
+    auto it = mapping->begin();
+    // Get Kind.
+    if (!nodeIsScalarString(it->getKey(), "kind")) {
+      error("expected key 'kind'");
+      return false;
+    }
+    if (it->getValue()->getType() != llvm::yaml::Node::NK_Scalar) {
+      error("unexpected 'kind' value (expected scalar)");
+      return false;
+    }
+    Kind kind;
+    if(!parseKind(static_cast<llvm::yaml::ScalarNode*>(it->getValue()), &kind)) {
+      return false;
+    }
+    message_out.setKind(kind);
+    ++it;
+    
+    // Get Name.
+    if (!nodeIsScalarString(it->getKey(), "name")) {
+      error("expected key 'name'");
+      return false;
+    }
+    if (it->getValue()->getType() != llvm::yaml::Node::NK_Scalar) {
+      error("unexpected 'name' value (expected scalar)");
+      return false;
+    }
+    StringRef name = stringFromScalarNode(static_cast<llvm::yaml::ScalarNode*>(it->getValue()));
+    message_out.setName(name);
+    ++it;
+    
+    switch (kind) {
+      case Kind::Began:
+      {
+        // Get Command.
+        if (!nodeIsScalarString(it->getKey(), "command")) {
+          error("expected key 'command'");
+          return false;
+        }
+        if (it->getValue()->getType() != llvm::yaml::Node::NK_Scalar) {
+          error("unexpected 'command' value (expected scalar)");
+          return false;
+        }
+        StringRef command = stringFromScalarNode(static_cast<llvm::yaml::ScalarNode*>(it->getValue()));
+        message_out.setCommand(command);
+        ++it;
+        
+        // Get Inputs.
+        if (!nodeIsScalarString(it->getKey(), "inputs")) {
+          error("expected key 'inputs'");
+          return false;
+        }
+        if (it->getValue()->getType() != llvm::yaml::Node::NK_Sequence) {
+          error("unexpected 'inputs' value (expected sequence)");
+          return false;
+        }
+        
+        SwiftCompilerOutputMessage::Inputs_t inputs;
+        if(!parseInputs(static_cast<llvm::yaml::SequenceNode*>(it->getValue()), &inputs)) {
+          return false;
+        }
+        message_out.setInputs(inputs);
+        ++it;
+        
+        // Get Outputs. Not to parse for now.
+        if (!nodeIsScalarString(it->getKey(), "outputs")) {
+          error("expected key 'outputs'");
+          return false;
+        }
+        ++it;
+        
+        // Get pid.
+        if (!nodeIsScalarString(it->getKey(), "pid")) {
+          error("expected key 'pid'");
+          return false;
+        }
+        if (it->getValue()->getType() != llvm::yaml::Node::NK_Scalar) {
+          error("unexpected 'pid' value (expected scalar)");
+          return false;
+        }
+        int64_t pid;
+        if(!parseInteger(static_cast<llvm::yaml::ScalarNode*>(it->getValue()), &pid)) {
+          return false;
+        }
+        message_out.setPid(pid);
+        ++it;
+        
+        return true;
+        
+      }
+      case Kind::Finished:
+      {
+        //get pid
+        if (!nodeIsScalarString(it->getKey(), "pid")) {
+          error("expected key 'pid'");
+          return false;
+        }
+        if (it->getValue()->getType() != llvm::yaml::Node::NK_Scalar) {
+          error("unexpected 'pid' value (expected scalar)");
+          return false;
+        }
+        int64_t pid;
+        if(!parseInteger(static_cast<llvm::yaml::ScalarNode*>(it->getValue()), &pid)) {
+          return false;
+        }
+        message_out.setPid(pid);
+        ++it;
+        
+        std::string output;
+        // Get output if present.
+        if (nodeIsScalarString(it->getKey(), "output")) {
+          if (it->getValue()->getType() != llvm::yaml::Node::NK_Scalar) {
+            error("unexpected 'output' value (expected scalar)");
+            return false;
+          }
+          output = stringFromScalarNode(static_cast<llvm::yaml::ScalarNode*>(it->getValue()));
+          message_out.setOutput(output);
+          ++it;
+        }
+        
+        //get exit status
+        if (!nodeIsScalarString(it->getKey(), "exit-status")) {
+          error("expected key 'exit-status'");
+          return false;
+        }
+        if (it->getValue()->getType() != llvm::yaml::Node::NK_Scalar) {
+          error("unexpected 'exit-status' value (expected scalar)");
+          return false;
+        }
+        
+        int64_t exitStatus;
+        if(!parseInteger(static_cast<llvm::yaml::ScalarNode*>(it->getValue()), &exitStatus)) {
+          return false;
+        }
+        message_out.setExitStatus(exitStatus);
+        ++it;
+        
+        return true;
+        
+      }
+      case Kind::Signalled:
+        // FIXME: parse.
+        return false;
+    }
+    
+    return false;
+  }
+  
+  bool parse(SwiftCompilerOutputMessage& message_out) {
+    llvm::SourceMgr sourceMgr;
+    llvm::yaml::Stream stream(jsonString, sourceMgr);
+    
+    auto it = stream.begin();
+    if (it == stream.end()) {
+      error("missing document in stream");
+      return false;
+    }
+    
+    auto& document = *it;
+    return parseRootNode(document.getRoot(), message_out);
+  }
+  
+};
+
+void SwiftCompilerShellCommand::parseCompilerOutputAndDisplay(std::string jsonString) {
+  SwiftCompilerOutputParserHelper parser(jsonString);
+
+  SwiftCompilerOutputMessage message;
+  
+  // Couldn't parse, nothing to do.
+  if(!parser.parse(message)) {
+    return;
+  }
+
+  if (message.getKind() == SwiftCompilerOutputMessage::Kind::Began && message.getName() == "compile") {
+    llvm::outs() << "Compile " << message.getInputs().front() << "\n";
+    outputmap.insert(std::make_pair(message.getPid(), message));
+  } else if (message.getKind() == SwiftCompilerOutputMessage::Kind::Finished) {
+    if (message.getExitStatus() == 0) {
+      auto it = outputmap.find(message.getPid());
+      if (it != outputmap.end())
+        llvm::outs() << "Compiled " << it->second.getInputs().front()  << "\n";
+    } else if (!message.getOutput().empty()) {
+        llvm::outs() << message.getOutput()  << "\n";
+    }
+  }
+}
+
 }
 
 std::unique_ptr<Tool> buildsystem::createSwiftCompilerTool(StringRef name) {
   return llvm::make_unique<SwiftCompilerTool>(name);
 }
+
+

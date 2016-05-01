@@ -124,7 +124,8 @@ public:
   executeProcess(QueueJobContext* opaqueContext,
                  ArrayRef<StringRef> commandLine,
                  ArrayRef<std::pair<StringRef,
-                                    StringRef>> environment) override {
+                                    StringRef>> environment,
+                 std::function<void(StringRef)> partialOutputCallback) override {
     // Assign a process handle, which just needs to be unique for as long as we
     // are communicating with the delegate.
     struct BuildExecutionQueueDelegate::ProcessHandle handle;
@@ -296,7 +297,11 @@ public:
         if (numBytes == 0)
           break;
 
-        outputData.insert(outputData.end(), &buf[0], &buf[numBytes]);
+        if (partialOutputCallback) {
+          partialOutputCallback(std::string(buf, numBytes));
+        } else {
+          outputData.insert(outputData.end(), &buf[0], &buf[numBytes]);
+        }
       }
 
       // Close the read end of the pipe.
