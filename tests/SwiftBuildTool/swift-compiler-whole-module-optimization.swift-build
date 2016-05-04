@@ -1,0 +1,62 @@
+# Check that we communicate properly with the Swift compiler.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: sed -e "s#SOURCEDIR#%S#g" -e "s#TMPDIR#%t#g" < %s > %t.build/build.swift-build
+# RUN: %{swift-build-tool} --no-db --chdir %t.build > %t.out
+# RUN: %{swift-build-tool} --no-db -v --chdir %t.build > %t-verbose.out
+# RUN: %{FileCheck} --input-file=%t.out %s
+# RUN: %{FileCheck} --check-prefix=CHECK-VERBOSE --input-file=%t-verbose.out %s
+#
+# CHECK: Compile Swift Module 'Foo'
+# CHECK-VERBOSE: swiftc -module-name Bar -incremental -emit-dependencies -emit-module -emit-module-path Bar.swiftmodule -output-file-map bar.build/output-file-map.json -parse-as-library -whole-module-optimization -num-threads 1 -c s1.swift -I importB
+# CHECK-VERBOSE-NEXT: swiftc -module-name Foo -incremental -emit-dependencies -emit-module -emit-module-path Foo.swiftmodule -output-file-map foo.build/output-file-map.json -parse-as-library -whole-module-optimization -num-threads 0 -c s1.swift s2.swift -I importA -I importB -Onone -I somePath
+
+# # Sanity check the output file map.
+#
+# RUN: %{FileCheck} --check-prefix=CHECK-OUTPUT-FILE-MAP --input-file=%t.build/foo.build/output-file-map.json %s
+# CHECK-OUTPUT-FILE-MAP: "": {
+# CHECK-OUTPUT-FILE-MAP-NEXT: "dependencies": "foo.build/Foo.d"
+# CHECK-OUTPUT-FILE-MAP-NEXT: "object": "foo.build/Foo.o"
+#
+# RUN: %{FileCheck} --check-prefix=CHECK-OUTPUT-FILE-MAP-BAR --input-file=%t.build/bar.build/output-file-map.json %s
+# CHECK-OUTPUT-FILE-MAP-BAR: "": {
+# CHECK-OUTPUT-FILE-MAP-BAR-NEXT: "dependencies": "bar.build/Bar.d"
+
+
+client:
+  name: swift-build
+
+targets:
+  "": ["<output>"]
+
+commands:
+  C0:
+    tool: swift-compiler
+    outputs: ["<C0>"]
+    executable: SOURCEDIR/Inputs/pseudo-swiftc
+    module-name: Bar
+    module-output-path: Bar.swiftmodule
+    sources: ["s1.swift"]
+    import-paths: ["importB"]
+    objects: ["bar.build/s1.o"]
+    other-args: []
+    temps-path: bar.build
+    is-library: true
+    enable-whole-module-optimization: true
+    num-threads: 1 
+
+  C1:
+    tool: swift-compiler
+    inputs: ["<C0>"]
+    outputs: ["<output>"]
+    executable: SOURCEDIR/Inputs/pseudo-swiftc
+    module-name: Foo
+    module-output-path: Foo.swiftmodule
+    sources: ["s1.swift", "s2.swift"]
+    import-paths: ["importA", "importB"]
+    objects: ["foo.build/s1.o", "foo.build/s2.o"]
+    other-args: ["-Onone", "-I", "somePath"]
+    temps-path: foo.build
+    is-library: true
+    enable-whole-module-optimization: true
