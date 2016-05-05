@@ -175,6 +175,12 @@ class SwiftCompilerShellCommand : public ExternalCommand {
   /// Whether the sources are part of a library or not.
   bool isLibrary = false;
   
+  /// Whether to enable -whole-module-optimization.
+  bool enableWholeModuleOptimization = false;
+
+  /// Enables multi-threading with the thread count if > 0.
+  std::string numThreads = "0";
+
   virtual uint64_t getSignature() override {
     uint64_t result = ExternalCommand::getSignature();
     result ^= basic::hashString(executable);
@@ -220,6 +226,11 @@ class SwiftCompilerShellCommand : public ExternalCommand {
     if (isLibrary) {
       result.push_back("-parse-as-library");
     }
+    if (enableWholeModuleOptimization) {
+      result.push_back("-whole-module-optimization");
+    }
+    result.push_back("-num-threads");
+    result.push_back(numThreads);
     result.push_back("-c");
     for (const auto& source: sourcesList) {
       result.push_back(source);
@@ -289,12 +300,22 @@ public:
     } else if (name == "temps-path") {
       tempsPath = value;
     } else if (name == "is-library") {
-      if (value != "true" && value != "false") {
-        ctx.error("invalid value: '" + value + "' for attribute '" +
-                  name + "'");
+      if (!configureBool(ctx, isLibrary, name, value))
+        return false;
+    } else if (name == "enable-whole-module-optimization") {
+      if (!configureBool(ctx, enableWholeModuleOptimization, name, value))
+        return false;
+    } else if (name == "num-threads") {
+      int numThreadsInt = 0;
+      if (value.getAsInteger(10, numThreadsInt)) {
+        ctx.error("'" + name + "' should be an int.");
         return false;
       }
-      isLibrary = value == "true";
+      if (numThreadsInt < 0) {
+        ctx.error("'" + name + "' should be greater than or equal to zero.");
+        return false;
+      }
+      numThreads = value;
     } else if (name == "other-args") {
       SmallVector<StringRef, 32> args;
       StringRef(value).split(args, " ", /*MaxSplit=*/-1,
@@ -306,7 +327,19 @@ public:
 
     return true;
   }
-  
+
+  // Extracts and stores the bool value of an attribute inside "to" variable.
+  // Returns true on success and false on error.
+  bool configureBool(const ConfigureContext& ctx, bool& to, StringRef name, StringRef value) {
+    if (value != "true" && value != "false") {
+      ctx.error("invalid value: '" + value + "' for attribute '" +
+          name + "'");
+      return false;
+    }
+    to = value == "true";
+    return true;
+  }
+
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   ArrayRef<StringRef> values) override {
     if (name == "sources") {
@@ -353,6 +386,15 @@ public:
     SmallString<16> masterDepsPath;
     llvm::sys::path::append(masterDepsPath, tempsPath, "master.swiftdeps");
     os << "  \"\": {\n";
+    if (enableWholeModuleOptimization) {
+      SmallString<16> depsPath;
+      llvm::sys::path::append(depsPath, tempsPath, moduleName + ".d");
+      depsFiles_out.push_back(depsPath.str());
+      SmallString<16> object;
+      llvm::sys::path::append(object, tempsPath, moduleName + ".o");
+      os << "    \"dependencies\": \"" << depsPath << "\",\n";
+      os << "    \"object\": \"" << object << "\",\n";
+    }
     os << "    \"swift-dependencies\": \"" << masterDepsPath << "\"\n";
     os << "  },\n";
 
@@ -361,18 +403,20 @@ public:
       auto source = sourcesList[i];
       auto object = objectsList[i];
       auto sourceStem = llvm::sys::path::stem(source);
-      SmallString<16> depsPath;
-      llvm::sys::path::append(depsPath, tempsPath, sourceStem + ".d");
       SmallString<16> partialModulePath;
       llvm::sys::path::append(partialModulePath, tempsPath,
                               sourceStem + "~partial.swiftmodule");
       SmallString<16> swiftDepsPath;
       llvm::sys::path::append(swiftDepsPath, tempsPath,
                               sourceStem + ".swiftdeps");
-      depsFiles_out.push_back(depsPath.str());
       
       os << "  \"" << source << "\": {\n";
-      os << "    \"dependencies\": \"" << depsPath << "\",\n";
+      if (!enableWholeModuleOptimization) {
+        SmallString<16> depsPath;
+        llvm::sys::path::append(depsPath, tempsPath, sourceStem + ".d");
+        os << "    \"dependencies\": \"" << depsPath << "\",\n";
+        depsFiles_out.push_back(depsPath.str());
+      }
       os << "    \"object\": \"" << object << "\",\n";
       os << "    \"swiftmodule\": \"" << partialModulePath << "\",\n";
       os << "    \"swift-dependencies\": \"" << swiftDepsPath << "\"\n";

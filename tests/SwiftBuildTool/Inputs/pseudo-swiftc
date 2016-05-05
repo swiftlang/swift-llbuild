@@ -16,6 +16,8 @@ def main():
     parser.add_argument('-emit-module-path', type=str)
     parser.add_argument('-emit-dependencies', action='store_true')
     parser.add_argument('-parse-as-library', action='store_true')
+    parser.add_argument('-whole-module-optimization', action='store_true')
+    parser.add_argument('-num-threads', type=int) 
     parser.add_argument('-I', type=str)
     parser.add_argument('-O', type=str)
     parser.add_argument('-c', dest="compile", action='store_true')
@@ -48,18 +50,39 @@ def main():
         
     # Write dummy outputs.
     if output_file_map is not None:
+        writeAllDeps = True
+        deps = None
+        if args.whole_module_optimization: 
+            # Write only one dep file for entire module.
+            writeAllDeps = False
+            deps = output_file_map[""]["dependencies"]
+            if os.path.exists(deps):
+                os.remove(deps)
+            # Non-parallel WMO mode.
+            if not args.num_threads > 0: 
+                # Write only one object file for entiremodule.
+                object = output_file_map[""]["object"]
+                writeObject(object) 
+                writeDeps(object, deps, args.add_dep, False)
+                return
+
         for key,item in output_file_map.items():
             if key == "":
                 continue
-
-            deps = item["dependencies"]
             object = item["object"]
-            with open(object, "w") as f:
-                f.write("<dummy>")
-
+            writeObject(object) 
             # Write dummy dependencies.
-            with open(deps, "w") as f:
-                f.write("%s: %s\n" % (object, ' '.join(args.add_dep or [])))
+            if writeAllDeps:
+                deps = item["dependencies"]
+            writeDeps(object, deps, args.add_dep, not writeAllDeps)
+
+def writeDeps(object, deps, add_dep, append):
+    with open(deps, "a" if append else "w") as f:
+        f.write("%s: %s\n" % (object, ' '.join(add_dep or [])))
+
+def writeObject(object):
+    with open(object, "w") as f:
+        f.write("<dummy>")
 
 if __name__ == '__main__':
     main()

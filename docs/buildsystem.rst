@@ -569,6 +569,14 @@ exact version of the Swift compiler in use (as reported by ``swiftc
        ``swiftc`` executable. Examples of individual values include
        ``"-enable-testing"`` or ``"-Onone"``.
 
+   * - enable-whole-module-optimization
+     - A boolean indicating whether to enable pass ``-whole-module-optimization``
+       flag to swiftc.
+
+   * - num-threads
+     - An integer which enables multithreading if greater than 0 and specifies 
+       the number of threads to use. Sets swiftc's ``-num-threads`` flags.
+
 Archive Tool
 ------------
 
