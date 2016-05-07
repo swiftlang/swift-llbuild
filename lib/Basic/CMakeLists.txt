@@ -4,6 +4,7 @@ add_llbuild_library(llbuildBasic
   Hashing.cpp
   SerialQueue.cpp
   Version.cpp
+  ShellUtility.cpp
   )
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")

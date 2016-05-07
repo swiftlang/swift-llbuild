@@ -11,7 +11,7 @@
 # CHECK: /usr/bin/env
 # CHECK-NOT: PATH=
 # CHECK: ENV_KEY=ENV_VALUE
-# CHECK: cp "input A" output
+# CHECK: cp 'input A' output
 
 # Check the engine trace.
 #
@@ -30,7 +30,7 @@
 # RUN: echo "PREVENT-EMPTY-FILE" >> %t2.out
 # RUN: %{FileCheck} --input-file=%t2.out %s --check-prefix=CHECK-REBUILD
 #
-# CHECK-REBUILD-NOT: cp "input A" output
+# CHECK-REBUILD-NOT: cp 'input A' output
 
 # Check that we properly copy the output when the input changes.
 #
@@ -39,7 +39,7 @@
 # RUN: %{FileCheck} --input-file=%t3.out %s --check-prefix=CHECK-REBUILD-MODIFIED
 # RUN: diff "%t.build/input A" %t.build/output
 #
-# CHECK-REBUILD-MODIFIED: cp "input A" output
+# CHECK-REBUILD-MODIFIED: cp 'input A' output
 
 # Check that we properly copy the output when the output isn't present.
 #
@@ -48,7 +48,7 @@
 # RUN: %{FileCheck} --input-file=%t4.out %s --check-prefix=CHECK-REBUILD-OUTPUT-REMOVED
 # RUN: diff "%t.build/input A" %t.build/output
 #
-# CHECK-REBUILD-OUTPUT-REMOVED: cp "input A" output
+# CHECK-REBUILD-OUTPUT-REMOVED: cp 'input A' output
 
 client:
   name: basic
