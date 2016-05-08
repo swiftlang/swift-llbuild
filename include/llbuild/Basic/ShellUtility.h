@@ -10,8 +10,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLBUILD_BASIC_SHELL_UTILITY_H
-#define LLBUILD_BASIC_SHELL_UTILITY_H
+#ifndef LLBUILD_BASIC_SHELLUTILITY_H
+#define LLBUILD_BASIC_SHELLUTILITY_H
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/raw_ostream.h"
