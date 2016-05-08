@@ -17,6 +17,7 @@
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/Basic/Hashing.h"
 #include "llbuild/Basic/LLVM.h"
+#include "llbuild/Basic/ShellUtility.h"
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/BuildEngine.h"
 #include "llbuild/Core/DependencyInfoParser.h"
@@ -1066,12 +1067,7 @@ public:
     for (const auto& arg: args) {
       if (!first) os << " ";
       first = false;
-      // FIXME: This isn't correct, we need utilities for doing shell quoting.
-      if (arg.find(' ') != StringRef::npos) {
-        os << '"' << arg << '"';
-      } else {
-        os << arg;
-      }
+      basic::appendShellEscapedString(os, arg);
     }
   }
   
