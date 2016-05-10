@@ -375,7 +375,7 @@ public class BuildEngine {
     // Initialize the delegate.
     _delegate.context = unsafeBitCast(Unmanaged.passUnretained(self), to: UnsafeMutablePointer<Void>.self)
 
-    _delegate.lookup_rule = { BuildEngine.toEngine($0).lookupRule($1, $2) }
+    _delegate.lookup_rule = { BuildEngine.toEngine($0!).lookupRule($1!, $2!) }
     // FIXME: Include cycleDetected callback.
 
     // Create the engine.
@@ -480,16 +480,16 @@ public class BuildEngine {
     // FIXME: We need a deallocation callback in order to ensure this is released.
     ruleOut.pointee.context = unsafeBitCast(Unmanaged.passRetained(Wrapper(rule)), to: UnsafeMutablePointer<Void>.self)
     ruleOut.pointee.create_task = { (context, engineContext) -> OpaquePointer! in
-      let rule = BuildEngine.toRule(context)
-      let engine = BuildEngine.toEngine(engineContext)
+      let rule = BuildEngine.toRule(context!)
+      let engine = BuildEngine.toEngine(engineContext!)
       return engine.ruleCreateTask(rule)
     }
     ruleOut.pointee.is_result_valid = { (context, engineContext, internalRule, value) -> Bool in
-      let rule = BuildEngine.toRule(context)
-      return rule.isResultValid(Value.fromInternalData(value.pointee))
+      let rule = BuildEngine.toRule(context!)
+      return rule.isResultValid(Value.fromInternalData(value!.pointee))
     }
     ruleOut.pointee.update_status =  { (context, engineContext, status) in
-      let rule = BuildEngine.toRule(context)
+      let rule = BuildEngine.toRule(context!)
       let status = { (kind: llb_rule_status_kind_t) -> RuleStatus in
         switch kind.rawValue {
           case llb_rule_is_scanning.rawValue: return .IsScanning
@@ -520,15 +520,15 @@ public class BuildEngine {
     // FIXME: We need a deallocation callback in order to ensure this is released.
     taskDelegate.context = unsafeBitCast(Unmanaged.passRetained(taskWrapper), to: UnsafeMutablePointer<Void>.self)
     taskDelegate.start = { (context, engineContext, internalTask) in
-      let taskWrapper = BuildEngine.toTaskWrapper(context)
+      let taskWrapper = BuildEngine.toTaskWrapper(context!)
       taskWrapper.task.start(taskWrapper)
     }
     taskDelegate.provide_value = { (context, engineContext, internalTask, inputID, value) in
-      let taskWrapper = BuildEngine.toTaskWrapper(context)
-      taskWrapper.task.provideValue(taskWrapper, inputID: Int(inputID), value: Value.fromInternalData(value.pointee))
+      let taskWrapper = BuildEngine.toTaskWrapper(context!)
+      taskWrapper.task.provideValue(taskWrapper, inputID: Int(inputID), value: Value.fromInternalData(value!.pointee))
     }
     taskDelegate.inputs_available = { (context, engineContext, internalTask) in
-      let taskWrapper = BuildEngine.toTaskWrapper(context)
+      let taskWrapper = BuildEngine.toTaskWrapper(context!)
       taskWrapper.task.inputsAvailable(taskWrapper)
     }
 
