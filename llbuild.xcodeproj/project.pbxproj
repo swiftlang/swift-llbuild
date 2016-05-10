@@ -107,6 +107,7 @@
 		E1604CAB1BB9E01D001153A1 /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
 		E1604CB51BB9E03E001153A1 /* swift-build-tool.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1604CB41BB9E032001153A1 /* swift-build-tool.cpp */; };
 		E171538D1A0BF702004CD598 /* CorePerfTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = E171538C1A0BF702004CD598 /* CorePerfTests.mm */; };
+		E17440C31CE192FF0070A30C /* ShellUtility.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E17440C21CE192FF0070A30C /* ShellUtility.cpp */; };
 		E19D79921A15D9E6002604FB /* MakefileDepsParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */; };
 		E19D79951A15DA06002604FB /* MakefileDepsParserTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E19D79941A15DA06002604FB /* MakefileDepsParserTest.cpp */; };
 		E1A0B0FF1C971582006DA08F /* DependencyInfoParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B0FE1C971581006DA08F /* DependencyInfoParser.cpp */; };
@@ -661,6 +662,8 @@
 		E1604CB31BB9E032001153A1 /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1604CB41BB9E032001153A1 /* swift-build-tool.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "swift-build-tool.cpp"; sourceTree = "<group>"; };
 		E171538C1A0BF702004CD598 /* CorePerfTests.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = CorePerfTests.mm; sourceTree = "<group>"; };
+		E17440C11CE192E30070A30C /* ShellUtility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShellUtility.h; sourceTree = "<group>"; };
+		E17440C21CE192FF0070A30C /* ShellUtility.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ShellUtility.cpp; sourceTree = "<group>"; };
 		E17C29E41B5AAA2F00C12DA9 /* create-target-link.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "create-target-link.sh"; sourceTree = "<group>"; };
 		E17C29F21B5AC18C00C12DA9 /* install-user-sphinx.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "install-user-sphinx.sh"; sourceTree = "<group>"; };
 		E17C29F31B5AC2A700C12DA9 /* build-sphinx-docs.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "build-sphinx-docs.sh"; sourceTree = "<group>"; };
@@ -1212,6 +1215,7 @@
 				E138129D1C536D0E000092C0 /* FileSystem.cpp */,
 				E1FE53401AB1343B00041B8E /* Hashing.cpp */,
 				E147DEFA1BA81CF70032D08E /* SerialQueue.cpp */,
+				E17440C21CE192FF0070A30C /* ShellUtility.cpp */,
 				E1A2240719F991530059043E /* Version.cpp */,
 			);
 			path = Basic;
@@ -1274,6 +1278,7 @@
 				E147DEFD1BA81D0E0032D08E /* Hashing.h */,
 				E1066C091BC5BCE700B892CE /* LLVM.h */,
 				E147DEFC1BA81D0E0032D08E /* SerialQueue.h */,
+				E17440C11CE192E30070A30C /* ShellUtility.h */,
 				E1A2245119F997D40059043E /* Version.h */,
 			);
 			name = Headers;
@@ -2180,51 +2185,82 @@
 				TargetAttributes = {
 					E10D5CD919FEBF6A00211ED4 = {
 						CreatedOnToolsVersion = 6.3;
+						ProvisioningStyle = Manual;
+					};
+					E147DEFE1BA81D330032D08E = {
+						ProvisioningStyle = Manual;
+					};
+					E1604C951BB9E01D001153A1 = {
+						ProvisioningStyle = Manual;
 					};
 					E178FCC11A1BF3270039F8B5 = {
 						CreatedOnToolsVersion = 6.3;
+						ProvisioningStyle = Manual;
 					};
 					E17C29ED1B5AC12B00C12DA9 = {
 						CreatedOnToolsVersion = 7.0;
+						ProvisioningStyle = Manual;
 					};
 					E180432F1A00122900662FE7 = {
 						CreatedOnToolsVersion = 6.3;
+						ProvisioningStyle = Manual;
 					};
 					E1A2242419F991B40059043E = {
 						CreatedOnToolsVersion = 6.3;
+						ProvisioningStyle = Manual;
 					};
 					E1A2242D19F997050059043E = {
 						CreatedOnToolsVersion = 6.3;
+						ProvisioningStyle = Manual;
 					};
 					E1A2243519F9970D0059043E = {
 						CreatedOnToolsVersion = 6.3;
+						ProvisioningStyle = Manual;
 					};
 					E1A2243D19F997150059043E = {
 						CreatedOnToolsVersion = 6.3;
+						ProvisioningStyle = Manual;
 					};
 					E1A224C219F999B80059043E = {
 						CreatedOnToolsVersion = 6.3;
+						ProvisioningStyle = Manual;
 					};
 					E1A224DC19F99B0E0059043E = {
 						CreatedOnToolsVersion = 6.3;
+						ProvisioningStyle = Manual;
 					};
 					E1A224E519F99C580059043E = {
 						CreatedOnToolsVersion = 6.3;
+						ProvisioningStyle = Manual;
 					};
 					E1A224EE19F99D880059043E = {
 						CreatedOnToolsVersion = 6.3;
+						ProvisioningStyle = Manual;
+					};
+					E1A224F819F99DFD0059043E = {
+						ProvisioningStyle = Manual;
 					};
 					E1A2254219F9A20D0059043E = {
 						CreatedOnToolsVersion = 6.3;
+						ProvisioningStyle = Manual;
 					};
 					E1ADC2391A85936400D5387C = {
 						CreatedOnToolsVersion = 7.0;
+						ProvisioningStyle = Manual;
+					};
+					E1B838981B52E7DE00DB876B = {
+						ProvisioningStyle = Manual;
+					};
+					E1B839481B541BFD00DB876B = {
+						ProvisioningStyle = Manual;
 					};
 					E1C404AB1A0308F3003392BA = {
 						CreatedOnToolsVersion = 6.3;
+						ProvisioningStyle = Manual;
 					};
 					E1D191BD1B47232B000C4E95 = {
 						CreatedOnToolsVersion = 7.0;
+						ProvisioningStyle = Manual;
 					};
 				};
 			};
@@ -2452,6 +2488,7 @@
 				E11470941B7555FA00ED84CF /* FileInfo.cpp in Sources */,
 				E147DEFB1BA81CF70032D08E /* SerialQueue.cpp in Sources */,
 				E1A224BE19F9995E0059043E /* Version.cpp in Sources */,
+				E17440C31CE192FF0070A30C /* ShellUtility.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
