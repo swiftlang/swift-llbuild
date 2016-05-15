@@ -997,12 +997,12 @@ class ShellCommand : public ExternalCommand {
       }
 
       virtual void actOnRuleDependency(const char* dependency,
-                                       uint64_t length) override {
+                                       uint64_t length, const SmallString<256> &unescapedWord) override {
         bsci.taskDiscoveredDependency(
-            task, BuildKey::makeNode(StringRef(dependency, length)));
+            task, BuildKey::makeNode(unescapedWord.str()));
       }
 
-      virtual void actOnRuleStart(const char* name, uint64_t length) override {}
+      virtual void actOnRuleStart(const char* name, uint64_t length, const SmallString<256> &unescapedWord) override {}
       virtual void actOnRuleEnd() override {}
     };
 
@@ -1241,12 +1241,12 @@ class ClangShellCommand : public ExternalCommand {
       }
 
       virtual void actOnRuleDependency(const char* dependency,
-                                       uint64_t length) override {
+                                       uint64_t length, const SmallString<256> &unescapedWord) override {
         bsci.taskDiscoveredDependency(
-            task, BuildKey::makeNode(StringRef(dependency, length)));
+            task, BuildKey::makeNode(unescapedWord.str()));
       }
 
-      virtual void actOnRuleStart(const char* name, uint64_t length) override {}
+      virtual void actOnRuleStart(const char* name, uint64_t length, const SmallString<256> &unescapedWord) override {}
       virtual void actOnRuleEnd() override {}
     };
 

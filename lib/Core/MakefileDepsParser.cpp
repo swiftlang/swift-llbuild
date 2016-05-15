@@ -12,6 +12,7 @@
 
 #include "llbuild/Core/MakefileDepsParser.h"
 
+using namespace llvm;
 using namespace llbuild;
 using namespace llbuild::core;
 
@@ -86,7 +87,8 @@ static void skipToEndOfLine(const char*& cur, const char* end) {
   }
 }
 
-static void lexWord(const char*& cur, const char* end) {
+static void lexWord(const char*& cur, const char* end, SmallVectorImpl<char> &unescapedWord) {
+    unescapedWord.clear();
   for (; cur != end; ++cur) {
     int c = *cur;
 
@@ -98,18 +100,28 @@ static void lexWord(const char*& cur, const char* end) {
 
       // Otherwise, skip the escaped character.
       ++cur;
+      // Escape if the escaped character was not a space and something
+      // else like $.
+      if (*cur != ' ')
+          unescapedWord.push_back(c);
+      // Append the character that was escaped.
+      unescapedWord.push_back(*cur);
       continue;
     }
 
     // Otherwise, if this is not a valid word character then skip it.
     if (!isWordChar(*cur))
       break;
+    // Append the current character to unescaped word.
+    unescapedWord.push_back(c);
   }
 }
 
 void MakefileDepsParser::parse() {
   const char* cur = data;
   const char* end = data + length;
+  // Storage for currently begin lexed unescaped word.
+  SmallString<256> unescapedWord;
 
   // While we have input data...
   while (cur != end) {
@@ -122,13 +134,13 @@ void MakefileDepsParser::parse() {
     
     // The next token should be a word.
     const char* wordStart = cur;
-    lexWord(cur, end);
+    lexWord(cur, end, unescapedWord);
     if (cur == wordStart) {
       actions.error("unexpected character in file", cur - data);
       skipToEndOfLine(cur, end);
       continue;
     }
-    actions.actOnRuleStart(wordStart, cur - wordStart);
+    actions.actOnRuleStart(wordStart, cur - wordStart, unescapedWord);
 
     // The next token should be a colon.
     skipNonNewlineWhitespace(cur, end);
@@ -151,13 +163,13 @@ void MakefileDepsParser::parse() {
 
       // Otherwise, we should have a word.
       const char* wordStart = cur;
-      lexWord(cur, end);
+      lexWord(cur, end, unescapedWord);
       if (cur == wordStart) {
         actions.error("unexpected character in prerequisites", cur - data);
         skipToEndOfLine(cur, end);
         continue;
       }
-      actions.actOnRuleDependency(wordStart, cur - wordStart);
+      actions.actOnRuleDependency(wordStart, cur - wordStart, unescapedWord);
     }
     actions.actOnRuleEnd();
   }
