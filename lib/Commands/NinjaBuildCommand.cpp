@@ -29,6 +29,7 @@
 #include <atomic>
 #include <cerrno>
 #include <condition_variable>
+#include <cstdarg>
 #include <cstdlib>
 #include <deque>
 #include <mutex>
