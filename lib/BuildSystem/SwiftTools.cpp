@@ -24,6 +24,7 @@
 #include "llbuild/Core/MakefileDepsParser.h"
 
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/Hashing.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Twine.h"
@@ -182,25 +183,27 @@ class SwiftCompilerShellCommand : public ExternalCommand {
   std::string numThreads = "0";
 
   virtual uint64_t getSignature() override {
-    uint64_t result = ExternalCommand::getSignature();
-    result ^= basic::hashString(executable);
-    result ^= basic::hashString(moduleName);
-    result ^= basic::hashString(moduleOutputPath);
+    // FIXME: Use a more appropriate hashing infrastructure.
+    using llvm::hash_combine;
+    llvm::hash_code code = ExternalCommand::getSignature();
+    code = hash_combine(code, executable);
+    code = hash_combine(code, moduleName);
+    code = hash_combine(code, moduleOutputPath);
     for (const auto& item: sourcesList) {
-      result ^= basic::hashString(item);
+      code = hash_combine(code, item);
     }
     for (const auto& item: objectsList) {
-      result ^= basic::hashString(item);
+      code = hash_combine(code, item);
     }
     for (const auto& item: importPaths) {
-      result ^= basic::hashString(item);
+      code = hash_combine(code, item);
     }
-    result ^= basic::hashString(tempsPath);
+    code = hash_combine(code, tempsPath);
     for (const auto& item: otherArgs) {
-      result ^= basic::hashString(item);
+      code = hash_combine(code, item);
     }
-    result ^= isLibrary;
-    return result;
+    code = hash_combine(code, isLibrary);
+    return size_t(code);
   }
 
   /// Get the path to use for the output file map.

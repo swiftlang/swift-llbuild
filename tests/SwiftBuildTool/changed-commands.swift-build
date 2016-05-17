@@ -1,0 +1,68 @@
+# Check that we behave properly when a command changes.
+#
+# This is a regression test for a subtle bug when our hash function was too
+# trivial, and ended up reversing itself due to trivial XOR combining.
+#
+# We use 'grep' to slice out two different subfiles from the same file.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: touch %t.build/s1.swift %t.build/s2.swift
+#
+# RUN: grep -A1000 "VERSION-BEGIN-[1]" %s | grep -B10000 "VERSION-END-1" | grep -ve '^--$' > %t.build/build.swift-build
+# RUN: sed -i "" -e "s#SOURCEDIR#%S#g" -e "s#TMPDIR#%t#g" %t.build/build.swift-build
+# RUN: %{swift-build-tool} -v --chdir %t.build > %t1.out
+# RUN: %{FileCheck} --check-prefix CHECK-VERSION-1 --input-file %t1.out %s
+#
+# RUN: grep -A1000 "VERSION-BEGIN-[2]" %s | grep -B10000 "VERSION-END-2" | grep -ve '^--$' > %t.build/build.swift-build
+# RUN: sed -i "" -e "s#SOURCEDIR#%S#g" -e "s#TMPDIR#%t#g" %t.build/build.swift-build
+# RUN: %{swift-build-tool} -v --chdir %t.build > %t2.out
+# RUN: %{FileCheck} --check-prefix CHECK-VERSION-2 --input-file %t2.out %s
+
+##### VERSION-BEGIN-1 #####
+
+# CHECK-VERSION-1: swiftc {{.*}} s1.swift s2.swift
+client:
+  name: swift-build
+
+targets:
+  "": ["s1.o"]
+
+commands:
+  C1:
+    tool: swift-compiler
+    inputs: ["s1.swift", "s2.swift"]
+    outputs: ["s1.o", "s2.o"]
+    executable: SOURCEDIR/Inputs/pseudo-swiftc
+    module-name: Foo
+    module-output-path: Foo.swiftmodule
+    sources: ["s1.swift", "s2.swift"]
+    objects: ["s1.o", "s2.o"]
+    temps-path: temps
+    is-library: true
+    
+##### VERSION-END-1 #####
+
+##### VERSION-BEGIN-2 #####
+
+# CHECK-VERSION-2: swiftc {{.*}} s1.swift
+client:
+  name: swift-build
+
+targets:
+  "": ["s1.o"]
+
+commands:
+  C1:
+    tool: swift-compiler
+    inputs: ["s1.swift"]
+    outputs: ["s1.o"]
+    executable: SOURCEDIR/Inputs/pseudo-swiftc
+    module-name: Foo
+    module-output-path: Foo.swiftmodule
+    sources: ["s1.swift"]
+    objects: ["s1.o"]
+    temps-path: temps
+    is-library: true
+
+##### VERSION-END-2 #####
