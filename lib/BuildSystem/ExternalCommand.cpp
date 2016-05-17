@@ -23,6 +23,7 @@
 #include "llbuild/Basic/FileInfo.h"
 #include "llbuild/Basic/LLVM.h"
 
+#include "llvm/ADT/Hashing.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
@@ -32,23 +33,19 @@ using namespace llbuild::basic;
 using namespace llbuild::buildsystem;
 
 uint64_t ExternalCommand::getSignature() {
-  uint64_t result = 0;
+  // FIXME: Use a more appropriate hashing infrastructure.
+  using llvm::hash_combine;
+  llvm::hash_code code = hash_value(getName());
   for (const auto* input: inputs) {
-    result ^= basic::hashString(input->getName());
+    code = hash_combine(code, input->getName());
   }
   for (const auto* output: outputs) {
-    result ^= basic::hashString(output->getName());
+    code = hash_combine(code, output->getName());
   }
-  if (allowMissingInputs) {
-    result ^= 0x1;
-  }
-  if (allowModifiedOutputs) {
-    result ^= 0x2;
-  }
-  if (alwaysOutOfDate) {
-    result ^= 0x4;
-  }
-  return result;
+  code = hash_combine(code, allowMissingInputs);
+  code = hash_combine(code, allowModifiedOutputs);
+  code = hash_combine(code, alwaysOutOfDate);
+  return size_t(code);
 }
 
 void ExternalCommand::configureDescription(const ConfigureContext&,
