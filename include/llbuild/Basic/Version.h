@@ -13,9 +13,9 @@
 #ifndef LLBUILD_BASIC_VERSION_H
 #define LLBUILD_BASIC_VERSION_H
 
-#include <llbuild/Basic/LLVM.h>
+#include "llbuild/Basic/LLVM.h"
 
-#include <llvm/ADT/StringRef.h>
+#include "llvm/ADT/StringRef.h"
 
 #include <string>
 
