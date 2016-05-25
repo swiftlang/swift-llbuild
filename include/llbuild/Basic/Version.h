@@ -13,10 +13,19 @@
 #ifndef LLBUILD_BASIC_VERSION_H
 #define LLBUILD_BASIC_VERSION_H
 
+#include <llbuild/Basic/LLVM.h>
+
+#include <llvm/ADT/StringRef.h>
+
 #include <string>
 
 namespace llbuild {
-    std::string getLLBuildFullVersion();
+
+/// Get the version string.
+///
+/// \param productName The name of the product to embed in the string.
+std::string getLLBuildFullVersion(StringRef productName = "llbuild");
+
 }
 
 #endif

@@ -13,6 +13,7 @@
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
 
 #include "llbuild/Basic/FileSystem.h"
+#include "llbuild/Basic/Version.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/SwiftTools.h"
 
@@ -67,6 +68,10 @@ static int execute(ArrayRef<std::string> args) {
   // Handle invocation actions.
   if (invocation.showUsage) {
     usage(0);
+  } else if (invocation.showVersion) {
+    // Print the version and exit.
+    printf("%s\n", getLLBuildFullVersion("swift-build-tool").c_str());
+    return 0;
   } else if (invocation.hadErrors) {
     usage(1);
   }

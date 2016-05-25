@@ -38,6 +38,7 @@ void BuildSystemInvocation::getUsage(int optionWidth, raw_ostream& os) {
     llvm::StringRef option, helpText;
   } options[] = {
     { "--help", "show this help message and exit" },
+    { "--version", "show the tool version" },
     { "-C <PATH>, --chdir <PATH>", "change directory to PATH before building" },
     { "--no-db", "disable use of a build database" },
     { "--db <PATH>", "enable building against the database at PATH" },
@@ -78,6 +79,9 @@ void BuildSystemInvocation::parse(llvm::ArrayRef<std::string> args,
     
     if (option == "--help") {
       showUsage = true;
+      break;
+    } else if (option == "--version") {
+      showVersion = true;
       break;
     } else if (option == "--no-db") {
       dbPath = "";
@@ -452,7 +456,8 @@ bool BuildSystemFrontend::build(StringRef targetToBuild) {
     // file.
     SmallString<256> tmp;
     StringRef dbPath = invocation.dbPath;
-    if (llvm::sys::path::is_relative(invocation.dbPath) && dbPath.find("://") == StringRef::npos && !dbPath.startswith(":")) {
+    if (llvm::sys::path::is_relative(invocation.dbPath) &&
+        dbPath.find("://") == StringRef::npos && !dbPath.startswith(":")) {
       llvm::sys::path::append(
           tmp, llvm::sys::path::parent_path(invocation.buildFilePath),
           invocation.dbPath);

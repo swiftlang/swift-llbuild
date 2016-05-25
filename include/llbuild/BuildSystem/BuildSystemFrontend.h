@@ -245,8 +245,11 @@ public:
 /// This class wraps the common options which are used by the frontend.
 class BuildSystemInvocation {
 public:
-  /// Whether command usage should be printed.
+  /// Whether the command usage should be printed.
   bool showUsage = false;
+
+  /// Whether the command version should be printed.
+  bool showVersion = false;
 
   /// Whether to show verbose output.
   bool showVerboseStatus = false;
