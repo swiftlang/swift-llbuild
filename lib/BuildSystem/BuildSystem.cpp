@@ -1200,15 +1200,18 @@ public:
 
 class ClangShellCommand : public ExternalCommand {
   /// The compiler command to invoke.
-  std::string args;
+  std::vector<std::string> args;
   
   /// The path to the dependency output file, if used.
   std::string depsPath;
   
   virtual uint64_t getSignature() override {
-    uint64_t result = ExternalCommand::getSignature();
-    result ^= basic::hashString(args);
-    return result;
+    using llvm::hash_combine;
+    llvm::hash_code code = ExternalCommand::getSignature();
+    for (const auto& arg: args) {
+      code = hash_combine(code, arg);
+    }
+    return size_t(code);
   }
 
   bool processDiscoveredDependencies(BuildSystemCommandInterface& bsci,
@@ -1267,13 +1270,24 @@ public:
   }
 
   virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
-    llvm::raw_svector_ostream(result) << args;
+    llvm::raw_svector_ostream os(result);
+    bool first = true;
+    for (const auto& arg: args) {
+      if (!first) os << " ";
+      first = false;
+      basic::appendShellEscapedString(os, arg);
+    }
   }
   
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
     if (name == "args") {
-      args = value;
+      // When provided as a scalar string, we default to executing using the
+      // shell.
+      args.clear();
+      args.push_back("/bin/sh");
+      args.push_back("-c");
+      args.push_back(value);
     } else if (name == "deps") {
       depsPath = value;
     } else {
@@ -1284,7 +1298,13 @@ public:
   }
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   ArrayRef<StringRef> values) override {
-    return ExternalCommand::configureAttribute(ctx, name, values);
+    if (name == "args") {
+      args = std::vector<std::string>(values.begin(), values.end());
+    } else {
+        return ExternalCommand::configureAttribute(ctx, name, values);
+    }
+
+    return true;
   }
   virtual bool configureAttribute(
       const ConfigureContext& ctx, StringRef name,
@@ -1295,8 +1315,13 @@ public:
   virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
                                       Task* task,
                                       QueueJobContext* context) override {
+    std::vector<StringRef> commandLine;
+    for (const auto& arg: args) {
+      commandLine.push_back(arg);
+    }
+
     // Execute the command.
-    if (!bsci.getExecutionQueue().executeShellCommand(context, args)) {
+    if (!bsci.getExecutionQueue().executeProcess(context, commandLine)) {
       // If the command failed, there is no need to gather dependencies.
       return false;
     }
