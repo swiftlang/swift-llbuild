@@ -65,7 +65,7 @@ nodes:
 # CHECK: command('link-hello')
 # CHECK:  -- 'tool': 'link'
 # CHECK:  -- 'description': 'LINK'
-# CHECK:  -- 'inputs': ['hello.o']
+# CHECK:  -- 'inputs': ['hello.o', 'bye.o']
 # CHECK:  -- 'outputs': ['hello']
 # CHECK:  -- -- loaded command('link-hello')
 # CHECK: command('cc-hello.o')
@@ -76,11 +76,18 @@ nodes:
 # CHECK:  -- 'extra-map': {
 # CHECK:  --   'key': 'value'
 # CHECK:  -- }
+# CHECK: tool('clang')
+# CHECK: command('bye.o')
+# CHECK:   -- 'tool': 'clang')
+# CHECK:   -- 'inputs': ['bye.c']
+# CHECK:   -- 'outputs': ['bye.o']
+# CHECK:   -- 'args': ['-O0', '-g']
+# CHECK:   -- -- loaded command('bye.o')
 commands:
   link-hello:
     tool: link
     description: LINK
-    inputs: ["hello.o"]
+    inputs: ["hello.o", "bye.o"]
     outputs: ["hello"]
   cc-hello.o:
     tool: cc
@@ -89,3 +96,8 @@ commands:
     args: ["-O0"]
     extra-map:
       key: value
+  bye.o:
+    tool: clang
+    inputs: ["bye.c"]
+    outputs: ["bye.o"]
+    args: ["-O0", "-g"]
