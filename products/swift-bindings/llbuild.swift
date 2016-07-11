@@ -68,12 +68,12 @@ public struct Key: CustomStringConvertible, Equatable, Hashable {
   }
 
   /// Create a Key object from an llb_data_t.
-  private static func fromInternalData(_ data: llb_data_t) -> Key {
+  fileprivate static func fromInternalData(_ data: llb_data_t) -> Key {
     return Key([UInt8](UnsafeBufferPointer(start: data.data, count: Int(data.length))))
   }
 
   /// Provide a Key contents as an llb_data_t pointer.
-  private func withInternalDataPtr<T>(closure: @noescape (UnsafePointer<llb_data_t>) -> T) -> T {
+  fileprivate func withInternalDataPtr<T>(closure: @noescape (UnsafePointer<llb_data_t>) -> T) -> T {
     return data.withUnsafeBufferPointer { (dataPtr: UnsafeBufferPointer<UInt8>) -> T in
         var value = llb_data_t(length: UInt64(self.data.count), data: dataPtr.baseAddress)
         return withUnsafePointer(&value, closure)
@@ -102,12 +102,12 @@ public struct Value: CustomStringConvertible {
   }
     
   /// Create a Value object from an llb_data_t.
-  private static func fromInternalData(_ data: llb_data_t) -> Value {
+  fileprivate static func fromInternalData(_ data: llb_data_t) -> Value {
     return Value([UInt8](UnsafeBufferPointer(start: data.data, count: Int(data.length))))
   }
 
   /// Provide a Value contents as an llb_data_t pointer.
-  private func withInternalDataPtr<T>(closure: @noescape (UnsafePointer<llb_data_t>) -> T) -> T {
+  fileprivate func withInternalDataPtr<T>(closure: @noescape (UnsafePointer<llb_data_t>) -> T) -> T {
     return data.withUnsafeBufferPointer { (dataPtr: UnsafeBufferPointer<UInt8>) -> T in
         var value = llb_data_t(length: UInt64(self.data.count), data: dataPtr.baseAddress)
         return withUnsafePointer(&value, closure)
@@ -120,7 +120,7 @@ public struct Value: CustomStringConvertible {
   /// use. The structure *must* be filled in by the closure.
   ///
   /// \return The output Value.
-  private static func fromInternalDataOutputPtr(closure: @noescape (UnsafeMutablePointer<llb_data_t>) -> Void) -> Value {
+  fileprivate static func fromInternalDataOutputPtr(closure: @noescape (UnsafeMutablePointer<llb_data_t>) -> Void) -> Value {
     var data = llb_data_t()
     withUnsafeMutablePointer(&data, closure)
     return Value.fromInternalData(data)
@@ -428,25 +428,25 @@ public class BuildEngine {
 
   /// MARK: Internal Task-Only API
 
-  private func taskNeedsInput(_ taskWrapper: TaskWrapper, key: Key, inputID: Int) {
+  fileprivate func taskNeedsInput(_ taskWrapper: TaskWrapper, key: Key, inputID: Int) {
     key.withInternalDataPtr { keyPtr in
       llb_buildengine_task_needs_input(self._engine, taskWrapper.taskInternal, keyPtr, UInt(inputID))
     }
   }
 
-  private func taskMustFollow(_ taskWrapper: TaskWrapper, key: Key) {
+  fileprivate func taskMustFollow(_ taskWrapper: TaskWrapper, key: Key) {
     key.withInternalDataPtr { keyPtr in
       llb_buildengine_task_must_follow(self._engine, taskWrapper.taskInternal, keyPtr)
     }
   }
 
-  private func taskDiscoveredDependency(_ taskWrapper: TaskWrapper, key: Key) {
+  fileprivate func taskDiscoveredDependency(_ taskWrapper: TaskWrapper, key: Key) {
     key.withInternalDataPtr { keyPtr in
       llb_buildengine_task_discovered_dependency(self._engine, taskWrapper.taskInternal, keyPtr)
     }
   }
 
-  private func taskIsComplete(_ taskWrapper: TaskWrapper, result: Value, forceChange: Bool = false) {
+  fileprivate func taskIsComplete(_ taskWrapper: TaskWrapper, result: Value, forceChange: Bool = false) {
     result.withInternalDataPtr { dataPtr in
       llb_buildengine_task_is_complete(self._engine, taskWrapper.taskInternal, dataPtr, forceChange)
     }
@@ -455,21 +455,21 @@ public class BuildEngine {
   /// MARK: Internal Delegate Implementation
 
   /// Helper function for getting the engine from the delegate context.
-  static private func toEngine(_ context: UnsafeMutablePointer<Void>) -> BuildEngine {
+  static fileprivate func toEngine(_ context: UnsafeMutablePointer<Void>) -> BuildEngine {
     return Unmanaged<BuildEngine>.fromOpaque(unsafeBitCast(context, to: OpaquePointer.self)).takeUnretainedValue()
   }
 
   /// Helper function for getting the rule from a rule delegate context.
-  static private func toRule(_ context: UnsafeMutablePointer<Void>) -> Rule {
+  static fileprivate func toRule(_ context: UnsafeMutablePointer<Void>) -> Rule {
     return Unmanaged<Wrapper<Rule>>.fromOpaque(unsafeBitCast(context, to: OpaquePointer.self)).takeUnretainedValue().item
   }
 
   /// Helper function for getting the task from a task delegate context.
-  static private func toTaskWrapper(_ context: UnsafeMutablePointer<Void>) -> TaskWrapper {
+  static fileprivate func toTaskWrapper(_ context: UnsafeMutablePointer<Void>) -> TaskWrapper {
     return Unmanaged<TaskWrapper>.fromOpaque(unsafeBitCast(context, to: OpaquePointer.self)).takeUnretainedValue()
   }
   
-  private func lookupRule(_ key: UnsafePointer<llb_data_t>, _ ruleOut: UnsafeMutablePointer<llb_rule_t>) {
+  fileprivate func lookupRule(_ key: UnsafePointer<llb_data_t>, _ ruleOut: UnsafeMutablePointer<llb_rule_t>) {
     numRules += 1
     
     // Get the rule from the client.
