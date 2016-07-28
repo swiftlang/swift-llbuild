@@ -373,7 +373,7 @@ public class BuildEngine {
     self.delegate = delegate
 
     // Initialize the delegate.
-    _delegate.context = unsafeBitCast(Unmanaged.passUnretained(self), to: UnsafeMutablePointer<Void>.self)
+    _delegate.context = unsafeBitCast(Unmanaged.passUnretained(self), to: UnsafeMutableRawPointer.self)
 
     _delegate.lookup_rule = { BuildEngine.toEngine($0!).lookupRule($1!, $2!) }
     // FIXME: Include cycleDetected callback.
@@ -455,17 +455,17 @@ public class BuildEngine {
   /// MARK: Internal Delegate Implementation
 
   /// Helper function for getting the engine from the delegate context.
-  static fileprivate func toEngine(_ context: UnsafeMutablePointer<Void>) -> BuildEngine {
+  static fileprivate func toEngine(_ context: UnsafeMutableRawPointer) -> BuildEngine {
     return Unmanaged<BuildEngine>.fromOpaque(unsafeBitCast(context, to: OpaquePointer.self)).takeUnretainedValue()
   }
 
   /// Helper function for getting the rule from a rule delegate context.
-  static fileprivate func toRule(_ context: UnsafeMutablePointer<Void>) -> Rule {
+  static fileprivate func toRule(_ context: UnsafeMutableRawPointer) -> Rule {
     return Unmanaged<Wrapper<Rule>>.fromOpaque(unsafeBitCast(context, to: OpaquePointer.self)).takeUnretainedValue().item
   }
 
   /// Helper function for getting the task from a task delegate context.
-  static fileprivate func toTaskWrapper(_ context: UnsafeMutablePointer<Void>) -> TaskWrapper {
+  static fileprivate func toTaskWrapper(_ context: UnsafeMutableRawPointer) -> TaskWrapper {
     return Unmanaged<TaskWrapper>.fromOpaque(unsafeBitCast(context, to: OpaquePointer.self)).takeUnretainedValue()
   }
   
@@ -478,7 +478,7 @@ public class BuildEngine {
     // Fill in the output structure.
     //
     // FIXME: We need a deallocation callback in order to ensure this is released.
-    ruleOut.pointee.context = unsafeBitCast(Unmanaged.passRetained(Wrapper(rule)), to: UnsafeMutablePointer<Void>.self)
+    ruleOut.pointee.context = unsafeBitCast(Unmanaged.passRetained(Wrapper(rule)), to: UnsafeMutableRawPointer.self)
     ruleOut.pointee.create_task = { (context, engineContext) -> OpaquePointer! in
       let rule = BuildEngine.toRule(context!)
       let engine = BuildEngine.toEngine(engineContext!)
@@ -518,7 +518,7 @@ public class BuildEngine {
     // FIXME: Separate the delegate from the context pointer.
     var taskDelegate = llb_task_delegate_t()
     // FIXME: We need a deallocation callback in order to ensure this is released.
-    taskDelegate.context = unsafeBitCast(Unmanaged.passRetained(taskWrapper), to: UnsafeMutablePointer<Void>.self)
+    taskDelegate.context = unsafeBitCast(Unmanaged.passRetained(taskWrapper), to: UnsafeMutableRawPointer.self)
     taskDelegate.start = { (context, engineContext, internalTask) in
       let taskWrapper = BuildEngine.toTaskWrapper(context!)
       taskWrapper.task.start(taskWrapper)
