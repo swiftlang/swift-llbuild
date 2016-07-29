@@ -13,7 +13,10 @@
 #ifndef LLBUILD_CORE_MAKEFILEDEPSPARSER_H
 #define LLBUILD_CORE_MAKEFILEDEPSPARSER_H
 
+#include "llvm/ADT/SmallString.h"
 #include <cstdint>
+
+using namespace llvm;
 
 namespace llbuild {
 namespace core {
@@ -36,13 +39,14 @@ public:
     virtual void error(const char* message, uint64_t position) = 0;
 
     /// Called when a new rule is encountered.
-    virtual void actOnRuleStart(const char* name, uint64_t length) = 0;
+    virtual void actOnRuleStart(const char* name, uint64_t length, const SmallString<256> &unescapedWord) = 0;
     /// Called when a new dependency is found for the current rule.
     ///
     /// This is only called between paired calls to \see actOnRuleStart() and
     /// \see actOnRuleEnd().
     virtual void actOnRuleDependency(const char* dependency,
-                                     uint64_t length) = 0;
+                                     uint64_t length, const SmallString<256> &unescapedWord) = 0;
+
     /// Called when a rule is complete.
     virtual void actOnRuleEnd() = 0;
   };
