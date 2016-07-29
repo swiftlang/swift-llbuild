@@ -468,16 +468,19 @@ public:
       }
 
       virtual void actOnRuleDependency(const char* dependency,
-                                       uint64_t length) override {
+                                       uint64_t length,
+                                       const StringRef unescapedWord) override {
         // Only process dependencies for the first rule (the output file), the
         // rest are identical.
         if (ruleNumber == 0) {
           bsci.taskDiscoveredDependency(
-              task, BuildKey::makeNode(StringRef(dependency, length)));
+              task, BuildKey::makeNode(unescapedWord));
         }
       }
 
-      virtual void actOnRuleStart(const char* name, uint64_t length) override {}
+      virtual void actOnRuleStart(const char* name, uint64_t length,
+                                  const StringRef unescapedWord) override {}
+
       virtual void actOnRuleEnd() override {
         ++ruleNumber;
       }

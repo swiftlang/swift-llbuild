@@ -5,7 +5,7 @@
 
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
-# RUN: touch %t.build/header-1 %t.build/input-1
+# RUN: touch %t.build/header\ with\ space-1 %t.build/input-1
 # RUN: cp %s %t.build/build.llbuild
 
 
@@ -20,7 +20,7 @@
 
 # Check a build that modifies the header.
 #
-# RUN: echo "mod" >> %t.build/header-1
+# RUN: echo "mod" >> %t.build/header\ with\ space-1
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build &> %t2.out
 # RUN: %{FileCheck} --check-prefix=CHECK-AFTER-MOD --input-file=%t2.out %s
 #
@@ -38,7 +38,7 @@ commands:
     tool: shell
     inputs: ["input-1"]
     outputs: ["output-1"]
-    args: "echo \"output-1: input-1 header-1\" > output-1.d && cat input-1 header-1 > output-1"
+    args: "echo \"output-1: input-1 header\\ with\\ space-1\" > output-1.d && cat input-1 header\\ with\\ space-1 > output-1"
     description: CC output-1
     deps: output-1.d
     deps-style: makefile

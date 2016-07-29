@@ -1376,13 +1376,14 @@ buildCommand(BuildContext& context, ninja::Command* command) {
           }
 
           virtual void actOnRuleDependency(const char* dependency,
-                                           uint64_t length) override {
-            context.engine.taskDiscoveredDependency(
-              task, std::string(dependency, dependency+length));
+                                           uint64_t length,
+                                           const StringRef
+                                             unescapedWord) override {
+            context.engine.taskDiscoveredDependency(task, unescapedWord);
           }
 
-          virtual void actOnRuleStart(const char* name,
-                                      uint64_t length) override {}
+          virtual void actOnRuleStart(const char* name, uint64_t length,
+                                      const StringRef unescapedWord) override {}
           virtual void actOnRuleEnd() override {}
         };
 

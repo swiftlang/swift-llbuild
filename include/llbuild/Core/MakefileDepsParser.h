@@ -13,6 +13,10 @@
 #ifndef LLBUILD_CORE_MAKEFILEDEPSPARSER_H
 #define LLBUILD_CORE_MAKEFILEDEPSPARSER_H
 
+#include "llbuild/Basic/LLVM.h"
+
+#include "llvm/ADT/StringRef.h"
+
 #include <cstdint>
 
 namespace llbuild {
@@ -36,13 +40,30 @@ public:
     virtual void error(const char* message, uint64_t position) = 0;
 
     /// Called when a new rule is encountered.
-    virtual void actOnRuleStart(const char* name, uint64_t length) = 0;
+    ///
+    /// \param name - A pointer to the rule name string start.
+    ///
+    /// \param length - The raw length of the rule name string, including escape
+    /// sequences.
+    ///
+    /// \param unescapedWord - An unescaped version of the name.
+    virtual void actOnRuleStart(const char* name, uint64_t length,
+                                const StringRef unescapedWord) = 0;
+
     /// Called when a new dependency is found for the current rule.
     ///
     /// This is only called between paired calls to \see actOnRuleStart() and
     /// \see actOnRuleEnd().
-    virtual void actOnRuleDependency(const char* dependency,
-                                     uint64_t length) = 0;
+    ///
+    /// \param dependency - A pointer to the dependency string start.
+    ///
+    /// \param length - The raw length of the dependency string, including
+    /// escape sequences.
+    ///
+    /// \param unescapedWord - An unescaped version of the dependency.
+    virtual void actOnRuleDependency(const char* dependency, uint64_t length,
+                                     const StringRef unescapedWord) = 0;
+
     /// Called when a rule is complete.
     virtual void actOnRuleEnd() = 0;
   };

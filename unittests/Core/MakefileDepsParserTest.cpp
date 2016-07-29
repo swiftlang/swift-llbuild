@@ -33,15 +33,15 @@ TEST(MakefileDepsParserTest, basic) {
       errors.push_back({ message, length });
     }
 
-    virtual void actOnRuleStart(const char* name, uint64_t length) override {
-      records.push_back({ std::string(name, name + length), {} });
+    virtual void actOnRuleStart(const char* name, uint64_t length,
+                                const StringRef unescapedWord) override {
+      records.push_back({ unescapedWord.str(), {} });
     }
 
-    virtual void actOnRuleDependency(const char* dependency,
-                                     uint64_t length) override {
+    virtual void actOnRuleDependency(const char* dependency, uint64_t length,
+                                     const StringRef unescapedWord) override {
       assert(!records.empty());
-      records.back().second.push_back(std::string(dependency,
-                                                  dependency+length));
+      records.back().second.push_back(unescapedWord.str());
     }
     virtual void actOnRuleEnd() override {}
   };
@@ -66,6 +66,17 @@ TEST(MakefileDepsParserTest, basic) {
   EXPECT_EQ(1U, actions.records.size());
   EXPECT_EQ(RuleRecord("a", { "b", "c", "d" }),
             actions.records[0]);
+
+  // Check a valid input with various escaped spaces.
+  actions.errors.clear();
+  actions.records.clear();
+  input = "a\\ b: a\\ b a$$b a\\b a\\#b a\\\\\\ b";
+  MakefileDepsParser(input.data(), input.size(), actions).parse();
+  EXPECT_EQ(0U, actions.errors.size());
+  EXPECT_EQ(1U, actions.records.size());
+  EXPECT_EQ(RuleRecord("a b", {
+        "a b", "a$b", "a\\b", "a#b", "a\\ b" }),
+    actions.records[0]);
 
   // Check a basic valid input with two rules.
   actions.errors.clear();
