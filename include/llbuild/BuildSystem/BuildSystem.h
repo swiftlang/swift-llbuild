@@ -197,7 +197,8 @@ public:
 
   /// Build the named target.
   ///
-  /// \returns True on success.
+  /// \returns True on success, or false if the build was aborted (for example,
+  /// if a cycle was discovered).
   bool build(StringRef target);
 
   /// @}

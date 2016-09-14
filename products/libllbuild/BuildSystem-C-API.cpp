@@ -343,7 +343,7 @@ public:
     frontendDelegate->resetForBuild();
 
     // FIXME: We probably should return a context to represent the running
-    // build, instead of keeping state (like cancellation) in the delegate).
+    // build, instead of keeping state (like cancellation) in the delegate.
     return getFrontend().build(key);
   }
 

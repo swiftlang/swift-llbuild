@@ -106,7 +106,7 @@ public:
 /// The delegate used to build a loaded build file.
 class BuildSystemEngineDelegate : public BuildEngineDelegate {
   BuildSystemImpl& system;
-
+  
   // FIXME: This is an inefficent map, the string is duplicated.
   std::unordered_map<std::string, std::unique_ptr<BuildNode>> dynamicNodes;
 
@@ -153,6 +153,9 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
   /// The execution queue reference; this is only valid while a build is
   /// actually in progress.
   std::unique_ptr<BuildExecutionQueue> executionQueue;
+
+  /// Flag indicating if the build has been aborted.
+  bool buildWasAborted = false;
 
   /// @name BuildSystemCommandInterface Implementation
   /// @{
@@ -263,6 +266,10 @@ public:
 
   bool build(StringRef target);
 
+  void setBuildWasAborted(bool value) {
+    buildWasAborted = value;
+  }
+    
   /// @}
 };
 
@@ -751,6 +758,9 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
 }
 
 void BuildSystemEngineDelegate::cycleDetected(const std::vector<Rule*>& cycle) {
+  // Track that the build has been aborted.
+  getBuildSystem().setBuildWasAborted(true);
+  
   // Compute a description of the cycle path.
   SmallString<256> message;
   llvm::raw_svector_ostream os(message);
@@ -816,6 +826,7 @@ bool BuildSystemImpl::build(StringRef target) {
   }
 
   // Build the target.
+  buildWasAborted = false;
   getBuildEngine().build(BuildKey::makeTarget(target).toData());
 
   // Release the execution queue, impicitly waiting for it to complete. The
@@ -825,7 +836,7 @@ bool BuildSystemImpl::build(StringRef target) {
   // completion).
   executionQueue.reset();
 
-  return true;
+  return !buildWasAborted;
 }
 
 #pragma mark - PhonyTool implementation

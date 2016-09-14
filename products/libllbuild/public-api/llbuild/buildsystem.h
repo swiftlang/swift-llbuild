@@ -298,6 +298,9 @@ llb_buildsystem_destroy(llb_buildsystem_t* system);
 ///
 /// It is an unchecked error for the client to request multiple builds
 /// concurrently.
+///
+/// \returns True on success, or false if the build was aborted (for example, if
+/// a cycle was discovered).
 LLBUILD_EXPORT bool
 llb_buildsystem_build(llb_buildsystem_t* system, const llb_data_t* key);
 
