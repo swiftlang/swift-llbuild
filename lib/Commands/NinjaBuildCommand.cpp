@@ -1169,9 +1169,11 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       }
       posix_spawnattr_setsigdefault(&attributes, &mostSignals);
 #else
-      sigset_t allSignals;
-      sigfillset(&allSignals);
-      posix_spawnattr_setsigdefault(&attributes, &allSignals);
+      sigset_t mostSignals;
+      sigfillset(&mostSignals);
+      sigdelset(&mostSignals, SIGKILL);
+      sigdelset(&mostSignals, SIGSTOP);
+      posix_spawnattr_setsigdefault(&attributes, &mostSignals);
 #endif
 
       // Establish a separate process group.
