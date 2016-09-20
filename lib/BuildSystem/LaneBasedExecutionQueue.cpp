@@ -159,10 +159,12 @@ public:
     }
     posix_spawnattr_setsigdefault(&attributes, &mostSignals);
 #else
-    sigset_t allSignals;
-    sigfillset(&allSignals);
-    posix_spawnattr_setsigdefault(&attributes, &allSignals);
-#endif      
+    sigset_t mostSignals;
+    sigfillset(&mostSignals);
+    sigdelset(&mostSignals, SIGKILL);
+    sigdelset(&mostSignals, SIGSTOP);
+    posix_spawnattr_setsigdefault(&attributes, &mostSignals);
+#endif
 
     // Establish a separate process group.
     posix_spawnattr_setpgroup(&attributes, 0);
