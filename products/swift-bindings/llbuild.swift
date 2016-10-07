@@ -10,30 +10,30 @@
 
 import Foundation
 
-enum DatabaseError: ErrorProtocol {
+enum DatabaseError: Error {
   case AttachFailure(message: String)
 }
 
 private func stringFromData(data: llb_data_t) -> String {
   // Convert as a UTF8 string, if possible.
-  let tmp = NSData(bytes: unsafeBitCast(data.data, to: UnsafePointer<Void>.self), length: Int(data.length))
-  if let str = NSString(data: tmp, encoding: NSUTF8StringEncoding) {
-    return String(str)
+  let tmp = NSData(bytes: unsafeBitCast(data.data, to: UnsafeRawPointer.self), length: Int(data.length))
+  if let str = String(data: tmp as Data, encoding: String.Encoding.utf8) {
+    return str
   }
     
   // Otherwise, return a string representation of the bytes.
-  return String([UInt8](UnsafeBufferPointer(start: data.data, count: Int(data.length))))
+  return String(describing: [UInt8](UnsafeBufferPointer(start: data.data, count: Int(data.length))))
 }
 
 private func stringFromUInt8Array(_ data: [UInt8]) -> String {
   // Convert as a UTF8 string, if possible.
   let tmp = NSData(bytes: data, length: data.count)
-  if let str = NSString(data: tmp, encoding: NSUTF8StringEncoding) {
-    return String(str)
+  if let str = String(data: tmp as Data, encoding: String.Encoding.utf8) {
+    return str
   }
     
   // Otherwise, return a string representation of the bytes.
-  return String(data)
+  return String(describing: data)
 }
 
 /// Key objects are used to identify rules that can be built.
@@ -73,10 +73,10 @@ public struct Key: CustomStringConvertible, Equatable, Hashable {
   }
 
   /// Provide a Key contents as an llb_data_t pointer.
-  fileprivate func withInternalDataPtr<T>(closure: @noescape (UnsafePointer<llb_data_t>) -> T) -> T {
+  fileprivate func withInternalDataPtr<T>(closure: (UnsafePointer<llb_data_t>) -> T) -> T {
     return data.withUnsafeBufferPointer { (dataPtr: UnsafeBufferPointer<UInt8>) -> T in
         var value = llb_data_t(length: UInt64(self.data.count), data: dataPtr.baseAddress)
-        return withUnsafePointer(&value, closure)
+        return withUnsafePointer(to: &value, closure)
     }
   }
 }
@@ -107,10 +107,10 @@ public struct Value: CustomStringConvertible {
   }
 
   /// Provide a Value contents as an llb_data_t pointer.
-  fileprivate func withInternalDataPtr<T>(closure: @noescape (UnsafePointer<llb_data_t>) -> T) -> T {
+  fileprivate func withInternalDataPtr<T>(closure: (UnsafePointer<llb_data_t>) -> T) -> T {
     return data.withUnsafeBufferPointer { (dataPtr: UnsafeBufferPointer<UInt8>) -> T in
         var value = llb_data_t(length: UInt64(self.data.count), data: dataPtr.baseAddress)
-        return withUnsafePointer(&value, closure)
+      return withUnsafePointer(to: &value, closure)
     }
   }
     
@@ -120,9 +120,9 @@ public struct Value: CustomStringConvertible {
   /// use. The structure *must* be filled in by the closure.
   ///
   /// \return The output Value.
-  fileprivate static func fromInternalDataOutputPtr(closure: @noescape (UnsafeMutablePointer<llb_data_t>) -> Void) -> Value {
+  fileprivate static func fromInternalDataOutputPtr(closure: (UnsafeMutablePointer<llb_data_t>) -> Void) -> Value {
     var data = llb_data_t()
-    withUnsafeMutablePointer(&data, closure)
+    withUnsafeMutablePointer(to: &data, closure)
     return Value.fromInternalData(data)
   }
 }
@@ -407,7 +407,7 @@ public class BuildEngine {
   /// it is an error to attach a database after adding rules or initiating any
   /// builds, or to attempt to attach multiple databases.
   public func attachDB(path: String, schemaVersion: Int = 0) throws {
-    let errorPtr = UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>(allocatingCapacity: 1)
+    let errorPtr = UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>.allocate(capacity: 1)
     defer { errorPtr.deinitialize(count: 1) }
 
     // FIXME: Why do I have to name the closure signature here?
@@ -456,17 +456,17 @@ public class BuildEngine {
 
   /// Helper function for getting the engine from the delegate context.
   static fileprivate func toEngine(_ context: UnsafeMutableRawPointer) -> BuildEngine {
-    return Unmanaged<BuildEngine>.fromOpaque(unsafeBitCast(context, to: OpaquePointer.self)).takeUnretainedValue()
+    return Unmanaged<BuildEngine>.fromOpaque(context).takeUnretainedValue()
   }
 
   /// Helper function for getting the rule from a rule delegate context.
   static fileprivate func toRule(_ context: UnsafeMutableRawPointer) -> Rule {
-    return Unmanaged<Wrapper<Rule>>.fromOpaque(unsafeBitCast(context, to: OpaquePointer.self)).takeUnretainedValue().item
+    return Unmanaged<Wrapper<Rule>>.fromOpaque(context).takeUnretainedValue().item
   }
 
   /// Helper function for getting the task from a task delegate context.
   static fileprivate func toTaskWrapper(_ context: UnsafeMutableRawPointer) -> TaskWrapper {
-    return Unmanaged<TaskWrapper>.fromOpaque(unsafeBitCast(context, to: OpaquePointer.self)).takeUnretainedValue()
+    return Unmanaged<TaskWrapper>.fromOpaque(context).takeUnretainedValue()
   }
   
   fileprivate func lookupRule(_ key: UnsafePointer<llb_data_t>, _ ruleOut: UnsafeMutablePointer<llb_rule_t>) {

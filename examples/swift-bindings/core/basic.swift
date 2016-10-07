@@ -1,13 +1,13 @@
 import llbuild
 
-typealias Compute = [Int] -> Int
+typealias Compute = ([Int]) -> Int
 
 class SimpleTask: Task {
   let inputs: [Key]
   var values: [Int]
   let compute: Compute
 	
-  init(_ inputs: [Key], compute: Compute) {
+  init(_ inputs: [Key], compute: @escaping Compute) {
     self.inputs = inputs
     values = [Int](repeating: 0, count: inputs.count)
     self.compute = compute
@@ -62,7 +62,7 @@ class SimpleBuildEngineDelegate: BuildEngineDelegate {
 class SimpleRule: Rule {
   let inputs: [Key]
   let compute: Compute
-  init(_ inputs: [Key], compute: Compute) { 
+  init(_ inputs: [Key], compute: @escaping Compute) { 
     self.inputs = inputs 
     self.compute = compute
   } 
