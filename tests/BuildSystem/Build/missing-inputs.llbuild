@@ -7,6 +7,7 @@
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.llbuild
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build &> %t.out || true
+# RUN: cat %t.out
 # RUN: %{FileCheck} %s --input-file %t.out --check-prefix=CHECK-FAILURE
 #
 # CHECK-FAILURE: missing input 'input' and no rule to build it
@@ -15,6 +16,7 @@
 
 # RUN: touch %t.build/input
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build &> %t2.out || true
+# RUN: cat %t2.out
 # RUN: %{FileCheck} %s --input-file %t2.out --check-prefix=CHECK-FAILURE-2
 #
 # At this point, we have unblocked the commands, and commands are allowed to run
