@@ -244,6 +244,10 @@ public:
   /// @{
 
   /// Build the result for a particular key.
+  ///
+  /// \returns The result of computing the key, or the empty value if the key
+  /// could not be computed; the latter case only happens if a cycle was
+  /// discovered currently.
   const ValueType& build(const KeyType& key);
 
   /// Attach a database for persisting build state.
