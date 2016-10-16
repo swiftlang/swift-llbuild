@@ -187,11 +187,19 @@ class BuildEngineImpl {
       assert(isScanning());
       return inProgressInfo.pendingScanRecord;
     }
+    const RuleScanRecord* getPendingScanRecord() const {
+      assert(isScanning());
+      return inProgressInfo.pendingScanRecord;
+    }
     void setPendingScanRecord(RuleScanRecord* value) {
       inProgressInfo.pendingScanRecord = value;
     }
 
     TaskInfo* getPendingTaskInfo() {
+      assert(isInProgress());
+      return inProgressInfo.pendingTaskInfo;
+    }
+    const TaskInfo* getPendingTaskInfo() const {
       assert(isInProgress());
       return inProgressInfo.pendingTaskInfo;
     }
@@ -869,7 +877,7 @@ private:
 
     // Gather all of the successor relationships.
     std::unordered_map<Rule*, std::vector<Rule*>> graph;
-    std::vector<RuleScanRecord *> activeRuleScanRecords;
+    std::vector<const RuleScanRecord *> activeRuleScanRecords;
     for (const auto& it: taskInfos) {
       const TaskInfo& taskInfo = it.second;
       assert(taskInfo.forRuleInfo);
@@ -881,13 +889,21 @@ private:
       for (const auto& request: taskInfo.deferredScanRequests) {
         // Add the sucessor for the deferred relationship itself.
         successors.push_back(&request.ruleInfo->rule);
-          
-        // Add the active rule scan record which needs to be traversed.
-        assert(request.ruleInfo->isScanning());
-        activeRuleScanRecords.push_back(
-            request.ruleInfo->getPendingScanRecord());
       }
       graph.insert({ &taskInfo.forRuleInfo->rule, successors });
+    }
+
+    // Add the pending scan records for every rule.
+    //
+    // NOTE: There is a very subtle condition around this versus adding the ones
+    // accessible via the tasks, see https://bugs.swift.org/browse/SR-1948.
+    // Unfortunately, we do not have a test case for this!
+    for (const auto& it: ruleInfos) {
+      const RuleInfo& ruleInfo = it.second;
+      if (ruleInfo.isScanning()) {
+        const auto* scanRecord = ruleInfo.getPendingScanRecord();
+        activeRuleScanRecords.push_back(scanRecord);
+      }
     }
       
     // Gather dependencies from all of the active scan records.
