@@ -18,7 +18,7 @@ data_path="${TMPDIR}/performance-data.json"
   --revision "${revision}" \
   --machine-name dtprojectcore \
   --output-path "${data_path}" \
-  "${XCS_DERIVED_DATA_DIR}/Logs/Test/"*.xcactivitylog
+  "${XCS_OUTPUT_DIR}/xcodebuild_result.bundle"
 
 # Submit the results to the local server.
 echo "**** Uploading Performance Data ****"
