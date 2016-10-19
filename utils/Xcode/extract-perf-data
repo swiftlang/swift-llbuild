@@ -5,216 +5,21 @@ This is a helper script for converting Xcode Server performance test data into
 the format used for submission to an LNT (http://lnt.llvm.org) server.
 """
 
-import StringIO
-import calendar
 import collections
 import datetime
-import gzip
 import json
 import os
 import platform
-import re
-import struct
-import sys
-import zipfile
+import plistlib
+import pprint
 
 from optparse import OptionParser, OptionGroup
-
-class DeserializerError(Exception):
-    pass
-
-class IDEActivityLogSection(object):
-    @classmethod
-    def deserializeObject(cls, ds):
-        result = collections.OrderedDict()
-        result["sectionType"] = ds.readInt()
-        result["recorderName"] = ds.readString()
-        result["title"] = ds.readString()
-        result["signature"] = ds.readString()
-        result["timeStarted"] = ds.readDouble()
-        result["timeStopped"] = ds.readDouble()
-        result["subsections"] = ds.readObjectList()
-        result["text"] = ds.readString()
-        result["messages"] = ds.readObjectList()
-        result["wasCancelled"] = ds.readInt()
-        result["isQuiet"] = ds.readInt()
-        result["wasFetchedFromCache"] = ds.readInt()
-        result["subtitle"] = ds.readString()
-        result["location"] = ds.readObject()
-        result["commandDetailDesc"] = ds.readString()
-        result["uniqueIdentifier"] = ds.readString()
-        result["localizedResultString"] = ds.readString()
-        return result
-    
-class IDEActivityLogUnitTestSection(IDEActivityLogSection):
-    @classmethod
-    def deserializeObject(cls, ds):
-        result = super(IDEActivityLogUnitTestSection, cls).deserializeObject(ds)
-        result["testsPassed"] = ds.readString()
-        result["durationString"] = ds.readString()
-        result["summaryString"] = ds.readString()
-        result["suiteName"] = ds.readString()
-        result["testName"] = ds.readString()
-        result["performanceTestOutput"] = ds.readString()
-        return result
-    
-class IDEActivityLogMessage(object):
-    @classmethod
-    def deserializeObject(cls, ds):
-        result = collections.OrderedDict()
-        result["title"] = ds.readString()
-        result["shortTitle"] = ds.readString()
-        result["timeEmitted"] = ds.readInt()
-        result["rangeInSectionText"] = ds.readInt()
-        result["rangeInSectionTextLength"] = ds.readInt()
-        result["submessages"] = ds.readObjectList()
-        result["severity"] = ds.readInt()
-        result["typeIdentString"] = ds.readString()
-        result["location"] = ds.readObject()
-        result["category"] = ds.readString()
-        result["secondaryLocations"] = ds.readObjectList()
-        result["additionalDescription"] = ds.readObject()
-        return result
-    
-class DVTTextDocumentLocation(object):
-    @classmethod
-    def deserializeObject(cls, ds):
-        result = collections.OrderedDict()
-        result["documentURLString"] = ds.readString()
-        result["timestamp"] = ds.readDouble()
-        result["startingLineNumber"] = ds.readInt()
-        result["startingColumnNumber"] = ds.readInt()
-        result["endingLineNumber"] = ds.readInt()
-        result["endingColumnNumber"] = ds.readInt()
-        result["characterRange"] = ds.readInt()
-        result["characterRangeLength"] = ds.readInt()
-        result["locationEncoding"] = ds.readInt()
-        return result
-    
-class SLFDeserializer(object):    
-    def __init__(self, file):
-        self.file = file
-        self._look = ''
-        self._known_classes = [None]
-
-    def look(self, N=1):
-        assert N > 0
-        
-        if not self._look or len(self._look) < N:
-            self._look = self._look + self.read(N - len(self._look))
-            
-        return self._look[:N]
-    
-    def read(self, N):
-        if N > len(self._look):
-            self._look = self._look + self.file.read(N - len(self._look))
-        result = self._look[:N]
-        self._look = self._look[N:]
-        return result
-
-    def readAsciiUInt(self):
-        if not self.look().isdigit():
-            return -1
-        value = 0
-        while self.look().isdigit():
-            value = value * 10 + (ord(self.read(1)) - ord('0'))
-        return value
-
-    def readHexBytes(self):
-        if self.look() not in '0123456789abcdef':
-            return ''
-        value = ''
-        while self.look() in '0123456789abcdef':
-            value += self.read(1)
-        assert (len(value) % 2) == 0
-        result = ''
-        for i in range(0, len(value), 2):
-            result += chr(int(value[i:i+2], 16))
-        return result
-        
-    def readCode(self):
-        value = self.readAsciiUInt()
-        type = self.read(1)
-        return (value, type)
-
-    def readHexCode(self):
-        value = self.readHexBytes()
-        type = self.read(1)
-        return (value, type)
-    
-    def readInt(self):
-        code = self.readCode()
-        assert code[1] == '#'
-        return code[0]
-        
-    def readString(self):
-        code = self.readCode()
-        if code[1] == '-':
-            assert code[0] == -1
-            return ''
-
-        assert code[1] == '"'
-        return self.read(code[0])
-        
-    def readDouble(self):
-        code = self.readHexCode()
-        assert code[1] == '^'
-        result, = struct.unpack('<d', code[0])
-        return result
-
-    def readObject(self):
-        code = self.readCode()
-        while code[1] == '%':
-            clsName = self.read(code[0])
-            cls = globals().get(clsName)
-            if cls is None:
-                raise DeserializerError("unknown class %r" % (clsName,))
-            self._known_classes.append(cls)
-            code = self.readCode()
-        if code[1] == '-':
-            assert code[0] == -1
-            return None
-
-        assert code[1] == '@'
-        idx = code[0]
-        if idx >= len(self._known_classes):
-            raise DeserializerError("unknown class index %r" % (idx,))
-        cls = self._known_classes[idx]
-        return cls.deserializeObject(self)
-
-    def readObjectList(self):
-        code = self.readCode()
-        if code[1] == '-':
-            assert code[0] == -1
-            return []
-
-        assert code[1] == '('
-        result = []
-        for i in range(code[0]):
-            result.append(self.readObject())
-        return result
-        
-    def parse(self):
-        magic = self.read(4)
-        if magic != 'SLF0':
-            raise DeserializerError("unknown file format")
-
-        version = self.readInt()
-        if version != 7:
-            raise DeserializerError("unknown version")
-        
-        return self.readObject()
 
 def dumpReport(logs, results, opts):
     startTime = min(data['timeStarted']
                 for data in logs)
     endTime = max(data['timeStopped']
                   for data in logs)
-    
-    # Convert times from format Cocoa uses.
-    reference = datetime.datetime(year=2001, month=1, day=1)
-    start = reference + datetime.timedelta(seconds=startTime)
-    end = reference + datetime.timedelta(seconds=endTime)
 
     # Create the machine info.
     report = collections.OrderedDict()
@@ -228,8 +33,8 @@ def dumpReport(logs, results, opts):
     run["Info"]["tag"] = "simple"
     run["Info"]["run_order"] = str(opts.run_order)
     run["Info"]["revision"] = str(opts.revision)
-    run["Start Time"] = start.strftime('%Y-%m-%d %H:%M:%S')
-    run["End Time"] = end.strftime('%Y-%m-%d %H:%M:%S')
+    run["Start Time"] = startTime.strftime('%Y-%m-%d %H:%M:%S')
+    run["End Time"] = endTime.strftime('%Y-%m-%d %H:%M:%S')
 
     # Add the test data
     report["Tests"] = tests = []
@@ -256,6 +61,13 @@ def main():
     parser.add_option("", "--revision", dest="revision", metavar="STR",
                       help="Revision string to include with the run",
                       action="store", type=str, default=None)
+    parser.add_option("", "--limit-samples", dest="limit_samples", metavar="N",
+                      help="If provided, limit to the first N samples",
+                      action="store", type=int, default=None)
+    parser.add_option("", "--filter-minimum", dest="filter_minimum",
+                      metavar="MIN",
+                      help="If provided, ignore samples below MIN",
+                      action="store", type=float, default=None)
     parser.add_option("", "--output-path", dest="output_path", metavar="PATH",
                       help="Path to write the output report to.",
                       action="store", type=str, default=None)
@@ -277,46 +89,41 @@ def main():
     performanceResults = {}
     logs = []
     for logPath in logPaths:
-        # Extract the performance data.
-        def visit(section):
-            # We found a performance test if the performanceTestOutput key is
-            # present.
-            if section.get('performanceTestOutput'):
-                m = performanceDataRex.match(section['summaryString'])
-                if not m:
-                    # Sometimes the summary doesn't get parsed?
-                    m = performanceDataRex.search(section['text'])
-                    if not m:
-                        print section
-                        raise RuntimeError("unable to parse performance data")
+        info_plist = os.path.join(logPath, 'Info.plist')
+        info = plistlib.readPlist(info_plist)
 
-                data = m.groups()
-                name = data[2]
-                average = data[3]
-                values = eval(data[5])
+        for action in info['Actions']:
+            logs.append({ 'timeStarted': action['StartedTime'], 'timeStopped': action['EndedTime'] })
 
-                # Sanity check the data.
-                assert data[3] == "%.3f" % (sum(values)/len(values),)
+        test_summaries_plist = os.path.join(logPath, 'TestSummaries.plist')
+        test_summaries = plistlib.readPlist(test_summaries_plist)
 
-                performanceResults[name] = values
-            else:
-                # Otherwise, visit the subsections.
-                for section in section['subsections']:
-                    visit(section)
-        performanceDataRex = re.compile(
-            r"""(.*):([0-9]+): Test Case '(.*)' measured \[Time, seconds\] """
-            r"""average: ([0-9.]+), relative standard deviation: ([0-9.]+)%, """
-            r"""values: (\[[^]]*\]).*, performanceMetricID:([A-Za-z._]+), """
-            r"""baselineName: ("[^"]*"), baselineAverage: (.*), """
-            r"""maxPercentRegression: ([0-9.]+)%, """
-            r"""maxPercentRelativeStandardDeviation: ([0-9.]+)%, """
-            r"""maxRegression: ([0-9.]+), """
-            r"""maxStandardDeviation: ([0-9.]+)\r""")
+        if test_summaries['FormatVersion'] != '1.1':
+            raise RuntimeError('Unknown test summaries format version: %s' % test_summaries['FormatVersion'])
 
-        testLog = gzip.GzipFile(logPath)
-        data = SLFDeserializer(testLog).parse()
-        visit(data)
-        logs.append(data)
+        def visit(section, testNames):
+            if section.get('PerformanceMetrics'):
+                values = []
+                for performanceMetrics in section['PerformanceMetrics']:
+                    if performanceMetrics['Identifier'] == 'com.apple.XCTPerformanceMetric_WallClockTime':
+                        values = performanceMetrics['Measurements']
+                        values = map(lambda x: round(x, 6), values)
+
+                className = testNames[-1]
+                testBundleName = testNames[-2]
+                name = '%s %s' % (className, section['TestName'].replace('()', ''))
+
+                if className != testBundleName:
+                    name = '%s.%s' % (testBundleName, name)
+
+                performanceResults['-[%s]' % name] = values
+            elif section.get('Subtests'):
+                for subtest in section['Subtests']:
+                    visit(subtest, testNames + [section['TestName'].replace('.xctest', '')])
+
+        for testable_summaries in test_summaries['TestableSummaries']:
+            for test in testable_summaries['Tests']:
+                visit(test, [test['TestName']])
 
     # Dump the data to an LNT report.
     dumpReport(logs, performanceResults, opts)
