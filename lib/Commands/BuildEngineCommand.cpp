@@ -77,28 +77,79 @@ static core::ValueType intToValue(int32_t value) {
   return result;
 }
 
+/// Key representation used in Ackermann build.
+struct AckermannKey {
+  /// The Ackermann number this key represents.
+  int m, n;
+
+  /// Create a key representing the given Ackermann number.
+  AckermannKey(int m, int n) : m(m), n(n) {}
+
+  /// Create an Ackermann key from the encoded representation.
+  AckermannKey(const core::KeyType& key) {
+      auto keyString = StringRef(key);
+      assert(keyString.startswith("ack(") && keyString.endswith(")"));
+      auto arguments = keyString.split("(").second.split(")").first.split(",");
+      m = 0;
+      n = 0;
+      (void)arguments.first.getAsInteger(10, m);
+      (void)arguments.second.getAsInteger(10, n);
+      assert(m >= 0 && m < 4);
+      assert(n >= 0);
+  }
+
+  /// Convert an Ackermann key to its encoded representation.
+  operator core::KeyType() const {
+    char inputKey[32];
+    sprintf(inputKey, "ack(%d,%d)", m, n);
+    return inputKey;
+  }
+};
+
+/// Value representation used in Ackermann build.
+struct AckermannValue {
+  int value;
+
+  /// Create a value for 0.
+  AckermannValue() : value(0) { }
+
+  /// Create a value from an integer.
+  AckermannValue(int value) : value(value) { }
+
+  /// Create a value from the encoded representation.
+  AckermannValue(const core::ValueType& value) : value(intFromValue(value)) { }
+
+  /// Convert a value to its encoded representation.
+  operator core::ValueType() const {
+    return intToValue(value);
+  }
+
+  /// Convert a wrapped value to its actual value.
+  operator int() const {
+    return value;
+  }
+};
+    
 static core::Task* buildAck(core::BuildEngine& engine, int m, int n) {
   struct AckermannTask : core::Task {
     int m, n;
-    int recursiveResultA = 0;
-    int recursiveResultB = 0;
+    AckermannValue recursiveResultA = {};
+    AckermannValue recursiveResultB = {};
 
     AckermannTask(int m, int n) : m(m), n(n) { }
 
     virtual void provideValue(core::BuildEngine& engine, uintptr_t inputID,
                               const core::ValueType& value) override {
       if (inputID == 0) {
-        recursiveResultA = intFromValue(value);
+        recursiveResultA = value;
 
         // Request the second recursive result, if needed.
         if (m != 0 && n != 0) {
-          char inputKey[32];
-          sprintf(inputKey, "ack(%d,%d)", m - 1, recursiveResultA);
-          engine.taskNeedsInput(this, inputKey, 1);
+          engine.taskNeedsInput(this, AckermannKey(m-1, recursiveResultA), 1);
         }
       } else {
         assert(inputID == 1 && "invalid input ID");
-        recursiveResultB = intFromValue(value);
+        recursiveResultB = value;
       }
     }
 
@@ -107,30 +158,26 @@ static core::Task* buildAck(core::BuildEngine& engine, int m, int n) {
       if (m == 0) {
         ;
       } else if (n == 0) {
-        char inputKey[32];
-        sprintf(inputKey, "ack(%d,%d)", m-1, 1);
-        engine.taskNeedsInput(this, inputKey, 0);
+        engine.taskNeedsInput(this, AckermannKey(m-1, 1), 0);
       } else {
-        char inputKey[32];
-        sprintf(inputKey, "ack(%d,%d)", m, n-1);
-        engine.taskNeedsInput(this, inputKey, 0);
+        engine.taskNeedsInput(this, AckermannKey(m, n-1), 0);
       }
     }
 
     virtual void inputsAvailable(core::BuildEngine& engine) override {
       if (m == 0) {
-        engine.taskIsComplete(this, intToValue(n + 1));
+        engine.taskIsComplete(this, AckermannValue(n + 1));
         return;
       }
 
       assert(recursiveResultA != 0);
       if (n == 0) {
-        engine.taskIsComplete(this, intToValue(recursiveResultA));
+        engine.taskIsComplete(this, AckermannValue(recursiveResultA));
         return;
       }
 
       assert(recursiveResultB != 0);
-      engine.taskIsComplete(this, intToValue(recursiveResultB));
+      engine.taskIsComplete(this, AckermannValue(recursiveResultB));
     }
   };
 
@@ -151,24 +198,11 @@ static int runAckermannBuild(int m, int n, int recomputeCount,
   public:
     int numRules = 0;
 
-    virtual core::Rule lookupRule(const core::KeyType& key) override {
-      // Extract the Ackermann parameters.
-      //
-      // FIXME: Need generalized key type.
-      assert(key[0] == 'a' && key[1] == 'c' && key[2] == 'k' &&
-             key[3] == '(');
-      const char* mStart = &key[4];
-      const char* mEnd = strchr(mStart, ',');
-      assert(mEnd != nullptr && mEnd[0] == ',');
-      const char* nStart = &mEnd[1];
-      int m = strtol(mStart, nullptr, 10);
-      int n = strtol(nStart, nullptr, 10);
-      assert(m >= 0 && m < 4);
-      assert(n >= 0);
-
+    virtual core::Rule lookupRule(const core::KeyType& keyData) override {
       ++numRules;
-      return core::Rule{key, [m, n] (core::BuildEngine& engine) {
-          return buildAck(engine, m, n); } };
+      auto key = AckermannKey(keyData);
+      return core::Rule{key, [key] (core::BuildEngine& engine) {
+          return buildAck(engine, key.m, key.n); } };
     }
 
     virtual void cycleDetected(const std::vector<core::Rule*>& items) override {
@@ -188,9 +222,8 @@ static int runAckermannBuild(int m, int n, int recomputeCount,
     }
   }
 
-  char key[32];
-  sprintf(key, "ack(%d,%d)", m, n);
-  int result = intFromValue(engine.build(key));
+  auto key = AckermannKey(m, n);
+  auto result = AckermannValue(engine.build(key));
   std::cout << "ack(" << m << ", " << n << ") = " << result << "\n";
   if (n < 10) {
 #ifndef NDEBUG
@@ -206,7 +239,7 @@ static int runAckermannBuild(int m, int n, int recomputeCount,
 
   // Recompute the result as many times as requested.
   for (int i = 0; i != recomputeCount; ++i) {
-    int recomputedResult = intFromValue(engine.build(key));
+    auto recomputedResult = AckermannValue(engine.build(key));
     if (recomputedResult != result)
       abort();
   }
