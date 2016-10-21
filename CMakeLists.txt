@@ -14,7 +14,7 @@ endif()
 
 # Configure the default set of bindings to build.
 if(NOT DEFINED LLBUILD_SUPPORT_BINDINGS)
-  set(LLBUILD_SUPPORT_BINDINGS "Swift")
+  set(LLBUILD_SUPPORT_BINDINGS "")
 endif()
 
 
