@@ -12,7 +12,10 @@
 
 #include "llbuild/Commands/Commands.h"
 
+#include "llbuild/Basic/LLVM.h"
 #include "llbuild/Core/BuildEngine.h"
+
+#include "llvm/Support/raw_ostream.h"
 
 #include <cassert>
 #include <cmath>
@@ -130,60 +133,60 @@ struct AckermannValue {
   }
 };
     
-static core::Task* buildAck(core::BuildEngine& engine, int m, int n) {
-  struct AckermannTask : core::Task {
-    int m, n;
-    AckermannValue recursiveResultA = {};
-    AckermannValue recursiveResultB = {};
+struct AckermannTask : core::Task {
+  int m, n;
+  AckermannValue recursiveResultA = {};
+  AckermannValue recursiveResultB = {};
 
-    AckermannTask(int m, int n) : m(m), n(n) { }
+  AckermannTask(core::BuildEngine& engine, int m, int n) : m(m), n(n) {
+    engine.registerTask(this);
+  }
 
-    virtual void provideValue(core::BuildEngine& engine, uintptr_t inputID,
-                              const core::ValueType& value) override {
-      if (inputID == 0) {
-        recursiveResultA = value;
+  /// Called when the task is started.
+  virtual void start(core::BuildEngine& engine) override {
+    // Request the first recursive result, if necessary.
+    if (m == 0) {
+      ;
+    } else if (n == 0) {
+      engine.taskNeedsInput(this, AckermannKey(m-1, 1), 0);
+    } else {
+      engine.taskNeedsInput(this, AckermannKey(m, n-1), 0);
+    }
+  }
 
-        // Request the second recursive result, if needed.
-        if (m != 0 && n != 0) {
-          engine.taskNeedsInput(this, AckermannKey(m-1, recursiveResultA), 1);
-        }
-      } else {
-        assert(inputID == 1 && "invalid input ID");
-        recursiveResultB = value;
+  /// Called when a task’s requested input is available.
+  virtual void provideValue(core::BuildEngine& engine, uintptr_t inputID,
+                            const core::ValueType& value) override {
+    if (inputID == 0) {
+      recursiveResultA = value;
+
+      // Request the second recursive result, if needed.
+      if (m != 0 && n != 0) {
+        engine.taskNeedsInput(this, AckermannKey(m-1, recursiveResultA), 1);
       }
+    } else {
+      assert(inputID == 1 && "invalid input ID");
+      recursiveResultB = value;
+    }
+  }
+
+  /// Called when all inputs are available.
+  virtual void inputsAvailable(core::BuildEngine& engine) override {
+    if (m == 0) {
+      engine.taskIsComplete(this, AckermannValue(n + 1));
+      return;
     }
 
-    virtual void start(core::BuildEngine& engine) override {
-      // Request the first recursive result, if necessary.
-      if (m == 0) {
-        ;
-      } else if (n == 0) {
-        engine.taskNeedsInput(this, AckermannKey(m-1, 1), 0);
-      } else {
-        engine.taskNeedsInput(this, AckermannKey(m, n-1), 0);
-      }
+    assert(recursiveResultA != 0);
+    if (n == 0) {
+      engine.taskIsComplete(this, recursiveResultA);
+      return;
     }
 
-    virtual void inputsAvailable(core::BuildEngine& engine) override {
-      if (m == 0) {
-        engine.taskIsComplete(this, AckermannValue(n + 1));
-        return;
-      }
-
-      assert(recursiveResultA != 0);
-      if (n == 0) {
-        engine.taskIsComplete(this, AckermannValue(recursiveResultA));
-        return;
-      }
-
-      assert(recursiveResultB != 0);
-      engine.taskIsComplete(this, AckermannValue(recursiveResultB));
-    }
-  };
-
-  // Create the task.
-  return engine.registerTask(new AckermannTask(m, n));
-}
+    assert(recursiveResultB != 0);
+    engine.taskIsComplete(this, recursiveResultB);
+  }
+};
 
 static int runAckermannBuild(int m, int n, int recomputeCount,
                              const std::string& traceFilename,
@@ -198,13 +201,16 @@ static int runAckermannBuild(int m, int n, int recomputeCount,
   public:
     int numRules = 0;
 
+    /// Get the rule to use for the given Key.
     virtual core::Rule lookupRule(const core::KeyType& keyData) override {
       ++numRules;
       auto key = AckermannKey(keyData);
       return core::Rule{key, [key] (core::BuildEngine& engine) {
-          return buildAck(engine, key.m, key.n); } };
+          return new AckermannTask(engine, key.m, key.n); } };
     }
 
+    /// Called when a cycle is detected by the build engine and it cannot make
+    /// forward progress.
     virtual void cycleDetected(const std::vector<core::Rule*>& items) override {
       assert(0 && "unexpected cycle!");
     }
@@ -224,14 +230,14 @@ static int runAckermannBuild(int m, int n, int recomputeCount,
 
   auto key = AckermannKey(m, n);
   auto result = AckermannValue(engine.build(key));
-  std::cout << "ack(" << m << ", " << n << ") = " << result << "\n";
+  llvm::outs() << "ack(" << m << ", " << n << ") = " << result << "\n";
   if (n < 10) {
 #ifndef NDEBUG
     int expected = ack(m, n);
     assert(result == expected);
 #endif
   }
-  std::cout << "... computed using " << delegate.numRules << " rules\n";
+  llvm::outs() << "... computed using " << delegate.numRules << " rules\n";
 
   if (!dumpGraphPath.empty()) {
     engine.dumpGraphToFile(dumpGraphPath);
