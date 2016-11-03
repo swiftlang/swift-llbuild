@@ -112,6 +112,13 @@ endif()
 include_directories(BEFORE
   ${CMAKE_SOURCE_DIR}/include)
 
+# On FreeBSD, /usr/local/* is not used by default. In order to build LLVM
+# with sqlite3, etc., we must add /usr/local paths.
+if(${CMAKE_SYSTEM_NAME} MATCHES "(FreeBSD|DragonFly)")
+  include_directories("/usr/local/include")
+  link_directories("/usr/local/lib")
+endif(${CMAKE_SYSTEM_NAME} MATCHES "(FreeBSD|DragonFly)")
+
 # Xcode: Use libc++ and c++14 using proper build settings.
 if (XCODE)
   # Force usage of Clang.
@@ -170,8 +177,8 @@ else ()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wnon-virtual-dtor")
 endif ()
 
-# On Linux, always build with PIC.
-if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+# On BSD and Linux, always build with PIC.
+if(${CMAKE_SYSTEM_NAME} MATCHES ".*BSD" OR ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 endif ()

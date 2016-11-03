@@ -4,3 +4,5 @@ add_llbuild_library(llbuildNinja
   ManifestLoader.cpp
   Parser.cpp
   )
+
+target_link_libraries(llbuildNinja llvmSupport curses)
