@@ -5,7 +5,7 @@
 # LIT_EXECUTABLE
 
 find_program(LIT_EXECUTABLE
-             NAMES lit
+             NAMES lit llvm-lit
              DOC "Path to 'lit' executable")
 
 # Handle REQUIRED and QUIET arguments, this will also set LIT_FOUND to true
