@@ -5,4 +5,4 @@ add_llbuild_library(llbuildNinja
   Parser.cpp
   )
 
-target_link_libraries(llbuildNinja llvmSupport curses)
+target_link_libraries(llbuildNinja llvmSupport)
