@@ -812,8 +812,15 @@ private:
         }
 
         // Update the database record, if attached.
-        if (db)
-            db->setRuleResult(ruleInfo->rule, ruleInfo->result);
+        if (db) {
+          std::string error;
+          bool result = db->setRuleResult(ruleInfo->rule, ruleInfo->result, &error);
+          if (!result) {
+            // FIXME: Error handling.
+            std::cerr << error << std::endl;
+            exit(1);
+          }
+        }
 
         // Wake up all of the pending scan requests.
         for (const auto& request: taskInfo->deferredScanRequests) {
@@ -1075,7 +1082,13 @@ public:
     // it and never duplicate it.
     RuleInfo& ruleInfo = result.first->second;
     if (db) {
-      db->lookupRuleResult(ruleInfo.rule, &ruleInfo.result);
+      std::string error;
+      db->lookupRuleResult(ruleInfo.rule, &ruleInfo.result, &error);
+      if (!error.empty()) {
+        // FIXME: Error handling.
+        std::cerr << error << std::endl;
+        exit(1);
+      }
     }
 
     return ruleInfo;
@@ -1110,7 +1123,13 @@ public:
     //
     // FIXME: Is it correct to do this here, or earlier?
     if (db) {
-      db->setCurrentIteration(currentTimestamp);
+      std::string error;
+      bool result = db->setCurrentIteration(currentTimestamp, &error);
+      if (!result) {
+        // FIXME: Error handling.
+        std::cerr << error << std::endl;
+        exit(1);
+      }
       db->buildComplete();
     }
 
@@ -1138,14 +1157,16 @@ public:
     return ruleInfo.result.value;
   }
 
-  void attachDB(std::unique_ptr<BuildDB> database) {
+  bool attachDB(std::unique_ptr<BuildDB> database, std::string* error_out) {
     assert(!db && "invalid attachDB() call");
     assert(currentTimestamp == 0 && "invalid attachDB() call");
     assert(ruleInfos.empty() && "invalid attachDB() call");
     db = std::move(database);
 
     // Load our initial state from the database.
-    currentTimestamp = db->getCurrentIteration();
+    bool success;
+    currentTimestamp = db->getCurrentIteration(&success, error_out);
+    return success;
   }
 
   bool enableTracing(const std::string& filename, std::string* error_out) {
@@ -1333,8 +1354,8 @@ void BuildEngine::dumpGraphToFile(const std::string& path) {
   static_cast<BuildEngineImpl*>(impl)->dumpGraphToFile(path);
 }
 
-void BuildEngine::attachDB(std::unique_ptr<BuildDB> database) {
-  static_cast<BuildEngineImpl*>(impl)->attachDB(std::move(database));
+bool BuildEngine::attachDB(std::unique_ptr<BuildDB> database, std::string* error_out) {
+  return static_cast<BuildEngineImpl*>(impl)->attachDB(std::move(database), error_out);
 }
 
 bool BuildEngine::enableTracing(const std::string& path,

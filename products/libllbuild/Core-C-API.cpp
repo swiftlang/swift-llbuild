@@ -165,8 +165,9 @@ bool llb_buildengine_attach_db(llb_buildengine_t* engine_p,
     return false;
   }
 
-  engine->attachDB(std::move(db));
-  return true;
+  bool result = engine->attachDB(std::move(db), &error);
+  *error_out = strdup(error.c_str());
+  return result;
 }
 
 void llb_buildengine_build(llb_buildengine_t* engine_p, const llb_data_t* key,

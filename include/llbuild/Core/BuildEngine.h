@@ -257,7 +257,10 @@ public:
   /// A database should only be attached immediately after creating the engine,
   /// it is an error to attach a database after adding rules or initiating any
   /// builds, or to attempt to attach multiple databases.
-  void attachDB(std::unique_ptr<BuildDB> database);
+  ///
+  /// \param error_out [out] Error string if return value is false.
+  /// \returns false if the build database could not be attached.
+  bool attachDB(std::unique_ptr<BuildDB> database, std::string* error_out);
 
   /// Enable tracing into the given output file.
   ///

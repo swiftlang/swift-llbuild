@@ -19,6 +19,7 @@
 #include <cassert>
 #include <cerrno>
 #include <cstring>
+#include <sstream>
 
 #include <sqlite3.h>
 #include <unistd.h>
@@ -28,15 +29,27 @@ using namespace llbuild::core;
 
 // SQLite BuildDB Implementation
 
-// FIXME: This entire implementation needs to be updated for good error
-// handling.
-
 namespace {
 
 class SQLiteBuildDB : public BuildDB {
   static const int currentSchemaVersion = 5;
 
   sqlite3 *db = nullptr;
+
+  std::string getCurrentErrorMessage() {
+    int err_code = sqlite3_errcode(db);
+    const char* err_message = sqlite3_errmsg(db);
+    const char* filename = sqlite3_db_filename(db, "main");
+
+    std::stringstream out;
+    out << "error: accessing build database \"" << filename << "\": " << err_message;
+
+    if (err_code == SQLITE_BUSY || err_code == SQLITE_LOCKED) {
+      out << " Possibly there are two concurrent builds running in the same filesystem location.";
+    }
+
+    return out.str();
+  }
 
 public:
   virtual ~SQLiteBuildDB() {
@@ -65,8 +78,10 @@ public:
     if (result == SQLITE_ERROR) {
       version = -1;
     } else {
-      assert(result == SQLITE_OK);
-
+      if (result != SQLITE_OK) {
+        *error_out = getCurrentErrorMessage();
+        return false;
+      }
       result = sqlite3_step(stmt);
       if (result == SQLITE_DONE) {
         version = -1;
@@ -75,7 +90,8 @@ public:
         version = sqlite3_column_int(stmt, 0);
         clientVersion = sqlite3_column_int(stmt, 1);
       } else {
-        abort();
+        *error_out = getCurrentErrorMessage();
+        return false;
       }
       sqlite3_finalize(stmt);
     }
@@ -98,8 +114,7 @@ public:
         // If the remove was successful, reopen the database.
         int result = sqlite3_open(path.str().c_str(), &db);
         if (result != SQLITE_OK) {
-          // FIXME: Provide better error messages.
-          *error_out = "unable to open database";
+          *error_out = getCurrentErrorMessage();
           return false;
         }
       }
@@ -263,7 +278,7 @@ public:
   /// @name BuildDB API
   /// @{
 
-  virtual uint64_t getCurrentIteration() override {
+  virtual uint64_t getCurrentIteration(bool* success_out, std::string *error_out) override {
     assert(db);
 
     // Fetch the iteration from the info table.
@@ -274,20 +289,23 @@ public:
       -1, &stmt, nullptr);
     assert(result == SQLITE_OK);
 
-    // This statement should always succeed.
     result = sqlite3_step(stmt);
-    if (result != SQLITE_ROW)
-      abort();
+    if (result != SQLITE_ROW) {
+      *success_out = false;
+      *error_out = getCurrentErrorMessage();
+      return 0;
+    }
 
     assert(sqlite3_column_count(stmt) == 1);
     uint64_t iteration = sqlite3_column_int64(stmt, 0);
 
     sqlite3_finalize(stmt);
 
+    *success_out = true;
     return iteration;
   }
 
-  virtual void setCurrentIteration(uint64_t value) override {
+  virtual bool setCurrentIteration(uint64_t value, std::string *error_out) override {
     sqlite3_stmt* stmt;
     int result;
     result = sqlite3_prepare_v2(
@@ -297,12 +315,14 @@ public:
     result = sqlite3_bind_int64(stmt, /*index=*/1, value);
     assert(result == SQLITE_OK);
 
-    // This statement should always succeed.
     result = sqlite3_step(stmt);
-    if (result != SQLITE_DONE)
-      abort();
+    if (result != SQLITE_DONE) {
+      *error_out = getCurrentErrorMessage();
+      return false;
+    }
 
     sqlite3_finalize(stmt);
+    return true;
   }
 
   static constexpr const char *deleteFromKeysStmtSQL =
@@ -319,7 +339,7 @@ public:
   "ON key_names.id = rule_dependencies.key_id WHERE rule_id == ?;";
   sqlite3_stmt* findRuleDependenciesStmt = nullptr;
 
-  virtual bool lookupRuleResult(const Rule& rule, Result* result_out) override {
+  virtual bool lookupRuleResult(const Rule& rule, Result* result_out, std::string *error_out) override {
     assert(result_out->builtAt == 0);
 
     // Fetch the basic rule information.
@@ -338,8 +358,10 @@ public:
     result = sqlite3_step(findRuleResultStmt);
     if (result == SQLITE_DONE)
       return false;
-    if (result != SQLITE_ROW)
-      abort();
+    if (result != SQLITE_ROW) {
+      *error_out = getCurrentErrorMessage();
+      return false;
+    }
 
     // Otherwise, read the result contents from the row.
     assert(sqlite3_column_count(findRuleResultStmt) == 4);
@@ -367,9 +389,9 @@ public:
       result = sqlite3_step(findRuleDependenciesStmt);
       if (result == SQLITE_DONE)
         break;
-      assert(result == SQLITE_ROW);
       if (result != SQLITE_ROW) {
-        abort();
+        *error_out = getCurrentErrorMessage();
+        return false;
       }
       assert(sqlite3_column_count(findRuleDependenciesStmt) == 1);
       result_out->dependencies.push_back(std::string(
@@ -418,7 +440,7 @@ public:
   /// Inserts a key if not present and always returns keyID
   /// Sometimes key will be inserted for a lookup operation
   /// but that is okay because it'll be added at somepoint anyway
-  uint64_t getOrInsertKey(const KeyType& key) {
+  uint64_t getOrInsertKey(const KeyType& key, std::string *error_out) {
     int result;
 
     // Seach for the key.
@@ -448,18 +470,24 @@ public:
                                SQLITE_STATIC);
     assert(result == SQLITE_OK);
     result = sqlite3_step(insertIntoKeysStmt);
-    if (result != SQLITE_DONE)
-      abort();
+    if (result != SQLITE_DONE) {
+      *error_out = getCurrentErrorMessage();
+      return UINT64_MAX;
+    }
 
     return sqlite3_last_insert_rowid(db);
   }
   
-  virtual void setRuleResult(const Rule& rule,
-                             const Result& ruleResult) override {
+  virtual bool setRuleResult(const Rule& rule,
+                             const Result& ruleResult,
+                             std::string *error_out) override {
     int result;
-
-    uint64_t keyID = getOrInsertKey(rule.key);
     uint64_t ruleID = 0;
+
+    uint64_t keyID = getOrInsertKey(rule.key, error_out);
+    if (keyID == UINT64_MAX) {
+      return false;
+    }
 
     // Find the existing rule id, if present.
     //
@@ -479,7 +507,8 @@ public:
       assert(sqlite3_column_count(findIDForKeyInRuleResultsStmt) == 1);
       ruleID = sqlite3_column_int64(findIDForKeyInRuleResultsStmt, 0);
     } else {
-      abort();
+      *error_out = getCurrentErrorMessage();
+      return false;
     }
 
     // If there is an existing entry, delete it first.
@@ -495,8 +524,10 @@ public:
                                   ruleID);
       assert(result == SQLITE_OK);
       result = sqlite3_step(deleteFromRuleDependenciesStmt);
-      if (result != SQLITE_DONE)
-        abort();
+      if (result != SQLITE_DONE) {
+        *error_out = getCurrentErrorMessage();
+        return false;
+      }
 
       // Delete the rule result.
       result = sqlite3_reset(deleteFromRuleResultsStmt);
@@ -507,8 +538,10 @@ public:
                                   ruleID);
       assert(result == SQLITE_OK);
       result = sqlite3_step(deleteFromRuleResultsStmt);
-      if (result != SQLITE_DONE)
-        abort();
+      if (result != SQLITE_DONE) {
+        *error_out = getCurrentErrorMessage();
+        return false;
+      }
     }
     
     // Insert the actual rule result.
@@ -531,8 +564,10 @@ public:
                                 ruleResult.computedAt);
     assert(result == SQLITE_OK);
     result = sqlite3_step(insertIntoRuleResultsStmt);
-    if (result != SQLITE_DONE)
-      abort();
+    if (result != SQLITE_DONE) {
+      *error_out = getCurrentErrorMessage();
+      return false;
+    }
 
     // Get the rule ID.
     ruleID = sqlite3_last_insert_rowid(db);
@@ -546,14 +581,21 @@ public:
       result = sqlite3_bind_int64(insertIntoRuleDependenciesStmt, /*index=*/1,
                                   ruleID);
       assert(result == SQLITE_OK);
-      uint64_t dependencyKeyID = getOrInsertKey(dependency);
+      uint64_t dependencyKeyID = getOrInsertKey(dependency, error_out);
+      if (dependencyKeyID == UINT64_MAX) {
+        return false;
+      }
       result = sqlite3_bind_int64(insertIntoRuleDependenciesStmt, /*index=*/2,
                                  dependencyKeyID);
       assert(result == SQLITE_OK);
       result = sqlite3_step(insertIntoRuleDependenciesStmt);
-      if (result != SQLITE_DONE)
-        abort();
+      if (result != SQLITE_DONE) {
+        *error_out = getCurrentErrorMessage();
+        return false;
+      }
     }
+
+    return true;
   }
 
   virtual void buildStarted() override {

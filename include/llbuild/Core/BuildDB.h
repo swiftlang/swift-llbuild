@@ -31,15 +31,21 @@ public:
   virtual ~BuildDB();
 
   /// Get the current build iteration.
-  virtual uint64_t getCurrentIteration() = 0;
+  ///
+  /// \param success_out [out] Whether or not the query succeeded.
+  /// \param error_out [out] Error string if success_out is false.
+  virtual uint64_t getCurrentIteration(bool* success_out, std::string* error_out) = 0;
 
   /// Set the current build iteration.
-  virtual void setCurrentIteration(uint64_t value) = 0;
+  ///
+  /// \param error_out [out] Error string if return value is false.
+  virtual bool setCurrentIteration(uint64_t value, std::string* error_out) = 0;
 
   /// Look up the result for a rule.
   ///
   /// \param rule The rule to look up the result for.
   /// \param result_out [out] The result, if found.
+  /// \param error_out [out] Error string if an error occurred.
   /// \returns True if the database had a stored result for the rule.
   //
   // FIXME: This might be more efficient if it returns Result.
@@ -47,14 +53,16 @@ public:
   // FIXME: Figure out if we want a more lazy approach where we make the
   // database cache result objects and we query them only when needed. This may
   // scale better to very large build graphs.
-  virtual bool lookupRuleResult(const Rule& rule, Result* result_out) = 0;
+  virtual bool lookupRuleResult(const Rule& rule, Result* result_out, std::string* error_out) = 0;
 
   /// Update the stored result for a rule.
   ///
   /// The BuildEngine does not enforce that the dependencies for a Rule are
   /// unique. However, duplicate dependencies have no semantic meaning for the
   /// engine, and the database may elect to discard them from storage.
-  virtual void setRuleResult(const Rule& rule, const Result& result) = 0;
+  ///
+  /// \param error_out [out] Error string if return value is false.
+  virtual bool setRuleResult(const Rule& rule, const Result& result, std::string* error_out) = 0;
 
   /// Called by the build engine to indicate that a build has started.
   ///

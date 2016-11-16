@@ -246,7 +246,7 @@ TEST(DepsBuildEngineTest, KeysWithNull) {
     core::BuildEngine engine(delegate);
     // FIXME: Don't put database in temp.
     std::string error;
-    engine.attachDB(createSQLiteBuildDB(dbPath, 1, &error));
+    engine.attachDB(createSQLiteBuildDB(dbPath, 1, &error), &error);
 
     std::string inputA{"i\0A", 3};
     std::string inputB{"i\0B", 3};
