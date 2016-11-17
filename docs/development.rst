@@ -14,7 +14,9 @@ Build Instructions
 
     $ brew install cmake ninja
 
-* Install FileCheck
+* Install FileCheck::
+
+    $ brew install llvm
 
 * Build::
 
@@ -30,6 +32,8 @@ Build Instructions
                   
     $ env PATH=$HOME/Library/Python/2.7/bin/:"$PATH" cmake -G Ninja -DCMAKE_BUILD_TYPE:=Debug ..
 
+Note: this assumes you have installed `lit` as a user, by running `easy_install --user lit`.
+
 **Building from source on Ubuntu**
 
 * Install dependencies::
@@ -40,7 +44,9 @@ Build Instructions
 
     $ sudo pip install lit
 
-* Install FileCheck
+* Install FileCheck::
+
+    $ sudo apt-get install llvm-3.7-tools
 
 * Build::
 

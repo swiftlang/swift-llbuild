@@ -2,6 +2,14 @@
 
 set -e
 
+# Amend PATH with known location of LLVM tools
+BREW="$(which brew || true)"
+if [ -n "${BREW}" ]; then
+    PATH="$PATH:`${BREW} --prefix`/opt/llvm/bin"
+fi
+# Default location on Ubuntu
+PATH="$PATH:/usr/lib/llvm-3.7/bin"
+
 # If we have an included copy of FileCheck, use that.
 FILECHECK="${SRCROOT}/llbuild-test-tools/utils/Xcode/FileCheck"
 if [ ! -f "${FILECHECK}" ]; then
