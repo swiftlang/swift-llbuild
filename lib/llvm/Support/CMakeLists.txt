@@ -38,6 +38,10 @@ circular_raw_ostream.cpp
 raw_ostream.cpp
 )
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+  target_link_libraries(llvmSupport execinfo pthread)
+endif()
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   target_link_libraries(llvmSupport pthread dl)
 endif()
