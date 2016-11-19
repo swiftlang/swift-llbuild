@@ -195,7 +195,9 @@ public:
   /// Called when a cycle is detected by the build engine and it cannot make
   /// forward progress.
   ///
-  /// \param items The ordered list of items comprising the cycle.
+  /// \param items The ordered list of items comprising the cycle, starting from
+  /// the node which was requested to build and ending with the first node in
+  /// the cycle (i.e., the node participating in the cycle will appear twice).
   virtual void cycleDetected(const std::vector<Rule*>& items) = 0;
 
 };

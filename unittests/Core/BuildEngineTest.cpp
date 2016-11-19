@@ -784,7 +784,7 @@ TEST(BuildEngineTest, CycleDuringScanningFromTop) {
     iteration = 1;
     auto result = engine.build("A");
     EXPECT_EQ(ValueType{}, result);
-    EXPECT_EQ(std::vector<std::string>({ "B", "C", "B" }), delegate.cycle);
+    EXPECT_EQ(std::vector<std::string>({ "A", "C", "B", "C" }), delegate.cycle);
   }
 }
 
