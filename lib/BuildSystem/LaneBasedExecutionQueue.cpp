@@ -16,6 +16,7 @@
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/SmallString.h"
+#include "llvm/ADT/Twine.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/Program.h"
 
@@ -29,6 +30,7 @@
 #include <string>
 
 #include <fcntl.h>
+#include <pthread.h>
 #include <unistd.h>
 #include <signal.h>
 #include <spawn.h>
@@ -63,6 +65,18 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
   std::condition_variable readyJobsCondition;
   
   void executeLane(unsigned laneNumber) {
+    // Set the thread name, if available.
+#if defined(__APPLE__)
+    pthread_setname_np(
+        (llvm::Twine("org.swift.llbuild Lane-") +
+         llvm::Twine(laneNumber)).str().c_str());
+#elif defined(__linux__)
+    pthread_setname_np(
+        pthread_self(),
+        (llvm::Twine("org.swift.llbuild Lane-") +
+         llvm::Twine(laneNumber)).str().c_str());
+#endif
+    
     // Execute items from the queue until shutdown.
     while (true) {
       // Take a job from the ready queue.
