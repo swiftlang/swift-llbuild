@@ -964,33 +964,44 @@ private:
     }
     
     // Find the cycle by searching from the entry node.
-    //
-    // FIXME: Need a setvector.
+    struct WorkItem {
+      Rule* node;
+      unsigned predecessorIndex = 0;
+    };
     std::vector<Rule*> cycleList;
     std::unordered_set<Rule*> cycleItems;
-    std::function<bool(Rule*)> findCycle;
-    findCycle = [&](Rule* node) {
-      // Push the node on the stack.
-      cycleList.push_back(node);
-      auto it = cycleItems.insert(node);
+    std::vector<WorkItem> stack{
+      WorkItem{ &getRuleInfoForKey(buildKey).rule } };
+    while (!stack.empty()) {
+      // Take the top item.
+      auto& entry = stack.back();
+      const auto& predecessors = predecessorGraph[entry.node];
+      
+      // If the index is 0, we just started visiting the node.
+      if (entry.predecessorIndex == 0) {
+        // Push the node on the stack.
+        cycleList.push_back(entry.node);
+        auto it = cycleItems.insert(entry.node);
 
-      // If the node is already in the stack, we found the cycle.
-      if (!it.second)
-        return true;
-
-      // Otherwise, iterate over each predecessor looking for a cycle.
-      for (Rule* successor: predecessorGraph[node]) {
-        if (findCycle(successor))
-          return true;
+        // If the node is already in the stack, we found a cycle.
+        if (!it.second)
+          break;
       }
 
-      // If we didn't find the cycle, pop this item.
-      cycleItems.erase(it.first);
+      // Visit the next predecessor, if possible.
+      if (entry.predecessorIndex != predecessors.size()) {
+        auto* child = predecessors[entry.predecessorIndex];
+        entry.predecessorIndex += 1;
+        stack.emplace_back(WorkItem{ child });
+        continue;
+      }
+
+      // Otherwise, we are done visiting this node.
+      cycleItems.erase(entry.node);
       cycleList.pop_back();
-      return false;
-    };
-    auto result = findCycle(&getRuleInfoForKey(buildKey).rule);
-    assert(result && !cycleList.empty());
+      stack.pop_back();
+    }
+    assert(!cycleList.empty());
 
     delegate.cycleDetected(cycleList);
 
