@@ -281,6 +281,10 @@ static BuildSystemImpl& getBuildSystem(BuildEngine& engine) {
   return static_cast<BuildSystemEngineDelegate*>(
       engine.getDelegate())->getBuildSystem();
 }
+
+static bool isCancelled(BuildEngine& engine) {
+  return getBuildSystem(engine).getCommandInterface().getDelegate().isCancelled();
+}
   
 /// This is the task used to "build" a target, it translates between the request
 /// for building a target key and the requests for all of its nodes.
@@ -328,6 +332,12 @@ class TargetTask : public Task {
   }
 
   virtual void inputsAvailable(BuildEngine& engine) override {
+    // If the build should cancel, do nothing.
+    if (isCancelled(engine)) {
+      engine.taskIsComplete(this, BuildValue::makeSkippedCommand().toData());
+      return;
+    }
+
     if (hasMissingInput) {
       // FIXME: Design the logging and status output APIs.
       auto& system = getBuildSystem(engine);
@@ -2040,4 +2050,11 @@ bool BuildSystem::enableTracing(StringRef path,
 
 bool BuildSystem::build(StringRef name) {
   return static_cast<BuildSystemImpl*>(impl)->build(name);
+}
+
+void BuildSystem::cancel() {
+  if (impl) {
+    auto buildSystemImpl = static_cast<BuildSystemImpl*>(impl);
+    buildSystemImpl->getCommandInterface().getExecutionQueue().cancelAllJobs();
+  }
 }
