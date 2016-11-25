@@ -85,6 +85,9 @@ public:
   /// Add a job to be executed.
   virtual void addJob(QueueJob job) = 0;
 
+  /// Cancel all jobs and subprocesses of this queue.
+  virtual void cancelAllJobs() = 0;
+
   /// @name Execution Interfaces
   ///
   /// These are additional interfaces provided by the execution queue which can

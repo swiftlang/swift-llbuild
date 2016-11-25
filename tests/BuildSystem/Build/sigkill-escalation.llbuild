@@ -1,0 +1,32 @@
+# Check that aborting a build escalates to SIGKILL after a grace period.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.llbuild
+# RUN: cp %S/Inputs/wait-for-file %t.build
+# RUN: cp %S/Inputs/ignore-sigint %t.build
+# RUN: /bin/bash -x -c \
+# RUN:   "%{llbuild} buildsystem build --serial --chdir %t.build --no-db &> %t.out & \
+# RUN:    echo $! >%t.build/llbuild.pid; \
+# RUN:    wait $(cat %t.build/llbuild.pid)" || true
+# RUN: %{FileCheck} --input-file %t.out %s
+#
+# CHECK: SIGNAL
+# CHECK: cancelling build.
+
+client:
+  name: basic
+
+targets:
+  "": ["llbuild.pid"]
+
+commands:  
+  SIGNAL:
+    tool: shell
+    inputs: ["<cleanup>"]
+    outputs: ["llbuild.pid"]
+    description: "SIGNAL"
+    args:
+      ./ignore-sigint &
+      ./wait-for-file llbuild.pid &&
+      cat llbuild.pid | xargs kill -SIGINT

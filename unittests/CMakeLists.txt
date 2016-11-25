@@ -7,4 +7,5 @@ endfunction()
 
 add_subdirectory(Basic)
 add_subdirectory(Core)
+add_subdirectory(BuildSystem)
 add_subdirectory(Ninja)

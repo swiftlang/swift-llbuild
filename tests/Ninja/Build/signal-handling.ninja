@@ -4,7 +4,7 @@
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
 # RUN: cp %S/Inputs/wait-for-file %t.build
-# RUN: /bin/sh -c \
+# RUN: /bin/bash -c \
 # RUN:   "%{llbuild} ninja build --jobs 1 --chdir %t.build &> %t.out & \
 # RUN:    echo $! > %t.build/llbuild.pid; \
 # RUN:    wait $(cat %t.build/llbuild.pid)" || true
@@ -12,9 +12,6 @@
 #
 # CHECK: [1/{{.*}}] SIGNAL PARENT LLBUILD PROCESS
 # CHECK: cancelling build.
-#
-# FIXME: Disabled on Linux for the time being, it doesn't always pass.
-# REQUIRES: platform=Darwin
 
 rule CAT
   command = cat ${in} > ${out}
