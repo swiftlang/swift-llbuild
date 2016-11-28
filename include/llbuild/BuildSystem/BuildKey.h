@@ -60,8 +60,8 @@ private:
   }
   BuildKey(char kindCode, StringRef name, StringRef data) {
     // FIXME: We need good support infrastructure for binary encoding.
-    uint32_t nameSize = name.size();
-    uint32_t dataSize = data.size();
+    uint32_t nameSize = (uint32_t)name.size();
+    uint32_t dataSize = (uint32_t)data.size();
     key.resize(1 + sizeof(uint32_t) + nameSize + dataSize);
     uint32_t pos = 0;
     key[pos] = kindCode; pos += 1;
@@ -141,7 +141,7 @@ public:
     assert(isCustomTask());
     uint32_t nameSize;
     memcpy(&nameSize, &key[1], sizeof(uint32_t));
-    uint32_t dataSize = key.size() - 1 - sizeof(uint32_t) - nameSize;
+    uint32_t dataSize = (int)key.size() - 1 - sizeof(uint32_t) - nameSize;
     return StringRef(&key[1 + sizeof(uint32_t) + nameSize], dataSize);
   }
 

@@ -286,7 +286,7 @@ BuildSystemFrontendDelegate::error(StringRef filename,
     // to SourceMgr completely.
     auto buffer = getFileSystem().getFileContents(filename);
     if (buffer) {
-      unsigned offset = at.start - impl->bufferBeingParsed.data();
+      unsigned long offset = at.start - impl->bufferBeingParsed.data();
       if (offset + at.length < buffer->getBufferSize()) {
         range.Start = loc = llvm::SMLoc::getFromPointer(
             buffer->getBufferStart() + offset);
@@ -316,7 +316,7 @@ BuildSystemFrontendDelegate::createExecutionQueue() {
     
   // Get the number of CPUs to use.
   long numCPUs = sysconf(_SC_NPROCESSORS_ONLN);
-  unsigned numLanes;
+  unsigned long numLanes;
   if (numCPUs < 0) {
     error("<unknown>", {}, "unable to detect number of CPUs");
     numLanes = 1;

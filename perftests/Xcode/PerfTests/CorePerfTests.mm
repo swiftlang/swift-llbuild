@@ -63,7 +63,7 @@ public:
 
   virtual void start(BuildEngine& Engine) override {
     // Request all of the inputs.
-    for (int i = 0, e = Inputs.size(); i != e; ++i) {
+    for (size_t i = 0, e = Inputs.size(); i != e; ++i) {
       Engine.taskNeedsInput(this, Inputs[i], i);
     }
   }
@@ -198,8 +198,8 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
   //         \-> i2,N          iM,{N**(M-1)}
 
   int M = 13, N = 3; // Use a graph of 797,161 nodes.
-  int NumTotalNodes = (i64pow(N, M) - 1) / (N - 1);
-  NSLog(@"running test with %d-ary tree of depth %d (%d nodes)\n",
+  size_t NumTotalNodes = (i64pow(N, M) - 1) / (N - 1);
+  NSLog(@"running test with %d-ary tree of depth %d (%zu nodes)\n",
          N, M, NumTotalNodes);
 
   // Set up the build rules.
@@ -221,7 +221,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
   int LastInputValue = 0;
   for (int i = 1; i <= M; ++i) {
     // Compute the total number of groups at this depth.
-    int NumNodes = i64pow(N, i - 1);
+    int64_t NumNodes = i64pow(N, i - 1);
     for (int j = 1; j <= NumNodes; ++j) {
       char Name[32];
       sprintf(Name, "i%d,%d", i, j);

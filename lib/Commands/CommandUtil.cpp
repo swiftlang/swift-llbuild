@@ -43,9 +43,9 @@ static char hexdigit(unsigned input) {
   return (input < 10) ? '0' + input : 'A' + input - 10;
 }
 
-std::string util::escapedString(const char* start, unsigned length) {
+std::string util::escapedString(const char* start, unsigned long length) {
   std::stringstream result;
-  for (unsigned i = 0; i != length; ++i) {
+  for (unsigned long i = 0; i != length; ++i) {
     char c = start[i];
     if (c == '"') {
       result << "\\\"";
@@ -126,7 +126,7 @@ static void emitError(const std::string& filename, const std::string& message,
 
 void util::emitError(const std::string& filename, const std::string& message,
                      const ninja::Token& at, const ninja::Parser* parser) {
-  ::emitError(filename, message, at.start, at.length, at.line, at.column,
+  ::emitError(filename, message, at.start, (int)at.length, (int)at.line, (int)at.column,
             parser->getLexer().getBuffer());
 }
 

@@ -46,11 +46,11 @@ struct Token {
     KWKindLast = KWSubninja
   };
 
-  const char* start;          /// The beginning of the token string.
-  Kind        tokenKind;      /// The token kind.
-  unsigned    length;         /// The length of the token.
-  unsigned    line;           /// The line number of the start of this token.
-  unsigned    column;         /// The column number at the start of this token.
+  const char* start;                /// The beginning of the token string.
+  Kind              tokenKind;      /// The token kind.
+  unsigned long     length;         /// The length of the token.
+  unsigned long     line;           /// The line number of the start of this token.
+  unsigned long     column;         /// The column number at the start of this token.
 
   /// The name of this token's kind.
   const char *getKindName() const;
