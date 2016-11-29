@@ -65,6 +65,12 @@ public:
 
   /// Called by the build engine to indicate a build has finished, and results
   /// should be written.
+  ///
+  /// The expected behavior of the database when \see buildStarted() is called,
+  /// but \see buildComplete() is never called (e.g., due to a crash) is not
+  /// prescribed. The database implementation may choose to put all
+  /// modifications within the scope of a single build in a single transaction,
+  /// or it may choose to eagerly commit partial results from the build.
   virtual void buildComplete() = 0;
 };
 
