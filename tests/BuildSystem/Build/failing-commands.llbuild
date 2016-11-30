@@ -5,7 +5,7 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.llbuild
-# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.out || true
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build &> %t.out || true
 # RUN: test ! -f %t.build/output
 # RUN: %{FileCheck} %s --input-file %t.out --check-prefix=CHECK-FAILURE
 #
@@ -17,7 +17,7 @@
 
 # Rebuild and verify the command reruns.
 #
-# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t2.out || true
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build &> %t2.out || true
 # RUN: test ! -f %t.build/output
 # RUN: %{FileCheck} %s --input-file %t2.out --check-prefix=CHECK-FAILURE-REBUILD
 #

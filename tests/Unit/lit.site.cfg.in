@@ -5,6 +5,7 @@ import sys
 config.llbuild_src_root = "@LLBUILD_SRC_DIR@"
 config.llbuild_obj_root = "@LLBUILD_OBJ_DIR@"
 config.llbuild_build_mode = "@LLBUILD_BUILD_MODE@"
+config.llbuild_buildsystem_unittest_path = "@LLBUILD_BUILDSYSTEM_UNITTEST_PATH@"
 
 # Support substitution of the build_mode with user parameters. This is
 # used when we can't determine the tool dir at configuration time.

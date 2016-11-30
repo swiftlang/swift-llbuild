@@ -204,13 +204,6 @@ public:
   virtual void commandProcessHadError(Command*, ProcessHandle handle,
                                        const Twine& message);
 
-  /// Called to report a command processes' (merged) standard output and error.
-  ///
-  /// \param handle - The process handle.
-  /// \param data - The process output.
-  virtual void commandProcessHadOutput(Command*, ProcessHandle handle,
-                                       StringRef data);
-  
   /// Called when a command's job has finished executing an external process.
   ///
   /// \param handle - The handle used to identify the process. This handle will
