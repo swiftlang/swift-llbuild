@@ -106,12 +106,6 @@ public:
 
   virtual void inputsAvailable(BuildSystemCommandInterface& bsci,
                                core::Task* task) override {
-    // If the build should cancel, do nothing.
-    if (bsci.getDelegate().isCancelled()) {
-      bsci.taskIsComplete(task, BuildValue::makeSkippedCommand());
-      return;
-    }
-
     // Dispatch a task to query the compiler version.
     auto fn = [this, &bsci=bsci, task=task](QueueJobContext* context) {
       // Suppress static analyzer false positive on generalized lambda capture

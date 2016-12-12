@@ -16,7 +16,6 @@
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/SmallString.h"
-#include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/Program.h"
@@ -29,7 +28,6 @@
 #include <thread>
 #include <vector>
 #include <string>
-#include <unordered_set>
 
 #include <fcntl.h>
 #include <pthread.h>
@@ -66,16 +64,6 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
   std::mutex readyJobsMutex;
   std::condition_variable readyJobsCondition;
   
-  /// The set of spawned processes to terminate if we get cancelled.
-  std::unordered_set<pid_t> spawnedProcesses;
-  std::mutex spawnedProcessesMutex;
-
-  /// Management of cancellation and SIGKILL escalation
-  std::unique_ptr<std::thread> killAfterTimeoutThread = nullptr;
-  std::atomic<bool> cancelled { false };
-  std::condition_variable stopKillingCondition;
-  std::mutex stopKillingMutex;
-
   void executeLane(unsigned laneNumber) {
     // Set the thread name, if available.
 #if defined(__APPLE__)
@@ -90,7 +78,7 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
 #endif
     
     // Execute items from the queue until shutdown.
-    while (!cancelled) {
+    while (true) {
       // Take a job from the ready queue.
       QueueJob job{};
       {
@@ -99,10 +87,6 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
         // While the queue is empty, wait for an item.
         while (readyJobs.empty()) {
           readyJobsCondition.wait(lock);
-
-          if (cancelled) {
-            return;
-          }
         }
 
         // Take an item according to the chosen policy.
@@ -122,21 +106,6 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
     }
   }
 
-  void killAfterTimeout() {
-    std::unique_lock<std::mutex> lock(stopKillingMutex);
-    stopKillingCondition.wait_for(lock, std::chrono::seconds(10));
-    sendSignalToProcesses(SIGKILL);
-  }
-
-  void sendSignalToProcesses(int signal) {
-    std::unique_lock<std::mutex> lock(spawnedProcessesMutex);
-
-    for (pid_t pid: spawnedProcesses) {
-      // We are killing the whole process group here, this depends on us spawning each process in its own group earlier
-      ::kill(-pid, signal);
-    }
-  }
-
 public:
   LaneBasedExecutionQueue(BuildExecutionQueueDelegate& delegate,
                           unsigned numLanes)
@@ -151,41 +120,18 @@ public:
   
   virtual ~LaneBasedExecutionQueue() {
     // Shut down the lanes.
-    cancelled = true;
-    readyJobsCondition.notify_all();
-
+    for (unsigned i = 0; i != numLanes; ++i) {
+      addJob({});
+    }
     for (unsigned i = 0; i != numLanes; ++i) {
       lanes[i]->join();
-    }
-
-    if (killAfterTimeoutThread) {
-      stopKillingCondition.notify_all();
-      killAfterTimeoutThread->join();
     }
   }
 
   virtual void addJob(QueueJob job) override {
-    if (cancelled) {
-      // FIXME: We should eventually raise an error here as new work should not be enqueued after cancellation
-      return;
-    }
-
     std::lock_guard<std::mutex> guard(readyJobsMutex);
     readyJobs.push_back(job);
     readyJobsCondition.notify_one();
-  }
-
-  virtual void cancelAllJobs() override {
-    auto wasAlreadyCancelled = cancelled.exchange(true);
-    // If we were already cancelled, do nothing.
-    if (wasAlreadyCancelled) {
-      return;
-    }
-
-    readyJobsCondition.notify_all();
-
-    sendSignalToProcesses(SIGINT);
-    killAfterTimeoutThread = llvm::make_unique<std::thread>(&LaneBasedExecutionQueue::killAfterTimeout, this);
   }
 
   virtual bool
@@ -328,24 +274,19 @@ public:
     }
       
     // Spawn the command.
+    //
+    // FIXME: Need to track spawned processes for the purposes of cancellation.
+    
     pid_t pid;
-    {
-      // We need to hold the spawn processes lock when we spawn, to ensure that
-      // we don't create a process in between when we are cancelled.
-      std::lock_guard<std::mutex> guard(spawnedProcessesMutex);
-
-      if (posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
-                      /*attrp=*/&attributes, const_cast<char**>(args.data()),
-                      envp) != 0) {
-        getDelegate().commandProcessHadError(
-            context.job.getForCommand(), handle,
-            Twine("unable to spawn process (") + strerror(errno) + ")");
-        getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
-                                             -1);
-        return false;
-      }
-
-      spawnedProcesses.insert(pid);
+    if (posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
+                    /*attrp=*/&attributes, const_cast<char**>(args.data()),
+                    envp) != 0) {
+      getDelegate().commandProcessHadError(
+          context.job.getForCommand(), handle,
+          Twine("unable to spawn process (") + strerror(errno) + ")");
+      getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
+                                           -1);
+      return false;
     }
 
     posix_spawn_file_actions_destroy(&fileActions);
@@ -382,13 +323,6 @@ public:
     int status, result = waitpid(pid, &status, 0);
     while (result == -1 && errno == EINTR)
       result = waitpid(pid, &status, 0);
-
-    // Update the set of spawned processes.
-    {
-        std::lock_guard<std::mutex> guard(spawnedProcessesMutex);
-        spawnedProcesses.erase(pid);
-    }
-
     if (result == -1) {
       getDelegate().commandProcessHadError(
           context.job.getForCommand(), handle,

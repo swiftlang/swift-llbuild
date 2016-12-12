@@ -92,7 +92,6 @@ public:
   
 private:
   void* impl;
-  std::atomic<bool> isCancelled_;
 
   /// Default implementation, cannot be overriden by subclasses.
   virtual void setFileContentsBeingParsed(StringRef buffer) override;
@@ -128,12 +127,6 @@ public:
   /// Provides a default cancellation implementation that will cancel when any
   /// command has failed.
   virtual bool isCancelled() override;
-
-  /// Cancels the current build.
-  virtual void cancel();
-
-  /// Reset mutable build state before a new build operation.
-  void resetForBuild();
   
   /// Provides a default handler.
   ///
