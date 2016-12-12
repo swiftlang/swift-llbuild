@@ -117,13 +117,14 @@ public:
 class CAPIBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
   llb_buildsystem_delegate_t cAPIDelegate;
   CAPIFileSystem fileSystem;
+  std::atomic<bool> isCancelled_;
 
 public:
   CAPIBuildSystemFrontendDelegate(llvm::SourceMgr& sourceMgr,
                                   BuildSystemInvocation& invocation,
                                   llb_buildsystem_delegate_t delegate)
       : BuildSystemFrontendDelegate(sourceMgr, invocation, "basic", 0),
-        cAPIDelegate(delegate), fileSystem(delegate) { }
+        cAPIDelegate(delegate), fileSystem(delegate), isCancelled_(false) { }
 
   virtual basic::FileSystem& getFileSystem() override { return fileSystem; }
   
@@ -139,6 +140,10 @@ public:
     }
 
     return std::unique_ptr<Tool>((Tool*)tool);
+  }
+
+  virtual bool isCancelled() override {
+    return isCancelled_;
   }
 
   virtual void hadCommandFailure() override {
@@ -250,9 +255,18 @@ public:
     }
   }
 
+  /// Reset mutable build state before a new build operation.
+  void resetForBuild() {
+    isCancelled_ = false;
+  }
+
   /// Request cancellation of any current build.
-  void cancel() override {
-    BuildSystemFrontendDelegate::cancel();
+  void cancel() {
+    // FIXME: We need to implement BuildSystem layer support for real
+    // cancellation (including task and subprocess termination).
+
+    // FIXME: We should audit that a build is happening.
+    isCancelled_ = true;
   }
 };
 
