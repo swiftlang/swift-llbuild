@@ -19,6 +19,7 @@
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringRef.h"
 
+#include <atomic>
 #include <string>
 #include <vector>
 
