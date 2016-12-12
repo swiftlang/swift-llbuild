@@ -128,7 +128,7 @@ public:
 
 class BuildSystemImpl : public BuildSystemCommandInterface {
   /// The internal schema version.
-  static const uint32_t internalSchemaVersion = 1;
+  static const uint32_t internalSchemaVersion = 2;
   
   BuildSystem& buildSystem;
 
@@ -1468,8 +1468,9 @@ class MkdirCommand : public Command {
 
   virtual BuildValue getResultForOutput(Node* node,
                                         const BuildValue& value) override {
-    // If the value was a failed or skipped command, propagate the failure.
-    if (value.isFailedCommand() || value.isSkippedCommand())
+    // If the value was a failed command, propagate the failure.
+    if (value.isFailedCommand() || value.isPropagatedFailureCommand() ||
+        value.isCancelledCommand())
       return BuildValue::makeFailedInput();
 
     // Otherwise, we should have a successful command -- return the actual
@@ -1528,7 +1529,7 @@ class MkdirCommand : public Command {
                                core::Task* task) override {
     // If the build should cancel, do nothing.
     if (bsci.getDelegate().isCancelled()) {
-      bsci.taskIsComplete(task, BuildValue::makeSkippedCommand());
+      bsci.taskIsComplete(task, BuildValue::makeCancelledCommand());
       return;
     }
     
@@ -1685,8 +1686,9 @@ class SymlinkCommand : public Command {
 
   virtual BuildValue getResultForOutput(Node* node,
                                         const BuildValue& value) override {
-    // If the value was a failed or skipped command, propagate the failure.
-    if (value.isFailedCommand() || value.isSkippedCommand())
+    // If the value was a failed command, propagate the failure.
+    if (value.isFailedCommand() || value.isPropagatedFailureCommand() ||
+        value.isCancelledCommand())
       return BuildValue::makeFailedInput();
 
     // Otherwise, we should have a successful command -- return the actual
@@ -1732,7 +1734,7 @@ class SymlinkCommand : public Command {
                                core::Task* task) override {
     // If the build should cancel, do nothing.
     if (bsci.getDelegate().isCancelled()) {
-      bsci.taskIsComplete(task, BuildValue::makeSkippedCommand());
+      bsci.taskIsComplete(task, BuildValue::makeCancelledCommand());
       return;
     }
     
