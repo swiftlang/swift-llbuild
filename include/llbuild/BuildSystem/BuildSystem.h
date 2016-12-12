@@ -201,6 +201,9 @@ public:
   /// if a cycle was discovered).
   bool build(StringRef target);
 
+  /// Cancel the current build
+  void cancel();
+
   /// @}
 };
 
