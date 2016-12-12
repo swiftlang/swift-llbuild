@@ -117,8 +117,9 @@ bool ExternalCommand::configureAttribute(
 
 BuildValue ExternalCommand::
 getResultForOutput(Node* node, const BuildValue& value) {
-  // If the value was a failed or skipped command, propagate the failure.
-  if (value.isFailedCommand() || value.isSkippedCommand())
+  // If the value was a failed or cancelled command, propagate the failure.
+  if (value.isFailedCommand() || value.isPropagatedFailureCommand() ||
+      value.isCancelledCommand())
     return BuildValue::makeFailedInput();
 
   // Otherwise, we should have a successful command -- return the actual
@@ -198,7 +199,7 @@ void ExternalCommand::start(BuildSystemCommandInterface& bsci,
   bsci.getDelegate().commandPreparing(this);
     
   // Initialize the build state.
-  shouldSkip = false;
+  skipValue = llvm::None;
   hasMissingInput = false;
 
   // Request all of the inputs.
@@ -229,11 +230,11 @@ void ExternalCommand::provideValue(BuildSystemCommandInterface& bsci,
          value.isMissingOutput() || value.isFailedInput() ||
          value.isVirtualInput());
 
-  // Predicate for whether the input should cause the command to skip.
-  auto shouldSkipForInput = [&] {
+  // If the input should cause this command to skip, how should it skip?
+  auto getSkipValueForInput = [&]() -> llvm::Optional<BuildValue> {
     // If the value is an existing or virtual input, we are always good.
     if (value.isExistingInput() || value.isVirtualInput())
-      return false;
+      return llvm::None;
 
     // We explicitly allow running the command against a missing output, under
     // the expectation that responsibility for reporting this situation falls to
@@ -242,19 +243,27 @@ void ExternalCommand::provideValue(BuildSystemCommandInterface& bsci,
     // FIXME: Eventually, it might be nice to harden the format so that we know
     // when an output was actually required versus optional.
     if (value.isMissingOutput())
-      return false;
+      return llvm::None;
 
     // If the value is a missing input, but those are allowed, it is ok.
-    if (allowMissingInputs && value.isMissingInput())
-      return false;
+    if (value.isMissingInput()) {
+      if (allowMissingInputs)
+        return llvm::None;
+      else
+        return BuildValue::makePropagatedFailureCommand();
+    }
 
-    // For anything else, this is an error and the command should be skipped.
-    return true;
+    // Propagate failure.
+    if (value.isFailedInput())
+      return BuildValue::makePropagatedFailureCommand();
+
+    llvm_unreachable("unexpected input");
   };
 
   // Check if we need to skip the command because of this input.
-  if (shouldSkipForInput()) {
-    shouldSkip = true;
+  auto skipValueForInput = getSkipValueForInput();
+  if (skipValueForInput.hasValue()) {
+    skipValue = std::move(skipValueForInput);
     if (value.isMissingInput()) {
       hasMissingInput = true;
 
@@ -309,12 +318,12 @@ void ExternalCommand::inputsAvailable(BuildSystemCommandInterface& bsci,
                                       core::Task* task) {
   // If the build should cancel, do nothing.
   if (bsci.getDelegate().isCancelled()) {
-    bsci.taskIsComplete(task, BuildValue::makeSkippedCommand());
+    bsci.taskIsComplete(task, BuildValue::makeCancelledCommand());
     return;
   }
     
   // If this command should be skipped, do nothing.
-  if (shouldSkip) {
+  if (skipValue.hasValue()) {
     // If this command had a failed input, treat it as having failed.
     if (hasMissingInput) {
       // FIXME: Design the logging and status output APIs.
@@ -326,7 +335,7 @@ void ExternalCommand::inputsAvailable(BuildSystemCommandInterface& bsci,
       bsci.getDelegate().hadCommandFailure();
     }
 
-    bsci.taskIsComplete(task, BuildValue::makeSkippedCommand());
+    bsci.taskIsComplete(task, skipValue.getValue());
     return;
   }
   assert(!hasMissingInput);

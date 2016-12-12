@@ -50,7 +50,7 @@ class BuildValue {
     /// missing.
     MissingOutput,
 
-    /// A value for a produced output whose command failed.
+    /// A value for a produced output whose command failed or was cancelled.
     FailedInput,
 
     /// A value produced by a successful command.
@@ -58,9 +58,13 @@ class BuildValue {
 
     /// A value produced by a failing command.
     FailedCommand,
-      
-    /// A value produced by a command which was skipped.
-    SkippedCommand,
+
+    /// A value produced by a command which was skipped because one of its
+    /// dependencies failed.
+    PropagatedFailureCommand,
+
+    /// A value produced by a command which was cancelled.
+    CancelledCommand,
 
     /// Sentinel value representing the result of "building" a top-level target.
     Target,
@@ -174,8 +178,11 @@ public:
   static BuildValue makeFailedCommand() {
     return BuildValue(Kind::FailedCommand);
   }
-  static BuildValue makeSkippedCommand() {
-    return BuildValue(Kind::SkippedCommand);
+  static BuildValue makePropagatedFailureCommand() {
+    return BuildValue(Kind::PropagatedFailureCommand);
+  }
+  static BuildValue makeCancelledCommand() {
+    return BuildValue(Kind::CancelledCommand);
   }
   static BuildValue makeTarget() {
     return BuildValue(Kind::Target);
@@ -195,7 +202,8 @@ public:
   bool isFailedInput() const { return kind == Kind::FailedInput; }
   bool isSuccessfulCommand() const {return kind == Kind::SuccessfulCommand; }
   bool isFailedCommand() const { return kind == Kind::FailedCommand; }
-  bool isSkippedCommand() const { return kind == Kind::SkippedCommand; }
+  bool isPropagatedFailureCommand() const { return kind == Kind::PropagatedFailureCommand; }
+  bool isCancelledCommand() const { return kind == Kind::CancelledCommand; }
   bool isTarget() const { return kind == Kind::Target; }
 
   bool hasMultipleOutputs() const {

@@ -15,7 +15,9 @@
 
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildSystem.h"
+#include "llbuild/BuildSystem/BuildValue.h"
 
+#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/StringRef.h"
 
 #include <string>
@@ -65,8 +67,8 @@ class ExternalCommand : public Command {
   /// The previous build result command signature, if available.
   uint64_t priorResultCommandSignature;
   
-  /// If true, the command should be skipped (because of an error in an input).
-  bool shouldSkip = false;
+  /// If not None, the command should be skipped with the provided BuildValue.
+  llvm::Optional<BuildValue> skipValue;
 
   /// If true, the command had a missing input (this implies ShouldSkip is
   /// true).
