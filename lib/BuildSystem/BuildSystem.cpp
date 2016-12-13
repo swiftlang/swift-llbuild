@@ -128,7 +128,7 @@ public:
 
 class BuildSystemImpl : public BuildSystemCommandInterface {
   /// The internal schema version.
-  static const uint32_t internalSchemaVersion = 2;
+  static const uint32_t internalSchemaVersion = 3;
   
   BuildSystem& buildSystem;
 
@@ -534,7 +534,23 @@ class CommandTask : public Task {
   }
 
   virtual void inputsAvailable(BuildEngine& engine) override {
-    command.inputsAvailable(getBuildSystem(engine).getCommandInterface(), this);
+    auto fn = [this, &engine](QueueJobContext* context) {
+      auto& bsci = getBuildSystem(engine).getCommandInterface();
+      bool shouldSkip = !bsci.getDelegate().shouldCommandStart(&command);
+
+      if (shouldSkip) {
+        bsci.taskIsComplete(this, BuildValue::makeSkippedCommand());
+
+        // We need to call commandFinished here because commandPreparing and
+        // shouldCommandStart guarantee that they're followed by
+        // commandFinished.
+        bsci.getDelegate().commandFinished(&command);
+      } else {
+        command.inputsAvailable(bsci, this);
+      }
+    };
+
+    getBuildSystem(engine).getCommandInterface().addJob({ &command, std::move(fn) });
   }
 
 public:
