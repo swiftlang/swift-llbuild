@@ -121,6 +121,8 @@ getResultForOutput(Node* node, const BuildValue& value) {
   if (value.isFailedCommand() || value.isPropagatedFailureCommand() ||
       value.isCancelledCommand())
     return BuildValue::makeFailedInput();
+  if (value.isSkippedCommand())
+      return BuildValue::makeSkippedCommand();
 
   // Otherwise, we should have a successful command -- return the actual
   // result for the output.
@@ -228,7 +230,7 @@ void ExternalCommand::provideValue(BuildSystemCommandInterface& bsci,
   assert(!value.hasMultipleOutputs());
   assert(value.isExistingInput() || value.isMissingInput() ||
          value.isMissingOutput() || value.isFailedInput() ||
-         value.isVirtualInput());
+         value.isVirtualInput()  || value.isSkippedCommand());
 
   // If the input should cause this command to skip, how should it skip?
   auto getSkipValueForInput = [&]() -> llvm::Optional<BuildValue> {
@@ -256,6 +258,10 @@ void ExternalCommand::provideValue(BuildSystemCommandInterface& bsci,
     // Propagate failure.
     if (value.isFailedInput())
       return BuildValue::makePropagatedFailureCommand();
+
+    // A skipped dependency doesn't cause this command to skip.
+    if (value.isSkippedCommand())
+        return llvm::None;
 
     llvm_unreachable("unexpected input");
   };

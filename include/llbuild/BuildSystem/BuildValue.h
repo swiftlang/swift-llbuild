@@ -66,6 +66,9 @@ class BuildValue {
     /// A value produced by a command which was cancelled.
     CancelledCommand,
 
+    /// A value produced by a command which was skipped.
+    SkippedCommand,
+
     /// Sentinel value representing the result of "building" a top-level target.
     Target,
   };
@@ -184,6 +187,9 @@ public:
   static BuildValue makeCancelledCommand() {
     return BuildValue(Kind::CancelledCommand);
   }
+  static BuildValue makeSkippedCommand() {
+    return BuildValue(Kind::SkippedCommand);
+  }
   static BuildValue makeTarget() {
     return BuildValue(Kind::Target);
   }
@@ -204,6 +210,7 @@ public:
   bool isFailedCommand() const { return kind == Kind::FailedCommand; }
   bool isPropagatedFailureCommand() const { return kind == Kind::PropagatedFailureCommand; }
   bool isCancelledCommand() const { return kind == Kind::CancelledCommand; }
+  bool isSkippedCommand() const { return kind == Kind::SkippedCommand; }
   bool isTarget() const { return kind == Kind::Target; }
 
   bool hasMultipleOutputs() const {

@@ -70,6 +70,10 @@
 		9DB047BC1DF9D4AA006CDF52 /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
 		9DB047BD1DF9D4B0006CDF52 /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
 		9DB047C01DF9F592006CDF52 /* LaneBasedExecutionQueueTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9DB0478B1DF9D3E2006CDF52 /* LaneBasedExecutionQueueTest.cpp */; };
+		C5740D091E03523100567DD8 /* BuildSystemFrontendTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5740D081E03523100567DD8 /* BuildSystemFrontendTest.cpp */; };
+		C5740D0A1E03527B00567DD8 /* libllbuildCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243E19F997150059043E /* libllbuildCore.a */; };
+		C5740D0B1E03528600567DD8 /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
+		C5740D0C1E03529300567DD8 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
 		E104FAF71B655A97005C68A0 /* BuildSystemPerfTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = E104FAF61B655A97005C68A0 /* BuildSystemPerfTests.mm */; };
 		E104FAFA1B655BBA005C68A0 /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
 		E104FAFB1B655C33005C68A0 /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
@@ -688,6 +692,8 @@
 		54E187B81CD296EA00F7EC89 /* SwiftTools.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SwiftTools.h; sourceTree = "<group>"; };
 		9DB0478B1DF9D3E2006CDF52 /* LaneBasedExecutionQueueTest.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = LaneBasedExecutionQueueTest.cpp; sourceTree = "<group>"; };
 		9DB047A81DF9D43D006CDF52 /* BuildSystemTests */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = BuildSystemTests; sourceTree = BUILT_PRODUCTS_DIR; };
+		C5740D081E03523100567DD8 /* BuildSystemFrontendTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildSystemFrontendTest.cpp; sourceTree = "<group>"; };
+		C5740D0D1E0352D800567DD8 /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E104FAF61B655A97005C68A0 /* BuildSystemPerfTests.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = BuildSystemPerfTests.mm; sourceTree = "<group>"; };
 		E104FAFF1B6568E0005C68A0 /* BuildSystem.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildSystem.cpp; sourceTree = "<group>"; };
 		E1066C071BC5ACAB00B892CE /* LaneBasedExecutionQueue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LaneBasedExecutionQueue.cpp; sourceTree = "<group>"; };
@@ -976,6 +982,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				9D2107C61DFADDFA00BE26FF /* libcurses.dylib in Frameworks */,
+				C5740D0C1E03529300567DD8 /* libsqlite3.dylib in Frameworks */,
+				C5740D0B1E03528600567DD8 /* libllbuildBasic.a in Frameworks */,
+				C5740D0A1E03527B00567DD8 /* libllbuildCore.a in Frameworks */,
 				9DB047BD1DF9D4B0006CDF52 /* libllbuildBuildSystem.a in Frameworks */,
 				9DB047BC1DF9D4AA006CDF52 /* libllvmSupport.a in Frameworks */,
 				9DB047BA1DF9D4A4006CDF52 /* libgtest_main.a in Frameworks */,
@@ -1159,6 +1168,8 @@
 		9DB0478A1DF9D39E006CDF52 /* BuildSystem */ = {
 			isa = PBXGroup;
 			children = (
+				C5740D0D1E0352D800567DD8 /* CMakeLists.txt */,
+				C5740D081E03523100567DD8 /* BuildSystemFrontendTest.cpp */,
 				9DB0478B1DF9D3E2006CDF52 /* LaneBasedExecutionQueueTest.cpp */,
 			);
 			path = BuildSystem;
@@ -2583,6 +2594,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9DB047C01DF9F592006CDF52 /* LaneBasedExecutionQueueTest.cpp in Sources */,
+				C5740D091E03523100567DD8 /* BuildSystemFrontendTest.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
