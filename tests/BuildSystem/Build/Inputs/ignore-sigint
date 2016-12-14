@@ -1,0 +1,8 @@
+#!/bin/sh
+
+trap 'echo "Ignoring SIGINT..."' INT
+
+while [ true ]
+do
+  yes >/dev/null
+done
