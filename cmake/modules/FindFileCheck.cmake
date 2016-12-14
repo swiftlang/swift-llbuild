@@ -6,7 +6,7 @@
 
 find_program(FILECHECK_EXECUTABLE
              NAMES FileCheck
-             PATHS /usr/local/opt/llvm/bin /usr/lib/llvm-3.7/bin
+             PATHS /usr/local/opt/llvm/bin /usr/lib/llvm-3.6/bin /usr/lib/llvm-3.7/bin
              DOC "Path to 'FileCheck' executable")
 
 # Handle REQUIRED and QUIET arguments, this will also set FILECHECK_FOUND to true
