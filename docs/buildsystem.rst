@@ -307,8 +307,9 @@ tracking. This tool should be used when clients only care about the existence of
 the directory, not any other aspects of it. In particular, it ignores changes to
 the directory timestamp when consider whether to run.
 
-No attributes are supported other than the common keys. No inputs may be
-declared, and the sole output should be the node for the path to create.
+No attributes are supported other than the common keys. The sole output should
+be the node for the path to create. Arbitrary inputs can be declared, but they
+will only be used to establish the order in which the command is run.
 
 Symlink Tool
 ------------
@@ -324,6 +325,10 @@ evaluating the build state. In the case of a symbolic link this is incorrect, as
 it will retrieve the status information of the target, not the link itself. This
 may lead to unnecessary recreation of the link (and triggering of subsequent
 work).
+
+The sole output should be the node for the path to create. Arbitrary inputs can
+be declared, but they will only be used to establish the order in which the
+command is run.
 
 .. note::
 
