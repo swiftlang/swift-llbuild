@@ -371,6 +371,19 @@ typedef struct llb_buildsystem_external_command_delegate_t_ {
   /// User context pointer.
   void* context;
 
+  /// Called to get a signature which represents the internal state of the
+  /// command which is not tracked by any other attribute visible to the build
+  /// system (for example, a declared input or output). This signature is
+  /// compared with previous executions of the command when determining whether
+  /// or not it needs to rerun.
+  ///
+  /// The contents *MUST* be returned in a new buffer allocated with \see
+  /// malloc().
+  //
+  // FIXME: We need to use a better data type than a uint64_t here.
+  void (*get_signature)(void* context, llb_buildsystem_command_t* command,
+                        llb_data_t* data_out);
+
   /// Called by the build system's execution queue after the command's inputs
   /// are available and the execution queue is ready to schedule the command.
   ///

@@ -20,6 +20,7 @@
 #include "llbuild/BuildSystem/ExternalCommand.h"
 #include "llbuild/Core/BuildEngine.h"
 
+#include "llvm/ADT/Hashing.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/raw_ostream.h"
@@ -408,6 +409,24 @@ public:
   virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
     // FIXME: Provide client control.
     llvm::raw_svector_ostream(result) << getName();
+  }
+
+  virtual uint64_t getSignature() override {
+    // FIXME: Use a more appropriate hashing infrastructure.
+    using llvm::hash_combine;
+    llvm::hash_code code = ExternalCommand::getSignature();
+    if (cAPIDelegate.get_signature) {
+      llb_data_t data;
+      cAPIDelegate.get_signature(cAPIDelegate.context, (llb_buildsystem_command_t*)this,
+                                 &data);
+      code = hash_combine(code, StringRef((const char*)data.data, data.length));
+
+      // Release the client memory.
+      //
+      // FIXME: This is gross, come up with a general purpose solution.
+      free((char*)data.data);
+    }
+    return size_t(code);
   }
 };
 
