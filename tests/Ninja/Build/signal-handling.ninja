@@ -12,6 +12,9 @@
 #
 # CHECK: [1/{{.*}}] SIGNAL PARENT LLBUILD PROCESS
 # CHECK: cancelling build.
+#
+# FIXME: Disabled on Linux for the time being, it doesn't always pass. See https://bugs.swift.org/browse/SR-3427
+# REQUIRES: platform=Darwin
 
 rule CAT
   command = cat ${in} > ${out}
