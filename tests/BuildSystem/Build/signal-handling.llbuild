@@ -12,6 +12,9 @@
 #
 # CHECK: SIGNAL
 # CHECK: cancelling build.
+#
+# FIXME: Disabled on Linux for the time being, it doesn't always pass. See https://bugs.swift.org/browse/SR-3427
+# REQUIRES: platform=Darwin
 
 client:
   name: basic
