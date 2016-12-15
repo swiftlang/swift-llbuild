@@ -6,6 +6,7 @@
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.out
 # RUN: %{FileCheck} --input-file=%t.out %s
 #
+# CHECK: ECHO
 # CHECK: MKDIR
 # CHECK: MUTATE
 
@@ -43,9 +44,15 @@ commands:
     tool: phony
     inputs: ["subdir/subdir2/thing.txt"]
     outputs: ["<all>"]
+  C.echo:
+    tool: shell
+    description: ECHO
+    outputs: ["<echo>"]
+    args: echo hi
   C.mkdir:
     tool: mkdir
     description: MKDIR
+    inputs: ["<echo>"]
     outputs: ["subdir/subdir2"]
   C.mutate:
     tool: shell
