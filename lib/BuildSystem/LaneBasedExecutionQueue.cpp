@@ -166,7 +166,8 @@ public:
 
   virtual void addJob(QueueJob job) override {
     if (cancelled) {
-      // FIXME: We should eventually raise an error here as new work should not be enqueued after cancellation
+      // FIXME: We should eventually raise an error here as new work should not
+      // be enqueued after cancellation.
       return;
     }
 
@@ -185,7 +186,8 @@ public:
     readyJobsCondition.notify_all();
 
     sendSignalToProcesses(SIGINT);
-    killAfterTimeoutThread = llvm::make_unique<std::thread>(&LaneBasedExecutionQueue::killAfterTimeout, this);
+    killAfterTimeoutThread = llvm::make_unique<std::thread>(
+        &LaneBasedExecutionQueue::killAfterTimeout, this);
   }
 
   virtual bool
