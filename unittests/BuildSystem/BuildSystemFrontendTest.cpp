@@ -13,6 +13,7 @@
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
 #include "llbuild/BuildSystem/BuildFile.h"
+#include "TempDir.hpp"
 
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/FileSystem.h"
@@ -39,101 +40,7 @@ using namespace llvm;
     ASSERT_FALSE(__ec = (code)) << __ec.message();  \
   } while (0)
 
-
-// TODO Move this into some kind of libtestSupport?
-// Cribbed from llvm, where it's been since removed.
 namespace {
-
-using namespace std;
-using namespace llvm::sys::fs;
-
-error_code _remove_all_r(StringRef path, file_type ft, uint32_t &count) {
-  if (ft == file_type::directory_file) {
-    error_code ec;
-    directory_iterator i(path, ec);
-    if (ec)
-      return ec;
-
-    for (directory_iterator e; i != e; i.increment(ec)) {
-      if (ec)
-        return ec;
-
-      file_status st;
-
-      if (error_code ec = i->status(st))
-        return ec;
-
-      if (error_code ec = _remove_all_r(i->path(), st.type(), count))
-        return ec;
-    }
-
-    if (error_code ec = remove(path, false))
-      return ec;
-
-    ++count; // Include the directory itself in the items removed.
-  } else {
-    if (error_code ec = remove(path, false))
-      return ec;
-
-    ++count;
-  }
-
-  return error_code();
-}
-
-error_code remove_all(const Twine &path, uint32_t &num_removed) {
-  SmallString<128> path_storage;
-  StringRef p = path.toStringRef(path_storage);
-
-  file_status fs;
-  if (error_code ec = status(path, fs))
-    return ec;
-  num_removed = 0;
-  return _remove_all_r(p, fs.type(), num_removed);
-}
-
-error_code remove_all(const Twine &path) {
-  uint32_t num_removed = 0;
-  return remove_all(path, num_removed);
-}
-
-}
-
-namespace {
-
-// TODO Move this into some kind of libtestSupport?
-/// Creates a temporary directory in its constructor and removes it in its
-/// destructor. Makes it available via str() and c_str().
-class TmpDir {
-private:
-  TmpDir(const TmpDir&) = delete;
-  TmpDir& operator=(const TmpDir&) = delete;
-
-  SmallString<256> tempDir;
-
-public:
-  TmpDir(StringRef namePrefix = "") {
-    SmallString<256> tempDirPrefix;
-    llvm::sys::path::system_temp_directory(true, tempDirPrefix);
-    llvm::sys::path::append(tempDirPrefix, namePrefix);
-
-    std::error_code ec = llvm::sys::fs::createUniqueDirectory
-      (Twine(tempDirPrefix),
-       tempDir);
-    assert(!ec);
-    (void)ec;
-  }
-
-  ~TmpDir() {
-    std::error_code ec = remove_all(Twine(tempDir));
-    assert(!ec);
-    (void)ec;
-  }
-
-  const char *c_str() { return tempDir.c_str(); }
-  std::string str() const { return tempDir.str(); }
-};
-
 
 /// Records delegate callbacks and makes them available via ``getTrace()``
 /// and ``checkTrace()``.

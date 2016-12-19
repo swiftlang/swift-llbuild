@@ -1,6 +1,7 @@
 add_llbuild_unittest(BuildSystemTests
   LaneBasedExecutionQueueTest
   BuildSystemFrontendTest.cpp
+  TempDir.cpp
   )
 
 target_link_libraries(BuildSystemTests
