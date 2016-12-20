@@ -7,8 +7,11 @@ set(DEPENDENCIES
   llbuildCore
   llbuildBasic
   llvmSupport
-  sqlite3
-  curses)
+  sqlite3)
+
+if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+  list(APPEND DEPENDENCIES curses)
+endif()
 
 add_llbuild_library(libllbuild
   ${SOURCES}

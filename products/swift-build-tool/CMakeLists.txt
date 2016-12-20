@@ -6,9 +6,11 @@ target_link_libraries(swift-build-tool
   llbuildCore
   llbuildBasic
   llvmSupport
-  sqlite3
-  curses
-  )
+  sqlite3)
+
+if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+  target_link_libraries(swift-build-tool curses)
+endif()
 
 install(TARGETS swift-build-tool
         COMPONENT swift-build-tool
