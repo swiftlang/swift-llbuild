@@ -61,10 +61,9 @@
 #define LLVM_NATIVE_TARGETMC LLVMInitializeX86TargetMC
 
 /* Define if this is Unixish platform */
+#if !defined(LLVM_ON_WIN32)
 #define LLVM_ON_UNIX 1
-
-/* Define if this is Win32ish platform */
-/* #undef LLVM_ON_WIN32 */
+#endif
 
 /* Installation prefix directory */
 #define LLVM_PREFIX "/usr/local"

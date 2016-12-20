@@ -18,6 +18,10 @@
 #ifndef LLBUILD_BASIC_COMPILER_H
 #define LLBUILD_BASIC_COMPILER_H
 
+#if !defined(__has_feature)
+#define __has_feature(x) 0
+#endif
+
 /// \macro LLBUILD_MSC_PREREQ
 /// \brief Is the compiler MSVC of at least the specified version?
 /// The common \param version values to check for are:
