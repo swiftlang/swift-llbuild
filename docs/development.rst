@@ -54,6 +54,41 @@ Note: this assumes you have installed `lit` as a user, by running `easy_install 
     $ cmake -G Ninja -DCMAKE_BUILD_TYPE:=Debug -DCMAKE_C_COMPILER:=clang -DCMAKE_CXX_COMPILER:=clang++ ..
     $ ninja
 
+**Building from source on Windows**
+
+* Install the latest Visual Studio with Visual C++.
+
+* Install the latest version of `CMake <https://cmake.org/>`_ and add `cmake.exe` to the system's PATH
+  environment variable.
+
+* Install the latest version of `Ninja <https://ninja-build.org/>`_ and add `ninja.exe` to the system's
+  PATH environment variable.
+
+* Configure a developer command prompt, using `amd64` for 64 bit processors and 'x86' for 32 bit processors.
+  All the followingcommands should be executed from a developer command prompt.
+
+    $ "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/vcvarsall.bat" amd64
+
+* Download the latest `sqlite amalgamation source code <https://sqlite.org/download.html>`_ and extract the source code.
+
+* Build sqlite3, using `/MDd` for a Debug build, and `/MD` for a Release build::
+   
+    $ cl shell.c sqlite3.c /MDd -Fe:sqlite3.exe
+    $ lib shell.obj sqlite3.obj /out:sqlite3.lib
+
+* Build LLVM, in order to use `FileCheck` and `llvm-lit`.
+
+* Build::
+
+    $ mkdir build && cd build
+    $ cmake -G "Ninja"^
+     -DCMAKE_BUILD_TYPE=Debug^
+     -DLIT_EXECUTABLE="<llvm-bin-directory>/llvm-lit.py"^
+     -DFILECHECK_EXECUTABLE="<llvm-bin-directory>/FileCheck.exe"^
+     -DLLBUILD_PATH_TO_SQLITE_SOURCE="<directory-containing-sqlite3.h>"^
+     -DLLBUILD_PATH_TO_SQLITE_BUILD="<directory-containing-sqlite3.lib>"^
+     "C:/Users/hbellamy/Documents/GitHub/my-swift/llbuild"
+    $ ninja
 
 Notes
 -----
