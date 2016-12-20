@@ -359,6 +359,10 @@ void BuildSystemFrontendDelegate::commandStatusChanged(Command*,
 void BuildSystemFrontendDelegate::commandPreparing(Command*) {
 }
 
+bool BuildSystemFrontendDelegate::shouldCommandStart(Command*) {
+  return true;
+}
+
 void BuildSystemFrontendDelegate::commandStarted(Command* command) {
   // Don't report status if opted out by the command.
   if (!command->shouldShowStatus()) {
