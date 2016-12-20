@@ -119,6 +119,14 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "(FreeBSD|DragonFly)")
   link_directories("/usr/local/lib")
 endif(${CMAKE_SYSTEM_NAME} MATCHES "(FreeBSD|DragonFly)")
 
+if(NOT ${LLBUILD_PATH_TO_SQLITE_SOURCE} STREQUAL "")
+  include_directories("${LLBUILD_PATH_TO_SQLITE_SOURCE}")
+endif()
+
+if(NOT "${LLBUILD_PATH_TO_SQLITE_BUILD}" STREQUAL "")
+  link_directories("${LLBUILD_PATH_TO_SQLITE_BUILD}")
+endif()
+
 # Xcode: Use libc++ and c++14 using proper build settings.
 if (XCODE)
   # Force usage of Clang.
