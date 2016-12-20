@@ -117,12 +117,9 @@ bool ExternalCommand::configureAttribute(
 
 BuildValue ExternalCommand::
 getResultForOutput(Node* node, const BuildValue& value) {
-  // If the value was a failed or cancelled command, propagate the failure.
-  if (value.isFailedCommand() || value.isPropagatedFailureCommand() ||
-      value.isCancelledCommand())
+  // If the value was a failed or skipped command, propagate the failure.
+  if (value.isFailedCommand() || value.isSkippedCommand())
     return BuildValue::makeFailedInput();
-  if (value.isSkippedCommand())
-      return BuildValue::makeSkippedCommand();
 
   // Otherwise, we should have a successful command -- return the actual
   // result for the output.
@@ -201,7 +198,7 @@ void ExternalCommand::start(BuildSystemCommandInterface& bsci,
   bsci.getDelegate().commandPreparing(this);
     
   // Initialize the build state.
-  skipValue = llvm::None;
+  shouldSkip = false;
   hasMissingInput = false;
 
   // Request all of the inputs.
@@ -230,13 +227,13 @@ void ExternalCommand::provideValue(BuildSystemCommandInterface& bsci,
   assert(!value.hasMultipleOutputs());
   assert(value.isExistingInput() || value.isMissingInput() ||
          value.isMissingOutput() || value.isFailedInput() ||
-         value.isVirtualInput()  || value.isSkippedCommand());
+         value.isVirtualInput());
 
-  // If the input should cause this command to skip, how should it skip?
-  auto skipValueForInput = [&]() -> llvm::Optional<BuildValue> {
+  // Predicate for whether the input should cause the command to skip.
+  auto shouldSkipForInput = [&] {
     // If the value is an existing or virtual input, we are always good.
     if (value.isExistingInput() || value.isVirtualInput())
-      return llvm::None;
+      return false;
 
     // We explicitly allow running the command against a missing output, under
     // the expectation that responsibility for reporting this situation falls to
@@ -245,30 +242,19 @@ void ExternalCommand::provideValue(BuildSystemCommandInterface& bsci,
     // FIXME: Eventually, it might be nice to harden the format so that we know
     // when an output was actually required versus optional.
     if (value.isMissingOutput())
-      return llvm::None;
+      return false;
 
     // If the value is a missing input, but those are allowed, it is ok.
-    if (value.isMissingInput()) {
-      if (allowMissingInputs)
-        return llvm::None;
-      else
-        return BuildValue::makeMissingInput();
-    }
+    if (allowMissingInputs && value.isMissingInput())
+      return false;
 
-    // Propagate failure.
-    if (value.isFailedInput())
-      return BuildValue::makePropagatedFailureCommand();
-
-    // A skipped dependency doesn't cause this command to skip.
-    if (value.isSkippedCommand())
-        return llvm::None;
-
-    llvm_unreachable("unexpected input");
+    // For anything else, this is an error and the command should be skipped.
+    return true;
   };
 
   // Check if we need to skip the command because of this input.
-  skipValue = skipValueForInput();
-  if (skipValue.hasValue()) {
+  if (shouldSkipForInput()) {
+    shouldSkip = true;
     if (value.isMissingInput()) {
       hasMissingInput = true;
 
@@ -323,12 +309,12 @@ void ExternalCommand::inputsAvailable(BuildSystemCommandInterface& bsci,
                                       core::Task* task) {
   // If the build should cancel, do nothing.
   if (bsci.getDelegate().isCancelled()) {
-    bsci.taskIsComplete(task, BuildValue::makeCancelledCommand());
+    bsci.taskIsComplete(task, BuildValue::makeSkippedCommand());
     return;
   }
     
   // If this command should be skipped, do nothing.
-  if (skipValue.hasValue()) {
+  if (shouldSkip) {
     // If this command had a failed input, treat it as having failed.
     if (hasMissingInput) {
       // FIXME: Design the logging and status output APIs.
@@ -340,7 +326,7 @@ void ExternalCommand::inputsAvailable(BuildSystemCommandInterface& bsci,
       bsci.getDelegate().hadCommandFailure();
     }
 
-    bsci.taskIsComplete(task, skipValue.getValue());
+    bsci.taskIsComplete(task, BuildValue::makeSkippedCommand());
     return;
   }
   assert(!hasMissingInput);

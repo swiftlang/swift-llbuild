@@ -167,21 +167,6 @@ public:
   /// corresponding \see commandFinished() call.
   virtual void commandPreparing(Command*) override;
 
-  /// Called by the build system to allow the delegate to skip a command without
-  /// implicitly skipping its dependents.
-  ///
-  /// WARNING: Clients need to take special care when using this. Skipping
-  /// commands without considering their dependencies or dependents can easily
-  /// produce an inconsistent build.
-  ///
-  /// This method is called before the command starts, when the system has
-  /// identified that it will eventually need to run (after all of its inputs
-  /// have been satisfied).
-  ///
-  /// The system guarantees that all such calls will be paired with a
-  /// corresponding \see commandFinished() call.
-  virtual bool shouldCommandStart(Command*) override;
-
   /// Called by the build system to report that a declared command has started.
   ///
   /// The system guarantees that all such calls will be paired with a

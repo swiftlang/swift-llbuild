@@ -227,21 +227,6 @@ typedef struct llb_buildsystem_delegate_t_ {
   /// with exactly one \see command_finished() call.
   void (*command_preparing)(void* context, llb_buildsystem_command_t* command);
 
-  /// Called by the build system to allow the delegate to skip a command without
-  /// implicitly skipping its dependents.
-  ///
-  /// WARNING: Clients need to take special care when using this. Skipping
-  /// commands without considering their dependencies or dependents can easily
-  /// produce an inconsistent build.
-  ///
-  /// This method is called before the command starts, when the system has
-  /// identified that it will eventually need to run (after all of its inputs
-  /// have been satisfied).
-  ///
-  /// The system guarantees that all such calls will be paired with a
-  /// corresponding \see commandFinished() call.
-  bool (*should_command_start)(void* context, llb_buildsystem_command_t* command);
-
   /// Called when a command has been started.
   ///
   /// The system guarantees that any commandStart() call will be paired with

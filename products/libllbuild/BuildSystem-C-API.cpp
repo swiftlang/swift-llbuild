@@ -188,15 +188,6 @@ public:
     }
   }
 
-  virtual bool shouldCommandStart(Command * command) override {
-    if (cAPIDelegate.should_command_start) {
-      return cAPIDelegate.should_command_start(
-          cAPIDelegate.context, (llb_buildsystem_command_t*) command);
-    } else {
-      return true;
-    }
-  }
-
   virtual void commandStarted(Command* command) override {
     if (cAPIDelegate.command_started) {
       cAPIDelegate.command_started(
