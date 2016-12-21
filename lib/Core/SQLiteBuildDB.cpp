@@ -155,7 +155,7 @@ public:
                "rule_id INTEGER, "
                "key_id INTEGER, "
                "PRIMARY KEY (rule_id, key_id) "
-               "FOREIGN KEY(rule_id) REFERENCES rule_info(id) "
+               "FOREIGN KEY(rule_id) REFERENCES rule_results(id) "
                "FOREIGN KEY(key_id) REFERENCES key_names(id)) "
 #if SQLITE_VERSION_NUMBER >= 3008002
                "WITHOUT ROWID"
