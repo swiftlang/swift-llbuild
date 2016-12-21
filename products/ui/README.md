@@ -38,3 +38,8 @@ $ FLASK_APP=llbuildui.app venv/bin/python -m flask run
  * Serving Flask app "llbuildui.app"
  * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
 ~~~
+
+You can start in debug/development mode with:
+~~~shell
+$ FLASK_APP=llbuildui.app FLASK_DEBUG=1 venv/bin/python -m flask run
+~~~
