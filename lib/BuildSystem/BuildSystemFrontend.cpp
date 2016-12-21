@@ -14,6 +14,7 @@
 
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/Basic/LLVM.h"
+#include "llbuild/Basic/PlatformUtility.h"
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 
@@ -29,6 +30,7 @@
 #include <unistd.h>
 
 using namespace llbuild;
+using namespace llbuild::basic;
 using namespace llbuild::buildsystem;
 
 #pragma mark - BuildSystemInvocation implementation
@@ -437,7 +439,7 @@ BuildSystemFrontend(BuildSystemFrontendDelegate& delegate,
 bool BuildSystemFrontend::build(StringRef targetToBuild) {
   // Honor the --chdir option, if used.
   if (!invocation.chdirPath.empty()) {
-    if (::chdir(invocation.chdirPath.c_str()) < 0) {
+    if (!sys::chdir(invocation.chdirPath.c_str())) {
       getDelegate().error(Twine("unable to honor --chdir: ") + strerror(errno));
       return false;
     }

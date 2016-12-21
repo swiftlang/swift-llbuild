@@ -2,6 +2,7 @@ add_llbuild_library(llbuildBasic
   FileInfo.cpp
   FileSystem.cpp
   Hashing.cpp
+  PlatformUtility.cpp
   SerialQueue.cpp
   Version.cpp
   ShellUtility.cpp

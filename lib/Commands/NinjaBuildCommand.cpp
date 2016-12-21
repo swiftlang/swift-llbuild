@@ -15,6 +15,7 @@
 #include "llbuild/Basic/Compiler.h"
 #include "llbuild/Basic/FileInfo.h"
 #include "llbuild/Basic/Hashing.h"
+#include "llbuild/Basic/PlatformUtility.h"
 #include "llbuild/Basic/SerialQueue.h"
 #include "llbuild/Basic/Version.h"
 #include "llbuild/Commands/Commands.h"
@@ -1860,7 +1861,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
 
   // Honor the --chdir option, if used.
   if (!chdirPath.empty()) {
-    if (::chdir(chdirPath.c_str()) < 0) {
+    if (!sys::chdir(chdirPath.c_str())) {
       fprintf(stderr, "%s: error: unable to honor --chdir: %s\n",
               getProgramName(), strerror(errno));
       return 1;
