@@ -10,11 +10,11 @@ class KeyName(Base):
     __tablename__ = "key_names"
 
     id = Column(Integer, nullable=False, primary_key=True)
-    key = Column(String, nullable=False)
+    name = Column('key', String, nullable=False)
 
     def __repr__(self):
         return "%s%r" % (
-            self.__class__.__name__, (self.id, self.key))
+            self.__class__.__name__, (self.id, self.name))
 
 class RuleResult(Base):
     __tablename__ = "rule_results"
@@ -42,8 +42,9 @@ class RuleDependency(Base):
     key_id = Column(Integer, ForeignKey(KeyName.id),
                      nullable=False, primary_key=True)
 
+    rule = relation(RuleResult)
     key = relation(KeyName)
-
+    
     def __repr__(self):
         return "%s%r" % (
             self.__class__.__name__, (self.rule_id, self.key))
