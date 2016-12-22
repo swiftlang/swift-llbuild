@@ -36,7 +36,8 @@ Support_imports = [
     'ManagedStatic', 'MathExtras', 'Mutex', 'MutexGuard', 'Memory',
     'MemoryBuffer', 'PointerLikeTypeTraits', 'Recycler', 'SwapByteOrder',
     'TimeValue', 'Threading', 'Unicode', 'UniqueLock', 'Unix', 'WindowsError',
-    'Valgrind', 'circular_raw_ostream', 'raw_ostream', 'type_traits']
+    'Valgrind', 'circular_raw_ostream', 'raw_ostream', 'type_traits', 
+    'WindowsSupport']
 
 # Stuff we don't want, but have to pull in.
 Support_imports += [
@@ -110,6 +111,8 @@ def main():
             import_source('Support', name+'.cpp')
             import_source('Support', os.path.join('Unix', name+'.h'))
             import_source('Support', os.path.join('Unix', name+'.inc'))
+            import_source('Support', os.path.join('Windows', name+'.h'))
+            import_source('Support', os.path.join('Windows', name+'.inc'))
         
 if __name__ == '__main__':
     main()
