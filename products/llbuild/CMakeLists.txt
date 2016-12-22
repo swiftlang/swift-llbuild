@@ -8,6 +8,8 @@ target_link_libraries(llbuild
   llbuildCore
   llbuildBasic
   llvmSupport
-  sqlite3
-  curses
-  )
+  sqlite3)
+
+if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+  target_link_libraries(llbuild curses)
+endif()
