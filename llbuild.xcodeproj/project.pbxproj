@@ -184,7 +184,7 @@
 		E1B838EE1B52E86E00DB876B /* Valgrind.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1B838CE1B52E85400DB876B /* Valgrind.cpp */; };
 		E1B838EF1B52E86E00DB876B /* YAMLParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1B838CF1B52E85400DB876B /* YAMLParser.cpp */; };
 		E1B838F01B52E86E00DB876B /* circular_raw_ostream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1B838D01B52E85400DB876B /* circular_raw_ostream.cpp */; };
-		E1B838F11B52E86E00DB876B /* raw_ostream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1B838D11B52E85400DB876B /* raw_ostream.cpp */; };
+		E1B838F11B52E86E00DB876B /* raw_ostream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1B838D11B52E85400DB876B /* raw_ostream.cpp */; settings = {COMPILER_FLAGS = "-Xclang -analyzer-disable-all-checks"; }; };
 		E1B8393A1B52E8C100DB876B /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
 		E1B8393B1B52E8CC00DB876B /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
 		E1B839471B52EAAE00DB876B /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
