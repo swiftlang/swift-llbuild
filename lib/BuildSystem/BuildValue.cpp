@@ -30,6 +30,8 @@ StringRef BuildValue::stringForKind(BuildValue::Kind kind) {
     CASE(FailedInput);
     CASE(SuccessfulCommand);
     CASE(FailedCommand);
+    CASE(PropagatedFailureCommand);
+    CASE(CancelledCommand);
     CASE(SkippedCommand);
     CASE(Target);
 #undef CASE

@@ -128,7 +128,7 @@ public:
 
 class BuildSystemImpl : public BuildSystemCommandInterface {
   /// The internal schema version.
-  static const uint32_t internalSchemaVersion = 1;
+  static const uint32_t internalSchemaVersion = 3;
   
   BuildSystem& buildSystem;
 
@@ -534,7 +534,23 @@ class CommandTask : public Task {
   }
 
   virtual void inputsAvailable(BuildEngine& engine) override {
-    command.inputsAvailable(getBuildSystem(engine).getCommandInterface(), this);
+    auto& bsci = getBuildSystem(engine).getCommandInterface();
+    auto fn = [this, &bsci=bsci](QueueJobContext* context) {
+      bool shouldSkip = !bsci.getDelegate().shouldCommandStart(&command);
+
+      if (shouldSkip) {
+        // We need to call commandFinished here because commandPreparing and
+        // shouldCommandStart guarantee that they're followed by
+        // commandFinished.
+        bsci.getDelegate().commandFinished(&command);
+
+        bsci.taskIsComplete(this, BuildValue::makeSkippedCommand());
+      } else {
+        command.inputsAvailable(bsci, this);
+      }
+    };
+
+    bsci.addJob({ &command, std::move(fn) });
   }
 
 public:
@@ -1480,8 +1496,9 @@ class MkdirCommand : public Command {
 
   virtual BuildValue getResultForOutput(Node* node,
                                         const BuildValue& value) override {
-    // If the value was a failed or skipped command, propagate the failure.
-    if (value.isFailedCommand() || value.isSkippedCommand())
+    // If the value was a failed command, propagate the failure.
+    if (value.isFailedCommand() || value.isPropagatedFailureCommand() ||
+        value.isCancelledCommand())
       return BuildValue::makeFailedInput();
 
     // Otherwise, we should have a successful command -- return the actual
@@ -1549,7 +1566,7 @@ class MkdirCommand : public Command {
                                core::Task* task) override {
     // If the build should cancel, do nothing.
     if (bsci.getDelegate().isCancelled()) {
-      bsci.taskIsComplete(task, BuildValue::makeSkippedCommand());
+      bsci.taskIsComplete(task, BuildValue::makeCancelledCommand());
       return;
     }
     
@@ -1718,8 +1735,9 @@ class SymlinkCommand : public Command {
 
   virtual BuildValue getResultForOutput(Node* node,
                                         const BuildValue& value) override {
-    // If the value was a failed or skipped command, propagate the failure.
-    if (value.isFailedCommand() || value.isSkippedCommand())
+    // If the value was a failed command, propagate the failure.
+    if (value.isFailedCommand() || value.isPropagatedFailureCommand() ||
+        value.isCancelledCommand())
       return BuildValue::makeFailedInput();
 
     // Otherwise, we should have a successful command -- return the actual
@@ -1774,7 +1792,7 @@ class SymlinkCommand : public Command {
                                core::Task* task) override {
     // If the build should cancel, do nothing.
     if (bsci.getDelegate().isCancelled()) {
-      bsci.taskIsComplete(task, BuildValue::makeSkippedCommand());
+      bsci.taskIsComplete(task, BuildValue::makeCancelledCommand());
       return;
     }
     
