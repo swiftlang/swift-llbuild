@@ -116,7 +116,7 @@ void Lexer::skipToEndOfLine() {
 }
 
 Token& Lexer::setIdentifierTokenKind(Token& result) const {
-  unsigned length = bufferPos - result.start;
+  unsigned long length = bufferPos - result.start;
   switch (length) {
   case 4:
     if (memcmp("rule", result.start, 4) == 0)

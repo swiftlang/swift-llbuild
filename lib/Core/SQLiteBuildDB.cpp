@@ -330,7 +330,7 @@ public:
     result = sqlite3_clear_bindings(findRuleResultStmt);
     assert(result == SQLITE_OK);
     result = sqlite3_bind_text(findRuleResultStmt, /*index=*/1,
-                               rule.key.data(), rule.key.size(),
+                               rule.key.data(), (int)rule.key.size(),
                                SQLITE_STATIC);
     assert(result == SQLITE_OK);
 
@@ -427,7 +427,7 @@ public:
     result = sqlite3_clear_bindings(findKeyIDForKeyStmt);
     assert(result == SQLITE_OK);
     result = sqlite3_bind_text(findKeyIDForKeyStmt, /*index=*/1,
-                               key.data(), key.size(),
+                               key.data(), (int)key.size(),
                                SQLITE_STATIC);
     assert(result == SQLITE_OK);
 
@@ -444,7 +444,7 @@ public:
     result = sqlite3_clear_bindings(insertIntoKeysStmt);
     assert(result == SQLITE_OK);
     result = sqlite3_bind_text(insertIntoKeysStmt, /*index=*/1,
-                               key.data(), key.size(),
+                               key.data(), (int)key.size(),
                                SQLITE_STATIC);
     assert(result == SQLITE_OK);
     result = sqlite3_step(insertIntoKeysStmt);
@@ -521,7 +521,7 @@ public:
     assert(result == SQLITE_OK);
     result = sqlite3_bind_blob(insertIntoRuleResultsStmt, /*index=*/2,
                                ruleResult.value.data(),
-                               ruleResult.value.size(),
+                               (int)ruleResult.value.size(),
                                SQLITE_STATIC);
     assert(result == SQLITE_OK);
     result = sqlite3_bind_int64(insertIntoRuleResultsStmt, /*index=*/3,

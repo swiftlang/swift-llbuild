@@ -3187,6 +3187,7 @@
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
 				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				LIBRARY_SEARCH_PATHS = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
@@ -3200,6 +3201,7 @@
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
 				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				LIBRARY_SEARCH_PATHS = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
@@ -3209,6 +3211,7 @@
 		E1604CAF1BB9E01D001153A1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/bin";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = NO;
@@ -3218,6 +3221,7 @@
 		E1604CB01BB9E01D001153A1 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/bin";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = NO;
@@ -3381,6 +3385,7 @@
 					"$(inherited)",
 					"LLBUILD_VERSION_STRING=\\\"$(LLBUILD_VERSION_STRING)\\\"",
 				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				LLBUILD_VERSION_STRING = "llbuild-$(PROJECT_SOURCE_VERSION)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -3394,6 +3399,7 @@
 					"$(inherited)",
 					"LLBUILD_VERSION_STRING=\\\"$(LLBUILD_VERSION_STRING)\\\"",
 				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				LLBUILD_VERSION_STRING = "llbuild-$(PROJECT_SOURCE_VERSION)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -3403,6 +3409,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				EXECUTABLE_PREFIX = lib;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -3411,6 +3418,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				EXECUTABLE_PREFIX = lib;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -3419,6 +3427,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				EXECUTABLE_PREFIX = lib;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -3427,6 +3436,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				EXECUTABLE_PREFIX = lib;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -3435,6 +3445,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				EXECUTABLE_PREFIX = lib;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -3443,6 +3454,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				EXECUTABLE_PREFIX = lib;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -3450,6 +3462,7 @@
 		E1A224C819F999B80059043E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/bin";
 				PRODUCT_NAME = llbuild;
 				SKIP_INSTALL = NO;
@@ -3459,6 +3472,7 @@
 		E1A224C919F999B80059043E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/bin";
 				PRODUCT_NAME = llbuild;
 				SKIP_INSTALL = NO;
@@ -3526,6 +3540,7 @@
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
 				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				LIBRARY_SEARCH_PATHS = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
@@ -3540,6 +3555,7 @@
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
 				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				LIBRARY_SEARCH_PATHS = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
@@ -3594,6 +3610,7 @@
 				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				EXECUTABLE_PREFIX = lib;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/public-api";
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/lib";
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
@@ -3610,6 +3627,7 @@
 				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				EXECUTABLE_PREFIX = lib;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/public-api";
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/lib";
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
@@ -3624,6 +3642,7 @@
 			buildSettings = {
 				CLANG_ENABLE_CODE_COVERAGE = NO;
 				EXECUTABLE_PREFIX = lib;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/include";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -3634,6 +3653,7 @@
 			buildSettings = {
 				CLANG_ENABLE_CODE_COVERAGE = NO;
 				EXECUTABLE_PREFIX = lib;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/include";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -3643,6 +3663,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				EXECUTABLE_PREFIX = lib;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -3651,6 +3672,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				EXECUTABLE_PREFIX = lib;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -3700,6 +3722,7 @@
 				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/public-api";
 				INFOPLIST_FILE = "$(SRCROOT)/products/llbuild-framework/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
@@ -3720,6 +3743,7 @@
 				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/public-api";
 				INFOPLIST_FILE = "$(SRCROOT)/products/llbuild-framework/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";

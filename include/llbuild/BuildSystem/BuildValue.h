@@ -103,7 +103,7 @@ private:
   }
   BuildValue(Kind kind, ArrayRef<FileInfo> outputInfos,
              uint64_t commandSignature = 0)
-      : kind(kind), numOutputInfos(outputInfos.size()),
+      : kind(kind), numOutputInfos((uint32_t)outputInfos.size()),
         commandSignature(commandSignature)
   {
     assert(numOutputInfos >= 1);

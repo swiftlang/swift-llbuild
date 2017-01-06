@@ -33,7 +33,7 @@ struct CommandLineStatusOutputImpl {
   bool isClosed{false};
 
   /// The number of characters written to the current line.
-  int numCurrentCharacters{0};
+  unsigned long numCurrentCharacters{0};
 
   CommandLineStatusOutputImpl() {}
 
@@ -92,7 +92,7 @@ struct CommandLineStatusOutputImpl {
     if (hasOutput) {
       // Clear the line before writing, this tends to produce better results
       // than clearing the unwritten tail of the line written below.
-      fprintf(fp, "\r%*s\r", numCurrentCharacters, "");
+      fprintf(fp, "\r%*s\r", (int)numCurrentCharacters, "");
       fflush(fp);
       hasOutput = false;
     }

@@ -422,7 +422,7 @@ bool ParserImpl::parseBuildSpecifier(ParseActions::BuildResult *decl_out) {
   while (tok.tokenKind == Token::Kind::String) {
     inputs.push_back(consumeExpectedToken(Token::Kind::String));
   }
-  unsigned numExplicitInputs = inputs.size();
+  unsigned long numExplicitInputs = inputs.size();
 
   // Parse the implicit inputs, if present.
   if (consumeIfToken(Token::Kind::Pipe)) {
@@ -430,7 +430,7 @@ bool ParserImpl::parseBuildSpecifier(ParseActions::BuildResult *decl_out) {
       inputs.push_back(consumeExpectedToken(Token::Kind::String));
     }
   }
-  unsigned numImplicitInputs = inputs.size() - numExplicitInputs;
+  unsigned long numImplicitInputs = inputs.size() - numExplicitInputs;
 
   // Parse the order-only inputs, if present.
   if (consumeIfToken(Token::Kind::PipePipe)) {
@@ -448,7 +448,7 @@ bool ParserImpl::parseBuildSpecifier(ParseActions::BuildResult *decl_out) {
   }
 
   *decl_out = actions.actOnBeginBuildDecl(name, outputs, inputs,
-                                          numExplicitInputs, numImplicitInputs);
+                                          (unsigned)numExplicitInputs, (unsigned)numImplicitInputs);
 
   return true;
 }

@@ -233,7 +233,7 @@ static int runAckermannBuild(int m, int n, int recomputeCount,
   llvm::outs() << "ack(" << m << ", " << n << ") = " << result << "\n";
   if (n < 10) {
 #ifndef NDEBUG
-    int expected = ack(m, n);
+    uint64_t expected = ack(m, n);
     assert(result == expected);
 #endif
   }
@@ -270,7 +270,7 @@ static void ackermannUsage() {
 }
 
 static int executeAckermannCommand(std::vector<std::string> args) {
-  int recomputeCount = 0;
+  long recomputeCount = 0;
   std::string dumpGraphPath, traceFilename;
   while (!args.empty() && args[0][0] == '-') {
     const std::string option = args[0];
@@ -324,14 +324,14 @@ static int executeAckermannCommand(std::vector<std::string> args) {
   }
 
   const char *str = args[0].c_str();
-  int m = ::strtol(str, (char**)&str, 10);
+  long m = ::strtol(str, (char**)&str, 10);
   if (*str != '\0') {
     fprintf(stderr, "error: %s: invalid argument '%s' (expected integer)\n",
             getProgramName(), args[0].c_str());
     return 1;
   }
   str = args[1].c_str();
-  int n = ::strtol(str, (char**)&str, 10);
+  long n = ::strtol(str, (char**)&str, 10);
   if (*str != '\0') {
     fprintf(stderr, "error: %s: invalid argument '%s' (expected integer)\n",
             getProgramName(), args[1].c_str());
@@ -339,18 +339,18 @@ static int executeAckermannCommand(std::vector<std::string> args) {
   }
 
   if (m >= 4) {
-    fprintf(stderr, "error: %s: invalid argument M = '%d' (too large)\n",
+    fprintf(stderr, "error: %s: invalid argument M = '%ldd' (too large)\n",
             getProgramName(), m);
     return 1;
   }
 
   if (n >= 1024) {
-    fprintf(stderr, "error: %s: invalid argument N = '%d' (too large)\n",
+    fprintf(stderr, "error: %s: invalid argument N = '%ld' (too large)\n",
             getProgramName(), n);
     return 1;
   }
 
-  return runAckermannBuild(m, n, recomputeCount, traceFilename, dumpGraphPath);
+  return runAckermannBuild((int)m, (int)n, (int)recomputeCount, traceFilename, dumpGraphPath);
 }
 
 }

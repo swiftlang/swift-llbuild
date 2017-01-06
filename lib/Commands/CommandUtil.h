@@ -33,7 +33,7 @@ struct Token;
 namespace commands {
 namespace util {
 
-std::string escapedString(const char* start, unsigned length);
+std::string escapedString(const char* start, unsigned long length);
 
 std::string escapedString(const std::string& string);
 

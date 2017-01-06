@@ -56,7 +56,7 @@ struct LaneBasedExecutionQueueJobContext {
 // FIXME: Consider trying to share this with the Ninja implementation.
 class LaneBasedExecutionQueue : public BuildExecutionQueue {
   /// The number of lanes the queue was configured with.
-  unsigned numLanes;
+  unsigned long numLanes;
 
   /// A thread for each lane.
   std::vector<std::unique_ptr<std::thread>> lanes;
@@ -139,10 +139,10 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
 
 public:
   LaneBasedExecutionQueue(BuildExecutionQueueDelegate& delegate,
-                          unsigned numLanes)
+                          unsigned long numLanes)
       : BuildExecutionQueue(delegate), numLanes(numLanes)
   {
-    for (unsigned i = 0; i != numLanes; ++i) {
+    for (unsigned long i = 0; i != numLanes; ++i) {
       lanes.push_back(std::unique_ptr<std::thread>(
                           new std::thread(
                               &LaneBasedExecutionQueue::executeLane, this, i)));
@@ -419,6 +419,6 @@ public:
 
 BuildExecutionQueue*
 llbuild::buildsystem::createLaneBasedExecutionQueue(
-    BuildExecutionQueueDelegate& delegate, int numLanes) {
+    BuildExecutionQueueDelegate& delegate, unsigned long numLanes) {
   return new LaneBasedExecutionQueue(delegate, numLanes);
 }

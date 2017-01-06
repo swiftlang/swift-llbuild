@@ -132,7 +132,7 @@ namespace {
 /// lane.
 struct BuildExecutionQueue {
   /// The number of lanes the queue was configured with.
-  unsigned numLanes;
+  unsigned long numLanes;
 
   /// A thread for each lane.
   std::vector<std::unique_ptr<std::thread>> lanes;
@@ -146,7 +146,7 @@ struct BuildExecutionQueue {
   bool useLIFO;
 
 public:
-  BuildExecutionQueue(unsigned numLanes, bool useLIFO)
+  BuildExecutionQueue(unsigned long numLanes, bool useLIFO)
       : numLanes(numLanes), useLIFO(useLIFO)
   {
     for (unsigned i = 0; i != numLanes; ++i) {
@@ -423,7 +423,7 @@ public:
   /// Whether output should use verbose mode.
   bool verbose = false;
   /// The number of failed commands to tolerate, or 0 if unlimited
-  unsigned numFailedCommandsToTolerate = 1;
+  unsigned long numFailedCommandsToTolerate = 1;
 
   /// The build profile output file.
   FILE *profileFP = nullptr;
@@ -526,7 +526,7 @@ public:
     // Wait for signal arrival indications.
     while (true) {
       char byte;
-      int res = read(signalWatchingPipe[0], &byte, 1);
+      ssize_t res = read(signalWatchingPipe[0], &byte, 1);
 
       // If nothing was read, the pipe has been closed and we should shut down.
       if (res == 0)
@@ -880,7 +880,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
 
     /// Compute the output result for the command.
     BuildValue computeCommandResult(uint64_t commandHash) const {
-      unsigned numOutputs = command->getOutputs().size();
+      unsigned long numOutputs = command->getOutputs().size();
       if (numOutputs == 1) {
         return BuildValue::makeSuccessfulCommand(
             FileInfo::getInfoForPath(
@@ -892,7 +892,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
           outputInfos[i] = FileInfo::getInfoForPath(
               command->getOutputs()[i]->getPath());
         }
-        return BuildValue::makeSuccessfulCommand(outputInfos.data(), numOutputs,
+        return BuildValue::makeSuccessfulCommand(outputInfos.data(), (uint32_t)numOutputs,
                                                  commandHash);
       }
     }
@@ -1579,7 +1579,7 @@ static bool buildCommandIsResultValid(ninja::Command* command,
   }
 
   // Check the timestamps on each of the outputs.
-  for (unsigned i = 0, e = command->getOutputs().size(); i != e; ++i) {
+  for (unsigned long i = 0, e = command->getOutputs().size(); i != e; ++i) {
     // Always rebuild if the output is missing.
     auto info = FileInfo::getInfoForPath(command->getOutputs()[i]->getPath());
     if (info.isMissing())
@@ -1589,7 +1589,7 @@ static bool buildCommandIsResultValid(ninja::Command* command,
     //
     // Note that we may still decide not to actually run the command based on
     // the update-if-newer handling, but it does require running the task.
-    if (value.getNthOutputInfo(i) != info)
+    if (value.getNthOutputInfo((unsigned)i) != info)
       return false;
   }
 
@@ -1696,8 +1696,8 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
   bool simulate = false;
   bool strict = false;
   bool verbose = false;
-  unsigned numJobsInParallel = 0;
-  unsigned numFailedCommandsToTolerate = 1;
+  unsigned long numJobsInParallel = 0;
+  unsigned long numFailedCommandsToTolerate = 1;
   float maximumLoadAverage = 0.0;
   std::vector<std::string> debugTools;
 
@@ -2055,11 +2055,11 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
 
       // Create the per-output selection rules that select the individual output
       // result from the composite result.
-      for (unsigned i = 0, e = command->getOutputs().size(); i != e; ++i) {
+      for (unsigned long i = 0, e = command->getOutputs().size(); i != e; ++i) {
         context.engine.addRule({
             command->getOutputs()[i]->getPath(),
             [=, &context] (core::BuildEngine&) {
-              return selectCompositeBuildResult(context, command, i,
+              return selectCompositeBuildResult(context, command, (unsigned)i,
                                                 compositeRuleName);
             },
             [=, &context] (core::BuildEngine&, const core::Rule& rule,

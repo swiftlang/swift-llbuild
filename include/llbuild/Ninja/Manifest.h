@@ -209,7 +209,7 @@ public:
   unsigned getNumExplicitInputs() const { return numExplicitInputs; }
   unsigned getNumImplicitInputs() const { return numImplicitInputs; }
   unsigned getNumOrderOnlyInputs() const {
-    return inputs.size() - getNumExplicitInputs() - getNumImplicitInputs();
+    return (unsigned)inputs.size() - getNumExplicitInputs() - getNumImplicitInputs();
   }
 
   llvm::StringMap<std::string>& getParameters() {

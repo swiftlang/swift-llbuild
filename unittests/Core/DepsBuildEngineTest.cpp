@@ -81,7 +81,7 @@ public:
 
   virtual void start(BuildEngine& engine) override {
     // Request all of the inputs.
-    for (int i = 0, e = inputs.size(); i != e; ++i) {
+    for (unsigned long i = 0, e = inputs.size(); i != e; ++i) {
       engine.taskNeedsInput(this, inputs[i], i);
     }
   }

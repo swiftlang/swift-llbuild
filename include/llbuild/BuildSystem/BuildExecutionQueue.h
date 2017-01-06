@@ -233,7 +233,7 @@ public:
 /// Create an execution queue that schedules jobs to individual lanes with a
 /// capped limit on the number of concurrent lanes.
 BuildExecutionQueue *createLaneBasedExecutionQueue(
-    BuildExecutionQueueDelegate& delegate, int numLanes);
+    BuildExecutionQueueDelegate& delegate, unsigned long numLanes);
 
 }
 }

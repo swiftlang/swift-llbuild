@@ -143,7 +143,7 @@ getResultForOutput(Node* node, const BuildValue& value) {
   auto idx = it - outputs.begin();
   assert(idx < value.getNumOutputs());
 
-  auto& info = value.getNthOutputInfo(idx);
+  auto& info = value.getNthOutputInfo((unsigned int)idx);
   if (info.isMissing())
     return BuildValue::makeMissingOutput();
     
@@ -165,7 +165,7 @@ bool ExternalCommand::isResultValid(BuildSystem& system,
     return false;
 
   // Check the timestamps on each of the outputs.
-  for (unsigned i = 0, e = outputs.size(); i != e; ++i) {
+  for (unsigned long i = 0, e = outputs.size(); i != e; ++i) {
     auto* node = outputs[i];
 
     // Ignore virtual outputs.
@@ -187,7 +187,7 @@ bool ExternalCommand::isResultValid(BuildSystem& system,
     // could enable behavior to remove such output files if annotated prior to
     // running the command.
     auto info = node->getFileInfo(system.getDelegate().getFileSystem());
-    if (value.getNthOutputInfo(i) != info)
+    if (value.getNthOutputInfo((unsigned int)i) != info)
       return false;
   }
 

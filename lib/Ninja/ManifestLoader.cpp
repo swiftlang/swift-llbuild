@@ -402,7 +402,7 @@ public:
       }
       return;
     } else if (name == "out") {
-      for (unsigned i = 0, ie = decl->getOutputs().size(); i != ie; ++i) {
+      for (unsigned long i = 0, ie = decl->getOutputs().size(); i != ie; ++i) {
         if (i != 0)
           result << " ";
         result << decl->getOutputs()[i]->getPath();
