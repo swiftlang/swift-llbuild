@@ -1698,7 +1698,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
   bool verbose = false;
   unsigned numJobsInParallel = 0;
   unsigned numFailedCommandsToTolerate = 1;
-  float maximumLoadAverage = 0.0;
+  double maximumLoadAverage = 0.0;
   std::vector<std::string> debugTools;
 
   while (!args.empty() && args[0][0] == '-') {
