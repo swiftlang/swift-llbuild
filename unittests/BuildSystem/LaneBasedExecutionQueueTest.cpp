@@ -10,15 +10,21 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llbuild/Basic/FileSystem.h"
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
+#include "TempDir.hpp"
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/FileSystem.h"
 
 #include "gtest/gtest.h"
 
+#include <ctime>
+
 using namespace llbuild;
+using namespace llbuild::basic;
 using namespace llbuild::buildsystem;
 
 namespace {
@@ -36,16 +42,25 @@ namespace {
 
   TEST(LaneBasedExecutionQueueTest, basic) {
     DummyDelegate delegate;
+    std::unique_ptr<FileSystem> fs = createLocalFileSystem();
+    TmpDir tempDir{"LaneBasedExecutionQueueTest"};
+    std::string outputFile = tempDir.str() + "/yes-output.txt";
     auto queue = std::unique_ptr<BuildExecutionQueue>(createLaneBasedExecutionQueue(delegate, 2));
 
-    auto fn = [&queue](QueueJobContext* context) {
-      std::vector<StringRef> commandLine;
-      commandLine.push_back("/usr/bin/yes");
-      queue->executeProcess(context, commandLine);
+    auto fn = [&outputFile, &queue](QueueJobContext* context) {
+      queue->executeShellCommand(context, "yes >" + outputFile);
     };
 
     queue->addJob(QueueJob((Command*)0x1, fn));
-    ::usleep(10); // there's a tiny race, until executeProcess() has called executeCommand()
+
+    // Busy wait until `outputFile` appears which indicates that `yes` is running
+    time_t start = ::time(NULL);
+    while (fs->getFileInfo(outputFile).isMissing()) {
+      if (::time(NULL) > start + 5) {
+         // We can't fail gracefully because the `LaneBasedExecutionQueue` will always wait for spawned processes to exit
+        abort();
+      }
+    }
 
     queue->cancelAllJobs();
     queue.reset();

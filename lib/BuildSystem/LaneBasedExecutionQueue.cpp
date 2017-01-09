@@ -65,6 +65,7 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
   std::deque<QueueJob> readyJobs;
   std::mutex readyJobsMutex;
   std::condition_variable readyJobsCondition;
+  bool cancelled { false };
   
   /// The set of spawned processes to terminate if we get cancelled.
   std::unordered_set<pid_t> spawnedProcesses;
@@ -72,9 +73,9 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
 
   /// Management of cancellation and SIGKILL escalation
   std::unique_ptr<std::thread> killAfterTimeoutThread = nullptr;
-  std::atomic<bool> cancelled { false };
-  std::condition_variable stopKillingCondition;
-  std::mutex stopKillingMutex;
+  std::condition_variable queueCompleteCondition;
+  std::mutex queueCompleteMutex;
+  bool queueComplete { false };
 
   void executeLane(unsigned laneNumber) {
     // Set the thread name, if available.
@@ -90,20 +91,18 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
 #endif
     
     // Execute items from the queue until shutdown.
-    while (!cancelled) {
+    while (true) {
       // Take a job from the ready queue.
       QueueJob job{};
       {
         std::unique_lock<std::mutex> lock(readyJobsMutex);
 
         // While the queue is empty, wait for an item.
-        while (readyJobs.empty()) {
+        while (!cancelled && readyJobs.empty()) {
           readyJobsCondition.wait(lock);
-
-          if (cancelled) {
-            return;
-          }
         }
+        if (cancelled)
+          return;
 
         // Take an item according to the chosen policy.
         job = readyJobs.front();
@@ -123,9 +122,12 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
   }
 
   void killAfterTimeout() {
-    std::unique_lock<std::mutex> lock(stopKillingMutex);
-    stopKillingCondition.wait_for(lock, std::chrono::seconds(10));
-    sendSignalToProcesses(SIGKILL);
+    std::unique_lock<std::mutex> lock(queueCompleteMutex);
+
+    if (!queueComplete) {
+      queueCompleteCondition.wait_for(lock, std::chrono::seconds(10));
+      sendSignalToProcesses(SIGKILL);
+    }
   }
 
   void sendSignalToProcesses(int signal) {
@@ -151,39 +153,44 @@ public:
   
   virtual ~LaneBasedExecutionQueue() {
     // Shut down the lanes.
-    cancelled = true;
-    readyJobsCondition.notify_all();
+    {
+      std::unique_lock<std::mutex> lock(readyJobsMutex);
+      cancelled = true;
+      readyJobsCondition.notify_all();
+    }
 
     for (unsigned i = 0; i != numLanes; ++i) {
       lanes[i]->join();
     }
 
     if (killAfterTimeoutThread) {
-      stopKillingCondition.notify_all();
+      {
+        std::unique_lock<std::mutex> lock(queueCompleteMutex);
+        queueComplete = true;
+        queueCompleteCondition.notify_all();
+      }
       killAfterTimeoutThread->join();
     }
   }
 
   virtual void addJob(QueueJob job) override {
+    std::lock_guard<std::mutex> guard(readyJobsMutex);
     if (cancelled) {
       // FIXME: We should eventually raise an error here as new work should not
       // be enqueued after cancellation.
       return;
     }
 
-    std::lock_guard<std::mutex> guard(readyJobsMutex);
     readyJobs.push_back(job);
     readyJobsCondition.notify_one();
   }
 
   virtual void cancelAllJobs() override {
-    auto wasAlreadyCancelled = cancelled.exchange(true);
-    // If we were already cancelled, do nothing.
-    if (wasAlreadyCancelled) {
-      return;
+    {
+      std::unique_lock<std::mutex> lock(readyJobsMutex);
+      cancelled = true;
+      readyJobsCondition.notify_all();
     }
-
-    readyJobsCondition.notify_all();
 
     sendSignalToProcesses(SIGINT);
     killAfterTimeoutThread = llvm::make_unique<std::thread>(
