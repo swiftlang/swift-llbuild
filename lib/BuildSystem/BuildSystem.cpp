@@ -256,8 +256,7 @@ public:
     if (!db)
       return false;
 
-    buildEngine.attachDB(std::move(db));
-    return true;
+    return buildEngine.attachDB(std::move(db), error_out);
   }
 
   bool enableTracing(StringRef filename, std::string* error_out) {

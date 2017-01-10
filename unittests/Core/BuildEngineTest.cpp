@@ -416,23 +416,27 @@ TEST(BuildEngineTest, incrementalDependency) {
   public:
     std::unordered_map<core::KeyType, Result> ruleResults;
 
-    virtual uint64_t getCurrentIteration() override {
+    virtual uint64_t getCurrentIteration(bool* success_out, std::string* error_out) override {
       return 0;
     }
-    virtual void setCurrentIteration(uint64_t value) override {}
+    virtual bool setCurrentIteration(uint64_t value, std::string* error_out) override { return true; }
     virtual bool lookupRuleResult(const Rule& rule,
-                                  Result* result_out) override {
+                                  Result* result_out,
+                                  std::string* error_out) override {
       return false;
     }
-    virtual void setRuleResult(const Rule& rule,
-                               const Result& result) override {
+    virtual bool setRuleResult(const Rule& rule,
+                               const Result& result,
+                               std::string* error_out) override {
       ruleResults[rule.key] = result;
+      return true;
     }
     virtual void buildStarted() override {}
     virtual void buildComplete() override {}
   };
   CustomDB *db = new CustomDB();
-  engine.attachDB(std::unique_ptr<CustomDB>(db));
+  std::string error;
+  engine.attachDB(std::unique_ptr<CustomDB>(db), &error);
 
   int valueA = 2;
   engine.addRule({

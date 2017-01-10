@@ -1982,11 +1982,10 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
         core::createSQLiteBuildDB(dbFilename,
                                   BuildValue::currentSchemaVersion,
                                   &error));
-      if (!db) {
+      if (!db || !context.engine.attachDB(std::move(db), &error)) {
         context.emitError("unable to open build database: %s", error.c_str());
         return 1;
       }
-      context.engine.attachDB(std::move(db));
     }
 
     // Enable tracing, if requested.
