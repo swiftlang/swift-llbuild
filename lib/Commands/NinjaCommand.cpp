@@ -13,6 +13,7 @@
 #include "llbuild/Commands/Commands.h"
 
 #include "llbuild/Basic/LLVM.h"
+#include "llbuild/Basic/PlatformUtility.h"
 #include "llbuild/Ninja/Lexer.h"
 #include "llbuild/Ninja/Manifest.h"
 #include "llbuild/Ninja/ManifestLoader.h"
@@ -26,9 +27,8 @@
 #include <iostream>
 #include <iomanip>
 
-#include <unistd.h>
-
 using namespace llbuild;
+using namespace llbuild::basic;
 using namespace llbuild::commands;
 
 static void usage() {
@@ -404,7 +404,7 @@ static int executeLoadManifestCommand(const std::vector<std::string>& args,
   std::string filename = args[0];
   size_t pos = filename.find_last_of('/');
   if (pos != std::string::npos) {
-    if (::chdir(std::string(filename.substr(0, pos)).c_str()) < 0) {
+    if (!sys::chdir(filename.substr(0, pos).c_str())) {
       fprintf(stderr, "error: %s: unable to chdir(): %s\n",
               getProgramName(), strerror(errno));
       return 1;
