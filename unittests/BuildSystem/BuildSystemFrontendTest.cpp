@@ -384,4 +384,93 @@ commandFinished: 2
 
 }
 
+// Built-in commands don't process skipped inputs the same way as external
+// commands (for now). Add explicit tests to make sure they behave as expected.
+TEST_F(BuildSystemFrontendTest, commandSkipping_NonExternalCommands_mkdir) {
+  writeBuildFile(R"END(
+client:
+    name: client
+
+targets:
+    "": ["2"]
+
+commands:
+    1:
+        tool: mkdir
+        outputs: ["1"]
+    2:
+        tool: mkdir
+        inputs: ["1"]
+        outputs: ["2"]
+)END");
+
+  TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation, *fs);
+  delegate.commandsToSkip.insert("1");
+  
+  BuildSystemFrontend frontend(delegate, invocation);
+  ASSERT_TRUE(frontend.build(""));
+
+  ASSERT_TRUE(delegate.checkTrace(R"END(
+commandPreparing: 2
+commandPreparing: 1
+shouldCommandStart: 1
+commandFinished: 1
+shouldCommandStart: 2
+commandStarted: 2
+commandFinished: 2
+)END"));
+}
+
+// Built-in commands don't process skipped inputs the same way as external
+// commands (for now). Add explicit tests to make sure they behave as expected.
+TEST_F(BuildSystemFrontendTest, commandSkipping_NonExternalCommands_symlink) {
+  writeBuildFile(R"END(
+client:
+    name: client
+
+targets:
+    "": ["3"]
+
+commands:
+    1:
+        tool: symlink
+        outputs: ["1"]
+        contents: "x"
+    2:
+        tool: symlink
+        inputs: ["1"]
+        outputs: ["2"]
+        contents: "y"
+    3:
+        tool: shell
+        inputs: ["2"]
+        outputs: ["3"]
+        args: rm 2
+)END");
+  // We need to delete the symlink ourselves, because llvm's remove()
+  // currently refuses to delete symlinks.
+
+  TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation, *fs);
+  delegate.commandsToSkip.insert("1");
+  
+  BuildSystemFrontend frontend(delegate, invocation);
+  ASSERT_TRUE(frontend.build(""));
+
+  ASSERT_TRUE(delegate.checkTrace(R"END(
+commandPreparing: 3
+commandPreparing: 2
+commandPreparing: 1
+shouldCommandStart: 1
+commandFinished: 1
+shouldCommandStart: 2
+commandStarted: 2
+commandFinished: 2
+shouldCommandStart: 3
+commandStarted: 3
+commandProcessStarted: 3
+commandProcessFinished: 3: 0
+commandFinished: 3
+)END"));
+}
+
 }
