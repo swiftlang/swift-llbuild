@@ -11,6 +11,7 @@
 
 #if defined(_WIN32)
 #include "LeanWindows.h"
+#include <io.h>
 #else
 #include <unistd.h>
 #endif
@@ -23,5 +24,13 @@ bool sys::chdir(const char* fileName) {
   return SetCurrentDirectoryA(fileName);
 #else
   return ::chdir(fileName) == 0;
+#endif
+}
+
+int sys::unlink(const char *fileName) {
+#if defined(_WIN32)
+  return ::_unlink(fileName);
+#else
+  return ::unlink(fileName);
 #endif
 }
