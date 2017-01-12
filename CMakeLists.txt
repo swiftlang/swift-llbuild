@@ -199,6 +199,10 @@ else ()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wnon-virtual-dtor")
 endif ()
 
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLLVM_ON_WIN32")
+endif()
+
 # On BSD and Linux, always build with PIC.
 if(${CMAKE_SYSTEM_NAME} MATCHES ".*BSD" OR ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
