@@ -1499,6 +1499,8 @@ class MkdirCommand : public Command {
     if (value.isFailedCommand() || value.isPropagatedFailureCommand() ||
         value.isCancelledCommand())
       return BuildValue::makeFailedInput();
+    if (value.isSkippedCommand())
+      return BuildValue::makeSkippedCommand();
 
     // Otherwise, we should have a successful command -- return the actual
     // result for the output.
@@ -1738,6 +1740,8 @@ class SymlinkCommand : public Command {
     if (value.isFailedCommand() || value.isPropagatedFailureCommand() ||
         value.isCancelledCommand())
       return BuildValue::makeFailedInput();
+    if (value.isSkippedCommand())
+      return BuildValue::makeSkippedCommand();
 
     // Otherwise, we should have a successful command -- return the actual
     // result for the output.
