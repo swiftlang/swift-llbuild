@@ -972,6 +972,8 @@ private:
     
     // Find the cycle by searching from the entry node.
     struct WorkItem {
+      WorkItem(Rule * node) { this->node = node; }
+
       Rule* node;
       unsigned predecessorIndex = 0;
     };
