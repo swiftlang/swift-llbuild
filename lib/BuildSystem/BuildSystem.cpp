@@ -533,6 +533,12 @@ class CommandTask : public Task {
   }
 
   virtual void inputsAvailable(BuildEngine& engine) override {
+    // If the build should cancel, do nothing.
+    if (isCancelled(engine)) {
+      engine.taskIsComplete(this, BuildValue::makeSkippedCommand().toData());
+      return;
+    }
+
     auto& bsci = getBuildSystem(engine).getCommandInterface();
     auto fn = [this, &bsci=bsci](QueueJobContext* context) {
       bool shouldSkip = !bsci.getDelegate().shouldCommandStart(&command);
