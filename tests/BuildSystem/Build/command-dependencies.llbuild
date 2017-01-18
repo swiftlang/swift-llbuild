@@ -1,0 +1,59 @@
+# Check the behavior of command dependencies.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: touch %t.build/input
+# RUN: cp %s %t.build/build.llbuild
+
+# Both commands should run on the initial build.
+#
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.initial.out
+# RUN: %{FileCheck} --check-prefix CHECK-INITIAL --input-file %t.initial.out %s
+# CHECK-INITIAL: C.output-2
+# CHECK-INITIAL: C.output-1
+# RUN: diff %t.build/output-1 %t.build/output-2
+
+# No commands should run on a null rebuild.
+#
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.null.out
+# RUN: echo EOF >> %t.null.out
+# RUN: %{FileCheck} --check-prefix CHECK-NULL --input-file %t.null.out %s
+# RUN: diff %t.build/output-1 %t.build/output-2
+# CHECK-NULL-NOT: C.output
+# CHECK-NULL: EOF
+
+# Forcing the initial command to run should cause them both to run again.
+#
+# RUN: echo modified >> %t.build/input
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.rebuild.out
+# RUN: cat %t.rebuild.out
+# RUN: %{FileCheck} --check-prefix CHECK-REBUILD --input-file %t.rebuild.out %s
+# RUN: diff %t.build/output-1 %t.build/output-2
+#
+# CHECK-REBUILD: C.output-2
+# CHECK-REBUILD: C.output-1
+
+client:
+  name: basic
+
+targets:
+  "": ["<output>"]
+
+nodes:
+  "<C.output-2.timestamp>":
+    is-command-timestamp: true
+
+commands:
+  C.output-1:
+    tool: shell
+    inputs: ["<C.output-2.timestamp>"]
+    outputs: ["<output>"]
+    description: C.output-1
+    args: cp output-2 output-1
+
+  C.output-2:
+    tool: shell
+    inputs: ["input"]
+    outputs: ["<C.output-2.timestamp>"]
+    description: C.output-2
+    args: cp input output-2

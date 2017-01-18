@@ -33,11 +33,19 @@ class BuildNode : public Node {
   /// Whether or not this node is "virtual" (i.e., not a filesystem path).
   bool virtualNode;
 
+  /// Whether this node represents a "command timestamp".
+  ///
+  /// Such nodes should always also be virtual.
+  bool commandTimestamp;
+
 public:
-  explicit BuildNode(StringRef name, bool isVirtual)
-      : Node(name), virtualNode(isVirtual) {}
+  explicit BuildNode(StringRef name, bool isVirtual, bool isCommandTimestamp)
+      : Node(name), virtualNode(isVirtual),
+        commandTimestamp(isCommandTimestamp) {}
 
   bool isVirtual() const { return virtualNode; }
+
+  bool isCommandTimestamp() const { return commandTimestamp; }
 
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override;

@@ -275,6 +275,19 @@ The following attributes are currently supported:
        to files in the file system matching the name. This attribute can be used
        to override that default.
 
+   * - is-command-timestamp
+     - A boolean value, indicating whether the node should be used to represent
+       the "timestamp" at which a command was run. When set, the node should
+       also be the output of some command in the graph. Whenever that command is
+       run, the node will take on a value representing the timestamp at which
+       the command was run.
+
+       This node can then be used as a (virtual) input to another command in
+       order to cause the downstream command to rerun whenever the producing
+       command is run.
+
+       Such nodes are always virtual nodes.
+
 .. note::
   FIXME: At some point, we probably want to support custom node types.
 
