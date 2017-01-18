@@ -128,7 +128,7 @@ public:
 
 class BuildSystemImpl : public BuildSystemCommandInterface {
   /// The internal schema version.
-  static const uint32_t internalSchemaVersion = 3;
+  static const uint32_t internalSchemaVersion = 4;
   
   BuildSystem& buildSystem;
 
