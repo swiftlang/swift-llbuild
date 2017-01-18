@@ -122,6 +122,7 @@
 		E1604CB51BB9E03E001153A1 /* swift-build-tool.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1604CB41BB9E032001153A1 /* swift-build-tool.cpp */; };
 		E171538D1A0BF702004CD598 /* CorePerfTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = E171538C1A0BF702004CD598 /* CorePerfTests.mm */; };
 		E17440C31CE192FF0070A30C /* ShellUtility.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E17440C21CE192FF0070A30C /* ShellUtility.cpp */; };
+		E192E92F1E30014E00122F17 /* BuildValueTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E192E92E1E30014E00122F17 /* BuildValueTest.cpp */; };
 		E19D79921A15D9E6002604FB /* MakefileDepsParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */; };
 		E19D79951A15DA06002604FB /* MakefileDepsParserTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E19D79941A15DA06002604FB /* MakefileDepsParserTest.cpp */; };
 		E1A0B0FF1C971582006DA08F /* DependencyInfoParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B0FE1C971581006DA08F /* DependencyInfoParser.cpp */; };
@@ -742,6 +743,7 @@
 		E17C29F31B5AC2A700C12DA9 /* build-sphinx-docs.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "build-sphinx-docs.sh"; sourceTree = "<group>"; };
 		E18043391A00129400662FE7 /* install-user-lit.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "install-user-lit.sh"; sourceTree = "<group>"; };
 		E182BE111ABA2B8D001840AD /* Compiler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Compiler.h; sourceTree = "<group>"; };
+		E192E92E1E30014E00122F17 /* BuildValueTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildValueTest.cpp; sourceTree = "<group>"; };
 		E19C3F171B98B3CB0035E1AA /* extract-perf-data */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "extract-perf-data"; sourceTree = "<group>"; };
 		E19C3F181B98B3CB0035E1AA /* xcs-submit-perf-data.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "xcs-submit-perf-data.sh"; sourceTree = "<group>"; };
 		E19C3FD51B98C1A70035E1AA /* tests */ = {isa = PBXFileReference; lastKnownFileType = folder; path = tests; sourceTree = "<group>"; };
@@ -1177,6 +1179,7 @@
 			children = (
 				C5740D0D1E0352D800567DD8 /* CMakeLists.txt */,
 				C5740D081E03523100567DD8 /* BuildSystemFrontendTest.cpp */,
+				E192E92E1E30014E00122F17 /* BuildValueTest.cpp */,
 				9DB0478B1DF9D3E2006CDF52 /* LaneBasedExecutionQueueTest.cpp */,
 				9D0A6D7F1E1FFEA800BE636F /* TempDir.cpp */,
 				9D0A6D801E1FFEA800BE636F /* TempDir.hpp */,
@@ -2604,6 +2607,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E192E92F1E30014E00122F17 /* BuildValueTest.cpp in Sources */,
 				9DB047C01DF9F592006CDF52 /* LaneBasedExecutionQueueTest.cpp in Sources */,
 				C5740D091E03523100567DD8 /* BuildSystemFrontendTest.cpp in Sources */,
 				9D0A6D811E1FFEA800BE636F /* TempDir.cpp in Sources */,
