@@ -100,6 +100,7 @@ private:
   BuildValue() {}
   BuildValue(Kind kind) : kind(kind) {
     valueData.asOutputInfo = {};
+    commandSignature = 0;
   }
   BuildValue(Kind kind, ArrayRef<FileInfo> outputInfos,
              uint64_t commandSignature = 0)
@@ -121,14 +122,16 @@ public:
   // BuildValues can only be moved, not copied.
   BuildValue(BuildValue&& rhs) : numOutputInfos(rhs.numOutputInfos) {
     kind = rhs.kind;
-    if (numOutputInfos == 1) {
-      valueData.asOutputInfo = rhs.valueData.asOutputInfo;
-    } else {
+    numOutputInfos = rhs.numOutputInfos;
+    commandSignature = rhs.commandSignature;
+    if (rhs.hasMultipleOutputs()) {
       valueData.asOutputInfos = rhs.valueData.asOutputInfos;
       rhs.valueData.asOutputInfos = nullptr;
+    } else {
+      valueData.asOutputInfo = rhs.valueData.asOutputInfo;
     }
   }
-  BuildValue &operator=(BuildValue&& rhs) {
+  BuildValue& operator=(BuildValue&& rhs) {
     if (this != &rhs) {
       // Release our resources.
       if (hasMultipleOutputs())
@@ -137,7 +140,8 @@ public:
       // Move the data.
       kind = rhs.kind;
       numOutputInfos = rhs.numOutputInfos;
-      if (numOutputInfos > 1) {
+      commandSignature = rhs.commandSignature;
+      if (rhs.hasMultipleOutputs()) {
         valueData.asOutputInfos = rhs.valueData.asOutputInfos;
         rhs.valueData.asOutputInfos = nullptr;
       } else {
@@ -208,7 +212,9 @@ public:
   bool isFailedInput() const { return kind == Kind::FailedInput; }
   bool isSuccessfulCommand() const {return kind == Kind::SuccessfulCommand; }
   bool isFailedCommand() const { return kind == Kind::FailedCommand; }
-  bool isPropagatedFailureCommand() const { return kind == Kind::PropagatedFailureCommand; }
+  bool isPropagatedFailureCommand() const {
+    return kind == Kind::PropagatedFailureCommand;
+  }
   bool isCancelledCommand() const { return kind == Kind::CancelledCommand; }
   bool isSkippedCommand() const { return kind == Kind::SkippedCommand; }
   bool isTarget() const { return kind == Kind::Target; }
@@ -279,6 +285,9 @@ public:
       std::vector<uint8_t> result(sizeof(*this) +
                                   numOutputInfos * sizeof(FileInfo));
       memcpy(result.data(), this, sizeof(*this));
+      // We must normalize the bytes where the address is stored.
+      memset(result.data() + offsetof(BuildValue, valueData), 0,
+             sizeof(valueData));
       memcpy(result.data() + sizeof(*this), valueData.asOutputInfos,
              numOutputInfos * sizeof(FileInfo));
       return result;
