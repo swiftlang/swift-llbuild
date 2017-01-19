@@ -831,7 +831,8 @@ void BuildSystemEngineDelegate::cycleDetected(const std::vector<Rule*>& cycle) {
 std::unique_ptr<BuildNode>
 BuildSystemImpl::lookupNode(StringRef name, bool isImplicit) {
   bool isVirtual = !name.empty() && name[0] == '<' && name.back() == '>';
-  return llvm::make_unique<BuildNode>(name, isVirtual);
+  return llvm::make_unique<BuildNode>(name, isVirtual,
+                                      /*isCommandTimestamp=*/false);
 }
 
 bool BuildSystemImpl::build(StringRef target) {

@@ -1049,6 +1049,10 @@ public:
     return &delegate;
   }
 
+  Timestamp getCurrentTimestamp() {
+    return currentTimestamp;
+  }
+
   RuleInfo& getRuleInfoForKey(const KeyType& key) {
     // Check if we have already found the rule.
     auto it = ruleInfos.find(key);
@@ -1342,6 +1346,10 @@ BuildEngine::~BuildEngine() {
 
 BuildEngineDelegate* BuildEngine::getDelegate() {
   return static_cast<BuildEngineImpl*>(impl)->getDelegate();
+}
+
+Timestamp BuildEngine::getCurrentTimestamp() {
+  return static_cast<BuildEngineImpl*>(impl)->getCurrentTimestamp();
 }
 
 void BuildEngine::addRule(Rule&& rule) {

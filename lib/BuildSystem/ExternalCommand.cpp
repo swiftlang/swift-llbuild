@@ -129,7 +129,11 @@ getResultForOutput(Node* node, const BuildValue& value) {
   assert(value.isSuccessfulCommand());
 
   // If the node is virtual, the output is always a virtual input value.
-  if (static_cast<BuildNode*>(node)->isVirtual()) {
+  //
+  // FIXME: Eliminate this, and make the build value array contain an array of
+  // build values.
+  auto buildNode = static_cast<BuildNode*>(node);
+  if (buildNode->isVirtual() && !buildNode->isCommandTimestamp()) {
     return BuildValue::makeVirtualInput();
   }
     
@@ -310,7 +314,14 @@ ExternalCommand::computeCommandResult(BuildSystemCommandInterface& bsci) {
   // FIXME: We need to delegate to the node here.
   SmallVector<FileInfo, 8> outputInfos;
   for (auto* node: outputs) {
-    if (node->isVirtual()) {
+    if (node->isCommandTimestamp()) {
+      // FIXME: We currently have to shoehorn the timestamp into a fake file
+      // info, but need to refactor the command result to just store the node
+      // subvalues instead.
+      FileInfo info{};
+      info.size = bsci.getBuildEngine().getCurrentTimestamp();
+      outputInfos.push_back(info);
+    } else if (node->isVirtual()) {
       outputInfos.push_back(FileInfo{});
     } else {
       outputInfos.push_back(node->getFileInfo(

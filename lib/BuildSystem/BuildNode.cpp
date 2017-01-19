@@ -30,6 +30,19 @@ bool BuildNode::configureAttribute(const ConfigureContext& ctx, StringRef name,
       virtualNode = true;
     } else if (value == "false") {
       virtualNode = false;
+      commandTimestamp = false;
+    } else {
+      ctx.error("invalid value: '" + value + "' for attribute '"
+                + name + "'");
+      return false;
+    }
+    return true;
+  } else if (name == "is-command-timestamp") {
+    if (value == "true") {
+      commandTimestamp = true;
+      virtualNode = true;
+    } else if (value == "false") {
+      commandTimestamp = false;
     } else {
       ctx.error("invalid value: '" + value + "' for attribute '"
                 + name + "'");

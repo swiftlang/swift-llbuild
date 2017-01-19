@@ -30,6 +30,10 @@ typedef std::vector<uint8_t> ValueType;
 class BuildDB;
 class BuildEngine;
 
+/// A monotonically increasing timestamp identifying which iteration of a build
+/// an event occurred during.
+typedef uint64_t Timestamp;
+
 /// This object contains the result of executing a task to produce the value for
 /// a key.
 struct Result {
@@ -233,6 +237,12 @@ public:
 
   /// Return the delegate the engine was configured with.
   BuildEngineDelegate* getDelegate();
+
+  /// Get the current build timestamp used by the engine.
+  ///
+  /// The timestamp is a monotonically increasing value which is incremented
+  /// with each requested build.
+  Timestamp getCurrentTimestamp();
 
   /// @name Rule Definition
   /// @{
