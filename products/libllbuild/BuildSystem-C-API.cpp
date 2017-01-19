@@ -17,6 +17,7 @@
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildSystemCommandInterface.h"
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
+#include "llbuild/BuildSystem/CommandResult.h"
 #include "llbuild/BuildSystem/ExternalCommand.h"
 #include "llbuild/Core/BuildEngine.h"
 
@@ -250,12 +251,30 @@ public:
   }
   
   virtual void commandProcessFinished(Command* command, ProcessHandle handle,
+                                      CommandResult commandResult,
                                       int exitStatus) override {
     if (cAPIDelegate.command_process_finished) {
+      llb_buildsystem_command_result_t result = llb_buildsystem_command_result_failed;
+      switch (commandResult) {
+        case CommandResult::Succeeded:
+          result = llb_buildsystem_command_result_succeeded;
+          break;
+        case CommandResult::Cancelled:
+          result = llb_buildsystem_command_result_cancelled;
+          break;
+        case CommandResult::Failed:
+          result = llb_buildsystem_command_result_failed;
+          break;
+        default:
+          assert(0 && "unknown command result");
+          break;
+      }
+
       cAPIDelegate.command_process_finished(
           cAPIDelegate.context,
           (llb_buildsystem_command_t*) command,
           (llb_buildsystem_process_t*) handle.id,
+          result,
           exitStatus);
     }
   }

@@ -11,6 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
+#include "llbuild/BuildSystem/CommandResult.h"
 
 #include "llbuild/Basic/LLVM.h"
 
@@ -277,7 +278,7 @@ public:
             context.job.getForCommand(), handle,
             Twine("unable to open output pipe (") + strerror(errno) + ")");
         getDelegate().commandProcessFinished(context.job.getForCommand(),
-                                             handle, -1);
+                                             handle, CommandResult::Failed, -1);
         return false;
       }
 
@@ -350,7 +351,7 @@ public:
             context.job.getForCommand(), handle,
             Twine("unable to spawn process (") + strerror(errno) + ")");
         getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
-                                             -1);
+                                             CommandResult::Failed, -1);
         return false;
       }
 
@@ -403,7 +404,7 @@ public:
           context.job.getForCommand(), handle,
           Twine("unable to wait for process (") + strerror(errno) + ")");
       getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
-                                           -1);
+                                           CommandResult::Failed, -1);
       return false;
     }
 
@@ -414,11 +415,11 @@ public:
     }
     
     // Notify of the process completion.
-    //
-    // FIXME: Need to communicate more information on the process exit status.
+    bool cancelled = WIFSIGNALED(status) && (WTERMSIG(status) == SIGINT || WTERMSIG(status) == SIGKILL);
+    CommandResult commandResult = cancelled ? CommandResult::Cancelled : (status == 0) ? CommandResult::Succeeded : CommandResult::Failed;
     getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
-                                         status);
-    return (status == 0);
+                                         commandResult, status);
+    return (status == 0) || cancelled;
   }
 };
 
