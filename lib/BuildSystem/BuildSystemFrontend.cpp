@@ -179,11 +179,12 @@ public:
   }
 
   virtual void commandProcessFinished(Command* command, ProcessHandle handle,
+                                      CommandResult result,
                                       int exitStatus) override {
     static_cast<BuildSystemFrontendDelegate*>(&getSystem().getDelegate())->
       commandProcessFinished(
           command, BuildSystemFrontendDelegate::ProcessHandle { handle.id },
-          exitStatus);
+          result, exitStatus);
   }
 };
 
@@ -424,6 +425,7 @@ commandProcessHadOutput(Command* command, ProcessHandle handle,
 
 void BuildSystemFrontendDelegate::
 commandProcessFinished(Command*, ProcessHandle handle,
+                       CommandResult result,
                        int exitStatus) {
 }
 

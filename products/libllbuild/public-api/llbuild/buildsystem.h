@@ -87,6 +87,13 @@ typedef struct llb_buildsystem_tool_t_ llb_buildsystem_tool_t;
 /// Opaque handle to a build system command's launched process.
 typedef struct llb_buildsystem_process_t_ llb_buildsystem_process_t;
 
+/// Result of a command execution
+typedef enum {
+  llb_buildsystem_command_result_succeeded = 0,
+  llb_buildsystem_command_result_failed = 1,
+  llb_buildsystem_command_result_cancelled = 2,
+} llb_buildsystem_command_result_t;
+
 /// Status change event kinds.
 typedef enum {
   /// Indicates the command is being scanned to determine if it needs to run.
@@ -288,10 +295,12 @@ typedef struct llb_buildsystem_delegate_t_ {
   /// Xparam process The handle used to identify the process. This handle
   /// will become invalid as soon as the client returns from this API call.
   ///
-  /// Xparam exitStatus The exit status of the process.
+  /// Xparam result Whether the process suceeded, failed or was cancelled.
+  /// Xparam exitStatus The raw exit status of the process.
   void (*command_process_finished)(void* context,
                                    llb_buildsystem_command_t* command,
                                    llb_buildsystem_process_t* process,
+                                   llb_buildsystem_command_result_t result,
                                    int exit_status);
   
   /// @}
