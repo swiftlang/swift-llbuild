@@ -141,6 +141,11 @@ static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
       fprintf(stderr, "error: unexpected cycle\n");
       abort();
     }
+
+    virtual void error(const Twine& message) override {
+      fprintf(stderr, "error: %s\n", message.str().c_str());
+      abort();
+    }
   } Delegate;
   __block core::BuildEngine Engine(Delegate);
   int LastInputValue = 0;
@@ -214,6 +219,11 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
     virtual void cycleDetected(const std::vector<core::Rule*>& Cycle) override {
       // We never expect to find a cycle.
       fprintf(stderr, "error: unexpected cycle\n");
+      abort();
+    }
+
+    virtual void error(const Twine& message) override {
+      fprintf(stderr, "error: %s\n", message.str().c_str());
       abort();
     }
   } Delegate;
@@ -293,6 +303,11 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
     virtual void cycleDetected(const std::vector<core::Rule*>& Cycle) override {
       // We never expect to find a cycle.
       fprintf(stderr, "error: unexpected cycle\n");
+      abort();
+    }
+
+    virtual void error(const Twine& message) override {
+      fprintf(stderr, "error: %s\n", message.str().c_str());
       abort();
     }
   } Delegate;

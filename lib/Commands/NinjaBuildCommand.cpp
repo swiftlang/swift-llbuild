@@ -400,6 +400,8 @@ struct NinjaBuildEngineDelegate : public core::BuildEngineDelegate {
   virtual core::Rule lookupRule(const core::KeyType& key) override;
 
   virtual void cycleDetected(const std::vector<core::Rule*>& items) override;
+
+  virtual void error(const Twine& message) override;
 };
 
 /// Wrapper for information used during a single build.
@@ -1677,6 +1679,14 @@ void NinjaBuildEngineDelegate::cycleDetected(
   }
 
   context->emitError(message.str());
+
+  // Cancel the build.
+  context->isCancelled = true;
+}
+
+void NinjaBuildEngineDelegate::error(const Twine& message) {
+  // Report the error.
+  context->emitError("error: " + message.str());
 
   // Cancel the build.
   context->isCancelled = true;

@@ -20,6 +20,8 @@
 #include <utility>
 #include <vector>
 
+#include "llvm/ADT/Twine.h"
+
 namespace llbuild {
 namespace core {
 
@@ -203,6 +205,11 @@ public:
   /// the node which was requested to build and ending with the first node in
   /// the cycle (i.e., the node participating in the cycle will appear twice).
   virtual void cycleDetected(const std::vector<Rule*>& items) = 0;
+
+  /// Called when a fatal error is encountered by the build engine.
+  ///
+  /// \param message The diagnostic message.
+  virtual void error(const llvm::Twine& message) = 0;
 
 };
 

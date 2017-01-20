@@ -104,6 +104,12 @@ typedef struct llb_buildengine_delegate_t_ {
     void (*lookup_rule)(void* context,
                         const llb_data_t* key,
                         llb_rule_t* rule_out);
+
+    /// Callback for fatal errors the build engine encounters.
+    ///
+    /// Xparam context The user context pointer.
+    /// Xparam message Error message.
+    void (*error)(void* context, const char* message);
 } llb_buildengine_delegate_t;
 
 /// Create a new build engine object.

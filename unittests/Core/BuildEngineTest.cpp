@@ -45,6 +45,11 @@ private:
     std::transform(items.begin(), items.end(), std::back_inserter(cycle),
                    [](auto rule) { return std::string(rule->key); });
   }
+
+  virtual void error(const Twine& message) override {
+    fprintf(stderr, "error: %s\n", message.str().c_str());
+    abort();
+  }
 };
 
 static int32_t intFromValue(const core::ValueType& value) {

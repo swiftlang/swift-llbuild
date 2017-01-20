@@ -86,6 +86,10 @@ class CAPIBuildEngineDelegate : public BuildEngineDelegate {
     assert(0 && "unexpected cycle!");
   }
 
+  virtual void error(const Twine& message) override {
+    cAPIDelegate.error(cAPIDelegate.context, message.str().c_str());
+  }
+
 public:
   CAPIBuildEngineDelegate(llb_buildengine_delegate_t delegate)
     : cAPIDelegate(delegate)

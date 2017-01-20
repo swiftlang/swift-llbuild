@@ -117,6 +117,7 @@ class BuildSystemEngineDelegate : public BuildEngineDelegate {
 
   virtual Rule lookupRule(const KeyType& keyData) override;
   virtual void cycleDetected(const std::vector<Rule*>& items) override;
+  virtual void error(const Twine& message) override;
 
 public:
   BuildSystemEngineDelegate(BuildSystemImpl& system) : system(system) {}
@@ -824,6 +825,10 @@ void BuildSystemEngineDelegate::cycleDetected(const std::vector<Rule*>& cycle) {
   }
   
   system.error(system.getMainFilename(), os.str());
+}
+
+void BuildSystemEngineDelegate::error(const Twine& message) {
+  system.error(system.getMainFilename(), message);
 }
 
 #pragma mark - BuildSystemImpl implementation

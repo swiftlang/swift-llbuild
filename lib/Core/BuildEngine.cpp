@@ -816,9 +816,9 @@ private:
           std::string error;
           bool result = db->setRuleResult(ruleInfo->rule, ruleInfo->result, &error);
           if (!result) {
-            // FIXME: Error handling.
-            std::cerr << error << std::endl;
-            exit(1);
+            delegate.error(error);
+            completeRemainingTasks();
+            return false;
           }
         }
 
@@ -1013,10 +1013,13 @@ private:
     assert(!cycleList.empty());
 
     delegate.cycleDetected(cycleList);
+    completeRemainingTasks();
+  }
 
-    // Complete all of the remaining tasks.
-    //
-    // FIXME: Should we have a task abort callback?
+  // Complete all of the remaining tasks.
+  //
+  // FIXME: Should we have a task abort callback?
+  void completeRemainingTasks() {
     for (auto& it: taskInfos) {
       // Complete the task, even though it did not update the value.
       //
@@ -1091,9 +1094,8 @@ public:
       std::string error;
       db->lookupRuleResult(ruleInfo.rule, &ruleInfo.result, &error);
       if (!error.empty()) {
-        // FIXME: Error handling.
-        std::cerr << error << std::endl;
-        exit(1);
+        delegate.error(error);
+        completeRemainingTasks();
       }
     }
 
@@ -1132,9 +1134,9 @@ public:
       std::string error;
       bool result = db->setCurrentIteration(currentTimestamp, &error);
       if (!result) {
-        // FIXME: Error handling.
-        std::cerr << error << std::endl;
-        exit(1);
+        delegate.error(error);
+        static ValueType emptyValue{};
+        return emptyValue;
       }
       db->buildComplete();
     }
@@ -1189,10 +1191,8 @@ public:
   void dumpGraphToFile(const std::string& path) {
     FILE* fp = ::fopen(path.c_str(), "w");
     if (!fp) {
-      // FIXME: Error handling.
-      std::cerr << "error: unable to open graph output path \""
-                << path << "\"\n";
-      exit(1);
+      delegate.error("error: unable to open graph output path \"" + path + "\"");
+      return;
     }
 
     // Write the graph header.
@@ -1260,9 +1260,9 @@ public:
   void taskNeedsInput(Task* task, const KeyType& key, uintptr_t inputID) {
     // Validate the InputID.
     if (inputID > BuildEngine::kMaximumInputID) {
-      // FIXME: Error handling.
-      std::cerr << "error: attempt to use reserved input ID\n";
-      exit(1);
+      delegate.error("error: attempt to use reserved input ID");
+      completeRemainingTasks();
+      return;
     }
 
     addTaskInputRequest(task, key, inputID);
@@ -1278,9 +1278,9 @@ public:
     assert(taskInfo && "cannot request inputs for an unknown task");
 
     if (!taskInfo->forRuleInfo->isInProgressComputing()) {
-      // FIXME: Error handling.
-      std::cerr << "error: invalid state for adding discovered dependency\n";
-      exit(1);
+      delegate.error("error: invalid state for adding discovered dependency");
+      completeRemainingTasks();
+      return;
     }
 
     taskInfo->discoveredDependencies.push_back(key);
@@ -1294,9 +1294,9 @@ public:
     assert(taskInfo && "cannot request inputs for an unknown task");
 
     if (!taskInfo->forRuleInfo->isInProgressComputing()) {
-      // FIXME: Error handling.
-      std::cerr << "error: invalid state for marking task complete\n";
-      exit(1);
+      delegate.error("error: invalid state for marking task complete");
+      completeRemainingTasks();
+      return;
     }
 
     RuleInfo* ruleInfo = taskInfo->forRuleInfo;
