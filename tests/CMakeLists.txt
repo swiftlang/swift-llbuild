@@ -28,6 +28,7 @@ if(PYTHONINTERP_FOUND)
   endif()
 
   set(lit_command
+    ${PYTHON_EXECUTABLE}
     ${LIT_EXECUTABLE}
     ${LIT_ARGS}
     --param build_mode=${build_mode})

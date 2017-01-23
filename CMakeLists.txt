@@ -73,6 +73,7 @@ set(LLBUILD_LIBRARY_OUTPUT_INTDIR ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR
 
 find_package(Lit REQUIRED)
 find_package(FileCheck REQUIRED)
+find_package(PythonInterp)
 
 # Check if we should build the Swift bindings.
 if (";${LLBUILD_SUPPORT_BINDINGS};" MATCHES ";Swift;")
