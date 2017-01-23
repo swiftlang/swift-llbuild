@@ -6,6 +6,7 @@ add_llbuild_library(llbuildBasic
   SerialQueue.cpp
   Version.cpp
   ShellUtility.cpp
+  SignalHandlerWrapper
   )
 
 if(${CMAKE_SYSTEM_NAME} MATCHES ".*BSD" OR ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
