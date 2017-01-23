@@ -43,6 +43,11 @@ class SimpleBuildEngineDelegate : public core::BuildEngineDelegate {
     fprintf(stderr, "error: cycle\n");
     abort();
   }
+
+  virtual void error(const Twine& message) override {
+    fprintf(stderr, "error: %s\n", message.str().c_str());
+    abort();
+  }
 };
 
 static int32_t intFromValue(const core::ValueType& value) {

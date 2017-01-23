@@ -214,6 +214,11 @@ static int runAckermannBuild(int m, int n, int recomputeCount,
     virtual void cycleDetected(const std::vector<core::Rule*>& items) override {
       assert(0 && "unexpected cycle!");
     }
+
+    /// Called when a fatal error is encountered by the build engine.
+    virtual void error(const Twine &message) override {
+      assert(0 && ("error:" + message.str()).c_str());
+    }
   };
   AckermannDelegate delegate;
   core::BuildEngine engine(delegate);
