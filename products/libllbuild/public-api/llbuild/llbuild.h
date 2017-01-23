@@ -18,9 +18,15 @@
 #define LLBUILD_PUBLIC_LLBUILD_H
 
 #if defined(__cplusplus)
+#if defined(_WIN32)
+#define LLBUILD_EXPORT extern "C" __declspec(dllexport)
+#else
 #define LLBUILD_EXPORT extern "C" __attribute__((visibility("default")))
+#endif
 #elif __GNUC__
 #define LLBUILD_EXPORT extern __attribute__((visibility("default")))
+#elif defined(_WIN32)
+#define LLBUILD_EXPORT extern __declspec(dllexport)
 #else
 #define LLBUILD_EXPORT extern
 #endif
