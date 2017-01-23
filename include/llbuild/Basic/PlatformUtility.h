@@ -18,11 +18,15 @@
 #ifndef LLBUILD_BASIC_PLATFORMUTILITY_H
 #define LLBUILD_BASIC_PLATFORMUTILITY_H
 
+#include <cstdio>
+
 namespace llbuild {
 namespace basic {
 namespace sys {
-  bool chdir(const char *fileName);
-  int unlink(const char *fileName);
+bool chdir(const char *fileName);
+int pclose(FILE *stream);
+FILE *popen(const char *command, const char *mode);
+int unlink(const char *fileName);
 }
 }
 }

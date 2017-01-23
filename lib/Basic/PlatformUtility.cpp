@@ -13,6 +13,7 @@
 #include "LeanWindows.h"
 #include <io.h>
 #else
+#include <stdio.h>
 #include <unistd.h>
 #endif
 
@@ -24,6 +25,22 @@ bool sys::chdir(const char* fileName) {
   return SetCurrentDirectoryA(fileName);
 #else
   return ::chdir(fileName) == 0;
+#endif
+}
+
+int sys::pclose(FILE *stream) {
+#if defined(_WIN32)
+  return ::_pclose(stream);
+#else
+  return ::pclose(stream);
+#endif
+}
+
+FILE *sys::popen(const char *command, const char *mode) {
+#if defined(_WIN32)
+  return ::_popen(command, mode);
+#else
+  return ::popen(command, mode);
 #endif
 }
 

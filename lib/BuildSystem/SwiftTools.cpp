@@ -15,6 +15,7 @@
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/Basic/Hashing.h"
 #include "llbuild/Basic/LLVM.h"
+#include "llbuild/Basic/PlatformUtility.h"
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildKey.h"
@@ -126,7 +127,7 @@ public:
       commandOS << " " << "--version";
 
       // Read the result.
-      FILE *fp = ::popen(commandOS.str().str().c_str(), "r");
+      FILE *fp = basic::sys::popen(commandOS.str().str().c_str(), "r");
       SmallString<4096> result;
       if (fp) {
         char buf[4096];
@@ -138,7 +139,7 @@ public:
           }
           result.append(StringRef(buf, numRead));
         }
-        pclose(fp);
+        basic::sys::pclose(fp);
       }
 
       // For now, we can get away with just encoding this as a successful
