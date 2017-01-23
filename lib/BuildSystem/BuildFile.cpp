@@ -45,7 +45,7 @@ namespace {
 
 #ifndef NDEBUG
 static void dumpNode(llvm::yaml::Node* node, unsigned indent=0)
-    __attribute__((used));
+    LLVM_ATTRIBUTE_USED;
 static void dumpNode(llvm::yaml::Node* node, unsigned indent) {
   switch (node->getType()) {
   default: {
