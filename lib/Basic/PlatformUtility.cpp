@@ -28,6 +28,14 @@ bool sys::chdir(const char *fileName) {
 #endif
 }
 
+int sys::close(int fileHandle) {
+#if defined(_WIN32)
+  return ::_close(fileHandle);
+#else
+  return ::close(fileHandle);
+#endif
+}
+
 int sys::pclose(FILE *stream) {
 #if defined(_WIN32)
   return ::_pclose(stream);

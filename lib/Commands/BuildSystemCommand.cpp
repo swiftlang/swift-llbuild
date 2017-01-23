@@ -459,7 +459,7 @@ class BasicBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
     }
 
     // Shut down the pipe.
-    close(signalWatchingPipe[0]);
+    basic::sys::close(signalWatchingPipe[0]);
     signalWatchingPipe[0] = -1;
   }
   
@@ -488,7 +488,7 @@ public:
     sigaction(SIGINT, &previousSigintHandler, NULL);
 
     // Close the signal watching pipe.
-    ::close(BasicBuildSystemFrontendDelegate::signalWatchingPipe[1]);
+    basic::sys::close(BasicBuildSystemFrontendDelegate::signalWatchingPipe[1]);
     signalWatchingPipe[1] = -1;
   }
 
