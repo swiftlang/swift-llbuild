@@ -50,8 +50,9 @@ TEST(DependencyInfoParserTest, basic) {
     }
   };
 
-#define INPUT(str) ({ \
-      assert(sizeof(str) != 0); StringRef(str, sizeof(str) - 1); })
+#define INPUT(str)                                                             \
+  StringRef(str, sizeof(str) - 1);                                             \
+  assert(sizeof(str) != 0);
 
   // Check missing terminator diagnose (on empty file).
   {
