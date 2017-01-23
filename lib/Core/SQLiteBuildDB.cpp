@@ -12,6 +12,7 @@
 
 #include "llbuild/Core/BuildDB.h"
 
+#include "llbuild/Basic/PlatformUtility.h"
 #include "llbuild/Core/BuildEngine.h"
 
 #include "llvm/ADT/STLExtras.h"
@@ -22,7 +23,6 @@
 #include <sstream>
 
 #include <sqlite3.h>
-#include <unistd.h>
 
 using namespace llbuild;
 using namespace llbuild::core;
@@ -102,7 +102,7 @@ public:
       sqlite3_close(db);
 
       // Always recreate the database from scratch when the schema changes.
-      result = unlink(path.str().c_str());
+      result = basic::sys::unlink(path.str().c_str());
       if (result == -1) {
         if (errno != ENOENT) {
           *error_out = std::string("unable to unlink existing database: ") +

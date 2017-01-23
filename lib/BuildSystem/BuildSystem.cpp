@@ -17,6 +17,7 @@
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/Basic/Hashing.h"
 #include "llbuild/Basic/LLVM.h"
+#include "llbuild/Basic/PlatformUtility.h"
 #include "llbuild/Basic/ShellUtility.h"
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/BuildEngine.h"
@@ -1834,7 +1835,7 @@ class SymlinkCommand : public Command {
       auto success = true;
       if (llvm::sys::fs::create_link(contents, output->getName())) {
         // On failure, we attempt to unlink the file and retry.
-        ::unlink(output->getName().str().c_str());
+        basic::sys::unlink(output->getName().str().c_str());
         
         if (llvm::sys::fs::create_link(contents, output->getName())) {
           getBuildSystem(bsci.getBuildEngine()).error(

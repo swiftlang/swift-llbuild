@@ -22,6 +22,7 @@ namespace llbuild {
 namespace basic {
 namespace sys {
   bool chdir(const char *fileName);
+  int unlink(const char *fileName);
 }
 }
 }
