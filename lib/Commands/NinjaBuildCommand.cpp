@@ -568,7 +568,7 @@ public:
     // Create a pipe and thread to watch for signals.
     assert(BuildContext::signalWatchingPipe[0] == -1 &&
            BuildContext::signalWatchingPipe[1] == -1);
-    if (::pipe(BuildContext::signalWatchingPipe) < 0) {
+    if (basic::sys::pipe(BuildContext::signalWatchingPipe) < 0) {
       perror("pipe");
     }
     new std::thread(&BuildContext::signalWaitThread, this);
@@ -1205,7 +1205,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       // Create a pipe to use to read the command output, if necessary.
       int pipe[2]{ -1, -1 };
       if (!isConsole) {
-        if (::pipe(pipe) < 0) {
+        if (basic::sys::pipe(pipe) < 0) {
           context.emitError("unable to create command pipe (%s)",
                             strerror(errno));
           return false;

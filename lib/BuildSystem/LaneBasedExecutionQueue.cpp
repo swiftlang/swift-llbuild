@@ -13,6 +13,7 @@
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
 
 #include "llbuild/Basic/LLVM.h"
+#include "llbuild/Basic/PlatformUtility.h"
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/SmallString.h"
@@ -272,7 +273,7 @@ public:
     // If we are capturing output, create a pipe and appropriate spawn actions.
     int outputPipe[2]{ -1, -1 };
     if (shouldCaptureOutput) {
-      if (::pipe(outputPipe) < 0) {
+      if (basic::sys::pipe(outputPipe) < 0) {
         getDelegate().commandProcessHadError(
             context.job.getForCommand(), handle,
             Twine("unable to open output pipe (") + strerror(errno) + ")");
