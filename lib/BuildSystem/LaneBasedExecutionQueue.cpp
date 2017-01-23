@@ -125,7 +125,13 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
     std::unique_lock<std::mutex> lock(queueCompleteMutex);
 
     if (!queueComplete) {
-      queueCompleteCondition.wait_for(lock, std::chrono::seconds(10));
+      // Shorten timeout if in testing context
+      if (getenv("LLBUILD_TEST") != nullptr) {
+        queueCompleteCondition.wait_for(lock, std::chrono::milliseconds(1000));
+      } else {
+        queueCompleteCondition.wait_for(lock, std::chrono::seconds(10));
+      }
+
       sendSignalToProcesses(SIGKILL);
     }
   }
