@@ -5,6 +5,9 @@
 
 #include "llvm/Config/llvm-config.h"
 
+#if !defined(__has_include)
+#define __has_include(x) 0
+#endif
 
 /* Define if you want backtraces on crash */
 #define ENABLE_BACKTRACES
@@ -27,7 +30,11 @@
 
 /* Define to 1 if you have the declaration of `strerror_s', and to 0 if you
    don't. */
+#if defined(LLVM_ON_WIN32)
+#define HAVE_DECL_STRERROR_S 1
+#else
 #define HAVE_DECL_STRERROR_S 0
+#endif
 
 /* Define to 1 if you have the DIA SDK installed, and to 0 if you don't. */
 /* #undef HAVE_DIA_SDK */
@@ -126,13 +133,19 @@
 #define HAVE_POSIX_SPAWN 1
 
 /* Define to 1 if you have the `pread' function. */
+#if !defined(LLVM_ON_WIN32)
 #define HAVE_PREAD 1
+#endif
 
 /* Define to 1 if you have the <pthread.h> header file. */
+#if !defined(LLVM_ON_WIN32)
 #define HAVE_PTHREAD_H 1
+#endif
 
 /* Have pthread_mutex_lock */
+#if !defined(LLVM_ON_WIN32)
 #define HAVE_PTHREAD_MUTEX_LOCK 1
+#endif
 
 /* Define to 1 if you have the `sbrk' function. */
 #define HAVE_SBRK 1
@@ -150,7 +163,9 @@
 #define HAVE_STRERROR 1
 
 /* Define to 1 if you have the `strerror_r' function. */
+#if !defined(LLVM_ON_WIN32)
 #define HAVE_STRERROR_R 1
+#endif
 
 /* Define to 1 if you have the `sysconf' function. */
 #undef HAVE_SYSCONF
@@ -179,25 +194,37 @@
 #define HAVE_SYS_STAT_H 1
 
 /* Define to 1 if you have the <sys/time.h> header file. */
+#if !defined(LLVM_ON_WIN32)
 #define HAVE_SYS_TIME_H 1
+#endif
 
 /* Define to 1 if you have the <sys/uio.h> header file. */
+#if !defined(LLVM_ON_WIN32)
 #define HAVE_SYS_UIO_H 1
+#endif
 
 /* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
+#if !defined(LLVM_ON_WIN32)
 #define HAVE_SYS_WAIT_H 1
+#endif
 
 /* Define if the setupterm() function is supported this platform. */
+#if !defined(LLVM_ON_WIN32)
 #define HAVE_TERMINFO 1
+#endif
 
 /* Define to 1 if you have the <termios.h> header file. */
+#if !defined(LLVM_ON_WIN32)
 #define HAVE_TERMIOS_H 1
+#endif
 
 /* Define to 1 if the system has the type `uint64_t'. */
 #define HAVE_UINT64_T 1
 
 /* Define to 1 if you have the <unistd.h> header file. */
+#if !defined(LLVM_ON_WIN32)
 #define HAVE_UNISTD_H 1
+#endif
 
 /* Define to 1 if the system has the type `u_int64_t'. */
 #define HAVE_U_INT64_T 1
@@ -206,7 +233,9 @@
 /* #undef HAVE_VALGRIND_VALGRIND_H */
 
 /* Define to 1 if you have the `writev' function. */
+#if !defined(LLVM_ON_WIN32)
 #define HAVE_WRITEV 1
+#endif
 
 /* Define if /dev/zero should be used when mapping RWX memory, or undefine if
    its not necessary */
