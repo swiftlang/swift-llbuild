@@ -25,6 +25,7 @@ namespace basic {
 namespace sys {
 bool chdir(const char *fileName);
 int pclose(FILE *stream);
+int pipe(int ptHandles[2]);
 FILE *popen(const char *command, const char *mode);
 int unlink(const char *fileName);
 }

@@ -14,6 +14,7 @@
 
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/Basic/LLVM.h"
+#include "llbuild/Basic/PlatformUtility.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildSystem.h"
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
@@ -476,7 +477,7 @@ public:
     // Create a pipe and thread to watch for signals.
     assert(BasicBuildSystemFrontendDelegate::signalWatchingPipe[0] == -1 &&
            BasicBuildSystemFrontendDelegate::signalWatchingPipe[1] == -1);
-    if (::pipe(BasicBuildSystemFrontendDelegate::signalWatchingPipe) < 0) {
+    if (basic::sys::pipe(BasicBuildSystemFrontendDelegate::signalWatchingPipe) < 0) {
       perror("pipe");
     }
     new std::thread(&BasicBuildSystemFrontendDelegate::signalWaitThread, this);

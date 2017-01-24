@@ -36,6 +36,14 @@ int sys::pclose(FILE *stream) {
 #endif
 }
 
+int sys::pipe(int ptHandles[2]) {
+#if defined(_WIN32)
+  return ::_pipe(ptHandles, 0, 0);
+#else
+  return ::pipe(ptHandles);
+#endif
+}
+
 FILE *sys::popen(const char *command, const char *mode) {
 #if defined(_WIN32)
   return ::_popen(command, mode);
