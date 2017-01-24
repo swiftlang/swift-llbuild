@@ -288,21 +288,21 @@ static int executeAckermannCommand(std::vector<std::string> args) {
       ackermannUsage();
     } else if (option == "--recompute") {
       if (args.empty()) {
-        fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
+        fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
                 getProgramName(), option.c_str());
         ackermannUsage();
       }
       char *end;
       recomputeCount = ::strtol(args[0].c_str(), &end, 10);
       if (*end != '\0') {
-        fprintf(stderr, "\error: %s: invalid argument to '%s'\n\n",
+        fprintf(stderr, "error: %s: invalid argument to '%s'\n\n",
                 getProgramName(), option.c_str());
         ackermannUsage();
       }
       args.erase(args.begin());
     } else if (option == "--dump-graph") {
       if (args.empty()) {
-        fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
+        fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
                 getProgramName(), option.c_str());
         ackermannUsage();
       }
@@ -310,14 +310,14 @@ static int executeAckermannCommand(std::vector<std::string> args) {
       args.erase(args.begin());
     } else if (option == "--trace") {
       if (args.empty()) {
-        fprintf(stderr, "\error: %s: missing argument to '%s'\n\n",
+        fprintf(stderr, "error: %s: missing argument to '%s'\n\n",
                 getProgramName(), option.c_str());
         ackermannUsage();
       }
       traceFilename = args[0];
       args.erase(args.begin());
     } else {
-      fprintf(stderr, "\error: %s: invalid option: '%s'\n\n",
+      fprintf(stderr, "error: %s: invalid option: '%s'\n\n",
               getProgramName(), option.c_str());
       ackermannUsage();
     }
