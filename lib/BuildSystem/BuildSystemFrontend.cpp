@@ -26,8 +26,7 @@
 
 #include <atomic>
 #include <memory>
-
-#include <unistd.h>
+#include <thread>
 
 using namespace llbuild;
 using namespace llbuild::basic;
@@ -317,9 +316,9 @@ BuildSystemFrontendDelegate::createExecutionQueue() {
   }
     
   // Get the number of CPUs to use.
-  long numCPUs = sysconf(_SC_NPROCESSORS_ONLN);
+  unsigned numCPUs = std::thread::hardware_concurrency();
   unsigned numLanes;
-  if (numCPUs < 0) {
+  if (numCPUs == 0) {
     error("<unknown>", {}, "unable to detect number of CPUs");
     numLanes = 1;
   } else {
