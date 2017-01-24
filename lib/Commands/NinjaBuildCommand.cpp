@@ -17,6 +17,7 @@
 #include "llbuild/Basic/Hashing.h"
 #include "llbuild/Basic/PlatformUtility.h"
 #include "llbuild/Basic/SerialQueue.h"
+#include "llbuild/Basic/SignalHandlerWrapper.h"
 #include "llbuild/Basic/Version.h"
 #include "llbuild/Commands/Commands.h"
 #include "llbuild/Core/BuildDB.h"
@@ -471,7 +472,7 @@ public:
   std::unique_ptr<BuildExecutionQueue> jobQueue;
 
   /// The previous SIGINT handler.
-  struct sigaction previousSigintHandler;
+  sys::SignalHandlerWrapper previousSigintHandler;
 
   /// The set of spawned processes to cancel when interrupted.
   std::unordered_set<pid_t> spawnedProcesses;
@@ -561,9 +562,9 @@ public:
     delegate.context = this;
 
     // Register an interrupt handler.
-    struct sigaction action{};
-    action.sa_handler = &BuildContext::sigintHandler;
-    sigaction(SIGINT, &action, &previousSigintHandler);
+    sys::SignalHandlerWrapper handler{};
+    handler.handler = &BuildContext::sigintHandler;
+    handler.registerAction(SIGINT, &previousSigintHandler);
 
     // Create a pipe and thread to watch for signals.
     assert(BuildContext::signalWatchingPipe[0] == -1 &&
@@ -579,7 +580,7 @@ public:
     outputQueue.sync([] {});
 
     // Restore any previous SIGINT handler.
-    sigaction(SIGINT, &previousSigintHandler, NULL);
+    previousSigintHandler.registerAction(SIGINT, NULL);
 
     // Close the status output.
     std::string error;
@@ -2184,9 +2185,9 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     // to support proper shell behavior.
     if (context.wasCancelledBySigint) {
       // Ensure SIGINT action is default.
-      struct sigaction action{};
-      action.sa_handler = SIG_DFL;
-      sigaction(SIGINT, &action, 0);
+      sys::SignalHandlerWrapper action{};
+      action.handler = SIG_DFL;
+      action.registerAction(SIGINT, NULL);
 
       kill(getpid(), SIGINT);
       usleep(1000);

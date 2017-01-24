@@ -14,6 +14,7 @@
 
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/Basic/LLVM.h"
+#include "llbuild/Basic/SignalHandlerWrapper.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildSystem.h"
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
@@ -25,15 +26,13 @@
 
 #include "CommandUtil.h"
 
-#include <cerrno>
 #include <thread>
-
 #include <signal.h>
-#include <unistd.h>
 
 using namespace llbuild;
 using namespace llbuild::commands;
 using namespace llbuild::core;
+using namespace llbuild::basic;
 using namespace llbuild::buildsystem;
 
 namespace {
@@ -411,7 +410,7 @@ class BasicBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
   std::unique_ptr<basic::FileSystem> fileSystem;
 
   /// The previous SIGINT handler.
-  struct sigaction previousSigintHandler;
+  sys::SignalHandlerWrapper previousSigintHandler;
 
   /// Low-level flag for when a SIGINT has been received.
   static std::atomic<bool> wasInterrupted;
@@ -469,9 +468,9 @@ public:
                                     "basic", /*version=*/0),
         fileSystem(basic::createLocalFileSystem()) {
     // Register an interrupt handler.
-    struct sigaction action{};
-    action.sa_handler = &BasicBuildSystemFrontendDelegate::sigintHandler;
-    sigaction(SIGINT, &action, &previousSigintHandler);
+    sys::SignalHandlerWrapper handler{};
+    handler.handler = &BasicBuildSystemFrontendDelegate::sigintHandler;
+    handler.registerAction(SIGINT, &previousSigintHandler);
 
     // Create a pipe and thread to watch for signals.
     assert(BasicBuildSystemFrontendDelegate::signalWatchingPipe[0] == -1 &&
@@ -484,7 +483,7 @@ public:
 
   ~BasicBuildSystemFrontendDelegate() {
     // Restore any previous SIGINT handler.
-    sigaction(SIGINT, &previousSigintHandler, NULL);
+    previousSigintHandler.registerAction(SIGINT, NULL);
 
     // Close the signal watching pipe.
     ::close(BasicBuildSystemFrontendDelegate::signalWatchingPipe[1]);
