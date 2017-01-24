@@ -38,14 +38,24 @@ class BuildNode : public Node {
   /// Such nodes should always also be virtual.
   bool commandTimestamp;
 
+  /// Whether this node is mutated by the build.
+  ///
+  /// This flag cannot currently be honored to provide a strongly consistent
+  /// build, but it is used to detect when the file system information on a node
+  /// cannot be safely used to track *output* file state.
+  bool mutated;
+
 public:
-  explicit BuildNode(StringRef name, bool isVirtual, bool isCommandTimestamp)
+  explicit BuildNode(StringRef name, bool isVirtual, bool isCommandTimestamp,
+                     bool isMutated)
       : Node(name), virtualNode(isVirtual),
-        commandTimestamp(isCommandTimestamp) {}
+        commandTimestamp(isCommandTimestamp), mutated(isMutated) {}
 
   bool isVirtual() const { return virtualNode; }
 
   bool isCommandTimestamp() const { return commandTimestamp; }
+
+  bool isMutated() const { return mutated; }
 
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override;
