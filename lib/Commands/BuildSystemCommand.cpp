@@ -426,7 +426,7 @@ class BasicBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
 
     // Write to wake up the signal monitoring thread.
     char byte{};
-    write(signalWatchingPipe[1], &byte, 1);
+    basic::sys::write(signalWatchingPipe[1], &byte, 1);
   }
 
   /// Check if an interrupt has occurred.

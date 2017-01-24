@@ -20,7 +20,7 @@
 using namespace llbuild;
 using namespace llbuild::basic;
 
-bool sys::chdir(const char* fileName) {
+bool sys::chdir(const char *fileName) {
 #if defined(_WIN32)
   return SetCurrentDirectoryA(fileName);
 #else
@@ -57,5 +57,14 @@ int sys::unlink(const char *fileName) {
   return ::_unlink(fileName);
 #else
   return ::unlink(fileName);
+#endif
+}
+
+int sys::write(int fileHandle, void *destinationBuffer,
+  unsigned int maxCharCount) {
+#if defined(_WIN32)
+  return ::_write(fileHandle, destinationBuffer, maxCharCount);
+#else
+  return ::write(fileHandle, destinationBuffer, maxCharCount);
 #endif
 }
