@@ -24,6 +24,8 @@
 #include "llbuild/Core/MakefileDepsParser.h"
 #include "llbuild/Ninja/ManifestLoader.h"
 
+#include "llvm/Support/TimeValue.h"
+
 #include "CommandLineStatusOutput.h"
 #include "CommandUtil.h"
 
@@ -43,7 +45,6 @@
 #include <spawn.h>
 #include <unistd.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <sys/wait.h>
 
 using namespace llbuild;
@@ -55,9 +56,8 @@ extern "C" {
 }
 
 static uint64_t getTimeInMicroseconds() {
-  struct timeval tv;
-  ::gettimeofday(&tv, nullptr);
-  return tv.tv_sec * 1000000 + tv.tv_usec;
+  llvm::sys::TimeValue now = llvm::sys::TimeValue::now();
+  return now.msec();
 }
 
 static std::string getFormattedString(const char* fmt, va_list ap) {
