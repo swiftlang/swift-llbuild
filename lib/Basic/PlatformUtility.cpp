@@ -36,6 +36,16 @@ int sys::close(int fileHandle) {
 #endif
 }
 
+int sys::lstat(const char *fileName, sys::StatStruct *buf) {
+#if defined(_WIN32)
+  // We deliberately ignore lstat on Windows, and delegate
+  // to stat.
+  return ::_stat(fileName, buf);
+#else
+  return ::lstat(fileName, buf);
+#endif
+}
+
 int sys::pclose(FILE *stream) {
 #if defined(_WIN32)
   return ::_pclose(stream);
@@ -66,6 +76,14 @@ int sys::read(int fileHandle, void *destinationBuffer,
   return ::_read(fileHandle, destinationBuffer, maxCharCount);
 #else
   return ::read(fileHandle, destinationBuffer, maxCharCount);
+#endif
+}
+
+int sys::stat(const char *fileName, StatStruct *buf) {
+#if defined(_WIN32)
+  return ::_stat(fileName, buf);
+#else
+  return ::stat(fileName, buf);
 #endif
 }
 
