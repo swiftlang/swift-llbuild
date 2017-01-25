@@ -448,7 +448,7 @@ class BasicBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
     // Wait for signal arrival indications.
     while (true) {
       char byte;
-      int res = read(signalWatchingPipe[0], &byte, 1);
+      int res = basic::sys::read(signalWatchingPipe[0], &byte, 1);
 
       // If nothing was read, the pipe has been closed and we should shut down.
       if (res == 0)
