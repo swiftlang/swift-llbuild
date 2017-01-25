@@ -178,6 +178,7 @@ static void command_process_had_output(void* context,
 static void command_process_finished(void* context,
                                      llb_buildsystem_command_t* command,
                                      llb_buildsystem_process_t* process,
+                                     llb_buildsystem_command_result_t result,
                                      int exit_status) {
 }
 

@@ -37,7 +37,7 @@ namespace {
     virtual void commandProcessStarted(Command* command, ProcessHandle handle) override {}
     virtual void commandProcessHadError(Command* command, ProcessHandle handle, const Twine& message) override {}
     virtual void commandProcessHadOutput(Command* command, ProcessHandle handle, StringRef data) override {}
-    virtual void commandProcessFinished(Command* command, ProcessHandle handle, int exitStatus) override {}
+    virtual void commandProcessFinished(Command* command, ProcessHandle handle, CommandResult result, int exitStatus) override {}
   };
 
   TEST(LaneBasedExecutionQueueTest, basic) {

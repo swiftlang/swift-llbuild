@@ -177,13 +177,13 @@ public:
     super::commandProcessHadError(command, handle, message);
   }
 
-  virtual void commandProcessFinished(Command* command, ProcessHandle handle,
+  virtual void commandProcessFinished(Command* command, ProcessHandle handle, CommandResult result,
                                       int exitStatus) override {
     {
         std::lock_guard<std::mutex> lock(traceMutex);
         traceStream << __FUNCTION__ << ": " << command->getName() << ": " << exitStatus << "\n";
     }
-    super::commandProcessFinished(command, handle, exitStatus);
+    super::commandProcessFinished(command, handle, result, exitStatus);
   }
 
   virtual FileSystem& getFileSystem() override {
