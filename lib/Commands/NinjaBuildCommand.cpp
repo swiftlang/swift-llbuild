@@ -489,7 +489,7 @@ public:
 
     // Write to wake up the signal monitoring thread.
     char byte{};
-    write(signalWatchingPipe[1], &byte, 1);
+    sys::write(signalWatchingPipe[1], &byte, 1);
   }
 
   /// Cancel the build in response to an interrupt event.

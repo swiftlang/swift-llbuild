@@ -28,6 +28,7 @@ int pclose(FILE *stream);
 int pipe(int ptHandles[2]);
 FILE *popen(const char *command, const char *mode);
 int unlink(const char *fileName);
+int write(int fileHandle, void *destinationBuffer, unsigned int maxCharCount);
 }
 }
 }
