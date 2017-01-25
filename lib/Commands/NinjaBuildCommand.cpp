@@ -61,13 +61,19 @@ static uint64_t getTimeInMicroseconds() {
   return now.msec();
 }
 
-static std::string getFormattedString(const char* fmt, va_list ap) {
-  char* buf;
-  if (::vasprintf(&buf, fmt, ap) < 0) {
+static std::string getFormattedString(const char* fmt, va_list ap1) {
+  va_list ap2;
+  va_copy(ap2, ap1);
+  int count = vsnprintf(NULL, 0, fmt, ap1);
+  if (count <= 0) {
     return "unable to format message";
   }
-  std::string result(buf);
-  ::free(buf);
+
+  std::string result = std::string(count, NULL);
+  if (vsnprintf(const_cast<char *>(result.c_str()), count + 1, fmt, ap2) < 0) {
+    return "unable to format message";
+  }
+
   return result;
 }
 
