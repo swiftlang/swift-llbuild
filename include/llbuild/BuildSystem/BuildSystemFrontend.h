@@ -40,6 +40,7 @@ namespace buildsystem {
 
 class BuildSystemFrontendDelegate;
 class BuildSystemInvocation;
+enum class CommandResult;
 
 /// This provides a standard "frontend" to the build system features, for use in
 /// building bespoke build systems that can still take advantage of desirable
@@ -239,11 +240,13 @@ public:
   /// \param handle - The handle used to identify the process. This handle will
   /// become invalid as soon as the client returns from this API call.
   ///
-  /// \param exitStatus - The exit status of the process.
+  /// \param result - Whether the process suceeded, failed or was cancelled.
+  /// \param exitStatus - The raw exit status of the process.
   //
   // FIXME: Need to include additional information on the status here, e.g., the
   // signal status, and the process output (if buffering).
   virtual void commandProcessFinished(Command*, ProcessHandle handle,
+                                      CommandResult result,
                                       int exitStatus);
 
   /// @}
