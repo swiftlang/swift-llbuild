@@ -24,6 +24,7 @@ namespace llbuild {
 namespace basic {
 namespace sys {
 bool chdir(const char *fileName);
+int close(int fileHandle);
 int pclose(FILE *stream);
 int pipe(int ptHandles[2]);
 FILE *popen(const char *command, const char *mode);

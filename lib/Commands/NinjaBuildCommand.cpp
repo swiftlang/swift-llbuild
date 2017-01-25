@@ -541,7 +541,7 @@ public:
     }
 
     // Shut down the pipe.
-    close(signalWatchingPipe[0]);
+    sys::close(signalWatchingPipe[0]);
     signalWatchingPipe[0] = -1;
   }
 
@@ -587,7 +587,7 @@ public:
     statusOutput.close(&error);
 
     // Close the signal watching pipe.
-    ::close(BuildContext::signalWatchingPipe[1]);
+    sys::close(BuildContext::signalWatchingPipe[1]);
     signalWatchingPipe[1] = -1;
   }
 
