@@ -31,6 +31,7 @@
 
 #include <atomic>
 #include <cerrno>
+#include <chrono>
 #include <condition_variable>
 #include <cstdarg>
 #include <cstdlib>
@@ -2189,7 +2190,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       sigaction(SIGINT, &action, 0);
 
       kill(getpid(), SIGINT);
-      usleep(1000);
+      std::this_thread::sleep_for(std::chrono::microseconds(1000));
       return 2;
     }
 
