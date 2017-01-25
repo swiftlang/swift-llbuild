@@ -52,6 +52,15 @@ FILE *sys::popen(const char *command, const char *mode) {
 #endif
 }
 
+int sys::read(int fileHandle, void *destinationBuffer,
+  unsigned int maxCharCount) {
+#if defined(_WIN32)
+  return ::_read(fileHandle, destinationBuffer, maxCharCount);
+#else
+  return ::read(fileHandle, destinationBuffer, maxCharCount);
+#endif
+}
+
 int sys::unlink(const char *fileName) {
 #if defined(_WIN32)
   return ::_unlink(fileName);
