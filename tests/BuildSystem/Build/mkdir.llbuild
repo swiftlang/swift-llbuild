@@ -9,6 +9,7 @@
 # CHECK: ECHO
 # CHECK: MKDIR
 # CHECK: MUTATE
+# CHECK: TRIGGERED
 
 
 # Check that a null build does nothing.
@@ -21,6 +22,7 @@
 # CHECK-REBUILD: START
 # CHECK-REBUILD-NOT: MKDIR
 # CHECK-REBUILD-NOT: MUTATE
+# CHECK-REBUILD-NOT: TRIGGERED
 # CHECK-REBUILD-NEXT: EOF
 
 
@@ -32,6 +34,7 @@
 #
 # CHECK-RECREATE: MKDIR
 # CHECK-RECREATE: MUTATE
+# CHECK-RECREATE: TRIGGERED
 
 client:
   name: basic
@@ -39,10 +42,14 @@ client:
 targets:
   "": ["<all>"]
 
+nodes:
+  "<<TRIGGER: MKDIR>>":
+    is-command-timestamp: true
+
 commands:
   C.all:
     tool: phony
-    inputs: ["subdir/subdir2/thing.txt"]
+    inputs: ["<TRIGGERED>"]
     outputs: ["<all>"]
   C.echo:
     tool: shell
@@ -53,7 +60,7 @@ commands:
     tool: mkdir
     description: MKDIR
     inputs: ["<echo>"]
-    outputs: ["subdir/subdir2"]
+    outputs: ["subdir/subdir2", "<<TRIGGER: MKDIR>>"]
   C.mutate:
     tool: shell
     description: MUTATE
@@ -61,5 +68,12 @@ commands:
     outputs: ["subdir/subdir2/thing.txt"]
     # We use touch -r here to ensure the directory time is modified to something different.
     args: touch subdir/subdir2/thing.txt && touch -r / subdir subdir/subdir2
+  C.triggered:
+    tool: shell
+    description: TRIGGERED
+    # The second input here is just to force a deterministic order.
+    inputs: ["<<TRIGGER: MKDIR>>", "subdir/subdir2/thing.txt"]
+    outputs: ["<TRIGGERED>"]
+    args: true
 
   
