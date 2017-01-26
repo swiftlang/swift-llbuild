@@ -1,0 +1,81 @@
+# Demonstrates the current "recommended" way of modeling mutable outputs. We do
+# not yet have the ability to offer strong support for these situations, but
+# this approach uses command dependencies and the node "is-mutable" flag to
+# emulate support as best as possible.
+
+# Check the behavior of command dependencies.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: printf Hello > %t.build/input
+# RUN: cp %s %t.build/build.llbuild
+
+# Both commands should run on the initial build.
+#
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.initial.out
+# RUN: %{FileCheck} --check-prefix CHECK-INITIAL-LOG --input-file %t.initial.out %s
+# RUN: printf "Hello, world!\n" > %t.build/expected-output
+# RUNX: diff %t.build/output %t.build/expected-output
+#
+# CHECK-INITIAL-LOG: C.create
+# CHECK-INITIAL-LOG: C.mutate
+
+# No commands should run on a null rebuild.
+#
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.null.out
+# RUN: echo EOF >> %t.null.out
+# RUN: %{FileCheck} --check-prefix CHECK-NULL-LOG --input-file %t.null.out %s
+# RUN: printf "Hello, world!\n" > %t.build/expected-output
+# RUNX: diff %t.build/output %t.build/expected-output
+#
+# CHECK-NULL-LOG-NOT: C.
+# CHECK-NULL-LOG: EOF
+
+# Forcing the initial command to run should cause them both to run again.
+#
+# RUN: printf "Hello there" > %t.build/input
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.rebuild.out
+# RUN: %{FileCheck} --check-prefix CHECK-REBUILD-LOG --input-file %t.rebuild.out %s
+# RUN: printf "Hello there, world!\n" > %t.build/expected-output
+# RUNX: diff %t.build/output %t.build/expected-output
+#
+# CHECK-REBUILD-LOG: C.create
+# CHECK-REBUILD-LOG: C.mutate
+
+# If the output file was removed, they should both to run again.
+#
+# RUN: rm %t.build/output
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.rebuild.out
+# RUN: %{FileCheck} --check-prefix CHECK-REMOVAL-LOG --input-file %t.rebuild.out %s
+# RUN: printf "Hello there, world!\n" > %t.build/expected-output
+# RUNX: diff %t.build/output %t.build/expected-output
+#
+# CHECK-REMOVAL-LOG: C.create
+# CHECK-REMOVAL-LOG: C.mutate
+
+client:
+  name: basic
+
+targets:
+  "": ["<C.mutate>"]
+
+nodes:
+  "<C.create.timestamp>":
+    is-command-timestamp: true
+  "output":
+    is-mutated: true
+
+commands:
+  C.mutate:
+    tool: shell
+    inputs: ["<C.create.timestamp>"]
+    outputs: ["<C.mutate>"]
+    description: C.mutate
+    args: test -f output && echo ", world!" >> output
+
+  C.create:
+    tool: shell
+    inputs: ["input"]
+    outputs: ["output", "<C.create.timestamp>"]
+    description: C.create
+    args: cp input output

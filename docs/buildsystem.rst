@@ -288,6 +288,15 @@ The following attributes are currently supported:
 
        Such nodes are always virtual nodes.
 
+   * - is-mutated
+     - A boolean value, indicating whether the node is mutated by commands in
+       the build. When a command is mutated, it's file system information will
+       no longer be used in determining whether a detected change in the
+       *output* of a command should cause that command to rerun. Without this
+       check, the producer of the file would always rerun since the output
+       information captured at production time will always be out-of-date once
+       the mutating command runs.
+       
 .. note::
   FIXME: At some point, we probably want to support custom node types.
 

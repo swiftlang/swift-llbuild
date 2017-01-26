@@ -838,7 +838,8 @@ std::unique_ptr<BuildNode>
 BuildSystemImpl::lookupNode(StringRef name, bool isImplicit) {
   bool isVirtual = !name.empty() && name[0] == '<' && name.back() == '>';
   return llvm::make_unique<BuildNode>(name, isVirtual,
-                                      /*isCommandTimestamp=*/false);
+                                      /*isCommandTimestamp=*/false,
+                                      /*isMutable=*/false);
 }
 
 bool BuildSystemImpl::build(StringRef target) {

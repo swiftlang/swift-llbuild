@@ -175,7 +175,7 @@ bool ExternalCommand::isResultValid(BuildSystem& system,
     // Ignore virtual outputs.
     if (node->isVirtual())
       continue;
-      
+
     // Rebuild if the output information has changed.
     //
     // We intentionally allow missing outputs here, as long as they haven't
@@ -191,6 +191,15 @@ bool ExternalCommand::isResultValid(BuildSystem& system,
     // could enable behavior to remove such output files if annotated prior to
     // running the command.
     auto info = node->getFileInfo(system.getDelegate().getFileSystem());
+
+    // If this output is mutated by the build, we can't rely on equivalence,
+    // only existence.
+    if (node->isMutated()) {
+      if (value.getNthOutputInfo(i).isMissing() != info.isMissing())
+        return false;
+      continue;
+    }
+
     if (value.getNthOutputInfo(i) != info)
       return false;
   }

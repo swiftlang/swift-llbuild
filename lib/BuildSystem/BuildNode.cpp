@@ -49,6 +49,17 @@ bool BuildNode::configureAttribute(const ConfigureContext& ctx, StringRef name,
       return false;
     }
     return true;
+  } else if (name == "is-mutated") {
+    if (value == "true") {
+      mutated = true;
+    } else if (value == "false") {
+      mutated = false;
+    } else {
+      ctx.error("invalid value: '" + value + "' for attribute '"
+                + name + "'");
+      return false;
+    }
+    return true;
   }
     
   // We don't support any other custom attributes.
