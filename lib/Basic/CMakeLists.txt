@@ -3,6 +3,7 @@ add_llbuild_library(llbuildBasic
   FileSystem.cpp
   Hashing.cpp
   PlatformUtility.cpp
+  RedirectedProcess.cpp
   SerialQueue.cpp
   Version.cpp
   ShellUtility.cpp
