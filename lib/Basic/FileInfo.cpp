@@ -12,15 +12,16 @@
 
 #include "llbuild/Basic/FileInfo.h"
 
+#include "llbuild/Basic/PlatformUtility.h"
+
 #include <cassert>
 #include <cstring>
-#include <sys/stat.h>
 
 using namespace llbuild;
 using namespace llbuild::basic;
 
 bool FileInfo::isDirectory() const {
-  return mode & S_IFDIR;
+  return (mode & S_IFDIR) != 0;
 }
 
 /// Get the information to represent the state of the given node in the file
@@ -30,9 +31,10 @@ bool FileInfo::isDirectory() const {
 /// \returns True if information on the path was found.
 FileInfo FileInfo::getInfoForPath(const std::string& path, bool asLink) {
   FileInfo result;
-  struct ::stat buf;
+
+  sys::StatStruct buf;
   auto statResult =
-    asLink ? ::lstat(path.c_str(), &buf) : ::stat(path.c_str(), &buf);
+    asLink ? sys::lstat(path.c_str(), &buf) : sys::stat(path.c_str(), &buf);
   if (statResult != 0) {
     memset(&result, 0, sizeof(result));
     assert(result.isMissing());
@@ -46,6 +48,9 @@ FileInfo FileInfo::getInfoForPath(const std::string& path, bool asLink) {
 #if defined(__APPLE__)
   auto seconds = buf.st_mtimespec.tv_sec;
   auto nanoseconds = buf.st_mtimespec.tv_nsec;
+#elif defined(_WIN32)
+  auto seconds = buf.st_mtime;
+  auto nanoseconds = 0;
 #else
   auto seconds = buf.st_mtim.tv_sec;
   auto nanoseconds = buf.st_mtim.tv_nsec;

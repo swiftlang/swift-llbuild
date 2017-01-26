@@ -19,16 +19,25 @@
 #define LLBUILD_BASIC_PLATFORMUTILITY_H
 
 #include <cstdio>
+#include <sys/stat.h>
 
 namespace llbuild {
 namespace basic {
 namespace sys {
+#if defined(_WIN32)
+using StatStruct = struct ::_stat;
+#else
+using StatStruct = struct ::stat;
+#endif
+
 bool chdir(const char *fileName);
 int close(int fileHandle);
+int lstat(const char *fileName, StatStruct *buf);
 int pclose(FILE *stream);
 int pipe(int ptHandles[2]);
 FILE *popen(const char *command, const char *mode);
 int read(int fileHandle, void *destinationBuffer, unsigned int maxCharCount);
+int stat(const char *fileName, StatStruct *buf);
 int unlink(const char *fileName);
 int write(int fileHandle, void *destinationBuffer, unsigned int maxCharCount);
 }
