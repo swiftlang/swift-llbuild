@@ -1042,7 +1042,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
                         ("{ \"name\": \"%s\", \"ph\": \"B\", \"pid\": 0, "
                          "\"tid\": %d, \"ts\": %llu},\n"),
                         localCommand->getEffectiveDescription().c_str(), bucket,
-                        startTime);
+                        static_cast<unsigned long long>(startTime));
               });
           }
 
@@ -1056,7 +1056,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
                         ("{ \"name\": \"%s\", \"ph\": \"E\", \"pid\": 0, "
                          "\"tid\": %d, \"ts\": %llu},\n"),
                         localCommand->getEffectiveDescription().c_str(), bucket,
-                        endTime);
+                        static_cast<unsigned long long>(endTime));
               });
           }
 #endif
