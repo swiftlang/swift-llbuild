@@ -1941,8 +1941,8 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     // FIXME: Do a serious analysis of scheduling, including ideally an active
     // scheduler in the execution queue.
     if (numJobsInParallel == 0) {
-      long numCPUs = sysconf(_SC_NPROCESSORS_ONLN);
-      if (numCPUs < 0) {
+      unsigned numCPUs = std::thread::hardware_concurrency();
+      if (numCPUs == 0) {
         context.emitError("unable to detect number of CPUs (%s)",
                           strerror(errno));
         return 1;
