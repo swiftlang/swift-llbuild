@@ -43,9 +43,11 @@
 using namespace llbuild;
 using namespace llbuild::buildsystem;
 
+#if !defined(_WIN32)
 extern "C" {
   extern char **environ;
 }
+#endif
 
 namespace {
 
@@ -324,7 +326,7 @@ public:
     std::vector<const char*> env(environment.size() + 1);
     char* const* envp = nullptr;
     if (environment.empty()) {
-      envp = ::environ;
+      envp = environ;
     } else {
       for (size_t i = 0; i != envStorage.size(); ++i) {
         env[i] = envStorage[i].c_str();

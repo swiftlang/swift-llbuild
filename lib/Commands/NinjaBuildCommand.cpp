@@ -52,9 +52,11 @@ using namespace llbuild;
 using namespace llbuild::basic;
 using namespace llbuild::commands;
 
+#if !defined(_WIN32)
 extern "C" {
   extern char **environ;
 }
+#endif
 
 static uint64_t getTimeInMicroseconds() {
   llvm::sys::TimeValue now = llvm::sys::TimeValue::now();
@@ -1251,7 +1253,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
 
         if (posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
                         /*attrp=*/&attributes, const_cast<char**>(args),
-                        ::environ) != 0) {
+                        environ) != 0) {
           context.emitError("unable to spawn process (%s)", strerror(errno));
           return false;
         }
