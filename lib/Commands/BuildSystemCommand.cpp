@@ -382,7 +382,7 @@ static int executeParseCommand(std::vector<std::string> args) {
     } else if (option == "--no-output") {
       showOutput = false;
     } else {
-      fprintf(stderr, "\error: %s: invalid option: '%s'\n\n",
+      fprintf(stderr, "error: %s: invalid option: '%s'\n\n",
               getProgramName(), option.c_str());
       parseUsage(1);
     }

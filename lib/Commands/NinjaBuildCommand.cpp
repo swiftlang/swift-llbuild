@@ -71,7 +71,7 @@ static std::string getFormattedString(const char* fmt, va_list ap1) {
     return "unable to format message";
   }
 
-  std::string result = std::string(count, NULL);
+  std::string result = std::string(count, '\0');
   if (vsnprintf(const_cast<char *>(result.c_str()), count + 1, fmt, ap2) < 0) {
     return "unable to format message";
   }
