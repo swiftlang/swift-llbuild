@@ -144,7 +144,8 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
     std::unique_lock<std::mutex> lock(spawnedProcessesMutex);
 
     for (pid_t pid: spawnedProcesses) {
-      // We are killing the whole process group here, this depends on us spawning each process in its own group earlier
+      // We are killing the whole process group here, this depends on us
+      // spawning each process in its own group earlier.
       ::kill(-pid, signal);
     }
   }
