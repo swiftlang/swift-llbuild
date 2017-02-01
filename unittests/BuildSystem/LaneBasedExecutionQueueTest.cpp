@@ -21,7 +21,10 @@
 
 #include "gtest/gtest.h"
 
+#include <atomic>
+#include <condition_variable>
 #include <ctime>
+#include <mutex>
 
 using namespace llbuild;
 using namespace llbuild::basic;
@@ -65,5 +68,47 @@ namespace {
     queue->cancelAllJobs();
     queue.reset();
   }
-    
+
+  TEST(LaneBasedExecutionQueueTest, exhaustsQueueAfterCancellation) {
+    DummyDelegate delegate;
+    auto queue = std::unique_ptr<BuildExecutionQueue>(createLaneBasedExecutionQueue(delegate, 1));
+
+    bool buildStarted { false };
+    std::condition_variable buildStartedCondition;
+    std::mutex buildStartedMutex;
+    std::atomic<int> executions { 0 };
+
+    auto fn = [&buildStarted, &buildStartedCondition, &buildStartedMutex,
+               &executions, &queue](QueueJobContext* context) {
+      executions++;
+      if (queue) { queue->cancelAllJobs(); }
+
+      std::unique_lock<std::mutex> lock(buildStartedMutex);
+      buildStarted = true;
+      buildStartedCondition.notify_all();
+    };
+
+    queue->addJob(QueueJob((Command*)0x1, fn));
+    queue->addJob(QueueJob((Command*)0x1, fn));
+
+    {
+      std::unique_lock<std::mutex> lock(buildStartedMutex);
+      while (!buildStarted) {
+        buildStartedCondition.wait(lock);
+      }
+    }
+
+    queue.reset();
+
+    // Busy wait until our executions are done, but also have a timeout in case they never finish
+    time_t start = ::time(NULL);
+    while (executions < 2) {
+      if (::time(NULL) > start + 5) {
+        break;
+      }
+    }
+
+    EXPECT_EQ(executions, 2);
+  }
+
 }

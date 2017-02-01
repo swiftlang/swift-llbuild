@@ -70,6 +70,7 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
   std::mutex readyJobsMutex;
   std::condition_variable readyJobsCondition;
   bool cancelled { false };
+  bool shutdown { false };
   
   /// The set of spawned processes to terminate if we get cancelled.
   std::unordered_set<pid_t> spawnedProcesses;
@@ -102,10 +103,10 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
         std::unique_lock<std::mutex> lock(readyJobsMutex);
 
         // While the queue is empty, wait for an item.
-        while (!cancelled && readyJobs.empty()) {
+        while (!shutdown && readyJobs.empty()) {
           readyJobsCondition.wait(lock);
         }
-        if (cancelled)
+        if (shutdown && readyJobs.empty())
           return;
 
         // Take an item according to the chosen policy.
@@ -166,7 +167,7 @@ public:
     // Shut down the lanes.
     {
       std::unique_lock<std::mutex> lock(readyJobsMutex);
-      cancelled = true;
+      shutdown = true;
       readyJobsCondition.notify_all();
     }
 
@@ -186,12 +187,6 @@ public:
 
   virtual void addJob(QueueJob job) override {
     std::lock_guard<std::mutex> guard(readyJobsMutex);
-    if (cancelled) {
-      // FIXME: We should eventually raise an error here as new work should not
-      // be enqueued after cancellation.
-      return;
-    }
-
     readyJobs.push_back(job);
     readyJobsCondition.notify_one();
   }
@@ -199,6 +194,7 @@ public:
   virtual void cancelAllJobs() override {
     {
       std::unique_lock<std::mutex> lock(readyJobsMutex);
+      if (cancelled) return;
       cancelled = true;
       readyJobsCondition.notify_all();
     }
