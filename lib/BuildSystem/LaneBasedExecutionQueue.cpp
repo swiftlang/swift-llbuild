@@ -209,6 +209,14 @@ public:
                  ArrayRef<StringRef> commandLine,
                  ArrayRef<std::pair<StringRef,
                                     StringRef>> environment) override {
+    {
+      std::unique_lock<std::mutex> lock(readyJobsMutex);
+      // Do not execute new processes anymore after cancellation.
+      if (cancelled) {
+        return false;
+      }
+    }
+
     // Assign a process handle, which just needs to be unique for as long as we
     // are communicating with the delegate.
     struct BuildExecutionQueueDelegate::ProcessHandle handle;
