@@ -50,6 +50,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set_target_properties(llbuild-framework PROPERTIES MACOSX_RPATH "@rpath")
   set_target_properties(llbuild-framework PROPERTIES OUTPUT_NAME llbuild)
   set_target_properties(llbuild-framework PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LLBUILD_LIBRARY_OUTPUT_INTDIR})
+  set_target_properties(llbuild-framework PROPERTIES LINK_FLAGS " -compatibility_version 1 -current_version 1")
   target_link_libraries(llbuild-framework ${DEPENDENCIES})
 
   # Manually set up the remaining framework structure.
