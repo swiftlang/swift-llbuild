@@ -1,0 +1,12 @@
+{% extends "layout.html" %}
+{% block title %}Root Node{% endblock %}
+{% block body %}
+
+<p>
+  Roots:
+  {% for root in roots %}
+  <a href="{{ url_for('main.rule_result', id=root.id) }}">{{ root.key.name }}</a> (id: {{ root.id }})<br>
+  {% endfor %}
+</p>
+
+{% endblock %}
