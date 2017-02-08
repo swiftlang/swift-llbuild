@@ -17,6 +17,7 @@
 #include "llbuild/Basic/PlatformUtility.h"
 
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/Hashing.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/Twine.h"
@@ -43,11 +44,13 @@
 using namespace llbuild;
 using namespace llbuild::buildsystem;
 
-#if !defined(_WIN32)
-extern "C" {
-  extern char **environ;
+namespace std {
+  template<> struct hash<llvm::StringRef> {
+    size_t operator()(const StringRef& value) const {
+      return size_t(hash_value(value));
+    }
+  };
 }
-#endif
 
 namespace {
 
@@ -82,6 +85,9 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
   std::mutex queueCompleteMutex;
   bool queueComplete { false };
 
+  /// The base environment.
+  const char* const* environment;
+  
   void executeLane(unsigned laneNumber) {
     // Set the thread name, if available.
 #if defined(__APPLE__)
@@ -153,8 +159,10 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
 
 public:
   LaneBasedExecutionQueue(BuildExecutionQueueDelegate& delegate,
-                          unsigned numLanes)
-      : BuildExecutionQueue(delegate), numLanes(numLanes)
+                          unsigned numLanes,
+                          const char* const* environment)
+      : BuildExecutionQueue(delegate), numLanes(numLanes),
+        environment(environment)
   {
     for (unsigned i = 0; i != numLanes; ++i) {
       lanes.push_back(std::unique_ptr<std::thread>(
@@ -208,7 +216,8 @@ public:
   executeProcess(QueueJobContext* opaqueContext,
                  ArrayRef<StringRef> commandLine,
                  ArrayRef<std::pair<StringRef,
-                                    StringRef>> environment) override {
+                                    StringRef>> environment,
+                 bool inheritEnvironment) override {
     {
       std::unique_lock<std::mutex> lock(readyJobsMutex);
       // Do not execute new processes anymore after cancellation.
@@ -309,7 +318,7 @@ public:
       posix_spawn_file_actions_adddup2(&fileActions, 2, 2);
     }
 
-    // Form the complete C-string command line.
+    // Form the complete C string command line.
     std::vector<std::string> argsStorage(
         commandLine.begin(), commandLine.end());
     std::vector<const char*> args(argsStorage.size() + 1);
@@ -320,24 +329,49 @@ public:
 
     // Form the complete environment.
     std::vector<std::string> envStorage;
-    for (const auto& entry: environment) {
-      SmallString<256> assignment;
-      assignment += entry.first;
-      assignment += '=';
-      assignment += entry.second;
-      assignment += '\0';
-      envStorage.emplace_back(assignment.str());
-    }
-    std::vector<const char*> env(environment.size() + 1);
-    char* const* envp = nullptr;
+    std::vector<const char*> env;
+    const char* const* envp = nullptr;
+
+    // If no additional environment is supplied, use the base environment.
     if (environment.empty()) {
-      envp = environ;
+      envp = this->environment;
     } else {
-      for (size_t i = 0; i != envStorage.size(); ++i) {
-        env[i] = envStorage[i].c_str();
+      // Inherit the base environment, if desired.
+      if (inheritEnvironment) {
+        std::unordered_set<StringRef> overriddenKeys{};
+        // Compute the set of strings which are overridden in the process
+        // environment.
+        for (const auto& entry: environment) {
+          overriddenKeys.insert(entry.first);
+        }
+
+        // Form the complete environment by adding the base key value pairs
+        // which are not overridden, then adding all of the overridden ones.
+        for (const char* const* p = this->environment; *p != nullptr; ++p) {
+          // Find the key.
+          auto key = StringRef(*p).split('=').first;
+          if (!overriddenKeys.count(key)) {
+            env.emplace_back(*p);
+          }
+        }
       }
-      env[envStorage.size()] = nullptr;
-      envp = const_cast<char**>(env.data());
+
+      // Add the requested environment.
+      for (const auto& entry: environment) {
+        SmallString<256> assignment;
+        assignment += entry.first;
+        assignment += '=';
+        assignment += entry.second;
+        assignment += '\0';
+        envStorage.emplace_back(assignment.str());
+      }
+      // We must do this in a second pass, once the entries are guaranteed not
+      // to move.
+      for (const auto& entry: envStorage) {
+        env.emplace_back(entry.c_str());
+      }
+      env.emplace_back(nullptr);
+      envp = env.data();
     }
 
     // Resolve the executable path, if necessary.
@@ -360,7 +394,7 @@ public:
 
       if (posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
                       /*attrp=*/&attributes, const_cast<char**>(args.data()),
-                      envp) != 0) {
+                      const_cast<char* const*>(envp)) != 0) {
         getDelegate().commandProcessHadError(
             context.job.getForCommand(), handle,
             Twine("unable to spawn process (") + strerror(errno) + ")");
@@ -439,8 +473,18 @@ public:
 
 }
 
+#if !defined(_WIN32)
+extern "C" {
+  extern char **environ;
+}
+#endif
+
 BuildExecutionQueue*
 llbuild::buildsystem::createLaneBasedExecutionQueue(
-    BuildExecutionQueueDelegate& delegate, int numLanes) {
-  return new LaneBasedExecutionQueue(delegate, numLanes);
+    BuildExecutionQueueDelegate& delegate, int numLanes,
+    const char* const* environment) {
+  if (!environment) {
+    environment = const_cast<const char* const*>(environ);
+  }
+  return new LaneBasedExecutionQueue(delegate, numLanes, environment);
 }

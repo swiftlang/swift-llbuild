@@ -9,8 +9,11 @@
 # RUN: diff "%t.build/input A" %t.build/output
 #
 # CHECK: /usr/bin/env
+# CHECK: ENV_KEY=ENV_VALUE_1
 # CHECK-NOT: PATH=
-# CHECK: ENV_KEY=ENV_VALUE
+# CHECK-NEXT: /usr/bin/env
+# CHECK: ENV_KEY=ENV_VALUE_2
+# CHECK: PATH=random-overridden-path
 # CHECK: cp 'input A' output
 
 # Check the engine trace.
@@ -21,7 +24,7 @@
 # CHECK-TRACE: "new-rule", "R1", "Tbasic"
 # CHECK-TRACE: "new-rule", "R2", "Noutput"
 # CHECK-TRACE: "new-rule", "R3", "Ccp-output"
-# CHECK-TRACE: "new-rule", "R4", "N<env>"
+# CHECK-TRACE: "new-rule", "R4", "N<env-2>"
 # CHECK-TRACE: "build-ended"
 
 # Check that a null build does nothing.
@@ -59,16 +62,26 @@ targets:
 default: basic
 
 commands:
-  "<env>":
+  "<env-1>":
     tool: shell
-    outputs: ["<env>"]
+    outputs: ["<env-1>"]
     args: ["/usr/bin/env"]
     env:
-      ENV_KEY: ENV_VALUE
-    
+      ENV_KEY: ENV_VALUE_1
+    inherit-env: false
+
+  "<env-2>":
+    tool: shell
+    inputs: ["<env-1>"]
+    outputs: ["<env-2>"]
+    args: /usr/bin/env | /usr/bin/sort
+    env:
+      ENV_KEY: ENV_VALUE_2
+      PATH: random-overridden-path
+
   cp-output:
     tool: shell
-    inputs: ["input A", "<env>"]
+    inputs: ["input A", "<env-1>", "<env-2>"]
     outputs: ["output"]
     # FIXME: Design a limited mechanism for substitution. Might be tool specific.
     args: ["cp", "input A", "output"]

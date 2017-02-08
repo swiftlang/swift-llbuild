@@ -124,7 +124,18 @@ struct llb_buildsystem_invocation_t_ {
 
   /// The path of the build trace output file to use, if any.
   const char* traceFilePath;
-    
+
+  /// The base environment to use when executing subprocesses.
+  ///
+  /// The format is expected to match that of `::main()`, i.e. a null-terminated
+  /// array of pointers to null terminated C strings.
+  ///
+  /// If empty, the environment of the calling process will be used.
+  ///
+  /// The environment is *not* copied by the build invocation, and must remain
+  /// alive for the lifetime of any build using this invocation.
+  const char* const* environment;
+  
   /// Whether to show verbose output.
   //
   // FIXME: This doesn't belong here, move once the status is fully delegated.
@@ -247,7 +258,8 @@ typedef struct llb_buildsystem_delegate_t_ {
   ///
   /// The system guarantees that all such calls will be paired with a
   /// corresponding \see commandFinished() call.
-  bool (*should_command_start)(void* context, llb_buildsystem_command_t* command);
+  bool (*should_command_start)(void* context,
+                               llb_buildsystem_command_t* command);
 
   /// Called when a command has been started.
   ///
@@ -323,6 +335,7 @@ llb_buildsystem_destroy(llb_buildsystem_t* system);
 /// It is an unchecked error for the client to request multiple builds
 /// concurrently.
 ///
+/// \param key The key to build.
 /// \returns True on success, or false if the build was aborted (for example, if
 /// a cycle was discovered).
 LLBUILD_EXPORT bool
@@ -403,8 +416,6 @@ typedef struct llb_buildsystem_external_command_delegate_t_ {
   ///
   /// The contents *MUST* be returned in a new buffer allocated with \see
   /// malloc().
-  //
-  // FIXME: We need to use a better data type than a uint64_t here.
   void (*get_signature)(void* context, llb_buildsystem_command_t* command,
                         llb_data_t* data_out);
 

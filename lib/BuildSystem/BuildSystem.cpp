@@ -959,7 +959,10 @@ class ShellCommand : public ExternalCommand {
 
   /// The style of dependencies used.
   DepsStyle depsStyle = DepsStyle::Unused;
-  
+
+  /// Whether to inherit the base environment.
+  bool inheritEnv = true;
+
   virtual uint64_t getSignature() override {
     // FIXME: Use a more appropriate hashing infrastructure.
     using llvm::hash_combine;
@@ -975,6 +978,7 @@ class ShellCommand : public ExternalCommand {
       code = hash_combine(code, path);
     }
     code = hash_combine(code, int(depsStyle));
+    code = hash_combine(code, int(inheritEnv));
     return size_t(code);
   }
 
@@ -1148,6 +1152,13 @@ public:
         return false;
       }
       return true;
+    } else if (name == "inherit-env") {
+      if (value != "true" && value != "false") {
+        ctx.error("invalid value: '" + value + "' for attribute '" +
+                  name + "'");
+        return false;
+      }
+      inheritEnv = value == "true";
     } else {
       return ExternalCommand::configureAttribute(ctx, name, value);
     }
@@ -1201,7 +1212,7 @@ public:
     // Execute the command.
     if (!bsci.getExecutionQueue().executeProcess(
             context, std::vector<StringRef>(args.begin(), args.end()),
-            environment)) {
+            environment, /*inheritEnvironment=*/inheritEnv)) {
       // If the command failed, there is no need to gather dependencies.
       return false;
     }
