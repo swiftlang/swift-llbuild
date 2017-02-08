@@ -31,6 +31,18 @@
 #define LLBUILD_EXPORT extern
 #endif
 
+/// A monotonically increasing indicator of the llbuild API version.
+///
+/// The llbuild API is *not* stable. This value allows clients to conditionally
+/// compile for multiple versions of the API.
+///
+/// Version History:
+///
+/// 1: Added `environment` parameter to llb_buildsystem_invocation_t.
+///
+/// 0: Pre-history
+#define LLBUILD_API_VERSION 1
+
 /// Get the full version of the llbuild library.
 LLBUILD_EXPORT const char* llb_get_full_version_string(void);
 

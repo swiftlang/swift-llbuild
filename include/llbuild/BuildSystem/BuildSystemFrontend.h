@@ -295,6 +295,14 @@ public:
   /// The path of the build trace output file to use, if any.
   std::string traceFilePath = "";
 
+  /// The base environment to use when executing subprocesses.
+  ///
+  /// The format is expected to match that of `::main()`, i.e. a null-terminated
+  /// array of pointers to null terminated C strings.
+  ///
+  /// If empty, the environment of the calling process will be used.
+  const char* const* environment = nullptr;
+
   /// The positional arguments.
   std::vector<std::string> positionalArgs;
 

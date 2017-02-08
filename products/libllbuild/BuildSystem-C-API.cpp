@@ -328,7 +328,9 @@ public:
     invocation.buildFilePath =
       cAPIInvocation.buildFilePath ? cAPIInvocation.buildFilePath : "";
     invocation.dbPath = cAPIInvocation.dbPath ? cAPIInvocation.dbPath : "";
-    invocation.traceFilePath = cAPIInvocation.traceFilePath ? cAPIInvocation.traceFilePath : "";
+    invocation.traceFilePath = (
+        cAPIInvocation.traceFilePath ? cAPIInvocation.traceFilePath : "");
+    invocation.environment = cAPIInvocation.environment;
     invocation.useSerialBuild = cAPIInvocation.useSerialBuild;
     invocation.showVerboseStatus = cAPIInvocation.showVerboseStatus;
 

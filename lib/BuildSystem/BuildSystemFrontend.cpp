@@ -313,7 +313,8 @@ BuildSystemFrontendDelegate::createExecutionQueue() {
   
   if (impl->invocation.useSerialBuild) {
     return std::unique_ptr<BuildExecutionQueue>(
-        createLaneBasedExecutionQueue(impl->executionQueueDelegate, 1));
+        createLaneBasedExecutionQueue(impl->executionQueueDelegate, 1,
+                                      impl->invocation.environment));
   }
     
   // Get the number of CPUs to use.
@@ -327,7 +328,8 @@ BuildSystemFrontendDelegate::createExecutionQueue() {
   }
     
   return std::unique_ptr<BuildExecutionQueue>(
-      createLaneBasedExecutionQueue(impl->executionQueueDelegate, numLanes));
+      createLaneBasedExecutionQueue(impl->executionQueueDelegate, numLanes,
+                                    impl->invocation.environment));
 }
 
 bool BuildSystemFrontendDelegate::isCancelled() {

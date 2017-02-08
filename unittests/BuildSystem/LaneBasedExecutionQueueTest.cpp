@@ -37,10 +37,15 @@ namespace {
 
     virtual void commandJobStarted(Command* command) override {}
     virtual void commandJobFinished(Command* command) override {}
-    virtual void commandProcessStarted(Command* command, ProcessHandle handle) override {}
-    virtual void commandProcessHadError(Command* command, ProcessHandle handle, const Twine& message) override {}
-    virtual void commandProcessHadOutput(Command* command, ProcessHandle handle, StringRef data) override {}
-    virtual void commandProcessFinished(Command* command, ProcessHandle handle, CommandResult result, int exitStatus) override {}
+    virtual void commandProcessStarted(Command* command,
+                                       ProcessHandle handle) override {}
+    virtual void commandProcessHadError(Command* command, ProcessHandle handle,
+                                        const Twine& message) override {}
+    virtual void commandProcessHadOutput(Command* command, ProcessHandle handle,
+                                         StringRef data) override {}
+    virtual void commandProcessFinished(Command* command, ProcessHandle handle,
+                                        CommandResult result,
+                                        int exitStatus) override {}
   };
 
   TEST(LaneBasedExecutionQueueTest, basic) {
@@ -48,7 +53,8 @@ namespace {
     std::unique_ptr<FileSystem> fs = createLocalFileSystem();
     TmpDir tempDir{"LaneBasedExecutionQueueTest"};
     std::string outputFile = tempDir.str() + "/yes-output.txt";
-    auto queue = std::unique_ptr<BuildExecutionQueue>(createLaneBasedExecutionQueue(delegate, 2));
+    auto queue = std::unique_ptr<BuildExecutionQueue>(
+        createLaneBasedExecutionQueue(delegate, 2, /*environment=*/nullptr));
 
     auto fn = [&outputFile, &queue](QueueJobContext* context) {
       queue->executeShellCommand(context, "yes >" + outputFile);
@@ -56,11 +62,13 @@ namespace {
 
     queue->addJob(QueueJob((Command*)0x1, fn));
 
-    // Busy wait until `outputFile` appears which indicates that `yes` is running
+    // Busy wait until `outputFile` appears which indicates that `yes` is
+    // running.
     time_t start = ::time(NULL);
     while (fs->getFileInfo(outputFile).isMissing()) {
       if (::time(NULL) > start + 5) {
-         // We can't fail gracefully because the `LaneBasedExecutionQueue` will always wait for spawned processes to exit
+        // We can't fail gracefully because the `LaneBasedExecutionQueue` will
+        // always wait for spawned processes to exit
         abort();
       }
     }
@@ -71,7 +79,8 @@ namespace {
 
   TEST(LaneBasedExecutionQueueTest, exhaustsQueueAfterCancellation) {
     DummyDelegate delegate;
-    auto queue = std::unique_ptr<BuildExecutionQueue>(createLaneBasedExecutionQueue(delegate, 1));
+    auto queue = std::unique_ptr<BuildExecutionQueue>(
+        createLaneBasedExecutionQueue(delegate, 1, /*environment=*/nullptr));
 
     bool buildStarted { false };
     std::condition_variable buildStartedCondition;

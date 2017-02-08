@@ -390,9 +390,13 @@ attributes on commands, and not at the tool level.
 
    * - env
      - A mapping of keys and values defining the environment to pass to the
-       launched process. If provided, **only** the entries in this mapping will
-       be exposed in the process environment. If not provided, the process will
-       inherit the environment from the client.
+       launched process. See also `inherit-env`.
+
+   * - inherit-env
+     - A boolean flag controlling whether this command should inherit the base
+       environment provided when executing the build system (either from the
+       command line, or via the internal C APIs), or whether it should only
+       include the entries explicitly provided in the `env` mapping above.
 
    * - allow-missing-inputs
      - A boolean value, indicating whether the commands should be allowed to run

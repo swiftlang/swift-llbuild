@@ -108,8 +108,11 @@ public:
   ///
   /// \param commandLine The command line to execute.
   ///
-  /// \param environment The environment to launch with. If empty, the process
-  /// environment will be inherited.
+  /// \param environment The environment to launch with.
+  ///
+  /// \param inheritEnvironment If true, the supplied environment will be
+  /// overlayed on top base environment supplied when creating the queue. If
+  /// false, only the supplied environment will be passed to the subprocess.
   ///
   /// \returns True on success.
   //
@@ -118,7 +121,8 @@ public:
   virtual bool
   executeProcess(QueueJobContext* context,
                  ArrayRef<StringRef> commandLine,
-                 ArrayRef<std::pair<StringRef, StringRef>> environment) = 0;
+                 ArrayRef<std::pair<StringRef, StringRef>> environment,
+                 bool inheritEnvironment = true) = 0;
 
   /// @}
 
@@ -223,8 +227,8 @@ public:
   /// become invalid as soon as the client returns from this API call.
   ///
   /// \param result - Whether the process suceeded, failed or was cancelled.
-  /// \param exitStatus - The raw exit status of the process, or -1 if an error was
-  /// encountered.
+  /// \param exitStatus - The raw exit status of the process, or -1 if an error
+  /// was encountered.
   //
   // FIXME: Need to include additional information on the status here, e.g., the
   // signal status, and the process output (if buffering).
@@ -236,7 +240,8 @@ public:
 /// Create an execution queue that schedules jobs to individual lanes with a
 /// capped limit on the number of concurrent lanes.
 BuildExecutionQueue *createLaneBasedExecutionQueue(
-    BuildExecutionQueueDelegate& delegate, int numLanes);
+    BuildExecutionQueueDelegate& delegate, int numLanes,
+    const char* const* environment);
 
 }
 }
