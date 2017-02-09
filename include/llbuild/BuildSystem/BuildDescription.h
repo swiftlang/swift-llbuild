@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -252,6 +252,71 @@ public:
 
   virtual void inputsAvailable(BuildSystemCommandInterface&, core::Task*) = 0;
   
+  /// @}
+};
+
+
+/// A complete description of a build.
+class BuildDescription {
+public:
+  // FIXME: This is an inefficent map, the string is duplicated.
+  typedef std::unordered_map<std::string, std::unique_ptr<Node>> node_set;
+  
+  // FIXME: This is an inefficent map, the string is duplicated.
+  typedef std::unordered_map<std::string, std::unique_ptr<Target>> target_set;
+
+  // FIXME: This is an inefficent map, the string is duplicated.
+  typedef std::unordered_map<std::string, std::unique_ptr<Command>> command_set;
+  
+  // FIXME: This is an inefficent map, the string is duplicated.
+  typedef std::unordered_map<std::string, std::unique_ptr<Tool>> tool_set;
+
+private:
+  node_set nodes;
+
+  target_set targets;
+
+  command_set commands;
+  
+  tool_set tools;
+
+  /// The default target.
+  std::string defaultTarget;
+
+public:
+  /// @name Accessors
+  /// @{
+
+  /// Get the set of declared nodes for the file.
+  node_set& getNodes() { return nodes; }
+
+  /// Get the set of declared nodes for the file.
+  const node_set& getNodes() const { return nodes; }
+
+  /// Get the set of declared targets for the file.
+  target_set& getTargets() { return targets; }
+
+  /// Get the set of declared targets for the file.
+  const target_set& getTargets() const { return targets; }
+
+  /// Get the default target.
+  std::string& getDefaultTarget() { return defaultTarget; }
+
+  /// Get the default target.
+  const std::string& getDefaultTarget() const { return defaultTarget; }
+
+  /// Get the set of declared commands for the file.
+  command_set& getCommands() { return commands; }
+
+  /// Get the set of declared commands for the file.
+  const command_set& getCommands() const { return commands; }
+
+  /// Get the set of all tools used by the file.
+  tool_set& getTools() { return tools; }
+
+  /// Get the set of all tools used by the file.
+  const tool_set& getTools() const { return tools; }
+
   /// @}
 };
 

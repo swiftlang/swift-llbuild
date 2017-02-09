@@ -100,19 +100,19 @@ class BuildFileImpl {
   BuildFileDelegate& delegate;
 
   /// The set of all registered tools.
-  BuildFile::tool_set tools;
+  BuildDescription::tool_set tools;
 
   /// The set of all declared targets.
-  BuildFile::target_set targets;
+  BuildDescription::target_set targets;
 
   /// Default target name
   std::string defaultTarget;
 
   /// The set of all declared nodes.
-  BuildFile::node_set nodes;
+  BuildDescription::node_set nodes;
 
   /// The set of all declared commands.
-  BuildFile::command_set commands;
+  BuildDescription::command_set commands;
   
   /// The number of parsing errors.
   int numErrors = 0;
@@ -823,7 +823,7 @@ public:
   /// @name Parse Actions
   /// @{
 
-  bool load() {
+  std::unique_ptr<BuildDescription> load() {
     // Create a memory buffer for the input.
     //
     // FIXME: Lift the file access into the delegate, like we do for Ninja.
@@ -831,7 +831,7 @@ public:
     auto input = delegate.getFileSystem().getFileContents(mainFilename);
     if (!input) {
       error("unable to open '" + mainFilename + "'");
-      return false;
+      return nullptr;
     }
 
     delegate.setFileContentsBeingParsed(input->getBuffer());
@@ -843,36 +843,31 @@ public:
     auto it = stream.begin();
     if (it == stream.end()) {
       error("missing document in stream");
-      return false;
+      return nullptr;
     }
 
     auto& document = *it;
     if (!parseRootNode(document.getRoot())) {
-      return false;
+      return nullptr;
     }
 
     if (++it != stream.end()) {
       error(it->getRoot(), "unexpected additional document in stream");
-      return false;
+      return nullptr;
     }
 
-    return numErrors == 0;
+    // Create the actual description from our constructed elements.
+    //
+    // FIXME: This is historical, We should tidy up this class to reflect that
+    // it is now just a builder.
+    auto description = std::make_unique<BuildDescription>();
+    std::swap(description->getNodes(), nodes);
+    std::swap(description->getTargets(), targets);
+    std::swap(description->getDefaultTarget(), defaultTarget);
+    std::swap(description->getCommands(), commands);
+    std::swap(description->getTools(), tools);
+    return description;
   }
-
-  /// @name Accessors
-  /// @{
-
-  const BuildFile::node_set& getNodes() const { return nodes; }
-
-  const BuildFile::target_set& getTargets() const { return targets; }
-
-  const StringRef getDefaultTarget() const { return defaultTarget; }
-
-  const BuildFile::command_set& getCommands() const { return commands; }
-
-  const BuildFile::tool_set& getTools() const { return tools; }
-
-  /// @}
 };
 
 }
@@ -889,30 +884,7 @@ BuildFile::~BuildFile() {
   delete static_cast<BuildFileImpl*>(impl);
 }
 
-BuildFileDelegate* BuildFile::getDelegate() {
-  return static_cast<BuildFileImpl*>(impl)->getDelegate();
-}
-
-const BuildFile::node_set& BuildFile::getNodes() const {
-  return static_cast<BuildFileImpl*>(impl)->getNodes();
-}
-
-const BuildFile::target_set& BuildFile::getTargets() const {
-  return static_cast<BuildFileImpl*>(impl)->getTargets();
-}
-
-const StringRef BuildFile::getDefaultTarget() const {
-  return static_cast<BuildFileImpl*>(impl)->getDefaultTarget();
-}
-
-const BuildFile::command_set& BuildFile::getCommands() const {
-  return static_cast<BuildFileImpl*>(impl)->getCommands();
-}
-
-const BuildFile::tool_set& BuildFile::getTools() const {
-  return static_cast<BuildFileImpl*>(impl)->getTools();
-}
-
-bool BuildFile::load() {
+std::unique_ptr<BuildDescription> BuildFile::load() {
+  // Create the build description.
   return static_cast<BuildFileImpl*>(impl)->load();
 }

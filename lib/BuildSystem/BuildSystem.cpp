@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -114,7 +114,7 @@ class BuildSystemEngineDelegate : public BuildEngineDelegate {
   /// The custom tasks which are owned by the build system.
   std::vector<std::unique_ptr<Command>> customTasks;
 
-  BuildFile& getBuildFile();
+  const BuildDescription& getBuildDescription() const;
 
   virtual Rule lookupRule(const KeyType& keyData) override;
   virtual void cycleDetected(const std::vector<Rule*>& items) override;
@@ -145,6 +145,9 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
 
   /// The build file the system is building.
   BuildFile buildFile;
+
+  /// The build description, once loaded.
+  std::unique_ptr<BuildDescription> buildDescription;
 
   /// The delegate used for building the file contents.
   BuildSystemEngineDelegate engineDelegate;
@@ -222,8 +225,9 @@ public:
     return *this;
   }
 
-  BuildFile& getBuildFile() {
-    return buildFile;
+  const BuildDescription& getBuildDescription() const {
+    assert(buildDescription);
+    return *buildDescription;
   }
 
   void error(StringRef filename, const Twine& message) {
@@ -600,8 +604,8 @@ public:
   using Task::Task;
 };
 
-BuildFile& BuildSystemEngineDelegate::getBuildFile() {
-  return system.getBuildFile();
+const BuildDescription& BuildSystemEngineDelegate::getBuildDescription() const {
+  return system.getBuildDescription();
 }
 
 static BuildSystemDelegate::CommandStatusKind
@@ -628,8 +632,8 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     
   case BuildKey::Kind::Command: {
     // Find the comand.
-    auto it = getBuildFile().getCommands().find(key.getCommandName());
-    if (it == getBuildFile().getCommands().end()) {
+    auto it = getBuildDescription().getCommands().find(key.getCommandName());
+    if (it == getBuildDescription().getCommands().end()) {
       // If there is no such command, produce an error task.
       return Rule{
         keyData,
@@ -670,7 +674,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     // FIXME: We should most likely have some kind of registration process so we
     // can do an efficient query here, but exactly how this should look isn't
     // clear yet.
-    for (const auto& it: getBuildFile().getTools()) {
+    for (const auto& it: getBuildDescription().getTools()) {
       auto result = it.second->createCustomCommand(key);
       if (!result) continue;
 
@@ -708,9 +712,9 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     
   case BuildKey::Kind::Node: {
     // Find the node.
-    auto it = getBuildFile().getNodes().find(key.getNodeName());
+    auto it = getBuildDescription().getNodes().find(key.getNodeName());
     BuildNode* node;
-    if (it != getBuildFile().getNodes().end()) {
+    if (it != getBuildDescription().getNodes().end()) {
       node = static_cast<BuildNode*>(it->second.get());
     } else {
       auto it = dynamicNodes.find(key.getNodeName());
@@ -763,8 +767,8 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
 
   case BuildKey::Kind::Target: {
     // Find the target.
-    auto it = getBuildFile().getTargets().find(key.getTargetName());
-    if (it == getBuildFile().getTargets().end()) {
+    auto it = getBuildDescription().getTargets().find(key.getTargetName());
+    if (it == getBuildDescription().getTargets().end()) {
       // FIXME: Invalid target name, produce an error.
       assert(0 && "FIXME: invalid target");
       abort();
@@ -843,16 +847,17 @@ BuildSystemImpl::lookupNode(StringRef name, bool isImplicit) {
 }
 
 bool BuildSystemImpl::build(StringRef target) {
-  // Load the build file.
+  // Load the build file, if necessary.
   //
   // FIXME: Eventually, we may want to support something fancier where we load
   // the build file in the background so we can immediately start building
   // things as they show up.
-  //
-  // FIXME: We need to load this only once.
-  if (!getBuildFile().load()) {
-    error(getMainFilename(), "unable to load build file");
-    return false;
+  if (!buildDescription) {
+    buildDescription = buildFile.load();
+    if (!buildDescription) {
+      error(getMainFilename(), "unable to load build file");
+      return false;
+    }
   }    
 
   // Create the execution queue.
@@ -861,7 +866,7 @@ bool BuildSystemImpl::build(StringRef target) {
   // If target name is not passed then we try to load the default target name
   // from manifest file
   if (target.empty()) {
-    target = getBuildFile().getDefaultTarget();
+    target = getBuildDescription().getDefaultTarget();
   }
 
   // Build the target.

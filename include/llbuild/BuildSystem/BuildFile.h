@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -36,10 +36,11 @@ namespace buildsystem {
 /// The type used to pass parsed properties to the delegate.
 typedef std::vector<std::pair<std::string, std::string>> property_list_type;
 
+class BuildDescription;
 class BuildFileDelegate;
+class BuildKey;
 class BuildSystem;
 class BuildSystemCommandInterface;
-class BuildKey;
 class BuildValue;
 class Command;
 class Node;
@@ -134,19 +135,6 @@ public:
 /// The BuildFile class supports the "llbuild"-native build description file
 /// format.
 class BuildFile {
-public:
-  // FIXME: This is an inefficent map, the string is duplicated.
-  typedef std::unordered_map<std::string, std::unique_ptr<Node>> node_set;
-  
-  // FIXME: This is an inefficent map, the string is duplicated.
-  typedef std::unordered_map<std::string, std::unique_ptr<Target>> target_set;
-
-  // FIXME: This is an inefficent map, the string is duplicated.
-  typedef std::unordered_map<std::string, std::unique_ptr<Command>> command_set;
-  
-  // FIXME: This is an inefficent map, the string is duplicated.
-  typedef std::unordered_map<std::string, std::unique_ptr<Tool>> tool_set;
-
 private:
   void *impl;
 
@@ -161,37 +149,10 @@ public:
   /// Return the delegate the engine was configured with.
   BuildFileDelegate* getDelegate();
 
-  /// @name Parse Actions
-  /// @{
-
   /// Load the build file from the provided filename.
   ///
-  /// This method should only be called once on the BuildFile, and it should be
-  /// called before any other operations.
-  ///
-  /// \returns True on success.
-  bool load();
-
-  /// @}
-  /// @name Accessors
-  /// @{
-
-  /// Get the set of declared nodes for the file.
-  const node_set& getNodes() const;
-
-  /// Get the set of declared targets for the file.
-  const target_set& getTargets() const;
-
-  /// Get the default target.
-  const StringRef getDefaultTarget() const;
-
-  /// Get the set of declared commands for the file.
-  const command_set& getCommands() const;
-
-  /// Get the set of all tools used by the file.
-  const tool_set& getTools() const;
-
-  /// @}
+  /// \returns A non-null build description on success.
+  std::unique_ptr<BuildDescription> load();
 };
 
 }

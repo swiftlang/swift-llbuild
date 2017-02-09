@@ -212,6 +212,8 @@ public:
 
   /// Build the named target.
   ///
+  /// This will automatically load the build file, if necessary.
+  ///
   /// \returns True on success, or false if the build was aborted (for example,
   /// if a cycle was discovered).
   bool build(StringRef target);
