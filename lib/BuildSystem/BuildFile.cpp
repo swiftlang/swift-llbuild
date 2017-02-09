@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -14,6 +14,7 @@
 
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/Basic/LLVM.h"
+#include "llbuild/BuildSystem/BuildDescription.h"
 
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/Support/MemoryBuffer.h"
@@ -28,16 +29,6 @@ void ConfigureContext::error(const Twine& message) const {
 }
 
 BuildFileDelegate::~BuildFileDelegate() {}
-
-Node::~Node() {}
-
-Command::~Command() {}
-
-Tool::~Tool() {}
-
-std::unique_ptr<Command> Tool::createCustomCommand(const BuildKey& key) {
-  return nullptr;
-}
 
 #pragma mark - BuildFile implementation
 

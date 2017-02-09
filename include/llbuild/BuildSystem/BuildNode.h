@@ -13,6 +13,8 @@
 #ifndef LLBUILD_BUILDSYSTEM_BUILDNODE_H
 #define LLBUILD_BUILDSYSTEM_BUILDNODE_H
 
+#include "BuildDescription.h"
+
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 

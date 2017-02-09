@@ -10,10 +10,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llbuild/Basic/FileSystem.h"
-#include "llbuild/BuildSystem/BuildSystemFrontend.h"
-#include "llbuild/BuildSystem/BuildFile.h"
 #include "TempDir.hpp"
+
+#include "llbuild/Basic/FileSystem.h"
+#include "llbuild/BuildSystem/BuildDescription.h"
+#include "llbuild/BuildSystem/BuildFile.h"
+#include "llbuild/BuildSystem/BuildSystemFrontend.h"
 
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/FileSystem.h"

@@ -13,6 +13,7 @@
 #include "llbuild/BuildSystem/BuildKey.h"
 
 #include "llbuild/Basic/LLVM.h"
+#include "llbuild/BuildSystem/BuildDescription.h"
 
 #include "llvm/Support/raw_ostream.h"
 

@@ -13,7 +13,7 @@
 #ifndef LLBUILD_BUILDSYSTEM_EXTERNALCOMMAND_H
 #define LLBUILD_BUILDSYSTEM_EXTERNALCOMMAND_H
 
-#include "llbuild/BuildSystem/BuildFile.h"
+#include "llbuild/BuildSystem/BuildDescription.h"
 #include "llbuild/BuildSystem/BuildSystem.h"
 #include "llbuild/BuildSystem/BuildValue.h"
 

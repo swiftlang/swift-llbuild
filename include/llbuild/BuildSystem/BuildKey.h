@@ -16,7 +16,7 @@
 #include "llbuild/Basic/Compiler.h"
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/Core/BuildEngine.h"
-#include "llbuild/BuildSystem/BuildFile.h"
+#include "llbuild/BuildSystem/BuildDescription.h"
 
 #include "llvm/ADT/StringRef.h"
 
