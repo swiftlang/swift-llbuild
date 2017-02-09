@@ -368,9 +368,10 @@ public:
   }
 };
 
-/// This is the task to "build" a node which represents pure raw input to the
-/// system.
-class InputNodeTask : public Task {
+
+/// This is the task to "build" a file node which represents pure raw input to
+/// the system.
+class FileInputNodeTask : public Task {
   BuildNode& node;
 
   virtual void start(BuildEngine& engine) override {
@@ -385,18 +386,12 @@ class InputNodeTask : public Task {
                             const ValueType& value) override {
   }
 
-  virtual void inputsAvailable(BuildEngine& engine) override {
-    // Handle virtual nodes.
-    if (node.isVirtual()) {
-      engine.taskIsComplete(
-          this, BuildValue::makeVirtualInput().toData());
-      return;
-    }
-    
+  virtual void inputsAvailable(BuildEngine& engine) override {    
     // Get the information on the file.
     //
     // FIXME: This needs to delegate, since we want to have a notion of
     // different node types.
+    assert(!node.isVirtual());
     auto info = node.getFileInfo(
         getBuildSystem(engine).getDelegate().getFileSystem());
     if (info.isMissing()) {
@@ -409,14 +404,12 @@ class InputNodeTask : public Task {
   }
 
 public:
-  InputNodeTask(BuildNode& node) : node(node) {}
+  FileInputNodeTask(BuildNode& node) : node(node) {
+    assert(!node.isVirtual());
+  }
 
   static bool isResultValid(BuildEngine& engine, const BuildNode& node,
                             const BuildValue& value) {
-    // Virtual input nodes are always valid unless the value type is wrong.
-    if (node.isVirtual())
-      return value.isVirtualInput();
-    
     // The result is valid if the exists matches the value type and the file
     // information remains the same.
     //
@@ -433,6 +426,41 @@ public:
     } else {
       return value.isExistingInput() && value.getOutputInfo() == info;
     }
+  }
+};
+
+
+/// This is the task to build a virtual node which isn't connected to any
+/// output.
+class VirtualInputNodeTask : public Task {
+  BuildNode& node;
+
+  virtual void start(BuildEngine& engine) override {
+    assert(node.getProducers().empty());
+  }
+
+  virtual void providePriorValue(BuildEngine&,
+                                 const ValueType& value) override {
+  }
+
+  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+                            const ValueType& value) override {
+  }
+
+  virtual void inputsAvailable(BuildEngine& engine) override {
+    engine.taskIsComplete(
+        this, BuildValue::makeVirtualInput().toData());
+  }
+
+public:
+  VirtualInputNodeTask(BuildNode& node) : node(node) {
+    assert(node.isVirtual());
+  }
+
+  static bool isResultValid(BuildEngine& engine, const BuildNode& node,
+                            const BuildValue& value) {
+    // Virtual input nodes are always valid unless the value type is wrong.
+    return value.isVirtualInput();
   }
 };
 
@@ -738,14 +766,28 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
 
     // Create an input node if there are no producers.
     if (node->getProducers().empty()) {
+      if (node->isVirtual()) {
+        return Rule{
+          keyData,
+          /*Action=*/ [node](BuildEngine& engine) -> Task* {
+            return engine.registerTask(new VirtualInputNodeTask(*node));
+          },
+          /*IsValid=*/ [node](BuildEngine& engine, const Rule& rule,
+                                const ValueType& value) -> bool {
+            return VirtualInputNodeTask::isResultValid(
+                engine, *node, BuildValue::fromData(value));
+          }
+        };
+      }
+      
       return Rule{
         keyData,
         /*Action=*/ [node](BuildEngine& engine) -> Task* {
-          return engine.registerTask(new InputNodeTask(*node));
+          return engine.registerTask(new FileInputNodeTask(*node));
         },
         /*IsValid=*/ [node](BuildEngine& engine, const Rule& rule,
                             const ValueType& value) -> bool {
-          return InputNodeTask::isResultValid(
+          return FileInputNodeTask::isResultValid(
               engine, *node, BuildValue::fromData(value));
         }
       };
