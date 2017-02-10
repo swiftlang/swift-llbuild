@@ -433,10 +433,7 @@ public:
 /// This is the task to build a virtual node which isn't connected to any
 /// output.
 class VirtualInputNodeTask : public Task {
-  BuildNode& node;
-
   virtual void start(BuildEngine& engine) override {
-    assert(node.getProducers().empty());
   }
 
   virtual void providePriorValue(BuildEngine&,
@@ -453,9 +450,7 @@ class VirtualInputNodeTask : public Task {
   }
 
 public:
-  VirtualInputNodeTask(BuildNode& node) : node(node) {
-    assert(node.isVirtual());
-  }
+  VirtualInputNodeTask() {}
 
   static bool isResultValid(BuildEngine& engine, const BuildNode& node,
                             const BuildValue& value) {
@@ -770,7 +765,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
         return Rule{
           keyData,
           /*Action=*/ [node](BuildEngine& engine) -> Task* {
-            return engine.registerTask(new VirtualInputNodeTask(*node));
+            return engine.registerTask(new VirtualInputNodeTask());
           },
           /*IsValid=*/ [node](BuildEngine& engine, const Rule& rule,
                                 const ValueType& value) -> bool {
