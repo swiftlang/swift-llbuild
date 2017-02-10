@@ -860,7 +860,7 @@ public:
     //
     // FIXME: This is historical, We should tidy up this class to reflect that
     // it is now just a builder.
-    auto description = std::make_unique<BuildDescription>();
+    auto description = llvm::make_unique<BuildDescription>();
     std::swap(description->getNodes(), nodes);
     std::swap(description->getTargets(), targets);
     std::swap(description->getDefaultTarget(), defaultTarget);
