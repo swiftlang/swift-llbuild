@@ -94,6 +94,8 @@
 		E1192CF11C49DC3300F85890 /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
 		E1192CF21C49DC4F00F85890 /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
 		E11F2B7F1E4D255B00176BAD /* BuildDescription.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E11F2B7E1E4D255B00176BAD /* BuildDescription.cpp */; };
+		E120B9ED1E4E65EB00B28469 /* BinaryCodingTests.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E120B9EB1E4E65EB00B28469 /* BinaryCodingTests.cpp */; };
+		E120B9EE1E4E65EB00B28469 /* ShellUtilityTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E120B9EC1E4E65EB00B28469 /* ShellUtilityTest.cpp */; };
 		E12BFF181C4972D900B8D20F /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
 		E12BFF191C4972E000B8D20F /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
 		E12BFF1A1C4972F000B8D20F /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
@@ -723,6 +725,9 @@
 		E1192CEC1C49D84500F85890 /* buildsystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = buildsystem.h; sourceTree = "<group>"; };
 		E11F2B7D1E4D253B00176BAD /* BuildDescription.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildDescription.h; sourceTree = "<group>"; };
 		E11F2B7E1E4D255B00176BAD /* BuildDescription.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildDescription.cpp; sourceTree = "<group>"; };
+		E120B9EB1E4E65EB00B28469 /* BinaryCodingTests.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BinaryCodingTests.cpp; sourceTree = "<group>"; };
+		E120B9EC1E4E65EB00B28469 /* ShellUtilityTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ShellUtilityTest.cpp; sourceTree = "<group>"; };
+		E120B9EF1E4E65FC00B28469 /* BinaryCoding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BinaryCoding.h; sourceTree = "<group>"; };
 		E12E12A71AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CommandLineStatusOutput.cpp; sourceTree = "<group>"; };
 		E12E12A81AD50AE500ACE7B3 /* CommandLineStatusOutput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CommandLineStatusOutput.h; sourceTree = "<group>"; };
 		E138129C1C536CFC000092C0 /* FileSystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FileSystem.h; sourceTree = "<group>"; };
@@ -1224,8 +1229,10 @@
 			isa = PBXGroup;
 			children = (
 				E147DF181BA81D4E0032D08E /* CMakeLists.txt */,
+				E120B9EB1E4E65EB00B28469 /* BinaryCodingTests.cpp */,
 				E13812A11C53708E000092C0 /* FileSystemTest.cpp */,
 				E147DF191BA81D4E0032D08E /* SerialQueueTest.cpp */,
+				E120B9EC1E4E65EB00B28469 /* ShellUtilityTest.cpp */,
 			);
 			path = Basic;
 			sourceTree = "<group>";
@@ -1382,6 +1389,7 @@
 		E1A2244F19F997D40059043E /* Headers */ = {
 			isa = PBXGroup;
 			children = (
+				E120B9EF1E4E65FC00B28469 /* BinaryCoding.h */,
 				E182BE111ABA2B8D001840AD /* Compiler.h */,
 				E11470901B75160400ED84CF /* FileInfo.h */,
 				E138129C1C536CFC000092C0 /* FileSystem.h */,
@@ -2636,7 +2644,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				E13812A21C53708E000092C0 /* FileSystemTest.cpp in Sources */,
+				E120B9EE1E4E65EB00B28469 /* ShellUtilityTest.cpp in Sources */,
 				E147DF1A1BA81D5A0032D08E /* SerialQueueTest.cpp in Sources */,
+				E120B9ED1E4E65EB00B28469 /* BinaryCodingTests.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
