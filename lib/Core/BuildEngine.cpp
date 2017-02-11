@@ -965,9 +965,9 @@ private:
     // Normalize predecessor order, to ensure a deterministic result (at least,
     // if the graph reaches the same cycle).
     for (auto& entry: predecessorGraph) {
-    std::sort(entry.second.begin(), entry.second.end(), [](Rule* a, Rule* b) {
-        return a->key < b->key;
-      });
+      std::sort(entry.second.begin(), entry.second.end(), [](Rule* a, Rule* b) {
+          return a->key < b->key;
+        });
     }
     
     // Find the cycle by searching from the entry node.
