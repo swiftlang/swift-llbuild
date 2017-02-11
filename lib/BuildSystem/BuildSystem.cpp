@@ -130,7 +130,11 @@ public:
 
 class BuildSystemImpl : public BuildSystemCommandInterface {
   /// The internal schema version.
-  static const uint32_t internalSchemaVersion = 4;
+  ///
+  /// Version History:
+  /// * 5: Switch BuildValue to be BinaryCoding based
+  /// * 4: Pre-history
+  static const uint32_t internalSchemaVersion = 5;
   
   BuildSystem& buildSystem;
 

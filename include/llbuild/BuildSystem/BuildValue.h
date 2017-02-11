@@ -14,12 +14,15 @@
 #define LLBUILD_BUILDSYSTEM_BUILDVALUE_H
 
 #include "llbuild/Core/BuildEngine.h"
+#include "llbuild/Basic/BinaryCoding.h"
 #include "llbuild/Basic/Compiler.h"
 #include "llbuild/Basic/FileInfo.h"
 #include "llbuild/Basic/LLVM.h"
 
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/raw_ostream.h"
 
 namespace llvm {
 class raw_ostream;
@@ -74,14 +77,16 @@ class BuildValue {
   };
   static StringRef stringForKind(Kind);
 
+  friend struct basic::BinaryCodingTraits<BuildValue::Kind>;
+
   /// The kind of value.
-  Kind kind;
+  Kind kind = Kind::Invalid;
 
   /// The number of attached output infos.
   uint32_t numOutputInfos = 0;
 
   /// The command hash, for successful commands.
-  uint64_t commandSignature;
+  uint64_t commandSignature = 0;
 
   union {
     /// The file info for the rule output, for existing inputs and successful
@@ -90,14 +95,23 @@ class BuildValue {
 
     /// The file info for successful commands with multiple outputs.
     FileInfo* asOutputInfos;
-  } valueData;
+  } valueData = { {} };
 
+  bool kindHasCommandSignature() const {
+    return isSuccessfulCommand();
+  }
+
+  bool kindHasOutputInfo() const {
+    return isExistingInput() || isSuccessfulCommand();
+  }
+  
 private:
   // Copying is disabled.
   BuildValue(const BuildValue&) LLBUILD_DELETED_FUNCTION;
   void operator=(const BuildValue&) LLBUILD_DELETED_FUNCTION;
 
   BuildValue() {}
+  BuildValue(basic::BinaryDecoder& decoder);
   BuildValue(Kind kind) : kind(kind) {
     valueData.asOutputInfo = {};
     commandSignature = 0;
@@ -115,6 +129,17 @@ private:
       for (uint32_t i = 0; i != numOutputInfos; ++i) {
         valueData.asOutputInfos[i] = outputInfos[i];
       }
+    }
+  }
+
+  FileInfo& getNthOutputInfo(unsigned n) {
+    assert(kindHasOutputInfo() && "invalid call for value kind");
+    assert(n < getNumOutputs());
+    if (hasMultipleOutputs()) {
+      return valueData.asOutputInfos[n];
+    } else {
+      assert(n == 0);
+      return valueData.asOutputInfo;
     }
   }
 
@@ -224,22 +249,19 @@ public:
   }
 
   unsigned getNumOutputs() const {
-    assert((isExistingInput() || isSuccessfulCommand()) &&
-           "invalid call for value kind");
+    assert(kindHasOutputInfo() && "invalid call for value kind");
     return numOutputInfos;
   }
 
   const FileInfo& getOutputInfo() const {
-    assert((isExistingInput() || isSuccessfulCommand()) &&
-           "invalid call for value kind");
+    assert(kindHasOutputInfo() && "invalid call for value kind");
     assert(!hasMultipleOutputs() &&
            "invalid call on result with multiple outputs");
     return valueData.asOutputInfo;
   }
 
   const FileInfo& getNthOutputInfo(unsigned n) const {
-    assert((isExistingInput() || isSuccessfulCommand()) &&
-           "invalid call for value kind");
+    assert(kindHasOutputInfo() && "invalid call for value kind");
     assert(n < getNumOutputs());
     if (hasMultipleOutputs()) {
       return valueData.asOutputInfos[n];
@@ -250,7 +272,7 @@ public:
   }
 
   uint64_t getCommandSignature() const {
-    assert(isSuccessfulCommand() && "invalid call for value kind");
+    assert(kindHasCommandSignature() && "invalid call for value kind");
     return commandSignature;
   }
 
@@ -260,43 +282,10 @@ public:
   /// @{
 
   static BuildValue fromData(const core::ValueType& value) {
-    BuildValue result;
-    assert(value.size() >= sizeof(result));
-    memcpy(&result, value.data(), sizeof(result));
-
-    // If this result has multiple output values, deserialize them properly.
-    if (result.numOutputInfos > 1) {
-      assert(value.size() == (sizeof(result) +
-                              result.numOutputInfos * sizeof(FileInfo)));
-      result.valueData.asOutputInfos = new FileInfo[result.numOutputInfos];
-      memcpy(result.valueData.asOutputInfos,
-             value.data() + sizeof(result),
-             result.numOutputInfos * sizeof(FileInfo));
-    } else {
-      assert(value.size() == sizeof(result));
-    }
-
-    return result;
+    basic::BinaryDecoder decoder(StringRef((char*)value.data(), value.size()));
+    return BuildValue(decoder);
   }
-
-  core::ValueType toData() const {
-    if (numOutputInfos > 1) {
-      // FIXME: This could be packed one entry tighter.
-      std::vector<uint8_t> result(sizeof(*this) +
-                                  numOutputInfos * sizeof(FileInfo));
-      memcpy(result.data(), this, sizeof(*this));
-      // We must normalize the bytes where the address is stored.
-      memset(result.data() + offsetof(BuildValue, valueData), 0,
-             sizeof(valueData));
-      memcpy(result.data() + sizeof(*this), valueData.asOutputInfos,
-             numOutputInfos * sizeof(FileInfo));
-      return result;
-    } else {
-      std::vector<uint8_t> result(sizeof(*this));
-      memcpy(result.data(), this, sizeof(*this));
-      return result;
-    }
-  }
+  core::ValueType toData() const;
 
   /// @}
 
@@ -309,6 +298,53 @@ public:
 };
 
 }
+
+template<>
+struct basic::BinaryCodingTraits<buildsystem::BuildValue::Kind> {
+  typedef buildsystem::BuildValue::Kind Kind;
+  
+  static inline void encode(Kind& value, BinaryEncoder& encoder) {
+    uint8_t tmp = uint8_t(value);
+    assert(value == Kind(tmp));
+    encoder.write(tmp);
+  }
+  static inline void decode(Kind& value, BinaryDecoder& decoder) {
+    uint8_t tmp;
+    decoder.read(tmp);
+    value = Kind(tmp);
+  }
+};
+
+inline buildsystem::BuildValue::BuildValue(basic::BinaryDecoder& decoder) {
+  decoder.read(kind);
+  if (kindHasCommandSignature())
+    decoder.read(commandSignature);
+  if (kindHasOutputInfo()) {
+    decoder.read(numOutputInfos);
+    if (numOutputInfos > 1) {
+        valueData.asOutputInfos = new FileInfo[numOutputInfos];
+    }
+    for (uint32_t i = 0; i != numOutputInfos; ++i) {
+      decoder.read(getNthOutputInfo(i));
+    }
+  }
+  decoder.finish();
+}
+
+inline core::ValueType buildsystem::BuildValue::toData() const {
+  basic::BinaryEncoder coder;
+  coder.write(kind);
+  if (kindHasCommandSignature())
+    coder.write(commandSignature);
+  if (kindHasOutputInfo()) {
+    coder.write(numOutputInfos);
+    for (uint32_t i = 0; i != numOutputInfos; ++i) {
+      coder.write(getNthOutputInfo(i));
+    }
+  }
+  return coder.contents();
+}
+
 }
 
 #endif

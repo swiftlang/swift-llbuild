@@ -40,6 +40,11 @@ TEST(BuildValueTest, virtualValueSerialization) {
     BuildValue a{ std::move(tmp) };
     EXPECT_EQ(a.toData(), BuildValue::makeVirtualInput().toData());
   }
+
+  // Check that a round-tripped value is equivalent.
+  EXPECT_EQ(BuildValue::makeVirtualInput().toData(),
+            BuildValue::fromData(
+                BuildValue::makeVirtualInput().toData()).toData());
 }
 
 TEST(BuildValueTest, commandValueSingleOutputSerialization) {
@@ -69,6 +74,12 @@ TEST(BuildValueTest, commandValueSingleOutputSerialization) {
     EXPECT_EQ(a.toData(),
               BuildValue::makeSuccessfulCommand(infos, signature).toData());
   }
+
+  // Check that a round-tripped value is equivalent.
+  EXPECT_EQ(BuildValue::makeSuccessfulCommand(infos, signature).toData(),
+            BuildValue::fromData(
+                BuildValue::makeSuccessfulCommand(
+                    infos, signature).toData()).toData());
 }
 
 TEST(BuildValueTest, commandValueMultipleOutputsSerialization) {
@@ -99,6 +110,12 @@ TEST(BuildValueTest, commandValueMultipleOutputsSerialization) {
     EXPECT_EQ(a.toData(),
               BuildValue::makeSuccessfulCommand(infos, signature).toData());
   }
+
+  // Check that a round-tripped value is equivalent.
+  EXPECT_EQ(BuildValue::makeSuccessfulCommand(infos, signature).toData(),
+            BuildValue::fromData(
+                BuildValue::makeSuccessfulCommand(
+                    infos, signature).toData()).toData());
 }
 
 }

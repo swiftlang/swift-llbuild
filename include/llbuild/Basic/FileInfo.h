@@ -25,6 +25,8 @@
 #ifndef LLBUILD_BASIC_FILEINFO_H
 #define LLBUILD_BASIC_FILEINFO_H
 
+#include "BinaryCoding.h"
+
 #include <cstdint>
 #include <string>
 
@@ -104,6 +106,36 @@ struct FileInfo {
   /// \returns The FileInfo for the given path, which will be missing if the
   /// path does not exist (or any error was encountered).
   static FileInfo getInfoForPath(const std::string& path, bool asLink = false);
+};
+
+template<>
+struct BinaryCodingTraits<FileTimestamp> {
+  static inline void encode(const FileTimestamp& value, BinaryEncoder& coder) {
+    coder.write(value.seconds);
+    coder.write(value.nanoseconds);
+  }
+  static inline void decode(FileTimestamp& value, BinaryDecoder& coder) {
+    coder.read(value.seconds);
+    coder.read(value.nanoseconds);
+  }
+};
+
+template<>
+struct BinaryCodingTraits<FileInfo> {
+  static inline void encode(const FileInfo& value, BinaryEncoder& coder) {
+    coder.write(value.device);
+    coder.write(value.inode);
+    coder.write(value.mode);
+    coder.write(value.size);
+    coder.write(value.modTime);
+  }
+  static inline void decode(FileInfo& value, BinaryDecoder& coder) {
+    coder.read(value.device);
+    coder.read(value.inode);
+    coder.read(value.mode);
+    coder.read(value.size);
+    coder.read(value.modTime);
+  }
 };
 
 }
