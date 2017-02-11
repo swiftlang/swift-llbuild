@@ -91,11 +91,22 @@ TEST(BuildSystemTaskTests, directoryContents) {
   system.loadDescription(std::move(description));
 
   // Build a specific key.
-  auto result = system.build(BuildKey::makeDirectoryContents(tempDir.str()));
-  ASSERT_TRUE(result.hasValue());
-  ASSERT_TRUE(result.getValue().isDirectoryContents());
-  ASSERT_EQ(result.getValue().getDirectoryContents(),
-            std::vector<StringRef>({ StringRef("fileA"), StringRef("fileB") }));
+  {
+    auto result = system.build(BuildKey::makeDirectoryContents(tempDir.str()));
+    ASSERT_TRUE(result.hasValue());
+    ASSERT_TRUE(result.getValue().isDirectoryContents());
+    ASSERT_EQ(result.getValue().getDirectoryContents(),
+              std::vector<StringRef>({
+                  StringRef("fileA"), StringRef("fileB") }));
+  }
+
+  // Check that a missing directory behaves properly.
+  {
+    auto result = system.build(BuildKey::makeDirectoryContents(
+                                   tempDir.str() + "/missing-subpath"));
+    ASSERT_TRUE(result.hasValue());
+    ASSERT_TRUE(result.getValue().isMissingInput());
+  }
 }
 
 }

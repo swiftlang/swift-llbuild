@@ -588,6 +588,7 @@ class DirectoryContentsTask : public Task {
     if (info.isMissing()) {
       engine.taskIsComplete(
           this, BuildValue::makeMissingInput().toData());
+      return;
     }
 
     // Get the list of files in the directory.
