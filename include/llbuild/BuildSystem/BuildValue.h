@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -53,6 +53,9 @@ class BuildValue {
 
     /// The contents of a directory.
     DirectoryContents,
+
+    /// The signature of a directories contents.
+    DirectoryTreeSignature,
 
     /// A value produced by a command which succeeded, but whose output was
     /// missing.
@@ -116,7 +119,7 @@ class BuildValue {
   } stringValues = {0, 0};
 
   bool kindHasCommandSignature() const {
-    return isSuccessfulCommand();
+    return isSuccessfulCommand() || isDirectoryTreeSignature();
   }
 
   bool kindHasStringList() const {
@@ -134,10 +137,8 @@ private:
 
   BuildValue() {}
   BuildValue(basic::BinaryDecoder& decoder);
-  BuildValue(Kind kind) : kind(kind) {
-    valueData.asOutputInfo = {};
-    commandSignature = 0;
-  }
+  BuildValue(Kind kind, uint64_t commandSignature = 0)
+      : kind(kind), commandSignature(commandSignature) { }
   BuildValue(Kind kind, ArrayRef<FileInfo> outputInfos,
              uint64_t commandSignature = 0)
       : kind(kind), numOutputInfos(outputInfos.size()),
@@ -267,6 +268,9 @@ public:
                                           ArrayRef<std::string> values) {
     return BuildValue(Kind::DirectoryContents, directoryInfo, values);
   }
+  static BuildValue makeDirectoryTreeSignature(uint64_t signature) {
+    return BuildValue(Kind::DirectoryTreeSignature, signature);
+  }
   static BuildValue makeMissingOutput() {
     return BuildValue(Kind::MissingOutput);
   }
@@ -304,6 +308,9 @@ public:
   bool isMissingInput() const { return kind == Kind::MissingInput; }
 
   bool isDirectoryContents() const { return kind == Kind::DirectoryContents; }
+  bool isDirectoryTreeSignature() const {
+    return kind == Kind::DirectoryTreeSignature;
+  }
   
   bool isMissingOutput() const { return kind == Kind::MissingOutput; }
   bool isFailedInput() const { return kind == Kind::FailedInput; }
@@ -319,6 +326,11 @@ public:
   std::vector<StringRef> getDirectoryContents() const {
     assert(isDirectoryContents() && "invalid call for value kind");
     return getStringListValues();
+  }
+  
+  uint64_t getDirectoryTreeSignature() const {
+    assert(isDirectoryTreeSignature() && "invalid call for value kind");
+    return commandSignature;
   }
 
   bool hasMultipleOutputs() const {
@@ -349,7 +361,7 @@ public:
   }
 
   uint64_t getCommandSignature() const {
-    assert(kindHasCommandSignature() && "invalid call for value kind");
+    assert(isSuccessfulCommand() && "invalid call for value kind");
     return commandSignature;
   }
 

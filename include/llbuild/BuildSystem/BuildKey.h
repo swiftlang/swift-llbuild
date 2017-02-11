@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -38,6 +38,9 @@ public:
 
     /// A key used to identify directory contents.
     DirectoryContents,
+
+    /// A key used to identify the signature of a complete directory tree.
+    DirectoryTreeSignature,
 
     /// A key used to identify a node.
     Node,
@@ -96,6 +99,11 @@ public:
     return BuildKey('D', path);
   }
 
+  /// Create a key for computing the contents of a directory.
+  static BuildKey makeDirectoryTreeSignature(StringRef path) {
+    return BuildKey('S', path);
+  }
+
   /// Create a key for computing a node result.
   static BuildKey makeNode(StringRef path) {
     return BuildKey('N', path);
@@ -122,6 +130,7 @@ public:
     case 'C': return Kind::Command;
     case 'D': return Kind::DirectoryContents;
     case 'N': return Kind::Node;
+    case 'S': return Kind::DirectoryTreeSignature;
     case 'T': return Kind::Target;
     case 'X': return Kind::CustomTask;
     default:
@@ -133,6 +142,9 @@ public:
   bool isCustomTask() const { return getKind() == Kind::CustomTask; }
   bool isDirectoryContents() const {
     return getKind() == Kind::DirectoryContents;
+  }
+  bool isDirectoryTreeSignature() const {
+    return getKind() == Kind::DirectoryTreeSignature;
   }
   bool isNode() const { return getKind() == Kind::Node; }
   bool isTarget() const { return getKind() == Kind::Target; }
@@ -159,6 +171,11 @@ public:
 
   StringRef getDirectoryContentsPath() const {
     assert(isDirectoryContents());
+    return StringRef(key.data()+1, key.size()-1);
+  }
+
+  StringRef getDirectoryTreeSignaturePath() const {
+    assert(isDirectoryTreeSignature());
     return StringRef(key.data()+1, key.size()-1);
   }
 

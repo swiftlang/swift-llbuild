@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -26,6 +26,7 @@ StringRef BuildKey::stringForKind(BuildKey::Kind kind) {
     CASE(Command);
     CASE(CustomTask);
     CASE(DirectoryContents);
+    CASE(DirectoryTreeSignature);
     CASE(Node);
     CASE(Target);
     CASE(Unknown);
@@ -47,7 +48,11 @@ void BuildKey::dump(raw_ostream& os) const {
     break;
   }
   case Kind::DirectoryContents: {
-    os << ", name='" << getDirectoryContentsPath() << "'";
+    os << ", path='" << getDirectoryContentsPath() << "'";
+    break;
+  }
+  case Kind::DirectoryTreeSignature: {
+    os << ", path='" << getDirectoryTreeSignaturePath() << "'";
     break;
   }
   case Kind::Node: {

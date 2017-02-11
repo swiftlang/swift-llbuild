@@ -629,6 +629,137 @@ public:
 };
 
 
+
+/// This is the task to "build" a directory node which will encapsulate (via a
+/// signature) all of the contents of the directory, recursively.
+class DirectoryTreeSignatureTask : public Task {
+  // The basic algorithm we need to follow:
+  //
+  // 1. Get the directory contents.
+  // 2. Get the subpath directory info.
+  // 3. For each node input, if it is a directory, get the input node for it.
+  //
+  // FIXME: This algorithm currently does a redundant stat for each directory,
+  // because we stat it once to find out it is a directory, then again when we
+  // gather its contents (to use for validating the directory contents).
+  //
+  // FIXME: We need to fix the directory list to not get contents for symbolic
+  // links.
+
+  /// This structure encapsulates the information we need on each child.
+  struct SubpathInfo {
+    /// The filename;
+    std::string filename;
+    
+    /// The result of requesting the node at this subpath, once available.
+    ValueType value;
+
+    /// The directory signature, if needed.
+    llvm::Optional<ValueType> directorySignatureValue;
+  };
+  
+  /// The path we are taking the signature of.
+  std::string path;
+
+  /// The accumulated list of child input info.
+  ///
+  /// Once we have the input directory information, we resize this to match the
+  /// number of children to avoid dynamically resizing it.
+  std::vector<SubpathInfo> childResults;
+  
+  virtual void start(BuildEngine& engine) override {
+    // Ask for the base directory directory contents.
+    engine.taskNeedsInput(
+        this, BuildKey::makeDirectoryContents(path).toData(),
+        /*inputID=*/0);
+  }
+
+  virtual void providePriorValue(BuildEngine&,
+                                 const ValueType& value) override {
+  }
+
+  virtual void provideValue(BuildEngine& engine, uintptr_t inputID,
+                            const ValueType& valueData) override {
+    // The first input is the directory contents.
+    if (inputID == 0) {
+      // Request the inputs for each subpath.
+      auto value = BuildValue::fromData(valueData);
+      if (value.isMissingInput())
+        return;
+
+      assert(value.isDirectoryContents());
+      auto filenames = value.getDirectoryContents();
+      for (size_t i = 0; i != filenames.size(); ++i) {
+        SmallString<256> childPath{ path };
+        llvm::sys::path::append(childPath, filenames[i]);
+        childResults.emplace_back(SubpathInfo{ filenames[i], {}, None });
+        engine.taskNeedsInput(this, BuildKey::makeNode(childPath).toData(),
+                              /*inputID=*/1 + i);
+      }
+      return;
+    }
+
+    // If the input is a child, add it to the collection and dispatch a
+    // directory request if needed.
+    if (inputID >= 1 && inputID < 1 + childResults.size()) {
+      auto index = inputID - 1;
+      auto& childResult = childResults[index];
+      childResult.value = valueData;
+
+      // If this node is a directory, request its signature recursively.
+      auto value = BuildValue::fromData(valueData);
+      if (value.isExistingInput()) {
+        if (value.getOutputInfo().isDirectory()) {
+          SmallString<256> childPath{ path };
+          llvm::sys::path::append(childPath, childResult.filename);
+        
+          engine.taskNeedsInput(
+              this, BuildKey::makeDirectoryTreeSignature(childPath).toData(),
+              /*inputID=*/1 + childResults.size() + index);
+        }
+      }
+      return;
+    }
+
+    // Otherwise, the input should be a directory signature.
+    auto index = inputID - 1 - childResults.size();
+    assert(index < childResults.size());
+    childResults[index].directorySignatureValue = valueData;
+  }
+
+  virtual void inputsAvailable(BuildEngine& engine) override {
+    // Compute the signature across all of the inputs.
+    using llvm::hash_combine;
+    llvm::hash_code code = hash_value(path);
+    
+    // For now, we represent this task as the aggregation of all the inputs.
+    //
+    // NOTE: We don't actually include the information on the directory path
+    // itself, just its contents.
+    for (const auto& info: childResults) {
+      // We merge the children by simply combining their encoded representation.
+      code = hash_combine(
+          code, hash_combine_range(info.value.begin(), info.value.end()));
+      if (info.directorySignatureValue.hasValue()) {
+        auto& data = info.directorySignatureValue.getValue();
+        code = hash_combine(
+            code, hash_combine_range(data.begin(), data.end()));
+      } else {
+        // Combine a random number to represent nil.
+        code = hash_combine(code, 0XC183979C3E98722E);
+      }
+    }
+    
+    // Compute the signature.
+    engine.taskIsComplete(this, BuildValue::makeDirectoryTreeSignature(
+                              uint64_t(code)).toData());
+  }
+
+public:
+  DirectoryTreeSignatureTask(StringRef path) : path(path) {}
+};
+
+
 /// This is the task to actually execute a command.
 class CommandTask : public Task {
   Command& command;
@@ -837,6 +968,19 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       }
     };
   }
+
+  case BuildKey::Kind::DirectoryTreeSignature: {
+    std::string path = key.getDirectoryTreeSignaturePath();
+    return Rule{
+      keyData,
+      /*Action=*/ [path](BuildEngine& engine) -> Task* {
+        return engine.registerTask(new DirectoryTreeSignatureTask(path));
+      },
+        // Directory signatures don't require any validation outside of their
+        // concrete dependencies.
+      /*IsValid=*/ nullptr
+    };
+  }
     
   case BuildKey::Kind::Node: {
     // Find the node.
@@ -963,6 +1107,10 @@ void BuildSystemEngineDelegate::cycleDetected(const std::vector<Rule*>& cycle) {
       break;
     case BuildKey::Kind::DirectoryContents:
       os << "directory-contents '" << key.getDirectoryContentsPath() << "'";
+      break;
+    case BuildKey::Kind::DirectoryTreeSignature:
+      os << "directory-tree-signature '"
+         << key.getDirectoryTreeSignaturePath() << "'";
       break;
     case BuildKey::Kind::Node:
       os << "node '" << key.getNodeName() << "'";

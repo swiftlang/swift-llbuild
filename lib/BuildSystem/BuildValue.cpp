@@ -27,6 +27,7 @@ StringRef BuildValue::stringForKind(BuildValue::Kind kind) {
     CASE(ExistingInput);
     CASE(MissingInput);
     CASE(DirectoryContents);
+    CASE(DirectoryTreeSignature);
     CASE(MissingOutput);
     CASE(FailedInput);
     CASE(SuccessfulCommand);
@@ -42,6 +43,9 @@ StringRef BuildValue::stringForKind(BuildValue::Kind kind) {
   
 void BuildValue::dump(raw_ostream& os) const {
   os << "BuildValue(" << stringForKind(kind);
+  if (kindHasCommandSignature()) {
+    os << ", signature=" << commandSignature;
+  }
   if (kindHasOutputInfo()) {
     os << ", outputInfos=[";
     for (unsigned i = 0; i != getNumOutputs(); ++i) {
@@ -67,7 +71,8 @@ void BuildValue::dump(raw_ostream& os) const {
     for (unsigned i = 0; i != values.size(); ++i) {
       if (i != 0) os << ", ";
       os << '"';
-      os.write_escaped(values[i]);
+      os << values[i];
+      //      os.write_escaped(values[i]);
       os << '"';
     }
     os << "]";
