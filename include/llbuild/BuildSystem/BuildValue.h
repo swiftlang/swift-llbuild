@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -23,6 +23,8 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/raw_ostream.h"
+
+#include <vector>
 
 namespace llvm {
 class raw_ostream;
@@ -48,6 +50,12 @@ class BuildValue {
 
     /// A value produced by a missing input file.
     MissingInput,
+
+    /// The contents of a directory.
+    DirectoryContents,
+
+    /// The signature of a directories contents.
+    DirectoryTreeSignature,
 
     /// A value produced by a command which succeeded, but whose output was
     /// missing.
@@ -89,20 +97,37 @@ class BuildValue {
   uint64_t commandSignature = 0;
 
   union {
-    /// The file info for the rule output, for existing inputs and successful
-    /// commands with a single output.
+    /// The file info for the rule output, for existing inputs, successful
+    /// commands with a single output, and directory contents.
     FileInfo asOutputInfo;
 
     /// The file info for successful commands with multiple outputs.
     FileInfo* asOutputInfos;
   } valueData = { {} };
 
+  /// String list storage.
+  //
+  // FIXME: We are currently paying the cost for carrying this around on every
+  // value, which is very wasteful. We need to redesign this type to be
+  // customized to each exact value.
+  struct {
+    /// The values are packed as a sequence of C strings.
+    char* contents;
+
+    /// The total length of the contents.
+    uint64_t size;
+  } stringValues = {0, 0};
+
   bool kindHasCommandSignature() const {
-    return isSuccessfulCommand();
+    return isSuccessfulCommand() || isDirectoryTreeSignature();
+  }
+
+  bool kindHasStringList() const {
+    return isDirectoryContents();
   }
 
   bool kindHasOutputInfo() const {
-    return isExistingInput() || isSuccessfulCommand();
+    return isExistingInput() || isSuccessfulCommand() || isDirectoryContents();
   }
   
 private:
@@ -112,10 +137,8 @@ private:
 
   BuildValue() {}
   BuildValue(basic::BinaryDecoder& decoder);
-  BuildValue(Kind kind) : kind(kind) {
-    valueData.asOutputInfo = {};
-    commandSignature = 0;
-  }
+  BuildValue(Kind kind, uint64_t commandSignature = 0)
+      : kind(kind), commandSignature(commandSignature) { }
   BuildValue(Kind kind, ArrayRef<FileInfo> outputInfos,
              uint64_t commandSignature = 0)
       : kind(kind), numOutputInfos(outputInfos.size()),
@@ -130,6 +153,39 @@ private:
         valueData.asOutputInfos[i] = outputInfos[i];
       }
     }
+  }
+  
+  /// Create a build value containing directory contents.
+  BuildValue(Kind kind, FileInfo directoryInfo, ArrayRef<std::string> values)
+      : BuildValue(kind, directoryInfo)
+  {
+    // Construct the concatenated data.
+    uint64_t size = 0;
+    for (auto value: values) {
+      size += value.size() + 1;
+    }
+    char *p, *contents = p = new char[size];
+    for (auto value: values) {
+      assert(value.find('\0') == StringRef::npos);
+      memcpy(p, value.data(), value.size());
+      p += value.size();
+      *p++ = '\0';
+    }
+    stringValues.contents = contents;
+    stringValues.size = size;
+  }
+
+  
+  std::vector<StringRef> getStringListValues() const {
+    assert(kindHasStringList());
+    std::vector<StringRef> result;
+    for (uint64_t i = 0; i < stringValues.size;) {
+      auto value = StringRef(&stringValues.contents[i]);
+      assert(i + value.size() <= stringValues.size);
+      result.push_back(value);
+      i += value.size() + 1;
+    }
+    return result;
   }
 
   FileInfo& getNthOutputInfo(unsigned n) {
@@ -155,6 +211,10 @@ public:
     } else {
       valueData.asOutputInfo = rhs.valueData.asOutputInfo;
     }
+    if (rhs.kindHasStringList()) {
+      stringValues = rhs.stringValues;
+      rhs.stringValues.contents = nullptr;
+    }
   }
   BuildValue& operator=(BuildValue&& rhs) {
     if (this != &rhs) {
@@ -172,12 +232,19 @@ public:
       } else {
         valueData.asOutputInfo = rhs.valueData.asOutputInfo;
       }
+      if (rhs.kindHasStringList()) {
+        stringValues = rhs.stringValues;
+        rhs.stringValues.contents = nullptr;
+      }
     }
     return *this;
   }
   ~BuildValue() {
     if (hasMultipleOutputs()) {
       delete[] valueData.asOutputInfos;
+    }
+    if (kindHasStringList()) {
+      delete[] stringValues.contents;
     }
   }
 
@@ -196,6 +263,13 @@ public:
   }
   static BuildValue makeMissingInput() {
     return BuildValue(Kind::MissingInput);
+  }
+  static BuildValue makeDirectoryContents(FileInfo directoryInfo,
+                                          ArrayRef<std::string> values) {
+    return BuildValue(Kind::DirectoryContents, directoryInfo, values);
+  }
+  static BuildValue makeDirectoryTreeSignature(uint64_t signature) {
+    return BuildValue(Kind::DirectoryTreeSignature, signature);
   }
   static BuildValue makeMissingOutput() {
     return BuildValue(Kind::MissingOutput);
@@ -233,6 +307,11 @@ public:
   bool isExistingInput() const { return kind == Kind::ExistingInput; }
   bool isMissingInput() const { return kind == Kind::MissingInput; }
 
+  bool isDirectoryContents() const { return kind == Kind::DirectoryContents; }
+  bool isDirectoryTreeSignature() const {
+    return kind == Kind::DirectoryTreeSignature;
+  }
+  
   bool isMissingOutput() const { return kind == Kind::MissingOutput; }
   bool isFailedInput() const { return kind == Kind::FailedInput; }
   bool isSuccessfulCommand() const {return kind == Kind::SuccessfulCommand; }
@@ -243,6 +322,16 @@ public:
   bool isCancelledCommand() const { return kind == Kind::CancelledCommand; }
   bool isSkippedCommand() const { return kind == Kind::SkippedCommand; }
   bool isTarget() const { return kind == Kind::Target; }
+
+  std::vector<StringRef> getDirectoryContents() const {
+    assert(isDirectoryContents() && "invalid call for value kind");
+    return getStringListValues();
+  }
+  
+  uint64_t getDirectoryTreeSignature() const {
+    assert(isDirectoryTreeSignature() && "invalid call for value kind");
+    return commandSignature;
+  }
 
   bool hasMultipleOutputs() const {
     return numOutputInfos > 1;
@@ -272,7 +361,7 @@ public:
   }
 
   uint64_t getCommandSignature() const {
-    assert(kindHasCommandSignature() && "invalid call for value kind");
+    assert(isSuccessfulCommand() && "invalid call for value kind");
     return commandSignature;
   }
 
@@ -303,38 +392,45 @@ template<>
 struct basic::BinaryCodingTraits<buildsystem::BuildValue::Kind> {
   typedef buildsystem::BuildValue::Kind Kind;
   
-  static inline void encode(Kind& value, BinaryEncoder& encoder) {
+  static inline void encode(Kind& value, BinaryEncoder& coder) {
     uint8_t tmp = uint8_t(value);
     assert(value == Kind(tmp));
-    encoder.write(tmp);
+    coder.write(tmp);
   }
-  static inline void decode(Kind& value, BinaryDecoder& decoder) {
+  static inline void decode(Kind& value, BinaryDecoder& coder) {
     uint8_t tmp;
-    decoder.read(tmp);
+    coder.read(tmp);
     value = Kind(tmp);
   }
 };
 
-inline buildsystem::BuildValue::BuildValue(basic::BinaryDecoder& decoder) {
+inline buildsystem::BuildValue::BuildValue(basic::BinaryDecoder& coder) {
   // Handle empty decode requests.
-  if (decoder.isEmpty()) {
+  if (coder.isEmpty()) {
     kind = BuildValue::Kind::Invalid;
     return;
   }
   
-  decoder.read(kind);
+  coder.read(kind);
   if (kindHasCommandSignature())
-    decoder.read(commandSignature);
+    coder.read(commandSignature);
   if (kindHasOutputInfo()) {
-    decoder.read(numOutputInfos);
+    coder.read(numOutputInfos);
     if (numOutputInfos > 1) {
-        valueData.asOutputInfos = new FileInfo[numOutputInfos];
+      valueData.asOutputInfos = new FileInfo[numOutputInfos];
     }
     for (uint32_t i = 0; i != numOutputInfos; ++i) {
-      decoder.read(getNthOutputInfo(i));
+      coder.read(getNthOutputInfo(i));
     }
   }
-  decoder.finish();
+  if (kindHasStringList()) {
+    coder.read(stringValues.size);
+    StringRef contents;
+    coder.readBytes(stringValues.size, contents);
+    stringValues.contents = new char[stringValues.size];
+    memcpy(stringValues.contents, contents.data(), contents.size());
+  }
+  coder.finish();
 }
 
 inline core::ValueType buildsystem::BuildValue::toData() const {
@@ -347,6 +443,10 @@ inline core::ValueType buildsystem::BuildValue::toData() const {
     for (uint32_t i = 0; i != numOutputInfos; ++i) {
       coder.write(getNthOutputInfo(i));
     }
+  }
+  if (kindHasStringList()) {
+    coder.write(stringValues.size);
+    coder.writeBytes(StringRef(stringValues.contents, stringValues.size));
   }
   return coder.contents();
 }

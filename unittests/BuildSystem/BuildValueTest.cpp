@@ -124,4 +124,41 @@ TEST(BuildValueTest, commandValueMultipleOutputsSerialization) {
                     infos, signature).toData()).toData());
 }
 
+TEST(BuildValueTest, directoryListValues) {
+  basic::FileInfo mockInfo{};
+  std::vector<std::string> strings{ "hello", "world" };
+  
+  // Check that two identical values are equivalent.
+  {
+    BuildValue a = BuildValue::makeDirectoryContents(mockInfo, strings);
+    EXPECT_EQ(a.toData(),
+              BuildValue::makeDirectoryContents(mockInfo, strings).toData());
+  }
+
+  // Check that a moved complex value is equivalent.
+  {
+    BuildValue tmp = BuildValue::makeDirectoryContents(mockInfo, strings);
+    BuildValue a = std::move(tmp);
+    EXPECT_EQ(a.toData(),
+              BuildValue::makeDirectoryContents(mockInfo, strings).toData());
+  }
+
+  // Check that an rvalue initialized complex value is equivalent.
+  {
+    BuildValue tmp = BuildValue::makeDirectoryContents(mockInfo, strings);
+    BuildValue a{ std::move(tmp) };
+    EXPECT_EQ(a.toData(),
+              BuildValue::makeDirectoryContents(mockInfo, strings).toData());
+  }
+
+  // Check the contents are correct.
+  {
+    BuildValue tmp = BuildValue::makeDirectoryContents(mockInfo, strings);
+    auto result = tmp.getDirectoryContents();
+    EXPECT_EQ(result.size(), 2U);
+    EXPECT_EQ(result[0], "hello");
+    EXPECT_EQ(result[1], "world");
+  }
+}
+
 }

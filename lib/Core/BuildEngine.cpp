@@ -382,6 +382,10 @@ private:
     }
 
     // If the rule indicates its computed value is out of date, it needs to run.
+    //
+    // FIXME: We should probably try and move this so that it can be done by
+    // clients in the background, either by us backgrounding it, or by using a
+    // completion model as we do for inputs.
     if (ruleInfo.rule.isResultValid &&
         !ruleInfo.rule.isResultValid(buildEngine, ruleInfo.rule,
                                      ruleInfo.result.value)) {

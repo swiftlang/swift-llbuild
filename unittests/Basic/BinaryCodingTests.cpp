@@ -83,6 +83,25 @@ TEST(BinaryCodingTests, basic) {
   checkRoundtrip(uint64_t(0xABCD01234567DCBAULL));
 }
 
+TEST(BinaryCodingTests, bytes) {
+  BinaryEncoder encoder;
+  encoder.writeBytes(StringRef("hello"));
+  encoder.writeBytes(StringRef("world"));
+  auto result = encoder.contents();
+
+  // Check the raw encoding.
+  EXPECT_EQ(StringRef((char*)result.data(), result.size()),
+            StringRef("helloworld"));
+
+  // Check the decode.
+  BinaryDecoder decoder(result);
+  StringRef s1, s2;
+  decoder.readBytes(5, s1);
+  decoder.readBytes(5, s2);
+  EXPECT_EQ(s1, StringRef("hello"));
+  EXPECT_EQ(s2, StringRef("world"));
+}
+
 TEST(BinaryCodingTests, customType) {
   // Check the coding of basic types.
   checkRoundtrip(CustomType{ 0xABCD, 0x1234 });

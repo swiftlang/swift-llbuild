@@ -76,6 +76,11 @@ public:
     write(uint32_t(value >> 32));
   }
 
+  /// Encode a sequence of bytes to the stream.
+  void writeBytes(StringRef bytes) {
+    data.insert(data.end(), bytes.begin(), bytes.end());
+  }
+
   /// Encode a value to the stream.
   template<typename T>
   void write(T value) {
@@ -124,7 +129,10 @@ public:
   /// Construct a binary decoder. 
   BinaryDecoder(StringRef data) : data(data) {}
   
-  /// Construct a binary decoder. 
+  /// Construct a binary decoder.
+  ///
+  /// NOTE: The input data is supplied by reference, and its lifetime must
+  /// exceed that of the decoder.
   BinaryDecoder(const std::vector<uint8_t>& data) : BinaryDecoder(
       StringRef(reinterpret_cast<const char*>(data.data()), data.size())) {}
 
@@ -144,6 +152,16 @@ public:
 
   /// Decode a value from the stream.
   void read(uint64_t& value) { value = read64(); }
+
+  /// Decode a byte string from the stream.
+  ///
+  /// NOTE: The return value points into the decode stream, and must be copied
+  /// by clients if it is to last longer than the lifetime of the decoder.
+  void readBytes(size_t count, StringRef& value) {
+    assert(pos + count <= data.size());
+    value = StringRef(data.begin() + pos, count);
+    pos += count;
+  }
 
   /// Decode a value from the stream.
   template<typename T>
