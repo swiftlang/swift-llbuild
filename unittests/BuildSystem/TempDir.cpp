@@ -81,8 +81,8 @@ llbuild::TmpDir::TmpDir(llvm::StringRef namePrefix) {
     llvm::sys::path::system_temp_directory(true, tempDirPrefix);
     llvm::sys::path::append(tempDirPrefix, namePrefix);
 
-    std::error_code ec = llvm::sys::fs::createUniqueDirectory
-    (llvm::Twine(tempDirPrefix), tempDir);
+    std::error_code ec = llvm::sys::fs::createUniqueDirectory(
+        tempDirPrefix.str(), tempDir);
     assert(!ec);
     (void)ec;
 }

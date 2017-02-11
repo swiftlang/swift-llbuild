@@ -16,6 +16,7 @@
 #include "llbuild/Basic/Compiler.h"
 #include "llbuild/Basic/LLVM.h"
 
+#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/StringRef.h"
 
 #include <cstdint>
@@ -33,6 +34,8 @@ namespace buildsystem {
 
 class BuildDescription;
 class BuildExecutionQueue;
+class BuildKey;
+class BuildValue;
 class Command;
 class Tool;
   
@@ -227,6 +230,13 @@ public:
   /// \returns True on success, or false if the build was aborted (for example,
   /// if a cycle was discovered).
   bool build(StringRef target);
+
+  /// Build a specific key directly.
+  ///
+  /// A build description *must* have been loaded before calling this method.
+  ///
+  /// \returns The result of computing the value, or nil if the build failed.
+  llvm::Optional<BuildValue> build(BuildKey target);
 
   /// Cancel the current build
   void cancel();
