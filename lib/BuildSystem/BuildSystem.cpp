@@ -287,6 +287,9 @@ public:
     return buildEngine.enableTracing(filename, error_out);
   }
 
+  /// Build the given key, and return the result and an indication of success.
+  llvm::Optional<BuildValue> build(BuildKey key);
+  
   bool build(StringRef target);
 
   void setBuildWasAborted(bool value) {
@@ -901,26 +904,14 @@ BuildSystemImpl::lookupNode(StringRef name, bool isImplicit) {
                                       /*isMutable=*/false);
 }
 
-bool BuildSystemImpl::build(StringRef target) {
-  // The build description must have been loaded.
-  if (!buildDescription) {
-    error(getMainFilename(), "no build description loaded");
-    return false;
-  }
-
+llvm::Optional<BuildValue> BuildSystemImpl::build(BuildKey key) {
   // Create the execution queue.
   executionQueue = delegate.createExecutionQueue();
 
-  // If target name is not passed then we try to load the default target name
-  // from manifest file
-  if (target.empty()) {
-    target = getBuildDescription().getDefaultTarget();
-  }
-
   // Build the target.
   buildWasAborted = false;
-  getBuildEngine().build(BuildKey::makeTarget(target).toData());
-
+  auto result = getBuildEngine().build(key.toData());
+    
   // Release the execution queue, impicitly waiting for it to complete. The
   // asynchronous nature of the engine callbacks means it is possible for the
   // queue to have notified the engine of the last task completion, but still
@@ -928,7 +919,25 @@ bool BuildSystemImpl::build(StringRef target) {
   // completion).
   executionQueue.reset();
 
-  return !buildWasAborted;
+  if (buildWasAborted)
+    return None;
+  return BuildValue::fromData(result);
+}
+
+bool BuildSystemImpl::build(StringRef target) {
+  // The build description must have been loaded.
+  if (!buildDescription) {
+    error(getMainFilename(), "no build description loaded");
+    return false;
+  }
+
+  // If target name is not passed then we try to load the default target name
+  // from manifest file
+  if (target.empty()) {
+    target = getBuildDescription().getDefaultTarget();
+  }
+
+  return build(BuildKey::makeTarget(target)).hasValue();
 }
 
 #pragma mark - PhonyTool implementation
@@ -2049,6 +2058,10 @@ bool BuildSystem::attachDB(StringRef path,
 bool BuildSystem::enableTracing(StringRef path,
                                 std::string* error_out) {
   return static_cast<BuildSystemImpl*>(impl)->enableTracing(path, error_out);
+}
+
+llvm::Optional<BuildValue> BuildSystem::build(BuildKey key) {
+  return static_cast<BuildSystemImpl*>(impl)->build(key);
 }
 
 bool BuildSystem::build(StringRef name) {

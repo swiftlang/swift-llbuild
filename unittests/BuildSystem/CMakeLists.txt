@@ -1,6 +1,8 @@
 add_llbuild_unittest(BuildSystemTests
+  BuildSystemTaskTests.cpp
   BuildSystemFrontendTest.cpp
   BuildValueTest.cpp
+  MockBuildSystemDelegate.cpp
   LaneBasedExecutionQueueTest
   TempDir.cpp
   )

@@ -318,6 +318,34 @@ public:
   const tool_set& getTools() const { return tools; }
 
   /// @}
+  /// @name Construction Helpers.
+  /// @{
+
+  Node& addNode(std::unique_ptr<Node> value) {
+    auto& result = *value.get();
+    getNodes()[value->getName()] = std::move(value);
+    return result;
+  }
+
+  Target& addTarget(std::unique_ptr<Target> value) {
+    auto& result = *value.get();
+    getTargets()[value->getName()] = std::move(value);
+    return result;
+  }
+
+  Command& addCommand(std::unique_ptr<Command> value) {
+    auto& result = *value.get();
+    getCommands()[value->getName()] = std::move(value);
+    return result;
+  }
+
+  Tool& addTool(std::unique_ptr<Tool> value) {
+    auto& result = *value.get();
+    getTools()[value->getName()] = std::move(value);
+    return result;
+  }
+  
+  /// @}
 };
 
 }
