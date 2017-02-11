@@ -11,6 +11,9 @@
 # serve to show the default.
 
 import datetime, sys, os
+import recommonmark
+from recommonmark.parser import CommonMarkParser
+from recommonmark.transform import AutoStructify
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -34,7 +37,10 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.coverage']
 templates_path = ['_templates']
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+source_parsers = {
+    '.md': CommonMarkParser,
+}
+source_suffix = ['.rst', '.md']
 
 # The encoding of source files.
 #source_encoding = 'utf-8-sig'
@@ -66,7 +72,7 @@ today_fmt = '%Y-%m-%d'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build']
+exclude_patterns = ['README.md', '_build']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
@@ -238,3 +244,16 @@ latex_documents = [
 
 # The depth of the table of contents in toc.ncx.
 #epub_tocdepth = 3
+
+
+# -- Options for AutoStructify output ------------------------------------------
+
+# At the bottom of conf.py
+github_doc_root = 'https://github.com/apple/swift-llbuild/tree/master/docs/'
+def setup(app):
+    app.add_config_value('recommonmark_config',
+                         {
+                             'url_resolver': lambda url: github_doc_root + url,
+                             'enable_auto_doc_ref': True,
+                         }, True)
+    app.add_transform(AutoStructify)

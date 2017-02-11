@@ -9,6 +9,7 @@ Contents
    development
    buildengine
    buildsystem
+   buildsystem-internals
    TODO
 
 

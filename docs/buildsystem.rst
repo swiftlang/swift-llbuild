@@ -21,8 +21,9 @@ and requirements so that the process of executing a typical software build is
 enough information to be able to perform sophisticated tasks like automatic
 distributed compilation or making use of a in-process compiler design.
 
-Build Graph
-===========
+
+Build Description
+=================
 
 Conceptually, the ``BuildSystem`` is organized around a bipartite graph of
 commands and nodes. A ``Command`` represent a units of computation that need to
@@ -32,6 +33,11 @@ is to be used to create it. The tools themselves are integrated into the
 ``BuildSystem`` component (either as builtin tools, or via the client), and this
 allows them to provided customizable features for use in the build file, and to
 be deeply integrated with *llbuild*.
+
+The build graph is supplied to the ``BuildSystem`` via a ``BuildDescription``
+which can either be loaded from a build file (see below), or can be directly
+constructed by clients. The latter facility is currently only used for
+constructing unit tests, and is not exposed via the public llbuild API.
 
 Nodes
 -----
