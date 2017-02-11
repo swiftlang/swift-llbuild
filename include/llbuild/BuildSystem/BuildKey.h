@@ -36,6 +36,9 @@ public:
     /// A key used to identify a custom task.
     CustomTask,
 
+    /// A key used to identify directory contents.
+    DirectoryContents,
+
     /// A key used to identify a node.
     Node,
 
@@ -88,6 +91,11 @@ public:
     return BuildKey('X', name, taskData);
   }
 
+  /// Create a key for computing the contents of a directory.
+  static BuildKey makeDirectoryContents(StringRef path) {
+    return BuildKey('D', path);
+  }
+
   /// Create a key for computing a node result.
   static BuildKey makeNode(StringRef path) {
     return BuildKey('N', path);
@@ -112,6 +120,7 @@ public:
   Kind getKind() const {
     switch (key[0]) {
     case 'C': return Kind::Command;
+    case 'D': return Kind::DirectoryContents;
     case 'N': return Kind::Node;
     case 'T': return Kind::Target;
     case 'X': return Kind::CustomTask;
@@ -121,8 +130,11 @@ public:
   }
 
   bool isCommand() const { return getKind() == Kind::Command; }
-  bool isNode() const { return getKind() == Kind::Node; }
   bool isCustomTask() const { return getKind() == Kind::CustomTask; }
+  bool isDirectoryContents() const {
+    return getKind() == Kind::DirectoryContents;
+  }
+  bool isNode() const { return getKind() == Kind::Node; }
   bool isTarget() const { return getKind() == Kind::Target; }
 
   StringRef getCommandName() const {
@@ -143,6 +155,11 @@ public:
     memcpy(&nameSize, &key[1], sizeof(uint32_t));
     uint32_t dataSize = key.size() - 1 - sizeof(uint32_t) - nameSize;
     return StringRef(&key[1 + sizeof(uint32_t) + nameSize], dataSize);
+  }
+
+  StringRef getDirectoryContentsPath() const {
+    assert(isDirectoryContents());
+    return StringRef(key.data()+1, key.size()-1);
   }
 
   StringRef getNodeName() const {

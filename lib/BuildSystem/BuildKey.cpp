@@ -25,6 +25,7 @@ StringRef BuildKey::stringForKind(BuildKey::Kind kind) {
 #define CASE(kind) case Kind::kind: return #kind
     CASE(Command);
     CASE(CustomTask);
+    CASE(DirectoryContents);
     CASE(Node);
     CASE(Target);
     CASE(Unknown);
@@ -43,6 +44,10 @@ void BuildKey::dump(raw_ostream& os) const {
   case Kind::CustomTask: {
     os << ", name='" << getCustomTaskName() << "'";
     os << ", dataSize='" << getCustomTaskData().size() << "'";
+    break;
+  }
+  case Kind::DirectoryContents: {
+    os << ", name='" << getDirectoryContentsPath() << "'";
     break;
   }
   case Kind::Node: {

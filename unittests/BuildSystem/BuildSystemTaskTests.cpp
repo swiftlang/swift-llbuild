@@ -37,7 +37,7 @@ namespace {
 TEST(BuildSystemTaskTests, basics) {
   TmpDir tempDir{ __FUNCTION__ };
 
-  // Create a smaple file.
+  // Create a sample file.
   SmallString<256> path{ tempDir.str() };
   sys::path::append(path, "a.txt");
   auto testString = StringRef("Hello, world!\n");
@@ -52,15 +52,50 @@ TEST(BuildSystemTaskTests, basics) {
   auto description = llvm::make_unique<BuildDescription>();
   MockBuildSystemDelegate delegate;
   BuildSystem system(delegate);
-  system.enableTracing("/tmp/x.trace", nullptr);
   system.loadDescription(std::move(description));
 
   // Build a specific key.
-  auto key = BuildKey::makeNode(path);
-  auto result = system.build(key);
+  auto result = system.build(BuildKey::makeNode(path));
   ASSERT_TRUE(result.hasValue());
   ASSERT_TRUE(result.getValue().isExistingInput());
   ASSERT_EQ(result.getValue().getOutputInfo().size, testString.size());
+}
+
+
+/// Check the evaluation of directory contents.
+TEST(BuildSystemTaskTests, directoryContents) {
+  TmpDir tempDir{ __FUNCTION__ };
+
+  // Create a directory with sample files.
+  SmallString<256> fileA{ tempDir.str() };
+  sys::path::append(fileA, "fileA");
+  SmallString<256> fileB{ tempDir.str() };
+  sys::path::append(fileB, "fileB");
+  {
+    std::error_code ec;
+    llvm::raw_fd_ostream os(fileA, ec, llvm::sys::fs::F_Text);
+    assert(!ec);
+    os << "fileA";
+  }
+  {
+    std::error_code ec;
+    llvm::raw_fd_ostream os(fileB, ec, llvm::sys::fs::F_Text);
+    assert(!ec);
+    os << "fileB";
+  }
+  
+  // Create the build system.
+  auto description = llvm::make_unique<BuildDescription>();
+  MockBuildSystemDelegate delegate;
+  BuildSystem system(delegate);
+  system.loadDescription(std::move(description));
+
+  // Build a specific key.
+  auto result = system.build(BuildKey::makeDirectoryContents(tempDir.str()));
+  ASSERT_TRUE(result.hasValue());
+  ASSERT_TRUE(result.getValue().isDirectoryContents());
+  ASSERT_EQ(result.getValue().getDirectoryContents(),
+            std::vector<StringRef>({ StringRef("fileA"), StringRef("fileB") }));
 }
 
 }

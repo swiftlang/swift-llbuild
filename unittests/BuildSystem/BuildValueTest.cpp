@@ -126,7 +126,7 @@ TEST(BuildValueTest, commandValueMultipleOutputsSerialization) {
 
 TEST(BuildValueTest, directoryListValues) {
   basic::FileInfo mockInfo{};
-  std::vector<StringRef> strings{ "hello", "world" };
+  std::vector<std::string> strings{ "hello", "world" };
   
   // Check that two identical values are equivalent.
   {

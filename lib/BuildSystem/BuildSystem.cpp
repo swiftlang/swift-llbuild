@@ -132,9 +132,10 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
   /// The internal schema version.
   ///
   /// Version History:
+  /// * 6: Added DirectoryContents to BuildKey
   /// * 5: Switch BuildValue to be BinaryCoding based
   /// * 4: Pre-history
-  static const uint32_t internalSchemaVersion = 5;
+  static const uint32_t internalSchemaVersion = 6;
   
   BuildSystem& buildSystem;
 
@@ -408,6 +409,8 @@ class FileInputNodeTask : public Task {
   }
 
   virtual void inputsAvailable(BuildEngine& engine) override {    
+    // FIXME: We should do this work in the background.
+
     // Get the information on the file.
     //
     // FIXME: This needs to delegate, since we want to have a notion of
@@ -431,7 +434,7 @@ public:
 
   static bool isResultValid(BuildEngine& engine, const BuildNode& node,
                             const BuildValue& value) {
-    // The result is valid if the exists matches the value type and the file
+    // The result is valid if the existence matches the value type and the file
     // information remains the same.
     //
     // FIXME: This is inefficient, we will end up doing the stat twice, once
@@ -559,6 +562,71 @@ public:
     return true;
   }
 };
+
+
+/// This task is responsible for computing the lists of files in directories.
+class DirectoryContentsTask : public Task {
+  std::string path;
+
+  virtual void start(BuildEngine& engine) override {
+  }
+
+  virtual void providePriorValue(BuildEngine&,
+                                 const ValueType& value) override {
+  }
+
+  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+                            const ValueType& value) override {
+  }
+
+  virtual void inputsAvailable(BuildEngine& engine) override {
+    // FIXME: We should do this work in the background.
+    
+    // Get the stat information on the directory.
+    auto info = getBuildSystem(engine).getDelegate().getFileSystem().getFileInfo(
+        path);
+    if (info.isMissing()) {
+      engine.taskIsComplete(
+          this, BuildValue::makeMissingInput().toData());
+    }
+
+    // Get the list of files in the directory.
+    std::error_code ec;
+    std::vector<std::string> filenames;
+    for (auto it = llvm::sys::fs::directory_iterator(path, ec),
+           end = llvm::sys::fs::directory_iterator(); it != end;
+         it = it.increment(ec)) {
+      filenames.push_back(llvm::sys::path::filename(it->path()));
+    }
+
+    // Order the filenames.
+    std::sort(filenames.begin(), filenames.end(),
+              [](const std::string& a, const std::string& b) {
+                return a < b;
+              });
+
+    // Create the result.
+    engine.taskIsComplete(
+        this, BuildValue::makeDirectoryContents(info, filenames).toData());
+  }
+
+public:
+  DirectoryContentsTask(StringRef path) : path(path) {}
+
+  static bool isResultValid(BuildEngine& engine, StringRef path,
+                            const BuildValue& value) {
+    // The result is valid if the existence matches the existing value type, and
+    // the file information remains the same.
+    auto info = getBuildSystem(engine).getDelegate().getFileSystem().getFileInfo(
+        path);
+    if (info.isMissing()) {
+      return value.isMissingInput();
+    } else {
+      return value.isExistingInput() && value.getOutputInfo() == info;
+    }
+  }
+};
+
 
 /// This is the task to actually execute a command.
 class CommandTask : public Task {
@@ -753,6 +821,21 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       }
     };
   }
+
+  case BuildKey::Kind::DirectoryContents: {
+    std::string path = key.getDirectoryContentsPath();
+    return Rule{
+      keyData,
+      /*Action=*/ [path](BuildEngine& engine) -> Task* {
+        return engine.registerTask(new DirectoryContentsTask(path));
+      },
+      /*IsValid=*/ [path](BuildEngine& engine, const Rule& rule,
+                          const ValueType& value) -> bool {
+        return DirectoryContentsTask::isResultValid(
+            engine, path, BuildValue::fromData(value));
+      }
+    };
+  }
     
   case BuildKey::Kind::Node: {
     // Find the node.
@@ -876,6 +959,9 @@ void BuildSystemEngineDelegate::cycleDetected(const std::vector<Rule*>& cycle) {
       break;
     case BuildKey::Kind::CustomTask:
       os << "custom task '" << key.getCustomTaskName() << "'";
+      break;
+    case BuildKey::Kind::DirectoryContents:
+      os << "directory-contents '" << key.getDirectoryContentsPath() << "'";
       break;
     case BuildKey::Kind::Node:
       os << "node '" << key.getNodeName() << "'";

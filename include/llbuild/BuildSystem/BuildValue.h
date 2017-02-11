@@ -155,7 +155,7 @@ private:
   }
   
   /// Create a build value containing directory contents.
-  BuildValue(Kind kind, FileInfo directoryInfo, ArrayRef<StringRef> values)
+  BuildValue(Kind kind, FileInfo directoryInfo, ArrayRef<std::string> values)
       : BuildValue(kind, directoryInfo)
   {
     // Construct the concatenated data.
@@ -264,7 +264,7 @@ public:
     return BuildValue(Kind::MissingInput);
   }
   static BuildValue makeDirectoryContents(FileInfo directoryInfo,
-                                          ArrayRef<StringRef> values) {
+                                          ArrayRef<std::string> values) {
     return BuildValue(Kind::DirectoryContents, directoryInfo, values);
   }
   static BuildValue makeMissingOutput() {
