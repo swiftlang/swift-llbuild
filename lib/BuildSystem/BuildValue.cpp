@@ -71,8 +71,7 @@ void BuildValue::dump(raw_ostream& os) const {
     for (unsigned i = 0; i != values.size(); ++i) {
       if (i != 0) os << ", ";
       os << '"';
-      os << values[i];
-      //      os.write_escaped(values[i]);
+      os.write_escaped(values[i]);
       os << '"';
     }
     os << "]";
