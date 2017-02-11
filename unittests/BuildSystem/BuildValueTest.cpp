@@ -20,6 +20,12 @@ using namespace llvm;
 
 namespace {
 
+/// We should support decoding an empty value without crashing.
+TEST(BuildValueTest, emptyDecode) {
+  auto result = BuildValue::fromData(core::ValueType());
+  EXPECT_EQ(result.toData(), BuildValue::makeInvalid().toData());
+}
+
 TEST(BuildValueTest, virtualValueSerialization) {
   // Check that two identical values are equivalent.
   {

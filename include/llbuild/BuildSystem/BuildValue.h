@@ -316,6 +316,12 @@ struct basic::BinaryCodingTraits<buildsystem::BuildValue::Kind> {
 };
 
 inline buildsystem::BuildValue::BuildValue(basic::BinaryDecoder& decoder) {
+  // Handle empty decode requests.
+  if (decoder.isEmpty()) {
+    kind = BuildValue::Kind::Invalid;
+    return;
+  }
+  
   decoder.read(kind);
   if (kindHasCommandSignature())
     decoder.read(commandSignature);
