@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -25,9 +25,22 @@ using namespace llbuild::buildsystem;
 
 bool BuildNode::configureAttribute(const ConfigureContext& ctx, StringRef name,
                                    StringRef value) {
-  if (name == "is-virtual") {
+  if (name == "is-directory") {
+    if (value == "true") {
+      directory = true;
+      virtualNode = false;
+    } else if (value == "false") {
+      directory = false;
+    } else {
+      ctx.error("invalid value: '" + value + "' for attribute '"
+                + name + "'");
+      return false;
+    }
+    return true;
+  } else if (name == "is-virtual") {
     if (value == "true") {
       virtualNode = true;
+      directory = false;
     } else if (value == "false") {
       virtualNode = false;
       commandTimestamp = false;
@@ -41,6 +54,7 @@ bool BuildNode::configureAttribute(const ConfigureContext& ctx, StringRef name,
     if (value == "true") {
       commandTimestamp = true;
       virtualNode = true;
+      directory = false;
     } else if (value == "false") {
       commandTimestamp = false;
     } else {

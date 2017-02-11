@@ -454,6 +454,49 @@ public:
 };
 
 
+/// This is the task to "build" a directory node.
+///
+/// This node effectively just adapts a directory tree signature to a node. The
+/// reason why we need it (versus simply making the directory tree signature
+/// *be* this, is that we want the directory signature to be able to interface
+/// with other build nodes produced by commands).
+class DirectoryInputNodeTask : public Task {
+  BuildNode& node;
+
+  core::ValueType directorySignature;
+
+  virtual void start(BuildEngine& engine) override {
+    // Remove any trailing slash from the node name.
+    StringRef path =  node.getName();
+    if (path.endswith("/") && path != "/") {
+      path = path.substr(0, path.size() - 1);
+    }
+    engine.taskNeedsInput(
+        this, BuildKey::makeDirectoryTreeSignature(path).toData(),
+        /*inputID=*/0);
+  }
+
+  virtual void providePriorValue(BuildEngine&,
+                                 const ValueType& value) override {
+  }
+
+  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+                            const ValueType& value) override {
+    directorySignature = value;
+  }
+
+  virtual void inputsAvailable(BuildEngine& engine) override {
+    // Simply propagate the value.
+    engine.taskIsComplete(this, ValueType(directorySignature));
+  }
+
+public:
+  DirectoryInputNodeTask(BuildNode& node) : node(node) {
+    assert(!node.isVirtual());
+  }
+};
+
+
 /// This is the task to build a virtual node which isn't connected to any
 /// output.
 class VirtualInputNodeTask : public Task {
@@ -1023,6 +1066,18 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
           }
         };
       }
+
+      if (node->isDirectory()) {
+        return Rule{
+          keyData,
+            /*Action=*/ [node](BuildEngine& engine) -> Task* {
+            return engine.registerTask(new DirectoryInputNodeTask(*node));
+          },
+            // Directory nodes don't require any validation outside of their
+            // concrete dependencies.
+          /*IsValid=*/ nullptr
+        };
+      }
       
       return Rule{
         keyData,
@@ -1133,8 +1188,9 @@ void BuildSystemEngineDelegate::error(const Twine& message) {
 
 std::unique_ptr<BuildNode>
 BuildSystemImpl::lookupNode(StringRef name, bool isImplicit) {
+  bool isDirectory = name.endswith("/");
   bool isVirtual = !name.empty() && name[0] == '<' && name.back() == '>';
-  return llvm::make_unique<BuildNode>(name, isVirtual,
+  return llvm::make_unique<BuildNode>(name, isDirectory, isVirtual,
                                       /*isCommandTimestamp=*/false,
                                       /*isMutable=*/false);
 }
