@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -31,6 +31,7 @@ class FileSystem;
 
 namespace buildsystem {
 
+class BuildDescription;
 class BuildExecutionQueue;
 class Command;
 class Tool;
@@ -186,12 +187,13 @@ class BuildSystem {
 private:
   void *impl;
 
+  // Copying is disabled.
+  BuildSystem(const BuildSystem&) LLBUILD_DELETED_FUNCTION;
+  void operator=(const BuildSystem&) LLBUILD_DELETED_FUNCTION;
+
 public:
   /// Create a build system with the given delegate.
-  ///
-  /// \arg mainFilename The path of the main build file.
-  explicit BuildSystem(BuildSystemDelegate& delegate,
-                       StringRef mainFilename);
+  explicit BuildSystem(BuildSystemDelegate& delegate);
   ~BuildSystem();
 
   /// Return the delegate the engine was configured with.
@@ -200,6 +202,14 @@ public:
   /// @name Client API
   /// @{
 
+  /// Load the build description from a file.
+  ///
+  /// \returns True on success.
+  bool loadDescription(StringRef mainFilename);
+
+  /// Load an explicit build description. from a file.
+  void loadDescription(std::unique_ptr<BuildDescription> description);
+  
   /// Attach (or create) the database at the given path.
   ///
   /// \returns True on success.
@@ -212,7 +222,7 @@ public:
 
   /// Build the named target.
   ///
-  /// This will automatically load the build file, if necessary.
+  /// A build description *must* have been loaded before calling this method.
   ///
   /// \returns True on success, or false if the build was aborted (for example,
   /// if a cycle was discovered).

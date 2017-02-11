@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -454,7 +454,11 @@ bool BuildSystemFrontend::build(StringRef targetToBuild) {
   }
 
   // Create the build system.
-  BuildSystem system(delegate, invocation.buildFilePath);
+  BuildSystem system(delegate);
+
+  // Load the build file.
+  if (!system.loadDescription(invocation.buildFilePath))
+    return false;
 
   // Register the system back pointer.
   //

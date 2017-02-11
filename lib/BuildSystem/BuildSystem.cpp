@@ -147,9 +147,6 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
   /// The delegate used for the loading the build file.
   BuildSystemFileDelegate fileDelegate;
 
-  /// The build file the system is building.
-  BuildFile buildFile;
-
   /// The build description, once loaded.
   std::unique_ptr<BuildDescription> buildDescription;
 
@@ -205,12 +202,9 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
 
 public:
   BuildSystemImpl(class BuildSystem& buildSystem,
-                  BuildSystemDelegate& delegate,
-                  StringRef mainFilename)
+                  BuildSystemDelegate& delegate)
       : buildSystem(buildSystem), delegate(delegate),
-        mainFilename(mainFilename),
-        fileDelegate(*this), buildFile(mainFilename, fileDelegate),
-        engineDelegate(*this), buildEngine(engineDelegate),
+        fileDelegate(*this), engineDelegate(*this), buildEngine(engineDelegate),
         executionQueue() {}
 
   BuildSystem& getBuildSystem() {
@@ -221,6 +215,9 @@ public:
     return delegate;
   }
 
+  // FIXME: We should eliminate this, it isn't well formed when loading
+  // descriptions not from a file. We currently only use that for unit testing,
+  // though.
   StringRef getMainFilename() {
     return mainFilename;
   }
@@ -256,6 +253,23 @@ public:
   
   /// @name Client API
   /// @{
+
+  bool loadDescription(StringRef filename) {
+    this->mainFilename = filename;
+
+    auto description = BuildFile(filename, fileDelegate).load();
+    if (!description) {
+      error(getMainFilename(), "unable to load build file");
+      return false;
+    }
+
+    buildDescription = std::move(description);
+    return true;
+  }
+
+  void loadDescription(std::unique_ptr<BuildDescription> description) {
+    buildDescription = std::move(description);
+  }
 
   bool attachDB(StringRef filename, std::string* error_out) {
     // FIXME: How do we pass the client schema version here, if we haven't
@@ -888,18 +902,11 @@ BuildSystemImpl::lookupNode(StringRef name, bool isImplicit) {
 }
 
 bool BuildSystemImpl::build(StringRef target) {
-  // Load the build file, if necessary.
-  //
-  // FIXME: Eventually, we may want to support something fancier where we load
-  // the build file in the background so we can immediately start building
-  // things as they show up.
+  // The build description must have been loaded.
   if (!buildDescription) {
-    buildDescription = buildFile.load();
-    if (!buildDescription) {
-      error(getMainFilename(), "unable to load build file");
-      return false;
-    }
-  }    
+    error(getMainFilename(), "no build description loaded");
+    return false;
+  }
 
   // Create the execution queue.
   executionQueue = delegate.createExecutionQueue();
@@ -2011,9 +2018,8 @@ BuildSystemFileDelegate::lookupNode(StringRef name,
 
 #pragma mark - BuildSystem
 
-BuildSystem::BuildSystem(BuildSystemDelegate& delegate,
-                         StringRef mainFilename)
-    : impl(new BuildSystemImpl(*this, delegate, mainFilename))
+BuildSystem::BuildSystem(BuildSystemDelegate& delegate)
+    : impl(new BuildSystemImpl(*this, delegate))
 {
 }
 
@@ -2023,6 +2029,16 @@ BuildSystem::~BuildSystem() {
 
 BuildSystemDelegate& BuildSystem::getDelegate() {
   return static_cast<BuildSystemImpl*>(impl)->getDelegate();
+}
+
+bool BuildSystem::loadDescription(StringRef mainFilename) {
+  return static_cast<BuildSystemImpl*>(impl)->loadDescription(mainFilename);
+}
+
+void BuildSystem::loadDescription(
+    std::unique_ptr<BuildDescription> description) {
+  return static_cast<BuildSystemImpl*>(impl)->loadDescription(
+      std::move(description));
 }
 
 bool BuildSystem::attachDB(StringRef path,
