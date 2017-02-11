@@ -128,6 +128,11 @@ public:
   BinaryDecoder(const std::vector<uint8_t>& data) : BinaryDecoder(
       StringRef(reinterpret_cast<const char*>(data.data()), data.size())) {}
 
+  /// Check if the decoder is at the end of the stream.
+  bool isEmpty() const {
+    return pos == data.size();
+  }
+  
   /// Decode a value from the stream.
   void read(uint8_t& value) { value = read8(); }
   
@@ -148,7 +153,7 @@ public:
 
   /// Finish decoding and clean up.
   void finish() {
-    assert(pos == data.size());
+    assert(isEmpty());
   }
 };
 
