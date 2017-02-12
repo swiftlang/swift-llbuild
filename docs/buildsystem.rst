@@ -49,9 +49,45 @@ with a file (that said, it is a common case and the ``BuildSystem`` will have
 special support to ensure that using nodes which are proxies for files on disk
 is convenient and featureful).
 
-Currently, the build system automatically treats nodes as files unless they have
-a name matching ``'<.*>'``, see the documentation of the ``is-virtual`` node
-attribute for more information.
+There are several different types of nodes with special behavior. The build
+system allows controlling these behaviors on a per node basis, but in order to
+keep build files succinct, there is also support for inferring the type of a
+node from naming conventions on the node itself.
+
+These are the supported node types:
+
+* File Nodes: A node is by default assumed to represent a path in the filesystem
+  with the same name as the node.
+
+* Directory Nodes: A node ending with "/" is assumed to represent a *directory tree*,
+  not an individual file. The node's value will be a signature of the recursive
+  contents of the entire directory tree at that path, and any changes to any
+  part of the directory structure will causes commands taking it as an input to
+  rerun.
+
+  For example, in the following build file fragment ``C1`` uses a directory node
+  because the task is doing a recursive copy of the input directory::
+  
+      commands:
+        C1:
+          tool: shell
+          inputs: ["input/"]
+          outputs: ["output/"]
+          args: rm -rf output && cp -r input output
+    
+* Virtual Nodes: Nodes matching the name ``'<.*>'``, e.g. ``<gate-task>``, are
+  *assumed* to be virtual nodes, and are used for adding arbitrary edges to the
+  graph. Virtual nodes carry no value and only will only cause commands to
+  rebuild based on their presence or absence. see the documentation of the
+  ``is-virtual`` node attribute for more information.
+
+* Command Timestamps: A node can be marked as being a *command timestamp* (see
+  the ``is-command-timestamp`` node attributes). Command timestamps are always
+  virtual, but will carry a value representing the time at which the command
+  which produces them was run. When used as an input to a subsequent command,
+  this will cause that command to rerun whenever the producer of the timestamp
+  is run. This can be used to build triggers such that one command will always
+  force another to build.
 
 Commands
 --------
@@ -273,6 +309,13 @@ The following attributes are currently supported:
 
    * - Name
      - Description
+
+   * - is-directory
+   
+     - A boolean value, indicating whether or not the node should represent a
+       directory instead of a file path. By default, the build system assumes
+       that nodes matching the pattern ``'.*/'`` (e.g., ``/tmp/``) are directory
+       nodes. This attribute can be used to override that default.
 
    * - is-virtual
      - A boolean value, indicating whether or not the node is "virtual". By

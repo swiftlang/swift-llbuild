@@ -25,6 +25,9 @@ tools: { "fancy": {} }
 targets:
   "": ["<all>"]
 
+nodes:
+  "/": { "is-directory": false }
+
 commands:
   "<all>":
     tool: phony

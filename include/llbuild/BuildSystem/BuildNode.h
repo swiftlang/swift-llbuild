@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -32,6 +32,11 @@ namespace buildsystem {
   
 // FIXME: Figure out how this is going to be organized.
 class BuildNode : public Node {
+  /// Whether or not this node is a directory.
+  //
+  // FIXME: We need a type enumeration here.
+  bool directory;
+
   /// Whether or not this node is "virtual" (i.e., not a filesystem path).
   bool virtualNode;
 
@@ -48,12 +53,17 @@ class BuildNode : public Node {
   bool mutated;
 
 public:
-  explicit BuildNode(StringRef name, bool isVirtual, bool isCommandTimestamp,
-                     bool isMutated)
-      : Node(name), virtualNode(isVirtual),
+  explicit BuildNode(StringRef name, bool isDirectory, bool isVirtual,
+                     bool isCommandTimestamp, bool isMutated)
+      : Node(name), directory(isDirectory), virtualNode(isVirtual),
         commandTimestamp(isCommandTimestamp), mutated(isMutated) {}
 
+  /// Check whether this is a "virtual" (non-filesystem related) node.
   bool isVirtual() const { return virtualNode; }
+
+  /// Check whether this node is intended to represent a directory's contents
+  /// recursively.
+  bool isDirectory() const { return directory; }
 
   bool isCommandTimestamp() const { return commandTimestamp; }
 
