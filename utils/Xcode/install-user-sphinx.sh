@@ -5,7 +5,7 @@
 set -e
 
 # Check if the 'sphinx' module is available (e.g., in their user python path).
-SPHINX_MODULE_PATH=$(python -c "import sphinx; print sphinx.__file__" 2> /dev/null || true)
+SPHINX_MODULE_PATH=$(python -c "import sphinx, recommonmark; print sphinx.__file__" 2> /dev/null || true)
 if [ -z "${SPHINX_MODULE_PATH}" ]; then
     # If not, attempt an automatic user easy_install of 'sphinx'.
     mkdir -p "${BUILT_PRODUCTS_DIR}"
