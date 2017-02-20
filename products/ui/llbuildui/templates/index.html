@@ -5,7 +5,7 @@
 <p>
   Roots:
   {% for root in roots %}
-  <a href="{{ url_for('main.rule_result', id=root.id) }}">{{ root.key.name }}</a> (id: {{ root.id }})<br>
+  <a href="{{ url_for('main.rule_result', name=root.key.name) }}">{{ root.key.name }}</a> (id: {{ root.id }})<br>
   {% endfor %}
 </p>
 

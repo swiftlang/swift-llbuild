@@ -35,11 +35,12 @@ def config():
 
 # MARK: Model Object Views
 
-@main.route('/rule_result/<int:id>')
-def rule_result(id):
+@main.route('/rule_result/<path:name>')
+def rule_result(name):
     # Get the result.
     s = current_app.database_session
-    rule_result = s.query(model.RuleResult).filter_by(id=id).one()
+    rule_result = s.query(model.RuleResult).join(model.KeyName).filter(
+        model.KeyName.name == name).one()
     dependency_results = [
         s.query(model.RuleResult).filter_by(
             key=dependency.key).one()
