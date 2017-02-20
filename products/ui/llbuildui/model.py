@@ -105,11 +105,14 @@ class BuildValue(object):
         if self.hasStringList:
             stringsLength = struct.unpack("<Q", bytes[:8])[0]
             bytes = bytes[8:]
-            stringData = bytes[:stringsLength]
-            bytes = bytes[stringsLength:]
-            assert len(stringData) == stringsLength
-            assert stringData[-1] == '\0'
-            self.strings = stringData[:-1].split("\0")
+            if stringsLength == 0:
+                self.strings = []
+            else:
+                stringData = bytes[:stringsLength]
+                bytes = bytes[stringsLength:]
+                assert len(stringData) == stringsLength
+                assert stringData[-1] == '\0'
+                self.strings = stringData[:-1].split("\0")
         else:
             self.strings = None
 
