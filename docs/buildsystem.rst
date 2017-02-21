@@ -59,11 +59,11 @@ These are the supported node types:
 * File Nodes: A node is by default assumed to represent a path in the filesystem
   with the same name as the node.
 
-* Directory Nodes: A node ending with "/" is assumed to represent a *directory tree*,
-  not an individual file. The node's value will be a signature of the recursive
-  contents of the entire directory tree at that path, and any changes to any
-  part of the directory structure will causes commands taking it as an input to
-  rerun.
+* Directory Tree Nodes: A node ending with "/" is assumed to represent a
+  *directory tree*, not an individual file. The node's value will be a signature
+  of the recursive contents of the entire directory tree at that path, and any
+  changes to any part of the directory structure will causes commands taking it
+  as an input to rerun.
 
   For example, in the following build file fragment ``C1`` uses a directory node
   because the task is doing a recursive copy of the input directory::
@@ -74,7 +74,14 @@ These are the supported node types:
           inputs: ["input/"]
           outputs: ["output/"]
           args: rm -rf output && cp -r input output
-    
+
+  .. note::
+    It is legal to use a directory tree node to refer to a path which is
+    *actually* just a file; the node will be considered as changed whenever the
+    file on disk is changed. This is useful when the client cannot easily know
+    in advance whether the node is expected to be a file or a directory, but
+    should be treated as a directory tree if it is one.
+  
 * Virtual Nodes: Nodes matching the name ``'<.*>'``, e.g. ``<gate-task>``, are
   *assumed* to be virtual nodes, and are used for adding arbitrary edges to the
   graph. Virtual nodes carry no value and only will only cause commands to

@@ -704,6 +704,9 @@ class DirectoryTreeSignatureTask : public Task {
   /// The path we are taking the signature of.
   std::string path;
 
+  /// The value for the directory itself.
+  ValueType directoryValue;
+
   /// The accumulated list of child input info.
   ///
   /// Once we have the input directory information, we resize this to match the
@@ -725,6 +728,9 @@ class DirectoryTreeSignatureTask : public Task {
                             const ValueType& valueData) override {
     // The first input is the directory contents.
     if (inputID == 0) {
+      // Record the value for the directory.
+      directoryValue = valueData;
+
       // Request the inputs for each subpath.
       auto value = BuildValue::fromData(valueData);
       if (value.isMissingInput())
@@ -774,11 +780,12 @@ class DirectoryTreeSignatureTask : public Task {
     // Compute the signature across all of the inputs.
     using llvm::hash_combine;
     llvm::hash_code code = hash_value(path);
-    
+
+    // Add the signature for the actual input path.
+    code = hash_combine(
+        code, hash_combine_range(directoryValue.begin(), directoryValue.end()));
+
     // For now, we represent this task as the aggregation of all the inputs.
-    //
-    // NOTE: We don't actually include the information on the directory path
-    // itself, just its contents.
     for (const auto& info: childResults) {
       // We merge the children by simply combining their encoded representation.
       code = hash_combine(
