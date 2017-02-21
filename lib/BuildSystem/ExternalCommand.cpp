@@ -410,16 +410,20 @@ void ExternalCommand::inputsAvailable(BuildSystemCommandInterface& bsci,
     bsci.getDelegate().commandFinished(this);
     
     // Process the result.
-    if (!result) {
-      bsci.getDelegate().hadCommandFailure();
+    switch (result) {
+      case CommandResult::Failed:
+        bsci.getDelegate().hadCommandFailure();
 
-      // If the command failed, the result is failure.
-      bsci.taskIsComplete(task, BuildValue::makeFailedCommand());
-      return;
+        // If the command failed, the result is failure.
+        bsci.taskIsComplete(task, BuildValue::makeFailedCommand());
+        break;
+      case CommandResult::Cancelled:
+        bsci.taskIsComplete(task, BuildValue::makeCancelledCommand());
+        break;
+      case CommandResult::Succeeded:
+        bsci.taskIsComplete(task, computeCommandResult(bsci));
+        break;
     }
-
-    // Otherwise, complete with a successful result.
-    bsci.taskIsComplete(task, computeCommandResult(bsci));
   };
   bsci.addJob({ this, std::move(fn) });
 #endif

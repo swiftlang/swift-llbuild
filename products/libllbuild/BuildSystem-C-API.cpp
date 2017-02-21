@@ -416,13 +416,13 @@ class CAPIExternalCommand : public ExternalCommand {
   // that the delegates are const and we just carry the context pointer around.
   llb_buildsystem_external_command_delegate_t cAPIDelegate;
 
-  virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
-                                      core::Task* task,
-                                      QueueJobContext* job_context) override {
+  virtual CommandResult executeExternalCommand(BuildSystemCommandInterface& bsci,
+                                               core::Task* task,
+                                               QueueJobContext* job_context) override {
     return cAPIDelegate.execute_command(
         cAPIDelegate.context, (llb_buildsystem_command_t*)this,
         (llb_buildsystem_command_interface_t*)&bsci,
-        (llb_task_t*)task, (llb_buildsystem_queue_job_context_t*)job_context);
+        (llb_task_t*)task, (llb_buildsystem_queue_job_context_t*)job_context) ? CommandResult::Succeeded : CommandResult::Failed;
   }
 
 public:

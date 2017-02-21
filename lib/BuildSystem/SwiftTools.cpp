@@ -10,6 +10,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llbuild/BuildSystem/CommandResult.h"
 #include "llbuild/BuildSystem/SwiftTools.h"
 
 #include "llbuild/Basic/FileSystem.h"
@@ -532,31 +533,31 @@ public:
     ExternalCommand::provideValue(bsci, task, inputID, value);
   }
 
-  virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
-                                      core::Task* task,
-                                      QueueJobContext* context) override {
+  virtual CommandResult executeExternalCommand(BuildSystemCommandInterface& bsci,
+                                               core::Task* task,
+                                               QueueJobContext* context) override {
     // FIXME: Need to add support for required parameters.
     if (sourcesList.empty()) {
       bsci.getDelegate().error("", {}, "no configured 'sources'");
-      return false;
+      return CommandResult::Failed;
     }
     if (objectsList.empty()) {
       bsci.getDelegate().error("", {}, "no configured 'objects'");
-      return false;
+      return CommandResult::Failed;
     }
     if (moduleName.empty()) {
       bsci.getDelegate().error("", {}, "no configured 'module-name'");
-      return false;
+      return CommandResult::Failed;
     }
     if (tempsPath.empty()) {
       bsci.getDelegate().error("", {}, "no configured 'temps-path'");
-      return false;
+      return CommandResult::Failed;
     }
 
     if (sourcesList.size() != objectsList.size()) {
       bsci.getDelegate().error(
           "", {}, "'sources' and 'objects' are not the same size");
-      return false;
+      return CommandResult::Failed;
     }
 
     // Ensure the temporary directory exists.
@@ -577,21 +578,23 @@ public:
     // Write the output file map.
     std::vector<std::string> depsFiles;
     if (!writeOutputFileMap(bsci, outputFileMapPath, depsFiles))
-      return false;
+      return CommandResult::Failed;
 
     // Execute the command.
-    if (!bsci.getExecutionQueue().executeProcess(context, commandLine)) {
+    auto result = bsci.getExecutionQueue().executeProcess(context, commandLine);
+
+    if (result != CommandResult::Succeeded) {
       // If the command failed, there is no need to gather dependencies.
-      return false;
+      return result;
     }
 
     // Load all of the discovered dependencies.
     for (const auto& depsPath: depsFiles) {
       if (!processDiscoveredDependencies(bsci, task, depsPath))
-        return false;
+        return CommandResult::Failed;
     }
     
-    return true;
+    return result;
   }
 };
 

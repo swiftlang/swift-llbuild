@@ -212,7 +212,7 @@ public:
         &LaneBasedExecutionQueue::killAfterTimeout, this);
   }
 
-  virtual bool
+  virtual CommandResult
   executeProcess(QueueJobContext* opaqueContext,
                  ArrayRef<StringRef> commandLine,
                  ArrayRef<std::pair<StringRef,
@@ -222,7 +222,7 @@ public:
       std::unique_lock<std::mutex> lock(readyJobsMutex);
       // Do not execute new processes anymore after cancellation.
       if (cancelled) {
-        return false;
+        return CommandResult::Cancelled;
       }
     }
 
@@ -302,7 +302,7 @@ public:
             Twine("unable to open output pipe (") + strerror(errno) + ")");
         getDelegate().commandProcessFinished(context.job.getForCommand(),
                                              handle, CommandResult::Failed, -1);
-        return false;
+        return CommandResult::Failed;
       }
 
       // Open the write end of the pipe as stdout and stderr.
@@ -400,7 +400,7 @@ public:
             Twine("unable to spawn process (") + strerror(errno) + ")");
         getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
                                              CommandResult::Failed, -1);
-        return false;
+        return CommandResult::Failed;
       }
 
       spawnedProcesses.insert(pid);
@@ -453,7 +453,7 @@ public:
           Twine("unable to wait for process (") + strerror(errno) + ")");
       getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
                                            CommandResult::Failed, -1);
-      return false;
+      return CommandResult::Failed;
     }
 
     // Notify the client of the output, if buffering.
@@ -467,7 +467,7 @@ public:
     CommandResult commandResult = cancelled ? CommandResult::Cancelled : (status == 0) ? CommandResult::Succeeded : CommandResult::Failed;
     getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
                                          commandResult, status);
-    return (status == 0) || cancelled;
+    return commandResult;
   }
 };
 

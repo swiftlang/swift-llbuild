@@ -16,6 +16,7 @@
 #include "llbuild/BuildSystem/BuildDescription.h"
 #include "llbuild/BuildSystem/BuildSystem.h"
 #include "llbuild/BuildSystem/BuildValue.h"
+#include "llbuild/BuildSystem/CommandResult.h"
 
 #include "llvm/ADT/Optional.h"
 #include "llvm/ADT/StringRef.h"
@@ -98,9 +99,9 @@ protected:
   virtual uint64_t getSignature();
 
   /// Extension point for subclasses, to actually execute the command.
-  virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
-                                      core::Task* task,
-                                      QueueJobContext* context) = 0;
+  virtual CommandResult executeExternalCommand(BuildSystemCommandInterface& bsci,
+                                               core::Task* task,
+                                               QueueJobContext* context) = 0;
   
 public:
   using Command::Command;

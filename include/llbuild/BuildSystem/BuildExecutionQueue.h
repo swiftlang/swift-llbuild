@@ -114,11 +114,11 @@ public:
   /// overlayed on top base environment supplied when creating the queue. If
   /// false, only the supplied environment will be passed to the subprocess.
   ///
-  /// \returns True on success.
+  /// \returns Result of the process execution.
   //
   // FIXME: This interface will need to get more complicated, and provide the
   // command result and facilities for dealing with the output.
-  virtual bool
+  virtual CommandResult
   executeProcess(QueueJobContext* context,
                  ArrayRef<StringRef> commandLine,
                  ArrayRef<std::pair<StringRef, StringRef>> environment,
@@ -127,7 +127,7 @@ public:
   /// @}
 
   /// Execute the given command, using an inherited environment.
-  bool executeProcess(QueueJobContext* context,
+  CommandResult executeProcess(QueueJobContext* context,
                       ArrayRef<StringRef> commandLine);
 
   /// Execute the given command using "/bin/sh".
