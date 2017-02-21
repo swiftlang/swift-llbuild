@@ -31,6 +31,7 @@
 
 using namespace llvm;
 using namespace llbuild;
+using namespace llbuild::basic;
 using namespace llbuild::buildsystem;
 using namespace llbuild::unittests;
 
@@ -115,7 +116,8 @@ TEST(BuildSystemTaskTests, directoryContents) {
 /// Check the evaluation of directory signatures.
 TEST(BuildSystemTaskTests, directorySignature) {
   TmpDir tempDir{ __FUNCTION__ };
-
+  auto localFS = createLocalFileSystem();
+  
   // Create a directory with sample files.
   SmallString<256> fileA{ tempDir.str() };
   sys::path::append(fileA, "fileA");
@@ -159,12 +161,19 @@ TEST(BuildSystemTaskTests, directorySignature) {
   // Modify the immediate directory and rebuild.
   SmallString<256> fileC{ tempDir.str() };
   sys::path::append(fileC, "fileC");
-  {
+
+  // We must write the file in a loop until the directory actually changes (we
+  // currently assume we can trust the directory file info to detect changes,
+  // which is not always strictly true).
+  auto dirFileInfo = localFS->getFileInfo(tempDir.str());
+  do {
     std::error_code ec;
+    llvm::sys::fs::remove(fileC.str());
     llvm::raw_fd_ostream os(fileC, ec, llvm::sys::fs::F_Text);
     assert(!ec);
     os << "fileC";
-  }
+  } while (dirFileInfo == localFS->getFileInfo(tempDir.str()));
+  
   auto resultB = system.build(keyToBuild);
   ASSERT_TRUE(resultB.hasValue() && resultB->isDirectoryTreeSignature());
   ASSERT_TRUE(resultA->toData() != resultB->toData());
@@ -172,12 +181,19 @@ TEST(BuildSystemTaskTests, directorySignature) {
   // Modify the subdirectory and rebuild.
   SmallString<256> subdirFileD{ subdirA };
   sys::path::append(subdirFileD, "fileD");
-  {
+
+  // We must write the file in a loop until the directory actually changes (we
+  // currently assume we can trust the directory file info to detect changes,
+  // which is not always strictly true).
+  dirFileInfo = localFS->getFileInfo(subdirA.str());
+  do {
     std::error_code ec;
+    llvm::sys::fs::remove(subdirFileD.str());
     llvm::raw_fd_ostream os(subdirFileD, ec, llvm::sys::fs::F_Text);
     assert(!ec);
     os << "fileD";
-  }
+  } while (dirFileInfo == localFS->getFileInfo(subdirA.str()));
+  
   auto resultC = system.build(keyToBuild);
   ASSERT_TRUE(resultC.hasValue() && resultC->isDirectoryTreeSignature());
   ASSERT_TRUE(resultA->toData() != resultB->toData());
