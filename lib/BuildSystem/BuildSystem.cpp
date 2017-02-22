@@ -611,7 +611,14 @@ public:
 class DirectoryContentsTask : public Task {
   std::string path;
 
+  /// The value for the input directory.
+  ValueType directoryValue;
+  
   virtual void start(BuildEngine& engine) override {
+    // Request the base directory node -- this task doesn't actually use the
+    // value, but this connects the task to its producer if present.
+    engine.taskNeedsInput(
+        this, BuildKey::makeNode(path).toData(), /*inputID=*/0);
   }
 
   virtual void providePriorValue(BuildEngine&,
@@ -620,12 +627,19 @@ class DirectoryContentsTask : public Task {
 
   virtual void provideValue(BuildEngine&, uintptr_t inputID,
                             const ValueType& value) override {
+    if (inputID == 0) {
+      directoryValue = value;
+      return;
+    }
   }
 
   virtual void inputsAvailable(BuildEngine& engine) override {
     // FIXME: We should do this work in the background.
     
     // Get the stat information on the directory.
+    //
+    // FIXME: We should probably be using the directory value here, but that
+    // requires reworking some of the value encoding for the directory.
     auto info = getBuildSystem(engine).getDelegate().getFileSystem().getFileInfo(
         path);
     if (info.isMissing()) {
