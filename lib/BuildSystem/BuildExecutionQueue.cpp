@@ -11,6 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
+#include "llbuild/BuildSystem/CommandResult.h"
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/SmallString.h"
@@ -29,7 +30,7 @@ BuildExecutionQueue::BuildExecutionQueue(BuildExecutionQueueDelegate& delegate)
 BuildExecutionQueue::~BuildExecutionQueue() {
 }
 
-bool BuildExecutionQueue::executeProcess(
+CommandResult BuildExecutionQueue::executeProcess(
     QueueJobContext* context, ArrayRef<StringRef> commandLine) {
   return executeProcess(context, commandLine, {});
 }
@@ -39,7 +40,7 @@ bool BuildExecutionQueue::executeShellCommand(QueueJobContext* context,
   SmallString<1024> commandStorage(command);
   std::vector<StringRef> commandLine(
       { "/bin/sh", "-c", commandStorage.c_str() });
-  return executeProcess(context, commandLine);
+  return executeProcess(context, commandLine) == CommandResult::Succeeded;
 }
 
 BuildExecutionQueueDelegate::~BuildExecutionQueueDelegate() {

@@ -15,6 +15,7 @@
 
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/BuildSystem/BuildDescription.h"
+#include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildKey.h"
 #include "llbuild/BuildSystem/BuildValue.h"
 #include "llbuild/BuildSystem/BuildSystem.h"
@@ -23,6 +24,8 @@
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
+
+#include <thread>
 
 #include "gtest/gtest.h"
 
@@ -179,6 +182,64 @@ TEST(BuildSystemTaskTests, directorySignature) {
   ASSERT_TRUE(resultC.hasValue() && resultC->isDirectoryTreeSignature());
   ASSERT_TRUE(resultA->toData() != resultB->toData());
   ASSERT_TRUE(resultA->toData() != resultC->toData());
+}
+
+TEST(BuildSystemTaskTests, doesNotProcessDependenciesAfterCancellation) {
+  TmpDir tempDir{ __FUNCTION__ };
+
+  std::string outputFile = tempDir.str() + "/output.txt";
+
+  SmallString<256> manifest{ tempDir.str() };
+  sys::path::append(manifest, "manifest.llbuild");
+  {
+    std::error_code ec;
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    assert(!ec);
+
+    os << "client:\n"
+"  name: mock\n"
+"\n"
+"commands:\n"
+"  WAIT:\n"
+"    tool: shell\n"
+"    deps: \"/tmp/deps.info\"\n"
+"    deps-style: dependency-info\n"
+"    inputs: [\"<cleanup>\"]\n";
+
+    os << "    outputs: [\"" << outputFile << "\"]\n";
+    os << "    description: \"WAIT\"\n"
+"    args:\n";
+
+    os << "      touch " << outputFile << "\n";
+    os << "      sleep 9999\n";
+  }
+
+  auto keyToBuild = BuildKey::makeCommand("WAIT");
+  MockBuildSystemDelegate delegate;
+  BuildSystem system(delegate);
+  bool loadingResult = system.loadDescription(manifest);
+  ASSERT_TRUE(loadingResult);
+
+  std::unique_ptr<llbuild::basic::FileSystem> fs = llbuild::basic::createLocalFileSystem();
+  std::thread cancelThread([&] {
+    // Busy wait until `outputFile` appears which indicates that `yes` is
+    // running.
+    time_t start = ::time(NULL);
+    while (fs->getFileInfo(outputFile).isMissing()) {
+      if (::time(NULL) > start + 5) {
+        // We can't fail gracefully because the `LaneBasedExecutionQueue` will
+        // always wait for spawned processes to exit
+        abort();
+      }
+    }
+
+    system.cancel();
+  });
+
+  auto result = system.build(keyToBuild);
+
+  cancelThread.join();
+  ASSERT_EQ(delegate.getMessages().size(), 0);
 }
 
 }

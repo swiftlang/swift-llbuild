@@ -12,6 +12,7 @@
 
 #include "llbuild/BuildSystem/BuildSystem.h"
 #include "llbuild/BuildSystem/BuildSystemCommandInterface.h"
+#include "llbuild/BuildSystem/CommandResult.h"
 
 #include "llbuild/Basic/FileInfo.h"
 #include "llbuild/Basic/FileSystem.h"
@@ -1254,11 +1255,11 @@ public:
     llvm::raw_svector_ostream(result) << getName();
   }
 
-  virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
-                                      Task* task,
-                                      QueueJobContext* context) override {
+  virtual CommandResult executeExternalCommand(BuildSystemCommandInterface& bsci,
+                                               Task* task,
+                                               QueueJobContext* context) override {
     // Nothing needs to be done for phony commands.
-    return true;
+    return CommandResult::Succeeded;
   }
 };
 
@@ -1561,20 +1562,21 @@ public:
     return true;
   }
 
-  virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
-                                      Task* task,
-                                      QueueJobContext* context) override {
+  virtual CommandResult executeExternalCommand(BuildSystemCommandInterface& bsci,
+                                               Task* task,
+                                               QueueJobContext* context) override {
     std::vector<std::pair<StringRef, StringRef>> environment;
     for (const auto& it: env) {
       environment.push_back({ it.getKey(), it.getValue() });
     }
     
     // Execute the command.
-    if (!bsci.getExecutionQueue().executeProcess(
-            context, std::vector<StringRef>(args.begin(), args.end()),
-            environment, /*inheritEnvironment=*/inheritEnv)) {
+    auto result = bsci.getExecutionQueue().executeProcess(context, std::vector<StringRef>(args.begin(), args.end()),
+                                                          environment, /*inheritEnvironment=*/inheritEnv);
+
+    if (result != CommandResult::Succeeded) {
       // If the command failed, there is no need to gather dependencies.
-      return false;
+      return result;
     }
     
     // Collect the discovered dependencies, if used.
@@ -1582,11 +1584,11 @@ public:
       if (!processDiscoveredDependencies(bsci, task, context)) {
         // If we were unable to process the dependencies output, report a
         // failure.
-        return false;
+        return CommandResult::Failed;
       }
     }
     
-    return true;
+    return result;
   }
 };
 
@@ -1737,18 +1739,20 @@ public:
     return ExternalCommand::configureAttribute(ctx, name, values);
   }
 
-  virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
-                                      Task* task,
-                                      QueueJobContext* context) override {
+  virtual CommandResult executeExternalCommand(BuildSystemCommandInterface& bsci,
+                                               Task* task,
+                                               QueueJobContext* context) override {
     std::vector<StringRef> commandLine;
     for (const auto& arg: args) {
       commandLine.push_back(arg);
     }
 
     // Execute the command.
-    if (!bsci.getExecutionQueue().executeProcess(context, commandLine)) {
+    auto result = bsci.getExecutionQueue().executeProcess(context, commandLine);
+
+    if (result != CommandResult::Succeeded) {
       // If the command failed, there is no need to gather dependencies.
-      return false;
+      return result;
     }
 
     // Otherwise, collect the discovered dependencies, if used.
@@ -1756,11 +1760,11 @@ public:
       if (!processDiscoveredDependencies(bsci, task, context)) {
         // If we were unable to process the dependencies output, report a
         // failure.
-        return false;
+        return CommandResult::Failed;
       }
     }
 
-    return true;
+    return result;
   }
 };
 
@@ -1837,16 +1841,16 @@ class MkdirCommand : public ExternalCommand {
     return true;
   }
   
-  virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
-                                      Task* task,
-                                      QueueJobContext* context) override {
+  virtual CommandResult executeExternalCommand(BuildSystemCommandInterface& bsci,
+                                               Task* task,
+                                               QueueJobContext* context) override {
     auto output = getOutputs()[0];
     if (llvm::sys::fs::create_directories(output->getName())) {
       getBuildSystem(bsci.getBuildEngine()).error(
           "", "unable to create directory '" + output->getName() + "'");
-      return false;
+      return CommandResult::Failed;
     }
-    return true;
+    return CommandResult::Succeeded;
   }
   
 public:
@@ -2130,22 +2134,18 @@ class ArchiveShellCommand : public ExternalCommand {
   std::string archiveName;
   std::vector<std::string> archiveInputs;
 
-  virtual bool executeExternalCommand(BuildSystemCommandInterface& bsci,
-                                      Task* task,
-                                      QueueJobContext* context) override {
+  virtual CommandResult executeExternalCommand(BuildSystemCommandInterface& bsci,
+                                               Task* task,
+                                               QueueJobContext* context) override {
     // First delete the current archive
     // TODO instead insert, update and remove files from the archive
     if (llvm::sys::fs::remove(archiveName, /*IgnoreNonExisting*/ true)) {
-      return false;
+      return CommandResult::Failed;
     }
 
     // Create archive
     auto args = getArgs();
-    if (!bsci.getExecutionQueue().executeProcess(context, std::vector<StringRef>(args.begin(), args.end()))) {
-      return false;
-    }
-
-    return true;
+    return bsci.getExecutionQueue().executeProcess(context, std::vector<StringRef>(args.begin(), args.end()));
   }
 
   virtual void getShortDescription(SmallVectorImpl<char> &result) override {

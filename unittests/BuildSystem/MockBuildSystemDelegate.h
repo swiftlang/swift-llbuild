@@ -17,6 +17,9 @@
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/Basic/LLVM.h"
 
+#include "llvm/Support/SourceMgr.h"
+
+#include <iostream>
 #include <memory>
 
 using namespace llvm;
@@ -51,11 +54,14 @@ private:
 class MockBuildSystemDelegate : public BuildSystemDelegate {
   std::unique_ptr<basic::FileSystem> fileSystem =
     basic::createLocalFileSystem();
+  std::vector<std::string> messages;
   
   MockExecutionQueueDelegate executionQueueDelegate;
   
 public:
   MockBuildSystemDelegate();
+
+  std::vector<std::string>& getMessages() { return messages; }
   
   virtual basic::FileSystem& getFileSystem() { return *fileSystem; }
   
@@ -63,7 +69,10 @@ public:
 
   virtual void error(StringRef filename,
                      const Token& at,
-                     const Twine& message) {}
+                     const Twine& message) {
+    std::cerr << "error: " << filename.str() << ": " << message.str() << std::endl;
+    messages.push_back(message.str());
+  }
 
   virtual std::unique_ptr<Tool> lookupTool(StringRef name) {
     return nullptr;
