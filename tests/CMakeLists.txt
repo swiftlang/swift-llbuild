@@ -18,7 +18,7 @@ configure_file(
   ${CMAKE_CURRENT_BINARY_DIR}/Unit/lit.site.cfg)
 
 include(FindPythonInterp)
-if(PYTHONINTERP_FOUND)
+if(PYTHONINTERP_FOUND AND LIT_FOUND AND FILECHECK_FOUND)
   set(LIT_ARGS "${LLBUILD_LIT_ARGS}")
   separate_arguments(LIT_ARGS)
   
@@ -47,12 +47,14 @@ if(PYTHONINTERP_FOUND)
   set_target_properties(test-llbuild PROPERTIES FOLDER "Tests")
 
   add_dependencies(test-llbuild ${test_target_dependencies})
-endif()
 
-# Add a target for running all tests.
-if(POLICY CMP0037)
-  cmake_policy(SET CMP0037 OLD)
-endif(POLICY CMP0037)
-add_custom_target(test)
-add_dependencies(test test-llbuild)
-set_target_properties(test PROPERTIES FOLDER "Tests")
+  # Add a target for running all tests.
+  if(POLICY CMP0037)
+    cmake_policy(SET CMP0037 OLD)
+  endif(POLICY CMP0037)
+  add_custom_target(test)
+  add_dependencies(test test-llbuild)
+  set_target_properties(test PROPERTIES FOLDER "Tests")
+else()
+  message(STATUS "Not configuring tests (missing requirements)")
+endif()
