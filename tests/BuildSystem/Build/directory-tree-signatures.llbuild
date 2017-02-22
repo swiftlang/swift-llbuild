@@ -6,13 +6,13 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.llbuild
-# RUN: mkdir -p %t.build/dir
 # RUN: echo "file" > %t.build/file
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.initial.out
 # RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file=%t.initial.out %s
 #
 # CHECK-INITIAL: DTS-MISSING-CHANGED
 # CHECK-INITIAL: DTS-FILE-CHANGED
+# CHECK-INITIAL: DIR-CREATOR
 # CHECK-INITIAL: DTS-DIR-CHANGED
 
 
@@ -63,6 +63,13 @@ commands:
     inputs: ["file/", "<D-missing>"]
     outputs: ["<D-file>"]
     args: true
+
+  C.dir-creator:
+    tool: shell
+    description: DIR-CREATOR
+    inputs: ["<D-file>"]
+    outputs: ["dir"]
+    args: mkdir -p dir
   C.D-dir:
     tool: shell
     description: DTS-DIR-CHANGED
