@@ -666,7 +666,7 @@ public:
     if (info.isMissing()) {
       return value.isMissingInput();
     } else {
-      return value.isExistingInput() && value.getOutputInfo() == info;
+      return value.isDirectoryContents() && value.getOutputInfo() == info;
     }
   }
 };
