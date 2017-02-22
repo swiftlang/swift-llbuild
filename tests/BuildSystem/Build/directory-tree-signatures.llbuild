@@ -1,0 +1,71 @@
+# Check the handling of directory tree signatures.
+#
+# We check the node used against three kinds of directories: missing, a file, an
+# actual directory.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.llbuild
+# RUN: mkdir -p %t.build/dir
+# RUN: echo "file" > %t.build/file
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.initial.out
+# RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file=%t.initial.out %s
+#
+# CHECK-INITIAL: DTS-MISSING-CHANGED
+# CHECK-INITIAL: DTS-FILE-CHANGED
+# CHECK-INITIAL: DTS-DIR-CHANGED
+
+
+# Check that a null build does nothing.
+#
+# RUN: echo "START." > %t.rebuild.out
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build >> %t.rebuild.out
+# RUN: echo "EOF" >> %t.rebuild.out
+# RUN: %{FileCheck} --check-prefix=CHECK-REBUILD --input-file=%t.rebuild.out %s
+#
+# CHECK-REBUILD: START
+# CHECK-REBUILD-NOT: DTS-
+# CHECK-REBUILD-NEXT: EOF
+
+
+# Check that modifications are detected.
+#
+# RUN: mkdir -p %t.build/missing-dir
+# RUN: mkdir -p %t.build/dir/subdir
+# RUN: echo "modified" > %t.build/file
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.modified.out
+# RUN: %{FileCheck} --check-prefix=CHECK-MODIFIED --input-file=%t.modified.out %s
+#
+# CHECK-MODIFIED: DTS-MISSING-CHANGED
+# CHECK-MODIFIED: DTS-FILE-CHANGED
+# CHECK-MODIFIED: DTS-DIR-CHANGED
+
+client:
+  name: basic
+
+targets:
+  "": ["<all>"]
+
+commands:
+  C.all:
+    tool: phony
+    inputs: ["<D-missing>", "<D-file>", "<D-dir>"]
+    outputs: ["<all>"]
+  C.D-missing:
+    tool: shell
+    description: DTS-MISSING-CHANGED
+    inputs: ["missing-dir/"]
+    outputs: ["<D-missing>"]
+    args: true
+  C.D-file:
+    tool: shell
+    description: DTS-FILE-CHANGED
+    inputs: ["file/", "<D-missing>"]
+    outputs: ["<D-file>"]
+    args: true
+  C.D-dir:
+    tool: shell
+    description: DTS-DIR-CHANGED
+    inputs: ["dir/", "<D-file>"]
+    outputs: ["<D-dir>"]
+    args: true
