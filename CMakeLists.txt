@@ -69,10 +69,10 @@ set(LLBUILD_EXECUTABLE_OUTPUT_INTDIR ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INT
 set(LLBUILD_LIBRARY_OUTPUT_INTDIR ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/lib)
 
 ###
-# Requires Support Tools
+# Support Tools
 
-find_package(Lit REQUIRED)
-find_package(FileCheck REQUIRED)
+find_package(Lit)
+find_package(FileCheck)
 find_package(PythonInterp)
 
 # Check if we should build the Swift bindings.
