@@ -347,7 +347,10 @@ void BuildSystemFrontendDelegate::cancel() {
 }
 
 void BuildSystemFrontendDelegate::resetForBuild() {
+  auto impl = static_cast<BuildSystemFrontendDelegateImpl*>(this->impl);
+
   isCancelled_ = false;
+  impl->numFailedCommands = 0;
 }
 
 void BuildSystemFrontendDelegate::hadCommandFailure() {
@@ -444,8 +447,7 @@ BuildSystemFrontend(BuildSystemFrontendDelegate& delegate,
   delegateImpl->frontend = this;
 }
 
-bool BuildSystemFrontend::build(StringRef targetToBuild) {
-  // Honor the --chdir option, if used.
+bool BuildSystemFrontend::initialize() {
   if (!invocation.chdirPath.empty()) {
     if (!sys::chdir(invocation.chdirPath.c_str())) {
       getDelegate().error(Twine("unable to honor --chdir: ") + strerror(errno));
@@ -454,10 +456,10 @@ bool BuildSystemFrontend::build(StringRef targetToBuild) {
   }
 
   // Create the build system.
-  BuildSystem system(delegate);
+  buildSystem.emplace(delegate);
 
   // Load the build file.
-  if (!system.loadDescription(invocation.buildFilePath))
+  if (!buildSystem->loadDescription(invocation.buildFilePath))
     return false;
 
   // Register the system back pointer.
@@ -465,12 +467,12 @@ bool BuildSystemFrontend::build(StringRef targetToBuild) {
   // FIXME: Eliminate this.
   auto delegateImpl =
     static_cast<BuildSystemFrontendDelegateImpl*>(delegate.impl);
-  delegateImpl->system = &system;
+  delegateImpl->system = buildSystem.getPointer();
   
   // Enable tracing, if requested.
   if (!invocation.traceFilePath.empty()) {
     std::string error;
-    if (!system.enableTracing(invocation.traceFilePath, &error)) {
+    if (!buildSystem->enableTracing(invocation.traceFilePath, &error)) {
       getDelegate().error(Twine("unable to enable tracing: ") + error);
       return false;
     }
@@ -491,16 +493,26 @@ bool BuildSystemFrontend::build(StringRef targetToBuild) {
     }
     
     std::string error;
-    if (!system.attachDB(dbPath, &error)) {
+    if (!buildSystem->attachDB(dbPath, &error)) {
       getDelegate().error(Twine("unable to attach DB: ") + error);
       return false;
     }
   }
 
-  // If something unspecified failed about the build, return an error.
-  if (!system.build(targetToBuild)) {
-    return false;
+  return true;
+}
+
+bool BuildSystemFrontend::build(StringRef targetToBuild) {
+  // Initialize the build system, if necessary
+  if (!buildSystem.hasValue()) {
+    if (!initialize())
+      return false;
   }
+
+  // Build the target; if something unspecified failed about the build, return
+  // an error.
+  if (!buildSystem->build(targetToBuild))
+    return false;
 
   // If there were failed commands, report the count and return an error.
   if (delegate.getNumFailedCommands()) {
