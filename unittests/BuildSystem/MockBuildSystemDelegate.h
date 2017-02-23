@@ -17,9 +17,9 @@
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/Basic/LLVM.h"
 
+#include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/SourceMgr.h"
 
-#include <iostream>
 #include <memory>
 
 using namespace llvm;
@@ -70,7 +70,7 @@ public:
   virtual void error(StringRef filename,
                      const Token& at,
                      const Twine& message) {
-    std::cerr << "error: " << filename.str() << ": " << message.str() << std::endl;
+    llvm::errs() << "error: " << filename.str() << ": " << message.str() << "\n";
     messages.push_back(message.str());
   }
 

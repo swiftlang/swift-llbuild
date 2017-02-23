@@ -239,6 +239,7 @@ TEST(BuildSystemTaskTests, doesNotProcessDependenciesAfterCancellation) {
   auto result = system.build(keyToBuild);
 
   cancelThread.join();
+  // This is what we are testing for, if dependencies were processed, an error would occur during the build
   ASSERT_EQ(delegate.getMessages().size(), 0);
 }
 
