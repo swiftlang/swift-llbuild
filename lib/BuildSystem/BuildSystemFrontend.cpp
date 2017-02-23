@@ -340,10 +340,16 @@ bool BuildSystemFrontendDelegate::isCancelled() {
 
 void BuildSystemFrontendDelegate::cancel() {
   // FIXME: We should audit that a build is happening.
+  if (isCancelled_) {
+    return;
+  }
   isCancelled_ = true;
 
   auto delegateImpl = static_cast<BuildSystemFrontendDelegateImpl*>(impl);
-  delegateImpl->system->cancel();
+  auto system = delegateImpl->system;
+  if (system) {
+    system->cancel();
+  }
 }
 
 void BuildSystemFrontendDelegate::resetForBuild() {
