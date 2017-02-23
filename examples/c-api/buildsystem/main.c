@@ -213,9 +213,15 @@ int main(int argc, char **argv) {
     
   // Create a build system.
   llb_buildsystem_t* system = llb_buildsystem_create(delegate, invocation);
-    
-  // Build the default target.
+
+  // Initialize the system.
+  llb_buildsystem_initialize(system);
+  
+  // Build the default target, twice.
   llb_data_t key = { 0, NULL };
+  printf("initial build:\n");
+  llb_buildsystem_build(system, &key);
+  printf("second build:\n");
   llb_buildsystem_build(system, &key);
 
   // Destroy the build system.

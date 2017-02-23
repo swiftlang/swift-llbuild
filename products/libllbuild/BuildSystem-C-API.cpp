@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2015 - 2016 Apple Inc. and the Swift project authors
+// Copyright (c) 2015 - 2017 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -355,6 +355,10 @@ public:
     return *frontend;
   }
 
+  bool initialize() {
+    return getFrontend().initialize();
+  }
+
   bool build(const core::KeyType& key) {
     // Reset mutable build state.
     frontendDelegate->resetForBuild();
@@ -502,6 +506,11 @@ llb_buildsystem_tool_create(const llb_data_t* name,
   assert(delegate.create_command);
   return (llb_buildsystem_tool_t*) new CAPITool(
       StringRef((const char*)name->data, name->length), delegate);
+}
+
+bool llb_buildsystem_initialize(llb_buildsystem_t* system_p) {
+  CAPIBuildSystem* system = (CAPIBuildSystem*) system_p;
+  return system->initialize();
 }
 
 bool llb_buildsystem_build(llb_buildsystem_t* system_p, const llb_data_t* key) {

@@ -6,6 +6,7 @@
 # RUN: %{FileCheck} %s --input-file %t.out
 #
 # CHECK: -- read file contents: {{.*}}/buildsystem-capi.llbuild
+# CHECK: initial build:
 # CHECK: -- stat: /
 # CHECK: command_started: <hello> -- HELLO
 # CHECK: command_finished: <hello>
@@ -14,6 +15,10 @@
 # CHECK: command_finished: <fancy-thing>
 # CHECK: command_started: <error> -- FAILING-COMMAND
 # CHECK: had_command_failure
+# CHECK: <unknown>:0: error: build had 1 command failure
+#
+# CHECK: second build:
+# CHECK: command_started: <error> -- FAILING-COMMAND
 # CHECK: <unknown>:0: error: build had 1 command failure
 
 client:

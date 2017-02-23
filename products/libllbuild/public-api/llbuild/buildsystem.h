@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2015 - 2016 Apple Inc. and the Swift project authors
+// Copyright (c) 2015 - 2017 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -330,10 +330,30 @@ llb_buildsystem_create(llb_buildsystem_delegate_t delegate,
 LLBUILD_EXPORT void
 llb_buildsystem_destroy(llb_buildsystem_t* system);
 
+/// Initialize the build system.
+///
+/// This will load the build manifest and apply any other options (for example,
+/// attaching the database).
+///
+/// Clients may use a single build system for many separate build
+/// invocations. When used this way, the underlying system will transparently
+/// cache the contents of the manifest as well as database results which can
+/// result in a significant performance improvement for builds in little
+/// substantive work is performed.
+///
+/// \returns True on success, or false if the system could not be
+/// initialized. It is a programmatic error to attempt to use the system after
+/// initialization has failed.
+LLBUILD_EXPORT bool
+llb_buildsystem_initialize(llb_buildsystem_t* system);
+
 /// Build the named target.
 ///
 /// It is an unchecked error for the client to request multiple builds
 /// concurrently.
+///
+/// This will automatically initialize the build system if it has not already
+/// been initialized.
 ///
 /// \param key The key to build.
 /// \returns True on success, or false if the build was aborted (for example, if
