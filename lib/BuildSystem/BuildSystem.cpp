@@ -1338,7 +1338,14 @@ class ShellCommand : public ExternalCommand {
   /// Whether to inherit the base environment.
   bool inheritEnv = true;
 
+  /// The cached signature, once computed -- 0 is used as a sentinel value.
+  std::atomic<uint64_t> cachedSignature{ 0 };
+  
   virtual uint64_t getSignature() override {
+    uint64_t signature = cachedSignature;
+    if (signature != 0)
+      return signature;
+      
     // FIXME: Use a more appropriate hashing infrastructure.
     using llvm::hash_combine;
     llvm::hash_code code = ExternalCommand::getSignature();
@@ -1354,7 +1361,12 @@ class ShellCommand : public ExternalCommand {
     }
     code = hash_combine(code, int(depsStyle));
     code = hash_combine(code, int(inheritEnv));
-    return size_t(code);
+    signature = size_t(code);
+    if (signature == 0) {
+      signature = 1;
+    }
+    cachedSignature = signature;
+    return signature;
   }
 
   bool processDiscoveredDependencies(BuildSystemCommandInterface& bsci,
