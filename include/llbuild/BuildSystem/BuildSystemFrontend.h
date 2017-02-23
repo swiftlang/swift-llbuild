@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -18,6 +18,7 @@
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/ADT/Optional.h"
 
 #include <atomic>
 #include <string>
@@ -50,10 +51,13 @@ enum class CommandResult;
 /// to provide:
 ///   o Support for common command line options.
 ///   o Support for parallel, persistent builds.
-//    o Support for command line diagnostics and status reporting.
+///   o Support for command line diagnostics and status reporting.
+///
+/// NOTE: This class is *NOT* thread safe.
 class BuildSystemFrontend {
   BuildSystemFrontendDelegate& delegate;
   const BuildSystemInvocation& invocation;
+  llvm::Optional<BuildSystem> buildSystem;
 
 public:
   BuildSystemFrontend(BuildSystemFrontendDelegate& delegate,
@@ -72,6 +76,16 @@ public:
   /// @name Client API
   /// @{
 
+  /// Initialize the build system.
+  ///
+  /// This will load the manifest and apply all of the command line options to
+  /// construct an appropriate underlying `BuildSystem` for use by subsequent
+  /// build calls.
+  ///
+  /// \returns True on success, or false if there were errors. If initialization
+  /// fails, the frontend is in an indeterminant state and should not be reused.
+  bool initialize();
+  
   /// Build the named target using the specified invocation parameters.
   ///
   /// \returns True on success, or false if there were errors.
