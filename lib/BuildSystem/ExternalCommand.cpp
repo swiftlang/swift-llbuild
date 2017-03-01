@@ -13,6 +13,7 @@
 #include "llbuild/BuildSystem/ExternalCommand.h"
 
 #include "llbuild/Basic/Hashing.h"
+#include "llbuild/Basic/FileSystem.h"
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildKey.h"
@@ -398,7 +399,7 @@ void ExternalCommand::inputsAvailable(BuildSystemCommandInterface& bsci,
         // FIXME: Need to use the filesystem interfaces.
         auto parent = llvm::sys::path::parent_path(node->getName());
         if (!parent.empty()) {
-          (void) llvm::sys::fs::create_directories(parent);
+          (void) bsci.getDelegate().getFileSystem().createDirectories(parent);
         }
       }
     }

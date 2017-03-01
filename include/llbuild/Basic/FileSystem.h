@@ -48,6 +48,12 @@ public:
   virtual bool
   createDirectory(const std::string& path) = 0;
 
+  /// Create the given directory (recursively) if it does not exist.
+  ///
+  /// \returns True on success (the directory was created, or already exists).
+  virtual bool
+  createDirectories(const std::string& path);
+
   /// Get a memory buffer for a given file on the file system.
   ///
   /// \returns The file contents, on success, or null on error.
