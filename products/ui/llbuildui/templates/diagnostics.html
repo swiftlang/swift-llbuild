@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+{% block title %}Database Diagnostics{% endblock %}
+{% block body %}
+
+<p>
+  Key Names: {{ "{:,d}".format(session.query(model.KeyName).count()) }}<br/>
+  Key Names Size: {{ "{:,d}".format(session.query(sql.functions.sum(sql.functions.char_length(model.KeyName.name))).first()[0]) }}<br/>
+  Rule Results: {{ "{:,d}".format(session.query(model.RuleResult).count()) }}<br/>
+  Rule Dependencies: {{ "{:,d}".format(session.query(model.RuleDependency).count()) }}<br/>
+</p>
+
+{% if cycle %}
+<p>
+  <font color="red">WARNING: Database contains a cycle!</font><br>
+  <ul>
+    {% for node in cycle %}
+    <li>{{node}}</li>
+    {% endfor %}
+  </ul>
+</p>
+{% endif %}
+
+{% endblock %}

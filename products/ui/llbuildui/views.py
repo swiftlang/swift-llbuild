@@ -1,7 +1,9 @@
 import flask
+import sqlalchemy.sql
 
 from flask import Flask, current_app, g, redirect, request, session, url_for
 
+import graphalgorithms
 import model
 
 main = flask.Blueprint('main', __name__)
@@ -32,6 +34,40 @@ def config():
         session['db'] = request.form['db_path']
         return redirect(url_for('main.index'))
     return flask.render_template("config.html", db_path=session.get("db"))
+
+@main.route('/diagnostics', methods=['GET', 'POST'])
+def diagnostics():
+    s = current_app.database_session
+
+    # Find all the rules.
+    rules = {}
+    key_names = {}
+    for result in s.query(model.KeyName):
+        key_names[result.id] = result.name
+    for result in s.query(model.RuleResult):
+        rules[result.key_id] = result
+
+    # Find information on any cycles in the database.
+    def successors(id):
+        # Get the rule.
+        rule = rules[id]
+
+        # Get the dependencies.
+        succs = []
+        for dependency in rule.dependencies:
+            succs.append(dependency.key_id)
+        return succs
+    keys = sorted(rules.keys())
+    cycle = graphalgorithms.find_cycle(keys, successors)
+    if cycle is not None:
+        cycle = cycle[0].items + [cycle[1]]
+        cycle = [key_names[id] for id in cycle]
+    
+    return flask.render_template("diagnostics.html",
+                                 db_path=session.get("db"),
+                                 session=s, model=model, sql=sqlalchemy.sql,
+                                 cycle=cycle)
+
 
 # MARK: Model Object Views
 
