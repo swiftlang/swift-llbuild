@@ -5,11 +5,14 @@
 # RUN: cp %s %t.build/build.llbuild
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.out
 # RUN: %{FileCheck} --input-file=%t.out %s
+# RUN: %S/Inputs/get-file-permissions %t.build/subdir/subdir2 > %t.permissions
+# RUN: %{FileCheck} --input-file=%t.permissions --check-prefix=CHECK-PERMISSIONS %s
 #
 # CHECK: ECHO
 # CHECK: MKDIR
 # CHECK: MUTATE
 # CHECK: TRIGGERED
+# CHECK-PERMISSIONS: 0755
 
 
 # Check that a null build does nothing.

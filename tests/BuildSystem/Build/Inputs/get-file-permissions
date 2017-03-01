@@ -1,0 +1,7 @@
+#!/usr/bin/env python
+
+import os
+import stat
+import sys
+
+print(oct(stat.S_IMODE(os.stat(sys.argv[1]).st_mode)))

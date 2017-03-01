@@ -46,6 +46,15 @@ public:
       : cAPIDelegate(delegate),
         localFileSystem(basic::createLocalFileSystem()) { }
 
+  virtual bool
+  createDirectory(const std::string& path) override {
+    if (!cAPIDelegate.fs_create_directory) {
+      return localFileSystem->createDirectory(path);
+    }
+
+    return cAPIDelegate.fs_create_directory(cAPIDelegate.context, path.c_str());
+  }
+  
   virtual std::unique_ptr<llvm::MemoryBuffer>
   getFileContents(const std::string& path) override {
     if (!cAPIDelegate.fs_get_file_contents) {

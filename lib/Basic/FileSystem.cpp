@@ -30,6 +30,16 @@ class LocalFileSystem : public FileSystem {
 public:
   LocalFileSystem() {}
 
+  virtual bool
+  createDirectory(const std::string& path) override {
+    if (::mkdir(path.c_str(), S_IRWXU | S_IRWXG |  S_IRWXO) == -1) {
+      if (errno != EEXIST) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   virtual std::unique_ptr<llvm::MemoryBuffer>
   getFileContents(const std::string& path) override {
     auto result = llvm::MemoryBuffer::getFile(path);

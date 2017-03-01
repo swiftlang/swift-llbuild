@@ -42,6 +42,12 @@ public:
   FileSystem() {}
   virtual ~FileSystem();
 
+  /// Create the given directory if it does not exist.
+  ///
+  /// \returns True on success (the directory was created, or already exists).
+  virtual bool
+  createDirectory(const std::string& path) = 0;
+
   /// Get a memory buffer for a given file on the file system.
   ///
   /// \returns The file contents, on success, or null on error.
