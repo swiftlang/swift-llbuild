@@ -1871,7 +1871,7 @@ class MkdirCommand : public ExternalCommand {
                                                Task* task,
                                                QueueJobContext* context) override {
     auto output = getOutputs()[0];
-    if (!bsci.getDelegate().getFileSystem().createDirectory(
+    if (!bsci.getDelegate().getFileSystem().createDirectories(
             output->getName())) {
       getBuildSystem(bsci.getBuildEngine()).error(
           "", "unable to create directory '" + output->getName() + "'");
@@ -2075,12 +2075,10 @@ class SymlinkCommand : public Command {
       // Create the directory containing the symlink, if necessary.
       //
       // FIXME: Shared behavior with ExternalCommand.
-      //
-      // FIXME: Need to use the filesystem interfaces.
       {
         auto parent = llvm::sys::path::parent_path(output->getName());
         if (!parent.empty()) {
-          (void) bsci.getDelegate().getFileSystem().createDirectory(parent);
+          (void) bsci.getDelegate().getFileSystem().createDirectories(parent);
         }
       }
 

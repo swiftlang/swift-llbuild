@@ -13,6 +13,7 @@
 #include "llbuild/Basic/FileSystem.h"
 
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/Support/Path.h"
 #include "llvm/Support/MemoryBuffer.h"
 
 #include <cassert>
@@ -23,6 +24,19 @@ using namespace llbuild;
 using namespace llbuild::basic;
 
 FileSystem::~FileSystem() {}
+
+bool FileSystem::createDirectories(const std::string& path) {
+  // Attempt to create the final directory first, to optimize for the common
+  // case where we don't need to recurse.
+  if (createDirectory(path))
+    return true;
+
+  // If that failed, attempt to create the parent.
+  StringRef parent = llvm::sys::path::parent_path(path);
+  if (parent.empty())
+    return false;
+  return createDirectories(parent) && createDirectory(path);
+}
 
 namespace {
 

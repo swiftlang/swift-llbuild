@@ -5,8 +5,8 @@
 # RUN: cp %s %t.build/build.llbuild
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.out
 # RUN: test -d %t.build/subdir
-# RUN: test -f %t.build/subdir/file
-# RUN: test -L %t.build/subdir-2/symlink
+# RUN: test -f %t.build/subdir/subsubdir/file
+# RUN: test -L %t.build/subdir-2/subsubdir/symlink
 # RUN: %{FileCheck} --input-file=%t.out %s
 #
 # CHECK: TOUCH
@@ -21,15 +21,15 @@ targets:
 commands:
   C.all:
     tool: phony
-    inputs: ["subdir/file", "subdir-2/symlink"]
+    inputs: ["subdir/subsubdir/file", "subdir-2/subsubdir/symlink"]
     outputs: ["<all>"]
   C.touch:
     tool: shell
     description: TOUCH
-    args: ["touch", "subdir/file"]
-    outputs: ["subdir/file"]
+    args: ["touch", "subdir/subsubdir/file"]
+    outputs: ["subdir/subsubdir/file"]
   C.symlink:
     tool: symlink
     description: SYMLINK
-    outputs: ["subdir-2/symlink"]
+    outputs: ["subdir-2/subsubdir/symlink"]
     contents: ignored

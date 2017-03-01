@@ -566,8 +566,8 @@ public:
     //
     // FIXME: This should really be done using an additional implicit input, so
     // it only happens once per build.
-    (void)llvm::sys::fs::create_directories(tempsPath, /*ignoreExisting=*/true);
-
+    (void) bsci.getDelegate().getFileSystem().createDirectories(tempsPath);
+ 
     SmallString<64> outputFileMapPath;
     getOutputFileMapPath(outputFileMapPath);
     
