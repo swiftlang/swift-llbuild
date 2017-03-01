@@ -1859,7 +1859,8 @@ class MkdirCommand : public ExternalCommand {
                                                Task* task,
                                                QueueJobContext* context) override {
     auto output = getOutputs()[0];
-    if (llvm::sys::fs::create_directories(output->getName())) {
+    if (!bsci.getDelegate().getFileSystem().createDirectory(
+            output->getName())) {
       getBuildSystem(bsci.getBuildEngine()).error(
           "", "unable to create directory '" + output->getName() + "'");
       return CommandResult::Failed;
@@ -2067,7 +2068,7 @@ class SymlinkCommand : public Command {
       {
         auto parent = llvm::sys::path::parent_path(output->getName());
         if (!parent.empty()) {
-          (void) llvm::sys::fs::create_directories(parent);
+          (void) bsci.getDelegate().getFileSystem().createDirectory(parent);
         }
       }
 

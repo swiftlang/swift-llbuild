@@ -158,6 +158,11 @@ typedef struct llb_buildsystem_delegate_t_ {
   ///
   /// @{
 
+  /// Create the given directory if it does not exist.
+  ///
+  /// \\returns True on success (the directory was created, or already exists).
+  bool (*fs_create_directory)(void* context, const char* path);
+  
   /// Get the file contents for the given path.
   ///
   /// The contents *MUST* be returned in a new buffer allocated with \see
