@@ -1381,6 +1381,11 @@ class ShellCommand : public ExternalCommand {
       return false;
     }
 
+    // Dependency information is only emitted for the first file when using WMO
+    if (isSwiftC() && usesWMO()) {
+      depsPaths.resize(1);
+    }
+
     for (const auto& depsPath: depsPaths) {
       // Read the dependencies file.
       auto input = bsci.getDelegate().getFileSystem().getFileContents(depsPath);
@@ -1498,6 +1503,24 @@ class ShellCommand : public ExternalCommand {
     DepsActions actions(bsci, task, this, depsPath);
     core::DependencyInfoParser(input->getBuffer(), actions).parse();
     return actions.numErrors == 0;
+  }
+
+  bool isSwiftC() {
+    for (const auto& arg: args) {
+      if (StringRef(arg).endswith("swiftc")) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool usesWMO() {
+    for (const auto& arg: args) {
+      if (arg == "-whole-module-optimization") {
+        return true;
+      }
+    }
+    return false;
   }
 
 public:
