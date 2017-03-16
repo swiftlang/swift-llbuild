@@ -436,7 +436,7 @@ TEST(BuildEngineTest, incrementalDependency) {
       ruleResults[rule.key] = result;
       return true;
     }
-    virtual void buildStarted() override {}
+    virtual bool buildStarted(std::string* error_out) override { return true; }
     virtual void buildComplete() override {}
   };
   CustomDB *db = new CustomDB();

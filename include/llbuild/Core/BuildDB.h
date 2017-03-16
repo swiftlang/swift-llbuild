@@ -69,7 +69,9 @@ public:
   /// The engine guarantees that all mutation operations (e.g., \see
   /// setCurrentIteration() and \see setRuleResult()) are only called between
   /// build paired \see buildStarted() and \see buildComplete() calls.
-  virtual void buildStarted() = 0;
+  ///
+  /// \param error_out [out] Error string if return value is false.
+  virtual bool buildStarted(std::string* error_out) = 0;
 
   /// Called by the build engine to indicate a build has finished, and results
   /// should be written.

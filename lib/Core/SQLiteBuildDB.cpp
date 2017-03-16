@@ -120,7 +120,7 @@ public:
       }
 
       // Create the schema in a single transaction.
-      result = sqlite3_exec(db, "BEGIN IMMEDIATE;", nullptr, nullptr, &cError);
+      result = sqlite3_exec(db, "BEGIN EXCLUSIVE;", nullptr, nullptr, &cError);
 
       // Create the info table.
       if (result == SQLITE_OK) {
@@ -598,15 +598,19 @@ public:
     return true;
   }
 
-  virtual void buildStarted() override {
+  virtual bool buildStarted(std::string *error_out) override {
     // Execute the entire build inside a single transaction.
     //
     // FIXME: We should revist this, as we probably wouldn't want a crash in the
     // build system to totally lose all build results.
-    int result = sqlite3_exec(db, "BEGIN IMMEDIATE;", nullptr, nullptr,
-        nullptr);
-    assert(result == SQLITE_OK);
-    (void)result;
+    int result = sqlite3_exec(db, "BEGIN EXCLUSIVE;", nullptr, nullptr, nullptr);
+
+    if (result != SQLITE_OK) {
+      *error_out = getCurrentErrorMessage();
+      return false;
+    }
+
+    return true;
   }
 
   virtual void buildComplete() override {

@@ -1112,8 +1112,15 @@ public:
   /// @{
 
   const ValueType& build(const KeyType& key) {
-    if (db)
-      db->buildStarted();
+    if (db) {
+      std::string error;
+      bool result = db->buildStarted(&error);
+      if (!result) {
+        delegate.error(error);
+        static ValueType emptyValue{};
+        return emptyValue;
+      }
+    }
 
     // Increment our running iteration count.
     //
