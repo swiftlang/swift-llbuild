@@ -33,6 +33,7 @@ using StatStruct = struct ::stat;
 bool chdir(const char *fileName);
 int close(int fileHandle);
 int lstat(const char *fileName, StatStruct *buf);
+bool mkdir(const char *fileName);
 int pclose(FILE *stream);
 int pipe(int ptHandles[2]);
 FILE *popen(const char *command, const char *mode);

@@ -11,6 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llbuild/Basic/FileSystem.h"
+#include "llbuild/Basic/PlatformUtility.h"
 
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/Support/Path.h"
@@ -18,7 +19,6 @@
 
 #include <cassert>
 #include <cstring>
-#include <sys/stat.h>
 
 using namespace llbuild;
 using namespace llbuild::basic;
@@ -46,7 +46,7 @@ public:
 
   virtual bool
   createDirectory(const std::string& path) override {
-    if (::mkdir(path.c_str(), S_IRWXU | S_IRWXG |  S_IRWXO) == -1) {
+    if (!sys::mkdir(path.c_str())) {
       if (errno != EEXIST) {
         return false;
       }

@@ -11,6 +11,7 @@
 
 #if defined(_WIN32)
 #include "LeanWindows.h"
+#include <direct.h>
 #include <io.h>
 #else
 #include <stdio.h>
@@ -43,6 +44,14 @@ int sys::lstat(const char *fileName, sys::StatStruct *buf) {
   return ::_stat(fileName, buf);
 #else
   return ::lstat(fileName, buf);
+#endif
+}
+
+bool sys::mkdir(const char* fileName) {
+#if defined(_WIN32)
+  return _mkdir(fileName) == 0;
+#else
+  return ::mkdir(fileName, S_IRWXU | S_IRWXG |  S_IRWXO) == 0;
 #endif
 }
 
