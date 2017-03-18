@@ -12,6 +12,7 @@
 
 #include "llbuild/Commands/Commands.h"
 
+#include "InterruptSignalAwaiter.h"
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/Basic/PlatformUtility.h"
@@ -38,6 +39,7 @@
 using namespace llbuild;
 using namespace llbuild::commands;
 using namespace llbuild::core;
+using namespace llbuild::basic;
 using namespace llbuild::buildsystem;
 
 namespace {
@@ -422,58 +424,6 @@ static int executeParseCommand(std::vector<std::string> args) {
 
 class BasicBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
   std::unique_ptr<basic::FileSystem> fileSystem;
-
-  /// The previous SIGINT handler.
-  struct sigaction previousSigintHandler;
-
-  /// Low-level flag for when a SIGINT has been received.
-  static std::atomic<bool> wasInterrupted;
-
-  /// Pipe used to allow detection of signals.
-  static int signalWatchingPipe[2];
-
-  static void sigintHandler(int) {
-    // Set the atomic interrupt flag.
-    BasicBuildSystemFrontendDelegate::wasInterrupted = true;
-
-    // Write to wake up the signal monitoring thread.
-    char byte{};
-    basic::sys::write(signalWatchingPipe[1], &byte, 1);
-  }
-
-  /// Check if an interrupt has occurred.
-  void checkForInterrupt() {
-    // Save and clear the interrupt flag, atomically.
-    bool wasInterrupted = BasicBuildSystemFrontendDelegate::wasInterrupted.exchange(false);
-
-    // Process the interrupt flag, if present.
-    if (wasInterrupted) {
-      // Otherwise, cancel the build.
-      printf("cancelling build.\n");
-      cancel();
-    }
-  }
-
-  /// Thread function to wait for indications that signals have arrived and to
-  /// process them.
-  void signalWaitThread() {
-    // Wait for signal arrival indications.
-    while (true) {
-      char byte;
-      int res = basic::sys::read(signalWatchingPipe[0], &byte, 1);
-
-      // If nothing was read, the pipe has been closed and we should shut down.
-      if (res == 0)
-        break;
-
-      // Otherwise, check if we were awoke because of an interrupt.
-      checkForInterrupt();
-    }
-
-    // Shut down the pipe.
-    basic::sys::close(signalWatchingPipe[0]);
-    signalWatchingPipe[0] = -1;
-  }
   
 public:
   BasicBuildSystemFrontendDelegate(llvm::SourceMgr& sourceMgr,
@@ -481,27 +431,14 @@ public:
       : BuildSystemFrontendDelegate(sourceMgr, invocation,
                                     "basic", /*version=*/0),
         fileSystem(basic::createLocalFileSystem()) {
-    // Register an interrupt handler.
-    struct sigaction action{};
-    action.sa_handler = &BasicBuildSystemFrontendDelegate::sigintHandler;
-    sigaction(SIGINT, &action, &previousSigintHandler);
-
-    // Create a pipe and thread to watch for signals.
-    assert(BasicBuildSystemFrontendDelegate::signalWatchingPipe[0] == -1 &&
-           BasicBuildSystemFrontendDelegate::signalWatchingPipe[1] == -1);
-    if (basic::sys::pipe(BasicBuildSystemFrontendDelegate::signalWatchingPipe) < 0) {
-      perror("pipe");
-    }
-    new std::thread(&BasicBuildSystemFrontendDelegate::signalWaitThread, this);
+    command::InterruptSignalAwaiter::GlobalAwaiter.setInterruptHandler([&] {
+      printf("cancelling build.\n");
+      cancel();
+    });
   }
 
   ~BasicBuildSystemFrontendDelegate() {
-    // Restore any previous SIGINT handler.
-    sigaction(SIGINT, &previousSigintHandler, NULL);
-
-    // Close the signal watching pipe.
-    basic::sys::close(BasicBuildSystemFrontendDelegate::signalWatchingPipe[1]);
-    signalWatchingPipe[1] = -1;
+    command::InterruptSignalAwaiter::GlobalAwaiter.resetInterruptHandler();
   }
 
   virtual basic::FileSystem& getFileSystem() override { return *fileSystem; }
@@ -524,9 +461,6 @@ public:
     error(message);
   }
 };
-
-std::atomic<bool> BasicBuildSystemFrontendDelegate::wasInterrupted{false};
-int BasicBuildSystemFrontendDelegate::signalWatchingPipe[2]{-1, -1};
 
 static void buildUsage(int exitCode) {
   int optionWidth = 25;

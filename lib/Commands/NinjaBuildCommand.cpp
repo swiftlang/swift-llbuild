@@ -12,6 +12,7 @@
 
 #include "NinjaBuildCommand.h"
 
+#include "InterruptSignalAwaiter.h"
 #include "llbuild/Basic/Compiler.h"
 #include "llbuild/Basic/FileInfo.h"
 #include "llbuild/Basic/Hashing.h"
@@ -480,84 +481,9 @@ public:
   /// The limited queue we use to execute parallel jobs.
   std::unique_ptr<BuildExecutionQueue> jobQueue;
 
-  /// The previous SIGINT handler.
-  struct sigaction previousSigintHandler;
-
   /// The set of spawned processes to cancel when interrupted.
   std::unordered_set<pid_t> spawnedProcesses;
   std::mutex spawnedProcessesMutex;
-
-  /// Low-level flag for when a SIGINT has been received.
-  static std::atomic<bool> wasInterrupted;
-
-  /// Pipe used to allow detection of signals.
-  static int signalWatchingPipe[2];
-
-  static void sigintHandler(int) {
-    // Set the atomic interrupt flag.
-    BuildContext::wasInterrupted = true;
-
-    // Write to wake up the signal monitoring thread.
-    char byte{};
-    sys::write(signalWatchingPipe[1], &byte, 1);
-  }
-
-  void sendSignalToProcesses(int signal) {
-    std::unique_lock<std::mutex> lock(spawnedProcessesMutex);
-
-    for (pid_t pid: spawnedProcesses) {
-      // We are killing the whole process group here, this depends on us
-      // spawning each process in its own group earlier.
-      ::kill(-pid, signal);
-    }
-  }
-
-  /// Cancel the build in response to an interrupt event.
-  void cancelBuildOnInterrupt() {
-    sendSignalToProcesses(SIGINT);
-
-    emitNote("cancelling build.");
-    isCancelled = true;
-    wasCancelledBySigint = true;
-
-    // FIXME: In our model, we still wait for everything to terminate, which
-    // means a process that refuses to respond to SIGINT will cause us to just
-    // hang here. We should probably detect and report that and be willing to do
-    // a hard kill at some point (for example, on the second interrupt).
-  }
-
-  /// Check if an interrupt has occurred.
-  void checkForInterrupt() {
-    // Save and clear the interrupt flag, atomically.
-    bool wasInterrupted = BuildContext::wasInterrupted.exchange(false);
-
-    // Process the interrupt flag, if present.
-    if (wasInterrupted) {
-      // Otherwise, process the interrupt.
-      cancelBuildOnInterrupt();
-    }
-  }
-
-  /// Thread function to wait for indications that signals have arrived and to
-  /// process them.
-  void signalWaitThread() {
-    // Wait for signal arrival indications.
-    while (true) {
-      char byte;
-      int res = sys::read(signalWatchingPipe[0], &byte, 1);
-
-      // If nothing was read, the pipe has been closed and we should shut down.
-      if (res == 0)
-        break;
-
-      // Otherwise, check if we were awoke because of an interrupt.
-      checkForInterrupt();
-    }
-
-    // Shut down the pipe.
-    sys::close(signalWatchingPipe[0]);
-    signalWatchingPipe[0] = -1;
-  }
 
 public:
   BuildContext()
@@ -575,34 +501,34 @@ public:
     // Register the context with the delegate.
     delegate.context = this;
 
-    // Register an interrupt handler.
-    struct sigaction action{};
-    action.sa_handler = &BuildContext::sigintHandler;
-    sigaction(SIGINT, &action, &previousSigintHandler);
+    command::InterruptSignalAwaiter::GlobalAwaiter.setInterruptHandler([&] {
+      std::lock_guard<std::mutex> guard(spawnedProcessesMutex);
 
-    // Create a pipe and thread to watch for signals.
-    assert(BuildContext::signalWatchingPipe[0] == -1 &&
-           BuildContext::signalWatchingPipe[1] == -1);
-    if (basic::sys::pipe(BuildContext::signalWatchingPipe) < 0) {
-      perror("pipe");
-    }
-    new std::thread(&BuildContext::signalWaitThread, this);
+      emitNote("cancelling build.");
+      isCancelled = true;
+      wasCancelledBySigint = true;
+
+      // Cancel the spawned processes.
+      for (pid_t pid: spawnedProcesses) {
+        ::kill(-pid, SIGINT);
+      }
+
+      // FIXME: In our model, we still wait for everything to terminate, which
+      // means a process that refuses to respond to SIGINT will cause us to just
+      // hang here. We should probably detect and report that and be willing to do
+      // a hard kill at some point (for example, on the second interrupt).
+    });
   }
 
   ~BuildContext() {
     // Ensure the output queue is done.
     outputQueue.sync([] {});
 
-    // Restore any previous SIGINT handler.
-    sigaction(SIGINT, &previousSigintHandler, NULL);
-
     // Close the status output.
     std::string error;
     statusOutput.close(&error);
 
-    // Close the signal watching pipe.
-    sys::close(BuildContext::signalWatchingPipe[1]);
-    signalWatchingPipe[1] = -1;
+    command::InterruptSignalAwaiter::GlobalAwaiter.resetInterruptHandler();
   }
 
   /// @name Diagnostics Output
@@ -714,9 +640,6 @@ public:
     }
   }
 };
-
-std::atomic<bool> BuildContext::wasInterrupted{false};
-int BuildContext::signalWatchingPipe[2]{-1, -1};
 
 class BuildManifestActions : public ninja::ManifestLoaderActions {
   BuildContext& context;
@@ -2200,10 +2123,10 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     // If the build was cancelled by SIGINT, cause ourself to also die by SIGINT
     // to support proper shell behavior.
     if (context.wasCancelledBySigint) {
-      // Ensure SIGINT action is default.
-      struct sigaction action{};
-      action.sa_handler = SIG_DFL;
-      sigaction(SIGINT, &action, 0);
+      // Ensure SIGINT action is default. This is because we kill the current
+      // process using SIGINT and don't want the signal handler to trigger
+      // twice.
+      command::InterruptSignalAwaiter::resetProgramSignalHandler();
 
       kill(getpid(), SIGINT);
       std::this_thread::sleep_for(std::chrono::microseconds(1000));
