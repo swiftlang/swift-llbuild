@@ -3,6 +3,7 @@ add_llbuild_library(llbuildCommands
   BuildSystemCommand.cpp
   CommandLineStatusOutput.cpp
   CommandUtil.cpp
+  InterruptSignalAwaiter.cpp
   NinjaBuildCommand.cpp
   NinjaCommand.cpp
   )
