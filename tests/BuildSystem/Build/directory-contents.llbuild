@@ -1,0 +1,42 @@
+# Check that directory contents are rebuilt *only* when appropriate.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.llbuild
+# RUN: mkdir -p %t.build/dir
+# RUN: %{llbuild} buildsystem build --serial --trace %t.initial.trace --chdir %t.build
+# RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file=%t.initial.trace %s
+#
+# CHECK-INITIAL: { "new-rule", "[[RULE_NAME:R[0-9]+]]", "Ddir" },
+# CHECK-INITIAL: { "rule-needs-to-run", "[[RULE_NAME]]", "never-built" },
+
+
+# A null rebuild shouldn't rebuild the directory.
+#
+# RUN: %{llbuild} buildsystem build --serial --trace %t.rebuild.trace --chdir %t.build
+# RUN: %{FileCheck} --check-prefix=CHECK-REBUILD --input-file=%t.rebuild.trace %s
+#
+# CHECK-REBUILD: { "new-rule", "[[RULE_NAME:R[0-9]+]]", "Ddir" },
+# CHECK-REBUILD: { "rule-does-not-need-to-run", "[[RULE_NAME]]" },
+
+
+# A rebuild after adding a new file should rebuild the directory.
+#
+# RUN: touch %t.build/dir/file
+# RUN: %{llbuild} buildsystem build --serial --trace %t.modified.trace --chdir %t.build
+# RUN: %{FileCheck} --check-prefix=CHECK-MODIFIED --input-file=%t.modified.trace %s
+#
+# CHECK-MODIFIED: { "new-rule", "[[RULE_NAME:R[0-9]+]]", "Ddir" },
+# CHECK-MODIFIED: { "rule-needs-to-run", "[[RULE_NAME]]", "invalid-value" },
+
+client:
+  name: basic
+
+targets:
+  "": ["<all>"]
+
+commands:
+  C.all:
+    tool: phony
+    inputs: ["dir/"]
+    outputs: ["<all>"]
