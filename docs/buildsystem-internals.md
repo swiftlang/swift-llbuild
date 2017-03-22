@@ -59,6 +59,12 @@ discovers, as follows:
      directory, but which **are** the output of some task. The client is
      currently responsible for ensuring that any commands which produce output
      in the directory should be strongly ordered before the signature node.
+
+     However, clients can explicitly make additional dependencies on the
+     directory tree by registering a phony command which produces the directory
+     used by the tree signature, and which adds input dependencies on other
+     nodes in the graph (for example, ones which may or may not produce content
+     within the directory tree, and thus must be run before it).
    ```
 
 3. Recursively request directory signatures for any directories discovered as
