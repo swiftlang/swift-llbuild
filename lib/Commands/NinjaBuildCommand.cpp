@@ -1320,7 +1320,8 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       if (status != 0) {
         // If the process was killed by SIGINT, assume it is because we were
         // interrupted.
-        if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
+        bool cancelled = WIFSIGNALED(status) && (WTERMSIG(status) == SIGINT || WTERMSIG(status) == SIGKILL);
+        if (cancelled)
           return false;
 
         // Otherwise, report the failure.
