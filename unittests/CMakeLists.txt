@@ -6,6 +6,7 @@ function(add_llbuild_unittest test_dirname)
 endfunction()
 
 add_subdirectory(Basic)
-add_subdirectory(Core)
 add_subdirectory(BuildSystem)
+add_subdirectory(Core)
+add_subdirectory(Commands)
 add_subdirectory(Ninja)
