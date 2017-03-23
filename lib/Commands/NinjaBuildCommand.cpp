@@ -24,6 +24,7 @@
 #include "llbuild/Core/MakefileDepsParser.h"
 #include "llbuild/Ninja/ManifestLoader.h"
 
+#include "llvm/ADT/SmallString.h"
 #include "llvm/Support/TimeValue.h"
 
 #include "CommandLineStatusOutput.h"
@@ -1267,7 +1268,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       posix_spawnattr_destroy(&attributes);
 
       // Read the command output, if buffering.
-      std::vector<char> outputData;
+      SmallString<1024> outputData;
       if (!isConsole) {
         // Close the write end of the output pipe.
         ::close(pipe[1]);
