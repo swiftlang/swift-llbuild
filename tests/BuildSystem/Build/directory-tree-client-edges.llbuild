@@ -1,0 +1,33 @@
+# Check the ability of clients to add additional dependency on a directory tree.
+#
+
+# This is important because currently llbuild won't necessarily try to find any
+# unmodeled dependency edges between outputs which fill in contents of a
+# directory and the directory tree node itself. Currently, clients must supply
+# any missing unmodeled edges explicitly.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.llbuild
+# RUN: echo "file" > %t.build/file
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.initial.out
+# RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file=%t.initial.out %s
+#
+# CHECK-INITIAL: SUBDIR-CONTENTS
+
+client:
+  name: basic
+
+targets:
+  "": ["subdir/"]
+
+commands:
+  C.subdir-dependencies:
+    tool: phony
+    inputs: ["<subdir-contents>"]
+    outputs: ["subdir"]
+  C.subdir-contents:
+    tool: shell
+    description: SUBDIR-CONTENTS
+    outputs: ["<subdir-contents>"]
+    args: mkdir -p subdir && touch subdir/foo

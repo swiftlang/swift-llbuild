@@ -81,6 +81,14 @@ These are the supported node types:
     file on disk is changed. This is useful when the client cannot easily know
     in advance whether the node is expected to be a file or a directory, but
     should be treated as a directory tree if it is one.
+
+  The directory tree will eagerly scan the directory as soon as any commands
+  which produce the immediate directory are complete. This means that the build
+  graph **MUST** contain a complete dependency graph between the tree node and
+  any command which may produce content within the directory. If such a
+  dependency is missing, the build system will typically end up scanning the
+  directory before all content is produced, and this will result in the first
+  build being incomplete, and the next build redoing the remainder of the work.
   
 * Virtual Nodes: Nodes matching the name ``'<.*>'``, e.g. ``<gate-task>``, are
   *assumed* to be virtual nodes, and are used for adding arbitrary edges to the
