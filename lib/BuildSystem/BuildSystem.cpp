@@ -443,7 +443,11 @@ public:
     // output.
     //
     // We can solve this by caching ourselves but I wonder if it is something
-    // the engine should support more naturally.
+    // the engine should support more naturally. In practice, this is unlikely
+    // to be very performance critical in practice because this is only
+    // redundant in the case where we have never built the node before (or need
+    // to rebuild it), and thus the additional stat is only one small part of
+    // the work we need to perform.
     auto info = node.getFileInfo(
         getBuildSystem(engine).getDelegate().getFileSystem());
     if (info.isMissing()) {
