@@ -1953,11 +1953,22 @@ class SymlinkCommand : public Command {
   virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
     llvm::raw_svector_ostream os(result);
     os << "ln -sfh ";
-    // FIXME: This isn't correct, we need utilities for doing shell quoting.
-    if (StringRef(output->getName()).find(' ') != StringRef::npos) {
-      os << '"' << output->getName() << '"';
+    if (output) {
+      // FIXME: This isn't correct, we need utilities for doing shell quoting.
+      if (StringRef(output->getName()).find(' ') != StringRef::npos) {
+        os << '"' << output->getName() << '"';
+      } else {
+        os << output->getName();
+      }
     } else {
-      os << output->getName();
+      os << "<<<missing output>>>";
+    }
+    os << ' ';
+    // FIXME: This isn't correct, we need utilities for doing shell quoting.
+    if (StringRef(contents).find(' ') != StringRef::npos) {
+      os << '"' << contents << '"';
+    } else {
+      os << contents;
     }
   }
   
@@ -2025,8 +2036,20 @@ class SymlinkCommand : public Command {
 
   virtual bool isResultValid(BuildSystem& system,
                              const BuildValue& value) override {
+    // It is an error if this command isn't configured properly.
+    if (!output)
+      return false;
+
     // If the prior value wasn't for a successful command, recompute.
     if (!value.isSuccessfulCommand())
+      return false;
+    
+    // If the command's signature has changed since it was built, rebuild.
+    if (value.getCommandSignature() != getSignature())
+      return false;
+
+    // If the prior command doesn't look like one for a link, recompute.
+    if (value.getNumOutputs() != 1)
       return false;
 
     // Otherwise, assume the result is valid if its link status matches the
@@ -2069,6 +2092,13 @@ class SymlinkCommand : public Command {
     // If the build should cancel, do nothing.
     if (bsci.getDelegate().isCancelled()) {
       bsci.taskIsComplete(task, BuildValue::makeCancelledCommand());
+      return;
+    }
+
+    // It is an error if this command isn't configured properly.
+    if (!output) {
+      bsci.getDelegate().hadCommandFailure();
+      bsci.taskIsComplete(task, BuildValue::makeFailedCommand());
       return;
     }
     
