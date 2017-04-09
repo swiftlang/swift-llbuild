@@ -1,0 +1,48 @@
+# Check that we behave properly when a link target is modified.
+#
+# We use 'grep' to slice out two different subfiles from the same file.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+#
+# RUN: grep -A1000 "VERSION-BEGIN-[1]" %s | grep -B10000 "VERSION-END-1" | grep -ve '^--$' > %t.build/build-1.llbuild
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build -f build-1.llbuild > %t1.out
+# RUN: %{FileCheck} --check-prefix CHECK-VERSION-1 --input-file %t1.out %s
+#
+# RUN: grep -A1000 "VERSION-BEGIN-[2]" %s | grep -B10000 "VERSION-END-2" | grep -ve '^--$' > %t.build/build-2.llbuild
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build -f build-2.llbuild > %t2.out 2> %t2.err
+# RUN: %{FileCheck} --check-prefix CHECK-VERSION-2 --input-file %t2.out %s
+
+##### VERSION-BEGIN-1 #####
+
+# CHECK-VERSION-1: ln -sfh foo foo-1
+client:
+  name: basic
+
+targets:
+  "": ["foo"]
+
+commands:
+  output:
+    tool: symlink
+    outputs: ["foo"]
+    contents: "foo-1"
+    
+##### VERSION-END-1 #####
+
+##### VERSION-BEGIN-2 #####
+
+# CHECK-VERSION-2: ln -sfh foo foo-2
+client:
+  name: basic
+
+targets:
+  "": ["foo"]
+
+commands:
+  output:
+    tool: symlink
+    outputs: ["foo"]
+    contents: "foo-2"
+
+##### VERSION-END-2 #####
