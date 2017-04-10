@@ -800,7 +800,7 @@ private:
         // they are not keys for rules which have not been run, which would
         // indicate an underspecified build (e.g., a generated header).
         ruleInfo->result.dependencies.insert(
-          ruleInfo->result.dependencies.begin(),
+          ruleInfo->result.dependencies.end(),
           taskInfo->discoveredDependencies.begin(),
           taskInfo->discoveredDependencies.end());
 
