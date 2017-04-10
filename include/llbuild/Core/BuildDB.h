@@ -61,6 +61,9 @@ public:
   /// unique. However, duplicate dependencies have no semantic meaning for the
   /// engine, and the database may elect to discard them from storage.
   ///
+  /// The database *MUST*, however, correctly maintain the order of the
+  /// dependencies.
+  ///
   /// \param error_out [out] Error string if return value is false.
   virtual bool setRuleResult(const Rule& rule, const Result& result, std::string* error_out) = 0;
 

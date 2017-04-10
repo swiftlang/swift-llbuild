@@ -32,7 +32,11 @@ using namespace llbuild::core;
 namespace {
 
 class SQLiteBuildDB : public BuildDB {
-  static const int currentSchemaVersion = 5;
+  /// Version History:
+  /// * 6: Added `ordinal` field for dependencies.
+  /// * 5: Switched to using `WITHOUT ROWID` for dependencies.
+  /// * 4: Pre-history
+  static const int currentSchemaVersion = 6;
 
   sqlite3 *db = nullptr;
 
@@ -165,10 +169,15 @@ public:
         // key. This allows us to use the table itself to perform efficient
         // queries for all of the keys associated with a particular rule_id, and
         // by doing so avoid having an ancillary index with duplicate data.
+        //
+        // We do, however, have to include an extra integer to identify the
+        // relative ordering of the dependencies, which the database is required
+        // to preserve.
         result = sqlite3_exec(
           db, ("CREATE TABLE rule_dependencies ("
                "rule_id INTEGER, "
                "key_id INTEGER, "
+               "ordinal INTEGER NONNULL, "
                "PRIMARY KEY (rule_id, key_id) "
                "FOREIGN KEY(rule_id) REFERENCES rule_results(id) "
                "FOREIGN KEY(key_id) REFERENCES key_names(id)) "
@@ -336,7 +345,8 @@ public:
 
   static constexpr const char *findRuleDependenciesStmtSQL =
   "SELECT key FROM key_names INNER JOIN rule_dependencies "
-  "ON key_names.id = rule_dependencies.key_id WHERE rule_id == ?;";
+  "ON key_names.id = rule_dependencies.key_id WHERE rule_id == ?"
+  "ORDER BY rule_dependencies.ordinal;";
   sqlite3_stmt* findRuleDependenciesStmt = nullptr;
 
   virtual bool lookupRuleResult(const Rule& rule, Result* result_out, std::string *error_out) override {
@@ -417,7 +427,8 @@ public:
   /// there is a duplicate dependencies for a rule, because the primary key is a
   /// composite of (rule_id, key).
   static constexpr const char *insertIntoRuleDependenciesStmtSQL =
-    "INSERT OR IGNORE INTO rule_dependencies(rule_id, key_id) VALUES (?, ?);";
+    "INSERT OR IGNORE INTO rule_dependencies(rule_id, key_id, ordinal) "
+    "VALUES (?, ?, ?);";
   sqlite3_stmt* insertIntoRuleDependenciesStmt = nullptr;
 
   static constexpr const char *deleteFromRuleResultsStmtSQL =
@@ -573,14 +584,21 @@ public:
     ruleID = sqlite3_last_insert_rowid(db);
 
     // Insert all the dependencies.
-    for (auto& dependency: ruleResult.dependencies) {
+    for (unsigned i = 0; i != ruleResult.dependencies.size(); ++i) {
+      const auto& dependency = ruleResult.dependencies[i];
+
+      // Reset the insert statement.
       result = sqlite3_reset(insertIntoRuleDependenciesStmt);
       assert(result == SQLITE_OK);
       result = sqlite3_clear_bindings(insertIntoRuleDependenciesStmt);
       assert(result == SQLITE_OK);
+
+      // Bind the rule ID.
       result = sqlite3_bind_int64(insertIntoRuleDependenciesStmt, /*index=*/1,
                                   ruleID);
       assert(result == SQLITE_OK);
+
+      // Bind the dependency key ID.
       uint64_t dependencyKeyID = getOrInsertKey(dependency, error_out);
       if (dependencyKeyID == UINT64_MAX) {
         return false;
@@ -588,6 +606,12 @@ public:
       result = sqlite3_bind_int64(insertIntoRuleDependenciesStmt, /*index=*/2,
                                  dependencyKeyID);
       assert(result == SQLITE_OK);
+
+      // Bind the index of the dependency.
+      result = sqlite3_bind_int(insertIntoRuleDependenciesStmt, /*index=*/3, i);
+      assert(result == SQLITE_OK);
+
+      // Perform the insert.
       result = sqlite3_step(insertIntoRuleDependenciesStmt);
       if (result != SQLITE_DONE) {
         *error_out = getCurrentErrorMessage();
