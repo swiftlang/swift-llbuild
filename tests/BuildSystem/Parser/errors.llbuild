@@ -81,8 +81,6 @@ commands:
         tool: ["bad", "key"]
   command3:
         tool: "good"
-  command3:
-        tool: "good"
         # CHECK-ERR-NOT: error:
         # CHECK-ERR: error: invalid value type for 'inputs' command key
         inputs: {}
@@ -111,3 +109,7 @@ commands:
         attribute7:
           ["bad", "key"]: value
           "ok": ["bad", "value"]
+
+        # CHECK-ERR: errors.llbuild:[[@LINE+1]]:2: error: duplicate command in 'commands' map
+  command7:
+        tool: "duplicate"

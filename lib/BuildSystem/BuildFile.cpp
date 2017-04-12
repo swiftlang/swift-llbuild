@@ -622,6 +622,12 @@ class BuildFileImpl {
           static_cast<llvm::yaml::ScalarNode*>(entry.getKey()));
       llvm::yaml::MappingNode* attrs = static_cast<llvm::yaml::MappingNode*>(
           entry.getValue());
+
+      // Check that the command is not a duplicate.
+      if (commands.count(name) != 0) {
+        error(entry.getKey(), "duplicate command in 'commands' map");
+        continue;
+      }
       
       // Get the initial attribute, which must be the tool name.
       auto it = attrs->begin();
