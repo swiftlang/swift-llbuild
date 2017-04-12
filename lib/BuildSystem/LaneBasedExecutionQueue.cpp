@@ -100,6 +100,11 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
         (llvm::Twine("org.swift.llbuild Lane-") +
          llvm::Twine(laneNumber)).str().c_str());
 #endif
+
+    // Set the QoS class, if available.
+#if defined(__APPLE__)
+    pthread_set_qos_class_self_np(QOS_CLASS_UTILITY, 0);
+#endif
     
     // Execute items from the queue until shutdown.
     while (true) {
