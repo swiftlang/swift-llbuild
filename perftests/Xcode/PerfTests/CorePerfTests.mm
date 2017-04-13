@@ -157,10 +157,10 @@ static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
   int LastInputValue = 0;
   for (int i = 1; i <= M; ++i) {
     char Name[32];
-    sprintf(Name, "i%d", i);
+    snprintf(Name, sizeof(Name), "i%d", i);
     if (i != M) {
       char InputName[32];
-      sprintf(InputName, "i%d", i+1);
+      snprintf(InputName, sizeof(InputName), "i%d", i+1);
       Engine.addRule({
           Name, simpleAction({ InputName },
                              [] (const std::vector<int>& Inputs) {
@@ -240,12 +240,13 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
     int NumNodes = i64pow(N, i - 1);
     for (int j = 1; j <= NumNodes; ++j) {
       char Name[32];
-      sprintf(Name, "i%d,%d", i, j);
+      snprintf(Name, sizeof(Name), "i%d,%d", i, j);
       if (i != M) {
         std::vector<KeyType> Inputs;
         for (int k = 1; k <= N; ++k) {
           char InputName[32];
-          sprintf(InputName, "i%d,%d", i+1, 1 + (j - 1)*N + (k - 1));
+          snprintf(InputName, sizeof(InputName), "i%d,%d", i+1,
+                   1 + (j - 1)*N + (k - 1));
           Inputs.push_back(InputName);
         }
         Engine.addRule({
@@ -322,13 +323,13 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
   for (int i = 1; i <= M; ++i) {
     for (int j = 1; j <= N; ++j) {
       char Name[32];
-      sprintf(Name, "i%d,%d", i, j);
+      snprintf(Name, sizeof(Name), "i%d,%d", i, j);
       if (i != M && j != N) {
         // Nodes not on an edge.
         char InputAName[32];
-        sprintf(InputAName, "i%d,%d", i+1, j);
+        snprintf(InputAName, sizeof(InputAName), "i%d,%d", i+1, j);
         char InputBName[32];
-        sprintf(InputBName, "i%d,%d", i, j+1);
+        snprintf(InputBName, sizeof(InputBName), "i%d,%d", i, j+1);
         Engine.addRule({
             Name, simpleAction({ InputAName, InputBName },
                                [] (const std::vector<int>& Inputs) {
@@ -337,7 +338,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
         // Top edge.
         assert(j == N);
         char InputName[32];
-        sprintf(InputName, "i%d,%d", i+1, j);
+        snprintf(InputName, sizeof(InputName), "i%d,%d", i+1, j);
         Engine.addRule({
             Name, simpleAction({ InputName },
                                [] (const std::vector<int>& Inputs) {
@@ -346,7 +347,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
         // Right edge.
         assert(i == M);
         char InputName[32];
-        sprintf(InputName, "i%d,%d", i, j+1);
+        snprintf(InputName, sizeof(InputName), "i%d,%d", i, j+1);
         Engine.addRule({
             Name, simpleAction({ InputName },
                                [] (const std::vector<int>& Inputs) {
