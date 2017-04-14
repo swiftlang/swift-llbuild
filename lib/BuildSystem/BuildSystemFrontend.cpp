@@ -520,13 +520,9 @@ bool BuildSystemFrontend::build(StringRef targetToBuild) {
   if (!buildSystem->build(targetToBuild))
     return false;
 
-  // If there were failed commands, report the count and return an error.
-  if (delegate.getNumFailedCommands()) {
-    getDelegate().error("build had " + Twine(delegate.getNumFailedCommands()) +
-                        " command failures");
-    return false;
-  }
-
-  // Otherwise, return an error only if there were unspecified errors.
-  return delegate.getNumErrors() == 0;
+  // The build was successful if there were no failed commands or unspecified
+  // errors.
+  //
+  // It is the job of the client to report a summary, if desired.
+  return delegate.getNumFailedCommands() == 0 && delegate.getNumErrors() == 0;
 }
