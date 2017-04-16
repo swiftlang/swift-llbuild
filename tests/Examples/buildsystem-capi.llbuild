@@ -15,11 +15,11 @@
 # CHECK: command_finished: <fancy-thing>
 # CHECK: command_started: <error> -- FAILING-COMMAND
 # CHECK: had_command_failure
-# CHECK: <unknown>:0: error: build had 1 command failure
+# CHECK: build had command failures
 #
 # CHECK: second build:
 # CHECK: command_started: <error> -- FAILING-COMMAND
-# CHECK: <unknown>:0: error: build had 1 command failure
+# CHECK: build had command failures
 
 client:
   name: basic

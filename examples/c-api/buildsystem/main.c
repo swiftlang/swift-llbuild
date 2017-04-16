@@ -220,9 +220,13 @@ int main(int argc, char **argv) {
   // Build the default target, twice.
   llb_data_t key = { 0, NULL };
   printf("initial build:\n");
-  llb_buildsystem_build(system, &key);
+  if (!llb_buildsystem_build(system, &key)) {
+    printf("build had command failures\n");
+  }
   printf("second build:\n");
-  llb_buildsystem_build(system, &key);
+  if (!llb_buildsystem_build(system, &key)) {
+    printf("build had command failures\n");
+  }    
 
   // Destroy the build system.
   llb_buildsystem_destroy(system);

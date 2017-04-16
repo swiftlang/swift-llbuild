@@ -546,6 +546,12 @@ static int executeBuildCommand(std::vector<std::string> args) {
   BasicBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
   BuildSystemFrontend frontend(delegate, invocation);
   if (!frontend.build(targetToBuild)) {
+    // If there were failed commands, report the count and return an error.
+    if (delegate.getNumFailedCommands()) {
+      delegate.error("build had " + Twine(delegate.getNumFailedCommands()) +
+                     " command failures");
+    }
+
     return 1;
   }
 
