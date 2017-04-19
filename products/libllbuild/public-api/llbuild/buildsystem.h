@@ -481,7 +481,7 @@ llb_buildsystem_command_get_name(llb_buildsystem_command_t* command,
 /// Get the description for the given command.
 ///
 /// \returns The command description, as a new C string. The client is
-/// resonpsible for calling \see free() on the result.
+/// responsible for calling \see free() on the result.
 //
 // FIXME: This API most likely doesn't belong.
 LLBUILD_EXPORT char*
@@ -490,7 +490,7 @@ llb_buildsystem_command_get_description(llb_buildsystem_command_t* command);
 /// Get the verbose description for the given command.
 ///
 /// \returns The verbose command description, as a new C string. The client is
-/// resonpsible for calling \see free() on the result.
+/// responsible for calling \see free() on the result.
 //
 // FIXME: This API most likely doesn't belong.
 LLBUILD_EXPORT char*
