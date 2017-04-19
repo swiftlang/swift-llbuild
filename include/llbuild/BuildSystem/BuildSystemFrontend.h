@@ -15,6 +15,7 @@
 
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/BuildSystem/BuildSystem.h"
+#include "llbuild/Core/BuildEngine.h"
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringRef.h"
@@ -258,6 +259,14 @@ public:
                                       CommandResult result,
                                       int exitStatus);
 
+  /// Called when a cycle is detected by the build engine and it cannot make
+  /// forward progress.
+  ///
+  /// \param items The ordered list of items comprising the cycle, starting from
+  /// the node which was requested to build and ending with the first node in
+  /// the cycle (i.e., the node participating in the cycle will appear twice).
+  virtual void cycleDetected(const std::vector<core::Rule*>& items) = 0;
+
   /// @}
   
   /// @name Accessors
@@ -326,6 +335,9 @@ public:
   ///
   /// \param sourceMgr The source manager to use for diagnostics.
   void parse(ArrayRef<std::string> args, llvm::SourceMgr& sourceMgr);
+
+  /// Provides a default string representation for a cycle detected by the build engine.
+  static std::string formatDetectedCycle(const std::vector<core::Rule*>& cycle);
 };
 
 }

@@ -113,6 +113,39 @@ typedef enum {
   llb_buildsystem_command_status_kind_is_complete = 2,
 } llb_buildsystem_command_status_kind_t;
 
+typedef enum {
+  /// A key used to identify a command.
+  llb_build_key_kind_command = 0,
+
+  /// A key used to identify a custom task.
+  llb_build_key_kind_custom_task = 1,
+
+  /// A key used to identify directory contents.
+  llb_build_key_kind_directory_contents = 2,
+
+  /// A key used to identify the signature of a complete directory tree.
+  llb_build_key_kind_directory_tree_signature = 3,
+
+  /// A key used to identify a node.
+  llb_build_key_kind_node = 4,
+
+  /// A key used to identify a target.
+  llb_build_key_kind_target = 5,
+
+  /// An invalid key kind.
+  llb_build_key_kind_unknown = 6,
+} llb_build_key_kind_t;
+
+/// The BuildKey encodes the key space used by the BuildSystem when using the
+/// core BuildEngine.
+typedef struct llb_build_key_t_ llb_build_key_t;
+struct llb_build_key_t_ {
+  /// The kind of key
+  llb_build_key_kind_t kind;
+  /// The actual key data
+  const char* key;
+} ;
+
 /// Invocation parameters for a build system.
 typedef struct llb_buildsystem_invocation_t_ llb_buildsystem_invocation_t;
 struct llb_buildsystem_invocation_t_ {
@@ -319,6 +352,15 @@ typedef struct llb_buildsystem_delegate_t_ {
                                    llb_buildsystem_process_t* process,
                                    llb_buildsystem_command_result_t result,
                                    int exit_status);
+
+  /// Called when a cycle is detected by the build engine and it cannot make
+  /// forward progress.
+  ///
+  /// Xparam rules The ordered list of items comprising the cycle, starting from
+  /// the node which was requested to build and ending with the first node in
+  /// the cycle (i.e., the node participating in the cycle will appear twice).
+  /// Xparam rule_count The number of rules comprising the cycle.
+  void (*cycle_detected)(void* context, llb_build_key_t* rules, uint64_t rule_count);
   
   /// @}
 } llb_buildsystem_delegate_t;

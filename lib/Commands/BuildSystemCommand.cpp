@@ -21,6 +21,7 @@
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
 #include "llbuild/BuildSystem/BuildValue.h"
 
+#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/raw_ostream.h"
@@ -509,6 +510,11 @@ public:
   virtual std::unique_ptr<Tool> lookupTool(StringRef name) override {
     // We do not support any non-built-in tools.
     return nullptr;
+  }
+
+  virtual void cycleDetected(const std::vector<Rule*>& cycle) override {
+    auto message = BuildSystemInvocation::formatDetectedCycle(cycle);
+    error(message);
   }
 };
 

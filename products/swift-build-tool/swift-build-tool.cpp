@@ -52,6 +52,11 @@ public:
 
     return nullptr;
   }
+
+  virtual void cycleDetected(const std::vector<core::Rule*>& items) override {
+    auto message = BuildSystemInvocation::formatDetectedCycle(items);
+    error(message);
+  }
 };
 
 static void usage(int exitCode) {
