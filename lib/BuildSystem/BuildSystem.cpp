@@ -585,6 +585,7 @@ class ProducedNodeTask : public Task {
 
   virtual void inputsAvailable(BuildEngine& engine) override {
     if (isInvalid) {
+      getBuildSystem(engine).getDelegate().hadCommandFailure();
       engine.taskIsComplete(this, BuildValue::makeFailedInput().toData());
       return;
     }
