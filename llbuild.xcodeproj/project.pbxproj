@@ -759,8 +759,6 @@
 		E18043391A00129400662FE7 /* install-user-lit.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "install-user-lit.sh"; sourceTree = "<group>"; };
 		E182BE111ABA2B8D001840AD /* Compiler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Compiler.h; sourceTree = "<group>"; };
 		E192E92E1E30014E00122F17 /* BuildValueTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildValueTest.cpp; sourceTree = "<group>"; };
-		E19C3F171B98B3CB0035E1AA /* extract-perf-data */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "extract-perf-data"; sourceTree = "<group>"; };
-		E19C3F181B98B3CB0035E1AA /* xcs-submit-perf-data.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "xcs-submit-perf-data.sh"; sourceTree = "<group>"; };
 		E19C3FD51B98C1A70035E1AA /* tests */ = {isa = PBXFileReference; lastKnownFileType = folder; path = tests; sourceTree = "<group>"; };
 		E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MakefileDepsParser.cpp; sourceTree = "<group>"; };
 		E19D79931A15D9F5002604FB /* MakefileDepsParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MakefileDepsParser.h; sourceTree = "<group>"; };
@@ -1587,10 +1585,8 @@
 				E17C29E41B5AAA2F00C12DA9 /* create-target-link.sh */,
 				E1A2255019F9A74B0059043E /* create-lit-site-cfg.sh */,
 				E1A2255119F9A74B0059043E /* execute-lit-tests.sh */,
-				E19C3F171B98B3CB0035E1AA /* extract-perf-data */,
 				E18043391A00129400662FE7 /* install-user-lit.sh */,
 				E17C29F21B5AC18C00C12DA9 /* install-user-sphinx.sh */,
-				E19C3F181B98B3CB0035E1AA /* xcs-submit-perf-data.sh */,
 			);
 			path = Xcode;
 			sourceTree = "<group>";
