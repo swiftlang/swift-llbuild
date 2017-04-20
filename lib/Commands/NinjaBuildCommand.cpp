@@ -16,6 +16,7 @@
 #include "llbuild/Basic/FileInfo.h"
 #include "llbuild/Basic/Hashing.h"
 #include "llbuild/Basic/PlatformUtility.h"
+#include "llbuild/Basic/RedirectedProcess.h"
 #include "llbuild/Basic/SerialQueue.h"
 #include "llbuild/Basic/Version.h"
 #include "llbuild/Commands/Commands.h"
@@ -483,7 +484,7 @@ public:
   struct sigaction previousSigintHandler;
 
   /// The set of spawned processes to cancel when interrupted.
-  std::unordered_set<pid_t> spawnedProcesses;
+  std::unordered_set<sys::RedirectedProcess> spawnedProcesses;
   std::mutex spawnedProcessesMutex;
 
   /// Low-level flag for when a SIGINT has been received.
@@ -510,8 +511,8 @@ public:
     wasCancelledBySigint = true;
 
     // Cancel the spawned processes.
-    for (pid_t pid: spawnedProcesses) {
-      ::kill(-pid, SIGINT);
+    for (sys::RedirectedProcess process: spawnedProcesses) {
+      process.kill(SIGINT);
     }
 
     // FIXME: In our model, we still wait for everything to terminate, which
@@ -1159,151 +1160,52 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       bool isConsole = command->getExecutionPool() ==
         context.manifest->getConsolePool();
 
-      // Initialize the spawn attributes.
-      posix_spawnattr_t attributes;
-      posix_spawnattr_init(&attributes);
-
-      // Unmask all signals
-      sigset_t noSignals;
-      sigemptyset(&noSignals);
-      posix_spawnattr_setsigmask(&attributes, &noSignals);
-
-      // Reset all signals to default behavior.
-      //
-      // On Linux, this can only be used to reset signals that are legal to
-      // modify, so we have to take care about the set we use.
-#if defined(__linux__)
-      sigset_t mostSignals;
-      sigemptyset(&mostSignals);
-      for (int i = 1; i < SIGUNUSED; ++i) {
-        if (i == SIGKILL || i == SIGSTOP) continue;
-        sigaddset(&mostSignals, i);
-      }
-      posix_spawnattr_setsigdefault(&attributes, &mostSignals);
-#else
-      sigset_t mostSignals;
-      sigfillset(&mostSignals);
-      sigdelset(&mostSignals, SIGKILL);
-      sigdelset(&mostSignals, SIGSTOP);
-      posix_spawnattr_setsigdefault(&attributes, &mostSignals);
-#endif
-
-      // Establish a separate process group.
-      posix_spawnattr_setpgroup(&attributes, 0);
-
-      // Set the attribute flags.
-      unsigned flags = POSIX_SPAWN_SETSIGMASK | POSIX_SPAWN_SETSIGDEF;
-      if (!isConsole)
-        flags |= POSIX_SPAWN_SETPGROUP;
-
-      // Close all other files by default.
-      //
-      // FIXME: This is an Apple-specific extension, and we will have to do
-      // something else on other platforms (and unfortunately, there isn't
-      // really an easy answer other than using a stub executable).
-#ifdef __APPLE__
-      flags |= POSIX_SPAWN_CLOEXEC_DEFAULT;
-#endif
-
-      posix_spawnattr_setflags(&attributes, flags);
-
-      // Setup the file actions.
-      posix_spawn_file_actions_t fileActions;
-      posix_spawn_file_actions_init(&fileActions);
-
-      // Create a pipe to use to read the command output, if necessary.
-      int pipe[2]{ -1, -1 };
-      if (!isConsole) {
-        if (basic::sys::pipe(pipe) < 0) {
-          context.emitError("unable to create command pipe (%s)",
-                            strerror(errno));
-          return false;
-        }
-      }
-
-      // Open /dev/null as stdin.
-      posix_spawn_file_actions_addopen(
-          &fileActions, 0, "/dev/null", O_RDONLY, 0);
-
-      if (isConsole) {
-        posix_spawn_file_actions_adddup2(&fileActions, 1, 1);
-        posix_spawn_file_actions_adddup2(&fileActions, 2, 2);
-      } else {
-        // Open the write end of the pipe as stdout and stderr.
-        posix_spawn_file_actions_adddup2(&fileActions, pipe[1], 1);
-        posix_spawn_file_actions_adddup2(&fileActions, pipe[1], 2);
-
-        // Close the read and write ends of the pipe.
-        posix_spawn_file_actions_addclose(&fileActions, pipe[0]);
-        posix_spawn_file_actions_addclose(&fileActions, pipe[1]);
-      }
-
       // Spawn the command.
+      // TOOD: Win32 should use "cmd /C"
       const char* args[4];
       args[0] = "/bin/sh";
       args[1] = "-c";
       args[2] = command->getCommandString().c_str();
       args[3] = nullptr;
 
-      // We need to hold the spawn processes lock when we spawn, to ensure that
-      // we don't create a process in between when we are cancelled.
-      pid_t pid;
-      {
-        std::lock_guard<std::mutex> guard(context.spawnedProcessesMutex);
-
-        if (posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
-                        /*attrp=*/&attributes, const_cast<char**>(args),
-                        environ) != 0) {
-          context.emitError("unable to spawn process (%s)", strerror(errno));
-          return false;
-        }
-
-        // The console process will get interrupted automatically.
-        if (!isConsole)
-          context.spawnedProcesses.insert(pid);
+      sys::RedirectedProcess process(!isConsole);
+      bool pipeSuccess = process.openPipe();
+      if (!pipeSuccess) {
+        context.emitError("unable to create command pipe (%s)",
+                          strerror(errno));
+        return false;
       }
 
-      posix_spawn_file_actions_destroy(&fileActions);
-      posix_spawnattr_destroy(&attributes);
+      bool processSuccess =
+          process.execute(args[0], !isConsole, const_cast<char *const *>(args),
+                          environ, context.spawnedProcessesMutex);
+      if (!processSuccess) {
+        context.emitError("unable to spawn process (%s)", strerror(errno));
+        return false;
+      }
+
+      context.spawnedProcesses.insert(process);
 
       // Read the command output, if buffering.
-      std::vector<char> outputData;
-      if (!isConsole) {
-        // Close the write end of the output pipe.
-        ::close(pipe[1]);
-
-        // Read all the data from the output pipe.
-        while (true) {
-          char buf[4096];
-          ssize_t numBytes = read(pipe[0], buf, sizeof(buf));
-          if (numBytes < 0) {
-            context.emitError("unable to read from output pipe (%s)",
-                              strerror(errno));
-            break;
-          }
-
-          if (numBytes == 0)
-            break;
-
-          outputData.insert(outputData.end(), &buf[0], &buf[numBytes]);
-        }
-
-        // Close the read end of the pipe.
-        ::close(pipe[0]);
+      SmallString<1024> outputData;
+      bool readSuccess = process.readPipe(outputData);
+      if (!readSuccess) {
+        context.emitError("unable to read from output pipe (%s)",
+                          strerror(errno));
+        // Don't return, let the process end.
       }
 
       // Wait for the command to complete.
-      int status, result = waitpid(pid, &status, 0);
-      while (result == -1 && errno == EINTR)
-          result = waitpid(pid, &status, 0);
-      if (result == -1) {
+      int status;
+      bool completionSuccess = process.waitForCompletion(&status);
+      if (!completionSuccess) {
         context.emitError("unable to wait for process (%s)", strerror(errno));
       }
 
       // Update the set of spawned processes.
       {
         std::lock_guard<std::mutex> guard(context.spawnedProcessesMutex);
-        context.spawnedProcesses.erase(pid);
+        context.spawnedProcesses.erase(process);
       }
 
       // If the build has been interrupted, return without writing any output or
@@ -1318,13 +1220,13 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       if (status != 0) {
         // If the process was killed by SIGINT, assume it is because we were
         // interrupted.
-        if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
+        if (sys::RedirectedProcess::isProcessCancelledStatus(status))
           return false;
 
         // Otherwise, report the failure.
         context.emitErrorAndText(
-            getFormattedString(
-                "process failed: %s", command->getCommandString().c_str()),
+            getFormattedString("process failed: %s",
+                               command->getCommandString().c_str()),
             std::string(outputData.data(), outputData.size()));
 
         // Update the count of failed commands.

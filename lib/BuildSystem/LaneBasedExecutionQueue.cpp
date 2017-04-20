@@ -15,6 +15,7 @@
 
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/Basic/PlatformUtility.h"
+#include "llbuild/Basic/RedirectedProcess.h"
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/Hashing.h"
@@ -42,6 +43,7 @@
 #include <sys/wait.h>
 
 using namespace llbuild;
+using namespace llbuild::basic;
 using namespace llbuild::buildsystem;
 
 namespace std {
@@ -76,7 +78,7 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
   bool shutdown { false };
   
   /// The set of spawned processes to terminate if we get cancelled.
-  std::unordered_set<pid_t> spawnedProcesses;
+  std::unordered_set<sys::RedirectedProcess> spawnedProcesses;
   std::mutex spawnedProcessesMutex;
 
   /// Management of cancellation and SIGKILL escalation
@@ -148,17 +150,17 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
         queueCompleteCondition.wait_for(lock, std::chrono::seconds(10));
       }
 
-      sendSignalToProcesses(SIGKILL);
+      sendSignalToProcesses(sys::RedirectedProcess::sigkill());
     }
   }
 
   void sendSignalToProcesses(int signal) {
     std::unique_lock<std::mutex> lock(spawnedProcessesMutex);
 
-    for (pid_t pid: spawnedProcesses) {
+    for (sys::RedirectedProcess process: spawnedProcesses) {
       // We are killing the whole process group here, this depends on us
       // spawning each process in its own group earlier.
-      ::kill(-pid, signal);
+      process.kill(signal);
     }
   }
 
@@ -242,86 +244,6 @@ public:
     LaneBasedExecutionQueueJobContext& context =
       *reinterpret_cast<LaneBasedExecutionQueueJobContext*>(opaqueContext);
     getDelegate().commandProcessStarted(context.job.getForCommand(), handle);
-    
-    // Initialize the spawn attributes.
-    posix_spawnattr_t attributes;
-    posix_spawnattr_init(&attributes);
-
-    // Unmask all signals.
-    sigset_t noSignals;
-    sigemptyset(&noSignals);
-    posix_spawnattr_setsigmask(&attributes, &noSignals);
-
-    // Reset all signals to default behavior.
-    //
-    // On Linux, this can only be used to reset signals that are legal to
-    // modify, so we have to take care about the set we use.
-#if defined(__linux__)
-    sigset_t mostSignals;
-    sigemptyset(&mostSignals);
-    for (int i = 1; i < SIGUNUSED; ++i) {
-      if (i == SIGKILL || i == SIGSTOP) continue;
-      sigaddset(&mostSignals, i);
-    }
-    posix_spawnattr_setsigdefault(&attributes, &mostSignals);
-#else
-    sigset_t mostSignals;
-    sigfillset(&mostSignals);
-    sigdelset(&mostSignals, SIGKILL);
-    sigdelset(&mostSignals, SIGSTOP);
-    posix_spawnattr_setsigdefault(&attributes, &mostSignals);
-#endif
-
-    // Establish a separate process group.
-    posix_spawnattr_setpgroup(&attributes, 0);
-
-    // Set the attribute flags.
-    unsigned flags = POSIX_SPAWN_SETSIGMASK | POSIX_SPAWN_SETSIGDEF;
-    flags |= POSIX_SPAWN_SETPGROUP;
-
-    // Close all other files by default.
-    //
-    // FIXME: Note that this is an Apple-specific extension, and we will have to
-    // do something else on other platforms (and unfortunately, there isn't
-    // really an easy answer other than using a stub executable).
-#ifdef __APPLE__
-    flags |= POSIX_SPAWN_CLOEXEC_DEFAULT;
-#endif
-
-    posix_spawnattr_setflags(&attributes, flags);
-
-    // Setup the file actions.
-    posix_spawn_file_actions_t fileActions;
-    posix_spawn_file_actions_init(&fileActions);
-
-    // Open /dev/null as stdin.
-    posix_spawn_file_actions_addopen(
-        &fileActions, 0, "/dev/null", O_RDONLY, 0);
-
-    // If we are capturing output, create a pipe and appropriate spawn actions.
-    int outputPipe[2]{ -1, -1 };
-    if (shouldCaptureOutput) {
-      if (basic::sys::pipe(outputPipe) < 0) {
-        getDelegate().commandProcessHadError(
-            context.job.getForCommand(), handle,
-            Twine("unable to open output pipe (") + strerror(errno) + ")");
-        getDelegate().commandProcessFinished(context.job.getForCommand(),
-                                             handle, CommandResult::Failed, -1);
-        return CommandResult::Failed;
-      }
-
-      // Open the write end of the pipe as stdout and stderr.
-      posix_spawn_file_actions_adddup2(&fileActions, outputPipe[1], 1);
-      posix_spawn_file_actions_adddup2(&fileActions, outputPipe[1], 2);
-
-      // Close the read and write ends of the pipe.
-      posix_spawn_file_actions_addclose(&fileActions, outputPipe[0]);
-      posix_spawn_file_actions_addclose(&fileActions, outputPipe[1]);
-    } else {
-      // Otherwise, propagate the current stdout/stderr.
-      posix_spawn_file_actions_adddup2(&fileActions, 1, 1);
-      posix_spawn_file_actions_adddup2(&fileActions, 2, 2);
-    }
 
     // Form the complete C string command line.
     std::vector<std::string> argsStorage(
@@ -389,70 +311,55 @@ public:
         args[0] = argsStorage[0].c_str();
       }
     }
-      
-    // Spawn the command.
-    pid_t pid;
-    {
-      // We need to hold the spawn processes lock when we spawn, to ensure that
-      // we don't create a process in between when we are cancelled.
-      std::lock_guard<std::mutex> guard(spawnedProcessesMutex);
 
-      if (posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
-                      /*attrp=*/&attributes, const_cast<char**>(args.data()),
-                      const_cast<char* const*>(envp)) != 0) {
-        getDelegate().commandProcessHadError(
-            context.job.getForCommand(), handle,
-            Twine("unable to spawn process (") + strerror(errno) + ")");
-        getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
-                                             CommandResult::Failed, -1);
-        return CommandResult::Failed;
-      }
-
-      spawnedProcesses.insert(pid);
+    sys::RedirectedProcess process = sys::RedirectedProcess(true);
+    bool pipeSuccess = process.openPipe();
+    if (!pipeSuccess) {
+      getDelegate().commandProcessHadError(
+          context.job.getForCommand(), handle,
+          Twine("unable to open output pipe (") + strerror(errno) + ")");
+      getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
+                                           CommandResult::Failed, -1);
+      return CommandResult::Failed;
     }
 
-    posix_spawn_file_actions_destroy(&fileActions);
-    posix_spawnattr_destroy(&attributes);
+    bool processSuccess =
+        process.execute(args[0], true, const_cast<char *const *>(args.data()),
+                        const_cast<char **>(envp), spawnedProcessesMutex);
+    if (!processSuccess) {
+      getDelegate().commandProcessHadError(context.job.getForCommand(), handle,
+                                           Twine("unable to spawn process (") +
+                                               strerror(errno) + ")");
+      getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
+                                           CommandResult::Failed, -1);
+      return CommandResult::Failed;
+    }
+
+    spawnedProcesses.insert(process);
 
     // Read the command output, if capturing.
     SmallString<1024> outputData;
-    if (shouldCaptureOutput) {
-      // Close the write end of the output pipe.
-      ::close(outputPipe[1]);
-
-      // Read all the data from the output pipe.
-      while (true) {
-        char buf[4096];
-        ssize_t numBytes = read(outputPipe[0], buf, sizeof(buf));
-        if (numBytes < 0) {
-          getDelegate().commandProcessHadError(
-              context.job.getForCommand(), handle,
-              Twine("unable to read process output (") + strerror(errno) + ")");
-          break;
-        }
-
-        if (numBytes == 0)
-          break;
-
-        outputData.insert(outputData.end(), &buf[0], &buf[numBytes]);
-      }
-
-      // Close the read end of the pipe.
-      ::close(outputPipe[0]);
+    bool readSuccess = process.readPipe(outputData);
+    if (!readSuccess) {
+      getDelegate().commandProcessHadError(context.job.getForCommand(), handle,
+                                           Twine("unable to spawn process (") +
+                                               strerror(errno) + ")");
+      getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
+                                           CommandResult::Failed, -1);
+      return CommandResult::Failed;
     }
-    
+
     // Wait for the command to complete.
-    int status, result = waitpid(pid, &status, 0);
-    while (result == -1 && errno == EINTR)
-      result = waitpid(pid, &status, 0);
+    int status;
+    bool waitResult = process.waitForCompletion(&status);
 
     // Update the set of spawned processes.
     {
         std::lock_guard<std::mutex> guard(spawnedProcessesMutex);
-        spawnedProcesses.erase(pid);
+        spawnedProcesses.erase(process);
     }
 
-    if (result == -1) {
+    if (!waitResult) {
       getDelegate().commandProcessHadError(
           context.job.getForCommand(), handle,
           Twine("unable to wait for process (") + strerror(errno) + ")");
@@ -468,7 +375,7 @@ public:
     }
     
     // Notify of the process completion.
-    bool cancelled = WIFSIGNALED(status) && (WTERMSIG(status) == SIGINT || WTERMSIG(status) == SIGKILL);
+    bool cancelled = sys::RedirectedProcess::isProcessCancelledStatus(status);
     CommandResult commandResult = cancelled ? CommandResult::Cancelled : (status == 0) ? CommandResult::Succeeded : CommandResult::Failed;
     getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
                                          commandResult, status);
