@@ -1,0 +1,37 @@
+# Check the diagnosing of multiple producers for a node.
+#
+# We shouldn't try to run `C.b` by default.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.llbuild
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build &> %t.out || true
+# RUN: %{FileCheck} %s --input-file %t.out
+#
+# CHECK: unable to build node: '<a>'
+# CHECK-NOT: B
+# CHECK: build had 1 command failure
+
+client:
+  name: basic
+
+targets:
+  "": ["<a>", "<b>"]
+
+commands:
+  C.a1:
+    tool: shell
+    outputs: ["<a>"]
+    description: A1
+    args: true
+  C.a2:
+    tool: shell
+    outputs: ["<a>"]
+    description: A2
+    args: true
+  C.b:
+    tool: shell
+    outputs: ["<b>"]
+    description: B
+    args: true
+
