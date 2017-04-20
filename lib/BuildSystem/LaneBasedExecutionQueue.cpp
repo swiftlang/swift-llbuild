@@ -15,6 +15,7 @@
 
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/Basic/PlatformUtility.h"
+#include "llbuild/Basic/RedirectedProcess.h"
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/Hashing.h"
@@ -42,6 +43,7 @@
 #include <sys/wait.h>
 
 using namespace llbuild;
+using namespace llbuild::basic;
 using namespace llbuild::buildsystem;
 
 namespace std {
@@ -76,7 +78,7 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
   bool shutdown { false };
   
   /// The set of spawned processes to terminate if we get cancelled.
-  std::unordered_set<pid_t> spawnedProcesses;
+  std::unordered_set<RedirectedProcess, RedirectedProcess::Hash> spawnedProcesses;
   std::mutex spawnedProcessesMutex;
 
   /// Management of cancellation and SIGKILL escalation
@@ -155,10 +157,10 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
   void sendSignalToProcesses(int signal) {
     std::unique_lock<std::mutex> lock(spawnedProcessesMutex);
 
-    for (pid_t pid: spawnedProcesses) {
+    for (auto&& process: spawnedProcesses) {
       // We are killing the whole process group here, this depends on us
       // spawning each process in its own group earlier.
-      ::kill(-pid, signal);
+      process.sendSignal(signal);
     }
   }
 
@@ -408,7 +410,7 @@ public:
         return CommandResult::Failed;
       }
 
-      spawnedProcesses.insert(pid);
+      spawnedProcesses.insert(RedirectedProcess(pid));
     }
 
     posix_spawn_file_actions_destroy(&fileActions);

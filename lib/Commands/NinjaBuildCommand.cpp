@@ -16,6 +16,7 @@
 #include "llbuild/Basic/FileInfo.h"
 #include "llbuild/Basic/Hashing.h"
 #include "llbuild/Basic/PlatformUtility.h"
+#include "llbuild/Basic/RedirectedProcess.h"
 #include "llbuild/Basic/SerialQueue.h"
 #include "llbuild/Basic/Version.h"
 #include "llbuild/Commands/Commands.h"
@@ -483,7 +484,7 @@ public:
   struct sigaction previousSigintHandler;
 
   /// The set of spawned processes to cancel when interrupted.
-  std::unordered_set<pid_t> spawnedProcesses;
+  std::unordered_set<RedirectedProcess, RedirectedProcess::Hash> spawnedProcesses;
   std::mutex spawnedProcessesMutex;
 
   /// Low-level flag for when a SIGINT has been received.
@@ -510,8 +511,8 @@ public:
     wasCancelledBySigint = true;
 
     // Cancel the spawned processes.
-    for (pid_t pid: spawnedProcesses) {
-      ::kill(-pid, SIGINT);
+    for (auto&& process: spawnedProcesses) {
+      process.sendSignal(SIGINT);
     }
 
     // FIXME: In our model, we still wait for everything to terminate, which
@@ -1260,7 +1261,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
 
         // The console process will get interrupted automatically.
         if (!isConsole)
-          context.spawnedProcesses.insert(pid);
+          context.spawnedProcesses.insert(RedirectedProcess(pid));
       }
 
       posix_spawn_file_actions_destroy(&fileActions);
