@@ -259,4 +259,69 @@ TEST(BuildSystemTaskTests, doesNotProcessDependenciesAfterCancellation) {
   ASSERT_EQ(delegate.getMessages().size(), 0U);
 }
 
+
+/// Check that cancellation applies to enqueued jobs.
+TEST(BuildSystemTaskTests, cancelAllInQueue) {
+  TmpDir tempDir{ __FUNCTION__ };
+
+  SmallString<256> manifest{ tempDir.str() };
+  sys::path::append(manifest, "manifest.llbuild");
+  {
+    std::error_code ec;
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    assert(!ec);
+
+    os << R"END(
+client:
+  name: mock
+
+commands:
+  ALL:
+    tool: phony
+    inputs: ["<C1>", "<C2>"]
+  C1:
+    tool: shell
+    outputs: ["<C1>"]
+    args: sleep 60
+  C2:
+    tool: shell
+    outputs: ["<C2>"]
+    args: sleep 60
+)END";
+  }
+    
+  auto keyToBuild = BuildKey::makeCommand("ALL");
+  MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
+  BuildSystem system(delegate);
+  bool loadingResult = system.loadDescription(manifest);
+  ASSERT_TRUE(loadingResult);
+
+  std::unique_ptr<llbuild::basic::FileSystem> fs = llbuild::basic::createLocalFileSystem();
+  std::thread cancelThread([&] {
+      // Cancel the build once it appears to have started.
+      time_t start = ::time(NULL);
+      while (::time(NULL) < start + 5) {
+        auto messages = delegate.getMessages();
+        if (std::find(messages.begin(), messages.end(),
+                      "commandStarted(C1)") != messages.end()) {
+          system.cancel();
+          return;
+        }
+      }
+      // If we got here, we timed out waiting for the start.
+      abort();
+  });
+
+  auto result = system.build(keyToBuild);
+  cancelThread.join();
+
+  ASSERT_EQ(std::vector<std::string>({
+          "commandPreparing(ALL)",
+          "commandPreparing(C2)",
+          "commandPreparing(C1)",
+          "commandStarted(C1)",
+          "commandFinished(C1)",
+          }), delegate.getMessages());
+}
+
 }

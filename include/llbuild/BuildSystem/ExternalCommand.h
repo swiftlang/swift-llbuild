@@ -138,8 +138,9 @@ public:
                             uintptr_t inputID,
                             const BuildValue& value) override;
 
-  virtual void inputsAvailable(BuildSystemCommandInterface& bsci,
-                               core::Task* task) override;
+  virtual BuildValue execute(BuildSystemCommandInterface& bsci,
+                             core::Task* task,
+                             QueueJobContext* context) override;
 };
 
 }

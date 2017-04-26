@@ -43,6 +43,7 @@ class BuildKey;
 class BuildValue;
 class Command;
 class Node;
+struct QueueJobContext;
 
 /// Context for information that may be needed for a configuration action.
 //
@@ -250,7 +251,11 @@ public:
   virtual void provideValue(BuildSystemCommandInterface&, core::Task*,
                             uintptr_t inputID, const BuildValue& value) = 0;
 
-  virtual void inputsAvailable(BuildSystemCommandInterface&, core::Task*) = 0;
+  /// Execute the command, and return the value.
+  ///
+  /// This method will always be executed on the build execution queue.
+  virtual BuildValue execute(BuildSystemCommandInterface&, core::Task*,
+                             QueueJobContext* context) = 0;
   
   /// @}
 };

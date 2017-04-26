@@ -218,7 +218,10 @@ public:
   virtual void provideValue(BuildSystemCommandInterface&, Task*,
                                  uintptr_t inputID,
                                  const BuildValue&) override {}
-  virtual void inputsAvailable(BuildSystemCommandInterface&, Task*) override {}
+  virtual BuildValue execute(BuildSystemCommandInterface&, Task*,
+                             QueueJobContext*) override {
+    return BuildValue::makeFailedCommand();
+  }
 };
 
 class ParseDummyTool : public Tool {

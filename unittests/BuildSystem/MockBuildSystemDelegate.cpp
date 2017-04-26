@@ -19,6 +19,9 @@ using namespace llbuild::unittests;
 
 MockExecutionQueueDelegate::MockExecutionQueueDelegate() {}
 
-MockBuildSystemDelegate::MockBuildSystemDelegate()
-    : BuildSystemDelegate("mock", 0)
-{}
+MockBuildSystemDelegate::MockBuildSystemDelegate(bool trackAllMessages)
+    : BuildSystemDelegate("mock", 0), trackAllMessages(trackAllMessages)
+{
+}
+
+    
