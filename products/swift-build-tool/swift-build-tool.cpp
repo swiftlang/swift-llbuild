@@ -36,6 +36,14 @@ public:
       fileSystem(basic::createLocalFileSystem()) {}
 
   virtual basic::FileSystem& getFileSystem() override { return *fileSystem; }
+
+  virtual void hadCommandFailure() override {
+    // Call the base implementation.
+    BuildSystemFrontendDelegate::hadCommandFailure();
+
+    // Cancel the build, by default.
+    cancel();
+  }
   
   virtual std::unique_ptr<Tool> lookupTool(StringRef name) override {
     if (name == "swift-compiler") {

@@ -124,11 +124,6 @@ public:
 
   /// Called by the build system to get create the object used to dispatch work.
   virtual std::unique_ptr<BuildExecutionQueue> createExecutionQueue() = 0;
-
-  /// Called by the build system to determine if the build has been cancelled.
-  ///
-  /// This is checked before starting each new command.
-  virtual bool isCancelled() = 0;
   
   /// Called by the build system to report a command failure.
   virtual void hadCommandFailure() = 0;
@@ -238,7 +233,7 @@ public:
   /// \returns The result of computing the value, or nil if the build failed.
   llvm::Optional<BuildValue> build(BuildKey target);
 
-  /// Cancel the current build
+  /// Cancel the current build.
   void cancel();
 
   /// @}

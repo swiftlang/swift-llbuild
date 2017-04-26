@@ -165,6 +165,9 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
   /// Flag indicating if the build has been aborted.
   bool buildWasAborted = false;
 
+  /// Flag indicating if the build has been cancelled.
+  std::atomic<bool> isCancelled_{ false };
+  
   /// @name BuildSystemCommandInterface Implementation
   /// @{
 
@@ -297,7 +300,18 @@ public:
   void setBuildWasAborted(bool value) {
     buildWasAborted = value;
   }
-    
+
+  /// Cancel the running build.
+  void cancel() {
+    isCancelled_ = true;
+    getExecutionQueue().cancelAllJobs();
+  }
+
+  /// Check if the build has been cancelled.
+  bool isCancelled() {
+    return isCancelled_;
+  }
+  
   /// @}
 };
 
@@ -308,10 +322,6 @@ public:
 static BuildSystemImpl& getBuildSystem(BuildEngine& engine) {
   return static_cast<BuildSystemEngineDelegate*>(
       engine.getDelegate())->getBuildSystem();
-}
-
-static bool isCancelled(BuildEngine& engine) {
-  return getBuildSystem(engine).getCommandInterface().getDelegate().isCancelled();
 }
   
 /// This is the task used to "build" a target, it translates between the request
@@ -361,7 +371,7 @@ class TargetTask : public Task {
 
   virtual void inputsAvailable(BuildEngine& engine) override {
     // If the build should cancel, do nothing.
-    if (isCancelled(engine)) {
+    if (getBuildSystem(engine).isCancelled()) {
       engine.taskIsComplete(this, BuildValue::makeSkippedCommand().toData());
       return;
     }
@@ -853,14 +863,14 @@ class CommandTask : public Task {
   }
 
   virtual void inputsAvailable(BuildEngine& engine) override {
-    // If the build should cancel, do nothing.
-    if (isCancelled(engine)) {
-      engine.taskIsComplete(this, BuildValue::makeSkippedCommand().toData());
-      return;
-    }
-
     auto& bsci = getBuildSystem(engine).getCommandInterface();
     auto fn = [this, &bsci=bsci](QueueJobContext* context) {
+      // If the build should cancel, do nothing.
+      if (getBuildSystem(bsci.getBuildEngine()).isCancelled()) {
+        bsci.taskIsComplete(this, BuildValue::makeCancelledCommand());
+        return;
+      }
+
       bool shouldSkip = !bsci.getDelegate().shouldCommandStart(&command);
 
       if (shouldSkip) {
@@ -2091,7 +2101,7 @@ class SymlinkCommand : public Command {
   virtual void inputsAvailable(BuildSystemCommandInterface& bsci,
                                core::Task* task) override {
     // If the build should cancel, do nothing.
-    if (bsci.getDelegate().isCancelled()) {
+    if (getBuildSystem(bsci.getBuildEngine()).isCancelled()) {
       bsci.taskIsComplete(task, BuildValue::makeCancelledCommand());
       return;
     }
@@ -2428,7 +2438,6 @@ bool BuildSystem::build(StringRef name) {
 
 void BuildSystem::cancel() {
   if (impl) {
-    auto buildSystemImpl = static_cast<BuildSystemImpl*>(impl);
-    buildSystemImpl->getCommandInterface().getExecutionQueue().cancelAllJobs();
+    static_cast<BuildSystemImpl*>(impl)->cancel();
   }
 }

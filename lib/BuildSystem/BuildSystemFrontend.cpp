@@ -224,7 +224,7 @@ BuildSystemFrontendDelegate(llvm::SourceMgr& sourceMgr,
                             StringRef name,
                             uint32_t version)
     : BuildSystemDelegate(name, version),
-      impl(new BuildSystemFrontendDelegateImpl(sourceMgr, invocation)), isCancelled_(false)
+      impl(new BuildSystemFrontendDelegateImpl(sourceMgr, invocation))
 {
   
 }
@@ -333,18 +333,7 @@ BuildSystemFrontendDelegate::createExecutionQueue() {
                                     impl->invocation.environment));
 }
 
-bool BuildSystemFrontendDelegate::isCancelled() {
-  // Stop the build after any command failures.
-  return getNumFailedCommands() > 0 || isCancelled_;
-}
-
 void BuildSystemFrontendDelegate::cancel() {
-  // FIXME: We should audit that a build is happening.
-  if (isCancelled_) {
-    return;
-  }
-  isCancelled_ = true;
-
   auto delegateImpl = static_cast<BuildSystemFrontendDelegateImpl*>(impl);
   auto system = delegateImpl->system;
   if (system) {
@@ -355,7 +344,6 @@ void BuildSystemFrontendDelegate::cancel() {
 void BuildSystemFrontendDelegate::resetForBuild() {
   auto impl = static_cast<BuildSystemFrontendDelegateImpl*>(this->impl);
 
-  isCancelled_ = false;
   impl->numFailedCommands = 0;
 }
 

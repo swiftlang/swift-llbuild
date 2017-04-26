@@ -495,6 +495,14 @@ public:
 
   virtual basic::FileSystem& getFileSystem() override { return *fileSystem; }
 
+  virtual void hadCommandFailure() override {
+    // Call the base implementation.
+    BuildSystemFrontendDelegate::hadCommandFailure();
+
+    // Cancel the build, by default.
+    cancel();
+  }
+
   virtual std::unique_ptr<Tool> lookupTool(StringRef name) override {
     // We do not support any non-built-in tools.
     return nullptr;

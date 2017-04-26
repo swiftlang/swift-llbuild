@@ -83,8 +83,6 @@ public:
         createLaneBasedExecutionQueue(executionQueueDelegate, /*numLanes=*/1,
                                       /*environment=*/nullptr));
   }
-
-  virtual bool isCancelled() { return false; }
   
   virtual void hadCommandFailure() {}
 

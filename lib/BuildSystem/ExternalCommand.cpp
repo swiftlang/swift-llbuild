@@ -346,12 +346,6 @@ ExternalCommand::computeCommandResult(BuildSystemCommandInterface& bsci) {
 
 void ExternalCommand::inputsAvailable(BuildSystemCommandInterface& bsci,
                                       core::Task* task) {
-  // If the build should cancel, do nothing.
-  if (bsci.getDelegate().isCancelled()) {
-    bsci.taskIsComplete(task, BuildValue::makeCancelledCommand());
-    return;
-  }
-    
   // If this command should be skipped, do nothing.
   if (skipValue.hasValue()) {
     // If this command had a failed input, treat it as having failed.
