@@ -106,53 +106,39 @@ public:
                             uintptr_t inputID,
                             const BuildValue& value) override { }
 
-  virtual void inputsAvailable(BuildSystemCommandInterface& bsci,
-                               core::Task* task) override {
-    // If the build should cancel, do nothing.
-    if (bsci.getDelegate().isCancelled()) {
-      bsci.taskIsComplete(task, BuildValue::makeSkippedCommand());
-      return;
+  virtual BuildValue execute(BuildSystemCommandInterface& bsci,
+                             core::Task* task,
+                             QueueJobContext* context) override {
+    // Construct the command line used to query the swift compiler version.
+    //
+    // FIXME: Need a decent subprocess interface.
+    SmallString<256> command;
+    llvm::raw_svector_ostream commandOS(command);
+    commandOS << executable;
+    commandOS << " " << "--version";
+
+    // Read the result.
+    FILE *fp = basic::sys::popen(commandOS.str().str().c_str(), "r");
+    SmallString<4096> result;
+    if (fp) {
+      char buf[4096];
+      for (;;) {
+        ssize_t numRead = fread(buf, 1, sizeof(buf), fp);
+        if (numRead == 0) {
+          // FIXME: Error handling.
+          break;
+        }
+        result.append(StringRef(buf, numRead));
+      }
+      basic::sys::pclose(fp);
     }
 
-    // Dispatch a task to query the compiler version.
-    auto fn = [this, &bsci=bsci, task=task](QueueJobContext* context) {
-      // Suppress static analyzer false positive on generalized lambda capture
-      // (rdar://problem/22165130).
-#ifndef __clang_analyzer__
-      // Construct the command line used to query the swift compiler version.
-      //
-      // FIXME: Need a decent subprocess interface.
-      SmallString<256> command;
-      llvm::raw_svector_ostream commandOS(command);
-      commandOS << executable;
-      commandOS << " " << "--version";
-
-      // Read the result.
-      FILE *fp = basic::sys::popen(commandOS.str().str().c_str(), "r");
-      SmallString<4096> result;
-      if (fp) {
-        char buf[4096];
-        for (;;) {
-          ssize_t numRead = fread(buf, 1, sizeof(buf), fp);
-          if (numRead == 0) {
-            // FIXME: Error handling.
-            break;
-          }
-          result.append(StringRef(buf, numRead));
-        }
-        basic::sys::pclose(fp);
-      }
-
-      // For now, we can get away with just encoding this as a successful
-      // command and relying on the signature to detect changes.
-      //
-      // FIXME: We should support BuildValues with arbitrary payloads.
-      bsci.taskIsComplete(task, BuildValue::makeSuccessfulCommand(
-                              basic::FileInfo{}, basic::hashString(result)));
-#endif
-    };
-    bsci.addJob({ this, std::move(fn) });
-    return;
+    // For now, we can get away with just encoding this as a successful
+    // command and relying on the signature to detect changes.
+    //
+    // FIXME: We should support BuildValues with arbitrary payloads.
+    return BuildValue::makeSuccessfulCommand(
+        basic::FileInfo{}, basic::hashString(result));
   }
 };
 

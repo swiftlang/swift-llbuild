@@ -165,6 +165,9 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
   /// Flag indicating if the build has been aborted.
   bool buildWasAborted = false;
 
+  /// Flag indicating if the build has been cancelled.
+  std::atomic<bool> isCancelled_{ false };
+  
   /// @name BuildSystemCommandInterface Implementation
   /// @{
 
@@ -297,7 +300,18 @@ public:
   void setBuildWasAborted(bool value) {
     buildWasAborted = value;
   }
-    
+
+  /// Cancel the running build.
+  void cancel() {
+    isCancelled_ = true;
+    getExecutionQueue().cancelAllJobs();
+  }
+
+  /// Check if the build has been cancelled.
+  bool isCancelled() {
+    return isCancelled_;
+  }
+
   /// @}
 };
 
@@ -308,10 +322,6 @@ public:
 static BuildSystemImpl& getBuildSystem(BuildEngine& engine) {
   return static_cast<BuildSystemEngineDelegate*>(
       engine.getDelegate())->getBuildSystem();
-}
-
-static bool isCancelled(BuildEngine& engine) {
-  return getBuildSystem(engine).getCommandInterface().getDelegate().isCancelled();
 }
   
 /// This is the task used to "build" a target, it translates between the request
@@ -361,7 +371,7 @@ class TargetTask : public Task {
 
   virtual void inputsAvailable(BuildEngine& engine) override {
     // If the build should cancel, do nothing.
-    if (isCancelled(engine)) {
+    if (getBuildSystem(engine).isCancelled()) {
       engine.taskIsComplete(this, BuildValue::makeSkippedCommand().toData());
       return;
     }
@@ -835,6 +845,9 @@ class CommandTask : public Task {
   Command& command;
 
   virtual void start(BuildEngine& engine) override {
+    // Notify the client the command is preparing to run.
+    getBuildSystem(engine).getDelegate().commandPreparing(&command);
+
     command.start(getBuildSystem(engine).getCommandInterface(), this);
   }
 
@@ -853,28 +866,33 @@ class CommandTask : public Task {
   }
 
   virtual void inputsAvailable(BuildEngine& engine) override {
-    // If the build should cancel, do nothing.
-    if (isCancelled(engine)) {
-      engine.taskIsComplete(this, BuildValue::makeSkippedCommand().toData());
-      return;
-    }
-
     auto& bsci = getBuildSystem(engine).getCommandInterface();
     auto fn = [this, &bsci=bsci](QueueJobContext* context) {
-      bool shouldSkip = !bsci.getDelegate().shouldCommandStart(&command);
+      // If the build should cancel, do nothing.
+      if (getBuildSystem(bsci.getBuildEngine()).isCancelled()) {
+        bsci.taskIsComplete(this, BuildValue::makeCancelledCommand());
+        return;
+      }
 
-      if (shouldSkip) {
+      // Check if the command should be skipped.
+      if (!bsci.getDelegate().shouldCommandStart(&command)) {
         // We need to call commandFinished here because commandPreparing and
         // shouldCommandStart guarantee that they're followed by
         // commandFinished.
         bsci.getDelegate().commandFinished(&command);
-
         bsci.taskIsComplete(this, BuildValue::makeSkippedCommand());
-      } else {
-        command.inputsAvailable(bsci, this);
+        return;
       }
+    
+      // Execute the command, with notifications to the delegate.
+      auto result = command.execute(bsci, this, context);
+        
+      // Inform the engine of the result.
+      if (result.isFailedCommand()) {
+        bsci.getDelegate().hadCommandFailure();
+      }
+      bsci.taskIsComplete(this, std::move(result));
     };
-
     bsci.addJob({ &command, std::move(fn) });
   }
 
@@ -2064,9 +2082,6 @@ class SymlinkCommand : public Command {
   
   virtual void start(BuildSystemCommandInterface& bsci,
                      core::Task* task) override {
-    // Notify the client the command is preparing to run.
-    bsci.getDelegate().commandPreparing(this);
-
     // The command itself takes no inputs, so just treat any declared inputs as
     // "must follow" directives.
     //
@@ -2088,70 +2103,53 @@ class SymlinkCommand : public Command {
     assert(0 && "unexpected API call");
   }
 
-  virtual void inputsAvailable(BuildSystemCommandInterface& bsci,
-                               core::Task* task) override {
-    // If the build should cancel, do nothing.
-    if (bsci.getDelegate().isCancelled()) {
-      bsci.taskIsComplete(task, BuildValue::makeCancelledCommand());
-      return;
-    }
-
+  virtual BuildValue execute(BuildSystemCommandInterface& bsci,
+                             core::Task* task,
+                             QueueJobContext* context) override {
     // It is an error if this command isn't configured properly.
     if (!output) {
-      bsci.getDelegate().hadCommandFailure();
-      bsci.taskIsComplete(task, BuildValue::makeFailedCommand());
-      return;
+      return BuildValue::makeFailedCommand();
     }
-    
-    auto fn = [this, &bsci=bsci, task](QueueJobContext* context) {
-      // Notify the client the actual command body is going to run.
-      bsci.getDelegate().commandStarted(this);
 
-      // Create the directory containing the symlink, if necessary.
-      //
-      // FIXME: Shared behavior with ExternalCommand.
-      {
-        auto parent = llvm::sys::path::parent_path(output->getName());
-        if (!parent.empty()) {
-          (void) bsci.getDelegate().getFileSystem().createDirectories(parent);
-        }
+    // Create the directory containing the symlink, if necessary.
+    //
+    // FIXME: Shared behavior with ExternalCommand.
+    {
+      auto parent = llvm::sys::path::parent_path(output->getName());
+      if (!parent.empty()) {
+        (void) bsci.getDelegate().getFileSystem().createDirectories(parent);
       }
+    }
 
-      // Create the symbolic link (note that despite the poorly chosen LLVM
-      // name, this is a symlink).
-      //
-      // FIXME: Need to use the filesystem interfaces.
-      auto success = true;
-      if (llvm::sys::fs::create_link(contents, output->getName())) {
-        // On failure, we attempt to unlink the file and retry.
-        basic::sys::unlink(output->getName().str().c_str());
+    // Create the symbolic link (note that despite the poorly chosen LLVM
+    // name, this is a symlink).
+    //
+    // FIXME: Need to use the filesystem interfaces.
+    bsci.getDelegate().commandStarted(this);
+    auto success = true;
+    if (llvm::sys::fs::create_link(contents, output->getName())) {
+      // On failure, we attempt to unlink the file and retry.
+      basic::sys::unlink(output->getName().str().c_str());
         
-        if (llvm::sys::fs::create_link(contents, output->getName())) {
-          getBuildSystem(bsci.getBuildEngine()).error(
-              "", "unable to create symlink at '" + output->getName() + "'");
-          success = false;
-        }
+      if (llvm::sys::fs::create_link(contents, output->getName())) {
+        getBuildSystem(bsci.getBuildEngine()).error(
+            "", "unable to create symlink at '" + output->getName() + "'");
+        success = false;
       }
-      
-      // Notify the client the command is complete.
-      bsci.getDelegate().commandFinished(this);
+    }
+    bsci.getDelegate().commandFinished(this);
     
-      // Process the result.
-      if (!success) {
-        bsci.getDelegate().hadCommandFailure();
-        bsci.taskIsComplete(task, BuildValue::makeFailedCommand());
-        return;
-      }
+    // Process the result.
+    if (!success) {
+      return BuildValue::makeFailedCommand();
+    }
 
-      // Capture the *link* information of the output.
-      FileInfo outputInfo = output->getLinkInfo(
-          bsci.getDelegate().getFileSystem());
+    // Capture the *link* information of the output.
+    FileInfo outputInfo = output->getLinkInfo(
+        bsci.getDelegate().getFileSystem());
       
-      // Complete with a successful result.
-      bsci.taskIsComplete(
-          task, BuildValue::makeSuccessfulCommand(outputInfo, getSignature()));
-    };
-    bsci.addJob({ this, std::move(fn) });
+    // Complete with a successful result.
+    return BuildValue::makeSuccessfulCommand(outputInfo, getSignature());
   }
 
 public:
@@ -2428,7 +2426,6 @@ bool BuildSystem::build(StringRef name) {
 
 void BuildSystem::cancel() {
   if (impl) {
-    auto buildSystemImpl = static_cast<BuildSystemImpl*>(impl);
-    buildSystemImpl->getCommandInterface().getExecutionQueue().cancelAllJobs();
+    static_cast<BuildSystemImpl*>(impl)->cancel();
   }
 }

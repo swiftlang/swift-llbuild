@@ -21,6 +21,7 @@
 #include "llvm/Support/SourceMgr.h"
 
 #include <memory>
+#include <mutex>
 
 using namespace llvm;
 using namespace llbuild;
@@ -55,13 +56,21 @@ class MockBuildSystemDelegate : public BuildSystemDelegate {
   std::unique_ptr<basic::FileSystem> fileSystem =
     basic::createLocalFileSystem();
   std::vector<std::string> messages;
+  std::mutex messagesMutex;
   
   MockExecutionQueueDelegate executionQueueDelegate;
+
+  bool trackAllMessages;
   
 public:
-  MockBuildSystemDelegate();
+  MockBuildSystemDelegate(bool trackAllMessages = false);
 
-  std::vector<std::string>& getMessages() { return messages; }
+  std::vector<std::string> getMessages() {
+    {
+      std::unique_lock<std::mutex> lock(messagesMutex);
+      return messages;
+    }
+  }
   
   virtual basic::FileSystem& getFileSystem() { return *fileSystem; }
   
@@ -71,7 +80,10 @@ public:
                      const Token& at,
                      const Twine& message) {
     llvm::errs() << "error: " << filename.str() << ": " << message.str() << "\n";
-    messages.push_back(message.str());
+    {
+      std::unique_lock<std::mutex> lock(messagesMutex);
+      messages.push_back(message.str());
+    }
   }
 
   virtual std::unique_ptr<Tool> lookupTool(StringRef name) {
@@ -83,20 +95,41 @@ public:
         createLaneBasedExecutionQueue(executionQueueDelegate, /*numLanes=*/1,
                                       /*environment=*/nullptr));
   }
-
-  virtual bool isCancelled() { return false; }
   
-  virtual void hadCommandFailure() {}
+  virtual void hadCommandFailure() {
+    if (trackAllMessages) {
+      std::unique_lock<std::mutex> lock(messagesMutex);
+      messages.push_back("hadCommandFailure");
+    }
+  }
 
-  virtual void commandStatusChanged(Command*, CommandStatusKind) {}
+  virtual void commandStatusChanged(Command*, CommandStatusKind) { }
 
-  virtual void commandPreparing(Command*) {}
+  virtual void commandPreparing(Command* command) {
+    if (trackAllMessages) {
+      std::unique_lock<std::mutex> lock(messagesMutex);
+      messages.push_back(
+          ("commandPreparing(" + command->getName() + ")").str());
+    }
+  }
 
   virtual bool shouldCommandStart(Command*) { return true; }
 
-  virtual void commandStarted(Command*) { }
+  virtual void commandStarted(Command* command) {
+    if (trackAllMessages) {
+      std::unique_lock<std::mutex> lock(messagesMutex);
+      messages.push_back(
+          ("commandStarted(" + command->getName() + ")").str());
+    }
+  }
 
-  virtual void commandFinished(Command*) {}
+  virtual void commandFinished(Command* command) {
+    if (trackAllMessages) {
+      std::unique_lock<std::mutex> lock(messagesMutex);
+      messages.push_back(
+          ("commandFinished(" + command->getName() + ")").str());
+    }
+  }
 };
 
 }

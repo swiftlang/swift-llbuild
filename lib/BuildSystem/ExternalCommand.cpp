@@ -211,9 +211,6 @@ bool ExternalCommand::isResultValid(BuildSystem& system,
 
 void ExternalCommand::start(BuildSystemCommandInterface& bsci,
                             core::Task* task) {
-  // Notify the client the command is preparing to run.
-  bsci.getDelegate().commandPreparing(this);
-    
   // Initialize the build state.
   skipValue = llvm::None;
   hasMissingInput = false;
@@ -344,14 +341,9 @@ ExternalCommand::computeCommandResult(BuildSystemCommandInterface& bsci) {
   return BuildValue::makeSuccessfulCommand(outputInfos, getSignature());
 }
 
-void ExternalCommand::inputsAvailable(BuildSystemCommandInterface& bsci,
-                                      core::Task* task) {
-  // If the build should cancel, do nothing.
-  if (bsci.getDelegate().isCancelled()) {
-    bsci.taskIsComplete(task, BuildValue::makeCancelledCommand());
-    return;
-  }
-    
+BuildValue ExternalCommand::execute(BuildSystemCommandInterface& bsci,
+                                    core::Task* task,
+                                    QueueJobContext* context) {
   // If this command should be skipped, do nothing.
   if (skipValue.hasValue()) {
     // If this command had a failed input, treat it as having failed.
@@ -365,8 +357,7 @@ void ExternalCommand::inputsAvailable(BuildSystemCommandInterface& bsci,
       bsci.getDelegate().hadCommandFailure();
     }
 
-    bsci.taskIsComplete(task, skipValue.getValue());
-    return;
+    return std::move(skipValue.getValue());
   }
   assert(!hasMissingInput);
 
@@ -375,57 +366,40 @@ void ExternalCommand::inputsAvailable(BuildSystemCommandInterface& bsci,
       hasPriorResult && priorResultCommandSignature == getSignature()) {
     BuildValue result = computeCommandResult(bsci);
     if (canUpdateIfNewerWithResult(result)) {
-      bsci.taskIsComplete(task, result);
-      return;
+      return result;
+    }
+  }
+
+  // Create the directories for the directories containing file outputs.
+  //
+  // FIXME: Implement a shared cache for this, to reduce the number of
+  // syscalls required to make this happen.
+  for (auto* node: outputs) {
+    if (!node->isVirtual()) {
+      // Attempt to create the directory; we ignore errors here under the
+      // assumption the command will diagnose the situation if necessary.
+      //
+      // FIXME: Need to use the filesystem interfaces.
+      auto parent = llvm::sys::path::parent_path(node->getName());
+      if (!parent.empty()) {
+        (void) bsci.getDelegate().getFileSystem().createDirectories(parent);
+      }
     }
   }
     
-  // Suppress static analyzer false positive on generalized lambda capture
-  // (rdar://problem/22165130).
-#ifndef __clang_analyzer__
-  auto fn = [this, &bsci=bsci, task](QueueJobContext* context) {
-    // Notify the client the actual command body is going to run.
-    bsci.getDelegate().commandStarted(this);
-
-    // Create the directories for the directories containing file outputs.
-    //
-    // FIXME: Implement a shared cache for this, to reduce the number of
-    // syscalls required to make this happen.
-    for (auto* node: outputs) {
-      if (!node->isVirtual()) {
-        // Attempt to create the directory; we ignore errors here under the
-        // assumption the command will diagnose the situation if necessary.
-        //
-        // FIXME: Need to use the filesystem interfaces.
-        auto parent = llvm::sys::path::parent_path(node->getName());
-        if (!parent.empty()) {
-          (void) bsci.getDelegate().getFileSystem().createDirectories(parent);
-        }
-      }
-    }
+  // Invoke the external command.
+  bsci.getDelegate().commandStarted(this);
+  auto result = executeExternalCommand(bsci, task, context);
+  bsci.getDelegate().commandFinished(this);
     
-    // Invoke the external command.
-    auto result = executeExternalCommand(bsci, task, context);
-    
-    // Notify the client the command is complete.
-    bsci.getDelegate().commandFinished(this);
-    
-    // Process the result.
-    switch (result) {
-      case CommandResult::Failed:
-        bsci.getDelegate().hadCommandFailure();
-
-        // If the command failed, the result is failure.
-        bsci.taskIsComplete(task, BuildValue::makeFailedCommand());
-        break;
-      case CommandResult::Cancelled:
-        bsci.taskIsComplete(task, BuildValue::makeCancelledCommand());
-        break;
-      case CommandResult::Succeeded:
-        bsci.taskIsComplete(task, computeCommandResult(bsci));
-        break;
-    }
-  };
-  bsci.addJob({ this, std::move(fn) });
-#endif
+  // Process the result.
+  switch (result) {
+  case CommandResult::Failed:
+    return BuildValue::makeFailedCommand();
+  case CommandResult::Cancelled:
+    return BuildValue::makeCancelledCommand();
+  case CommandResult::Succeeded:
+    return computeCommandResult(bsci);
+  }
+  llvm::report_fatal_error("unknown result");
 }

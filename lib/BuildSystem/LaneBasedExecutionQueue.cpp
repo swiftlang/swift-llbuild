@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -206,7 +206,8 @@ public:
 
   virtual void cancelAllJobs() override {
     {
-      std::unique_lock<std::mutex> lock(readyJobsMutex);
+      std::lock_guard<std::mutex> lock(readyJobsMutex);
+      std::lock_guard<std::mutex> guard(spawnedProcessesMutex);
       if (cancelled) return;
       cancelled = true;
       readyJobsCondition.notify_all();
@@ -391,28 +392,42 @@ public:
     }
       
     // Spawn the command.
-    pid_t pid;
+    pid_t pid = -1;
+    bool wasCancelled;
     {
       // We need to hold the spawn processes lock when we spawn, to ensure that
       // we don't create a process in between when we are cancelled.
       std::lock_guard<std::mutex> guard(spawnedProcessesMutex);
-
-      if (posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
-                      /*attrp=*/&attributes, const_cast<char**>(args.data()),
-                      const_cast<char* const*>(envp)) != 0) {
-        getDelegate().commandProcessHadError(
-            context.job.getForCommand(), handle,
-            Twine("unable to spawn process (") + strerror(errno) + ")");
-        getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
-                                             CommandResult::Failed, -1);
-        return CommandResult::Failed;
+      wasCancelled = cancelled;
+      
+      // If we have been cancelled since we started, do nothing.
+      if (!wasCancelled) {
+        if (posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
+                        /*attrp=*/&attributes, const_cast<char**>(args.data()),
+                        const_cast<char* const*>(envp)) != 0) {
+          getDelegate().commandProcessHadError(
+              context.job.getForCommand(), handle,
+              Twine("unable to spawn process (") + strerror(errno) + ")");
+          getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
+                                               CommandResult::Failed, -1);
+          pid = -1;
+        } else {
+          spawnedProcesses.insert(pid);
+        }
       }
-
-      spawnedProcesses.insert(pid);
     }
 
     posix_spawn_file_actions_destroy(&fileActions);
     posix_spawnattr_destroy(&attributes);
+    
+    // If we failed to launch a process, clean up and abort.
+    if (pid == -1) {
+      if (shouldCaptureOutput) {
+        ::close(outputPipe[1]);
+        ::close(outputPipe[0]);
+      }
+      return wasCancelled ? CommandResult::Cancelled : CommandResult::Failed;
+    }
 
     // Read the command output, if capturing.
     SmallString<1024> outputData;

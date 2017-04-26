@@ -218,7 +218,10 @@ public:
   virtual void provideValue(BuildSystemCommandInterface&, Task*,
                                  uintptr_t inputID,
                                  const BuildValue&) override {}
-  virtual void inputsAvailable(BuildSystemCommandInterface&, Task*) override {}
+  virtual BuildValue execute(BuildSystemCommandInterface&, Task*,
+                             QueueJobContext*) override {
+    return BuildValue::makeFailedCommand();
+  }
 };
 
 class ParseDummyTool : public Tool {
@@ -494,6 +497,14 @@ public:
   }
 
   virtual basic::FileSystem& getFileSystem() override { return *fileSystem; }
+
+  virtual void hadCommandFailure() override {
+    // Call the base implementation.
+    BuildSystemFrontendDelegate::hadCommandFailure();
+
+    // Cancel the build, by default.
+    cancel();
+  }
 
   virtual std::unique_ptr<Tool> lookupTool(StringRef name) override {
     // We do not support any non-built-in tools.

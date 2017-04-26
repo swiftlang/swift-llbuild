@@ -107,7 +107,6 @@ public:
   
 private:
   void* impl;
-  std::atomic<bool> isCancelled_;
 
   /// Default implementation, cannot be overriden by subclasses.
   virtual void setFileContentsBeingParsed(StringRef buffer) override;
@@ -139,10 +138,6 @@ public:
 
   /// Provides an appropriate execution queue based on the invocation options.
   virtual std::unique_ptr<BuildExecutionQueue> createExecutionQueue() override;
-
-  /// Provides a default cancellation implementation that will cancel when any
-  /// command has failed.
-  virtual bool isCancelled() override;
 
   /// Cancels the current build.
   virtual void cancel();
