@@ -195,6 +195,8 @@ public:
   virtual std::unique_ptr<Tool> lookupTool(StringRef name) override {
     return nullptr;
   }
+
+  virtual void cycleDetected(const std::vector<core::Rule*>& items) override { }
 };
 
 

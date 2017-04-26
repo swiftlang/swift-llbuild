@@ -12,6 +12,7 @@
 
 #include "llbuild/BuildSystem/BuildSystem.h"
 #include "llbuild/BuildSystem/BuildSystemCommandInterface.h"
+#include "llbuild/BuildSystem/BuildSystemFrontend.h"
 #include "llbuild/BuildSystem/CommandResult.h"
 
 #include "llbuild/Basic/FileInfo.h"
@@ -1183,46 +1184,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
 void BuildSystemEngineDelegate::cycleDetected(const std::vector<Rule*>& cycle) {
   // Track that the build has been aborted.
   getBuildSystem().setBuildWasAborted(true);
-  
-  // Compute a description of the cycle path.
-  SmallString<256> message;
-  llvm::raw_svector_ostream os(message);
-  os << "cycle detected while building: ";
-  bool first = true;
-  for (const auto* rule: cycle) {
-    if (!first)
-      os << " -> ";
-
-    // Convert to a build key.
-    auto key = BuildKey::fromData(rule->key);
-    switch (key.getKind()) {
-    case BuildKey::Kind::Unknown:
-      os << "((unknown))";
-      break;
-    case BuildKey::Kind::Command:
-      os << "command '" << key.getCommandName() << "'";
-      break;
-    case BuildKey::Kind::CustomTask:
-      os << "custom task '" << key.getCustomTaskName() << "'";
-      break;
-    case BuildKey::Kind::DirectoryContents:
-      os << "directory-contents '" << key.getDirectoryContentsPath() << "'";
-      break;
-    case BuildKey::Kind::DirectoryTreeSignature:
-      os << "directory-tree-signature '"
-         << key.getDirectoryTreeSignaturePath() << "'";
-      break;
-    case BuildKey::Kind::Node:
-      os << "node '" << key.getNodeName() << "'";
-      break;
-    case BuildKey::Kind::Target:
-      os << "target '" << key.getTargetName() << "'";
-      break;
-    }
-    first = false;
-  }
-  
-  system.error(system.getMainFilename(), os.str());
+  static_cast<BuildSystemFrontendDelegate*>(&getBuildSystem().getDelegate())->cycleDetected(cycle);
 }
 
 void BuildSystemEngineDelegate::error(const Twine& message) {

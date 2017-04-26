@@ -15,6 +15,7 @@
 
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/BuildSystem/BuildFile.h"
+#include "llbuild/BuildSystem/BuildKey.h"
 #include "llbuild/BuildSystem/BuildSystemCommandInterface.h"
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
 #include "llbuild/BuildSystem/CommandResult.h"
@@ -291,6 +292,54 @@ public:
   /// Request cancellation of any current build.
   void cancel() override {
     BuildSystemFrontendDelegate::cancel();
+  }
+
+  virtual void cycleDetected(const std::vector<core::Rule*>& items) override {
+    std::vector<llb_build_key_t> rules(items.size());
+    int idx = 0;
+
+    for (std::vector<core::Rule*>::const_iterator it = items.begin(); it != items.end(); ++it) {
+      core::Rule* rule = *it;
+      auto key = BuildKey::fromData(rule->key);
+      auto& buildKey = rules[idx++];
+
+      switch (key.getKind()) {
+        case BuildKey::Kind::Command:
+          buildKey.kind = llb_build_key_kind_command;
+          buildKey.key = strdup(key.getCommandName().str().c_str());
+          break;
+        case BuildKey::Kind::CustomTask:
+          buildKey.kind = llb_build_key_kind_custom_task;
+          buildKey.key = strdup(key.getCustomTaskName().str().c_str());
+          break;
+        case BuildKey::Kind::DirectoryContents:
+          buildKey.kind = llb_build_key_kind_directory_contents;
+          buildKey.key = strdup(key.getDirectoryContentsPath().str().c_str());
+          break;
+        case BuildKey::Kind::DirectoryTreeSignature:
+          buildKey.kind = llb_build_key_kind_directory_tree_signature;
+          buildKey.key = strdup(key.getDirectoryTreeSignaturePath().str().c_str());
+          break;
+        case BuildKey::Kind::Node:
+          buildKey.kind = llb_build_key_kind_node;
+          buildKey.key = strdup(key.getNodeName().str().c_str());
+          break;
+        case BuildKey::Kind::Target:
+          buildKey.kind = llb_build_key_kind_target;
+          buildKey.key = strdup(key.getTargetName().str().c_str());
+          break;
+        case BuildKey::Kind::Unknown:
+          buildKey.kind = llb_build_key_kind_unknown;
+          buildKey.key = strdup("((unknown))");
+          break;
+      }
+    }
+
+    cAPIDelegate.cycle_detected(cAPIDelegate.context, &rules[0], rules.size());
+
+    for (unsigned long i=0;i<rules.size();i++) {
+      free((char *)rules[i].key);
+    }
   }
 };
 
