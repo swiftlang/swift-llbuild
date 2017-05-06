@@ -1,0 +1,23 @@
+//===-- Release.xcconfig --------------------------------------------------===//
+//
+// This source file is part of the Swift.org open source project
+//
+// Copyright (c) 2017 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
+//
+// See http://swift.org/LICENSE.txt for license information
+// See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+//
+//===----------------------------------------------------------------------===//
+
+// Shared build settings.
+#include "Common.xcconfig"
+
+// Prefer binary Info.plists for Release.
+INFOPLIST_OUTPUT_FORMAT = binary
+
+DEBUG_INFORMATION_FORMAT = dwarf-with-dsym
+
+GCC_OPTIMIZATION_LEVEL = s
+
+GCC_PREPROCESSOR_DEFINITIONS = $(COMMON_PREPROCESSOR_DEFINITIONS) NDEBUG=1

@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "E1A224C219F999B80059043E"
-               BuildableName = "llbuild"
+               BuildableName = "llbuild Tool"
                BlueprintName = "llbuild Tool"
                ReferencedContainer = "container:llbuild.xcodeproj">
             </BuildableReference>
@@ -86,7 +86,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E1A224C219F999B80059043E"
-            BuildableName = "llbuild"
+            BuildableName = "llbuild Tool"
             BlueprintName = "llbuild Tool"
             ReferencedContainer = "container:llbuild.xcodeproj">
          </BuildableReference>
@@ -111,7 +111,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E1A224C219F999B80059043E"
-            BuildableName = "llbuild"
+            BuildableName = "llbuild Tool"
             BlueprintName = "llbuild Tool"
             ReferencedContainer = "container:llbuild.xcodeproj">
          </BuildableReference>
@@ -136,7 +136,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E1A224C219F999B80059043E"
-            BuildableName = "llbuild"
+            BuildableName = "llbuild Tool"
             BlueprintName = "llbuild Tool"
             ReferencedContainer = "container:llbuild.xcodeproj">
          </BuildableReference>

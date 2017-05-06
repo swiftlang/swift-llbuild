@@ -1,0 +1,23 @@
+//===-- Common.xcconfig ---------------------------------------------------===//
+//
+// This source file is part of the Swift.org open source project
+//
+// Copyright (c) 2017 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
+//
+// See http://swift.org/LICENSE.txt for license information
+// See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+//
+//===----------------------------------------------------------------------===//
+
+// Set the default product name.
+PRODUCT_NAME = $(TARGET_NAME)
+
+// Set the versioning system to "Apple Generic" for all projects.
+VERSIONING_SYSTEM = apple-generic
+
+// Do not always search user paths.
+ALWAYS_SEARCH_USER_PATHS = NO
+
+// Headermaps are disabled.
+USE_HEADERMAP = NO

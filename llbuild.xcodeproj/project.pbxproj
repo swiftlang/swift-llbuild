@@ -738,6 +738,9 @@
 		E138129C1C536CFC000092C0 /* FileSystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FileSystem.h; sourceTree = "<group>"; };
 		E138129D1C536D0E000092C0 /* FileSystem.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FileSystem.cpp; sourceTree = "<group>"; };
 		E13812A11C53708E000092C0 /* FileSystemTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FileSystemTest.cpp; sourceTree = "<group>"; };
+		E14144921EBDA4A10046F282 /* Common.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Common.xcconfig; sourceTree = "<group>"; };
+		E14144931EBDA4A10046F282 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		E14144941EBDA4A10046F282 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		E147DEFA1BA81CF70032D08E /* SerialQueue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SerialQueue.cpp; sourceTree = "<group>"; };
 		E147DEFC1BA81D0E0032D08E /* SerialQueue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SerialQueue.h; sourceTree = "<group>"; };
 		E147DEFD1BA81D0E0032D08E /* Hashing.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Hashing.h; sourceTree = "<group>"; };
@@ -840,7 +843,7 @@
 		E1A224B619F998D40059043E /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1A224B919F998D40059043E /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1A224BA19F998D40059043E /* LexerTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LexerTest.cpp; sourceTree = "<group>"; };
-		E1A224C319F999B80059043E /* llbuild */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = llbuild; sourceTree = BUILT_PRODUCTS_DIR; };
+		E1A224C319F999B80059043E /* llbuild Tool */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "llbuild Tool"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1A224DD19F99B0E0059043E /* libgtest.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libgtest.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1A224E619F99C580059043E /* libgtest_main.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libgtest_main.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1A224EF19F99D880059043E /* CoreTests */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = CoreTests; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -857,7 +860,7 @@
 		E1ADC2311A85922F00D5387C /* C-API.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "C-API.cpp"; sourceTree = "<group>"; };
 		E1ADC2341A85928100D5387C /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		E1ADC2351A8592AA00D5387C /* llbuild.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = llbuild.h; sourceTree = "<group>"; };
-		E1ADC23A1A85936400D5387C /* libllbuild.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libllbuild.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		E1ADC23A1A85936400D5387C /* llbuild.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = llbuild.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1B3B9DA1E4D5A7A00DF1FBC /* MockBuildSystemDelegate.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MockBuildSystemDelegate.cpp; sourceTree = "<group>"; };
 		E1B3B9DB1E4D5A7A00DF1FBC /* MockBuildSystemDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MockBuildSystemDelegate.h; sourceTree = "<group>"; };
 		E1B49EF91B6BD45D0031AFC2 /* BuildSystemCommandInterface.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildSystemCommandInterface.h; sourceTree = "<group>"; };
@@ -1233,6 +1236,24 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		E14144901EBDA4A10046F282 /* Xcode */ = {
+			isa = PBXGroup;
+			children = (
+				E14144911EBDA4A10046F282 /* Configs */,
+			);
+			path = Xcode;
+			sourceTree = "<group>";
+		};
+		E14144911EBDA4A10046F282 /* Configs */ = {
+			isa = PBXGroup;
+			children = (
+				E14144921EBDA4A10046F282 /* Common.xcconfig */,
+				E14144931EBDA4A10046F282 /* Debug.xcconfig */,
+				E14144941EBDA4A10046F282 /* Release.xcconfig */,
+			);
+			path = Configs;
+			sourceTree = "<group>";
+		};
 		E147DF171BA81D4E0032D08E /* Basic */ = {
 			isa = PBXGroup;
 			children = (
@@ -1257,6 +1278,7 @@
 		E1A223E819F98F1C0059043E = {
 			isa = PBXGroup;
 			children = (
+				E14144901EBDA4A10046F282 /* Xcode */,
 				E1A223FD19F990F10059043E /* products */,
 				E1A2240419F991530059043E /* lib */,
 				E19C3FD51B98C1A70035E1AA /* tests */,
@@ -1277,14 +1299,14 @@
 				E1A2242E19F997050059043E /* libllbuildCommands.a */,
 				E1A2243619F9970D0059043E /* libllbuildNinja.a */,
 				E1A2243E19F997150059043E /* libllbuildCore.a */,
-				E1A224C319F999B80059043E /* llbuild */,
+				E1A224C319F999B80059043E /* llbuild Tool */,
 				E1A224DD19F99B0E0059043E /* libgtest.a */,
 				E1A224E619F99C580059043E /* libgtest_main.a */,
 				E1A224EF19F99D880059043E /* CoreTests */,
 				E1A2250119F99DFD0059043E /* NinjaTests */,
 				E10D5CDA19FEBF6A00211ED4 /* LitXCTestAdaptor.xctest */,
 				E1C404AC1A0308F3003392BA /* PerfTests.xctest */,
-				E1ADC23A1A85936400D5387C /* libllbuild.dylib */,
+				E1ADC23A1A85936400D5387C /* llbuild.dylib */,
 				E1D191BE1B47232B000C4E95 /* llbuild.framework */,
 				E1B838A21B52E7DE00DB876B /* libllvmSupport.a */,
 				E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */,
@@ -2146,7 +2168,7 @@
 			);
 			name = "llbuild Tool";
 			productName = llbuild;
-			productReference = E1A224C319F999B80059043E /* llbuild */;
+			productReference = E1A224C319F999B80059043E /* llbuild Tool */;
 			productType = "com.apple.product-type.tool";
 		};
 		E1A224DC19F99B0E0059043E /* gtest */ = {
@@ -2246,7 +2268,7 @@
 			);
 			name = libllbuild;
 			productName = libllbuild;
-			productReference = E1ADC23A1A85936400D5387C /* libllbuild.dylib */;
+			productReference = E1ADC23A1A85936400D5387C /* llbuild.dylib */;
 			productType = "com.apple.product-type.library.dynamic";
 		};
 		E1B838981B52E7DE00DB876B /* llvmSupport */ = {
@@ -2438,6 +2460,7 @@
 				E178FCC11A1BF3270039F8B5 /* B&I */,
 				E1A224C219F999B80059043E /* llbuild Tool */,
 				E1604C951BB9E01D001153A1 /* swift-build-tool */,
+				E1D191BD1B47232B000C4E95 /* llbuild-framework */,
 				E1ADC2391A85936400D5387C /* libllbuild */,
 				E1B838981B52E7DE00DB876B /* llvmSupport */,
 				E1A2242419F991B40059043E /* llbuildBasic */,
@@ -2456,7 +2479,6 @@
 				E1A2254219F9A20D0059043E /* test */,
 				E10D5CD919FEBF6A00211ED4 /* LitXCTestAdaptor */,
 				E1C404AB1A0308F3003392BA /* PerfTests */,
-				E1D191BD1B47232B000C4E95 /* llbuild-framework */,
 			);
 		};
 /* End PBXProject section */
@@ -3151,21 +3173,10 @@
 		9DB047AD1DF9D43D006CDF52 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CODE_SIGN_IDENTITY = "-";
-				DEBUG_INFORMATION_FORMAT = dwarf;
-				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
 				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
-				MACOSX_DEPLOYMENT_TARGET = 10.12;
-				MTL_ENABLE_DEBUG_INFO = YES;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Debug;
@@ -3173,19 +3184,10 @@
 		9DB047AE1DF9D43D006CDF52 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CODE_SIGN_IDENTITY = "-";
-				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					NDEBUG,
 					"GTEST_HAS_RTTI=0",
 				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
-				MACOSX_DEPLOYMENT_TARGET = 10.12;
-				MTL_ENABLE_DEBUG_INFO = NO;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Release;
@@ -3193,7 +3195,6 @@
 		E10D5CE019FEBF6A00211ED4 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(DEVELOPER_FRAMEWORKS_DIR)",
 					"$(inherited)",
@@ -3205,14 +3206,12 @@
 				INFOPLIST_FILE = utils/Xcode/LitXCTestAdaptor/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.apple.$(PRODUCT_NAME:rfc1034identifier)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
 		E10D5CE119FEBF6A00211ED4 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(DEVELOPER_FRAMEWORKS_DIR)",
 					"$(inherited)",
@@ -3224,7 +3223,6 @@
 				INFOPLIST_FILE = utils/Xcode/LitXCTestAdaptor/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.apple.$(PRODUCT_NAME:rfc1034identifier)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
@@ -3235,9 +3233,6 @@
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
 				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
-				LIBRARY_SEARCH_PATHS = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Debug;
@@ -3249,9 +3244,6 @@
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
 				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
-				LIBRARY_SEARCH_PATHS = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Release;
@@ -3259,9 +3251,7 @@
 		E1604CAF1BB9E01D001153A1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/bin";
-				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = NO;
 			};
 			name = Debug;
@@ -3269,9 +3259,7 @@
 		E1604CB01BB9E01D001153A1 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/bin";
-				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = NO;
 			};
 			name = Release;
@@ -3279,47 +3267,42 @@
 		E178FCC21A1BF3270039F8B5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
 		E178FCC31A1BF3270039F8B5 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
 		E17C29EE1B5AC12B00C12DA9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
 		E17C29EF1B5AC12B00C12DA9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
 		E18043301A00122900662FE7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
 		E18043311A00122900662FE7 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
 		E1A223F619F98F1C0059043E /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = E14144931EBDA4A10046F282 /* Debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
@@ -3349,7 +3332,7 @@
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
@@ -3375,6 +3358,7 @@
 		};
 		E1A223F719F98F1C0059043E /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = E14144941EBDA4A10046F282 /* Release.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
@@ -3404,7 +3388,7 @@
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = NDEBUG;
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
@@ -3430,91 +3414,65 @@
 		E1A2242719F991B40059043E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				EXECUTABLE_PREFIX = lib;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"LLBUILD_VERSION_STRING=\\\"$(LLBUILD_VERSION_STRING)\\\"",
 				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				LLBUILD_VERSION_STRING = "llbuild-$(PROJECT_SOURCE_VERSION)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
 		E1A2242819F991B40059043E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				EXECUTABLE_PREFIX = lib;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"LLBUILD_VERSION_STRING=\\\"$(LLBUILD_VERSION_STRING)\\\"",
 				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				LLBUILD_VERSION_STRING = "llbuild-$(PROJECT_SOURCE_VERSION)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
 		E1A2243019F997050059043E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				EXECUTABLE_PREFIX = lib;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
 		E1A2243119F997050059043E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				EXECUTABLE_PREFIX = lib;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
 		E1A2243819F9970D0059043E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				EXECUTABLE_PREFIX = lib;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
 		E1A2243919F9970D0059043E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				EXECUTABLE_PREFIX = lib;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
 		E1A2244019F997150059043E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				EXECUTABLE_PREFIX = lib;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
 		E1A2244119F997150059043E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				EXECUTABLE_PREFIX = lib;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
 		E1A224C819F999B80059043E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/bin";
-				PRODUCT_NAME = llbuild;
 				SKIP_INSTALL = NO;
 			};
 			name = Debug;
@@ -3522,9 +3480,7 @@
 		E1A224C919F999B80059043E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/bin";
-				PRODUCT_NAME = llbuild;
 				SKIP_INSTALL = NO;
 			};
 			name = Release;
@@ -3532,12 +3488,10 @@
 		E1A224DF19F99B0E0059043E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				EXECUTABLE_PREFIX = lib;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
 				);
-				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/utils/unittest/googletest/include $(SRCROOT)/utils/unittest/googletest";
 			};
 			name = Debug;
@@ -3545,12 +3499,10 @@
 		E1A224E019F99B0E0059043E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				EXECUTABLE_PREFIX = lib;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
 				);
-				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/utils/unittest/googletest/include $(SRCROOT)/utils/unittest/googletest";
 			};
 			name = Release;
@@ -3558,13 +3510,10 @@
 		E1A224E819F99C580059043E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				EXECUTABLE_PREFIX = lib;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
 				);
-				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Debug;
@@ -3572,13 +3521,10 @@
 		E1A224E919F99C580059043E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				EXECUTABLE_PREFIX = lib;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
 				);
-				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Release;
@@ -3590,9 +3536,6 @@
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
 				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
-				LIBRARY_SEARCH_PATHS = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Debug;
@@ -3600,14 +3543,10 @@
 		E1A224F519F99D880059043E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
 				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
-				LIBRARY_SEARCH_PATHS = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Release;
@@ -3619,8 +3558,6 @@
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
 				);
-				LIBRARY_SEARCH_PATHS = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Debug;
@@ -3628,13 +3565,10 @@
 		E1A2250019F99DFD0059043E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
 				);
-				LIBRARY_SEARCH_PATHS = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Release;
@@ -3642,14 +3576,12 @@
 		E1A2254419F9A20D0059043E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
 		E1A2254519F9A20D0059043E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
@@ -3659,11 +3591,8 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				EXECUTABLE_PREFIX = lib;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/public-api";
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/lib";
-				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				PRODUCT_NAME = llbuild;
 				PUBLIC_HEADERS_FOLDER_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/include/llbuild";
 				SKIP_INSTALL = NO;
@@ -3676,11 +3605,8 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				EXECUTABLE_PREFIX = lib;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/public-api";
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/lib";
-				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				PRODUCT_NAME = llbuild;
 				PUBLIC_HEADERS_FOLDER_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/include/llbuild";
 				SKIP_INSTALL = NO;
@@ -3691,10 +3617,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_CODE_COVERAGE = NO;
-				EXECUTABLE_PREFIX = lib;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/include";
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
@@ -3702,28 +3625,19 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_CODE_COVERAGE = NO;
-				EXECUTABLE_PREFIX = lib;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/include";
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
 		E1B839551B541BFD00DB876B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				EXECUTABLE_PREFIX = lib;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
 		E1B839561B541BFD00DB876B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				EXECUTABLE_PREFIX = lib;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
@@ -3739,10 +3653,8 @@
 					"\"SRCROOT=\\\"$(SRCROOT)\\\"\"",
 					"\"TEST_TEMPS_PATH=\\\"$(CONFIGURATION_TEMP_DIR)/test-temps\\\"\"",
 				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				INFOPLIST_FILE = perftests/Xcode/PerfTests/Info.plist;
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.NinjaPerfTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
 		};
@@ -3758,10 +3670,8 @@
 					"\"SRCROOT=\\\"$(SRCROOT)\\\"\"",
 					"\"TEST_TEMPS_PATH=\\\"$(CONFIGURATION_TEMP_DIR)/test-temps\\\"\"",
 				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				INFOPLIST_FILE = perftests/Xcode/PerfTests/Info.plist;
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.NinjaPerfTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
@@ -3773,8 +3683,6 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/public-api";
 				INFOPLIST_FILE = "$(SRCROOT)/products/llbuild-framework/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
@@ -3794,8 +3702,6 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/public-api";
 				INFOPLIST_FILE = "$(SRCROOT)/products/llbuild-framework/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
