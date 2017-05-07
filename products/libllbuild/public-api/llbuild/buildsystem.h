@@ -215,6 +215,13 @@ typedef struct llb_buildsystem_delegate_t_ {
   bool (*fs_get_file_contents)(void* context, const char* path,
                                llb_data_t* data_out);
 
+  /// Remove file or directory at given path.
+  ///
+  /// Xparam path The path to remove.
+  ///
+  /// \\returns True on success.
+  bool (*fs_remove)(void* context, const char* path);
+
   /// Get the file information for the given path.
   void (*fs_get_file_info)(void* context, const char* path,
                            llb_fs_file_info_t* data_out);

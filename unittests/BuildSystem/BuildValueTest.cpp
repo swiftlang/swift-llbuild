@@ -161,4 +161,25 @@ TEST(BuildValueTest, directoryListValues) {
   }
 }
 
+TEST(BuildValueTest, staleFileRemovalValues) {
+  std::vector<std::string> files { "a.out", "Info.plist" };
+
+  {
+    BuildValue a = BuildValue::makeStaleFileRemoval(ArrayRef<std::string>(files));
+    auto nodes = a.getStaleFileList();
+    EXPECT_EQ(2UL, nodes.size());
+    EXPECT_EQ(nodes[0], "a.out");
+    EXPECT_EQ(nodes[1], "Info.plist");
+  }
+
+  {
+    BuildValue a = BuildValue::makeStaleFileRemoval(ArrayRef<std::string>(files));
+    BuildValue b = BuildValue::fromData(a.toData());
+    auto nodes = b.getStaleFileList();
+    EXPECT_EQ(2UL, nodes.size());
+    EXPECT_EQ(nodes[0], "a.out");
+    EXPECT_EQ(nodes[1], "Info.plist");
+  }
+}
+
 }

@@ -36,6 +36,7 @@ StringRef BuildValue::stringForKind(BuildValue::Kind kind) {
     CASE(CancelledCommand);
     CASE(SkippedCommand);
     CASE(Target);
+    CASE(StaleFileRemoval);
 #undef CASE
   }
   return "<unknown>";

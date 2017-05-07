@@ -324,4 +324,87 @@ commands:
           }), delegate.getMessages());
 }
 
+// Tests the behaviour of StaleFileRemovalTool
+TEST(BuildSystemTaskTests, staleFileRemoval) {
+  TmpDir tempDir{ __FUNCTION__ };
+
+  SmallString<256> manifest{ tempDir.str() };
+  sys::path::append(manifest, "manifest.llbuild");
+  {
+    std::error_code ec;
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    assert(!ec);
+
+    os << R"END(
+client:
+  name: mock
+
+commands:
+    C.1:
+      tool: stale-file-removal
+      description: STALE-FILE-REMOVAL
+      expectedOutputs: ["a.out"]
+)END";
+  }
+
+  auto keyToBuild = BuildKey::makeCommand("C.1");
+  MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
+  BuildSystem system(delegate);
+
+  SmallString<256> builddb{ tempDir.str() };
+  sys::path::append(builddb, "build.db");
+  system.attachDB(builddb.c_str(), nullptr);
+
+  bool loadingResult = system.loadDescription(manifest);
+  ASSERT_TRUE(loadingResult);
+
+  auto result = system.build(keyToBuild);
+
+  ASSERT_TRUE(result.getValue().isStaleFileRemoval());
+  ASSERT_EQ(result.getValue().getStaleFileList().size(), 1UL);
+  ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "a.out") == 0);
+
+  ASSERT_EQ(std::vector<std::string>({
+    "commandPreparing(C.1)",
+    "commandStarted(C.1)",
+    "commandFinished(C.1)",
+  }), delegate.getMessages());
+
+  {
+    std::error_code ec;
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    assert(!ec);
+
+    os << R"END(
+client:
+  name: mock
+
+commands:
+  C.1:
+    tool: stale-file-removal
+    description: STALE-FILE-REMOVAL
+    expectedOutputs: ["b.out"]
+)END";
+  }
+
+  MockBuildSystemDelegate delegate2(/*trackAllMessages=*/true);
+  BuildSystem system2(delegate2);
+  system2.attachDB(builddb.c_str(), nullptr);
+  loadingResult = system2.loadDescription(manifest);
+  ASSERT_TRUE(loadingResult);
+  result = system2.build(keyToBuild);
+
+  ASSERT_TRUE(result.getValue().isStaleFileRemoval());
+  ASSERT_EQ(result.getValue().getStaleFileList().size(), 1UL);
+  ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "b.out") == 0);
+
+  ASSERT_EQ(std::vector<std::string>({
+    "commandPreparing(C.1)",
+    "commandStarted(C.1)",
+    // FIXME: Maybe it's worth creating a virtual FileSystem implementation and checking if `remove` has been called
+    "cannot remove stale file 'a.out': No such file or directory",
+    "commandFinished(C.1)",
+  }), delegate2.getMessages());
+}
+
 }

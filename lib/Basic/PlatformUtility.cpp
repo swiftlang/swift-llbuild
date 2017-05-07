@@ -88,6 +88,14 @@ int sys::read(int fileHandle, void *destinationBuffer,
 #endif
 }
 
+int sys::rmdir(const char *path) {
+#if defined(_WIN32)
+  return ::_rmdir(path);
+#else
+  return ::rmdir(path);
+#endif
+}
+
 int sys::stat(const char *fileName, StatStruct *buf) {
 #if defined(_WIN32)
   return ::_stat(fileName, buf);

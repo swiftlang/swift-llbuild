@@ -62,6 +62,30 @@ public:
     }
     return std::unique_ptr<llvm::MemoryBuffer>(result->release());
   }
+
+  virtual bool remove(const std::string& path) override {
+    // Assume `path` is a regular file.
+    if (sys::unlink(path.c_str()) == 0) {
+      return true;
+    }
+
+    // Error can't be that `path` is actually a directory.
+    if (errno != EPERM) {
+      return false;
+    }
+
+    // Check if `path` is a directory.
+    struct stat statbuf;
+    if (sys::stat(path.c_str(), &statbuf) != 0) {
+      return false;
+    }
+
+    if (S_ISDIR(statbuf.st_mode)) {
+      return sys::rmdir(path.c_str()) == 0;
+    }
+
+    return false;
+  }
   
   virtual FileInfo getFileInfo(const std::string& path) override {
     return FileInfo::getInfoForPath(path);
