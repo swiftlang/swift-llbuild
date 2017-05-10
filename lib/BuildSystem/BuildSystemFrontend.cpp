@@ -232,6 +232,15 @@ public:
 };
 
 struct BuildSystemFrontendDelegateImpl {
+
+  /// The status of delegate.
+  enum class Status {
+    Uninitialized = 0,
+    Initialized,
+    InitializationFailure,
+    Cancelled,
+  };
+
   llvm::SourceMgr& sourceMgr;
   const BuildSystemInvocation& invocation;
   
@@ -248,6 +257,28 @@ struct BuildSystemFrontendDelegateImpl {
                                   const BuildSystemInvocation& invocation)
       : sourceMgr(sourceMgr), invocation(invocation),
         executionQueueDelegate(*this) {}
+
+private:
+  /// The status of the delegate.
+  std::atomic<Status> status{Status::Uninitialized};
+
+public:
+
+  /// Set the status of delegate to the given value.
+  ///
+  /// It is not possible to update the status once status is set to initialization failure.
+  void setStatus(Status newStatus) {
+    // Disallow changing status if there was an initialization failure.
+    if (status == Status::InitializationFailure) {
+      return;
+    }
+    status = newStatus;
+  }
+
+  /// Returns the current status.
+  Status getStatus() {
+    return status;
+  }
 };
 
 bool BuildSystemFrontendExecutionQueueDelegate::showVerboseOutput() const {
@@ -378,6 +409,11 @@ BuildSystemFrontendDelegate::createExecutionQueue() {
 
 void BuildSystemFrontendDelegate::cancel() {
   auto delegateImpl = static_cast<BuildSystemFrontendDelegateImpl*>(impl);
+  assert(delegateImpl->getStatus() != BuildSystemFrontendDelegateImpl::Status::Uninitialized);
+
+  // Update the status to cancelled.
+  delegateImpl->setStatus(BuildSystemFrontendDelegateImpl::Status::Cancelled);
+
   auto system = delegateImpl->system;
   if (system) {
     system->cancel();
@@ -388,6 +424,12 @@ void BuildSystemFrontendDelegate::resetForBuild() {
   auto impl = static_cast<BuildSystemFrontendDelegateImpl*>(this->impl);
 
   impl->numFailedCommands = 0;
+  impl->numErrors = 0;
+
+  // Update status back to initialized on reset.
+  if (impl->getStatus() == BuildSystemFrontendDelegateImpl::Status::Cancelled) {
+      impl->setStatus(BuildSystemFrontendDelegateImpl::Status::Initialized);
+  }
 }
 
 void BuildSystemFrontendDelegate::hadCommandFailure() {
@@ -540,9 +582,28 @@ bool BuildSystemFrontend::initialize() {
 }
 
 bool BuildSystemFrontend::build(StringRef targetToBuild) {
+
+  auto delegateImpl =
+    static_cast<BuildSystemFrontendDelegateImpl*>(delegate.impl);
+
+  // We expect build to be called in these states only.
+  assert(delegateImpl->getStatus() == BuildSystemFrontendDelegateImpl::Status::Uninitialized
+    || delegateImpl->getStatus() == BuildSystemFrontendDelegateImpl::Status::Initialized);
+
+  // Set the delegate status to initialized.
+  delegateImpl->setStatus(BuildSystemFrontendDelegateImpl::Status::Initialized);
+
   // Initialize the build system, if necessary
   if (!buildSystem.hasValue()) {
-    if (!initialize())
+    if (!initialize()) {
+      // Set status to initialization failure. It is not possible to recover from this state.
+      delegateImpl->setStatus(BuildSystemFrontendDelegateImpl::Status::InitializationFailure);
+      return false;
+    }
+  }
+
+  // If delegate was told to cancel while we were initializing, abort now.
+  if (delegateImpl->getStatus() == BuildSystemFrontendDelegateImpl::Status::Cancelled) {
       return false;
   }
 
