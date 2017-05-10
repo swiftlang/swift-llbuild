@@ -368,7 +368,7 @@ BuildSystemFrontendDelegate::createExecutionQueue() {
     error("<unknown>", {}, "unable to detect number of CPUs");
     numLanes = 1;
   } else {
-    numLanes = numCPUs + 2;
+    numLanes = numCPUs;
   }
     
   return std::unique_ptr<BuildExecutionQueue>(
