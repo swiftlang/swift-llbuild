@@ -23,7 +23,9 @@
         </div>
         <div id="navbar" class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
-            <li><a href="{{ url_for('main.config') }}"><i>Database:</i> {{ db_path }}</a></li>
+            {% if db_path %}
+            <li><a href="{{ url_for('main.db_config') }}"><i>Database:</i> {{ db_path }}</a></li>
+            {% endif %}
           </ul>
         </div><!--/.nav-collapse -->
       </div>

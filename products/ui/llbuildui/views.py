@@ -10,10 +10,14 @@ main = flask.Blueprint('main', __name__)
 
 @main.route('/')
 def index():
+    return flask.render_template("index.html")
+
+@main.route('/db')
+def db_root():
     # If no database has been selected, prompt for one.
     db_path = session.get("db")
     if db_path is None:
-        return redirect(url_for('main.config'))
+        return redirect(url_for('main.db_config'))
     
     s = current_app.database_session
 
@@ -25,18 +29,18 @@ def index():
                       s.query(model.RuleDependency.key_id)))
 
     return flask.render_template(
-        "index.html",
+        "db_root.html",
         db_path=db_path, roots=roots_query.all())
 
-@main.route('/config', methods=['GET', 'POST'])
-def config():
+@main.route('/db/config', methods=['GET', 'POST'])
+def db_config():
     if request.method == 'POST':
         session['db'] = request.form['db_path']
-        return redirect(url_for('main.index'))
-    return flask.render_template("config.html", db_path=session.get("db"))
+        return redirect(url_for('main.db_root'))
+    return flask.render_template("db_config.html", db_path=session.get("db"))
 
-@main.route('/diagnostics', methods=['GET', 'POST'])
-def diagnostics():
+@main.route('/db/diagnostics', methods=['GET', 'POST'])
+def db_diagnostics():
     s = current_app.database_session
 
     # Find all the rules.
@@ -63,7 +67,7 @@ def diagnostics():
         cycle = cycle[0].items + [cycle[1]]
         cycle = [key_names[id] for id in cycle]
     
-    return flask.render_template("diagnostics.html",
+    return flask.render_template("db_diagnostics.html",
                                  db_path=session.get("db"),
                                  session=s, model=model, sql=sqlalchemy.sql,
                                  cycle=cycle)
@@ -71,8 +75,8 @@ def diagnostics():
 
 # MARK: Model Object Views
 
-@main.route('/rule_result/<path:name>')
-def rule_result(name):
+@main.route('/db/rule_result/<path:name>')
+def db_rule_result(name):
     # Get the result.
     s = current_app.database_session
     rule_result = s.query(model.RuleResult).join(model.KeyName).filter(
@@ -89,7 +93,7 @@ def rule_result(name):
     dependents_results = sorted(dependents_results, key=lambda d: d.key.name)
     
     return flask.render_template(
-        "rule_result.html",
+        "db_rule_result.html",
         db_path=session.get("db"), rule_result=rule_result,
         dependency_results=dependency_results,
         dependents_results=dependents_results)

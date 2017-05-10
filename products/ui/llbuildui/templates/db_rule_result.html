@@ -5,7 +5,7 @@
 <h4>Dependencies</h4>
 
 {% for dependency in dependency_results %}
-<a href="{{ url_for('main.rule_result', name=dependency.key.name) }}">
+<a href="{{ url_for('main.db_rule_result', name=dependency.key.name) }}">
   {{ dependency.key.name }} (id: {{ dependency.id }})
 </a><br>
 {% endfor %}
@@ -13,7 +13,7 @@
 <h4>Dependents</h4>
 
 {% for dependent in dependents_results %}
-<a href="{{ url_for('main.rule_result', name=dependent.key.name) }}">
+<a href="{{ url_for('main.db_rule_result', name=dependent.key.name) }}">
   {{ dependent.key.name }} (id: {{ dependent.id }})
 </a><br>
 {% endfor %}
