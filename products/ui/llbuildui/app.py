@@ -3,6 +3,7 @@ import os
 import flask
 
 import database
+import trace
 import views
 
 class LLBuildApp(flask.Flask):
@@ -19,6 +20,14 @@ class LLBuildApp(flask.Flask):
                 db.close()
 
         self.register_blueprint(views.main)
+
+    @property
+    def trace(self):
+        d = flask.g.get('_trace', None)
+        if d is None:
+            result = trace.Trace.frompath(flask.session["trace"])
+            d = flask.g._trace = result
+        return d
 
     @property
     def database_session(self):

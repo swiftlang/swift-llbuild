@@ -26,6 +26,9 @@
             {% if db_path %}
             <li><a href="{{ url_for('main.db_config') }}"><i>Database:</i> {{ db_path }}</a></li>
             {% endif %}
+            {% if trace_path %}
+            <li><a href="{{ url_for('main.trace_config') }}"><i>Trace:</i> {{ trace_path }}</a></li>
+            {% endif %}
           </ul>
         </div><!--/.nav-collapse -->
       </div>

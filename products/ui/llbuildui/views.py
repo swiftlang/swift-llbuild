@@ -12,6 +12,29 @@ main = flask.Blueprint('main', __name__)
 def index():
     return flask.render_template("index.html")
 
+# MARK: Trace Viewer
+
+@main.route('/trace')
+def trace_root():
+    # If no database has been selected, prompt for one.
+    trace_path = session.get("trace")
+    if trace_path is None:
+        return redirect(url_for('main.trace_config'))
+    
+    return flask.render_template(
+        "trace_root.html", trace=current_app.trace,
+        trace_path=session.get("trace"))
+
+@main.route('/trace/config', methods=['GET', 'POST'])
+def trace_config():
+    if request.method == 'POST':
+        session['trace'] = request.form['trace_path']
+        return redirect(url_for('main.trace_root'))
+    return flask.render_template("trace_config.html",
+                                 trace_path=session.get("trace"))
+
+# MARK: Database Browser
+
 @main.route('/db')
 def db_root():
     # If no database has been selected, prompt for one.

@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block title %}Build Trace{% endblock %}
+{% block body %}
+
+<p>
+  Events:<br>
+  {% for event in trace.events%}
+  {% if event.isReadiedTask %}
+  {{event.task.rule.key}}<br><br>
+  {% endif %}
+  {% endfor %}
+</p>
+
+{% endblock %}
