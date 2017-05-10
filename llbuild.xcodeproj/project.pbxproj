@@ -843,7 +843,7 @@
 		E1A224B619F998D40059043E /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1A224B919F998D40059043E /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1A224BA19F998D40059043E /* LexerTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LexerTest.cpp; sourceTree = "<group>"; };
-		E1A224C319F999B80059043E /* llbuild Tool */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "llbuild Tool"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E1A224C319F999B80059043E /* llbuild */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = llbuild; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1A224DD19F99B0E0059043E /* libgtest.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libgtest.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1A224E619F99C580059043E /* libgtest_main.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libgtest_main.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1A224EF19F99D880059043E /* CoreTests */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = CoreTests; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1299,7 +1299,7 @@
 				E1A2242E19F997050059043E /* libllbuildCommands.a */,
 				E1A2243619F9970D0059043E /* libllbuildNinja.a */,
 				E1A2243E19F997150059043E /* libllbuildCore.a */,
-				E1A224C319F999B80059043E /* llbuild Tool */,
+				E1A224C319F999B80059043E /* llbuild */,
 				E1A224DD19F99B0E0059043E /* libgtest.a */,
 				E1A224E619F99C580059043E /* libgtest_main.a */,
 				E1A224EF19F99D880059043E /* CoreTests */,
@@ -2168,7 +2168,7 @@
 			);
 			name = "llbuild Tool";
 			productName = llbuild;
-			productReference = E1A224C319F999B80059043E /* llbuild Tool */;
+			productReference = E1A224C319F999B80059043E /* llbuild */;
 			productType = "com.apple.product-type.tool";
 		};
 		E1A224DC19F99B0E0059043E /* gtest */ = {
@@ -3473,6 +3473,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/bin";
+				PRODUCT_NAME = llbuild;
 				SKIP_INSTALL = NO;
 			};
 			name = Debug;
@@ -3481,6 +3482,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/bin";
+				PRODUCT_NAME = llbuild;
 				SKIP_INSTALL = NO;
 			};
 			name = Release;
