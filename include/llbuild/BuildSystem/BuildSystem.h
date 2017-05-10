@@ -233,6 +233,9 @@ public:
   /// \returns The result of computing the value, or nil if the build failed.
   llvm::Optional<BuildValue> build(BuildKey target);
 
+  /// Reset mutable build state before a new build operation.
+  void resetForBuild();
+
   /// Cancel the current build.
   void cancel();
 

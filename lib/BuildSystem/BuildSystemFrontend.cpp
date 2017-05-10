@@ -430,6 +430,12 @@ void BuildSystemFrontendDelegate::resetForBuild() {
   if (impl->getStatus() == BuildSystemFrontendDelegateImpl::Status::Cancelled) {
       impl->setStatus(BuildSystemFrontendDelegateImpl::Status::Initialized);
   }
+
+  // Reset the build system.
+  auto system = impl->system;
+  if (system) {
+    system->resetForBuild();
+  }
 }
 
 void BuildSystemFrontendDelegate::hadCommandFailure() {

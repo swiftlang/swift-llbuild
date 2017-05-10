@@ -45,6 +45,7 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include <memory>
+#include <mutex>
 
 #include <unistd.h>
 
@@ -158,6 +159,9 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
 
   /// The build engine.
   BuildEngine buildEngine;
+
+  /// Mutex for access to execution queue.
+  std::mutex executionQueueMutex;
 
   /// The execution queue reference; this is only valid while a build is
   /// actually in progress.
@@ -302,10 +306,19 @@ public:
     buildWasAborted = value;
   }
 
+  void resetForBuild() {
+    std::lock_guard<std::mutex> guard(executionQueueMutex);
+    isCancelled_ = false;
+  }
+
   /// Cancel the running build.
   void cancel() {
+    std::lock_guard<std::mutex> guard(executionQueueMutex);
+
     isCancelled_ = true;
-    getExecutionQueue().cancelAllJobs();
+    // Cancel jobs if we actually have a queue.
+    if (executionQueue.get() != nullptr)
+      getExecutionQueue().cancelAllJobs();
   }
 
   /// Check if the build has been cancelled.
@@ -1203,8 +1216,18 @@ BuildSystemImpl::lookupNode(StringRef name, bool isImplicit) {
 }
 
 llvm::Optional<BuildValue> BuildSystemImpl::build(BuildKey key) {
-  // Create the execution queue.
-  executionQueue = delegate.createExecutionQueue();
+
+  // Aquire lock and create execution queue.
+  {
+    std::lock_guard<std::mutex> guard(executionQueueMutex);
+
+    // If we were cancelled, return.
+    if (isCancelled()) {
+      return None;
+    }
+
+    executionQueue = delegate.createExecutionQueue();
+  }
 
   // Build the target.
   buildWasAborted = false;
@@ -2390,4 +2413,8 @@ void BuildSystem::cancel() {
   if (impl) {
     static_cast<BuildSystemImpl*>(impl)->cancel();
   }
+}
+
+void BuildSystem::resetForBuild() {
+  static_cast<BuildSystemImpl*>(impl)->resetForBuild();
 }
