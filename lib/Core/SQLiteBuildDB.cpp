@@ -193,8 +193,21 @@ public:
         // Create an index to be used for efficiently looking up rule
         // information from a key.
         result = sqlite3_exec(
-               db, "CREATE UNIQUE INDEX rule_results_idx ON rule_results (key_id);",
-          nullptr, nullptr, &cError);
+            db, "CREATE UNIQUE INDEX rule_results_idx ON rule_results (key_id);",
+            nullptr, nullptr, &cError);
+      }
+
+      // Create a covering index for dependency queries.
+      //
+      // This is rather inefficient, because the rule_dependencies table is
+      // almost covering, but without this the dependency query is considerably
+      // more expensive -- this index alone is good for almost 10% on a null
+      // build of a large graph.
+      if (result == SQLITE_OK) {
+        result = sqlite3_exec(
+            db, ("CREATE UNIQUE INDEX rule_dependencies_idx "
+                 "ON rule_dependencies (rule_id, ordinal, key_id);"),
+            nullptr, nullptr, &cError);
       }
 
       // Sync changes to disk.
