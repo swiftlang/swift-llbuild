@@ -67,6 +67,9 @@ class BuildSystemImpl;
 class BuildSystemFileDelegate : public BuildFileDelegate {
   BuildSystemImpl& system;
 
+  /// FIXME: It would be nice to have a StringSet.
+  llvm::StringMap<bool> internedStrings;
+
 public:
   BuildSystemFileDelegate(BuildSystemImpl& system)
       : BuildFileDelegate(), system(system) {}
@@ -75,6 +78,11 @@ public:
 
   /// @name Delegate Implementation
   /// @{
+
+  virtual StringRef getInternedString(StringRef value) override {
+    auto entry = internedStrings.insert(std::make_pair(value, true));
+    return entry.first->getKey();
+  }
 
   virtual FileSystem& getFileSystem() override {
     return getSystemDelegate().getFileSystem();
@@ -1309,10 +1317,10 @@ class ShellCommand : public ExternalCommand {
   };
   
   /// The command line arguments.
-  std::vector<std::string> args;
+  std::vector<StringRef> args;
 
   /// The environment to use. If empty, the environment will be inherited.
-  llvm::StringMap<std::string> env;
+  SmallVector<std::pair<StringRef, StringRef>, 1> env;
   
   /// The path to the dependency output file, if used.
   SmallVector<std::string, 1> depsPaths{};
@@ -1338,8 +1346,8 @@ class ShellCommand : public ExternalCommand {
       code = hash_combine(code, arg);
     }
     for (const auto& entry: env) {
-      code = hash_combine(code, entry.getKey());
-      code = hash_combine(code, entry.getValue());
+      code = hash_combine(code, entry.first);
+      code = hash_combine(code, entry.second);
     }
     for (const auto& path: depsPaths) {
       code = hash_combine(code, path);
@@ -1508,9 +1516,9 @@ public:
       // When provided as a scalar string, we default to executing using the
       // shell.
       args.clear();
-      args.push_back("/bin/sh");
-      args.push_back("-c");
-      args.push_back(value);
+      args.push_back(ctx.getDelegate().getInternedString("/bin/sh"));
+      args.push_back(ctx.getDelegate().getInternedString("-c"));
+      args.push_back(ctx.getDelegate().getInternedString(value));
     } else if (name == "deps") {
       depsPaths.clear();
       depsPaths.emplace_back(value);
@@ -1546,8 +1554,12 @@ public:
         ctx.error("invalid arguments for command '" + getName() + "'");
         return false;
       }
-      
-      args = std::vector<std::string>(values.begin(), values.end());
+
+      args.clear();
+      args.reserve(values.size());
+      for (auto arg: values) {
+        args.emplace_back(ctx.getDelegate().getInternedString(arg));
+      }
     } else if (name == "deps") {
       depsPaths.clear();
       depsPaths.insert(depsPaths.begin(), values.begin(), values.end());
@@ -1563,8 +1575,12 @@ public:
       ArrayRef<std::pair<StringRef, StringRef>> values) override {
     if (name == "env") {
       env.clear();
+      env.reserve(values.size());
       for (const auto& entry: values) {
-        env[entry.first] = entry.second;
+        env.emplace_back(
+            std::make_pair(
+                ctx.getDelegate().getInternedString(entry.first),
+                ctx.getDelegate().getInternedString(entry.second)));
       }
     } else {
       return ExternalCommand::configureAttribute(ctx, name, values);
@@ -1576,14 +1592,10 @@ public:
   virtual CommandResult executeExternalCommand(BuildSystemCommandInterface& bsci,
                                                Task* task,
                                                QueueJobContext* context) override {
-    std::vector<std::pair<StringRef, StringRef>> environment;
-    for (const auto& it: env) {
-      environment.push_back({ it.getKey(), it.getValue() });
-    }
-    
     // Execute the command.
-    auto result = bsci.getExecutionQueue().executeProcess(context, std::vector<StringRef>(args.begin(), args.end()),
-                                                          environment, /*inheritEnvironment=*/inheritEnv);
+    auto result = bsci.getExecutionQueue().executeProcess(
+        context, args,
+        env, /*inheritEnvironment=*/inheritEnv);
 
     if (result != CommandResult::Succeeded) {
       // If the command failed, there is no need to gather dependencies.
@@ -1636,7 +1648,7 @@ public:
 
 class ClangShellCommand : public ExternalCommand {
   /// The compiler command to invoke.
-  std::vector<std::string> args;
+  std::vector<StringRef> args;
   
   /// The path to the dependency output file, if used.
   std::string depsPath;
@@ -1723,9 +1735,9 @@ public:
       // When provided as a scalar string, we default to executing using the
       // shell.
       args.clear();
-      args.push_back("/bin/sh");
-      args.push_back("-c");
-      args.push_back(value);
+      args.push_back(ctx.getDelegate().getInternedString("/bin/sh"));
+      args.push_back(ctx.getDelegate().getInternedString("-c"));
+      args.push_back(ctx.getDelegate().getInternedString(value));
     } else if (name == "deps") {
       depsPath = value;
     } else {
@@ -1737,7 +1749,11 @@ public:
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   ArrayRef<StringRef> values) override {
     if (name == "args") {
-      args = std::vector<std::string>(values.begin(), values.end());
+      args.clear();
+      args.reserve(values.size());
+      for (auto arg: values) {
+        args.emplace_back(ctx.getDelegate().getInternedString(arg));
+      }
     } else {
         return ExternalCommand::configureAttribute(ctx, name, values);
     }
@@ -1753,13 +1769,8 @@ public:
   virtual CommandResult executeExternalCommand(BuildSystemCommandInterface& bsci,
                                                Task* task,
                                                QueueJobContext* context) override {
-    std::vector<StringRef> commandLine;
-    for (const auto& arg: args) {
-      commandLine.push_back(arg);
-    }
-
     // Execute the command.
-    auto result = bsci.getExecutionQueue().executeProcess(context, commandLine);
+    auto result = bsci.getExecutionQueue().executeProcess(context, args);
 
     if (result != CommandResult::Succeeded) {
       // If the command failed, there is no need to gather dependencies.
@@ -2165,7 +2176,8 @@ class ArchiveShellCommand : public ExternalCommand {
 
     // Create archive
     auto args = getArgs();
-    return bsci.getExecutionQueue().executeProcess(context, std::vector<StringRef>(args.begin(), args.end()));
+    return bsci.getExecutionQueue().executeProcess(
+        context, std::vector<StringRef>(args.begin(), args.end()));
   }
 
   virtual void getShortDescription(SmallVectorImpl<char> &result) override {

@@ -23,6 +23,7 @@
 
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/StringMap.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -47,6 +48,7 @@ class ParseBuildFileDelegate : public BuildFileDelegate {
   bool showOutput;
   StringRef bufferBeingParsed;
   std::unique_ptr<basic::FileSystem> fileSystem;
+  llvm::StringMap<bool> internedStrings;
   
 public:
   ParseBuildFileDelegate(bool showOutput)
@@ -56,6 +58,11 @@ public:
 
   virtual bool shouldShowOutput() { return showOutput; }
 
+  virtual StringRef getInternedString(StringRef value) override {
+    auto entry = internedStrings.insert(std::make_pair(value, true));
+    return entry.first->getKey();
+  }
+  
   virtual basic::FileSystem& getFileSystem() override { return *fileSystem; }
   
   virtual void setFileContentsBeingParsed(StringRef buffer) override;
