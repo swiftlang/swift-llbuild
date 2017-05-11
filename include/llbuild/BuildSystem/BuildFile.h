@@ -65,6 +65,8 @@ struct ConfigureContext {
   BuildFileToken at;
 
 public:
+  BuildFileDelegate& getDelegate() const { return delegate; }
+
   void error(const Twine& message) const;
 };
 
@@ -72,6 +74,9 @@ class BuildFileDelegate {
 public:
   virtual ~BuildFileDelegate();
 
+  /// Get an interned string.
+  virtual StringRef getInternedString(StringRef value) = 0;
+  
   /// Get the file system to use for access.
   virtual basic::FileSystem& getFileSystem() = 0;
   
