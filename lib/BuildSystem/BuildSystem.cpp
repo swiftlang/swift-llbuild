@@ -146,7 +146,7 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
   /// * 6: Added DirectoryContents to BuildKey
   /// * 5: Switch BuildValue to be BinaryCoding based
   /// * 4: Pre-history
-  static const uint32_t internalSchemaVersion = 6;
+  static const uint32_t internalSchemaVersion = 0;
   
   BuildSystem& buildSystem;
 
