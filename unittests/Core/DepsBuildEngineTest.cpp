@@ -249,9 +249,18 @@ TEST(DepsBuildEngineTest, KeysWithNull) {
     fprintf(stderr, "iteration: %d\n", iteration);
     
     core::BuildEngine engine(delegate);
-    // FIXME: Don't put database in temp.
-    std::string error;
-    engine.attachDB(createSQLiteBuildDB(dbPath, 1, &error), &error);
+
+    // Attach the database.
+    {
+      std::string error;
+      auto db = createSQLiteBuildDB(dbPath, 1, &error);
+      EXPECT_EQ(bool(db), true);
+      if (!db) {
+        fprintf(stderr, "unable to open database: %s\n", error.c_str());
+        return;
+      }
+      engine.attachDB(std::move(db), &error);
+    }
 
     std::string inputA{"i\0A", 3};
     std::string inputB{"i\0B", 3};
