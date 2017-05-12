@@ -20,7 +20,6 @@
 #include <utility>
 #include <vector>
 
-#include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
 
 namespace llbuild {
@@ -28,7 +27,6 @@ namespace core {
 
 // FIXME: Need to abstract KeyType;
 typedef std::string KeyType;
-typedef uint64_t KeyID;
 typedef std::vector<uint8_t> ValueType;
 
 class BuildDB;
@@ -63,7 +61,7 @@ struct Result {
   //
   // FIXME: At some point, figure out the optimal representation for this field,
   // which is likely to be a lot of the resident memory size.
-  std::vector<KeyID> dependencies;
+  std::vector<KeyType> dependencies;
 };
 
 /// A task object represents an abstract in-progress computation in the build
@@ -89,6 +87,8 @@ struct Result {
 /// complete its computation and provide the output. The Task is responsible for
 /// providing the engine with the computed value when ready using \see
 /// BuildEngine::taskIsComplete().
+//
+// FIXME: Define parallel execution semantics.
 class Task {
 public:
   Task() {}

@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -16,12 +16,10 @@
 #include "llbuild/Core/BuildEngine.h"
 
 #include "llvm/ADT/STLExtras.h"
-#include "llvm/ADT/StringMap.h"
 
 #include <cassert>
 #include <cerrno>
 #include <cstring>
-#include <mutex>
 #include <sstream>
 
 #include <sqlite3.h>
@@ -41,10 +39,6 @@ class SQLiteBuildDB : public BuildDB {
   static const int currentSchemaVersion = 6;
 
   sqlite3 *db = nullptr;
-
-  /// The mutex that protects the key ID table (which must support concurrent
-  /// access).
-  std::mutex keyIDMutex;
 
   std::string getCurrentErrorMessage() {
     int err_code = sqlite3_errcode(db);
@@ -235,11 +229,6 @@ public:
       db, findKeyIDForKeyStmtSQL,
       -1, &findKeyIDForKeyStmt, nullptr);
     assert(result == SQLITE_OK);
-
-    result = sqlite3_prepare_v2(
-      db, findKeyNameForKeyIDStmtSQL,
-      -1, &findKeyNameForKeyIDStmt, nullptr);
-    assert(result == SQLITE_OK);
     
     result = sqlite3_prepare_v2(
       db, findIDForKeyInRuleResultsStmtSQL,
@@ -294,7 +283,6 @@ public:
 
     // Destroy prepared statements.
     sqlite3_finalize(findKeyIDForKeyStmt);
-    sqlite3_finalize(findKeyNameForKeyIDStmt);
     sqlite3_finalize(findRuleDependenciesStmt);
     sqlite3_finalize(findRuleResultStmt);
     sqlite3_finalize(deleteFromKeysStmt);
@@ -359,23 +347,22 @@ public:
     return true;
   }
 
-  static constexpr const char *deleteFromKeysStmtSQL = (
-      "DELETE FROM key_names WHERE key == ?;");
+  static constexpr const char *deleteFromKeysStmtSQL =
+  "DELETE FROM key_names WHERE key == ?;";
   sqlite3_stmt* deleteFromKeysStmt = nullptr;
   
-  static constexpr const char *findRuleResultStmtSQL = (
-      "SELECT id, value, built_at, computed_at FROM rule_results "
-      "WHERE key_id == ?;");
+  static constexpr const char *findRuleResultStmtSQL =
+  "SELECT rule_results.id, value, built_at, computed_at FROM rule_results "
+  "INNER JOIN key_names ON key_names.id = rule_results.key_id WHERE key == ?;";
   sqlite3_stmt* findRuleResultStmt = nullptr;
 
-  static constexpr const char *findRuleDependenciesStmtSQL = (
-      "SELECT key_id FROM rule_dependencies WHERE rule_id == ?"
-      "ORDER BY rule_dependencies.ordinal;");
+  static constexpr const char *findRuleDependenciesStmtSQL =
+  "SELECT key FROM key_names INNER JOIN rule_dependencies "
+  "ON key_names.id = rule_dependencies.key_id WHERE rule_id == ?"
+  "ORDER BY rule_dependencies.ordinal;";
   sqlite3_stmt* findRuleDependenciesStmt = nullptr;
 
-  virtual bool lookupRuleResult(KeyID keyID, const Rule& rule,
-                                Result* result_out,
-                                std::string *error_out) override {
+  virtual bool lookupRuleResult(const Rule& rule, Result* result_out, std::string *error_out) override {
     assert(result_out->builtAt == 0);
 
     // Fetch the basic rule information.
@@ -385,7 +372,9 @@ public:
     assert(result == SQLITE_OK);
     result = sqlite3_clear_bindings(findRuleResultStmt);
     assert(result == SQLITE_OK);
-    result = sqlite3_bind_int64(findRuleResultStmt, /*index=*/1, keyID);
+    result = sqlite3_bind_text(findRuleResultStmt, /*index=*/1,
+                               rule.key.data(), rule.key.size(),
+                               SQLITE_STATIC);
     assert(result == SQLITE_OK);
 
     // If the rule wasn't found, we are done.
@@ -428,8 +417,9 @@ public:
         return false;
       }
       assert(sqlite3_column_count(findRuleDependenciesStmt) == 1);
-      auto dependencyID = sqlite3_column_int64(findRuleDependenciesStmt, 0);
-      result_out->dependencies.push_back(dependencyID);
+      result_out->dependencies.push_back(std::string(
+                (const char*)sqlite3_column_text(findRuleDependenciesStmt, 0),
+                sqlite3_column_bytes(findRuleDependenciesStmt, 0)));
     }
 
     return true;
@@ -462,15 +452,10 @@ public:
     "DELETE FROM rule_dependencies WHERE rule_id == ?;";
   sqlite3_stmt* deleteFromRuleDependenciesStmt = nullptr;
 
-  static constexpr const char *findKeyIDForKeyStmtSQL = (
-      "SELECT id FROM key_names "
-      "WHERE key == ? LIMIT 1;");
+  static constexpr const char *findKeyIDForKeyStmtSQL =
+  "SELECT id FROM key_names "
+  "WHERE key == ? LIMIT 1;";
   sqlite3_stmt* findKeyIDForKeyStmt = nullptr;
-
-  static constexpr const char *findKeyNameForKeyIDStmtSQL = (
-      "SELECT key FROM key_names "
-      "WHERE id == ? LIMIT 1;");
-  sqlite3_stmt* findKeyNameForKeyIDStmt = nullptr;
 
   static constexpr const char *insertIntoKeysStmtSQL =
   "INSERT OR IGNORE INTO key_names(key) VALUES (?);";
@@ -479,8 +464,7 @@ public:
   /// Inserts a key if not present and always returns keyID
   /// Sometimes key will be inserted for a lookup operation
   /// but that is okay because it'll be added at somepoint anyway
-  virtual KeyID getKeyID(const KeyType& key) override {
-    std::lock_guard<std::mutex> guard(keyIDMutex);
+  uint64_t getOrInsertKey(const KeyType& key, std::string *error_out) {
     int result;
 
     // Seach for the key.
@@ -511,42 +495,23 @@ public:
     assert(result == SQLITE_OK);
     result = sqlite3_step(insertIntoKeysStmt);
     if (result != SQLITE_DONE) {
-      // FIXME: We need to support error reporting here, but the engine cannot
-      // handle it currently.
-      abort();
+      *error_out = getCurrentErrorMessage();
+      return UINT64_MAX;
     }
 
     return sqlite3_last_insert_rowid(db);
   }
-
-  virtual KeyType getKeyForID(KeyID keyID) override {
-    std::lock_guard<std::mutex> guard(keyIDMutex);
-    int result;
-
-    // Seach for the key.
-    result = sqlite3_reset(findKeyNameForKeyIDStmt);
-    assert(result == SQLITE_OK);
-    result = sqlite3_clear_bindings(findKeyNameForKeyIDStmt);
-    assert(result == SQLITE_OK);
-    result = sqlite3_bind_int64(findKeyNameForKeyIDStmt, /*index=*/1, keyID);
-    assert(result == SQLITE_OK);
-
-    result = sqlite3_step(findKeyNameForKeyIDStmt);
-    assert(result == SQLITE_ROW);
-    assert(sqlite3_column_count(findKeyNameForKeyIDStmt) == 1);
-
-    // Found a keyID, return.
-    auto size = sqlite3_column_bytes(findKeyNameForKeyIDStmt, 0);
-    auto text = (const char*) sqlite3_column_text(findKeyNameForKeyIDStmt, 0);
-    return KeyType(text, size);
-  }
-
-  virtual bool setRuleResult(KeyID keyID,
-                             const Rule& rule,
+  
+  virtual bool setRuleResult(const Rule& rule,
                              const Result& ruleResult,
                              std::string *error_out) override {
     int result;
     uint64_t ruleID = 0;
+
+    uint64_t keyID = getOrInsertKey(rule.key, error_out);
+    if (keyID == UINT64_MAX) {
+      return false;
+    }
 
     // Find the existing rule id, if present.
     //
@@ -633,7 +598,7 @@ public:
 
     // Insert all the dependencies.
     for (unsigned i = 0; i != ruleResult.dependencies.size(); ++i) {
-      KeyID dependencyKeyID = ruleResult.dependencies[i];
+      const auto& dependency = ruleResult.dependencies[i];
 
       // Reset the insert statement.
       result = sqlite3_reset(insertIntoRuleDependenciesStmt);
@@ -647,8 +612,12 @@ public:
       assert(result == SQLITE_OK);
 
       // Bind the dependency key ID.
+      uint64_t dependencyKeyID = getOrInsertKey(dependency, error_out);
+      if (dependencyKeyID == UINT64_MAX) {
+        return false;
+      }
       result = sqlite3_bind_int64(insertIntoRuleDependenciesStmt, /*index=*/2,
-                                  dependencyKeyID);
+                                 dependencyKeyID);
       assert(result == SQLITE_OK);
 
       // Bind the index of the dependency.
