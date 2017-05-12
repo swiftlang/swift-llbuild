@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -15,6 +15,7 @@
 #include "llbuild/Core/BuildDB.h"
 
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/StringMap.h"
 
 #include "BuildEngineTrace.h"
 
@@ -54,6 +55,12 @@ class BuildEngineImpl {
 
   BuildEngineDelegate& delegate;
 
+  /// The key table, used when there is no database.
+  llvm::StringMap<bool> keyTable;
+
+  /// The mutex that protects the key table.
+  std::mutex keyTableMutex;
+  
   /// The build database, if attached.
   std::unique_ptr<BuildDB> db;
 
@@ -127,9 +134,14 @@ class BuildEngineImpl {
       Complete
     };
 
-    RuleInfo(Rule&& rule) : rule(rule) {}
+    RuleInfo(KeyID keyID, Rule&& rule) : keyID(keyID), rule(rule) {}
 
+    /// The ID for the rule key.
+    KeyID keyID;
+
+    /// The rule this information describes.
     Rule rule;
+    
     /// The state dependent record for in-progress information.
     union {
       RuleScanRecord* pendingScanRecord;
@@ -214,8 +226,9 @@ class BuildEngineImpl {
   // NOTE: We currently rely on the unordered_map behavior that ensures that
   // references to elements are not invalidated by insertion. We will need to
   // move to an alternate allocation strategy if we switch to DenseMap style
-  // table.
-  std::unordered_map<KeyType, RuleInfo> ruleInfos;
+  // table. This is probably a good idea in any case, because we would benefit
+  // from pool allocating RuleInfo instances.
+  std::unordered_map<KeyID, RuleInfo> ruleInfos;
 
   /// Information tracked for executing tasks.
   //
@@ -244,7 +257,7 @@ class BuildEngineImpl {
     /// provided.
     unsigned waitCount = 0;
     /// The list of discovered dependencies found during execution of the task.
-    std::vector<KeyType> discoveredDependencies;
+    std::vector<KeyID> discoveredDependencies;
 
 #ifndef NDEBUG
     void dump() const {
@@ -503,8 +516,8 @@ private:
     do {
       // Look up the input rule info, if not yet cached.
       if (!request.inputRuleInfo) {
-        const auto& inputKey = ruleInfo.result.dependencies[request.inputIndex];
-        request.inputRuleInfo = &getRuleInfoForKey(inputKey);
+        const auto& inputID = ruleInfo.result.dependencies[request.inputIndex];
+        request.inputRuleInfo = &getRuleInfoForKey(inputID);
       }
       auto& inputRuleInfo = *request.inputRuleInfo;
 
@@ -716,7 +729,7 @@ private:
         // * Record at the time it is popped off the input request queue.
         // * Record at the time the input is supplied (here).
         request.taskInfo->forRuleInfo->result.dependencies.push_back(
-          request.inputRuleInfo->rule.key);
+            request.inputRuleInfo->keyID);
 
         // Provide the requesting task with the input.
         //
@@ -811,14 +824,15 @@ private:
         // approach for discovered dependencies instead of just providing
         // support for taskNeedsInput() even after the task has started
         // computing and from parallel contexts.
-        for (const auto& inputKey: taskInfo->discoveredDependencies) {
-          inputRequests.push_back({ nullptr, &getRuleInfoForKey(inputKey) });
+        for (KeyID inputID: taskInfo->discoveredDependencies) {
+          inputRequests.push_back({ nullptr, &getRuleInfoForKey(inputID) });
         }
 
         // Update the database record, if attached.
         if (db) {
           std::string error;
-          bool result = db->setRuleResult(ruleInfo->rule, ruleInfo->result, &error);
+          bool result = db->setRuleResult(
+              ruleInfo->keyID, ruleInfo->rule, ruleInfo->result, &error);
           if (!result) {
             delegate.error(error);
             completeRemainingTasks();
@@ -1060,14 +1074,50 @@ public:
     return currentTimestamp;
   }
 
+  KeyID getKeyID(const KeyType& key) {
+    // Delegate if we have a database.
+    if (db) {
+      return db->getKeyID(key);
+    }
+
+    // Otherwise use our builtin key table.
+    {
+      std::lock_guard<std::mutex> guard(keyTableMutex);
+      auto it = keyTable.insert(std::make_pair(key, false)).first;
+      return (KeyID)(uintptr_t)it->getKey().data();
+    }
+  }
+
   RuleInfo& getRuleInfoForKey(const KeyType& key) {
+    auto keyID = getKeyID(key);
+    
     // Check if we have already found the rule.
-    auto it = ruleInfos.find(key);
+    auto it = ruleInfos.find(keyID);
     if (it != ruleInfos.end())
       return it->second;
 
     // Otherwise, request it from the delegate and add it.
-    return addRule(delegate.lookupRule(key));
+    return addRule(keyID, delegate.lookupRule(key));
+  }
+
+  RuleInfo& getRuleInfoForKey(KeyID keyID) {
+    // Check if we have already found the rule.
+    auto it = ruleInfos.find(keyID);
+    if (it != ruleInfos.end())
+      return it->second;
+
+    // Otherwise, we need to resolve the full key so we can request it from the
+    // delegate.
+    KeyType key;
+    if (db) {
+      key = db->getKeyForID(keyID);
+    } else {
+      // Note that we don't need to lock `keyTable` here because the key entries
+      // themselves don't change once created.
+      key = llvm::StringMapEntry<bool>::GetStringMapEntryFromKeyData(
+          (const char*)(uintptr_t)keyID).getKey();
+    }
+    return addRule(keyID, delegate.lookupRule(key));
   }
 
   TaskInfo* getTaskInfo(Task* task) {
@@ -1080,7 +1130,11 @@ public:
   /// @{
 
   RuleInfo& addRule(Rule&& rule) {
-    auto result = ruleInfos.emplace(rule.key, RuleInfo(std::move(rule)));
+    return addRule(getKeyID(rule.key), std::move(rule));
+  }
+  
+  RuleInfo& addRule(KeyID keyID, Rule&& rule) {
+    auto result = ruleInfos.emplace(keyID, RuleInfo(keyID, std::move(rule)));
     if (!result.second) {
       // FIXME: Error handling.
       std::cerr << "error: attempt to register duplicate rule \""
@@ -1096,7 +1150,7 @@ public:
     RuleInfo& ruleInfo = result.first->second;
     if (db) {
       std::string error;
-      db->lookupRuleResult(ruleInfo.rule, &ruleInfo.result, &error);
+      db->lookupRuleResult(ruleInfo.keyID, ruleInfo.rule, &ruleInfo.result, &error);
       if (!error.empty()) {
         delegate.error(error);
         completeRemainingTasks();
@@ -1225,9 +1279,10 @@ public:
     // Write out all of the rules.
     for (const auto& ruleInfo: orderedRuleInfos) {
       fprintf(fp, "\"%s\"\n", ruleInfo->rule.key.c_str());
-      for (auto& input: ruleInfo->result.dependencies) {
+      for (KeyID inputID: ruleInfo->result.dependencies) {
+        const auto& dependency = getRuleInfoForKey(inputID);
         fprintf(fp, "\"%s\" -> \"%s\"\n", ruleInfo->rule.key.c_str(),
-                input.c_str());
+                dependency.rule.key.c_str());
       }
       fprintf(fp, "\n");
     }
@@ -1294,7 +1349,8 @@ public:
       return;
     }
 
-    taskInfo->discoveredDependencies.push_back(key);
+    auto dependencyID = getKeyID(key);
+    taskInfo->discoveredDependencies.push_back(dependencyID);
   }
 
   void taskIsComplete(Task* task, ValueType&& value, bool forceChange) {
