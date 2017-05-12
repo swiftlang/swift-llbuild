@@ -16,8 +16,6 @@
 #include "llbuild/Basic/LLVM.h"
 #include "llvm/ADT/StringRef.h"
 
-#include "llbuild/Core/BuildEngine.h"
-
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -32,16 +30,6 @@ class BuildDB {
 public:
   virtual ~BuildDB();
 
-  /// Get a unique ID for the given key.
-  ///
-  /// This method is thread safe, and cannot fail.
-  virtual KeyID getKeyID(const KeyType& key) = 0;
-
-  /// Get the key corresponding to a key ID.
-  ///
-  /// This method is thread safe, and cannot fail.
-  virtual KeyType getKeyForID(KeyID key) = 0;
-  
   /// Get the current build iteration.
   ///
   /// \param success_out [out] Whether or not the query succeeded.
@@ -55,7 +43,6 @@ public:
 
   /// Look up the result for a rule.
   ///
-  /// \param keyID The keyID for the rule.
   /// \param rule The rule to look up the result for.
   /// \param result_out [out] The result, if found.
   /// \param error_out [out] Error string if an error occurred.
@@ -66,7 +53,7 @@ public:
   // FIXME: Figure out if we want a more lazy approach where we make the
   // database cache result objects and we query them only when needed. This may
   // scale better to very large build graphs.
-  virtual bool lookupRuleResult(KeyID keyID, const Rule& rule, Result* result_out, std::string* error_out) = 0;
+  virtual bool lookupRuleResult(const Rule& rule, Result* result_out, std::string* error_out) = 0;
 
   /// Update the stored result for a rule.
   ///
@@ -77,9 +64,8 @@ public:
   /// The database *MUST*, however, correctly maintain the order of the
   /// dependencies.
   ///
-  /// \param keyID The keyID for the rule.
   /// \param error_out [out] Error string if return value is false.
-  virtual bool setRuleResult(KeyID keyID, const Rule& rule, const Result& result, std::string* error_out) = 0;
+  virtual bool setRuleResult(const Rule& rule, const Result& result, std::string* error_out) = 0;
 
   /// Called by the build engine to indicate that a build has started.
   ///
