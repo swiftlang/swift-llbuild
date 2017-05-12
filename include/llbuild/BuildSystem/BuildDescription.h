@@ -16,11 +16,11 @@
 #include "llbuild/Basic/Compiler.h"
 #include "llbuild/Basic/LLVM.h"
 
+#include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
 
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -265,16 +265,16 @@ public:
 class BuildDescription {
 public:
   // FIXME: This is an inefficent map, the string is duplicated.
-  typedef std::unordered_map<std::string, std::unique_ptr<Node>> node_set;
+  typedef llvm::StringMap<std::unique_ptr<Node>> node_set;
   
   // FIXME: This is an inefficent map, the string is duplicated.
-  typedef std::unordered_map<std::string, std::unique_ptr<Target>> target_set;
+  typedef llvm::StringMap<std::unique_ptr<Target>> target_set;
 
   // FIXME: This is an inefficent map, the string is duplicated.
-  typedef std::unordered_map<std::string, std::unique_ptr<Command>> command_set;
+  typedef llvm::StringMap<std::unique_ptr<Command>> command_set;
   
   // FIXME: This is an inefficent map, the string is duplicated.
-  typedef std::unordered_map<std::string, std::unique_ptr<Tool>> tool_set;
+  typedef llvm::StringMap<std::unique_ptr<Tool>> tool_set;
 
 private:
   node_set nodes;
