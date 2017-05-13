@@ -408,8 +408,8 @@ commands:
     "commandPreparing(C.1)",
     "commandStarted(C.1)",
     // FIXME: Maybe it's worth creating a virtual FileSystem implementation and checking if `remove` has been called
-    "cannot remove stale file 'a.out': No such file or directory",
-    "commandFinished(C.1: 1)",
+    "commandWarning(C.1) cannot remove stale file 'a.out': No such file or directory\n",
+    "commandFinished(C.1: 0)",
   }), delegate.getMessages());
 }
 
@@ -431,7 +431,7 @@ commands:
     C.1:
       tool: stale-file-removal
       description: STALE-FILE-REMOVAL
-      expectedOutputs: ["/bar/a.out"]
+      expectedOutputs: ["/bar/a.out", "/foo", "/foobar.txt"]
 )END";
   }
 
@@ -451,8 +451,10 @@ commands:
     auto result = system.build(keyToBuild);
 
     ASSERT_TRUE(result.getValue().isStaleFileRemoval());
-    ASSERT_EQ(result.getValue().getStaleFileList().size(), 1UL);
+    ASSERT_EQ(result.getValue().getStaleFileList().size(), 3UL);
     ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "/bar/a.out") == 0);
+    ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[1].str().c_str(), "/foo") == 0);
+    ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[2].str().c_str(), "/foobar.txt") == 0);
 
     ASSERT_EQ(std::vector<std::string>({
       "commandPreparing(C.1)",
@@ -474,7 +476,7 @@ commands:
     C.1:
       tool: stale-file-removal
       description: STALE-FILE-REMOVAL
-      expectedOutputs: ["/bar/b.out", "/foo", "/foobar.txt"]
+      expectedOutputs: ["/bar/b.out"]
       roots: ["/foo"]
 )END";
   }
@@ -487,19 +489,20 @@ commands:
   auto result = system.build(keyToBuild);
 
   ASSERT_TRUE(result.getValue().isStaleFileRemoval());
-  ASSERT_EQ(result.getValue().getStaleFileList().size(), 3UL);
+  ASSERT_EQ(result.getValue().getStaleFileList().size(), 1UL);
   ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "/bar/b.out") == 0);
-  ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[1].str().c_str(), "/foo") == 0);
-  ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[2].str().c_str(), "/foobar.txt") == 0);
+
+  auto messages = delegate.getMessages();
+  std::sort(messages.begin(), messages.end());
 
   ASSERT_EQ(std::vector<std::string>({
+    "commandFinished(C.1: 0)",
     "commandPreparing(C.1)",
     "commandStarted(C.1)",
-    "Stale file '/bar/a.out' is located outside of the allowed root paths.",
-    // FIXME: Enable once stale file removal issues are no longer errros.
-    //"Stale file '/foobar.txt' is located outside of the allowed root paths.",
-    "commandFinished(C.1: 1)",
-  }), delegate.getMessages());
+    "commandWarning(C.1) Stale file '/bar/a.out' is located outside of the allowed root paths.\n",
+    "commandWarning(C.1) Stale file '/foobar.txt' is located outside of the allowed root paths.\n",
+    "commandWarning(C.1) cannot remove stale file '/foo': No such file or directory\n",
+  }), messages);
 }
 
 TEST(BuildSystemTaskTests, staleFileRemovalWithRootsEnforcesAbsolutePaths) {
@@ -582,8 +585,8 @@ commands:
   ASSERT_EQ(std::vector<std::string>({
     "commandPreparing(C.1)",
     "commandStarted(C.1)",
-    "Stale file 'a.out' has a relative path. This is invalid in combination with the root path attribute.",
-    "commandFinished(C.1: 1)",
+    "commandWarning(C.1) Stale file 'a.out' has a relative path. This is invalid in combination with the root path attribute.\n",
+    "commandFinished(C.1: 0)",
   }), delegate.getMessages());
 }
 
@@ -667,9 +670,9 @@ commands:
   ASSERT_EQ(std::vector<std::string>({
     "commandPreparing(C.1)",
     "commandStarted(C.1)",
-    "cannot remove stale file '/foo/': No such file or directory",
-    "Stale file 'a.out' has a relative path. This is invalid in combination with the root path attribute.",
-    "commandFinished(C.1: 1)",
+    "commandWarning(C.1) cannot remove stale file '/foo/': No such file or directory\n",
+    "commandWarning(C.1) Stale file 'a.out' has a relative path. This is invalid in combination with the root path attribute.\n",
+    "commandFinished(C.1: 0)",
   }), delegate.getMessages());
 }
 

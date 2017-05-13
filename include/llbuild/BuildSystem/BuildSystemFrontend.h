@@ -199,6 +199,21 @@ public:
   /// corresponding \see commandFinished() call.
   virtual void commandStarted(Command*) override;
 
+  /// Called to report an error during the execution of a command.
+  ///
+  /// \param data - The error message.
+  virtual void commandHadError(Command*, StringRef data) override;
+
+  /// Called to report a note during the execution of a command.
+  ///
+  /// \param data - The note message.
+  virtual void commandHadNote(Command*, StringRef data) override;
+
+  /// Called to report a warning during the execution of a command.
+  ///
+  /// \param data - The warning message.
+  virtual void commandHadWarning(Command*, StringRef data) override;
+
   /// Called by the build system to report a command has completed.
   ///
   /// \param result - The result of command (e.g. success, failure, etc).
