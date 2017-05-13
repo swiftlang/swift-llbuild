@@ -853,7 +853,13 @@ public:
     }
 
     auto& document = *it;
-    if (!parseRootNode(document.getRoot())) {
+    auto root = document.getRoot();
+    if (!root) {
+      error("missing document in stream");
+      return nullptr;
+    }
+
+    if (!parseRootNode(root)) {
       return nullptr;
     }
 
