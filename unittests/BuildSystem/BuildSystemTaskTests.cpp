@@ -348,27 +348,30 @@ commands:
   }
 
   auto keyToBuild = BuildKey::makeCommand("C.1");
-  MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
-  BuildSystem system(delegate);
 
   SmallString<256> builddb{ tempDir.str() };
   sys::path::append(builddb, "build.db");
-  system.attachDB(builddb.c_str(), nullptr);
 
-  bool loadingResult = system.loadDescription(manifest);
-  ASSERT_TRUE(loadingResult);
+  {
+    MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
+    BuildSystem system(delegate);
+    system.attachDB(builddb.c_str(), nullptr);
 
-  auto result = system.build(keyToBuild);
+    bool loadingResult = system.loadDescription(manifest);
+    ASSERT_TRUE(loadingResult);
 
-  ASSERT_TRUE(result.getValue().isStaleFileRemoval());
-  ASSERT_EQ(result.getValue().getStaleFileList().size(), 1UL);
-  ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "a.out") == 0);
+    auto result = system.build(keyToBuild);
 
-  ASSERT_EQ(std::vector<std::string>({
-    "commandPreparing(C.1)",
-    "commandStarted(C.1)",
-    "commandFinished(C.1)",
-  }), delegate.getMessages());
+    ASSERT_TRUE(result.getValue().isStaleFileRemoval());
+    ASSERT_EQ(result.getValue().getStaleFileList().size(), 1UL);
+    ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "a.out") == 0);
+
+    ASSERT_EQ(std::vector<std::string>({
+      "commandPreparing(C.1)",
+      "commandStarted(C.1)",
+      "commandFinished(C.1)",
+    }), delegate.getMessages());
+  }
 
   {
     std::error_code ec;
@@ -387,12 +390,12 @@ commands:
 )END";
   }
 
-  MockBuildSystemDelegate delegate2(/*trackAllMessages=*/true);
-  BuildSystem system2(delegate2);
-  system2.attachDB(builddb.c_str(), nullptr);
-  loadingResult = system2.loadDescription(manifest);
+  MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
+  BuildSystem system(delegate);
+  system.attachDB(builddb.c_str(), nullptr);
+  bool loadingResult = system.loadDescription(manifest);
   ASSERT_TRUE(loadingResult);
-  result = system2.build(keyToBuild);
+  auto result = system.build(keyToBuild);
 
   ASSERT_TRUE(result.getValue().isStaleFileRemoval());
   ASSERT_EQ(result.getValue().getStaleFileList().size(), 1UL);
@@ -404,7 +407,7 @@ commands:
     // FIXME: Maybe it's worth creating a virtual FileSystem implementation and checking if `remove` has been called
     "cannot remove stale file 'a.out': No such file or directory",
     "commandFinished(C.1)",
-  }), delegate2.getMessages());
+  }), delegate.getMessages());
 }
 
 }
