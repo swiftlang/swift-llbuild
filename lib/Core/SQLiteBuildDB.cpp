@@ -12,6 +12,7 @@
 
 #include "llbuild/Core/BuildDB.h"
 
+#include "llbuild/Basic/BinaryCoding.h"
 #include "llbuild/Basic/PlatformUtility.h"
 #include "llbuild/Core/BuildEngine.h"
 
@@ -179,33 +180,8 @@ public:
                "value BLOB, "
                "built_at INTEGER, "
                "computed_at INTEGER, "
+               "dependencies BLOB, "
                "FOREIGN KEY(key_id) REFERENCES key_names(id));"),
-          nullptr, nullptr, &cError);
-      }
-      if (result == SQLITE_OK) {
-        // Create the table used for storing rule dependencies.
-        //
-        // In order to reduce duplication, we use a WITHOUT ROWID (if available)
-        // table with a composite key on the rule_id and the dependency
-        // key. This allows us to use the table itself to perform efficient
-        // queries for all of the keys associated with a particular rule_id, and
-        // by doing so avoid having an ancillary index with duplicate data.
-        //
-        // We do, however, have to include an extra integer to identify the
-        // relative ordering of the dependencies, which the database is required
-        // to preserve.
-        result = sqlite3_exec(
-          db, ("CREATE TABLE rule_dependencies ("
-               "rule_id INTEGER, "
-               "key_id INTEGER, "
-               "ordinal INTEGER NONNULL, "
-               "PRIMARY KEY (rule_id, key_id) "
-               "FOREIGN KEY(rule_id) REFERENCES rule_results(id) "
-               "FOREIGN KEY(key_id) REFERENCES key_names(id)) "
-#if SQLITE_VERSION_NUMBER >= 3008002
-               "WITHOUT ROWID"
-#endif
-               ";"),
           nullptr, nullptr, &cError);
       }
 
@@ -215,19 +191,6 @@ public:
         // information from a key.
         result = sqlite3_exec(
             db, "CREATE UNIQUE INDEX rule_results_idx ON rule_results (key_id);",
-            nullptr, nullptr, &cError);
-      }
-
-      // Create a covering index for dependency queries.
-      //
-      // This is rather inefficient, because the rule_dependencies table is
-      // almost covering, but without this the dependency query is considerably
-      // more expensive -- this index alone is good for almost 10% on a null
-      // build of a large graph.
-      if (result == SQLITE_OK) {
-        result = sqlite3_exec(
-            db, ("CREATE UNIQUE INDEX rule_dependencies_idx "
-                 "ON rule_dependencies (rule_id, ordinal, key_id);"),
             nullptr, nullptr, &cError);
       }
 
@@ -270,11 +233,6 @@ public:
       db, insertIntoRuleResultsStmtSQL,
       -1, &insertIntoRuleResultsStmt, nullptr);
     assert(result == SQLITE_OK);
-
-    result = sqlite3_prepare_v2(
-      db, insertIntoRuleDependenciesStmtSQL,
-      -1, &insertIntoRuleDependenciesStmt, nullptr);
-    assert(result == SQLITE_OK);
     
     result = sqlite3_prepare_v2(
       db, deleteFromKeysStmtSQL,
@@ -285,20 +243,10 @@ public:
       db, deleteFromRuleResultsStmtSQL,
       -1, &deleteFromRuleResultsStmt, nullptr);
     assert(result == SQLITE_OK);
-
-    result = sqlite3_prepare_v2(
-      db, deleteFromRuleDependenciesStmtSQL,
-      -1, &deleteFromRuleDependenciesStmt, nullptr);
-    assert(result == SQLITE_OK);
     
     result = sqlite3_prepare_v2(
       db, findRuleResultStmtSQL,
       -1, &findRuleResultStmt, nullptr);
-    assert(result == SQLITE_OK);
-
-    result = sqlite3_prepare_v2(
-      db, findRuleDependenciesStmtSQL,
-      -1, &findRuleDependenciesStmt, nullptr);
     assert(result == SQLITE_OK);
 
     return true;
@@ -311,13 +259,10 @@ public:
     // Destroy prepared statements.
     sqlite3_finalize(findKeyIDForKeyStmt);
     sqlite3_finalize(findKeyNameForKeyIDStmt);
-    sqlite3_finalize(findRuleDependenciesStmt);
     sqlite3_finalize(findRuleResultStmt);
     sqlite3_finalize(deleteFromKeysStmt);
-    sqlite3_finalize(deleteFromRuleDependenciesStmt);
     sqlite3_finalize(deleteFromRuleResultsStmt);
     sqlite3_finalize(insertIntoKeysStmt);
-    sqlite3_finalize(insertIntoRuleDependenciesStmt);
     sqlite3_finalize(insertIntoRuleResultsStmt);
     sqlite3_finalize(findIDForKeyInRuleResultsStmt);
 
@@ -382,14 +327,9 @@ public:
   sqlite3_stmt* deleteFromKeysStmt = nullptr;
   
   static constexpr const char *findRuleResultStmtSQL = (
-      "SELECT id, value, built_at, computed_at FROM rule_results "
+      "SELECT id, value, built_at, computed_at, dependencies FROM rule_results "
       "WHERE key_id == ?;");
   sqlite3_stmt* findRuleResultStmt = nullptr;
-
-  static constexpr const char *findRuleDependenciesStmtSQL = (
-      "SELECT key_id FROM rule_dependencies WHERE rule_id == ?"
-      "ORDER BY rule_dependencies.ordinal;");
-  sqlite3_stmt* findRuleDependenciesStmt = nullptr;
 
   virtual bool lookupRuleResult(KeyID keyID, const Rule& rule,
                                 Result* result_out,
@@ -417,7 +357,7 @@ public:
     }
 
     // Otherwise, read the result contents from the row.
-    assert(sqlite3_column_count(findRuleResultStmt) == 4);
+    assert(sqlite3_column_count(findRuleResultStmt) == 5);
     uint64_t ruleID = sqlite3_column_int64(findRuleResultStmt, 0);
     int numValueBytes = sqlite3_column_bytes(findRuleResultStmt, 1);
     result_out->value.resize(numValueBytes);
@@ -427,28 +367,20 @@ public:
     result_out->builtAt = sqlite3_column_int64(findRuleResultStmt, 2);
     result_out->computedAt = sqlite3_column_int64(findRuleResultStmt, 3);
 
-    // Look up all the rule dependencies.
-    // To lookup the dependencies efficiently we use an INNER JOIN query
-    // otherwise we need to run two queries to find the keys which is slow.
-    result = sqlite3_reset(findRuleDependenciesStmt);
-    assert(result == SQLITE_OK);
-    result = sqlite3_clear_bindings(findRuleDependenciesStmt);
-    assert(result == SQLITE_OK);
-    result = sqlite3_bind_int64(findRuleDependenciesStmt, /*index=*/1,
-                                ruleID);
-    assert(result == SQLITE_OK);
-
-    while (true) {
-      result = sqlite3_step(findRuleDependenciesStmt);
-      if (result == SQLITE_DONE)
-        break;
-      if (result != SQLITE_ROW) {
-        *error_out = getCurrentErrorMessage();
-        return false;
-      }
-      assert(sqlite3_column_count(findRuleDependenciesStmt) == 1);
-      auto dependencyID = sqlite3_column_int64(findRuleDependenciesStmt, 0);
-      result_out->dependencies.push_back(dependencyID);
+    // Extract the dependencies binary blob.
+    int numDependencyBytes = sqlite3_column_bytes(findRuleResultStmt, 4);
+    const void* dependencyBytes = sqlite3_column_blob(findRuleResultStmt, 4);
+    int numDependencies = numDependencyBytes / sizeof(uint64_t);
+    if (numDependencyBytes != numDependencies * sizeof(uint64_t)) {
+      *error_out = (llvm::Twine("unexpected contents for database result: ") +
+                    llvm::Twine((int)ruleID)).str();
+      return false;
+    }
+    result_out->dependencies.resize(numDependencies);
+    basic::BinaryDecoder decoder(
+        StringRef((const char*)dependencyBytes, numDependencyBytes));
+    for (auto i = 0; i != numDependencies; ++i) {
+      decoder.read(result_out->dependencies[i]);
     }
 
     return true;
@@ -460,26 +392,12 @@ public:
   sqlite3_stmt* findIDForKeyInRuleResultsStmt = nullptr;
 
   static constexpr const char *insertIntoRuleResultsStmtSQL =
-    "INSERT INTO rule_results VALUES (NULL, ?, ?, ?, ?);";
+    "INSERT INTO rule_results VALUES (NULL, ?, ?, ?, ?, ?);";
   sqlite3_stmt* insertIntoRuleResultsStmt = nullptr;
-
-  /// The query for inserting new rule dependencies.
-  ///
-  /// Note that we explicitly allow ignoring the insert which will happen when
-  /// there is a duplicate dependencies for a rule, because the primary key is a
-  /// composite of (rule_id, key).
-  static constexpr const char *insertIntoRuleDependenciesStmtSQL =
-    "INSERT OR IGNORE INTO rule_dependencies(rule_id, key_id, ordinal) "
-    "VALUES (?, ?, ?);";
-  sqlite3_stmt* insertIntoRuleDependenciesStmt = nullptr;
 
   static constexpr const char *deleteFromRuleResultsStmtSQL =
     "DELETE FROM rule_results WHERE id == ?;";
   sqlite3_stmt* deleteFromRuleResultsStmt = nullptr;
-
-  static constexpr const char *deleteFromRuleDependenciesStmtSQL =
-    "DELETE FROM rule_dependencies WHERE rule_id == ?;";
-  sqlite3_stmt* deleteFromRuleDependenciesStmt = nullptr;
 
   static constexpr const char *findKeyIDForKeyStmtSQL = (
       "SELECT id FROM key_names "
@@ -594,20 +512,6 @@ public:
     //
     // FIXME: This is inefficient, we should just perform an update.
     if (ruleID != 0) {
-      // Delete all of the rule dependencies.
-      result = sqlite3_reset(deleteFromRuleDependenciesStmt);
-      assert(result == SQLITE_OK);
-      result = sqlite3_clear_bindings(deleteFromRuleDependenciesStmt);
-      assert(result == SQLITE_OK);
-      result = sqlite3_bind_int64(deleteFromRuleDependenciesStmt, /*index=*/1,
-                                  ruleID);
-      assert(result == SQLITE_OK);
-      result = sqlite3_step(deleteFromRuleDependenciesStmt);
-      if (result != SQLITE_DONE) {
-        *error_out = getCurrentErrorMessage();
-        return false;
-      }
-
       // Delete the rule result.
       result = sqlite3_reset(deleteFromRuleResultsStmt);
       assert(result == SQLITE_OK);
@@ -622,7 +526,18 @@ public:
         return false;
       }
     }
-    
+
+    // Create the encoded dependency list.
+    //
+    // FIXME: We could save some reallocation by having a templated SmallVector
+    // size here.
+    basic::BinaryEncoder encoder{};
+    for (auto keyID: ruleResult.dependencies) {
+      encoder.write(keyID);
+    }
+    // FIXME: This is doing an unnecessary copy.
+    auto encodedDependencies = encoder.contents();
+      
     // Insert the actual rule result.
     result = sqlite3_reset(insertIntoRuleResultsStmt);
     assert(result == SQLITE_OK);
@@ -642,45 +557,15 @@ public:
     result = sqlite3_bind_int64(insertIntoRuleResultsStmt, /*index=*/4,
                                 ruleResult.computedAt);
     assert(result == SQLITE_OK);
+    result = sqlite3_bind_blob(insertIntoRuleResultsStmt, /*index=*/5,
+                               encodedDependencies.data(),
+                               encodedDependencies.size(),
+                               SQLITE_STATIC);
+    assert(result == SQLITE_OK);
     result = sqlite3_step(insertIntoRuleResultsStmt);
     if (result != SQLITE_DONE) {
       *error_out = getCurrentErrorMessage();
       return false;
-    }
-
-    // Get the rule ID.
-    ruleID = sqlite3_last_insert_rowid(db);
-
-    // Insert all the dependencies.
-    for (unsigned i = 0; i != ruleResult.dependencies.size(); ++i) {
-      KeyID dependencyKeyID = ruleResult.dependencies[i];
-
-      // Reset the insert statement.
-      result = sqlite3_reset(insertIntoRuleDependenciesStmt);
-      assert(result == SQLITE_OK);
-      result = sqlite3_clear_bindings(insertIntoRuleDependenciesStmt);
-      assert(result == SQLITE_OK);
-
-      // Bind the rule ID.
-      result = sqlite3_bind_int64(insertIntoRuleDependenciesStmt, /*index=*/1,
-                                  ruleID);
-      assert(result == SQLITE_OK);
-
-      // Bind the dependency key ID.
-      result = sqlite3_bind_int64(insertIntoRuleDependenciesStmt, /*index=*/2,
-                                  dependencyKeyID);
-      assert(result == SQLITE_OK);
-
-      // Bind the index of the dependency.
-      result = sqlite3_bind_int(insertIntoRuleDependenciesStmt, /*index=*/3, i);
-      assert(result == SQLITE_OK);
-
-      // Perform the insert.
-      result = sqlite3_step(insertIntoRuleDependenciesStmt);
-      if (result != SQLITE_DONE) {
-        *error_out = getCurrentErrorMessage();
-        return false;
-      }
     }
 
     return true;
