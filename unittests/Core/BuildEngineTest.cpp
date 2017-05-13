@@ -14,6 +14,7 @@
 
 #include "llbuild/Core/BuildDB.h"
 
+#include "llvm/ADT/StringMap.h"
 #include "llvm/Support/ErrorHandling.h"
 
 #include "gtest/gtest.h"
@@ -419,18 +420,32 @@ TEST(BuildEngineTest, incrementalDependency) {
   // Attach a custom database, used to get the results.
   class CustomDB : public BuildDB {
   public:
-    std::unordered_map<core::KeyType, Result> ruleResults;
+    llvm::StringMap<bool> keyTable;
+    
+    std::unordered_map<KeyType, Result> ruleResults;
 
+    virtual KeyID getKeyID(const KeyType& key) override {
+      auto it = keyTable.insert(std::make_pair(key, false)).first;
+      return (KeyID)(uintptr_t)it->getKey().data();
+    }
+
+    virtual KeyType getKeyForID(KeyID keyID) override {
+      return llvm::StringMapEntry<bool>::GetStringMapEntryFromKeyData(
+          (const char*)(uintptr_t)keyID).getKey();
+    }
+    
     virtual uint64_t getCurrentIteration(bool* success_out, std::string* error_out) override {
       return 0;
     }
     virtual bool setCurrentIteration(uint64_t value, std::string* error_out) override { return true; }
-    virtual bool lookupRuleResult(const Rule& rule,
+    virtual bool lookupRuleResult(KeyID keyID,
+                                  const Rule& rule,
                                   Result* result_out,
                                   std::string* error_out) override {
       return false;
     }
-    virtual bool setRuleResult(const Rule& rule,
+    virtual bool setRuleResult(KeyID key,
+                               const Rule& rule,
                                const Result& result,
                                std::string* error_out) override {
       ruleResults[rule.key] = result;
