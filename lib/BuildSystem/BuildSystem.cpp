@@ -46,6 +46,7 @@
 
 #include <memory>
 #include <mutex>
+#include <unordered_set>
 
 #include <unistd.h>
 
@@ -143,10 +144,11 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
   /// The internal schema version.
   ///
   /// Version History:
+  /// * 7: Added StaleFileRemoval to BuildValue
   /// * 6: Added DirectoryContents to BuildKey
   /// * 5: Switch BuildValue to be BinaryCoding based
   /// * 4: Pre-history
-  static const uint32_t internalSchemaVersion = 6;
+  static const uint32_t internalSchemaVersion = 7;
   
   BuildSystem& buildSystem;
 
@@ -2297,6 +2299,182 @@ public:
   }
 };
 
+#pragma mark - StaleFileRemovalTool implementation
+
+class StaleFileRemovalCommand : public Command {
+  std::string description;
+
+  std::vector<std::string> expectedOutputs;
+  std::vector<std::string> filesToDelete;
+  bool computedFilesToDelete = false;
+
+  BuildValue priorValue;
+  bool hasPriorResult = false;
+
+  virtual void configureDescription(const ConfigureContext&, StringRef value) override {
+    description = value;
+  }
+
+  virtual void getShortDescription(SmallVectorImpl<char> &result) override {
+    llvm::raw_svector_ostream(result) << (description.empty() ? "Stale file removal" : description);
+  }
+
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
+    computeFilesToDelete();
+
+    getShortDescription(result);
+    llvm::raw_svector_ostream(result) << ", stale files: [";
+    for (auto fileToDelete : filesToDelete) {
+      llvm::raw_svector_ostream(result) << fileToDelete;
+      if (fileToDelete != *(--filesToDelete.end())) {
+        llvm::raw_svector_ostream(result) << ", ";
+      }
+    }
+    llvm::raw_svector_ostream(result) << "]";
+  }
+
+  virtual void configureInputs(const ConfigureContext& ctx,
+                               const std::vector<Node*>& value) override {}
+
+  virtual void configureOutputs(const ConfigureContext& ctx,
+                                const std::vector<Node*>& value) override {}
+
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  StringRef value) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  ArrayRef<StringRef> values) override {
+    if (name == "expectedOutputs") {
+      expectedOutputs.reserve(values.size());
+      for (auto value : values) {
+        expectedOutputs.emplace_back(value.str());
+      }
+      return true;
+    }
+
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  ArrayRef<std::pair<StringRef, StringRef>> values) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+
+  virtual BuildValue getResultForOutput(Node* node,
+                                        const BuildValue& value) override {
+    // If the value was a failed command, propagate the failure.
+    if (value.isFailedCommand() || value.isPropagatedFailureCommand() ||
+        value.isCancelledCommand())
+      return BuildValue::makeFailedInput();
+    if (value.isSkippedCommand())
+      return BuildValue::makeSkippedCommand();
+
+    // Otherwise, this was successful, return the value as-is.
+    return BuildValue::fromData(value.toData());;
+  }
+
+  virtual bool isResultValid(BuildSystem& system,
+                             const BuildValue& value) override {
+    // Always re-run stale file removal.
+    return false;
+  }
+
+  virtual void start(BuildSystemCommandInterface& bsci,
+                     core::Task* task) override {}
+
+  virtual void providePriorValue(BuildSystemCommandInterface&, core::Task*,
+                                 const BuildValue& value) override {
+    hasPriorResult = true;
+    priorValue = BuildValue::fromData(value.toData());
+  }
+
+  virtual void provideValue(BuildSystemCommandInterface&, core::Task*,
+                            uintptr_t inputID,
+                            const BuildValue& value) override {
+    assert(0 && "unexpected API call");
+  }
+
+  void computeFilesToDelete() {
+    if (computedFilesToDelete) {
+      return;
+    }
+
+    std::vector<StringRef> priorValueList = priorValue.getStaleFileList();
+    std::unordered_set<std::string> priorNodes(priorValueList.begin(), priorValueList.end());
+    std::unordered_set<std::string> expectedNodes(expectedOutputs.begin(), expectedOutputs.end());
+
+    std::set_difference(priorNodes.begin(), priorNodes.end(),
+                        expectedNodes.begin(), expectedNodes.end(),
+                        std::back_inserter(filesToDelete));
+
+    computedFilesToDelete = true;
+  }
+
+  virtual BuildValue execute(BuildSystemCommandInterface& bsci,
+                             core::Task* task,
+                             QueueJobContext* context) override {
+    // Nothing to do if we do not have a prior result.
+    if (!hasPriorResult || !priorValue.isStaleFileRemoval()) {
+      bsci.getDelegate().commandStarted(this);
+      bsci.getDelegate().commandFinished(this);
+      return BuildValue::makeStaleFileRemoval(expectedOutputs);
+    }
+
+    computeFilesToDelete();
+
+    bsci.getDelegate().commandStarted(this);
+
+    for (auto fileToDelete : filesToDelete) {
+      if (!getBuildSystem(bsci.getBuildEngine()).getDelegate().getFileSystem().remove(fileToDelete)) {
+        bsci.getDelegate().error("", {}, (Twine("cannot remove stale file '") + fileToDelete + "': " + strerror(errno)));
+      }
+    }
+
+    bsci.getDelegate().commandFinished(this);
+
+    // Complete with a successful result.
+    return BuildValue::makeStaleFileRemoval(expectedOutputs);
+  }
+
+public:
+  StaleFileRemovalCommand(const StringRef name)
+  : Command(name), priorValue(BuildValue::makeInvalid()) {}
+};
+
+class StaleFileRemovalTool : public Tool {
+public:
+  using Tool::Tool;
+
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  StringRef value) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  ArrayRef<StringRef> values) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+  virtual bool configureAttribute(
+                                  const ConfigureContext& ctx, StringRef name,
+                                  ArrayRef<std::pair<StringRef, StringRef>> values) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+
+  virtual std::unique_ptr<Command> createCommand(StringRef name) override {
+    return llvm::make_unique<StaleFileRemovalCommand>(name);
+  }
+};
+
 #pragma mark - BuildSystemFileDelegate
 
 BuildSystemDelegate& BuildSystemFileDelegate::getSystemDelegate() {
@@ -2354,6 +2532,8 @@ BuildSystemFileDelegate::lookupTool(StringRef name) {
     return llvm::make_unique<SymlinkTool>(name);
   } else if (name == "archive") {
     return llvm::make_unique<ArchiveTool>(name);
+  } else if (name == "stale-file-removal") {
+    return llvm::make_unique<StaleFileRemovalTool>(name);
   }
 
   return nullptr;

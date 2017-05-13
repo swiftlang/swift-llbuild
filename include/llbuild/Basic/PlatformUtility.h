@@ -38,6 +38,7 @@ int pclose(FILE *stream);
 int pipe(int ptHandles[2]);
 FILE *popen(const char *command, const char *mode);
 int read(int fileHandle, void *destinationBuffer, unsigned int maxCharCount);
+int rmdir(const char *path);
 int stat(const char *fileName, StatStruct *buf);
 int unlink(const char *fileName);
 int write(int fileHandle, void *destinationBuffer, unsigned int maxCharCount);

@@ -59,6 +59,13 @@ public:
   /// \returns The file contents, on success, or null on error.
   virtual std::unique_ptr<llvm::MemoryBuffer>
   getFileContents(const std::string& path) = 0;
+
+  /// Remove the file or directory at the given path.
+  ///
+  /// Directory removal is non-recursive, so only empty directories will be removed.
+  ///
+  /// \returns True if the item was removed, false otherwise.
+  virtual bool remove(const std::string& path) = 0;
   
   /// Get the information to represent the state of the given path in the file
   /// system.

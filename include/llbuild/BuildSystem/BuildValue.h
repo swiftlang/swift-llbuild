@@ -57,6 +57,9 @@ class BuildValue {
     /// The signature of a directories contents.
     DirectoryTreeSignature,
 
+    /// A value produced by stale file removal.
+    StaleFileRemoval,
+
     /// A value produced by a command which succeeded, but whose output was
     /// missing.
     MissingOutput,
@@ -123,7 +126,7 @@ class BuildValue {
   }
 
   bool kindHasStringList() const {
-    return isDirectoryContents();
+    return isDirectoryContents() || isStaleFileRemoval();
   }
 
   bool kindHasOutputInfo() const {
@@ -159,6 +162,23 @@ private:
   BuildValue(Kind kind, FileInfo directoryInfo, ArrayRef<std::string> values)
       : BuildValue(kind, directoryInfo)
   {
+    // Construct the concatenated data.
+    uint64_t size = 0;
+    for (auto value: values) {
+      size += value.size() + 1;
+    }
+    char *p, *contents = p = new char[size];
+    for (auto value: values) {
+      assert(value.find('\0') == StringRef::npos);
+      memcpy(p, value.data(), value.size());
+      p += value.size();
+      *p++ = '\0';
+    }
+    stringValues.contents = contents;
+    stringValues.size = size;
+  }
+
+  BuildValue(Kind kind, ArrayRef<std::string> values) : kind(kind) {
     // Construct the concatenated data.
     uint64_t size = 0;
     for (auto value: values) {
@@ -296,6 +316,9 @@ public:
   static BuildValue makeTarget() {
     return BuildValue(Kind::Target);
   }
+  static BuildValue makeStaleFileRemoval(ArrayRef<std::string> values) {
+    return BuildValue(Kind::StaleFileRemoval, values);
+  }
 
   /// @}
 
@@ -311,6 +334,7 @@ public:
   bool isDirectoryTreeSignature() const {
     return kind == Kind::DirectoryTreeSignature;
   }
+  bool isStaleFileRemoval() const { return kind == Kind::StaleFileRemoval; }
   
   bool isMissingOutput() const { return kind == Kind::MissingOutput; }
   bool isFailedInput() const { return kind == Kind::FailedInput; }
@@ -325,6 +349,11 @@ public:
 
   std::vector<StringRef> getDirectoryContents() const {
     assert(isDirectoryContents() && "invalid call for value kind");
+    return getStringListValues();
+  }
+
+  std::vector<StringRef> getStaleFileList() const {
+    assert(isStaleFileRemoval() && "invalid call for value kind");
     return getStringListValues();
   }
   

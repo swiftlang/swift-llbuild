@@ -82,6 +82,14 @@ public:
     return result;
   }
 
+  virtual bool remove(const std::string& path) override {
+    if (!cAPIDelegate.fs_remove) {
+      return localFileSystem->remove(path);
+    }
+
+    return cAPIDelegate.fs_remove(cAPIDelegate.context, path.c_str());
+  }
+
   virtual basic::FileInfo getFileInfo(const std::string& path) override {
     if (!cAPIDelegate.fs_get_file_info) {
       return localFileSystem->getFileInfo(path);

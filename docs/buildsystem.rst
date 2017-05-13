@@ -689,3 +689,25 @@ A typical use for this tool is creating static libraries.
    FIXME: currently the archive is always recreated entirely, it would be
    preferable in future to correctly update/delete/create the archive file
    as required.
+
+Stale File Removal Tool
+-----------------------
+
+**Identifier**: *stale-file-removal*
+
+A tool to remove stale files from previous builds.
+
+The build system records the last value of `expectedOutputs` and compares it
+to the current one. Any path that was previously present, but isn't in the
+current string list will be removed from the file system.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 80
+
+   * - Name
+     - Description
+
+   * - expectedOutputs
+     - A string list of paths that are expected to be produced by the given
+       manifest.
