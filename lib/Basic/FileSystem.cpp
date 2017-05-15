@@ -14,11 +14,98 @@
 #include "llbuild/Basic/PlatformUtility.h"
 
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/MemoryBuffer.h"
 
 #include <cassert>
 #include <cstring>
+
+// Cribbed from llvm, where it's been since removed.
+namespace {
+  using namespace std;
+  using namespace llvm;
+  using namespace llvm::sys::fs;
+
+  static std::error_code fillStatus(int StatRet, const struct stat &Status,
+                                    file_status &Result) {
+    if (StatRet != 0) {
+      std::error_code ec(errno, std::generic_category());
+      if (ec == errc::no_such_file_or_directory)
+        Result = file_status(file_type::file_not_found);
+      else
+        Result = file_status(file_type::status_error);
+      return ec;
+    }
+
+    file_type Type = file_type::type_unknown;
+
+    if (S_ISDIR(Status.st_mode))
+      Type = file_type::directory_file;
+    else if (S_ISREG(Status.st_mode))
+      Type = file_type::regular_file;
+    else if (S_ISBLK(Status.st_mode))
+      Type = file_type::block_file;
+    else if (S_ISCHR(Status.st_mode))
+      Type = file_type::character_file;
+    else if (S_ISFIFO(Status.st_mode))
+      Type = file_type::fifo_file;
+    else if (S_ISSOCK(Status.st_mode))
+      Type = file_type::socket_file;
+    else if (S_ISLNK(Status.st_mode))
+      Type = file_type::symlink_file;
+
+    perms Perms = static_cast<perms>(Status.st_mode);
+    Result =
+    file_status(Type, Perms, Status.st_dev, Status.st_ino, Status.st_mtime,
+                Status.st_uid, Status.st_gid, Status.st_size);
+
+    return std::error_code();
+  }
+
+  std::error_code link_status(const Twine &Path, file_status &Result) {
+    SmallString<128> PathStorage;
+    StringRef P = Path.toNullTerminatedStringRef(PathStorage);
+
+    struct stat Status;
+    int StatRet = ::lstat(P.begin(), &Status);
+    return fillStatus(StatRet, Status, Result);
+  }
+
+  error_code _remove_all_r(StringRef path, file_type ft, uint32_t &count) {
+    if (ft == file_type::directory_file) {
+      error_code ec;
+      directory_iterator i(path, ec);
+      if (ec)
+        return ec;
+
+      for (directory_iterator e; i != e; i.increment(ec)) {
+        if (ec)
+          return ec;
+
+        file_status st;
+
+        if (error_code ec = link_status(i->path(), st))
+          return ec;
+
+        if (error_code ec = _remove_all_r(i->path(), st.type(), count))
+          return ec;
+      }
+
+      if (error_code ec = remove(path, false))
+        return ec;
+
+      ++count; // Include the directory itself in the items removed.
+    } else {
+      if (error_code ec = remove(path, false))
+        return ec;
+
+      ++count;
+    }
+
+    return error_code();
+  }
+}
 
 using namespace llbuild;
 using namespace llbuild::basic;
@@ -46,7 +133,7 @@ public:
 
   virtual bool
   createDirectory(const std::string& path) override {
-    if (!sys::mkdir(path.c_str())) {
+    if (!llbuild::basic::sys::mkdir(path.c_str())) {
       if (errno != EEXIST) {
         return false;
       }
@@ -63,25 +150,34 @@ public:
     return std::unique_ptr<llvm::MemoryBuffer>(result->release());
   }
 
+  bool rm_tree(const char* path) {
+    uint32_t count = 0;
+    return !_remove_all_r(path, file_type::directory_file, count);
+  }
+
   virtual bool remove(const std::string& path) override {
     // Assume `path` is a regular file.
-    if (sys::unlink(path.c_str()) == 0) {
+    if (llbuild::basic::sys::unlink(path.c_str()) == 0) {
       return true;
     }
 
-    // Error can't be that `path` is actually a directory.
-    if (errno != EPERM) {
+    // Error can't be that `path` is actually a directory (on Linux `EISDIR` will be returned since 2.1.132).
+    if (errno != EPERM && errno != EISDIR) {
       return false;
     }
 
     // Check if `path` is a directory.
     struct stat statbuf;
-    if (sys::stat(path.c_str(), &statbuf) != 0) {
+    if (llbuild::basic::sys::lstat(path.c_str(), &statbuf) != 0) {
       return false;
     }
 
     if (S_ISDIR(statbuf.st_mode)) {
-      return sys::rmdir(path.c_str()) == 0;
+      if (llbuild::basic::sys::rmdir(path.c_str()) == 0) {
+        return true;
+      } else {
+        return rm_tree(path.c_str());
+      }
     }
 
     return false;

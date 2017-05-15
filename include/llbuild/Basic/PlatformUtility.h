@@ -40,6 +40,7 @@ FILE *popen(const char *command, const char *mode);
 int read(int fileHandle, void *destinationBuffer, unsigned int maxCharCount);
 int rmdir(const char *path);
 int stat(const char *fileName, StatStruct *buf);
+int symlink(const char *source, const char *target);
 int unlink(const char *fileName);
 int write(int fileHandle, void *destinationBuffer, unsigned int maxCharCount);
 }

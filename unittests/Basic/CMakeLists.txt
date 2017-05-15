@@ -3,6 +3,7 @@ add_llbuild_unittest(BasicTests
   FileSystemTest.cpp
   SerialQueueTest.cpp
   ShellUtilityTest.cpp
+  ../BuildSystem/TempDir.cpp
   )
 
 target_link_libraries(BasicTests llbuildBasic llvmSupport)

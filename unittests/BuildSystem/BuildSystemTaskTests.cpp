@@ -410,4 +410,264 @@ commands:
   }), delegate.getMessages());
 }
 
+TEST(BuildSystemTaskTests, staleFileRemovalWithRoots) {
+  TmpDir tempDir{ __FUNCTION__ };
+
+  SmallString<256> manifest{ tempDir.str() };
+  sys::path::append(manifest, "manifest.llbuild");
+  {
+    std::error_code ec;
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    assert(!ec);
+
+    os << R"END(
+client:
+  name: mock
+
+commands:
+    C.1:
+      tool: stale-file-removal
+      description: STALE-FILE-REMOVAL
+      expectedOutputs: ["/bar/a.out"]
+)END";
+  }
+
+  auto keyToBuild = BuildKey::makeCommand("C.1");
+
+  SmallString<256> builddb{ tempDir.str() };
+  sys::path::append(builddb, "build.db");
+
+  {
+    MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
+    BuildSystem system(delegate);
+    system.attachDB(builddb.c_str(), nullptr);
+
+    bool loadingResult = system.loadDescription(manifest);
+    ASSERT_TRUE(loadingResult);
+
+    auto result = system.build(keyToBuild);
+
+    ASSERT_TRUE(result.getValue().isStaleFileRemoval());
+    ASSERT_EQ(result.getValue().getStaleFileList().size(), 1UL);
+    ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "/bar/a.out") == 0);
+
+    ASSERT_EQ(std::vector<std::string>({
+      "commandPreparing(C.1)",
+      "commandStarted(C.1)",
+      "commandFinished(C.1)",
+    }), delegate.getMessages());
+  }
+
+  {
+    std::error_code ec;
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    assert(!ec);
+
+    os << R"END(
+client:
+  name: mock
+
+commands:
+    C.1:
+      tool: stale-file-removal
+      description: STALE-FILE-REMOVAL
+      expectedOutputs: ["/bar/b.out", "/foo", "/foobar.txt"]
+      roots: ["/foo"]
+)END";
+  }
+
+  MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
+  BuildSystem system(delegate);
+  system.attachDB(builddb.c_str(), nullptr);
+  bool loadingResult = system.loadDescription(manifest);
+  ASSERT_TRUE(loadingResult);
+  auto result = system.build(keyToBuild);
+
+  ASSERT_TRUE(result.getValue().isStaleFileRemoval());
+  ASSERT_EQ(result.getValue().getStaleFileList().size(), 3UL);
+  ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "/bar/b.out") == 0);
+  ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[1].str().c_str(), "/foo") == 0);
+  ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[2].str().c_str(), "/foobar.txt") == 0);
+
+  ASSERT_EQ(std::vector<std::string>({
+    "commandPreparing(C.1)",
+    "commandStarted(C.1)",
+    "Stale file '/bar/a.out' is located outside of the allowed root paths.",
+    // FIXME: Enable once stale file removal issues are no longer errros.
+    //"Stale file '/foobar.txt' is located outside of the allowed root paths.",
+    "commandFinished(C.1)",
+  }), delegate.getMessages());
+}
+
+TEST(BuildSystemTaskTests, staleFileRemovalWithRootsEnforcesAbsolutePaths) {
+  TmpDir tempDir{ __FUNCTION__ };
+
+  SmallString<256> manifest{ tempDir.str() };
+  sys::path::append(manifest, "manifest.llbuild");
+  {
+    std::error_code ec;
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    assert(!ec);
+
+    os << R"END(
+client:
+  name: mock
+
+commands:
+    C.1:
+      tool: stale-file-removal
+      description: STALE-FILE-REMOVAL
+      expectedOutputs: ["a.out"]
+)END";
+  }
+
+  auto keyToBuild = BuildKey::makeCommand("C.1");
+
+  SmallString<256> builddb{ tempDir.str() };
+  sys::path::append(builddb, "build.db");
+
+  {
+    MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
+    BuildSystem system(delegate);
+    system.attachDB(builddb.c_str(), nullptr);
+
+    bool loadingResult = system.loadDescription(manifest);
+    ASSERT_TRUE(loadingResult);
+
+    auto result = system.build(keyToBuild);
+
+    ASSERT_TRUE(result.getValue().isStaleFileRemoval());
+    ASSERT_EQ(result.getValue().getStaleFileList().size(), 1UL);
+    ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "a.out") == 0);
+
+    ASSERT_EQ(std::vector<std::string>({
+      "commandPreparing(C.1)",
+      "commandStarted(C.1)",
+      "commandFinished(C.1)",
+    }), delegate.getMessages());
+  }
+
+  {
+    std::error_code ec;
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    assert(!ec);
+
+    os << R"END(
+client:
+  name: mock
+
+commands:
+    C.1:
+      tool: stale-file-removal
+      description: STALE-FILE-REMOVAL
+      expectedOutputs: ["/bar/b.out"]
+      roots: ["/foo"]
+)END";
+  }
+
+  MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
+  BuildSystem system(delegate);
+  system.attachDB(builddb.c_str(), nullptr);
+  bool loadingResult = system.loadDescription(manifest);
+  ASSERT_TRUE(loadingResult);
+  auto result = system.build(keyToBuild);
+
+  ASSERT_TRUE(result.getValue().isStaleFileRemoval());
+  ASSERT_EQ(result.getValue().getStaleFileList().size(), 1UL);
+  ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "/bar/b.out") == 0);
+
+  ASSERT_EQ(std::vector<std::string>({
+    "commandPreparing(C.1)",
+    "commandStarted(C.1)",
+    "Stale file 'a.out' has a relative path. This is invalid in combination with the root path attribute.",
+    "commandFinished(C.1)",
+  }), delegate.getMessages());
+}
+
+TEST(BuildSystemTaskTests, staleFileRemovalWithRootsIsAgnosticToTrailingPathSeparator) {
+  TmpDir tempDir{ __FUNCTION__ };
+
+  SmallString<256> manifest{ tempDir.str() };
+  sys::path::append(manifest, "manifest.llbuild");
+  {
+    std::error_code ec;
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    assert(!ec);
+
+    os << R"END(
+client:
+  name: mock
+
+commands:
+    C.1:
+      tool: stale-file-removal
+      description: STALE-FILE-REMOVAL
+      expectedOutputs: ["a.out", "/foo/"]
+)END";
+  }
+
+  auto keyToBuild = BuildKey::makeCommand("C.1");
+
+  SmallString<256> builddb{ tempDir.str() };
+  sys::path::append(builddb, "build.db");
+
+  {
+    MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
+    BuildSystem system(delegate);
+    system.attachDB(builddb.c_str(), nullptr);
+
+    bool loadingResult = system.loadDescription(manifest);
+    ASSERT_TRUE(loadingResult);
+
+    auto result = system.build(keyToBuild);
+
+    ASSERT_TRUE(result.getValue().isStaleFileRemoval());
+    ASSERT_EQ(result.getValue().getStaleFileList().size(), 2UL);
+    ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "a.out") == 0);
+
+    ASSERT_EQ(std::vector<std::string>({
+      "commandPreparing(C.1)",
+      "commandStarted(C.1)",
+      "commandFinished(C.1)",
+    }), delegate.getMessages());
+  }
+
+  {
+    std::error_code ec;
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    assert(!ec);
+
+    os << R"END(
+client:
+  name: mock
+
+commands:
+    C.1:
+      tool: stale-file-removal
+      description: STALE-FILE-REMOVAL
+      expectedOutputs: ["/bar/b.out"]
+      roots: ["/foo/"]
+)END";
+  }
+
+  MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
+  BuildSystem system(delegate);
+  system.attachDB(builddb.c_str(), nullptr);
+  bool loadingResult = system.loadDescription(manifest);
+  ASSERT_TRUE(loadingResult);
+  auto result = system.build(keyToBuild);
+
+  ASSERT_TRUE(result.getValue().isStaleFileRemoval());
+  ASSERT_EQ(result.getValue().getStaleFileList().size(), 1UL);
+  ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "/bar/b.out") == 0);
+
+  ASSERT_EQ(std::vector<std::string>({
+    "commandPreparing(C.1)",
+    "commandStarted(C.1)",
+    "cannot remove stale file '/foo/': No such file or directory",
+    "Stale file 'a.out' has a relative path. This is invalid in combination with the root path attribute.",
+    "commandFinished(C.1)",
+  }), delegate.getMessages());
+}
+
 }

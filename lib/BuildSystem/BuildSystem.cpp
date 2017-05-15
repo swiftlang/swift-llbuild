@@ -2306,10 +2306,13 @@ class StaleFileRemovalCommand : public Command {
 
   std::vector<std::string> expectedOutputs;
   std::vector<std::string> filesToDelete;
+  std::vector<std::string> roots;
   bool computedFilesToDelete = false;
 
   BuildValue priorValue;
   bool hasPriorResult = false;
+
+  char path_separator = llvm::sys::path::get_separator()[0];
 
   virtual void configureDescription(const ConfigureContext&, StringRef value) override {
     description = value;
@@ -2351,6 +2354,12 @@ class StaleFileRemovalCommand : public Command {
       expectedOutputs.reserve(values.size());
       for (auto value : values) {
         expectedOutputs.emplace_back(value.str());
+      }
+      return true;
+    } else if (name == "roots") {
+      roots.reserve(values.size());
+      for (auto value : values) {
+        roots.emplace_back(value.str());
       }
       return true;
     }
@@ -2430,6 +2439,28 @@ class StaleFileRemovalCommand : public Command {
     bsci.getDelegate().commandStarted(this);
 
     for (auto fileToDelete : filesToDelete) {
+      // If no root paths are specified, any path is valid.
+      bool isLocatedUnderRootPath = roots.size() == 0 ? true : false;
+
+      // If root paths are defined, stale file paths should be absolute.
+      if (roots.size() > 0 && fileToDelete[0] != path_separator) {
+        bsci.getDelegate().error("", {}, (Twine("Stale file '") + fileToDelete + "' has a relative path. This is invalid in combination with the root path attribute."));
+        continue;
+      }
+
+      // Check if the file is located under one of the allowed root paths.
+      for (auto root : roots) {
+        auto res = std::mismatch(root.begin(), root.end(), fileToDelete.begin());
+        if (res.first == root.end() && ((*(res.first++) == '\0') || (*(res.first++) == path_separator))) {
+          isLocatedUnderRootPath = true;
+        }
+      }
+
+      if (!isLocatedUnderRootPath) {
+        bsci.getDelegate().error("", {}, (Twine("Stale file '") + fileToDelete + "' is located outside of the allowed root paths."));
+        continue;
+      }
+
       if (!getBuildSystem(bsci.getBuildEngine()).getDelegate().getFileSystem().remove(fileToDelete)) {
         bsci.getDelegate().error("", {}, (Twine("cannot remove stale file '") + fileToDelete + "': " + strerror(errno)));
       }
