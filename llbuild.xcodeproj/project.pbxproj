@@ -66,6 +66,7 @@
 /* Begin PBXBuildFile section */
 		9D0A6D811E1FFEA800BE636F /* TempDir.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9D0A6D7F1E1FFEA800BE636F /* TempDir.cpp */; };
 		9D2107C61DFADDFA00BE26FF /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
+		9D5A5C311EC5FAE600DC84CC /* TempDir.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9D0A6D7F1E1FFEA800BE636F /* TempDir.cpp */; };
 		9DADBBAD1E256C73005B4869 /* PlatformUtility.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9DADBBAC1E256C52005B4869 /* PlatformUtility.cpp */; };
 		9DB047BA1DF9D4A4006CDF52 /* libgtest_main.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A224E619F99C580059043E /* libgtest_main.a */; };
 		9DB047BB1DF9D4A4006CDF52 /* libgtest.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A224DD19F99B0E0059043E /* libgtest.a */; };
@@ -2674,6 +2675,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9D5A5C311EC5FAE600DC84CC /* TempDir.cpp in Sources */,
 				E13812A21C53708E000092C0 /* FileSystemTest.cpp in Sources */,
 				E120B9EE1E4E65EB00B28469 /* ShellUtilityTest.cpp in Sources */,
 				E147DF1A1BA81D5A0032D08E /* SerialQueueTest.cpp in Sources */,

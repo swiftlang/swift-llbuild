@@ -711,3 +711,8 @@ current string list will be removed from the file system.
    * - expectedOutputs
      - A string list of paths that are expected to be produced by the given
        manifest.
+
+   * - roots
+     - A string lists of paths that are the only allowed root paths for files
+       to be deleted. Files outside of those paths will not be removed by
+       stale file removal.

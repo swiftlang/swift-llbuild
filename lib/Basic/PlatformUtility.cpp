@@ -104,6 +104,14 @@ int sys::stat(const char *fileName, StatStruct *buf) {
 #endif
 }
 
+int sys::symlink(const char *source, const char *target) {
+#if defined(_WIN32)
+  return ::_symlink(source, target);
+#else
+  return ::symlink(source, target);
+#endif
+}
+
 int sys::unlink(const char *fileName) {
 #if defined(_WIN32)
   return ::_unlink(fileName);

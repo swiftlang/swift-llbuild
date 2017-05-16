@@ -62,7 +62,7 @@ public:
 
   /// Remove the file or directory at the given path.
   ///
-  /// Directory removal is non-recursive, so only empty directories will be removed.
+  /// Directory removal is recursive.
   ///
   /// \returns True if the item was removed, false otherwise.
   virtual bool remove(const std::string& path) = 0;
