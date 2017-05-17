@@ -35,10 +35,11 @@ namespace {
 
 class SQLiteBuildDB : public BuildDB {
   /// Version History:
+  /// * 7: De-normalized the rule result dependencies.
   /// * 6: Added `ordinal` field for dependencies.
   /// * 5: Switched to using `WITHOUT ROWID` for dependencies.
   /// * 4: Pre-history
-  static const int currentSchemaVersion = 6;
+  static const int currentSchemaVersion = 7;
 
   sqlite3 *db = nullptr;
 
