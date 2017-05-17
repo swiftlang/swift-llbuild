@@ -2333,6 +2333,13 @@ class StaleFileRemovalCommand : public Command {
         llvm::raw_svector_ostream(result) << ", ";
       }
     }
+    llvm::raw_svector_ostream(result) << "], roots: [";
+    for (auto root : roots) {
+      llvm::raw_svector_ostream(result) << root;
+      if (root != *(--roots.end())) {
+        llvm::raw_svector_ostream(result) << ", ";
+      }
+    }
     llvm::raw_svector_ostream(result) << "]";
   }
 
