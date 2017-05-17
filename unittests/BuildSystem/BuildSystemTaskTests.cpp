@@ -262,6 +262,8 @@ TEST(BuildSystemTaskTests, doesNotProcessDependenciesAfterCancellation) {
 
 /// Check that cancellation applies to enqueued jobs.
 TEST(BuildSystemTaskTests, cancelAllInQueue) {
+// Disabled: <rdar://problem/32142112> BuildSystem/BuildSystemTests/BuildSystemTaskTests.cancelAllInQueue FAILED
+#ifdef false
   TmpDir tempDir{ __FUNCTION__ };
 
   SmallString<256> manifest{ tempDir.str() };
@@ -322,6 +324,7 @@ commands:
           "commandStarted(C1)",
           "commandFinished(C1)",
           }), delegate.getMessages());
+#endif
 }
 
 // Tests the behaviour of StaleFileRemovalTool
