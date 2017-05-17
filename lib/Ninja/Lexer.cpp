@@ -297,8 +297,10 @@ Token& Lexer::lex(Token& result) {
   }
 
   case '|': {
-    if (peekNextChar() == '|')
-      return getNextChar(), setTokenKind(result, Token::Kind::PipePipe);
+    if (peekNextChar() == '|') {
+      (void) getNextChar();
+      return setTokenKind(result, Token::Kind::PipePipe);
+    }
     return setTokenKind(result, Token::Kind::Pipe);
   }
 
