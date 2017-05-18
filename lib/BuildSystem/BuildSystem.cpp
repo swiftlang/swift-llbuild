@@ -46,7 +46,7 @@
 
 #include <memory>
 #include <mutex>
-#include <unordered_set>
+#include <set>
 
 #include <unistd.h>
 
@@ -2421,8 +2421,8 @@ class StaleFileRemovalCommand : public Command {
     }
 
     std::vector<StringRef> priorValueList = priorValue.getStaleFileList();
-    std::unordered_set<std::string> priorNodes(priorValueList.begin(), priorValueList.end());
-    std::unordered_set<std::string> expectedNodes(expectedOutputs.begin(), expectedOutputs.end());
+    std::set<std::string> priorNodes(priorValueList.begin(), priorValueList.end());
+    std::set<std::string> expectedNodes(expectedOutputs.begin(), expectedOutputs.end());
 
     std::set_difference(priorNodes.begin(), priorNodes.end(),
                         expectedNodes.begin(), expectedNodes.end(),
