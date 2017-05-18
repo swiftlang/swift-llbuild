@@ -673,4 +673,104 @@ commands:
   }), delegate.getMessages());
 }
 
+TEST(BuildSystemTaskTests, staleFileRemovalWithManyFiles) {
+  TmpDir tempDir{ __FUNCTION__ };
+
+  SmallString<256> manifest{ tempDir.str() };
+  sys::path::append(manifest, "manifest.llbuild");
+  {
+    std::error_code ec;
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    assert(!ec);
+
+    os << R"END(
+client:
+  name: mock
+
+commands:
+    C.1:
+      tool: stale-file-removal
+      expectedOutputs: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/Objects-normal/x86_64/empty.o", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Headers/CoreBasic-extra-header.h", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Headers/CoreBasic.h", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Resources/CoreBasic-extra-resource.txt", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Resources/CoreBasic-resource.txt", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Modules/module.modulemap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/CoreBasic, /var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Headers", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Resources", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Resources/Info.plist", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/CoreBasic", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Headers", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Modules", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Resources", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/Current", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic-all-non-framework-target-headers.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic-all-target-headers.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic-generated-files.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic-own-target-headers.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic-project-headers.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/Objects-normal/x86_64/CoreBasic.LinkFileList", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/all-product-headers.yaml", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/module.modulemap"]
+      roots: ["/tmp/basic.dst", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products"]
+)END";
+  }
+
+  auto keyToBuild = BuildKey::makeCommand("C.1");
+
+  SmallString<256> builddb{ tempDir.str() };
+  sys::path::append(builddb, "build.db");
+
+  // We will check that the same file is present in both file lists, so it should not show up in the difference.
+  std::string linkFileList = "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/Objects-normal/x86_64/CoreBasic.LinkFileList";
+
+  {
+    MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
+    BuildSystem system(delegate);
+    system.attachDB(builddb.c_str(), nullptr);
+
+    bool loadingResult = system.loadDescription(manifest);
+    ASSERT_TRUE(loadingResult);
+
+    auto result = system.build(keyToBuild);
+
+    ASSERT_TRUE(result.getValue().isStaleFileRemoval());
+    ASSERT_EQ(result.getValue().getStaleFileList().size(), 50UL);
+
+    // Check that `LinkFileList` is present in list of files of initial build
+    bool hasLinkFileList = false;
+    for (auto staleFile : result.getValue().getStaleFileList()) {
+      if (staleFile == linkFileList) {
+        hasLinkFileList = true;
+      }
+    }
+    ASSERT_TRUE(hasLinkFileList);
+
+    ASSERT_EQ(std::vector<std::string>({
+      "commandPreparing(C.1)",
+      "commandStarted(C.1)",
+      "commandFinished(C.1)",
+    }), delegate.getMessages());
+  }
+
+  {
+    std::error_code ec;
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    assert(!ec);
+
+    os << R"END(
+client:
+  name: mock
+
+commands:
+    C.1:
+      tool: stale-file-removal
+      expectedOutputs: ["/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/Objects-normal/x86_64/empty.o", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Headers/CoreBasic.h", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Resources/CoreBasic-resource.txt", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/CoreBasic", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Headers", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Resources", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Resources/Info.plist", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/CoreBasic", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Headers", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Resources", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/Current", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic-all-non-framework-target-headers.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic-all-target-headers.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic-generated-files.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic-own-target-headers.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic-project-headers.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/Objects-normal/x86_64/CoreBasic.LinkFileList", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/all-product-headers.yaml"]
+      roots: ["/tmp/basic.dst", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products"]
+)END";
+  }
+
+  MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
+  BuildSystem system(delegate);
+  system.attachDB(builddb.c_str(), nullptr);
+  bool loadingResult = system.loadDescription(manifest);
+  ASSERT_TRUE(loadingResult);
+  auto result = system.build(keyToBuild);
+
+  ASSERT_TRUE(result.getValue().isStaleFileRemoval());
+  ASSERT_EQ(result.getValue().getStaleFileList().size(), 22UL);
+
+  // Check that `LinkFileList` is present in list of files of second build
+  bool hasLinkFileList = false;
+  for (auto staleFile : result.getValue().getStaleFileList()) {
+    if (staleFile == linkFileList) {
+      hasLinkFileList = true;
+    }
+  }
+  ASSERT_TRUE(hasLinkFileList);
+
+  // Check that `LinkFileList` is not present in the diff
+  std::vector<std::string> messages = delegate.getMessages();
+  ASSERT_FALSE(std::find(messages.begin(), messages.end(), "cannot remove stale file '" + linkFileList + "': No such file or directory") != messages.end());
+}
+
 }
