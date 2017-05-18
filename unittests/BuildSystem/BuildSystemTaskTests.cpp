@@ -776,4 +776,14 @@ commands:
   ASSERT_FALSE(std::find(messages.begin(), messages.end(), "cannot remove stale file '" + linkFileList + "': No such file or directory") != messages.end());
 }
 
+TEST(BuildSystemTaskTests, staleFileRemovalPathIsPrefixedByPath) {
+  ASSERT_TRUE(pathIsPrefixedByPath("/foo/bar", "/foo"));
+  ASSERT_TRUE(pathIsPrefixedByPath("/foo", "/foo"));
+  ASSERT_TRUE(pathIsPrefixedByPath("/foo/", "/foo"));
+  ASSERT_TRUE(pathIsPrefixedByPath("/foo", "/foo/"));
+
+  ASSERT_FALSE(pathIsPrefixedByPath("/bar", "/foo"));
+  ASSERT_FALSE(pathIsPrefixedByPath("/foobar", "/foo"));
+}
+
 }
