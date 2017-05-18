@@ -23,6 +23,7 @@ commands:
     tool: phony
     inputs: ["subdir/subsubdir/file", "subdir-2/subsubdir/symlink"]
     outputs: ["<all>"]
+    allow-missing-inputs: true
   C.touch:
     tool: shell
     description: TOUCH

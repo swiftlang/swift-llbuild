@@ -1936,6 +1936,27 @@ public:
 
 #pragma mark - SymlinkTool implementation
 
+/// Implementation of the symlink command.
+///
+/// This command uses a non-orthodox encoding of its data. In order to
+/// accurately model the semantics of symbolic links, we need to track both the
+/// stat() and lstat() information of the output path:
+///
+/// * We need to track the stat() information because this command will be the
+///   producer of the file output, and commands which depend on that file should
+///   rebuild when the underlying target changes (in our current semantics --
+///   eventually we should more rigourously track the connection between the
+///   file and its target).
+///
+/// * We need to track the lstat() information in order to accurately track when
+///   the command needs to rerun.
+///
+/// This encoding means the command itself needs to rerun any time the
+/// destination of the target changes (because we must update the file
+/// information), however we only actually rerun the symlink if necessary.
+///
+/// The value currently is encoded as a command with two outputs, the pair of
+/// (fileInfo, statInfo).
 class SymlinkCommand : public Command {
   BuildNode* output = nullptr;
 
@@ -1948,6 +1969,9 @@ class SymlinkCommand : public Command {
   /// The contents to write at the output path.
   std::string contents;
 
+  /// The prior value, if available.
+  llvm::Optional<BuildValue> priorValue;
+  
   virtual uint64_t getSignature() {
     using llvm::hash_combine;
     llvm::hash_code code = hash_value(output->getName());
@@ -2048,11 +2072,20 @@ class SymlinkCommand : public Command {
     // result for the output.
     assert(value.isSuccessfulCommand());
 
-    return BuildValue::makeExistingInput(value.getOutputInfo());
+    // We return the *file* information for the output.
+    auto fileInfo = value.getNthOutputInfo(0);
+    if (fileInfo.isMissing())
+      return BuildValue::makeMissingInput();
+      
+    return BuildValue::makeExistingInput(fileInfo);
   }
 
-  virtual bool isResultValid(BuildSystem& system,
-                             const BuildValue& value) override {
+  /// Check if the *link* part of the result is valid.
+  ///
+  /// \param linkInfo_out On successful return, the current information on the
+  /// output link.
+  bool isLinkResultValid(BuildSystem& system, const BuildValue& value,
+                         FileInfo* linkInfo_out) {
     // It is an error if this command isn't configured properly.
     if (!output)
       return false;
@@ -2066,20 +2099,38 @@ class SymlinkCommand : public Command {
       return false;
 
     // If the prior command doesn't look like one for a link, recompute.
-    if (value.getNumOutputs() != 1)
+    if (value.getNumOutputs() != 2)
       return false;
 
+    // Otherwise, the result is valid if the link exists, and the link and file
+    // status match when we were last run.
+    
     // Otherwise, assume the result is valid if its link status matches the
     // previous one.
-    auto info = output->getLinkInfo(system.getDelegate().getFileSystem());
-    if (info.isMissing())
+    auto linkInfo = output->getLinkInfo(system.getDelegate().getFileSystem());
+    if (linkInfo.isMissing() || linkInfo != value.getNthOutputInfo(1))
       return false;
 
-    return info == value.getOutputInfo();
+    *linkInfo_out = linkInfo;
+    return true;
+  }
+  
+  virtual bool isResultValid(BuildSystem& system,
+                             const BuildValue& value) override {
+    // This result is valid if both the link and file information is up-to-date.
+    FileInfo linkInfo;
+    if (!isLinkResultValid(system, value, &linkInfo))
+      return false;
+
+    auto fileInfo = output->getFileInfo(system.getDelegate().getFileSystem());
+    return fileInfo == value.getNthOutputInfo(0);
   }
   
   virtual void start(BuildSystemCommandInterface& bsci,
                      core::Task* task) override {
+    // Reset internal state.
+    priorValue = llvm::None;
+    
     // The command itself takes no inputs, so just treat any declared inputs as
     // "must follow" directives.
     //
@@ -2092,7 +2143,8 @@ class SymlinkCommand : public Command {
 
   virtual void providePriorValue(BuildSystemCommandInterface&, core::Task*,
                                  const BuildValue& value) override {
-    // Ignored.
+    // FIXME: This is horrible, we need to be able to copy values.
+    priorValue = BuildValue::fromData(value.toData());
   }
 
   virtual void provideValue(BuildSystemCommandInterface&, core::Task*,
@@ -2109,6 +2161,19 @@ class SymlinkCommand : public Command {
       return BuildValue::makeFailedCommand();
     }
 
+    // Check if we actually needed to run, or just update the result value.
+    if (priorValue) {
+      FileInfo linkInfo;
+      if (isLinkResultValid(
+              getBuildSystem(bsci.getBuildEngine()).getBuildSystem(),
+              priorValue.getValue(), &linkInfo)) {
+        auto fileInfo = output->getFileInfo(bsci.getDelegate().getFileSystem());
+        FileInfo outputs[2] = { fileInfo, linkInfo };
+        return BuildValue::makeSuccessfulCommand(
+            llvm::makeArrayRef(outputs), getSignature());
+      }
+    }
+    
     // Create the directory containing the symlink, if necessary.
     //
     // FIXME: Shared behavior with ExternalCommand.
@@ -2142,12 +2207,16 @@ class SymlinkCommand : public Command {
       return BuildValue::makeFailedCommand();
     }
 
-    // Capture the *link* information of the output.
-    FileInfo outputInfo = output->getLinkInfo(
-        bsci.getDelegate().getFileSystem());
+    // Capture the information on the output.
+    FileInfo outputs[2] = {
+      output->getFileInfo(
+          bsci.getDelegate().getFileSystem()),
+      output->getLinkInfo(
+          bsci.getDelegate().getFileSystem()) };
       
     // Complete with a successful result.
-    return BuildValue::makeSuccessfulCommand(outputInfo, getSignature());
+    return BuildValue::makeSuccessfulCommand(
+        llvm::makeArrayRef(outputs), getSignature());
   }
 
 public:
@@ -2401,7 +2470,11 @@ class StaleFileRemovalCommand : public Command {
   }
 
   virtual void start(BuildSystemCommandInterface& bsci,
-                     core::Task* task) override {}
+                     core::Task* task) override {
+    // Reset internal state.
+    hasPriorResult = false;
+    priorValue = BuildValue::makeInvalid();
+  }
 
   virtual void providePriorValue(BuildSystemCommandInterface&, core::Task*,
                                  const BuildValue& value) override {
