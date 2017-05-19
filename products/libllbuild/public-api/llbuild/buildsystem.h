@@ -92,6 +92,7 @@ typedef enum {
   llb_buildsystem_command_result_succeeded = 0,
   llb_buildsystem_command_result_failed = 1,
   llb_buildsystem_command_result_cancelled = 2,
+  llb_buildsystem_command_result_skipped = 3,
 } llb_buildsystem_command_result_t;
 
 /// Status change event kinds.
@@ -313,7 +314,11 @@ typedef struct llb_buildsystem_delegate_t_ {
   void (*command_started)(void* context, llb_buildsystem_command_t* command);
 
   /// Called when a command has been finished.
-  void (*command_finished)(void* context, llb_buildsystem_command_t* command);
+  ///
+  /// Xparam result The result of command (e.g. success, failure, etc).
+  void (*command_finished)(void* context,
+                           llb_buildsystem_command_t* command,
+                           llb_buildsystem_command_result_t result);
 
   /// Called when a command's job has started executing an external process.
   ///

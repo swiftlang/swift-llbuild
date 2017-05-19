@@ -480,7 +480,7 @@ void BuildSystemFrontendDelegate::commandStarted(Command* command) {
   fflush(stdout);
 }
 
-void BuildSystemFrontendDelegate::commandFinished(Command*) {
+void BuildSystemFrontendDelegate::commandFinished(Command*, CommandResult) {
 }
 
 void BuildSystemFrontendDelegate::commandJobStarted(Command*) {

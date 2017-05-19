@@ -390,7 +390,7 @@ BuildValue ExternalCommand::execute(BuildSystemCommandInterface& bsci,
   // Invoke the external command.
   bsci.getDelegate().commandStarted(this);
   auto result = executeExternalCommand(bsci, task, context);
-  bsci.getDelegate().commandFinished(this);
+  bsci.getDelegate().commandFinished(this, result);
     
   // Process the result.
   switch (result) {

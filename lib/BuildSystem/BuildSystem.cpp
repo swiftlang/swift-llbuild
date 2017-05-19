@@ -903,7 +903,7 @@ class CommandTask : public Task {
         // We need to call commandFinished here because commandPreparing and
         // shouldCommandStart guarantee that they're followed by
         // commandFinished.
-        bsci.getDelegate().commandFinished(&command);
+        bsci.getDelegate().commandFinished(&command, CommandResult::Skipped);
         bsci.taskIsComplete(this, BuildValue::makeSkippedCommand());
         return;
       }
@@ -2135,7 +2135,7 @@ class SymlinkCommand : public Command {
         success = false;
       }
     }
-    bsci.getDelegate().commandFinished(this);
+    bsci.getDelegate().commandFinished(this, success ? CommandResult::Succeeded : CommandResult::Failed);
     
     // Process the result.
     if (!success) {
@@ -2437,13 +2437,14 @@ class StaleFileRemovalCommand : public Command {
     // Nothing to do if we do not have a prior result.
     if (!hasPriorResult || !priorValue.isStaleFileRemoval()) {
       bsci.getDelegate().commandStarted(this);
-      bsci.getDelegate().commandFinished(this);
+      bsci.getDelegate().commandFinished(this, CommandResult::Succeeded);
       return BuildValue::makeStaleFileRemoval(expectedOutputs);
     }
 
     computeFilesToDelete();
 
     bsci.getDelegate().commandStarted(this);
+    auto success = true;
 
     for (auto fileToDelete : filesToDelete) {
       // If no root paths are specified, any path is valid.
@@ -2452,6 +2453,7 @@ class StaleFileRemovalCommand : public Command {
       // If root paths are defined, stale file paths should be absolute.
       if (roots.size() > 0 && fileToDelete[0] != path_separator) {
         bsci.getDelegate().error("", {}, (Twine("Stale file '") + fileToDelete + "' has a relative path. This is invalid in combination with the root path attribute."));
+        success = false;
         continue;
       }
 
@@ -2465,15 +2467,17 @@ class StaleFileRemovalCommand : public Command {
 
       if (!isLocatedUnderRootPath) {
         bsci.getDelegate().error("", {}, (Twine("Stale file '") + fileToDelete + "' is located outside of the allowed root paths."));
+        success = false;
         continue;
       }
 
       if (!getBuildSystem(bsci.getBuildEngine()).getDelegate().getFileSystem().remove(fileToDelete)) {
         bsci.getDelegate().error("", {}, (Twine("cannot remove stale file '") + fileToDelete + "': " + strerror(errno)));
+        success = false;
       }
     }
 
-    bsci.getDelegate().commandFinished(this);
+    bsci.getDelegate().commandFinished(this, success ? CommandResult::Succeeded : CommandResult::Failed);
 
     // Complete with a successful result.
     return BuildValue::makeStaleFileRemoval(expectedOutputs);
