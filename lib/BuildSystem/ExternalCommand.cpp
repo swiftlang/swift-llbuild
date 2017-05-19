@@ -400,6 +400,9 @@ BuildValue ExternalCommand::execute(BuildSystemCommandInterface& bsci,
     return BuildValue::makeCancelledCommand();
   case CommandResult::Succeeded:
     return computeCommandResult(bsci);
+  case CommandResult::Skipped:
+    // It is illegal to get skipped result at this point.
+    break;
   }
   llvm::report_fatal_error("unknown result");
 }
