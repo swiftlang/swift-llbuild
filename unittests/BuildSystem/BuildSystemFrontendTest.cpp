@@ -154,12 +154,12 @@ public:
     super::commandStarted(command);
   }
 
-  virtual void commandFinished(Command* command) override {
+  virtual void commandFinished(Command* command, CommandResult result) override {
     {
       std::lock_guard<std::mutex> lock(traceMutex);
-      traceStream << __FUNCTION__ << ": " << command->getName() << "\n";
+      traceStream << __FUNCTION__ << ": " << command->getName() << ": " << (int)result << "\n";
     }
-    super::commandFinished(command);
+    super::commandFinished(command, result);
   }
 
   virtual void commandProcessStarted(Command* command, ProcessHandle handle) override {
@@ -268,14 +268,14 @@ shouldCommandStart: 1
 commandStarted: 1
 commandProcessStarted: 1
 commandProcessFinished: 1: 0
-commandFinished: 1
+commandFinished: 1: 0
 shouldCommandStart: 2
-commandFinished: 2
+commandFinished: 2: 3
 shouldCommandStart: 3
 commandStarted: 3
 commandProcessStarted: 3
 commandProcessFinished: 3: 0
-commandFinished: 3
+commandFinished: 3: 0
 )END"));
 
     ASSERT_FALSE(fs->getFileInfo(tempDir.str() + "/1").isMissing());
@@ -298,13 +298,13 @@ shouldCommandStart: 2
 commandStarted: 2
 commandProcessStarted: 2
 commandProcessFinished: 2: 0
-commandFinished: 2
+commandFinished: 2: 0
 commandPreparing: 3
 shouldCommandStart: 3
 commandStarted: 3
 commandProcessStarted: 3
 commandProcessFinished: 3: 0
-commandFinished: 3
+commandFinished: 3: 0
 )END"));
 
     ASSERT_FALSE(fs->getFileInfo(tempDir.str() + "/2").isMissing());
@@ -347,12 +347,12 @@ commands:
 commandPreparing: 2
 commandPreparing: 1
 shouldCommandStart: 1
-commandFinished: 1
+commandFinished: 1: 3
 shouldCommandStart: 2
 commandStarted: 2
 commandProcessStarted: 2
 commandProcessFinished: 2: 256
-commandFinished: 2
+commandFinished: 2: 1
 hadCommandFailure
 )END"));
 
@@ -374,12 +374,12 @@ shouldCommandStart: 1
 commandStarted: 1
 commandProcessStarted: 1
 commandProcessFinished: 1: 0
-commandFinished: 1
+commandFinished: 1: 0
 shouldCommandStart: 2
 commandStarted: 2
 commandProcessStarted: 2
 commandProcessFinished: 2: 0
-commandFinished: 2
+commandFinished: 2: 0
 )END"));
 
     ASSERT_FALSE(fs->getFileInfo(tempDir.str() + "/1").isMissing());
@@ -418,10 +418,10 @@ commands:
 commandPreparing: 2
 commandPreparing: 1
 shouldCommandStart: 1
-commandFinished: 1
+commandFinished: 1: 3
 shouldCommandStart: 2
 commandStarted: 2
-commandFinished: 2
+commandFinished: 2: 0
 )END"));
 }
 
@@ -465,15 +465,15 @@ commandPreparing: 3
 commandPreparing: 2
 commandPreparing: 1
 shouldCommandStart: 1
-commandFinished: 1
+commandFinished: 1: 3
 shouldCommandStart: 2
 commandStarted: 2
-commandFinished: 2
+commandFinished: 2: 0
 shouldCommandStart: 3
 commandStarted: 3
 commandProcessStarted: 3
 commandProcessFinished: 3: 0
-commandFinished: 3
+commandFinished: 3: 0
 )END"));
 }
 

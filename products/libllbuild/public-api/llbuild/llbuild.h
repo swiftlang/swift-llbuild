@@ -38,10 +38,12 @@
 ///
 /// Version History:
 ///
+/// 2: Added `llb_buildsystem_command_result_t` parameter to command_finished.
+///
 /// 1: Added `environment` parameter to llb_buildsystem_invocation_t.
 ///
 /// 0: Pre-history
-#define LLBUILD_API_VERSION 1
+#define LLBUILD_API_VERSION 2
 
 /// Get the full version of the llbuild library.
 LLBUILD_EXPORT const char* llb_get_full_version_string(void);

@@ -200,7 +200,9 @@ public:
   virtual void commandStarted(Command*) override;
 
   /// Called by the build system to report a command has completed.
-  virtual void commandFinished(Command*) override;
+  ///
+  /// \param result - The result of command (e.g. success, failure, etc).
+  virtual void commandFinished(Command*, CommandResult result) override;
 
   /// Called when a command's job has been started.
   ///

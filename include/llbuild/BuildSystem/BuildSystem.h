@@ -15,6 +15,7 @@
 
 #include "llbuild/Basic/Compiler.h"
 #include "llbuild/Basic/LLVM.h"
+#include "llbuild/BuildSystem/CommandResult.h"
 
 #include "llvm/ADT/Optional.h"
 #include "llvm/ADT/StringRef.h"
@@ -176,7 +177,9 @@ public:
   virtual void commandStarted(Command*) = 0;
 
   /// Called by the build system to report a command has completed.
-  virtual void commandFinished(Command*) = 0;
+  ///
+  /// \param result - The result of command (e.g. success, failure, etc).
+  virtual void commandFinished(Command*, CommandResult result) = 0;
 };
 
 /// The BuildSystem class is used to perform builds using the native build

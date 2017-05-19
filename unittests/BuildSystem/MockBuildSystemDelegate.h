@@ -123,11 +123,11 @@ public:
     }
   }
 
-  virtual void commandFinished(Command* command) {
+  virtual void commandFinished(Command* command, CommandResult result) {
     if (trackAllMessages) {
       std::unique_lock<std::mutex> lock(messagesMutex);
       messages.push_back(
-          ("commandFinished(" + command->getName() + ")").str());
+          ("commandFinished(" + command->getName() + ": " + std::to_string((int)result) + ")").str());
     }
   }
 };
