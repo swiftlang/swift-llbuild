@@ -141,7 +141,8 @@ static void command_started(void* context,
 }
 
 static void command_finished(void* context,
-                             llb_buildsystem_command_t* command) {
+                             llb_buildsystem_command_t* command,
+                             llb_buildsystem_command_result_t result) {
   llb_data_t name;
   llb_buildsystem_command_get_name(command, &name);
   printf("%s: %.*s\n", __FUNCTION__, (int)name.length, name.data);

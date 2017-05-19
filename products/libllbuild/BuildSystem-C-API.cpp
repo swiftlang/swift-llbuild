@@ -138,6 +138,23 @@ class CAPIBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
   llb_buildsystem_delegate_t cAPIDelegate;
   CAPIFileSystem fileSystem;
 
+  llb_buildsystem_command_result_t get_command_result(CommandResult commandResult) {
+    switch (commandResult) {
+      case CommandResult::Succeeded:
+        return llb_buildsystem_command_result_succeeded;
+      case CommandResult::Cancelled:
+        return llb_buildsystem_command_result_cancelled;
+      case CommandResult::Failed:
+        return llb_buildsystem_command_result_failed;
+      case CommandResult::Skipped:
+        return llb_buildsystem_command_result_skipped;
+      default:
+        assert(0 && "unknown command result");
+        break;
+    }
+    return llb_buildsystem_command_result_failed;
+  }
+
 public:
   CAPIBuildSystemFrontendDelegate(llvm::SourceMgr& sourceMgr,
                                   BuildSystemInvocation& invocation,
@@ -224,11 +241,12 @@ public:
     }
   }
 
-  virtual void commandFinished(Command* command) override {
+  virtual void commandFinished(Command* command, CommandResult commandResult) override {
     if (cAPIDelegate.command_finished) {
       cAPIDelegate.command_finished(
           cAPIDelegate.context,
-          (llb_buildsystem_command_t*) command);
+          (llb_buildsystem_command_t*) command,
+          get_command_result(commandResult));
     }
   }
 
@@ -272,27 +290,11 @@ public:
                                       CommandResult commandResult,
                                       int exitStatus) override {
     if (cAPIDelegate.command_process_finished) {
-      llb_buildsystem_command_result_t result = llb_buildsystem_command_result_failed;
-      switch (commandResult) {
-        case CommandResult::Succeeded:
-          result = llb_buildsystem_command_result_succeeded;
-          break;
-        case CommandResult::Cancelled:
-          result = llb_buildsystem_command_result_cancelled;
-          break;
-        case CommandResult::Failed:
-          result = llb_buildsystem_command_result_failed;
-          break;
-        default:
-          assert(0 && "unknown command result");
-          break;
-      }
-
       cAPIDelegate.command_process_finished(
           cAPIDelegate.context,
           (llb_buildsystem_command_t*) command,
           (llb_buildsystem_process_t*) handle.id,
-          result,
+          get_command_result(commandResult),
           exitStatus);
     }
   }

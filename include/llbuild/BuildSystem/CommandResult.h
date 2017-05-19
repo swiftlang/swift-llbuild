@@ -9,11 +9,6 @@
 // See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 //
 //===----------------------------------------------------------------------===//
-//
-// Compiler support and compatibility macros. Liberally taken from LLVM.
-//
-//===----------------------------------------------------------------------===//
-
 
 #ifndef LLBUILD_BUILDSYSTEM_COMMAND_RESULT_H
 #define LLBUILD_BUILDSYSTEM_COMMAND_RESULT_H
@@ -21,11 +16,12 @@
 namespace llbuild {
 namespace buildsystem {
 
-/// Result of a command execution
+/// Result of a command execution.
 enum class CommandResult {
   Succeeded = 0,
-  Failed = 1,
-  Cancelled = 2,
+  Failed,
+  Cancelled,
+  Skipped,
 };
 
 }
