@@ -127,7 +127,7 @@ public:
     if (trackAllMessages) {
       std::unique_lock<std::mutex> lock(messagesMutex);
       messages.push_back(
-          ("commandFinished(" + command->getName() + ")").str());
+          ("commandFinished(" + command->getName() + ": " + std::to_string((int)result) + ")").str());
     }
   }
 };

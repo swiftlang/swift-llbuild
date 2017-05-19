@@ -372,7 +372,7 @@ commands:
     ASSERT_EQ(std::vector<std::string>({
       "commandPreparing(C.1)",
       "commandStarted(C.1)",
-      "commandFinished(C.1)",
+      "commandFinished(C.1: 0)",
     }), delegate.getMessages());
   }
 
@@ -409,7 +409,7 @@ commands:
     "commandStarted(C.1)",
     // FIXME: Maybe it's worth creating a virtual FileSystem implementation and checking if `remove` has been called
     "cannot remove stale file 'a.out': No such file or directory",
-    "commandFinished(C.1)",
+    "commandFinished(C.1: 1)",
   }), delegate.getMessages());
 }
 
@@ -457,7 +457,7 @@ commands:
     ASSERT_EQ(std::vector<std::string>({
       "commandPreparing(C.1)",
       "commandStarted(C.1)",
-      "commandFinished(C.1)",
+      "commandFinished(C.1: 0)",
     }), delegate.getMessages());
   }
 
@@ -498,7 +498,7 @@ commands:
     "Stale file '/bar/a.out' is located outside of the allowed root paths.",
     // FIXME: Enable once stale file removal issues are no longer errros.
     //"Stale file '/foobar.txt' is located outside of the allowed root paths.",
-    "commandFinished(C.1)",
+    "commandFinished(C.1: 1)",
   }), delegate.getMessages());
 }
 
@@ -546,7 +546,7 @@ commands:
     ASSERT_EQ(std::vector<std::string>({
       "commandPreparing(C.1)",
       "commandStarted(C.1)",
-      "commandFinished(C.1)",
+      "commandFinished(C.1: 0)",
     }), delegate.getMessages());
   }
 
@@ -583,7 +583,7 @@ commands:
     "commandPreparing(C.1)",
     "commandStarted(C.1)",
     "Stale file 'a.out' has a relative path. This is invalid in combination with the root path attribute.",
-    "commandFinished(C.1)",
+    "commandFinished(C.1: 1)",
   }), delegate.getMessages());
 }
 
@@ -631,7 +631,7 @@ commands:
     ASSERT_EQ(std::vector<std::string>({
       "commandPreparing(C.1)",
       "commandStarted(C.1)",
-      "commandFinished(C.1)",
+      "commandFinished(C.1: 0)",
     }), delegate.getMessages());
   }
 
@@ -669,7 +669,7 @@ commands:
     "commandStarted(C.1)",
     "cannot remove stale file '/foo/': No such file or directory",
     "Stale file 'a.out' has a relative path. This is invalid in combination with the root path attribute.",
-    "commandFinished(C.1)",
+    "commandFinished(C.1: 1)",
   }), delegate.getMessages());
 }
 
