@@ -728,7 +728,7 @@ commands:
     ASSERT_EQ(std::vector<std::string>({
       "commandPreparing(C.1)",
       "commandStarted(C.1)",
-      "commandFinished(C.1)",
+      "commandFinished(C.1: 0)",
     }), delegate.getMessages());
   }
 
