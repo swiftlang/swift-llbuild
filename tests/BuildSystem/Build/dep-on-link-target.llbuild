@@ -1,0 +1,67 @@
+# Check behavior when a command directly depends on a file seen through a
+# symbolic link.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: echo "input" > %t.build/input
+# RUN: cp %s %t.build/build.llbuild
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.out
+# RUN: %{FileCheck} --input-file=%t.out %s --check-prefix=CHECK-INITIAL
+# RUN: diff %t.build/input %t.build/output
+#
+# CHECK-INITIAL: LINK
+# CHECK-INITIAL: CONSUMER
+
+
+# Check that a null build does nothing.
+#
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t2.out
+# RUN: echo "END-OF-FILE" >> %t2.out
+# RUN: %{FileCheck} --input-file=%t2.out %s --check-prefix=CHECK-REBUILD
+#
+# CHECK-REBUILD-NOT: LINK
+# CHECK-REBUILD-NOT: CONSUMER
+
+
+# Check that a modification triggers both uses.
+#
+# RUN: echo "MOD" >> %t.build/input
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t3.out
+# RUN: %{FileCheck} --input-file=%t3.out %s --check-prefix=CHECK-AFTER-MOD
+# RUN: diff %t.build/input %t.build/output
+#
+# CHECK-AFTER-MOD: CONSUMER
+
+
+# Check that another null build does nothing.
+#
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t4.out
+# RUN: echo "END-OF-FILE" >> %t4.out
+# RUN: %{FileCheck} --input-file=%t4.out %s --check-prefix=CHECK-REBUILD
+
+client:
+  name: basic
+
+targets:
+  "": ["output"]
+  
+commands:
+  # A command which consumes a generated input and reports it as a discovered dep.
+  C.consumer:
+    tool: shell
+    description: CONSUMER
+    inputs: ["link"]
+    outputs: ["output"]
+    args: cp link output
+
+  # A command which generates the discovered input.
+  #
+  # NOTE: The generated-input itself is intentionally never declared as an
+  # output here; this test is intentionally checking that we support a situation
+  # where the dependency edge is only valid due to some other explicit ordering
+  # in the build system, in this case the edge "C.consumer -> <GENERATOR>".
+  C.generator:
+    tool: symlink
+    description: LINK
+    outputs: ["link"]
+    contents: input

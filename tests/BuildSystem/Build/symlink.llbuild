@@ -1,39 +1,43 @@
 # Check the 'symlink' tool.
 #
+# NOTE: We create contents in a subdirectory of the target to ensure that the
+# changes we make don't cause the stat information of the link itself to change.
+#
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.llbuild
-# RUN: mkdir -p %t.build/symlink-target
+# RUN: mkdir -p %t.build/symlink-target/subdir
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.out
 # RUN: test -L %t.build/symlink
-# RUN: test -f %t.build/symlink-target/file
+# RUN: test -f %t.build/symlink-target/subdir/file
 # RUN: %{FileCheck} --input-file=%t.out %s
 #
 # CHECK: SYMLINK
-# CHECK: MUTATE
-
+# CHECK: USE-SYMLINK
 
 # Check that a null build does nothing.
 #
 # RUN: echo "START." > %t2.out
-# RUN: %{llbuild} buildsystem build --serial --chdir %t.build >> %t2.out
+# RUN: %{llbuild} buildsystem build --serial --trace %t2.trace --chdir %t.build >> %t2.out
 # RUN: echo "EOF" >> %t2.out
+# RUN: cat %t2.out
 # RUN: %{FileCheck} --input-file=%t2.out %s --check-prefix=CHECK-REBUILD
 #
 # CHECK-REBUILD: START
 # CHECK-REBUILD-NOT: SYMLINK
-# CHECK-REBUILD-NOT: MUTATE
+# CHECK-REBUILD-NOT: USE-SYMLINK
 # CHECK-REBUILD-NEXT: EOF
-
 
 # Ensure the symlink is recreated if necessary.
 #
 # RUN: rm -rf %t.build/symlink
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t3.out
+# RUN: test -L %t.build/symlink
+# RUN: test -f %t.build/symlink-target/subdir/file
 # RUN: %{FileCheck} --input-file=%t3.out %s --check-prefix=CHECK-RECREATE
 #
 # CHECK-RECREATE: SYMLINK
-# CHECK-RECREATE: MUTATE
+# CHECK-RECREATE: USE-SYMLINK
 
 client:
   name: basic
@@ -44,17 +48,16 @@ targets:
 commands:
   C.all:
     tool: phony
-    inputs: ["symlink-target/file"]
+    inputs: ["symlink/subdir/file"]
     outputs: ["<all>"]
   C.symlink:
     tool: symlink
     description: SYMLINK
     outputs: ["symlink"]
     contents: "symlink-target"
-  C.mutate:
+  C.USE-SYMLINK:
     tool: shell
-    description: MUTATE
+    description: USE-SYMLINK
     inputs: ["symlink"]
-    outputs: ["symlink-target/file"]
-    # We use touch -r here to ensure the file time is modified to something different than the symlink.
-    args: touch symlink-target/file && touch -r / symlink-target
+    outputs: ["symlink/subdir/file"]
+    args: touch symlink/subdir/file

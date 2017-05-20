@@ -450,6 +450,7 @@ commands:
         inputs: ["2"]
         outputs: ["3"]
         args: rm 2
+        allow-missing-inputs: true
 )END");
   // We need to delete the symlink ourselves, because llvm's remove()
   // currently refuses to delete symlinks.
