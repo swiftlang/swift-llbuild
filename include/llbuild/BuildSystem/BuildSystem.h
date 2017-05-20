@@ -39,6 +39,8 @@ class BuildKey;
 class BuildValue;
 class Command;
 class Tool;
+
+bool pathIsPrefixedByPath(std::string path, std::string prefixPath);
   
 class BuildSystemDelegate {
   // DO NOT COPY

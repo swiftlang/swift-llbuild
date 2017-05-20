@@ -2457,8 +2457,7 @@ class StaleFileRemovalCommand : public Command {
 
       // Check if the file is located under one of the allowed root paths.
       for (auto root : roots) {
-        auto res = std::mismatch(root.begin(), root.end(), fileToDelete.begin());
-        if (res.first == root.end() && ((*(res.second++) == '\0') || (*(res.second++) == path_separator))) {
+        if (pathIsPrefixedByPath(fileToDelete, root)) {
           isLocatedUnderRootPath = true;
         }
       }
@@ -2649,4 +2648,14 @@ void BuildSystem::cancel() {
 
 void BuildSystem::resetForBuild() {
   static_cast<BuildSystemImpl*>(impl)->resetForBuild();
+}
+
+// This function checks if the given path is prefixed by another path.
+bool llbuild::buildsystem::pathIsPrefixedByPath(std::string path, std::string prefixPath) {
+  static char path_separator = llvm::sys::path::get_separator()[0];
+  auto res = std::mismatch(prefixPath.begin(), prefixPath.end(), path.begin());
+  // Check if `prefixPath` has been exhausted or just a separator remains.
+  bool isPrefix = res.first == prefixPath.end() || (*(res.first++) == path_separator);
+  // Check if `path` has been exhausted or just a separator remains.
+  return isPrefix && (res.second == path.end() || (*(res.second++) == path_separator));
 }
