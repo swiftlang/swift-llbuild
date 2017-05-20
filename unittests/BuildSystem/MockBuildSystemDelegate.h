@@ -123,6 +123,28 @@ public:
     }
   }
 
+  virtual void commandHadError(Command* command, StringRef data) {
+    llvm::errs() << "error: " << command->getName() << ": " << data.str() << "\n";
+    {
+      std::unique_lock<std::mutex> lock(messagesMutex);
+      messages.push_back(data.str());
+    }
+  }
+
+  virtual void commandHadNote(Command* command, StringRef data) {
+    if (trackAllMessages) {
+      std::unique_lock<std::mutex> lock(messagesMutex);
+      messages.push_back(("commandNote(" + command->getName() + ") " + data).str());
+    }
+  }
+
+  virtual void commandHadWarning(Command* command, StringRef data) {
+    if (trackAllMessages) {
+      std::unique_lock<std::mutex> lock(messagesMutex);
+      messages.push_back(("commandWarning(" + command->getName() + ") " + data).str());
+    }
+  }
+
   virtual void commandFinished(Command* command, CommandResult result) {
     if (trackAllMessages) {
       std::unique_lock<std::mutex> lock(messagesMutex);
