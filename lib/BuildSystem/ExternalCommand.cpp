@@ -390,7 +390,7 @@ BuildValue ExternalCommand::execute(BuildSystemCommandInterface& bsci,
   // Invoke the external command.
   bsci.getDelegate().commandStarted(this);
   auto result = executeExternalCommand(bsci, task, context);
-  bsci.getDelegate().commandFinished(this);
+  bsci.getDelegate().commandFinished(this, result);
     
   // Process the result.
   switch (result) {
@@ -400,6 +400,9 @@ BuildValue ExternalCommand::execute(BuildSystemCommandInterface& bsci,
     return BuildValue::makeCancelledCommand();
   case CommandResult::Succeeded:
     return computeCommandResult(bsci);
+  case CommandResult::Skipped:
+    // It is illegal to get skipped result at this point.
+    break;
   }
   llvm::report_fatal_error("unknown result");
 }
