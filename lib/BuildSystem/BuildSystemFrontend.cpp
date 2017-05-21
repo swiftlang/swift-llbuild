@@ -480,6 +480,21 @@ void BuildSystemFrontendDelegate::commandStarted(Command* command) {
   fflush(stdout);
 }
 
+void BuildSystemFrontendDelegate::commandHadError(Command* command, StringRef data) {
+  fwrite(data.data(), data.size(), 1, stderr);
+  fflush(stderr);
+}
+
+void BuildSystemFrontendDelegate::commandHadNote(Command* command, StringRef data) {
+  fwrite(data.data(), data.size(), 1, stdout);
+  fflush(stdout);
+}
+
+void BuildSystemFrontendDelegate::commandHadWarning(Command* command, StringRef data) {
+  fwrite(data.data(), data.size(), 1, stdout);
+  fflush(stdout);
+}
+
 void BuildSystemFrontendDelegate::commandFinished(Command*, CommandResult) {
 }
 

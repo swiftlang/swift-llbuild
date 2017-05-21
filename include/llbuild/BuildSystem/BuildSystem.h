@@ -39,6 +39,8 @@ class BuildKey;
 class BuildValue;
 class Command;
 class Tool;
+
+bool pathIsPrefixedByPath(std::string path, std::string prefixPath);
   
 class BuildSystemDelegate {
   // DO NOT COPY
@@ -175,6 +177,21 @@ public:
   /// the build manifest (i.e., not for any work implicitly spawned by those
   /// commands).
   virtual void commandStarted(Command*) = 0;
+
+  /// Called to report an error during the execution of a command.
+  ///
+  /// \param data - The error message.
+  virtual void commandHadError(Command*, StringRef data) = 0;
+
+  /// Called to report a note during the execution of a command.
+  ///
+  /// \param data - The note message.
+  virtual void commandHadNote(Command*, StringRef data) = 0;
+
+  /// Called to report a warning during the execution of a command.
+  ///
+  /// \param data - The warning message.
+  virtual void commandHadWarning(Command*, StringRef data) = 0;
 
   /// Called by the build system to report a command has completed.
   ///

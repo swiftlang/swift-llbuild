@@ -46,7 +46,7 @@
 
 #include <memory>
 #include <mutex>
-#include <unordered_set>
+#include <set>
 
 #include <unistd.h>
 
@@ -2421,8 +2421,8 @@ class StaleFileRemovalCommand : public Command {
     }
 
     std::vector<StringRef> priorValueList = priorValue.getStaleFileList();
-    std::unordered_set<std::string> priorNodes(priorValueList.begin(), priorValueList.end());
-    std::unordered_set<std::string> expectedNodes(expectedOutputs.begin(), expectedOutputs.end());
+    std::set<std::string> priorNodes(priorValueList.begin(), priorValueList.end());
+    std::set<std::string> expectedNodes(expectedOutputs.begin(), expectedOutputs.end());
 
     std::set_difference(priorNodes.begin(), priorNodes.end(),
                         expectedNodes.begin(), expectedNodes.end(),
@@ -2444,7 +2444,6 @@ class StaleFileRemovalCommand : public Command {
     computeFilesToDelete();
 
     bsci.getDelegate().commandStarted(this);
-    auto success = true;
 
     for (auto fileToDelete : filesToDelete) {
       // If no root paths are specified, any path is valid.
@@ -2452,32 +2451,30 @@ class StaleFileRemovalCommand : public Command {
 
       // If root paths are defined, stale file paths should be absolute.
       if (roots.size() > 0 && fileToDelete[0] != path_separator) {
-        bsci.getDelegate().error("", {}, (Twine("Stale file '") + fileToDelete + "' has a relative path. This is invalid in combination with the root path attribute."));
-        success = false;
+        bsci.getDelegate().commandHadWarning(this, "Stale file '" + fileToDelete + "' has a relative path. This is invalid in combination with the root path attribute.\n");
         continue;
       }
 
       // Check if the file is located under one of the allowed root paths.
       for (auto root : roots) {
-        auto res = std::mismatch(root.begin(), root.end(), fileToDelete.begin());
-        if (res.first == root.end() && ((*(res.first++) == '\0') || (*(res.first++) == path_separator))) {
+        if (pathIsPrefixedByPath(fileToDelete, root)) {
           isLocatedUnderRootPath = true;
         }
       }
 
       if (!isLocatedUnderRootPath) {
-        bsci.getDelegate().error("", {}, (Twine("Stale file '") + fileToDelete + "' is located outside of the allowed root paths."));
-        success = false;
+        bsci.getDelegate().commandHadWarning(this, "Stale file '" + fileToDelete + "' is located outside of the allowed root paths.\n");
         continue;
       }
 
-      if (!getBuildSystem(bsci.getBuildEngine()).getDelegate().getFileSystem().remove(fileToDelete)) {
-        bsci.getDelegate().error("", {}, (Twine("cannot remove stale file '") + fileToDelete + "': " + strerror(errno)));
-        success = false;
+      if (getBuildSystem(bsci.getBuildEngine()).getDelegate().getFileSystem().remove(fileToDelete)) {
+        bsci.getDelegate().commandHadNote(this, "Removed stale file '" + fileToDelete + "'\n");
+      } else {
+        bsci.getDelegate().commandHadWarning(this, "cannot remove stale file '" + fileToDelete + "': " + strerror(errno) + "\n");
       }
     }
 
-    bsci.getDelegate().commandFinished(this, success ? CommandResult::Succeeded : CommandResult::Failed);
+    bsci.getDelegate().commandFinished(this, CommandResult::Succeeded);
 
     // Complete with a successful result.
     return BuildValue::makeStaleFileRemoval(expectedOutputs);
@@ -2651,4 +2648,14 @@ void BuildSystem::cancel() {
 
 void BuildSystem::resetForBuild() {
   static_cast<BuildSystemImpl*>(impl)->resetForBuild();
+}
+
+// This function checks if the given path is prefixed by another path.
+bool llbuild::buildsystem::pathIsPrefixedByPath(std::string path, std::string prefixPath) {
+  static char path_separator = llvm::sys::path::get_separator()[0];
+  auto res = std::mismatch(prefixPath.begin(), prefixPath.end(), path.begin());
+  // Check if `prefixPath` has been exhausted or just a separator remains.
+  bool isPrefix = res.first == prefixPath.end() || (*(res.first++) == path_separator);
+  // Check if `path` has been exhausted or just a separator remains.
+  return isPrefix && (res.second == path.end() || (*(res.second++) == path_separator));
 }

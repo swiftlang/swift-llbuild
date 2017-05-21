@@ -408,8 +408,8 @@ commands:
     "commandPreparing(C.1)",
     "commandStarted(C.1)",
     // FIXME: Maybe it's worth creating a virtual FileSystem implementation and checking if `remove` has been called
-    "cannot remove stale file 'a.out': No such file or directory",
-    "commandFinished(C.1: 1)",
+    "commandWarning(C.1) cannot remove stale file 'a.out': No such file or directory\n",
+    "commandFinished(C.1: 0)",
   }), delegate.getMessages());
 }
 
@@ -431,7 +431,7 @@ commands:
     C.1:
       tool: stale-file-removal
       description: STALE-FILE-REMOVAL
-      expectedOutputs: ["/bar/a.out"]
+      expectedOutputs: ["/bar/a.out", "/foo", "/foobar.txt"]
 )END";
   }
 
@@ -451,8 +451,10 @@ commands:
     auto result = system.build(keyToBuild);
 
     ASSERT_TRUE(result.getValue().isStaleFileRemoval());
-    ASSERT_EQ(result.getValue().getStaleFileList().size(), 1UL);
+    ASSERT_EQ(result.getValue().getStaleFileList().size(), 3UL);
     ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "/bar/a.out") == 0);
+    ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[1].str().c_str(), "/foo") == 0);
+    ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[2].str().c_str(), "/foobar.txt") == 0);
 
     ASSERT_EQ(std::vector<std::string>({
       "commandPreparing(C.1)",
@@ -474,7 +476,7 @@ commands:
     C.1:
       tool: stale-file-removal
       description: STALE-FILE-REMOVAL
-      expectedOutputs: ["/bar/b.out", "/foo", "/foobar.txt"]
+      expectedOutputs: ["/bar/b.out"]
       roots: ["/foo"]
 )END";
   }
@@ -487,19 +489,20 @@ commands:
   auto result = system.build(keyToBuild);
 
   ASSERT_TRUE(result.getValue().isStaleFileRemoval());
-  ASSERT_EQ(result.getValue().getStaleFileList().size(), 3UL);
+  ASSERT_EQ(result.getValue().getStaleFileList().size(), 1UL);
   ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "/bar/b.out") == 0);
-  ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[1].str().c_str(), "/foo") == 0);
-  ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[2].str().c_str(), "/foobar.txt") == 0);
+
+  auto messages = delegate.getMessages();
+  std::sort(messages.begin(), messages.end());
 
   ASSERT_EQ(std::vector<std::string>({
+    "commandFinished(C.1: 0)",
     "commandPreparing(C.1)",
     "commandStarted(C.1)",
-    "Stale file '/bar/a.out' is located outside of the allowed root paths.",
-    // FIXME: Enable once stale file removal issues are no longer errros.
-    //"Stale file '/foobar.txt' is located outside of the allowed root paths.",
-    "commandFinished(C.1: 1)",
-  }), delegate.getMessages());
+    "commandWarning(C.1) Stale file '/bar/a.out' is located outside of the allowed root paths.\n",
+    "commandWarning(C.1) Stale file '/foobar.txt' is located outside of the allowed root paths.\n",
+    "commandWarning(C.1) cannot remove stale file '/foo': No such file or directory\n",
+  }), messages);
 }
 
 TEST(BuildSystemTaskTests, staleFileRemovalWithRootsEnforcesAbsolutePaths) {
@@ -582,8 +585,8 @@ commands:
   ASSERT_EQ(std::vector<std::string>({
     "commandPreparing(C.1)",
     "commandStarted(C.1)",
-    "Stale file 'a.out' has a relative path. This is invalid in combination with the root path attribute.",
-    "commandFinished(C.1: 1)",
+    "commandWarning(C.1) Stale file 'a.out' has a relative path. This is invalid in combination with the root path attribute.\n",
+    "commandFinished(C.1: 0)",
   }), delegate.getMessages());
 }
 
@@ -667,10 +670,120 @@ commands:
   ASSERT_EQ(std::vector<std::string>({
     "commandPreparing(C.1)",
     "commandStarted(C.1)",
-    "cannot remove stale file '/foo/': No such file or directory",
-    "Stale file 'a.out' has a relative path. This is invalid in combination with the root path attribute.",
-    "commandFinished(C.1: 1)",
+    "commandWarning(C.1) cannot remove stale file '/foo/': No such file or directory\n",
+    "commandWarning(C.1) Stale file 'a.out' has a relative path. This is invalid in combination with the root path attribute.\n",
+    "commandFinished(C.1: 0)",
   }), delegate.getMessages());
+}
+
+TEST(BuildSystemTaskTests, staleFileRemovalWithManyFiles) {
+  TmpDir tempDir{ __FUNCTION__ };
+
+  SmallString<256> manifest{ tempDir.str() };
+  sys::path::append(manifest, "manifest.llbuild");
+  {
+    std::error_code ec;
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    assert(!ec);
+
+    os << R"END(
+client:
+  name: mock
+
+commands:
+    C.1:
+      tool: stale-file-removal
+      expectedOutputs: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/Objects-normal/x86_64/empty.o", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Headers/CoreBasic-extra-header.h", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Headers/CoreBasic.h", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Resources/CoreBasic-extra-resource.txt", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Resources/CoreBasic-resource.txt", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Modules/module.modulemap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/CoreBasic, /var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Headers", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Resources", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Resources/Info.plist", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/CoreBasic", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Headers", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Modules", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Resources", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/Current", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic-all-non-framework-target-headers.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic-all-target-headers.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic-generated-files.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic-own-target-headers.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic-project-headers.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/Objects-normal/x86_64/CoreBasic.LinkFileList", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/all-product-headers.yaml", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/module.modulemap"]
+      roots: ["/tmp/basic.dst", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products"]
+)END";
+  }
+
+  auto keyToBuild = BuildKey::makeCommand("C.1");
+
+  SmallString<256> builddb{ tempDir.str() };
+  sys::path::append(builddb, "build.db");
+
+  // We will check that the same file is present in both file lists, so it should not show up in the difference.
+  std::string linkFileList = "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/Objects-normal/x86_64/CoreBasic.LinkFileList";
+
+  {
+    MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
+    BuildSystem system(delegate);
+    system.attachDB(builddb.c_str(), nullptr);
+
+    bool loadingResult = system.loadDescription(manifest);
+    ASSERT_TRUE(loadingResult);
+
+    auto result = system.build(keyToBuild);
+
+    ASSERT_TRUE(result.getValue().isStaleFileRemoval());
+    ASSERT_EQ(result.getValue().getStaleFileList().size(), 50UL);
+
+    // Check that `LinkFileList` is present in list of files of initial build
+    bool hasLinkFileList = false;
+    for (auto staleFile : result.getValue().getStaleFileList()) {
+      if (staleFile == linkFileList) {
+        hasLinkFileList = true;
+      }
+    }
+    ASSERT_TRUE(hasLinkFileList);
+
+    ASSERT_EQ(std::vector<std::string>({
+      "commandPreparing(C.1)",
+      "commandStarted(C.1)",
+      "commandFinished(C.1: 0)",
+    }), delegate.getMessages());
+  }
+
+  {
+    std::error_code ec;
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    assert(!ec);
+
+    os << R"END(
+client:
+  name: mock
+
+commands:
+    C.1:
+      tool: stale-file-removal
+      expectedOutputs: ["/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/Objects-normal/x86_64/empty.o", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Headers/CoreBasic.h", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Resources/CoreBasic-resource.txt", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/CoreBasic", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Headers", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Resources", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/A/Resources/Info.plist", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/CoreBasic", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Headers", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Resources", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products/Debug/CoreBasic.framework/Versions/Current", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic-all-non-framework-target-headers.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic-all-target-headers.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic-generated-files.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic-own-target-headers.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic-project-headers.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/CoreBasic.hmap", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/Objects-normal/x86_64/CoreBasic.LinkFileList", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates/basic.build/Debug/CoreBasic.build/all-product-headers.yaml"]
+      roots: ["/tmp/basic.dst", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Intermediates", "/var/folders/1f/r6txd12925s9kytl1_pckt_w0000gp/T/Tests/Build/Products"]
+)END";
+  }
+
+  MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
+  BuildSystem system(delegate);
+  system.attachDB(builddb.c_str(), nullptr);
+  bool loadingResult = system.loadDescription(manifest);
+  ASSERT_TRUE(loadingResult);
+  auto result = system.build(keyToBuild);
+
+  ASSERT_TRUE(result.getValue().isStaleFileRemoval());
+  ASSERT_EQ(result.getValue().getStaleFileList().size(), 22UL);
+
+  // Check that `LinkFileList` is present in list of files of second build
+  bool hasLinkFileList = false;
+  for (auto staleFile : result.getValue().getStaleFileList()) {
+    if (staleFile == linkFileList) {
+      hasLinkFileList = true;
+    }
+  }
+  ASSERT_TRUE(hasLinkFileList);
+
+  // Check that `LinkFileList` is not present in the diff
+  std::vector<std::string> messages = delegate.getMessages();
+  ASSERT_FALSE(std::find(messages.begin(), messages.end(), "cannot remove stale file '" + linkFileList + "': No such file or directory") != messages.end());
+}
+
+TEST(BuildSystemTaskTests, staleFileRemovalPathIsPrefixedByPath) {
+  ASSERT_TRUE(pathIsPrefixedByPath("/foo/bar", "/foo"));
+  ASSERT_TRUE(pathIsPrefixedByPath("/foo", "/foo"));
+  ASSERT_TRUE(pathIsPrefixedByPath("/foo/", "/foo"));
+  ASSERT_TRUE(pathIsPrefixedByPath("/foo", "/foo/"));
+
+  ASSERT_FALSE(pathIsPrefixedByPath("/bar", "/foo"));
+  ASSERT_FALSE(pathIsPrefixedByPath("/foobar", "/foo"));
 }
 
 }
