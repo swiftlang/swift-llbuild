@@ -1937,8 +1937,13 @@ public:
 #pragma mark - SymlinkTool implementation
 
 class SymlinkCommand : public Command {
+  /// The declared output node.
   BuildNode* output = nullptr;
 
+  /// The path of the actual symbolic link to create, if different from the
+  /// output node.
+  std::string linkOutputPath;
+  
   /// The command description.
   std::string description;
 
@@ -1948,6 +1953,12 @@ class SymlinkCommand : public Command {
   /// The contents to write at the output path.
   std::string contents;
 
+  /// Get the destination path.
+  StringRef getActualOutputPath() const {
+    return linkOutputPath.empty() ? output->getName() :
+      StringRef(linkOutputPath);
+  }
+  
   virtual uint64_t getSignature() {
     using llvm::hash_combine;
     llvm::hash_code code = hash_value(output->getName());
@@ -1970,12 +1981,13 @@ class SymlinkCommand : public Command {
   virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
     llvm::raw_svector_ostream os(result);
     os << "ln -sfh ";
-    if (output) {
+    StringRef outputPath = getActualOutputPath();
+    if (!output || !outputPath.empty()) {
       // FIXME: This isn't correct, we need utilities for doing shell quoting.
-      if (StringRef(output->getName()).find(' ') != StringRef::npos) {
-        os << '"' << output->getName() << '"';
+      if (outputPath.find(' ') != StringRef::npos) {
+        os << '"' << outputPath << '"';
       } else {
-        os << output->getName();
+        os << outputPath;
       }
     } else {
       os << "<<<missing output>>>";
@@ -2001,9 +2013,6 @@ class SymlinkCommand : public Command {
                                 const std::vector<Node*>& value) override {
     if (value.size() == 1) {
       output = static_cast<BuildNode*>(value[0]);
-      if (output->isVirtual()) {
-        ctx.error("unexpected virtual output");
-      }
     } else if (value.empty()) {
       ctx.error("missing declared output");
     } else {
@@ -2015,6 +2024,9 @@ class SymlinkCommand : public Command {
                                   StringRef value) override {
     if (name == "contents") {
       contents = value;
+      return true;
+    } else if (name == "link-output-path") {
+      linkOutputPath = value;
       return true;
     } else {
       ctx.error("unexpected attribute: '" + name + "'");
@@ -2054,7 +2066,8 @@ class SymlinkCommand : public Command {
   virtual bool isResultValid(BuildSystem& system,
                              const BuildValue& value) override {
     // It is an error if this command isn't configured properly.
-    if (!output)
+    StringRef outputPath = getActualOutputPath();
+    if (!output || outputPath.empty())
       return false;
 
     // If the prior value wasn't for a successful command, recompute.
@@ -2071,7 +2084,7 @@ class SymlinkCommand : public Command {
 
     // Otherwise, assume the result is valid if its link status matches the
     // previous one.
-    auto info = output->getLinkInfo(system.getDelegate().getFileSystem());
+    auto info = system.getDelegate().getFileSystem().getLinkInfo(outputPath);
     if (info.isMissing())
       return false;
 
@@ -2105,7 +2118,8 @@ class SymlinkCommand : public Command {
                              core::Task* task,
                              QueueJobContext* context) override {
     // It is an error if this command isn't configured properly.
-    if (!output) {
+    StringRef outputPath = getActualOutputPath();
+    if (!output || outputPath.empty()) {
       return BuildValue::makeFailedCommand();
     }
 
@@ -2113,7 +2127,7 @@ class SymlinkCommand : public Command {
     //
     // FIXME: Shared behavior with ExternalCommand.
     {
-      auto parent = llvm::sys::path::parent_path(output->getName());
+      auto parent = llvm::sys::path::parent_path(outputPath);
       if (!parent.empty()) {
         (void) bsci.getDelegate().getFileSystem().createDirectories(parent);
       }
@@ -2125,13 +2139,13 @@ class SymlinkCommand : public Command {
     // FIXME: Need to use the filesystem interfaces.
     bsci.getDelegate().commandStarted(this);
     auto success = true;
-    if (llvm::sys::fs::create_link(contents, output->getName())) {
+    if (llvm::sys::fs::create_link(contents, outputPath)) {
       // On failure, we attempt to unlink the file and retry.
-      basic::sys::unlink(output->getName().str().c_str());
+      basic::sys::unlink(outputPath.str().c_str());
         
-      if (llvm::sys::fs::create_link(contents, output->getName())) {
+      if (llvm::sys::fs::create_link(contents, outputPath)) {
         getBuildSystem(bsci.getBuildEngine()).error(
-            "", "unable to create symlink at '" + output->getName() + "'");
+            "", "unable to create symlink at '" + outputPath + "'");
         success = false;
       }
     }
@@ -2143,8 +2157,8 @@ class SymlinkCommand : public Command {
     }
 
     // Capture the *link* information of the output.
-    FileInfo outputInfo = output->getLinkInfo(
-        bsci.getDelegate().getFileSystem());
+    FileInfo outputInfo = bsci.getDelegate().getFileSystem().getLinkInfo(
+        outputPath);
       
     // Complete with a successful result.
     return BuildValue::makeSuccessfulCommand(outputInfo, getSignature());
