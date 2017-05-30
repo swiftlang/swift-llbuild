@@ -250,6 +250,36 @@ public:
     }
   }
 
+  virtual void commandHadError(Command* command, StringRef message) override {
+    if (cAPIDelegate.command_had_error) {
+      llb_data_t cMessage { message.size(), (const uint8_t*) message.data() };
+      cAPIDelegate.command_had_error(
+          cAPIDelegate.context,
+          (llb_buildsystem_command_t*) command,
+          &cMessage);
+    }
+  }
+
+  virtual void commandHadNote(Command* command, StringRef message) override {
+    if (cAPIDelegate.command_had_note) {
+      llb_data_t cMessage { message.size(), (const uint8_t*) message.data() };
+      cAPIDelegate.command_had_note(
+          cAPIDelegate.context,
+          (llb_buildsystem_command_t*) command,
+          &cMessage);
+    }
+  }
+
+  virtual void commandHadWarning(Command* command, StringRef message) override {
+    if (cAPIDelegate.command_had_warning) {
+      llb_data_t cMessage { message.size(), (const uint8_t*) message.data() };
+      cAPIDelegate.command_had_warning(
+         cAPIDelegate.context,
+         (llb_buildsystem_command_t*) command,
+         &cMessage);
+    }
+  }
+
   virtual void commandProcessStarted(Command* command,
                                      ProcessHandle handle) override {
     if (cAPIDelegate.command_process_started) {
