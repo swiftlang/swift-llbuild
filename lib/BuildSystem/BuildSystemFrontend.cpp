@@ -20,6 +20,7 @@
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildKey.h"
 
+#include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/Format.h"
 #include "llvm/Support/Path.h"
@@ -28,6 +29,7 @@
 
 #include <atomic>
 #include <memory>
+#include <mutex>
 #include <thread>
 
 using namespace llbuild;
@@ -252,6 +254,12 @@ struct BuildSystemFrontendDelegateImpl {
 
   BuildSystemFrontend* frontend = nullptr;
   BuildSystem* system = nullptr;
+
+  /// The set of active command output buffers, by process handle.
+  llvm::DenseMap<uintptr_t, std::vector<uint8_t>> processOutputBuffers;
+
+  /// The lock protecting `processOutputBuffers`.
+  std::mutex processOutputBuffersMutex;
   
   BuildSystemFrontendDelegateImpl(llvm::SourceMgr& sourceMgr,
                                   const BuildSystemInvocation& invocation)
@@ -523,15 +531,30 @@ commandProcessHadError(Command* command, ProcessHandle handle,
 void BuildSystemFrontendDelegate::
 commandProcessHadOutput(Command* command, ProcessHandle handle,
                         StringRef data) {
-  // FIXME: Design the logging and status output APIs.
-  fwrite(data.data(), data.size(), 1, stdout);
-  fflush(stdout);
+  auto impl = static_cast<BuildSystemFrontendDelegateImpl*>(this->impl);
+  std::unique_lock<std::mutex> lock(impl->processOutputBuffersMutex);
+
+  // Append to the output buffer.
+  auto& buffer = impl->processOutputBuffers[handle.id];
+  buffer.insert(buffer.end(), data.begin(), data.end());
 }
 
 void BuildSystemFrontendDelegate::
 commandProcessFinished(Command*, ProcessHandle handle,
                        CommandResult result,
                        int exitStatus) {
+  auto impl = static_cast<BuildSystemFrontendDelegateImpl*>(this->impl);
+  std::unique_lock<std::mutex> lock(impl->processOutputBuffersMutex);
+
+  // If there was an output buffer, flush it.
+  auto it = impl->processOutputBuffers.find(handle.id);
+  if (it == impl->processOutputBuffers.end())
+    return;
+
+  fwrite(it->second.data(), it->second.size(), 1, stdout);
+  fflush(stdout);
+
+  impl->processOutputBuffers.erase(it);  
 }
 
 #pragma mark - BuildSystemFrontend implementation
