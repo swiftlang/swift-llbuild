@@ -423,6 +423,13 @@ command is run.
    purpose feature available to any command, but that may be a desirable feature
    in the future.
 
+.. note::
+
+   The defined output of this tool will be the file system information on the
+   **link**, not the target of the link. This is almost always **not** what
+   clients want unless also using *link-output-path*, since many consumers of
+   the output will want to know about the **target** of the link.
+   
 .. list-table::
    :header-rows: 1
    :widths: 20 80
@@ -432,6 +439,14 @@ command is run.
 
    * - contents
      - The contents (i.e., path to the source) of the symlink.
+
+   * - link-output-path
+     
+     - If specified, defines that actual output path for the symbolic link. This
+       is **not** treated as a declared output of this task, which allows a
+       *phony* task to be created which will then define the modeled value for
+       this path. This allows a client to create a build in which both the
+       `lstat()` and `stat()` information for a link are accurately modeled.
 
 Shell Tool
 ----------
