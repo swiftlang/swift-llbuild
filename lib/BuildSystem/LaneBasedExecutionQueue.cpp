@@ -430,7 +430,6 @@ public:
     }
 
     // Read the command output, if capturing.
-    SmallString<1024> outputData;
     if (shouldCaptureOutput) {
       // Close the write end of the output pipe.
       ::close(outputPipe[1]);
@@ -449,7 +448,10 @@ public:
         if (numBytes == 0)
           break;
 
-        outputData.insert(outputData.end(), &buf[0], &buf[numBytes]);
+        // Notify the client of the output.
+        getDelegate().commandProcessHadOutput(
+            context.job.getForCommand(), handle,
+            StringRef(buf, numBytes));
       }
 
       // Close the read end of the pipe.
@@ -474,12 +476,6 @@ public:
       getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
                                            CommandResult::Failed, -1);
       return CommandResult::Failed;
-    }
-
-    // Notify the client of the output, if buffering.
-    if (shouldCaptureOutput) {
-      getDelegate().commandProcessHadOutput(context.job.getForCommand(), handle,
-                                            outputData);
     }
     
     // Notify of the process completion.

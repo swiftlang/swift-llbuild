@@ -150,6 +150,9 @@ public:
 /// All delegate interfaces are invoked synchronously by the execution queue,
 /// and should defer any long running operations to avoid blocking the queue
 /// unnecessarily.
+///
+/// NOTE: The delegate *MUST* be thread-safe with respect to all calls, which
+/// will arrive concurrently and without any specified thread.
 class BuildExecutionQueueDelegate {
   // DO NOT COPY
   BuildExecutionQueueDelegate(const BuildExecutionQueueDelegate&)
