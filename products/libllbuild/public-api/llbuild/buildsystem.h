@@ -320,6 +320,27 @@ typedef struct llb_buildsystem_delegate_t_ {
                            llb_buildsystem_command_t* command,
                            llb_buildsystem_command_result_t result);
 
+  /// Called to report an error during the execution of a command.
+  ///
+  /// Xparam data The error message.
+  void (*command_had_error)(void* context,
+                            llb_buildsystem_command_t* command,
+                            const llb_data_t* data);
+
+  /// Called to report a note during the execution of a command.
+  ///
+  /// Xparam data The note message.
+  void (*command_had_note)(void* context,
+                           llb_buildsystem_command_t* command,
+                           const llb_data_t* data);
+
+  /// Called to report a warning during the execution of a command.
+  ///
+  /// Xparam data The warning message.
+  void (*command_had_warning)(void* context,
+                           llb_buildsystem_command_t* command,
+                           const llb_data_t* data);
+
   /// Called when a command's job has started executing an external process.
   ///
   /// The system guarantees that any commandProcessStarted() call will be paired
