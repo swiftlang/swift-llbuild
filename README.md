@@ -29,7 +29,7 @@ Usage
 -----
 
 The project currently produces three top-level products; `llbuild`, `swift-build-tool`,
-and `libllbuild`.
+and `libllbuild` / `llbuild.framework`.
 
 ### `llbuild` Command Line Tool
 
@@ -77,8 +77,8 @@ used directly by third-parties or to build additional language bindings. See
 [bindings](bindings/) for example Swift and Python bindings that use this
 library.
 
-Currently, there are only bindings for the Core engine APIs. We intend to add
-support for the other libraries over time.
+This API is what is used, for example, in Xcode as the basis for the new build
+system introduced in Xcode 9.
 
 
 Motivation
@@ -98,6 +98,10 @@ environments which integrate external tools -- like the compiler -- using APIs
 instead of command line interfaces. By allowing the build system and tools to
 communicate directly and to be co-designed, we believe we can unlock additional
 optimization opportunities and create more robust, easy-to-use build systems.
+
+For more information, see
+[A New Architecture for Building Software](https://www.youtube.com/watch?v=b_T-eCToX1I)
+from the 2016 LLVM Developer's Conference.
 
 
 Philosophy
@@ -130,6 +134,20 @@ the dependencies between parts of the computation.
 Part of the goal in designing llbuild around a general purpose build engine is
 to allow its use in contexts which are not traditionally thought of as requiring
 a "build system".
+
+
+Documentation
+-------------
+
+Technical documentation is available at
+[llbuild.readthedocs.io](https://llbuild.readthedocs.io).
+
+
+Bug Reports
+-----------
+
+Bug reports should be filed in the [Swift OSS Jira](https://bugs.swift.org) in
+the `llbuild` component.
 
 
 Open Projects
@@ -223,7 +241,7 @@ discovered on the fly.
 License
 -------
 
-Copyright (c) 2014 - 2016 Apple Inc. and the Swift project authors.
+Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors.
 Licensed under Apache License v2.0 with Runtime Library Exception.
 
 See http://swift.org/LICENSE.txt for license information.
