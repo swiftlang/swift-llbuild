@@ -1,5 +1,6 @@
 import flask
 import sqlalchemy.sql
+import sqlalchemy.sql.expression
 
 from flask import Flask, current_app, g, redirect, request, session, url_for
 
@@ -47,13 +48,15 @@ def db_root():
     # Compute the roots of the results.
     #
     # We compute this by simply looking for nodes which have no dependencies.
-    roots_query = s.query(model.RuleResult) \
-                  .filter(model.RuleResult.key_id.notin_(
-                      s.query(model.RuleDependency.key_id)))
+    dependees = set()
+    for result in s.query(model.RuleResult):
+        for item in result.dependencies:
+            dependees.add(item)
+    roots = [result
+             for result in s.query(model.RuleResult)
+             if result.key_id not in dependees]
 
-    return flask.render_template(
-        "db_root.html",
-        db_path=db_path, roots=roots_query.all())
+    return flask.render_template("db_root.html", db_path=db_path, roots=roots)
 
 @main.route('/db/config', methods=['GET', 'POST'])
 def db_config():
@@ -82,7 +85,7 @@ def db_diagnostics():
         # Get the dependencies.
         succs = []
         for dependency in rule.dependencies:
-            succs.append(dependency.key_id)
+            succs.append(dependency)
         return succs
     keys = sorted(rules.keys())
     cycle = graphalgorithms.find_cycle(keys, successors)
@@ -106,17 +109,12 @@ def db_rule_result(name):
         model.KeyName.name == name).one()
     dependency_results = [
         s.query(model.RuleResult).filter_by(
-            key=dependency.key).one()
+            key_id=dependency).one()
         for dependency in rule_result.dependencies]
-    dependents_results = s.query(model.RuleResult) \
-                          .filter(model.RuleResult.id.in_(
-                              s.query(model.RuleDependency.rule_id).filter_by(
-                                  key=rule_result.key)))
+    # FIXME: We need to get back the dependents view, it was super useful.
     dependency_results = sorted(dependency_results, key=lambda d: d.key.name)
-    dependents_results = sorted(dependents_results, key=lambda d: d.key.name)
     
     return flask.render_template(
         "db_rule_result.html",
         db_path=session.get("db"), rule_result=rule_result,
-        dependency_results=dependency_results,
-        dependents_results=dependents_results)
+        dependency_results=dependency_results)

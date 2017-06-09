@@ -24,12 +24,12 @@ class RuleResult(Base):
     id = Column(Integer, nullable=False, primary_key=True)
     key_id = Column(Integer, ForeignKey(KeyName.id),
                      nullable=False)
-    value_bytes = Column("value", Integer, nullable=False)
+    value_bytes = Column("value", Binary, nullable=False)
     built_at = Column(Integer, nullable=False)
     computed_at = Column(Integer, nullable=False)
 
     key = relation(KeyName)
-    dependencies = relationship('RuleDependency')
+    dependencies_bytes = Column("dependencies", Binary, nullable=True)
 
     def __repr__(self):
         return "%s%r" % (
@@ -40,21 +40,15 @@ class RuleResult(Base):
     def value(self):
         return BuildValue(self.value_bytes)
 
-class RuleDependency(Base):
-    __tablename__ = "rule_dependencies"
-
-    rule_id = Column(Integer, ForeignKey(RuleResult.id),
-                     nullable=False, primary_key=True)
-    key_id = Column(Integer, ForeignKey(KeyName.id),
-                     nullable=False, primary_key=True)
-
-    rule = relation(RuleResult)
-    key = relation(KeyName)
+    @property
+    def dependencies(self):
+        if self.dependencies_bytes is None:
+            return []
+        else :
+            num_dependencies = len(self.dependencies_bytes) / 8
+            return struct.unpack("<" + str(num_dependencies) + "Q",
+                                 self.dependencies_bytes)
     
-    def __repr__(self):
-        return "%s%r" % (
-            self.__class__.__name__, (self.rule_id, self.key))
-
 ###
 
 class BuildValue(object):
@@ -66,7 +60,7 @@ class BuildValue(object):
         "Invalid",
         "VirtualInput", "ExistingInput", "MissingInput",
         "DirectoryContents", "DirectoryTreeSignature",
-        "MissingOutput", "FailedInput",
+        "StaleFileRemoval", "MissingOutput", "FailedInput",
         "SuccessfulCommand", "FailedCommand",
         "PropagatedFailureCommand", "CancelledCommand", "SkippedCommand",
         "Target",
@@ -124,7 +118,7 @@ class BuildValue(object):
 
     @property
     def hasStringList(self):
-        return self.kind in ("DirectoryContents",)
+        return self.kind in ("DirectoryContents", "StaleFileRemoval")
 
     @property
     def hasOutputInfo(self):
