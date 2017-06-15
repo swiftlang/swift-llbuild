@@ -502,18 +502,23 @@ public:
     sys::write(signalWatchingPipe[1], &byte, 1);
   }
 
+  void sendSignalToProcesses(int signal) {
+    std::unique_lock<std::mutex> lock(spawnedProcessesMutex);
+
+    for (pid_t pid: spawnedProcesses) {
+      // We are killing the whole process group here, this depends on us
+      // spawning each process in its own group earlier.
+      ::kill(-pid, signal);
+    }
+  }
+
   /// Cancel the build in response to an interrupt event.
   void cancelBuildOnInterrupt() {
-    std::lock_guard<std::mutex> guard(spawnedProcessesMutex);
+    sendSignalToProcesses(SIGINT);
 
     emitNote("cancelling build.");
     isCancelled = true;
     wasCancelledBySigint = true;
-
-    // Cancel the spawned processes.
-    for (pid_t pid: spawnedProcesses) {
-      ::kill(-pid, SIGINT);
-    }
 
     // FIXME: In our model, we still wait for everything to terminate, which
     // means a process that refuses to respond to SIGINT will cause us to just
