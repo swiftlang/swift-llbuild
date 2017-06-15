@@ -15,6 +15,7 @@
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/Basic/PlatformUtility.h"
+#include "llbuild/Basic/Stat.h"
 
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/MemoryBuffer.h"
@@ -94,7 +95,7 @@ TEST(FileSystemTest, testRecursiveRemoval) {
   bool result = fs->remove(tempDir.c_str());
   EXPECT_TRUE(result);
 
-  struct stat statbuf;
+  sys::StatStruct statbuf;
   EXPECT_EQ(-1, sys::stat(tempDir.c_str(), &statbuf));
   EXPECT_EQ(ENOENT, errno);
 }
@@ -144,7 +145,7 @@ TEST(FileSystemTest, testRecursiveRemovalDoesNotFollowSymlinks) {
   bool result = fs->remove(tempDir.c_str());
   EXPECT_TRUE(result);
 
-  struct stat statbuf;
+  sys::StatStruct  statbuf;
   EXPECT_EQ(-1, sys::stat(tempDir.c_str(), &statbuf));
   EXPECT_EQ(ENOENT, errno);
   // Verify that the symlink target still exists.
