@@ -12,9 +12,9 @@
 
 #include "llbuild/Commands/Commands.h"
 
-#include "InterruptSignalAwaiter.h"
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/Basic/LLVM.h"
+#include "llbuild/Basic/InterruptSignalAwaiter.h"
 #include "llbuild/Basic/PlatformUtility.h"
 #include "llbuild/BuildSystem/BuildDescription.h"
 #include "llbuild/BuildSystem/BuildFile.h"
@@ -431,14 +431,14 @@ public:
       : BuildSystemFrontendDelegate(sourceMgr, invocation,
                                     "basic", /*version=*/0),
         fileSystem(basic::createLocalFileSystem()) {
-    command::InterruptSignalAwaiter::GlobalAwaiter.setInterruptHandler([&] {
+    InterruptSignalAwaiter::GlobalAwaiter.setInterruptHandler([&] {
       printf("cancelling build.\n");
       cancel();
     });
   }
 
   ~BasicBuildSystemFrontendDelegate() {
-    command::InterruptSignalAwaiter::GlobalAwaiter.resetInterruptHandler();
+    InterruptSignalAwaiter::GlobalAwaiter.resetInterruptHandler();
   }
 
   virtual basic::FileSystem& getFileSystem() override { return *fileSystem; }
