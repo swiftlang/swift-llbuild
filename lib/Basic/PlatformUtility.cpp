@@ -106,7 +106,13 @@ int sys::stat(const char *fileName, StatStruct *buf) {
 
 int sys::symlink(const char *source, const char *target) {
 #if defined(_WIN32)
-  return ::_symlink(source, target);
+  DWORD attributes = GetFileAttributesA(source);
+  if (attributes != INVALID_FILE_ATTRIBUTES &&
+      (attributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+    return ::CreateSymbolicLinkA(source, target, SYMBOLIC_LINK_FLAG_DIRECTORY);
+  }
+
+  return ::CreateSymbolicLinkA(source, target, 0);
 #else
   return ::symlink(source, target);
 #endif
