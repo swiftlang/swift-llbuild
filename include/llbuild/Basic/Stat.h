@@ -58,7 +58,7 @@ namespace sys {
 #define S_ISSOCK(mode) ((mode) & _S_IFMT) == S_IFSOCK
 #endif
 
-#if !defined(_S_ISLINK)
+#if !defined(S_ISLNK)
 #define S_ISLNK(mode) ((mode) & _S_IFMT) == S_IFLNK
 #endif
 
