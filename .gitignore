@@ -25,3 +25,6 @@ docs/_build
 # Don't check in Xcode user data.
 xcuserdata
 
+# Visual Studio cache/options directory
+.vs/
+
