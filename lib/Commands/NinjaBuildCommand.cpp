@@ -24,6 +24,7 @@
 #include "llbuild/Core/MakefileDepsParser.h"
 #include "llbuild/Ninja/ManifestLoader.h"
 
+#include "llvm/ADT/SmallString.h"
 #include "llvm/Support/TimeValue.h"
 
 #include "CommandLineStatusOutput.h"
@@ -501,18 +502,23 @@ public:
     sys::write(signalWatchingPipe[1], &byte, 1);
   }
 
+  void sendSignalToProcesses(int signal) {
+    std::unique_lock<std::mutex> lock(spawnedProcessesMutex);
+
+    for (pid_t pid: spawnedProcesses) {
+      // We are killing the whole process group here, this depends on us
+      // spawning each process in its own group earlier.
+      ::kill(-pid, signal);
+    }
+  }
+
   /// Cancel the build in response to an interrupt event.
   void cancelBuildOnInterrupt() {
-    std::lock_guard<std::mutex> guard(spawnedProcessesMutex);
+    sendSignalToProcesses(SIGINT);
 
     emitNote("cancelling build.");
     isCancelled = true;
     wasCancelledBySigint = true;
-
-    // Cancel the spawned processes.
-    for (pid_t pid: spawnedProcesses) {
-      ::kill(-pid, SIGINT);
-    }
 
     // FIXME: In our model, we still wait for everything to terminate, which
     // means a process that refuses to respond to SIGINT will cause us to just
@@ -1211,6 +1217,10 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       posix_spawn_file_actions_t fileActions;
       posix_spawn_file_actions_init(&fileActions);
 
+      // Open /dev/null as stdin.
+      posix_spawn_file_actions_addopen(
+        &fileActions, 0, "/dev/null", O_RDONLY, 0);
+
       // Create a pipe to use to read the command output, if necessary.
       int pipe[2]{ -1, -1 };
       if (!isConsole) {
@@ -1219,16 +1229,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
                             strerror(errno));
           return false;
         }
-      }
 
-      // Open /dev/null as stdin.
-      posix_spawn_file_actions_addopen(
-          &fileActions, 0, "/dev/null", O_RDONLY, 0);
-
-      if (isConsole) {
-        posix_spawn_file_actions_adddup2(&fileActions, 1, 1);
-        posix_spawn_file_actions_adddup2(&fileActions, 2, 2);
-      } else {
         // Open the write end of the pipe as stdout and stderr.
         posix_spawn_file_actions_adddup2(&fileActions, pipe[1], 1);
         posix_spawn_file_actions_adddup2(&fileActions, pipe[1], 2);
@@ -1236,6 +1237,10 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         // Close the read and write ends of the pipe.
         posix_spawn_file_actions_addclose(&fileActions, pipe[0]);
         posix_spawn_file_actions_addclose(&fileActions, pipe[1]);
+      } else {
+        // Otherwise, propagate the current stdout/stderr.
+        posix_spawn_file_actions_adddup2(&fileActions, 1, 1);
+        posix_spawn_file_actions_adddup2(&fileActions, 2, 2);
       }
 
       // Spawn the command.
@@ -1245,10 +1250,11 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       args[2] = command->getCommandString().c_str();
       args[3] = nullptr;
 
-      // We need to hold the spawn processes lock when we spawn, to ensure that
-      // we don't create a process in between when we are cancelled.
+      // Spawn the command.
       pid_t pid;
       {
+        // We need to hold the spawn processes lock when we spawn, to ensure that
+        // we don't create a process in between when we are cancelled.
         std::lock_guard<std::mutex> guard(context.spawnedProcessesMutex);
 
         if (posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
@@ -1267,7 +1273,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       posix_spawnattr_destroy(&attributes);
 
       // Read the command output, if buffering.
-      std::vector<char> outputData;
+      SmallString<1024> outputData;
       if (!isConsole) {
         // Close the write end of the output pipe.
         ::close(pipe[1]);
@@ -1295,15 +1301,16 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       // Wait for the command to complete.
       int status, result = waitpid(pid, &status, 0);
       while (result == -1 && errno == EINTR)
-          result = waitpid(pid, &status, 0);
-      if (result == -1) {
-        context.emitError("unable to wait for process (%s)", strerror(errno));
-      }
+        result = waitpid(pid, &status, 0);
 
       // Update the set of spawned processes.
       {
         std::lock_guard<std::mutex> guard(context.spawnedProcessesMutex);
         context.spawnedProcesses.erase(pid);
+      }
+
+      if (result == -1) {
+        context.emitError("unable to wait for process (%s)", strerror(errno));
       }
 
       // If the build has been interrupted, return without writing any output or
@@ -1318,7 +1325,8 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       if (status != 0) {
         // If the process was killed by SIGINT, assume it is because we were
         // interrupted.
-        if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
+        bool cancelled = WIFSIGNALED(status) && (WTERMSIG(status) == SIGINT || WTERMSIG(status) == SIGKILL);
+        if (cancelled)
           return false;
 
         // Otherwise, report the failure.
