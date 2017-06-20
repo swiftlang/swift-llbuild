@@ -12,6 +12,7 @@
 
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/Basic/PlatformUtility.h"
+#include "llbuild/Basic/Stat.h"
 
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/Support/FileSystem.h"
@@ -27,7 +28,7 @@ namespace {
   using namespace llvm;
   using namespace llvm::sys::fs;
 
-  static std::error_code fillStatus(int StatRet, const struct stat &Status,
+  static std::error_code fillStatus(int StatRet, const llbuild::basic::sys::StatStruct &Status,
                                     file_status &Result) {
     if (StatRet != 0) {
       std::error_code ec(errno, std::generic_category());
@@ -55,10 +56,14 @@ namespace {
     else if (S_ISLNK(Status.st_mode))
       Type = file_type::symlink_file;
 
+#if defined(_WIN32)
+    Result = file_status(Type);
+#else
     perms Perms = static_cast<perms>(Status.st_mode);
     Result =
     file_status(Type, Perms, Status.st_dev, Status.st_ino, Status.st_mtime,
                 Status.st_uid, Status.st_gid, Status.st_size);
+#endif
 
     return std::error_code();
   }
@@ -67,8 +72,8 @@ namespace {
     SmallString<128> PathStorage;
     StringRef P = Path.toNullTerminatedStringRef(PathStorage);
 
-    struct stat Status;
-    int StatRet = ::lstat(P.begin(), &Status);
+    llbuild::basic::sys::StatStruct Status;
+    int StatRet = llbuild::basic::sys::lstat(P.begin(), &Status);
     return fillStatus(StatRet, Status, Result);
   }
 
@@ -167,7 +172,7 @@ public:
     }
 
     // Check if `path` is a directory.
-    struct stat statbuf;
+    llbuild::basic::sys::StatStruct statbuf;
     if (llbuild::basic::sys::lstat(path.c_str(), &statbuf) != 0) {
       return false;
     }
