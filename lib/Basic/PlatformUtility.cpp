@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llbuild/Basic/PlatformUtility.h"
+#include "llbuild/Basic/Stat.h"
 
 #if defined(_WIN32)
 #include "LeanWindows.h"

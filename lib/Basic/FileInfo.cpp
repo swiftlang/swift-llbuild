@@ -12,7 +12,7 @@
 
 #include "llbuild/Basic/FileInfo.h"
 
-#include "llbuild/Basic/PlatformUtility.h"
+#include "llbuild/Basic/Stat.h"
 
 #include <cassert>
 #include <cstring>
