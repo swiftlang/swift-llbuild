@@ -17,7 +17,7 @@
 #include <csignal>
 
 using namespace llbuild;
-using namespace llbuild::command;
+using namespace llbuild::basic;
 
 int InterruptSignalAwaiter::signalWatchingPipe[2]{-1, -1};
 std::atomic<bool> InterruptSignalAwaiter::wasInterrupted{false};
@@ -30,13 +30,13 @@ void InterruptSignalAwaiter::sigintHandler(int) {
 
   // Write to wake up the signal monitoring thread.
   char byte{};
-  basic::sys::write(signalWatchingPipe[1], &byte, 1);
+  sys::write(signalWatchingPipe[1], &byte, 1);
 }
 
 InterruptSignalAwaiter::InterruptSignalAwaiter() {
   previousSignalHandler = std::signal(SIGINT, &sigintHandler);
 
-  if (basic::sys::pipe(signalWatchingPipe) < 0) {
+  if (sys::pipe(signalWatchingPipe) < 0) {
     perror("pipe");
   }
 
@@ -47,7 +47,7 @@ void InterruptSignalAwaiter::waitForSignal() {
   // Wait for signal arrival indications.
   while (true) {
     char byte;
-    int res = basic::sys::read(signalWatchingPipe[0], &byte, 1);
+    int res = sys::read(signalWatchingPipe[0], &byte, 1);
 
     // If nothing was read, the pipe has been closed and we should shut down.
     if (res == 0) break;
@@ -80,7 +80,7 @@ InterruptSignalAwaiter::~InterruptSignalAwaiter() {
   std::signal(SIGINT, previousSignalHandler);
 
   // Close the signal watching pipe.
-  basic::sys::close(signalWatchingPipe[1]);
+  sys::close(signalWatchingPipe[1]);
   signalWatchingPipe[1] = -1;
 
   // Wait for the handler thread to finish execution

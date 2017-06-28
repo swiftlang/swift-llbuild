@@ -19,7 +19,7 @@
 #include <thread>
 
 using namespace llbuild;
-using namespace llbuild::command;
+using namespace llbuild::basic;
 
 namespace {
 
