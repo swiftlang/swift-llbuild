@@ -3253,7 +3253,8 @@
 		E1604CAF1BB9E01D001153A1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/bin";
+				CODE_SIGN_IDENTITY = "$(LLBUILD_CODE_SIGN_IDENTITY)";
+				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/bin";
 				SKIP_INSTALL = NO;
 			};
 			name = Debug;
@@ -3261,7 +3262,8 @@
 		E1604CB01BB9E01D001153A1 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/bin";
+				CODE_SIGN_IDENTITY = "$(LLBUILD_CODE_SIGN_IDENTITY)";
+				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/bin";
 				SKIP_INSTALL = NO;
 			};
 			name = Release;
@@ -3484,6 +3486,7 @@
 		E1A224C819F999B80059043E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "$(LLBUILD_CODE_SIGN_IDENTITY)";
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/bin";
 				PRODUCT_NAME = llbuild;
 				SKIP_INSTALL = NO;
@@ -3493,6 +3496,7 @@
 		E1A224C919F999B80059043E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "$(LLBUILD_CODE_SIGN_IDENTITY)";
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/bin";
 				PRODUCT_NAME = llbuild;
 				SKIP_INSTALL = NO;
@@ -3692,6 +3696,7 @@
 		E1D191C41B47232B000C4E95 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "$(LLBUILD_CODE_SIGN_IDENTITY)";
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
@@ -3711,6 +3716,7 @@
 		E1D191C51B47232B000C4E95 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "$(LLBUILD_CODE_SIGN_IDENTITY)";
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
