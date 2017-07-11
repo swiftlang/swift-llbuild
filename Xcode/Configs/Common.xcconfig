@@ -13,7 +13,7 @@
 // Set the default product name.
 PRODUCT_NAME = $(TARGET_NAME)
 
-// Set the versioning system to "Apple Generic" for all projects.
+// Set the versioning system to "Apple Generic" for all targets.
 VERSIONING_SYSTEM = apple-generic
 
 // Do not always search user paths.
@@ -21,3 +21,17 @@ ALWAYS_SEARCH_USER_PATHS = NO
 
 // Headermaps are disabled.
 USE_HEADERMAP = NO
+
+// MARK: Signing Support
+
+// Enable code signing, if appropriate.
+LLBUILD_ENABLE_SIGNING = NO
+
+LLBUILD_CODE_SIGN_IDENTITY = $(LLBUILD_CODE_SIGN_IDENTITY__$(LLBUILD_ENABLE_SIGNING))
+LLBUILD_CODE_SIGN_IDENTITY__NO =
+LLBUILD_CODE_SIGN_IDENTITY__YES = -
+
+// The entitlements to use for binaries.
+CODE_SIGN_ENTITLEMENTS = $(LLBUILD_CODE_SIGN_ENTITLEMENTS__producttype_eq_$(PRODUCT_TYPE:identifier))
+LLBUILD_CODE_SIGN_ENTITLEMENTS__producttype_eq_com_apple_product_type_tool = $(LLBUILD_TOOL_CODE_SIGN_ENTITLEMENTS)
+LLBUILD_TOOL_CODE_SIGN_ENTITLEMENTS =
