@@ -1,4 +1,4 @@
-//===- unittests/BuildSystem/LaneBasedExecutionQueueTest.cpp --------------------------------===//
+//===- unittests/BuildSystem/LaneBasedExecutionQueueTest.cpp --------------===//
 //
 // This source file is part of the Swift.org open source project
 //
@@ -13,6 +13,9 @@
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
 #include "TempDir.h"
+
+#include "llbuild/BuildSystem/BuildDescription.h"
+#include "llbuild/BuildSystem/BuildValue.h"
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/SmallString.h"
@@ -48,6 +51,49 @@ namespace {
                                         int exitStatus) override {}
   };
 
+  class DummyCommand : public Command {
+  public:
+    DummyCommand() : Command("") {}
+
+    virtual void getShortDescription(SmallVectorImpl<char> &result) {}
+    virtual void getVerboseDescription(SmallVectorImpl<char> &result) {}
+    virtual void configureDescription(const ConfigureContext&,
+                                      StringRef description) {};
+    virtual void configureInputs(const ConfigureContext&,
+                                 const std::vector<Node*>& inputs) {}
+    virtual void configureOutputs(const ConfigureContext&,
+                                const std::vector<Node*>& outputs) {}
+    virtual bool configureAttribute(const ConfigureContext&, StringRef name,
+                                    StringRef value) {
+      return false;
+    }
+    virtual bool configureAttribute(const ConfigureContext&, StringRef name,
+                                    ArrayRef<StringRef> values) {
+      return false;
+    }
+    virtual bool configureAttribute(
+        const ConfigureContext&, StringRef name,
+        ArrayRef<std::pair<StringRef, StringRef>> values) {
+      return false;
+    }
+    virtual BuildValue getResultForOutput(Node* node,
+                                          const BuildValue& value) {
+      return BuildValue::makeInvalid();
+    }
+    virtual bool isResultValid(BuildSystem& system, const BuildValue& value) {
+      return true;
+    }
+    virtual void start(BuildSystemCommandInterface&, core::Task*) {}
+    virtual void providePriorValue(BuildSystemCommandInterface&, core::Task*,
+                                   const BuildValue& value) {}
+    virtual void provideValue(BuildSystemCommandInterface&, core::Task*,
+                              uintptr_t inputID, const BuildValue& value) {}
+    virtual BuildValue execute(BuildSystemCommandInterface&, core::Task*,
+                               QueueJobContext* context) {
+      return BuildValue::makeInvalid();
+    }
+  };
+
   TEST(LaneBasedExecutionQueueTest, basic) {
     DummyDelegate delegate;
     std::unique_ptr<FileSystem> fs = createLocalFileSystem();
@@ -60,7 +106,8 @@ namespace {
       queue->executeShellCommand(context, "yes >" + outputFile);
     };
 
-    queue->addJob(QueueJob((Command*)0x1, fn));
+    DummyCommand dummyCommand;
+    queue->addJob(QueueJob(&dummyCommand, fn));
 
     // Busy wait until `outputFile` appears which indicates that `yes` is
     // running.
@@ -97,8 +144,10 @@ namespace {
       buildStartedCondition.notify_all();
     };
 
-    queue->addJob(QueueJob((Command*)0x1, fn));
-    queue->addJob(QueueJob((Command*)0x1, fn));
+    DummyCommand dummyCommand1;
+    queue->addJob(QueueJob(&dummyCommand1, fn));
+    DummyCommand dummyCommand2;
+    queue->addJob(QueueJob(&dummyCommand2, fn));
 
     {
       std::unique_lock<std::mutex> lock(buildStartedMutex);
