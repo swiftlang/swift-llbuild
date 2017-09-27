@@ -12,6 +12,7 @@
 
 #include "llbuild/Core/BuildEngine.h"
 
+#include "llbuild/Basic/Tracing.h"
 #include "llbuild/Core/BuildDB.h"
 
 #include "llvm/ADT/STLExtras.h"
@@ -483,7 +484,10 @@ private:
     ruleInfo.result.dependencies.clear();
 
     // Inform the task it should start.
-    task->start(buildEngine);
+    {
+      TracingInterval i(EngineTaskCallbackKind::Start);
+      task->start(buildEngine);
+    }
 
     // Provide the task the prior result, if present.
     //
@@ -492,6 +496,7 @@ private:
     // the clients that want it can ask? It's cheap to provide here, so
     // ultimately this is mostly a matter of cleanliness.
     if (ruleInfo.result.builtAt != 0) {
+      TracingInterval i(EngineTaskCallbackKind::ProvidePriorValue);
       task->providePriorValue(buildEngine, ruleInfo.result.value);
     }
 
@@ -631,6 +636,8 @@ private:
       // FIXME: We don't want to process all of these requests, this amounts to
       // doing all of the dependency scanning up-front.
       while (!ruleInfosToScan.empty()) {
+        TracingInterval i(EngineQueueItemKind::RuleToScan);
+        
         didWork = true;
 
         auto request = ruleInfosToScan.back();
@@ -641,6 +648,8 @@ private:
 
       // Process all of the pending input requests.
       while (!inputRequests.empty()) {
+        TracingInterval i(EngineQueueItemKind::InputRequest);
+        
         didWork = true;
 
         auto request = inputRequests.back();
@@ -695,6 +704,8 @@ private:
 
       // Process all of the finished inputs.
       while (!finishedInputRequests.empty()) {
+        TracingInterval i(EngineQueueItemKind::FinishedInputRequest);
+        
         didWork = true;
 
         auto request = finishedInputRequests.back();
@@ -736,8 +747,11 @@ private:
         // FIXME: Should we provide the input key here? We have it available
         // cheaply.
         assert(request.inputRuleInfo->isComplete(this));
-        request.taskInfo->task->provideValue(
-          buildEngine, request.inputID, request.inputRuleInfo->result.value);
+        {
+          TracingInterval i(EngineTaskCallbackKind::ProvideValue);
+          request.taskInfo->task->provideValue(
+              buildEngine, request.inputID, request.inputRuleInfo->result.value);
+        }
 
         // Decrement the wait count, and move to finish queue if necessary.
         decrementTaskWaitCount(request.taskInfo);
@@ -745,6 +759,8 @@ private:
 
       // Process all of the ready to run tasks.
       while (!readyTaskInfos.empty()) {
+        TracingInterval i(EngineQueueItemKind::ReadyTask);
+        
         didWork = true;
 
         TaskInfo* taskInfo = readyTaskInfos.back();
@@ -764,7 +780,10 @@ private:
         //
         // FIXME: We need to track this state, and generate an error if this
         // task ever requests additional inputs.
-        taskInfo->task->inputsAvailable(buildEngine);
+        {
+          TracingInterval i(EngineTaskCallbackKind::InputsAvailable);
+          taskInfo->task->inputsAvailable(buildEngine);
+        }
 
         // Increment our count of outstanding tasks.
         ++numOutstandingUnfinishedTasks;
@@ -772,6 +791,8 @@ private:
 
       // Process all of the finished tasks.
       while (true) {
+        TracingInterval i(EngineQueueItemKind::FinishedTask);
+        
         // Try to take a task from the finished queue.
         TaskInfo* taskInfo = nullptr;
         {
@@ -871,6 +892,8 @@ private:
       // If we haven't done any other work at this point but we have pending
       // tasks, we need to wait for a task to complete.
       if (!didWork && numOutstandingUnfinishedTasks != 0) {
+        TracingInterval i(EngineQueueItemKind::Waiting);
+        
         // Wait for our condition variable.
         std::unique_lock<std::mutex> lock(finishedTaskInfosMutex);
 
