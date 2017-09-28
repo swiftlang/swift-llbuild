@@ -761,6 +761,8 @@
 		E17C29F21B5AC18C00C12DA9 /* install-user-sphinx.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "install-user-sphinx.sh"; sourceTree = "<group>"; };
 		E17C29F31B5AC2A700C12DA9 /* build-sphinx-docs.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "build-sphinx-docs.sh"; sourceTree = "<group>"; };
 		E18043391A00129400662FE7 /* install-user-lit.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "install-user-lit.sh"; sourceTree = "<group>"; };
+		E181D1441F7D90AC0015286C /* Stat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Stat.h; sourceTree = "<group>"; };
+		E181D1451F7D90AC0015286C /* Tracing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Tracing.h; sourceTree = "<group>"; };
 		E182BE111ABA2B8D001840AD /* Compiler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Compiler.h; sourceTree = "<group>"; };
 		E192E92E1E30014E00122F17 /* BuildValueTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildValueTest.cpp; sourceTree = "<group>"; };
 		E19C3FD51B98C1A70035E1AA /* tests */ = {isa = PBXFileReference; lastKnownFileType = folder; path = tests; sourceTree = "<group>"; };
@@ -1429,6 +1431,8 @@
 				9D2589301E3820E3006C76F4 /* PlatformUtility.h */,
 				E147DEFC1BA81D0E0032D08E /* SerialQueue.h */,
 				E17440C11CE192E30070A30C /* ShellUtility.h */,
+				E181D1441F7D90AC0015286C /* Stat.h */,
+				E181D1451F7D90AC0015286C /* Tracing.h */,
 				E1A2245119F997D40059043E /* Version.h */,
 			);
 			name = Headers;
