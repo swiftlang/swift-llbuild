@@ -62,13 +62,13 @@ enum class EngineQueueItemKind {
 /// An RAII type to define an individual tracing point.
 struct TracingPoint {
   const uint32_t kind;
-  const uint32_t arg1;
-  const uint32_t arg2;
-  const uint32_t arg3;
-  const uint32_t arg4;
+  const uint64_t arg1;
+  const uint64_t arg2;
+  const uint64_t arg3;
+  const uint64_t arg4;
 
-  TracingPoint(TraceEventKind kind, uint32_t arg1 = 0, uint32_t arg2 = 0,
-                uint32_t arg3 = 0, uint32_t arg4 = 0)
+  TracingPoint(TraceEventKind kind, uint64_t arg1 = 0, uint64_t arg2 = 0,
+                uint64_t arg3 = 0, uint64_t arg4 = 0)
     : kind(uint32_t(kind)), arg1(arg1), arg2(arg2), arg3(arg3), arg4(arg4)
   {
   }
@@ -81,13 +81,13 @@ struct TracingPoint {
 /// interval completion event.
 struct TracingInterval {
   const uint32_t kind;
-  uint32_t arg1;
-  uint32_t arg2;
-  uint32_t arg3;
-  uint32_t arg4;
+  uint64_t arg1;
+  uint64_t arg2;
+  uint64_t arg3;
+  uint64_t arg4;
 
-  TracingInterval(TraceEventKind kind, uint32_t arg1 = 0, uint32_t arg2 = 0,
-                  uint32_t arg3 = 0, uint32_t arg4 = 0)
+  TracingInterval(TraceEventKind kind, uint64_t arg1 = 0, uint64_t arg2 = 0,
+                  uint64_t arg3 = 0, uint64_t arg4 = 0)
       : kind(uint32_t(kind)), arg1(arg1), arg2(arg2), arg3(arg3), arg4(arg4)
   {
   }
@@ -97,10 +97,10 @@ struct TracingInterval {
   // MARK: Utility Wrappers
   
   TracingInterval(EngineTaskCallbackKind arg1)
-    : TracingInterval(TraceEventKind::EngineTaskCallback, uint32_t(arg1)) {}
+    : TracingInterval(TraceEventKind::EngineTaskCallback, uint64_t(arg1)) {}
 
   TracingInterval(EngineQueueItemKind arg1)
-    : TracingInterval(TraceEventKind::EngineQueueItemEvent, uint32_t(arg1)) {}
+    : TracingInterval(TraceEventKind::EngineQueueItemEvent, uint64_t(arg1)) {}
 };
 
 /// An RAII type to define a string.
@@ -109,12 +109,12 @@ struct TracingString {
 
   /// The integer code for the string, which can be provided to a trace point or
   /// interval.
-  const uint32_t value;
+  const uint64_t value;
 
   TracingString(TraceEventKind kind, llvm::StringRef str)
       : kind(uint32_t(kind)), value(0) {}
 
-  operator uint32_t() const { return value; }
+  operator uint64_t() const { return value; }
 };
   
 }
