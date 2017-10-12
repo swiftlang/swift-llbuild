@@ -55,6 +55,11 @@ public:
   BinaryEncoder() {}
 
   /// Encode a value to the stream.
+  void write(bool value) {
+    encdata.push_back(uint8_t(value));
+  }
+
+  /// Encode a value to the stream.
   void write(uint8_t value) {
     encdata.push_back(value);
   }
@@ -161,6 +166,9 @@ public:
   bool isEmpty() const {
     return pos == data.size();
   }
+  
+  /// Decode a value from the stream.
+  void read(bool& value) { value = read8() != 0; }
   
   /// Decode a value from the stream.
   void read(uint8_t& value) { value = read8(); }
