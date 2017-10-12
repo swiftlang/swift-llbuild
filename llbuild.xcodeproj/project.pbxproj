@@ -95,6 +95,9 @@
 		E1192CEF1C49DBA900F85890 /* Core-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1DD22741C47259900555A5D /* Core-C-API.cpp */; };
 		E1192CF11C49DC3300F85890 /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
 		E1192CF21C49DC4F00F85890 /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
+		E11C21451F8F651F00ED4524 /* BuildEngineServer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E11C21431F8F651F00ED4524 /* BuildEngineServer.cpp */; };
+		E11C21461F8F651F00ED4524 /* BuildEngineClient.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E11C21441F8F651F00ED4524 /* BuildEngineClient.cpp */; };
+		E11C21481F8F653C00ED4524 /* BuildEngineServerTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E11C21471F8F653C00ED4524 /* BuildEngineServerTest.cpp */; };
 		E11F2B7F1E4D255B00176BAD /* BuildDescription.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E11F2B7E1E4D255B00176BAD /* BuildDescription.cpp */; };
 		E120B9ED1E4E65EB00B28469 /* BinaryCodingTests.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E120B9EB1E4E65EB00B28469 /* BinaryCodingTests.cpp */; };
 		E120B9EE1E4E65EB00B28469 /* ShellUtilityTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E120B9EC1E4E65EB00B28469 /* ShellUtilityTest.cpp */; };
@@ -728,6 +731,12 @@
 		E11470921B752E7000ED84CF /* BuildKey.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildKey.h; sourceTree = "<group>"; };
 		E11470931B7554F800ED84CF /* FileInfo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FileInfo.cpp; sourceTree = "<group>"; };
 		E1192CEC1C49D84500F85890 /* buildsystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = buildsystem.h; sourceTree = "<group>"; };
+		E11C21431F8F651F00ED4524 /* BuildEngineServer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildEngineServer.cpp; sourceTree = "<group>"; };
+		E11C21441F8F651F00ED4524 /* BuildEngineClient.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildEngineClient.cpp; sourceTree = "<group>"; };
+		E11C21471F8F653C00ED4524 /* BuildEngineServerTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildEngineServerTest.cpp; sourceTree = "<group>"; };
+		E11C21491F8FECD500ED4524 /* BuildEngineClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuildEngineClient.h; sourceTree = "<group>"; };
+		E11C214A1F8FECD500ED4524 /* BuildEngineServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuildEngineServer.h; sourceTree = "<group>"; };
+		E11C214B1F8FECF000ED4524 /* BuildEngineProtocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuildEngineProtocol.h; sourceTree = "<group>"; };
 		E11F2B7D1E4D253B00176BAD /* BuildDescription.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildDescription.h; sourceTree = "<group>"; };
 		E11F2B7E1E4D255B00176BAD /* BuildDescription.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildDescription.cpp; sourceTree = "<group>"; };
 		E120B9EB1E4E65EB00B28469 /* BinaryCodingTests.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BinaryCodingTests.cpp; sourceTree = "<group>"; };
@@ -1393,11 +1402,14 @@
 			isa = PBXGroup;
 			children = (
 				E1A2245719F997FE0059043E /* Headers */,
-				E1A2241519F991530059043E /* CMakeLists.txt */,
 				E1E221051A0067F800957481 /* BuildDB.cpp */,
 				E1A2241219F991530059043E /* BuildEngine.cpp */,
+				E11C21441F8F651F00ED4524 /* BuildEngineClient.cpp */,
+				E11C214B1F8FECF000ED4524 /* BuildEngineProtocol.h */,
+				E11C21431F8F651F00ED4524 /* BuildEngineServer.cpp */,
 				E1A2241319F991530059043E /* BuildEngineTrace.cpp */,
 				E1A2241419F991530059043E /* BuildEngineTrace.h */,
+				E1A2241519F991530059043E /* CMakeLists.txt */,
 				E1A0B0FE1C971581006DA08F /* DependencyInfoParser.cpp */,
 				E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */,
 				E1E2210B1A015B9E00957481 /* SQLiteBuildDB.cpp */,
@@ -1453,6 +1465,8 @@
 			children = (
 				E1E221041A0067EF00957481 /* BuildDB.h */,
 				E1A2245819F997FE0059043E /* BuildEngine.h */,
+				E11C21491F8FECD500ED4524 /* BuildEngineClient.h */,
+				E11C214A1F8FECD500ED4524 /* BuildEngineServer.h */,
 				E19D79931A15D9F5002604FB /* MakefileDepsParser.h */,
 			);
 			name = Headers;
@@ -1586,6 +1600,7 @@
 			children = (
 				E1A224B619F998D40059043E /* CMakeLists.txt */,
 				E1A224B519F998D40059043E /* BuildEngineTest.cpp */,
+				E11C21471F8F653C00ED4524 /* BuildEngineServerTest.cpp */,
 				E1A0B1001C9717BA006DA08F /* DependencyInfoParserTest.cpp */,
 				E10FE0D61B7313D50059D086 /* DepsBuildEngineTest.cpp */,
 				E19D79941A15DA06002604FB /* MakefileDepsParserTest.cpp */,
@@ -2738,7 +2753,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				E1E2210C1A015B9E00957481 /* SQLiteBuildDB.cpp in Sources */,
+				E11C21451F8F651F00ED4524 /* BuildEngineServer.cpp in Sources */,
 				E1A0B0FF1C971582006DA08F /* DependencyInfoParser.cpp in Sources */,
+				E11C21461F8F651F00ED4524 /* BuildEngineClient.cpp in Sources */,
 				E1A2244619F9974A0059043E /* BuildEngine.cpp in Sources */,
 				E1E221071A00689C00957481 /* BuildDB.cpp in Sources */,
 				E1A2244719F9974D0059043E /* BuildEngineTrace.cpp in Sources */,
@@ -2775,6 +2792,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9DDD8BE11DDCAB9A00FB62D2 /* SQLiteBuildDBTest.cpp in Sources */,
+				E11C21481F8F653C00ED4524 /* BuildEngineServerTest.cpp in Sources */,
 				E19D79951A15DA06002604FB /* MakefileDepsParserTest.cpp in Sources */,
 				E1A0B1011C9717BA006DA08F /* DependencyInfoParserTest.cpp in Sources */,
 				E1A224F619F99D940059043E /* BuildEngineTest.cpp in Sources */,

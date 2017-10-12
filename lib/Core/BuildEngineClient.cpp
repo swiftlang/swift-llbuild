@@ -12,7 +12,12 @@
 
 #include "llbuild/Core/BuildEngineClient.h"
 
+#include "llbuild/Basic/BinaryCoding.h"
 #include "llbuild/Basic/LLVM.h"
+
+#include "llvm/Support/ErrorHandling.h"
+
+#include "BuildEngineProtocol.h"
 
 #include <errno.h>
 #include <unistd.h>
@@ -20,6 +25,7 @@
 #include <sys/un.h>
 
 using namespace llbuild;
+using namespace llbuild::basic;
 using namespace llbuild::core;
 
 namespace {
@@ -28,7 +34,7 @@ class BuildEngineClientImpl {
   /// The path to the UNIX domain socket to connect on.
   std::string path;
 
-  /// The taskID to register with.
+  /// The task ID to register with.
   std::string taskID;
 
   /// Whether the client is connected.
@@ -36,6 +42,41 @@ class BuildEngineClientImpl {
 
   /// The socket file descriptor.
   int socketFD = -1;
+
+  /// Send the given message to the server.
+  template <typename T>
+  void sendMessage(T&& msg) {
+    assert(isConnected);
+    
+    // Encode the message with reserved space for the size (backpatched below).
+    BinaryEncoder coder{};
+    coder.write((uint32_t)0);
+    coder.write(T::messageKind);
+    coder.write(msg);
+    auto contents = coder.contents();
+
+    // Backpatch the size.
+    //
+    // FIXME: If we don't go the streaming route, we could extend BinaryCoding
+    // to support in-place coding which would make this more elegant.
+    uint32_t size = contents.size() - 8;
+    contents[0] = uint8_t(size >> 0);
+    contents[1] = uint8_t(size >> 8);
+    contents[2] = uint8_t(size >> 16);
+    contents[3] = uint8_t(size >> 24);
+
+    auto pos = contents.begin();
+    while (pos < contents.end()) {
+      auto bytesRemaining = contents.end() - pos;
+      auto n = ::write(socketFD, &*pos, bytesRemaining);
+      if (n < 0) {
+        // FIXME: Error handling.
+        llvm::report_fatal_error("unexpected failure writing to client");
+      }
+      assert(n <= bytesRemaining);
+      pos += n;
+    }
+  }
   
 public:
   BuildEngineClientImpl(StringRef path, StringRef taskID)
@@ -59,9 +100,11 @@ public:
       *error_out = std::string("unable to connect socket: ") + strerror(errno);
       goto fail;
     }
-
-    (void)::write(socketFD, "1", 1);
     isConnected = true;
+
+    // Send the introductory message.
+    sendMessage(engine_protocol::AnnounceClient{
+        engine_protocol::kBuildEngineProtocolVersion, taskID });
     
     return true;
 

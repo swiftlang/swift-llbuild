@@ -12,10 +12,14 @@
 
 #include "llbuild/Core/BuildEngineServer.h"
 
+#include "llbuild/Basic/BinaryCoding.h"
 #include "llbuild/Basic/LLVM.h"
 
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/ErrorHandling.h"
+
+#include "BuildEngineProtocol.h"
 
 #include <errno.h>
 #include <thread>
@@ -24,6 +28,7 @@
 #include <sys/un.h>
 
 using namespace llbuild;
+using namespace llbuild::basic;
 using namespace llbuild::core;
 
 namespace {
@@ -68,9 +73,14 @@ class BuildEngineServerImpl {
 
   /// Service an individual client connection.
   void serveClient(int fd) {
+    // Our scratch buffer.
+    llvm::SmallVector<char, 4096> buf;
+
     while (true) {
-      uint8_t buf[4096];
-      auto n = read(fd, buf, sizeof(buf));
+      // Read onto the end of our buffer.
+      const auto readSize = 4096;
+      buf.reserve(buf.size() + readSize);
+      auto n = read(fd, buf.begin() + buf.size(), readSize);
       if (n < 0) {
         // If we experience errors on this connection, there is nothing we can
         // do.
@@ -83,10 +93,49 @@ class BuildEngineServerImpl {
         break;
       }
 
-      // FIXME: We read data, service the connection.
+      // Adjust the buffer size.
+      buf.set_size(buf.size() + n);
+
+      // Consume all of the messages in the buffer; \see BinaryEngineProtocol.h
+      // for the framing definition.
+      auto pos = buf.begin();
+      const auto headerSize = 8;
+      while (buf.end() - pos >= headerSize) {
+        // Decode the header.
+        uint32_t size;
+        engine_protocol::MessageKind kind;
+        {
+          BinaryDecoder coder(StringRef(pos, headerSize));
+          coder.read(size);
+          coder.read(kind);
+          assert(coder.isEmpty());
+        }
+
+        // If we don't have the complete message, we are done.
+        if (buf.end() - pos < headerSize + size) break;
+
+        // Process the message.
+        processClientMessage(kind, StringRef(pos + headerSize, size));
+        
+        pos += headerSize + size;
+      }
+
+      // Drop all read messages.
+      buf.erase(buf.begin(), pos);
     }
   }
 
+  /// Process an individual client message.
+  void processClientMessage(engine_protocol::MessageKind kind, StringRef data) {
+    switch (kind) {
+    case engine_protocol::MessageKind::AnnounceClient:
+      engine_protocol::AnnounceClient msg;
+      BinaryDecoder(data).read(msg);
+      fprintf(stderr, "client announced (protocolVersion %d, task '%s')\n",
+              msg.protocolVersion, msg.taskID.c_str());
+    }
+  }
+  
 public:
   BuildEngineServerImpl(BuildEngine& engine, StringRef path)
       : engine(engine), path(path) {}
