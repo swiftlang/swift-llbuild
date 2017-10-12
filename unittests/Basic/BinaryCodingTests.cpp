@@ -81,6 +81,7 @@ TEST(BinaryCodingTests, basic) {
   checkRoundtrip(uint16_t(0xABCD));
   checkRoundtrip(uint32_t(0xABCD0123));
   checkRoundtrip(uint64_t(0xABCD01234567DCBAULL));
+  checkRoundtrip(std::string("hello"));
 }
 
 TEST(BinaryCodingTests, bytes) {
