@@ -98,6 +98,7 @@
 		E11C21451F8F651F00ED4524 /* BuildEngineServer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E11C21431F8F651F00ED4524 /* BuildEngineServer.cpp */; };
 		E11C21461F8F651F00ED4524 /* BuildEngineClient.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E11C21441F8F651F00ED4524 /* BuildEngineClient.cpp */; };
 		E11C21481F8F653C00ED4524 /* BuildEngineServerTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E11C21471F8F653C00ED4524 /* BuildEngineServerTest.cpp */; };
+		E11C214D1F90365A00ED4524 /* BuildEngineProtocol.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E11C214C1F90365A00ED4524 /* BuildEngineProtocol.cpp */; };
 		E11F2B7F1E4D255B00176BAD /* BuildDescription.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E11F2B7E1E4D255B00176BAD /* BuildDescription.cpp */; };
 		E120B9ED1E4E65EB00B28469 /* BinaryCodingTests.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E120B9EB1E4E65EB00B28469 /* BinaryCodingTests.cpp */; };
 		E120B9EE1E4E65EB00B28469 /* ShellUtilityTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E120B9EC1E4E65EB00B28469 /* ShellUtilityTest.cpp */; };
@@ -737,6 +738,7 @@
 		E11C21491F8FECD500ED4524 /* BuildEngineClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuildEngineClient.h; sourceTree = "<group>"; };
 		E11C214A1F8FECD500ED4524 /* BuildEngineServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuildEngineServer.h; sourceTree = "<group>"; };
 		E11C214B1F8FECF000ED4524 /* BuildEngineProtocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuildEngineProtocol.h; sourceTree = "<group>"; };
+		E11C214C1F90365A00ED4524 /* BuildEngineProtocol.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildEngineProtocol.cpp; sourceTree = "<group>"; };
 		E11F2B7D1E4D253B00176BAD /* BuildDescription.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildDescription.h; sourceTree = "<group>"; };
 		E11F2B7E1E4D255B00176BAD /* BuildDescription.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildDescription.cpp; sourceTree = "<group>"; };
 		E120B9EB1E4E65EB00B28469 /* BinaryCodingTests.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BinaryCodingTests.cpp; sourceTree = "<group>"; };
@@ -1406,6 +1408,7 @@
 				E1A2241219F991530059043E /* BuildEngine.cpp */,
 				E11C21441F8F651F00ED4524 /* BuildEngineClient.cpp */,
 				E11C214B1F8FECF000ED4524 /* BuildEngineProtocol.h */,
+				E11C214C1F90365A00ED4524 /* BuildEngineProtocol.cpp */,
 				E11C21431F8F651F00ED4524 /* BuildEngineServer.cpp */,
 				E1A2241319F991530059043E /* BuildEngineTrace.cpp */,
 				E1A2241419F991530059043E /* BuildEngineTrace.h */,
@@ -2754,6 +2757,7 @@
 			files = (
 				E1E2210C1A015B9E00957481 /* SQLiteBuildDB.cpp in Sources */,
 				E11C21451F8F651F00ED4524 /* BuildEngineServer.cpp in Sources */,
+				E11C214D1F90365A00ED4524 /* BuildEngineProtocol.cpp in Sources */,
 				E1A0B0FF1C971582006DA08F /* DependencyInfoParser.cpp in Sources */,
 				E11C21461F8F651F00ED4524 /* BuildEngineClient.cpp in Sources */,
 				E1A2244619F9974A0059043E /* BuildEngine.cpp in Sources */,

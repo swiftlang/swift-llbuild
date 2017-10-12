@@ -21,11 +21,12 @@
 
 #include "BuildEngineProtocol.h"
 
-#include <errno.h>
 #include <thread>
-#include <unistd.h>
+
+#include <errno.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <unistd.h>
 
 using namespace llbuild;
 using namespace llbuild::basic;
@@ -33,6 +34,23 @@ using namespace llbuild::core;
 
 namespace {
 
+class ClientConnection: public engine_protocol::MessageSocket {
+public:
+  using MessageSocket::MessageSocket;
+  
+  /// Process an individual client message.
+  virtual void handleMessage(engine_protocol::MessageKind kind,
+                             StringRef data) {
+    switch (kind) {
+    case engine_protocol::MessageKind::AnnounceClient:
+      engine_protocol::AnnounceClient msg;
+      BinaryDecoder(data).read(msg);
+      fprintf(stderr, "client announced (protocolVersion %d, task '%s')\n",
+              msg.protocolVersion, msg.taskID.c_str());
+    }
+  }
+};
+  
 class BuildEngineServerImpl {
   /// The engine the server is for.
   BuildEngine& engine;
@@ -66,73 +84,10 @@ class BuildEngineServerImpl {
       // Spawn a thread to handle this connection.
       //
       // FIXME: This isn't efficient, we want a select loop.
-      auto t = new std::thread(&BuildEngineServerImpl::serveClient, this, fd);
-      t->detach();
-    }
-  }
-
-  /// Service an individual client connection.
-  void serveClient(int fd) {
-    // Our scratch buffer.
-    llvm::SmallVector<char, 4096> buf;
-
-    while (true) {
-      // Read onto the end of our buffer.
-      const auto readSize = 4096;
-      buf.reserve(buf.size() + readSize);
-      auto n = read(fd, buf.begin() + buf.size(), readSize);
-      if (n < 0) {
-        // If we experience errors on this connection, there is nothing we can
-        // do.
-        close(fd);
-        break;
-      }
-
-      if (n == 0) {
-        close(fd);
-        break;
-      }
-
-      // Adjust the buffer size.
-      buf.set_size(buf.size() + n);
-
-      // Consume all of the messages in the buffer; \see BinaryEngineProtocol.h
-      // for the framing definition.
-      auto pos = buf.begin();
-      const auto headerSize = 8;
-      while (buf.end() - pos >= headerSize) {
-        // Decode the header.
-        uint32_t size;
-        engine_protocol::MessageKind kind;
-        {
-          BinaryDecoder coder(StringRef(pos, headerSize));
-          coder.read(size);
-          coder.read(kind);
-          assert(coder.isEmpty());
-        }
-
-        // If we don't have the complete message, we are done.
-        if (buf.end() - pos < headerSize + size) break;
-
-        // Process the message.
-        processClientMessage(kind, StringRef(pos + headerSize, size));
-        
-        pos += headerSize + size;
-      }
-
-      // Drop all read messages.
-      buf.erase(buf.begin(), pos);
-    }
-  }
-
-  /// Process an individual client message.
-  void processClientMessage(engine_protocol::MessageKind kind, StringRef data) {
-    switch (kind) {
-    case engine_protocol::MessageKind::AnnounceClient:
-      engine_protocol::AnnounceClient msg;
-      BinaryDecoder(data).read(msg);
-      fprintf(stderr, "client announced (protocolVersion %d, task '%s')\n",
-              msg.protocolVersion, msg.taskID.c_str());
+      //
+      // FIXME: Fix the ownership here.
+      auto connection = new ClientConnection(fd);
+      connection->resume();
     }
   }
   

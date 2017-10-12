@@ -21,8 +21,14 @@
 #include "llbuild/Basic/BinaryCoding.h"
 #include "llbuild/Basic/LLVM.h"
 
+#include "llvm/ADT/StringRef.h"
+
+#include <atomic>
 #include <cstdint>
+#include <memory>
+#include <mutex>
 #include <string>
+#include <thread>
 
 namespace llbuild {
 namespace core {
@@ -36,7 +42,9 @@ namespace engine_protocol {
 ///
 /// 0: Initial revision. 
 const uint32_t kBuildEngineProtocolVersion = 0;
-  
+
+// MARK: Message Types
+
 // The basic protocol consists of objects encoded using the BinaryCoding
 // interface (values are little-endian, for example).
 //
@@ -63,7 +71,87 @@ struct AnnounceClient {
   std::string taskID;
 };
 
+// MARK: Message IO
+
+/// A abstract generic IO interface to a message-based socket.
+///
+/// This implementation is currently thread based, it is not particularly
+/// efficient.
+///
+/// This class is *NOT* thread-safe.
+class MessageSocket {
+  /// The socket file descriptor.
+  int fd;
+
+  /// Whether the connection is terminating.
+  std::atomic<bool> isTerminating{ false };
+
+  /// The reader thread.
+  std::unique_ptr<std::thread> readerThread;
+
+  /// Write a sequence of bytes to the output socket.
+  void writeBytes(StringRef data);
+
+  /// Read and dispatch messages.
+  void readMessages();
+
+public:
+  /// Create a new socket for handling messages on the given file descriptor.
+  MessageSocket(int fd);
+  virtual ~MessageSocket();
+
+  /// Start processing messages from the connect.
+  void resume();
+  
+  /// Force the connection to shutdown.
+  void shutdown();
+  
+  /// Enqueue a new message to the socket.
+  ///
+  /// The write is done synchronously, this may block.
+  //
+  // FIXME: Change this to async, probably.
+  template<typename T>
+  void writeMessage(T&& msg);
+      
+  /// Handle a received message.
+  ///
+  /// This entry point is called synchronously from the IO handler, it should
+  /// generally either be very fast or defer work to a separate thread.
+  ///
+  /// NOTE: This cannot be a pure virtual function, it may be called
+  /// synchronously with the destructor.
+  ///
+  /// \parameter kind The kind of the message that was received.
+  /// \parameter data The complete data payload.
+  virtual void handleMessage(MessageKind kind, StringRef data) {}
+};
+
 }
+}
+
+template<typename T>
+void core::engine_protocol::MessageSocket::writeMessage(T&& msg) {
+    // Encode the message with reserved space for the size (backpatched below).
+  basic::BinaryEncoder coder{};
+    coder.write((uint32_t)0);
+    coder.write(T::messageKind);
+    coder.write(msg);
+    auto contents = coder.contents();
+
+    // Backpatch the size.
+    //
+    // FIXME: If we don't go the streaming route, we could extend BinaryCoding
+    // to support in-place coding which would make this more elegant.
+    uint32_t size = contents.size() - 8;
+    contents[0] = uint8_t(size >> 0);
+    contents[1] = uint8_t(size >> 8);
+    contents[2] = uint8_t(size >> 16);
+    contents[3] = uint8_t(size >> 24);
+
+    writeBytes(StringRef(
+                   reinterpret_cast<char*>(contents.data()),
+                   contents.size()));
 }
 
 // MARK: BinaryCoding Traits
