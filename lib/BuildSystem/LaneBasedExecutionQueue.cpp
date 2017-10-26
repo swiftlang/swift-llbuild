@@ -352,29 +352,31 @@ public:
     args[argsStorage.size()] = nullptr;
 
     // Form the complete environment.
+    //
+    // NOTE: We construct the environment in order of precedence, so
+    // overridden keys should be defined first.
     POSIXEnvironment posixEnv;
-    const char* const* envp = nullptr;
 
-    // If no additional environment is supplied, use the base environment.
-    if (environment.empty()) {
-      envp = this->environment;
-    } else {
-      // NOTE: We construct the environment in order of precedence, so
-      // overridden keys should be defined first.
+    // Export a task ID to subprocesses.
+    //
+    // We currently only export the lane ID, but eventually will export a unique
+    // task ID for SR-6053.
+    posixEnv.setIfMissing("LLBUILD_TASK_ID", Twine(context.laneNumber).str());
+                          
+    // Add the requested environment.
+    for (const auto& entry: environment) {
+      posixEnv.setIfMissing(entry.first, entry.second);
+    }
       
-      // Add the requested environment.
-      for (const auto& entry: environment) {
-        posixEnv.setIfMissing(entry.first, entry.second);
+    // Inherit the base environment, if desired.
+    //
+    // FIXME: This involves a lot of redundant allocation, currently. We could
+    // cache this for the common case of a directly inherited environment.
+    if (inheritEnvironment) {
+      for (const char* const* p = this->environment; *p != nullptr; ++p) {
+        auto pair = StringRef(*p).split('=');
+        posixEnv.setIfMissing(pair.first, pair.second);
       }
-      
-      // Inherit the base environment, if desired.
-      if (inheritEnvironment) {
-        for (const char* const* p = this->environment; *p != nullptr; ++p) {
-          auto pair = StringRef(*p).split('=');
-          posixEnv.setIfMissing(pair.first, pair.second);
-        }
-      }
-      envp = posixEnv.getEnvp();
     }
 
     // Resolve the executable path, if necessary.
@@ -401,7 +403,7 @@ public:
       if (!wasCancelled) {
         if (posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
                         /*attrp=*/&attributes, const_cast<char**>(args.data()),
-                        const_cast<char* const*>(envp)) != 0) {
+                        const_cast<char* const*>(posixEnv.getEnvp())) != 0) {
           getDelegate().commandProcessHadError(
               context.job.getForCommand(), handle,
               Twine("unable to spawn process (") + strerror(errno) + ")");
