@@ -129,6 +129,7 @@
 		E171538D1A0BF702004CD598 /* CorePerfTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = E171538C1A0BF702004CD598 /* CorePerfTests.mm */; };
 		E17440C31CE192FF0070A30C /* ShellUtility.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E17440C21CE192FF0070A30C /* ShellUtility.cpp */; };
 		E192E92F1E30014E00122F17 /* BuildValueTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E192E92E1E30014E00122F17 /* BuildValueTest.cpp */; };
+		E19880EB1FA256FC00E490FF /* POSIXEnvironmentTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E19880EA1FA256FB00E490FF /* POSIXEnvironmentTest.cpp */; };
 		E19D79921A15D9E6002604FB /* MakefileDepsParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */; };
 		E19D79951A15DA06002604FB /* MakefileDepsParserTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E19D79941A15DA06002604FB /* MakefileDepsParserTest.cpp */; };
 		E1A0B0FF1C971582006DA08F /* DependencyInfoParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B0FE1C971581006DA08F /* DependencyInfoParser.cpp */; };
@@ -765,6 +766,8 @@
 		E181D1451F7D90AC0015286C /* Tracing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Tracing.h; sourceTree = "<group>"; };
 		E182BE111ABA2B8D001840AD /* Compiler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Compiler.h; sourceTree = "<group>"; };
 		E192E92E1E30014E00122F17 /* BuildValueTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildValueTest.cpp; sourceTree = "<group>"; };
+		E19880E91FA256D900E490FF /* POSIXEnvironment.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = POSIXEnvironment.h; sourceTree = "<group>"; };
+		E19880EA1FA256FB00E490FF /* POSIXEnvironmentTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = POSIXEnvironmentTest.cpp; sourceTree = "<group>"; };
 		E19C3FD51B98C1A70035E1AA /* tests */ = {isa = PBXFileReference; lastKnownFileType = folder; path = tests; sourceTree = "<group>"; };
 		E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MakefileDepsParser.cpp; sourceTree = "<group>"; };
 		E19D79931A15D9F5002604FB /* MakefileDepsParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MakefileDepsParser.h; sourceTree = "<group>"; };
@@ -1202,9 +1205,10 @@
 				C5740D081E03523100567DD8 /* BuildSystemFrontendTest.cpp */,
 				E1075ED61E4EA417007D52C6 /* BuildSystemTaskTests.cpp */,
 				E192E92E1E30014E00122F17 /* BuildValueTest.cpp */,
+				9DB0478B1DF9D3E2006CDF52 /* LaneBasedExecutionQueueTest.cpp */,
 				E1B3B9DA1E4D5A7A00DF1FBC /* MockBuildSystemDelegate.cpp */,
 				E1B3B9DB1E4D5A7A00DF1FBC /* MockBuildSystemDelegate.h */,
-				9DB0478B1DF9D3E2006CDF52 /* LaneBasedExecutionQueueTest.cpp */,
+				E19880EA1FA256FB00E490FF /* POSIXEnvironmentTest.cpp */,
 				9D0A6D7F1E1FFEA800BE636F /* TempDir.cpp */,
 				9D0A6D801E1FFEA800BE636F /* TempDir.h */,
 			);
@@ -1835,6 +1839,7 @@
 				E1FC67F81BB1F417004EBC54 /* BuildValue.cpp */,
 				E1AAD28F1BC65AB200F54680 /* ExternalCommand.cpp */,
 				E1066C071BC5ACAB00B892CE /* LaneBasedExecutionQueue.cpp */,
+				E19880E91FA256D900E490FF /* POSIXEnvironment.h */,
 				E1AAD2911BC65B5000F54680 /* SwiftTools.cpp */,
 			);
 			path = BuildSystem;
@@ -2658,6 +2663,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E19880EB1FA256FC00E490FF /* POSIXEnvironmentTest.cpp in Sources */,
 				E192E92F1E30014E00122F17 /* BuildValueTest.cpp in Sources */,
 				9DB047C01DF9F592006CDF52 /* LaneBasedExecutionQueueTest.cpp in Sources */,
 				C5740D091E03523100567DD8 /* BuildSystemFrontendTest.cpp in Sources */,
