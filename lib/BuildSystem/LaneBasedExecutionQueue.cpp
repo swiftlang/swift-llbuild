@@ -11,13 +11,15 @@
 //===----------------------------------------------------------------------===//
 
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
-#include "llbuild/BuildSystem/CommandResult.h"
+
+#include "POSIXEnvironment.h"
 
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/Basic/PlatformUtility.h"
 #include "llbuild/Basic/Tracing.h"
 
 #include "llbuild/BuildSystem/BuildDescription.h"
+#include "llbuild/BuildSystem/CommandResult.h"
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/Hashing.h"
@@ -47,14 +49,6 @@
 
 using namespace llbuild;
 using namespace llbuild::buildsystem;
-
-namespace std {
-  template<> struct hash<llvm::StringRef> {
-    size_t operator()(const StringRef& value) const {
-      return size_t(hash_value(value));
-    }
-  };
-}
 
 namespace {
 
@@ -358,50 +352,31 @@ public:
     args[argsStorage.size()] = nullptr;
 
     // Form the complete environment.
-    std::vector<std::string> envStorage;
-    std::vector<const char*> env;
-    const char* const* envp = nullptr;
+    //
+    // NOTE: We construct the environment in order of precedence, so
+    // overridden keys should be defined first.
+    POSIXEnvironment posixEnv;
 
-    // If no additional environment is supplied, use the base environment.
-    if (environment.empty()) {
-      envp = this->environment;
-    } else {
-      // Inherit the base environment, if desired.
-      if (inheritEnvironment) {
-        std::unordered_set<StringRef> overriddenKeys{};
-        // Compute the set of strings which are overridden in the process
-        // environment.
-        for (const auto& entry: environment) {
-          overriddenKeys.insert(entry.first);
-        }
-
-        // Form the complete environment by adding the base key value pairs
-        // which are not overridden, then adding all of the overridden ones.
-        for (const char* const* p = this->environment; *p != nullptr; ++p) {
-          // Find the key.
-          auto key = StringRef(*p).split('=').first;
-          if (!overriddenKeys.count(key)) {
-            env.emplace_back(*p);
-          }
-        }
+    // Export a task ID to subprocesses.
+    //
+    // We currently only export the lane ID, but eventually will export a unique
+    // task ID for SR-6053.
+    posixEnv.setIfMissing("LLBUILD_TASK_ID", Twine(context.laneNumber).str());
+                          
+    // Add the requested environment.
+    for (const auto& entry: environment) {
+      posixEnv.setIfMissing(entry.first, entry.second);
+    }
+      
+    // Inherit the base environment, if desired.
+    //
+    // FIXME: This involves a lot of redundant allocation, currently. We could
+    // cache this for the common case of a directly inherited environment.
+    if (inheritEnvironment) {
+      for (const char* const* p = this->environment; *p != nullptr; ++p) {
+        auto pair = StringRef(*p).split('=');
+        posixEnv.setIfMissing(pair.first, pair.second);
       }
-
-      // Add the requested environment.
-      for (const auto& entry: environment) {
-        SmallString<256> assignment;
-        assignment += entry.first;
-        assignment += '=';
-        assignment += entry.second;
-        assignment += '\0';
-        envStorage.emplace_back(assignment.str());
-      }
-      // We must do this in a second pass, once the entries are guaranteed not
-      // to move.
-      for (const auto& entry: envStorage) {
-        env.emplace_back(entry.c_str());
-      }
-      env.emplace_back(nullptr);
-      envp = env.data();
     }
 
     // Resolve the executable path, if necessary.
@@ -428,7 +403,7 @@ public:
       if (!wasCancelled) {
         if (posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
                         /*attrp=*/&attributes, const_cast<char**>(args.data()),
-                        const_cast<char* const*>(envp)) != 0) {
+                        const_cast<char* const*>(posixEnv.getEnvp())) != 0) {
           getDelegate().commandProcessHadError(
               context.job.getForCommand(), handle,
               Twine("unable to spawn process (") + strerror(errno) + ")");
