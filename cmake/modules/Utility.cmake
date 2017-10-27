@@ -110,6 +110,7 @@ function(add_unittest test_suite test_name)
   endif ()
 
   set_property(TARGET ${test_name} APPEND PROPERTY COMPILE_DEFINITIONS GTEST_HAS_RTTI=0)
+  set_property(TARGET ${test_name} APPEND PROPERTY COMPILE_DEFINITIONS GTEST_NO_LLVM_RAW_OSTREAM=1)
 endfunction()
 
 # Compile swift sources to a dynamic framework.
