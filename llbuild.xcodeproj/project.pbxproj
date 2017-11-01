@@ -3188,6 +3188,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
+                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
 				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
@@ -3199,6 +3200,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					NDEBUG,
 					"GTEST_HAS_RTTI=0",
+                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
 				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
@@ -3244,6 +3246,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
+                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
 				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
@@ -3255,6 +3258,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
+                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
 				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
@@ -3519,6 +3523,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
+                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
 				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/utils/unittest/googletest/include $(SRCROOT)/utils/unittest/googletest";
 			};
@@ -3530,6 +3535,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
+                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
 				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/utils/unittest/googletest/include $(SRCROOT)/utils/unittest/googletest";
 			};
@@ -3541,6 +3547,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
+                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
 				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/utils/unittest/googletest/include";
 			};
@@ -3552,6 +3559,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
+                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
 				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/utils/unittest/googletest/include";
 			};
@@ -3563,6 +3571,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
+                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
 				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
@@ -3574,6 +3583,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
+                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
 				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
@@ -3585,6 +3595,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
+                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
 				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
@@ -3596,6 +3607,7 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"GTEST_HAS_RTTI=0",
+                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
 				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
