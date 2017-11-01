@@ -26,6 +26,7 @@ if(SUPPORTS_NO_VARIADIC_MACROS_FLAG)
 endif()
 
 add_definitions( -DGTEST_HAS_RTTI=0 )
+add_definitions( -DGTEST_NO_LLVM_RAW_OSTREAM=1 )
 
 if (NOT LLVM_ENABLE_THREADS)
   add_definitions( -DGTEST_HAS_PTHREAD=0 )
