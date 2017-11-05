@@ -196,6 +196,15 @@ class BuildEngineImpl {
       result.builtAt = engine->getCurrentTimestamp();
     }
 
+    void setCancelled() {
+      // If we have to cancel a task, it becomes incomplete. We do not need to
+      // sync this to the database, the database won't see an updated record and
+      // can continue to maintain the previous view of state -- however, we must
+      // mark the internal representation as incomplete because the result is no
+      // longer valid.
+      state = StateKind::Incomplete;
+    }
+    
     RuleScanRecord* getPendingScanRecord() {
       assert(isScanning());
       return inProgressInfo.pendingScanRecord;
@@ -1101,7 +1110,7 @@ private:
       RuleInfo* ruleInfo = taskInfo->forRuleInfo;
       assert(taskInfo == ruleInfo->getPendingTaskInfo());
       ruleInfo->setPendingTaskInfo(nullptr);
-      ruleInfo->setComplete(this);
+      ruleInfo->setCancelled();
     }
 
     // Delete all of the tasks.
