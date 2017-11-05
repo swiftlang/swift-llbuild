@@ -856,7 +856,7 @@ private:
               ruleInfo->keyID, ruleInfo->rule, ruleInfo->result, &error);
           if (!result) {
             delegate.error(error);
-            completeRemainingTasks();
+            cancelRemainingTasks();
             return false;
           }
         }
@@ -891,6 +891,10 @@ private:
 
       // If we haven't done any other work at this point but we have pending
       // tasks, we need to wait for a task to complete.
+      //
+      // NOTE: Cancellation also implements this process, if you modify this
+      // code please also validate that \see cancelRemainingTasks() is still
+      // correct.
       if (!didWork && numOutstandingUnfinishedTasks != 0) {
         TracingInterval i(EngineQueueItemKind::Waiting);
         
@@ -901,7 +905,7 @@ private:
         // of the mutex, if one has been added then we may have already missed
         // the condition notification and cannot safely wait.
         if (finishedTaskInfos.empty()) {
-            finishedTaskInfosCondition.wait(lock);
+          finishedTaskInfosCondition.wait(lock);
         }
 
         didWork = true;
@@ -1054,17 +1058,45 @@ private:
     assert(!cycleList.empty());
 
     delegate.cycleDetected(cycleList);
-    completeRemainingTasks();
+    cancelRemainingTasks();
   }
 
-  // Complete all of the remaining tasks.
-  //
-  // FIXME: Should we have a task abort callback?
-  void completeRemainingTasks() {
+  // Cancel all of the remaining tasks.
+  void cancelRemainingTasks() {
+    // We need to wait for any currently running tasks to be reported as
+    // complete. Not doing this would mean we could get asynchronous calls
+    // attempting to modify the task state concurrently with the cancellation
+    // process, which isn't something we want to need to synchronize on.
+    //
+    // We don't process the requests at all, we simply drain them. In practice,
+    // we expect clients to implement cancellation in conjection with causing
+    // long-running tasks to also cancel and fail, so preserving those results
+    // is not valuable.
+    while (numOutstandingUnfinishedTasks != 0) {
+        std::unique_lock<std::mutex> lock(finishedTaskInfosMutex);
+        if (finishedTaskInfos.empty()) {
+          finishedTaskInfosCondition.wait(lock);
+        } else {
+          assert(finishedTaskInfos.size() <= numOutstandingUnfinishedTasks);
+          numOutstandingUnfinishedTasks -= finishedTaskInfos.size();
+          finishedTaskInfos.clear();
+        }
+    }
+    
     for (auto& it: taskInfos) {
-      // Complete the task, even though it did not update the value.
+      // Cancel the task, marking it incomplete.
       //
-      // FIXME: What should we do here with the value?
+      // This will force it to rerun in a later build, but since it was already
+      // running in this build that was almost certainly going to be
+      // required. Technically, there are rare situations where it wouldn't have
+      // to rerun (e.g., if resultIsValid becomes true after being false in this
+      // run), and if we were willing to restore the tasks state--either by
+      // keeping the old one or by restoring from the database--we could ensure
+      // that doesn't happen.
+      //
+      // NOTE: Actually, we currently don't sync this write to the database, so
+      // in some cases we do actually preserve this information (if the client
+      // ends up cancelling, then reloading froom the database).
       TaskInfo* taskInfo = &it.second;
       RuleInfo* ruleInfo = taskInfo->forRuleInfo;
       assert(taskInfo == ruleInfo->getPendingTaskInfo());
@@ -1176,7 +1208,7 @@ public:
       db->lookupRuleResult(ruleInfo.keyID, ruleInfo.rule, &ruleInfo.result, &error);
       if (!error.empty()) {
         delegate.error(error);
-        completeRemainingTasks();
+        cancelRemainingTasks();
       }
     }
 
@@ -1350,7 +1382,7 @@ public:
     // Validate the InputID.
     if (inputID > BuildEngine::kMaximumInputID) {
       delegate.error("error: attempt to use reserved input ID");
-      completeRemainingTasks();
+      cancelRemainingTasks();
       return;
     }
 
@@ -1368,7 +1400,7 @@ public:
 
     if (!taskInfo->forRuleInfo->isInProgressComputing()) {
       delegate.error("error: invalid state for adding discovered dependency");
-      completeRemainingTasks();
+      cancelRemainingTasks();
       return;
     }
 
@@ -1385,7 +1417,7 @@ public:
 
     if (!taskInfo->forRuleInfo->isInProgressComputing()) {
       delegate.error("error: invalid state for marking task complete");
-      completeRemainingTasks();
+      cancelRemainingTasks();
       return;
     }
 
