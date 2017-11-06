@@ -1125,7 +1125,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       if (node->isVirtual()) {
         return Rule{
           keyData,
-          /*Action=*/ [node](BuildEngine& engine) -> Task* {
+          /*Action=*/ [](BuildEngine& engine) -> Task* {
             return engine.registerTask(new VirtualInputNodeTask());
           },
           /*IsValid=*/ [node](BuildEngine& engine, const Rule& rule,
