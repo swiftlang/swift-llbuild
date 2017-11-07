@@ -1,0 +1,59 @@
+# Verify that downstream commands separated by from an error by a phony edge
+# don't trigger an unnecessary rebuild.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.llbuild
+
+# Perform the initial build.
+#
+# RUN: echo true > %t.build/script
+# RUN: chmod +x %t.build/script
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build &> %t.out
+# RUN: %{FileCheck} --check-prefix CHECK-INITIAL --input-file %t.out %s
+#
+# CHECK-INITIAL: TEST COMMAND
+# CHECK-INITIAL-NEXT: DOWNSTREAM COMMAND
+
+# Run the build with a failure.
+#
+# RUN: echo false > %t.build/script
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t2.out || true
+# RUN: %{FileCheck} --check-prefix CHECK-FAILURE --input-file %t2.out %s
+#
+# CHECK-FAILURE: TEST COMMAND
+# CHECK-FAILURE-NOT: DOWNSTREAM
+
+# Fix the failure and rebuild. The downstream command shouldn't run.
+#
+# RUN: echo true > %t.build/script
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t3.out
+# RUN: %{FileCheck} --check-prefix CHECK-REBUILD --input-file %t3.out %s
+#
+# CHECK-REBUILD: TEST COMMAND
+# CHECK-REBUILD-NOT: DOWNSTREAM
+
+
+client:
+  name: basic
+
+targets:
+  "": ["<output>"]
+
+commands:
+  C.1:
+    tool: shell
+    inputs: ["./script"]
+    outputs: ["<n0>"]
+    args: ./script
+    description: TEST COMMAND
+  C.2:
+    tool: phony
+    inputs: ["<n0>"]
+    outputs: ["<n1>"]
+  C.3:
+    tool: shell
+    inputs: ["<n1>"]
+    outputs: ["<output>"]
+    args: true
+    description: DOWNSTREAM COMMAND
