@@ -1293,6 +1293,22 @@ public:
     // Nothing needs to be done for phony commands.
     return CommandResult::Succeeded;
   }
+
+  virtual BuildValue getResultForOutput(Node* node, const BuildValue& value) override {
+    // If the node is virtual, the output is always a virtual input value,
+    // regardless of the actual build value.
+    //
+    // This is a special case for phony commands, to avoid them incorrectly
+    // propagating failed/cancelled states onwards to downstream commands when
+    // they are being used only for ordering purposes.
+    auto buildNode = static_cast<BuildNode*>(node);
+    if (buildNode->isVirtual() && !buildNode->isCommandTimestamp()) {
+      return BuildValue::makeVirtualInput();
+    }
+
+    // Otherwise, delegate to the inherited implementation.
+    return ExternalCommand::getResultForOutput(node, value);
+  }
 };
 
 class PhonyTool : public Tool {
