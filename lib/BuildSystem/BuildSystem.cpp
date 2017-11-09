@@ -2076,7 +2076,10 @@ class SymlinkCommand : public Command {
     // result for the output.
     assert(value.isSuccessfulCommand());
 
-    return BuildValue::makeExistingInput(value.getOutputInfo());
+    auto info = value.getOutputInfo();
+    if (info.isMissing())
+        return BuildValue::makeMissingOutput();
+    return BuildValue::makeExistingInput(info);
   }
 
   virtual bool isResultValid(BuildSystem& system,
