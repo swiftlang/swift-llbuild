@@ -249,6 +249,7 @@ TEST(BuildSystemTaskTests, doesNotProcessDependenciesAfterCancellation) {
       }
     }
 
+    sleep(1);
     system.cancel();
   });
 
