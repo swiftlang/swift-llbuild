@@ -1,3 +1,0 @@
-module "llbuild" {
-  header "llbuild.h"
-}

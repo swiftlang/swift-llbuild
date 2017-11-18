@@ -29,8 +29,7 @@ install(DIRECTORY include/
   DESTINATION include
   COMPONENT libllbuild
   FILES_MATCHING
-  PATTERN "*.h"
-  PATTERN "*.modulemap")
+  PATTERN "*.h")
 
 install(TARGETS libllbuild
         DESTINATION lib

@@ -17,6 +17,9 @@ let package = Package(
         .library(
             name: "llbuild",
             targets: ["llbuildBasic"]),
+        .library(
+            name: "libllbuild",
+            targets: ["libllbuild"]),
     ],
     targets: [
         /// The llbuild testing tool.
@@ -29,6 +32,13 @@ let package = Package(
             path: "products/llbuild"
         ),
 
+        /// The public llbuild API.
+        .target(
+            name: "libllbuild",
+            dependencies: ["llbuildCore", "llbuildBuildSystem"],
+            path: "products/libllbuild"
+        ),
+        
         // MARK: Components
         
         .target(
