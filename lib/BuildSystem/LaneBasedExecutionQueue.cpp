@@ -278,7 +278,7 @@ public:
 #if defined(__linux__)
     sigset_t mostSignals;
     sigemptyset(&mostSignals);
-    for (int i = 1; i < SIGUNUSED; ++i) {
+    for (int i = 1; i < SIGSYS; ++i) {
       if (i == SIGKILL || i == SIGSTOP) continue;
       sigaddset(&mostSignals, i);
     }
