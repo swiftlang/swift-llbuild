@@ -1641,7 +1641,7 @@
 				E1ADC2341A85928100D5387C /* README.md */,
 			);
 			name = "Public API";
-			path = "public-api";
+			path = "include";
 			sourceTree = "<group>";
 		};
 		E1ADC2331A85925800D5387C /* llbuild */ = {
@@ -3631,7 +3631,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/public-api";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/include";
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/lib";
 				PUBLIC_HEADERS_FOLDER_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/include/llbuild";
 				SKIP_INSTALL = NO;
@@ -3644,7 +3644,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/public-api";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/include";
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/lib";
 				PUBLIC_HEADERS_FOLDER_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/include/llbuild";
 				SKIP_INSTALL = NO;
@@ -3724,7 +3724,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/public-api";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/include";
 				INFOPLIST_FILE = "$(SRCROOT)/products/llbuild-framework/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
@@ -3744,7 +3744,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/public-api";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/include";
 				INFOPLIST_FILE = "$(SRCROOT)/products/llbuild-framework/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 10.10;

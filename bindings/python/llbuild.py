@@ -35,7 +35,7 @@ ffi = cffi.FFI()
 # Load the defs by reading the llbuild header directly.
 data = open(os.path.join(
     os.path.dirname(__file__),
-    "../../products/libllbuild/public-api/llbuild/llbuild.h")).read()
+    "../../products/libllbuild/include/llbuild/llbuild.h")).read()
 # Strip out the directives.
 data = re.sub("^#.*", "", data, 0, re.MULTILINE)
 data = re.sub("LLBUILD_EXPORT", "", data, 0, re.MULTILINE)

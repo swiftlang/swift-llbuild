@@ -3,7 +3,7 @@ set(SOURCES llbuild.swift)
 
 # Link C API.
 list(APPEND additional_args -import-underlying-module -lllbuild)
-list(APPEND additional_args -I ${CMAKE_CURRENT_SOURCE_DIR}/../libllbuild/public-api)
+list(APPEND additional_args -I ${CMAKE_CURRENT_SOURCE_DIR}/../libllbuild/include)
 
 # Add swift bindings target if swift compiler is present.
 if (SWIFTC_FOUND)
