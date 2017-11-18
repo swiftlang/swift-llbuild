@@ -15,9 +15,6 @@ let package = Package(
     name: "llbuild",
     products: [
         .library(
-            name: "llbuild",
-            targets: ["llbuildBasic"]),
-        .library(
             name: "libllbuild",
             targets: ["libllbuild"]),
     ],
@@ -27,9 +24,14 @@ let package = Package(
         /// We have a name collision between this tool, and the library, so we
         /// have to give it a separate name when built as a Swift package.
         .target(
-            name: "llbuild-tool",
+            name: "llbuild",
             dependencies: ["llbuildCommands"],
             path: "products/llbuild"
+        ),
+        .target(
+            name: "swift-build-tool",
+            dependencies: ["llbuildBuildSystem"],
+            path: "products/swift-build-tool"
         ),
 
         /// The public llbuild API.

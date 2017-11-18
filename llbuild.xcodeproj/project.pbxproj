@@ -125,7 +125,7 @@
 		E1604CA81BB9E01D001153A1 /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
 		E1604CAA1BB9E01D001153A1 /* libllbuildCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243E19F997150059043E /* libllbuildCore.a */; };
 		E1604CAB1BB9E01D001153A1 /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
-		E1604CB51BB9E03E001153A1 /* swift-build-tool.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1604CB41BB9E032001153A1 /* swift-build-tool.cpp */; };
+		E1604CB51BB9E03E001153A1 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1604CB41BB9E032001153A1 /* main.cpp */; };
 		E171538D1A0BF702004CD598 /* CorePerfTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = E171538C1A0BF702004CD598 /* CorePerfTests.mm */; };
 		E17440C31CE192FF0070A30C /* ShellUtility.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E17440C21CE192FF0070A30C /* ShellUtility.cpp */; };
 		E192E92F1E30014E00122F17 /* BuildValueTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E192E92E1E30014E00122F17 /* BuildValueTest.cpp */; };
@@ -145,7 +145,7 @@
 		E1A2244D19F9978A0059043E /* ManifestLoader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241D19F991530059043E /* ManifestLoader.cpp */; };
 		E1A2244E19F9978C0059043E /* Parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2241E19F991530059043E /* Parser.cpp */; };
 		E1A224BE19F9995E0059043E /* Version.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240719F991530059043E /* Version.cpp */; };
-		E1A224CA19F999CB0059043E /* llbuild.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240319F991350059043E /* llbuild.cpp */; };
+		E1A224CA19F999CB0059043E /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240319F991350059043E /* main.cpp */; };
 		E1A224D519F99A2D0059043E /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
 		E1A224D619F99A300059043E /* libllbuildCommands.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242E19F997050059043E /* libllbuildCommands.a */; };
 		E1A224D719F99A320059043E /* libllbuildNinja.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243619F9970D0059043E /* libllbuildNinja.a */; };
@@ -754,7 +754,7 @@
 		E15B6EC61B546A2C00643066 /* libcurses.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcurses.dylib; path = usr/lib/libcurses.dylib; sourceTree = SDKROOT; };
 		E1604CB11BB9E01D001153A1 /* swift-build-tool */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "swift-build-tool"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1604CB31BB9E032001153A1 /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
-		E1604CB41BB9E032001153A1 /* swift-build-tool.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "swift-build-tool.cpp"; sourceTree = "<group>"; };
+		E1604CB41BB9E032001153A1 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		E171538C1A0BF702004CD598 /* CorePerfTests.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = CorePerfTests.mm; sourceTree = "<group>"; };
 		E17440C11CE192E30070A30C /* ShellUtility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShellUtility.h; sourceTree = "<group>"; };
 		E17440C21CE192FF0070A30C /* ShellUtility.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ShellUtility.cpp; sourceTree = "<group>"; };
@@ -778,7 +778,7 @@
 		E1A223FC19F990E60059043E /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		E1A2240019F991350059043E /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1A2240219F991350059043E /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
-		E1A2240319F991350059043E /* llbuild.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = llbuild.cpp; sourceTree = "<group>"; };
+		E1A2240319F991350059043E /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		E1A2240619F991530059043E /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1A2240719F991530059043E /* Version.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Version.cpp; sourceTree = "<group>"; };
 		E1A2240819F991530059043E /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
@@ -1277,7 +1277,7 @@
 			isa = PBXGroup;
 			children = (
 				E1604CB31BB9E032001153A1 /* CMakeLists.txt */,
-				E1604CB41BB9E032001153A1 /* swift-build-tool.cpp */,
+				E1604CB41BB9E032001153A1 /* main.cpp */,
 			);
 			path = "swift-build-tool";
 			sourceTree = "<group>";
@@ -1340,7 +1340,7 @@
 			isa = PBXGroup;
 			children = (
 				E1A2240219F991350059043E /* CMakeLists.txt */,
-				E1A2240319F991350059043E /* llbuild.cpp */,
+				E1A2240319F991350059043E /* main.cpp */,
 			);
 			path = llbuild;
 			sourceTree = "<group>";
@@ -1641,7 +1641,7 @@
 				E1ADC2341A85928100D5387C /* README.md */,
 			);
 			name = "Public API";
-			path = "include";
+			path = include;
 			sourceTree = "<group>";
 		};
 		E1ADC2331A85925800D5387C /* llbuild */ = {
@@ -2697,7 +2697,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E1604CB51BB9E03E001153A1 /* swift-build-tool.cpp in Sources */,
+				E1604CB51BB9E03E001153A1 /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2756,7 +2756,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E1A224CA19F999CB0059043E /* llbuild.cpp in Sources */,
+				E1A224CA19F999CB0059043E /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3192,9 +3192,7 @@
 		9DB047AE1DF9D43D006CDF52 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					NDEBUG,
-				);
+				GCC_PREPROCESSOR_DEFINITIONS = NDEBUG;
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Release;
