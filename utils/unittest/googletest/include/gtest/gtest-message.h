@@ -48,6 +48,8 @@
 
 #include <limits>
 
+#include "gtest/gtest-llbuild-config.h"
+
 #include "gtest/internal/gtest-port.h"
 
 #if !GTEST_NO_LLVM_RAW_OSTREAM

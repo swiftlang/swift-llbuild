@@ -3185,11 +3185,6 @@
 		9DB047AD1DF9D43D006CDF52 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"$(inherited)",
-					"GTEST_HAS_RTTI=0",
-                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
-				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Debug;
@@ -3199,8 +3194,6 @@
 			buildSettings = {
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					NDEBUG,
-					"GTEST_HAS_RTTI=0",
-                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
 				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
@@ -3243,11 +3236,6 @@
 		E147DF141BA81D330032D08E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"$(inherited)",
-					"GTEST_HAS_RTTI=0",
-                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
-				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Debug;
@@ -3255,11 +3243,6 @@
 		E147DF151BA81D330032D08E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"$(inherited)",
-					"GTEST_HAS_RTTI=0",
-                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
-				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Release;
@@ -3520,11 +3503,6 @@
 		E1A224DF19F99B0E0059043E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"$(inherited)",
-					"GTEST_HAS_RTTI=0",
-                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
-				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/utils/unittest/googletest/include $(SRCROOT)/utils/unittest/googletest";
 			};
 			name = Debug;
@@ -3532,11 +3510,6 @@
 		E1A224E019F99B0E0059043E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"$(inherited)",
-					"GTEST_HAS_RTTI=0",
-                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
-				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/utils/unittest/googletest/include $(SRCROOT)/utils/unittest/googletest";
 			};
 			name = Release;
@@ -3544,11 +3517,6 @@
 		E1A224E819F99C580059043E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"$(inherited)",
-					"GTEST_HAS_RTTI=0",
-                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
-				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Debug;
@@ -3556,11 +3524,6 @@
 		E1A224E919F99C580059043E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"$(inherited)",
-					"GTEST_HAS_RTTI=0",
-                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
-				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Release;
@@ -3568,11 +3531,6 @@
 		E1A224F419F99D880059043E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"$(inherited)",
-					"GTEST_HAS_RTTI=0",
-                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
-				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Debug;
@@ -3580,11 +3538,6 @@
 		E1A224F519F99D880059043E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"$(inherited)",
-					"GTEST_HAS_RTTI=0",
-                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
-				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Release;
@@ -3592,11 +3545,6 @@
 		E1A224FF19F99DFD0059043E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"$(inherited)",
-					"GTEST_HAS_RTTI=0",
-                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
-				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Debug;
@@ -3604,11 +3552,6 @@
 		E1A2250019F99DFD0059043E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"$(inherited)",
-					"GTEST_HAS_RTTI=0",
-                                        "GTEST_NO_LLVM_RAW_OSTREAM=1",
-				);
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Release;

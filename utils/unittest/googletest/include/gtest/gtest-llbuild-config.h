@@ -1,0 +1,9 @@
+// Standard llbuild gtest configuration
+
+#ifndef LLBUILD_UTILS_UNITTEST_GTEST_LLBUILD_CONFIG_H
+#define LLBUILD_UTILS_UNITTEST_GTEST_LLBUILD_CONFIG_H
+
+#define GTEST_HAS_RTTI 0
+#define GTEST_NO_LLVM_RAW_OSTREAM 1
+
+#endif

@@ -100,6 +100,9 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "gtest/gtest-llbuild-config.h"
+
 #include "gtest/internal/gtest-port.h"
 #include "gtest/internal/gtest-internal.h"
 

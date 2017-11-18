@@ -41,6 +41,7 @@
 #ifndef GTEST_INCLUDE_GTEST_GTEST_PARAM_TEST_H_
 #define GTEST_INCLUDE_GTEST_GTEST_PARAM_TEST_H_
 
+#include "gtest/gtest-llbuild-config.h"
 
 // Value-parameterized tests allow you to test your code with different
 // parameters without writing multiple copies of the same test.
