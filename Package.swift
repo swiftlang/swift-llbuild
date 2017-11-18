@@ -67,7 +67,42 @@ let package = Package(
             path: "lib/Commands"
         ),
 
+        // MARK: Test Targets
+
+        .target(
+            name: "llbuildBasicTests",
+            dependencies: ["llbuildBasic", "gtest"],
+            path: "unittests/Basic"),
+        .target(
+            name: "llbuildCoreTests",
+            dependencies: ["llbuildCore", "gtest"],
+            path: "unittests/Core"),
+        .target(
+            name: "llbuildBuildSystemTests",
+            dependencies: ["llbuildBuildSystem", "gtest"],
+            path: "unittests/BuildSystem"),
+        .target(
+            name: "llbuildNinjaTests",
+            dependencies: ["llbuildNinja", "gtest"],
+            path: "unittests/Ninja"),
+        
+        // MARK: GoogleTest
+
+        .target(
+            name: "gtest",
+            path: "utils/unittest/googletest/src",
+            exclude: [
+                "gtest-death-test.cc",
+                "gtest-filepath.cc",
+                "gtest-port.cc",
+                "gtest-printers.cc",
+                "gtest-test-part.cc",
+                "gtest-typed-test.cc",
+                "gtest.cc",
+            ]),
+        
         // MARK: Ingested LLVM code.
+
         .target(
             name: "llvmSupport",
             path: "lib/llvm/Support"
