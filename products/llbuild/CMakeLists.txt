@@ -1,5 +1,5 @@
 add_llbuild_executable(llbuild
-  llbuild.cpp)
+  main.cpp)
 
 target_link_libraries(llbuild
   llbuildCommands
