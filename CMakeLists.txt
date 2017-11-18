@@ -12,12 +12,6 @@ else()
   set(cmake_3_2_USES_TERMINAL USES_TERMINAL)
 endif()
 
-# Configure the default set of bindings to build.
-if(NOT DEFINED LLBUILD_SUPPORT_BINDINGS)
-  set(LLBUILD_SUPPORT_BINDINGS "")
-endif()
-
-
 # Include standard CMake modules.
 include(CMakeParseArguments)
 include(CheckCXXCompilerFlag)
@@ -74,37 +68,6 @@ set(LLBUILD_LIBRARY_OUTPUT_INTDIR ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR
 find_package(Lit)
 find_package(FileCheck)
 find_package(PythonInterp)
-
-# Check if we should build the Swift bindings.
-if (";${LLBUILD_SUPPORT_BINDINGS};" MATCHES ";Swift;")
-  # Find swiftc on OSX using `xcrun --find swiftc` and `find_package` on Linux.
-  if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    execute_process(
-        COMMAND xcrun --find swiftc
-        OUTPUT_VARIABLE SWIFTC_EXECUTABLE
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
-    set(SWIFTC_FOUND TRUE)
-    message(STATUS "Found swiftc: ${SWIFTC_EXECUTABLE}")
-  else()
-    find_package(Swiftc)
-  endif()
-  
-  # Check if we have correct swift version for bindings.
-  if (SWIFTC_FOUND)
-    execute_process(
-        COMMAND ${SWIFTC_EXECUTABLE} --version
-        OUTPUT_VARIABLE SWIFTC_VERSION
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
-    if (NOT SWIFTC_VERSION MATCHES "(.*)Swift version 3.0(.*)")
-      set(SWIFTC_EXECUTABLE)
-      set(SWIFTC_FOUND FALSE)
-    endif()
-  endif()
-else()
-  message(STATUS "Not building Swift bindings")
-  set(SWIFTC_EXECUTABLE)
-  set(SWIFTC_FOUND FALSE)
-endif()
 
 ###
 # Setup compiler and project build settings

@@ -1,8 +1,0 @@
-# Check basic 'core' functionality of the swift bindings
-#
-# REQUIRES: has-swift=TRUE
-# RUN: env LD_LIBRARY_PATH=%{llbuild-lib-dir} %{swiftc} %{swiftc-platform-flags} %{srcroot}/examples/swift-bindings/core/basic.swift -I %{build-dir}/products/swift-bindings -I %{srcroot}/products/libllbuild/include -Xlinker %{llbuild-lib-dir}/swift-bindings.dylib -o %t.exe
-# RUN: env LD_LIBRARY_PATH=%{llbuild-lib-dir} %t.exe %s > %t.out
-# RUN: cat %t.out
-# RUN: %{FileCheck} %s --input-file %t.out
-# CHECK: 6

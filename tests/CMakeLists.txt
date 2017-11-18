@@ -36,10 +36,6 @@ if(PYTHONINTERP_FOUND AND LIT_FOUND AND FILECHECK_FOUND)
   set(test_target_dependencies
     llbuild libllbuild swift-build-tool UnitTests)
 
-  if (SWIFTC_FOUND)
-    list(APPEND test_target_dependencies swift-bindings)
-  endif()
-
   add_custom_target(test-llbuild
     COMMAND ${lit_command} ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "Running llbuild tests..."
