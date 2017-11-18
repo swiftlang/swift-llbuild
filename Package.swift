@@ -17,21 +17,31 @@ let package = Package(
         .library(
             name: "libllbuild",
             targets: ["libllbuild"]),
+        .library(
+            name: "llbuildSwift",
+            targets: ["llbuildSwift"]),
     ],
     targets: [
         /// The llbuild testing tool.
-        ///
-        /// We have a name collision between this tool, and the library, so we
-        /// have to give it a separate name when built as a Swift package.
         .target(
             name: "llbuild",
             dependencies: ["llbuildCommands"],
             path: "products/llbuild"
         ),
+
+        /// The custom build tool used by the Swift package manager.
         .target(
             name: "swift-build-tool",
             dependencies: ["llbuildBuildSystem"],
             path: "products/swift-build-tool"
+        ),
+
+        /// The custom build tool used by the Swift package manager.
+        .target(
+            name: "llbuildSwift",
+            dependencies: ["libllbuild"],
+            path: "products/llbuildSwift",
+            exclude: ["llbuild.swift"]
         ),
 
         /// The public llbuild API.
