@@ -13,6 +13,7 @@
 #include "llbuild/Ninja/ManifestLoader.h"
 
 #include "llbuild/Basic/LLVM.h"
+#include "llbuild/Basic/ShellUtility.h"
 #include "llbuild/Ninja/Lexer.h"
 #include "llbuild/Ninja/Parser.h"
 
@@ -381,6 +382,7 @@ public:
     ManifestLoaderImpl& loader;
     Command* decl;
     const Token& startTok;
+    bool shellEscapeInAndOut;
   };
   static void lookupBuildParameter(void* userContext, StringRef name,
                                    raw_ostream& result) {
@@ -398,14 +400,18 @@ public:
       for (unsigned i = 0, ie = decl->getNumExplicitInputs(); i != ie; ++i) {
         if (i != 0)
           result << " ";
-        result << decl->getInputs()[i]->getPath();
+        auto &path = decl->getInputs()[i]->getPath();
+        result << (context->shellEscapeInAndOut ? basic::shellEscaped(path)
+                                                : path);
       }
       return;
     } else if (name == "out") {
       for (unsigned i = 0, ie = decl->getOutputs().size(); i != ie; ++i) {
         if (i != 0)
           result << " ";
-        result << decl->getOutputs()[i]->getPath();
+        auto &path = decl->getOutputs()[i]->getPath();
+        result << (context->shellEscapeInAndOut ? basic::shellEscaped(path)
+                                                : path);
       }
       return;
     }
@@ -430,7 +436,8 @@ public:
   StringRef lookupNamedBuildParameter(Command* decl, const Token& startTok,
                                       StringRef name,
                                       SmallVectorImpl<char>& storage) {
-    LookupContext context{ *this, decl, startTok };
+    LookupContext context{*this, decl, startTok,
+                          /*shellEscapeInAndOut*/ name == "command"};
     llvm::raw_svector_ostream os(storage);
     lookupBuildParameter(&context, name, os);
     return os.str();
