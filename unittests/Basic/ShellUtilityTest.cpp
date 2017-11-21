@@ -21,8 +21,8 @@ namespace {
 
 TEST(UtilityTest, basic) {
   // No escapable char.
-  std::string output = shellEscaped("input");
-  EXPECT_EQ(output, "input");
+  std::string output = shellEscaped("input01");
+  EXPECT_EQ(output, "input01");
 
   // Space.
   output = shellEscaped("input A");
