@@ -18,7 +18,7 @@ namespace basic {
 
 void appendShellEscapedString(llvm::raw_ostream& os, StringRef string) {
 
-  static const std::string whitelist = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_/:@#%+=.,";
+  static const std::string whitelist = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-_/:@#%+=.,";
   auto pos = string.find_first_not_of(whitelist);
 
   // We don't need any escaping just append the string and return.
