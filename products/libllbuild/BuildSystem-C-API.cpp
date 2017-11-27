@@ -381,6 +381,19 @@ public:
       free((char *)rules[i].key);
     }
   }
+
+  virtual void error(StringRef filename, const Token& at, const Twine& message) override {
+    if (cAPIDelegate.handle_diagnostic) {
+      cAPIDelegate.handle_diagnostic(cAPIDelegate.context,
+                                     llb_buildsystem_diagnostic_kind_error,
+                                     filename.str().c_str(),
+                                     -1,
+                                     -1,
+                                     message.str().c_str());
+    } else {
+        BuildSystemFrontendDelegate::error(filename, at, message);
+    }
+  }
 };
 
 class CAPIBuildSystem {

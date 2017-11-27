@@ -111,11 +111,6 @@ private:
 
   /// Default implementation, cannot be overriden by subclasses.
   virtual void setFileContentsBeingParsed(StringRef buffer) override;
-
-  /// Provides a default error implementation which will delegate to the
-  /// provided source manager. Cannot be overriden by subclasses.
-  virtual void error(StringRef filename, const Token& at,
-                     const Twine& message) override;
   
 public:
   /// Create a frontend delegate.
@@ -156,6 +151,11 @@ public:
 
   /// Report a non-file specific error message.
   void error(const Twine& message);
+
+  /// Provides a default error implementation which will delegate to the
+  /// provided source manager.
+  virtual void error(StringRef filename, const Token& at,
+                     const Twine& message) override;
   
   /// @}
 
