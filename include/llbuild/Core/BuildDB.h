@@ -34,8 +34,11 @@ public:
 
   /// Get a unique ID for the given key.
   ///
-  /// This method is thread safe, and cannot fail.
-  virtual KeyID getKeyID(const KeyType& key) = 0;
+  /// This method is thread safe.
+  ///
+  /// \param key [out] The key whose unique ID is being returned.
+  /// \param error_out [out] Error string if return value is 0.
+  virtual KeyID getKeyID(const KeyType& key, std::string *error_out) = 0;
 
   /// Get the key corresponding to a key ID.
   ///

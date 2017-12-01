@@ -1141,7 +1141,13 @@ public:
   KeyID getKeyID(const KeyType& key) {
     // Delegate if we have a database.
     if (db) {
-      return db->getKeyID(key);
+      std::string error;
+      KeyID id = db->getKeyID(key, &error);
+      if (!error.empty()) {
+        delegate.error(error);
+        cancelRemainingTasks();
+      }
+      return id;
     }
 
     // Otherwise use our builtin key table.

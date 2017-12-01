@@ -424,7 +424,7 @@ TEST(BuildEngineTest, incrementalDependency) {
     
     std::unordered_map<KeyType, Result> ruleResults;
 
-    virtual KeyID getKeyID(const KeyType& key) override {
+    virtual KeyID getKeyID(const KeyType& key, std::string *error_out) override {
       auto it = keyTable.insert(std::make_pair(key, false)).first;
       return (KeyID)(uintptr_t)it->getKey().data();
     }
