@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -13,15 +13,17 @@
 #ifndef LLBUILD_CORE_BUILDENGINE_H
 #define LLBUILD_CORE_BUILDENGINE_H
 
+#include "llbuild/Basic/Compiler.h"
+
+#include "llvm/ADT/StringRef.h"
+#include "llvm/ADT/Twine.h"
+
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-
-#include "llvm/ADT/StringRef.h"
-#include "llvm/ADT/Twine.h"
 
 namespace llbuild {
 namespace core {
@@ -236,6 +238,10 @@ public:
 /// instances.
 class BuildEngine {
   void *impl;
+
+  // Copying is disabled.
+  BuildEngine(const BuildEngine&) LLBUILD_DELETED_FUNCTION;
+  void operator=(const BuildEngine&) LLBUILD_DELETED_FUNCTION;
 
 public:
   /// Create a build engine with the given delegate.

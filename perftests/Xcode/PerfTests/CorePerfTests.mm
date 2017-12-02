@@ -101,6 +101,12 @@ static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
 
 #pragma mark - "buildengine ack" Performance Tests
 
+- (void)measurePerformance:(std::function<void()>)body {
+    [self measureBlock:^() {
+        body();
+    }];
+}
+
 - (void)testBuildEngineBasicPerf {
   // Test the timing of 'buildengine ack 3 14'.
   //
@@ -153,7 +159,8 @@ static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
       abort();
     }
   } Delegate;
-  __block core::BuildEngine Engine(Delegate);
+  core::BuildEngine Engine(Delegate);
+
   int LastInputValue = 0;
   for (int i = 1; i <= M; ++i) {
     char Name[32];
@@ -187,7 +194,7 @@ static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
   Engine.build("i1");
 
   // Measure the null build time.
-  [self measureBlock:^{
+    [self measurePerformance: [&] {
       auto Result = IntFromValue(Engine.build("i1"));
       (void)Result;
       assert(Result == LastInputValue);
@@ -233,7 +240,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
       abort();
     }
   } Delegate;
-  __block core::BuildEngine Engine(Delegate);
+  core::BuildEngine Engine(Delegate);
   int LastInputValue = 0;
   for (int i = 1; i <= M; ++i) {
     // Compute the total number of groups at this depth.
@@ -274,7 +281,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
   Engine.build("i1,1");
 
   // Measure the null build time.
-  [self measureBlock:^{
+  [self measurePerformance: [&] {
       auto Result = IntFromValue(Engine.build("i1,1"));
       (void)Result;
       assert(Result == LastInputValue);
@@ -295,7 +302,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
   //
   // This is an easy to construct synthetic graph which is scalable and has
   // sharing.
-  int M = 1000, N = 1000; // Use a graph of 1 million nodes.
+  int M = 100, N = 100; // Use a graph of 1 million nodes.
 
   // Set up the build rules.
   struct MatrixDelegate : public BuildEngineDelegate {
@@ -317,7 +324,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
       abort();
     }
   } Delegate;
-  __block core::BuildEngine Engine(Delegate);
+  core::BuildEngine Engine(Delegate);
   int LastInputValue = 0;
   for (int i = 1; i <= M; ++i) {
     for (int j = 1; j <= N; ++j) {
@@ -376,7 +383,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
   Engine.build("i1,1");
 
   // Measure the null build time.
-  [self measureBlock:^{
+  [self measurePerformance: [&] {
       auto Result = IntFromValue(Engine.build("i1,1"));
       (void)Result;
       assert(Result == LastInputValue);
