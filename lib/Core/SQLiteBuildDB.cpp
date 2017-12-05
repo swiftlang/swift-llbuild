@@ -417,7 +417,7 @@ public:
   /// Inserts a key if not present and always returns keyID
   /// Sometimes key will be inserted for a lookup operation
   /// but that is okay because it'll be added at somepoint anyway
-  virtual KeyID getKeyID(const KeyType& key) override {
+  virtual KeyID getKeyID(const KeyType& key, std::string *error_out) override {
     std::lock_guard<std::mutex> guard(dbMutex);
     int result;
 
@@ -449,9 +449,8 @@ public:
     assert(result == SQLITE_OK);
     result = sqlite3_step(insertIntoKeysStmt);
     if (result != SQLITE_DONE) {
-      // FIXME: We need to support error reporting here, but the engine cannot
-      // handle it currently.
-      abort();
+      *error_out = getCurrentErrorMessage();
+      return 0;
     }
 
     return sqlite3_last_insert_rowid(db);
