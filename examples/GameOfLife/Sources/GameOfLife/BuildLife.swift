@@ -36,17 +36,9 @@ public struct Cell {
         keyStr.removeSubrange(range)
         
         // We should now have 3 numbers separated by ','.
-        guard let range2 = keyStr.range(of: ",") else { return nil }
-        let xStr = keyStr.substring(to: range2.lowerBound)
-        keyStr = keyStr.substring(from: range2.upperBound)
-        guard let range3 = keyStr.range(of: ",") else { return nil }
-        let yStr = keyStr.substring(to: range3.lowerBound)
-        let genStr = keyStr.substring(from: range3.upperBound)
-        
-        guard let x = Int(xStr) else { return nil }
-        guard let y = Int(yStr) else { return nil }
-        guard let gen = Int(genStr) else { return nil }
-        
+        let components = keyStr.components(separatedBy: ",")
+        guard components.count == 3 else { return nil }
+        guard let x = Int(components[0]), let y = Int(components[1]), let gen = Int(components[2]) else { return nil }
         return Cell(x: x, y: y, gen: gen)
     }
 }
