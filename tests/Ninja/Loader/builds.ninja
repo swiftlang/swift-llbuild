@@ -100,7 +100,7 @@ build target11: target11_rule target11_inputA | target11_inputB
 #
 # CHECK: build "target12 foo": target12_rule
 # CHECK-NEXT: command = "target12_rule 'target12 inputA' -o 'target12 foo'"
-# CHECK-NOT: depfile = "'target12 foo.d'"
+# CHECK: depfile = "target12 foo.d"
 rule target12_rule
   command = target12_rule $in -o $out
   depfile = $out.d
