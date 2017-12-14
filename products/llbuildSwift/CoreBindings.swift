@@ -1,6 +1,6 @@
 // This source file is part of the Swift.org open source project
 //
-// Copyright 2015 Apple Inc. and the Swift project authors
+// Copyright 2015-2017 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -10,14 +10,16 @@
 
 import Foundation
 
+import llbuild
+
 enum DatabaseError: Error {
   case AttachFailure(message: String)
 }
 
 private func stringFromData(data: llb_data_t) -> String {
   // Convert as a UTF8 string, if possible.
-  let tmp = NSData(bytes: unsafeBitCast(data.data, to: UnsafeRawPointer.self), length: Int(data.length))
-  if let str = String(data: tmp as Data, encoding: String.Encoding.utf8) {
+  let tmp = Data(UnsafeBufferPointer(start: unsafeBitCast(data.data, to: UnsafePointer<UInt8>.self), count: Int(data.length)))
+  if let str = String(data: tmp, encoding: String.Encoding.utf8) {
     return str
   }
     
@@ -27,8 +29,7 @@ private func stringFromData(data: llb_data_t) -> String {
 
 private func stringFromUInt8Array(_ data: [UInt8]) -> String {
   // Convert as a UTF8 string, if possible.
-  let tmp = NSData(bytes: data, length: data.count)
-  if let str = String(data: tmp as Data, encoding: String.Encoding.utf8) {
+  if let str = String(data: Data(data), encoding: String.Encoding.utf8) {
     return str
   }
     
@@ -170,8 +171,8 @@ public protocol Rule {
 
 /// Protocol extension for default Rule methods.
 public extension Rule {
-  final func isResultValid(_ priorValue: Value) -> Bool { return true }
-  final func updateStatus(_ status: RuleStatus) { }
+  func isResultValid(_ priorValue: Value) -> Bool { return true }
+  func updateStatus(_ status: RuleStatus) { }
 }
 
 /// A task object represents an abstract in-progress computation in the build

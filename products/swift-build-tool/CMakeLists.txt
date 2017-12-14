@@ -1,5 +1,5 @@
 add_llbuild_executable(swift-build-tool
-  swift-build-tool.cpp)
+  main.cpp)
 
 target_link_libraries(swift-build-tool
   llbuildBuildSystem

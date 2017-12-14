@@ -23,14 +23,13 @@ set_property(TARGET libllbuild PROPERTY MACOSX_RPATH ON)
 target_link_libraries(libllbuild ${DEPENDENCIES})
 
 include_directories(BEFORE
-  ${CMAKE_CURRENT_SOURCE_DIR}/public-api)
+  ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-install(DIRECTORY public-api/
+install(DIRECTORY include/
   DESTINATION include
   COMPONENT libllbuild
   FILES_MATCHING
-  PATTERN "*.h"
-  PATTERN "*.modulemap")
+  PATTERN "*.h")
 
 install(TARGETS libllbuild
         DESTINATION lib
@@ -57,7 +56,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(LLBUILD_FW_INPUTS)
 
   # Copy the public headers.
-  file(GLOB headers public-api/llbuild/*.h)
+  file(GLOB headers include/llbuild/*.h)
   foreach(header ${headers})
     get_filename_component(name ${header} NAME)
     set(dst ${LLBUILD_LIBRARY_OUTPUT_INTDIR}/llbuild.framework/Versions/A/Headers/${name})

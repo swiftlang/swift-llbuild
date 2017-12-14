@@ -4,4 +4,3 @@ add_subdirectory(swift-build-tool)
 
 # Public API products.
 add_subdirectory(libllbuild)
-add_subdirectory(swift-bindings)
