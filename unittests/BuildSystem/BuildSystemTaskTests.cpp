@@ -25,6 +25,7 @@
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <memory>
 #include <thread>
 
 #include "gtest/gtest.h"
@@ -36,6 +37,56 @@ using namespace llbuild::buildsystem;
 using namespace llbuild::unittests;
 
 namespace {
+
+class LoggingFileSystem : public FileSystem {
+private:
+  std::mutex deletedPathsMutex;
+  std::vector<std::string> deletedPaths;
+  std::mutex missingPathsMutex;
+  std::vector<std::string> missingPaths;
+
+  std::unique_ptr<FileSystem> realFS = createLocalFileSystem();
+
+public:
+  std::vector<std::string> getDeletedPaths() {
+    std::unique_lock<std::mutex> lock(deletedPathsMutex);
+    return deletedPaths;
+  }
+
+  std::vector<std::string> getMissingPaths() {
+    std::unique_lock<std::mutex> lock(missingPathsMutex);
+    return missingPaths;
+  }
+
+  LoggingFileSystem() {}
+
+  virtual bool createDirectory(const std::string& path) override {
+    return realFS->createDirectory(path);
+  }
+
+  virtual std::unique_ptr<llvm::MemoryBuffer> getFileContents(const std::string& path) override {
+    return realFS->getFileContents(path);
+  }
+
+  virtual bool remove(const std::string& path) override {
+    std::unique_lock<std::mutex> lock(deletedPathsMutex);
+    deletedPaths.push_back(path);
+    return true;
+  }
+
+  virtual FileInfo getFileInfo(const std::string& path) override {
+    FileInfo info = realFS->getFileInfo(path);
+    if (info.isMissing()) {
+      std::unique_lock<std::mutex> lock(missingPathsMutex);
+      missingPaths.push_back(path);
+    }
+    return info;
+  }
+
+  virtual FileInfo getLinkInfo(const std::string& path) override {
+    return realFS->getLinkInfo(path);
+  }
+};
 
 /// Check that we evaluate a path key properly.
 TEST(BuildSystemTaskTests, basics) {
@@ -393,7 +444,8 @@ commands:
 )END";
   }
 
-  MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
+  auto mockFS = std::make_shared<LoggingFileSystem>();
+  MockBuildSystemDelegate delegate(/*trackAllMessages=*/true, mockFS);
   BuildSystem system(delegate);
   system.attachDB(builddb.c_str(), nullptr);
   bool loadingResult = system.loadDescription(manifest);
@@ -404,11 +456,12 @@ commands:
   ASSERT_EQ(result.getValue().getStaleFileList().size(), 1UL);
   ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "b.out") == 0);
 
+  ASSERT_EQ(std::vector<std::string>({ "a.out" }), mockFS->getDeletedPaths());
+
   ASSERT_EQ(std::vector<std::string>({
     "commandPreparing(C.1)",
     "commandStarted(C.1)",
-    // FIXME: Maybe it's worth creating a virtual FileSystem implementation and checking if `remove` has been called
-    "commandWarning(C.1) cannot remove stale file 'a.out': No such file or directory\n",
+    "commandNote(C.1) Removed stale file 'a.out'\n",
     "commandFinished(C.1: 0)",
   }), delegate.getMessages());
 }
@@ -481,7 +534,8 @@ commands:
 )END";
   }
 
-  MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
+  auto mockFS = std::make_shared<LoggingFileSystem>();
+  MockBuildSystemDelegate delegate(/*trackAllMessages=*/true, mockFS);
   BuildSystem system(delegate);
   system.attachDB(builddb.c_str(), nullptr);
   bool loadingResult = system.loadDescription(manifest);
@@ -495,13 +549,15 @@ commands:
   auto messages = delegate.getMessages();
   std::sort(messages.begin(), messages.end());
 
+  ASSERT_EQ(std::vector<std::string>({ "/foo" }), mockFS->getDeletedPaths());
+
   ASSERT_EQ(std::vector<std::string>({
     "commandFinished(C.1: 0)",
+    "commandNote(C.1) Removed stale file '/foo'\n",
     "commandPreparing(C.1)",
     "commandStarted(C.1)",
     "commandWarning(C.1) Stale file '/bar/a.out' is located outside of the allowed root paths.\n",
     "commandWarning(C.1) Stale file '/foobar.txt' is located outside of the allowed root paths.\n",
-    "commandWarning(C.1) cannot remove stale file '/foo': No such file or directory\n",
   }), messages);
 }
 
@@ -656,7 +712,8 @@ commands:
 )END";
   }
 
-  MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
+  auto mockFS = std::make_shared<LoggingFileSystem>();
+  MockBuildSystemDelegate delegate(/*trackAllMessages=*/true, mockFS);
   BuildSystem system(delegate);
   system.attachDB(builddb.c_str(), nullptr);
   bool loadingResult = system.loadDescription(manifest);
@@ -667,13 +724,18 @@ commands:
   ASSERT_EQ(result.getValue().getStaleFileList().size(), 1UL);
   ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "/bar/b.out") == 0);
 
+  ASSERT_EQ(std::vector<std::string>({ "/foo/" }), mockFS->getDeletedPaths());
+
+  auto messages = delegate.getMessages();
+  std::sort(messages.begin(), messages.end());
+
   ASSERT_EQ(std::vector<std::string>({
+    "commandFinished(C.1: 0)",
+    "commandNote(C.1) Removed stale file '/foo/'\n",
     "commandPreparing(C.1)",
     "commandStarted(C.1)",
-    "commandWarning(C.1) cannot remove stale file '/foo/': No such file or directory\n",
     "commandWarning(C.1) Stale file 'a.out' has a relative path. This is invalid in combination with the root path attribute.\n",
-    "commandFinished(C.1: 0)",
-  }), delegate.getMessages());
+  }), messages);
 }
 
 TEST(BuildSystemTaskTests, staleFileRemovalWithManyFiles) {

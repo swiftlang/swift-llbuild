@@ -19,8 +19,8 @@ using namespace llbuild::unittests;
 
 MockExecutionQueueDelegate::MockExecutionQueueDelegate() {}
 
-MockBuildSystemDelegate::MockBuildSystemDelegate(bool trackAllMessages)
-    : BuildSystemDelegate("mock", 0), trackAllMessages(trackAllMessages)
+MockBuildSystemDelegate::MockBuildSystemDelegate(bool trackAllMessages, std::shared_ptr<basic::FileSystem> fileSystem)
+    : BuildSystemDelegate("mock", 0), fileSystem(fileSystem), trackAllMessages(trackAllMessages)
 {
 }
 
