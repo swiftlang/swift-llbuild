@@ -2503,7 +2503,10 @@ class StaleFileRemovalCommand : public Command {
       if (getBuildSystem(bsci.getBuildEngine()).getDelegate().getFileSystem().remove(fileToDelete)) {
         bsci.getDelegate().commandHadNote(this, "Removed stale file '" + fileToDelete + "'\n");
       } else {
-        bsci.getDelegate().commandHadWarning(this, "cannot remove stale file '" + fileToDelete + "': " + strerror(errno) + "\n");
+        // Do not warn if the file has already been deleted.
+        if (errno != ENOENT) {
+          bsci.getDelegate().commandHadWarning(this, "cannot remove stale file '" + fileToDelete + "': " + strerror(errno) + "\n");
+        }
       }
     }
 
