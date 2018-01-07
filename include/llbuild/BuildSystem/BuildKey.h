@@ -42,6 +42,10 @@ public:
     /// A key used to identify the signature of a complete directory tree.
     DirectoryTreeSignature,
 
+    /// A key used to identify the signature of a complete directory tree
+    /// structure.
+    DirectoryTreeStructureSignature,
+
     /// A key used to identify a node.
     Node,
 
@@ -104,6 +108,11 @@ public:
     return BuildKey('S', path);
   }
 
+  /// Create a key for computing the structure of a directory.
+  static BuildKey makeDirectoryTreeStructureSignature(StringRef path) {
+    return BuildKey('s', path);
+  }
+
   /// Create a key for computing a node result.
   static BuildKey makeNode(StringRef path) {
     return BuildKey('N', path);
@@ -131,6 +140,7 @@ public:
     case 'D': return Kind::DirectoryContents;
     case 'N': return Kind::Node;
     case 'S': return Kind::DirectoryTreeSignature;
+    case 's': return Kind::DirectoryTreeStructureSignature;
     case 'T': return Kind::Target;
     case 'X': return Kind::CustomTask;
     default:
@@ -145,6 +155,9 @@ public:
   }
   bool isDirectoryTreeSignature() const {
     return getKind() == Kind::DirectoryTreeSignature;
+  }
+  bool isDirectoryTreeStructureSignature() const {
+    return getKind() == Kind::DirectoryTreeStructureSignature;
   }
   bool isNode() const { return getKind() == Kind::Node; }
   bool isTarget() const { return getKind() == Kind::Target; }
@@ -176,6 +189,11 @@ public:
 
   StringRef getDirectoryTreeSignaturePath() const {
     assert(isDirectoryTreeSignature());
+    return StringRef(key.data()+1, key.size()-1);
+  }
+
+  StringRef getDirectoryTreeStructureSignaturePath() const {
+    assert(isDirectoryTreeStructureSignature());
     return StringRef(key.data()+1, key.size()-1);
   }
 

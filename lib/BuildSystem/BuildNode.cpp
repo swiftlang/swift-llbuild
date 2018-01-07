@@ -28,7 +28,19 @@ bool BuildNode::configureAttribute(const ConfigureContext& ctx, StringRef name,
   if (name == "is-directory") {
     if (value == "true") {
       directory = true;
-      virtualNode = false;
+      directoryStructure = virtualNode = false;
+    } else if (value == "false") {
+      directory = false;
+    } else {
+      ctx.error("invalid value: '" + value + "' for attribute '"
+                + name + "'");
+      return false;
+    }
+    return true;
+  } else if (name == "is-directory-structure") {
+    if (value == "true") {
+      directoryStructure = true;
+      directory = virtualNode = false;
     } else if (value == "false") {
       directory = false;
     } else {
@@ -40,7 +52,7 @@ bool BuildNode::configureAttribute(const ConfigureContext& ctx, StringRef name,
   } else if (name == "is-virtual") {
     if (value == "true") {
       virtualNode = true;
-      directory = false;
+      directory = directoryStructure = false;
     } else if (value == "false") {
       virtualNode = false;
       commandTimestamp = false;
@@ -54,7 +66,7 @@ bool BuildNode::configureAttribute(const ConfigureContext& ctx, StringRef name,
     if (value == "true") {
       commandTimestamp = true;
       virtualNode = true;
-      directory = false;
+      directory = directoryStructure = false;
     } else if (value == "false") {
       commandTimestamp = false;
     } else {

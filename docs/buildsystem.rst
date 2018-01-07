@@ -89,6 +89,17 @@ These are the supported node types:
   dependency is missing, the build system will typically end up scanning the
   directory before all content is produced, and this will result in the first
   build being incomplete, and the next build redoing the remainder of the work.
+
+* Directory Tree Structure Nodes: These are like directory tree nodes, but
+  instead of tracking all attributes of the directory, they will change only
+  when the *structure* of the directory (recursively) changes. That is, they
+  will not rerun when the contents of files in the directory are modified, only
+  when files are added or removed, or files change type.
+
+  This is useful for clients which infer properties based purely on a directory
+  structure. Such clients can use this node type to track when to redo that
+  computation, and use additional dependencies on particular files for any items
+  within the structure whose content are relevant to the task.
   
 * Virtual Nodes: Nodes matching the name ``'<.*>'``, e.g. ``<gate-task>``, are
   *assumed* to be virtual nodes, and are used for adding arbitrary edges to the
@@ -331,6 +342,12 @@ The following attributes are currently supported:
        directory instead of a file path. By default, the build system assumes
        that nodes matching the pattern ``'.*/'`` (e.g., ``/tmp/``) are directory
        nodes. This attribute can be used to override that default.
+
+   * - is-directory-structure
+     - A boolean value, indicating whether the node should represent the
+       directory structure of a file path. Such nodes should be name as
+       '<path>/' (which would normally be a directory node), and then this
+       attributed used to change the type.
 
    * - is-virtual
      - A boolean value, indicating whether or not the node is "virtual". By
