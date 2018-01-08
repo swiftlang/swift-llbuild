@@ -1,4 +1,4 @@
-# Check the handling of directory tree signatures.
+# Check the handling of directory tree structure signatures.
 #
 # We check the node used against three kinds of directories: missing, a file, an
 # actual directory.
@@ -42,15 +42,17 @@
 # CHECK-MODIFIED: DTS-DIR-CHANGED
 
 
-# Check that a mutation of a file is detected.
+# Check that a mutation of a file is ignored.
 #
 # RUN: echo "mutated" >> %t.build/dir/subdir/file
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.mutated.out
+# RUN: echo EOF. >> %t.mutated.out
 # RUN: %{FileCheck} --check-prefix=CHECK-MUTATED --input-file=%t.mutated.out %s
 #
 # CHECK-MUTATED-NOT: DTS-MISSING-CHANGED
 # CHECK-MUTATED-NOT: DTS-FILE-CHANGED
-# CHECK-MUTATED: DTS-DIR-CHANGED
+# CHECK-MUTATED-NOT: DTS-DIR-CHANGED
+# CHECK-MUTATED: EOF.
 
 client:
   name: basic
@@ -58,6 +60,14 @@ client:
 targets:
   "": ["<all>"]
 
+nodes:
+  "missing-dir/":
+    is-directory-structure: true
+  "file/":
+    is-directory-structure: true
+  "dir/":
+    is-directory-structure: true
+    
 commands:
   C.all:
     tool: phony

@@ -57,6 +57,9 @@ class BuildValue {
     /// The signature of a directories contents.
     DirectoryTreeSignature,
 
+    /// The signature of a directories structure.
+    DirectoryTreeStructureSignature,
+
     /// A value produced by stale file removal.
     StaleFileRemoval,
 
@@ -122,7 +125,8 @@ class BuildValue {
   } stringValues = {0, 0};
 
   bool kindHasCommandSignature() const {
-    return isSuccessfulCommand() || isDirectoryTreeSignature();
+    return isSuccessfulCommand() || isDirectoryTreeSignature() ||
+      isDirectoryTreeStructureSignature();
   }
 
   bool kindHasStringList() const {
@@ -291,6 +295,9 @@ public:
   static BuildValue makeDirectoryTreeSignature(uint64_t signature) {
     return BuildValue(Kind::DirectoryTreeSignature, signature);
   }
+  static BuildValue makeDirectoryTreeStructureSignature(uint64_t signature) {
+    return BuildValue(Kind::DirectoryTreeStructureSignature, signature);
+  }
   static BuildValue makeMissingOutput() {
     return BuildValue(Kind::MissingOutput);
   }
@@ -334,6 +341,9 @@ public:
   bool isDirectoryTreeSignature() const {
     return kind == Kind::DirectoryTreeSignature;
   }
+  bool isDirectoryTreeStructureSignature() const {
+    return kind == Kind::DirectoryTreeStructureSignature;
+  }
   bool isStaleFileRemoval() const { return kind == Kind::StaleFileRemoval; }
   
   bool isMissingOutput() const { return kind == Kind::MissingOutput; }
@@ -359,6 +369,12 @@ public:
   
   uint64_t getDirectoryTreeSignature() const {
     assert(isDirectoryTreeSignature() && "invalid call for value kind");
+    return commandSignature;
+  }
+  
+  uint64_t getDirectoryTreeStructureSignature() const {
+    assert(isDirectoryTreeStructureSignature() &&
+           "invalid call for value kind");
     return commandSignature;
   }
 

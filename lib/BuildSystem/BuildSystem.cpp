@@ -144,11 +144,12 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
   /// The internal schema version.
   ///
   /// Version History:
+  /// * 8: Added DirectoryTreeStructureSignature to BuildValue
   /// * 7: Added StaleFileRemoval to BuildValue
   /// * 6: Added DirectoryContents to BuildKey
   /// * 5: Switch BuildValue to be BinaryCoding based
   /// * 4: Pre-history
-  static const uint32_t internalSchemaVersion = 7;
+  static const uint32_t internalSchemaVersion = 8;
   
   BuildSystem& buildSystem;
 
@@ -536,6 +537,49 @@ public:
 };
 
 
+/// This is the task to "build" a directory structure node.
+///
+/// This node effectively just adapts a directory tree structure signature to a
+/// node. The reason why we need it (versus simply making the directory tree
+/// signature *be* this, is that we want the directory signature to be able to
+/// interface with other build nodes produced by commands).
+class DirectoryStructureInputNodeTask : public Task {
+  BuildNode& node;
+
+  core::ValueType directorySignature;
+
+  virtual void start(BuildEngine& engine) override {
+    // Remove any trailing slash from the node name.
+    StringRef path =  node.getName();
+    if (path.endswith("/") && path != "/") {
+      path = path.substr(0, path.size() - 1);
+    }
+    engine.taskNeedsInput(
+        this, BuildKey::makeDirectoryTreeStructureSignature(path).toData(),
+        /*inputID=*/0);
+  }
+
+  virtual void providePriorValue(BuildEngine&,
+                                 const ValueType& value) override {
+  }
+
+  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+                            const ValueType& value) override {
+    directorySignature = value;
+  }
+
+  virtual void inputsAvailable(BuildEngine& engine) override {
+    // Simply propagate the value.
+    engine.taskIsComplete(this, ValueType(directorySignature));
+  }
+
+public:
+  DirectoryStructureInputNodeTask(BuildNode& node) : node(node) {
+    assert(!node.isVirtual());
+  }
+};
+
+
 /// This is the task to build a virtual node which isn't connected to any
 /// output.
 class VirtualInputNodeTask : public Task {
@@ -864,6 +908,163 @@ public:
 };
 
 
+/// This is the task to "build" a directory structure node which will
+/// encapsulate (via a signature) the structure of the directory, recursively.
+class DirectoryTreeStructureSignatureTask : public Task {
+  // The basic algorithm we need to follow:
+  //
+  // 1. Get the directory contents.
+  // 2. Get the subpath directory info.
+  // 3. For each node input, if it is a directory, get the input node for it.
+  //
+  // FIXME: This algorithm currently does a redundant stat for each directory,
+  // because we stat it once to find out it is a directory, then again when we
+  // gather its contents (to use for validating the directory contents).
+  //
+  // FIXME: We need to fix the directory list to not get contents for symbolic
+  // links.
+
+  /// This structure encapsulates the information we need on each child.
+  struct SubpathInfo {
+    /// The filename;
+    std::string filename;
+    
+    /// The result of requesting the node at this subpath, once available.
+    ValueType value;
+
+    /// The directory structure signature, if needed.
+    llvm::Optional<ValueType> directoryStructureSignatureValue;
+  };
+  
+  /// The path we are taking the signature of.
+  std::string path;
+
+  /// The value for the directory itself.
+  ValueType directoryValue;
+
+  /// The accumulated list of child input info.
+  ///
+  /// Once we have the input directory information, we resize this to match the
+  /// number of children to avoid dynamically resizing it.
+  std::vector<SubpathInfo> childResults;
+  
+  virtual void start(BuildEngine& engine) override {
+    // Ask for the base directory directory contents.
+    engine.taskNeedsInput(
+        this, BuildKey::makeDirectoryContents(path).toData(),
+        /*inputID=*/0);
+  }
+
+  virtual void providePriorValue(BuildEngine&,
+                                 const ValueType& value) override {
+  }
+
+  virtual void provideValue(BuildEngine& engine, uintptr_t inputID,
+                            const ValueType& valueData) override {
+    // The first input is the directory contents.
+    if (inputID == 0) {
+      // Record the value for the directory.
+      directoryValue = valueData;
+
+      // Request the inputs for each subpath.
+      auto value = BuildValue::fromData(valueData);
+      if (value.isMissingInput())
+        return;
+
+      assert(value.isDirectoryContents());
+      auto filenames = value.getDirectoryContents();
+      for (size_t i = 0; i != filenames.size(); ++i) {
+        SmallString<256> childPath{ path };
+        llvm::sys::path::append(childPath, filenames[i]);
+        childResults.emplace_back(SubpathInfo{ filenames[i], {}, None });
+        engine.taskNeedsInput(this, BuildKey::makeNode(childPath).toData(),
+                              /*inputID=*/1 + i);
+      }
+      return;
+    }
+
+    // If the input is a child, add it to the collection and dispatch a
+    // directory structure request if needed.
+    if (inputID >= 1 && inputID < 1 + childResults.size()) {
+      auto index = inputID - 1;
+      auto& childResult = childResults[index];
+      childResult.value = valueData;
+
+      // If this node is a directory, request its signature recursively.
+      auto value = BuildValue::fromData(valueData);
+      if (value.isExistingInput()) {
+        if (value.getOutputInfo().isDirectory()) {
+          SmallString<256> childPath{ path };
+          llvm::sys::path::append(childPath, childResult.filename);
+        
+          engine.taskNeedsInput(
+              this,
+              BuildKey::makeDirectoryTreeStructureSignature(childPath).toData(),
+              /*inputID=*/1 + childResults.size() + index);
+        }
+      }
+      return;
+    }
+
+    // Otherwise, the input should be a directory signature.
+    auto index = inputID - 1 - childResults.size();
+    assert(index < childResults.size());
+    childResults[index].directoryStructureSignatureValue = valueData;
+  }
+
+  virtual void inputsAvailable(BuildEngine& engine) override {
+    // Compute the signature across all of the inputs.
+    using llvm::hash_combine;
+    llvm::hash_code code = hash_value(path);
+
+    // Only merge the structure information on the directory itself (including a
+    // random code to represent the directory).
+    {
+      auto value = BuildValue::fromData(directoryValue);
+      if (value.isExistingInput()) {
+        code = hash_combine(code, value.getOutputInfo().mode);
+      } else {
+        code = hash_combine(
+            code, hash_combine_range(directoryValue.begin(),
+                                     directoryValue.end()));
+      }
+    }
+    
+    // For now, we represent this task as the aggregation of all the inputs.
+    for (const auto& info: childResults) {
+      // We only merge the "structural" information on a child; i.e. its
+      // filename and type.
+      code = hash_combine(code, info.filename);
+      auto value = BuildValue::fromData(info.value);
+      if (value.isExistingInput()) {
+        code = hash_combine(code, value.getOutputInfo().mode);
+      } else {
+        // If this node has been modified to report a non-file value, just merge
+        // the encoded representation.
+        code = hash_combine(
+            code, hash_combine_range(info.value.begin(), info.value.end()));
+      }
+      
+      if (info.directoryStructureSignatureValue.hasValue()) {
+        auto& data = info.directoryStructureSignatureValue.getValue();
+        code = hash_combine(
+            code, hash_combine_range(data.begin(), data.end()));
+      } else {
+        // Combine a random number to represent nil.
+        code = hash_combine(code, 0XC183979C3E98722E);
+      }
+    }
+    
+    // Compute the signature.
+    engine.taskIsComplete(this, BuildValue::makeDirectoryTreeStructureSignature(
+                              uint64_t(code)).toData());
+  }
+
+public:
+  DirectoryTreeStructureSignatureTask(StringRef path) : path(path) {}
+};
+
+
 /// This is the task to actually execute a command.
 class CommandTask : public Task {
   Command& command;
@@ -1093,6 +1294,20 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       /*IsValid=*/ nullptr
     };
   }
+
+  case BuildKey::Kind::DirectoryTreeStructureSignature: {
+    std::string path = key.getDirectoryTreeStructureSignaturePath();
+    return Rule{
+      keyData,
+      /*Action=*/ [path](BuildEngine& engine) -> Task* {
+        return engine.registerTask(
+            new DirectoryTreeStructureSignatureTask(path));
+      },
+        // Directory signatures don't require any validation outside of their
+        // concrete dependencies.
+      /*IsValid=*/ nullptr
+    };
+  }
     
   case BuildKey::Kind::Node: {
     // Find the node.
@@ -1141,6 +1356,19 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
           keyData,
             /*Action=*/ [node](BuildEngine& engine) -> Task* {
             return engine.registerTask(new DirectoryInputNodeTask(*node));
+          },
+            // Directory nodes don't require any validation outside of their
+            // concrete dependencies.
+          /*IsValid=*/ nullptr
+        };
+      }
+
+      if (node->isDirectoryStructure()) {
+        return Rule{
+          keyData,
+            /*Action=*/ [node](BuildEngine& engine) -> Task* {
+            return engine.registerTask(
+                new DirectoryStructureInputNodeTask(*node));
           },
             // Directory nodes don't require any validation outside of their
             // concrete dependencies.
@@ -1220,7 +1448,9 @@ std::unique_ptr<BuildNode>
 BuildSystemImpl::lookupNode(StringRef name, bool isImplicit) {
   bool isDirectory = name.endswith("/");
   bool isVirtual = !name.empty() && name[0] == '<' && name.back() == '>';
-  return llvm::make_unique<BuildNode>(name, isDirectory, isVirtual,
+  return llvm::make_unique<BuildNode>(name, isDirectory,
+                                      /*isDirectoryStructure=*/false,
+                                      isVirtual,
                                       /*isCommandTimestamp=*/false,
                                       /*isMutable=*/false);
 }

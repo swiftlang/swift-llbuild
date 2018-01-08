@@ -242,13 +242,16 @@ void ExternalCommand::provideValue(BuildSystemCommandInterface& bsci,
   assert(value.isExistingInput() || value.isMissingInput() ||
          value.isMissingOutput() || value.isFailedInput() ||
          value.isVirtualInput()  || value.isSkippedCommand() ||
-         value.isDirectoryTreeSignature() || value.isStaleFileRemoval());
+         value.isDirectoryTreeSignature() ||
+         value.isDirectoryTreeStructureSignature() ||
+         value.isStaleFileRemoval());
 
   // If the input should cause this command to skip, how should it skip?
   auto getSkipValueForInput = [&]() -> llvm::Optional<BuildValue> {
     // If the value is an signature, existing, or virtual input, we are always
     // good.
-    if (value.isDirectoryTreeSignature() | value.isExistingInput() ||
+    if (value.isDirectoryTreeSignature() ||
+        value.isDirectoryTreeStructureSignature() || value.isExistingInput() ||
         value.isVirtualInput() || value.isStaleFileRemoval())
       return llvm::None;
 

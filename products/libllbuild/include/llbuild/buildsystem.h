@@ -135,6 +135,9 @@ typedef enum {
 
   /// An invalid key kind.
   llb_build_key_kind_unknown = 6,
+
+  /// A key used to identify the signature of a complete directory tree.
+  llb_build_key_kind_directory_tree_structure_signature = 7,
 } llb_build_key_kind_t;
 
 /// The BuildKey encodes the key space used by the BuildSystem when using the

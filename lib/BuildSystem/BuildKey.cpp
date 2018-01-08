@@ -27,6 +27,7 @@ StringRef BuildKey::stringForKind(BuildKey::Kind kind) {
     CASE(CustomTask);
     CASE(DirectoryContents);
     CASE(DirectoryTreeSignature);
+    CASE(DirectoryTreeStructureSignature);
     CASE(Node);
     CASE(Target);
     CASE(Unknown);
@@ -53,6 +54,10 @@ void BuildKey::dump(raw_ostream& os) const {
   }
   case Kind::DirectoryTreeSignature: {
     os << ", path='" << getDirectoryTreeSignaturePath() << "'";
+    break;
+  }
+  case Kind::DirectoryTreeStructureSignature: {
+    os << ", path='" << getDirectoryTreeStructureSignaturePath() << "'";
     break;
   }
   case Kind::Node: {
