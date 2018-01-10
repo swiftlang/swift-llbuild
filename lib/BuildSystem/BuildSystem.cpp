@@ -1017,11 +1017,12 @@ class DirectoryTreeStructureSignatureTask : public Task {
     using llvm::hash_combine;
     llvm::hash_code code = hash_value(path);
 
-    // Only merge the structure information on the directory itself (including a
-    // random code to represent the directory).
+    // Only merge the structure information on the directory itself.
     {
+      // We need to merge mode information about the directory itself, in case
+      // it changes type.
       auto value = BuildValue::fromData(directoryValue);
-      if (value.isExistingInput()) {
+      if (value.isDirectoryContents()) {
         code = hash_combine(code, value.getOutputInfo().mode);
       } else {
         code = hash_combine(
