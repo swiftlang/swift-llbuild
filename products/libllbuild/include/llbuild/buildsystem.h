@@ -438,11 +438,25 @@ llb_buildsystem_initialize(llb_buildsystem_t* system);
 /// This will automatically initialize the build system if it has not already
 /// been initialized.
 ///
-/// \param key The key to build.
+/// \param key Name of the target to build.
 /// \returns True on success, or false if the build was aborted (for example, if
 /// a cycle was discovered).
 LLBUILD_EXPORT bool
 llb_buildsystem_build(llb_buildsystem_t* system, const llb_data_t* key);
+
+/// Build a single node.
+///
+/// It is an unchecked error for the client to request multiple builds
+/// concurrently.
+///
+/// This will automatically initialize the build system if it has not already
+/// been initialized.
+///
+/// \param key Path to the node to build.
+/// \returns True on success, or false if the build was aborted (for example, if
+/// a cycle was discovered).
+LLBUILD_EXPORT bool
+llb_buildsystem_build_node(llb_buildsystem_t* system, const llb_data_t* key);
 
 /// Cancel any ongoing build.
 ///

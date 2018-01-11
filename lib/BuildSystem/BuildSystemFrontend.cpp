@@ -19,6 +19,7 @@
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildKey.h"
+#include "llbuild/BuildSystem/BuildValue.h"
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallString.h"
@@ -629,14 +630,13 @@ bool BuildSystemFrontend::initialize() {
   return true;
 }
 
-bool BuildSystemFrontend::build(StringRef targetToBuild) {
-
+bool BuildSystemFrontend::setupBuild() {
   auto delegateImpl =
-    static_cast<BuildSystemFrontendDelegateImpl*>(delegate.impl);
+  static_cast<BuildSystemFrontendDelegateImpl*>(delegate.impl);
 
   // We expect build to be called in these states only.
   assert(delegateImpl->getStatus() == BuildSystemFrontendDelegateImpl::Status::Uninitialized
-    || delegateImpl->getStatus() == BuildSystemFrontendDelegateImpl::Status::Initialized);
+         || delegateImpl->getStatus() == BuildSystemFrontendDelegateImpl::Status::Initialized);
 
   // Set the delegate status to initialized.
   delegateImpl->setStatus(BuildSystemFrontendDelegateImpl::Status::Initialized);
@@ -652,7 +652,27 @@ bool BuildSystemFrontend::build(StringRef targetToBuild) {
 
   // If delegate was told to cancel while we were initializing, abort now.
   if (delegateImpl->getStatus() == BuildSystemFrontendDelegateImpl::Status::Cancelled) {
-      return false;
+    return false;
+  }
+
+  return true;
+}
+
+bool BuildSystemFrontend::buildNode(StringRef nodeToBuild) {
+  if (!setupBuild()) {
+    return false;
+  }
+
+  if (!buildSystem->build(BuildKey::makeNode(nodeToBuild)).hasValue()) {
+    return false;
+  }
+
+  return delegate.getNumFailedCommands() == 0 && delegate.getNumErrors() == 0;
+}
+
+bool BuildSystemFrontend::build(StringRef targetToBuild) {
+  if (!setupBuild()) {
+    return false;
   }
 
   // Build the target; if something unspecified failed about the build, return

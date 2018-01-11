@@ -60,6 +60,10 @@ class BuildSystemFrontend {
   const BuildSystemInvocation& invocation;
   llvm::Optional<BuildSystem> buildSystem;
 
+private:
+
+  bool setupBuild();
+
 public:
   BuildSystemFrontend(BuildSystemFrontendDelegate& delegate,
                       const BuildSystemInvocation& invocation);
@@ -91,6 +95,11 @@ public:
   ///
   /// \returns True on success, or false if there were errors.
   bool build(StringRef targetToBuild);
+
+  /// Build a single node using the specified invocation parameters.
+  ///
+  /// \returns True on success, or false if there were errors.
+  bool buildNode(StringRef nodeToBuild);
 
   /// @}
 };
