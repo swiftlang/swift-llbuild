@@ -38,6 +38,8 @@
 ///
 /// Version History:
 ///
+/// 4: Added llb_buildsystem_build_node.
+///
 /// 3: Added command_had_error, command_had_note and command_had_warning delegate methods.
 ///
 /// 2: Added `llb_buildsystem_command_result_t` parameter to command_finished.
@@ -45,7 +47,7 @@
 /// 1: Added `environment` parameter to llb_buildsystem_invocation_t.
 ///
 /// 0: Pre-history
-#define LLBUILD_API_VERSION 3
+#define LLBUILD_API_VERSION 4
 
 /// Get the full version of the llbuild library.
 LLBUILD_EXPORT const char* llb_get_full_version_string(void);
