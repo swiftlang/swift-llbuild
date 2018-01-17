@@ -663,7 +663,15 @@ bool BuildSystemFrontend::buildNode(StringRef nodeToBuild) {
     return false;
   }
 
-  if (!buildSystem->build(BuildKey::makeNode(nodeToBuild)).hasValue()) {
+  auto buildValue = buildSystem->build(BuildKey::makeNode(nodeToBuild));
+  if (!buildValue.hasValue()) {
+    return false;
+  }
+
+  if (!buildValue.getValue().isExistingInput()) {
+    if (buildValue.getValue().isMissingInput()) {
+      delegate.error((Twine("missing input '") + nodeToBuild + "' and no rule to build it"));
+    }
     return false;
   }
 
