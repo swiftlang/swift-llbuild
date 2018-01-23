@@ -197,6 +197,11 @@ public:
   }
 
   virtual void cycleDetected(const std::vector<core::Rule*>& items) override { }
+
+  virtual void error(StringRef filename, const Token& at, const Twine& message) override {
+    std::lock_guard<std::mutex> lock(traceMutex);
+    traceStream << __FUNCTION__ << ": " << message << "\n";
+  }
 };
 
 
@@ -475,6 +480,19 @@ commandProcessStarted: 3
 commandProcessFinished: 3: 0
 commandFinished: 3: 0
 )END"));
+}
+
+TEST_F(BuildSystemFrontendTest, singleNodeBuildLogsMissingInputs) {
+  writeBuildFile(R"END(
+client:
+  name: client
+)END");
+
+  TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation, *fs);
+  BuildSystemFrontend frontend(delegate, invocation);
+
+  ASSERT_FALSE(frontend.buildNode("/missing"));
+  ASSERT_TRUE(delegate.checkTrace("error: missing input '/missing' and no rule to build it\n"));
 }
 
 }
