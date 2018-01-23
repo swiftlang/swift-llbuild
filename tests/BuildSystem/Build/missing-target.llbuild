@@ -1,0 +1,22 @@
+# Check we display an error if the given target is not present.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.llbuild
+# RUN: %{llbuild} buildsystem build does-not-exist --chdir %t.build &> %t.out || true
+# RUN: %{FileCheck} --input-file=%t.out %s
+#
+# CHECK: No target named 'does-not-exist' in build description
+
+client:
+  name: basic
+
+targets:
+  tee: ["<command>"]
+
+commands:
+  "<command>":
+    tool: shell
+    inputs: []
+    outputs: [<command>]
+    args: ["echo", "hi"]
