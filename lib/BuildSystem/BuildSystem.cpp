@@ -1499,6 +1499,13 @@ bool BuildSystemImpl::build(StringRef target) {
     target = getBuildDescription().getDefaultTarget();
   }
 
+  // Validate the target name.
+  auto &targets = getBuildDescription().getTargets();
+  if (targets.find(target) == targets.end()) {
+    error(getMainFilename(), "No target named '" + target + "' in build description");
+    return false;
+  }
+
   return build(BuildKey::makeTarget(target)).hasValue();
 }
 
