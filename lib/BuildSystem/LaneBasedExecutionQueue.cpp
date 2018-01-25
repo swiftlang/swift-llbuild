@@ -401,12 +401,13 @@ public:
       
       // If we have been cancelled since we started, do nothing.
       if (!wasCancelled) {
-        if (posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
-                        /*attrp=*/&attributes, const_cast<char**>(args.data()),
-                        const_cast<char* const*>(posixEnv.getEnvp())) != 0) {
+        int result = posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
+                                 /*attrp=*/&attributes, const_cast<char**>(args.data()),
+                                 const_cast<char* const*>(posixEnv.getEnvp()));
+        if (result != 0) {
           getDelegate().commandProcessHadError(
               context.job.getForCommand(), handle,
-              Twine("unable to spawn process (") + strerror(errno) + ")");
+              Twine("unable to spawn process (") + strerror(result) + ")");
           getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
                                                CommandResult::Failed, -1);
           pid = -1;
