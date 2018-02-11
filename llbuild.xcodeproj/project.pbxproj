@@ -13,6 +13,7 @@
 			buildPhases = (
 			);
 			dependencies = (
+				BC8DEF2B20300E6100E9EF0C /* PBXTargetDependency */,
 				E178FCC61A1BF32F0039F8B5 /* PBXTargetDependency */,
 				E1604CB71BB9E07B001153A1 /* PBXTargetDependency */,
 				E1B839631B541CDE00DB876B /* PBXTargetDependency */,
@@ -74,6 +75,18 @@
 		9DB047BD1DF9D4B0006CDF52 /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
 		9DB047C01DF9F592006CDF52 /* LaneBasedExecutionQueueTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9DB0478B1DF9D3E2006CDF52 /* LaneBasedExecutionQueueTest.cpp */; };
 		9DDD8BE11DDCAB9A00FB62D2 /* SQLiteBuildDBTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9DDD8BDF1DDCAB9A00FB62D2 /* SQLiteBuildDBTest.cpp */; };
+		BC8DEF0820300AAF00E9EF0C /* BuildSystemBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8DEF0620300AAF00E9EF0C /* BuildSystemBindings.swift */; };
+		BC8DEF0920300AAF00E9EF0C /* CoreBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8DEF0720300AAF00E9EF0C /* CoreBindings.swift */; };
+		BC8DEF1420300BBE00E9EF0C /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
+		BC8DEF1520300BBE00E9EF0C /* libllbuildCommands.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242E19F997050059043E /* libllbuildCommands.a */; };
+		BC8DEF1620300BBE00E9EF0C /* libllbuildCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243E19F997150059043E /* libllbuildCore.a */; };
+		BC8DEF1720300BBE00E9EF0C /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
+		BC8DEF1820300BC600E9EF0C /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
+		BC8DEF2220300D7B00E9EF0C /* BuildSystem-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1DD22761C472A3F00555A5D /* BuildSystem-C-API.cpp */; };
+		BC8DEF2320300D7B00E9EF0C /* C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1ADC2311A85922F00D5387C /* C-API.cpp */; };
+		BC8DEF2420300D7B00E9EF0C /* Core-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1DD22741C47259900555A5D /* Core-C-API.cpp */; };
+		BC8DEF2720300DA000E9EF0C /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = BC8DEF2620300DA000E9EF0C /* libsqlite3.tbd */; };
+		BC8DEF2920300DA900E9EF0C /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = BC8DEF2820300DA900E9EF0C /* libcurses.tbd */; };
 		C5740D091E03523100567DD8 /* BuildSystemFrontendTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5740D081E03523100567DD8 /* BuildSystemFrontendTest.cpp */; };
 		C5740D0A1E03527B00567DD8 /* libllbuildCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243E19F997150059043E /* libllbuildCore.a */; };
 		C5740D0B1E03528600567DD8 /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
@@ -274,6 +287,48 @@
 			proxyType = 1;
 			remoteGlobalIDString = 9DB047A71DF9D43D006CDF52;
 			remoteInfo = BuildSystemTests;
+		};
+		BC8DEF0A20300B9300E9EF0C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1B838981B52E7DE00DB876B;
+			remoteInfo = llvmSupport;
+		};
+		BC8DEF0C20300B9300E9EF0C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1A2242419F991B40059043E;
+			remoteInfo = llbuildBasic;
+		};
+		BC8DEF0E20300B9300E9EF0C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1A2242D19F997050059043E;
+			remoteInfo = llbuildCommands;
+		};
+		BC8DEF1020300B9300E9EF0C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1A2243D19F997150059043E;
+			remoteInfo = llbuildCore;
+		};
+		BC8DEF1220300B9300E9EF0C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1B839481B541BFD00DB876B;
+			remoteInfo = llbuildBuildSystem;
+		};
+		BC8DEF2A20300E6100E9EF0C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BC8DEEFE2030088600E9EF0C;
+			remoteInfo = llbuildSwift;
 		};
 		E104FAF81B655BB2005C68A0 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -710,6 +765,12 @@
 		9DB0478B1DF9D3E2006CDF52 /* LaneBasedExecutionQueueTest.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = LaneBasedExecutionQueueTest.cpp; sourceTree = "<group>"; };
 		9DB047A81DF9D43D006CDF52 /* BuildSystemTests */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = BuildSystemTests; sourceTree = BUILT_PRODUCTS_DIR; };
 		9DDD8BDF1DDCAB9A00FB62D2 /* SQLiteBuildDBTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SQLiteBuildDBTest.cpp; sourceTree = "<group>"; };
+		BC8DEEFF2030088600E9EF0C /* libllbuildSwift.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libllbuildSwift.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		BC8DEF0520300AAF00E9EF0C /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
+		BC8DEF0620300AAF00E9EF0C /* BuildSystemBindings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BuildSystemBindings.swift; sourceTree = "<group>"; };
+		BC8DEF0720300AAF00E9EF0C /* CoreBindings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CoreBindings.swift; sourceTree = "<group>"; };
+		BC8DEF2620300DA000E9EF0C /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
+		BC8DEF2820300DA900E9EF0C /* libcurses.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libcurses.tbd; path = usr/lib/libcurses.tbd; sourceTree = SDKROOT; };
 		C5740D081E03523100567DD8 /* BuildSystemFrontendTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildSystemFrontendTest.cpp; sourceTree = "<group>"; };
 		C5740D0D1E0352D800567DD8 /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E104FAF61B655A97005C68A0 /* BuildSystemPerfTests.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = BuildSystemPerfTests.mm; sourceTree = "<group>"; };
@@ -1025,6 +1086,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BC8DEEFC2030088600E9EF0C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BC8DEF2920300DA900E9EF0C /* libcurses.tbd in Frameworks */,
+				BC8DEF2720300DA000E9EF0C /* libsqlite3.tbd in Frameworks */,
+				BC8DEF1820300BC600E9EF0C /* libllbuildBuildSystem.a in Frameworks */,
+				BC8DEF1420300BBE00E9EF0C /* libllbuildBasic.a in Frameworks */,
+				BC8DEF1520300BBE00E9EF0C /* libllbuildCommands.a in Frameworks */,
+				BC8DEF1620300BBE00E9EF0C /* libllbuildCore.a in Frameworks */,
+				BC8DEF1720300BBE00E9EF0C /* libllvmSupport.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E10D5CD719FEBF6A00211ED4 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -1215,6 +1290,16 @@
 			path = BuildSystem;
 			sourceTree = "<group>";
 		};
+		BC8DEF0420300AAF00E9EF0C /* llbuildSwift */ = {
+			isa = PBXGroup;
+			children = (
+				BC8DEF0520300AAF00E9EF0C /* CMakeLists.txt */,
+				BC8DEF0620300AAF00E9EF0C /* BuildSystemBindings.swift */,
+				BC8DEF0720300AAF00E9EF0C /* CoreBindings.swift */,
+			);
+			path = llbuildSwift;
+			sourceTree = "<group>";
+		};
 		E10D5CDB19FEBF6A00211ED4 /* LitXCTestAdaptor */ = {
 			isa = PBXGroup;
 			children = (
@@ -1236,6 +1321,8 @@
 		E13B5E411A00395300EA0405 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				BC8DEF2820300DA900E9EF0C /* libcurses.tbd */,
+				BC8DEF2620300DA000E9EF0C /* libsqlite3.tbd */,
 				E15B6EC61B546A2C00643066 /* libcurses.dylib */,
 				E1E221081A00B82100957481 /* libsqlite3.dylib */,
 				E10D5CE319FEF3BD00211ED4 /* Python.framework */,
@@ -1320,6 +1407,7 @@
 				E147DF161BA81D330032D08E /* BasicTests */,
 				E1604CB11BB9E01D001153A1 /* swift-build-tool */,
 				9DB047A81DF9D43D006CDF52 /* BuildSystemTests */,
+				BC8DEEFF2030088600E9EF0C /* libllbuildSwift.dylib */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1327,6 +1415,7 @@
 		E1A223FD19F990F10059043E /* products */ = {
 			isa = PBXGroup;
 			children = (
+				BC8DEF0420300AAF00E9EF0C /* llbuildSwift */,
 				E1A2240119F991350059043E /* llbuild */,
 				E1ADC22F1A8591F600D5387C /* libllbuild */,
 				E1D191B71B472305000C4E95 /* llbuild-framework */,
@@ -1922,6 +2011,13 @@
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
+		BC8DEEFD2030088600E9EF0C /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E1A2242319F991B40059043E /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -2021,6 +2117,28 @@
 			productName = BuildSystemTests;
 			productReference = 9DB047A81DF9D43D006CDF52 /* BuildSystemTests */;
 			productType = "com.apple.product-type.tool";
+		};
+		BC8DEEFE2030088600E9EF0C /* llbuildSwift */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BC8DEF002030088600E9EF0C /* Build configuration list for PBXNativeTarget "llbuildSwift" */;
+			buildPhases = (
+				BC8DEEFB2030088600E9EF0C /* Sources */,
+				BC8DEEFC2030088600E9EF0C /* Frameworks */,
+				BC8DEEFD2030088600E9EF0C /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BC8DEF0B20300B9300E9EF0C /* PBXTargetDependency */,
+				BC8DEF0D20300B9300E9EF0C /* PBXTargetDependency */,
+				BC8DEF0F20300B9300E9EF0C /* PBXTargetDependency */,
+				BC8DEF1120300B9300E9EF0C /* PBXTargetDependency */,
+				BC8DEF1320300B9300E9EF0C /* PBXTargetDependency */,
+			);
+			name = llbuildSwift;
+			productName = llbuildSwift;
+			productReference = BC8DEEFF2030088600E9EF0C /* libllbuildSwift.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
 		};
 		E10D5CD919FEBF6A00211ED4 /* LitXCTestAdaptor */ = {
 			isa = PBXNativeTarget;
@@ -2373,6 +2491,10 @@
 						CreatedOnToolsVersion = 8.3;
 						ProvisioningStyle = Automatic;
 					};
+					BC8DEEFE2030088600E9EF0C = {
+						CreatedOnToolsVersion = 9.3;
+						ProvisioningStyle = Automatic;
+					};
 					E10D5CD919FEBF6A00211ED4 = {
 						CreatedOnToolsVersion = 6.3;
 						ProvisioningStyle = Manual;
@@ -2478,6 +2600,7 @@
 				E1A2243D19F997150059043E /* llbuildCore */,
 				E1B839481B541BFD00DB876B /* llbuildBuildSystem */,
 				E1A2243519F9970D0059043E /* llbuildNinja */,
+				BC8DEEFE2030088600E9EF0C /* llbuildSwift */,
 				E1A224DC19F99B0E0059043E /* gtest */,
 				E1A224E519F99C580059043E /* gtest_main */,
 				E147DEFE1BA81D330032D08E /* BasicTests */,
@@ -2670,6 +2793,18 @@
 				9D0A6D811E1FFEA800BE636F /* TempDir.cpp in Sources */,
 				E1075ED71E4EA417007D52C6 /* BuildSystemTaskTests.cpp in Sources */,
 				E1B3B9DC1E4D5A7A00DF1FBC /* MockBuildSystemDelegate.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BC8DEEFB2030088600E9EF0C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BC8DEF2220300D7B00E9EF0C /* BuildSystem-C-API.cpp in Sources */,
+				BC8DEF2320300D7B00E9EF0C /* C-API.cpp in Sources */,
+				BC8DEF2420300D7B00E9EF0C /* Core-C-API.cpp in Sources */,
+				BC8DEF0920300AAF00E9EF0C /* CoreBindings.swift in Sources */,
+				BC8DEF0820300AAF00E9EF0C /* BuildSystemBindings.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2918,6 +3053,36 @@
 			isa = PBXTargetDependency;
 			target = 9DB047A71DF9D43D006CDF52 /* BuildSystemTests */;
 			targetProxy = 9DB047BE1DF9D4B8006CDF52 /* PBXContainerItemProxy */;
+		};
+		BC8DEF0B20300B9300E9EF0C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1B838981B52E7DE00DB876B /* llvmSupport */;
+			targetProxy = BC8DEF0A20300B9300E9EF0C /* PBXContainerItemProxy */;
+		};
+		BC8DEF0D20300B9300E9EF0C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1A2242419F991B40059043E /* llbuildBasic */;
+			targetProxy = BC8DEF0C20300B9300E9EF0C /* PBXContainerItemProxy */;
+		};
+		BC8DEF0F20300B9300E9EF0C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1A2242D19F997050059043E /* llbuildCommands */;
+			targetProxy = BC8DEF0E20300B9300E9EF0C /* PBXContainerItemProxy */;
+		};
+		BC8DEF1120300B9300E9EF0C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1A2243D19F997150059043E /* llbuildCore */;
+			targetProxy = BC8DEF1020300B9300E9EF0C /* PBXContainerItemProxy */;
+		};
+		BC8DEF1320300B9300E9EF0C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1B839481B541BFD00DB876B /* llbuildBuildSystem */;
+			targetProxy = BC8DEF1220300B9300E9EF0C /* PBXContainerItemProxy */;
+		};
+		BC8DEF2B20300E6100E9EF0C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BC8DEEFE2030088600E9EF0C /* llbuildSwift */;
+			targetProxy = BC8DEF2A20300E6100E9EF0C /* PBXContainerItemProxy */;
 		};
 		E104FAF91B655BB2005C68A0 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -3194,6 +3359,69 @@
 			buildSettings = {
 				GCC_PREPROCESSOR_DEFINITIONS = NDEBUG;
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
+			};
+			name = Release;
+		};
+		BC8DEF012030088600E9EF0C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				EXECUTABLE_PREFIX = lib;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/include";
+				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/lib/swift/pm/llbuild";
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = NO;
+				SWIFT_VERSION = 4.0;
+			};
+			name = Debug;
+		};
+		BC8DEF022030088600E9EF0C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				EXECUTABLE_PREFIX = lib;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/include";
+				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/lib/swift/pm/llbuild";
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = NO;
+				SWIFT_VERSION = 4.0;
 			};
 			name = Release;
 		};
@@ -3704,6 +3932,15 @@
 			buildConfigurations = (
 				9DB047AD1DF9D43D006CDF52 /* Debug */,
 				9DB047AE1DF9D43D006CDF52 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BC8DEF002030088600E9EF0C /* Build configuration list for PBXNativeTarget "llbuildSwift" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BC8DEF012030088600E9EF0C /* Debug */,
+				BC8DEF022030088600E9EF0C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
