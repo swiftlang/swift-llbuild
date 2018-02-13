@@ -1,0 +1,275 @@
+#!/usr/bin/env python
+
+#Example 1 (Small-Manifest)
+#./generate-llbuild-manifest -levelWidths 1,2,4,8,1 -manifestPath generated-manifest.llbuild -expectedLLBuildOutputPath expectedOutput
+#llbuild buildsystem build -f generated-manifest.llbuild > actualOutput
+#diff <(sort expectedOutput) <(sort actualOutput)
+
+#Example 2 (Large-Manifest) 
+#./generate-llbuild-manifest -levelWidths 100,2000,4000,8000,4000,2000,100,1 -inputDensity 5 -maxAdditionalInputs 20 -manifestPath large-generated-manifest.llbuild -expectedLLBuildOutputPath expectedOutputFromLargeManifest
+#llbuild buildsystem build -f large-generated-manifest.llbuild > actualOutputFromLargeManifest
+#diff <(sort expectedOutputFromLargeManifest) <(sort actualOutputFromLargeManifest)
+
+#Example 3 (Randomized-Manifest)
+#./generate-llbuild-manifest -minWidth 3 -maxWidth 6 -minDepth 5 -maxDepth 10 -inputDensity 5 -maxAdditionalInputs 20 -manifestPath randomized-manifest.llbuild -expectedLLBuildOutputPath expectedOutputFromRandomizedManifest
+#llbuild buildsystem build -f randomized-manifest.llbuild > actualOutputFromRandomizedManifest
+#diff <(sort expectedOutputFromRandomizedManifest) <(sort actualOutputFromRandomizedManifest)
+
+import sys
+import argparse
+import uuid
+import random
+
+class Command:
+  def __init__(self, name, index, inputList):
+    self.name = name
+    self.outputFile = name
+    self.index = index
+    self.inputList = inputList
+    self.args = ""
+    self.hasDependantCommand = False
+
+  def setupArgs(self):
+    if not self.inputList:
+      self.args = "echo " + self.name + " > " + self.outputFile
+    else:
+      self.args = "echo " + self.name + " > " + self.outputFile + " && " + "cat " + " ".join(input for input in self.inputList) + " >> " + self.outputFile
+
+  def addNewInput(self, newInput):
+    self.inputList.append(newInput)
+
+class LLBuildManifest:
+  def __init__(self, manifestPath, expectedLLBuildOutputPath, clientName, clientVersion, density, maxAdditionalInputs=sys.maxsize, minDepth = -1, maxDepth = -1, minWidth = -1, maxWidth = -1, levelWidths = []):
+    print "Writing llbuild manifest to " + manifestPath
+
+    try:
+      self.manifestFile = open(manifestPath, 'w+')
+    except:
+      print "Failed to open manifest file at " + manifestPath
+      raise Exception
+
+    print "Writing expected llbuild results to " + expectedLLBuildOutputPath
+    try:
+      self.expectedLLBuildOutputFile = open(expectedLLBuildOutputPath, 'w+')
+    except:
+      print "Failed to open expected llbuild file at " + expectedLLBuildOutputPath
+      raise Exception
+
+    self.nextCommandID = 0
+    
+    self.levelWidths = levelWidths
+    self.setupLevelWidths(minDepth, maxDepth, minWidth, maxWidth)
+
+    self.commands = []
+    self.clientName = clientName
+    self.clientVersion = clientVersion
+    self.density = density
+    self.maxAdditionalInputs = maxAdditionalInputs
+    
+
+  def getNodeID(self):
+    nextCommandID = self.nextCommandID
+    self.nextCommandID+=1
+    return nextCommandID
+
+  def writeLine(self, newStr, indentLevel):
+    self.manifestFile.write((" " * indentLevel * 2) + newStr + '\n')
+
+  def writeCommandToManifest(self, command):
+    self.writeLine(command.name + ":", indentLevel=1)
+    self.writeLine("tool: shell", indentLevel=2)
+    self.writeLine("inputs: [" + ", ".join('"' + x + '"' for x in command.inputList) + "]", indentLevel=2)
+    self.writeLine("outputs: " + '["' + command.outputFile + '"]', indentLevel=2)
+    self.writeLine("args: " + command.args, indentLevel=2)
+
+  #This tool currently only uses shell commands, this method needs to be made more robust if other commands are implemented.
+  def writeCommandToExpectedResults(self, command):
+    self.expectedLLBuildOutputFile.write("/bin/sh -c '" + command.args + "'\n")
+
+  #Determines how many commands there will be per level in the graph.
+  def setupLevelWidths(self, minDepth, maxDepth, minWidth, maxWidth):
+    if not self.levelWidths:
+      depth = random.randint(minDepth, maxDepth)
+      
+      if minDepth < 0 or maxDepth < 0 or minWidth < 0 or maxWidth < 0:
+        print "ERROR: Missing necessary arguments for building the manifest or one of parameters was unexpectedly less than zero. Please provide -minWidth <INT>, -maxWidth <INT>, -minDepth <INT>, -maxDepth <INT> OR -levelWidths <LIST>."
+        raise Exception
+
+      for levelIndex in range(depth-1):
+        width = random.randint(minWidth, maxWidth)
+        self.levelWidths.append(width)
+
+      #The last level can only have one command, as only one target is created.
+      self.levelWidths.append(1)
+
+    if self.levelWidths[len(self.levelWidths)-1] != 1:
+      print "ERROR: Last LevelWidths Index must be set to 1 as there can only be one default target."
+      raise Exception
+
+    print "Level widths: %s" % self.levelWidths
+  
+  def generateBuildGraph(self):
+    print "Generating Build Graph"
+    
+    self.writeLine("client:", indentLevel=0)
+    self.writeLine("name: " + self.clientName, indentLevel=1)
+    self.writeLine("version: " + self.clientVersion, indentLevel=1)
+
+    self.writeLine("targets:", 0)
+    self.writeLine('"": [root]', 1)
+
+    self.writeLine("commands:", indentLevel=0)
+    
+    currentCommands = []
+    for levelIndex in range(len(self.levelWidths)):
+      currentCommands = self.createCommandsAtLevel(levelIndex, previousCommandLevel=currentCommands)
+      self.commands.extend(currentCommands)
+
+  def createCommandsAtLevel(self, currentLevelIndex, previousCommandLevel):
+    currentLevelCommands = []
+
+    if previousCommandLevel:
+      minPreviousLevelCommandIndex = previousCommandLevel[0].index
+      maxPreviousLevelCommandIndex = previousCommandLevel[len(previousCommandLevel)-1].index
+
+    #Create New Command
+    for commandIndex in range(self.levelWidths[currentLevelIndex]):
+      inputList = []
+
+      #Setup Inputs/Dependencies as long as the loop is not on the first or last level.
+      if previousCommandLevel and len(self.levelWidths)-1 != currentLevelIndex:
+        neighborCommand = random.choice(previousCommandLevel)
+        availableCommandCount = len(self.commands) - 1
+        
+        inputCount = random.randint(0, int(availableCommandCount * (self.density/100)))
+        inputCount = inputCount if inputCount <= self.maxAdditionalInputs else self.maxAdditionalInputs
+
+        dependencyCommands = self.getDependencyCommands(inputCount, neighborCommand.index)
+        dependencyCommands.append(neighborCommand)
+
+        #Mark all commands the current command is dependant on, to keep track of who has a dependant command.
+        for dependencyCommand in dependencyCommands:
+          if dependencyCommand.index >= minPreviousLevelCommandIndex and dependencyCommand.index <= maxPreviousLevelCommandIndex: 
+            previousCommandLevel[dependencyCommand.index - minPreviousLevelCommandIndex].hasDependantCommand = True
+          
+          inputList.append(dependencyCommand.outputFile)
+
+      if len(self.levelWidths)-1 != currentLevelIndex:
+        newCommandName = str(currentLevelIndex) + "-" + str(commandIndex)
+      else:
+        newCommandName = "root"
+
+      newCommand = Command(newCommandName, self.getNodeID(), inputList)
+      currentLevelCommands.append(newCommand)
+
+    #Parse previous level to ensure all it's commands are in the current level's input lists.
+    for command in previousCommandLevel:
+      if not command.hasDependantCommand:
+        neighborCommand = random.choice(currentLevelCommands)
+        neighborCommand.addNewInput(command.outputFile)
+    
+    
+    for command in currentLevelCommands:
+      command.setupArgs()
+      self.writeCommandToManifest(command)
+      self.writeCommandToExpectedResults(command)
+    
+    return currentLevelCommands
+
+  #Selects commands for the new command's input list.
+  def getDependencyCommands(self, inputCount, skipCommandWithIndex):
+    commandInputs = []
+    foundDuplicateCommand = False
+
+    for command in random.sample(self.commands, inputCount + 1):
+      if command.index != skipCommandWithIndex:
+        commandInputs.append(command)
+      else:
+        foundDuplicateCommand = True
+
+    if foundDuplicateCommand == False:
+      del commandInputs[random.randint(0, len(commandInputs)-1)]
+
+    return commandInputs
+
+#Collect Args
+parser = argparse.ArgumentParser()
+
+parser.add_argument("-manifestPath", dest="manifestPath",
+  help="Path to write manifest to. Defaults to '/tmp/llbuildmanifest-' + random hash + '.llbuild.'", 
+  default="/tmp/llbuildmanifest-" + uuid.uuid4().hex + ".llbuild")
+
+parser.add_argument("-expectedLLBuildOutputPath", dest="expectedLLBuildOutputPath",
+  help="Path to write llbuild's expected output to. Defaults to '/tmp/expectedResults-' + random hash + '.llbuild.' Please make sure to sort when diffing with actual llbuild output", 
+  default="/tmp/expected-llbuild-results-" + uuid.uuid4().hex + ".llbuild")
+
+parser.add_argument("-clientName", dest="clientName",
+  help="The name of the client. Default value is 'basic.'",
+  default="basic")
+
+parser.add_argument("-clientVersion", dest="clientVersion",
+  help="The version of the client. Default value is 0.",
+  default="0")
+
+parser.add_argument("-levelWidths", dest="levelWidths",
+  help="Specify the exact number of levels, and width for each level. The last level must be one as there can only be one default target. Overrides minDepth, maxDepth, minWidth, and maxWidth. i.e: -levelWidths 1,2,4,8,16,1.",
+  default="")
+
+parser.add_argument("-minDepth", dest="minDepth",
+  help="The minimum depth of the bipartite graph.",
+  default="-1")
+
+parser.add_argument("-maxDepth", dest="maxDepth",
+  help="The maximum depth of the bipartite graph.",
+  default="-1")
+
+parser.add_argument("-minWidth", dest="minWidth",
+  help="The minimum width of the graph - determines how many build tasks will occur in parallel.",
+  default="-1")
+
+parser.add_argument("-maxWidth", dest="maxWidth",
+  help="The maximum width of the graph - determines how many build tasks will occur in parallel.",
+  default="-1")
+
+parser.add_argument("-inputDensity", dest="density",
+  help="The percentage of additional inputs to add after constraints have been met.",
+  default="10")
+
+parser.add_argument("-maxAdditionalInputs", dest="maxAdditionalInputs",
+  help="The maximum number of dependencies possible for a node after meeting constraints.",
+  default=sys.maxsize)
+
+args = parser.parse_args()
+
+if float(args.density) > 100:
+  sys.exit("Invalid density amount. Should be from 1 to 100")
+
+try:
+  if args.levelWidths != "":
+    if args.minDepth != "-1" or args.maxDepth != "-1" or args.minWidth != "-1" or args.maxWidth != "-1":
+      print "WARNING: Level Width will override any width/depth parameters"
+
+    manifest = LLBuildManifest(args.manifestPath, 
+      args.expectedLLBuildOutputPath,
+      args.clientName,
+      args.clientVersion,
+      float(args.density),
+      maxAdditionalInputs=int(args.maxAdditionalInputs),
+      levelWidths=[int(levelWidth) for levelWidth in args.levelWidths.split(",")])
+
+  else:
+    manifest = LLBuildManifest(args.manifestPath,
+      args.expectedLLBuildOutputPath,
+      args.clientName,
+      args.clientVersion,
+      float(args.density),
+      maxAdditionalInputs=int(args.maxAdditionalInputs),
+      minDepth=int(args.minDepth), 
+      maxDepth=int(args.maxDepth), 
+      minWidth=int(args.minWidth), 
+      maxWidth=int(args.maxWidth))
+except:
+  sys.exit("ERROR: Manifest Generation failed in setup")
+
+manifest.generateBuildGraph()
+
