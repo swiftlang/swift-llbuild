@@ -130,6 +130,11 @@ bool FileSystem::createDirectories(const std::string& path) {
   return createDirectories(parent) && createDirectory(path);
 }
 
+
+std::unique_ptr<llvm::MemoryBuffer>
+DeviceAgnosticFileSystem::getFileContents(const std::string& path) {
+  return impl->getFileContents(path);
+}
 namespace {
 
 class LocalFileSystem : public FileSystem {
@@ -201,4 +206,9 @@ public:
 
 std::unique_ptr<FileSystem> basic::createLocalFileSystem() {
   return llvm::make_unique<LocalFileSystem>();
+}
+
+std::unique_ptr<FileSystem>
+basic::DeviceAgnosticFileSystem::from(std::unique_ptr<FileSystem> fs) {
+  return llvm::make_unique<DeviceAgnosticFileSystem>(std::move(fs));
 }

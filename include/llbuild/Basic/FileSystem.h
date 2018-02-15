@@ -85,6 +85,57 @@ public:
 /// Create a FileSystem instance suitable for accessing the local filesystem.
 std::unique_ptr<FileSystem> createLocalFileSystem();
 
+
+// Device/inode agnostic filesystem wrapper
+class DeviceAgnosticFileSystem : public FileSystem {
+private:
+  std::unique_ptr<FileSystem> impl;
+
+public:
+  explicit DeviceAgnosticFileSystem(std::unique_ptr<FileSystem> fs)
+    : impl(std::move(fs))
+  {
+  }
+
+  DeviceAgnosticFileSystem(const FileSystem&) LLBUILD_DELETED_FUNCTION;
+  void operator=(const DeviceAgnosticFileSystem&) LLBUILD_DELETED_FUNCTION;
+  DeviceAgnosticFileSystem &operator=(DeviceAgnosticFileSystem&& rhs) LLBUILD_DELETED_FUNCTION;
+
+  static std::unique_ptr<FileSystem> from(std::unique_ptr<FileSystem> fs);
+
+
+  virtual bool
+  createDirectory(const std::string& path) override {
+    return impl->createDirectory(path);
+  }
+
+  virtual bool
+  createDirectories(const std::string& path) override {
+    return impl->createDirectories(path);
+  }
+
+  virtual std::unique_ptr<llvm::MemoryBuffer>
+  getFileContents(const std::string& path) override;
+
+  virtual bool remove(const std::string& path) override {
+    return impl->remove(path);
+  }
+
+  virtual FileInfo getFileInfo(const std::string& path) override {
+    auto info = impl->getFileInfo(path);
+    info.device = 0;
+    info.inode = 0;
+    return info;
+  }
+
+  virtual FileInfo getLinkInfo(const std::string& path) override {
+    auto info = impl->getLinkInfo(path);
+    info.device = 0;
+    info.inode = 0;
+    return info;
+  }
+};
+
 }
 }
 
