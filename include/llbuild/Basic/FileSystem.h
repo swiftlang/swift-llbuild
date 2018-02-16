@@ -86,7 +86,7 @@ public:
 std::unique_ptr<FileSystem> createLocalFileSystem();
 
 
-// Device/inode agnostic filesystem wrapper
+/// Device/inode agnostic filesystem wrapper
 class DeviceAgnosticFileSystem : public FileSystem {
 private:
   std::unique_ptr<FileSystem> impl;
@@ -123,15 +123,23 @@ public:
 
   virtual FileInfo getFileInfo(const std::string& path) override {
     auto info = impl->getFileInfo(path);
+
+    // Device and inode numbers may (will) change when relocating files to
+    // another device. Here we explicitly, unconditionally override them with 0,
+    // enabling an entire build tree to be relocated or copied yet retain the
+    // ability to perform incremental builds.
     info.device = 0;
     info.inode = 0;
+
     return info;
   }
 
   virtual FileInfo getLinkInfo(const std::string& path) override {
     auto info = impl->getLinkInfo(path);
+
     info.device = 0;
     info.inode = 0;
+
     return info;
   }
 };
