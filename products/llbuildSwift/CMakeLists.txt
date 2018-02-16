@@ -5,7 +5,10 @@ set(SOURCES
 
 # Link C API.
 list(APPEND additional_args -I ${CMAKE_CURRENT_SOURCE_DIR}/../libllbuild/include -lllbuild)
-list(APPEND additional_args -target x86_64-apple-macosx10.10)
+ 
+if(APPLE)
+  list(APPEND additional_args -target x86_64-apple-macosx10.10)
+endif()
 
 # Add swift bindings target if swift compiler is present.
 if (SWIFTC_FOUND)
