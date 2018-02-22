@@ -1,0 +1,57 @@
+# Check sorting discovered dependencies surfaces actual header files
+
+# We test with a simple command that just writes a fake .d file which lists an
+# input dependency on "header-1".
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: touch %t.build/header-1 %t.build/input-1 %t.build/input-2
+# RUN: cp %s %t.build/build.llbuild
+
+
+# Check the first build.
+#
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t1.out
+# RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file=%t1.out %s
+#
+# CHECK-INITIAL: CC output-1
+# CHECK-INITIAL: cat output-1 > output
+
+
+# Check a build that modifies the input.
+#
+# RUN: echo "mod" >> %t.build/input-2
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build &> %t2.out || true
+# RUN: %{FileCheck} --check-prefix=CHECK-AFTER-MOD --input-file=%t2.out %s
+#
+# CHECK-AFTER-MOD: <unknown>:0: error: cycle detected while building: target '' -> node 'output' -> command 'output' -> node 'output-1' -> command 'output-1' -> node 'header-1' -> command 'output-2' -> node 'output-1'
+
+client:
+  name: basic
+
+targets:
+  "": ["output"]
+
+commands:
+  output-1:
+    tool: shell
+    inputs: ["input-1"]
+    outputs: ["output-1"]
+    # See `DependencyInfoParser` for information on the format.
+    args: "env printf '\\0VERSION\\0\\020input-1\\00\\020module.modulemap\\00\\020header-1\\00' > output-1.d && cat input-1 header-1 > output-1"
+    description: CC output-1
+    deps: output-1.d
+    deps-style: dependency-info
+
+  output-2:
+    tool: shell
+    inputs: ["output-1", "input-2"]
+    outputs: ["output-2", "module.modulemap", "header-1"]
+    args: touch output-2 module.modulemap header-1
+    
+  output:
+    tool: shell
+    inputs: ["output-2", "output-1"]
+    outputs: ["output"]
+    args: cat output-1 > output
+
