@@ -1,0 +1,92 @@
+# Check basic building functionality with the device-agnostic file system.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: touch "%t.build/input A"
+# RUN: cp %s %t.build/build.llbuild
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build --trace %t.trace > %t.out
+# RUN: %{FileCheck} --input-file=%t.out %s
+# RUN: diff "%t.build/input A" %t.build/output
+#
+# CHECK: /usr/bin/env
+# CHECK: ENV_KEY=ENV_VALUE_1
+# CHECK-NOT: PATH=
+# CHECK-NEXT: /usr/bin/env
+# CHECK: ENV_KEY=ENV_VALUE_2
+# CHECK: LLBUILD_TASK_ID=0
+# CHECK: PATH=random-overridden-path
+# CHECK: cp 'input A' output
+
+# Check the engine trace.
+#
+# RUN: %{FileCheck} --input-file=%t.trace %s --check-prefix CHECK-TRACE
+#
+# CHECK-TRACE: "build-started"
+# CHECK-TRACE: "new-rule", "R1", "Tbasic"
+# CHECK-TRACE: "new-rule", "R2", "Noutput"
+# CHECK-TRACE: "new-rule", "R3", "Ccp-output"
+# CHECK-TRACE: "new-rule", "R4", "N<env-2>"
+# CHECK-TRACE: "build-ended"
+
+# Check that a null build does nothing.
+#
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t2.out
+# RUN: echo "PREVENT-EMPTY-FILE" >> %t2.out
+# RUN: %{FileCheck} --input-file=%t2.out %s --check-prefix=CHECK-REBUILD
+#
+# CHECK-REBUILD-NOT: cp 'input A' output
+
+# Check that we properly copy the output when the input changes.
+#
+# RUN: echo mod >> "%t.build/input A"
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t3.out
+# RUN: %{FileCheck} --input-file=%t3.out %s --check-prefix=CHECK-REBUILD-MODIFIED
+# RUN: diff "%t.build/input A" %t.build/output
+#
+# CHECK-REBUILD-MODIFIED: cp 'input A' output
+
+# Check that we properly copy the output when the output isn't present.
+#
+# RUN: rm -rf %t.build/output
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t4.out
+# RUN: %{FileCheck} --input-file=%t4.out %s --check-prefix=CHECK-REBUILD-OUTPUT-REMOVED
+# RUN: diff "%t.build/input A" %t.build/output
+#
+# CHECK-REBUILD-OUTPUT-REMOVED: cp 'input A' output
+
+client:
+  name: basic
+  file-system: device-agnostic
+
+targets:
+  basic: ["output"]
+
+# define the default target to execute when this manifest is loaded.
+default: basic
+
+commands:
+  "<env-1>":
+    tool: shell
+    outputs: ["<env-1>"]
+    args: ["/usr/bin/env"]
+    env:
+      ENV_KEY: ENV_VALUE_1
+    inherit-env: false
+
+  "<env-2>":
+    tool: shell
+    inputs: ["<env-1>"]
+    outputs: ["<env-2>"]
+    args: /usr/bin/env | /usr/bin/sort
+    env:
+      ENV_KEY: ENV_VALUE_2
+      PATH: random-overridden-path
+
+  cp-output:
+    tool: shell
+    inputs: ["input A", "<env-1>", "<env-2>"]
+    outputs: ["output"]
+    # FIXME: Design a limited mechanism for substitution. Might be tool specific.
+    args: ["cp", "input A", "output"]
+
+
