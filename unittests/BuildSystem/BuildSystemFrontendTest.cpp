@@ -50,7 +50,6 @@ namespace {
 /// Allows for command skipping via ``commandsToSkip``.
 class TestBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
   using super = BuildSystemFrontendDelegate;
-  FileSystem& fs;
 
   std::mutex traceMutex;
   std::string traceData;
@@ -58,10 +57,8 @@ class TestBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
 
 public:
   TestBuildSystemFrontendDelegate(SourceMgr& sourceMgr,
-                                  const BuildSystemInvocation& invocation,
-                                  FileSystem& fs):
+                                  const BuildSystemInvocation& invocation):
       BuildSystemFrontendDelegate(sourceMgr, invocation, "client", 0),
-      fs(fs),
       traceStream(traceData)
   {
   }
@@ -188,10 +185,6 @@ public:
     super::commandProcessFinished(command, handle, result, exitStatus);
   }
 
-  virtual FileSystem& getFileSystem() override {
-    return fs;
-  }
-
   virtual std::unique_ptr<Tool> lookupTool(StringRef name) override {
     return nullptr;
   }
@@ -259,10 +252,10 @@ commands:
 )END");
 
   {
-    TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation, *fs);
+    TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
     delegate.commandsToSkip.insert("2");
 
-    BuildSystemFrontend frontend(delegate, invocation);
+    BuildSystemFrontend frontend(delegate, invocation, std::move(fs));
     ASSERT_TRUE(frontend.build(""));
 
     ASSERT_TRUE(delegate.checkTrace(R"END(
@@ -292,9 +285,9 @@ commandFinished: 3: 0
   // re-run 3. 1 doesn't have to run at all, so we don't expect to get asked
   // if it should start.
   {
-    TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation, *fs);
+    TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
 
-    BuildSystemFrontend frontend(delegate, invocation);
+    BuildSystemFrontend frontend(delegate, invocation, std::move(fs));
     ASSERT_TRUE(frontend.build(""));
 
     ASSERT_TRUE(delegate.checkTrace(R"END(
@@ -341,10 +334,10 @@ commands:
 )END");
 
   {
-    TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation, *fs);
+    TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
     delegate.commandsToSkip.insert("1");
 
-    BuildSystemFrontend frontend(delegate, invocation);
+    BuildSystemFrontend frontend(delegate, invocation, std::move(fs));
     ASSERT_FALSE(frontend.build(""));
     ASSERT_EQ(1u, delegate.getNumFailedCommands());
 
@@ -367,9 +360,9 @@ hadCommandFailure
 
   // If we rebuild incrementally without skipping, we expect to run 1 and 2.
   {
-    TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation, *fs);
+    TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
 
-    BuildSystemFrontend frontend(delegate, invocation);
+    BuildSystemFrontend frontend(delegate, invocation, std::move(fs));
     ASSERT_TRUE(frontend.build(""));
 
     ASSERT_TRUE(delegate.checkTrace(R"END(
@@ -413,10 +406,10 @@ commands:
         outputs: ["2"]
 )END");
 
-  TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation, *fs);
+  TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
   delegate.commandsToSkip.insert("1");
   
-  BuildSystemFrontend frontend(delegate, invocation);
+  BuildSystemFrontend frontend(delegate, invocation, std::move(fs));
   ASSERT_TRUE(frontend.build(""));
 
   ASSERT_TRUE(delegate.checkTrace(R"END(
@@ -459,10 +452,10 @@ commands:
   // We need to delete the symlink ourselves, because llvm's remove()
   // currently refuses to delete symlinks.
 
-  TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation, *fs);
+  TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
   delegate.commandsToSkip.insert("1");
   
-  BuildSystemFrontend frontend(delegate, invocation);
+  BuildSystemFrontend frontend(delegate, invocation, std::move(fs));
   ASSERT_TRUE(frontend.build(""));
 
   ASSERT_TRUE(delegate.checkTrace(R"END(
@@ -488,8 +481,8 @@ client:
   name: client
 )END");
 
-  TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation, *fs);
-  BuildSystemFrontend frontend(delegate, invocation);
+  TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
+  BuildSystemFrontend frontend(delegate, invocation, std::move(fs));
 
   ASSERT_FALSE(frontend.buildNode("/missing"));
   ASSERT_TRUE(delegate.checkTrace("error: missing input '/missing' and no rule to build it\n"));

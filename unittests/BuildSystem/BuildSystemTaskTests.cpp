@@ -88,6 +88,36 @@ public:
   }
 };
 
+/// Wrap a file system object reference so that tests may create a unique object
+/// that shares access to the underlying object
+class FileSystemReferenceWrapper : public FileSystem {
+private:
+  FileSystem& realFS;
+
+public:
+  FileSystemReferenceWrapper(FileSystem& realFS) : realFS(realFS) {}
+
+  virtual bool createDirectory(const std::string& path) override {
+    return realFS.createDirectory(path);
+  }
+
+  virtual std::unique_ptr<llvm::MemoryBuffer> getFileContents(const std::string& path) override {
+    return realFS.getFileContents(path);
+  }
+
+  virtual bool remove(const std::string& path) override {
+    return realFS.remove(path);
+  }
+
+  virtual FileInfo getFileInfo(const std::string& path) override {
+    return realFS.getFileInfo(path);
+  }
+
+  virtual FileInfo getLinkInfo(const std::string& path) override {
+    return realFS.getLinkInfo(path);
+  }
+};
+
 /// Check that we evaluate a path key properly.
 TEST(BuildSystemTaskTests, basics) {
   TmpDir tempDir{ __FUNCTION__ };
@@ -106,7 +136,7 @@ TEST(BuildSystemTaskTests, basics) {
   // Create the build system.
   auto description = llvm::make_unique<BuildDescription>();
   MockBuildSystemDelegate delegate;
-  BuildSystem system(delegate);
+  BuildSystem system(delegate, createLocalFileSystem());
   system.loadDescription(std::move(description));
 
   // Build a specific key.
@@ -142,7 +172,7 @@ TEST(BuildSystemTaskTests, directoryContents) {
   // Create the build system.
   auto description = llvm::make_unique<BuildDescription>();
   MockBuildSystemDelegate delegate;
-  BuildSystem system(delegate);
+  BuildSystem system(delegate, createLocalFileSystem());
   system.loadDescription(std::move(description));
 
   // Build a specific key.
@@ -202,7 +232,7 @@ TEST(BuildSystemTaskTests, directorySignature) {
   auto keyToBuild = BuildKey::makeDirectoryTreeSignature(tempDir.str());
   auto description = llvm::make_unique<BuildDescription>();
   MockBuildSystemDelegate delegate;
-  BuildSystem system(delegate);
+  BuildSystem system(delegate, createLocalFileSystem());
   system.loadDescription(std::move(description));
 
   // Build an initial value.
@@ -283,7 +313,7 @@ TEST(BuildSystemTaskTests, doesNotProcessDependenciesAfterCancellation) {
 
   auto keyToBuild = BuildKey::makeCommand("WAIT");
   MockBuildSystemDelegate delegate;
-  BuildSystem system(delegate);
+  BuildSystem system(delegate, basic::createLocalFileSystem());
   bool loadingResult = system.loadDescription(manifest);
   ASSERT_TRUE(loadingResult);
 
@@ -408,7 +438,7 @@ commands:
 
   {
     MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
-    BuildSystem system(delegate);
+    BuildSystem system(delegate, createLocalFileSystem());
     system.attachDB(builddb.c_str(), nullptr);
 
     bool loadingResult = system.loadDescription(manifest);
@@ -445,8 +475,9 @@ commands:
   }
 
   auto mockFS = std::make_shared<LoggingFileSystem>();
-  MockBuildSystemDelegate delegate(/*trackAllMessages=*/true, mockFS);
-  BuildSystem system(delegate);
+  std::unique_ptr<FileSystem> wrapFS(new FileSystemReferenceWrapper(*mockFS));
+  MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
+  BuildSystem system(delegate, std::move(wrapFS));
   system.attachDB(builddb.c_str(), nullptr);
   bool loadingResult = system.loadDescription(manifest);
   ASSERT_TRUE(loadingResult);
@@ -495,7 +526,7 @@ commands:
 
   {
     MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
-    BuildSystem system(delegate);
+    BuildSystem system(delegate, createLocalFileSystem());
     system.attachDB(builddb.c_str(), nullptr);
 
     bool loadingResult = system.loadDescription(manifest);
@@ -535,8 +566,9 @@ commands:
   }
 
   auto mockFS = std::make_shared<LoggingFileSystem>();
-  MockBuildSystemDelegate delegate(/*trackAllMessages=*/true, mockFS);
-  BuildSystem system(delegate);
+  std::unique_ptr<FileSystem> wrapFS(new FileSystemReferenceWrapper(*mockFS));
+  MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
+  BuildSystem system(delegate, std::move(wrapFS));
   system.attachDB(builddb.c_str(), nullptr);
   bool loadingResult = system.loadDescription(manifest);
   ASSERT_TRUE(loadingResult);
@@ -590,7 +622,7 @@ commands:
 
   {
     MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
-    BuildSystem system(delegate);
+    BuildSystem system(delegate, createLocalFileSystem());
     system.attachDB(builddb.c_str(), nullptr);
 
     bool loadingResult = system.loadDescription(manifest);
@@ -628,7 +660,7 @@ commands:
   }
 
   MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
-  BuildSystem system(delegate);
+  BuildSystem system(delegate, createLocalFileSystem());
   system.attachDB(builddb.c_str(), nullptr);
   bool loadingResult = system.loadDescription(manifest);
   ASSERT_TRUE(loadingResult);
@@ -675,7 +707,7 @@ commands:
 
   {
     MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
-    BuildSystem system(delegate);
+    BuildSystem system(delegate, createLocalFileSystem());
     system.attachDB(builddb.c_str(), nullptr);
 
     bool loadingResult = system.loadDescription(manifest);
@@ -713,8 +745,9 @@ commands:
   }
 
   auto mockFS = std::make_shared<LoggingFileSystem>();
-  MockBuildSystemDelegate delegate(/*trackAllMessages=*/true, mockFS);
-  BuildSystem system(delegate);
+  std::unique_ptr<FileSystem> wrapFS(new FileSystemReferenceWrapper(*mockFS));
+  MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
+  BuildSystem system(delegate, std::move(wrapFS));
   system.attachDB(builddb.c_str(), nullptr);
   bool loadingResult = system.loadDescription(manifest);
   ASSERT_TRUE(loadingResult);
@@ -770,7 +803,7 @@ commands:
 
   {
     MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
-    BuildSystem system(delegate);
+    BuildSystem system(delegate, createLocalFileSystem());
     system.attachDB(builddb.c_str(), nullptr);
 
     bool loadingResult = system.loadDescription(manifest);
@@ -815,7 +848,7 @@ commands:
   }
 
   MockBuildSystemDelegate delegate(/*trackAllMessages=*/true);
-  BuildSystem system(delegate);
+  BuildSystem system(delegate, createLocalFileSystem());
   system.attachDB(builddb.c_str(), nullptr);
   bool loadingResult = system.loadDescription(manifest);
   ASSERT_TRUE(loadingResult);

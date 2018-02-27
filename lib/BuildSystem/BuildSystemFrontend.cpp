@@ -374,7 +374,7 @@ BuildSystemFrontendDelegate::error(StringRef filename,
   if (!filename.empty() && at.start) {
     // FIXME: We ignore errors here, for now, this will be resolved when we move
     // to SourceMgr completely.
-    auto buffer = getFileSystem().getFileContents(filename);
+    auto buffer = impl->system->getFileSystem().getFileContents(filename);
     if (buffer) {
       unsigned offset = at.start - impl->bufferBeingParsed.data();
       if (offset + at.length < buffer->getBufferSize()) {
@@ -566,8 +566,9 @@ commandProcessFinished(Command*, ProcessHandle handle,
 
 BuildSystemFrontend::
 BuildSystemFrontend(BuildSystemFrontendDelegate& delegate,
-                    const BuildSystemInvocation& invocation)
-    : delegate(delegate), invocation(invocation)
+                    const BuildSystemInvocation& invocation,
+                    std::unique_ptr<basic::FileSystem> fileSystem)
+  : delegate(delegate), invocation(invocation), fileSystem(std::move(fileSystem))
 {
   auto delegateImpl =
     static_cast<BuildSystemFrontendDelegateImpl*>(delegate.impl);
@@ -584,7 +585,7 @@ bool BuildSystemFrontend::initialize() {
   }
 
   // Create the build system.
-  buildSystem.emplace(delegate);
+  buildSystem.emplace(delegate, std::move(fileSystem));
 
   // Load the build file.
   if (!buildSystem->loadDescription(invocation.buildFilePath))

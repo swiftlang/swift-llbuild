@@ -504,8 +504,6 @@ public:
     signalWatchingPipe[1] = -1;
   }
 
-  virtual basic::FileSystem& getFileSystem() override { return *fileSystem; }
-
   virtual void hadCommandFailure() override {
     // Call the base implementation.
     BuildSystemFrontendDelegate::hadCommandFailure();
@@ -568,7 +566,8 @@ static int executeBuildCommand(std::vector<std::string> args) {
 
   // Create the frontend object.
   BasicBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
-  BuildSystemFrontend frontend(delegate, invocation);
+  BuildSystemFrontend frontend(delegate, invocation,
+                               basic::createLocalFileSystem());
   if (!frontend.build(targetToBuild)) {
     // If there were failed commands, report the count and return an error.
     if (delegate.getNumFailedCommands()) {

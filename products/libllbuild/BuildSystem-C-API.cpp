@@ -136,7 +136,6 @@ public:
   
 class CAPIBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
   llb_buildsystem_delegate_t cAPIDelegate;
-  CAPIFileSystem fileSystem;
 
   llb_buildsystem_command_result_t get_command_result(CommandResult commandResult) {
     switch (commandResult) {
@@ -160,10 +159,8 @@ public:
                                   BuildSystemInvocation& invocation,
                                   llb_buildsystem_delegate_t delegate)
       : BuildSystemFrontendDelegate(sourceMgr, invocation, "basic", 0),
-        cAPIDelegate(delegate), fileSystem(delegate) { }
+        cAPIDelegate(delegate) { }
 
-  virtual basic::FileSystem& getFileSystem() override { return fileSystem; }
-  
   virtual std::unique_ptr<Tool> lookupTool(StringRef name) override {
     if (!cAPIDelegate.lookup_tool) {
       return nullptr;
@@ -464,8 +461,12 @@ public:
         // parameters.
         new CAPIBuildSystemFrontendDelegate(sourceMgr, invocation, delegate));
 
+    // Allocate the file system
+    std::unique_ptr<basic::FileSystem> fileSystem(new CAPIFileSystem(delegate));
+
     // Allocate the actual frontend.
-    frontend.reset(new BuildSystemFrontend(*frontendDelegate, invocation));
+    frontend.reset(new BuildSystemFrontend(*frontendDelegate, invocation,
+                                           std::move(fileSystem)));
   }
 
   BuildSystemFrontend& getFrontend() {
