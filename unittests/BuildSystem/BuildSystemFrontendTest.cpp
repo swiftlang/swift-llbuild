@@ -255,7 +255,7 @@ commands:
     TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
     delegate.commandsToSkip.insert("2");
 
-    BuildSystemFrontend frontend(delegate, invocation, std::move(fs));
+    BuildSystemFrontend frontend(delegate, invocation, createLocalFileSystem());
     ASSERT_TRUE(frontend.build(""));
 
     ASSERT_TRUE(delegate.checkTrace(R"END(
@@ -287,7 +287,7 @@ commandFinished: 3: 0
   {
     TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
 
-    BuildSystemFrontend frontend(delegate, invocation, std::move(fs));
+    BuildSystemFrontend frontend(delegate, invocation, createLocalFileSystem());
     ASSERT_TRUE(frontend.build(""));
 
     ASSERT_TRUE(delegate.checkTrace(R"END(
@@ -337,7 +337,7 @@ commands:
     TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
     delegate.commandsToSkip.insert("1");
 
-    BuildSystemFrontend frontend(delegate, invocation, std::move(fs));
+    BuildSystemFrontend frontend(delegate, invocation, createLocalFileSystem());
     ASSERT_FALSE(frontend.build(""));
     ASSERT_EQ(1u, delegate.getNumFailedCommands());
 
@@ -362,7 +362,7 @@ hadCommandFailure
   {
     TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
 
-    BuildSystemFrontend frontend(delegate, invocation, std::move(fs));
+    BuildSystemFrontend frontend(delegate, invocation, createLocalFileSystem());
     ASSERT_TRUE(frontend.build(""));
 
     ASSERT_TRUE(delegate.checkTrace(R"END(
@@ -409,7 +409,7 @@ commands:
   TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
   delegate.commandsToSkip.insert("1");
   
-  BuildSystemFrontend frontend(delegate, invocation, std::move(fs));
+  BuildSystemFrontend frontend(delegate, invocation, createLocalFileSystem());
   ASSERT_TRUE(frontend.build(""));
 
   ASSERT_TRUE(delegate.checkTrace(R"END(
@@ -455,7 +455,7 @@ commands:
   TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
   delegate.commandsToSkip.insert("1");
   
-  BuildSystemFrontend frontend(delegate, invocation, std::move(fs));
+  BuildSystemFrontend frontend(delegate, invocation, createLocalFileSystem());
   ASSERT_TRUE(frontend.build(""));
 
   ASSERT_TRUE(delegate.checkTrace(R"END(
@@ -482,7 +482,7 @@ client:
 )END");
 
   TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
-  BuildSystemFrontend frontend(delegate, invocation, std::move(fs));
+  BuildSystemFrontend frontend(delegate, invocation, createLocalFileSystem());
 
   ASSERT_FALSE(frontend.buildNode("/missing"));
   ASSERT_TRUE(delegate.checkTrace("error: missing input '/missing' and no rule to build it\n"));
