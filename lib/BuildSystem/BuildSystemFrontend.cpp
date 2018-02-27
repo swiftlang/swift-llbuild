@@ -587,17 +587,17 @@ bool BuildSystemFrontend::initialize() {
   // Create the build system.
   buildSystem.emplace(delegate, std::move(fileSystem));
 
-  // Load the build file.
-  if (!buildSystem->loadDescription(invocation.buildFilePath))
-    return false;
-
   // Register the system back pointer.
   //
   // FIXME: Eliminate this.
   auto delegateImpl =
-    static_cast<BuildSystemFrontendDelegateImpl*>(delegate.impl);
+  static_cast<BuildSystemFrontendDelegateImpl*>(delegate.impl);
   delegateImpl->system = buildSystem.getPointer();
-  
+
+  // Load the build file.
+  if (!buildSystem->loadDescription(invocation.buildFilePath))
+    return false;
+
   // Enable tracing, if requested.
   if (!invocation.traceFilePath.empty()) {
     std::string error;
