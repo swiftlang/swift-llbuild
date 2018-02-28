@@ -226,6 +226,11 @@ present.
 
   The version field is optional, and defaults to 0.
 
+  A file-system field may be supplied that toggles how the build system handles
+  file system use. The `default` mode uses detailed stat information for
+  detecting file changes. The `device-agnostic` mode will ignore device and
+  inode values.
+
   Additional string keys and values may be specified here, and are passed to the
   client to handle.
 

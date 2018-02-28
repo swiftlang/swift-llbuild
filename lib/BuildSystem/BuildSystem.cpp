@@ -278,6 +278,14 @@ public:
     assert(clientVersion <= (1 << 16) && "unsupported client verison");
     return internalSchemaVersion + (clientVersion << 16);
   }
+
+  void configureFileSystem(bool deviceAgnostic) {
+    if (deviceAgnostic) {
+      std::unique_ptr<basic::FileSystem> newFS(
+          new DeviceAgnosticFileSystem(std::move(fileSystem)));
+      fileSystem.swap(newFS);
+    }
+  }
   
   /// @name Client API
   /// @{
@@ -2820,7 +2828,7 @@ void BuildSystemFileDelegate::error(StringRef filename,
 }
 
 bool
-BuildSystemFileDelegate::configureClient(const ConfigureContext&,
+BuildSystemFileDelegate::configureClient(const ConfigureContext& ctx,
                                          StringRef name,
                                          uint32_t version,
                                          const property_list_type& properties) {
@@ -2834,6 +2842,17 @@ BuildSystemFileDelegate::configureClient(const ConfigureContext&,
   // schema version (auto-upgrade).
   if (version != getSystemDelegate().getVersion())
     return false;
+
+  for (auto prop : properties) {
+    if (prop.first == "file-system") {
+      if (prop.second == "device-agnostic") {
+        system.configureFileSystem(true);
+      } else if (prop.second != "default") {
+        ctx.error("unsupported client file-system: '" + prop.second + "'");
+        return false;
+      }
+    }
+  }
 
   return true;
 }

@@ -1,0 +1,23 @@
+# config error in file system opts
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.llbuild
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.out 2> %t.err || true
+# RUN: %{FileCheck} --check-prefix CHECK-ERR --input-file %t.err %s
+#
+
+client:
+  name: basic
+  # CHECK-ERR: build.llbuild:[[@LINE-1]]:3: error: unsupported client file-system: 'not-a-file-system'
+  # CHECK-ERR: error: unable to load build file
+  file-system: not-a-file-system
+
+targets:
+  "": ["output"]
+
+commands:
+  dummy:
+    tool: shell
+    outputs: ["output"]
+    args: echo "foo" > output
