@@ -191,7 +191,7 @@ bool ExternalCommand::isResultValid(BuildSystem& system,
     // could enforce and error on the missing output if not annotated, and we
     // could enable behavior to remove such output files if annotated prior to
     // running the command.
-    auto info = node->getFileInfo(system.getDelegate().getFileSystem());
+    auto info = node->getFileInfo(system.getFileSystem());
 
     // If this output is mutated by the build, we can't rely on equivalence,
     // only existence.
@@ -338,7 +338,7 @@ ExternalCommand::computeCommandResult(BuildSystemCommandInterface& bsci) {
       outputInfos.push_back(FileInfo{});
     } else {
       outputInfos.push_back(node->getFileInfo(
-                                bsci.getDelegate().getFileSystem()));
+                                bsci.getFileSystem()));
     }
   }
   return BuildValue::makeSuccessfulCommand(outputInfos, getSignature());
@@ -385,7 +385,7 @@ BuildValue ExternalCommand::execute(BuildSystemCommandInterface& bsci,
       // FIXME: Need to use the filesystem interfaces.
       auto parent = llvm::sys::path::parent_path(node->getName());
       if (!parent.empty()) {
-        (void) bsci.getDelegate().getFileSystem().createDirectories(parent);
+        (void) bsci.getFileSystem().createDirectories(parent);
       }
     }
   }

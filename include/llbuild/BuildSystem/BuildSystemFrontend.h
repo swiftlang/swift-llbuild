@@ -58,6 +58,7 @@ enum class CommandResult;
 class BuildSystemFrontend {
   BuildSystemFrontendDelegate& delegate;
   const BuildSystemInvocation& invocation;
+  std::unique_ptr<basic::FileSystem> fileSystem;
   llvm::Optional<BuildSystem> buildSystem;
 
 private:
@@ -66,7 +67,8 @@ private:
 
 public:
   BuildSystemFrontend(BuildSystemFrontendDelegate& delegate,
-                      const BuildSystemInvocation& invocation);
+                      const BuildSystemInvocation& invocation,
+                      std::unique_ptr<basic::FileSystem> fileSystem);
 
   /// @name Accessors
   /// @{
@@ -133,9 +135,6 @@ public:
                               StringRef name,
                               uint32_t version);
   virtual ~BuildSystemFrontendDelegate();
-
-  /// Get the file system to use for access.
-  virtual basic::FileSystem& getFileSystem() override = 0;
 
   /// Called by the build system to get a tool definition, must be provided by
   /// subclasses.

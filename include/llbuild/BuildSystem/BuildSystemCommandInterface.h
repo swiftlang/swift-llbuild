@@ -68,6 +68,9 @@ public:
   /// @name BuildSystem API
   /// @{
 
+  /// Get the file system
+  virtual basic::FileSystem& getFileSystem() = 0;
+
   /// Add a job to be executed.
   virtual void addJob(QueueJob&&) = 0;
 

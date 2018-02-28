@@ -430,7 +430,7 @@ public:
   bool processDiscoveredDependencies(BuildSystemCommandInterface& bsci,
                                      core::Task* task, StringRef depsPath) {
     // Read the dependencies file.
-    auto input = bsci.getDelegate().getFileSystem().getFileContents(depsPath);
+    auto input = bsci.getFileSystem().getFileContents(depsPath);
     if (!input) {
       bsci.getDelegate().error(
           "", {},
@@ -552,7 +552,7 @@ public:
     //
     // FIXME: This should really be done using an additional implicit input, so
     // it only happens once per build.
-    (void) bsci.getDelegate().getFileSystem().createDirectories(tempsPath);
+    (void) bsci.getFileSystem().createDirectories(tempsPath);
  
     SmallString<64> outputFileMapPath;
     getOutputFileMapPath(outputFileMapPath);
