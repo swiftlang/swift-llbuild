@@ -480,7 +480,7 @@ public class BuildEngine {
     //
     // FIXME: We need a deallocation callback in order to ensure this is released.
     ruleOut.pointee.context = unsafeBitCast(Unmanaged.passRetained(Wrapper(rule)), to: UnsafeMutableRawPointer.self)
-    ruleOut.pointee.create_task = { (context, engineContext) -> OpaquePointer! in
+    ruleOut.pointee.create_task = { (context, engineContext) -> OpaquePointer? in
       let rule = BuildEngine.toRule(context!)
       let engine = BuildEngine.toEngine(engineContext!)
       return engine.ruleCreateTask(rule)
