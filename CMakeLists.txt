@@ -21,12 +21,16 @@ endif()
 # Include standard CMake modules.
 include(CMakeParseArguments)
 include(CheckCXXCompilerFlag)
+include(ProcessorCount)
 
 # Get the SDK path for OSX.
 execute_process(
     COMMAND xcrun --sdk macosx --show-sdk-path
     OUTPUT_VARIABLE CMAKE_OSX_SYSROOT
     OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+# Compute the number of processors.
+ProcessorCount(NUM_PROCESSORS)
 
 project(llbuild)
 
