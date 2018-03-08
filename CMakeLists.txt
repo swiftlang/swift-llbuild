@@ -12,6 +12,12 @@ else()
   set(cmake_3_2_USES_TERMINAL USES_TERMINAL)
 endif()
 
+# Configure the default set of bindings to build.
+if(NOT DEFINED LLBUILD_SUPPORT_BINDINGS)
+  set(LLBUILD_SUPPORT_BINDINGS "")
+endif()
+
+
 # Include standard CMake modules.
 include(CMakeParseArguments)
 include(CheckCXXCompilerFlag)
@@ -68,6 +74,25 @@ set(LLBUILD_LIBRARY_OUTPUT_INTDIR ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR
 find_package(Lit)
 find_package(FileCheck)
 find_package(PythonInterp)
+
+# Check if we should build the Swift bindings.
+if (";${LLBUILD_SUPPORT_BINDINGS};" MATCHES ";Swift;")
+  # Find swiftc on OSX using `xcrun --find swiftc` and `find_package` on Linux.
+  if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    execute_process(
+        COMMAND xcrun --find swiftc
+        OUTPUT_VARIABLE SWIFTC_EXECUTABLE
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    set(SWIFTC_FOUND TRUE)
+    message(STATUS "Found swiftc: ${SWIFTC_EXECUTABLE}")
+  else()
+    find_package(Swiftc)
+  endif()
+else()
+  message(STATUS "Not building Swift bindings")
+  set(SWIFTC_EXECUTABLE)
+  set(SWIFTC_FOUND FALSE)
+endif()
 
 ###
 # Setup compiler and project build settings
@@ -192,6 +217,12 @@ append_if(CXX_SUPPORTS_UNREACHABLE_CODE_FLAG "-Wunreachable-code" CMAKE_CXX_FLAG
 
 check_cxx_compiler_flag("-Werror -Woverloaded-virtual" CXX_SUPPORTS_OVERLOADED_VIRTUAL)
 append_if(CXX_SUPPORTS_OVERLOADED_VIRTUAL "-Woverloaded-virtual" CMAKE_CXX_FLAGS)
+
+# Release configuration has assertions disabled, enable them if asked to.
+if(LLBUILD_ENABLE_ASSERTIONS)
+  string(REPLACE "-DNDEBUG" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+  string(REPLACE "-DNDEBUG" "" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
+endif()
 
 ###
 

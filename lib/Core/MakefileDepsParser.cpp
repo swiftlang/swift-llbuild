@@ -30,10 +30,6 @@ static bool isWordChar(int c) {
   case ' ':
   case '$':
   case ':':
-  case ';':
-  case '=':
-  case '|':
-  case '%':
     return false;
   default:
     return true;

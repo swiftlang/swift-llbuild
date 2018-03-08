@@ -26,16 +26,11 @@ using namespace llbuild;
 using namespace llbuild::buildsystem;
 
 class BasicBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
-  std::unique_ptr<basic::FileSystem> fileSystem;
-    
 public:
   BasicBuildSystemFrontendDelegate(llvm::SourceMgr& sourceMgr,
                                    const BuildSystemInvocation& invocation)
     : BuildSystemFrontendDelegate(sourceMgr, invocation,
-                                  "swift-build", /*version=*/0),
-      fileSystem(basic::createLocalFileSystem()) {}
-
-  virtual basic::FileSystem& getFileSystem() override { return *fileSystem; }
+                                  "swift-build", /*version=*/0) {}
 
   virtual void hadCommandFailure() override {
     // Call the base implementation.
@@ -101,7 +96,7 @@ static int execute(ArrayRef<std::string> args) {
 
   // Create the frontend object.
   BasicBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
-  BuildSystemFrontend frontend(delegate, invocation);
+  BuildSystemFrontend frontend(delegate, invocation, basic::createLocalFileSystem());
   if (!frontend.build(targetToBuild)) {
     return 1;
   }

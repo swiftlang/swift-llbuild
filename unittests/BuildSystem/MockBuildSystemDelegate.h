@@ -53,7 +53,6 @@ private:
 };
   
 class MockBuildSystemDelegate : public BuildSystemDelegate {
-  std::shared_ptr<basic::FileSystem> fileSystem;
   std::vector<std::string> messages;
   std::mutex messagesMutex;
   
@@ -62,8 +61,7 @@ class MockBuildSystemDelegate : public BuildSystemDelegate {
   bool trackAllMessages;
   
 public:
-    MockBuildSystemDelegate(bool trackAllMessages = false,
-                            std::shared_ptr<basic::FileSystem> fileSystem = basic::createLocalFileSystem());
+    MockBuildSystemDelegate(bool trackAllMessages = false);
 
   std::vector<std::string> getMessages() {
     {
@@ -71,8 +69,6 @@ public:
       return messages;
     }
   }
-  
-  virtual basic::FileSystem& getFileSystem() { return *fileSystem; }
   
   virtual void setFileContentsBeingParsed(StringRef buffer) {}
 

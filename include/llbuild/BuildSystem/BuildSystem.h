@@ -95,9 +95,6 @@ public:
   /// Called by the build system to get the current client version.
   uint32_t getVersion() const { return version; }
 
-  /// Get the file system to use for access.
-  virtual basic::FileSystem& getFileSystem() = 0;
-
   /// Called by the build file loader to register the current file contents.
   //
   // FIXME: This is a total hack, and should be cleaned up.
@@ -211,11 +208,14 @@ private:
 
 public:
   /// Create a build system with the given delegate.
-  explicit BuildSystem(BuildSystemDelegate& delegate);
+  BuildSystem(BuildSystemDelegate& delegate, std::unique_ptr<basic::FileSystem> fileSystem);
   ~BuildSystem();
 
   /// Return the delegate the engine was configured with.
   BuildSystemDelegate& getDelegate();
+
+  /// Get the file system to use for access.
+  basic::FileSystem& getFileSystem();
 
   /// @name Client API
   /// @{

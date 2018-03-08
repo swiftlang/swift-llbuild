@@ -86,9 +86,7 @@ public:
     return entry.first->getKey();
   }
 
-  virtual FileSystem& getFileSystem() override {
-    return getSystemDelegate().getFileSystem();
-  }
+  virtual FileSystem& getFileSystem() override;
   
   virtual void setFileContentsBeingParsed(StringRef buffer) override;
   
@@ -155,6 +153,9 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
 
   /// The delegate the BuildSystem was configured with.
   BuildSystemDelegate& delegate;
+
+  /// The file system used by the build system
+  std::unique_ptr<basic::FileSystem> fileSystem;
 
   /// The name of the main input file.
   std::string mainFilename;
@@ -223,8 +224,10 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
 
 public:
   BuildSystemImpl(class BuildSystem& buildSystem,
-                  BuildSystemDelegate& delegate)
+                  BuildSystemDelegate& delegate,
+                  std::unique_ptr<basic::FileSystem> fileSystem)
       : buildSystem(buildSystem), delegate(delegate),
+        fileSystem(std::move(fileSystem)),
         fileDelegate(*this), engineDelegate(*this), buildEngine(engineDelegate),
         executionQueue() {}
 
@@ -234,6 +237,10 @@ public:
 
   BuildSystemDelegate& getDelegate() override {
     return delegate;
+  }
+
+  basic::FileSystem& getFileSystem() override {
+    return *fileSystem;
   }
 
   // FIXME: We should eliminate this, it isn't well formed when loading
@@ -270,6 +277,14 @@ public:
     auto clientVersion = delegate.getVersion();
     assert(clientVersion <= (1 << 16) && "unsupported client verison");
     return internalSchemaVersion + (clientVersion << 16);
+  }
+
+  void configureFileSystem(bool deviceAgnostic) {
+    if (deviceAgnostic) {
+      std::unique_ptr<basic::FileSystem> newFS(
+          new DeviceAgnosticFileSystem(std::move(fileSystem)));
+      fileSystem.swap(newFS);
+    }
   }
   
   /// @name Client API
@@ -348,6 +363,12 @@ static BuildSystemImpl& getBuildSystem(BuildEngine& engine) {
   return static_cast<BuildSystemEngineDelegate*>(
       engine.getDelegate())->getBuildSystem();
 }
+
+
+FileSystem& BuildSystemFileDelegate::getFileSystem() {
+  return system.getFileSystem();
+}
+
   
 /// This is the task used to "build" a target, it translates between the request
 /// for building a target key and the requests for all of its nodes.
@@ -453,7 +474,7 @@ class FileInputNodeTask : public Task {
     // different node types.
     assert(!node.isVirtual());
     auto info = node.getFileInfo(
-        getBuildSystem(engine).getDelegate().getFileSystem());
+        getBuildSystem(engine).getFileSystem());
     if (info.isMissing()) {
       engine.taskIsComplete(this, BuildValue::makeMissingInput().toData());
       return;
@@ -484,7 +505,7 @@ public:
     // to rebuild it), and thus the additional stat is only one small part of
     // the work we need to perform.
     auto info = node.getFileInfo(
-        getBuildSystem(engine).getDelegate().getFileSystem());
+        getBuildSystem(engine).getFileSystem());
     if (info.isMissing()) {
       return value.isMissingInput();
     } else {
@@ -724,7 +745,7 @@ class DirectoryContentsTask : public Task {
     //
     // FIXME: We should probably be using the directory value here, but that
     // requires reworking some of the value encoding for the directory.
-    auto info = getBuildSystem(engine).getDelegate().getFileSystem().getFileInfo(
+    auto info = getBuildSystem(engine).getFileSystem().getFileInfo(
         path);
     if (info.isMissing()) {
       engine.taskIsComplete(
@@ -759,7 +780,7 @@ public:
                             const BuildValue& value) {
     // The result is valid if the existence matches the existing value type, and
     // the file information remains the same.
-    auto info = getBuildSystem(engine).getDelegate().getFileSystem().getFileInfo(
+    auto info = getBuildSystem(engine).getFileSystem().getFileInfo(
         path);
     if (info.isMissing()) {
       return value.isMissingInput();
@@ -1499,6 +1520,13 @@ bool BuildSystemImpl::build(StringRef target) {
     target = getBuildDescription().getDefaultTarget();
   }
 
+  // Validate the target name.
+  auto &targets = getBuildDescription().getTargets();
+  if (targets.find(target) == targets.end()) {
+    error(getMainFilename(), "No target named '" + target + "' in build description");
+    return false;
+  }
+
   return build(BuildKey::makeTarget(target)).hasValue();
 }
 
@@ -1648,7 +1676,7 @@ class ShellCommand : public ExternalCommand {
 
     for (const auto& depsPath: depsPaths) {
       // Read the dependencies file.
-      auto input = bsci.getDelegate().getFileSystem().getFileContents(depsPath);
+      auto input = bsci.getFileSystem().getFileContents(depsPath);
       if (!input) {
         getBuildSystem(bsci.getBuildEngine()).error(
             depsPath, "unable to open dependencies file (" + depsPath + ")");
@@ -1938,7 +1966,7 @@ class ClangShellCommand : public ExternalCommand {
                                      Task* task,
                                      QueueJobContext* context) {
     // Read the dependencies file.
-    auto input = bsci.getDelegate().getFileSystem().getFileContents(depsPath);
+    auto input = bsci.getFileSystem().getFileContents(depsPath);
     if (!input) {
       getBuildSystem(bsci.getBuildEngine()).error(
           depsPath, "unable to open dependencies file (" + depsPath + ")");
@@ -2117,7 +2145,7 @@ class MkdirCommand : public ExternalCommand {
 
     // Otherwise, the result is valid if the directory still exists.
     auto info = getOutputs()[0]->getFileInfo(
-        system.getDelegate().getFileSystem());
+        system.getFileSystem());
     if (info.isMissing())
       return false;
 
@@ -2139,7 +2167,7 @@ class MkdirCommand : public ExternalCommand {
                                                Task* task,
                                                QueueJobContext* context) override {
     auto output = getOutputs()[0];
-    if (!bsci.getDelegate().getFileSystem().createDirectories(
+    if (!bsci.getFileSystem().createDirectories(
             output->getName())) {
       getBuildSystem(bsci.getBuildEngine()).error(
           "", "unable to create directory '" + output->getName() + "'");
@@ -2334,7 +2362,7 @@ class SymlinkCommand : public Command {
 
     // Otherwise, assume the result is valid if its link status matches the
     // previous one.
-    auto info = system.getDelegate().getFileSystem().getLinkInfo(outputPath);
+    auto info = system.getFileSystem().getLinkInfo(outputPath);
     if (info.isMissing())
       return false;
 
@@ -2379,7 +2407,7 @@ class SymlinkCommand : public Command {
     {
       auto parent = llvm::sys::path::parent_path(outputPath);
       if (!parent.empty()) {
-        (void) bsci.getDelegate().getFileSystem().createDirectories(parent);
+        (void) bsci.getFileSystem().createDirectories(parent);
       }
     }
 
@@ -2407,7 +2435,7 @@ class SymlinkCommand : public Command {
     }
 
     // Capture the *link* information of the output.
-    FileInfo outputInfo = bsci.getDelegate().getFileSystem().getLinkInfo(
+    FileInfo outputInfo = bsci.getFileSystem().getLinkInfo(
         outputPath);
       
     // Complete with a successful result.
@@ -2731,7 +2759,7 @@ class StaleFileRemovalCommand : public Command {
         continue;
       }
 
-      if (getBuildSystem(bsci.getBuildEngine()).getDelegate().getFileSystem().remove(fileToDelete)) {
+      if (getBuildSystem(bsci.getBuildEngine()).getFileSystem().remove(fileToDelete)) {
         bsci.getDelegate().commandHadNote(this, "Removed stale file '" + fileToDelete + "'\n");
       } else {
         // Do not warn if the file has already been deleted.
@@ -2800,7 +2828,7 @@ void BuildSystemFileDelegate::error(StringRef filename,
 }
 
 bool
-BuildSystemFileDelegate::configureClient(const ConfigureContext&,
+BuildSystemFileDelegate::configureClient(const ConfigureContext& ctx,
                                          StringRef name,
                                          uint32_t version,
                                          const property_list_type& properties) {
@@ -2814,6 +2842,17 @@ BuildSystemFileDelegate::configureClient(const ConfigureContext&,
   // schema version (auto-upgrade).
   if (version != getSystemDelegate().getVersion())
     return false;
+
+  for (auto prop : properties) {
+    if (prop.first == "file-system") {
+      if (prop.second == "device-agnostic") {
+        system.configureFileSystem(true);
+      } else if (prop.second != "default") {
+        ctx.error("unsupported client file-system: '" + prop.second + "'");
+        return false;
+      }
+    }
+  }
 
   return true;
 }
@@ -2866,8 +2905,8 @@ BuildSystemFileDelegate::lookupNode(StringRef name,
 
 #pragma mark - BuildSystem
 
-BuildSystem::BuildSystem(BuildSystemDelegate& delegate)
-    : impl(new BuildSystemImpl(*this, delegate))
+BuildSystem::BuildSystem(BuildSystemDelegate& delegate, std::unique_ptr<basic::FileSystem> fileSystem)
+  : impl(new BuildSystemImpl(*this, delegate, std::move(fileSystem)))
 {
 }
 
@@ -2877,6 +2916,10 @@ BuildSystem::~BuildSystem() {
 
 BuildSystemDelegate& BuildSystem::getDelegate() {
   return static_cast<BuildSystemImpl*>(impl)->getDelegate();
+}
+
+basic::FileSystem& BuildSystem::getFileSystem() {
+  return static_cast<BuildSystemImpl*>(impl)->getFileSystem();
 }
 
 bool BuildSystem::loadDescription(StringRef mainFilename) {

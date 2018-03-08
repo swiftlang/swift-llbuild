@@ -153,15 +153,8 @@ function(add_swift_module target name deps sources additional_args)
       list(APPEND ARGS ${CMAKE_CURRENT_SOURCE_DIR}/${source})
   endforeach()
 
-  # FIXME: Find a better way to handle build types.
-  if (CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-    list(APPEND ARGS -g)
-  endif()
-  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    list(APPEND ARGS -Onone -g)    
-  else()
-    list(APPEND ARGS -O -whole-module-optimization)
-  endif()
+  # FIXME: We need to support Release build type.
+  list(APPEND ARGS -Onone -g)    
 
   foreach(arg ${additional_args})
     list(APPEND ARGS ${arg})
