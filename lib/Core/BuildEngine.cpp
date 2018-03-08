@@ -1420,12 +1420,7 @@ public:
     }
 
     auto dependencyID = getKeyID(key);
-    // Sort files which are less likely to be authored at the end, in order to find cycles based on authored files first.
-    if (StringRef(key).endswith("module.modulemap")) {
-      taskInfo->discoveredDependencies.push_back(dependencyID);
-    } else {
-      taskInfo->discoveredDependencies.insert(taskInfo->discoveredDependencies.begin(), dependencyID);
-    }
+    taskInfo->discoveredDependencies.push_back(dependencyID);
   }
 
   void taskIsComplete(Task* task, ValueType&& value, bool forceChange) {
