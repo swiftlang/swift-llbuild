@@ -64,8 +64,6 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		403B1A492053123B0018A322 /* version.h in Headers */ = {isa = PBXBuildFile; fileRef = 403B1A48205312000018A322 /* version.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		40F638ED205306AB00A1CFBE /* Version.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 40F638EC2053043D00A1CFBE /* Version.xcconfig */; };
 		9D0A6D811E1FFEA800BE636F /* TempDir.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9D0A6D7F1E1FFEA800BE636F /* TempDir.cpp */; };
 		9D2107C61DFADDFA00BE26FF /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
 		9D5A5C311EC5FAE600DC84CC /* TempDir.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9D0A6D7F1E1FFEA800BE636F /* TempDir.cpp */; };
@@ -748,9 +746,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		403B1A48205312000018A322 /* version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = version.h; path = products/libllbuild/include/llbuild/version.h; sourceTree = BUILT_PRODUCTS_DIR; };
-		40F4F4F220531D8A00170EE1 /* version.h.in */ = {isa = PBXFileReference; lastKnownFileType = text; path = version.h.in; sourceTree = "<group>"; };
-		40F638EC2053043D00A1CFBE /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 		54E187B61CD296EA00F7EC89 /* BuildNode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildNode.h; sourceTree = "<group>"; };
 		54E187B71CD296EA00F7EC89 /* ExternalCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ExternalCommand.h; sourceTree = "<group>"; };
 		54E187B81CD296EA00F7EC89 /* SwiftTools.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SwiftTools.h; sourceTree = "<group>"; };
@@ -1341,7 +1336,6 @@
 				E14144921EBDA4A10046F282 /* Common.xcconfig */,
 				E14144931EBDA4A10046F282 /* Debug.xcconfig */,
 				E14144941EBDA4A10046F282 /* Release.xcconfig */,
-				40F638EC2053043D00A1CFBE /* Version.xcconfig */,
 			);
 			path = Configs;
 			sourceTree = "<group>";
@@ -1737,8 +1731,6 @@
 				E1192CEC1C49D84500F85890 /* buildsystem.h */,
 				E1BE0AAD1C46F93000AD0883 /* core.h */,
 				E1ADC2351A8592AA00D5387C /* llbuild.h */,
-				403B1A48205312000018A322 /* version.h */,
-				40F4F4F220531D8A00170EE1 /* version.h.in */,
 			);
 			path = llbuild;
 			sourceTree = "<group>";
@@ -2087,7 +2079,6 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				403B1A492053123B0018A322 /* version.h in Headers */,
 				E1D191CA1B472440000C4E95 /* llbuild.h in Headers */,
 				E1BE0AAE1C46F94000AD0883 /* core.h in Headers */,
 				E1192CED1C49D84500F85890 /* buildsystem.h in Headers */,
@@ -2463,7 +2454,6 @@
 			buildPhases = (
 				E1D191B91B47232B000C4E95 /* Sources */,
 				E1D191BA1B47232B000C4E95 /* Frameworks */,
-				40F638EF205306D800A1CFBE /* ShellScript */,
 				E1D191BB1B47232B000C4E95 /* Headers */,
 				E1D191BC1B47232B000C4E95 /* Resources */,
 			);
@@ -2638,27 +2628,12 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				40F638ED205306AB00A1CFBE /* Version.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		40F638EF205306D800A1CFBE /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/libllbuild/include/llbuild/version.h",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "set -e\nmkdir -p ${BUILT_PRODUCTS_DIR}/products/libllbuild/include/llbuild\nsed -e \"s/\\${LLBUILD_C_API_VERSION}/${LLBUILD_C_API_VERSION}/\" ${PROJECT_DIR}/products/libllbuild/include/llbuild/version.h.in > ${BUILT_PRODUCTS_DIR}/products/libllbuild/include/llbuild/version.h";
-		};
 		9D2107C51DFA07D700BE26FF /* Create Target Link */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -3404,7 +3379,6 @@
 				MTL_ENABLE_DEBUG_INFO = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(LLBUILD_VERSION_DEFINITIONS)";
 				SWIFT_VERSION = 4.0;
 			};
 			name = Debug;
@@ -3434,7 +3408,6 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(LLBUILD_VERSION_DEFINITIONS)";
 				SWIFT_VERSION = 4.0;
 			};
 			name = Release;
@@ -3927,10 +3900,6 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"$(COMMON_PREPROCESSOR_DEFINITIONS)",
-					NDEBUG,
-				);
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/include";
 				INFOPLIST_FILE = "$(SRCROOT)/products/llbuild-framework/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
