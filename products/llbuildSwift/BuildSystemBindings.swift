@@ -18,6 +18,14 @@ import Foundation
 
 import llbuild
 
+#if !LLBUILD_C_API_VERSION_4
+  #if swift(>=4.2)
+    #error("Unsupported llbuild C API version")
+  #else
+    import llbuild_c_api_version_unsupported
+  #endif
+#endif
+
 private func bytesFromData(_ data: llb_data_t) -> [UInt8] {
     return Array(UnsafeBufferPointer(start: data.data, count: Int(data.length)))
 }
