@@ -7,6 +7,17 @@
 	objects = {
 
 /* Begin PBXAggregateTarget section */
+		40513F172057621500DCA088 /* Generate-version.h */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 40513F1A2057621500DCA088 /* Build configuration list for PBXAggregateTarget "Generate-version.h" */;
+			buildPhases = (
+				40513F1B2057626A00DCA088 /* ShellScript */,
+			);
+			dependencies = (
+			);
+			name = "Generate-version.h";
+			productName = "Generate version.h";
+		};
 		E178FCC11A1BF3270039F8B5 /* B&I */ = {
 			isa = PBXAggregateTarget;
 			buildConfigurationList = E178FCC41A1BF3270039F8B5 /* Build configuration list for PBXAggregateTarget "B&I" */;
@@ -247,6 +258,27 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		40513F1C2057629D00DCA088 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 40513F172057621500DCA088;
+			remoteInfo = "Generate version.h";
+		};
+		40513F1E205762CD00DCA088 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 40513F172057621500DCA088;
+			remoteInfo = "Generate-version.h";
+		};
+		40513F20205762DF00DCA088 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 40513F172057621500DCA088;
+			remoteInfo = "Generate-version.h";
+		};
 		9D2107C31DF9FBFA00BE26FF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
@@ -2109,6 +2141,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				40513F1F205762CD00DCA088 /* PBXTargetDependency */,
 				9DB047B81DF9D483006CDF52 /* PBXTargetDependency */,
 				9DB047B41DF9D471006CDF52 /* PBXTargetDependency */,
 				9DB047B21DF9D469006CDF52 /* PBXTargetDependency */,
@@ -2445,6 +2478,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				40513F21205762DF00DCA088 /* PBXTargetDependency */,
 				E104FAFD1B655C3C005C68A0 /* PBXTargetDependency */,
 				E17C29E61B5AAF6100C12DA9 /* PBXTargetDependency */,
 				E17C29EA1B5AAF6100C12DA9 /* PBXTargetDependency */,
@@ -2463,13 +2497,13 @@
 			buildPhases = (
 				E1D191B91B47232B000C4E95 /* Sources */,
 				E1D191BA1B47232B000C4E95 /* Frameworks */,
-				40F638EF205306D800A1CFBE /* ShellScript */,
 				E1D191BB1B47232B000C4E95 /* Headers */,
 				E1D191BC1B47232B000C4E95 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				40513F1D2057629D00DCA088 /* PBXTargetDependency */,
 				E1B839461B52EAA900DB876B /* PBXTargetDependency */,
 				E1B839421B52EA9E00DB876B /* PBXTargetDependency */,
 				E1B839441B52EAA500DB876B /* PBXTargetDependency */,
@@ -2489,6 +2523,10 @@
 				LastUpgradeCheck = 9900;
 				ORGANIZATIONNAME = "Apple Inc.";
 				TargetAttributes = {
+					40513F172057621500DCA088 = {
+						CreatedOnToolsVersion = 10.0;
+						ProvisioningStyle = Automatic;
+					};
 					9DB047A71DF9D43D006CDF52 = {
 						CreatedOnToolsVersion = 8.3;
 						ProvisioningStyle = Automatic;
@@ -2592,6 +2630,7 @@
 			projectRoot = "";
 			targets = (
 				E178FCC11A1BF3270039F8B5 /* B&I */,
+				40513F172057621500DCA088 /* Generate-version.h */,
 				E1A224C219F999B80059043E /* llbuild Tool */,
 				E1604C951BB9E01D001153A1 /* swift-build-tool */,
 				E1D191BD1B47232B000C4E95 /* llbuild-framework */,
@@ -2645,7 +2684,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		40F638EF205306D800A1CFBE /* ShellScript */ = {
+		40513F1B2057626A00DCA088 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -3041,6 +3080,21 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		40513F1D2057629D00DCA088 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 40513F172057621500DCA088 /* Generate-version.h */;
+			targetProxy = 40513F1C2057629D00DCA088 /* PBXContainerItemProxy */;
+		};
+		40513F1F205762CD00DCA088 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 40513F172057621500DCA088 /* Generate-version.h */;
+			targetProxy = 40513F1E205762CD00DCA088 /* PBXContainerItemProxy */;
+		};
+		40513F21205762DF00DCA088 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 40513F172057621500DCA088 /* Generate-version.h */;
+			targetProxy = 40513F20205762DF00DCA088 /* PBXContainerItemProxy */;
+		};
 		9D2107C41DF9FBFA00BE26FF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 9DB047A71DF9D43D006CDF52 /* BuildSystemTests */;
@@ -3359,6 +3413,22 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		40513F182057621500DCA088 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		40513F192057621500DCA088 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		9DB047AD1DF9D43D006CDF52 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -3945,6 +4015,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		40513F1A2057621500DCA088 /* Build configuration list for PBXAggregateTarget "Generate-version.h" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				40513F182057621500DCA088 /* Debug */,
+				40513F192057621500DCA088 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		9DB047AC1DF9D43D006CDF52 /* Build configuration list for PBXNativeTarget "BuildSystemTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
