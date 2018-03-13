@@ -7,7 +7,6 @@ import os
 config.llbuild_src_root = "@LLBUILD_SRC_DIR@"
 config.llbuild_obj_root = "@LLBUILD_OBJ_DIR@"
 
-config.llbuild_output_dir = "@LLBUILD_OUTPUT_DIR@"
 config.llbuild_tools_dir = "@LLBUILD_TOOLS_DIR@"
 config.llbuild_lib_dir = "@LLBUILD_LIBS_DIR@"
 

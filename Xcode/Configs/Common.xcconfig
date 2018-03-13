@@ -22,10 +22,6 @@ ALWAYS_SEARCH_USER_PATHS = NO
 // Headermaps are disabled.
 USE_HEADERMAP = NO
 
-#include "Version.xcconfig"
-
-COMMON_PREPROCESSOR_DEFINITIONS = $(LLBUILD_VERSION_DEFINITIONS)
-
 // MARK: Signing Support
 
 // Enable code signing, if appropriate.
