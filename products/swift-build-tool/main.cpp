@@ -16,7 +16,6 @@
 #include "llbuild/Basic/Version.h"
 #include "llbuild/BuildSystem/BuildDescription.h"
 #include "llbuild/BuildSystem/BuildFile.h"
-#include "llbuild/BuildSystem/SwiftTools.h"
 
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/Signals.h"
@@ -41,10 +40,6 @@ public:
   }
   
   virtual std::unique_ptr<Tool> lookupTool(StringRef name) override {
-    if (name == "swift-compiler") {
-      return createSwiftCompilerTool(name);
-    }
-
     return nullptr;
   }
 
