@@ -7,12 +7,24 @@
 	objects = {
 
 /* Begin PBXAggregateTarget section */
+		40513F172057621500DCA088 /* Generate-version.h */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 40513F1A2057621500DCA088 /* Build configuration list for PBXAggregateTarget "Generate-version.h" */;
+			buildPhases = (
+				40513F1B2057626A00DCA088 /* Generate version.h */,
+			);
+			dependencies = (
+			);
+			name = "Generate-version.h";
+			productName = "Generate version.h";
+		};
 		E178FCC11A1BF3270039F8B5 /* B&I */ = {
 			isa = PBXAggregateTarget;
 			buildConfigurationList = E178FCC41A1BF3270039F8B5 /* Build configuration list for PBXAggregateTarget "B&I" */;
 			buildPhases = (
 			);
 			dependencies = (
+				4020AD1E20584D4600884842 /* PBXTargetDependency */,
 				E178FCC61A1BF32F0039F8B5 /* PBXTargetDependency */,
 				E1604CB71BB9E07B001153A1 /* PBXTargetDependency */,
 				E1B839631B541CDE00DB876B /* PBXTargetDependency */,
@@ -64,6 +76,8 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		403B1A492053123B0018A322 /* version.h in Headers */ = {isa = PBXBuildFile; fileRef = 403B1A48205312000018A322 /* version.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		40F638ED205306AB00A1CFBE /* Version.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 40F638EC2053043D00A1CFBE /* Version.xcconfig */; };
 		9D0A6D811E1FFEA800BE636F /* TempDir.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9D0A6D7F1E1FFEA800BE636F /* TempDir.cpp */; };
 		9D2107C61DFADDFA00BE26FF /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
 		9D5A5C311EC5FAE600DC84CC /* TempDir.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9D0A6D7F1E1FFEA800BE636F /* TempDir.cpp */; };
@@ -245,6 +259,34 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		4020AD1D20584D4600884842 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 40513F172057621500DCA088;
+			remoteInfo = "Generate-version.h";
+		};
+		40513F1C2057629D00DCA088 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 40513F172057621500DCA088;
+			remoteInfo = "Generate version.h";
+		};
+		40513F1E205762CD00DCA088 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 40513F172057621500DCA088;
+			remoteInfo = "Generate-version.h";
+		};
+		40513F20205762DF00DCA088 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 40513F172057621500DCA088;
+			remoteInfo = "Generate-version.h";
+		};
 		9D2107C31DF9FBFA00BE26FF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
@@ -746,6 +788,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		403B1A48205312000018A322 /* version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = version.h; path = products/libllbuild/include/llbuild/version.h; sourceTree = BUILT_PRODUCTS_DIR; };
+		40F4F4F220531D8A00170EE1 /* version.h.in */ = {isa = PBXFileReference; lastKnownFileType = text; path = version.h.in; sourceTree = "<group>"; };
+		40F638EC2053043D00A1CFBE /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 		54E187B61CD296EA00F7EC89 /* BuildNode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildNode.h; sourceTree = "<group>"; };
 		54E187B71CD296EA00F7EC89 /* ExternalCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ExternalCommand.h; sourceTree = "<group>"; };
 		54E187B81CD296EA00F7EC89 /* SwiftTools.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SwiftTools.h; sourceTree = "<group>"; };
@@ -1336,6 +1381,7 @@
 				E14144921EBDA4A10046F282 /* Common.xcconfig */,
 				E14144931EBDA4A10046F282 /* Debug.xcconfig */,
 				E14144941EBDA4A10046F282 /* Release.xcconfig */,
+				40F638EC2053043D00A1CFBE /* Version.xcconfig */,
 			);
 			path = Configs;
 			sourceTree = "<group>";
@@ -1731,6 +1777,8 @@
 				E1192CEC1C49D84500F85890 /* buildsystem.h */,
 				E1BE0AAD1C46F93000AD0883 /* core.h */,
 				E1ADC2351A8592AA00D5387C /* llbuild.h */,
+				403B1A48205312000018A322 /* version.h */,
+				40F4F4F220531D8A00170EE1 /* version.h.in */,
 			);
 			path = llbuild;
 			sourceTree = "<group>";
@@ -2079,6 +2127,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				403B1A492053123B0018A322 /* version.h in Headers */,
 				E1D191CA1B472440000C4E95 /* llbuild.h in Headers */,
 				E1BE0AAE1C46F94000AD0883 /* core.h in Headers */,
 				E1192CED1C49D84500F85890 /* buildsystem.h in Headers */,
@@ -2100,6 +2149,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				40513F1F205762CD00DCA088 /* PBXTargetDependency */,
 				9DB047B81DF9D483006CDF52 /* PBXTargetDependency */,
 				9DB047B41DF9D471006CDF52 /* PBXTargetDependency */,
 				9DB047B21DF9D469006CDF52 /* PBXTargetDependency */,
@@ -2436,6 +2486,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				40513F21205762DF00DCA088 /* PBXTargetDependency */,
 				E104FAFD1B655C3C005C68A0 /* PBXTargetDependency */,
 				E17C29E61B5AAF6100C12DA9 /* PBXTargetDependency */,
 				E17C29EA1B5AAF6100C12DA9 /* PBXTargetDependency */,
@@ -2460,6 +2511,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				40513F1D2057629D00DCA088 /* PBXTargetDependency */,
 				E1B839461B52EAA900DB876B /* PBXTargetDependency */,
 				E1B839421B52EA9E00DB876B /* PBXTargetDependency */,
 				E1B839441B52EAA500DB876B /* PBXTargetDependency */,
@@ -2479,6 +2531,10 @@
 				LastUpgradeCheck = 9900;
 				ORGANIZATIONNAME = "Apple Inc.";
 				TargetAttributes = {
+					40513F172057621500DCA088 = {
+						CreatedOnToolsVersion = 10.0;
+						ProvisioningStyle = Automatic;
+					};
 					9DB047A71DF9D43D006CDF52 = {
 						CreatedOnToolsVersion = 8.3;
 						ProvisioningStyle = Automatic;
@@ -2582,6 +2638,7 @@
 			projectRoot = "";
 			targets = (
 				E178FCC11A1BF3270039F8B5 /* B&I */,
+				40513F172057621500DCA088 /* Generate-version.h */,
 				E1A224C219F999B80059043E /* llbuild Tool */,
 				E1604C951BB9E01D001153A1 /* swift-build-tool */,
 				E1D191BD1B47232B000C4E95 /* llbuild-framework */,
@@ -2628,12 +2685,30 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				40F638ED205306AB00A1CFBE /* Version.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		40513F1B2057626A00DCA088 /* Generate version.h */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 12;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/products/libllbuild/include/llbuild/version.h.in",
+			);
+			name = "Generate version.h";
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/products/libllbuild/include/llbuild/verison.h",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\nmkdir -p ${BUILT_PRODUCTS_DIR}/products/libllbuild/include/llbuild\nsed -e \"s/\\${LLBUILD_C_API_VERSION}/${LLBUILD_C_API_VERSION}/\" ${PROJECT_DIR}/products/libllbuild/include/llbuild/version.h.in > ${BUILT_PRODUCTS_DIR}/products/libllbuild/include/llbuild/version.h";
+			showEnvVarsInLog = 0;
+		};
 		9D2107C51DFA07D700BE26FF /* Create Target Link */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -3016,6 +3091,26 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		4020AD1E20584D4600884842 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 40513F172057621500DCA088 /* Generate-version.h */;
+			targetProxy = 4020AD1D20584D4600884842 /* PBXContainerItemProxy */;
+		};
+		40513F1D2057629D00DCA088 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 40513F172057621500DCA088 /* Generate-version.h */;
+			targetProxy = 40513F1C2057629D00DCA088 /* PBXContainerItemProxy */;
+		};
+		40513F1F205762CD00DCA088 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 40513F172057621500DCA088 /* Generate-version.h */;
+			targetProxy = 40513F1E205762CD00DCA088 /* PBXContainerItemProxy */;
+		};
+		40513F21205762DF00DCA088 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 40513F172057621500DCA088 /* Generate-version.h */;
+			targetProxy = 40513F20205762DF00DCA088 /* PBXContainerItemProxy */;
+		};
 		9D2107C41DF9FBFA00BE26FF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 9DB047A71DF9D43D006CDF52 /* BuildSystemTests */;
@@ -3334,6 +3429,24 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		40513F182057621500DCA088 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				INSTALLHDRS_SCRIPT_PHASE = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		40513F192057621500DCA088 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				INSTALLHDRS_SCRIPT_PHASE = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		9DB047AD1DF9D43D006CDF52 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -3379,6 +3492,7 @@
 				MTL_ENABLE_DEBUG_INFO = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(LLBUILD_SWIFT_VERSION_DEFINITIONS)";
 				SWIFT_VERSION = 4.0;
 			};
 			name = Debug;
@@ -3408,6 +3522,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(LLBUILD_SWIFT_VERSION_DEFINITIONS)";
 				SWIFT_VERSION = 4.0;
 			};
 			name = Release;
@@ -3900,6 +4015,10 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(COMMON_PREPROCESSOR_DEFINITIONS)",
+					NDEBUG,
+				);
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/include";
 				INFOPLIST_FILE = "$(SRCROOT)/products/llbuild-framework/Info.plist";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
@@ -3914,6 +4033,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		40513F1A2057621500DCA088 /* Build configuration list for PBXAggregateTarget "Generate-version.h" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				40513F182057621500DCA088 /* Debug */,
+				40513F192057621500DCA088 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		9DB047AC1DF9D43D006CDF52 /* Build configuration list for PBXNativeTarget "BuildSystemTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
