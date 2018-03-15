@@ -119,7 +119,7 @@ public struct Diagnostic {
         case warning
         case error
         
-        init(_ kind: llb_buildsystem_diagnostic_kind_t) {
+        public init(_ kind: llb_buildsystem_diagnostic_kind_t) {
             switch kind {
             case llb_buildsystem_diagnostic_kind_note:
                 self = .note
@@ -306,8 +306,37 @@ public struct BuildKey {
     }
 }
 
+/// File system information for a particular file.
+///
+/// This is a simple wrapper for stat() information.
+public protocol FileInfo {
+    /// Creates a new `FileInfo` object.
+    init(_ statBuf: stat)
+
+    var statBuf: stat { get }
+}
+
+/// Abstracted access to file system operations.
+// FIXME: We want to remove this protocol eventually and use the FileSystem
+// protocol from SwiftPM's Basic target.
+public protocol FileSystem {
+
+    /// Get the contents of a file.
+    // FIXME: This should throw.
+    func readFileContents(_ path: String) -> [UInt8]?
+
+    /// Returns the stat of a file at `path`.
+    func getFileInfo(_ path: String) throws -> FileInfo
+}
+
 /// Delegate interface for use with the build system.
 public protocol BuildSystemDelegate {
+
+    /// The FileSystem to use, if any.
+    ///
+    /// This is currently very limited.
+    var fs: FileSystem? { get }
+
     /// Called in response to requests for new tools.
     ///
     /// The client should return an appropriate tool implementation if recognized.
@@ -461,6 +490,12 @@ public final class BuildSystem {
         // Construct the system delegate.
         var _delegate = llb_buildsystem_delegate_t()
         _delegate.context = Unmanaged.passUnretained(self).toOpaque()
+        if delegate.fs != nil {
+            _delegate.fs_get_file_contents = { BuildSystem.toSystem($0!).fsGetFileContents(String(cString: $1!), $2!) }
+            _delegate.fs_get_file_info = { BuildSystem.toSystem($0!).fsGetFileInfo(String(cString: $1!), $2!) }
+            // FIXME: This should be a separate callback, not shared with getFileInfo (or get FileInfo should take a parameter).
+            _delegate.fs_get_link_info = { BuildSystem.toSystem($0!).fsGetFileInfo(String(cString: $1!), $2!) }
+        }
         _delegate.lookup_tool = { return BuildSystem.toSystem($0!).lookupTool($1!) }
         _delegate.had_command_failure = { BuildSystem.toSystem($0!).hadCommandFailure() }
         _delegate.handle_diagnostic = { BuildSystem.toSystem($0!).handleDiagnostic($1, String(cString: $2!), Int($3), Int($4), String(cString: $5!)) }
@@ -493,12 +528,20 @@ public final class BuildSystem {
         llb_buildsystem_destroy(_system)
     }
 
-    /// Build the default target.
+    /// Build the default target, or optionally a single node.
     ///
     /// The client is responsible for ensuring only one build is ever executing concurrently.
-    public func build() -> Bool {
-        var data = llb_data_t(length: 0, data: nil)
-        return llb_buildsystem_build(_system, &data)
+    ///
+    /// - parameter node: Optional path to a single node to build.
+    /// - returns: True if the build was successful, false otherwise.
+    public func build(node: String? = nil) -> Bool {
+        if let node = node {
+            var data = copiedDataFromBytes([UInt8](node.utf8))
+            return llb_buildsystem_build_node(_system, &data)
+        } else {
+            var data = llb_data_t(length: 0, data: nil)
+            return llb_buildsystem_build(_system, &data)
+        }
     }
 
     /// Cancel any running build.
@@ -521,6 +564,47 @@ public final class BuildSystem {
     /// Helper function for getting the command wrapper from the delegate context.
     static fileprivate func toCommandWrapper(_ context: UnsafeMutableRawPointer) -> CommandWrapper {
         return Unmanaged<CommandWrapper>.fromOpaque(UnsafeRawPointer(context)).takeUnretainedValue()
+    }
+
+    private func fsGetFileContents(_ path: String, _ data: UnsafeMutablePointer<llb_data_t>) -> Bool {
+        let fs = delegate.fs!
+
+        // Get the contents for the file.
+        guard let contents = fs.readFileContents(path) else {
+            return false
+        }
+
+        data.pointee = copiedDataFromBytes(contents)
+
+        return true
+    }
+
+    private func fsGetFileInfo(_ path: String, _ info: UnsafeMutablePointer<llb_fs_file_info_t>) {
+        // Ignore invalid paths.
+        guard path.first == "/" else {
+            info.pointee = llb_fs_file_info_t()
+            return
+        }
+
+        // If the path doesn't exist, it is missing.
+        let fs = delegate.fs!
+        guard let s = try? fs.getFileInfo(path).statBuf else {
+            info.pointee = llb_fs_file_info_t()
+            return
+        }
+
+        // Otherwise, we have some kind of file.
+        info.pointee.device = UInt64(s.st_dev)
+        info.pointee.inode = UInt64(s.st_ino)
+        info.pointee.mode = UInt64(s.st_mode)
+        info.pointee.size = UInt64(s.st_size)
+        info.pointee.mod_time.seconds = UInt64(s.st_mtimespec.tv_sec)
+        info.pointee.mod_time.nanoseconds = UInt64(s.st_mtimespec.tv_nsec)
+    }
+
+    private func fsGetLinkInfo(_ path: String, _ info: UnsafeMutablePointer<llb_fs_file_info_t>) {
+        // FIXME: We do not support this natively, yet.
+        return fsGetFileInfo(path, info)
     }
 
     /// The owning list of all created tools.
