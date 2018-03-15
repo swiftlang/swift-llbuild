@@ -314,20 +314,15 @@ public:
   }
   
   virtual void commandProcessFinished(Command* command, ProcessHandle handle,
-                                      const CommandExtendedResult& commandResult) override {
+                                      CommandResult commandResult,
+                                      int exitStatus) override {
     if (cAPIDelegate.command_process_finished) {
-      llb_buildsystem_command_extended_result_t result;
-      result.result = get_command_result(commandResult.result);
-      result.exit_status = commandResult.exitStatus;
-      result.utime = commandResult.utime;
-      result.stime = commandResult.stime;
-      result.maxrss = commandResult.maxrss;
-
       cAPIDelegate.command_process_finished(
           cAPIDelegate.context,
           (llb_buildsystem_command_t*) command,
           (llb_buildsystem_process_t*) handle.id,
-          &result);
+          get_command_result(commandResult),
+          exitStatus);
     }
   }
 

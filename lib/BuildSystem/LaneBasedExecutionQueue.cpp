@@ -325,7 +325,7 @@ public:
             context.job.getForCommand(), handle,
             Twine("unable to open output pipe (") + strerror(errno) + ")");
         getDelegate().commandProcessFinished(context.job.getForCommand(),
-                                             handle, CommandExtendedResult::makeFailed());
+                                             handle, CommandResult::Failed, -1);
         return CommandResult::Failed;
       }
 
@@ -409,7 +409,7 @@ public:
               context.job.getForCommand(), handle,
               Twine("unable to spawn process (") + strerror(result) + ")");
           getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
-                                               CommandExtendedResult::makeFailed());
+                                               CommandResult::Failed, -1);
           pid = -1;
         } else {
           spawnedProcesses.insert(pid);
@@ -475,7 +475,7 @@ public:
           context.job.getForCommand(), handle,
           Twine("unable to wait for process (") + strerror(errno) + ")");
       getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
-                                           CommandExtendedResult::makeFailed(status));
+                                           CommandResult::Failed, -1);
       return CommandResult::Failed;
     }
 
@@ -483,13 +483,10 @@ public:
     //   arg2: user time, in us
     //   arg3: sys time, in us
     //   arg4: memory usage, in bytes
-    uint64_t utime = (uint64_t(usage.ru_utime.tv_sec) * 1000000000 +
-                      uint64_t(usage.ru_utime.tv_usec) * 1000);
-    uint64_t stime = (uint64_t(usage.ru_stime.tv_sec) * 1000000000 +
-                      uint64_t(usage.ru_stime.tv_usec) * 1000);
-
-    subprocessInterval.arg2 = utime;
-    subprocessInterval.arg3 = stime;
+    subprocessInterval.arg2 = (uint64_t(usage.ru_utime.tv_sec) * 1000000000 +
+                               uint64_t(usage.ru_utime.tv_usec) * 1000);
+    subprocessInterval.arg3 = (uint64_t(usage.ru_stime.tv_sec) * 1000000000 +
+                               uint64_t(usage.ru_stime.tv_usec) * 1000);
     subprocessInterval.arg4 = usage.ru_maxrss;
     
     // FIXME: We should report a statistic for how much output we read from the
@@ -498,10 +495,8 @@ public:
     // Notify of the process completion.
     bool cancelled = WIFSIGNALED(status) && (WTERMSIG(status) == SIGINT || WTERMSIG(status) == SIGKILL);
     CommandResult commandResult = cancelled ? CommandResult::Cancelled : (status == 0) ? CommandResult::Succeeded : CommandResult::Failed;
-    CommandExtendedResult extendedResult(commandResult, status, utime, stime,
-                                         usage.ru_maxrss);
     getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
-                                         extendedResult);
+                                         commandResult, status);
     return commandResult;
   }
 };
