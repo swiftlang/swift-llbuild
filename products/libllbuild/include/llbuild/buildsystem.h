@@ -95,15 +95,6 @@ typedef enum {
   llb_buildsystem_command_result_skipped = 3,
 } llb_buildsystem_command_result_t;
 
-/// Extended result of a command execution
-typedef struct llb_buildsystem_command_extended_result_t_ {
-  llb_buildsystem_command_result_t result;  /// Result of command execution
-  int exit_status;                          /// The exit code
-  uint64_t utime;                           /// User time (in us)
-  uint64_t stime;                           /// Sys time (in us)
-  uint64_t maxrss;                          /// Max RSS (in bytes)
-} llb_buildsystem_command_extended_result_t;
-
 /// Status change event kinds.
 typedef enum {
   /// Indicates the command is being scanned to determine if it needs to run.
@@ -395,7 +386,8 @@ typedef struct llb_buildsystem_delegate_t_ {
   void (*command_process_finished)(void* context,
                                    llb_buildsystem_command_t* command,
                                    llb_buildsystem_process_t* process,
-                                   const llb_buildsystem_command_extended_result_t* result);
+                                   llb_buildsystem_command_result_t result,
+                                   int exit_status);
 
   /// Called when a cycle is detected by the build engine and it cannot make
   /// forward progress.

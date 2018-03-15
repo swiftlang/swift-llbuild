@@ -48,7 +48,8 @@ private:
                                        StringRef data) {}
   
   virtual void commandProcessFinished(Command*, ProcessHandle handle,
-                                      const CommandExtendedResult& result) {}
+                                      CommandResult result,
+                                      int exitStatus) {}
 };
   
 class MockBuildSystemDelegate : public BuildSystemDelegate {

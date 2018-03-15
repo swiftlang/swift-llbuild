@@ -789,26 +789,6 @@
 /* Begin PBXFileReference section */
 		403B1A48205312000018A322 /* version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = version.h; path = products/libllbuild/include/llbuild/version.h; sourceTree = BUILT_PRODUCTS_DIR; };
 		40F4F4F220531D8A00170EE1 /* version.h.in */ = {isa = PBXFileReference; lastKnownFileType = text; path = version.h.in; sourceTree = "<group>"; };
-		40F638CE2051EDC800A1CFBE /* count-lines-2 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "count-lines-2"; sourceTree = "<group>"; };
-		40F638CF2051EDC800A1CFBE /* count-lines-4 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "count-lines-4"; sourceTree = "<group>"; };
-		40F638D02051EDC800A1CFBE /* count-lines-3 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "count-lines-3"; sourceTree = "<group>"; };
-		40F638D12051EDC800A1CFBE /* simplebuild.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = simplebuild.py; sourceTree = "<group>"; };
-		40F638D22051EDC800A1CFBE /* simple-make */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "simple-make"; sourceTree = "<group>"; };
-		40F638D32051EDC800A1CFBE /* util.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = util.py; sourceTree = "<group>"; };
-		40F638D42051EDC800A1CFBE /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		40F638D52051EDC800A1CFBE /* count-lines-1 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "count-lines-1"; sourceTree = "<group>"; };
-		40F638D82051EDC800A1CFBE /* basic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = basic.swift; sourceTree = "<group>"; };
-		40F638DA2051EDC800A1CFBE /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		40F638DB2051EDC800A1CFBE /* .gitignore */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
-		40F638DD2051EDC800A1CFBE /* index.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = index.html; sourceTree = "<group>"; };
-		40F638DE2051EDC800A1CFBE /* PlayLife.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = PlayLife.js; sourceTree = "<group>"; };
-		40F638DF2051EDC800A1CFBE /* Package.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
-		40F638E22051EDC800A1CFBE /* LifeBoard.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LifeBoard.swift; sourceTree = "<group>"; };
-		40F638E32051EDC800A1CFBE /* LifeBoard+Build.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "LifeBoard+Build.swift"; sourceTree = "<group>"; };
-		40F638E42051EDC800A1CFBE /* BuildLife.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BuildLife.swift; sourceTree = "<group>"; };
-		40F638E62051EDC800A1CFBE /* main.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
-		40F638E92051EDC800A1CFBE /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		40F638EA2051EDC800A1CFBE /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		40F638EC2053043D00A1CFBE /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 		54E187B61CD296EA00F7EC89 /* BuildNode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildNode.h; sourceTree = "<group>"; };
 		54E187B71CD296EA00F7EC89 /* ExternalCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ExternalCommand.h; sourceTree = "<group>"; };
@@ -1327,113 +1307,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		40F638CC2051EDC800A1CFBE /* examples */ = {
-			isa = PBXGroup;
-			children = (
-				40F638CD2051EDC800A1CFBE /* simple-make */,
-				40F638D62051EDC800A1CFBE /* swift-bindings */,
-				40F638D92051EDC800A1CFBE /* GameOfLife */,
-				40F638E72051EDC800A1CFBE /* c-api */,
-			);
-			path = examples;
-			sourceTree = "<group>";
-		};
-		40F638CD2051EDC800A1CFBE /* simple-make */ = {
-			isa = PBXGroup;
-			children = (
-				40F638CE2051EDC800A1CFBE /* count-lines-2 */,
-				40F638CF2051EDC800A1CFBE /* count-lines-4 */,
-				40F638D02051EDC800A1CFBE /* count-lines-3 */,
-				40F638D12051EDC800A1CFBE /* simplebuild.py */,
-				40F638D22051EDC800A1CFBE /* simple-make */,
-				40F638D32051EDC800A1CFBE /* util.py */,
-				40F638D42051EDC800A1CFBE /* README.md */,
-				40F638D52051EDC800A1CFBE /* count-lines-1 */,
-			);
-			path = "simple-make";
-			sourceTree = "<group>";
-		};
-		40F638D62051EDC800A1CFBE /* swift-bindings */ = {
-			isa = PBXGroup;
-			children = (
-				40F638D72051EDC800A1CFBE /* core */,
-			);
-			path = "swift-bindings";
-			sourceTree = "<group>";
-		};
-		40F638D72051EDC800A1CFBE /* core */ = {
-			isa = PBXGroup;
-			children = (
-				40F638D82051EDC800A1CFBE /* basic.swift */,
-			);
-			path = core;
-			sourceTree = "<group>";
-		};
-		40F638D92051EDC800A1CFBE /* GameOfLife */ = {
-			isa = PBXGroup;
-			children = (
-				40F638DA2051EDC800A1CFBE /* README.md */,
-				40F638DB2051EDC800A1CFBE /* .gitignore */,
-				40F638DC2051EDC800A1CFBE /* Static */,
-				40F638DF2051EDC800A1CFBE /* Package.swift */,
-				40F638E02051EDC800A1CFBE /* Sources */,
-			);
-			path = GameOfLife;
-			sourceTree = "<group>";
-		};
-		40F638DC2051EDC800A1CFBE /* Static */ = {
-			isa = PBXGroup;
-			children = (
-				40F638DD2051EDC800A1CFBE /* index.html */,
-				40F638DE2051EDC800A1CFBE /* PlayLife.js */,
-			);
-			path = Static;
-			sourceTree = "<group>";
-		};
-		40F638E02051EDC800A1CFBE /* Sources */ = {
-			isa = PBXGroup;
-			children = (
-				40F638E12051EDC800A1CFBE /* GameOfLife */,
-				40F638E52051EDC800A1CFBE /* LifeServer */,
-			);
-			path = Sources;
-			sourceTree = "<group>";
-		};
-		40F638E12051EDC800A1CFBE /* GameOfLife */ = {
-			isa = PBXGroup;
-			children = (
-				40F638E22051EDC800A1CFBE /* LifeBoard.swift */,
-				40F638E32051EDC800A1CFBE /* LifeBoard+Build.swift */,
-				40F638E42051EDC800A1CFBE /* BuildLife.swift */,
-			);
-			path = GameOfLife;
-			sourceTree = "<group>";
-		};
-		40F638E52051EDC800A1CFBE /* LifeServer */ = {
-			isa = PBXGroup;
-			children = (
-				40F638E62051EDC800A1CFBE /* main.swift */,
-			);
-			path = LifeServer;
-			sourceTree = "<group>";
-		};
-		40F638E72051EDC800A1CFBE /* c-api */ = {
-			isa = PBXGroup;
-			children = (
-				40F638E82051EDC800A1CFBE /* buildsystem */,
-			);
-			path = "c-api";
-			sourceTree = "<group>";
-		};
-		40F638E82051EDC800A1CFBE /* buildsystem */ = {
-			isa = PBXGroup;
-			children = (
-				40F638E92051EDC800A1CFBE /* README.md */,
-				40F638EA2051EDC800A1CFBE /* main.c */,
-			);
-			path = buildsystem;
-			sourceTree = "<group>";
-		};
 		9DB0478A1DF9D39E006CDF52 /* BuildSystem */ = {
 			isa = PBXGroup;
 			children = (
@@ -1537,7 +1410,6 @@
 				E14144901EBDA4A10046F282 /* Xcode */,
 				E1A223FD19F990F10059043E /* products */,
 				E1A2240419F991530059043E /* lib */,
-				40F638CC2051EDC800A1CFBE /* examples */,
 				E19C3FD51B98C1A70035E1AA /* tests */,
 				E1C404B51A03090D003392BA /* perftests */,
 				E1A224B219F998D40059043E /* unittests */,
@@ -1578,10 +1450,10 @@
 		E1A223FD19F990F10059043E /* products */ = {
 			isa = PBXGroup;
 			children = (
+				BC8DEF0420300AAF00E9EF0C /* llbuildSwift */,
 				E1A2240119F991350059043E /* llbuild */,
 				E1ADC22F1A8591F600D5387C /* libllbuild */,
 				E1D191B71B472305000C4E95 /* llbuild-framework */,
-				BC8DEF0420300AAF00E9EF0C /* llbuildSwift */,
 				E1604CB21BB9E032001153A1 /* swift-build-tool */,
 				E1A2240019F991350059043E /* CMakeLists.txt */,
 			);

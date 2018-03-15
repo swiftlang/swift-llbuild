@@ -229,11 +229,12 @@ public:
   }
 
   virtual void commandProcessFinished(Command* command, ProcessHandle handle,
-                                      const CommandExtendedResult& result) override {
+                                      CommandResult result,
+                                      int exitStatus) override {
     static_cast<BuildSystemFrontendDelegate*>(&getSystem().getDelegate())->
       commandProcessFinished(
           command, BuildSystemFrontendDelegate::ProcessHandle { handle.id },
-          result);
+          result, exitStatus);
   }
 };
 
@@ -545,7 +546,8 @@ commandProcessHadOutput(Command* command, ProcessHandle handle,
 
 void BuildSystemFrontendDelegate::
 commandProcessFinished(Command*, ProcessHandle handle,
-                       const CommandExtendedResult& result) {
+                       CommandResult result,
+                       int exitStatus) {
   auto impl = static_cast<BuildSystemFrontendDelegateImpl*>(this->impl);
   std::unique_lock<std::mutex> lock(impl->processOutputBuffersMutex);
 
