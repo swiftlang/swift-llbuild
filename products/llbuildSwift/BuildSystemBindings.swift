@@ -16,7 +16,11 @@ import Darwin.C
 
 import Foundation
 
+// We don't need this import if we're building
+// this file as part of the llbuild framework.
+#if !LLBUILD_FRAMEWORK
 import llbuild
+#endif
 
 #if !LLBUILD_C_API_VERSION_6
 #if swift(>=4.2)

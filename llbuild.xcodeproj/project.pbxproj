@@ -91,6 +91,8 @@
 		9DB047BD1DF9D4B0006CDF52 /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
 		9DB047C01DF9F592006CDF52 /* LaneBasedExecutionQueueTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9DB0478B1DF9D3E2006CDF52 /* LaneBasedExecutionQueueTest.cpp */; };
 		9DDD8BE11DDCAB9A00FB62D2 /* SQLiteBuildDBTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9DDD8BDF1DDCAB9A00FB62D2 /* SQLiteBuildDBTest.cpp */; };
+		BC669C54205A2C2000942C3B /* BuildSystemBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8DEF0620300AAF00E9EF0C /* BuildSystemBindings.swift */; };
+		BC669C55205A2C2000942C3B /* CoreBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8DEF0720300AAF00E9EF0C /* CoreBindings.swift */; };
 		BC8DEF0820300AAF00E9EF0C /* BuildSystemBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8DEF0620300AAF00E9EF0C /* BuildSystemBindings.swift */; };
 		BC8DEF0920300AAF00E9EF0C /* CoreBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8DEF0720300AAF00E9EF0C /* CoreBindings.swift */; };
 		BC8DEF1420300BBE00E9EF0C /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
@@ -3387,6 +3389,8 @@
 				E1D191C91B472437000C4E95 /* C-API.cpp in Sources */,
 				E1192CEE1C49DBA600F85890 /* BuildSystem-C-API.cpp in Sources */,
 				E1192CEF1C49DBA900F85890 /* Core-C-API.cpp in Sources */,
+				BC669C54205A2C2000942C3B /* BuildSystemBindings.swift in Sources */,
+				BC669C55205A2C2000942C3B /* CoreBindings.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4303,6 +4307,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.dt.llbuid;
 				PRODUCT_NAME = llbuild;
 				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(LLBUILD_SWIFT_VERSION_DEFINITIONS) LLBUILD_FRAMEWORK";
+				SWIFT_VERSION = 4.0;
 			};
 			name = Debug;
 		};
@@ -4323,6 +4329,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.dt.llbuid;
 				PRODUCT_NAME = llbuild;
 				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(LLBUILD_SWIFT_VERSION_DEFINITIONS) LLBUILD_FRAMEWORK";
+				SWIFT_VERSION = 4.0;
 			};
 			name = Release;
 		};
