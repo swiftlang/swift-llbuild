@@ -2825,12 +2825,11 @@
 			);
 			name = "Generate version.h";
 			outputPaths = (
-				"$(BUILT_PRODUCTS_DIR)/products/libllbuild/include/llbuild/verison.h",
+				"$(BUILT_PRODUCTS_DIR)/products/libllbuild/include/llbuild/version.h",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e\nmkdir -p \"${BUILT_PRODUCTS_DIR}/products/libllbuild/include/llbuild\"\nsed -e \"s/\\${LLBUILD_C_API_VERSION}/${LLBUILD_C_API_VERSION}/\" \"${PROJECT_DIR}/products/libllbuild/include/llbuild/version.h.in\" > \"${BUILT_PRODUCTS_DIR}/products/libllbuild/include/llbuild/version.h\"";
-			showEnvVarsInLog = 0;
+			shellScript = "# This script generates the version.h file.  It exists as a separate build\n# phase so that both the framework build and tests that import it\n# 'library-style' can depend on it existing\n\nset -e\nmkdir -p \"${BUILT_PRODUCTS_DIR}/products/libllbuild/include/llbuild\"\nsed -e \"s/\\${LLBUILD_C_API_VERSION}/${LLBUILD_C_API_VERSION}/\" \"${SCRIPT_INPUT_FILE_0}\" > \"${SCRIPT_OUTPUT_FILE_0}\"";
 		};
 		9D2107C51DFA07D700BE26FF /* Create Target Link */ = {
 			isa = PBXShellScriptBuildPhase;
