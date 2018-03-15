@@ -676,6 +676,12 @@ void llb_buildsystem_command_get_name(llb_buildsystem_command_t* command_p,
   key_out->data = (const uint8_t*) name.data();
 }
 
+bool llb_buildsystem_command_should_show_status(
+    llb_buildsystem_command_t* command_p) {
+  auto command = (Command*) command_p;
+  return command->shouldShowStatus();
+}
+
 char* llb_buildsystem_command_get_description(
     llb_buildsystem_command_t* command_p) {
   auto command = (Command*) command_p;

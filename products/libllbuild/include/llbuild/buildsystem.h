@@ -578,6 +578,13 @@ LLBUILD_EXPORT void
 llb_buildsystem_command_get_name(llb_buildsystem_command_t* command,
                                  llb_data_t* key_out);
 
+/// Whether the default status reporting shows status for the command.
+///
+/// \returns A boolean describing wether status reporting should show status
+/// for the command.
+LLBUILD_EXPORT bool
+llb_buildsystem_command_should_show_status(llb_buildsystem_command_t* command);
+
 /// Get the description for the given command.
 ///
 /// \returns The command description, as a new C string. The client is
