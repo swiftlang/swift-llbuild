@@ -2706,7 +2706,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e\nmkdir -p ${BUILT_PRODUCTS_DIR}/products/libllbuild/include/llbuild\nsed -e \"s/\\${LLBUILD_C_API_VERSION}/${LLBUILD_C_API_VERSION}/\" ${PROJECT_DIR}/products/libllbuild/include/llbuild/version.h.in > ${BUILT_PRODUCTS_DIR}/products/libllbuild/include/llbuild/version.h";
+			shellScript = "set -e\nmkdir -p \"${BUILT_PRODUCTS_DIR}/products/libllbuild/include/llbuild\"\nsed -e \"s/\\${LLBUILD_C_API_VERSION}/${LLBUILD_C_API_VERSION}/\" \"${PROJECT_DIR}/products/libllbuild/include/llbuild/version.h.in\" > \"${BUILT_PRODUCTS_DIR}/products/libllbuild/include/llbuild/version.h\"";
 			showEnvVarsInLog = 0;
 		};
 		9D2107C51DFA07D700BE26FF /* Create Target Link */ = {
