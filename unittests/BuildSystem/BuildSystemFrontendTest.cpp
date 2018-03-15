@@ -176,13 +176,14 @@ public:
     super::commandProcessHadError(command, handle, message);
   }
 
-  virtual void commandProcessFinished(Command* command, ProcessHandle handle, CommandResult result,
-                                      int exitStatus) override {
+  virtual void commandProcessFinished(Command* command, ProcessHandle handle,
+                                      const CommandExtendedResult& result) override {
     {
         std::lock_guard<std::mutex> lock(traceMutex);
-        traceStream << __FUNCTION__ << ": " << command->getName() << ": " << exitStatus << "\n";
+        traceStream << __FUNCTION__ << ": " << command->getName() << ": "
+                    << result.exitStatus << "\n";
     }
-    super::commandProcessFinished(command, handle, result, exitStatus);
+    super::commandProcessFinished(command, handle, result);
   }
 
   virtual std::unique_ptr<Tool> lookupTool(StringRef name) override {

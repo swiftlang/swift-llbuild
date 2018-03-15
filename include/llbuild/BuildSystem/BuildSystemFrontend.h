@@ -276,13 +276,11 @@ public:
   /// become invalid as soon as the client returns from this API call.
   ///
   /// \param result - Whether the process suceeded, failed or was cancelled.
-  /// \param exitStatus - The raw exit status of the process.
   //
   // FIXME: Need to include additional information on the status here, e.g., the
   // signal status, and the process output (if buffering).
   virtual void commandProcessFinished(Command*, ProcessHandle handle,
-                                      CommandResult result,
-                                      int exitStatus);
+                                      const CommandExtendedResult& result);
 
   /// Called when a cycle is detected by the build engine and it cannot make
   /// forward progress.

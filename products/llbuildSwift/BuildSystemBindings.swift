@@ -18,7 +18,7 @@ import Foundation
 
 import llbuild
 
-#if !LLBUILD_C_API_VERSION_4
+#if !LLBUILD_C_API_VERSION_5
   #if swift(>=4.2)
     #error("Unsupported llbuild C API version")
   #else
@@ -228,6 +228,23 @@ public enum CommandResult {
   }
 }
 
+/// Result of a command execution.
+public struct CommandExtendedResult {
+  public let result: CommandResult /// The result of a command execution
+  public let exitStatus: Int32     /// The exit code
+  public let utime: UInt64         /// User time (in us)
+  public let stime: UInt64         /// Sys time (in us)
+  public let maxRSS: UInt64        /// Max RSS (in bytes)
+
+  init(_ result: UnsafePointer<llb_buildsystem_command_extended_result_t>) {
+    self.result = CommandResult(result.pointee.result)
+    self.exitStatus = result.pointee.exit_status
+    self.utime = result.pointee.utime
+    self.stime = result.pointee.stime
+    self.maxRSS = result.pointee.maxrss
+  }
+}
+
 /// Status change event kinds.
 public enum CommandStatusKind {
     case isScanning
@@ -385,7 +402,7 @@ public protocol BuildSystemDelegate {
     ///
     /// - parameter result: Whether the process suceeded, failed or was cancelled.
     /// - parameter exitStatus: The raw exit status of the process.
-    func commandProcessFinished(_ command: Command, process: ProcessHandle, result: CommandResult, exitStatus: Int)
+    func commandProcessFinished(_ command: Command, process: ProcessHandle, result: CommandExtendedResult)
 
     /// Called when a cycle is detected by the build engine and it cannot make
     /// forward progress.
@@ -470,7 +487,7 @@ public final class BuildSystem {
         _delegate.command_process_started = { BuildSystem.toSystem($0!).commandProcessStarted(Command($1), ProcessHandle($2!)) }
         _delegate.command_process_had_error = { BuildSystem.toSystem($0!).commandProcessHadError(Command($1), ProcessHandle($2!), $3!) }
         _delegate.command_process_had_output = { BuildSystem.toSystem($0!).commandProcessHadOutput(Command($1), ProcessHandle($2!), $3!) }
-        _delegate.command_process_finished = { BuildSystem.toSystem($0!).commandProcessFinished(Command($1), ProcessHandle($2!), CommandResult($3), Int($4)) }
+        _delegate.command_process_finished = { BuildSystem.toSystem($0!).commandProcessFinished(Command($1), ProcessHandle($2!), CommandExtendedResult($3!)) }
         _delegate.cycle_detected = {
             var rules = [BuildKey]()
             UnsafeBufferPointer(start: $1, count: Int($2)).forEach {
@@ -601,8 +618,8 @@ public final class BuildSystem {
         delegate.commandProcessHadOutput(command, process: process, data: bytesFromData(data.pointee))
     }
 
-    private func commandProcessFinished(_ command: Command, _ process: ProcessHandle, _ result: CommandResult, _ exitStatus: Int) {
-        delegate.commandProcessFinished(command, process: process, result: result, exitStatus: exitStatus)
+    private func commandProcessFinished(_ command: Command, _ process: ProcessHandle, _ result: CommandExtendedResult) {
+        delegate.commandProcessFinished(command, process: process, result: result)
     }
 
     private func cycleDetected(_ rules: [BuildKey]) {
