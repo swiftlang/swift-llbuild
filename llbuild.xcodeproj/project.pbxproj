@@ -191,7 +191,6 @@
 		E1AAD28A1BC609F600F54680 /* BuildSystemFrontend.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1AAD2891BC609F600F54680 /* BuildSystemFrontend.cpp */; };
 		E1AAD28E1BC65A1900F54680 /* BuildNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1AAD28D1BC65A1900F54680 /* BuildNode.cpp */; };
 		E1AAD2901BC65AB200F54680 /* ExternalCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1AAD28F1BC65AB200F54680 /* ExternalCommand.cpp */; };
-		E1AAD2921BC65B5000F54680 /* SwiftTools.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1AAD2911BC65B5000F54680 /* SwiftTools.cpp */; };
 		E1ADC23E1A85938C00D5387C /* C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1ADC2311A85922F00D5387C /* C-API.cpp */; };
 		E1ADC23F1A8593AD00D5387C /* llbuild.h in Headers */ = {isa = PBXBuildFile; fileRef = E1ADC2351A8592AA00D5387C /* llbuild.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		E1B3B9DC1E4D5A7A00DF1FBC /* MockBuildSystemDelegate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1B3B9DA1E4D5A7A00DF1FBC /* MockBuildSystemDelegate.cpp */; };
@@ -813,7 +812,6 @@
 		40F638EC2053043D00A1CFBE /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 		54E187B61CD296EA00F7EC89 /* BuildNode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildNode.h; sourceTree = "<group>"; };
 		54E187B71CD296EA00F7EC89 /* ExternalCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ExternalCommand.h; sourceTree = "<group>"; };
-		54E187B81CD296EA00F7EC89 /* SwiftTools.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SwiftTools.h; sourceTree = "<group>"; };
 		9D0A6D7F1E1FFEA800BE636F /* TempDir.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TempDir.cpp; sourceTree = "<group>"; };
 		9D0A6D801E1FFEA800BE636F /* TempDir.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TempDir.h; sourceTree = "<group>"; };
 		9D2589301E3820E3006C76F4 /* PlatformUtility.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PlatformUtility.h; sourceTree = "<group>"; };
@@ -979,7 +977,6 @@
 		E1AAD28B1BC60A0F00F54680 /* BuildSystemFrontend.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildSystemFrontend.h; sourceTree = "<group>"; };
 		E1AAD28D1BC65A1900F54680 /* BuildNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildNode.cpp; sourceTree = "<group>"; };
 		E1AAD28F1BC65AB200F54680 /* ExternalCommand.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ExternalCommand.cpp; sourceTree = "<group>"; };
-		E1AAD2911BC65B5000F54680 /* SwiftTools.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SwiftTools.cpp; sourceTree = "<group>"; };
 		E1ADC2301A85922F00D5387C /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1ADC2311A85922F00D5387C /* C-API.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "C-API.cpp"; sourceTree = "<group>"; };
 		E1ADC2341A85928100D5387C /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -2097,7 +2094,6 @@
 				E1AAD28F1BC65AB200F54680 /* ExternalCommand.cpp */,
 				E1066C071BC5ACAB00B892CE /* LaneBasedExecutionQueue.cpp */,
 				E19880E91FA256D900E490FF /* POSIXEnvironment.h */,
-				E1AAD2911BC65B5000F54680 /* SwiftTools.cpp */,
 			);
 			path = BuildSystem;
 			sourceTree = "<group>";
@@ -2116,7 +2112,6 @@
 				E11470911B7517C800ED84CF /* BuildValue.h */,
 				9D2589311E38221D006C76F4 /* CommandResult.h */,
 				54E187B71CD296EA00F7EC89 /* ExternalCommand.h */,
-				54E187B81CD296EA00F7EC89 /* SwiftTools.h */,
 			);
 			name = Headers;
 			path = include/llbuild/BuildSystem;
@@ -3188,7 +3183,6 @@
 				E1FC67F91BB1F427004EBC54 /* BuildValue.cpp in Sources */,
 				E1BE0AA61C458EB000AD0883 /* BuildExecutionQueue.cpp in Sources */,
 				E11F2B7F1E4D255B00176BAD /* BuildDescription.cpp in Sources */,
-				E1AAD2921BC65B5000F54680 /* SwiftTools.cpp in Sources */,
 				E1E4A5B41BFC1394001BFFC4 /* BuildKey.cpp in Sources */,
 				E1B8395E1B541C5900DB876B /* BuildFile.cpp in Sources */,
 				E104FB001B6568E0005C68A0 /* BuildSystem.cpp in Sources */,
