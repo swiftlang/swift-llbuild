@@ -171,6 +171,11 @@ public struct Command: Hashable {
         return stringFromData(data)
     }
 
+    /// Whether the default status reporting shows status for the command.
+    public var shouldShowStatus: Bool {
+        return llb_buildsystem_command_should_show_status(handle)
+    }
+
     /// The description provided by the command.
     public var description: String {
         let name = llb_buildsystem_command_get_description(handle)!
