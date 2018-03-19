@@ -81,8 +81,11 @@ find_package(PythonInterp)
 
 # Check if we should build the Swift bindings.
 if (";${LLBUILD_SUPPORT_BINDINGS};" MATCHES ";Swift;")
+  if (SWIFTC_EXECUTABLE)
+    set(SWIFTC_FOUND TRUE)
+    message(STATUS "Using provided swiftc: ${SWIFTC_EXECUTABLE}")
   # Find swiftc on OSX using `xcrun --find swiftc` and `find_package` on Linux.
-  if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     execute_process(
         COMMAND xcrun --find swiftc
         OUTPUT_VARIABLE SWIFTC_EXECUTABLE
