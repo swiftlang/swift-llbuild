@@ -175,7 +175,7 @@ function(add_swift_module target name deps sources additional_args)
   # Compile swiftmodule.
   add_custom_command(
       OUTPUT    ${OUTPUTS}
-      COMMAND   swiftc
+      COMMAND   ${SWIFTC_EXECUTABLE}
       ARGS      ${ARGS}
       DEPENDS   ${sources}
   )
@@ -197,7 +197,7 @@ function(add_swift_module target name deps sources additional_args)
   
   add_custom_command(
       OUTPUT    ${DYLIB_OUTPUT}
-      COMMAND   swiftc
+      COMMAND   ${SWIFTC_EXECUTABLE}
       ARGS      ${DYLYB_ARGS}
       DEPENDS   ${OUTPUTS}
   )
