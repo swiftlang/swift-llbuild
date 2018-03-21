@@ -787,7 +787,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		403B1A48205312000018A322 /* version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = version.h; path = products/libllbuild/include/llbuild/version.h; sourceTree = BUILT_PRODUCTS_DIR; };
+		40377C7B2061C44900C0FD4D /* generate-version-h.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "generate-version-h.sh"; sourceTree = "<group>"; };
+		40377C7C2061D24200C0FD4D /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
+		403B1A48205312000018A322 /* version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = version.h; sourceTree = "<group>"; };
 		40F4F4F220531D8A00170EE1 /* version.h.in */ = {isa = PBXFileReference; lastKnownFileType = text; path = version.h.in; sourceTree = "<group>"; };
 		40F638EC2053043D00A1CFBE /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 		54E187B61CD296EA00F7EC89 /* BuildNode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildNode.h; sourceTree = "<group>"; };
@@ -1407,6 +1409,7 @@
 		E1A223E819F98F1C0059043E = {
 			isa = PBXGroup;
 			children = (
+				40377C7C2061D24200C0FD4D /* Package.swift */,
 				E14144901EBDA4A10046F282 /* Xcode */,
 				E1A223FD19F990F10059043E /* products */,
 				E1A2240419F991530059043E /* lib */,
@@ -1602,6 +1605,7 @@
 		E1A2246A19F998C30059043E /* utils */ = {
 			isa = PBXGroup;
 			children = (
+				40377C7B2061C44900C0FD4D /* generate-version-h.sh */,
 				E1A2254E19F9A74B0059043E /* Xcode */,
 				E1A2246B19F998C30059043E /* unittest */,
 			);
@@ -2697,11 +2701,12 @@
 			);
 			name = "Generate version.h";
 			outputPaths = (
-				"$(BUILT_PRODUCTS_DIR)/products/libllbuild/include/llbuild/version.h",
+				"$(SRCROOT)/products/libllbuild/include/llbuild/version.h",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# This script generates the version.h file.  It exists as a separate build\n# phase so that both the framework build and tests that import it\n# 'library-style' can depend on it existing\n\nset -e\nmkdir -p \"${BUILT_PRODUCTS_DIR}/products/libllbuild/include/llbuild\"\nsed -e \"s/\\${LLBUILD_C_API_VERSION}/${LLBUILD_C_API_VERSION}/\" \"${SCRIPT_INPUT_FILE_0}\" > \"${SCRIPT_OUTPUT_FILE_0}\"";
+			shellScript = "\"${SRCROOT}/utils/generate-version-h.sh\"";
+			showEnvVarsInLog = 0;
 		};
 		9D2107C51DFA07D700BE26FF /* Create Target Link */ = {
 			isa = PBXShellScriptBuildPhase;

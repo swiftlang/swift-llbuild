@@ -13,7 +13,7 @@ endif(VERSION_XCCONFIG MATCHES ".*LLBUILD_C_API_VERSION = ([0-9]+).*")
 
 
 # Link C API.
-list(APPEND additional_args -DLLBUILD_C_API_VERSION_${LLBUILD_C_API_VERSION} -I ${CMAKE_CURRENT_SOURCE_DIR}/../libllbuild/include -I ${CMAKE_CURRENT_BINARY_DIR}/../libllbuild/include/llbuild -lllbuild)
+list(APPEND additional_args -DLLBUILD_C_API_VERSION_${LLBUILD_C_API_VERSION} -I ${CMAKE_CURRENT_SOURCE_DIR}/../libllbuild/include -lllbuild)
  
 if(APPLE)
   list(APPEND additional_args -target x86_64-apple-macosx10.10)

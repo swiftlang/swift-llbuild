@@ -6,7 +6,7 @@
 // You can build using:
 //
 // ```shell
-// swift build -Xlinker -lsqlite3 -Xlinker -lncurses
+// swift build -Xlinker -lsqlite3 -Xlinker -lncurses $(utils/generate-version-h.sh)
 // ```
 
 import PackageDescription

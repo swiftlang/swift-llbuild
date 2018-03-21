@@ -30,13 +30,10 @@ else(VERSION_XCCONFIG MATCHES ".*LLBUILD_C_API_VERSION = ([0-9]+).*")
   message(FATAL_ERROR "Unable to find LLBUILD_C_API_VERSION in Version.xcconfig")
 endif(VERSION_XCCONFIG MATCHES ".*LLBUILD_C_API_VERSION = ([0-9]+).*")
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/llbuild/version.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/llbuild/version.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/llbuild/version.h.in ${CMAKE_CURRENT_SOURCE_DIR}/include/llbuild/version.h)
 
 include_directories(BEFORE
   ${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-include_directories(BEFORE
-  ${CMAKE_CURRENT_BINARY_DIR}/include/llbuild)
 
 install(DIRECTORY include/
   DESTINATION include
