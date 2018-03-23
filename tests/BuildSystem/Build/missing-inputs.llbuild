@@ -10,8 +10,7 @@
 # RUN: cat %t.out
 # RUN: %{FileCheck} %s --input-file %t.out --check-prefix=CHECK-FAILURE
 #
-# CHECK-FAILURE: missing input 'input' and no rule to build it
-# CHECK-FAILURE: cannot build 'output-1' due to missing input
+# CHECK-FAILURE: cannot build 'output-1' due to missing inputs: 'input'
 # CHECK-FAILURE-NOT: missing input 'output-2' and no rule to build it
 
 # RUN: touch %t.build/input

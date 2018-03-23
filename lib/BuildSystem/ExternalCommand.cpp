@@ -28,6 +28,7 @@
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
+#include "llvm/Support/raw_ostream.h"
 
 using namespace llbuild;
 using namespace llbuild::basic;
@@ -213,7 +214,7 @@ void ExternalCommand::start(BuildSystemCommandInterface& bsci,
                             core::Task* task) {
   // Initialize the build state.
   skipValue = llvm::None;
-  hasMissingInput = false;
+  missingInputNodes.clear();
 
   // Request all of the inputs.
   unsigned id = 0;
@@ -288,12 +289,7 @@ void ExternalCommand::provideValue(BuildSystemCommandInterface& bsci,
   if (skipValueForInput.hasValue()) {
     skipValue = std::move(skipValueForInput);
     if (value.isMissingInput()) {
-      hasMissingInput = true;
-
-      // FIXME: Design the logging and status output APIs.
-      bsci.getDelegate().error(
-          "", {}, (Twine("missing input '") + inputs[inputID]->getName() +
-                   "' and no rule to build it"));
+      missingInputNodes.insert(inputs[inputID]);
     }
   } else {
     // If there is a missing input file (from a successful command), we always
@@ -350,11 +346,21 @@ BuildValue ExternalCommand::execute(BuildSystemCommandInterface& bsci,
   // If this command should be skipped, do nothing.
   if (skipValue.hasValue()) {
     // If this command had a failed input, treat it as having failed.
-    if (hasMissingInput) {
+    if (!missingInputNodes.empty()) {
+      std::string inputs;
+      llvm::raw_string_ostream inputsStream(inputs);
+      for (Node* missingInputNode : missingInputNodes) {
+        if (missingInputNode != *missingInputNodes.begin()) {
+          inputsStream << ", ";
+        }
+        inputsStream << "'" << missingInputNode->getName() << "'";
+      }
+      inputsStream.flush();
+
       // FIXME: Design the logging and status output APIs.
       bsci.getDelegate().error(
           "", {}, (Twine("cannot build '") + outputs[0]->getName() +
-                   "' due to missing input"));
+                   "' due to missing inputs: " + inputs));
 
       // Report the command failure.
       bsci.getDelegate().hadCommandFailure();
@@ -362,7 +368,7 @@ BuildValue ExternalCommand::execute(BuildSystemCommandInterface& bsci,
 
     return std::move(skipValue.getValue());
   }
-  assert(!hasMissingInput);
+  assert(missingInputNodes.empty());
 
   // If it is legal to simply update the command, then see if we can do so.
   if (canUpdateIfNewer &&

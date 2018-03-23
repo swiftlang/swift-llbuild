@@ -6,8 +6,7 @@
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.out 2> %t.err || true
 # RUN: %{FileCheck} %s --input-file %t.err --check-prefix=CHECK-FAILURE-ERR
 #
-# CHECK-FAILURE-ERR: missing input 'output' and no rule to build it
-# CHECK-FAILURE-ERR: cannot build target {{.*}} due to missing input
+# CHECK-FAILURE-ERR: cannot build target {{.*}} due to missing inputs: 'output'
 # CHECK-FAILURE-ERR: error: build had 1 command failures
 
 client:
