@@ -47,8 +47,7 @@ namespace {
     virtual void commandProcessHadOutput(Command* command, ProcessHandle handle,
                                          StringRef data) override {}
     virtual void commandProcessFinished(Command* command, ProcessHandle handle,
-                                        CommandResult result,
-                                        int exitStatus) override {}
+                                        const CommandExtendedResult& result) override {}
   };
 
   class DummyCommand : public Command {
