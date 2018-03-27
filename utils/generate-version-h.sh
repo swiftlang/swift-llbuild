@@ -8,13 +8,13 @@ set -e
 
 # If not in Xcode, infer SRCROOT relative to this script
 if [ -z ${SRCROOT+x} ]; then
-    scriptroot=$(dirname ${BASH_SOURCE[0]})
+    scriptroot=$(dirname "${BASH_SOURCE[0]}")
     SRCROOT="${scriptroot}/.."
 fi;
 
 # Read the version out of the xcconfig file
 if [ -z ${LLBUILD_C_API_VERSION+x} ]; then
-    LLBUILD_C_API_VERSION=$(sed -n -e "s/.*LLBUILD_C_API_VERSION = \([0-9][0-9]*\).*/\1/p" "${SRCROOT}/Xcode/Configs/Version.xcconfig")
+    LLBUILD_C_API_VERSION=$(sed -n -e "s/.*LLBUILD_C_API_VERSION = \\([0-9][0-9]*\\).*/\\1/p" "${SRCROOT}/Xcode/Configs/Version.xcconfig")
 fi
 
 # Write out version.h from the template
