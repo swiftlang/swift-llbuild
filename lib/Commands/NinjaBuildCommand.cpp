@@ -25,6 +25,7 @@
 #include "llbuild/Ninja/ManifestLoader.h"
 
 #include "llvm/ADT/SmallString.h"
+#include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/TimeValue.h"
 
 #include "CommandLineStatusOutput.h"
@@ -38,7 +39,6 @@
 #include <cstdlib>
 #include <deque>
 #include <mutex>
-#include <sstream>
 #include <thread>
 #include <unordered_set>
 
@@ -1686,17 +1686,19 @@ core::Rule NinjaBuildEngineDelegate::lookupRule(const core::KeyType& key) {
 void NinjaBuildEngineDelegate::cycleDetected(
     const std::vector<core::Rule*>& cycle) {
   // Report the cycle.
-  std::stringstream message;
-  message << "cycle detected among targets:";
+  std::string message;
+  llvm::raw_string_ostream messageStream(message);
+  messageStream << "cycle detected among targets:";
   bool first = true;
   for (const auto* rule: cycle) {
     if (!first)
-      message << " ->";
-    message << " \"" << rule->key << '"';
+      messageStream << " ->";
+    messageStream << " \"" << rule->key << '"';
     first = false;
   }
 
-  context->emitError(message.str());
+  messageStream.flush();
+  context->emitError(message.c_str());
 
   // Cancel the build.
   context->isCancelled = true;

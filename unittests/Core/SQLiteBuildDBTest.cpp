@@ -17,8 +17,6 @@
 
 #include "gtest/gtest.h"
 
-#include <sstream>
-
 #include <sqlite3.h>
 
 using namespace llbuild;
