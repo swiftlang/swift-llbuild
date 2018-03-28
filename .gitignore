@@ -18,6 +18,8 @@
 #==============================================================================#
 # Commonly used name for build products, at the top level.
 /build
+/.build
+/Packages
 
 # Ignore Sphinx build products.
 docs/_build
