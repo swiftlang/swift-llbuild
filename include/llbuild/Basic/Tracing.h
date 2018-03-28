@@ -15,6 +15,31 @@
 
 #include "llvm/ADT/StringRef.h"
 
+// Allow vendored llbuild installations to provide custom tracing entry points
+#if __has_include("TracingMacros.h")
+#include "TracingMacros.h"
+#endif
+
+#ifndef LLBUILD_TRACE_POINT
+#define LLBUILD_TRACE_POINT(kind, arg1, arg2, arg3, arg4) \
+    { (void)(kind); (void)(arg1); (void)(arg2); (void)(arg3); (void)(arg4); }
+#endif
+
+#ifndef LLBUILD_TRACE_INTERVAL_BEGIN
+#define LLBUILD_TRACE_INTERVAL_BEGIN(kind, arg1, arg2, arg3, arg4) \
+    { (void)(kind); (void)(arg1); (void)(arg2); (void)(arg3); (void)(arg4); }
+#endif
+
+#ifndef LLBUILD_TRACE_INTERVAL_END
+#define LLBUILD_TRACE_INTERVAL_END(kind, arg1, arg2, arg3, arg4) \
+    { (void)(kind); (void)(arg1); (void)(arg2); (void)(arg3); (void)(arg4); }
+#endif
+
+#ifndef LLBUILD_TRACE_STRING
+#define LLBUILD_TRACE_STRING(kind, str) \
+    ([&kind, &str]{ (void)(kind); (void)(str); return 0; })()
+#endif
+
 namespace llbuild {
 
 /// Tracing Kind Codes
@@ -71,6 +96,7 @@ struct TracingPoint {
                 uint64_t arg3 = 0, uint64_t arg4 = 0)
     : kind(uint32_t(kind)), arg1(arg1), arg2(arg2), arg3(arg3), arg4(arg4)
   {
+    LLBUILD_TRACE_POINT(kind, arg1, arg2, arg3, arg4);
   }
 };
 
@@ -90,8 +116,10 @@ struct TracingInterval {
                   uint64_t arg3 = 0, uint64_t arg4 = 0)
       : kind(uint32_t(kind)), arg1(arg1), arg2(arg2), arg3(arg3), arg4(arg4)
   {
+    LLBUILD_TRACE_INTERVAL_BEGIN(kind, arg1, arg2, arg3, arg4);
   }
   ~TracingInterval() {
+    LLBUILD_TRACE_INTERVAL_END(kind, arg1, arg2, arg3, arg4);
   }
 
   // MARK: Utility Wrappers
@@ -112,7 +140,7 @@ struct TracingString {
   const uint64_t value;
 
   TracingString(TraceEventKind kind, llvm::StringRef str)
-      : kind(uint32_t(kind)), value(0) {}
+      : kind(uint32_t(kind)), value(LLBUILD_TRACE_STRING(kind, str)) {}
 
   operator uint64_t() const { return value; }
 };
