@@ -17,12 +17,12 @@
 #include "llbuild/Core/BuildEngine.h"
 
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include <cassert>
 #include <cerrno>
 #include <cstring>
 #include <mutex>
-#include <sstream>
 
 #include <sqlite3.h>
 
@@ -51,14 +51,16 @@ class SQLiteBuildDB : public BuildDB {
     const char* err_message = sqlite3_errmsg(db);
     const char* filename = sqlite3_db_filename(db, "main");
 
-    std::stringstream out;
-    out << "error: accessing build database \"" << filename << "\": " << err_message;
+    std::string out;
+    llvm::raw_string_ostream outStream(out);
+    outStream << "error: accessing build database \"" << filename << "\": " << err_message;
 
     if (err_code == SQLITE_BUSY || err_code == SQLITE_LOCKED) {
-      out << " Possibly there are two concurrent builds running in the same filesystem location.";
+      outStream << " Possibly there are two concurrent builds running in the same filesystem location.";
     }
 
-    return out.str();
+    outStream.flush();
+    return out;
   }
 
 public:

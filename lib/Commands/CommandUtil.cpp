@@ -18,9 +18,9 @@
 #include "llbuild/Ninja/Parser.h"
 
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include <iostream>
-#include <sstream>
 
 using namespace llbuild;
 using namespace llbuild::commands;
@@ -44,22 +44,24 @@ static char hexdigit(unsigned input) {
 }
 
 std::string util::escapedString(const char* start, unsigned length) {
-  std::stringstream result;
+  std::string result;
+  llvm::raw_string_ostream resultStream(result);
   for (unsigned i = 0; i != length; ++i) {
     char c = start[i];
     if (c == '"') {
-      result << "\\\"";
+      resultStream << "\\\"";
     } else if (isprint(c)) {
-      result << c;
+      resultStream << c;
     } else if (c == '\n') {
-      result << "\\n";
+      resultStream << "\\n";
     } else {
-      result << "\\x"
+      resultStream << "\\x"
              << hexdigit(((unsigned char) c >> 4) & 0xF)
              << hexdigit((unsigned char) c & 0xF);
     }
   }
-  return result.str();
+  resultStream.flush();
+  return result;
 }
 std::string util::escapedString(const std::string& string) {
   return escapedString(string.data(), string.size());
