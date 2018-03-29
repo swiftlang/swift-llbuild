@@ -52,6 +52,9 @@
 /// Get the full version of the llbuild library.
 LLBUILD_EXPORT const char* llb_get_full_version_string(void);
 
+/// Get the C API version number.
+LLBUILD_EXPORT int llb_get_api_version(void);
+
 // The Core component.
 #include "core.h"
 
