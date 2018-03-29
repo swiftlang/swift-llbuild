@@ -395,7 +395,8 @@ typedef struct llb_buildsystem_delegate_t_ {
   void (*command_process_finished)(void* context,
                                    llb_buildsystem_command_t* command,
                                    llb_buildsystem_process_t* process,
-                                   const llb_buildsystem_command_extended_result_t* result);
+                                   llb_buildsystem_command_result_t result,
+                                   int exit_status);
 
   /// Called when a cycle is detected by the build engine and it cannot make
   /// forward progress.
