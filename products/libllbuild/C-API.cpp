@@ -25,3 +25,7 @@ const char* llb_get_full_version_string(void) {
 
   return versionString.c_str();
 }
+
+int llb_get_api_version(void) {
+    return LLBUILD_C_API_VERSION;
+}
