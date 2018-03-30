@@ -19,6 +19,7 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 
+#include <string>
 #include <vector>
 
 namespace llbuild {
@@ -54,6 +55,11 @@ public:
   BinaryEncoder() {}
 
   /// Encode a value to the stream.
+  void write(bool value) {
+    data.push_back(uint8_t(value));
+  }
+
+  /// Encode a value to the stream.
   void write(uint8_t value) {
     data.push_back(value);
   }
@@ -74,6 +80,16 @@ public:
   void write(uint64_t value) {
     write(uint32_t(value >> 0));
     write(uint32_t(value >> 32));
+  }
+
+  /// Encode a value to the stream.
+  ///
+  /// We do not support encoding values larger than 4GB.
+  void write(const std::string& value) {
+    uint32_t size = uint32_t(value.size());
+    assert(size == value.size());
+    write(size);
+    writeBytes(StringRef(value));
   }
 
   /// Encode a sequence of bytes to the stream.
@@ -142,6 +158,9 @@ public:
   }
   
   /// Decode a value from the stream.
+  void read(bool& value) { value = read8() != 0; }
+  
+  /// Decode a value from the stream.
   void read(uint8_t& value) { value = read8(); }
   
   /// Decode a value from the stream.
@@ -152,6 +171,15 @@ public:
 
   /// Decode a value from the stream.
   void read(uint64_t& value) { value = read64(); }
+
+  /// Decode a value from the stream.
+  void read(std::string& value) {
+    uint32_t size;
+    read(size);
+    StringRef contents;
+    readBytes(size, contents);
+    value = contents.str();
+  }
 
   /// Decode a byte string from the stream.
   ///

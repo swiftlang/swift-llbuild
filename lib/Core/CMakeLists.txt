@@ -1,6 +1,9 @@
 add_llbuild_library(llbuildCore
   BuildDB.cpp
   BuildEngine.cpp
+  BuildEngineClient.cpp
+  BuildEngineProtocol.cpp
+  BuildEngineServer.cpp
   BuildEngineTrace.cpp
   DependencyInfoParser.cpp
   MakefileDepsParser.cpp
