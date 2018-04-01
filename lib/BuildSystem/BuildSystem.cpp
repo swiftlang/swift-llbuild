@@ -2194,7 +2194,7 @@ public:
     // FIXME: Need a decent subprocess interface.
     SmallString<256> command;
     llvm::raw_svector_ostream commandOS(command);
-    commandOS << executable;
+    commandOS << basic::shellEscaped(executable);
     commandOS << " " << "--version";
 
     // Read the result.
