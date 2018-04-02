@@ -327,8 +327,7 @@ public:
           cAPIDelegate.context,
           (llb_buildsystem_command_t*) command,
           (llb_buildsystem_process_t*) handle.id,
-          result.result,
-          result.exit_status);
+          &result);
     }
   }
 
