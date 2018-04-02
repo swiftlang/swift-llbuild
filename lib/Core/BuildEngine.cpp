@@ -931,27 +931,34 @@ private:
         didWork = true;
       }
 
-      // If we didn't do any work, we are done.
-      if (!didWork)
-        break;
-    }
+      if (!didWork) {
+        // If there was no work to do, but we still have running tasks, then
+        // we have found a cycle. Try to resolve it and continue.
+        if (!taskInfos.empty()) {
+          if (resolveCycle(buildKey)) {
+            continue;
+          } else {
+            cancelRemainingTasks();
+            return false;
+          }
+        }
 
-    // If there was no work to do, but we still have running tasks, then
-    // we have found a cycle and are deadlocked.
-    if (!taskInfos.empty()) {
-      reportCycle(buildKey);
-      return false;
+        // We didn't do any work, and we have nothing more we can/need to do.
+        break;
+      }
     }
 
     return true;
   }
 
-  /// Report the cycle which has called the engine to be unable to make forward
+  /// Attempt to resolve a cycle which has called the engine to be unable to make forward
   /// progress.
   ///
   /// \param buildKey The key which was requested to build (the reported cycle
   /// with start with this node).
-  void reportCycle(const KeyType& buildKey) {
+  /// \returns True if the engine should try to proceed, false if the build the could not
+  /// be broken.
+  bool resolveCycle(const KeyType& buildKey) {
     // Take all available locks, to ensure we dump a consistent state.
     std::lock_guard<std::mutex> guard1(taskInfosMutex);
     std::lock_guard<std::mutex> guard2(finishedTaskInfosMutex);
@@ -1077,8 +1084,11 @@ private:
     }
     assert(!cycleList.empty());
 
+    // TODO: try to break the cycle here
+
     delegate.cycleDetected(cycleList);
-    cancelRemainingTasks();
+
+    return false;
   }
 
   // Cancel all of the remaining tasks.
