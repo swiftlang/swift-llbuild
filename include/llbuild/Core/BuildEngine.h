@@ -203,6 +203,16 @@ public:
   /// that the client can translate into an error.
   virtual Rule lookupRule(const KeyType& key) = 0;
 
+  /// Called when a cycle is detected by the build engine to check if it should
+  /// attempt to resolve the cycle and continue
+  ///
+  /// \param items The ordered list of items comprising the cycle, starting from
+  /// the node which was requested to build and ending with the first node in
+  /// the cycle (i.e., the node participating in the cycle will appear twice).
+  /// \returns True if the engine should attempt to resolve the cycle, false
+  /// otherwise.
+  virtual bool shouldResolveCycle(const std::vector<Rule*>& items);
+
   /// Called when a cycle is detected by the build engine and it cannot make
   /// forward progress.
   ///

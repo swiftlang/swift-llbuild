@@ -96,6 +96,14 @@ public:
 
     /// @}
 
+    /// @name Cycle Resolution
+    /// @{
+
+    void cycleForceRuleNeedsToRun(const Rule* forRule);
+    void cycleSupplyPriorValue(const Rule* forRule, const Task* toTask);
+
+    /// @}
+
     /// @}
 };
 
