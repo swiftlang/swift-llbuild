@@ -15,5 +15,5 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define LLBUILD_C_API_VERSION 4
+#define LLBUILD_C_API_VERSION 5
 
