@@ -126,6 +126,14 @@ public:
     }
   }
 
+  virtual void commandsHadError(std::vector<Command*> commands, StringRef data) {
+    llvm::errs() << "error: " << commands[0]->getName() << ": " << data.str() << "\n";
+    {
+      std::unique_lock<std::mutex> lock(messagesMutex);
+      messages.push_back(data.str());
+    }
+  }
+
   virtual void commandHadNote(Command* command, StringRef data) {
     if (trackAllMessages) {
       std::unique_lock<std::mutex> lock(messagesMutex);

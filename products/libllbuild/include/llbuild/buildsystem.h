@@ -339,6 +339,19 @@ typedef struct llb_buildsystem_delegate_t_ {
                             llb_buildsystem_command_t* command,
                             const llb_data_t* data);
 
+  /// Called to report an error that relates to multiple commands.
+  ///
+  /// For example, an error where multiple commands are trying to
+  /// build the same node.
+  ///
+  /// Xparam commands The commands this error is related to.
+  /// Xparam numberOfCommands The number of commands.
+  /// Xparam data The error message.
+  void (*commands_had_error)(void* context,
+                             llb_buildsystem_command_t** commands,
+                             unsigned numberOfCommands,
+                             const llb_data_t* data);
+
   /// Called to report a note during the execution of a command.
   ///
   /// Xparam data The note message.

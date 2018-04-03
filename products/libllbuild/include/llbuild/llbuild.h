@@ -38,6 +38,8 @@
 ///
 /// Version History:
 ///
+/// 6: Added `commands_had_error` delegate method.
+///
 /// 5: Added `llb_buildsystem_command_extended_result_t`, changed command_process_finished signature.
 ///
 /// 4: Added llb_buildsystem_build_node.

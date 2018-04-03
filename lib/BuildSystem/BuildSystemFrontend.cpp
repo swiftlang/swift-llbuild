@@ -497,6 +497,11 @@ void BuildSystemFrontendDelegate::commandHadError(Command* command, StringRef da
   fflush(stderr);
 }
 
+void BuildSystemFrontendDelegate::commandsHadError(std::vector<Command*> commands, StringRef data) {
+  fwrite(data.data(), data.size(), 1, stderr);
+  fflush(stderr);
+}
+
 void BuildSystemFrontendDelegate::commandHadNote(Command* command, StringRef data) {
   fwrite(data.data(), data.size(), 1, stdout);
   fflush(stdout);

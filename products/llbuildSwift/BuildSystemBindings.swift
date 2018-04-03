@@ -18,7 +18,7 @@ import Foundation
 
 import llbuild
 
-#if !LLBUILD_C_API_VERSION_5
+#if !LLBUILD_C_API_VERSION_6
   #if swift(>=4.2)
     #error("Unsupported llbuild C API version")
   #else
@@ -398,6 +398,9 @@ public protocol BuildSystemDelegate {
     /// Called to report an error during the execution of a command.
     func commandHadError(_ command: Command, message: String)
 
+    /// Called to report an error that relates to multiple commands.
+    func commandsHadError(_ commands: [Command], message: String)
+
     /// Called to report a note during the execution of a command.
     func commandHadNote(_ command: Command, message: String)
 
@@ -522,6 +525,11 @@ public final class BuildSystem {
         _delegate.should_command_start = { BuildSystem.toSystem($0!).shouldCommandStart(Command($1)) }
         _delegate.command_finished = { BuildSystem.toSystem($0!).commandFinished(Command($1), CommandResult($2)) }
         _delegate.command_had_error = { BuildSystem.toSystem($0!).commandHadError(Command($1), $2!) }
+        _delegate.commands_had_error = {
+            let commandsPtr = $1!
+            let commands = (0..<Int($2)).map { Command((commandsPtr + $0).pointee) }
+            BuildSystem.toSystem($0!).commandsHadError(commands, $3!)
+        }
         _delegate.command_had_note = { BuildSystem.toSystem($0!).commandHadNote(Command($1), $2!) }
         _delegate.command_had_warning = { BuildSystem.toSystem($0!).commandHadWarning(Command($1), $2!) }
         _delegate.command_process_started = { BuildSystem.toSystem($0!).commandProcessStarted(Command($1), ProcessHandle($2!)) }
@@ -685,6 +693,10 @@ public final class BuildSystem {
 
     private func commandHadError(_ command: Command, _ data: UnsafePointer<llb_data_t>) {
         delegate.commandHadError(command, message: stringFromData(data.pointee))
+    }
+
+    private func commandsHadError(_ commands: [Command], _ data: UnsafePointer<llb_data_t>) {
+        delegate.commandsHadError(commands, message: stringFromData(data.pointee))
     }
 
     private func commandHadNote(_ command: Command, _ data: UnsafePointer<llb_data_t>) {
