@@ -57,7 +57,7 @@ class BuildEngineImpl {
   BuildEngineDelegate& delegate;
 
   /// The key table, used when there is no database.
-  llvm::StringMap<bool> keyTable;
+  llvm::StringMap<KeyID> keyTable;
 
   /// The mutex that protects the key table.
   std::mutex keyTableMutex;
@@ -1139,23 +1139,29 @@ public:
   }
 
   KeyID getKeyID(const KeyType& key) {
+      std::lock_guard<std::mutex> guard(keyTableMutex);
+
     // Delegate if we have a database.
     if (db) {
+      // Check our cache, to avoid query the database redundantly.
+      auto it = keyTable.find(key);
+      if (it != keyTable.end())
+        return it->second;
+      
       std::string error;
       KeyID id = db->getKeyID(key, &error);
       if (!error.empty()) {
         delegate.error(error);
         cancelRemainingTasks();
       }
+
+      // Cache the result, and return;
+      keyTable.insert(std::make_pair(key, id));
       return id;
     }
 
-    // Otherwise use our builtin key table.
-    {
-      std::lock_guard<std::mutex> guard(keyTableMutex);
-      auto it = keyTable.insert(std::make_pair(key, false)).first;
-      return (KeyID)(uintptr_t)it->getKey().data();
-    }
+    // Otherwise, use our builtin key table.
+    return keyTable.insert(std::make_pair(key, keyTable.size())).first->second;
   }
 
   RuleInfo& getRuleInfoForKey(const KeyType& key) {
