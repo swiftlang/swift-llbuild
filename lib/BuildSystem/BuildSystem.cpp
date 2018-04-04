@@ -924,7 +924,7 @@ class DirectoryTreeSignatureTask : public Task {
     
     // Compute the signature.
     engine.taskIsComplete(this, BuildValue::makeDirectoryTreeSignature(
-                              uint64_t(code)).toData());
+                              CommandSignature(uint64_t(code))).toData());
   }
 
 public:
@@ -1082,7 +1082,7 @@ class DirectoryTreeStructureSignatureTask : public Task {
     
     // Compute the signature.
     engine.taskIsComplete(this, BuildValue::makeDirectoryTreeStructureSignature(
-                              uint64_t(code)).toData());
+                              CommandSignature(uint64_t(code))).toData());
   }
 
 public:
@@ -1644,32 +1644,28 @@ class ShellCommand : public ExternalCommand {
   bool canSafelyInterrupt = true;
 
   /// The cached signature, once computed -- 0 is used as a sentinel value.
-  std::atomic<uint64_t> cachedSignature{ 0 };
+  std::atomic<CommandSignature> cachedSignature{ };
   
-  virtual uint64_t getSignature() override {
-    uint64_t signature = cachedSignature;
-    if (signature != 0)
+  virtual CommandSignature getSignature() override {
+    CommandSignature signature = cachedSignature;
+    if (!signature.isNull())
       return signature;
-      
-    // FIXME: Use a more appropriate hashing infrastructure.
-    using llvm::hash_combine;
-    llvm::hash_code code = ExternalCommand::getSignature();
-    for (const auto& arg: args) {
-      code = hash_combine(code, arg);
-    }
+
+    auto code = ExternalCommand::getSignature()
+        .combine(args);
     for (const auto& entry: env) {
-      code = hash_combine(code, entry.first);
-      code = hash_combine(code, entry.second);
+      code = code.combine(entry.first);
+      code = code.combine(entry.second);
     }
     for (const auto& path: depsPaths) {
-      code = hash_combine(code, path);
+      code = code.combine(path);
     }
-    code = hash_combine(code, int(depsStyle));
-    code = hash_combine(code, int(inheritEnv));
-    code = hash_combine(code, int(canSafelyInterrupt));
-    signature = size_t(code);
-    if (signature == 0) {
-      signature = 1;
+    code = code.combine(int(depsStyle));
+    code = code.combine(int(inheritEnv));
+    code = code.combine(int(canSafelyInterrupt));
+    signature = code;
+    if (signature.isNull()) {
+      signature = CommandSignature(1);
     }
     cachedSignature = signature;
     return signature;
@@ -1976,13 +1972,9 @@ class ClangShellCommand : public ExternalCommand {
   /// The path to the dependency output file, if used.
   std::string depsPath;
   
-  virtual uint64_t getSignature() override {
-    using llvm::hash_combine;
-    llvm::hash_code code = ExternalCommand::getSignature();
-    for (const auto& arg: args) {
-      code = hash_combine(code, arg);
-    }
-    return size_t(code);
+  virtual CommandSignature getSignature() override {
+    return ExternalCommand::getSignature()
+        .combine(args);
   }
 
   bool processDiscoveredDependencies(BuildSystemCommandInterface& bsci,
@@ -2241,7 +2233,7 @@ public:
     //
     // FIXME: We should support BuildValues with arbitrary payloads.
     return BuildValue::makeSuccessfulCommand(
-        basic::FileInfo{}, basic::hashString(result));
+        basic::FileInfo{}, CommandSignature(result));
   }
 };
 
@@ -2279,28 +2271,17 @@ class SwiftCompilerShellCommand : public ExternalCommand {
   /// Enables multi-threading with the thread count if > 0.
   std::string numThreads = "0";
 
-  virtual uint64_t getSignature() override {
-    // FIXME: Use a more appropriate hashing infrastructure.
-    using llvm::hash_combine;
-    llvm::hash_code code = ExternalCommand::getSignature();
-    code = hash_combine(code, executable);
-    code = hash_combine(code, moduleName);
-    code = hash_combine(code, moduleOutputPath);
-    for (const auto& item: sourcesList) {
-      code = hash_combine(code, item);
-    }
-    for (const auto& item: objectsList) {
-      code = hash_combine(code, item);
-    }
-    for (const auto& item: importPaths) {
-      code = hash_combine(code, item);
-    }
-    code = hash_combine(code, tempsPath);
-    for (const auto& item: otherArgs) {
-      code = hash_combine(code, item);
-    }
-    code = hash_combine(code, isLibrary);
-    return size_t(code);
+  virtual CommandSignature getSignature() override {
+    return ExternalCommand::getSignature()
+        .combine(executable)
+        .combine(moduleName)
+        .combine(moduleOutputPath)
+        .combine(sourcesList)
+        .combine(objectsList)
+        .combine(importPaths)
+        .combine(tempsPath)
+        .combine(otherArgs)
+        .combine(isLibrary);
   }
 
   /// Get the path to use for the output file map.
@@ -2842,14 +2823,13 @@ class SymlinkCommand : public Command {
       StringRef(linkOutputPath);
   }
   
-  virtual uint64_t getSignature() {
-    using llvm::hash_combine;
-    llvm::hash_code code = hash_value(output->getName());
-    code = hash_combine(code, contents);
+  virtual CommandSignature getSignature() {
+    CommandSignature code(output->getName());
+    code = code.combine(contents);
     for (const auto* input: inputs) {
-      code = hash_combine(code, input->getName());
+      code = code.combine(input->getName());
     }
-    return size_t(code);
+    return code;
   }
 
   virtual void configureDescription(const ConfigureContext&,

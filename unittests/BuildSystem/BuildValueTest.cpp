@@ -10,6 +10,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llbuild/Basic/Hashing.h"
 #include "llbuild/BuildSystem/BuildValue.h"
 
 #include "gtest/gtest.h"
@@ -54,7 +55,7 @@ TEST(BuildValueTest, virtualValueSerialization) {
 }
 
 TEST(BuildValueTest, commandValueSingleOutputSerialization) {
-  uint64_t signature = 0xDEADBEEF;
+  auto signature = llbuild::basic::CommandSignature(0xDEADBEEF);
   basic::FileInfo infos[1] = {};
   infos[0].size = 1;
   
@@ -89,7 +90,7 @@ TEST(BuildValueTest, commandValueSingleOutputSerialization) {
 }
 
 TEST(BuildValueTest, commandValueMultipleOutputsSerialization) {
-  uint64_t signature = 0xDEADBEEF;
+  auto signature = llbuild::basic::CommandSignature(0xDEADBEEF);
   basic::FileInfo infos[2] = {};
   infos[0].size = 1;
   infos[1].size = 2;

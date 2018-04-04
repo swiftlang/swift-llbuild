@@ -686,22 +686,20 @@ public:
     llvm::raw_svector_ostream(result) << getName();
   }
 
-  virtual uint64_t getSignature() override {
-    // FIXME: Use a more appropriate hashing infrastructure.
-    using llvm::hash_combine;
-    llvm::hash_code code = ExternalCommand::getSignature();
+  virtual llbuild::basic::CommandSignature getSignature() override {
+    auto sig = ExternalCommand::getSignature();
     if (cAPIDelegate.get_signature) {
       llb_data_t data;
       cAPIDelegate.get_signature(cAPIDelegate.context, (llb_buildsystem_command_t*)this,
                                  &data);
-      code = hash_combine(code, StringRef((const char*)data.data, data.length));
+      sig = sig.combine(StringRef((const char*)data.data, data.length));
 
       // Release the client memory.
       //
       // FIXME: This is gross, come up with a general purpose solution.
       free((char*)data.data);
     }
-    return size_t(code);
+    return sig;
   }
 };
 

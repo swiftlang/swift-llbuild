@@ -34,20 +34,18 @@ using namespace llbuild;
 using namespace llbuild::basic;
 using namespace llbuild::buildsystem;
 
-uint64_t ExternalCommand::getSignature() {
-  // FIXME: Use a more appropriate hashing infrastructure.
-  using llvm::hash_combine;
-  llvm::hash_code code = hash_value(getName());
+CommandSignature ExternalCommand::getSignature() {
+  CommandSignature code(getName());
   for (const auto* input: inputs) {
-    code = hash_combine(code, input->getName());
+    code = code.combine(input->getName());
   }
   for (const auto* output: outputs) {
-    code = hash_combine(code, output->getName());
+    code = code.combine(output->getName());
   }
-  code = hash_combine(code, allowMissingInputs);
-  code = hash_combine(code, allowModifiedOutputs);
-  code = hash_combine(code, alwaysOutOfDate);
-  return size_t(code);
+  return code
+      .combine(allowMissingInputs)
+      .combine(allowModifiedOutputs)
+      .combine(alwaysOutOfDate);
 }
 
 void ExternalCommand::configureDescription(const ConfigureContext&,
