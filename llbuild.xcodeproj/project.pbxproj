@@ -788,7 +788,7 @@
 
 /* Begin PBXFileReference section */
 		40377C7B2061C44900C0FD4D /* generate-version-h.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "generate-version-h.sh"; sourceTree = "<group>"; };
-		40377C7C2061D24200C0FD4D /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
+		40377C7C2061D24200C0FD4D /* Package.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; tabWidth = 4; };
 		403B1A48205312000018A322 /* version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = version.h; sourceTree = "<group>"; };
 		40F4F4F220531D8A00170EE1 /* version.h.in */ = {isa = PBXFileReference; lastKnownFileType = text; path = version.h.in; sourceTree = "<group>"; };
 		40F638CE2051EDC800A1CFBE /* count-lines-2 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "count-lines-2"; sourceTree = "<group>"; };
@@ -823,7 +823,7 @@
 		9DB047A81DF9D43D006CDF52 /* BuildSystemTests */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = BuildSystemTests; sourceTree = BUILT_PRODUCTS_DIR; };
 		9DDD8BDF1DDCAB9A00FB62D2 /* SQLiteBuildDBTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SQLiteBuildDBTest.cpp; sourceTree = "<group>"; };
 		BC8DEEFF2030088600E9EF0C /* libllbuildSwift.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libllbuildSwift.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
-		BC8DEF0520300AAF00E9EF0C /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
+		BC8DEF0520300AAF00E9EF0C /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; tabWidth = 2; };
 		BC8DEF0620300AAF00E9EF0C /* BuildSystemBindings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BuildSystemBindings.swift; sourceTree = "<group>"; };
 		BC8DEF0720300AAF00E9EF0C /* CoreBindings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CoreBindings.swift; sourceTree = "<group>"; };
 		BC8DEF2620300DA000E9EF0C /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
@@ -990,7 +990,7 @@
 		E1B49EFA1B6BD45D0031AFC2 /* BuildSystem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildSystem.h; sourceTree = "<group>"; };
 		E1B838A21B52E7DE00DB876B /* libllvmSupport.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libllvmSupport.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1B838A41B52E85400DB876B /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
-		E1B838A51B52E85400DB876B /* import-llvm */ = {isa = PBXFileReference; lastKnownFileType = text; path = "import-llvm"; sourceTree = "<group>"; };
+		E1B838A51B52E85400DB876B /* import-llvm */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = text; path = "import-llvm"; sourceTree = "<group>"; tabWidth = 4; };
 		E1B838A71B52E85400DB876B /* Allocator.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Allocator.cpp; sourceTree = "<group>"; };
 		E1B838A81B52E85400DB876B /* Atomic.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Atomic.cpp; sourceTree = "<group>"; };
 		E1B838A91B52E85400DB876B /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
@@ -1337,8 +1337,10 @@
 				40F638D92051EDC800A1CFBE /* GameOfLife */,
 				40F638E72051EDC800A1CFBE /* c-api */,
 			);
+			indentWidth = 4;
 			path = examples;
 			sourceTree = "<group>";
+			tabWidth = 4;
 		};
 		40F638CD2051EDC800A1CFBE /* simple-make */ = {
 			isa = PBXGroup;
@@ -1424,8 +1426,10 @@
 			children = (
 				40F638E82051EDC800A1CFBE /* buildsystem */,
 			);
+			indentWidth = 2;
 			path = "c-api";
 			sourceTree = "<group>";
+			tabWidth = 2;
 		};
 		40F638E82051EDC800A1CFBE /* buildsystem */ = {
 			isa = PBXGroup;
@@ -1460,8 +1464,10 @@
 				BC8DEF0620300AAF00E9EF0C /* BuildSystemBindings.swift */,
 				BC8DEF0720300AAF00E9EF0C /* CoreBindings.swift */,
 			);
+			indentWidth = 4;
 			path = llbuildSwift;
 			sourceTree = "<group>";
+			tabWidth = 4;
 		};
 		E10D5CDB19FEBF6A00211ED4 /* LitXCTestAdaptor */ = {
 			isa = PBXGroup;
@@ -1498,8 +1504,10 @@
 			children = (
 				E14144911EBDA4A10046F282 /* Configs */,
 			);
+			indentWidth = 4;
 			path = Xcode;
 			sourceTree = "<group>";
+			tabWidth = 4;
 		};
 		E14144911EBDA4A10046F282 /* Configs */ = {
 			isa = PBXGroup;
@@ -1550,7 +1558,9 @@
 				E1A223F219F98F1C0059043E /* Products */,
 				E13B5E411A00395300EA0405 /* Frameworks */,
 			);
+			indentWidth = 2;
 			sourceTree = "<group>";
+			tabWidth = 2;
 		};
 		E1A223F219F98F1C0059043E /* Products */ = {
 			isa = PBXGroup;
@@ -1875,8 +1885,10 @@
 				E18043391A00129400662FE7 /* install-user-lit.sh */,
 				E17C29F21B5AC18C00C12DA9 /* install-user-sphinx.sh */,
 			);
+			indentWidth = 4;
 			path = Xcode;
 			sourceTree = "<group>";
+			tabWidth = 4;
 		};
 		E1ADC22F1A8591F600D5387C /* libllbuild */ = {
 			isa = PBXGroup;
@@ -2130,8 +2142,10 @@
 				E171538C1A0BF702004CD598 /* CorePerfTests.mm */,
 				E1C404B01A0308F3003392BA /* NinjaPerfTests.mm */,
 			);
+			indentWidth = 4;
 			path = PerfTests;
 			sourceTree = "<group>";
+			tabWidth = 4;
 		};
 		E1C404AE1A0308F3003392BA /* Supporting Files */ = {
 			isa = PBXGroup;
