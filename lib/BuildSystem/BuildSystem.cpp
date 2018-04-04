@@ -35,6 +35,7 @@
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/Hashing.h"
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
@@ -380,9 +381,9 @@ class TargetTask : public Task {
   // FIXME: We should probably factor this out somewhere else, so we can enforce
   // it is never used when initialized incorrectly.
 
-  /// If true, the command had a missing input (this implies ShouldSkip is
-  /// true).
-  bool hasMissingInput = false;
+  /// If there are any elements, the command had missing input nodes (this implies
+  /// ShouldSkip is true).
+  SmallPtrSet<Node*, 1> missingInputNodes;
 
   virtual void start(BuildEngine& engine) override {
     // Request all of the necessary system tasks.
@@ -404,14 +405,7 @@ class TargetTask : public Task {
     auto value = BuildValue::fromData(valueData);
 
     if (value.isMissingInput()) {
-      hasMissingInput = true;
-
-      // FIXME: Design the logging and status output APIs.
-      auto& system = getBuildSystem(engine);
-      system.error(system.getMainFilename(),
-                   (Twine("missing input '") +
-                    target.getNodes()[inputID]->getName() +
-                    "' and no rule to build it"));
+      missingInputNodes.insert(target.getNodes()[inputID]);
     }
   }
 
@@ -422,12 +416,22 @@ class TargetTask : public Task {
       return;
     }
 
-    if (hasMissingInput) {
+    if (!missingInputNodes.empty()) {
+      std::string inputs;
+      raw_string_ostream inputsStream(inputs);
+      for (Node* missingInputNode : missingInputNodes) {
+        if (missingInputNode != *missingInputNodes.begin()) {
+          inputsStream << ", ";
+        }
+        inputsStream << "'" << missingInputNode->getName() << "'";
+      }
+      inputsStream.flush();
+
       // FIXME: Design the logging and status output APIs.
       auto& system = getBuildSystem(engine);
       system.error(system.getMainFilename(),
                    (Twine("cannot build target '") + target.getName() +
-                    "' due to missing input"));
+                    "' due to missing inputs: " + inputs));
       
       // Report the command failure.
       system.getDelegate().hadCommandFailure();
