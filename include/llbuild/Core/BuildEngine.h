@@ -280,8 +280,8 @@ public:
 
   /// Cancel the currently running build.
   ///
-  /// The engine guarantees that it will not *start* any task after it has been
-  /// cancelled.
+  /// The engine guarantees that it will not *start* any task after processing
+  /// the current engine work loop iteration after it has been cancelled.
   ///
   /// This method is thread-safe.
   ///
