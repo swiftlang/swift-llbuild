@@ -260,7 +260,7 @@ private:
   } valueData;
 
   /// The command hash, for successful commands.
-  uint64_t commandHash;
+  CommandSignature commandHash;
 
 private:
   BuildValue() {}
@@ -269,13 +269,13 @@ private:
   {
   }
   BuildValue(BuildValueKind kind, const FileInfo& outputInfo,
-             uint64_t commandHash = 0)
+             CommandSignature commandHash = CommandSignature())
     : kind(kind), numOutputInfos(1), commandHash(commandHash)
   {
     valueData.asOutputInfo = outputInfo;
   }
   BuildValue(BuildValueKind kind, const FileInfo* outputInfos,
-             uint32_t numOutputInfos, uint64_t commandHash = 0)
+             uint32_t numOutputInfos, CommandSignature commandHash = CommandSignature())
     : kind(kind), numOutputInfos(numOutputInfos), commandHash(commandHash)
   {
     valueData.asOutputInfos = new FileInfo[numOutputInfos];
@@ -303,13 +303,13 @@ public:
     return BuildValue(BuildValueKind::MissingInput);
   }
   static BuildValue makeSuccessfulCommand(const FileInfo& outputInfo,
-                                          uint64_t commandHash) {
+                                          CommandSignature commandHash) {
     return BuildValue(BuildValueKind::SuccessfulCommand, outputInfo,
                       commandHash);
   }
   static BuildValue makeSuccessfulCommand(const FileInfo* outputInfos,
                                           uint32_t numOutputInfos,
-                                          uint64_t commandHash) {
+                                          CommandSignature commandHash) {
     // This ctor function should only be used for multiple outputs.
     assert(numOutputInfos > 1);
     return BuildValue(BuildValueKind::SuccessfulCommand, outputInfos,
@@ -362,7 +362,7 @@ public:
     }
   }
 
-  uint64_t getCommandHash() const {
+  CommandSignature getCommandHash() const {
     assert(isSuccessfulCommand() && "invalid call for value kind");
     return commandHash;
   }
@@ -785,7 +785,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
 
     /// Information on the prior command result, if present.
     bool hasPriorResult = false;
-    uint64_t priorCommandHash;
+    CommandSignature priorCommandHash;
 
     /// The timestamp of the most recently rebuilt input.
     FileTimestamp newestModTime{ 0, 0 };
@@ -897,7 +897,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
     }
 
     /// Compute the output result for the command.
-    BuildValue computeCommandResult(uint64_t commandHash) const {
+    BuildValue computeCommandResult(CommandSignature commandHash) const {
       unsigned numOutputs = command->getOutputs().size();
       if (numOutputs == 1) {
         return BuildValue::makeSuccessfulCommand(
@@ -964,7 +964,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       //
       // FIXME: Is it right to bring this up-to-date when one of the inputs
       // indicated a failure? It probably doesn't matter.
-      uint64_t commandHash = basic::hashString(command->getCommandString());
+      auto commandHash = CommandSignature(command->getCommandString());
       if (command->getRule() == context.manifest->getPhonyRule()) {
         // Get the result.
         BuildValue result = computeCommandResult(commandHash);
@@ -1152,7 +1152,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       //
       // We always restat the output, but we honor Ninja's restat flag by
       // forcing downstream propagation if it isn't set.
-      uint64_t commandHash = basic::hashString(command->getCommandString());
+      auto commandHash = CommandSignature(command->getCommandString());
       BuildValue result = computeCommandResult(commandHash);
       return completeTask(std::move(result),
                           /*ForceChange=*/!command->hasRestatFlag());
@@ -1490,7 +1490,7 @@ buildTargets(BuildContext& context,
     virtual void inputsAvailable(core::BuildEngine& engine) override {
       // Complete the job.
       engine.taskIsComplete(
-        this, BuildValue::makeSuccessfulCommand({}, 0).toValue());
+        this, BuildValue::makeSuccessfulCommand({}, CommandSignature()).toValue());
       return;
     }
   };
@@ -1594,7 +1594,7 @@ static bool buildCommandIsResultValid(ninja::Command* command,
 
   // For non-generator commands, if the command hash has changed, recompute.
   if (!command->hasGeneratorFlag()) {
-    if (value.getCommandHash() != basic::hashString(
+    if (value.getCommandHash() != CommandSignature(
           command->getCommandString()))
       return false;
   }
@@ -1628,7 +1628,7 @@ static bool selectCompositeIsResultValid(ninja::Command* command,
   // If the command's signature has changed since it was built, rebuild. This is
   // important for ensuring that we properly reevaluate the select rule when
   // it's incoming composite rule no longer exists.
-  if (value.getCommandHash() != basic::hashString(command->getCommandString()))
+  if (value.getCommandHash() != CommandSignature(command->getCommandString()))
     return false;
 
   // Otherwise, this result is always valid.

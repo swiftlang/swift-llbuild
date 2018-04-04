@@ -17,6 +17,7 @@
 #include "llbuild/Basic/BinaryCoding.h"
 #include "llbuild/Basic/Compiler.h"
 #include "llbuild/Basic/FileInfo.h"
+#include "llbuild/Basic/Hashing.h"
 #include "llbuild/Basic/LLVM.h"
 
 #include "llvm/ADT/ArrayRef.h"
@@ -100,7 +101,7 @@ class BuildValue {
   uint32_t numOutputInfos = 0;
 
   /// The command hash, for successful commands.
-  uint64_t commandSignature = 0;
+  basic::CommandSignature commandSignature;
 
   union {
     /// The file info for the rule output, for existing inputs, successful
@@ -144,10 +145,10 @@ private:
 
   BuildValue() {}
   BuildValue(basic::BinaryDecoder& decoder);
-  BuildValue(Kind kind, uint64_t commandSignature = 0)
+  BuildValue(Kind kind, basic::CommandSignature commandSignature = basic::CommandSignature())
       : kind(kind), commandSignature(commandSignature) { }
   BuildValue(Kind kind, ArrayRef<FileInfo> outputInfos,
-             uint64_t commandSignature = 0)
+             basic::CommandSignature commandSignature = basic::CommandSignature())
       : kind(kind), numOutputInfos(outputInfos.size()),
         commandSignature(commandSignature)
   {
@@ -296,10 +297,10 @@ public:
                                           ArrayRef<std::string> values) {
     return BuildValue(Kind::DirectoryContents, directoryInfo, values);
   }
-  static BuildValue makeDirectoryTreeSignature(uint64_t signature) {
+  static BuildValue makeDirectoryTreeSignature(basic::CommandSignature signature) {
     return BuildValue(Kind::DirectoryTreeSignature, signature);
   }
-  static BuildValue makeDirectoryTreeStructureSignature(uint64_t signature) {
+  static BuildValue makeDirectoryTreeStructureSignature(basic::CommandSignature signature) {
     return BuildValue(Kind::DirectoryTreeStructureSignature, signature);
   }
   static BuildValue makeMissingOutput() {
@@ -309,7 +310,7 @@ public:
     return BuildValue(Kind::FailedInput);
   }
   static BuildValue makeSuccessfulCommand(
-      ArrayRef<FileInfo> outputInfos, uint64_t commandSignature) {
+      ArrayRef<FileInfo> outputInfos, basic::CommandSignature commandSignature) {
     return BuildValue(Kind::SuccessfulCommand, outputInfos, commandSignature);
   }
   static BuildValue makeFailedCommand() {
@@ -371,12 +372,12 @@ public:
     return getStringListValues();
   }
   
-  uint64_t getDirectoryTreeSignature() const {
+  basic::CommandSignature getDirectoryTreeSignature() const {
     assert(isDirectoryTreeSignature() && "invalid call for value kind");
     return commandSignature;
   }
   
-  uint64_t getDirectoryTreeStructureSignature() const {
+  basic::CommandSignature getDirectoryTreeStructureSignature() const {
     assert(isDirectoryTreeStructureSignature() &&
            "invalid call for value kind");
     return commandSignature;
@@ -409,7 +410,7 @@ public:
     }
   }
 
-  uint64_t getCommandSignature() const {
+  basic::CommandSignature getCommandSignature() const {
     assert(isSuccessfulCommand() && "invalid call for value kind");
     return commandSignature;
   }
