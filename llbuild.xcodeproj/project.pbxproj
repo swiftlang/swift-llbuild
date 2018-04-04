@@ -125,6 +125,7 @@
 		E120B9ED1E4E65EB00B28469 /* BinaryCodingTests.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E120B9EB1E4E65EB00B28469 /* BinaryCodingTests.cpp */; };
 		E120B9EE1E4E65EB00B28469 /* ShellUtilityTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E120B9EC1E4E65EB00B28469 /* ShellUtilityTest.cpp */; };
 		E120B9F11E4E669F00B28469 /* BinaryCodingPerfTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = E120B9F01E4E669F00B28469 /* BinaryCodingPerfTests.mm */; };
+		E124FC922075370E00ECCC50 /* BuildEngineCancellationTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E124FC912075370D00ECCC50 /* BuildEngineCancellationTest.cpp */; };
 		E12BFF181C4972D900B8D20F /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
 		E12BFF191C4972E000B8D20F /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
 		E12BFF1A1C4972F000B8D20F /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
@@ -853,6 +854,7 @@
 		E120B9EC1E4E65EB00B28469 /* ShellUtilityTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ShellUtilityTest.cpp; sourceTree = "<group>"; };
 		E120B9EF1E4E65FC00B28469 /* BinaryCoding.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BinaryCoding.h; sourceTree = "<group>"; };
 		E120B9F01E4E669F00B28469 /* BinaryCodingPerfTests.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = BinaryCodingPerfTests.mm; sourceTree = "<group>"; };
+		E124FC912075370D00ECCC50 /* BuildEngineCancellationTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildEngineCancellationTest.cpp; sourceTree = "<group>"; };
 		E12E12A71AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CommandLineStatusOutput.cpp; sourceTree = "<group>"; };
 		E12E12A81AD50AE500ACE7B3 /* CommandLineStatusOutput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CommandLineStatusOutput.h; sourceTree = "<group>"; };
 		E138129C1C536CFC000092C0 /* FileSystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FileSystem.h; sourceTree = "<group>"; };
@@ -1855,6 +1857,7 @@
 			isa = PBXGroup;
 			children = (
 				E1A224B619F998D40059043E /* CMakeLists.txt */,
+				E124FC912075370D00ECCC50 /* BuildEngineCancellationTest.cpp */,
 				E1A224B519F998D40059043E /* BuildEngineTest.cpp */,
 				E1A0B1001C9717BA006DA08F /* DependencyInfoParserTest.cpp */,
 				E10FE0D61B7313D50059D086 /* DepsBuildEngineTest.cpp */,
@@ -3128,6 +3131,7 @@
 				E1A0B1011C9717BA006DA08F /* DependencyInfoParserTest.cpp in Sources */,
 				E1A224F619F99D940059043E /* BuildEngineTest.cpp in Sources */,
 				E10FE0D71B7313D50059D086 /* DepsBuildEngineTest.cpp in Sources */,
+				E124FC922075370E00ECCC50 /* BuildEngineCancellationTest.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -91,6 +91,9 @@ struct Result {
 /// complete its computation and provide the output. The Task is responsible for
 /// providing the engine with the computed value when ready using \see
 /// BuildEngine::taskIsComplete().
+///
+/// A task which has been cancelled may be destroyed without any of the above
+/// behaviors having been completed.
 class Task {
 public:
   Task() {}
@@ -275,6 +278,21 @@ public:
   /// discovered currently.
   const ValueType& build(const KeyType& key);
 
+  /// Cancel the currently running build.
+  ///
+  /// The engine guarantees that it will not *start* any task after processing
+  /// the current engine work loop iteration after it has been cancelled.
+  ///
+  /// This method is thread-safe.
+  ///
+  /// This method should only be used when a build is actively running. Invoking
+  /// this method before a build has started will have no effect.
+  //
+  // FIXME: This method is hard to use correctly, we should modify build to
+  // return an explicit object to represent an in-flight build, and then expose
+  // cancellation on that.
+  void cancelBuild();
+  
   /// Attach a database for persisting build state.
   ///
   /// A database should only be attached immediately after creating the engine,

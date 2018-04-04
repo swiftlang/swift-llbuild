@@ -20,6 +20,7 @@
 
 #include "BuildEngineTrace.h"
 
+#include <atomic>
 #include <algorithm>
 #include <cassert>
 #include <cstdio>
@@ -71,6 +72,9 @@ class BuildEngineImpl {
   /// The current build iteration, used to sequentially timestamp build results.
   uint64_t currentTimestamp = 0;
 
+  /// Whether the build should be cancelled.
+  std::atomic<bool> buildCancelled{ false };
+  
   /// The queue of input requests to process.
   struct TaskInputRequest {
     /// The task making the request.
@@ -640,6 +644,13 @@ private:
     while (true) {
       bool didWork = false;
 
+      // Cancel the build, if requested.
+      if (buildCancelled) {
+        // Force completion of all outstanding tasks.
+        cancelRemainingTasks();
+        return false;
+      }
+      
       // Process all of the pending rule scan requests.
       //
       // FIXME: We don't want to process all of these requests, this amounts to
@@ -1271,6 +1282,7 @@ public:
       trace->buildStarted();
 
     // Run the build engine, to process any necessary tasks.
+    buildCancelled = false;
     bool success = executeTasks(key);
     
     // Update the build database, if attached.
@@ -1311,6 +1323,15 @@ public:
     return ruleInfo.result.value;
   }
 
+  void cancelBuild() {
+    // Set the build cancelled marker.
+    //
+    // We do not need to handle waking the engine up, if it is waiting, because
+    // our current cancellation model requires us to wait for all outstanding
+    // tasks in any case.
+    buildCancelled = true;
+  }
+  
   bool attachDB(std::unique_ptr<BuildDB> database, std::string* error_out) {
     assert(!db && "invalid attachDB() call");
     assert(currentTimestamp == 0 && "invalid attachDB() call");
@@ -1506,6 +1527,10 @@ void BuildEngine::addRule(Rule&& rule) {
 
 const ValueType& BuildEngine::build(const KeyType& key) {
   return static_cast<BuildEngineImpl*>(impl)->build(key);
+}
+
+void BuildEngine::cancelBuild() {
+  return static_cast<BuildEngineImpl*>(impl)->cancelBuild();
 }
 
 void BuildEngine::dumpGraphToFile(const std::string& path) {
