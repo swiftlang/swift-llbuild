@@ -1161,7 +1161,12 @@ public:
     }
 
     // Otherwise, use our builtin key table.
-    return keyTable.insert(std::make_pair(key, keyTable.size())).first->second;
+    //
+    // The RHS of the mapping is actually ignored, we use the StringMap's ptr
+    // identity because it allows us to efficiently map back to the key string
+    // in `getRuleInfoForKey`.
+    auto it = keyTable.insert(std::make_pair(key, 0)).first;
+    return (KeyID)(uintptr_t)it->getKey().data();
   }
 
   RuleInfo& getRuleInfoForKey(const KeyType& key) {
@@ -1190,7 +1195,7 @@ public:
     } else {
       // Note that we don't need to lock `keyTable` here because the key entries
       // themselves don't change once created.
-      key = llvm::StringMapEntry<bool>::GetStringMapEntryFromKeyData(
+      key = llvm::StringMapEntry<KeyID>::GetStringMapEntryFromKeyData(
           (const char*)(uintptr_t)keyID).getKey();
     }
     return addRule(keyID, delegate.lookupRule(key));

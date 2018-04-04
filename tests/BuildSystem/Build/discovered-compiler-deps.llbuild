@@ -27,6 +27,15 @@
 # CHECK-AFTER-MOD: CC output-1
 # CHECK-AFTER-MOD: cat output-1 > output
 
+
+# Check that we can successfully build without a database.
+#
+# RUN: %{llbuild} buildsystem build --no-db --serial --chdir %t.build > %t.nodb.out
+# RUN: %{FileCheck} --check-prefix=CHECK-NO-DB --input-file=%t.nodb.out %s
+#
+# CHECK-NO-DB: CC output-1
+# CHECK-NO-DB: cat output-1 > output
+
 client:
   name: basic
 
