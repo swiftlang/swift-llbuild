@@ -525,6 +525,14 @@ attributes on commands, and not at the tool level.
    * - always-out-of-date
      - A boolean value, indicating whether the commands should be treated as
        being always out-of-date. The default is false.
+
+   * - can-safely-interrupt
+     - A boolean flag controlling whether this command is allowed to be sent a
+       SIGINT to cancel it during build cancellation. If false, the command will
+       not be interrupted, and the build system will wait for the default
+       timeout (10 seconds) before sending a SIGKILL. This is intended to give
+       tools which can leave an inconsistent file system state an opportunity to
+       clean up, before exiting. The default is true.
           
    * - deps
      - The path to an output file of the command which will contain information

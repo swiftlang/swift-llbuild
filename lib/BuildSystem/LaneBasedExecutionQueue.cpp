@@ -32,12 +32,12 @@
 #include <atomic>
 #include <condition_variable>
 #include <deque>
-#include <mutex>
 #include <memory>
-#include <thread>
-#include <vector>
+#include <mutex>
 #include <string>
-#include <unordered_set>
+#include <thread>
+#include <unordered_map>
+#include <vector>
 
 #include <fcntl.h>
 #include <pthread.h>
@@ -58,6 +58,11 @@ struct LaneBasedExecutionQueueJobContext {
   QueueJob& job;
 };
 
+struct ProcessInfo {
+  /// Whether the process can be safely interrupted.
+  bool canSafelyInterrupt;
+};
+  
 /// Build execution queue.
 //
 // FIXME: Consider trying to share this with the Ninja implementation.
@@ -76,7 +81,7 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
   bool shutdown { false };
   
   /// The set of spawned processes to terminate if we get cancelled.
-  std::unordered_set<pid_t> spawnedProcesses;
+  std::unordered_map<pid_t, ProcessInfo> spawnedProcesses;
   std::mutex spawnedProcessesMutex;
 
   /// Management of cancellation and SIGKILL escalation
@@ -165,10 +170,15 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
   void sendSignalToProcesses(int signal) {
     std::unique_lock<std::mutex> lock(spawnedProcessesMutex);
 
-    for (pid_t pid: spawnedProcesses) {
+    for (const auto& it: spawnedProcesses) {
+      // If we are interrupting, only interupt processes which are believed to
+      // be safe to interrupt.
+      if (signal == SIGINT && !it.second.canSafelyInterrupt)
+        continue;
+      
       // We are killing the whole process group here, this depends on us
       // spawning each process in its own group earlier.
-      ::kill(-pid, signal);
+      ::kill(-it.first, signal);
     }
   }
 
@@ -238,7 +248,8 @@ public:
                  ArrayRef<StringRef> commandLine,
                  ArrayRef<std::pair<StringRef,
                                     StringRef>> environment,
-                 bool inheritEnvironment) override {
+                 bool inheritEnvironment,
+                 bool canSafelyInterrupt) override {
     LaneBasedExecutionQueueJobContext& context =
       *reinterpret_cast<LaneBasedExecutionQueueJobContext*>(opaqueContext);
     TracingInterval subprocessInterval(TraceEventKind::ExecutionQueueSubprocess,
@@ -412,7 +423,8 @@ public:
                                                CommandExtendedResult::makeFailed());
           pid = -1;
         } else {
-          spawnedProcesses.insert(pid);
+          ProcessInfo info{ canSafelyInterrupt };
+          spawnedProcesses.emplace(std::make_pair(pid, info));
         }
       }
     }
