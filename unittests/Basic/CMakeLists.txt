@@ -1,6 +1,7 @@
 add_llbuild_unittest(BasicTests
   BinaryCodingTests.cpp
   FileSystemTest.cpp
+  InterruptSignalAwaiterTests.cpp
   SerialQueueTest.cpp
   ShellUtilityTest.cpp
   ../BuildSystem/TempDir.cpp
