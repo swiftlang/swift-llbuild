@@ -358,9 +358,8 @@ BuildValue ExternalCommand::execute(BuildSystemCommandInterface& bsci,
       inputsStream.flush();
 
       // FIXME: Design the logging and status output APIs.
-      bsci.getDelegate().error(
-          "", {}, (Twine("cannot build '") + outputs[0]->getName() +
-                   "' due to missing inputs: " + inputs));
+      bsci.getDelegate().commandHadError(this, "cannot build '" + outputs[0]->getName().str() +
+                                         "' due to missing inputs: " + inputs);
 
       // Report the command failure.
       bsci.getDelegate().hadCommandFailure();

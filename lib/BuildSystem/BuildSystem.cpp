@@ -1686,8 +1686,8 @@ class ShellCommand : public ExternalCommand {
       // Read the dependencies file.
       auto input = bsci.getFileSystem().getFileContents(depsPath);
       if (!input) {
-        getBuildSystem(bsci.getBuildEngine()).error(
-            depsPath, "unable to open dependencies file (" + depsPath + ")");
+        getBuildSystem(bsci.getBuildEngine()).getDelegate().commandHadError(this,
+                       "unable to open dependencies file (" + depsPath + ")");
         return false;
       }
 
@@ -1736,8 +1736,9 @@ class ShellCommand : public ExternalCommand {
           : bsci(bsci), task(task), command(command), depsPath(depsPath) {}
 
       virtual void error(const char* message, uint64_t position) override {
-        getBuildSystem(bsci.getBuildEngine()).error(
-            depsPath, "error reading dependency file: " + std::string(message));
+        getBuildSystem(bsci.getBuildEngine()).getDelegate().commandHadError(command,
+                        "error reading dependency file '" + depsPath.str() +
+                        "': " + std::string(message));
         ++numErrors;
       }
 
@@ -1781,8 +1782,9 @@ class ShellCommand : public ExternalCommand {
           : bsci(bsci), task(task), command(command), depsPath(depsPath) {}
 
       virtual void error(const char* message, uint64_t position) override {
-        getBuildSystem(bsci.getBuildEngine()).error(
-            depsPath, "error reading dependency file: " + std::string(message));
+        getBuildSystem(bsci.getBuildEngine()).getDelegate().commandHadError(command,
+                       "error reading dependency file '" + depsPath.str() +
+                       "': " + std::string(message));
         ++numErrors;
       }
 
@@ -1984,8 +1986,8 @@ class ClangShellCommand : public ExternalCommand {
     // Read the dependencies file.
     auto input = bsci.getFileSystem().getFileContents(depsPath);
     if (!input) {
-      getBuildSystem(bsci.getBuildEngine()).error(
-          depsPath, "unable to open dependencies file (" + depsPath + ")");
+      getBuildSystem(bsci.getBuildEngine()).getDelegate().commandHadError(this,
+                     "unable to open dependencies file (" + depsPath + ")");
       return false;
     }
 
@@ -2004,9 +2006,9 @@ class ClangShellCommand : public ExternalCommand {
           : bsci(bsci), task(task), command(command) {}
 
       virtual void error(const char* message, uint64_t position) override {
-        getBuildSystem(bsci.getBuildEngine()).error(
-            command->depsPath,
-            "error reading dependency file: " + std::string(message));
+        getBuildSystem(bsci.getBuildEngine()).getDelegate().commandHadError(command,
+                       "error reading dependency file '" + command->depsPath +
+                       "': " + std::string(message));
         ++numErrors;
       }
 
@@ -2467,9 +2469,8 @@ public:
     llvm::raw_fd_ostream os(outputFileMapPath, ec,
                             llvm::sys::fs::OpenFlags::F_Text);
     if (ec) {
-      bsci.getDelegate().error(
-          "", {},
-          "unable to create output file map: '" + outputFileMapPath + "'");
+      bsci.getDelegate().commandHadError((Command*)this,
+                      "unable to create output file map: '" + outputFileMapPath.str() + "'");
       return false;
     }
 
@@ -2528,9 +2529,8 @@ public:
     // Read the dependencies file.
     auto input = bsci.getFileSystem().getFileContents(depsPath);
     if (!input) {
-      bsci.getDelegate().error(
-          "", {},
-          "unable to open dependencies file '" + depsPath + "'");
+      getBuildSystem(bsci.getBuildEngine()).getDelegate().commandHadError(this,
+                     "unable to open dependencies file (" + depsPath.str() + ")");
       return false;
     }
 
@@ -2542,18 +2542,18 @@ public:
       BuildSystemCommandInterface& bsci;
       core::Task* task;
       StringRef depsPath;
+      Command* command;
       unsigned numErrors{0};
       unsigned ruleNumber{0};
       
       DepsActions(BuildSystemCommandInterface& bsci, core::Task* task,
-                  StringRef depsPath)
+                  StringRef depsPath, Command* command)
           : bsci(bsci), task(task), depsPath(depsPath) {}
 
       virtual void error(const char* message, uint64_t position) override {
-        bsci.getDelegate().error(
-            "", {},
-            "error reading dependency file: '" + depsPath + "' (" +
-            std::string(message) + ")");
+        getBuildSystem(bsci.getBuildEngine()).getDelegate().commandHadError(command,
+                       "error reading dependency file '" + depsPath.str() +
+                       "': " + std::string(message));
         ++numErrors;
       }
 
@@ -2576,7 +2576,7 @@ public:
       }
     };
 
-    DepsActions actions(bsci, task, depsPath);
+    DepsActions actions(bsci, task, depsPath, this);
     core::MakefileDepsParser(input->getBufferStart(), input->getBufferSize(),
                              actions).parse();
     return actions.numErrors == 0;
@@ -2772,8 +2772,8 @@ class MkdirCommand : public ExternalCommand {
     auto output = getOutputs()[0];
     if (!bsci.getFileSystem().createDirectories(
             output->getName())) {
-      getBuildSystem(bsci.getBuildEngine()).error(
-          "", "unable to create directory '" + output->getName() + "'");
+      getBuildSystem(bsci.getBuildEngine()).getDelegate().commandHadError(this,
+                     "unable to create directory '" + output->getName().str() + "'");
       return CommandResult::Failed;
     }
     return CommandResult::Succeeded;
@@ -3025,8 +3025,8 @@ class SymlinkCommand : public Command {
       basic::sys::unlink(outputPath.str().c_str());
         
       if (llvm::sys::fs::create_link(contents, outputPath)) {
-        getBuildSystem(bsci.getBuildEngine()).error(
-            "", "unable to create symlink at '" + outputPath + "'");
+        getBuildSystem(bsci.getBuildEngine()).getDelegate().commandHadError(this,
+                       "unable to create symlink at '" + outputPath.str() + "'");
         success = false;
       }
     }
