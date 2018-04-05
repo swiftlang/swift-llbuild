@@ -1635,6 +1635,9 @@ class ShellCommand : public ExternalCommand {
   /// Whether to inherit the base environment.
   bool inheritEnv = true;
 
+  /// Whether it is safe to interrupt (SIGINT) the tool during cancellation.
+  bool canSafelyInterrupt = true;
+
   /// The cached signature, once computed -- 0 is used as a sentinel value.
   std::atomic<uint64_t> cachedSignature{ 0 };
   
@@ -1658,6 +1661,7 @@ class ShellCommand : public ExternalCommand {
     }
     code = hash_combine(code, int(depsStyle));
     code = hash_combine(code, int(inheritEnv));
+    code = hash_combine(code, int(canSafelyInterrupt));
     signature = size_t(code);
     if (signature == 0) {
       signature = 1;
@@ -1836,6 +1840,13 @@ public:
         return false;
       }
       return true;
+    } else if (name == "can-safely-interrupt") {
+      if (value != "true" && value != "false") {
+        ctx.error("invalid value: '" + value + "' for attribute '" +
+                  name + "'");
+        return false;
+      }
+      canSafelyInterrupt = value == "true";
     } else if (name == "inherit-env") {
       if (value != "true" && value != "false") {
         ctx.error("invalid value: '" + value + "' for attribute '" +
@@ -1898,8 +1909,9 @@ public:
                                                QueueJobContext* context) override {
     // Execute the command.
     auto result = bsci.getExecutionQueue().executeProcess(
-        context, args,
-        env, /*inheritEnvironment=*/inheritEnv);
+        context, args, env,
+        /*inheritEnvironment=*/inheritEnv,
+        /*canSafelyInterrupt=*/canSafelyInterrupt);
 
     if (result != CommandResult::Succeeded) {
       // If the command failed, there is no need to gather dependencies.
