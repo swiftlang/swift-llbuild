@@ -257,6 +257,17 @@ public:
     }
   }
 
+  virtual void commandsHadError(std::vector<Command*> commands,  StringRef message) override {
+    if (cAPIDelegate.commands_had_error) {
+      llb_data_t cMessage { message.size(), (const uint8_t*) message.data() };
+      cAPIDelegate.commands_had_error(
+          cAPIDelegate.context,
+          (llb_buildsystem_command_t**) commands.data(),
+          commands.size(),
+          &cMessage);
+    }
+  }
+
   virtual void commandHadNote(Command* command, StringRef message) override {
     if (cAPIDelegate.command_had_note) {
       llb_data_t cMessage { message.size(), (const uint8_t*) message.data() };

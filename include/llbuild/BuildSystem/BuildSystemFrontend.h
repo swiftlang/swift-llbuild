@@ -212,6 +212,14 @@ public:
   /// \param data - The error message.
   virtual void commandHadError(Command*, StringRef data) override;
 
+  /// Called to report an error that relates to multiple commands.
+  ///
+  /// For example, an error where multiple commands are trying to
+  /// build the same node.
+  ///
+  /// \param data - The error message.
+  virtual void commandsHadError(std::vector<Command*>, StringRef data) override;
+
   /// Called to report a note during the execution of a command.
   ///
   /// \param data - The note message.

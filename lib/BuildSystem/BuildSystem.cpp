@@ -664,12 +664,9 @@ class ProducedNodeTask : public Task {
     }
 
     // We currently do not support building nodes which have multiple producers.
-    auto producerA = node.getProducers()[0];
-    auto producerB = node.getProducers()[1];
-    getBuildSystem(engine).error(
-        "", "unable to build node: '" + node.getName() + "' (node is produced "
-        "by multiple commands; e.g., '" + producerA->getName() + "' and '" +
-        producerB->getName() + "')");
+    getBuildSystem(engine).getDelegate().commandsHadError(node.getProducers(),
+                    "unable to build node: '" + node.getName().str() +
+                    "' (node is produced by multiple commands)");
     isInvalid = true;
   }
 
