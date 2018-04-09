@@ -210,7 +210,10 @@ public:
   /// the node which was requested to build and ending with the first node in
   /// the cycle (i.e., the node participating in the cycle will appear twice).
   /// \returns True if the engine should attempt to resolve the cycle, false
-  /// otherwise.
+  /// otherwise. Resolution is attempted by either forcing items to be built, or
+  /// supplying a previously built result to a node in the cycle. The latter
+  /// action may yield unexpected results and thus this should be opted into
+  /// with care.
   virtual bool shouldResolveCycle(const std::vector<Rule*>& items);
 
   /// Called when a cycle is detected by the build engine and it cannot make
