@@ -101,13 +101,8 @@ public:
 /// Holds onto the pointers for both the build engine and delegate objects so
 /// that both of them can be properly cleaned up when destroy() is called.
 struct CAPIBuildEngine {
-  BuildEngineDelegate* delegate = nullptr;
-  BuildEngine* engine = nullptr;
-
-  ~CAPIBuildEngine() {
-    delete engine;
-    delete delegate;
-  }
+  std::unique_ptr<BuildEngineDelegate> delegate;
+  std::unique_ptr<BuildEngine> engine;
 };
 
 class CAPITask : public Task {
@@ -154,8 +149,10 @@ public:
 
 llb_buildengine_t* llb_buildengine_create(llb_buildengine_delegate_t delegate) {
   CAPIBuildEngine* capi_engine = new CAPIBuildEngine;
-  capi_engine->delegate = new CAPIBuildEngineDelegate(delegate);
-  capi_engine->engine = new BuildEngine(*capi_engine->delegate);
+  capi_engine->delegate = std::unique_ptr<BuildEngineDelegate>(
+    new CAPIBuildEngineDelegate(delegate));
+  capi_engine->engine = std::unique_ptr<BuildEngine>(
+    new BuildEngine(*capi_engine->delegate));
   return (llb_buildengine_t*) capi_engine;
 }
 
@@ -168,7 +165,7 @@ bool llb_buildengine_attach_db(llb_buildengine_t* engine_p,
                                const llb_data_t* path,
                                uint32_t schema_version,
                                char** error_out) {
-  BuildEngine* engine = ((CAPIBuildEngine*) engine_p)->engine;
+  BuildEngine& engine = *((CAPIBuildEngine*) engine_p)->engine;
 
   std::string error;
   std::unique_ptr<BuildDB> db(createSQLiteBuildDB(
@@ -181,14 +178,14 @@ bool llb_buildengine_attach_db(llb_buildengine_t* engine_p,
     return false;
   }
 
-  bool result = engine->attachDB(std::move(db), &error);
+  bool result = engine.attachDB(std::move(db), &error);
   *error_out = strdup(error.c_str());
   return result;
 }
 
 void llb_buildengine_build(llb_buildengine_t* engine_p, const llb_data_t* key,
                            llb_data_t* result_out) {
-  BuildEngine* engine = ((CAPIBuildEngine*) engine_p)->engine;
+  auto& engine = ((CAPIBuildEngine*) engine_p)->engine;
 
   auto& result = engine->build(KeyType((const char*)key->data, key->length));
 
@@ -197,7 +194,7 @@ void llb_buildengine_build(llb_buildengine_t* engine_p, const llb_data_t* key,
 
 llb_task_t* llb_buildengine_register_task(llb_buildengine_t* engine_p,
                                           llb_task_t* task) {
-  BuildEngine* engine = ((CAPIBuildEngine*) engine_p)->engine;
+  auto& engine = ((CAPIBuildEngine*) engine_p)->engine;
   engine->registerTask((Task*)task);
   return task;
 }
@@ -206,7 +203,7 @@ void llb_buildengine_task_needs_input(llb_buildengine_t* engine_p,
                                       llb_task_t* task,
                                       const llb_data_t* key,
                                       uintptr_t input_id) {
-  BuildEngine* engine = (BuildEngine*) engine_p;
+  auto& engine = ((CAPIBuildEngine*) engine_p)->engine;
   engine->taskNeedsInput((Task*)task,
                          KeyType((const char*)key->data, key->length),
                          input_id);
@@ -215,7 +212,7 @@ void llb_buildengine_task_needs_input(llb_buildengine_t* engine_p,
 void llb_buildengine_task_must_follow(llb_buildengine_t* engine_p,
                                       llb_task_t* task,
                                       const llb_data_t* key) {
-  BuildEngine* engine = ((CAPIBuildEngine*) engine_p)->engine;
+  auto& engine = ((CAPIBuildEngine*) engine_p)->engine;
   engine->taskMustFollow((Task*)task,
                          KeyType((const char*)key->data, key->length));
 }
@@ -223,7 +220,7 @@ void llb_buildengine_task_must_follow(llb_buildengine_t* engine_p,
 void llb_buildengine_task_discovered_dependency(llb_buildengine_t* engine_p,
                                                 llb_task_t* task,
                                                 const llb_data_t* key) {
-  BuildEngine* engine = ((CAPIBuildEngine*) engine_p)->engine;
+  auto& engine = ((CAPIBuildEngine*) engine_p)->engine;
   engine->taskDiscoveredDependency((Task*)task,
                                    KeyType((const char*)key->data,
                                            key->length));
@@ -233,7 +230,7 @@ void llb_buildengine_task_is_complete(llb_buildengine_t* engine_p,
                                       llb_task_t* task,
                                       const llb_data_t* value,
                                       bool force_change) {
-  BuildEngine* engine = ((CAPIBuildEngine*) engine_p)->engine;
+  auto& engine = ((CAPIBuildEngine*) engine_p)->engine;
   std::vector<uint8_t> result(value->length);
   memcpy(result.data(), value->data, value->length);
   engine->taskIsComplete((Task*)task, std::move(result));
