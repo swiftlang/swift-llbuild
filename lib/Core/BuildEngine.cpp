@@ -163,6 +163,7 @@ class BuildEngineImpl {
     Result result = {};
     /// The current state of the rule.
     StateKind state = StateKind::Incomplete;
+    bool wasForced = false;
 
   public:
     bool isScanning() const {
@@ -407,6 +408,8 @@ private:
     if (ruleInfo.rule.updateStatus)
       ruleInfo.rule.updateStatus(buildEngine, Rule::StatusKind::IsScanning);
 
+    ruleInfo.wasForced = false;
+
     // If the rule has never been run, it needs to run.
     if (ruleInfo.result.builtAt == 0) {
       if (trace)
@@ -537,6 +540,7 @@ private:
 
     // With forced builds in cycle breaking, we may end up being asked to scan
     // something that has already been 'scanned'
+    assert(ruleInfo.isScanning() || ruleInfo.wasForced);
     if (!ruleInfo.isScanning())
       return;
 
@@ -994,6 +998,7 @@ private:
             }
           }
           finishScanRequest(ruleInfo, RuleInfo::StateKind::NeedsToRun);
+          ruleInfo.wasForced = true;
           return true;
         }
 
