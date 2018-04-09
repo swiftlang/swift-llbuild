@@ -171,13 +171,15 @@ private:
     for (auto value: values) {
       size += value.size() + 1;
     }
-    char *p, *contents = p = new char[size];
+    // Make sure to allocate at least 1 byte.
+    char *p, *contents = p = new char[size + 1];
     for (auto value: values) {
       assert(value.find('\0') == StringRef::npos);
       memcpy(p, value.data(), value.size());
       p += value.size();
       *p++ = '\0';
     }
+    *p = '\0';
     stringValues.contents = contents;
     stringValues.size = size;
   }
@@ -188,13 +190,15 @@ private:
     for (auto value: values) {
       size += value.size() + 1;
     }
-    char *p, *contents = p = new char[size];
+    // Make sure to allocate at least 1 byte.
+    char *p, *contents = p = new char[size + 1];
     for (auto value: values) {
       assert(value.find('\0') == StringRef::npos);
       memcpy(p, value.data(), value.size());
       p += value.size();
       *p++ = '\0';
     }
+    *p = '\0';
     stringValues.contents = contents;
     stringValues.size = size;
   }
