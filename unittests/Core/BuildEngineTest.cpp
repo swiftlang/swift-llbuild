@@ -48,7 +48,9 @@ private:
                    [](auto rule) { return std::string(rule->key); });
   }
 
-  virtual bool shouldResolveCycle(const std::vector<core::Rule*>& items) override {
+  virtual bool shouldResolveCycle(const std::vector<Rule*>& items,
+                                  Rule* candidateRule,
+                                  Rule::CycleAction action) override {
     return resolveCycle;
   }
 

@@ -40,7 +40,9 @@ Task::~Task() {}
 
 BuildEngineDelegate::~BuildEngineDelegate() {}
 
-bool BuildEngineDelegate::shouldResolveCycle(const std::vector<Rule *>&) {
+bool BuildEngineDelegate::shouldResolveCycle(const std::vector<Rule*>& items,
+                                             Rule* candidateRule,
+                                             Rule::CycleAction action) {
   return false;
 }
 
@@ -981,57 +983,10 @@ private:
     std::vector<Rule*> cycleList = findCycle(buildKey);
     assert(!cycleList.empty());
 
-    if (delegate.shouldResolveCycle(cycleList)) {
-      TracingInterval i(EngineQueueItemKind::BreakingCycle);
-
-      for (auto ruleIt = cycleList.rbegin(); ruleIt != cycleList.rend(); ruleIt++) {
-        auto& ruleInfo = getRuleInfoForKey((*ruleIt)->key);
-
-        // If this rule is scanning, try to force a rebuild to break the cycle
-        if (ruleInfo.isScanning()) {
-          if (trace) {
-            trace->cycleForceRuleNeedsToRun(&ruleInfo.rule);
-          }
-          for (auto it = ruleInfosToScan.begin(); it != ruleInfosToScan.end(); it++) {
-            if (it->ruleInfo->keyID == ruleInfo.keyID) {
-              ruleInfosToScan.erase(it);
-            }
-          }
-          finishScanRequest(ruleInfo, RuleInfo::StateKind::NeedsToRun);
-          ruleInfo.wasForced = true;
-          return true;
-        }
-
-        // Check if this rule has a (potentially) valid previous result and if so
-        // try to provide it to the node requesting it to break the cycle.
-        if (ruleInfo.isInProgressWaiting() && ruleInfo.result.builtAt != 0) {
-          auto* taskInfo = ruleInfo.getPendingTaskInfo();
-
-          // find downstream node in the cycle that wants this input
-          auto& nextRuleInfo = getRuleInfoForKey((*std::next(ruleIt))->key);
-
-          // find the corresponding request on this task
-          for (auto it = taskInfo->requestedBy.begin(); it != taskInfo->requestedBy.end(); it++) {
-            if (it->taskInfo->forRuleInfo->keyID == nextRuleInfo.keyID) {
-              // supply the prior value to the node
-              if (trace) {
-                trace->cycleSupplyPriorValue(&ruleInfo.rule, it->taskInfo->task.get());
-              }
-              it->forcePriorValue = true;
-              finishedInputRequests.insert(finishedInputRequests.end(), *it);
-
-              // remove this request from the task info
-              taskInfo->requestedBy.erase(it);
-              return true;
-            }
-          }
-
-        }
-      }
-    }
+    if (breakCycle(cycleList))
+      return true;
 
     delegate.cycleDetected(cycleList);
-
     return false;
   }
 
@@ -1159,6 +1114,102 @@ private:
     }
 
     return cycleList;
+  }
+
+  bool breakCycle(const std::vector<Rule*>& cycleList) {
+    TracingInterval i(EngineQueueItemKind::BreakingCycle);
+
+    // Search the cycle for potential means for breaking the cycle. Right now
+    // we use two principle approaches, force a rule to be built (skipping
+    // scanning its dependencies) and supply a previously built result.
+    for (auto ruleIt = cycleList.rbegin(); ruleIt != cycleList.rend(); ruleIt++) {
+      auto& ruleInfo = getRuleInfoForKey((*ruleIt)->key);
+
+      // If this rule is scanning, try to force a rebuild to break the cycle
+      if (ruleInfo.isScanning()) {
+        // Ask the delegate if we should try to resolve this cycle by forcing
+        // a rule to be built?
+        if (!delegate.shouldResolveCycle(cycleList, &ruleInfo.rule, Rule::CycleAction::ForceBuild))
+          return false;
+
+        if (trace) {
+          trace->cycleForceRuleNeedsToRun(&ruleInfo.rule);
+        }
+
+        // Find the rule scan request, if not already deferred, for this rule
+        // and remove it. If the rule scan request was already deferred, we use
+        // the wasForced condition to ignore it later.
+        auto it = findRuleScanRequestForRule(ruleInfosToScan, &ruleInfo);
+        if (it != ruleInfosToScan.end()) {
+          ruleInfosToScan.erase(it);
+        }
+
+        // mark this rule as needs to run (forced)
+        finishScanRequest(ruleInfo, RuleInfo::StateKind::NeedsToRun);
+        ruleInfo.wasForced = true;
+
+        return true;
+      }
+
+      // Check if this rule has a (potentially) valid previous result and if so
+      // try to provide it to the node requesting it to break the cycle.
+      if (ruleInfo.isInProgressWaiting() && ruleInfo.result.builtAt != 0) {
+        auto* taskInfo = ruleInfo.getPendingTaskInfo();
+
+        // find downstream node in the cycle that wants this input
+        auto& nextRuleInfo = getRuleInfoForKey((*std::next(ruleIt))->key);
+
+        // find the corresponding request on this task
+        auto it = findTaskInputRequestForRule(taskInfo->requestedBy, &nextRuleInfo);
+        if (it == taskInfo->requestedBy.end()) {
+          // this rule has not generated an input request yet, so we cannot
+          // provide a value to it
+          continue;
+        }
+
+        // Ask the delegate if we should try to resolve this cycle by supplying
+        // a prior value?
+        if (!delegate.shouldResolveCycle(cycleList, &ruleInfo.rule, Rule::CycleAction::SupplyPriorValue))
+          return false;
+
+        // supply the prior value to the node
+        if (trace) {
+          trace->cycleSupplyPriorValue(&ruleInfo.rule, it->taskInfo->task.get());
+        }
+        it->forcePriorValue = true;
+        finishedInputRequests.insert(finishedInputRequests.end(), *it);
+
+        // remove this request from the task info
+        taskInfo->requestedBy.erase(it);
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  // Helper function for breakCycle, finds a rule in a RuleScanRequest vector
+  std::vector<RuleScanRequest>::iterator findRuleScanRequestForRule(
+    std::vector<RuleScanRequest>& requests, RuleInfo* ruleInfo) {
+    for (auto it = requests.begin(); it != requests.end(); it++) {
+      if (it->ruleInfo == ruleInfo) {
+        return it;
+      }
+    }
+
+    return requests.end();
+  }
+
+  // Helper function for breakCycle, finds a rule in a TaskInputRequest vector
+  std::vector<TaskInputRequest>::iterator findTaskInputRequestForRule(
+    std::vector<TaskInputRequest>& requests, RuleInfo* ruleInfo)  {
+    for (auto it = requests.begin(); it != requests.end(); it++) {
+      if (it->taskInfo->forRuleInfo == ruleInfo) {
+        return it;
+      }
+    }
+
+    return requests.end();
   }
 
   // Cancel all of the remaining tasks.

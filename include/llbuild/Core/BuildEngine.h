@@ -169,6 +169,14 @@ public:
     IsComplete = 2
   };
 
+  enum class CycleAction {
+    /// Indicates a rule will be forced to build
+    ForceBuild = 0,
+
+    /// Indicates a rule's prior value will be supplied to a downstream rule
+    SupplyPriorValue = 1
+  };
+
   /// The key computed by the rule.
   KeyType key;
 
@@ -214,7 +222,9 @@ public:
   /// supplying a previously built result to a node in the cycle. The latter
   /// action may yield unexpected results and thus this should be opted into
   /// with care.
-  virtual bool shouldResolveCycle(const std::vector<Rule*>& items);
+  virtual bool shouldResolveCycle(const std::vector<Rule*>& items,
+                                  Rule* candidateRule,
+                                  Rule::CycleAction action);
 
   /// Called when a cycle is detected by the build engine and it cannot make
   /// forward progress.
