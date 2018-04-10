@@ -76,11 +76,13 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		14124EAD207C49BF00E2AB56 /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.tbd */; };
+		14124EAE207C49D400E2AB56 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.tbd */; };
 		402614272087B10B005BD956 /* Tracing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 402614262087B10B005BD956 /* Tracing.cpp */; };
 		403B1A492053123B0018A322 /* version.h in Headers */ = {isa = PBXBuildFile; fileRef = 403B1A48205312000018A322 /* version.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		40F638ED205306AB00A1CFBE /* Version.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 40F638EC2053043D00A1CFBE /* Version.xcconfig */; };
 		9D0A6D811E1FFEA800BE636F /* TempDir.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9D0A6D7F1E1FFEA800BE636F /* TempDir.cpp */; };
-		9D2107C61DFADDFA00BE26FF /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
+		9D2107C61DFADDFA00BE26FF /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.tbd */; };
 		9D5A5C311EC5FAE600DC84CC /* TempDir.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9D0A6D7F1E1FFEA800BE636F /* TempDir.cpp */; };
 		9DADBBAD1E256C73005B4869 /* PlatformUtility.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9DADBBAC1E256C52005B4869 /* PlatformUtility.cpp */; };
 		9DB047BA1DF9D4A4006CDF52 /* libgtest_main.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A224E619F99C580059043E /* libgtest_main.a */; };
@@ -99,16 +101,14 @@
 		BC8DEF2220300D7B00E9EF0C /* BuildSystem-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1DD22761C472A3F00555A5D /* BuildSystem-C-API.cpp */; };
 		BC8DEF2320300D7B00E9EF0C /* C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1ADC2311A85922F00D5387C /* C-API.cpp */; };
 		BC8DEF2420300D7B00E9EF0C /* Core-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1DD22741C47259900555A5D /* Core-C-API.cpp */; };
-		BC8DEF2720300DA000E9EF0C /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = BC8DEF2620300DA000E9EF0C /* libsqlite3.tbd */; };
-		BC8DEF2920300DA900E9EF0C /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = BC8DEF2820300DA900E9EF0C /* libcurses.tbd */; };
 		C5740D091E03523100567DD8 /* BuildSystemFrontendTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5740D081E03523100567DD8 /* BuildSystemFrontendTest.cpp */; };
 		C5740D0A1E03527B00567DD8 /* libllbuildCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243E19F997150059043E /* libllbuildCore.a */; };
 		C5740D0B1E03528600567DD8 /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
-		C5740D0C1E03529300567DD8 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
+		C5740D0C1E03529300567DD8 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.tbd */; };
 		E104FAF71B655A97005C68A0 /* BuildSystemPerfTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = E104FAF61B655A97005C68A0 /* BuildSystemPerfTests.mm */; };
 		E104FAFA1B655BBA005C68A0 /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
 		E104FAFB1B655C33005C68A0 /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
-		E104FAFE1B655C5D005C68A0 /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
+		E104FAFE1B655C5D005C68A0 /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.tbd */; };
 		E104FB001B6568E0005C68A0 /* BuildSystem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E104FAFF1B6568E0005C68A0 /* BuildSystem.cpp */; };
 		E1066C081BC5ACAB00B892CE /* LaneBasedExecutionQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1066C071BC5ACAB00B892CE /* LaneBasedExecutionQueue.cpp */; };
 		E1075ED71E4EA417007D52C6 /* BuildSystemTaskTests.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1075ED61E4EA417007D52C6 /* BuildSystemTaskTests.cpp */; };
@@ -121,34 +121,34 @@
 		E1192CEE1C49DBA600F85890 /* BuildSystem-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1DD22761C472A3F00555A5D /* BuildSystem-C-API.cpp */; };
 		E1192CEF1C49DBA900F85890 /* Core-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1DD22741C47259900555A5D /* Core-C-API.cpp */; };
 		E1192CF11C49DC3300F85890 /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
-		E1192CF21C49DC4F00F85890 /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
+		E1192CF21C49DC4F00F85890 /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.tbd */; };
 		E11F2B7F1E4D255B00176BAD /* BuildDescription.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E11F2B7E1E4D255B00176BAD /* BuildDescription.cpp */; };
 		E120B9ED1E4E65EB00B28469 /* BinaryCodingTests.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E120B9EB1E4E65EB00B28469 /* BinaryCodingTests.cpp */; };
 		E120B9EE1E4E65EB00B28469 /* ShellUtilityTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E120B9EC1E4E65EB00B28469 /* ShellUtilityTest.cpp */; };
 		E120B9F11E4E669F00B28469 /* BinaryCodingPerfTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = E120B9F01E4E669F00B28469 /* BinaryCodingPerfTests.mm */; };
 		E124FC922075370E00ECCC50 /* BuildEngineCancellationTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E124FC912075370D00ECCC50 /* BuildEngineCancellationTest.cpp */; };
-		E12BFF181C4972D900B8D20F /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
-		E12BFF191C4972E000B8D20F /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
+		E12BFF181C4972D900B8D20F /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.tbd */; };
+		E12BFF191C4972E000B8D20F /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.tbd */; };
 		E12BFF1A1C4972F000B8D20F /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
 		E12E12A91AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E12E12A71AD50AE500ACE7B3 /* CommandLineStatusOutput.cpp */; };
 		E12E12AA1AD50AE600ACE7B3 /* CommandLineStatusOutput.h in Headers */ = {isa = PBXBuildFile; fileRef = E12E12A81AD50AE500ACE7B3 /* CommandLineStatusOutput.h */; };
 		E138129E1C536D0E000092C0 /* FileSystem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E138129D1C536D0E000092C0 /* FileSystem.cpp */; };
 		E13812A21C53708E000092C0 /* FileSystemTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E13812A11C53708E000092C0 /* FileSystemTest.cpp */; };
 		E13812A31C5370A4000092C0 /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
-		E13812A41C5370B3000092C0 /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
+		E13812A41C5370B3000092C0 /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.tbd */; };
 		E147DEFB1BA81CF70032D08E /* SerialQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E147DEFA1BA81CF70032D08E /* SerialQueue.cpp */; };
 		E147DF0D1BA81D330032D08E /* libgtest.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A224DD19F99B0E0059043E /* libgtest.a */; };
 		E147DF0E1BA81D330032D08E /* libgtest_main.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A224E619F99C580059043E /* libgtest_main.a */; };
 		E147DF0F1BA81D330032D08E /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
 		E147DF1A1BA81D5A0032D08E /* SerialQueueTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E147DF191BA81D4E0032D08E /* SerialQueueTest.cpp */; };
 		E14C2CEF1BDAAD070033CA2A /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
-		E14C2CF01BDAAD1E0033CA2A /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
-		E14C2CF11BDAAD210033CA2A /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
+		E14C2CF01BDAAD1E0033CA2A /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.tbd */; };
+		E14C2CF11BDAAD210033CA2A /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.tbd */; };
 		E15B6EC41B546A1600643066 /* ConvertUTF.c in Sources */ = {isa = PBXBuildFile; fileRef = E15B6EC21B546A0D00643066 /* ConvertUTF.c */; };
 		E15B6EC51B546A1600643066 /* ConvertUTFWrapper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E15B6EC31B546A0D00643066 /* ConvertUTFWrapper.cpp */; };
-		E15B6EC71B546A2C00643066 /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
-		E1604CA51BB9E01D001153A1 /* libcurses.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.dylib */; };
-		E1604CA61BB9E01D001153A1 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
+		E15B6EC71B546A2C00643066 /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.tbd */; };
+		E1604CA51BB9E01D001153A1 /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.tbd */; };
+		E1604CA61BB9E01D001153A1 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.tbd */; };
 		E1604CA71BB9E01D001153A1 /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
 		E1604CA81BB9E01D001153A1 /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
 		E1604CAA1BB9E01D001153A1 /* libllbuildCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243E19F997150059043E /* libllbuildCore.a */; };
@@ -241,18 +241,18 @@
 		E1C404BA1A030A1D003392BA /* libllbuildCommands.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242E19F997050059043E /* libllbuildCommands.a */; };
 		E1C404BB1A030A1D003392BA /* libllbuildCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243E19F997150059043E /* libllbuildCore.a */; };
 		E1C404BC1A030A1D003392BA /* libllbuildNinja.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243619F9970D0059043E /* libllbuildNinja.a */; };
-		E1C404BD1A030A23003392BA /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
+		E1C404BD1A030A23003392BA /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.tbd */; };
 		E1D191C91B472437000C4E95 /* C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1ADC2311A85922F00D5387C /* C-API.cpp */; };
 		E1D191CA1B472440000C4E95 /* llbuild.h in Headers */ = {isa = PBXBuildFile; fileRef = E1ADC2351A8592AA00D5387C /* llbuild.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		E1D191CB1B472554000C4E95 /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
 		E1D191CC1B472554000C4E95 /* libllbuildCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243E19F997150059043E /* libllbuildCore.a */; };
-		E1D191CD1B472560000C4E95 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
+		E1D191CD1B472560000C4E95 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.tbd */; };
 		E1DB70221A85978100891F4D /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
 		E1DB70231A85978900891F4D /* libllbuildCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243E19F997150059043E /* libllbuildCore.a */; };
 		E1DD22751C47259900555A5D /* Core-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1DD22741C47259900555A5D /* Core-C-API.cpp */; };
 		E1DD22771C472A3F00555A5D /* BuildSystem-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1DD22761C472A3F00555A5D /* BuildSystem-C-API.cpp */; };
 		E1E221071A00689C00957481 /* BuildDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E221051A0067F800957481 /* BuildDB.cpp */; };
-		E1E221091A00B82100957481 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.dylib */; };
+		E1E221091A00B82100957481 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.tbd */; };
 		E1E2210C1A015B9E00957481 /* SQLiteBuildDB.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E2210B1A015B9E00957481 /* SQLiteBuildDB.cpp */; };
 		E1E4A5B41BFC1394001BFFC4 /* BuildKey.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E4A5B31BFC1394001BFFC4 /* BuildKey.cpp */; };
 		E1FC67F91BB1F427004EBC54 /* BuildValue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1FC67F81BB1F417004EBC54 /* BuildValue.cpp */; };
@@ -829,8 +829,6 @@
 		BC8DEF0520300AAF00E9EF0C /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; tabWidth = 2; };
 		BC8DEF0620300AAF00E9EF0C /* BuildSystemBindings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BuildSystemBindings.swift; sourceTree = "<group>"; };
 		BC8DEF0720300AAF00E9EF0C /* CoreBindings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CoreBindings.swift; sourceTree = "<group>"; };
-		BC8DEF2620300DA000E9EF0C /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
-		BC8DEF2820300DA900E9EF0C /* libcurses.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libcurses.tbd; path = usr/lib/libcurses.tbd; sourceTree = SDKROOT; };
 		C5740D081E03523100567DD8 /* BuildSystemFrontendTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildSystemFrontendTest.cpp; sourceTree = "<group>"; };
 		C5740D0D1E0352D800567DD8 /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E104FAF61B655A97005C68A0 /* BuildSystemPerfTests.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = BuildSystemPerfTests.mm; sourceTree = "<group>"; };
@@ -873,7 +871,7 @@
 		E147DF191BA81D4E0032D08E /* SerialQueueTest.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = SerialQueueTest.cpp; sourceTree = "<group>"; };
 		E15B6EC21B546A0D00643066 /* ConvertUTF.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ConvertUTF.c; sourceTree = "<group>"; };
 		E15B6EC31B546A0D00643066 /* ConvertUTFWrapper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ConvertUTFWrapper.cpp; sourceTree = "<group>"; };
-		E15B6EC61B546A2C00643066 /* libcurses.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcurses.dylib; path = usr/lib/libcurses.dylib; sourceTree = SDKROOT; };
+		E15B6EC61B546A2C00643066 /* libcurses.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libcurses.tbd; path = usr/lib/libcurses.tbd; sourceTree = SDKROOT; };
 		E1604CB11BB9E01D001153A1 /* swift-build-tool */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "swift-build-tool"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1604CB31BB9E032001153A1 /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1604CB41BB9E032001153A1 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
@@ -1123,7 +1121,7 @@
 		E1DD22761C472A3F00555A5D /* BuildSystem-C-API.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "BuildSystem-C-API.cpp"; sourceTree = "<group>"; };
 		E1E221041A0067EF00957481 /* BuildDB.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuildDB.h; sourceTree = "<group>"; };
 		E1E221051A0067F800957481 /* BuildDB.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildDB.cpp; sourceTree = "<group>"; };
-		E1E221081A00B82100957481 /* libsqlite3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsqlite3.dylib; path = usr/lib/libsqlite3.dylib; sourceTree = SDKROOT; };
+		E1E221081A00B82100957481 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		E1E2210B1A015B9E00957481 /* SQLiteBuildDB.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SQLiteBuildDB.cpp; sourceTree = "<group>"; };
 		E1E4A5B31BFC1394001BFFC4 /* BuildKey.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildKey.cpp; sourceTree = "<group>"; };
 		E1FC67F81BB1F417004EBC54 /* BuildValue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildValue.cpp; sourceTree = "<group>"; };
@@ -1135,8 +1133,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9D2107C61DFADDFA00BE26FF /* libcurses.dylib in Frameworks */,
-				C5740D0C1E03529300567DD8 /* libsqlite3.dylib in Frameworks */,
+				9D2107C61DFADDFA00BE26FF /* libcurses.tbd in Frameworks */,
+				C5740D0C1E03529300567DD8 /* libsqlite3.tbd in Frameworks */,
 				C5740D0B1E03528600567DD8 /* libllbuildBasic.a in Frameworks */,
 				C5740D0A1E03527B00567DD8 /* libllbuildCore.a in Frameworks */,
 				9DB047BD1DF9D4B0006CDF52 /* libllbuildBuildSystem.a in Frameworks */,
@@ -1150,12 +1148,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BC8DEF2920300DA900E9EF0C /* libcurses.tbd in Frameworks */,
-				BC8DEF2720300DA000E9EF0C /* libsqlite3.tbd in Frameworks */,
 				BC8DEF1820300BC600E9EF0C /* libllbuildBuildSystem.a in Frameworks */,
 				BC8DEF1420300BBE00E9EF0C /* libllbuildBasic.a in Frameworks */,
 				BC8DEF1520300BBE00E9EF0C /* libllbuildCommands.a in Frameworks */,
+				14124EAD207C49BF00E2AB56 /* libcurses.tbd in Frameworks */,
 				BC8DEF1620300BBE00E9EF0C /* libllbuildCore.a in Frameworks */,
+				14124EAE207C49D400E2AB56 /* libsqlite3.tbd in Frameworks */,
 				BC8DEF1720300BBE00E9EF0C /* libllvmSupport.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1172,7 +1170,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E13812A41C5370B3000092C0 /* libcurses.dylib in Frameworks */,
+				E13812A41C5370B3000092C0 /* libcurses.tbd in Frameworks */,
 				E147DF0D1BA81D330032D08E /* libgtest.a in Frameworks */,
 				E147DF0E1BA81D330032D08E /* libgtest_main.a in Frameworks */,
 				E147DF0F1BA81D330032D08E /* libllbuildBasic.a in Frameworks */,
@@ -1184,8 +1182,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E1604CA51BB9E01D001153A1 /* libcurses.dylib in Frameworks */,
-				E1604CA61BB9E01D001153A1 /* libsqlite3.dylib in Frameworks */,
+				E1604CA51BB9E01D001153A1 /* libcurses.tbd in Frameworks */,
+				E1604CA61BB9E01D001153A1 /* libsqlite3.tbd in Frameworks */,
 				E1604CA71BB9E01D001153A1 /* libllvmSupport.a in Frameworks */,
 				E1604CA81BB9E01D001153A1 /* libllbuildBasic.a in Frameworks */,
 				E1604CAA1BB9E01D001153A1 /* libllbuildCore.a in Frameworks */,
@@ -1225,8 +1223,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E15B6EC71B546A2C00643066 /* libcurses.dylib in Frameworks */,
-				E1E221091A00B82100957481 /* libsqlite3.dylib in Frameworks */,
+				E15B6EC71B546A2C00643066 /* libcurses.tbd in Frameworks */,
+				E1E221091A00B82100957481 /* libsqlite3.tbd in Frameworks */,
 				E1B8393B1B52E8CC00DB876B /* libllvmSupport.a in Frameworks */,
 				E1A224D519F99A2D0059043E /* libllbuildBasic.a in Frameworks */,
 				E1A224D619F99A300059043E /* libllbuildCommands.a in Frameworks */,
@@ -1254,8 +1252,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E14C2CF01BDAAD1E0033CA2A /* libcurses.dylib in Frameworks */,
-				E14C2CF11BDAAD210033CA2A /* libsqlite3.dylib in Frameworks */,
+				E14C2CF01BDAAD1E0033CA2A /* libcurses.tbd in Frameworks */,
+				E14C2CF11BDAAD210033CA2A /* libsqlite3.tbd in Frameworks */,
 				E14C2CEF1BDAAD070033CA2A /* libllvmSupport.a in Frameworks */,
 				E1A2250419F99E280059043E /* libgtest.a in Frameworks */,
 				E1A2250319F99E240059043E /* libgtest_main.a in Frameworks */,
@@ -1283,8 +1281,8 @@
 				E1DB70221A85978100891F4D /* libllbuildBasic.a in Frameworks */,
 				E1DB70231A85978900891F4D /* libllbuildCore.a in Frameworks */,
 				E12BFF1A1C4972F000B8D20F /* libllbuildBuildSystem.a in Frameworks */,
-				E12BFF181C4972D900B8D20F /* libsqlite3.dylib in Frameworks */,
-				E12BFF191C4972E000B8D20F /* libcurses.dylib in Frameworks */,
+				E12BFF181C4972D900B8D20F /* libsqlite3.tbd in Frameworks */,
+				E12BFF191C4972E000B8D20F /* libcurses.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1312,8 +1310,8 @@
 				E1C404BC1A030A1D003392BA /* libllbuildNinja.a in Frameworks */,
 				E104FAFA1B655BBA005C68A0 /* libllbuildBuildSystem.a in Frameworks */,
 				E1C404BA1A030A1D003392BA /* libllbuildCommands.a in Frameworks */,
-				E104FAFE1B655C5D005C68A0 /* libcurses.dylib in Frameworks */,
-				E1C404BD1A030A23003392BA /* libsqlite3.dylib in Frameworks */,
+				E104FAFE1B655C5D005C68A0 /* libcurses.tbd in Frameworks */,
+				E1C404BD1A030A23003392BA /* libsqlite3.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1325,8 +1323,8 @@
 				E1D191CB1B472554000C4E95 /* libllbuildBasic.a in Frameworks */,
 				E1D191CC1B472554000C4E95 /* libllbuildCore.a in Frameworks */,
 				E1192CF11C49DC3300F85890 /* libllbuildBuildSystem.a in Frameworks */,
-				E1D191CD1B472560000C4E95 /* libsqlite3.dylib in Frameworks */,
-				E1192CF21C49DC4F00F85890 /* libcurses.dylib in Frameworks */,
+				E1D191CD1B472560000C4E95 /* libsqlite3.tbd in Frameworks */,
+				E1192CF21C49DC4F00F85890 /* libcurses.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1494,10 +1492,8 @@
 		E13B5E411A00395300EA0405 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				BC8DEF2820300DA900E9EF0C /* libcurses.tbd */,
-				BC8DEF2620300DA000E9EF0C /* libsqlite3.tbd */,
-				E15B6EC61B546A2C00643066 /* libcurses.dylib */,
-				E1E221081A00B82100957481 /* libsqlite3.dylib */,
+				E15B6EC61B546A2C00643066 /* libcurses.tbd */,
+				E1E221081A00B82100957481 /* libsqlite3.tbd */,
 				E10D5CE319FEF3BD00211ED4 /* Python.framework */,
 			);
 			name = Frameworks;
@@ -2898,7 +2894,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/utils/Xcode/install-user-sphinx.sh\"";
+			shellScript = "\"${SRCROOT}/utils/Xcode/install-user-sphinx.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		E17C29F41B5AC2F600C12DA9 /* Build Sphinx Docs */ = {
@@ -2913,7 +2909,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "env LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 \"${SRCROOT}/utils/Xcode/build-sphinx-docs.sh\"";
+			shellScript = "env LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 \"${SRCROOT}/utils/Xcode/build-sphinx-docs.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		E18043371A00125500662FE7 /* Create 'lit.site.cfg' */ = {
