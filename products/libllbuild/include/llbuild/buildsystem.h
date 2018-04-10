@@ -361,6 +361,20 @@ typedef struct llb_buildsystem_delegate_t_ {
                            llb_buildsystem_command_t* command,
                            const llb_data_t* data);
 
+  /// Called to report a command could not build due to missing inputs.
+  void (*command_cannot_build_output_due_to_missing_inputs)(void *context,
+                           llb_buildsystem_command_t* command,
+                           llb_build_key_t* output,
+                           llb_build_key_t* inputs,
+                           uint64_t input_count);
+
+  /// Called by the build system to report a node could not be built
+  /// because multiple commands are producing it.
+  void (*cannot_build_node_due_to_multiple_producers)(void *context,
+                           llb_build_key_t* output,
+                           llb_buildsystem_command_t** commands,
+                           uint64_t command_count);
+
   /// Called when a command's job has started executing an external process.
   ///
   /// The system guarantees that any commandProcessStarted() call will be paired

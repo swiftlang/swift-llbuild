@@ -15,6 +15,7 @@
 
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/BuildSystem/BuildSystem.h"
+#include "llbuild/BuildSystem/BuildNode.h"
 #include "llbuild/Core/BuildEngine.h"
 
 #include "llvm/ADT/ArrayRef.h"
@@ -226,6 +227,16 @@ public:
   ///
   /// \param result - The result of command (e.g. success, failure, etc).
   virtual void commandFinished(Command*, CommandResult result) override;
+
+  /// Called by the build system to report a command could not build due to
+  /// missing inputs.
+  virtual void commandCannotBuildOutputDueToMissingInputs(Command*,
+               Node* output, SmallPtrSet<Node*, 1> inputs) override;
+
+  /// Called by the build system to report a node could not be built
+  /// because multiple commands are producing it.
+  virtual void cannotBuildNodeDueToMultipleProducers(Node* output,
+               std::vector<Command*>) override;
 
   /// Called when a command's job has been started.
   ///
