@@ -290,6 +290,23 @@ public:
   /// the cycle (i.e., the node participating in the cycle will appear twice).
   virtual void cycleDetected(const std::vector<core::Rule*>& items) = 0;
 
+  /// Called when a cycle is detected by the build engine to check if it should
+  /// attempt to resolve the cycle and continue
+  ///
+  /// \param items The ordered list of items comprising the cycle, starting from
+  /// the node which was requested to build and ending with the first node in
+  /// the cycle (i.e., the node participating in the cycle will appear twice).
+  /// \param candidateRule The rule the engine will use to attempt to break the
+  /// cycle.
+  /// \param action The action the engine will take on the candidateRule.
+  /// \returns True if the engine should attempt to resolve the cycle, false
+  /// otherwise. Resolution is attempted by either forcing items to be built, or
+  /// supplying a previously built result to a node in the cycle. The latter
+  /// action may yield unexpected results and thus this should be opted into
+  /// with care.
+  virtual bool shouldResolveCycle(const std::vector<core::Rule*>& items,
+                                  core::Rule* candidateRule,
+                                  core::Rule::CycleAction action);
   /// @}
   
   /// @name Accessors

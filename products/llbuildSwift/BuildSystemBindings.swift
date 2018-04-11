@@ -323,6 +323,25 @@ public struct BuildKey {
     }
 }
 
+/// Cycle actions.
+public enum CycleAction {
+    case forceBuild
+    case supplyPriorValue
+
+    init(_ action: llb_cycle_action_t) {
+        switch action {
+        case llb_cycle_action_force_build:
+            self = .forceBuild
+        case llb_cycle_action_supply_prior_value:
+            self = .supplyPriorValue
+        default:
+            fatalError("unknown cycle action")
+        }
+    }
+}
+
+
+
 /// File system information for a particular file.
 ///
 /// This is a simple wrapper for stat() information.
@@ -441,6 +460,24 @@ public protocol BuildSystemDelegate {
     /// Called when a cycle is detected by the build engine and it cannot make
     /// forward progress.
     func cycleDetected(rules: [BuildKey])
+
+    /// Called when a cycle is detected by the build engine to check if it should
+    /// attempt to resolve the cycle and continue
+    ///
+    /// - parameter rules: The ordered list of items comprising the cycle,
+    /// starting from the node which was requested to build and ending with the
+    /// first node in the cycle (i.e., the node participating in the cycle will
+    /// appear twice).
+    /// - parameter candidate: The rule the engine will use to attempt to break the
+    /// cycle.
+    /// - parameter action: The action the engine will take on the candidateRule.
+    ///
+    /// Returns true if the engine should attempt to resolve the cycle, false
+    /// otherwise. Resolution is attempted by either forcing items to be built, or
+    /// supplying a previously built result to a node in the cycle. The latter
+    /// action may yield unexpected results and thus this should be opted into
+    /// with care.
+    func shouldResolveCycle(rules: [BuildKey], candidate: BuildKey, action: CycleAction) -> Bool
 }
 
 /// Utility class for constructing a C-style environment.
@@ -534,6 +571,17 @@ public final class BuildSystem {
                 rules.append(BuildKey(kind: BuildKey.Kind($0.kind), key: String(cString: $0.key)))
             }
             BuildSystem.toSystem($0!).cycleDetected(rules)
+        }
+        _delegate.should_resolve_cycle = {
+            var rules = [BuildKey]()
+            UnsafeBufferPointer(start: $1, count: Int($2)).forEach {
+                rules.append(BuildKey(kind: BuildKey.Kind($0.kind), key: String(cString: $0.key)))
+            }
+            let candidate = BuildKey(kind: BuildKey.Kind($3.kind), key: String(cString: $3.key))
+
+            let result = BuildSystem.toSystem($0!).shouldResolveCycle(rules, candidate, CycleAction($4))
+
+            return (result) ? 1 : 0;
         }
 
         // Create the system.
@@ -713,5 +761,9 @@ public final class BuildSystem {
 
     private func cycleDetected(_ rules: [BuildKey]) {
         delegate.cycleDetected(rules: rules)
+    }
+
+    private func shouldResolveCycle(_ rules: [BuildKey], _ candidate: BuildKey, _ action: CycleAction) -> Bool {
+        return delegate.shouldResolveCycle(rules: rules, candidate: candidate, action: action)
     }
 }
