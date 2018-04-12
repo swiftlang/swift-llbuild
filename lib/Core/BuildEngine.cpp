@@ -1255,6 +1255,9 @@ private:
       ruleInfo->setCancelled();
     }
 
+    // FIXME: This is currently an O(n) operation that could be relatively
+    // expensive on larger projects.  We should be able to do something more
+    // targeted. rdar://problem/39386591
     for (auto& it: ruleInfos) {
       // Cancel outstanding activity on rules
       if (it.second.isScanning()) {
