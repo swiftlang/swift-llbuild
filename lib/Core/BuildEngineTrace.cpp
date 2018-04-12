@@ -285,3 +285,16 @@ void BuildEngineTrace::ruleDoesNotNeedToRun(const Rule* forRule) {
           getRuleName(forRule));
 }
 
+void BuildEngineTrace::cycleForceRuleNeedsToRun(const Rule* forRule) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
+
+  fprintf(fp, "{ \"cycle-force-rule-needs-to-run\", \"%s\" },\n",
+          getRuleName(forRule));
+}
+
+void BuildEngineTrace::cycleSupplyPriorValue(const Rule* forRule, const Task* toTask) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
+
+  fprintf(fp, "{ \"cycle-supply-prior-value\", \"%s\", \"%s\" },\n",
+          getRuleName(forRule), getTaskName(toTask));
+}

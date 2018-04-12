@@ -82,6 +82,8 @@ enum class EngineQueueItemKind {
   ReadyTask,
   FinishedTask,
   Waiting,
+  FindingCycle,
+  BreakingCycle,
 };
 
 /// An RAII type to define an individual tracing point.

@@ -31,6 +31,7 @@ class SimpleBuildEngineDelegate : public core::BuildEngineDelegate {
   /// The cycle, if one was detected during building.
 public:
   std::vector<std::string> cycle;
+  bool resolveCycle = false;
 
 private:
   virtual core::Rule lookupRule(const core::KeyType& key) override {
@@ -45,6 +46,12 @@ private:
     cycle.clear();
     std::transform(items.begin(), items.end(), std::back_inserter(cycle),
                    [](auto rule) { return std::string(rule->key); });
+  }
+
+  virtual bool shouldResolveCycle(const std::vector<Rule*>& items,
+                                  Rule* candidateRule,
+                                  Rule::CycleAction action) override {
+    return resolveCycle;
   }
 
   virtual void error(const Twine& message) override {
@@ -809,6 +816,16 @@ TEST(BuildEngineTest, CycleDuringScanningFromTop) {
     auto result = engine.build("A");
     EXPECT_EQ(ValueType{}, result);
     EXPECT_EQ(std::vector<std::string>({ "A", "C", "B", "C" }), delegate.cycle);
+  }
+
+  // Rebuild, allowing the engine to resolve the cycle
+  {
+    iteration = 1;
+    delegate.cycle.clear();
+    delegate.resolveCycle = true;
+    auto result = engine.build("A");
+    EXPECT_EQ(2, intFromValue(result));
+    EXPECT_EQ(std::vector<std::string>({}), delegate.cycle);
   }
 }
 
