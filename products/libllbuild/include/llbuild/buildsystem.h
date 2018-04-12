@@ -149,6 +149,14 @@ typedef enum {
   llb_build_key_kind_directory_tree_structure_signature = 7,
 } llb_build_key_kind_t;
 
+typedef enum {
+  /// Indicates a rule will be forced to build.
+  llb_cycle_action_force_build = 0,
+
+  /// Indicates a rule's prior value will be supplied to a downstream rule.
+  llb_cycle_action_supply_prior_value = 1,
+} llb_cycle_action_t;
+
 /// The BuildKey encodes the key space used by the BuildSystem when using the
 /// core BuildEngine.
 typedef struct llb_build_key_t_ llb_build_key_t;
@@ -405,6 +413,27 @@ typedef struct llb_buildsystem_delegate_t_ {
   /// the cycle (i.e., the node participating in the cycle will appear twice).
   /// Xparam rule_count The number of rules comprising the cycle.
   void (*cycle_detected)(void* context, llb_build_key_t* rules, uint64_t rule_count);
+
+  /// Called when a cycle is detected by the build engine to check if it should
+  /// attempt to resolve the cycle and continue
+  ///
+  /// Xparam rules The ordered list of items comprising the cycle, starting from
+  /// the node which was requested to build and ending with the first node in
+  /// the cycle (i.e., the node participating in the cycle will appear twice).
+  /// Xparam rule_count The number of rules comprising the cycle.
+  /// Xparam candidate_rule The rule the engine will use to attempt to break the
+  /// cycle.
+  /// Xparam action The action the engine will take on the candidateRule.
+  /// Xreturns Non-zero if the engine should attempt to resolve the cycle, zero
+  /// otherwise. Resolution is attempted by either forcing items to be built, or
+  /// supplying a previously built result to a node in the cycle. The latter
+  /// action may yield unexpected results and thus this should be opted into
+  /// with care.
+  uint8_t (*should_resolve_cycle)(void* context,
+                                  llb_build_key_t* rules,
+                                  uint64_t rule_count,
+                                  llb_build_key_t candidate_rule,
+                                  llb_cycle_action_t action);
   
   /// @}
 } llb_buildsystem_delegate_t;

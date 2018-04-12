@@ -519,7 +519,14 @@ void BuildSystemFrontendDelegate::commandJobFinished(Command*) {
 void BuildSystemFrontendDelegate::commandProcessStarted(Command*,
                                                         ProcessHandle) {
 }
-  
+
+bool BuildSystemFrontendDelegate::
+shouldResolveCycle(const std::vector<core::Rule*>& items,
+                   core::Rule* candidateRule,
+                   core::Rule::CycleAction action) {
+  return false;
+}
+
 void BuildSystemFrontendDelegate::
 commandProcessHadError(Command* command, ProcessHandle handle,
                        const Twine& message) {

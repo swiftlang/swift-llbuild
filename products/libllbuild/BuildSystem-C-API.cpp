@@ -336,58 +336,112 @@ public:
     BuildSystemFrontendDelegate::cancel();
   }
 
-  virtual void cycleDetected(const std::vector<core::Rule*>& items) override {
-    std::vector<llb_build_key_t> rules(items.size());
-    int idx = 0;
 
-    for (std::vector<core::Rule*>::const_iterator it = items.begin(); it != items.end(); ++it) {
-      core::Rule* rule = *it;
-      auto key = BuildKey::fromData(rule->key);
-      auto& buildKey = rules[idx++];
+  static llb_build_key_t convertBuildKey(const BuildKey& key) {
+    llb_build_key_t buildKey;
 
-      switch (key.getKind()) {
-        case BuildKey::Kind::Command:
-          buildKey.kind = llb_build_key_kind_command;
-          buildKey.key = strdup(key.getCommandName().str().c_str());
-          break;
-        case BuildKey::Kind::CustomTask:
-          buildKey.kind = llb_build_key_kind_custom_task;
-          buildKey.key = strdup(key.getCustomTaskName().str().c_str());
-          break;
-        case BuildKey::Kind::DirectoryContents:
-          buildKey.kind = llb_build_key_kind_directory_contents;
-          buildKey.key = strdup(key.getDirectoryContentsPath().str().c_str());
-          break;
-        case BuildKey::Kind::DirectoryTreeSignature:
-          buildKey.kind = llb_build_key_kind_directory_tree_signature;
-          buildKey.key = strdup(
-              key.getDirectoryTreeSignaturePath().str().c_str());
-          break;
-        case BuildKey::Kind::DirectoryTreeStructureSignature:
-          buildKey.kind = llb_build_key_kind_directory_tree_structure_signature;
-          buildKey.key = strdup(
-              key.getDirectoryTreeStructureSignaturePath().str().c_str());
-          break;
-        case BuildKey::Kind::Node:
-          buildKey.kind = llb_build_key_kind_node;
-          buildKey.key = strdup(key.getNodeName().str().c_str());
-          break;
-        case BuildKey::Kind::Target:
-          buildKey.kind = llb_build_key_kind_target;
-          buildKey.key = strdup(key.getTargetName().str().c_str());
-          break;
-        case BuildKey::Kind::Unknown:
-          buildKey.kind = llb_build_key_kind_unknown;
-          buildKey.key = strdup("((unknown))");
-          break;
+    switch (key.getKind()) {
+      case BuildKey::Kind::Command:
+        buildKey.kind = llb_build_key_kind_command;
+        buildKey.key = strdup(key.getCommandName().str().c_str());
+        break;
+      case BuildKey::Kind::CustomTask:
+        buildKey.kind = llb_build_key_kind_custom_task;
+        buildKey.key = strdup(key.getCustomTaskName().str().c_str());
+        break;
+      case BuildKey::Kind::DirectoryContents:
+        buildKey.kind = llb_build_key_kind_directory_contents;
+        buildKey.key = strdup(key.getDirectoryContentsPath().str().c_str());
+        break;
+      case BuildKey::Kind::DirectoryTreeSignature:
+        buildKey.kind = llb_build_key_kind_directory_tree_signature;
+        buildKey.key = strdup(
+                              key.getDirectoryTreeSignaturePath().str().c_str());
+        break;
+      case BuildKey::Kind::DirectoryTreeStructureSignature:
+        buildKey.kind = llb_build_key_kind_directory_tree_structure_signature;
+        buildKey.key = strdup(
+                              key.getDirectoryTreeStructureSignaturePath().str().c_str());
+        break;
+      case BuildKey::Kind::Node:
+        buildKey.kind = llb_build_key_kind_node;
+        buildKey.key = strdup(key.getNodeName().str().c_str());
+        break;
+      case BuildKey::Kind::Target:
+        buildKey.kind = llb_build_key_kind_target;
+        buildKey.key = strdup(key.getTargetName().str().c_str());
+        break;
+      case BuildKey::Kind::Unknown:
+        buildKey.kind = llb_build_key_kind_unknown;
+        buildKey.key = strdup("((unknown))");
+        break;
+    }
+
+    return buildKey;
+  }
+
+  class CAPIRulesVector {
+  private:
+    std::vector<llb_build_key_t> rules;
+
+  public:
+    CAPIRulesVector(const std::vector<core::Rule*>& items) : rules(items.size()) {
+      int idx = 0;
+
+      for (std::vector<core::Rule*>::const_iterator it = items.begin(); it != items.end(); ++it) {
+        core::Rule* rule = *it;
+        auto key = BuildKey::fromData(rule->key);
+        rules[idx++] = convertBuildKey(key);
       }
     }
 
-    cAPIDelegate.cycle_detected(cAPIDelegate.context, &rules[0], rules.size());
-
-    for (unsigned long i=0;i<rules.size();i++) {
-      free((char *)rules[i].key);
+    ~CAPIRulesVector() {
+      for (auto& rule : rules) {
+        free((char *)rule.key);
+      }
     }
+
+    llb_build_key_t* data() { return &rules[0]; }
+    uint64_t count() { return rules.size(); }
+  };
+
+
+  virtual void cycleDetected(const std::vector<core::Rule*>& items) override {
+    CAPIRulesVector rules(items);
+    cAPIDelegate.cycle_detected(cAPIDelegate.context, rules.data(), rules.count());
+  }
+
+  static llb_cycle_action_t
+  convertCycleAction(core::Rule::CycleAction action) {
+    switch (action) {
+      case core::Rule::CycleAction::ForceBuild:
+        return llb_cycle_action_force_build;
+      case core::Rule::CycleAction::SupplyPriorValue:
+        return llb_cycle_action_supply_prior_value;
+    }
+    assert(0 && "unknown cycle action");
+    return llb_cycle_action_force_build;
+  }
+
+  virtual bool shouldResolveCycle(const std::vector<core::Rule*>& items,
+                                  core::Rule* candidateRule,
+                                  core::Rule::CycleAction action) override {
+    if (!cAPIDelegate.should_resolve_cycle)
+      return false;
+
+    CAPIRulesVector rules(items);
+    auto key = BuildKey::fromData(candidateRule->key);
+    llb_build_key_t candidate = convertBuildKey(key);
+
+    uint8_t result = cAPIDelegate.should_resolve_cycle(cAPIDelegate.context,
+                                                       rules.data(),
+                                                       rules.count(),
+                                                       candidate,
+                                                       convertCycleAction(action));
+
+    free((char *)candidate.key);
+
+    return (result);
   }
 
   virtual void error(StringRef filename, const Token& at, const Twine& message) override {

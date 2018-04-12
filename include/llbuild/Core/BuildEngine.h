@@ -217,6 +217,9 @@ public:
   /// \param items The ordered list of items comprising the cycle, starting from
   /// the node which was requested to build and ending with the first node in
   /// the cycle (i.e., the node participating in the cycle will appear twice).
+  /// \param candidateRule The rule the engine will use to attempt to break the
+  /// cycle.
+  /// \param action The action the engine will take on the candidateRule.
   /// \returns True if the engine should attempt to resolve the cycle, false
   /// otherwise. Resolution is attempted by either forcing items to be built, or
   /// supplying a previously built result to a node in the cycle. The latter
