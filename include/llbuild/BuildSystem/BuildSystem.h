@@ -38,6 +38,7 @@ class BuildExecutionQueue;
 class BuildKey;
 class BuildValue;
 class Command;
+class Node;
 class Tool;
 
 bool pathIsPrefixedByPath(std::string path, std::string prefixPath);
@@ -194,6 +195,16 @@ public:
   ///
   /// \param result - The result of command (e.g. success, failure, etc).
   virtual void commandFinished(Command*, CommandResult result) = 0;
+
+  /// Called by the build system to report a command could not build due to
+  /// missing inputs.
+  virtual void commandCannotBuildOutputDueToMissingInputs(Command*,
+               Node* output, SmallPtrSet<Node*, 1> inputs) = 0;
+
+  /// Called by the build system to report a node could not be built
+  /// because multiple commands are producing it.
+  virtual void cannotBuildNodeDueToMultipleProducers(Node* output,
+               std::vector<Command*>) = 0;
 };
 
 /// The BuildSystem class is used to perform builds using the native build

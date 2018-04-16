@@ -347,19 +347,8 @@ BuildValue ExternalCommand::execute(BuildSystemCommandInterface& bsci,
   if (skipValue.hasValue()) {
     // If this command had a failed input, treat it as having failed.
     if (!missingInputNodes.empty()) {
-      std::string inputs;
-      llvm::raw_string_ostream inputsStream(inputs);
-      for (Node* missingInputNode : missingInputNodes) {
-        if (missingInputNode != *missingInputNodes.begin()) {
-          inputsStream << ", ";
-        }
-        inputsStream << "'" << missingInputNode->getName() << "'";
-      }
-      inputsStream.flush();
-
-      // FIXME: Design the logging and status output APIs.
-      bsci.getDelegate().commandHadError(this, "cannot build '" + outputs[0]->getName().str() +
-                                         "' due to missing inputs: " + inputs);
+      bsci.getDelegate().commandCannotBuildOutputDueToMissingInputs(this,
+                         outputs[0], missingInputNodes);
 
       // Report the command failure.
       bsci.getDelegate().hadCommandFailure();

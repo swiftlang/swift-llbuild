@@ -18,7 +18,7 @@ import Foundation
 
 import llbuild
 
-#if !LLBUILD_C_API_VERSION_5
+#if !LLBUILD_C_API_VERSION_6
   #if swift(>=4.2)
     #error("Unsupported llbuild C API version")
   #else
@@ -321,6 +321,10 @@ public struct BuildKey {
         self.kind = kind
         self.key = key
     }
+
+    init(key: llb_build_key_t) {
+        self.init(kind: BuildKey.Kind(key.kind), key: String(cString: key.key))
+    }
 }
 
 /// Cycle actions.
@@ -422,6 +426,14 @@ public protocol BuildSystemDelegate {
 
     /// Called to report a warning during the execution of a command.
     func commandHadWarning(_ command: Command, message: String)
+
+    /// Called by the build system to report a command could not build due to
+    /// missing inputs.
+    func commandCannotBuildOutputDueToMissingInputs(_ command: Command, output: BuildKey, inputs: [BuildKey])
+
+    /// Called by the build system to report a node could not be built
+    /// because multiple commands are producing it.
+    func cannotBuildNodeDueToMultipleProducers(output: BuildKey, commands: [Command])
 
     /// Called when a command's job has started executing an external process.
     ///
@@ -561,6 +573,16 @@ public final class BuildSystem {
         _delegate.command_had_error = { BuildSystem.toSystem($0!).commandHadError(Command($1), $2!) }
         _delegate.command_had_note = { BuildSystem.toSystem($0!).commandHadNote(Command($1), $2!) }
         _delegate.command_had_warning = { BuildSystem.toSystem($0!).commandHadWarning(Command($1), $2!) }
+        _delegate.command_cannot_build_output_due_to_missing_inputs = {
+            let inputsPtr = $3!
+            let inputs = (0..<Int($4)).map { BuildKey(key: inputsPtr[$0]) }
+            BuildSystem.toSystem($0!).commandCannotBuildOutputDueToMissingInputs(Command($1), BuildKey(key: $2!.pointee), inputs)
+        }
+        _delegate.cannot_build_node_due_to_multiple_producers = {
+            let commandsPtr = $2!
+            let commands = (0..<Int($3)).map { Command(commandsPtr[$0]) }
+            BuildSystem.toSystem($0!).cannotBuildNodeDueToMultipleProducers(BuildKey(key: $1!.pointee), commands)
+        }
         _delegate.command_process_started = { BuildSystem.toSystem($0!).commandProcessStarted(Command($1), ProcessHandle($2!)) }
         _delegate.command_process_had_error = { BuildSystem.toSystem($0!).commandProcessHadError(Command($1), ProcessHandle($2!), $3!) }
         _delegate.command_process_had_output = { BuildSystem.toSystem($0!).commandProcessHadOutput(Command($1), ProcessHandle($2!), $3!) }
@@ -568,7 +590,7 @@ public final class BuildSystem {
         _delegate.cycle_detected = {
             var rules = [BuildKey]()
             UnsafeBufferPointer(start: $1, count: Int($2)).forEach {
-                rules.append(BuildKey(kind: BuildKey.Kind($0.kind), key: String(cString: $0.key)))
+                rules.append(BuildKey(key: $0))
             }
             BuildSystem.toSystem($0!).cycleDetected(rules)
         }
@@ -741,6 +763,14 @@ public final class BuildSystem {
 
     private func commandHadWarning(_ command: Command, _ data: UnsafePointer<llb_data_t>) {
         delegate.commandHadWarning(command, message: stringFromData(data.pointee))
+    }
+
+    private func commandCannotBuildOutputDueToMissingInputs(_ command: Command, _ output: BuildKey, _ inputs: [BuildKey]) {
+        delegate.commandCannotBuildOutputDueToMissingInputs(command, output: output, inputs: inputs)
+    }
+
+    private func cannotBuildNodeDueToMultipleProducers(_ output: BuildKey, _ commands: [Command]) {
+        delegate.cannotBuildNodeDueToMultipleProducers(output: output, commands: commands)
     }
 
     private func commandProcessStarted(_ command: Command, _ process: ProcessHandle) {

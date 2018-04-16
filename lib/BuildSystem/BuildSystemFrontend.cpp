@@ -22,6 +22,7 @@
 #include "llbuild/BuildSystem/BuildValue.h"
 
 #include "llvm/ADT/DenseMap.h"
+#include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/Format.h"
 #include "llvm/Support/Path.h"
@@ -508,6 +509,48 @@ void BuildSystemFrontendDelegate::commandHadWarning(Command* command, StringRef 
 }
 
 void BuildSystemFrontendDelegate::commandFinished(Command*, CommandResult) {
+}
+
+void BuildSystemFrontendDelegate::commandCannotBuildOutputDueToMissingInputs(
+     Command * command, Node *output, SmallPtrSet<Node *, 1> inputs) {
+  std::string message;
+  llvm::raw_string_ostream messageStream(message);
+
+  messageStream << "cannot build '";
+  messageStream << output->getName().str();
+  messageStream << "' due to missing inputs: ";
+
+  for (Node* input : inputs) {
+    if (input != *inputs.begin()) {
+      messageStream << ", ";
+    }
+    messageStream << "'" << input->getName() << "'";
+  }
+
+  messageStream.flush();
+  fwrite(message.data(), message.size(), 1, stderr);
+  fflush(stderr);
+}
+
+void BuildSystemFrontendDelegate::cannotBuildNodeDueToMultipleProducers(
+     Node *output, std::vector<Command*> commands) {
+  std::string message;
+  llvm::raw_string_ostream messageStream(message);
+
+  messageStream << "unable to build node: '";
+  messageStream << output->getName();
+  messageStream << "' (node is produced by multiple commands: '";
+
+  for (Command* cmd : commands) {
+    if (cmd != *commands.begin()) {
+      messageStream << ", ";
+    }
+    messageStream << "'" << cmd->getName() << "'";
+  }
+
+  messageStream.flush();
+  fwrite(message.data(), message.size(), 1, stderr);
+  fflush(stderr);
 }
 
 void BuildSystemFrontendDelegate::commandJobStarted(Command*) {

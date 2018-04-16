@@ -277,6 +277,65 @@ public:
     }
   }
 
+  virtual void commandCannotBuildOutputDueToMissingInputs(Command* command,
+               Node* outputNode, SmallPtrSet<Node*, 1> inputNodes) override {
+    if (cAPIDelegate.command_cannot_build_output_due_to_missing_inputs) {
+      llb_build_key_t output = { llb_build_key_kind_node,
+        strdup(outputNode->getName().str().c_str()) };
+
+      CAPINodesVector inputs(inputNodes);
+
+      cAPIDelegate.command_cannot_build_output_due_to_missing_inputs(
+        cAPIDelegate.context,
+        (llb_buildsystem_command_t*) command,
+        &output,
+        inputs.data(),
+        inputs.count()
+      );
+
+      free((char *)output.key);
+    }
+  }
+
+  class CAPINodesVector {
+  private:
+    std::vector<llb_build_key_t> keys;
+
+  public:
+    CAPINodesVector(const SmallPtrSet<Node*, 1> inputNodes) : keys(inputNodes.size()) {
+      int idx = 0;
+      for (auto inputNode : inputNodes) {
+        auto& buildKey = keys[idx++];
+        buildKey.kind = llb_build_key_kind_node;
+        buildKey.key = strdup(inputNode->getName().str().c_str());
+      }
+    }
+
+    ~CAPINodesVector() {
+      for (auto& key : keys) {
+        free((char *)key.key);
+      }
+    }
+
+    llb_build_key_t* data() { return &keys[0]; }
+    uint64_t count() { return keys.size(); }
+  };
+
+  virtual void cannotBuildNodeDueToMultipleProducers(Node* outputNode,
+               std::vector<Command*> commands) override {
+    if (cAPIDelegate.cannot_build_node_due_to_multiple_producers) {
+      llb_build_key_t output = { llb_build_key_kind_node,
+        strdup(outputNode->getName().str().c_str()) };
+
+      cAPIDelegate.cannot_build_node_due_to_multiple_producers(
+        cAPIDelegate.context,
+        &output,
+        (llb_buildsystem_command_t**)commands.data(),
+        commands.size()
+      );
+    }
+  }
+
   virtual void commandProcessStarted(Command* command,
                                      ProcessHandle handle) override {
     if (cAPIDelegate.command_process_started) {
