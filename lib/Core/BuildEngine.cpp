@@ -1049,9 +1049,11 @@ private:
                                                                &request.ruleInfo->rule);
 
         // Add the active rule scan record which needs to be traversed.
-        assert(request.ruleInfo->isScanning());
-        activeRuleScanRecords.push_back(
-                                        request.ruleInfo->getPendingScanRecord());
+        assert(request.ruleInfo->isScanning() || request.ruleInfo->wasForced);
+        if (request.ruleInfo->isScanning()) {
+          activeRuleScanRecords.push_back(
+            request.ruleInfo->getPendingScanRecord());
+        }
       }
     }
 
