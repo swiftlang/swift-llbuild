@@ -128,6 +128,9 @@ class BuildSystemEngineDelegate : public BuildEngineDelegate {
   const BuildDescription& getBuildDescription() const;
 
   virtual Rule lookupRule(const KeyType& keyData) override;
+  virtual bool shouldResolveCycle(const std::vector<Rule*>& items,
+                                  Rule* candidateRule,
+                                  Rule::CycleAction action) override;
   virtual void cycleDetected(const std::vector<Rule*>& items) override;
   virtual void error(const Twine& message) override;
 
@@ -1452,6 +1455,12 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
 
   assert(0 && "invalid key type");
   abort();
+}
+
+bool BuildSystemEngineDelegate::shouldResolveCycle(const std::vector<Rule*>& cycle,
+                                                     Rule* candidateRule,
+                                                     Rule::CycleAction action) {
+  return static_cast<BuildSystemFrontendDelegate*>(&getBuildSystem().getDelegate())->shouldResolveCycle(cycle, candidateRule, action);
 }
 
 void BuildSystemEngineDelegate::cycleDetected(const std::vector<Rule*>& cycle) {
