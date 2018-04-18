@@ -267,6 +267,14 @@ typedef struct llb_task_delegate_t_ {
 LLBUILD_EXPORT llb_task_t*
 llb_task_create(llb_task_delegate_t delegate);
 
+/// Enable tracing points.
+LLBUILD_EXPORT void
+llb_enable_tracing();
+
+/// Disable tracing points.
+LLBUILD_EXPORT void
+llb_disable_tracing();
+
 /// @}
 
 #endif

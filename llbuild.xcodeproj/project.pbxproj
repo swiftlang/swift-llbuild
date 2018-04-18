@@ -76,6 +76,7 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		402614272087B10B005BD956 /* Tracing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 402614262087B10B005BD956 /* Tracing.cpp */; };
 		403B1A492053123B0018A322 /* version.h in Headers */ = {isa = PBXBuildFile; fileRef = 403B1A48205312000018A322 /* version.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		40F638ED205306AB00A1CFBE /* Version.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 40F638EC2053043D00A1CFBE /* Version.xcconfig */; };
 		9D0A6D811E1FFEA800BE636F /* TempDir.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9D0A6D7F1E1FFEA800BE636F /* TempDir.cpp */; };
@@ -788,6 +789,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		402614262087B10B005BD956 /* Tracing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Tracing.cpp; sourceTree = "<group>"; };
 		40377C7B2061C44900C0FD4D /* generate-version-h.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "generate-version-h.sh"; sourceTree = "<group>"; };
 		40377C7C2061D24200C0FD4D /* Package.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; tabWidth = 4; };
 		403B1A48205312000018A322 /* version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = version.h; sourceTree = "<group>"; };
@@ -1634,6 +1636,7 @@
 				E11470931B7554F800ED84CF /* FileInfo.cpp */,
 				E138129D1C536D0E000092C0 /* FileSystem.cpp */,
 				E1FE53401AB1343B00041B8E /* Hashing.cpp */,
+				402614262087B10B005BD956 /* Tracing.cpp */,
 				9DADBBAC1E256C52005B4869 /* PlatformUtility.cpp */,
 				E147DEFA1BA81CF70032D08E /* SerialQueue.cpp */,
 				E17440C21CE192FF0070A30C /* ShellUtility.cpp */,
@@ -3055,6 +3058,7 @@
 				E1FE53411AB1346700041B8E /* Hashing.cpp in Sources */,
 				E138129E1C536D0E000092C0 /* FileSystem.cpp in Sources */,
 				E11470941B7555FA00ED84CF /* FileInfo.cpp in Sources */,
+				402614272087B10B005BD956 /* Tracing.cpp in Sources */,
 				E147DEFB1BA81CF70032D08E /* SerialQueue.cpp in Sources */,
 				E1A224BE19F9995E0059043E /* Version.cpp in Sources */,
 				E17440C31CE192FF0070A30C /* ShellUtility.cpp in Sources */,
