@@ -13,6 +13,7 @@
 // Include the public API.
 #include <llbuild/llbuild.h>
 
+#include "llbuild/Basic/Tracing.h"
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/BuildEngine.h"
 
@@ -238,4 +239,12 @@ void llb_buildengine_task_is_complete(llb_buildengine_t* engine_p,
 
 llb_task_t* llb_task_create(llb_task_delegate_t delegate) {
   return (llb_task_t*) new CAPITask(delegate);
+}
+
+void llb_enable_tracing() {
+  TracingEnabled = true;
+}
+
+void llb_disable_tracing() {
+  TracingEnabled = false;
 }

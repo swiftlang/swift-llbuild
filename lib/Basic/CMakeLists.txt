@@ -4,6 +4,7 @@ add_llbuild_library(llbuildBasic
   Hashing.cpp
   PlatformUtility.cpp
   SerialQueue.cpp
+  Tracing.cpp
   Version.cpp
   ShellUtility.cpp
   )

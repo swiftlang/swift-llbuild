@@ -42,6 +42,8 @@
 
 namespace llbuild {
 
+extern bool TracingEnabled;
+
 /// Tracing Kind Codes
 ///
 /// These are currently global across the entire library, please take care to
@@ -98,7 +100,8 @@ struct TracingPoint {
                 uint64_t arg3 = 0, uint64_t arg4 = 0)
     : kind(uint32_t(kind)), arg1(arg1), arg2(arg2), arg3(arg3), arg4(arg4)
   {
-    LLBUILD_TRACE_POINT(kind, arg1, arg2, arg3, arg4);
+    if (TracingEnabled)
+      LLBUILD_TRACE_POINT(kind, arg1, arg2, arg3, arg4);
   }
 };
 
@@ -118,10 +121,12 @@ struct TracingInterval {
                   uint64_t arg3 = 0, uint64_t arg4 = 0)
       : kind(uint32_t(kind)), arg1(arg1), arg2(arg2), arg3(arg3), arg4(arg4)
   {
-    LLBUILD_TRACE_INTERVAL_BEGIN(kind, arg1, arg2, arg3, arg4);
+    if (TracingEnabled)
+      LLBUILD_TRACE_INTERVAL_BEGIN(kind, arg1, arg2, arg3, arg4);
   }
   ~TracingInterval() {
-    LLBUILD_TRACE_INTERVAL_END(kind, arg1, arg2, arg3, arg4);
+    if (TracingEnabled)
+      LLBUILD_TRACE_INTERVAL_END(kind, arg1, arg2, arg3, arg4);
   }
 
   // MARK: Utility Wrappers
@@ -142,7 +147,8 @@ struct TracingString {
   const uint64_t value;
 
   TracingString(TraceEventKind kind, llvm::StringRef str)
-      : kind(uint32_t(kind)), value(LLBUILD_TRACE_STRING(kind, str)) {}
+    : kind(uint32_t(kind)),
+    value(TracingEnabled ? LLBUILD_TRACE_STRING(kind, str) : 0) {}
 
   operator uint64_t() const { return value; }
 };
