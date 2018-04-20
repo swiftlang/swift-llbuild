@@ -431,16 +431,8 @@ TEST(BuildEngineTest, incrementalDependency) {
     
     std::unordered_map<KeyType, Result> ruleResults;
 
-    virtual KeyID getKeyID(const KeyType& key, std::string *error_out) override {
-      auto it = keyTable.insert(std::make_pair(key, false)).first;
-      return (KeyID)(uintptr_t)it->getKey().data();
-    }
+    virtual void attachDelegate(BuildDBDelegate* delegate) override { ; }
 
-    virtual KeyType getKeyForID(KeyID keyID) override {
-      return llvm::StringMapEntry<bool>::GetStringMapEntryFromKeyData(
-          (const char*)(uintptr_t)keyID).getKey();
-    }
-    
     virtual uint64_t getCurrentIteration(bool* success_out, std::string* error_out) override {
       return 0;
     }

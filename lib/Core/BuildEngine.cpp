@@ -50,7 +50,7 @@ bool BuildEngineDelegate::shouldResolveCycle(const std::vector<Rule*>& items,
 
 namespace {
 
-class BuildEngineImpl {
+class BuildEngineImpl : public BuildDBDelegate {
   struct RuleInfo;
   struct TaskInfo;
 
@@ -322,6 +322,8 @@ class BuildEngineImpl {
   /// This variable is used to signal when additional work is added to the
   /// FinishedTaskInfos queue, which the engine may need to wait on.
   std::condition_variable finishedTaskInfosCondition;
+
+
 
 private:
   /// @name RuleScanRecord Allocation
@@ -1292,35 +1294,21 @@ public:
     return currentTimestamp;
   }
 
-  KeyID getKeyID(const KeyType& key) {
-      std::lock_guard<std::mutex> guard(keyTableMutex);
+  virtual KeyID getKeyID(const KeyType& key) override {
+    std::lock_guard<std::mutex> guard(keyTableMutex);
 
-    // Delegate if we have a database.
-    if (db) {
-      // Check our cache, to avoid query the database redundantly.
-      auto it = keyTable.find(key);
-      if (it != keyTable.end())
-        return it->second;
-      
-      std::string error;
-      KeyID id = db->getKeyID(key, &error);
-      if (!error.empty()) {
-        delegate.error(error);
-        cancelRemainingTasks();
-      }
-
-      // Cache the result, and return;
-      keyTable.insert(std::make_pair(key, id));
-      return id;
-    }
-
-    // Otherwise, use our builtin key table.
-    //
     // The RHS of the mapping is actually ignored, we use the StringMap's ptr
     // identity because it allows us to efficiently map back to the key string
     // in `getRuleInfoForKey`.
     auto it = keyTable.insert(std::make_pair(key, 0)).first;
     return (KeyID)(uintptr_t)it->getKey().data();
+  }
+
+  virtual KeyType getKeyForID(KeyID key) override {
+    // Note that we don't need to lock `keyTable` here because the key entries
+    // themselves don't change once created.
+    return llvm::StringMapEntry<KeyID>::GetStringMapEntryFromKeyData(
+      (const char*)(uintptr_t)key).getKey();
   }
 
   RuleInfo& getRuleInfoForKey(const KeyType& key) {
@@ -1343,16 +1331,7 @@ public:
 
     // Otherwise, we need to resolve the full key so we can request it from the
     // delegate.
-    KeyType key;
-    if (db) {
-      key = db->getKeyForID(keyID);
-    } else {
-      // Note that we don't need to lock `keyTable` here because the key entries
-      // themselves don't change once created.
-      key = llvm::StringMapEntry<KeyID>::GetStringMapEntryFromKeyData(
-          (const char*)(uintptr_t)keyID).getKey();
-    }
-    return addRule(keyID, delegate.lookupRule(key));
+    return addRule(keyID, delegate.lookupRule(getKeyForID(keyID)));
   }
 
   TaskInfo* getTaskInfo(Task* task) {
@@ -1480,6 +1459,7 @@ public:
     assert(currentTimestamp == 0 && "invalid attachDB() call");
     assert(ruleInfos.empty() && "invalid attachDB() call");
     db = std::move(database);
+    db->attachDelegate(this);
 
     // Load our initial state from the database.
     bool success;

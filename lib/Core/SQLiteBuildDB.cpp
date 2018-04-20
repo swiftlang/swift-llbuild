@@ -41,10 +41,22 @@ class SQLiteBuildDB : public BuildDB {
   /// * 4: Pre-history
   static const int currentSchemaVersion = 7;
 
+  /// Internal key ID type used for linking rule dependencies. Related to, but
+  /// distinct from the build engine's KeyID type.
+  struct DBKeyID {
+    uint64_t value = 0;
+
+    DBKeyID() { ; }
+    explicit DBKeyID(uint64_t value) : value(value) { ; }
+  };
+
   sqlite3 *db = nullptr;
 
   /// The mutex to protect all access to the database and statements.
   std::mutex dbMutex;
+
+  /// The delegate pointer
+  BuildDBDelegate* delegate = nullptr;
 
   std::string getCurrentErrorMessage() {
     int err_code = sqlite3_errcode(db);
@@ -276,6 +288,10 @@ public:
   /// @name BuildDB API
   /// @{
 
+  virtual void attachDelegate(BuildDBDelegate* delegate) override {
+    this->delegate = delegate;
+  }
+
   virtual uint64_t getCurrentIteration(bool* success_out, std::string *error_out) override {
     std::lock_guard<std::mutex> guard(dbMutex);
     assert(db);
@@ -337,8 +353,14 @@ public:
   virtual bool lookupRuleResult(KeyID keyID, const Rule& rule,
                                 Result* result_out,
                                 std::string *error_out) override {
+    assert(delegate != nullptr);
     std::lock_guard<std::mutex> guard(dbMutex);
     assert(result_out->builtAt == 0);
+
+    auto dbKeyID = getKeyID(delegate->getKeyForID(keyID), error_out);
+    if (!error_out->empty()) {
+      return false;
+    }
 
     // Fetch the basic rule information.
     int result;
@@ -347,7 +369,7 @@ public:
     assert(result == SQLITE_OK);
     result = sqlite3_clear_bindings(findRuleResultStmt);
     assert(result == SQLITE_OK);
-    result = sqlite3_bind_int64(findRuleResultStmt, /*index=*/1, keyID);
+    result = sqlite3_bind_int64(findRuleResultStmt, /*index=*/1, dbKeyID);
     assert(result == SQLITE_OK);
 
     // If the rule wasn't found, we are done.
@@ -383,7 +405,16 @@ public:
     basic::BinaryDecoder decoder(
         StringRef((const char*)dependencyBytes, numDependencyBytes));
     for (auto i = 0; i != numDependencies; ++i) {
-      decoder.read(result_out->dependencies[i]);
+      DBKeyID dbKeyID;
+      decoder.read(dbKeyID.value);
+
+      // Map the database key ID into an engine key ID
+      //
+      // FIXME: This is roundtripping through the key table for every ID with
+      // no caching, thus likely fairly expensive. Should consider a db layer
+      // cache of key/id mappings.
+      auto key = getKeyForID(dbKeyID);
+      result_out->dependencies[i] = delegate->getKeyID(key);
     }
 
     return true;
@@ -416,77 +447,19 @@ public:
   "INSERT OR IGNORE INTO key_names(key) VALUES (?);";
   sqlite3_stmt* insertIntoKeysStmt = nullptr;
 
-  /// Inserts a key if not present and always returns keyID
-  /// Sometimes key will be inserted for a lookup operation
-  /// but that is okay because it'll be added at somepoint anyway
-  virtual KeyID getKeyID(const KeyType& key, std::string *error_out) override {
-    std::lock_guard<std::mutex> guard(dbMutex);
-    int result;
-
-    // Seach for the key.
-    result = sqlite3_reset(findKeyIDForKeyStmt);
-    assert(result == SQLITE_OK);
-    result = sqlite3_clear_bindings(findKeyIDForKeyStmt);
-    assert(result == SQLITE_OK);
-    result = sqlite3_bind_text(findKeyIDForKeyStmt, /*index=*/1,
-                               key.data(), key.size(),
-                               SQLITE_STATIC);
-    assert(result == SQLITE_OK);
-
-    result = sqlite3_step(findKeyIDForKeyStmt);
-    if (result == SQLITE_ROW) {
-      assert(sqlite3_column_count(findKeyIDForKeyStmt) == 1);
-      // Found a keyID, return.
-      return sqlite3_column_int64(findKeyIDForKeyStmt, 0);
-    }
-
-    // Did not find the key, need to insert.
-    result = sqlite3_reset(insertIntoKeysStmt);
-    assert(result == SQLITE_OK);
-    result = sqlite3_clear_bindings(insertIntoKeysStmt);
-    assert(result == SQLITE_OK);
-    result = sqlite3_bind_text(insertIntoKeysStmt, /*index=*/1,
-                               key.data(), key.size(),
-                               SQLITE_STATIC);
-    assert(result == SQLITE_OK);
-    result = sqlite3_step(insertIntoKeysStmt);
-    if (result != SQLITE_DONE) {
-      *error_out = getCurrentErrorMessage();
-      return 0;
-    }
-
-    return sqlite3_last_insert_rowid(db);
-  }
-
-  virtual KeyType getKeyForID(KeyID keyID) override {
-    std::lock_guard<std::mutex> guard(dbMutex);
-    int result;
-
-    // Seach for the key.
-    result = sqlite3_reset(findKeyNameForKeyIDStmt);
-    assert(result == SQLITE_OK);
-    result = sqlite3_clear_bindings(findKeyNameForKeyIDStmt);
-    assert(result == SQLITE_OK);
-    result = sqlite3_bind_int64(findKeyNameForKeyIDStmt, /*index=*/1, keyID);
-    assert(result == SQLITE_OK);
-
-    result = sqlite3_step(findKeyNameForKeyIDStmt);
-    assert(result == SQLITE_ROW);
-    assert(sqlite3_column_count(findKeyNameForKeyIDStmt) == 1);
-
-    // Found a keyID, return.
-    auto size = sqlite3_column_bytes(findKeyNameForKeyIDStmt, 0);
-    auto text = (const char*) sqlite3_column_text(findKeyNameForKeyIDStmt, 0);
-    return KeyType(text, size);
-  }
-
   virtual bool setRuleResult(KeyID keyID,
                              const Rule& rule,
                              const Result& ruleResult,
                              std::string *error_out) override {
+    assert(delegate != nullptr);
     std::lock_guard<std::mutex> guard(dbMutex);
     int result;
     uint64_t ruleID = 0;
+
+    auto dbKeyID = getKeyID(delegate->getKeyForID(keyID), error_out);
+    if (!error_out->empty()) {
+      return false;
+    }
 
     // Find the existing rule id, if present.
     //
@@ -496,7 +469,7 @@ public:
     result = sqlite3_clear_bindings(findIDForKeyInRuleResultsStmt);
     assert(result == SQLITE_OK);
     result = sqlite3_bind_int64(findIDForKeyInRuleResultsStmt, /*index=*/1,
-                               keyID);
+                               dbKeyID.value);
     assert(result == SQLITE_OK);
 
     result = sqlite3_step(findIDForKeyInRuleResultsStmt);
@@ -535,18 +508,25 @@ public:
     // size here.
     basic::BinaryEncoder encoder{};
     for (auto keyID: ruleResult.dependencies) {
-      encoder.write(keyID);
+      // Map the enging keyID to a database key ID
+      //
+      // FIXME: This is naively mapping all keys with no caching at this point,
+      // thus likely to perform poorly.  Should refactor this into a bulk
+      // query or a DB layer cache.
+      auto dbKeyID = getKeyID(delegate->getKeyForID(keyID), error_out);
+      if (!error_out->empty()) {
+        return false;
+      }
+      encoder.write(dbKeyID.value);
     }
-    // FIXME: This is doing an unnecessary copy.
-    auto encodedDependencies = encoder.contents();
-      
+
     // Insert the actual rule result.
     result = sqlite3_reset(insertIntoRuleResultsStmt);
     assert(result == SQLITE_OK);
     result = sqlite3_clear_bindings(insertIntoRuleResultsStmt);
     assert(result == SQLITE_OK);
     result = sqlite3_bind_int64(insertIntoRuleResultsStmt, /*index=*/1,
-                               keyID);
+                               dbKeyID.value);
     assert(result == SQLITE_OK);
     result = sqlite3_bind_blob(insertIntoRuleResultsStmt, /*index=*/2,
                                ruleResult.value.data(),
@@ -560,8 +540,8 @@ public:
                                 ruleResult.computedAt);
     assert(result == SQLITE_OK);
     result = sqlite3_bind_blob(insertIntoRuleResultsStmt, /*index=*/5,
-                               encodedDependencies.data(),
-                               encodedDependencies.size(),
+                               encoder.data(),
+                               encoder.size(),
                                SQLITE_STATIC);
     assert(result == SQLITE_OK);
     result = sqlite3_step(insertIntoRuleResultsStmt);
@@ -600,6 +580,70 @@ public:
   }
 
   /// @}
+
+  
+private:
+  /// Inserts a key if not present and always returns keyID
+  /// Sometimes key will be inserted for a lookup operation
+  /// but that is okay because it'll be added at somepoint anyway
+  DBKeyID getKeyID(const KeyType& key, std::string *error_out) {
+    int result;
+
+    // Seach for the key.
+    result = sqlite3_reset(findKeyIDForKeyStmt);
+    assert(result == SQLITE_OK);
+    result = sqlite3_clear_bindings(findKeyIDForKeyStmt);
+    assert(result == SQLITE_OK);
+    result = sqlite3_bind_text(findKeyIDForKeyStmt, /*index=*/1,
+                               key.data(), key.size(),
+                               SQLITE_STATIC);
+    assert(result == SQLITE_OK);
+
+    result = sqlite3_step(findKeyIDForKeyStmt);
+    if (result == SQLITE_ROW) {
+      assert(sqlite3_column_count(findKeyIDForKeyStmt) == 1);
+      // Found a keyID, return.
+      return DBKeyID(sqlite3_column_int64(findKeyIDForKeyStmt, 0));
+    }
+
+    // Did not find the key, need to insert.
+    result = sqlite3_reset(insertIntoKeysStmt);
+    assert(result == SQLITE_OK);
+    result = sqlite3_clear_bindings(insertIntoKeysStmt);
+    assert(result == SQLITE_OK);
+    result = sqlite3_bind_text(insertIntoKeysStmt, /*index=*/1,
+                               key.data(), key.size(),
+                               SQLITE_STATIC);
+    assert(result == SQLITE_OK);
+    result = sqlite3_step(insertIntoKeysStmt);
+    if (result != SQLITE_DONE) {
+      *error_out = getCurrentErrorMessage();
+      return DBKeyID();
+    }
+
+    return DBKeyID(sqlite3_last_insert_rowid(db));
+  }
+
+  KeyType getKeyForID(DBKeyID keyID) {
+    int result;
+
+    // Seach for the key.
+    result = sqlite3_reset(findKeyNameForKeyIDStmt);
+    assert(result == SQLITE_OK);
+    result = sqlite3_clear_bindings(findKeyNameForKeyIDStmt);
+    assert(result == SQLITE_OK);
+    result = sqlite3_bind_int64(findKeyNameForKeyIDStmt, /*index=*/1, keyID.value);
+    assert(result == SQLITE_OK);
+
+    result = sqlite3_step(findKeyNameForKeyIDStmt);
+    assert(result == SQLITE_ROW);
+    assert(sqlite3_column_count(findKeyNameForKeyIDStmt) == 1);
+
+    // Found a keyID, return.
+    auto size = sqlite3_column_bytes(findKeyNameForKeyIDStmt, 0);
+    auto text = (const char*) sqlite3_column_text(findKeyNameForKeyIDStmt, 0);
+    return KeyType(text, size);
+  }
 };
 
 }
