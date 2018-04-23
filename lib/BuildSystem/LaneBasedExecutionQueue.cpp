@@ -47,6 +47,10 @@
 #include <sys/resource.h>
 #include <sys/wait.h>
 
+#ifdef __APPLE__
+#include <pthread/spawn.h>
+#endif
+
 using namespace llbuild;
 using namespace llbuild::buildsystem;
 
@@ -316,6 +320,11 @@ public:
     // really an easy answer other than using a stub executable).
 #ifdef __APPLE__
     flags |= POSIX_SPAWN_CLOEXEC_DEFAULT;
+#endif
+
+    // On Darwin, set the QOS of launched processes to UTILITY.
+#ifdef __APPLE__
+    posix_spawnattr_set_qos_class_np(&attributes, QOS_CLASS_UTILITY);
 #endif
 
     posix_spawnattr_setflags(&attributes, flags);
