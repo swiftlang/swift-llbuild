@@ -15,4 +15,6 @@
 using namespace llbuild;
 using namespace llbuild::core;
 
+BuildDBDelegate::~BuildDBDelegate() { }
+
 BuildDB::~BuildDB() { }

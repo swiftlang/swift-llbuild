@@ -28,22 +28,34 @@ namespace core {
 struct Result;
 class Rule;
 
-class BuildDB {
+/// Delegate interface for use with the build database
+class BuildDBDelegate {
 public:
-  virtual ~BuildDB();
+  virtual ~BuildDBDelegate();
 
   /// Get a unique ID for the given key.
   ///
   /// This method is thread safe.
   ///
   /// \param key [out] The key whose unique ID is being returned.
-  /// \param error_out [out] Error string if return value is 0.
-  virtual KeyID getKeyID(const KeyType& key, std::string *error_out) = 0;
+  virtual KeyID getKeyID(const KeyType& key) = 0;
 
   /// Get the key corresponding to a key ID.
   ///
   /// This method is thread safe, and cannot fail.
   virtual KeyType getKeyForID(KeyID key) = 0;
+};
+
+
+class BuildDB {
+public:
+  virtual ~BuildDB();
+
+  /// Set the delegate for key/id mapping
+  ///
+  /// \param delegate The delegate pointer (does not take ownership)
+  virtual void attachDelegate(BuildDBDelegate* delegate) = 0;
+
   
   /// Get the current build iteration.
   ///

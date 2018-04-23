@@ -47,7 +47,7 @@ private:
   /// The encoded data.
   //
   // FIXME: Parameterize this size?
-  llvm::SmallVector<uint8_t, 256> data;
+  llvm::SmallVector<uint8_t, 256> encdata;
 
 public:
   /// Construct a new binary encoder.
@@ -55,7 +55,7 @@ public:
 
   /// Encode a value to the stream.
   void write(uint8_t value) {
-    data.push_back(value);
+    encdata.push_back(value);
   }
 
   /// Encode a value to the stream.
@@ -78,7 +78,7 @@ public:
 
   /// Encode a sequence of bytes to the stream.
   void writeBytes(StringRef bytes) {
-    data.insert(data.end(), bytes.begin(), bytes.end());
+    encdata.insert(encdata.end(), bytes.begin(), bytes.end());
   }
 
   /// Encode a value to the stream.
@@ -89,7 +89,17 @@ public:
 
   /// Get the encoded binary data.
   std::vector<uint8_t> contents() {
-    return std::vector<uint8_t>(data.begin(), data.end());
+    return std::vector<uint8_t>(encdata.begin(), encdata.end());
+  }
+
+  /// Get the encoded binary data (in place)
+  const uint8_t* data() const {
+    return encdata.data();
+  }
+
+  /// Get the size of the encoded binary data
+  const size_t size() const {
+    return encdata.size();
   }
 };
   
