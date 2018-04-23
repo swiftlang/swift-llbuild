@@ -344,10 +344,15 @@ public:
   static constexpr const char *deleteFromKeysStmtSQL = (
       "DELETE FROM key_names WHERE key == ?;");
   sqlite3_stmt* deleteFromKeysStmt = nullptr;
-  
+
+  // Although we have the engine's KeyID, we explictly use the key itself to
+  // do the mapping via a table join. This is substantially more performant when
+  // running an initial full build against empty tables. It is also essentially
+  // equivalent to the mapping we would have to do for the DBKeyID, but defers
+  // the creation of new IDs until we actually need them in setRuleResult().
   static constexpr const char *findRuleResultStmtSQL = (
-      "SELECT id, value, built_at, computed_at, dependencies FROM rule_results "
-      "WHERE key_id == ?;");
+      "SELECT rule_results.id, value, built_at, computed_at, dependencies FROM rule_results "
+      "INNER JOIN key_names ON key_names.id = rule_results.key_id WHERE key == ?;");
   sqlite3_stmt* findRuleResultStmt = nullptr;
 
   virtual bool lookupRuleResult(KeyID keyID, const Rule& rule,
@@ -357,11 +362,6 @@ public:
     std::lock_guard<std::mutex> guard(dbMutex);
     assert(result_out->builtAt == 0);
 
-    auto dbKeyID = getKeyID(delegate->getKeyForID(keyID), error_out);
-    if (!error_out->empty()) {
-      return false;
-    }
-
     // Fetch the basic rule information.
     int result;
 
@@ -369,7 +369,9 @@ public:
     assert(result == SQLITE_OK);
     result = sqlite3_clear_bindings(findRuleResultStmt);
     assert(result == SQLITE_OK);
-    result = sqlite3_bind_int64(findRuleResultStmt, /*index=*/1, dbKeyID);
+    result = sqlite3_bind_text(findRuleResultStmt, /*index=*/1,
+                               rule.key.data(), rule.key.size(),
+                               SQLITE_STATIC);
     assert(result == SQLITE_OK);
 
     // If the rule wasn't found, we are done.
