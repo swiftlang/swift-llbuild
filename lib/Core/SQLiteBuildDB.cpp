@@ -48,6 +48,7 @@ class SQLiteBuildDB : public BuildDB {
     uint64_t value = 0;
 
     DBKeyID() { ; }
+    DBKeyID(const DBKeyID&) = default;
     explicit DBKeyID(uint64_t value) : value(value) { ; }
   };
 
@@ -265,6 +266,11 @@ public:
       -1, &findRuleResultStmt, nullptr);
     assert(result == SQLITE_OK);
 
+    result = sqlite3_prepare_v2(
+      db, fastFindRuleResultStmtSQL,
+      -1, &fastFindRuleResultStmt, nullptr);
+    assert(result == SQLITE_OK);
+
     return true;
   }
 
@@ -276,6 +282,7 @@ public:
     sqlite3_finalize(findKeyIDForKeyStmt);
     sqlite3_finalize(findKeyNameForKeyIDStmt);
     sqlite3_finalize(findRuleResultStmt);
+    sqlite3_finalize(fastFindRuleResultStmt);
     sqlite3_finalize(deleteFromKeysStmt);
     sqlite3_finalize(deleteFromRuleResultsStmt);
     sqlite3_finalize(insertIntoKeysStmt);
@@ -352,9 +359,15 @@ public:
   // equivalent to the mapping we would have to do for the DBKeyID, but defers
   // the creation of new IDs until we actually need them in setRuleResult().
   static constexpr const char *findRuleResultStmtSQL = (
-      "SELECT rule_results.id, value, built_at, computed_at, dependencies FROM rule_results "
+      "SELECT rule_results.id, rule_results.key_id, value, built_at, computed_at, dependencies FROM rule_results "
       "INNER JOIN key_names ON key_names.id = rule_results.key_id WHERE key == ?;");
   sqlite3_stmt* findRuleResultStmt = nullptr;
+
+  // Fast path find result for rules we already know they ID for
+  static constexpr const char *fastFindRuleResultStmtSQL = (
+      "SELECT id, value, built_at, computed_at, dependencies FROM rule_results "
+      "WHERE key_id == ?;");
+  sqlite3_stmt* fastFindRuleResultStmt = nullptr;
 
   virtual bool lookupRuleResult(KeyID keyID, const Rule& rule,
                                 Result* result_out,
@@ -365,39 +378,84 @@ public:
 
     // Fetch the basic rule information.
     int result;
+    int numDependencyBytes = 0;
+    const void* dependencyBytes = nullptr;
+    uint64_t ruleID = 0;
 
-    result = sqlite3_reset(findRuleResultStmt);
-    assert(result == SQLITE_OK);
-    result = sqlite3_clear_bindings(findRuleResultStmt);
-    assert(result == SQLITE_OK);
-    result = sqlite3_bind_text(findRuleResultStmt, /*index=*/1,
-                               rule.key.data(), rule.key.size(),
-                               SQLITE_STATIC);
-    assert(result == SQLITE_OK);
+    auto it = dbKeyIDs.find(keyID);
+    if (it != dbKeyIDs.end()) {
+      result = sqlite3_reset(fastFindRuleResultStmt);
+      assert(result == SQLITE_OK);
+      result = sqlite3_clear_bindings(fastFindRuleResultStmt);
+      assert(result == SQLITE_OK);
+      result = sqlite3_bind_int64(fastFindRuleResultStmt, /*index=*/1,
+                                  it->second.value);
+      assert(result == SQLITE_OK);
 
-    // If the rule wasn't found, we are done.
-    result = sqlite3_step(findRuleResultStmt);
-    if (result == SQLITE_DONE)
-      return false;
-    if (result != SQLITE_ROW) {
-      *error_out = getCurrentErrorMessage();
-      return false;
+      // If the rule wasn't found, we are done.
+      result = sqlite3_step(fastFindRuleResultStmt);
+      if (result == SQLITE_DONE)
+        return false;
+      if (result != SQLITE_ROW) {
+        *error_out = getCurrentErrorMessage();
+        return false;
+      }
+
+      // Otherwise, read the result contents from the row.
+      assert(sqlite3_column_count(fastFindRuleResultStmt) == 5);
+      ruleID = sqlite3_column_int64(fastFindRuleResultStmt, 0);
+      int numValueBytes = sqlite3_column_bytes(fastFindRuleResultStmt, 1);
+      result_out->value.resize(numValueBytes);
+      memcpy(result_out->value.data(),
+             sqlite3_column_blob(fastFindRuleResultStmt, 1),
+             numValueBytes);
+      result_out->builtAt = sqlite3_column_int64(fastFindRuleResultStmt, 2);
+      result_out->computedAt = sqlite3_column_int64(fastFindRuleResultStmt, 3);
+
+      // Extract the dependencies binary blob.
+      numDependencyBytes = sqlite3_column_bytes(fastFindRuleResultStmt, 4);
+      dependencyBytes = sqlite3_column_blob(fastFindRuleResultStmt, 4);
+    } else {
+      result = sqlite3_reset(findRuleResultStmt);
+      assert(result == SQLITE_OK);
+      result = sqlite3_clear_bindings(findRuleResultStmt);
+      assert(result == SQLITE_OK);
+      result = sqlite3_bind_text(findRuleResultStmt, /*index=*/1,
+                                 rule.key.data(), rule.key.size(),
+                                 SQLITE_STATIC);
+      assert(result == SQLITE_OK);
+
+      // If the rule wasn't found, we are done.
+      result = sqlite3_step(findRuleResultStmt);
+      if (result == SQLITE_DONE)
+        return false;
+      if (result != SQLITE_ROW) {
+        *error_out = getCurrentErrorMessage();
+        return false;
+      }
+
+      // Otherwise, read the result contents from the row.
+      assert(sqlite3_column_count(findRuleResultStmt) == 6);
+      ruleID = sqlite3_column_int64(findRuleResultStmt, 0);
+      uint64_t ruleKeyID = sqlite3_column_int64(findRuleResultStmt, 1);
+      int numValueBytes = sqlite3_column_bytes(findRuleResultStmt, 2);
+      result_out->value.resize(numValueBytes);
+      memcpy(result_out->value.data(),
+             sqlite3_column_blob(findRuleResultStmt, 2),
+             numValueBytes);
+      result_out->builtAt = sqlite3_column_int64(findRuleResultStmt, 3);
+      result_out->computedAt = sqlite3_column_int64(findRuleResultStmt, 4);
+
+      // Cache the engine key mapping
+      engineKeyIDs[ruleKeyID] = keyID;
+      dbKeyIDs[keyID] = DBKeyID(ruleKeyID);
+
+      // Extract the dependencies binary blob.
+      numDependencyBytes = sqlite3_column_bytes(findRuleResultStmt, 5);
+      dependencyBytes = sqlite3_column_blob(findRuleResultStmt, 5);
     }
 
-    // Otherwise, read the result contents from the row.
-    assert(sqlite3_column_count(findRuleResultStmt) == 5);
-    uint64_t ruleID = sqlite3_column_int64(findRuleResultStmt, 0);
-    int numValueBytes = sqlite3_column_bytes(findRuleResultStmt, 1);
-    result_out->value.resize(numValueBytes);
-    memcpy(result_out->value.data(),
-           sqlite3_column_blob(findRuleResultStmt, 1),
-           numValueBytes);
-    result_out->builtAt = sqlite3_column_int64(findRuleResultStmt, 2);
-    result_out->computedAt = sqlite3_column_int64(findRuleResultStmt, 3);
 
-    // Extract the dependencies binary blob.
-    int numDependencyBytes = sqlite3_column_bytes(findRuleResultStmt, 4);
-    const void* dependencyBytes = sqlite3_column_blob(findRuleResultStmt, 4);
     int numDependencies = numDependencyBytes / sizeof(uint64_t);
     if (numDependencyBytes != numDependencies * sizeof(uint64_t)) {
       *error_out = (llvm::Twine("unexpected contents for database result: ") +
@@ -627,6 +685,9 @@ private:
   /// Local cache of database DBKeyID (values) to engine KeyIDs
   llvm::DenseMap<uint64_t, KeyID> engineKeyIDs;
 
+  /// Local cache of database engine KeyIDs to DBKeyIDs
+  llvm::DenseMap<KeyID, DBKeyID> dbKeyIDs;
+
   /// Maps a DBKeyID into an engine KeyID
   ///
   /// This method is not thread-safe. The caller must protect access via the
@@ -659,6 +720,7 @@ private:
 
     // Cache the mapping locally
     engineKeyIDs[keyID.value] = engineKeyID;
+    dbKeyIDs[engineKeyID] = keyID;
 
     return engineKeyID;
   }
