@@ -48,8 +48,8 @@ install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/
   PATTERN "*.h")
 
 install(TARGETS libllbuild
-        DESTINATION lib
-        COMPONENT libllbuild)
+  DESTINATION lib${LLBUILD_LIBDIR_SUFFIX}
+  COMPONENT libllbuild)
 
 add_custom_target(install-libllbuild
                   DEPENDS libllbuild
