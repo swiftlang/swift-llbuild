@@ -35,14 +35,18 @@ public:
 
   /// Get a unique ID for the given key.
   ///
-  /// This method is thread safe.
+  /// This method must be thread safe.
+  ///
+  /// The IDs returned by this method must be stable for the lifetime of the
+  /// BuildDB instance with which the delegate has been attached. BuildDB
+  /// implementations may (and do) cache these values for future use.
   ///
   /// \param key [out] The key whose unique ID is being returned.
   virtual KeyID getKeyID(const KeyType& key) = 0;
 
   /// Get the key corresponding to a key ID.
   ///
-  /// This method is thread safe, and cannot fail.
+  /// This method must be thread safe, and must not fail.
   virtual KeyType getKeyForID(KeyID key) = 0;
 };
 

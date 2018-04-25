@@ -16,6 +16,7 @@
 #include "llbuild/Basic/PlatformUtility.h"
 #include "llbuild/Core/BuildEngine.h"
 
+#include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -410,13 +411,9 @@ public:
       DBKeyID dbKeyID;
       decoder.read(dbKeyID.value);
 
-      // Map the database key ID into an engine key ID
-      //
-      // FIXME: This is roundtripping through the key table for every ID with
-      // no caching, thus likely fairly expensive. Should consider a db layer
-      // cache of key/id mappings.
-      auto key = getKeyForID(dbKeyID);
-      result_out->dependencies[i] = delegate->getKeyID(key);
+      // Map the database key ID into an engine key ID (note that we already
+      // hold the dbMutex at this point as required by getKeyIDforID())
+      result_out->dependencies[i] = getKeyIDForID(dbKeyID);
     }
 
     return true;
@@ -585,6 +582,7 @@ public:
 
   
 private:
+
   /// Inserts a key if not present and always returns keyID
   /// Sometimes key will be inserted for a lookup operation
   /// but that is okay because it'll be added at somepoint anyway
@@ -626,10 +624,21 @@ private:
     return DBKeyID(sqlite3_last_insert_rowid(db));
   }
 
-  KeyType getKeyForID(DBKeyID keyID) {
-    int result;
+  /// Local cache of database DBKeyID (values) to engine KeyIDs
+  llvm::DenseMap<uint64_t, KeyID> engineKeyIDs;
 
-    // Seach for the key.
+  /// Maps a DBKeyID into an engine KeyID
+  ///
+  /// This method is not thread-safe. The caller must protect access via the
+  /// dbMutex.
+  KeyID getKeyIDForID(DBKeyID keyID) {
+    // Search local db <-> engine mapping cache
+    auto it = engineKeyIDs.find(keyID.value);
+    if (it != engineKeyIDs.end())
+      return it->second;
+
+    // Search for the key in the database
+    int result;
     result = sqlite3_reset(findKeyNameForKeyIDStmt);
     assert(result == SQLITE_OK);
     result = sqlite3_clear_bindings(findKeyNameForKeyIDStmt);
@@ -641,10 +650,17 @@ private:
     assert(result == SQLITE_ROW);
     assert(sqlite3_column_count(findKeyNameForKeyIDStmt) == 1);
 
-    // Found a keyID, return.
+    // Found a key
     auto size = sqlite3_column_bytes(findKeyNameForKeyIDStmt, 0);
     auto text = (const char*) sqlite3_column_text(findKeyNameForKeyIDStmt, 0);
-    return KeyType(text, size);
+
+    // Map the key to an engine ID
+    auto engineKeyID = delegate->getKeyID(KeyType(text, size));
+
+    // Cache the mapping locally
+    engineKeyIDs[keyID.value] = engineKeyID;
+
+    return engineKeyID;
   }
 };
 
