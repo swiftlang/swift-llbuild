@@ -793,6 +793,7 @@
 		40377C7B2061C44900C0FD4D /* generate-version-h.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "generate-version-h.sh"; sourceTree = "<group>"; };
 		40377C7C2061D24200C0FD4D /* Package.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; tabWidth = 4; };
 		403B1A48205312000018A322 /* version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = version.h; sourceTree = "<group>"; };
+		404C888E20924BF8000C201A /* DenseMapInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DenseMapInfo.h; sourceTree = "<group>"; };
 		40F4F4F220531D8A00170EE1 /* version.h.in */ = {isa = PBXFileReference; lastKnownFileType = text; path = version.h.in; sourceTree = "<group>"; };
 		40F638CE2051EDC800A1CFBE /* count-lines-2 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "count-lines-2"; sourceTree = "<group>"; };
 		40F638CF2051EDC800A1CFBE /* count-lines-4 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "count-lines-4"; sourceTree = "<group>"; };
@@ -2016,6 +2017,7 @@
 			children = (
 				E1B838F41B52E8A500DB876B /* ArrayRef.h */,
 				E1B838F51B52E8A500DB876B /* DenseMap.h */,
+				404C888E20924BF8000C201A /* DenseMapInfo.h */,
 				E1B838F61B52E8A500DB876B /* Hashing.h */,
 				E1B838F71B52E8A500DB876B /* IntrusiveRefCntPtr.h */,
 				E1B838F81B52E8A500DB876B /* None.h */,
