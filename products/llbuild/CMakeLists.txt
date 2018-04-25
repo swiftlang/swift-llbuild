@@ -13,3 +13,7 @@ target_link_libraries(llbuild
 if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
   target_link_libraries(llbuild curses)
 endif()
+
+install(TARGETS llbuild
+        COMPONENT llbuild
+        DESTINATION bin)
