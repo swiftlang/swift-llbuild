@@ -34,6 +34,7 @@
 #include <deque>
 #include <memory>
 #include <mutex>
+#include <queue>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -54,6 +55,20 @@
 using namespace llbuild;
 using namespace llbuild::buildsystem;
 
+// Enable the priority based scheduler by default, based on measured performance
+// improvements for large projects.
+//
+// FIXME: We should turn this into an option that can be selected at
+// construction time so that clients may select the algorithm at run time via
+// the API.
+#define LLBUILD_LANE_SCHEDULER_PRIORITY_QUEUE
+
+struct QueueJobLess {
+  bool operator()(const llbuild::buildsystem::QueueJob &__x, const llbuild::buildsystem::QueueJob &__y) const {
+    return __x.getForCommand()->getName() < __y.getForCommand()->getName();
+  }
+};
+
 namespace {
 
 struct LaneBasedExecutionQueueJobContext {
@@ -66,7 +81,8 @@ struct ProcessInfo {
   /// Whether the process can be safely interrupted.
   bool canSafelyInterrupt;
 };
-  
+
+
 /// Build execution queue.
 //
 // FIXME: Consider trying to share this with the Ninja implementation.
@@ -78,7 +94,11 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
   std::vector<std::unique_ptr<std::thread>> lanes;
 
   /// The ready queue of jobs to execute.
+#if defined(LLBUILD_LANE_SCHEDULER_PRIORITY_QUEUE)
+  std::priority_queue<QueueJob, std::vector<QueueJob>, QueueJobLess> readyJobs;
+#else
   std::deque<QueueJob> readyJobs;
+#endif
   std::mutex readyJobsMutex;
   std::condition_variable readyJobsCondition;
   bool cancelled { false };
@@ -131,8 +151,13 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
           return;
 
         // Take an item according to the chosen policy.
+#if defined(LLBUILD_LANE_SCHEDULER_PRIORITY_QUEUE)
+        job = readyJobs.top();
+        readyJobs.pop();
+#else
         job = readyJobs.front();
         readyJobs.pop_front();
+#endif
         readyJobsCount = readyJobs.size();
       }
 
@@ -226,7 +251,11 @@ public:
     uint64_t readyJobsCount;
     {
       std::lock_guard<std::mutex> guard(readyJobsMutex);
+#if defined(LLBUILD_LANE_SCHEDULER_PRIORITY_QUEUE)
+      readyJobs.push(job);
+#else
       readyJobs.push_back(job);
+#endif
       readyJobsCondition.notify_one();
       readyJobsCount = readyJobs.size();
     }
