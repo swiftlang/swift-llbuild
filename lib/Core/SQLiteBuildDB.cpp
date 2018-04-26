@@ -32,25 +32,38 @@ using namespace llbuild::core;
 
 // SQLite BuildDB Implementation
 
+/// Internal key ID type used for linking rule dependencies. Related to, but
+/// distinct from the build engine's KeyID type.
+struct DBKeyID {
+  uint64_t value = 0;
+
+  DBKeyID() { ; }
+  DBKeyID(const DBKeyID&) = default;
+  explicit DBKeyID(uint64_t value) : value(value) { ; }
+};
+
+// Provide DenseMapInfo for DBKeyID.
+template<> struct ::llvm::DenseMapInfo<DBKeyID> {
+  static inline DBKeyID getEmptyKey() { return DBKeyID(~0ULL); }
+  static inline DBKeyID getTombstoneKey() { return DBKeyID(~0ULL - 1ULL); }
+  static unsigned getHashValue(const DBKeyID& Val) {
+    return (unsigned)(Val.value * 37ULL);
+  }
+  static bool isEqual(const DBKeyID& LHS, const DBKeyID& RHS) {
+    return LHS.value == RHS.value;
+  }
+};
+
 namespace {
 
 class SQLiteBuildDB : public BuildDB {
   /// Version History:
+  /// * 8: Remove ID from rule results
   /// * 7: De-normalized the rule result dependencies.
   /// * 6: Added `ordinal` field for dependencies.
   /// * 5: Switched to using `WITHOUT ROWID` for dependencies.
   /// * 4: Pre-history
-  static const int currentSchemaVersion = 7;
-
-  /// Internal key ID type used for linking rule dependencies. Related to, but
-  /// distinct from the build engine's KeyID type.
-  struct DBKeyID {
-    uint64_t value = 0;
-
-    DBKeyID() { ; }
-    DBKeyID(const DBKeyID&) = default;
-    explicit DBKeyID(uint64_t value) : value(value) { ; }
-  };
+  static const int currentSchemaVersion = 8;
 
   sqlite3 *db = nullptr;
 
@@ -192,8 +205,7 @@ public:
       if (result == SQLITE_OK) {
         result = sqlite3_exec(
           db, ("CREATE TABLE rule_results ("
-               "id INTEGER PRIMARY KEY, "
-               "key_id INTEGER, "
+               "key_id INTEGER PRIMARY KEY, "
                "value BLOB, "
                "built_at INTEGER, "
                "computed_at INTEGER, "
@@ -237,11 +249,6 @@ public:
     assert(result == SQLITE_OK);
     
     result = sqlite3_prepare_v2(
-      db, findIDForKeyInRuleResultsStmtSQL,
-      -1, &findIDForKeyInRuleResultsStmt, nullptr);
-    assert(result == SQLITE_OK);
-    
-    result = sqlite3_prepare_v2(
       db, insertIntoKeysStmtSQL,
       -1, &insertIntoKeysStmt, nullptr);
     assert(result == SQLITE_OK);
@@ -254,11 +261,6 @@ public:
     result = sqlite3_prepare_v2(
       db, deleteFromKeysStmtSQL,
       -1, &deleteFromKeysStmt, nullptr);
-    assert(result == SQLITE_OK);
-    
-    result = sqlite3_prepare_v2(
-      db, deleteFromRuleResultsStmtSQL,
-      -1, &deleteFromRuleResultsStmt, nullptr);
     assert(result == SQLITE_OK);
     
     result = sqlite3_prepare_v2(
@@ -284,10 +286,8 @@ public:
     sqlite3_finalize(findRuleResultStmt);
     sqlite3_finalize(fastFindRuleResultStmt);
     sqlite3_finalize(deleteFromKeysStmt);
-    sqlite3_finalize(deleteFromRuleResultsStmt);
     sqlite3_finalize(insertIntoKeysStmt);
     sqlite3_finalize(insertIntoRuleResultsStmt);
-    sqlite3_finalize(findIDForKeyInRuleResultsStmt);
 
     sqlite3_close(db);
     db = nullptr;
@@ -359,13 +359,13 @@ public:
   // equivalent to the mapping we would have to do for the DBKeyID, but defers
   // the creation of new IDs until we actually need them in setRuleResult().
   static constexpr const char *findRuleResultStmtSQL = (
-      "SELECT rule_results.id, rule_results.key_id, value, built_at, computed_at, dependencies FROM rule_results "
+      "SELECT rule_results.key_id, value, built_at, computed_at, dependencies FROM rule_results "
       "INNER JOIN key_names ON key_names.id = rule_results.key_id WHERE key == ?;");
   sqlite3_stmt* findRuleResultStmt = nullptr;
 
   // Fast path find result for rules we already know they ID for
   static constexpr const char *fastFindRuleResultStmtSQL = (
-      "SELECT id, value, built_at, computed_at, dependencies FROM rule_results "
+      "SELECT key_id, value, built_at, computed_at, dependencies FROM rule_results "
       "WHERE key_id == ?;");
   sqlite3_stmt* fastFindRuleResultStmt = nullptr;
 
@@ -380,10 +380,13 @@ public:
     int result;
     int numDependencyBytes = 0;
     const void* dependencyBytes = nullptr;
-    uint64_t ruleID = 0;
+    DBKeyID dbKeyID;
 
+    // Check if we already have the key mapping
     auto it = dbKeyIDs.find(keyID);
     if (it != dbKeyIDs.end()) {
+      // DBKeyID is known, perform the fast path that avoids table joining
+
       result = sqlite3_reset(fastFindRuleResultStmt);
       assert(result == SQLITE_OK);
       result = sqlite3_clear_bindings(fastFindRuleResultStmt);
@@ -403,7 +406,7 @@ public:
 
       // Otherwise, read the result contents from the row.
       assert(sqlite3_column_count(fastFindRuleResultStmt) == 5);
-      ruleID = sqlite3_column_int64(fastFindRuleResultStmt, 0);
+      dbKeyID = DBKeyID(sqlite3_column_int64(fastFindRuleResultStmt, 0));
       int numValueBytes = sqlite3_column_bytes(fastFindRuleResultStmt, 1);
       result_out->value.resize(numValueBytes);
       memcpy(result_out->value.data(),
@@ -416,6 +419,8 @@ public:
       numDependencyBytes = sqlite3_column_bytes(fastFindRuleResultStmt, 4);
       dependencyBytes = sqlite3_column_blob(fastFindRuleResultStmt, 4);
     } else {
+      // KeyID is not known, perform the 'normal' search using the key value
+
       result = sqlite3_reset(findRuleResultStmt);
       assert(result == SQLITE_OK);
       result = sqlite3_clear_bindings(findRuleResultStmt);
@@ -435,31 +440,30 @@ public:
       }
 
       // Otherwise, read the result contents from the row.
-      assert(sqlite3_column_count(findRuleResultStmt) == 6);
-      ruleID = sqlite3_column_int64(findRuleResultStmt, 0);
-      uint64_t ruleKeyID = sqlite3_column_int64(findRuleResultStmt, 1);
-      int numValueBytes = sqlite3_column_bytes(findRuleResultStmt, 2);
+      assert(sqlite3_column_count(findRuleResultStmt) == 5);
+      dbKeyID = DBKeyID(sqlite3_column_int64(findRuleResultStmt, 0));
+      int numValueBytes = sqlite3_column_bytes(findRuleResultStmt, 1);
       result_out->value.resize(numValueBytes);
       memcpy(result_out->value.data(),
-             sqlite3_column_blob(findRuleResultStmt, 2),
+             sqlite3_column_blob(findRuleResultStmt, 1),
              numValueBytes);
-      result_out->builtAt = sqlite3_column_int64(findRuleResultStmt, 3);
-      result_out->computedAt = sqlite3_column_int64(findRuleResultStmt, 4);
+      result_out->builtAt = sqlite3_column_int64(findRuleResultStmt, 2);
+      result_out->computedAt = sqlite3_column_int64(findRuleResultStmt, 3);
 
       // Cache the engine key mapping
-      engineKeyIDs[ruleKeyID] = keyID;
-      dbKeyIDs[keyID] = DBKeyID(ruleKeyID);
+      engineKeyIDs[dbKeyID] = keyID;
+      dbKeyIDs[keyID] = dbKeyID;
 
       // Extract the dependencies binary blob.
-      numDependencyBytes = sqlite3_column_bytes(findRuleResultStmt, 5);
-      dependencyBytes = sqlite3_column_blob(findRuleResultStmt, 5);
+      numDependencyBytes = sqlite3_column_bytes(findRuleResultStmt, 4);
+      dependencyBytes = sqlite3_column_blob(findRuleResultStmt, 4);
     }
 
 
     int numDependencies = numDependencyBytes / sizeof(uint64_t);
     if (numDependencyBytes != numDependencies * sizeof(uint64_t)) {
       *error_out = (llvm::Twine("unexpected contents for database result: ") +
-                    llvm::Twine((int)ruleID)).str();
+                    llvm::Twine((int)dbKeyID.value)).str();
       return false;
     }
     result_out->dependencies.resize(numDependencies);
@@ -477,18 +481,9 @@ public:
     return true;
   }
 
-  static constexpr const char *findIDForKeyInRuleResultsStmtSQL =
-    "SELECT id FROM rule_results "
-    "WHERE key_id == ? LIMIT 1;";
-  sqlite3_stmt* findIDForKeyInRuleResultsStmt = nullptr;
-
   static constexpr const char *insertIntoRuleResultsStmtSQL =
-    "INSERT INTO rule_results VALUES (NULL, ?, ?, ?, ?, ?);";
+    "INSERT OR REPLACE INTO rule_results VALUES (?, ?, ?, ?, ?);";
   sqlite3_stmt* insertIntoRuleResultsStmt = nullptr;
-
-  static constexpr const char *deleteFromRuleResultsStmtSQL =
-    "DELETE FROM rule_results WHERE id == ?;";
-  sqlite3_stmt* deleteFromRuleResultsStmt = nullptr;
 
   static constexpr const char *findKeyIDForKeyStmtSQL = (
       "SELECT id FROM key_names "
@@ -511,52 +506,10 @@ public:
     assert(delegate != nullptr);
     std::lock_guard<std::mutex> guard(dbMutex);
     int result;
-    uint64_t ruleID = 0;
 
-    auto dbKeyID = getKeyID(delegate->getKeyForID(keyID), error_out);
+    auto dbKeyID = getKeyID(keyID, error_out);
     if (!error_out->empty()) {
       return false;
-    }
-
-    // Find the existing rule id, if present.
-    //
-    // We rely on SQLite3 not using 0 as a valid rule ID.
-    result = sqlite3_reset(findIDForKeyInRuleResultsStmt);
-    assert(result == SQLITE_OK);
-    result = sqlite3_clear_bindings(findIDForKeyInRuleResultsStmt);
-    assert(result == SQLITE_OK);
-    result = sqlite3_bind_int64(findIDForKeyInRuleResultsStmt, /*index=*/1,
-                               dbKeyID.value);
-    assert(result == SQLITE_OK);
-
-    result = sqlite3_step(findIDForKeyInRuleResultsStmt);
-    if (result == SQLITE_DONE) {
-      ruleID = 0;
-    } else if (result == SQLITE_ROW) {
-      assert(sqlite3_column_count(findIDForKeyInRuleResultsStmt) == 1);
-      ruleID = sqlite3_column_int64(findIDForKeyInRuleResultsStmt, 0);
-    } else {
-      *error_out = getCurrentErrorMessage();
-      return false;
-    }
-
-    // If there is an existing entry, delete it first.
-    //
-    // FIXME: This is inefficient, we should just perform an update.
-    if (ruleID != 0) {
-      // Delete the rule result.
-      result = sqlite3_reset(deleteFromRuleResultsStmt);
-      assert(result == SQLITE_OK);
-      result = sqlite3_clear_bindings(deleteFromRuleResultsStmt);
-      assert(result == SQLITE_OK);
-      result = sqlite3_bind_int64(deleteFromRuleResultsStmt, /*index=*/1,
-                                  ruleID);
-      assert(result == SQLITE_OK);
-      result = sqlite3_step(deleteFromRuleResultsStmt);
-      if (result != SQLITE_DONE) {
-        *error_out = getCurrentErrorMessage();
-        return false;
-      }
     }
 
     // Create the encoded dependency list.
@@ -570,7 +523,7 @@ public:
       // FIXME: This is naively mapping all keys with no caching at this point,
       // thus likely to perform poorly.  Should refactor this into a bulk
       // query or a DB layer cache.
-      auto dbKeyID = getKeyID(delegate->getKeyForID(keyID), error_out);
+      auto dbKeyID = getKeyID(keyID, error_out);
       if (!error_out->empty()) {
         return false;
       }
@@ -640,14 +593,42 @@ public:
 
   
 private:
+  /// Local cache of database DBKeyID (values) to engine KeyIDs
+  llvm::DenseMap<DBKeyID, KeyID> engineKeyIDs;
 
-  /// Inserts a key if not present and always returns keyID
-  /// Sometimes key will be inserted for a lookup operation
-  /// but that is okay because it'll be added at somepoint anyway
-  DBKeyID getKeyID(const KeyType& key, std::string *error_out) {
+  /// Local cache of database engine KeyIDs to DBKeyIDs
+  llvm::DenseMap<KeyID, DBKeyID> dbKeyIDs;
+
+  /// Lookup or create a DBKeyID for a given engine KeyID
+  ///
+  /// This method is not thread-safe. The caller must protect access via the
+  /// dbMutex.
+  DBKeyID getKeyID(KeyID keyID, std::string *error_out) {
+    // Try to fetch the DBKeyID from the cache
+    auto it = dbKeyIDs.find(keyID);
+    if (it != dbKeyIDs.end()) {
+      return it->second;
+    }
+
+    auto dbKeyID = getKeyIDFromDB(keyID, error_out);
+
+    if (dbKeyID.value != 0) {
+      // Cache the ID mappings
+      engineKeyIDs[dbKeyID] = keyID;
+      dbKeyIDs[keyID] = dbKeyID;
+    }
+
+    return dbKeyID;
+  }
+
+  // Helper function that searches and updates the key_names table as needed to
+  // return a DBKeyID for the given engine KeyID. This should really only be
+  // used by the above cached getKeyID() method.
+  DBKeyID getKeyIDFromDB(KeyID keyID, std::string *error_out) {
     int result;
 
-    // Seach for the key.
+    // Search for the key in the key_names table
+    auto key = delegate->getKeyForID(keyID);
     result = sqlite3_reset(findKeyIDForKeyStmt);
     assert(result == SQLITE_OK);
     result = sqlite3_clear_bindings(findKeyIDForKeyStmt);
@@ -660,7 +641,8 @@ private:
     result = sqlite3_step(findKeyIDForKeyStmt);
     if (result == SQLITE_ROW) {
       assert(sqlite3_column_count(findKeyIDForKeyStmt) == 1);
-      // Found a keyID, return.
+
+      // Found a keyID.
       return DBKeyID(sqlite3_column_int64(findKeyIDForKeyStmt, 0));
     }
 
@@ -682,19 +664,13 @@ private:
     return DBKeyID(sqlite3_last_insert_rowid(db));
   }
 
-  /// Local cache of database DBKeyID (values) to engine KeyIDs
-  llvm::DenseMap<uint64_t, KeyID> engineKeyIDs;
-
-  /// Local cache of database engine KeyIDs to DBKeyIDs
-  llvm::DenseMap<KeyID, DBKeyID> dbKeyIDs;
-
   /// Maps a DBKeyID into an engine KeyID
   ///
   /// This method is not thread-safe. The caller must protect access via the
   /// dbMutex.
   KeyID getKeyIDForID(DBKeyID keyID) {
     // Search local db <-> engine mapping cache
-    auto it = engineKeyIDs.find(keyID.value);
+    auto it = engineKeyIDs.find(keyID);
     if (it != engineKeyIDs.end())
       return it->second;
 
@@ -719,7 +695,7 @@ private:
     auto engineKeyID = delegate->getKeyID(KeyType(text, size));
 
     // Cache the mapping locally
-    engineKeyIDs[keyID.value] = engineKeyID;
+    engineKeyIDs[keyID] = engineKeyID;
     dbKeyIDs[engineKeyID] = keyID;
 
     return engineKeyID;
