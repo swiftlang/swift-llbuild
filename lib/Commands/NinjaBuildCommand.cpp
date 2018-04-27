@@ -520,6 +520,9 @@ public:
     isCancelled = true;
     wasCancelledBySigint = true;
 
+    // Ask the engine to cancel.
+    engine.cancelBuild();
+    
     // FIXME: In our model, we still wait for everything to terminate, which
     // means a process that refuses to respond to SIGINT will cause us to just
     // hang here. We should probably detect and report that and be willing to do
