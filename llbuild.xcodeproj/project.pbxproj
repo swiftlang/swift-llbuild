@@ -789,6 +789,48 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		147018862097909B0079261E /* ui */ = {isa = PBXFileReference; lastKnownFileType = folder; path = ui; sourceTree = "<group>"; };
+		1484D1D620943D2100D3830F /* docs */ = {isa = PBXFileReference; lastKnownFileType = folder; path = docs; sourceTree = "<group>"; };
+		1484D1D720943E6800D3830F /* cmake */ = {isa = PBXFileReference; lastKnownFileType = folder; path = cmake; sourceTree = "<group>"; };
+		1484D1D82094508A00D3830F /* CODEOWNERS */ = {isa = PBXFileReference; lastKnownFileType = text; path = CODEOWNERS; sourceTree = "<group>"; };
+		1484D1D92094509400D3830F /* CONTRIBUTING.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CONTRIBUTING.md; sourceTree = "<group>"; };
+		1484D1DA2094509E00D3830F /* LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
+		1484D1DB209450A600D3830F /* Vagrantfile */ = {isa = PBXFileReference; lastKnownFileType = text; path = Vagrantfile; sourceTree = "<group>"; };
+		1484D1F42094534700D3830F /* module.modulemap */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.module-map"; path = module.modulemap; sourceTree = "<group>"; };
+		1484D1F5209453A500D3830F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		1484D1F62094540400D3830F /* DependencyInfoParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DependencyInfoParser.h; sourceTree = "<group>"; };
+		1484D1F72094548A00D3830F /* libstdc++14-workaround.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "libstdc++14-workaround.h"; path = "../include/libstdc++14-workaround.h"; sourceTree = "<group>"; };
+		1484D1FA2094566F00D3830F /* llbuild.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = llbuild.py; sourceTree = "<group>"; };
+		1484D1FB2094582C00D3830F /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
+		1484D1FC2094586800D3830F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		1484D1FD2094589700D3830F /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = CMakeLists.txt; path = perftests/CMakeLists.txt; sourceTree = "<group>"; };
+		1484D1FE2094E7C700D3830F /* gtest-llbuild-config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-llbuild-config.h"; sourceTree = "<group>"; };
+		1484D2002094E7D600D3830F /* gtest-port.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-port.h"; sourceTree = "<group>"; };
+		1484D2012094E7D600D3830F /* gtest.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gtest.h; sourceTree = "<group>"; };
+		1484D2022094E7D600D3830F /* gtest-printers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-printers.h"; sourceTree = "<group>"; };
+		1484D2032094E86600D3830F /* gtest-port-arch.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-port-arch.h"; sourceTree = "<group>"; };
+		1484D2042094E8B100D3830F /* check-coverage */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "check-coverage"; sourceTree = "<group>"; };
+		1484D2052094E8C300D3830F /* create-dummy-ninja-from-DB.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "create-dummy-ninja-from-DB.py"; sourceTree = "<group>"; };
+		1484D2062094E8CE00D3830F /* install-sources */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "install-sources"; sourceTree = "<group>"; };
+		1484D2082094E8DE00D3830F /* generate-llbuild-manifest */ = {isa = PBXFileReference; lastKnownFileType = text; path = "generate-llbuild-manifest"; sourceTree = "<group>"; };
+		1484D20B2094E8E700D3830F /* ptreetime.dtrace */ = {isa = PBXFileReference; lastKnownFileType = text; path = ptreetime.dtrace; sourceTree = "<group>"; };
+		1484D20C2094E8E700D3830F /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
+		1484D20D2094E8E700D3830F /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
+		1484D20E2094E8E700D3830F /* ptreetime_interpose.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ptreetime_interpose.c; sourceTree = "<group>"; };
+		1484D20F2094E8E700D3830F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		1484D2102094E8E700D3830F /* ptreetime.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = ptreetime.py; sourceTree = "<group>"; };
+		1484D2122094E90600D3830F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		1484D2132094E90600D3830F /* llbuild-project-settings.el */ = {isa = PBXFileReference; lastKnownFileType = text; path = "llbuild-project-settings.el"; sourceTree = "<group>"; };
+		1484D2152094E99900D3830F /* Path.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.pascal; path = Path.inc; sourceTree = "<group>"; };
+		1484D2162094E99900D3830F /* Host.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.pascal; path = Host.inc; sourceTree = "<group>"; };
+		1484D2172094E99900D3830F /* Signals.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.pascal; path = Signals.inc; sourceTree = "<group>"; };
+		1484D2182094E99900D3830F /* TimeValue.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.pascal; path = TimeValue.inc; sourceTree = "<group>"; };
+		1484D2192094E99900D3830F /* Process.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.pascal; path = Process.inc; sourceTree = "<group>"; };
+		1484D21A2094E99900D3830F /* WindowsSupport.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WindowsSupport.h; sourceTree = "<group>"; };
+		1484D21B2094E99900D3830F /* Program.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.pascal; path = Program.inc; sourceTree = "<group>"; };
+		1484D21C2094E99900D3830F /* Mutex.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.pascal; path = Mutex.inc; sourceTree = "<group>"; };
+		1484D21D2094E99900D3830F /* Memory.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.pascal; path = Memory.inc; sourceTree = "<group>"; };
+		1484D21E2094E9CE00D3830F /* LeanWindows.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = LeanWindows.h; path = ../../../lib/Basic/LeanWindows.h; sourceTree = "<group>"; };
 		402614262087B10B005BD956 /* Tracing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Tracing.cpp; sourceTree = "<group>"; };
 		40377C7B2061C44900C0FD4D /* generate-version-h.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "generate-version-h.sh"; sourceTree = "<group>"; };
 		40377C7C2061D24200C0FD4D /* Package.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; tabWidth = 4; };
@@ -1332,6 +1374,88 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		1484D1F82094566F00D3830F /* bindings */ = {
+			isa = PBXGroup;
+			children = (
+				1484D1F92094566F00D3830F /* python */,
+			);
+			path = bindings;
+			sourceTree = "<group>";
+		};
+		1484D1F92094566F00D3830F /* python */ = {
+			isa = PBXGroup;
+			children = (
+				1484D1FA2094566F00D3830F /* llbuild.py */,
+			);
+			indentWidth = 4;
+			path = python;
+			sourceTree = "<group>";
+			tabWidth = 4;
+		};
+		1484D1FF2094E7D600D3830F /* custom */ = {
+			isa = PBXGroup;
+			children = (
+				1484D2002094E7D600D3830F /* gtest-port.h */,
+				1484D2012094E7D600D3830F /* gtest.h */,
+				1484D2022094E7D600D3830F /* gtest-printers.h */,
+			);
+			path = custom;
+			sourceTree = "<group>";
+		};
+		1484D2072094E8DE00D3830F /* manifest-generator */ = {
+			isa = PBXGroup;
+			children = (
+				1484D2082094E8DE00D3830F /* generate-llbuild-manifest */,
+			);
+			path = "manifest-generator";
+			sourceTree = "<group>";
+		};
+		1484D2092094E8E700D3830F /* ptreetime */ = {
+			isa = PBXGroup;
+			children = (
+				1484D20A2094E8E700D3830F /* libptreetime */,
+				1484D20F2094E8E700D3830F /* README.md */,
+				1484D2102094E8E700D3830F /* ptreetime.py */,
+			);
+			path = ptreetime;
+			sourceTree = "<group>";
+		};
+		1484D20A2094E8E700D3830F /* libptreetime */ = {
+			isa = PBXGroup;
+			children = (
+				1484D20B2094E8E700D3830F /* ptreetime.dtrace */,
+				1484D20C2094E8E700D3830F /* Makefile */,
+				1484D20D2094E8E700D3830F /* .gitignore */,
+				1484D20E2094E8E700D3830F /* ptreetime_interpose.c */,
+			);
+			path = libptreetime;
+			sourceTree = "<group>";
+		};
+		1484D2112094E90600D3830F /* emacs */ = {
+			isa = PBXGroup;
+			children = (
+				1484D2122094E90600D3830F /* README.md */,
+				1484D2132094E90600D3830F /* llbuild-project-settings.el */,
+			);
+			path = emacs;
+			sourceTree = "<group>";
+		};
+		1484D2142094E99900D3830F /* Windows */ = {
+			isa = PBXGroup;
+			children = (
+				1484D2152094E99900D3830F /* Path.inc */,
+				1484D2162094E99900D3830F /* Host.inc */,
+				1484D2172094E99900D3830F /* Signals.inc */,
+				1484D2182094E99900D3830F /* TimeValue.inc */,
+				1484D2192094E99900D3830F /* Process.inc */,
+				1484D21A2094E99900D3830F /* WindowsSupport.h */,
+				1484D21B2094E99900D3830F /* Program.inc */,
+				1484D21C2094E99900D3830F /* Mutex.inc */,
+				1484D21D2094E99900D3830F /* Memory.inc */,
+			);
+			path = Windows;
+			sourceTree = "<group>";
+		};
 		40F638CC2051EDC800A1CFBE /* examples */ = {
 			isa = PBXGroup;
 			children = (
@@ -1549,13 +1673,21 @@
 				E14144901EBDA4A10046F282 /* Xcode */,
 				E1A223FD19F990F10059043E /* products */,
 				E1A2240419F991530059043E /* lib */,
+				1484D1F82094566F00D3830F /* bindings */,
 				40F638CC2051EDC800A1CFBE /* examples */,
+				1484D1D620943D2100D3830F /* docs */,
 				E19C3FD51B98C1A70035E1AA /* tests */,
 				E1C404B51A03090D003392BA /* perftests */,
+				1484D1FD2094589700D3830F /* CMakeLists.txt */,
 				E1A224B219F998D40059043E /* unittests */,
 				E1A2246A19F998C30059043E /* utils */,
+				1484D1D720943E6800D3830F /* cmake */,
 				E1A223FB19F990E60059043E /* CMakeLists.txt */,
+				1484D1D82094508A00D3830F /* CODEOWNERS */,
+				1484D1D92094509400D3830F /* CONTRIBUTING.md */,
+				1484D1DA2094509E00D3830F /* LICENSE.txt */,
 				E1A223FC19F990E60059043E /* README.md */,
+				1484D1DB209450A600D3830F /* Vagrantfile */,
 				E1A223F219F98F1C0059043E /* Products */,
 				E13B5E411A00395300EA0405 /* Frameworks */,
 			);
@@ -1597,6 +1729,7 @@
 				E1D191B71B472305000C4E95 /* llbuild-framework */,
 				BC8DEF0420300AAF00E9EF0C /* llbuildSwift */,
 				E1604CB21BB9E032001153A1 /* swift-build-tool */,
+				147018862097909B0079261E /* ui */,
 				E1A2240019F991350059043E /* CMakeLists.txt */,
 			);
 			path = products;
@@ -1620,6 +1753,7 @@
 				E1B839581B541C1F00DB876B /* BuildSystem */,
 				E1A2241919F991530059043E /* Ninja */,
 				E1A2240919F991530059043E /* Commands */,
+				1484D1F72094548A00D3830F /* libstdc++14-workaround.h */,
 				E1A2240819F991530059043E /* CMakeLists.txt */,
 			);
 			path = lib;
@@ -1698,6 +1832,7 @@
 				E11470901B75160400ED84CF /* FileInfo.h */,
 				E138129C1C536CFC000092C0 /* FileSystem.h */,
 				E147DEFD1BA81D0E0032D08E /* Hashing.h */,
+				1484D21E2094E9CE00D3830F /* LeanWindows.h */,
 				E1066C091BC5BCE700B892CE /* LLVM.h */,
 				9D2589301E3820E3006C76F4 /* PlatformUtility.h */,
 				E147DEFC1BA81D0E0032D08E /* SerialQueue.h */,
@@ -1724,6 +1859,7 @@
 			children = (
 				E1E221041A0067EF00957481 /* BuildDB.h */,
 				E1A2245819F997FE0059043E /* BuildEngine.h */,
+				1484D1F62094540400D3830F /* DependencyInfoParser.h */,
 				E19D79931A15D9F5002604FB /* MakefileDepsParser.h */,
 			);
 			name = Headers;
@@ -1745,7 +1881,13 @@
 		E1A2246A19F998C30059043E /* utils */ = {
 			isa = PBXGroup;
 			children = (
+				1484D2042094E8B100D3830F /* check-coverage */,
+				1484D2052094E8C300D3830F /* create-dummy-ninja-from-DB.py */,
 				40377C7B2061C44900C0FD4D /* generate-version-h.sh */,
+				1484D2062094E8CE00D3830F /* install-sources */,
+				1484D2112094E90600D3830F /* emacs */,
+				1484D2072094E8DE00D3830F /* manifest-generator */,
+				1484D2092094E8E700D3830F /* ptreetime */,
 				E1A2254E19F9A74B0059043E /* Xcode */,
 				E1A2246B19F998C30059043E /* unittest */,
 			);
@@ -1794,6 +1936,7 @@
 			isa = PBXGroup;
 			children = (
 				E1A2247519F998C30059043E /* gtest-death-test.h */,
+				1484D1FE2094E7C700D3830F /* gtest-llbuild-config.h */,
 				E1A2247619F998C30059043E /* gtest-message.h */,
 				E1A2247719F998C30059043E /* gtest-param-test.h */,
 				E1A2247819F998C30059043E /* gtest-printers.h */,
@@ -1811,12 +1954,14 @@
 		E1A2247F19F998C30059043E /* internal */ = {
 			isa = PBXGroup;
 			children = (
+				1484D1FF2094E7D600D3830F /* custom */,
 				E1A2248019F998C30059043E /* gtest-death-test-internal.h */,
 				E1A2248119F998C30059043E /* gtest-filepath.h */,
 				E1A2248219F998C30059043E /* gtest-internal.h */,
 				E1A2248319F998C30059043E /* gtest-linked_ptr.h */,
 				E1A2248419F998C30059043E /* gtest-param-util-generated.h */,
 				E1A2248519F998C30059043E /* gtest-param-util.h */,
+				1484D2032094E86600D3830F /* gtest-port-arch.h */,
 				E1A2248619F998C30059043E /* gtest-port.h */,
 				E1A2248719F998C30059043E /* gtest-string.h */,
 				E1A2248819F998C30059043E /* gtest-tuple.h */,
@@ -1909,6 +2054,7 @@
 			isa = PBXGroup;
 			children = (
 				E1ADC2331A85925800D5387C /* llbuild */,
+				1484D1F42094534700D3830F /* module.modulemap */,
 				E1ADC2341A85928100D5387C /* README.md */,
 			);
 			name = "Public API";
@@ -1942,6 +2088,7 @@
 			isa = PBXGroup;
 			children = (
 				E1B838C41B52E85400DB876B /* Unix */,
+				1484D2142094E99900D3830F /* Windows */,
 				E1B838A91B52E85400DB876B /* CMakeLists.txt */,
 				E1B838A71B52E85400DB876B /* Allocator.cpp */,
 				E1B838A81B52E85400DB876B /* Atomic.cpp */,
@@ -2145,6 +2292,7 @@
 				E104FAF61B655A97005C68A0 /* BuildSystemPerfTests.mm */,
 				E171538C1A0BF702004CD598 /* CorePerfTests.mm */,
 				E1C404B01A0308F3003392BA /* NinjaPerfTests.mm */,
+				1484D1FB2094582C00D3830F /* CMakeLists.txt */,
 			);
 			indentWidth = 4;
 			path = PerfTests;
@@ -2172,6 +2320,7 @@
 			isa = PBXGroup;
 			children = (
 				E1C404B71A03090D003392BA /* llvm-only.ninja */,
+				1484D1FC2094586800D3830F /* README.md */,
 			);
 			path = Inputs;
 			sourceTree = "<group>";
@@ -2189,6 +2338,7 @@
 			children = (
 				E1D191C61B472372000C4E95 /* Info.plist */,
 				E1D191B81B472305000C4E95 /* llbuild-module.modulemap */,
+				1484D1F5209453A500D3830F /* README.md */,
 			);
 			path = "llbuild-framework";
 			sourceTree = "<group>";
