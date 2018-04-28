@@ -350,9 +350,19 @@ The following attributes are currently supported:
 
    * - is-directory-structure
      - A boolean value, indicating whether the node should represent the
-       directory structure of a file path. Such nodes should be name as
+       directory structure of a file path. Such nodes should be named as
        '<path>/' (which would normally be a directory node), and then this
-       attributed used to change the type.
+       attribute used to change the type.
+
+       Directory structure nodes are affected by change tracking differently
+       than normal directory nodes. A normal directory node computes its
+       signatures effectively as the sum of the signatures of all its contained
+       files, recursively. A directory *structure* node's signature, by
+       contrast, is effectively the sum of the filenames of its contained files,
+       not taking into account their attributes or contents (except for the
+       attributes of the directory itself). Thus, this tracks when the
+       "structure" of the directory changes (for example, files are added or
+       removed), but not every modification to the files under the directory.
 
    * - is-virtual
      - A boolean value, indicating whether or not the node is "virtual". By
