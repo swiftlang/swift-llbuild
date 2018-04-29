@@ -19,6 +19,7 @@
 #include "llbuild/Basic/Tracing.h"
 
 #include "llbuild/BuildSystem/BuildDescription.h"
+#include "llbuild/BuildSystem/BuildSystem.h"
 #include "llbuild/BuildSystem/CommandResult.h"
 
 #include "llvm/ADT/ArrayRef.h"
@@ -70,6 +71,28 @@ struct QueueJobLess {
 };
 
 namespace {
+
+static std::atomic<QualityOfService> defaultQualityOfService{
+  llbuild::buildsystem::QualityOfService::normal };
+
+#if defined(__APPLE__)
+qos_class_t _getDarwinQOSClass(QualityOfService level) {
+  switch (llbuild::buildsystem::getDefaultQualityOfService()) {
+  case llbuild::buildsystem::QualityOfService::normal:
+    return QOS_CLASS_DEFAULT;
+  case llbuild::buildsystem::QualityOfService::userInitiated:
+    return QOS_CLASS_USER_INITIATED;
+  case llbuild::buildsystem::QualityOfService::utility:
+    return QOS_CLASS_UTILITY;
+  case llbuild::buildsystem::QualityOfService::background:
+    return QOS_CLASS_BACKGROUND;
+  default:
+    assert(0 && "unknown command result");
+    return QOS_CLASS_DEFAULT;
+  }
+}
+
+#endif
 
 struct LaneBasedExecutionQueueJobContext {
   uint32_t laneNumber;
@@ -132,7 +155,8 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
 
     // Set the QoS class, if available.
 #if defined(__APPLE__)
-    pthread_set_qos_class_self_np(QOS_CLASS_UTILITY, 0);
+    pthread_set_qos_class_self_np(
+        _getDarwinQOSClass(defaultQualityOfService), 0);
 #endif
     
     // Execute items from the queue until shutdown.
@@ -349,6 +373,12 @@ public:
     // really an easy answer other than using a stub executable).
 #ifdef __APPLE__
     flags |= POSIX_SPAWN_CLOEXEC_DEFAULT;
+#endif
+
+    // On Darwin, set the QOS of launched processes to the global default.
+#ifdef __APPLE__
+    posix_spawnattr_set_qos_class_np(
+        &attributes, _getDarwinQOSClass(defaultQualityOfService));
 #endif
 
     posix_spawnattr_setflags(&attributes, flags);
@@ -568,3 +598,12 @@ llbuild::buildsystem::createLaneBasedExecutionQueue(
   }
   return new LaneBasedExecutionQueue(delegate, numLanes, environment);
 }
+
+QualityOfService llbuild::buildsystem::getDefaultQualityOfService() {
+  return defaultQualityOfService;
+}
+
+void llbuild::buildsystem::setDefaultQualityOfService(QualityOfService level) {
+  defaultQualityOfService = level;
+}
+

@@ -810,3 +810,42 @@ char* llb_buildsystem_command_get_verbose_description(
   command->getVerboseDescription(result);
   return strdup(result.c_str());
 }
+
+llb_quality_of_service_t llb_get_quality_of_servicellb_enable_tracing() {
+  switch (llbuild::buildsystem::getDefaultQualityOfService()) {
+  case llbuild::buildsystem::QualityOfService::normal:
+    return llb_quality_of_service_default;
+  case llbuild::buildsystem::QualityOfService::userInitiated:
+    return llb_quality_of_service_user_initiated;
+  case llbuild::buildsystem::QualityOfService::utility:
+    return llb_quality_of_service_utility;
+  case llbuild::buildsystem::QualityOfService::background:
+    return llb_quality_of_service_background;
+  default:
+    assert(0 && "unknown command result");
+    return llb_quality_of_service_default;
+  }
+}
+
+void llb_set_quality_of_service(llb_quality_of_service_t level) {
+  switch (level) {
+  case llb_quality_of_service_default:
+    llbuild::buildsystem::setDefaultQualityOfService(
+        llbuild::buildsystem::QualityOfService::normal);
+    break;
+  case llb_quality_of_service_user_initiated:
+    llbuild::buildsystem::setDefaultQualityOfService(
+        llbuild::buildsystem::QualityOfService::userInitiated);
+    break;
+  case llb_quality_of_service_utility:
+    llbuild::buildsystem::setDefaultQualityOfService(
+        llbuild::buildsystem::QualityOfService::utility);
+    break;
+  case llb_quality_of_service_background:
+    llbuild::buildsystem::setDefaultQualityOfService(
+        llbuild::buildsystem::QualityOfService::background);
+    break;
+  default:
+    assert(0 && "unknown command result");
+  }
+}
