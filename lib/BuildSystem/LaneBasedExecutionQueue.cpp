@@ -351,11 +351,6 @@ public:
     flags |= POSIX_SPAWN_CLOEXEC_DEFAULT;
 #endif
 
-    // On Darwin, set the QOS of launched processes to UTILITY.
-#ifdef __APPLE__
-    posix_spawnattr_set_qos_class_np(&attributes, QOS_CLASS_UTILITY);
-#endif
-
     posix_spawnattr_setflags(&attributes, flags);
 
     // Setup the file actions.
