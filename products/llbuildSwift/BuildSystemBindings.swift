@@ -685,8 +685,13 @@ public final class BuildSystem {
         info.pointee.inode = UInt64(s.st_ino)
         info.pointee.mode = UInt64(s.st_mode)
         info.pointee.size = UInt64(s.st_size)
-        info.pointee.mod_time.seconds = UInt64(s.st_mtimespec.tv_sec)
-        info.pointee.mod_time.nanoseconds = UInt64(s.st_mtimespec.tv_nsec)
+        #if os(Darwin)
+            info.pointee.mod_time.seconds = UInt64(s.st_mtimespec.tv_sec)
+            info.pointee.mod_time.nanoseconds = UInt64(s.st_mtimespec.tv_nsec)
+        #else
+            info.pointee.mod_time.seconds = UInt64(s.st_mtim.tv_sec)
+            info.pointee.mod_time.nanoseconds = UInt64(s.st_mtim.tv_nsec)
+        #endif
     }
 
     private func fsGetLinkInfo(_ path: String, _ info: UnsafeMutablePointer<llb_fs_file_info_t>) {

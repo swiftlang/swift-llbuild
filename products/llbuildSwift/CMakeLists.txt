@@ -17,6 +17,20 @@ list(APPEND additional_args -DLLBUILD_C_API_VERSION_${LLBUILD_C_API_VERSION} -I 
  
 if(APPLE)
   list(APPEND additional_args -target x86_64-apple-macosx10.10)
+else()
+  # On Linux, use Foundation and Dispatch libraries built and provided by swift's build-script.
+  if(FOUNDATION_BUILD_DIR)
+    list(APPEND additional_args
+      -L${FOUNDATION_BUILD_DIR}/Foundation
+      -I${FOUNDATION_BUILD_DIR}/Foundation
+      -I${FOUNDATION_BUILD_DIR}/Foundation/usr/lib/swift)
+  endif()
+  if(LIBDISPATCH_BUILD_DIR)
+    list(APPEND additional_args -L${LIBDISPATCH_BUILD_DIR}/src/.libs)
+  endif()
+  if(LIBDISPATCH_SOURCE_DIR)
+    list(APPEND additional_args -I${LIBDISPATCH_SOURCE_DIR})
+  endif()
 endif()
 
 # Add swift bindings target if swift compiler is present.
