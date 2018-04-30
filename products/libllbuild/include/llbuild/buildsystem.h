@@ -647,6 +647,33 @@ LLBUILD_EXPORT char*
 llb_buildsystem_command_get_verbose_description(
     llb_buildsystem_command_t* command);
 
+// MARK: Quality of Service
+
+/// Quality of service levels.
+typedef enum {
+    /// A default quality of service (i.e. what the system would use without
+    /// other advisement, generally this would be comparable to what would be
+    /// done by `make`, `ninja`, etc.)
+    llb_quality_of_service_default = 0,
+
+    /// User-initiated, high priority work.
+    llb_quality_of_service_user_initiated = 1,
+
+    /// Batch work performed on behalf of the user.
+    llb_quality_of_service_utility = 2,
+
+    /// Background work that is not directly visible to the user.
+    llb_quality_of_service_background = 3
+} llb_quality_of_service_t;
+
+/// Get the global quality of service level to use for processing.
+LLBUILD_EXPORT llb_quality_of_service_t
+llb_get_quality_of_service();
+
+/// Set the global quality of service level to use for processing.
+LLBUILD_EXPORT void
+llb_set_quality_of_service(llb_quality_of_service_t level);
+
 /// @}
 
 #endif

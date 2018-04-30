@@ -274,6 +274,27 @@ public:
   /// @}
 };
 
+// MARK: Quality of Service
+
+enum class QualityOfService {
+  /// A default quality of service (i.e. what the system would use without other
+  /// advisement, generally this would be comparable to what would be done by
+  /// `make`, `ninja`, etc.)
+  normal,
+
+  /// User-initiated, high priority work.
+  userInitiated,
+  
+  /// Batch work performed on behalf of the user.
+  utility,
+
+  /// Background work that is not directly visible to the user.
+  background
+};
+
+QualityOfService getDefaultQualityOfService();
+void setDefaultQualityOfService(QualityOfService level);
+
 }
 }
 
