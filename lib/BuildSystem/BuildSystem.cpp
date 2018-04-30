@@ -347,13 +347,8 @@ public:
 
     isCancelled_ = true;
     // Cancel jobs if we actually have a queue.
-    if (executionQueue.get() != nullptr) {
-      // Ask the engine to cancel all pending work.
-      getBuildEngine().cancelBuild();
-
-      // Ask the execution queue to cancel currently running jobs.
+    if (executionQueue.get() != nullptr)
       getExecutionQueue().cancelAllJobs();
-    }
   }
 
   /// Check if the build has been cancelled.
