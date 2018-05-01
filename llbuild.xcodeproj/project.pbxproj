@@ -3013,6 +3013,7 @@
 			);
 			name = "Create Target Link";
 			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/unittests/$(PRODUCT_NAME)",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -3070,9 +3071,12 @@
 			files = (
 			);
 			inputPaths = (
+				"$(SRCROOT)/tests/lit.site.cfg.in",
 			);
 			name = "Create 'lit.site.cfg'";
 			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/tests/lit.site.cfg",
+				"$(BUILT_PRODUCTS_DIR)/tests/Unit/lit.site.cfg",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
