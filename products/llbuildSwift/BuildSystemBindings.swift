@@ -685,7 +685,7 @@ public final class BuildSystem {
         info.pointee.inode = UInt64(s.st_ino)
         info.pointee.mode = UInt64(s.st_mode)
         info.pointee.size = UInt64(s.st_size)
-        #if os(Darwin)
+        #if os(macOS)
             info.pointee.mod_time.seconds = UInt64(s.st_mtimespec.tv_sec)
             info.pointee.mod_time.nanoseconds = UInt64(s.st_mtimespec.tv_nsec)
         #else
