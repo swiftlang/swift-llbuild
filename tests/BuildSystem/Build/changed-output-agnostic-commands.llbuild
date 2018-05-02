@@ -52,6 +52,7 @@ commands:
     outputs: ["<C.output-2.timestamp>"]
     description: C.output-2
     args: cp input output-2
+    signature: cp input output-2
 
 ##### VERSION-END-1 #####
 
@@ -81,6 +82,6 @@ commands:
     outputs: ["<C.output-2.timestamp>"]
     description: C.output-2
     args: cp -v input output-2
-    args-for-signature: cp input output-2
+    signature: cp input output-2
 
 ##### VERSION-END-2 #####

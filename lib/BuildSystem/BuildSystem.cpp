@@ -1628,10 +1628,8 @@ class ShellCommand : public ExternalCommand {
   /// The command line arguments.
   std::vector<StringRef> args;
 
-  /// The compiler command to invoke, minus the arguments which don't affect
-  /// the output and thus don't contribute to the dependency tracking signature.
-  /// If this is empty, `args` will be used to compute the signature instead.
-  std::vector<StringRef> argsForSignature;
+  /// Arbitrary string used to contribute to the task signature.
+  std::string signatureData;
 
   /// The environment to use. If empty, the environment will be inherited.
   SmallVector<std::pair<StringRef, StringRef>, 1> env;
@@ -1656,18 +1654,24 @@ class ShellCommand : public ExternalCommand {
     if (!signature.isNull())
       return signature;
 
-    auto code = ExternalCommand::getSignature()
-        .combine(!argsForSignature.empty() ? argsForSignature : args);
-    for (const auto& entry: env) {
-      code = code.combine(entry.first);
-      code = code.combine(entry.second);
+    auto code = ExternalCommand::getSignature();
+    if (!signatureData.empty()) {
+      code = code.combine(signatureData);
+    } else {
+      for (const auto& arg: args) {
+        code = code.combine(arg);
+      }
+      for (const auto& entry: env) {
+        code = code.combine(entry.first);
+        code = code.combine(entry.second);
+      }
+      for (const auto& path: depsPaths) {
+        code = code.combine(path);
+      }
+      code = code.combine(int(depsStyle));
+      code = code.combine(int(inheritEnv));
+      code = code.combine(int(canSafelyInterrupt));
     }
-    for (const auto& path: depsPaths) {
-      code = code.combine(path);
-    }
-    code = code.combine(int(depsStyle));
-    code = code.combine(int(inheritEnv));
-    code = code.combine(int(canSafelyInterrupt));
     signature = code;
     if (signature.isNull()) {
       signature = CommandSignature(1);
@@ -1828,14 +1832,15 @@ public:
   
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
-    if (name == "args" || name == "args-for-signature") {
+    if (name == "args") {
       // When provided as a scalar string, we default to executing using the
       // shell.
-      auto &argsRef = name == "args-for-signature" ? argsForSignature : args;
-      argsRef.clear();
-      argsRef.push_back(ctx.getDelegate().getInternedString("/bin/sh"));
-      argsRef.push_back(ctx.getDelegate().getInternedString("-c"));
-      argsRef.push_back(ctx.getDelegate().getInternedString(value));
+      args.clear();
+      args.push_back(ctx.getDelegate().getInternedString("/bin/sh"));
+      args.push_back(ctx.getDelegate().getInternedString("-c"));
+      args.push_back(ctx.getDelegate().getInternedString(value));
+    } else if (name == "signature") {
+      signatureData = value;
     } else if (name == "deps") {
       depsPaths.clear();
       depsPaths.emplace_back(value);
@@ -1883,12 +1888,6 @@ public:
       args.reserve(values.size());
       for (auto arg: values) {
         args.emplace_back(ctx.getDelegate().getInternedString(arg));
-      }
-    } else if (name == "args-for-signature") {
-      argsForSignature.clear();
-      argsForSignature.reserve(values.size());
-      for (auto arg: values) {
-        argsForSignature.emplace_back(ctx.getDelegate().getInternedString(arg));
       }
     } else if (name == "deps") {
       depsPaths.clear();
@@ -1980,18 +1979,13 @@ public:
 class ClangShellCommand : public ExternalCommand {
   /// The compiler command to invoke.
   std::vector<StringRef> args;
-
-  /// The compiler command to invoke, minus the arguments which don't affect
-  /// the output and thus don't contribute to the dependency tracking signature.
-  /// If this is empty, `args` will be used to compute the signature instead.
-  std::vector<StringRef> argsForSignature;
   
   /// The path to the dependency output file, if used.
   std::string depsPath;
   
   virtual CommandSignature getSignature() override {
     return ExternalCommand::getSignature()
-        .combine(!argsForSignature.empty() ? argsForSignature : args);
+        .combine(args);
   }
 
   bool processDiscoveredDependencies(BuildSystemCommandInterface& bsci,
@@ -2063,14 +2057,13 @@ public:
   
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
-    if (name == "args" || name == "args-for-signature") {
+    if (name == "args") {
       // When provided as a scalar string, we default to executing using the
       // shell.
-      auto &argsRef = name == "args-for-signature" ? argsForSignature : args;
-      argsRef.clear();
-      argsRef.push_back(ctx.getDelegate().getInternedString("/bin/sh"));
-      argsRef.push_back(ctx.getDelegate().getInternedString("-c"));
-      argsRef.push_back(ctx.getDelegate().getInternedString(value));
+      args.clear();
+      args.push_back(ctx.getDelegate().getInternedString("/bin/sh"));
+      args.push_back(ctx.getDelegate().getInternedString("-c"));
+      args.push_back(ctx.getDelegate().getInternedString(value));
     } else if (name == "deps") {
       depsPath = value;
     } else {
@@ -2081,12 +2074,11 @@ public:
   }
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   ArrayRef<StringRef> values) override {
-    if (name == "args" || name == "args-for-signature") {
-      auto &argsRef = name == "args-for-signature" ? argsForSignature : args;
-      argsRef.clear();
-      argsRef.reserve(values.size());
+    if (name == "args") {
+      args.clear();
+      args.reserve(values.size());
       for (auto arg: values) {
-        argsRef.emplace_back(ctx.getDelegate().getInternedString(arg));
+        args.emplace_back(ctx.getDelegate().getInternedString(arg));
       }
     } else {
         return ExternalCommand::configureAttribute(ctx, name, values);

@@ -499,18 +499,11 @@ attributes on commands, and not at the tool level.
      - A string or string list indicating the command line to be executed. If a
        single string is provided, it will be executed using ``/bin/sh -c``.
 
-   * - args-for-signature
-     - A string or string list indicating the canonical form of the command line
-       to be executed. This should be the same as args, but without the
-       output-agnostic arguments that should be ignored for the purposes of
-       dependency tracking.
-
-       For example, args might be ``cp -v a b`` while args-for-signature might
-       be ``cp a b``, as the -v argument is irrelevant to dependency tracking
-       and its presence or absence should not trigger an execution of the
-       associated task on the next build.
-
-       The default is the same as `args`.
+   * - signature
+     - An arbitrary string used to compute the task signature. If defined, this
+       will be used instead of the built-in signature computation strategy,
+       which takes into account `args`, `env`, `deps`, `deps-style`,
+       `inherit-env` and `can-safely-interrupt`.
 
    * - env
      - A mapping of keys and values defining the environment to pass to the
