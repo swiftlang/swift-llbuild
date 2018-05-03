@@ -51,6 +51,7 @@ void BuildSystemInvocation::getUsage(int optionWidth, raw_ostream& os) {
     { "--db <PATH>", "enable building against the database at PATH" },
     { "-f <PATH>", "load the build task file at PATH" },
     { "--serial", "do not build in parallel" },
+    { "--scheduler <SCHEDULER>", "set scheduler algorithm" },
     { "-v, --verbose", "show verbose status information" },
     { "--trace <PATH>", "trace build engine operation to PATH" },
   };
@@ -115,6 +116,23 @@ void BuildSystemInvocation::parse(llvm::ArrayRef<std::string> args,
       args = args.slice(1);
     } else if (option == "--serial") {
       useSerialBuild = true;
+    } else if (option == "--scheduler") {
+      if (args.empty()) {
+        error("missing argument to '" + option + "'");
+        break;
+      }
+      auto algorithm = args[0];
+      if (algorithm == "commandNamePriority" || algorithm == "default") {
+        llbuild::buildsystem::setSchedulerAlgorithm(
+            llbuild::buildsystem::SchedulerAlgorithm::commandNamePriority);
+      } else if (algorithm == "fifo") {
+        llbuild::buildsystem::setSchedulerAlgorithm(
+            llbuild::buildsystem::SchedulerAlgorithm::fifo);
+      } else {
+        error("unknown scheduler algorithm '" + algorithm + "'");
+        break;
+      }
+      args = args.slice(1);
     } else if (option == "-v" || option == "--verbose") {
       showVerboseStatus = true;
     } else if (option == "--trace") {
@@ -406,13 +424,15 @@ BuildSystemFrontendDelegate::createExecutionQueue() {
   }
     
   // Get the number of CPUs to use.
-  unsigned numCPUs = std::thread::hardware_concurrency();
-  unsigned numLanes;
-  if (numCPUs == 0) {
-    error("<unknown>", {}, "unable to detect number of CPUs");
-    numLanes = 1;
-  } else {
-    numLanes = numCPUs;
+  unsigned numLanes = getSchedulerLaneWidth();
+  if (numLanes == 0) {
+    unsigned numCPUs = std::thread::hardware_concurrency();
+    if (numCPUs == 0) {
+      error("<unknown>", {}, "unable to detect number of CPUs");
+      numLanes = 1;
+    } else {
+      numLanes = numCPUs;
+    }
   }
     
   return std::unique_ptr<BuildExecutionQueue>(

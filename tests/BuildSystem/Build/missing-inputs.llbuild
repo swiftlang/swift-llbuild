@@ -6,7 +6,7 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.llbuild
-# RUN: %{llbuild} buildsystem build --serial --chdir %t.build &> %t.out || true
+# RUN: %{llbuild} buildsystem build --serial --scheduler fifo --chdir %t.build &> %t.out || true
 # RUN: cat %t.out
 # RUN: %{FileCheck} %s --input-file %t.out --check-prefix=CHECK-FAILURE
 #

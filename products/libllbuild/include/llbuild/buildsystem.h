@@ -674,6 +674,39 @@ llb_get_quality_of_service();
 LLBUILD_EXPORT void
 llb_set_quality_of_service(llb_quality_of_service_t level);
 
+// MARK: Execution Queue Scheduler Control
+
+/// Scheduler algorithms
+typedef enum {
+  /// Command name priority queue based scheduling [default]
+  llb_scheduler_algorithm_command_name_priority = 0,
+
+  /// First in, first out
+  llb_scheduler_algorithm_fifo = 1
+} llb_scheduler_algorithm_t;
+
+/// Get the global scheduler algorithm setting.
+LLBUILD_EXPORT llb_scheduler_algorithm_t
+llb_get_scheduler_algorithm();
+
+/// Set the global scheduler algorthm used for the execution queue. This will
+/// only take effect when constructing a new execution queue (i.e. for a build
+/// operation).
+LLBUILD_EXPORT void
+llb_set_scheduler_algorithm(llb_scheduler_algorithm_t algorithm);
+
+/// Get the global scheduler lane width setting.
+LLBUILD_EXPORT uint32_t
+llb_get_scheduler_lane_width();
+
+/// Set the global scheduler lane width. This will only take effect when
+/// constructing a new execution queue (i.e. for a build operation).
+///
+/// \param width The number of lanes to schedule. A value of 0 [default] will
+/// be automatically translated into the number of cores detected on the host.
+LLBUILD_EXPORT void
+llb_set_scheduler_lane_width(uint32_t width);
+
 /// @}
 
 #endif
