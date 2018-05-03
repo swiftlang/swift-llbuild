@@ -811,7 +811,7 @@ char* llb_buildsystem_command_get_verbose_description(
   return strdup(result.c_str());
 }
 
-llb_quality_of_service_t llb_get_quality_of_servicellb_enable_tracing() {
+llb_quality_of_service_t llb_get_quality_of_service() {
   switch (llbuild::buildsystem::getDefaultQualityOfService()) {
   case llbuild::buildsystem::QualityOfService::normal:
     return llb_quality_of_service_default;
@@ -822,7 +822,7 @@ llb_quality_of_service_t llb_get_quality_of_servicellb_enable_tracing() {
   case llbuild::buildsystem::QualityOfService::background:
     return llb_quality_of_service_background;
   default:
-    assert(0 && "unknown command result");
+    assert(0 && "unknown quality service level");
     return llb_quality_of_service_default;
   }
 }
@@ -846,6 +846,40 @@ void llb_set_quality_of_service(llb_quality_of_service_t level) {
         llbuild::buildsystem::QualityOfService::background);
     break;
   default:
-    assert(0 && "unknown command result");
+    assert(0 && "unknown quality service level");
   }
+}
+
+
+llb_scheduler_algorithm_t llb_get_scheduler_algorithm() {
+  switch (llbuild::buildsystem::getSchedulerAlgorithm()) {
+    case llbuild::buildsystem::SchedulerAlgorithm::commandNamePriority:
+      return llb_scheduler_algorithm_command_name_priority;
+    case llbuild::buildsystem::SchedulerAlgorithm::fifo:
+      return llb_scheduler_algorithm_fifo;
+    default:
+      assert(0 && "unknown scheduler algorithm");
+      return llb_scheduler_algorithm_command_name_priority;
+  }
+}
+
+void llb_set_scheduler_algorithm(llb_scheduler_algorithm_t algorithm) {
+  switch (algorithm) {
+    case llb_scheduler_algorithm_command_name_priority:
+      llbuild::buildsystem::setSchedulerAlgorithm(
+          llbuild::buildsystem::SchedulerAlgorithm::commandNamePriority);
+    case llb_scheduler_algorithm_fifo:
+      llbuild::buildsystem::setSchedulerAlgorithm(
+          llbuild::buildsystem::SchedulerAlgorithm::fifo);
+    default:
+      assert(0 && "unknown scheduler algorithm");
+  }
+}
+
+uint32_t llb_get_scheduler_lane_width() {
+  return llbuild::buildsystem::getSchedulerLaneWidth();
+}
+
+void llb_set_scheduler_lane_width(uint32_t width) {
+  llbuild::buildsystem::setSchedulerLaneWidth(width);
 }

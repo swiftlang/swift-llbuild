@@ -295,6 +295,22 @@ enum class QualityOfService {
 QualityOfService getDefaultQualityOfService();
 void setDefaultQualityOfService(QualityOfService level);
 
+// MARK: Execution Queue Scheduler Control
+
+enum class SchedulerAlgorithm {
+  /// Command name priority queue based scheduling [default]
+  commandNamePriority = 0,
+
+  /// First in, first out
+  fifo = 1
+};
+
+SchedulerAlgorithm getSchedulerAlgorithm();
+void setSchedulerAlgorithm(SchedulerAlgorithm algorithm);
+
+uint32_t getSchedulerLaneWidth();
+void setSchedulerLaneWidth(uint32_t width);
+
 }
 }
 

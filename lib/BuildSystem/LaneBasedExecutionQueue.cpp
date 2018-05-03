@@ -56,14 +56,6 @@
 using namespace llbuild;
 using namespace llbuild::buildsystem;
 
-// Enable the priority based scheduler by default, based on measured performance
-// improvements for large projects.
-//
-// FIXME: We should turn this into an option that can be selected at
-// construction time so that clients may select the algorithm at run time via
-// the API.
-#define LLBUILD_LANE_SCHEDULER_PRIORITY_QUEUE
-
 struct QueueJobLess {
   bool operator()(const llbuild::buildsystem::QueueJob &__x, const llbuild::buildsystem::QueueJob &__y) const {
     return __x.getForCommand()->getName() < __y.getForCommand()->getName();
@@ -74,6 +66,11 @@ namespace {
 
 static std::atomic<QualityOfService> defaultQualityOfService{
   llbuild::buildsystem::QualityOfService::normal };
+
+static std::atomic<SchedulerAlgorithm> defaultAlgorithm {
+  llbuild::buildsystem::SchedulerAlgorithm::commandNamePriority };
+
+static std::atomic<uint32_t> defaultLaneWidth { 0 };
 
 #if defined(__APPLE__)
 qos_class_t _getDarwinQOSClass(QualityOfService level) {
@@ -106,6 +103,18 @@ struct ProcessInfo {
 };
 
 
+class Scheduler {
+public:
+  virtual ~Scheduler() { }
+
+  virtual void addJob(QueueJob job) = 0;
+  virtual QueueJob getNextJob() = 0;
+  virtual bool empty() const = 0;
+  virtual uint64_t size() const = 0;
+
+  static std::unique_ptr<Scheduler> make();
+};
+
 /// Build execution queue.
 //
 // FIXME: Consider trying to share this with the Ninja implementation.
@@ -117,11 +126,7 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
   std::vector<std::unique_ptr<std::thread>> lanes;
 
   /// The ready queue of jobs to execute.
-#if defined(LLBUILD_LANE_SCHEDULER_PRIORITY_QUEUE)
-  std::priority_queue<QueueJob, std::vector<QueueJob>, QueueJobLess> readyJobs;
-#else
-  std::deque<QueueJob> readyJobs;
-#endif
+  std::unique_ptr<Scheduler> readyJobs;
   std::mutex readyJobsMutex;
   std::condition_variable readyJobsCondition;
   bool cancelled { false };
@@ -168,21 +173,15 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
         std::unique_lock<std::mutex> lock(readyJobsMutex);
 
         // While the queue is empty, wait for an item.
-        while (!shutdown && readyJobs.empty()) {
+        while (!shutdown && readyJobs->empty()) {
           readyJobsCondition.wait(lock);
         }
-        if (shutdown && readyJobs.empty())
+        if (shutdown && readyJobs->empty())
           return;
 
         // Take an item according to the chosen policy.
-#if defined(LLBUILD_LANE_SCHEDULER_PRIORITY_QUEUE)
-        job = readyJobs.top();
-        readyJobs.pop();
-#else
-        job = readyJobs.front();
-        readyJobs.pop_front();
-#endif
-        readyJobsCount = readyJobs.size();
+        job = readyJobs->getNextJob();
+        readyJobsCount = readyJobs->size();
       }
 
       // If we got an empty job, the queue is shutting down.
@@ -240,7 +239,7 @@ public:
                           unsigned numLanes,
                           const char* const* environment)
       : BuildExecutionQueue(delegate), numLanes(numLanes),
-        environment(environment)
+        readyJobs(Scheduler::make()), environment(environment)
   {
     for (unsigned i = 0; i != numLanes; ++i) {
       lanes.push_back(std::unique_ptr<std::thread>(
@@ -275,13 +274,9 @@ public:
     uint64_t readyJobsCount;
     {
       std::lock_guard<std::mutex> guard(readyJobsMutex);
-#if defined(LLBUILD_LANE_SCHEDULER_PRIORITY_QUEUE)
-      readyJobs.push(job);
-#else
-      readyJobs.push_back(job);
-#endif
+      readyJobs->addJob(job);
       readyJobsCondition.notify_one();
-      readyJobsCount = readyJobs.size();
+      readyJobsCount = readyJobs->size();
     }
     TracingPoint(TraceEventKind::ExecutionQueueDepth, readyJobsCount);
   }
@@ -581,6 +576,66 @@ public:
   }
 };
 
+class PriorityQueueScheduler : public Scheduler {
+private:
+  std::priority_queue<QueueJob, std::vector<QueueJob>, QueueJobLess> jobs;
+
+public:
+  void addJob(QueueJob job) override {
+    jobs.push(job);
+  }
+
+  QueueJob getNextJob() override {
+    QueueJob job = jobs.top();
+    jobs.pop();
+    return job;
+  }
+
+  bool empty() const override {
+    return jobs.empty();
+  }
+
+  uint64_t size() const override {
+    return jobs.size();
+  }
+};
+
+class FifoScheduler : public Scheduler {
+private:
+  std::deque<QueueJob> jobs;
+
+public:
+  void addJob(QueueJob job) override {
+    jobs.push_back(job);
+  }
+
+  QueueJob getNextJob() override {
+    QueueJob job = jobs.front();
+    jobs.pop_front();
+    return job;
+  }
+
+  bool empty() const override {
+    return jobs.empty();
+  }
+
+  uint64_t size() const override {
+    return jobs.size();
+  }
+};
+
+std::unique_ptr<Scheduler> Scheduler::make() {
+  switch (defaultAlgorithm) {
+    case llbuild::buildsystem::SchedulerAlgorithm::commandNamePriority:
+      return std::unique_ptr<Scheduler>(new PriorityQueueScheduler);
+    case llbuild::buildsystem::SchedulerAlgorithm::fifo:
+      return std::unique_ptr<Scheduler>(new FifoScheduler);
+    default:
+      assert(0 && "unknown scheduler algorithm");
+      return std::unique_ptr<Scheduler>(nullptr);
+  }
+}
+
 }
 
 #if !defined(_WIN32)
@@ -607,3 +662,18 @@ void llbuild::buildsystem::setDefaultQualityOfService(QualityOfService level) {
   defaultQualityOfService = level;
 }
 
+SchedulerAlgorithm llbuild::buildsystem::getSchedulerAlgorithm() {
+  return defaultAlgorithm;
+}
+
+void llbuild::buildsystem::setSchedulerAlgorithm(SchedulerAlgorithm algorithm) {
+  defaultAlgorithm = algorithm;
+}
+
+uint32_t llbuild::buildsystem::getSchedulerLaneWidth() {
+  return defaultLaneWidth;
+}
+
+void llbuild::buildsystem::setSchedulerLaneWidth(uint32_t width) {
+  defaultLaneWidth = width;
+}
