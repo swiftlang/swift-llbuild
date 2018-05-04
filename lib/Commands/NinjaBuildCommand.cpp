@@ -13,15 +13,19 @@
 #include "NinjaBuildCommand.h"
 
 #include "llbuild/Basic/Compiler.h"
+#include "llbuild/Basic/CrossPlatformCompatibility.h"
 #include "llbuild/Basic/FileInfo.h"
 #include "llbuild/Basic/Hashing.h"
 #include "llbuild/Basic/PlatformUtility.h"
 #include "llbuild/Basic/SerialQueue.h"
 #include "llbuild/Basic/Version.h"
+
 #include "llbuild/Commands/Commands.h"
+
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/BuildEngine.h"
 #include "llbuild/Core/MakefileDepsParser.h"
+
 #include "llbuild/Ninja/ManifestLoader.h"
 
 #include "llvm/ADT/SmallString.h"
@@ -484,7 +488,7 @@ public:
   struct sigaction previousSigintHandler;
 
   /// The set of spawned processes to cancel when interrupted.
-  std::unordered_set<pid_t> spawnedProcesses;
+  std::unordered_set<llbuild_pid_t> spawnedProcesses;
   std::mutex spawnedProcessesMutex;
 
   /// Low-level flag for when a SIGINT has been received.
@@ -505,7 +509,7 @@ public:
   void sendSignalToProcesses(int signal) {
     std::unique_lock<std::mutex> lock(spawnedProcessesMutex);
 
-    for (pid_t pid: spawnedProcesses) {
+    for (llbuild_pid_t pid: spawnedProcesses) {
       // We are killing the whole process group here, this depends on us
       // spawning each process in its own group earlier.
       ::kill(-pid, signal);
@@ -1254,7 +1258,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       args[3] = nullptr;
 
       // Spawn the command.
-      pid_t pid;
+      llbuild_pid_t pid;
       {
         // We need to hold the spawn processes lock when we spawn, to ensure that
         // we don't create a process in between when we are cancelled.

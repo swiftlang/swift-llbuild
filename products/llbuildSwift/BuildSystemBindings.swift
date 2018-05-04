@@ -240,7 +240,7 @@ public struct CommandMetrics {
     public let stime: UInt64         /// Sys time (in us)
     public let maxRSS: UInt64        /// Max RSS (in bytes)
 
-    init(utime: UInt64, stime: UInt64, maxRSS: UInt64) {
+    public init(utime: UInt64, stime: UInt64, maxRSS: UInt64) {
         self.utime = utime
         self.stime = stime
         self.maxRSS = maxRSS
@@ -251,11 +251,17 @@ public struct CommandMetrics {
 public struct CommandExtendedResult {
     public let result: CommandResult    /// The result of a command execution
     public let exitStatus: Int32        /// The exit code
+    public let pid: llbuild_pid_t?      /// The process identifier (nil if failed to create a process)
     public let metrics: CommandMetrics? /// Metrics about the executed command
 
     init(_ result: UnsafePointer<llb_buildsystem_command_extended_result_t>) {
         self.result = CommandResult(result.pointee.result)
         self.exitStatus = result.pointee.exit_status
+        if result.pointee.pid >= 0 {
+            self.pid = result.pointee.pid
+        } else {
+            self.pid = nil
+        }
         switch self.result {
         case .succeeded, .failed:
             self.metrics = CommandMetrics(utime: result.pointee.utime, stime: result.pointee.stime, maxRSS: result.pointee.maxrss)
@@ -264,11 +270,13 @@ public struct CommandExtendedResult {
         }
     }
 
-    public init(result: CommandResult, exitStatus: Int32) {
+    public init(result: CommandResult, exitStatus: Int32, pid: llbuild_pid_t?, metrics: CommandMetrics? = nil) {
         self.result = result
         self.exitStatus = exitStatus
-        self.metrics = nil
+        self.pid = pid
+        self.metrics = metrics
     }
+
 }
 
 /// Status change event kinds.

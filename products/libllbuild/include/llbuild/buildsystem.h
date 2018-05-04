@@ -24,6 +24,19 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifdef _MSC_VER
+typedef int llbuild_pid_t;
+#else
+
+#if defined(__linux__) || defined(__GNU__)
+#include <termios.h>
+#else
+#include <sys/types.h>
+#endif
+
+typedef pid_t llbuild_pid_t;
+#endif
+
 /// @name File System Behaviors
 /// @{
 
@@ -102,6 +115,7 @@ typedef struct llb_buildsystem_command_extended_result_t_ {
   uint64_t utime;                           /// User time (in us)
   uint64_t stime;                           /// Sys time (in us)
   uint64_t maxrss;                          /// Max RSS (in bytes)
+  llbuild_pid_t pid;                        /// The process identifier (-1 if process creation failed)
 } llb_buildsystem_command_extended_result_t;
 
 /// Status change event kinds.

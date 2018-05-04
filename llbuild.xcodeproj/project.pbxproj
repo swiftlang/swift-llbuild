@@ -868,6 +868,7 @@
 		9DB0478B1DF9D3E2006CDF52 /* LaneBasedExecutionQueueTest.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = LaneBasedExecutionQueueTest.cpp; sourceTree = "<group>"; };
 		9DB047A81DF9D43D006CDF52 /* BuildSystemTests */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = BuildSystemTests; sourceTree = BUILT_PRODUCTS_DIR; };
 		9DDD8BDF1DDCAB9A00FB62D2 /* SQLiteBuildDBTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SQLiteBuildDBTest.cpp; sourceTree = "<group>"; };
+		B563CEA620A6252500276198 /* CrossPlatformCompatibility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CrossPlatformCompatibility.h; sourceTree = "<group>"; };
 		BC8DEEFF2030088600E9EF0C /* libllbuildSwift.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libllbuildSwift.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		BC8DEF0520300AAF00E9EF0C /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; tabWidth = 2; };
 		BC8DEF0620300AAF00E9EF0C /* BuildSystemBindings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BuildSystemBindings.swift; sourceTree = "<group>"; };
@@ -1829,6 +1830,7 @@
 			children = (
 				E120B9EF1E4E65FC00B28469 /* BinaryCoding.h */,
 				E182BE111ABA2B8D001840AD /* Compiler.h */,
+				B563CEA620A6252500276198 /* CrossPlatformCompatibility.h */,
 				E11470901B75160400ED84CF /* FileInfo.h */,
 				E138129C1C536CFC000092C0 /* FileSystem.h */,
 				E147DEFD1BA81D0E0032D08E /* Hashing.h */,

@@ -14,6 +14,7 @@
 
 #include "POSIXEnvironment.h"
 
+#include "llbuild/Basic/CrossPlatformCompatibility.h"
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/Basic/PlatformUtility.h"
 #include "llbuild/Basic/Tracing.h"
@@ -133,7 +134,7 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
   bool shutdown { false };
   
   /// The set of spawned processes to terminate if we get cancelled.
-  std::unordered_map<pid_t, ProcessInfo> spawnedProcesses;
+  std::unordered_map<llbuild_pid_t, ProcessInfo> spawnedProcesses;
   std::mutex spawnedProcessesMutex;
 
   /// Management of cancellation and SIGKILL escalation
@@ -460,7 +461,7 @@ public:
     }
       
     // Spawn the command.
-    pid_t pid = -1;
+    llbuild_pid_t pid = -1;
     bool wasCancelled;
     {
       // We need to hold the spawn processes lock when we spawn, to ensure that
@@ -568,7 +569,7 @@ public:
     // Notify of the process completion.
     bool cancelled = WIFSIGNALED(status) && (WTERMSIG(status) == SIGINT || WTERMSIG(status) == SIGKILL);
     CommandResult commandResult = cancelled ? CommandResult::Cancelled : (status == 0) ? CommandResult::Succeeded : CommandResult::Failed;
-    CommandExtendedResult extendedResult(commandResult, status, utime, stime,
+    CommandExtendedResult extendedResult(commandResult, status, pid, utime, stime,
                                          usage.ru_maxrss);
     getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
                                          extendedResult);
