@@ -235,20 +235,39 @@ public enum CommandResult {
     }
 }
 
-/// Result of a command execution.
-public struct CommandExtendedResult {
-    public let result: CommandResult /// The result of a command execution
-    public let exitStatus: Int32     /// The exit code
+public struct CommandMetrics {
     public let utime: UInt64         /// User time (in us)
     public let stime: UInt64         /// Sys time (in us)
     public let maxRSS: UInt64        /// Max RSS (in bytes)
 
+    init(utime: UInt64, stime: UInt64, maxRSS: UInt64) {
+        self.utime = utime
+        self.stime = stime
+        self.maxRSS = maxRSS
+    }
+}
+
+/// Result of a command execution.
+public struct CommandExtendedResult {
+    public let result: CommandResult    /// The result of a command execution
+    public let exitStatus: Int32        /// The exit code
+    public let metrics: CommandMetrics? /// Metrics about the executed command
+
     init(_ result: UnsafePointer<llb_buildsystem_command_extended_result_t>) {
         self.result = CommandResult(result.pointee.result)
         self.exitStatus = result.pointee.exit_status
-        self.utime = result.pointee.utime
-        self.stime = result.pointee.stime
-        self.maxRSS = result.pointee.maxrss
+        switch self.result {
+        case .succeeded, .failed:
+            self.metrics = CommandMetrics(utime: result.pointee.utime, stime: result.pointee.stime, maxRSS: result.pointee.maxrss)
+        default:
+            self.metrics = nil
+        }
+    }
+
+    public init(result: CommandResult, exitStatus: Int32) {
+        self.result = result
+        self.exitStatus = exitStatus
+        self.metrics = nil
     }
 }
 
