@@ -187,9 +187,10 @@ public struct Command: Hashable {
     public var hashValue: Int {
         return handle!.hashValue
     }
-}
-public func ==(lhs: Command, rhs: Command) -> Bool {
-    return lhs.handle == rhs.handle
+
+    public static func ==(lhs: Command, rhs: Command) -> Bool {
+        return lhs.handle == rhs.handle
+    }
 }
 
 /// Handle for a process which has been launched by a command.
@@ -205,9 +206,10 @@ public struct ProcessHandle: Hashable {
     public var hashValue: Int {
         return handle.hashValue
     }
-}
-public func ==(lhs: ProcessHandle, rhs: ProcessHandle) -> Bool {
-    return lhs.handle == rhs.handle
+
+    public static func ==(lhs: ProcessHandle, rhs: ProcessHandle) -> Bool {
+        return lhs.handle == rhs.handle
+    }
 }
 
 /// Result of a command execution.
