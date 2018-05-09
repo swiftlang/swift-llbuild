@@ -832,5 +832,48 @@ public final class BuildSystem {
             llb_disable_tracing()
         }
     }
+
+
+    public enum SchedulerAlgorithm: String {
+        case commandNamePriority
+        case fifo
+
+        init(_ algorithm: llb_scheduler_algorithm_t) {
+            switch algorithm {
+            case llb_scheduler_algorithm_command_name_priority:
+                self = .commandNamePriority
+            case llb_scheduler_algorithm_fifo:
+                self = .fifo
+            default:
+                self = .commandNamePriority
+            }
+        }
+    }
+
+    /// Get the scheduler algorithm
+    public static func getSchedulerLaneWidth() -> SchedulerAlgorithm {
+        return SchedulerAlgorithm(llb_get_scheduler_algorithm())
+    }
+
+    /// Set scheduler algorithm
+    public static func setSchedulerAlgorithm(_ algorithm: SchedulerAlgorithm) {
+        switch (algorithm) {
+        case .commandNamePriority:
+            llb_set_scheduler_algorithm(
+                llb_scheduler_algorithm_command_name_priority)
+        case .fifo:
+            llb_set_scheduler_algorithm(llb_scheduler_algorithm_fifo)
+        }
+    }
+
+    /// Get scheduler lane width
+    public static func getSchedulerLaneWidth() -> UInt32 {
+        return llb_get_scheduler_lane_width()
+    }
+
+    /// Set scheduler lane width
+    public static func setSchedulerLaneWidth(width: UInt32) {
+        llb_set_scheduler_lane_width(width)
+    }
 }
 
