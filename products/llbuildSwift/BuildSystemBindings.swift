@@ -822,5 +822,15 @@ public final class BuildSystem {
     private func shouldResolveCycle(_ rules: [BuildKey], _ candidate: BuildKey, _ action: CycleAction) -> Bool {
         return delegate.shouldResolveCycle(rules: rules, candidate: candidate, action: action)
     }
+
+
+    /// Toggle tracing
+    public static func setTracing(enabled: Bool) {
+        if (enabled) {
+            llb_enable_tracing()
+        } else {
+            llb_disable_tracing()
+        }
+    }
 }
 
