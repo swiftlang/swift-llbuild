@@ -550,6 +550,12 @@ public final class BuildSystem {
     private let _cEnvironment: CStyleEnvironment?
 
     public init(buildFile: String, databaseFile: String, delegate: BuildSystemDelegate, environment: [String: String]? = nil, serial: Bool = false, traceFile: String? = nil) {
+
+        // Safety check that we have linked against a compatibile llbuild framework version
+        if llb_get_api_version() != LLBUILD_C_API_VERSION {
+            fatalError("llbuild C API version mismatch, found \(llb_get_api_version()), expect \(LLBUILD_C_API_VERSION)")
+        }
+
         self.buildFile = buildFile
         self.delegate = delegate
 
