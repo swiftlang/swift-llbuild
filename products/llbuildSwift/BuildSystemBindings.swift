@@ -729,7 +729,7 @@ public final class BuildSystem {
 
         // Clean up the location.
         let location: (filename: String, line: Int, column: Int)?
-        if filename == "<unknown>" {
+        if filename == "<unknown>" || (line == -1 && column == -1) {
             location = nil
         } else {
             location = (filename: filename, line: line, column: column)
