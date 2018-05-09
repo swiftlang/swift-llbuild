@@ -19,11 +19,11 @@ import Foundation
 import llbuild
 
 #if !LLBUILD_C_API_VERSION_6
-  #if swift(>=4.2)
-    #error("Unsupported llbuild C API version")
-  #else
-    import llbuild_c_api_version_unsupported
-  #endif
+#if swift(>=4.2)
+#error("Unsupported llbuild C API version")
+#else
+import llbuild_c_api_version_unsupported
+#endif
 #endif
 
 private func bytesFromData(_ data: llb_data_t) -> [UInt8] {
@@ -59,7 +59,7 @@ private final class ToolWrapper {
     init(tool: Tool) {
         self.tool = tool
     }
-    
+
     /// The owning list of all created commands.
     //
     // FIXME: This is lame, we should be able to destroy these naturally.
@@ -72,7 +72,7 @@ private final class ToolWrapper {
         _delegate.context = Unmanaged.passUnretained(wrapper).toOpaque()
         _delegate.get_signature = { return BuildSystem.toCommandWrapper($0!).getSignature($1!, $2!) }
         _delegate.execute_command = { return BuildSystem.toCommandWrapper($0!).executeCommand($1!, $2!, $3!, $4!) }
-            
+
         // Create the low-level command.
         wrapper._command = Command(llb_buildsystem_external_command_create(name, _delegate))
 
@@ -97,7 +97,7 @@ public protocol ExternalCommand: class {
 private final class CommandWrapper {
     let command: ExternalCommand
     var _command: Command
-    
+
     init(command: ExternalCommand) {
         self.command = command
         self._command = Command(nil)
@@ -118,7 +118,7 @@ public struct Diagnostic {
         case note
         case warning
         case error
-        
+
         public init(_ kind: llb_buildsystem_diagnostic_kind_t) {
             switch kind {
             case llb_buildsystem_diagnostic_kind_note:
@@ -129,7 +129,7 @@ public struct Diagnostic {
                 self = .error
             }
         }
-        
+
         public var description: String {
             switch self {
             case .note:
@@ -212,42 +212,42 @@ public func ==(lhs: ProcessHandle, rhs: ProcessHandle) -> Bool {
 
 /// Result of a command execution.
 public enum CommandResult {
-  case succeeded
-  case failed
-  case cancelled
-  case skipped
+    case succeeded
+    case failed
+    case cancelled
+    case skipped
 
-  init(_ result: llb_buildsystem_command_result_t) {
-    switch result {
-    case llb_buildsystem_command_result_succeeded:
-      self = .succeeded
-    case llb_buildsystem_command_result_failed:
-      self = .failed
-    case llb_buildsystem_command_result_cancelled:
-      self = .cancelled
-    case llb_buildsystem_command_result_skipped:
-      self = .skipped
-    default:
-      fatalError("unknown command result")
+    init(_ result: llb_buildsystem_command_result_t) {
+        switch result {
+        case llb_buildsystem_command_result_succeeded:
+            self = .succeeded
+        case llb_buildsystem_command_result_failed:
+            self = .failed
+        case llb_buildsystem_command_result_cancelled:
+            self = .cancelled
+        case llb_buildsystem_command_result_skipped:
+            self = .skipped
+        default:
+            fatalError("unknown command result")
+        }
     }
-  }
 }
 
 /// Result of a command execution.
 public struct CommandExtendedResult {
-  public let result: CommandResult /// The result of a command execution
-  public let exitStatus: Int32     /// The exit code
-  public let utime: UInt64         /// User time (in us)
-  public let stime: UInt64         /// Sys time (in us)
-  public let maxRSS: UInt64        /// Max RSS (in bytes)
+    public let result: CommandResult /// The result of a command execution
+    public let exitStatus: Int32     /// The exit code
+    public let utime: UInt64         /// User time (in us)
+    public let stime: UInt64         /// Sys time (in us)
+    public let maxRSS: UInt64        /// Max RSS (in bytes)
 
-  init(_ result: UnsafePointer<llb_buildsystem_command_extended_result_t>) {
-    self.result = CommandResult(result.pointee.result)
-    self.exitStatus = result.pointee.exit_status
-    self.utime = result.pointee.utime
-    self.stime = result.pointee.stime
-    self.maxRSS = result.pointee.maxrss
-  }
+    init(_ result: UnsafePointer<llb_buildsystem_command_extended_result_t>) {
+        self.result = CommandResult(result.pointee.result)
+        self.exitStatus = result.pointee.exit_status
+        self.utime = result.pointee.utime
+        self.stime = result.pointee.stime
+        self.maxRSS = result.pointee.maxrss
+    }
 }
 
 /// Status change event kinds.
@@ -255,7 +255,7 @@ public enum CommandStatusKind {
     case isScanning
     case isUpToDate
     case isComplete
-            
+
     init(_ kind: llb_buildsystem_command_status_kind_t) {
         switch kind {
         case llb_buildsystem_command_status_kind_is_scanning:
@@ -381,7 +381,7 @@ public protocol BuildSystemDelegate {
     ///
     /// The client should return an appropriate tool implementation if recognized.
     func lookupTool(_ name: String) -> Tool?
-    
+
     /// Called to report any form of command failure.
     ///
     /// This can may be called to report the failure of a command which has
@@ -389,7 +389,7 @@ public protocol BuildSystemDelegate {
     /// run. It is expected to be used by the client in making decisions with
     /// regard to cancelling the build.
     func hadCommandFailure()
-    
+
     /// Called to report an unassociated diagnostic from the build system.
     func handleDiagnostic(_ diagnostic: Diagnostic)
 
@@ -410,7 +410,7 @@ public protocol BuildSystemDelegate {
     /// The system guarantees that any commandStart() call will be paired with
     /// exactly one \see commandFinished() call.
     func commandStarted(_ command: Command)
-    
+
     /// Called to allow the delegate to skip commands without cancelling their
     /// dependents. See llbuild's should_command_start.
     func shouldCommandStart(_ command: Command) -> Bool
@@ -500,7 +500,7 @@ private final class CStyleEnvironment {
     /// The environment array, which will be a valid C-style environment pointer
     /// for the lifetime of the instance.
     let envp: [UnsafePointer<CChar>?]
-        
+
     init(_ environment: [String: String]) {
         // Allocate the individual binding strings.
         self.bindings = environment.map{ "\($0.0)=\($0.1)".withCString(strdup)! }
@@ -521,7 +521,7 @@ public final class BuildSystem {
 
     /// The delegate used by the system.
     public let delegate: BuildSystemDelegate
-    
+
     /// The internal llbuild build system.
     private var _system: OpaquePointer? = nil
 
@@ -535,7 +535,7 @@ public final class BuildSystem {
         // Create a stable C string path.
         let pathPtr = strdup(buildFile)
         defer { free(pathPtr) }
-        
+
         let dbPathPtr = strdup(databaseFile)
         defer { free(dbPathPtr) }
 
@@ -544,7 +544,7 @@ public final class BuildSystem {
 
         // Allocate a C style environment, if necessary.
         _cEnvironment = environment.map{ CStyleEnvironment($0) }
-        
+
         var _invocation = llb_buildsystem_invocation_t()
         _invocation.buildFilePath = UnsafePointer(pathPtr)
         _invocation.dbPath = UnsafePointer(dbPathPtr)
@@ -635,7 +635,7 @@ public final class BuildSystem {
     public func cancel() {
         llb_buildsystem_cancel(_system)
     }
-    
+
     /// MARK: Internal Delegate Implementation
 
     /// Helper function for getting the system from the delegate context.
@@ -686,11 +686,11 @@ public final class BuildSystem {
         info.pointee.mode = UInt64(s.st_mode)
         info.pointee.size = UInt64(s.st_size)
         #if os(macOS)
-            info.pointee.mod_time.seconds = UInt64(s.st_mtimespec.tv_sec)
-            info.pointee.mod_time.nanoseconds = UInt64(s.st_mtimespec.tv_nsec)
+        info.pointee.mod_time.seconds = UInt64(s.st_mtimespec.tv_sec)
+        info.pointee.mod_time.nanoseconds = UInt64(s.st_mtimespec.tv_nsec)
         #else
-            info.pointee.mod_time.seconds = UInt64(s.st_mtim.tv_sec)
-            info.pointee.mod_time.nanoseconds = UInt64(s.st_mtim.tv_nsec)
+        info.pointee.mod_time.seconds = UInt64(s.st_mtim.tv_sec)
+        info.pointee.mod_time.nanoseconds = UInt64(s.st_mtim.tv_nsec)
         #endif
     }
 
@@ -708,14 +708,14 @@ public final class BuildSystem {
         guard let tool = delegate.lookupTool(stringFromData(name.pointee)) else {
             return nil
         }
-        
+
         // If we got a tool, save it and create an appropriate low-level instance.
         let wrapper = ToolWrapper(tool: tool)
         self.toolWrappers.append(wrapper)
         var _delegate = llb_buildsystem_tool_delegate_t()
         _delegate.context = Unmanaged.passUnretained(wrapper).toOpaque()
         _delegate.create_command = { return BuildSystem.toToolWrapper($0!).createCommand($1!) }
-            
+
         // Create the tool.
         return llb_buildsystem_tool_create(name, _delegate)
     }
@@ -723,7 +723,7 @@ public final class BuildSystem {
     private func hadCommandFailure() {
         delegate.hadCommandFailure()
     }
-    
+
     private func handleDiagnostic(_ _kind: llb_buildsystem_diagnostic_kind_t, _ filename: String, _ line: Int, _ column: Int, _ message: String) {
         let kind: Diagnostic.Kind = Diagnostic.Kind(_kind)
 
@@ -734,14 +734,14 @@ public final class BuildSystem {
         } else {
             location = (filename: filename, line: line, column: column)
         }
-        
+
         delegate.handleDiagnostic(Diagnostic(kind: kind, location: location, message: message))
     }
-    
+
     private func commandStatusChanged(_ command: Command, _ kind: llb_buildsystem_command_status_kind_t) {
         delegate.commandStatusChanged(command, kind: CommandStatusKind(kind))
     }
-    
+
     private func commandPreparing(_ command: Command) {
         delegate.commandPreparing(command)
     }
@@ -749,7 +749,7 @@ public final class BuildSystem {
     private func commandStarted(_ command: Command) {
         delegate.commandStarted(command)
     }
-    
+
     private func shouldCommandStart(_ command: Command) -> Bool {
         return delegate.shouldCommandStart(command)
     }
@@ -802,3 +802,4 @@ public final class BuildSystem {
         return delegate.shouldResolveCycle(rules: rules, candidate: candidate, action: action)
     }
 }
+
