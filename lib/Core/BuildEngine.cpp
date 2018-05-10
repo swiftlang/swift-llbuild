@@ -1353,10 +1353,12 @@ public:
   RuleInfo& addRule(KeyID keyID, Rule&& rule) {
     auto result = ruleInfos.emplace(keyID, RuleInfo(keyID, std::move(rule)));
     if (!result.second) {
-      // FIXME: Error handling.
-      std::cerr << "error: attempt to register duplicate rule \""
-                << rule.key << "\"\n";
-      exit(1);
+      delegate.error("error: attempt to register duplicate rule \"" + rule.key + "\"\n");
+
+      // Set cancelled, but return something 'valid' for use until it is
+      // processed.
+      buildCancelled = true;
+      return result.first->second;
     }
 
     // If we have a database attached, retrieve any stored result.
@@ -1369,8 +1371,10 @@ public:
       std::string error;
       db->lookupRuleResult(ruleInfo.keyID, ruleInfo.rule, &ruleInfo.result, &error);
       if (!error.empty()) {
+        // FIXME: Investigate changing the database error handling model to
+        // allow builds to proceed without the database.
         delegate.error(error);
-        cancelRemainingTasks();
+        buildCancelled = true;
       }
     }
 
@@ -1555,7 +1559,7 @@ public:
     // Validate the InputID.
     if (inputID > BuildEngine::kMaximumInputID) {
       delegate.error("error: attempt to use reserved input ID");
-      cancelRemainingTasks();
+      buildCancelled = true;
       return;
     }
 
@@ -1573,7 +1577,7 @@ public:
 
     if (!taskInfo->forRuleInfo->isInProgressComputing()) {
       delegate.error("error: invalid state for adding discovered dependency");
-      cancelRemainingTasks();
+      buildCancelled = true;
       return;
     }
 
@@ -1590,7 +1594,7 @@ public:
 
     if (!taskInfo->forRuleInfo->isInProgressComputing()) {
       delegate.error("error: invalid state for marking task complete");
-      cancelRemainingTasks();
+      buildCancelled = true;
       return;
     }
 

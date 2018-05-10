@@ -28,6 +28,8 @@ using namespace llbuild::core;
 namespace {
 
 class SimpleBuildEngineDelegate : public core::BuildEngineDelegate {
+public:
+  bool expectError = false;
 private:
   virtual core::Rule lookupRule(const core::KeyType& key) override {
     // We never expect dynamic rule lookup.
@@ -43,7 +45,8 @@ private:
 
   virtual void error(const Twine& message) override {
     fprintf(stderr, "error: %s\n", message.str().c_str());
-    abort();
+    if (!expectError)
+      abort();
   }
 };
 
@@ -114,6 +117,13 @@ static ActionFn simpleAction(const std::vector<KeyType>& inputs,
                                               compute)); };
 }
 
+static ActionFn simpleActionExternalTask(const std::vector<KeyType>& inputs,
+                             SimpleTask::ComputeFnType compute, Task** task) {
+  return [=] (BuildEngine& engine) {
+    *task = new SimpleTask([inputs]{ return inputs; }, compute);
+    return engine.registerTask(*task); };
+}
+
 TEST(BuildEngineCancellationTest, basic) {
   std::vector<std::string> builtKeys;
   SimpleBuildEngineDelegate delegate;
@@ -150,6 +160,52 @@ TEST(BuildEngineCancellationTest, basic) {
   EXPECT_EQ(2U, builtKeys.size());
   EXPECT_EQ("value-A", builtKeys[0]);
   EXPECT_EQ("result", builtKeys[1]);
+}
+
+TEST(BuildEngineCancellationDueToDuplicateTaskTest, basic) {
+  std::vector<std::string> builtKeys;
+  SimpleBuildEngineDelegate delegate;
+  core::BuildEngine engine(delegate);
+  Task* taskA = nullptr;
+  engine.addRule({
+     "value-A", simpleActionExternalTask({"value-B"},
+        [&] (const std::vector<int>& inputs) {
+          builtKeys.push_back("value-A");
+          fprintf(stderr, "building A\n");
+          return 2;
+        },
+        &taskA)
+    });
+  engine.addRule({
+     "value-B", simpleAction({}, [&] (const std::vector<int>& inputs) {
+       builtKeys.push_back("value-B");
+       fprintf(stderr, "building B (and reporting A complete early)\n");
+       engine.taskIsComplete(taskA, intToValue(2));
+       return 3; }) });
+  engine.addRule({
+      "result",
+      simpleAction({"value-A", "value-B"},
+                   [&] (const std::vector<int>& inputs) {
+                     EXPECT_EQ(2U, inputs.size());
+                     EXPECT_EQ(2, inputs[0]);
+                     EXPECT_EQ(3, inputs[1]);
+                     builtKeys.push_back("result");
+                     return inputs[0] * 3 + inputs[1];
+                   }) });
+
+  // Build the result, expecting error
+  //
+  // This test is triggering the cancellation behavior through what is
+  // clearly broken client behavior (reporting a task complete that should
+  // not have started yet). The engine should cleanly cancel and report the
+  // error, which is what this test is checking. However, the question remains
+  // are there 'legitimate'/non-broken client pathways that could also trigger
+  // that error?
+  delegate.expectError = true;
+  auto result = engine.build("result");
+  EXPECT_EQ(0U, result.size());
+  EXPECT_EQ(1U, builtKeys.size());
+  EXPECT_EQ("value-B", builtKeys[0]);
 }
 
 }
