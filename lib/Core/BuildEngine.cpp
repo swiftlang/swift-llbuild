@@ -1237,7 +1237,9 @@ private:
           finishedTaskInfos.clear();
         }
     }
-    
+
+    std::lock_guard<std::mutex> guard(taskInfosMutex);
+
     for (auto& it: taskInfos) {
       // Cancel the task, marking it incomplete.
       //
