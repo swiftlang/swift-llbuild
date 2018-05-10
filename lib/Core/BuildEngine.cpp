@@ -492,6 +492,7 @@ private:
 
     // Create the task for this rule.
     Task* task = ruleInfo.rule.action(buildEngine);
+    assert(task && "rule action returned null task");
 
     // Find the task info for this task.
     auto taskInfo = getTaskInfo(task);
