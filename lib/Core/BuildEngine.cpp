@@ -492,6 +492,7 @@ private:
 
     // Create the task for this rule.
     Task* task = ruleInfo.rule.action(buildEngine);
+    assert(task && "rule action returned null task");
 
     // Find the task info for this task.
     auto taskInfo = getTaskInfo(task);
@@ -1237,7 +1238,9 @@ private:
           finishedTaskInfos.clear();
         }
     }
-    
+
+    std::lock_guard<std::mutex> guard(taskInfosMutex);
+
     for (auto& it: taskInfos) {
       // Cancel the task, marking it incomplete.
       //
@@ -1350,10 +1353,12 @@ public:
   RuleInfo& addRule(KeyID keyID, Rule&& rule) {
     auto result = ruleInfos.emplace(keyID, RuleInfo(keyID, std::move(rule)));
     if (!result.second) {
-      // FIXME: Error handling.
-      std::cerr << "error: attempt to register duplicate rule \""
-                << rule.key << "\"\n";
-      exit(1);
+      delegate.error("attempt to register duplicate rule \"" + rule.key + "\"\n");
+
+      // Set cancelled, but return something 'valid' for use until it is
+      // processed.
+      buildCancelled = true;
+      return result.first->second;
     }
 
     // If we have a database attached, retrieve any stored result.
@@ -1366,8 +1371,10 @@ public:
       std::string error;
       db->lookupRuleResult(ruleInfo.keyID, ruleInfo.rule, &ruleInfo.result, &error);
       if (!error.empty()) {
+        // FIXME: Investigate changing the database error handling model to
+        // allow builds to proceed without the database.
         delegate.error(error);
-        cancelRemainingTasks();
+        buildCancelled = true;
       }
     }
 
@@ -1481,7 +1488,7 @@ public:
   void dumpGraphToFile(const std::string& path) {
     FILE* fp = ::fopen(path.c_str(), "w");
     if (!fp) {
-      delegate.error("error: unable to open graph output path \"" + path + "\"");
+      delegate.error("unable to open graph output path \"" + path + "\"");
       return;
     }
 
@@ -1551,8 +1558,8 @@ public:
   void taskNeedsInput(Task* task, const KeyType& key, uintptr_t inputID) {
     // Validate the InputID.
     if (inputID > BuildEngine::kMaximumInputID) {
-      delegate.error("error: attempt to use reserved input ID");
-      cancelRemainingTasks();
+      delegate.error("attempt to use reserved input ID");
+      buildCancelled = true;
       return;
     }
 
@@ -1569,8 +1576,8 @@ public:
     assert(taskInfo && "cannot request inputs for an unknown task");
 
     if (!taskInfo->forRuleInfo->isInProgressComputing()) {
-      delegate.error("error: invalid state for adding discovered dependency");
-      cancelRemainingTasks();
+      delegate.error("invalid state for adding discovered dependency");
+      buildCancelled = true;
       return;
     }
 
@@ -1586,8 +1593,8 @@ public:
     assert(taskInfo && "cannot request inputs for an unknown task");
 
     if (!taskInfo->forRuleInfo->isInProgressComputing()) {
-      delegate.error("error: invalid state for marking task complete");
-      cancelRemainingTasks();
+      delegate.error("invalid state for marking task complete");
+      buildCancelled = true;
       return;
     }
 
