@@ -1353,7 +1353,7 @@ public:
   RuleInfo& addRule(KeyID keyID, Rule&& rule) {
     auto result = ruleInfos.emplace(keyID, RuleInfo(keyID, std::move(rule)));
     if (!result.second) {
-      delegate.error("error: attempt to register duplicate rule \"" + rule.key + "\"\n");
+      delegate.error("attempt to register duplicate rule \"" + rule.key + "\"\n");
 
       // Set cancelled, but return something 'valid' for use until it is
       // processed.
@@ -1488,7 +1488,7 @@ public:
   void dumpGraphToFile(const std::string& path) {
     FILE* fp = ::fopen(path.c_str(), "w");
     if (!fp) {
-      delegate.error("error: unable to open graph output path \"" + path + "\"");
+      delegate.error("unable to open graph output path \"" + path + "\"");
       return;
     }
 
@@ -1558,7 +1558,7 @@ public:
   void taskNeedsInput(Task* task, const KeyType& key, uintptr_t inputID) {
     // Validate the InputID.
     if (inputID > BuildEngine::kMaximumInputID) {
-      delegate.error("error: attempt to use reserved input ID");
+      delegate.error("attempt to use reserved input ID");
       buildCancelled = true;
       return;
     }
@@ -1576,7 +1576,7 @@ public:
     assert(taskInfo && "cannot request inputs for an unknown task");
 
     if (!taskInfo->forRuleInfo->isInProgressComputing()) {
-      delegate.error("error: invalid state for adding discovered dependency");
+      delegate.error("invalid state for adding discovered dependency");
       buildCancelled = true;
       return;
     }
@@ -1593,7 +1593,7 @@ public:
     assert(taskInfo && "cannot request inputs for an unknown task");
 
     if (!taskInfo->forRuleInfo->isInProgressComputing()) {
-      delegate.error("error: invalid state for marking task complete");
+      delegate.error("invalid state for marking task complete");
       buildCancelled = true;
       return;
     }
