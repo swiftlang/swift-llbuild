@@ -378,6 +378,7 @@ public:
       llb_buildsystem_command_extended_result_t result;
       result.result = get_command_result(commandResult.result);
       result.exit_status = commandResult.exitStatus;
+      result.pid = commandResult.pid;
       result.utime = commandResult.utime;
       result.stime = commandResult.stime;
       result.maxrss = commandResult.maxrss;
