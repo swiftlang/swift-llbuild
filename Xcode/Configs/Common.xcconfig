@@ -22,6 +22,9 @@ ALWAYS_SEARCH_USER_PATHS = NO
 // Headermaps are disabled.
 USE_HEADERMAP = NO
 
+// Manually opt targets into installation.
+SKIP_INSTALL = YES
+
 #include "Version.xcconfig"
 
 COMMON_PREPROCESSOR_DEFINITIONS = $(LLBUILD_VERSION_DEFINITIONS)
