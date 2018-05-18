@@ -3796,7 +3796,6 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(LLBUILD_SWIFT_VERSION_DEFINITIONS)";
 				SWIFT_VERSION = 4.0;
 			};
@@ -3826,7 +3825,6 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(LLBUILD_SWIFT_VERSION_DEFINITIONS)";
 				SWIFT_VERSION = 4.0;
 			};
@@ -3989,7 +3987,6 @@
 				PROJECT_SOURCE_VERSION_ = "$(RC_ProjectSourceVersion)";
 				PROJECT_SOURCE_VERSION_empty = 9999.99;
 				SDKROOT = macosx;
-				SKIP_INSTALL = YES;
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include";
 				USE_HEADERMAP = NO;
 			};
@@ -4048,7 +4045,6 @@
 				PROJECT_SOURCE_VERSION_ = "$(RC_ProjectSourceVersion)";
 				PROJECT_SOURCE_VERSION_empty = 9999.99;
 				SDKROOT = macosx;
-				SKIP_INSTALL = YES;
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include";
 				USE_HEADERMAP = NO;
 			};
@@ -4209,7 +4205,6 @@
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/include";
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/lib";
 				PUBLIC_HEADERS_FOLDER_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/include/llbuild";
-				SKIP_INSTALL = NO;
 			};
 			name = Debug;
 		};
@@ -4222,7 +4217,6 @@
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/include";
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/lib";
 				PUBLIC_HEADERS_FOLDER_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/include/llbuild";
-				SKIP_INSTALL = NO;
 			};
 			name = Release;
 		};
@@ -4306,7 +4300,7 @@
 				MODULEMAP_FILE = "$(SRCROOT)/products/llbuild-framework/llbuild-module.modulemap";
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.dt.llbuid;
 				PRODUCT_NAME = llbuild;
-				SKIP_INSTALL = YES;
+				SKIP_INSTALL = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(LLBUILD_SWIFT_VERSION_DEFINITIONS) LLBUILD_FRAMEWORK";
 				SWIFT_VERSION = 4.0;
 			};
@@ -4328,7 +4322,7 @@
 				MODULEMAP_FILE = "$(SRCROOT)/products/llbuild-framework/llbuild-module.modulemap";
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.dt.llbuid;
 				PRODUCT_NAME = llbuild;
-				SKIP_INSTALL = YES;
+				SKIP_INSTALL = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(LLBUILD_SWIFT_VERSION_DEFINITIONS) LLBUILD_FRAMEWORK";
 				SWIFT_VERSION = 4.0;
 			};
