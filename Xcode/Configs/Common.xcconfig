@@ -28,6 +28,7 @@ SKIP_INSTALL = YES
 #include "Version.xcconfig"
 
 COMMON_PREPROCESSOR_DEFINITIONS = $(LLBUILD_VERSION_DEFINITIONS)
+OTHER_CPLUSPLUSFLAGS = $(OTHER_CFLAGS) -Wimplicit-fallthrough
 
 // MARK: Signing Support
 
