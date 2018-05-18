@@ -848,6 +848,7 @@ void llb_set_quality_of_service(llb_quality_of_service_t level) {
     break;
   default:
     assert(0 && "unknown quality service level");
+    break;
   }
 }
 
@@ -869,11 +870,14 @@ void llb_set_scheduler_algorithm(llb_scheduler_algorithm_t algorithm) {
     case llb_scheduler_algorithm_command_name_priority:
       llbuild::buildsystem::setSchedulerAlgorithm(
           llbuild::buildsystem::SchedulerAlgorithm::commandNamePriority);
+      break;
     case llb_scheduler_algorithm_fifo:
       llbuild::buildsystem::setSchedulerAlgorithm(
           llbuild::buildsystem::SchedulerAlgorithm::fifo);
+      break;
     default:
       assert(0 && "unknown scheduler algorithm");
+      break;
   }
 }
 
