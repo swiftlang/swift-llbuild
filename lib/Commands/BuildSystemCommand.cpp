@@ -492,7 +492,9 @@ public:
     if (basic::sys::pipe(BasicBuildSystemFrontendDelegate::signalWatchingPipe) < 0) {
       perror("pipe");
     }
-    new std::thread(&BasicBuildSystemFrontendDelegate::signalWaitThread, this);
+    std::thread handlerThread(
+        &BasicBuildSystemFrontendDelegate::signalWaitThread, this);
+    handlerThread.detach();
   }
 
   ~BasicBuildSystemFrontendDelegate() {
