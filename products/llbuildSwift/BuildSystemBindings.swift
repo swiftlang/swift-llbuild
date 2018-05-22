@@ -395,8 +395,11 @@ public protocol FileInfo {
 public protocol FileSystem {
 
     /// Get the contents of a file.
-    // FIXME: This should throw.
+    @available(*, deprecated, renamed: "read")
     func readFileContents(_ path: String) -> [UInt8]?
+
+    /// Get the contents of a file.
+    func read(_ path: String) throws -> [UInt8]
 
     /// Returns the stat of a file at `path`.
     func getFileInfo(_ path: String) throws -> FileInfo
@@ -696,7 +699,7 @@ public final class BuildSystem {
         let fs = delegate.fs!
 
         // Get the contents for the file.
-        guard let contents = fs.readFileContents(path) else {
+        guard let contents = try? fs.read(path) else {
             return false
         }
 
