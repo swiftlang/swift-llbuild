@@ -3,15 +3,15 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.llbuild
-# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.out
+# RUN: %{llbuild} buildsystem build --serial --scheduler fifo --chdir %t.build > %t.out
 # RUN: %{FileCheck} --input-file %t.out %s
 #
 #
 # FIXME: the order of these checks is scheduler dependent.  We should refactor
 # this test to not be sensitive to task ordering.
 #
-# CHECK: THING2
 # CHECK: THING1
+# CHECK: THING2
 #
 # We shouldn't report anything about the phony command.
 # CHECK-NOT: output
