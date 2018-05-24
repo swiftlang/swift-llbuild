@@ -146,6 +146,26 @@ TEST(BuildSystemTaskTests, basics) {
   ASSERT_EQ(result.getValue().getOutputInfo().size, testString.size());
 }
 
+/// Check that we evaluate a missing input path key properly.
+TEST(BuildSystemTaskTests, missingInput) {
+  TmpDir tempDir{ __FUNCTION__ };
+
+  // Create a non-existent sample file path.
+  SmallString<256> path{ tempDir.str() };
+  sys::path::append(path, "a.txt");
+
+  // Create the build system.
+  auto description = llvm::make_unique<BuildDescription>();
+  MockBuildSystemDelegate delegate;
+  BuildSystem system(delegate, createLocalFileSystem());
+  system.loadDescription(std::move(description));
+
+  // Build a specific key.
+  auto result = system.build(BuildKey::makeNode(path));
+  ASSERT_TRUE(result.hasValue());
+  ASSERT_TRUE(result.getValue().isMissingInput());
+}
+
 
 /// Check the evaluation of directory contents.
 TEST(BuildSystemTaskTests, directoryContents) {
@@ -191,6 +211,65 @@ TEST(BuildSystemTaskTests, directoryContents) {
     ASSERT_TRUE(result.hasValue());
     ASSERT_TRUE(result->isMissingInput());
   }
+}
+
+/// Check that we evaluate a produced node dependency properly
+TEST(BuildSystemTaskTests, producedNode) {
+  TmpDir tempDir{ __FUNCTION__ };
+  auto localFS = createLocalFileSystem();
+
+  // Create a outputFile path
+  SmallString<256> outputFile{ tempDir.str() };
+  sys::path::append(outputFile, "a.txt");
+
+  SmallString<256> manifest{ tempDir.str() };
+  sys::path::append(manifest, "manifest.llbuild");
+  {
+    std::error_code ec;
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    assert(!ec);
+
+    os <<
+    "client:\n"
+    "  name: mock\n"
+    "\n"
+    "targets:\n"
+    "  \"\": [\"<all>\"]\n"
+    "\n"
+    "nodes:\n"
+    "  \"" << outputFile << "\": {}\n"
+    "\n"
+    "commands:\n"
+    "  \"touch-outputFile\":\n"
+    "    tool: shell\n"
+    "    outputs: [\"" << outputFile << "\"]\n"
+    "    description: \"touch-outputFile\"\n"
+    "    args:\n"
+    "      touch " << outputFile << "\n"
+    "  \"<all>\":\n"
+    "    tool: phony\n"
+    "    inputs: [\"" << outputFile << "\"]\n"
+    "    outputs: [\"<all>\"]";
+  }
+
+  // Create the build system.
+  auto keyToBuild = BuildKey::makeTarget("");
+  MockBuildSystemDelegate delegate;
+  BuildSystem system(delegate, createLocalFileSystem());
+  bool loadingResult = system.loadDescription(manifest);
+  ASSERT_TRUE(loadingResult);
+
+  // Check that the file does not exist
+  auto beforeFileInfo = localFS->getFileInfo(outputFile.str());
+  ASSERT_TRUE(beforeFileInfo.isMissing());
+
+  // Build a specific key.
+  auto result = system.build(keyToBuild);
+  ASSERT_TRUE(result.hasValue());
+
+  // Check that the file does exist
+  auto afterFileInfo = localFS->getFileInfo(outputFile.str());
+  ASSERT_TRUE(!afterFileInfo.isMissing());
 }
 
 
@@ -881,4 +960,90 @@ TEST(BuildSystemTaskTests, staleFileRemovalPathIsPrefixedByPath) {
   ASSERT_FALSE(pathIsPrefixedByPath("/foobar", "/foo"));
 }
 
+}
+
+/// Check that we evaluate properly handle a previously missing input that may
+/// now be produced.
+TEST(BuildSystemTaskTests, producedNodeAfterPreviouslyMissing) {
+  TmpDir tempDir{ __FUNCTION__ };
+  auto localFS = createLocalFileSystem();
+
+  SmallString<256> builddb{ tempDir.str() };
+  sys::path::append(builddb, "build.db");
+
+  SmallString<256> outputFile{ tempDir.str() };
+  sys::path::append(outputFile, "a.txt");
+
+  // Try to build the missing output file
+  {
+    // Create the build system.
+    auto description = llvm::make_unique<BuildDescription>();
+    MockBuildSystemDelegate delegate;
+    BuildSystem system(delegate, createLocalFileSystem());
+    system.attachDB(builddb.c_str(), nullptr);
+    system.loadDescription(std::move(description));
+
+    // Build a specific key.
+    auto result = system.build(BuildKey::makeNode(outputFile));
+    ASSERT_TRUE(result.hasValue());
+    ASSERT_TRUE(result.getValue().isMissingInput());
+  }
+
+  // Build such that the output file should be produced
+  {
+    SmallString<256> manifest{ tempDir.str() };
+    sys::path::append(manifest, "manifest.llbuild");
+    {
+      std::error_code ec;
+      llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+      assert(!ec);
+
+      os <<
+      "client:\n"
+      "  name: mock\n"
+      "\n"
+      "targets:\n"
+      "  \"\": [\"<all>\"]\n"
+      "\n"
+      "nodes:\n"
+      "  \"" << outputFile << "\": {}\n"
+      "\n"
+      "commands:\n"
+      "  \"touch-outputFile\":\n"
+      "    tool: shell\n"
+      "    outputs: [\"" << outputFile << "\"]\n"
+      "    description: \"touch-outputFile\"\n"
+      "    args:\n"
+      "      touch " << outputFile << "\n"
+      "  \"<all>\":\n"
+      "    tool: phony\n"
+      "    inputs: [\"" << outputFile << "\"]\n"
+      "    outputs: [\"<all>\"]\n";
+    }
+
+    // Create the build system.
+    auto keyToBuild = BuildKey::makeTarget("");
+    MockBuildSystemDelegate delegate;
+    BuildSystem system(delegate, createLocalFileSystem());
+    system.attachDB(builddb.c_str(), nullptr);
+    bool loadingResult = system.loadDescription(manifest);
+    ASSERT_TRUE(loadingResult);
+
+    // Check that the file does not exist
+    auto beforeFileInfo = localFS->getFileInfo(outputFile.str());
+    ASSERT_TRUE(beforeFileInfo.isMissing());
+
+    // Build a specific key.
+    auto result = system.build(keyToBuild);
+    ASSERT_TRUE(result.hasValue());
+
+    // Ensure that we have not had any missing inputs
+    for (auto message : delegate.getMessages()) {
+      ASSERT_EQ(message.find("missing input"), std::string::npos);
+    }
+
+    // Check that the file does exist
+    auto afterFileInfo = localFS->getFileInfo(outputFile.str());
+    ASSERT_TRUE(!afterFileInfo.isMissing());
+  }
 }

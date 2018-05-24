@@ -709,6 +709,12 @@ public:
     if (value.isFailedInput())
       return false;
 
+    // If the result was previously a missing input, it may have been because
+    // we did not previously know how to produce this node. We do now, so
+    // attempt to build it now.
+    if (value.isMissingInput())
+      return false;
+
     // The produced node result itself doesn't need any synchronization.
     return true;
   }
