@@ -15,7 +15,7 @@
 #import <XCTest/XCTest.h>
 
 @interface NinjaPerfTests : XCTestCase
-
++ (NSString*) findNinja;
 @end
 
 static void ExecuteShellCommand(const char *String) {
@@ -29,6 +29,15 @@ static void ExecuteShellCommand(const char *String) {
 }
 
 @implementation NinjaPerfTests
+
++ (NSString*) findNinja {
+    NSString* overrideNinjaPath = [@(SRCROOT)
+                                   stringByAppendingPathComponent:@"llbuild-test-tools/utils/Xcode/ninja"];
+    if ([[NSFileManager defaultManager] isExecutableFileAtPath:overrideNinjaPath]) {
+        return overrideNinjaPath;
+    }
+    return @"xcrun ninja";
+}
 
 - (void)testChromiumFakeManifestLoading {
     // Test the Ninja parsing/loading time for the Chromium fake manifest.
@@ -208,22 +217,22 @@ static void ExecuteShellCommand(const char *String) {
     printf("performing initial build...\n");
     NSString *pseudoLLVMPath = [sandboxDir stringByAppendingPathComponent:@"pseudo-llvm"];
     NSString *dbPath = [pseudoLLVMPath stringByAppendingPathComponent:@".ninja_log"];
-    NSString *ninjaPath = [@(SRCROOT) stringByAppendingPathComponent:@"llbuild-test-tools/utils/Xcode/ninja"];
+    NSString *ninjaCmd = [NinjaPerfTests findNinja];
     // NOTE: We have to pipe to /dev/null because Ninja has no -q (Ninja #480).
     ExecuteShellCommand([NSString stringWithFormat:@"%@  -C \"%@\" all > /dev/null",
-                         ninjaPath, pseudoLLVMPath].UTF8String);
+                         ninjaCmd, pseudoLLVMPath].UTF8String);
     
     // Test the null build performance.
     printf("performing full builds (performance test)...\n");
     [self measureBlock:^{
         // For each iteration, make clean and remove the database file.
         ExecuteShellCommand([NSString stringWithFormat:@"%@ -C \"%@\" -t clean",
-                             ninjaPath, pseudoLLVMPath].UTF8String);
+                             ninjaCmd, pseudoLLVMPath].UTF8String);
         ExecuteShellCommand([NSString stringWithFormat:@"rm -f \"%@\"",
                              dbPath].UTF8String);
         
         ExecuteShellCommand([NSString stringWithFormat:@"%@ -C \"%@\" all > /dev/null",
-                             ninjaPath, pseudoLLVMPath].UTF8String);
+                             ninjaCmd, pseudoLLVMPath].UTF8String);
     }];
 }
 
@@ -284,16 +293,16 @@ static void ExecuteShellCommand(const char *String) {
     // Build once to initialize the database.
     printf("performing initial build...\n");
     NSString *pseudoLLVMPath = [sandboxDir stringByAppendingPathComponent:@"pseudo-llvm"];
-    NSString *ninjaPath = [@(SRCROOT) stringByAppendingPathComponent:@"llbuild-test-tools/utils/Xcode/ninja"];
+    NSString *ninjaCmd = [NinjaPerfTests findNinja];
     // NOTE: We have to pipe to /dev/null because Ninja has no -q (Ninja #480).
     ExecuteShellCommand([NSString stringWithFormat:@"%@ -C \"%@\" > /dev/null",
-                            ninjaPath, pseudoLLVMPath].UTF8String);
+                            ninjaCmd, pseudoLLVMPath].UTF8String);
     
     // Test the null build performance.
     printf("performing null builds (performance test)...\n");
     [self measureBlock:^{
         ExecuteShellCommand([NSString stringWithFormat:@"%@ -j1 -C \"%@\" > /dev/null",
-                             ninjaPath, pseudoLLVMPath].UTF8String);
+                             ninjaCmd, pseudoLLVMPath].UTF8String);
         
     }];
 }
