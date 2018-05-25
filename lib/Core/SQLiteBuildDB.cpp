@@ -54,6 +54,14 @@ template<> struct ::llvm::DenseMapInfo<DBKeyID> {
   }
 };
 
+// Helper macro checking and returning error messages for failed SQLite calls
+#define checkSQLiteResultOKReturnFalse(result) \
+if (result != SQLITE_OK) { \
+  *error_out = getCurrentErrorMessage(); \
+  return false; \
+}
+
+
 namespace {
 
 class SQLiteBuildDB : public BuildDB {
@@ -241,37 +249,37 @@ public:
     result = sqlite3_prepare_v2(
       db, findKeyIDForKeyStmtSQL,
       -1, &findKeyIDForKeyStmt, nullptr);
-    assert(result == SQLITE_OK);
+    checkSQLiteResultOKReturnFalse(result);
 
     result = sqlite3_prepare_v2(
       db, findKeyNameForKeyIDStmtSQL,
       -1, &findKeyNameForKeyIDStmt, nullptr);
-    assert(result == SQLITE_OK);
-    
+    checkSQLiteResultOKReturnFalse(result);
+
     result = sqlite3_prepare_v2(
       db, insertIntoKeysStmtSQL,
       -1, &insertIntoKeysStmt, nullptr);
-    assert(result == SQLITE_OK);
-    
+    checkSQLiteResultOKReturnFalse(result);
+
     result = sqlite3_prepare_v2(
       db, insertIntoRuleResultsStmtSQL,
       -1, &insertIntoRuleResultsStmt, nullptr);
-    assert(result == SQLITE_OK);
-    
+    checkSQLiteResultOKReturnFalse(result);
+
     result = sqlite3_prepare_v2(
       db, deleteFromKeysStmtSQL,
       -1, &deleteFromKeysStmt, nullptr);
-    assert(result == SQLITE_OK);
-    
+    checkSQLiteResultOKReturnFalse(result);
+
     result = sqlite3_prepare_v2(
       db, findRuleResultStmtSQL,
       -1, &findRuleResultStmt, nullptr);
-    assert(result == SQLITE_OK);
+    checkSQLiteResultOKReturnFalse(result);
 
     result = sqlite3_prepare_v2(
       db, fastFindRuleResultStmtSQL,
       -1, &fastFindRuleResultStmt, nullptr);
-    assert(result == SQLITE_OK);
+    checkSQLiteResultOKReturnFalse(result);
 
     return true;
   }
@@ -310,7 +318,11 @@ public:
     result = sqlite3_prepare_v2(
       db, "SELECT iteration FROM info LIMIT 1",
       -1, &stmt, nullptr);
-    assert(result == SQLITE_OK);
+    if (result != SQLITE_OK) {
+      *success_out = false;
+      *error_out = getCurrentErrorMessage();
+      return 0;
+    }
 
     result = sqlite3_step(stmt);
     if (result != SQLITE_ROW) {
@@ -335,9 +347,9 @@ public:
     result = sqlite3_prepare_v2(
       db, "UPDATE info SET iteration = ? WHERE id == 0;",
       -1, &stmt, nullptr);
-    assert(result == SQLITE_OK);
+    checkSQLiteResultOKReturnFalse(result);
     result = sqlite3_bind_int64(stmt, /*index=*/1, value);
-    assert(result == SQLITE_OK);
+    checkSQLiteResultOKReturnFalse(result);
 
     result = sqlite3_step(stmt);
     if (result != SQLITE_DONE) {
@@ -388,12 +400,12 @@ public:
       // DBKeyID is known, perform the fast path that avoids table joining
 
       result = sqlite3_reset(fastFindRuleResultStmt);
-      assert(result == SQLITE_OK);
+      checkSQLiteResultOKReturnFalse(result);
       result = sqlite3_clear_bindings(fastFindRuleResultStmt);
-      assert(result == SQLITE_OK);
+      checkSQLiteResultOKReturnFalse(result);
       result = sqlite3_bind_int64(fastFindRuleResultStmt, /*index=*/1,
                                   it->second.value);
-      assert(result == SQLITE_OK);
+      checkSQLiteResultOKReturnFalse(result);
 
       // If the rule wasn't found, we are done.
       result = sqlite3_step(fastFindRuleResultStmt);
@@ -422,13 +434,13 @@ public:
       // KeyID is not known, perform the 'normal' search using the key value
 
       result = sqlite3_reset(findRuleResultStmt);
-      assert(result == SQLITE_OK);
+      checkSQLiteResultOKReturnFalse(result);
       result = sqlite3_clear_bindings(findRuleResultStmt);
-      assert(result == SQLITE_OK);
+      checkSQLiteResultOKReturnFalse(result);
       result = sqlite3_bind_text(findRuleResultStmt, /*index=*/1,
                                  rule.key.data(), rule.key.size(),
                                  SQLITE_STATIC);
-      assert(result == SQLITE_OK);
+      checkSQLiteResultOKReturnFalse(result);
 
       // If the rule wasn't found, we are done.
       result = sqlite3_step(findRuleResultStmt);
@@ -475,7 +487,11 @@ public:
 
       // Map the database key ID into an engine key ID (note that we already
       // hold the dbMutex at this point as required by getKeyIDforID())
-      result_out->dependencies[i] = getKeyIDForID(dbKeyID);
+      KeyID keyID = getKeyIDForID(dbKeyID, error_out);
+      if (!error_out->empty()) {
+        return false;
+      }
+      result_out->dependencies[i] = keyID;
     }
 
     return true;
@@ -532,28 +548,28 @@ public:
 
     // Insert the actual rule result.
     result = sqlite3_reset(insertIntoRuleResultsStmt);
-    assert(result == SQLITE_OK);
+    checkSQLiteResultOKReturnFalse(result);
     result = sqlite3_clear_bindings(insertIntoRuleResultsStmt);
-    assert(result == SQLITE_OK);
+    checkSQLiteResultOKReturnFalse(result);
     result = sqlite3_bind_int64(insertIntoRuleResultsStmt, /*index=*/1,
                                dbKeyID.value);
-    assert(result == SQLITE_OK);
+    checkSQLiteResultOKReturnFalse(result);
     result = sqlite3_bind_blob(insertIntoRuleResultsStmt, /*index=*/2,
                                ruleResult.value.data(),
                                ruleResult.value.size(),
                                SQLITE_STATIC);
-    assert(result == SQLITE_OK);
+    checkSQLiteResultOKReturnFalse(result);
     result = sqlite3_bind_int64(insertIntoRuleResultsStmt, /*index=*/3,
                                 ruleResult.builtAt);
-    assert(result == SQLITE_OK);
+    checkSQLiteResultOKReturnFalse(result);
     result = sqlite3_bind_int64(insertIntoRuleResultsStmt, /*index=*/4,
                                 ruleResult.computedAt);
-    assert(result == SQLITE_OK);
+    checkSQLiteResultOKReturnFalse(result);
     result = sqlite3_bind_blob(insertIntoRuleResultsStmt, /*index=*/5,
                                encoder.data(),
                                encoder.size(),
                                SQLITE_STATIC);
-    assert(result == SQLITE_OK);
+    checkSQLiteResultOKReturnFalse(result);
     result = sqlite3_step(insertIntoRuleResultsStmt);
     if (result != SQLITE_DONE) {
       *error_out = getCurrentErrorMessage();
@@ -625,18 +641,24 @@ private:
   // return a DBKeyID for the given engine KeyID. This should really only be
   // used by the above cached getKeyID() method.
   DBKeyID getKeyIDFromDB(KeyID keyID, std::string *error_out) {
+#define checkSQLiteResultOKReturnDBKeyID(result) \
+if (result != SQLITE_OK) { \
+  *error_out = getCurrentErrorMessage(); \
+  return DBKeyID(); \
+}
+
     int result;
 
     // Search for the key in the key_names table
     auto key = delegate->getKeyForID(keyID);
     result = sqlite3_reset(findKeyIDForKeyStmt);
-    assert(result == SQLITE_OK);
+    checkSQLiteResultOKReturnDBKeyID(result);
     result = sqlite3_clear_bindings(findKeyIDForKeyStmt);
-    assert(result == SQLITE_OK);
+    checkSQLiteResultOKReturnDBKeyID(result);
     result = sqlite3_bind_text(findKeyIDForKeyStmt, /*index=*/1,
                                key.data(), key.size(),
                                SQLITE_STATIC);
-    assert(result == SQLITE_OK);
+    checkSQLiteResultOKReturnDBKeyID(result);
 
     result = sqlite3_step(findKeyIDForKeyStmt);
     if (result == SQLITE_ROW) {
@@ -648,13 +670,13 @@ private:
 
     // Did not find the key, need to insert.
     result = sqlite3_reset(insertIntoKeysStmt);
-    assert(result == SQLITE_OK);
+    checkSQLiteResultOKReturnDBKeyID(result);
     result = sqlite3_clear_bindings(insertIntoKeysStmt);
-    assert(result == SQLITE_OK);
+    checkSQLiteResultOKReturnDBKeyID(result);
     result = sqlite3_bind_text(insertIntoKeysStmt, /*index=*/1,
                                key.data(), key.size(),
                                SQLITE_STATIC);
-    assert(result == SQLITE_OK);
+    checkSQLiteResultOKReturnDBKeyID(result);
     result = sqlite3_step(insertIntoKeysStmt);
     if (result != SQLITE_DONE) {
       *error_out = getCurrentErrorMessage();
@@ -662,13 +684,20 @@ private:
     }
 
     return DBKeyID(sqlite3_last_insert_rowid(db));
+#undef checkSQLiteResultOKReturnDBKeyID
   }
 
   /// Maps a DBKeyID into an engine KeyID
   ///
   /// This method is not thread-safe. The caller must protect access via the
   /// dbMutex.
-  KeyID getKeyIDForID(DBKeyID keyID) {
+  KeyID getKeyIDForID(DBKeyID keyID, std::string *error_out) {
+#define checkSQLiteResultOKReturnKeyID(result) \
+if (result != SQLITE_OK) { \
+  *error_out = getCurrentErrorMessage(); \
+  return KeyID(); \
+}
+
     // Search local db <-> engine mapping cache
     auto it = engineKeyIDs.find(keyID);
     if (it != engineKeyIDs.end())
@@ -677,14 +706,17 @@ private:
     // Search for the key in the database
     int result;
     result = sqlite3_reset(findKeyNameForKeyIDStmt);
-    assert(result == SQLITE_OK);
+    checkSQLiteResultOKReturnKeyID(result);
     result = sqlite3_clear_bindings(findKeyNameForKeyIDStmt);
-    assert(result == SQLITE_OK);
+    checkSQLiteResultOKReturnKeyID(result);
     result = sqlite3_bind_int64(findKeyNameForKeyIDStmt, /*index=*/1, keyID.value);
-    assert(result == SQLITE_OK);
+    checkSQLiteResultOKReturnKeyID(result);
 
     result = sqlite3_step(findKeyNameForKeyIDStmt);
-    assert(result == SQLITE_ROW);
+    if (result != SQLITE_ROW) {
+      *error_out = getCurrentErrorMessage();
+      return KeyID();
+    }
     assert(sqlite3_column_count(findKeyNameForKeyIDStmt) == 1);
 
     // Found a key
@@ -699,6 +731,7 @@ private:
     dbKeyIDs[engineKeyID] = keyID;
 
     return engineKeyID;
+#undef checkSQLiteResultOKReturnKeyID
   }
 };
 
@@ -713,3 +746,5 @@ std::unique_ptr<BuildDB> core::createSQLiteBuildDB(StringRef path,
 
   return std::move(db);
 }
+
+#undef checkSQLiteResultOKReturnFalse
