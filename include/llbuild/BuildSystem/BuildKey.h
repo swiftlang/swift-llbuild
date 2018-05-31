@@ -82,6 +82,7 @@ private:
     memcpy(&key[pos], data.data(), dataSize);
     pos += dataSize;
     assert(key.size() == pos);
+    (void)pos;
   }
 
 public:

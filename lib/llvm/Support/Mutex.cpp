@@ -50,6 +50,8 @@ MutexImpl::MutexImpl( bool recursive)
   pthread_mutexattr_t attr;
 
   // Initialize the mutex attributes
+  // FIXME: We silence analyzer warnings about errorcode, but should probably
+  // be doing something more sensible at runtime with the checks (abort?).
   int errorcode = pthread_mutexattr_init(&attr);
   assert(errorcode == 0); (void)errorcode;
 
@@ -57,15 +59,15 @@ MutexImpl::MutexImpl( bool recursive)
   // otherwise.
   int kind = ( recursive  ? PTHREAD_MUTEX_RECURSIVE : PTHREAD_MUTEX_NORMAL );
   errorcode = pthread_mutexattr_settype(&attr, kind);
-  assert(errorcode == 0);
+  assert(errorcode == 0); (void)errorcode;
 
   // Initialize the mutex
   errorcode = pthread_mutex_init(mutex, &attr);
-  assert(errorcode == 0);
+  assert(errorcode == 0); (void)errorcode;
 
   // Destroy the attributes
   errorcode = pthread_mutexattr_destroy(&attr);
-  assert(errorcode == 0);
+  assert(errorcode == 0); (void)errorcode;
 
   // Assign the data member
   data_ = mutex;

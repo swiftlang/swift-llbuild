@@ -525,6 +525,7 @@ commands:
 
     auto result = system.build(keyToBuild);
 
+    ASSERT_TRUE(result.hasValue());
     ASSERT_TRUE(result.getValue().isStaleFileRemoval());
     ASSERT_EQ(result.getValue().getStaleFileList().size(), 1UL);
     ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "a.out") == 0);
@@ -562,6 +563,7 @@ commands:
   ASSERT_TRUE(loadingResult);
   auto result = system.build(keyToBuild);
 
+  ASSERT_TRUE(result.hasValue());
   ASSERT_TRUE(result.getValue().isStaleFileRemoval());
   ASSERT_EQ(result.getValue().getStaleFileList().size(), 1UL);
   ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "b.out") == 0);
@@ -613,6 +615,7 @@ commands:
 
     auto result = system.build(keyToBuild);
 
+    ASSERT_TRUE(result.hasValue());
     ASSERT_TRUE(result.getValue().isStaleFileRemoval());
     ASSERT_EQ(result.getValue().getStaleFileList().size(), 3UL);
     ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "/bar/a.out") == 0);
@@ -653,6 +656,7 @@ commands:
   ASSERT_TRUE(loadingResult);
   auto result = system.build(keyToBuild);
 
+  ASSERT_TRUE(result.hasValue());
   ASSERT_TRUE(result.getValue().isStaleFileRemoval());
   ASSERT_EQ(result.getValue().getStaleFileList().size(), 1UL);
   ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "/bar/b.out") == 0);
@@ -709,6 +713,7 @@ commands:
 
     auto result = system.build(keyToBuild);
 
+    ASSERT_TRUE(result.hasValue());
     ASSERT_TRUE(result.getValue().isStaleFileRemoval());
     ASSERT_EQ(result.getValue().getStaleFileList().size(), 1UL);
     ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "a.out") == 0);
@@ -745,6 +750,7 @@ commands:
   ASSERT_TRUE(loadingResult);
   auto result = system.build(keyToBuild);
 
+  ASSERT_TRUE(result.hasValue());
   ASSERT_TRUE(result.getValue().isStaleFileRemoval());
   ASSERT_EQ(result.getValue().getStaleFileList().size(), 1UL);
   ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "/bar/b.out") == 0);
@@ -794,6 +800,7 @@ commands:
 
     auto result = system.build(keyToBuild);
 
+    ASSERT_TRUE(result.hasValue());
     ASSERT_TRUE(result.getValue().isStaleFileRemoval());
     ASSERT_EQ(result.getValue().getStaleFileList().size(), 2UL);
     ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "a.out") == 0);
@@ -832,6 +839,7 @@ commands:
   ASSERT_TRUE(loadingResult);
   auto result = system.build(keyToBuild);
 
+  ASSERT_TRUE(result.hasValue());
   ASSERT_TRUE(result.getValue().isStaleFileRemoval());
   ASSERT_EQ(result.getValue().getStaleFileList().size(), 1UL);
   ASSERT_TRUE(strcmp(result.getValue().getStaleFileList()[0].str().c_str(), "/bar/b.out") == 0);
@@ -890,6 +898,7 @@ commands:
 
     auto result = system.build(keyToBuild);
 
+    ASSERT_TRUE(result.hasValue());
     ASSERT_TRUE(result.getValue().isStaleFileRemoval());
     ASSERT_EQ(result.getValue().getStaleFileList().size(), 50UL);
 
@@ -933,6 +942,7 @@ commands:
   ASSERT_TRUE(loadingResult);
   auto result = system.build(keyToBuild);
 
+  ASSERT_TRUE(result.hasValue());
   ASSERT_TRUE(result.getValue().isStaleFileRemoval());
   ASSERT_EQ(result.getValue().getStaleFileList().size(), 22UL);
 

@@ -167,6 +167,8 @@ private:
   BuildValue(Kind kind, FileInfo directoryInfo, ArrayRef<std::string> values)
       : BuildValue(kind, directoryInfo)
   {
+    assert(kindHasStringList());
+
     // Construct the concatenated data.
     uint64_t size = 0;
     for (auto value: values) {
@@ -186,6 +188,8 @@ private:
   }
 
   BuildValue(Kind kind, ArrayRef<std::string> values) : kind(kind) {
+    assert(kindHasStringList());
+
     // Construct the concatenated data.
     uint64_t size = 0;
     for (auto value: values) {

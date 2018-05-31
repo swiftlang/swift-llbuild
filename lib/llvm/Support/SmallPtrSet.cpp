@@ -248,7 +248,8 @@ void SmallPtrSetImplBase::CopyFrom(const SmallPtrSetImplBase &RHS) {
   CurArraySize = RHS.CurArraySize;
 
   // Copy over the contents from the other set
-  memcpy(CurArray, RHS.CurArray, sizeof(void*)*CurArraySize);
+  if (CurArray)
+    memcpy(CurArray, RHS.CurArray, sizeof(void*)*CurArraySize);
   
   NumElements = RHS.NumElements;
   NumTombstones = RHS.NumTombstones;
