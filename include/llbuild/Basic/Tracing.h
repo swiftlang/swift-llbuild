@@ -15,57 +15,99 @@
 
 #include "llvm/ADT/StringRef.h"
 
-// Allow vendored llbuild installations to provide custom tracing entry points
-#if __has_include("TracingMacros.h")
-#include "TracingMacros.h"
-#endif
+// os_signpost is included in mac OS 10.14, if that header is not available, we don't trace at all.
+#if __has_include(<os/signpost.h>)
+#include <os/signpost.h>
 
-#ifndef LLBUILD_TRACE_POINT
-#define LLBUILD_TRACE_POINT(kind, arg1, arg2, arg3, arg4) \
-    { (void)(kind); (void)(arg1); (void)(arg2); (void)(arg3); (void)(arg4); }
-#endif
+/// Returns the singleton instance of os_log_t to use with os_log and os_signpost API.
+API_AVAILABLE(macos(10.12), ios(10.0), watchos(3.0), tvos(10.0))
+static os_log_t getLog() {
+  static os_log_t generalLog;
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    generalLog = os_log_create("com.apple.dt.XCBuild", "llbuild");
+  });
+  return generalLog;
+}
 
-#ifndef LLBUILD_TRACE_INTERVAL_BEGIN
-#define LLBUILD_TRACE_INTERVAL_BEGIN(kind, arg1, arg2, arg3, arg4) \
-    { (void)(kind); (void)(arg1); (void)(arg2); (void)(arg3); (void)(arg4); }
-#endif
+/// Returns a singleton id to use for all signpost calls during the lifetime of the program.
+API_AVAILABLE(macos(10.14), ios(12.0), tvos(12.0), watchos(5.0))
+static os_signpost_id_t signpost_id() {
+  static os_signpost_id_t signpost_id;
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+      signpost_id = os_signpost_id_generate(getLog());
+  });
+  return signpost_id;
+}
 
-#ifndef LLBUILD_TRACE_INTERVAL_END
-#define LLBUILD_TRACE_INTERVAL_END(kind, arg1, arg2, arg3, arg4) \
-    { (void)(kind); (void)(arg1); (void)(arg2); (void)(arg3); (void)(arg4); }
-#endif
+/// Begin an interval if tracing is enabled.
+#define LLBUILD_TRACE_INTERVAL_BEGIN(name, ...) { \
+if (__builtin_available(macOS 10.14, *)) os_signpost_interval_begin(getLog(), signpost_id(), name, ##__VA_ARGS__); \
+}
 
-#ifndef LLBUILD_TRACE_STRING
-#define LLBUILD_TRACE_STRING(kind, str) \
-    ([&kind, &str]{ (void)(kind); (void)(str); return 0; })()
-#endif
+/// End an interval if tracing is enabled.
+#define LLBUILD_TRACE_INTERVAL_END(name, ...) { \
+if (__builtin_available(macOS 10.14, *)) os_signpost_interval_end(getLog(), signpost_id(), name, ##__VA_ARGS__); \
+}
+
+/// Trace an event without duration at a point in time.
+#define LLBUILD_TRACE_POINT(name, ...) { \
+if (__builtin_available(macOS 10.12, *)) os_log(getLog(), ##__VA_ARGS__); \
+}
+
+#else
+
+// Define dummy definitions to do nothing
+#define LLBUILD_TRACE_POINT(name, ...) { (void)(name); }
+#define LLBUILD_TRACE_INTERVAL_BEGIN(name, ...) { (void)(name); }
+#define LLBUILD_TRACE_INTERVAL_END(name, ...) { (void)(name); }
+#define LLBUILD_TRACING_SET_ENABLED(on) { (void)on; }
+
+#endif // __has_include(<os/signpost.h>)
 
 namespace llbuild {
-
+  
 extern bool TracingEnabled;
+  
+struct TracingExecutionQueueJob {
+  TracingExecutionQueueJob(int laneNumber, llvm::StringRef commandName) {
+    if (!TracingEnabled) return;
+    LLBUILD_TRACE_INTERVAL_BEGIN("execution_queue_job", "lane:%d;command:%s", laneNumber, commandName.str().c_str());
+  }
+  
+  ~TracingExecutionQueueJob() {
+    if (!TracingEnabled) return;
+    LLBUILD_TRACE_INTERVAL_END("execution_queue_job");
+  }
+};
 
-/// Tracing Kind Codes
-///
-/// These are currently global across the entire library, please take care to
-/// not unnecessarily cause them to reorder as it will prevent use of prior
-/// tracing data.
-enum class TraceEventKind {
-  // Execution Queue
-    
-  /// An individual job execution interval.
-  ExecutionQueueJob = 0,
-      
-  /// A subprocess launch.
-  ExecutionQueueSubprocess = 1,
-
-  /// A callback from the task, \see EngineTaskCallbackKind.
-  EngineTaskCallback = 2,
-
-  /// An event on the engine processing queue, \see EngineQueueItemKind.
-  EngineQueueItemEvent = 3,
-
-  /// A point event to track the depth of the execution queue
-  ExecutionQueueDepth = 4,
+struct TracingExecutionQueueSubprocess {
+  TracingExecutionQueueSubprocess(uint32_t laneNumber,
+                                  llvm::StringRef commandName)
+      : laneNumber(laneNumber), pid(0), utime(0), stime(0), maxrss(0) {
+    if (!TracingEnabled) return;
+    LLBUILD_TRACE_INTERVAL_BEGIN("execution_queue_subprocess", "lane:%d;command:%s", laneNumber, commandName.str().c_str());
+  }
+  
+  void update(pid_t pid, uint64_t utime, uint64_t stime, long maxrss) {
+    this->pid = pid;
+    this->utime = utime;
+    this->stime = stime;
+    this->maxrss = maxrss;
+  }
+  
+  ~TracingExecutionQueueSubprocess() {
+    if (!TracingEnabled) return;
+    LLBUILD_TRACE_INTERVAL_END("execution_queue_subprocess", "lane:%d;pid:%d;utime:%llu;stime:%llu;maxrss:%ld", laneNumber, pid, utime, stime, maxrss);
+  }
+  
+private:
+  uint32_t laneNumber;
+  pid_t pid;
+  uint64_t utime;
+  uint64_t stime;
+  long maxrss;
 };
 
 // Engine Task Callbacks
@@ -74,6 +116,21 @@ enum class EngineTaskCallbackKind {
   ProvidePriorValue,
   ProvideValue,
   InputsAvailable,
+};
+
+struct TracingEngineTaskCallback {
+  TracingEngineTaskCallback(EngineTaskCallbackKind kind, uint64_t key)
+      : key(key) {
+    if (!TracingEnabled) return;
+    LLBUILD_TRACE_INTERVAL_BEGIN("engine_task_callback", "key:%llu;kind:%d", key, uint32_t(kind));
+  }
+  
+  ~TracingEngineTaskCallback() {
+    if (!TracingEnabled) return;
+    LLBUILD_TRACE_INTERVAL_END("engine_task_callback", "key:%llu", key);
+  }
+private:
+  uint64_t key;
 };
 
 // Engine Queue Processing
@@ -88,70 +145,25 @@ enum class EngineQueueItemKind {
   BreakingCycle,
 };
 
-/// An RAII type to define an individual tracing point.
-struct TracingPoint {
-  const uint32_t kind;
-  const uint64_t arg1;
-  const uint64_t arg2;
-  const uint64_t arg3;
-  const uint64_t arg4;
-
-  TracingPoint(TraceEventKind kind, uint64_t arg1 = 0, uint64_t arg2 = 0,
-                uint64_t arg3 = 0, uint64_t arg4 = 0)
-    : kind(uint32_t(kind)), arg1(arg1), arg2(arg2), arg3(arg3), arg4(arg4)
-  {
-    if (TracingEnabled)
-      LLBUILD_TRACE_POINT(kind, arg1, arg2, arg3, arg4);
+struct TracingEngineQueueItemEvent {
+  TracingEngineQueueItemEvent(EngineQueueItemKind kind, char const *key)
+      : key(key) {
+    if (!TracingEnabled) return;
+    LLBUILD_TRACE_INTERVAL_BEGIN("engine_queue_item_event", "key:%s;kind:%d", key, kind);
   }
-};
-
-/// An RAII type to define an individual tracing interval.
-///
-/// The client may modify the values of the arguments after initialization, for
-/// example to submit additional metrics for the event kind as part of the
-/// interval completion event.
-struct TracingInterval {
-  const uint32_t kind;
-  uint64_t arg1;
-  uint64_t arg2;
-  uint64_t arg3;
-  uint64_t arg4;
-
-  TracingInterval(TraceEventKind kind, uint64_t arg1 = 0, uint64_t arg2 = 0,
-                  uint64_t arg3 = 0, uint64_t arg4 = 0)
-      : kind(uint32_t(kind)), arg1(arg1), arg2(arg2), arg3(arg3), arg4(arg4)
-  {
-    if (TracingEnabled)
-      LLBUILD_TRACE_INTERVAL_BEGIN(kind, arg1, arg2, arg3, arg4);
-  }
-  ~TracingInterval() {
-    if (TracingEnabled)
-      LLBUILD_TRACE_INTERVAL_END(kind, arg1, arg2, arg3, arg4);
-  }
-
-  // MARK: Utility Wrappers
   
-  TracingInterval(EngineTaskCallbackKind arg1)
-    : TracingInterval(TraceEventKind::EngineTaskCallback, uint64_t(arg1)) {}
-
-  TracingInterval(EngineQueueItemKind arg1)
-    : TracingInterval(TraceEventKind::EngineQueueItemEvent, uint64_t(arg1)) {}
+  ~TracingEngineQueueItemEvent() {
+    if (!TracingEnabled) return;
+    LLBUILD_TRACE_INTERVAL_END("engine_queue_item_event", "key:%s", key)
+  }
+private:
+  char const *key;
 };
-
-/// An RAII type to define a string.
-struct TracingString {
-  const uint32_t kind;
-
-  /// The integer code for the string, which can be provided to a trace point or
-  /// interval.
-  const uint64_t value;
-
-  TracingString(TraceEventKind kind, llvm::StringRef str)
-    : kind(uint32_t(kind)),
-    value(TracingEnabled ? LLBUILD_TRACE_STRING(kind, str) : 0) {}
-
-  operator uint64_t() const { return value; }
-};
+  
+inline void TracingExecutionQueueDepth(uint64_t depth) {
+  if (!TracingEnabled) return;
+  LLBUILD_TRACE_POINT("execution_queue_depth", "depth:%llu", depth);
+}
   
 }
 

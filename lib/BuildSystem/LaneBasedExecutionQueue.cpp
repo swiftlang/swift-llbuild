@@ -192,12 +192,9 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
       // Process the job.
       LaneBasedExecutionQueueJobContext context{ laneNumber, job };
       {
-        TracingPoint(TraceEventKind::ExecutionQueueDepth, readyJobsCount);
-        TracingString commandNameID(
-            TraceEventKind::ExecutionQueueJob,
-            job.getForCommand()->getName());
-        TracingInterval i(TraceEventKind::ExecutionQueueJob,
-                          context.laneNumber, commandNameID);
+        TracingExecutionQueueDepth(readyJobsCount);
+        TracingExecutionQueueJob t(context.laneNumber, job.getForCommand()->getShortDescription());
+        
         getDelegate().commandJobStarted(job.getForCommand());
         job.execute(reinterpret_cast<QueueJobContext*>(&context));
         getDelegate().commandJobFinished(job.getForCommand());
@@ -279,7 +276,7 @@ public:
       readyJobsCondition.notify_one();
       readyJobsCount = readyJobs->size();
     }
-    TracingPoint(TraceEventKind::ExecutionQueueDepth, readyJobsCount);
+    TracingExecutionQueueDepth(readyJobsCount);
   }
 
   virtual void cancelAllJobs() override {
@@ -305,8 +302,7 @@ public:
                  bool canSafelyInterrupt) override {
     LaneBasedExecutionQueueJobContext& context =
       *reinterpret_cast<LaneBasedExecutionQueueJobContext*>(opaqueContext);
-    TracingInterval subprocessInterval(TraceEventKind::ExecutionQueueSubprocess,
-                                       context.laneNumber);
+    TracingExecutionQueueSubprocess subprocessInterval(context.laneNumber, context.job.getForCommand()->getShortDescription());
 
     {
       std::unique_lock<std::mutex> lock(readyJobsMutex);
@@ -551,17 +547,15 @@ public:
     }
 
     // We report additional info in the tracing interval
-    //   arg2: user time, in us
-    //   arg3: sys time, in us
-    //   arg4: memory usage, in bytes
-    uint64_t utime = (uint64_t(usage.ru_utime.tv_sec) * 1000000000 +
-                      uint64_t(usage.ru_utime.tv_usec) * 1000);
-    uint64_t stime = (uint64_t(usage.ru_stime.tv_sec) * 1000000000 +
-                      uint64_t(usage.ru_stime.tv_usec) * 1000);
+    //   - user time, in µs
+    //   - sys time, in µs
+    //   - memory usage, in bytes
+    uint64_t utime = (uint64_t(usage.ru_utime.tv_sec) * 1000000 +
+                      uint64_t(usage.ru_utime.tv_usec));
+    uint64_t stime = (uint64_t(usage.ru_stime.tv_sec) * 1000000 +
+                      uint64_t(usage.ru_stime.tv_usec));
 
-    subprocessInterval.arg2 = utime;
-    subprocessInterval.arg3 = stime;
-    subprocessInterval.arg4 = usage.ru_maxrss;
+    subprocessInterval.update(pid, utime, stime, usage.ru_maxrss);
     
     // FIXME: We should report a statistic for how much output we read from the
     // subprocess (probably as a new point sample).
