@@ -513,7 +513,7 @@ private:
 
     // Inform the task it should start.
     {
-      TracingInterval i(EngineTaskCallbackKind::Start);
+      TracingEngineTaskCallback i(EngineTaskCallbackKind::Start, ruleInfo.keyID);
       task->start(buildEngine);
     }
 
@@ -524,7 +524,7 @@ private:
     // the clients that want it can ask? It's cheap to provide here, so
     // ultimately this is mostly a matter of cleanliness.
     if (ruleInfo.result.builtAt != 0) {
-      TracingInterval i(EngineTaskCallbackKind::ProvidePriorValue);
+      TracingEngineTaskCallback i(EngineTaskCallbackKind::ProvidePriorValue, ruleInfo.keyID);
       task->providePriorValue(buildEngine, ruleInfo.result.value);
     }
 
@@ -676,7 +676,7 @@ private:
       // FIXME: We don't want to process all of these requests, this amounts to
       // doing all of the dependency scanning up-front.
       while (!ruleInfosToScan.empty()) {
-        TracingInterval i(EngineQueueItemKind::RuleToScan);
+        TracingEngineQueueItemEvent i(EngineQueueItemKind::RuleToScan, buildKey.c_str());
         
         didWork = true;
 
@@ -688,7 +688,7 @@ private:
 
       // Process all of the pending input requests.
       while (!inputRequests.empty()) {
-        TracingInterval i(EngineQueueItemKind::InputRequest);
+        TracingEngineQueueItemEvent i(EngineQueueItemKind::InputRequest, buildKey.c_str());
         
         didWork = true;
 
@@ -744,7 +744,7 @@ private:
 
       // Process all of the finished inputs.
       while (!finishedInputRequests.empty()) {
-        TracingInterval i(EngineQueueItemKind::FinishedInputRequest);
+        TracingEngineQueueItemEvent i(EngineQueueItemKind::FinishedInputRequest, buildKey.c_str());
         
         didWork = true;
 
@@ -788,7 +788,7 @@ private:
         // cheaply.
         assert(request.inputRuleInfo->isComplete(this) || request.forcePriorValue);
         {
-          TracingInterval i(EngineTaskCallbackKind::ProvideValue);
+          TracingEngineTaskCallback i(EngineTaskCallbackKind::ProvideValue, request.inputRuleInfo->keyID);
           request.taskInfo->task->provideValue(
               buildEngine, request.inputID, request.inputRuleInfo->result.value);
         }
@@ -799,7 +799,7 @@ private:
 
       // Process all of the ready to run tasks.
       while (!readyTaskInfos.empty()) {
-        TracingInterval i(EngineQueueItemKind::ReadyTask);
+        TracingEngineQueueItemEvent i(EngineQueueItemKind::ReadyTask, buildKey.c_str());
         
         didWork = true;
 
@@ -821,7 +821,7 @@ private:
         // FIXME: We need to track this state, and generate an error if this
         // task ever requests additional inputs.
         {
-          TracingInterval i(EngineTaskCallbackKind::InputsAvailable);
+          TracingEngineTaskCallback i(EngineTaskCallbackKind::InputsAvailable, ruleInfo->keyID);
           taskInfo->task->inputsAvailable(buildEngine);
         }
 
@@ -831,7 +831,7 @@ private:
 
       // Process all of the finished tasks.
       while (true) {
-        TracingInterval i(EngineQueueItemKind::FinishedTask);
+        TracingEngineQueueItemEvent i(EngineQueueItemKind::FinishedTask, buildKey.c_str());
         
         // Try to take a task from the finished queue.
         TaskInfo* taskInfo = nullptr;
@@ -936,7 +936,7 @@ private:
       // code please also validate that \see cancelRemainingTasks() is still
       // correct.
       if (!didWork && numOutstandingUnfinishedTasks != 0) {
-        TracingInterval i(EngineQueueItemKind::Waiting);
+        TracingEngineQueueItemEvent i(EngineQueueItemKind::Waiting, buildKey.c_str());
         
         // Wait for our condition variable.
         std::unique_lock<std::mutex> lock(finishedTaskInfosMutex);
@@ -994,7 +994,7 @@ private:
   }
 
   std::vector<Rule*> findCycle(const KeyType& buildKey) {
-    TracingInterval i(EngineQueueItemKind::FindingCycle);
+    TracingEngineQueueItemEvent i(EngineQueueItemKind::FindingCycle, buildKey.c_str());
 
     // Gather all of the successor relationships.
     std::unordered_map<Rule*, std::vector<Rule*>> successorGraph;
@@ -1122,7 +1122,8 @@ private:
   }
 
   bool breakCycle(const std::vector<Rule*>& cycleList) {
-    TracingInterval i(EngineQueueItemKind::BreakingCycle);
+    // BreakingCycle doesn't need a key since it will not be called in parallel
+    TracingEngineQueueItemEvent _(EngineQueueItemKind::BreakingCycle, "0");
 
     // Search the cycle for potential means for breaking the cycle. Right now
     // we use two principle approaches, force a rule to be built (skipping
