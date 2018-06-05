@@ -25,7 +25,7 @@ static os_log_t getLog() {
   static os_log_t generalLog;
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
-    generalLog = os_log_create("com.apple.dt.XCBuild", "llbuild");
+    generalLog = os_log_create("org.swift.llbuild", "tracing");
   });
   return generalLog;
 }
