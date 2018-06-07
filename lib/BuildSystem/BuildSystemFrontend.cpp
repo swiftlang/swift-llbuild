@@ -172,15 +172,15 @@ std::string BuildSystemInvocation::formatDetectedCycle(const std::vector<core::R
         os << "custom task '" << key.getCustomTaskName() << "'";
         break;
       case BuildKey::Kind::DirectoryContents:
-        os << "directory-contents '" << key.getDirectoryContentsPath() << "'";
+        os << "directory-contents '" << key.getDirectoryPath() << "'";
         break;
       case BuildKey::Kind::DirectoryTreeSignature:
         os << "directory-tree-signature '"
-        << key.getDirectoryTreeSignaturePath() << "'";
+        << key.getDirectoryPath() << "'";
         break;
       case BuildKey::Kind::DirectoryTreeStructureSignature:
         os << "directory-tree-structure-signature '"
-        << key.getDirectoryTreeStructureSignaturePath() << "'";
+        << key.getDirectoryPath() << "'";
         break;
       case BuildKey::Kind::Node:
         os << "node '" << key.getNodeName() << "'";

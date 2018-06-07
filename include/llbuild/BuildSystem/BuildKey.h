@@ -13,8 +13,10 @@
 #ifndef LLBUILD_BUILDSYSTEM_BUILDKEY_H
 #define LLBUILD_BUILDSYSTEM_BUILDKEY_H
 
+#include "llbuild/Basic/BinaryCoding.h"
 #include "llbuild/Basic/Compiler.h"
 #include "llbuild/Basic/LLVM.h"
+#include "llbuild/Basic/StringList.h"
 #include "llbuild/Core/BuildEngine.h"
 #include "llbuild/BuildSystem/BuildDescription.h"
 
@@ -68,10 +70,18 @@ private:
     key.push_back(kindCode);
     key.append(str.begin(), str.end());
   }
-  BuildKey(char kindCode, StringRef name, StringRef data) {
-    // FIXME: We need good support infrastructure for binary encoding.
+
+  template<typename BinaryEncodable>
+  BuildKey(char kindCode, StringRef name, const BinaryEncodable& data) {
     uint32_t nameSize = name.size();
-    uint32_t dataSize = data.size();
+
+    // FIXME: Perhaps should use this encoder for the key itself? Right now
+    // we're manually building the keys and causing some extra memcpy overhead
+    // here.
+    basic::BinaryEncoder encoder;
+    encoder.write(data);
+    uint32_t dataSize = encoder.contents().size();
+
     key.resize(1 + sizeof(uint32_t) + nameSize + dataSize);
     uint32_t pos = 0;
     key[pos] = kindCode; pos += 1;
@@ -79,7 +89,7 @@ private:
     pos += sizeof(uint32_t);
     memcpy(&key[pos], name.data(), nameSize);
     pos += nameSize;
-    memcpy(&key[pos], data.data(), dataSize);
+    memcpy(&key[pos], encoder.contents().data(), dataSize);
     pos += dataSize;
     assert(key.size() == pos);
     (void)pos;
@@ -100,18 +110,21 @@ public:
   }
 
   /// Create a key for computing the contents of a directory.
-  static BuildKey makeDirectoryContents(StringRef path) {
-    return BuildKey('D', path);
+  static BuildKey makeDirectoryContents(StringRef path,
+                                        const basic::StringList& filters) {
+    return BuildKey('D', path, filters);
   }
 
   /// Create a key for computing the contents of a directory.
-  static BuildKey makeDirectoryTreeSignature(StringRef path) {
-    return BuildKey('S', path);
+  static BuildKey makeDirectoryTreeSignature(StringRef path,
+                                             const basic::StringList& filters) {
+    return BuildKey('S', path, filters);
   }
 
   /// Create a key for computing the structure of a directory.
-  static BuildKey makeDirectoryTreeStructureSignature(StringRef path) {
-    return BuildKey('s', path);
+  static BuildKey makeDirectoryTreeStructureSignature(
+      StringRef path, const basic::StringList& filters) {
+    return BuildKey('s', path, filters);
   }
 
   /// Create a key for computing a node result.
@@ -183,19 +196,21 @@ public:
     return StringRef(&key[1 + sizeof(uint32_t) + nameSize], dataSize);
   }
 
-  StringRef getDirectoryContentsPath() const {
-    assert(isDirectoryContents());
-    return StringRef(key.data()+1, key.size()-1);
+  StringRef getDirectoryPath() const {
+    assert(isDirectoryContents() || isDirectoryTreeSignature() ||
+           isDirectoryTreeStructureSignature());
+    uint32_t nameSize;
+    memcpy(&nameSize, &key[1], sizeof(uint32_t));
+    return StringRef(&key[1 + sizeof(uint32_t)], nameSize);
   }
 
-  StringRef getDirectoryTreeSignaturePath() const {
-    assert(isDirectoryTreeSignature());
-    return StringRef(key.data()+1, key.size()-1);
-  }
-
-  StringRef getDirectoryTreeStructureSignaturePath() const {
-    assert(isDirectoryTreeStructureSignature());
-    return StringRef(key.data()+1, key.size()-1);
+  StringRef getDirectoryFilters() const {
+    assert(isDirectoryContents() || isDirectoryTreeSignature() ||
+           isDirectoryTreeStructureSignature());
+    uint32_t nameSize;
+    memcpy(&nameSize, &key[1], sizeof(uint32_t));
+    uint32_t dataSize = key.size() - 1 - sizeof(uint32_t) - nameSize;
+    return StringRef(&key[1 + sizeof(uint32_t) + nameSize], dataSize);
   }
 
   StringRef getNodeName() const {

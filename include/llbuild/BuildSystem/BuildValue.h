@@ -398,7 +398,7 @@ template<>
 struct basic::BinaryCodingTraits<buildsystem::BuildValue::Kind> {
   typedef buildsystem::BuildValue::Kind Kind;
   
-  static inline void encode(Kind& value, BinaryEncoder& coder) {
+  static inline void encode(const Kind& value, BinaryEncoder& coder) {
     uint8_t tmp = uint8_t(value);
     assert(value == Kind(tmp));
     coder.write(tmp);

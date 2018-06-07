@@ -83,7 +83,7 @@ public:
 
   /// Encode a value to the stream.
   template<typename T>
-  void write(T value) {
+  void write(const T& value) {
     BinaryCodingTraits<T>::encode(value, *this);
   }
 
@@ -182,6 +182,13 @@ public:
   /// Finish decoding and clean up.
   void finish() {
     assert(isEmpty());
+  }
+};
+
+template<>
+struct BinaryCodingTraits<StringRef> {
+  static inline void encode(const StringRef& value, BinaryEncoder& coder) {
+    coder.writeBytes(value);
   }
 };
 
