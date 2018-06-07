@@ -197,7 +197,8 @@ TEST(BuildSystemTaskTests, directoryContents) {
 
   // Build a specific key.
   {
-    auto result = system.build(BuildKey::makeDirectoryContents(tempDir.str()));
+    auto result = system.build(BuildKey::makeDirectoryContents(tempDir.str(),
+                                                               StringList()));
     ASSERT_TRUE(result.hasValue());
     ASSERT_TRUE(result->isDirectoryContents());
     ASSERT_EQ(result->getDirectoryContents(), std::vector<StringRef>({
@@ -207,7 +208,8 @@ TEST(BuildSystemTaskTests, directoryContents) {
   // Check that a missing directory behaves properly.
   {
     auto result = system.build(BuildKey::makeDirectoryContents(
-                                   tempDir.str() + "/missing-subpath"));
+                                   tempDir.str() + "/missing-subpath",
+                                                               StringList()));
     ASSERT_TRUE(result.hasValue());
     ASSERT_TRUE(result->isMissingInput());
   }
@@ -308,7 +310,8 @@ TEST(BuildSystemTaskTests, directorySignature) {
   }
   
   // Create the build system.
-  auto keyToBuild = BuildKey::makeDirectoryTreeSignature(tempDir.str());
+  auto keyToBuild = BuildKey::makeDirectoryTreeSignature(tempDir.str(),
+                                                         StringList());
   auto description = llvm::make_unique<BuildDescription>();
   MockBuildSystemDelegate delegate;
   BuildSystem system(delegate, createLocalFileSystem());

@@ -49,6 +49,7 @@
 #include <mutex>
 #include <set>
 
+#include <fnmatch.h>
 #include <unistd.h>
 
 using namespace llbuild;
@@ -146,12 +147,13 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
   /// The internal schema version.
   ///
   /// Version History:
+  /// * 9: Added filters to Directory* BuildKeys
   /// * 8: Added DirectoryTreeStructureSignature to BuildValue
   /// * 7: Added StaleFileRemoval to BuildValue
   /// * 6: Added DirectoryContents to BuildKey
   /// * 5: Switch BuildValue to be BinaryCoding based
   /// * 4: Pre-history
-  static const uint32_t internalSchemaVersion = 8;
+  static const uint32_t internalSchemaVersion = 9;
   
   BuildSystem& buildSystem;
 
@@ -540,7 +542,8 @@ class DirectoryInputNodeTask : public Task {
       path = path.substr(0, path.size() - 1);
     }
     engine.taskNeedsInput(
-        this, BuildKey::makeDirectoryTreeSignature(path).toData(),
+        this, BuildKey::makeDirectoryTreeSignature(path,
+            node.directoryExclusionFilters()).toData(),
         /*inputID=*/0);
   }
 
@@ -583,7 +586,8 @@ class DirectoryStructureInputNodeTask : public Task {
       path = path.substr(0, path.size() - 1);
     }
     engine.taskNeedsInput(
-        this, BuildKey::makeDirectoryTreeStructureSignature(path).toData(),
+        this, BuildKey::makeDirectoryTreeStructureSignature(path,
+            node.directoryExclusionFilters()).toData(),
         /*inputID=*/0);
   }
 
@@ -725,14 +729,16 @@ public:
 class DirectoryContentsTask : public Task {
   std::string path;
 
+  /// The exclusion filters used while computing the signature
+  StringList filters;
+
   /// The value for the input directory.
   ValueType directoryValue;
   
   virtual void start(BuildEngine& engine) override {
     // Request the base directory node -- this task doesn't actually use the
     // value, but this connects the task to its producer if present.
-    engine.taskNeedsInput(
-        this, BuildKey::makeNode(path).toData(), /*inputID=*/0);
+    engine.taskMustFollow(this, BuildKey::makeNode(path).toData());
   }
 
   virtual void providePriorValue(BuildEngine&,
@@ -762,13 +768,37 @@ class DirectoryContentsTask : public Task {
       return;
     }
 
-    // Get the list of files in the directory.
-    std::error_code ec;
     std::vector<std::string> filenames;
+    getFilteredContents(path, filters, filenames);
+
+    // Create the result.
+    engine.taskIsComplete(
+        this, BuildValue::makeDirectoryContents(info, filenames).toData());
+  }
+
+
+  static void getFilteredContents(StringRef path, const StringList& filters,
+                                  std::vector<std::string>& filenames) {
+    auto filterStrings = filters.getValues();
+
+    // Get the list of files in the directory.
+    // FIXME: This is not going through the filesystem object. Indeed the fs
+    // object does not currently support directory listing/iteration, but
+    // probably should so that clients may override it.
+    std::error_code ec;
     for (auto it = llvm::sys::fs::directory_iterator(path, ec),
-           end = llvm::sys::fs::directory_iterator(); it != end;
+         end = llvm::sys::fs::directory_iterator(); it != end;
          it = it.increment(ec)) {
-      filenames.push_back(llvm::sys::path::filename(it->path()));
+      std::string filename = llvm::sys::path::filename(it->path());
+      bool excluded = false;
+      for (auto pattern : filterStrings) {
+        if (fnmatch(pattern.data(), filename.c_str(), 0) == 0) {
+          excluded = true;
+          break;
+        }
+      }
+      if (!excluded)
+        filenames.push_back(filename);
     }
 
     // Order the filenames.
@@ -776,16 +806,15 @@ class DirectoryContentsTask : public Task {
               [](const std::string& a, const std::string& b) {
                 return a < b;
               });
-
-    // Create the result.
-    engine.taskIsComplete(
-        this, BuildValue::makeDirectoryContents(info, filenames).toData());
   }
 
+
 public:
-  DirectoryContentsTask(StringRef path) : path(path) {}
+  DirectoryContentsTask(StringRef path, StringList&& filters)
+    : path(path), filters(std::move(filters)) {}
 
   static bool isResultValid(BuildEngine& engine, StringRef path,
+                            const StringList& filters,
                             const BuildValue& value) {
     // The result is valid if the existence matches the existing value type, and
     // the file information remains the same.
@@ -794,7 +823,32 @@ public:
     if (info.isMissing()) {
       return value.isMissingInput();
     } else {
-      return value.isDirectoryContents() && value.getOutputInfo() == info;
+      if (!value.isDirectoryContents())
+        return false;
+
+      // With no filters, we skip listing the contents and just check the info
+      // for the directory itself.
+      if (filters.isEmpty())
+        return value.getOutputInfo() == info;
+
+      // With filters, we list the current filtered contents and then compare
+      // the lists.
+      std::vector<std::string> cur;
+      getFilteredContents(path, filters, cur);
+      auto prev = value.getDirectoryContents();
+
+      if (cur.size() != prev.size())
+        return false;
+
+      auto cur_it = cur.begin();
+      auto prev_it = prev.begin();
+      for (; cur_it != cur.end() && prev_it != prev.end(); cur_it++, prev_it++) {
+        if (*cur_it != *prev_it) {
+          return false;
+        }
+      }
+
+      return true;
     }
   }
 };
@@ -832,6 +886,9 @@ class DirectoryTreeSignatureTask : public Task {
   /// The path we are taking the signature of.
   std::string path;
 
+  /// The exclusion filters used while computing the signature
+  StringList filters;
+
   /// The value for the directory itself.
   ValueType directoryValue;
 
@@ -844,7 +901,7 @@ class DirectoryTreeSignatureTask : public Task {
   virtual void start(BuildEngine& engine) override {
     // Ask for the base directory directory contents.
     engine.taskNeedsInput(
-        this, BuildKey::makeDirectoryContents(path).toData(),
+        this, BuildKey::makeDirectoryContents(path, filters).toData(),
         /*inputID=*/0);
   }
 
@@ -891,7 +948,8 @@ class DirectoryTreeSignatureTask : public Task {
           llvm::sys::path::append(childPath, childResult.filename);
         
           engine.taskNeedsInput(
-              this, BuildKey::makeDirectoryTreeSignature(childPath).toData(),
+              this, BuildKey::makeDirectoryTreeSignature(childPath,
+                                                         filters).toData(),
               /*inputID=*/1 + childResults.size() + index);
         }
       }
@@ -934,7 +992,8 @@ class DirectoryTreeSignatureTask : public Task {
   }
 
 public:
-  DirectoryTreeSignatureTask(StringRef path) : path(path) {}
+  DirectoryTreeSignatureTask(StringRef path, StringList&& filters)
+      : path(path), filters(std::move(filters)) {}
 };
 
 
@@ -969,6 +1028,9 @@ class DirectoryTreeStructureSignatureTask : public Task {
   /// The path we are taking the signature of.
   std::string path;
 
+  /// The exclusion filters used while computing the signature
+  StringList filters;
+
   /// The value for the directory itself.
   ValueType directoryValue;
 
@@ -981,7 +1043,7 @@ class DirectoryTreeStructureSignatureTask : public Task {
   virtual void start(BuildEngine& engine) override {
     // Ask for the base directory directory contents.
     engine.taskNeedsInput(
-        this, BuildKey::makeDirectoryContents(path).toData(),
+        this, BuildKey::makeDirectoryContents(path, filters).toData(),
         /*inputID=*/0);
   }
 
@@ -1029,7 +1091,8 @@ class DirectoryTreeStructureSignatureTask : public Task {
         
           engine.taskNeedsInput(
               this,
-              BuildKey::makeDirectoryTreeStructureSignature(childPath).toData(),
+              BuildKey::makeDirectoryTreeStructureSignature(childPath,
+                                                            filters).toData(),
               /*inputID=*/1 + childResults.size() + index);
         }
       }
@@ -1092,7 +1155,8 @@ class DirectoryTreeStructureSignatureTask : public Task {
   }
 
 public:
-  DirectoryTreeStructureSignatureTask(StringRef path) : path(path) {}
+  DirectoryTreeStructureSignatureTask(StringRef path, StringList&& filters)
+    : path(path), filters(std::move(filters)) {}
 };
 
 
@@ -1299,26 +1363,34 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
   }
 
   case BuildKey::Kind::DirectoryContents: {
-    std::string path = key.getDirectoryContentsPath();
+    std::string path = key.getDirectoryPath();
+    std::string filters = key.getDirectoryFilters();
     return Rule{
       keyData,
-      /*Action=*/ [path](BuildEngine& engine) -> Task* {
-        return engine.registerTask(new DirectoryContentsTask(path));
+      /*Action=*/ [path, filters](BuildEngine& engine) -> Task* {
+        BinaryDecoder decoder(filters);
+        return engine.registerTask(new DirectoryContentsTask(path,
+            StringList(decoder)));
       },
-      /*IsValid=*/ [path](BuildEngine& engine, const Rule& rule,
-                          const ValueType& value) -> bool {
+      /*IsValid=*/ [path, filters](BuildEngine& engine, const Rule& rule,
+          const ValueType& value) mutable -> bool {
+        BinaryDecoder decoder(filters);
         return DirectoryContentsTask::isResultValid(
-            engine, path, BuildValue::fromData(value));
+            engine, path, StringList(decoder), BuildValue::fromData(value));
       }
     };
   }
 
   case BuildKey::Kind::DirectoryTreeSignature: {
-    std::string path = key.getDirectoryTreeSignaturePath();
+    std::string path = key.getDirectoryPath();
+    std::string filters = key.getDirectoryFilters();
     return Rule{
       keyData,
-      /*Action=*/ [path](BuildEngine& engine) -> Task* {
-        return engine.registerTask(new DirectoryTreeSignatureTask(path));
+      /*Action=*/ [path, filters](
+          BuildEngine& engine) mutable -> Task* {
+        BinaryDecoder decoder(filters);
+        return engine.registerTask(new DirectoryTreeSignatureTask(path,
+            StringList(decoder)));
       },
         // Directory signatures don't require any validation outside of their
         // concrete dependencies.
@@ -1327,12 +1399,15 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
   }
 
   case BuildKey::Kind::DirectoryTreeStructureSignature: {
-    std::string path = key.getDirectoryTreeStructureSignaturePath();
+    std::string path = key.getDirectoryPath();
+    std::string filters = key.getDirectoryFilters();
     return Rule{
       keyData,
-      /*Action=*/ [path](BuildEngine& engine) -> Task* {
-        return engine.registerTask(
-            new DirectoryTreeStructureSignatureTask(path));
+      /*Action=*/ [path, filters](
+          BuildEngine& engine) mutable -> Task* {
+        BinaryDecoder decoder(filters);
+        return engine.registerTask(new DirectoryTreeStructureSignatureTask(path,
+            StringList(decoder)));
       },
         // Directory signatures don't require any validation outside of their
         // concrete dependencies.

@@ -86,6 +86,9 @@ bool BuildNode::configureAttribute(const ConfigureContext& ctx, StringRef name,
       return false;
     }
     return true;
+  } else if (name == "directory-filters") {
+    directoryFilters = basic::StringList(value);
+    return true;
   }
     
   // We don't support any other custom attributes.
@@ -95,6 +98,11 @@ bool BuildNode::configureAttribute(const ConfigureContext& ctx, StringRef name,
 
 bool BuildNode::configureAttribute(const ConfigureContext& ctx, StringRef name,
                                    ArrayRef<StringRef> values) {
+  if (name == "directory-filters") {
+    directoryFilters = basic::StringList(values);
+    return true;
+  }
+
   // We don't support any other custom attributes.
   ctx.error("unexpected attribute: '" + name + "'");
   return false;

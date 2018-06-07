@@ -411,17 +411,17 @@ public:
         break;
       case BuildKey::Kind::DirectoryContents:
         buildKey.kind = llb_build_key_kind_directory_contents;
-        buildKey.key = strdup(key.getDirectoryContentsPath().str().c_str());
+        buildKey.key = strdup(key.getDirectoryPath().str().c_str());
         break;
       case BuildKey::Kind::DirectoryTreeSignature:
         buildKey.kind = llb_build_key_kind_directory_tree_signature;
         buildKey.key = strdup(
-                              key.getDirectoryTreeSignaturePath().str().c_str());
+                              key.getDirectoryPath().str().c_str());
         break;
       case BuildKey::Kind::DirectoryTreeStructureSignature:
         buildKey.kind = llb_build_key_kind_directory_tree_structure_signature;
         buildKey.key = strdup(
-                              key.getDirectoryTreeStructureSignaturePath().str().c_str());
+                              key.getDirectoryPath().str().c_str());
         break;
       case BuildKey::Kind::Node:
         buildKey.kind = llb_build_key_kind_node;

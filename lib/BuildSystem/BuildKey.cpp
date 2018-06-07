@@ -48,16 +48,11 @@ void BuildKey::dump(raw_ostream& os) const {
     os << ", dataSize='" << getCustomTaskData().size() << "'";
     break;
   }
-  case Kind::DirectoryContents: {
-    os << ", path='" << getDirectoryContentsPath() << "'";
-    break;
-  }
-  case Kind::DirectoryTreeSignature: {
-    os << ", path='" << getDirectoryTreeSignaturePath() << "'";
-    break;
-  }
+  case Kind::DirectoryContents:
+  case Kind::DirectoryTreeSignature:
   case Kind::DirectoryTreeStructureSignature: {
-    os << ", path='" << getDirectoryTreeStructureSignaturePath() << "'";
+    os << ", path='" << getDirectoryPath() << "'";
+    // FIXME: should probably dump filters here too
     break;
   }
   case Kind::Node: {

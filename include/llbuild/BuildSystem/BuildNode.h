@@ -16,6 +16,7 @@
 #include "BuildDescription.h"
 
 #include "llbuild/Basic/LLVM.h"
+#include "llbuild/Basic/StringList.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 
 #include "llvm/ADT/StringRef.h"
@@ -57,6 +58,12 @@ class BuildNode : public Node {
   /// cannot be safely used to track *output* file state.
   bool mutated;
 
+  /// Exclusion filters for directory listings
+  ///
+  /// Items matching these filter strings are not considered as part of the
+  /// signature for directory and directory structure nodes.
+  basic::StringList directoryFilters;
+
 public:
   explicit BuildNode(StringRef name, bool isDirectory,
                      bool isDirectoryStructure, bool isVirtual,
@@ -79,6 +86,10 @@ public:
   bool isCommandTimestamp() const { return commandTimestamp; }
 
   bool isMutated() const { return mutated; }
+
+  const basic::StringList& directoryExclusionFilters() const {
+    return directoryFilters;
+  }
 
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override;
