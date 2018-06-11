@@ -138,6 +138,7 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
   std::mutex spawnedProcessesMutex;
 
   /// Management of cancellation and SIGKILL escalation
+  std::mutex killAfterTimeoutThreadMutex;
   std::unique_ptr<std::thread> killAfterTimeoutThread = nullptr;
   std::condition_variable queueCompleteCondition;
   std::mutex queueCompleteMutex;
@@ -258,13 +259,16 @@ public:
       lanes[i]->join();
     }
 
-    if (killAfterTimeoutThread) {
-      {
-        std::unique_lock<std::mutex> lock(queueCompleteMutex);
-        queueComplete = true;
-        queueCompleteCondition.notify_all();
+    {
+      std::lock_guard<std::mutex> guard(killAfterTimeoutThreadMutex);
+      if (killAfterTimeoutThread) {
+        {
+          std::unique_lock<std::mutex> lock(queueCompleteMutex);
+          queueComplete = true;
+          queueCompleteCondition.notify_all();
+        }
+        killAfterTimeoutThread->join();
       }
-      killAfterTimeoutThread->join();
     }
   }
 
@@ -289,8 +293,11 @@ public:
     }
 
     sendSignalToProcesses(SIGINT);
-    killAfterTimeoutThread = llvm::make_unique<std::thread>(
-        &LaneBasedExecutionQueue::killAfterTimeout, this);
+    {
+      std::lock_guard<std::mutex> guard(killAfterTimeoutThreadMutex);
+      killAfterTimeoutThread = llvm::make_unique<std::thread>(
+          &LaneBasedExecutionQueue::killAfterTimeout, this);
+    }
   }
 
   virtual CommandResult
