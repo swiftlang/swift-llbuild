@@ -48,6 +48,7 @@
 #include <memory>
 #include <mutex>
 #include <set>
+#include <sstream>
 
 #include <fnmatch.h>
 #include <unistd.h>
@@ -1827,9 +1828,11 @@ class ShellCommand : public ExternalCommand {
           : bsci(bsci), task(task), command(command), depsPath(depsPath) {}
 
       virtual void error(const char* message, uint64_t position) override {
-        getBuildSystem(bsci.getBuildEngine()).getDelegate().commandHadError(command,
-                        "error reading dependency file '" + depsPath.str() +
-                        "': " + std::string(message));
+        std::stringstream msg;
+        msg << "error reading dependency file '" << depsPath.str() << "': "
+            << message << " at position " << position;
+        getBuildSystem(bsci.getBuildEngine()).getDelegate().commandHadError(
+            command, msg.str());
         ++numErrors;
       }
 
