@@ -87,7 +87,6 @@ static void skipToEndOfLine(const char*& cur, const char* end) {
 
 static void lexWord(const char*& cur, const char* end,
                     SmallVectorImpl<char> &unescapedWord) {
-  unescapedWord.clear();
   for (; cur != end; ++cur) {
     int c = *cur;
 
@@ -149,6 +148,7 @@ void MakefileDepsParser::parse() {
     
     // The next token should be a word.
     const char* wordStart = cur;
+    unescapedWord.clear();
     lexWord(cur, end, unescapedWord);
     if (cur == wordStart) {
       actions.error("unexpected character in file", cur - data);
@@ -178,11 +178,21 @@ void MakefileDepsParser::parse() {
 
       // Otherwise, we should have a word.
       const char* wordStart = cur;
+      unescapedWord.clear();
       lexWord(cur, end, unescapedWord);
       if (cur == wordStart) {
         actions.error("unexpected character in prerequisites", cur - data);
         skipToEndOfLine(cur, end);
         continue;
+      }
+      // Given that GCC/Clang generally do not escape any special characters in
+      // paths, we may encounter paths that contain them. Our lexer
+      // automatically stops on some such characters, namely ':'. If the we find
+      // a ':' at this point, we push it onto the word and continue lexing.
+      while (cur != end && *cur == ':') {
+        unescapedWord.push_back(*cur);
+        ++cur;
+        lexWord(cur, end, unescapedWord);
       }
       actions.actOnRuleDependency(wordStart, cur - wordStart,
                                   unescapedWord.str());
