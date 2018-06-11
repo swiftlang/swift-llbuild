@@ -144,6 +144,14 @@ TEST(MakefileDepsParserTest, basic) {
   EXPECT_EQ(1U, actions.records.size());
   EXPECT_EQ(RuleRecord("/=> ;|%.o", { "/=> ;|%.swift" }), actions.records[0]);
   
+  // Check that we can parse filenames with colons.
+  actions.errors.clear();
+  actions.records.clear();
+  input = "a: b:c";
+  MakefileDepsParser(input.data(), input.size(), actions).parse();
+  EXPECT_EQ(0U, actions.errors.size());
+  EXPECT_EQ(1U, actions.records.size());
+  EXPECT_EQ(RuleRecord("a", { "b:c" }), actions.records[0]);
 }
 
 }
