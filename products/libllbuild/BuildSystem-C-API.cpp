@@ -21,6 +21,7 @@
 #include "llbuild/BuildSystem/CommandResult.h"
 #include "llbuild/BuildSystem/ExternalCommand.h"
 #include "llbuild/Core/BuildEngine.h"
+#include "llbuild/Core/DependencyInfoParser.h"
 
 #include "llvm/ADT/Hashing.h"
 #include "llvm/ADT/SmallString.h"
@@ -661,16 +662,90 @@ class CAPIExternalCommand : public ExternalCommand {
   // FIXME: This is incredibly wasteful to copy everywhere. Rephrase things so
   // that the delegates are const and we just carry the context pointer around.
   llb_buildsystem_external_command_delegate_t cAPIDelegate;
+  
+  /// The path to the dependency output file, if used.
+  std::string depsPath;
+
+  bool processDiscoveredDependencies(BuildSystemCommandInterface& bsci,
+                                     core::Task* task,
+                                     QueueJobContext* context) {
+    // Read the dependencies file.
+    auto input = bsci.getFileSystem().getFileContents(depsPath);
+    if (!input) {
+      bsci.getDelegate().commandHadError(this, "unable to open dependencies file (" + depsPath + ")");
+      return false;
+    }
+    
+    // Parse the output.
+    //
+    // We just ignore the rule, and add any dependency that we encounter in the
+    // file.
+    struct DepsActions : public core::DependencyInfoParser::ParseActions {
+      BuildSystemCommandInterface& bsci;
+      core::Task* task;
+      CAPIExternalCommand* command;
+      StringRef depsPath;
+      unsigned numErrors{0};
+      
+      DepsActions(BuildSystemCommandInterface& bsci, core::Task* task,
+                  CAPIExternalCommand* command, StringRef depsPath)
+      : bsci(bsci), task(task), command(command), depsPath(depsPath) {}
+      
+      virtual void error(const char* message, uint64_t position) override {
+        bsci.getDelegate().commandHadError(command, "error reading dependency file '" + depsPath.str() + "': " + std::string(message));
+        ++numErrors;
+      }
+      
+      // Ignore everything but actual inputs.
+      virtual void actOnVersion(StringRef) override { }
+      virtual void actOnMissing(StringRef) override { }
+      virtual void actOnOutput(StringRef) override { }
+      virtual void actOnInput(StringRef name) override {
+        bsci.taskDiscoveredDependency(task, BuildKey::makeNode(name));
+      }
+    };
+    
+    DepsActions actions(bsci, task, this, depsPath);
+    core::DependencyInfoParser(input->getBuffer(), actions).parse();
+    return actions.numErrors == 0;
+  }
+
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  StringRef value) override {
+    if (name == "deps") {
+      depsPath = value;
+    } else {
+      return ExternalCommand::configureAttribute(ctx, name, value);
+    }
+    return true;
+  }
 
   virtual CommandResult executeExternalCommand(BuildSystemCommandInterface& bsci,
                                                core::Task* task,
                                                QueueJobContext* job_context) override {
-    return cAPIDelegate.execute_command(
+    auto result = cAPIDelegate.execute_command(
         cAPIDelegate.context, (llb_buildsystem_command_t*)this,
         (llb_buildsystem_command_interface_t*)&bsci,
-        (llb_task_t*)task, (llb_buildsystem_queue_job_context_t*)job_context) ? CommandResult::Succeeded : CommandResult::Failed;
-  }
+        (llb_task_t*)task, (llb_buildsystem_queue_job_context_t*)job_context)
+          ? CommandResult::Succeeded : CommandResult::Failed;
 
+    if (result != CommandResult::Succeeded) {
+      // If the command failed, there is no need to gather dependencies.
+      return result;
+    }
+    
+    // Otherwise, collect the discovered dependencies, if used.
+    if (!depsPath.empty()) {
+      if (!processDiscoveredDependencies(bsci, task, job_context)) {
+        // If we were unable to process the dependencies output, report a
+        // failure.
+        return CommandResult::Failed;
+      }
+    }
+    
+    return result;
+  }
+  
 public:
   CAPIExternalCommand(StringRef name,
                       llb_buildsystem_external_command_delegate_t delegate)
