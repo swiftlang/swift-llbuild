@@ -739,7 +739,13 @@ class DirectoryContentsTask : public Task {
   virtual void start(BuildEngine& engine) override {
     // Request the base directory node -- this task doesn't actually use the
     // value, but this connects the task to its producer if present.
-    engine.taskMustFollow(this, BuildKey::makeNode(path).toData());
+
+    // <rdar://41142590>
+    // FIXME: Temporarily revert part of PR #320, which causes tasks to execute
+    // in the wrong order under certain circumstances.
+    //engine.taskMustFollow(this, BuildKey::makeNode(path).toData());
+    engine.taskNeedsInput(
+        this, BuildKey::makeNode(path).toData(), /*inputID=*/0);
   }
 
   virtual void providePriorValue(BuildEngine&,
