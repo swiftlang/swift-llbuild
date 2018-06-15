@@ -15,6 +15,7 @@ PRODUCT_NAME = $(TARGET_NAME)
 
 // Set the versioning system to "Apple Generic" for all targets.
 VERSIONING_SYSTEM = apple-generic
+CURRENT_PROJECT_VERSION = 1
 
 // Do not always search user paths.
 ALWAYS_SEARCH_USER_PATHS = NO
