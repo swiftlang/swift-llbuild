@@ -47,7 +47,7 @@ targets:
 
 nodes:
   "dir/":
-    directory-filters: ["excludedfile"]
+    content-exclusion-patterns: ["excludedfile"]
 
 commands:
   C.all:

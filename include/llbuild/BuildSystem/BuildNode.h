@@ -62,7 +62,7 @@ class BuildNode : public Node {
   ///
   /// Items matching these filter strings are not considered as part of the
   /// signature for directory and directory structure nodes.
-  basic::StringList directoryFilters;
+  basic::StringList exclusionPatterns;
 
 public:
   explicit BuildNode(StringRef name, bool isDirectory,
@@ -87,8 +87,8 @@ public:
 
   bool isMutated() const { return mutated; }
 
-  const basic::StringList& directoryExclusionFilters() const {
-    return directoryFilters;
+  const basic::StringList& contentExclusionPatterns() const {
+    return exclusionPatterns;
   }
 
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,

@@ -204,7 +204,7 @@ public:
     return StringRef(&key[1 + sizeof(uint32_t)], nameSize);
   }
 
-  StringRef getDirectoryFilters() const {
+  StringRef getContentExclusionPatterns() const {
     assert(isDirectoryContents() || isDirectoryTreeSignature() ||
            isDirectoryTreeStructureSignature());
     uint32_t nameSize;

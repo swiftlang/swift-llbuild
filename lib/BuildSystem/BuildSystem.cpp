@@ -544,7 +544,7 @@ class DirectoryInputNodeTask : public Task {
     }
     engine.taskNeedsInput(
         this, BuildKey::makeDirectoryTreeSignature(path,
-            node.directoryExclusionFilters()).toData(),
+            node.contentExclusionPatterns()).toData(),
         /*inputID=*/0);
   }
 
@@ -588,7 +588,7 @@ class DirectoryStructureInputNodeTask : public Task {
     }
     engine.taskNeedsInput(
         this, BuildKey::makeDirectoryTreeStructureSignature(path,
-            node.directoryExclusionFilters()).toData(),
+            node.contentExclusionPatterns()).toData(),
         /*inputID=*/0);
   }
 
@@ -827,9 +827,12 @@ public:
       if (!value.isDirectoryContents())
         return false;
 
-      // With no filters, we skip listing the contents and just check the info
-      // for the directory itself.
-      if (filters.isEmpty())
+      // If the type changes rebuild
+      if (info.isDirectory() != value.getOutputInfo().isDirectory())
+        return false;
+
+      // For files, it is direct stat info that matters
+      if (!info.isDirectory())
         return value.getOutputInfo() == info;
 
       // With filters, we list the current filtered contents and then compare
@@ -1365,17 +1368,17 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
 
   case BuildKey::Kind::DirectoryContents: {
     std::string path = key.getDirectoryPath();
-    std::string filters = key.getDirectoryFilters();
+    std::string patterns = key.getContentExclusionPatterns();
     return Rule{
       keyData,
-      /*Action=*/ [path, filters](BuildEngine& engine) -> Task* {
-        BinaryDecoder decoder(filters);
+      /*Action=*/ [path, patterns](BuildEngine& engine) -> Task* {
+        BinaryDecoder decoder(patterns);
         return engine.registerTask(new DirectoryContentsTask(path,
             StringList(decoder)));
       },
-      /*IsValid=*/ [path, filters](BuildEngine& engine, const Rule& rule,
+      /*IsValid=*/ [path, patterns](BuildEngine& engine, const Rule& rule,
           const ValueType& value) mutable -> bool {
-        BinaryDecoder decoder(filters);
+        BinaryDecoder decoder(patterns);
         return DirectoryContentsTask::isResultValid(
             engine, path, StringList(decoder), BuildValue::fromData(value));
       }
@@ -1384,7 +1387,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
 
   case BuildKey::Kind::DirectoryTreeSignature: {
     std::string path = key.getDirectoryPath();
-    std::string filters = key.getDirectoryFilters();
+    std::string filters = key.getContentExclusionPatterns();
     return Rule{
       keyData,
       /*Action=*/ [path, filters](
@@ -1401,12 +1404,12 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
 
   case BuildKey::Kind::DirectoryTreeStructureSignature: {
     std::string path = key.getDirectoryPath();
-    std::string filters = key.getDirectoryFilters();
+    std::string patterns = key.getContentExclusionPatterns();
     return Rule{
       keyData,
-      /*Action=*/ [path, filters](
+      /*Action=*/ [path, patterns](
           BuildEngine& engine) mutable -> Task* {
-        BinaryDecoder decoder(filters);
+        BinaryDecoder decoder(patterns);
         return engine.registerTask(new DirectoryTreeStructureSignatureTask(path,
             StringList(decoder)));
       },
