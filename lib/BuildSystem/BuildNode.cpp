@@ -86,8 +86,8 @@ bool BuildNode::configureAttribute(const ConfigureContext& ctx, StringRef name,
       return false;
     }
     return true;
-  } else if (name == "directory-filters") {
-    directoryFilters = basic::StringList(value);
+  } else if (name == "content-exclusion-patterns") {
+    exclusionPatterns = basic::StringList(value);
     return true;
   }
     
@@ -98,8 +98,8 @@ bool BuildNode::configureAttribute(const ConfigureContext& ctx, StringRef name,
 
 bool BuildNode::configureAttribute(const ConfigureContext& ctx, StringRef name,
                                    ArrayRef<StringRef> values) {
-  if (name == "directory-filters") {
-    directoryFilters = basic::StringList(values);
+  if (name == "content-exclusion-patterns") {
+    exclusionPatterns = basic::StringList(values);
     return true;
   }
 
