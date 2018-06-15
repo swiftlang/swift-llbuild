@@ -80,6 +80,11 @@
 		14124EAE207C49D400E2AB56 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.tbd */; };
 		402614272087B10B005BD956 /* Tracing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 402614262087B10B005BD956 /* Tracing.cpp */; };
 		403B1A492053123B0018A322 /* version.h in Headers */ = {isa = PBXBuildFile; fileRef = 403B1A48205312000018A322 /* version.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		40B3C91020D3AEC9007C5847 /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.tbd */; };
+		40B3C91120D3AEC9007C5847 /* libgtest.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A224DD19F99B0E0059043E /* libgtest.a */; };
+		40B3C91220D3AEC9007C5847 /* libgtest_main.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A224E619F99C580059043E /* libgtest_main.a */; };
+		40B3C91C20D3B075007C5847 /* C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 40B3C91B20D3AF9B007C5847 /* C-API.cpp */; };
+		40B3C92720D3B24D007C5847 /* libllbuild.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1ADC23A1A85936400D5387C /* libllbuild.dylib */; };
 		40F638ED205306AB00A1CFBE /* Version.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 40F638EC2053043D00A1CFBE /* Version.xcconfig */; };
 		9D0A6D811E1FFEA800BE636F /* TempDir.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9D0A6D7F1E1FFEA800BE636F /* TempDir.cpp */; };
 		9D2107C61DFADDFA00BE26FF /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.tbd */; };
@@ -289,6 +294,27 @@
 			proxyType = 1;
 			remoteGlobalIDString = 40513F172057621500DCA088;
 			remoteInfo = "Generate-version.h";
+		};
+		40B3C90220D3AEC9007C5847 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1A224DC19F99B0E0059043E;
+			remoteInfo = gtest;
+		};
+		40B3C90420D3AEC9007C5847 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1A224E519F99C580059043E;
+			remoteInfo = gtest_main;
+		};
+		40B3C92520D3B248007C5847 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1ADC2391A85936400D5387C;
+			remoteInfo = libllbuild;
 		};
 		9D2107C31DF9FBFA00BE26FF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -734,6 +760,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		40B3C91520D3AEC9007C5847 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		9DB047A61DF9D43D006CDF52 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -839,6 +874,9 @@
 		403B1A48205312000018A322 /* version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = version.h; sourceTree = "<group>"; };
 		404C888E20924BF8000C201A /* DenseMapInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DenseMapInfo.h; sourceTree = "<group>"; };
 		4062058120C7263C00B28281 /* StringList.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = StringList.h; sourceTree = "<group>"; };
+		40B3C8FF20D3AEBC007C5847 /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
+		40B3C91A20D3AEC9007C5847 /* CAPITests */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = CAPITests; sourceTree = BUILT_PRODUCTS_DIR; };
+		40B3C91B20D3AF9B007C5847 /* C-API.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "C-API.cpp"; sourceTree = "<group>"; };
 		40F4F4F220531D8A00170EE1 /* version.h.in */ = {isa = PBXFileReference; lastKnownFileType = text; path = version.h.in; sourceTree = "<group>"; };
 		40F638CE2051EDC800A1CFBE /* count-lines-2 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "count-lines-2"; sourceTree = "<group>"; };
 		40F638CF2051EDC800A1CFBE /* count-lines-4 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "count-lines-4"; sourceTree = "<group>"; };
@@ -1176,6 +1214,17 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		40B3C90F20D3AEC9007C5847 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				40B3C92720D3B24D007C5847 /* libllbuild.dylib in Frameworks */,
+				40B3C91020D3AEC9007C5847 /* libcurses.tbd in Frameworks */,
+				40B3C91120D3AEC9007C5847 /* libgtest.a in Frameworks */,
+				40B3C91220D3AEC9007C5847 /* libgtest_main.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		9DB047A51DF9D43D006CDF52 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -1460,6 +1509,15 @@
 			path = Windows;
 			sourceTree = "<group>";
 		};
+		40B3C8FE20D3AE80007C5847 /* CAPI */ = {
+			isa = PBXGroup;
+			children = (
+				40B3C8FF20D3AEBC007C5847 /* CMakeLists.txt */,
+				40B3C91B20D3AF9B007C5847 /* C-API.cpp */,
+			);
+			path = CAPI;
+			sourceTree = "<group>";
+		};
 		40F638CC2051EDC800A1CFBE /* examples */ = {
 			isa = PBXGroup;
 			children = (
@@ -1721,6 +1779,7 @@
 				E1604CB11BB9E01D001153A1 /* swift-build-tool */,
 				9DB047A81DF9D43D006CDF52 /* BuildSystemTests */,
 				BC8DEEFF2030088600E9EF0C /* libllbuildSwift.dylib */,
+				40B3C91A20D3AEC9007C5847 /* CAPITests */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1996,6 +2055,7 @@
 			isa = PBXGroup;
 			children = (
 				E147DF171BA81D4E0032D08E /* Basic */,
+				40B3C8FE20D3AE80007C5847 /* CAPI */,
 				E1A224B419F998D40059043E /* Core */,
 				9DB0478A1DF9D39E006CDF52 /* BuildSystem */,
 				E1A224B819F998D40059043E /* Ninja */,
@@ -2438,6 +2498,27 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
+		40B3C90020D3AEC9007C5847 /* CAPITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 40B3C91720D3AEC9007C5847 /* Build configuration list for PBXNativeTarget "CAPITests" */;
+			buildPhases = (
+				40B3C90920D3AEC9007C5847 /* Sources */,
+				40B3C90F20D3AEC9007C5847 /* Frameworks */,
+				40B3C91520D3AEC9007C5847 /* CopyFiles */,
+				40B3C91620D3AEC9007C5847 /* Create Target Link */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				40B3C92620D3B248007C5847 /* PBXTargetDependency */,
+				40B3C90120D3AEC9007C5847 /* PBXTargetDependency */,
+				40B3C90320D3AEC9007C5847 /* PBXTargetDependency */,
+			);
+			name = CAPITests;
+			productName = CoreTests;
+			productReference = 40B3C91A20D3AEC9007C5847 /* CAPITests */;
+			productType = "com.apple.product-type.tool";
+		};
 		9DB047A71DF9D43D006CDF52 /* BuildSystemTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 9DB047AC1DF9D43D006CDF52 /* Build configuration list for PBXNativeTarget "BuildSystemTests" */;
@@ -2954,6 +3035,7 @@
 				E1A224DC19F99B0E0059043E /* gtest */,
 				E1A224E519F99C580059043E /* gtest_main */,
 				E147DEFE1BA81D330032D08E /* BasicTests */,
+				40B3C90020D3AEC9007C5847 /* CAPITests */,
 				E1A224EE19F99D880059043E /* CoreTests */,
 				9DB047A71DF9D43D006CDF52 /* BuildSystemTests */,
 				E1A224F819F99DFD0059043E /* NinjaTests */,
@@ -3010,6 +3092,22 @@
 			shellScript = "\"${SRCROOT}/utils/generate-version-h.sh\"";
 			showEnvVarsInLog = 0;
 		};
+		40B3C91620D3AEC9007C5847 /* Create Target Link */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Create Target Link";
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/unittests/$(PRODUCT_NAME)",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/utils/Xcode/create-target-link.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 		9D2107C51DFA07D700BE26FF /* Create Target Link */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -3023,7 +3121,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/utils/Xcode/create-target-link.sh\"";
+			shellScript = "\"${SRCROOT}/utils/Xcode/create-target-link.sh\"\n";
 		};
 		E147DF121BA81D330032D08E /* Create Target Link */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -3038,7 +3136,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/utils/Xcode/create-target-link.sh\"";
+			shellScript = "\"${SRCROOT}/utils/Xcode/create-target-link.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		E17C29F11B5AC13C00C12DA9 /* Install per-user 'sphinx' tools */ = {
@@ -3117,7 +3215,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/utils/Xcode/create-target-link.sh\"";
+			shellScript = "\"${SRCROOT}/utils/Xcode/create-target-link.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		E19EC53F1B34A44F00A2F233 /* Create Target Link */ = {
@@ -3133,7 +3231,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/utils/Xcode/create-target-link.sh\"";
+			shellScript = "\"${SRCROOT}/utils/Xcode/create-target-link.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		E1A2254C19F9A2280059043E /* Execute 'lit' tests */ = {
@@ -3154,6 +3252,14 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		40B3C90920D3AEC9007C5847 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				40B3C91C20D3B075007C5847 /* C-API.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		9DB047A41DF9D43D006CDF52 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -3418,6 +3524,21 @@
 			isa = PBXTargetDependency;
 			target = 40513F172057621500DCA088 /* Generate-version.h */;
 			targetProxy = 40513F20205762DF00DCA088 /* PBXContainerItemProxy */;
+		};
+		40B3C90120D3AEC9007C5847 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1A224DC19F99B0E0059043E /* gtest */;
+			targetProxy = 40B3C90220D3AEC9007C5847 /* PBXContainerItemProxy */;
+		};
+		40B3C90320D3AEC9007C5847 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1A224E519F99C580059043E /* gtest_main */;
+			targetProxy = 40B3C90420D3AEC9007C5847 /* PBXContainerItemProxy */;
+		};
+		40B3C92620D3B248007C5847 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1ADC2391A85936400D5387C /* libllbuild */;
+			targetProxy = 40B3C92520D3B248007C5847 /* PBXContainerItemProxy */;
 		};
 		9D2107C41DF9FBFA00BE26FF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -3748,6 +3869,22 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				INSTALLHDRS_SCRIPT_PHASE = YES;
+			};
+			name = Release;
+		};
+		40B3C91820D3AEC9007C5847 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
+			};
+			name = Debug;
+		};
+		40B3C91920D3AEC9007C5847 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Release;
 		};
@@ -4308,6 +4445,15 @@
 			buildConfigurations = (
 				40513F182057621500DCA088 /* Debug */,
 				40513F192057621500DCA088 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		40B3C91720D3AEC9007C5847 /* Build configuration list for PBXNativeTarget "CAPITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				40B3C91820D3AEC9007C5847 /* Debug */,
+				40B3C91920D3AEC9007C5847 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
