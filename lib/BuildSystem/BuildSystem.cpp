@@ -2373,6 +2373,8 @@ class SwiftCompilerShellCommand : public ExternalCommand {
   bool enableWholeModuleOptimization = false;
 
   /// Enables multi-threading with the thread count if > 0.
+  ///
+  /// Note: This is only used when whole module optimization is enabled.
   std::string numThreads = "0";
 
   virtual CommandSignature getSignature() override {
@@ -2413,9 +2415,9 @@ class SwiftCompilerShellCommand : public ExternalCommand {
     }
     if (enableWholeModuleOptimization) {
       result.push_back("-whole-module-optimization");
+      result.push_back("-num-threads");
+      result.push_back(numThreads);
     }
-    result.push_back("-num-threads");
-    result.push_back(numThreads);
     result.push_back("-c");
     for (const auto& source: sourcesList) {
       result.push_back(source);
