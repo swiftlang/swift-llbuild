@@ -4,6 +4,7 @@ include_directories(BEFORE
 
 add_llbuild_unittest(CAPITests
   C-API.cpp
+  BuildSystem-C-API.cpp
   )
 
 target_link_libraries(CAPITests

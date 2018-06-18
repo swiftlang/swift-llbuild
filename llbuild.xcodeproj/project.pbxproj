@@ -86,6 +86,7 @@
 		40B3C91C20D3B075007C5847 /* C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 40B3C91B20D3AF9B007C5847 /* C-API.cpp */; };
 		40B3C92720D3B24D007C5847 /* libllbuild.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1ADC23A1A85936400D5387C /* libllbuild.dylib */; };
 		40F638ED205306AB00A1CFBE /* Version.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 40F638EC2053043D00A1CFBE /* Version.xcconfig */; };
+		9ADD8B2320D7009F0066BE9A /* BuildSystem-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9ADD8B2220D7009A0066BE9A /* BuildSystem-C-API.cpp */; };
 		9D0A6D811E1FFEA800BE636F /* TempDir.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9D0A6D7F1E1FFEA800BE636F /* TempDir.cpp */; };
 		9D2107C61DFADDFA00BE26FF /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.tbd */; };
 		9D5A5C311EC5FAE600DC84CC /* TempDir.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9D0A6D7F1E1FFEA800BE636F /* TempDir.cpp */; };
@@ -901,6 +902,7 @@
 		40F638EC2053043D00A1CFBE /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 		54E187B61CD296EA00F7EC89 /* BuildNode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildNode.h; sourceTree = "<group>"; };
 		54E187B71CD296EA00F7EC89 /* ExternalCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ExternalCommand.h; sourceTree = "<group>"; };
+		9ADD8B2220D7009A0066BE9A /* BuildSystem-C-API.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "BuildSystem-C-API.cpp"; sourceTree = "<group>"; };
 		9D0A6D7F1E1FFEA800BE636F /* TempDir.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TempDir.cpp; sourceTree = "<group>"; };
 		9D0A6D801E1FFEA800BE636F /* TempDir.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TempDir.h; sourceTree = "<group>"; };
 		9D2589301E3820E3006C76F4 /* PlatformUtility.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PlatformUtility.h; sourceTree = "<group>"; };
@@ -1514,6 +1516,7 @@
 			children = (
 				40B3C8FF20D3AEBC007C5847 /* CMakeLists.txt */,
 				40B3C91B20D3AF9B007C5847 /* C-API.cpp */,
+				9ADD8B2220D7009A0066BE9A /* BuildSystem-C-API.cpp */,
 			);
 			path = CAPI;
 			sourceTree = "<group>";
@@ -3257,6 +3260,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9ADD8B2320D7009F0066BE9A /* BuildSystem-C-API.cpp in Sources */,
 				40B3C91C20D3B075007C5847 /* C-API.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
