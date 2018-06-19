@@ -1,8 +1,5 @@
 # Check that directory contents are rebuilt *only* when appropriate.
 #
-# Failure tracked by rdar://problem/41182818
-# XFAIL: *
-#
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.llbuild
@@ -22,14 +19,15 @@
 # CHECK-REBUILD: { "new-rule", "[[RULE_NAME:R[0-9]+]]", "Ddir" },
 # CHECK-REBUILD: { "rule-does-not-need-to-run", "[[RULE_NAME]]" },
 
-# A null rebuild where the directory itself has been touch shouldn't rebuild.
+# A null rebuild where the directory itself has been touched unfortunately
+# rebuilds (due to rdar://41142590).
 #
 # RUN: touch %t.build/dir
 # RUN: %{llbuild} buildsystem build --serial --trace %t.touch.trace --chdir %t.build
 # RUN: %{FileCheck} --check-prefix=CHECK-TOUCH --input-file=%t.touch.trace %s
 #
-# CHECK-TOUCH: { "new-rule", "[[RULE_NAME:R[0-9]+]]", "Ddir" },
-# CHECK-TOUCH: { "rule-does-not-need-to-run", "[[RULE_NAME]]" },
+# CHECK-TOUCH: { "new-rule", "[[RULE_NAME:R[0-9]+]]", "Ndir" },
+# CHECK-TOUCH: { "rule-needs-to-run", "[[RULE_NAME]]", "invalid-value" },
 
 
 # A rebuild after adding a new file should rebuild the directory.

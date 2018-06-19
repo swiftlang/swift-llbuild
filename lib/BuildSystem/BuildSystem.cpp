@@ -743,6 +743,27 @@ class DirectoryContentsTask : public Task {
     // <rdar://41142590>
     // FIXME: Temporarily revert part of PR #320, which causes tasks to execute
     // in the wrong order under certain circumstances.
+    //
+    // The taskMustFollow method expresses the weak dependency we have on
+    // 'path', but only at the task level. What we really want is to say at the
+    // 'isResultValid'/scanning level is 'must scan after'. That way we hold up
+    // this and downstream rules until the 'path' node has been set into its
+    // final state*.
+    //
+    // With the explicit dependency we are establishing with taskNeedsInput, we
+    // will unfortunately mark directory contents as 'needs to be built' under
+    // situations where excluded content and/or non-releveant stat info has
+    // changed. This causes unnecessary rebuilds. See rdar://problem/30640904
+    //
+    // * The 'final state' of a directory is also an thorny patch of toxic land
+    // mines. We really want directory contents to weakly depend upon anything
+    // that is currently and/or may be altered within it. i.e. if one rule
+    // creates the directory and another rule writes a file into it, we want to
+    // defer scanning until both of them have been scanned and possibly run.
+    // Having a 'must scan after' would help with the first rule (mkdir), but
+    // not the second, in particular if rules are added in subsequent builds.
+    // Related rdar://problem/30638921
+    //
     //engine.taskMustFollow(this, BuildKey::makeNode(path).toData());
     engine.taskNeedsInput(
         this, BuildKey::makeNode(path).toData(), /*inputID=*/0);

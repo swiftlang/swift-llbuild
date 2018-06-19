@@ -1,0 +1,76 @@
+# Check that directory contents that are actually files correctly trigger the
+# production of the file.
+# rdar://problem/41142590
+#
+#
+# First pass we set up the database such that a directory contents node points
+# to a 'missing' file/directory.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: grep -A1000 "VERSION-BEGIN-[1]" %s | grep -B10000 "VERSION-END-1" | grep -ve '^--$' > %t.build/build-1.llbuild
+# RUN: %{llbuild} buildsystem build --serial --trace %t.initial.trace --chdir %t.build -f build-1.llbuild
+# RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file=%t.initial.trace %s
+#
+# CHECK-INITIAL: { "new-rule", "[[RULE_NAME:R[0-9]+]]", "Dfile" },
+# CHECK-INITIAL: { "rule-needs-to-run", "[[RULE_NAME]]", "never-built" },
+
+
+# Second pass we add a rule that may now produce that file. As exposed in
+# rdar://problem/41142590, clients rely on the explicit dependency on the basal
+# node created by 'taskNeedsInput' for this to trigger the production of 'file'
+# before execution of the directory contents dependency.
+#
+# RUN: grep -A1000 "VERSION-BEGIN-[2]" %s | grep -B10000 "VERSION-END-2" | grep -ve '^--$' > %t.build/build-2.llbuild
+# RUN: %{llbuild} buildsystem build --serial --trace %t.rebuild.trace --chdir %t.build -f build-2.llbuild
+# RUN: %{FileCheck} --check-prefix=CHECK-REBUILD --input-file=%t.rebuild.trace %s
+#
+# CHECK-REBUILD: { "new-rule", "[[RULE_NAME:R[0-9]+]]", "Dfile" },
+# CHECK-REBUILD: { "rule-needs-to-run", "[[RULE_NAME]]", "input-rebuilt", "[[RULE_NAME2:R[0-9]+]]" },
+
+##### VERSION-BEGIN-1 #####
+
+client:
+  name: basic
+
+targets:
+  "": ["<all>"]
+
+commands:
+  a:
+    tool: phony
+    inputs: ["file/"]
+    outputs: ["<afile>"]
+  build:
+    tool: phony
+    inputs: ["<afile>"]
+    outputs: ["<all>"]
+
+##### VERSION-END-1 #####
+
+##### VERSION-BEGIN-2 #####
+
+client:
+  name: basic
+
+targets:
+  "": ["<all>"]
+
+commands:
+  a:
+    tool: shell
+    args: stat file
+    inputs: ["file/"]
+    outputs: ["<afile>"]
+
+  z:
+    tool: shell
+    args: touch file
+    outputs: ["file"]
+
+  build:
+    tool: phony
+    inputs: ["<afile>"]
+    outputs: ["<all>"]
+
+##### VERSION-END-2 #####

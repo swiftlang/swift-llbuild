@@ -1,9 +1,6 @@
 # Check that directory contents are rebuilt *only* when appropriate.
 # Makes use of exclusion filters
 #
-# Failure tracked by rdar://problem/41182818
-# XFAIL: *
-#
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.llbuild
@@ -23,14 +20,15 @@
 # CHECK-REBUILD: { "new-rule", "[[RULE_NAME:R[0-9]+]]", "Ddirexcludedfile" },
 # CHECK-REBUILD: { "rule-does-not-need-to-run", "[[RULE_NAME]]" },
 
-# A rebuild shouldn't rebuild the directory for excluded files.
+# A rebuild unfortunately rebuilds with even with excluded files.
+# rdar://41142590
 #
 # RUN: touch %t.build/dir/excludedfile
 # RUN: %{llbuild} buildsystem build --serial --trace %t.rebuild.trace --chdir %t.build
 # RUN: %{FileCheck} --check-prefix=CHECK-REBUILD2 --input-file=%t.rebuild.trace %s
 #
 # CHECK-REBUILD2: { "new-rule", "[[RULE_NAME:R[0-9]+]]", "Ddirexcludedfile" },
-# CHECK-REBUILD2: { "rule-does-not-need-to-run", "[[RULE_NAME]]" },
+# CHECK-REBUILD2: { "rule-needs-to-run", "[[RULE_NAME]]", "input-rebuilt", "[[RULE_NAME2:R[0-9]+]]" },
 
 
 # A rebuild after adding a new file should rebuild the directory.
