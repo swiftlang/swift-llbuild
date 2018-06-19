@@ -181,23 +181,9 @@ public:
   
   /// Get a short description of the command, for use in status reporting.
   virtual void getShortDescription(SmallVectorImpl<char> &result) = 0;
-
-  /// Get a short description of the command, for use in status reporting.
-  llvm::StringRef getShortDescription() {
-    llvm::SmallString<64> description;
-    getShortDescription(description);
-    return description.str();
-  }
   
   /// Get a verbose description of the command, for use in status reporting.
   virtual void getVerboseDescription(SmallVectorImpl<char> &result) = 0;
-  
-  /// Get a verbose description of the command, for use in status reporting.
-  llvm::StringRef getVerboseDescription() {
-    llvm::SmallString<64> description;
-    getVerboseDescription(description);
-    return description.str();
-  }
   
   /// @}
 

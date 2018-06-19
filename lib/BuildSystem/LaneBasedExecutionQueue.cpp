@@ -194,7 +194,10 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
       LaneBasedExecutionQueueJobContext context{ laneNumber, job };
       {
         TracingExecutionQueueDepth(readyJobsCount);
-        TracingExecutionQueueJob t(context.laneNumber, job.getForCommand()->getShortDescription());
+
+        llvm::SmallString<64> description;
+        job.getForCommand()->getShortDescription(description);
+        TracingExecutionQueueJob t(context.laneNumber, description.str());
         
         getDelegate().commandJobStarted(job.getForCommand());
         job.execute(reinterpret_cast<QueueJobContext*>(&context));
@@ -309,7 +312,10 @@ public:
                  bool canSafelyInterrupt) override {
     LaneBasedExecutionQueueJobContext& context =
       *reinterpret_cast<LaneBasedExecutionQueueJobContext*>(opaqueContext);
-    TracingExecutionQueueSubprocess subprocessInterval(context.laneNumber, context.job.getForCommand()->getShortDescription());
+
+    llvm::SmallString<64> description;
+    context.job.getForCommand()->getShortDescription(description);
+    TracingExecutionQueueSubprocess subprocessInterval(context.laneNumber, description.str());
 
     {
       std::unique_lock<std::mutex> lock(readyJobsMutex);
