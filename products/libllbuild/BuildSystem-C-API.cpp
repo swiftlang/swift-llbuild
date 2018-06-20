@@ -889,13 +889,13 @@ char* llb_buildsystem_command_get_verbose_description(
 
 llb_quality_of_service_t llb_get_quality_of_service() {
   switch (llbuild::buildsystem::getDefaultQualityOfService()) {
-  case llbuild::buildsystem::QualityOfService::normal:
+  case llbuild::buildsystem::QualityOfService::Normal:
     return llb_quality_of_service_default;
-  case llbuild::buildsystem::QualityOfService::userInitiated:
+  case llbuild::buildsystem::QualityOfService::UserInitiated:
     return llb_quality_of_service_user_initiated;
-  case llbuild::buildsystem::QualityOfService::utility:
+  case llbuild::buildsystem::QualityOfService::Utility:
     return llb_quality_of_service_utility;
-  case llbuild::buildsystem::QualityOfService::background:
+  case llbuild::buildsystem::QualityOfService::Background:
     return llb_quality_of_service_background;
   default:
     assert(0 && "unknown quality service level");
@@ -907,19 +907,19 @@ void llb_set_quality_of_service(llb_quality_of_service_t level) {
   switch (level) {
   case llb_quality_of_service_default:
     llbuild::buildsystem::setDefaultQualityOfService(
-        llbuild::buildsystem::QualityOfService::normal);
+        llbuild::buildsystem::QualityOfService::Normal);
     break;
   case llb_quality_of_service_user_initiated:
     llbuild::buildsystem::setDefaultQualityOfService(
-        llbuild::buildsystem::QualityOfService::userInitiated);
+        llbuild::buildsystem::QualityOfService::UserInitiated);
     break;
   case llb_quality_of_service_utility:
     llbuild::buildsystem::setDefaultQualityOfService(
-        llbuild::buildsystem::QualityOfService::utility);
+        llbuild::buildsystem::QualityOfService::Utility);
     break;
   case llb_quality_of_service_background:
     llbuild::buildsystem::setDefaultQualityOfService(
-        llbuild::buildsystem::QualityOfService::background);
+        llbuild::buildsystem::QualityOfService::Background);
     break;
   default:
     assert(0 && "unknown quality service level");
@@ -930,9 +930,9 @@ void llb_set_quality_of_service(llb_quality_of_service_t level) {
 
 llb_scheduler_algorithm_t llb_get_scheduler_algorithm() {
   switch (llbuild::buildsystem::getSchedulerAlgorithm()) {
-    case llbuild::buildsystem::SchedulerAlgorithm::commandNamePriority:
+    case llbuild::buildsystem::SchedulerAlgorithm::CommandNamePriority:
       return llb_scheduler_algorithm_command_name_priority;
-    case llbuild::buildsystem::SchedulerAlgorithm::fifo:
+    case llbuild::buildsystem::SchedulerAlgorithm::FIFO:
       return llb_scheduler_algorithm_fifo;
     default:
       assert(0 && "unknown scheduler algorithm");
@@ -944,11 +944,11 @@ void llb_set_scheduler_algorithm(llb_scheduler_algorithm_t algorithm) {
   switch (algorithm) {
     case llb_scheduler_algorithm_command_name_priority:
       llbuild::buildsystem::setSchedulerAlgorithm(
-          llbuild::buildsystem::SchedulerAlgorithm::commandNamePriority);
+          llbuild::buildsystem::SchedulerAlgorithm::CommandNamePriority);
       break;
     case llb_scheduler_algorithm_fifo:
       llbuild::buildsystem::setSchedulerAlgorithm(
-          llbuild::buildsystem::SchedulerAlgorithm::fifo);
+          llbuild::buildsystem::SchedulerAlgorithm::FIFO);
       break;
     default:
       assert(0 && "unknown scheduler algorithm");

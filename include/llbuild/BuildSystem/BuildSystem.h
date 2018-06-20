@@ -280,16 +280,16 @@ enum class QualityOfService {
   /// A default quality of service (i.e. what the system would use without other
   /// advisement, generally this would be comparable to what would be done by
   /// `make`, `ninja`, etc.)
-  normal,
+  Normal,
 
   /// User-initiated, high priority work.
-  userInitiated,
+  UserInitiated,
   
   /// Batch work performed on behalf of the user.
-  utility,
+  Utility,
 
   /// Background work that is not directly visible to the user.
-  background
+  Background
 };
 
 QualityOfService getDefaultQualityOfService();
@@ -299,10 +299,10 @@ void setDefaultQualityOfService(QualityOfService level);
 
 enum class SchedulerAlgorithm {
   /// Command name priority queue based scheduling [default]
-  commandNamePriority = 0,
+  CommandNamePriority = 0,
 
   /// First in, first out
-  fifo = 1
+  FIFO = 1
 };
 
 SchedulerAlgorithm getSchedulerAlgorithm();
