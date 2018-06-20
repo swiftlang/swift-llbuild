@@ -124,10 +124,10 @@ void BuildSystemInvocation::parse(llvm::ArrayRef<std::string> args,
       auto algorithm = args[0];
       if (algorithm == "commandNamePriority" || algorithm == "default") {
         llbuild::buildsystem::setSchedulerAlgorithm(
-            llbuild::buildsystem::SchedulerAlgorithm::commandNamePriority);
+            llbuild::buildsystem::SchedulerAlgorithm::CommandNamePriority);
       } else if (algorithm == "fifo") {
         llbuild::buildsystem::setSchedulerAlgorithm(
-            llbuild::buildsystem::SchedulerAlgorithm::fifo);
+            llbuild::buildsystem::SchedulerAlgorithm::FIFO);
       } else {
         error("unknown scheduler algorithm '" + algorithm + "'");
         break;

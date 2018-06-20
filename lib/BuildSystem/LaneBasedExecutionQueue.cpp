@@ -66,23 +66,23 @@ struct QueueJobLess {
 namespace {
 
 static std::atomic<QualityOfService> defaultQualityOfService{
-  llbuild::buildsystem::QualityOfService::normal };
+  llbuild::buildsystem::QualityOfService::Normal };
 
 static std::atomic<SchedulerAlgorithm> defaultAlgorithm {
-  llbuild::buildsystem::SchedulerAlgorithm::commandNamePriority };
+  llbuild::buildsystem::SchedulerAlgorithm::CommandNamePriority };
 
 static std::atomic<uint32_t> defaultLaneWidth { 0 };
 
 #if defined(__APPLE__)
 qos_class_t _getDarwinQOSClass(QualityOfService level) {
   switch (llbuild::buildsystem::getDefaultQualityOfService()) {
-  case llbuild::buildsystem::QualityOfService::normal:
+  case llbuild::buildsystem::QualityOfService::Normal:
     return QOS_CLASS_DEFAULT;
-  case llbuild::buildsystem::QualityOfService::userInitiated:
+  case llbuild::buildsystem::QualityOfService::UserInitiated:
     return QOS_CLASS_USER_INITIATED;
-  case llbuild::buildsystem::QualityOfService::utility:
+  case llbuild::buildsystem::QualityOfService::Utility:
     return QOS_CLASS_UTILITY;
-  case llbuild::buildsystem::QualityOfService::background:
+  case llbuild::buildsystem::QualityOfService::Background:
     return QOS_CLASS_BACKGROUND;
   default:
     assert(0 && "unknown command result");
@@ -634,9 +634,9 @@ public:
 
 std::unique_ptr<Scheduler> Scheduler::make() {
   switch (defaultAlgorithm) {
-    case llbuild::buildsystem::SchedulerAlgorithm::commandNamePriority:
+    case llbuild::buildsystem::SchedulerAlgorithm::CommandNamePriority:
       return std::unique_ptr<Scheduler>(new PriorityQueueScheduler);
-    case llbuild::buildsystem::SchedulerAlgorithm::fifo:
+    case llbuild::buildsystem::SchedulerAlgorithm::FIFO:
       return std::unique_ptr<Scheduler>(new FifoScheduler);
     default:
       assert(0 && "unknown scheduler algorithm");
