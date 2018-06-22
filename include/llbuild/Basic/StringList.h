@@ -70,7 +70,7 @@ public:
   }
 
   // StringList can only be moved, not copied
-  StringList(StringList&& rhs) : size(rhs.size), contents(rhs.contents) {
+  StringList(StringList&& rhs) : contents(rhs.contents), size(rhs.size) {
     rhs.size = 0;
     rhs.contents = nullptr;
   }
