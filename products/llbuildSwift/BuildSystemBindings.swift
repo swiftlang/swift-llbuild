@@ -393,11 +393,6 @@ public protocol FileInfo {
 // FIXME: We want to remove this protocol eventually and use the FileSystem
 // protocol from SwiftPM's Basic target.
 public protocol FileSystem {
-
-    /// Get the contents of a file.
-    @available(*, deprecated, renamed: "read")
-    func readFileContents(_ path: String) -> [UInt8]?
-
     /// Get the contents of a file.
     func read(_ path: String) throws -> [UInt8]
 
