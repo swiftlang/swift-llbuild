@@ -22,6 +22,10 @@
 # A null rebuild where the directory itself has been touched unfortunately
 # rebuilds (due to rdar://41142590).
 #
+# Sadly, some of the CI systems run on file systems where the time resolution
+# is coarse. We have to inject a pause here to cause this to roll over.
+#
+# RUN: sleep 1
 # RUN: touch %t.build/dir
 # RUN: %{llbuild} buildsystem build --serial --trace %t.touch.trace --chdir %t.build
 # RUN: %{FileCheck} --check-prefix=CHECK-TOUCH --input-file=%t.touch.trace %s
