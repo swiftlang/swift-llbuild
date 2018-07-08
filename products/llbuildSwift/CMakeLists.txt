@@ -36,14 +36,6 @@ endif()
 # Add swift bindings target if swift compiler is present.
 if (SWIFTC_FOUND)
   add_swift_module(libllbuildSwift llbuildSwift libllbuild "${SOURCES}" "${additional_args}")
-
-  # Install libllbuild.
-  install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../libllbuild/include
-    DESTINATION lib/swift/pm/llbuild
-    COMPONENT libllbuildSwift
-    FILES_MATCHING
-    PATTERN "*.h"
-    PATTERN "module.modulemap")
   
   # Install the swift headers.
   install(FILES 
