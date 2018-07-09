@@ -54,6 +54,22 @@ Note: this assumes you have installed `lit` as a user, by running `easy_install 
     $ cmake -G Ninja -DCMAKE_BUILD_TYPE:=Debug -DCMAKE_C_COMPILER:=clang -DCMAKE_CXX_COMPILER:=clang++ ..
     $ ninja
 
+**Building from source for Ubuntu with Docker**
+
+* Build the docker image::
+
+    $ utils/docker/docker-utils build
+
+* Run the container and open a bash shell::
+
+    $ utils/docker/docker-utils run bash
+
+* Build::
+
+    $ mkdir build && cd build
+    $ cmake -G Ninja -DCMAKE_BUILD_TYPE:=Debug -DCMAKE_C_COMPILER:=clang -DCMAKE_CXX_COMPILER:=clang++ ..
+    $ ninja
+
 **Building from source on Windows**
 
 * Install the latest Visual Studio with Visual C++.
