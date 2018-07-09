@@ -76,18 +76,6 @@ def build(_):
         docker_dir
     ])
 
-def run(args):
-    """Runs an executable in the container."""
-    docker_run([args.executable] + args.arguments)
-
-def bootstrap(args):
-    """Runs the bootstrap script in the container."""
-    docker_run(["Utilities/bootstrap"] + args.arguments)
-
-def build_run(args):
-    """Runs a built swift executable in the container."""
-    docker_run([".build/x86_64-unknown-linux/debug/" + args.command] + args.arguments)
-
 def main():
     """Main script entry-point."""
 
