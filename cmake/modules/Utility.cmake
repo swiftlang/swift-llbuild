@@ -181,7 +181,12 @@ function(add_swift_module target name deps sources additional_args)
   )
   
   # Link and create dynamic framework.
-  set(DYLIB_OUTPUT ${LLBUILD_LIBRARY_OUTPUT_INTDIR}/${target}.dylib)
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(DYLIB_EXT dylib)
+  else()
+    set(DYLIB_EXT so)
+  endif()
+  set(DYLIB_OUTPUT ${LLBUILD_LIBRARY_OUTPUT_INTDIR}/${target}.${DYLIB_EXT})
   
   if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     list(APPEND DYLYB_ARGS -sdk ${CMAKE_OSX_SYSROOT})
