@@ -85,7 +85,6 @@
 		40B3C91220D3AEC9007C5847 /* libgtest_main.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A224E619F99C580059043E /* libgtest_main.a */; };
 		40B3C91C20D3B075007C5847 /* C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 40B3C91B20D3AF9B007C5847 /* C-API.cpp */; };
 		40B3C92720D3B24D007C5847 /* libllbuild.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1ADC23A1A85936400D5387C /* libllbuild.dylib */; };
-		40F638ED205306AB00A1CFBE /* Version.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 40F638EC2053043D00A1CFBE /* Version.xcconfig */; };
 		9ADD8B2320D7009F0066BE9A /* BuildSystem-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9ADD8B2220D7009A0066BE9A /* BuildSystem-C-API.cpp */; };
 		9D0A6D811E1FFEA800BE636F /* TempDir.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9D0A6D7F1E1FFEA800BE636F /* TempDir.cpp */; };
 		9D2107C61DFADDFA00BE26FF /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.tbd */; };
@@ -2891,7 +2890,6 @@
 				E1D191B91B47232B000C4E95 /* Sources */,
 				E1D191BA1B47232B000C4E95 /* Frameworks */,
 				E1D191BB1B47232B000C4E95 /* Headers */,
-				E1D191BC1B47232B000C4E95 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -3065,14 +3063,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		E1D191BC1B47232B000C4E95 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				40F638ED205306AB00A1CFBE /* Version.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
