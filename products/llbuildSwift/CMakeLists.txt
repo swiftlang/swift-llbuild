@@ -38,7 +38,13 @@ if (SWIFTC_FOUND)
   add_swift_module(libllbuildSwift llbuildSwift libllbuild "${SOURCES}" "${additional_args}")
 
   # Install the library.
-  install(FILES "${LLBUILD_LIBRARY_OUTPUT_INTDIR}/libllbuildSwift.dylib"
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(DYLIB_EXT dylib)
+  else()
+    set(DYLIB_EXT so)
+  endif()
+  
+  install(FILES "${LLBUILD_LIBRARY_OUTPUT_INTDIR}/libllbuildSwift.${DYLIB_EXT}"
     DESTINATION lib/swift/pm/llbuild
     COMPONENT libllbuildSwift)
   
