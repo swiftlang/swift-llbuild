@@ -198,15 +198,6 @@ function(add_swift_module target name deps sources additional_args)
   foreach(arg ${additional_args})
     list(APPEND DYLYB_ARGS ${arg})
   endforeach()
-
-  # Add rpath to lookup the linked dylibs adjacent to itself.
-  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    list(APPEND DYLYB_ARGS -Xlinker -rpath -Xlinker @loader_path)
-    list(APPEND DYLYB_ARGS -Xlinker -install_name -Xlinker @rpath/${target}.${DYLIB_EXT})
-  else()
-    list(APPEND DYLYB_ARGS -Xlinker "-rpath=$ORIGIN")
-  endif()
-
   list(APPEND DYLYB_ARGS -L ${LLBUILD_LIBRARY_OUTPUT_INTDIR})
   
   add_custom_command(
