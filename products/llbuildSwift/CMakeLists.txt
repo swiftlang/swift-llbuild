@@ -43,8 +43,11 @@ if (SWIFTC_FOUND)
   else()
     set(DYLIB_EXT so)
   endif()
+
+  # Install both libllbuild and libllbuildSwift.
+  list(APPEND LLBUILD_LIBRARIES "${LLBUILD_LIBRARY_OUTPUT_INTDIR}/libllbuildSwift.${DYLIB_EXT}" "${LLBUILD_LIBRARY_OUTPUT_INTDIR}/libllbuild.${DYLIB_EXT}")
   
-  install(FILES "${LLBUILD_LIBRARY_OUTPUT_INTDIR}/libllbuildSwift.${DYLIB_EXT}"
+  install(FILES "${LLBUILD_LIBRARIES}"
     DESTINATION lib/swift/pm/llbuild
     COMPONENT libllbuildSwift)
   
