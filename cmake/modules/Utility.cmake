@@ -167,6 +167,10 @@ function(add_swift_module target name deps sources additional_args)
   foreach(arg ${additional_args})
     list(APPEND ARGS ${arg})
   endforeach()
+
+  # Enable autolinking so clients that import this library automatically get the
+  # -l<library-name> flag.
+  list(APPEND ARGS -module-link-name ${name})
   
   if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     list(APPEND ARGS -sdk ${CMAKE_OSX_SYSROOT})
