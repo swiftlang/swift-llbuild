@@ -32,7 +32,7 @@ def docker_run(command_args):
         "run",
         "-it",
         "--security-opt", "seccomp=unconfined",
-        "-v", os.getcwd() + ":/llbuild",
+        "-v", "%s:/llbuild" % os.getcwd(),
         "-w", "/llbuild",
         "--rm",
         "llbuild-docker-1604"
@@ -76,6 +76,10 @@ def build(_):
         docker_dir
     ])
 
+def run(args):
+    """Runs an executable in the container."""
+    docker_run(args.command)
+
 def main():
     """Main script entry-point."""
 
@@ -95,9 +99,8 @@ def main():
     # run
     parser_run = subparsers.add_parser(
         "run",
-        help="runs an executable in a container.")
-    parser_run.add_argument("executable", help="the executable to run")
-    parser_run.add_argument("arguments", nargs="*")
+        help="runs a command in a container.")
+    parser_run.add_argument("command", help="the command to run with its arguments", nargs="*")
     parser_run.set_defaults(func=run)
 
     args = parser.parse_args()

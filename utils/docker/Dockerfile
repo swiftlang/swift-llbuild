@@ -17,9 +17,11 @@ RUN apt-get -q update && \
     sqlite3 \
     python-pip \
     libsqlite3-dev \
-    libncurses5-dev
+    libncurses5-dev \
+    vim
 RUN pip install lit
 RUN apt-get -q install -y llvm-3.7-tools
+RUN update-alternatives --install /bin/sh sh /bin/bash 100
 
 ARG SNAPSHOT
 COPY $SNAPSHOT /
@@ -29,5 +31,4 @@ RUN tar -xvzf $SNAPSHOT --directory / --strip-components=1 && \
 # Set Swift Path
 ENV PATH /usr/bin:$PATH
 
-# Print Installed Swift Version
-RUN swift --version
+CMD ["/bin/bash"]
