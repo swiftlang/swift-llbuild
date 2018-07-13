@@ -1,6 +1,6 @@
 # This source file is part of the Swift.org open source project
 #
-# Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
+# Copyright (c) 2018 Apple Inc. and the Swift project authors
 # Licensed under Apache License v2.0 with Runtime Library Exception
 #
 # See http://swift.org/LICENSE.txt for license information
@@ -17,8 +17,7 @@ RUN apt-get -q update && \
     sqlite3 \
     python-pip \
     libsqlite3-dev \
-    libncurses5-dev \
-    vim
+    libncurses5-dev
 RUN pip install lit
 RUN apt-get -q install -y llvm-3.7-tools
 RUN update-alternatives --install /bin/sh sh /bin/bash 100
