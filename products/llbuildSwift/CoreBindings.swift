@@ -308,6 +308,17 @@ public protocol TaskBuildEngine {
     func taskIsComplete(_ result: Value, forceChange: Bool)
 }
 
+extension TaskBuildEngine {
+    /// Indicate that the task has completed and provide its resulting value.
+    ///
+    /// It is legal to call this method from any thread.
+    ///
+    /// - Parameter result: value The new value for the task's rule.
+    public func taskIsComplete(_ result: Value) {
+        self.taskIsComplete(result, forceChange: false)
+    }
+}
+
 /// Single concrete implementation of the TaskBuildEngine protocol.
 private class TaskWrapper: CustomStringConvertible, TaskBuildEngine {
     let engine: BuildEngine
