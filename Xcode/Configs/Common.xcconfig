@@ -20,6 +20,9 @@ CURRENT_PROJECT_VERSION = 1
 // Do not always search user paths.
 ALWAYS_SEARCH_USER_PATHS = NO
 
+// Only use API safe for use in app extensions.
+APPLICATION_EXTENSION_API_ONLY = YES
+
 // Headermaps are disabled.
 USE_HEADERMAP = NO
 
