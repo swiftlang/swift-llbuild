@@ -73,6 +73,9 @@ class SQLiteBuildDB : public BuildDB {
   /// * 4: Pre-history
   static const int currentSchemaVersion = 8;
 
+  std::string path;
+  uint32_t clientSchemaVersion;
+
   sqlite3 *db = nullptr;
 
   /// The mutex to protect all access to the database and statements.
@@ -98,16 +101,10 @@ class SQLiteBuildDB : public BuildDB {
     return out;
   }
 
-public:
-  virtual ~SQLiteBuildDB() {
-    if (db)
-      close();
-  }
-
-  bool open(StringRef path, uint32_t clientSchemaVersion,
-            std::string *error_out) {
-    std::lock_guard<std::mutex> guard(dbMutex);
-    assert(!db);
+  bool open(std::string *error_out) {
+    // The db is opened lazily whenever an operation on it occurs. Thus if it is
+    // already open, we don't need to do any further work.
+    if (db) return true;
 
     // Configure SQLite3 on first use.
     //
@@ -124,7 +121,7 @@ public:
         }
     }
 
-    int result = sqlite3_open(path.str().c_str(), &db);
+    int result = sqlite3_open(path.c_str(), &db);
     if (result != SQLITE_OK) {
       *error_out = "unable to open database: " + std::string(
           sqlite3_errstr(result));
@@ -166,7 +163,7 @@ public:
       sqlite3_close(db);
 
       // Always recreate the database from scratch when the schema changes.
-      result = basic::sys::unlink(path.str().c_str());
+      result = basic::sys::unlink(path.c_str());
       if (result == -1) {
         if (errno != ENOENT) {
           *error_out = std::string("unable to unlink existing database: ") +
@@ -176,7 +173,7 @@ public:
         }
       } else {
         // If the remove was successful, reopen the database.
-        int result = sqlite3_open(path.str().c_str(), &db);
+        int result = sqlite3_open(path.c_str(), &db);
         if (result != SQLITE_OK) {
           *error_out = getCurrentErrorMessage();
           return false;
@@ -285,20 +282,36 @@ public:
   }
 
   void close() {
-    std::lock_guard<std::mutex> guard(dbMutex);
-    assert(db);
+    if (!db) return;
 
     // Destroy prepared statements.
     sqlite3_finalize(findKeyIDForKeyStmt);
+    findKeyIDForKeyStmt = nullptr;
     sqlite3_finalize(findKeyNameForKeyIDStmt);
+    findKeyNameForKeyIDStmt = nullptr;
     sqlite3_finalize(findRuleResultStmt);
+    findRuleResultStmt = nullptr;
     sqlite3_finalize(fastFindRuleResultStmt);
+    fastFindRuleResultStmt = nullptr;
     sqlite3_finalize(deleteFromKeysStmt);
+    deleteFromKeysStmt = nullptr;
     sqlite3_finalize(insertIntoKeysStmt);
+    insertIntoKeysStmt = nullptr;
     sqlite3_finalize(insertIntoRuleResultsStmt);
+    insertIntoRuleResultsStmt = nullptr;
 
     sqlite3_close(db);
     db = nullptr;
+  }
+
+public:
+  SQLiteBuildDB(StringRef path, uint32_t clientSchemaVersion)
+    : path(path), clientSchemaVersion(clientSchemaVersion) { }
+
+  virtual ~SQLiteBuildDB() {
+    std::lock_guard<std::mutex> guard(dbMutex);
+    if (db)
+      close();
   }
 
   /// @name BuildDB API
@@ -310,7 +323,11 @@ public:
 
   virtual uint64_t getCurrentIteration(bool* success_out, std::string *error_out) override {
     std::lock_guard<std::mutex> guard(dbMutex);
-    assert(db);
+
+    if (!open(error_out)) {
+      *success_out = false;
+      return 0;
+    }
 
     // Fetch the iteration from the info table.
     sqlite3_stmt* stmt;
@@ -342,6 +359,11 @@ public:
 
   virtual bool setCurrentIteration(uint64_t value, std::string *error_out) override {
     std::lock_guard<std::mutex> guard(dbMutex);
+
+    if (!open(error_out)) {
+      return false;
+    }
+
     sqlite3_stmt* stmt;
     int result;
     result = sqlite3_prepare_v2(
@@ -387,6 +409,10 @@ public:
     assert(delegate != nullptr);
     std::lock_guard<std::mutex> guard(dbMutex);
     assert(result_out->builtAt == 0);
+
+    if (!open(error_out)) {
+      return false;
+    }
 
     // Fetch the basic rule information.
     int result;
@@ -523,6 +549,10 @@ public:
     std::lock_guard<std::mutex> guard(dbMutex);
     int result;
 
+    if (!open(error_out)) {
+      return false;
+    }
+
     auto dbKeyID = getKeyID(keyID, error_out);
     if (!error_out->empty()) {
       return false;
@@ -582,6 +612,9 @@ public:
   virtual bool buildStarted(std::string *error_out) override {
     std::lock_guard<std::mutex> guard(dbMutex);
 
+    if (!open(error_out))
+      return false;
+
     // Execute the entire build inside a single transaction.
     //
     // FIXME: We should revist this, as we probably wouldn't want a crash in the
@@ -603,6 +636,10 @@ public:
     int result = sqlite3_exec(db, "END;", nullptr, nullptr, nullptr);
     assert(result == SQLITE_OK);
     (void)result;
+
+    // We close the connection whenever a build completes so that we release
+    // any locks that we may have on the file.
+    close();
   }
 
   /// @}
@@ -740,10 +777,7 @@ if (result != SQLITE_OK) { \
 std::unique_ptr<BuildDB> core::createSQLiteBuildDB(StringRef path,
                                                    uint32_t clientSchemaVersion,
                                                    std::string* error_out) {
-  auto db = llvm::make_unique<SQLiteBuildDB>();
-  if (!db->open(path, clientSchemaVersion, error_out))
-    return nullptr;
-
+  auto db = llvm::make_unique<SQLiteBuildDB>(path, clientSchemaVersion);
   return std::move(db);
 }
 
