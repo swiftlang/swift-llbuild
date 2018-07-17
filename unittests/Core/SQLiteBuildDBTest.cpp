@@ -40,10 +40,22 @@ TEST(SQLiteBuildDBTest, ErrorHandling) {
     sqlite3_exec(db, "PRAGMA locking_mode = EXCLUSIVE; BEGIN EXCLUSIVE;", nullptr, nullptr, nullptr);
 
     buildDB = createSQLiteBuildDB(dbPath, 1, &error);
-    EXPECT_TRUE(buildDB == nullptr);
+    EXPECT_FALSE(buildDB == nullptr);
+
+    // The database is opened lazily, thus run an operation that will cause it
+    // to be opened and verify that it fails as expected.
+    bool result = true;
+    buildDB->getCurrentIteration(&result, &error);
+    EXPECT_FALSE(result);
+
     std::stringstream out;
     out << "error: accessing build database \"" << path << "\": database is locked Possibly there are two concurrent builds running in the same filesystem location.";
     EXPECT_EQ(error, out.str());
+
+    // Clean up database connections before unlinking
+    sqlite3_exec(db, "END;", nullptr, nullptr, nullptr);
+    sqlite3_close(db);
+    buildDB = nullptr;
 
     ec = llvm::sys::fs::remove(dbPath.str());
     EXPECT_EQ(bool(ec), false);
@@ -79,8 +91,20 @@ TEST(SQLiteBuildDBTest, LockedWhileBuilding) {
 
   // Tests that we cannot create new connections while a build is running
   std::unique_ptr<BuildDB> otherBuildDB = createSQLiteBuildDB(dbPath, 1, &error);
-  EXPECT_TRUE(otherBuildDB == nullptr);
+  EXPECT_FALSE(otherBuildDB == nullptr);
+
+  // The database is opened lazily, thus run an operation that will cause it
+  // to be opened and verify that it fails as expected.
+  bool success = true;
+  otherBuildDB->getCurrentIteration(&success, &error);
+  EXPECT_FALSE(success);
   EXPECT_EQ(error, out.str());
+
+  // Clean up database connections before unlinking
+  buildDB->buildComplete();
+  buildDB = nullptr;
+  secondBuildDB = nullptr;
+  otherBuildDB = nullptr;
 
   ec = llvm::sys::fs::remove(dbPath.str());
   EXPECT_EQ(bool(ec), false);
