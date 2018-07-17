@@ -777,8 +777,7 @@ if (result != SQLITE_OK) { \
 std::unique_ptr<BuildDB> core::createSQLiteBuildDB(StringRef path,
                                                    uint32_t clientSchemaVersion,
                                                    std::string* error_out) {
-  auto db = llvm::make_unique<SQLiteBuildDB>(path, clientSchemaVersion);
-  return std::move(db);
+  return llvm::make_unique<SQLiteBuildDB>(path, clientSchemaVersion);
 }
 
 #undef checkSQLiteResultOKReturnFalse
