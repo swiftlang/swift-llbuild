@@ -4,6 +4,7 @@ add_llbuild_unittest(CoreTests
   DependencyInfoParserTest.cpp
   DepsBuildEngineTest.cpp
   MakefileDepsParserTest.cpp
+  SQLiteBuildDBTest.cpp
   )
 
 target_link_libraries(CoreTests llbuildCore llbuildBasic llvmSupport sqlite3)
