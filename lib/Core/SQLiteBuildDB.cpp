@@ -128,6 +128,7 @@ class SQLiteBuildDB : public BuildDB {
       return false;
     }
 
+    sqlite3_busy_timeout(db, 20000);
     // Create the database schema, if necessary.
     char *cError;
     int version;
