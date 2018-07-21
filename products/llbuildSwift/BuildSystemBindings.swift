@@ -652,20 +652,26 @@ public final class BuildSystem {
         llb_buildsystem_destroy(_system)
     }
 
-    /// Build the default target, or optionally a single node.
+    /// Build a single node.
     ///
     /// The client is responsible for ensuring only one build is ever executing concurrently.
     ///
-    /// - parameter node: Optional path to a single node to build.
+    /// - parameter node: Path to a single node to build.
     /// - returns: True if the build was successful, false otherwise.
-    public func build(node: String? = nil) -> Bool {
-        if let node = node {
-            var data = copiedDataFromBytes([UInt8](node.utf8))
-            return llb_buildsystem_build_node(_system, &data)
-        } else {
-            var data = llb_data_t(length: 0, data: nil)
-            return llb_buildsystem_build(_system, &data)
-        }
+    public func build(node: String) -> Bool {
+        var data = copiedDataFromBytes([UInt8](node.utf8))
+        return llb_buildsystem_build_node(_system, &data)
+    }
+
+    /// Build the default target, or optionally a specific target.
+    ///
+    /// The client is responsible for ensuring only one build is ever executing concurrently.
+    ///
+    /// - parameter target: Optional name of the target to build.
+    /// - returns: True if the build was successful, false otherwise.
+    public func build(target: String? = nil) -> Bool {
+        var data = target.map({ copiedDataFromBytes([UInt8]($0.utf8)) }) ?? llb_data_t(length: 0, data: nil)
+        return llb_buildsystem_build(_system, &data)
     }
 
     /// Cancel any running build.
