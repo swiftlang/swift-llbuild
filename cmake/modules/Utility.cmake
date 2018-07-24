@@ -181,7 +181,7 @@ function(add_swift_module target name deps sources additional_args)
       OUTPUT    ${OUTPUTS}
       COMMAND   ${SWIFTC_EXECUTABLE}
       ARGS      ${ARGS}
-      DEPENDS   ${sources}
+      DEPENDS   ${sources} ${SWIFT_VERSION}
   )
   
   # Link and create dynamic framework.
@@ -229,5 +229,5 @@ function(add_swift_module target name deps sources additional_args)
   )
   
   # Add the target.    
-  add_custom_target(${target} ALL DEPENDS ${deps} ${DYLIB_OUTPUT} ${sources})
+  add_custom_target(${target} ALL DEPENDS ${deps} ${DYLIB_OUTPUT} ${sources} swiftversion)
 endfunction()
