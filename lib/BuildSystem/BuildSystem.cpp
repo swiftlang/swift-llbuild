@@ -2609,18 +2609,19 @@ public:
     for (unsigned i = 0; i != sourcesList.size(); ++i) {
       auto source = sourcesList[i];
       auto object = objectsList[i];
+      auto objectDir = llvm::sys::path::parent_path(object);
       auto sourceStem = llvm::sys::path::stem(source);
       SmallString<16> partialModulePath;
-      llvm::sys::path::append(partialModulePath, tempsPath,
+      llvm::sys::path::append(partialModulePath, objectDir,
                               sourceStem + "~partial.swiftmodule");
       SmallString<16> swiftDepsPath;
-      llvm::sys::path::append(swiftDepsPath, tempsPath,
+      llvm::sys::path::append(swiftDepsPath, objectDir,
                               sourceStem + ".swiftdeps");
       
       os << "  \"" << source << "\": {\n";
       if (!enableWholeModuleOptimization) {
         SmallString<16> depsPath;
-        llvm::sys::path::append(depsPath, tempsPath, sourceStem + ".d");
+        llvm::sys::path::append(depsPath, objectDir, sourceStem + ".d");
         os << "    \"dependencies\": \"" << depsPath << "\",\n";
         depsFiles_out.push_back(depsPath.str());
       }
