@@ -282,7 +282,7 @@ public:
     // FIXME: Find a cleaner strategy for merging the internal schema version
     // with that from the client.
     auto clientVersion = delegate.getVersion();
-    assert(clientVersion <= (1 << 16) && "unsupported client verison");
+    assert(clientVersion <= (1 << 16) && "unsupported client version");
     return internalSchemaVersion + (clientVersion << 16);
   }
 
