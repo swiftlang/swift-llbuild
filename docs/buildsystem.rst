@@ -164,7 +164,7 @@ connections between those commands. Similar to Ninja, the basic build file
 language is not intended to be written directly, but is expected to be an
 artifact produced by the higher level build system.
 
-The build file syntax is currently YAML, to faciliate ease of implementation and
+The build file syntax is currently YAML, to facilitate ease of implementation and
 evolution. At some future point, we may wish to change to a custom file format
 to optimize for the native build system's specific requirements (in particular,
 to reduce the file size).
