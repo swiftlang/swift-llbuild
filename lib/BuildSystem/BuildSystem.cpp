@@ -90,9 +90,9 @@ public:
   }
 
   virtual FileSystem& getFileSystem() override;
-  
+
   virtual void setFileContentsBeingParsed(StringRef buffer) override;
-  
+
   virtual void error(StringRef filename,
                      const BuildFileToken& at,
                      const Twine& message) override;
@@ -120,7 +120,7 @@ public:
 /// The delegate used to build a loaded build file.
 class BuildSystemEngineDelegate : public BuildEngineDelegate {
   BuildSystemImpl& system;
-  
+
   // FIXME: This is an inefficent map, the string is duplicated.
   std::unordered_map<std::string, std::unique_ptr<BuildNode>> dynamicNodes;
 
@@ -155,7 +155,7 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
   /// * 5: Switch BuildValue to be BinaryCoding based
   /// * 4: Pre-history
   static const uint32_t internalSchemaVersion = 9;
-  
+
   BuildSystem& buildSystem;
 
   /// The delegate the BuildSystem was configured with.
@@ -191,14 +191,14 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
 
   /// Flag indicating if the build has been cancelled.
   std::atomic<bool> isCancelled_{ false };
-  
+
   /// @name BuildSystemCommandInterface Implementation
   /// @{
 
   virtual BuildEngine& getBuildEngine() override {
     return buildEngine;
   }
-  
+
   virtual BuildExecutionQueue& getExecutionQueue() override {
     assert(executionQueue.get());
     return *executionQueue;
@@ -282,7 +282,7 @@ public:
     // FIXME: Find a cleaner strategy for merging the internal schema version
     // with that from the client.
     auto clientVersion = delegate.getVersion();
-    assert(clientVersion <= (1 << 16) && "unsupported client verison");
+    assert(clientVersion <= (1 << 16) && "unsupported client version");
     return internalSchemaVersion + (clientVersion << 16);
   }
 
@@ -293,7 +293,7 @@ public:
       fileSystem.swap(newFS);
     }
   }
-  
+
   /// @name Client API
   /// @{
 
@@ -332,7 +332,7 @@ public:
 
   /// Build the given key, and return the result and an indication of success.
   llvm::Optional<BuildValue> build(BuildKey key);
-  
+
   bool build(StringRef target);
 
   void setBuildWasAborted(bool value) {
@@ -376,12 +376,12 @@ FileSystem& BuildSystemFileDelegate::getFileSystem() {
   return system.getFileSystem();
 }
 
-  
+
 /// This is the task used to "build" a target, it translates between the request
 /// for building a target key and the requests for all of its nodes.
 class TargetTask : public Task {
   Target& target;
-  
+
   // Build specific data.
   //
   // FIXME: We should probably factor this out somewhere else, so we can enforce
@@ -438,11 +438,11 @@ class TargetTask : public Task {
       system.error(system.getMainFilename(),
                    (Twine("cannot build target '") + target.getName() +
                     "' due to missing inputs: " + inputs));
-      
+
       // Report the command failure.
       system.getDelegate().hadCommandFailure();
     }
-    
+
     // Complete the task immediately.
     engine.taskIsComplete(this, BuildValue::makeTarget().toData());
   }
@@ -475,7 +475,7 @@ class FileInputNodeTask : public Task {
                             const ValueType& value) override {
   }
 
-  virtual void inputsAvailable(BuildEngine& engine) override {    
+  virtual void inputsAvailable(BuildEngine& engine) override {
     // FIXME: We should do this work in the background.
 
     // Get the information on the file.
@@ -660,7 +660,7 @@ class ProducedNodeTask : public Task {
 
   // Whether this is a node we are unable to produce.
   bool isInvalid = false;
-  
+
   virtual void start(BuildEngine& engine) override {
     // Request the producer command.
     if (node.getProducers().size() == 1) {
@@ -696,9 +696,9 @@ class ProducedNodeTask : public Task {
       engine.taskIsComplete(this, BuildValue::makeFailedInput().toData());
       return;
     }
-    
+
     assert(!nodeResult.isInvalid());
-    
+
     // Complete the task immediately.
     engine.taskIsComplete(this, nodeResult.toData());
   }
@@ -706,7 +706,7 @@ class ProducedNodeTask : public Task {
 public:
   ProducedNodeTask(Node& node)
       : node(node), nodeResult(BuildValue::makeInvalid()) {}
-  
+
   static bool isResultValid(BuildEngine&, Node& node,
                             const BuildValue& value) {
     // If the result was failure, we always need to rebuild (it may produce an
@@ -735,7 +735,7 @@ class DirectoryContentsTask : public Task {
 
   /// The value for the input directory.
   ValueType directoryValue;
-  
+
   virtual void start(BuildEngine& engine) override {
     // Request the base directory node -- this task doesn't actually use the
     // value, but this connects the task to its producer if present.
@@ -783,7 +783,7 @@ class DirectoryContentsTask : public Task {
 
   virtual void inputsAvailable(BuildEngine& engine) override {
     // FIXME: We should do this work in the background.
-    
+
     // Get the stat information on the directory.
     //
     // FIXME: We should probably be using the directory value here, but that
@@ -906,14 +906,14 @@ class DirectoryTreeSignatureTask : public Task {
   struct SubpathInfo {
     /// The filename;
     std::string filename;
-    
+
     /// The result of requesting the node at this subpath, once available.
     ValueType value;
 
     /// The directory signature, if needed.
     llvm::Optional<ValueType> directorySignatureValue;
   };
-  
+
   /// The path we are taking the signature of.
   std::string path;
 
@@ -928,7 +928,7 @@ class DirectoryTreeSignatureTask : public Task {
   /// Once we have the input directory information, we resize this to match the
   /// number of children to avoid dynamically resizing it.
   std::vector<SubpathInfo> childResults;
-  
+
   virtual void start(BuildEngine& engine) override {
     // Ask for the base directory directory contents.
     engine.taskNeedsInput(
@@ -977,7 +977,7 @@ class DirectoryTreeSignatureTask : public Task {
         if (value.getOutputInfo().isDirectory()) {
           SmallString<256> childPath{ path };
           llvm::sys::path::append(childPath, childResult.filename);
-        
+
           engine.taskNeedsInput(
               this, BuildKey::makeDirectoryTreeSignature(childPath,
                                                          filters).toData(),
@@ -1016,7 +1016,7 @@ class DirectoryTreeSignatureTask : public Task {
         code = hash_combine(code, 0XC183979C3E98722E);
       }
     }
-    
+
     // Compute the signature.
     engine.taskIsComplete(this, BuildValue::makeDirectoryTreeSignature(
                               CommandSignature(uint64_t(code))).toData());
@@ -1048,14 +1048,14 @@ class DirectoryTreeStructureSignatureTask : public Task {
   struct SubpathInfo {
     /// The filename;
     std::string filename;
-    
+
     /// The result of requesting the node at this subpath, once available.
     ValueType value;
 
     /// The directory structure signature, if needed.
     llvm::Optional<ValueType> directoryStructureSignatureValue;
   };
-  
+
   /// The path we are taking the signature of.
   std::string path;
 
@@ -1070,7 +1070,7 @@ class DirectoryTreeStructureSignatureTask : public Task {
   /// Once we have the input directory information, we resize this to match the
   /// number of children to avoid dynamically resizing it.
   std::vector<SubpathInfo> childResults;
-  
+
   virtual void start(BuildEngine& engine) override {
     // Ask for the base directory directory contents.
     engine.taskNeedsInput(
@@ -1119,7 +1119,7 @@ class DirectoryTreeStructureSignatureTask : public Task {
         if (value.getOutputInfo().isDirectory()) {
           SmallString<256> childPath{ path };
           llvm::sys::path::append(childPath, childResult.filename);
-        
+
           engine.taskNeedsInput(
               this,
               BuildKey::makeDirectoryTreeStructureSignature(childPath,
@@ -1154,7 +1154,7 @@ class DirectoryTreeStructureSignatureTask : public Task {
                                      directoryValue.end()));
       }
     }
-    
+
     // For now, we represent this task as the aggregation of all the inputs.
     for (const auto& info: childResults) {
       // We only merge the "structural" information on a child; i.e. its
@@ -1169,7 +1169,7 @@ class DirectoryTreeStructureSignatureTask : public Task {
         code = hash_combine(
             code, hash_combine_range(info.value.begin(), info.value.end()));
       }
-      
+
       if (info.directoryStructureSignatureValue.hasValue()) {
         auto& data = info.directoryStructureSignatureValue.getValue();
         code = hash_combine(
@@ -1179,7 +1179,7 @@ class DirectoryTreeStructureSignatureTask : public Task {
         code = hash_combine(code, 0XC183979C3E98722E);
       }
     }
-    
+
     // Compute the signature.
     engine.taskIsComplete(this, BuildValue::makeDirectoryTreeStructureSignature(
                               CommandSignature(uint64_t(code))).toData());
@@ -1234,10 +1234,10 @@ class CommandTask : public Task {
         bsci.taskIsComplete(this, BuildValue::makeSkippedCommand());
         return;
       }
-    
+
       // Execute the command, with notifications to the delegate.
       auto result = command.execute(bsci, this, context);
-        
+
       // Inform the engine of the result.
       if (result.isFailedCommand()) {
         bsci.getDelegate().hadCommandFailure();
@@ -1312,7 +1312,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
   switch (key.getKind()) {
   case BuildKey::Kind::Unknown:
     break;
-    
+
   case BuildKey::Kind::Command: {
     // Find the comand.
     auto it = getBuildDescription().getCommands().find(key.getCommandName());
@@ -1364,7 +1364,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       // Save the custom command.
       customTasks.emplace_back(std::move(result));
       Command *command = customTasks.back().get();
-      
+
       return Rule{
         keyData,
         /*Action=*/ [command](BuildEngine& engine) -> Task* {
@@ -1377,7 +1377,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
         }
       };
     }
-    
+
     // We were unable to create an appropriate custom command, produce an error
     // task.
     return Rule{
@@ -1445,7 +1445,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       /*IsValid=*/ nullptr
     };
   }
-    
+
   case BuildKey::Kind::Node: {
     // Find the node.
     auto it = getBuildDescription().getNodes().find(key.getNodeName());
@@ -1512,7 +1512,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
           /*IsValid=*/ nullptr
         };
       }
-      
+
       return Rule{
         keyData,
         /*Action=*/ [node](BuildEngine& engine) -> Task* {
@@ -1615,7 +1615,7 @@ llvm::Optional<BuildValue> BuildSystemImpl::build(BuildKey key) {
   // Build the target.
   buildWasAborted = false;
   auto result = getBuildEngine().build(key.toData());
-    
+
   // Release the execution queue, impicitly waiting for it to complete. The
   // asynchronous nature of the engine callbacks means it is possible for the
   // queue to have notified the engine of the last task completion, but still
@@ -1727,7 +1727,7 @@ class ShellCommand : public ExternalCommand {
   enum class DepsStyle {
     /// No discovered dependencies are in use.
     Unused = 0,
-      
+
     /// "Makefile" style dependencies in the form typically generated by C
     /// compilers, wherein the dependencies of the first target are treated as
     /// dependencies of the command.
@@ -1736,7 +1736,7 @@ class ShellCommand : public ExternalCommand {
     /// Darwin's DependencyInfo format.
     DependencyInfo,
   };
-  
+
   /// The command line arguments.
   std::vector<StringRef> args;
 
@@ -1745,7 +1745,7 @@ class ShellCommand : public ExternalCommand {
 
   /// The environment to use. If empty, the environment will be inherited.
   SmallVector<std::pair<StringRef, StringRef>, 1> env;
-  
+
   /// The path to the dependency output file, if used.
   SmallVector<std::string, 1> depsPaths{};
 
@@ -1760,7 +1760,7 @@ class ShellCommand : public ExternalCommand {
 
   /// The cached signature, once computed -- 0 is used as a sentinel value.
   std::atomic<CommandSignature> cachedSignature{ };
-  
+
   virtual CommandSignature getSignature() override {
     CommandSignature signature = cachedSignature;
     if (!signature.isNull())
@@ -1830,7 +1830,7 @@ class ShellCommand : public ExternalCommand {
           return false;
         continue;
       }
-      
+
       llvm::report_fatal_error("unknown dependencies style");
     }
 
@@ -1943,7 +1943,7 @@ public:
       basic::appendShellEscapedString(os, arg);
     }
   }
-  
+
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
     if (name == "args") {
@@ -1988,7 +1988,7 @@ public:
 
     return true;
   }
-  
+
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   ArrayRef<StringRef> values) override {
     if (name == "args") {
@@ -2045,7 +2045,7 @@ public:
       // If the command failed, there is no need to gather dependencies.
       return result;
     }
-    
+
     // Collect the discovered dependencies, if used.
     if (!depsPaths.empty()) {
       if (!processDiscoveredDependencies(bsci, task, context)) {
@@ -2054,7 +2054,7 @@ public:
         return CommandResult::Failed;
       }
     }
-    
+
     return result;
   }
 };
@@ -2093,10 +2093,10 @@ public:
 class ClangShellCommand : public ExternalCommand {
   /// The compiler command to invoke.
   std::vector<StringRef> args;
-  
+
   /// The path to the dependency output file, if used.
   std::string depsPath;
-  
+
   virtual CommandSignature getSignature() override {
     return ExternalCommand::getSignature()
         .combine(args);
@@ -2168,7 +2168,7 @@ public:
       basic::appendShellEscapedString(os, arg);
     }
   }
-  
+
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
     if (name == "args") {
@@ -2263,7 +2263,7 @@ public:
 
 class SwiftGetVersionCommand : public Command {
   std::string executable;
-  
+
 public:
   SwiftGetVersionCommand(const BuildKey& key)
       : Command("swift-get-version"), executable(key.getCustomTaskData()) {
@@ -2312,7 +2312,7 @@ public:
     llvm_unreachable("unexpected");
     return BuildValue::makeInvalid();
   }
-  
+
   virtual bool isResultValid(BuildSystem&, const BuildValue& value) override {
     // Always rebuild this task.
     return false;
@@ -2365,10 +2365,10 @@ public:
 class SwiftCompilerShellCommand : public ExternalCommand {
   /// The compiler command to invoke.
   std::string executable = "swiftc";
-  
+
   /// The name of the module.
   std::string moduleName;
-  
+
   /// The path of the output module.
   std::string moduleOutputPath;
 
@@ -2389,7 +2389,7 @@ class SwiftCompilerShellCommand : public ExternalCommand {
 
   /// Whether the sources are part of a library or not.
   bool isLibrary = false;
-  
+
   /// Whether to enable -whole-module-optimization.
   bool enableWholeModuleOptimization = false;
 
@@ -2415,7 +2415,7 @@ class SwiftCompilerShellCommand : public ExternalCommand {
   void getOutputFileMapPath(SmallVectorImpl<char>& result) const {
     llvm::sys::path::append(result, tempsPath, "output-file-map.json");
   }
-    
+
   /// Compute the complete set of command line arguments to invoke swift with.
   void constructCommandLineArgs(StringRef outputFileMapPath,
                                 std::vector<StringRef>& result) const {
@@ -2451,7 +2451,7 @@ class SwiftCompilerShellCommand : public ExternalCommand {
       result.push_back(arg);
     }
   }
-  
+
 public:
   using ExternalCommand::ExternalCommand;
 
@@ -2464,10 +2464,10 @@ public:
   virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
     SmallString<64> outputFileMapPath;
     getOutputFileMapPath(outputFileMapPath);
-    
+
     std::vector<StringRef> commandLine;
     constructCommandLineArgs(outputFileMapPath, commandLine);
-    
+
     llvm::raw_svector_ostream os(result);
     bool first = true;
     for (const auto& arg: commandLine) {
@@ -2481,7 +2481,7 @@ public:
       }
     }
   }
-  
+
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
     if (name == "executable") {
@@ -2561,7 +2561,7 @@ public:
     } else {
       return ExternalCommand::configureAttribute(ctx, name, values);
     }
-    
+
     return true;
   }
 
@@ -2576,7 +2576,7 @@ public:
                           std::vector<std::string>& depsFiles_out) const {
     // FIXME: We need to properly escape everything we write here.
     assert(sourcesList.size() == objectsList.size());
-    
+
     SmallString<16> data;
     std::error_code ec;
     llvm::raw_fd_ostream os(outputFileMapPath, ec,
@@ -2588,7 +2588,7 @@ public:
     }
 
     os << "{\n";
-    
+
     // Write the master file dependencies entry.
     SmallString<16> masterDepsPath;
     llvm::sys::path::append(masterDepsPath, tempsPath, "master.swiftdeps");
@@ -2617,7 +2617,7 @@ public:
       SmallString<16> swiftDepsPath;
       llvm::sys::path::append(swiftDepsPath, objectDir,
                               sourceStem + ".swiftdeps");
-      
+
       os << "  \"" << source << "\": {\n";
       if (!enableWholeModuleOptimization) {
         SmallString<16> depsPath;
@@ -2630,9 +2630,9 @@ public:
       os << "    \"swift-dependencies\": \"" << swiftDepsPath << "\"\n";
       os << "  }" << ((i + 1) < sourcesList.size() ? "," : "") << "\n";
     }
-    
+
     os << "}\n";
-    
+
     os.close();
 
     return true;
@@ -2659,7 +2659,7 @@ public:
       Command* command;
       unsigned numErrors{0};
       unsigned ruleNumber{0};
-      
+
       DepsActions(BuildSystemCommandInterface& bsci, core::Task* task,
                   StringRef depsPath, Command* command)
           : bsci(bsci), task(task), depsPath(depsPath) {}
@@ -2701,7 +2701,7 @@ public:
   virtual void start(BuildSystemCommandInterface& bsci,
                      core::Task* task) override {
     ExternalCommand::start(bsci, task);
-    
+
     // The Swift compiler version is also an input.
     //
     // FIXME: We need to fix the input ID situation, this is not extensible. We
@@ -2725,7 +2725,7 @@ public:
     if (inputID == core::BuildEngine::kMaximumInputID - 1) {
       return;
     }
-    
+
     ExternalCommand::provideValue(bsci, task, inputID, value);
   }
 
@@ -2763,10 +2763,10 @@ public:
     // FIXME: This should really be done using an additional implicit input, so
     // it only happens once per build.
     (void) bsci.getFileSystem().createDirectories(tempsPath);
- 
+
     SmallString<64> outputFileMapPath;
     getOutputFileMapPath(outputFileMapPath);
-    
+
     // Form the complete command.
     std::vector<StringRef> commandLine;
     constructCommandLineArgs(outputFileMapPath, commandLine);
@@ -2789,7 +2789,7 @@ public:
       if (!processDiscoveredDependencies(bsci, task, depsPath))
         return CommandResult::Failed;
     }
-    
+
     return result;
   }
 };
@@ -2812,7 +2812,7 @@ public:
     ctx.error("unexpected attribute: '" + name + "'");
     return false;
   }
-  
+
   virtual bool configureAttribute(
       const ConfigureContext& ctx, StringRef name,
       ArrayRef<std::pair<StringRef, StringRef>> values) override {
@@ -2876,10 +2876,10 @@ class MkdirCommand : public ExternalCommand {
     // out the details of the file info (like the timestamp), but not rerunning
     // when they change. This is by design for this command, but it would still
     // be nice to be strict about it.
-    
+
     return true;
   }
-  
+
   virtual CommandResult executeExternalCommand(BuildSystemCommandInterface& bsci,
                                                Task* task,
                                                QueueJobContext* context) override {
@@ -2892,7 +2892,7 @@ class MkdirCommand : public ExternalCommand {
     }
     return CommandResult::Succeeded;
   }
-  
+
 public:
   using ExternalCommand::ExternalCommand;
 };
@@ -2935,7 +2935,7 @@ class SymlinkCommand : public Command {
   /// The path of the actual symbolic link to create, if different from the
   /// output node.
   std::string linkOutputPath;
-  
+
   /// The command description.
   std::string description;
 
@@ -2950,7 +2950,7 @@ class SymlinkCommand : public Command {
     return linkOutputPath.empty() ? output->getName() :
       StringRef(linkOutputPath);
   }
-  
+
   virtual CommandSignature getSignature() {
     CommandSignature code(output->getName());
     code = code.combine(contents);
@@ -2991,7 +2991,7 @@ class SymlinkCommand : public Command {
       os << contents;
     }
   }
-  
+
   virtual void configureInputs(const ConfigureContext& ctx,
                                const std::vector<Node*>& value) override {
     inputs.reserve(value.size());
@@ -3010,7 +3010,7 @@ class SymlinkCommand : public Command {
       ctx.error("unexpected explicit output: '" + value[1]->getName() + "'");
     }
   }
-  
+
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
     if (name == "contents") {
@@ -3067,7 +3067,7 @@ class SymlinkCommand : public Command {
     // If the prior value wasn't for a successful command, recompute.
     if (!value.isSuccessfulCommand())
       return false;
-    
+
     // If the command's signature has changed since it was built, rebuild.
     if (value.getCommandSignature() != getSignature())
       return false;
@@ -3084,7 +3084,7 @@ class SymlinkCommand : public Command {
 
     return info == value.getOutputInfo();
   }
-  
+
   virtual void start(BuildSystemCommandInterface& bsci,
                      core::Task* task) override {
     // The command itself takes no inputs, so just treat any declared inputs as
@@ -3136,7 +3136,7 @@ class SymlinkCommand : public Command {
     if (llvm::sys::fs::create_link(contents, outputPath)) {
       // On failure, we attempt to unlink the file and retry.
       basic::sys::unlink(outputPath.str().c_str());
-        
+
       if (llvm::sys::fs::create_link(contents, outputPath)) {
         getBuildSystem(bsci.getBuildEngine()).getDelegate().commandHadError(this,
                        "unable to create symlink at '" + outputPath.str() + "'");
@@ -3144,7 +3144,7 @@ class SymlinkCommand : public Command {
       }
     }
     bsci.getDelegate().commandFinished(this, success ? CommandResult::Succeeded : CommandResult::Failed);
-    
+
     // Process the result.
     if (!success) {
       return BuildValue::makeFailedCommand();
@@ -3153,7 +3153,7 @@ class SymlinkCommand : public Command {
     // Capture the *link* information of the output.
     FileInfo outputInfo = bsci.getFileSystem().getLinkInfo(
         outputPath);
-      
+
     // Complete with a successful result.
     return BuildValue::makeSuccessfulCommand(outputInfo, getSignature());
   }
@@ -3232,7 +3232,7 @@ class ArchiveShellCommand : public ExternalCommand {
       }
     }
   }
-  
+
   virtual void configureInputs(const ConfigureContext& ctx,
                                 const std::vector<Node*>& value) override {
     ExternalCommand::configureInputs(ctx, value);
@@ -3246,7 +3246,7 @@ class ArchiveShellCommand : public ExternalCommand {
       ctx.error("missing expected input");
     }
   }
-  
+
   virtual void configureOutputs(const ConfigureContext& ctx,
                                 const std::vector<Node*>& value) override {
     ExternalCommand::configureOutputs(ctx, value);

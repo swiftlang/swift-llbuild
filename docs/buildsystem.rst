@@ -67,7 +67,7 @@ These are the supported node types:
 
   For example, in the following build file fragment ``C1`` uses a directory node
   because the task is doing a recursive copy of the input directory::
-  
+
       commands:
         C1:
           tool: shell
@@ -100,7 +100,7 @@ These are the supported node types:
   structure. Such clients can use this node type to track when to redo that
   computation, and use additional dependencies on particular files for any items
   within the structure whose content are relevant to the task.
-  
+
 * Virtual Nodes: Nodes matching the name ``'<.*>'``, e.g. ``<gate-task>``, are
   *assumed* to be virtual nodes, and are used for adding arbitrary edges to the
   graph. Virtual nodes carry no value and only will only cause commands to
@@ -164,7 +164,7 @@ connections between those commands. Similar to Ninja, the basic build file
 language is not intended to be written directly, but is expected to be an
 artifact produced by the higher level build system.
 
-The build file syntax is currently YAML, to faciliate ease of implementation and
+The build file syntax is currently YAML, to facilitate ease of implementation and
 evolution. At some future point, we may wish to change to a custom file format
 to optimize for the native build system's specific requirements (in particular,
 to reduce the file size).
@@ -172,7 +172,7 @@ to reduce the file size).
 A small example build file is below:
 
 .. code-block:: yaml
-  
+
   # Declare the client information.
   client:
     name: example-client
@@ -185,19 +185,19 @@ A small example build file is below:
       cwd: /tmp/example
     link:
       cwd: /tmp/example
-  
+
   # Define the targets.
   targets:
     hello: ["hello"]
-  
+
   # Define the default target to execute.
   default: hello
-  
+
   # Define properties on nodes.
   nodes:
     hello.o:
       hash-content: True
-    
+
   # Define the commands.
   commands:
     link-hello:
@@ -247,11 +247,11 @@ present.
   This section defines top-level targets which can be used to group commands
   which should be build together for a particular purpose. This typically would
   include definitions for all of the things a user might want to build directly.
-  
+
 * ``Default`` Definitions (`default` key)
 
   This section defines the default target to build when manifest is loaded.
-  
+
 * ``Node`` Definitions (`nodes` key)
 
   This section can be used to configure additional properties on the node
@@ -282,7 +282,7 @@ present.
 
   The `description` key is available to all tools, and should be a string
   describing the command.
-  
+
   The `inputs` and `outputs` keys are shared by all tools (although not all
   tools may use them) and are lists naming the input and output nodes of the
   ``Command``. It is legal to use undeclared nodes in a command definition --
@@ -342,7 +342,7 @@ The following attributes are currently supported:
      - Description
 
    * - is-directory
-   
+
      - A boolean value, indicating whether or not the node should represent a
        directory instead of a file path. By default, the build system assumes
        that nodes matching the pattern ``'.*/'`` (e.g., ``/tmp/``) are directory
@@ -392,7 +392,7 @@ The following attributes are currently supported:
        check, the producer of the file would always rerun since the output
        information captured at production time will always be out-of-date once
        the mutating command runs.
-       
+
 .. note::
   FIXME: At some point, we probably want to support custom node types.
 
@@ -461,7 +461,7 @@ command is run.
    **link**, not the target of the link. This is almost always **not** what
    clients want unless also using *link-output-path*, since many consumers of
    the output will want to know about the **target** of the link.
-   
+
 .. list-table::
    :header-rows: 1
    :widths: 20 80
@@ -473,7 +473,7 @@ command is run.
      - The contents (i.e., path to the source) of the symlink.
 
    * - link-output-path
-     
+
      - If specified, defines that actual output path for the symbolic link. This
        is **not** treated as a declared output of this task, which allows a
        *phony* task to be created which will then define the modeled value for
@@ -549,7 +549,7 @@ attributes on commands, and not at the tool level.
        timeout (10 seconds) before sending a SIGKILL. This is intended to give
        tools which can leave an inconsistent file system state an opportunity to
        clean up, before exiting. The default is true.
-          
+
    * - deps
      - The path to an output file of the command which will contain information
        on the exact dependencies used by the command when it ran. This can be
@@ -580,23 +580,23 @@ attributes on commands, and not at the tool level.
        dependencies output files.
 
    * - deps-style
-     
+
      - Specifies the kind of dependency format used for the file at `deps`, if
        specified. Currently supported options are:
 
        .. list-table::
           :header-rows: 1
           :widths: 20 80
-       
+
           * - Name
             - Description
-       
+
           * - makefile
             - The file should be a Makefile-fragment which specifies a single
               rule. The rule target is ignored by the build system, and the
               dependencies of the rule are treated as dependencies of the
               command which ran.
-       
+
           * - dependency-info
             - The file should be in the "dependency info" format used by some
               Darwin tools (like `ld`).
@@ -622,7 +622,7 @@ produced correctly if it produces it directly.
    We currently do not support that behavior directly, but may in the future add
    additional options for developers needing to experiment at that level.
 
-       
+
 Clang Tool
 ----------
 
@@ -730,7 +730,7 @@ exact version of the Swift compiler in use (as reported by ``swiftc
        flag to swiftc.
 
    * - num-threads
-     - An integer which enables multithreading if greater than 0 and specifies 
+     - An integer which enables multithreading if greater than 0 and specifies
        the number of threads to use. Sets swiftc's ``-num-threads`` flags.
 
 Archive Tool
