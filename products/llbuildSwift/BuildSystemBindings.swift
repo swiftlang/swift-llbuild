@@ -157,7 +157,7 @@ public struct Diagnostic {
 }
 
 /// Handle for a command as invoked by the low-level BuildSystem.
-public struct Command: Hashable {
+public struct Command: Hashable, CustomStringConvertible, CustomDebugStringConvertible {
     fileprivate let handle: OpaquePointer?
 
     fileprivate init(_ handle: OpaquePointer?) {
@@ -186,6 +186,19 @@ public struct Command: Hashable {
         defer { free(name) }
 
         return String(cString: name)
+    }
+
+    /// The verbose description provided by the command.
+    public var verboseDescription: String {
+        let name = llb_buildsystem_command_get_verbose_description(handle)!
+        defer { free(name) }
+
+        return String(cString: name)
+    }
+
+    /// The debug description provides the verbose description.
+    public var debugDescription: String {
+        return verboseDescription
     }
 
     public var hashValue: Int {
