@@ -61,6 +61,16 @@ primarily only useful for developers interested in working on the Ninja
 support. These commands allow testing the lexer, parser, and manifest loading
 components independently and are used as part of the test suite.
 
+#### Build Trace Files
+
+Inspired by Buck, `llbuild ninja` supports a `--profile PATH` option to generate
+a
+[Chromium trace](https://www.chromium.org/developers/how-tos/trace-event-profiling-tool) for
+visualizing where time is spent during a build. For example, the following graph
+is for a build of llbuild itself:
+
+![llbuild build profile](docs/llbuild-profile.png)
+
 ### `swift-build-tool` Command Line Tool
 
 The `swift-build-tool` product is the command line interface to the build system
