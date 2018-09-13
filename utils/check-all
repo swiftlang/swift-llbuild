@@ -1,0 +1,32 @@
+#!/bin/sh
+
+set -e
+
+SRCROOT="$(realpath $(pwd))"
+OBJROOT="/tmp/llbuild-cov.obj"
+
+# Run a build and test cycle with --coverage enabled to generate the .gcda data.
+if false; then
+    echo "note: building with xcodebuild into '${OBJROOT}'..."
+    time xcodebuild \
+        -scheme test \
+        OBJROOT="${OBJROOT}" \
+        SYMROOT="${OBJROOT}/sym" \
+        DSTROOT="${OBJROOT}/dst" \
+        CCHROOT="${OBJROOT}/cch" \
+        OTHER_CFLAGS="--coverage" OTHER_LDFLAGS="--coverage" &> /tmp/llbuild-cov.log
+else
+    echo "note: building with llbuild into '${OBJROOT}'"
+    mkdir -p ${OBJROOT}
+    (cd ${OBJROOT} &&
+     cmake -G Ninja -DCMAKE_CXX_FLAGS=--coverage -DCMAKE_CXX_COMPILER=/tmp/apple-clang-r442221-t20150326_090132-b26188/usr/bin/clang++ ${SRCROOT} &&
+     xcrun llbuild ninja build --chdir ${OBJROOT} test) &> /tmp/llbuild-cov.log
+fi
+
+# Use zcov to generate a coverage report.
+rm -rf build/llbuild.zcov build/llbuild-cov
+mkdir -p build/llbuild-cov
+zcov scan build/llbuild.zcov "${OBJROOT}"
+zcov summarize --root "${SRCROOT}" --prune "/utils/" --prune "/unittests/" build/llbuild.zcov
+zcov genhtml --root "${SRCROOT}" --prune "/utils/" --prune "/unittests/" --hide-branches build/llbuild.zcov build/llbuild-cov
+

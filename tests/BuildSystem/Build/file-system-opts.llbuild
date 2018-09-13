@@ -13,7 +13,7 @@
 # CHECK-NOT: PATH=
 # CHECK-NEXT: /usr/bin/env
 # CHECK: ENV_KEY=ENV_VALUE_2
-# CHECK: LLBUILD_TASK_ID=0
+# CHECK: LLBUILD_TASK_ID={{[a-f0-9]+}}
 # CHECK: PATH=random-overridden-path
 # CHECK: cp 'input A' output
 
