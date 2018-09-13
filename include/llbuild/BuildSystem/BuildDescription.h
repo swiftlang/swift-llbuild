@@ -20,6 +20,7 @@
 #include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <utility>
@@ -252,11 +253,16 @@ public:
   virtual void provideValue(BuildSystemCommandInterface&, core::Task*,
                             uintptr_t inputID, const BuildValue& value) = 0;
 
+
+  typedef std::function<void (BuildValue&&)> ResultFn;
+
   /// Execute the command, and return the value.
   ///
   /// This method will always be executed on the build execution queue.
-  virtual BuildValue execute(BuildSystemCommandInterface&, core::Task*,
-                             QueueJobContext* context) = 0;
+  ///
+  /// Note that resultFn may be executed asynchronously on a separate thread.
+  virtual void execute(BuildSystemCommandInterface&, core::Task*,
+                       QueueJobContext* context, ResultFn resultFn) = 0;
   
   /// @}
 };

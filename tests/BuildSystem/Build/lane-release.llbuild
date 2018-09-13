@@ -1,0 +1,34 @@
+# Test that a command can release a lane
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.llbuild
+# RUN: cp %S/Inputs/wait-for-file %t.build
+# RUN: %{llbuild} buildsystem build --serial --scheduler fifo --chdir %t.build >%t.out
+# RUN: %{FileCheck} --input-file=%t.out %s
+
+# CHECK: release
+# CHECK: other
+# CHECK: done
+
+client:
+  name: basic
+
+targets:
+  "": ["<all>"]
+
+commands:
+  "<echo-wait-echo>":
+    tool: shell
+    outputs: ["<echo-wait-echo>"]
+    args: bash -c "echo release && command echo -e 'llbuild.1\n${LLBUILD_TASK_ID}\n' >&${LLBUILD_CONTROL_FD} && ./wait-for-file ./semaphore && echo done"
+
+  "<echo-other>":
+    tool: shell
+    outputs: ["<echo-other>"]
+    args: echo other && touch ./semaphore
+
+  "<all>":
+    tool: phony
+    inputs: ["<echo-wait-echo>", "<echo-other>"]
+    outputs: ["<all>"]

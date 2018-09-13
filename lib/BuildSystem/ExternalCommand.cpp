@@ -339,9 +339,10 @@ ExternalCommand::computeCommandResult(BuildSystemCommandInterface& bsci) {
   return BuildValue::makeSuccessfulCommand(outputInfos, getSignature());
 }
 
-BuildValue ExternalCommand::execute(BuildSystemCommandInterface& bsci,
-                                    core::Task* task,
-                                    QueueJobContext* context) {
+void ExternalCommand::execute(BuildSystemCommandInterface& bsci,
+                              core::Task* task,
+                              QueueJobContext* context,
+                              ResultFn resultFn) {
   // If this command should be skipped, do nothing.
   if (skipValue.hasValue()) {
     // If this command had a failed input, treat it as having failed.
@@ -353,7 +354,8 @@ BuildValue ExternalCommand::execute(BuildSystemCommandInterface& bsci,
       bsci.getDelegate().hadCommandFailure();
     }
 
-    return std::move(skipValue.getValue());
+    resultFn(std::move(skipValue.getValue()));
+    return;
   }
   assert(missingInputNodes.empty());
 
@@ -362,7 +364,8 @@ BuildValue ExternalCommand::execute(BuildSystemCommandInterface& bsci,
       hasPriorResult && priorResultCommandSignature == getSignature()) {
     BuildValue result = computeCommandResult(bsci);
     if (canUpdateIfNewerWithResult(result)) {
-      return result;
+      resultFn(std::move(result));
+      return;
     }
   }
 
@@ -385,20 +388,24 @@ BuildValue ExternalCommand::execute(BuildSystemCommandInterface& bsci,
     
   // Invoke the external command.
   bsci.getDelegate().commandStarted(this);
-  auto result = executeExternalCommand(bsci, task, context);
-  bsci.getDelegate().commandFinished(this, result);
-    
-  // Process the result.
-  switch (result) {
-  case CommandResult::Failed:
-    return BuildValue::makeFailedCommand();
-  case CommandResult::Cancelled:
-    return BuildValue::makeCancelledCommand();
-  case CommandResult::Succeeded:
-    return computeCommandResult(bsci);
-  case CommandResult::Skipped:
-    // It is illegal to get skipped result at this point.
-    break;
-  }
-  llvm::report_fatal_error("unknown result");
+  executeExternalCommand(bsci, task, context, {[this, &bsci, resultFn](CommandResult result){
+    bsci.getDelegate().commandFinished(this, result);
+
+    // Process the result.
+    switch (result) {
+    case CommandResult::Failed:
+      resultFn(BuildValue::makeFailedCommand());
+      return;
+    case CommandResult::Cancelled:
+      resultFn(BuildValue::makeCancelledCommand());
+      return;
+    case CommandResult::Succeeded:
+      resultFn(computeCommandResult(bsci));
+      return;
+    case CommandResult::Skipped:
+      // It is illegal to get skipped result at this point.
+      break;
+    }
+    llvm::report_fatal_error("unknown result");
+  }});
 }
