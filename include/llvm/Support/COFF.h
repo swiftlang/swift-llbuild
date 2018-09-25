@@ -27,6 +27,12 @@
 #include <cassert>
 #include <cstring>
 
+// Undefine the DEBUG macro which is added by SwiftPM to avoid
+// conflict with another "DEBUG" symbol in this file.
+#ifdef SWIFT_PACKAGE
+#undef DEBUG
+#endif
+
 namespace llvm {
 namespace COFF {
 
