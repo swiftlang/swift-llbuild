@@ -161,6 +161,12 @@ typedef enum {
 
   /// A key used to identify the signature of a complete directory tree.
   llb_build_key_kind_directory_tree_structure_signature = 7,
+
+  /// A key used to identify filtered directory contents.
+  llb_build_key_kind_filtered_directory_contents = 8,
+
+  /// A key used to identify a node.
+  llb_build_key_kind_stat = 10,
 } llb_build_key_kind_t;
 
 typedef enum {

@@ -41,6 +41,9 @@ public:
     /// A key used to identify directory contents.
     DirectoryContents,
 
+    /// A key used to identify filtered directory contents.
+    FilteredDirectoryContents,
+
     /// A key used to identify the signature of a complete directory tree.
     DirectoryTreeSignature,
 
@@ -50,6 +53,9 @@ public:
 
     /// A key used to identify a node.
     Node,
+
+    /// A key used to identify a file system stat info.
+    Stat,
 
     /// A key used to identify a target.
     Target,
@@ -110,21 +116,25 @@ public:
   }
 
   /// Create a key for computing the contents of a directory.
-  static BuildKey makeDirectoryContents(StringRef path,
+  static BuildKey makeDirectoryContents(StringRef path) {
+    return BuildKey('D', path);
+  }
+
+  /// Create a key for computing the filtered contents of a directory.
+  static BuildKey makeFilteredDirectoryContents(StringRef path,
                                         const basic::StringList& filters) {
-    return BuildKey('D', path, filters);
+    return BuildKey('d', path, filters);
   }
 
   /// Create a key for computing the contents of a directory.
   static BuildKey makeDirectoryTreeSignature(StringRef path,
-                                             const basic::StringList& filters) {
+                                        const basic::StringList& filters) {
     return BuildKey('S', path, filters);
   }
 
   /// Create a key for computing the structure of a directory.
-  static BuildKey makeDirectoryTreeStructureSignature(
-      StringRef path, const basic::StringList& filters) {
-    return BuildKey('s', path, filters);
+  static BuildKey makeDirectoryTreeStructureSignature(StringRef path) {
+    return BuildKey('s', path);
   }
 
   /// Create a key for computing a node result.
@@ -135,6 +145,11 @@ public:
   /// Create a key for computing a node result.
   static BuildKey makeNode(const Node* node) {
     return BuildKey('N', node->getName());
+  }
+
+  /// Create a key for computing a file system stat info result.
+  static BuildKey makeStat(StringRef path) {
+    return BuildKey('I', path);
   }
 
   /// Createa a key for computing a target.
@@ -152,7 +167,9 @@ public:
     switch (key[0]) {
     case 'C': return Kind::Command;
     case 'D': return Kind::DirectoryContents;
+    case 'd': return Kind::FilteredDirectoryContents;
     case 'N': return Kind::Node;
+    case 'I': return Kind::Stat;
     case 'S': return Kind::DirectoryTreeSignature;
     case 's': return Kind::DirectoryTreeStructureSignature;
     case 'T': return Kind::Target;
@@ -167,6 +184,9 @@ public:
   bool isDirectoryContents() const {
     return getKind() == Kind::DirectoryContents;
   }
+  bool isFilteredDirectoryContents() const {
+    return getKind() == Kind::FilteredDirectoryContents;
+  }
   bool isDirectoryTreeSignature() const {
     return getKind() == Kind::DirectoryTreeSignature;
   }
@@ -174,6 +194,7 @@ public:
     return getKind() == Kind::DirectoryTreeStructureSignature;
   }
   bool isNode() const { return getKind() == Kind::Node; }
+  bool isStat() const { return getKind() == Kind::Stat; }
   bool isTarget() const { return getKind() == Kind::Target; }
 
   StringRef getCommandName() const {
@@ -197,16 +218,26 @@ public:
   }
 
   StringRef getDirectoryPath() const {
-    assert(isDirectoryContents() || isDirectoryTreeSignature() ||
-           isDirectoryTreeStructureSignature());
+    assert(isDirectoryContents() || isDirectoryTreeStructureSignature());
+    return StringRef(key.data()+1, key.size()-1);
+  }
+
+  StringRef getDirectoryTreeSignaturePath() const {
+    assert(isDirectoryTreeSignature());
+    uint32_t nameSize;
+    memcpy(&nameSize, &key[1], sizeof(uint32_t));
+    return StringRef(&key[1 + sizeof(uint32_t)], nameSize);
+  }
+
+  StringRef getFilteredDirectoryPath() const {
+    assert(isFilteredDirectoryContents());
     uint32_t nameSize;
     memcpy(&nameSize, &key[1], sizeof(uint32_t));
     return StringRef(&key[1 + sizeof(uint32_t)], nameSize);
   }
 
   StringRef getContentExclusionPatterns() const {
-    assert(isDirectoryContents() || isDirectoryTreeSignature() ||
-           isDirectoryTreeStructureSignature());
+    assert(isDirectoryTreeSignature() || isFilteredDirectoryContents());
     uint32_t nameSize;
     memcpy(&nameSize, &key[1], sizeof(uint32_t));
     uint32_t dataSize = key.size() - 1 - sizeof(uint32_t) - nameSize;
@@ -215,6 +246,11 @@ public:
 
   StringRef getNodeName() const {
     assert(isNode());
+    return StringRef(key.data()+1, key.size()-1);
+  }
+
+  StringRef getStatName() const {
+    assert(isStat());
     return StringRef(key.data()+1, key.size()-1);
   }
 

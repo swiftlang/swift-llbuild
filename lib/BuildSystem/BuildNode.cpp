@@ -125,3 +125,12 @@ FileInfo BuildNode::getLinkInfo(basic::FileSystem& fileSystem) const {
   assert(!isVirtual());
   return fileSystem.getLinkInfo(getName());
 }
+
+
+FileInfo StatNode::getFileInfo(basic::FileSystem& fileSystem) const {
+  return fileSystem.getFileInfo(name);
+}
+
+FileInfo StatNode::getLinkInfo(basic::FileSystem& fileSystem) const {
+  return fileSystem.getLinkInfo(name);
+}

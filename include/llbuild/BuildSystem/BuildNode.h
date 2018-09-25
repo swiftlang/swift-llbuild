@@ -103,6 +103,20 @@ public:
   basic::FileInfo getLinkInfo(basic::FileSystem&) const;
 };
 
+
+class StatNode {
+  std::string name;
+
+public:
+  explicit StatNode(StringRef name) : name(name) {}
+
+  const std::string& getName() { return name; }
+
+  basic::FileInfo getFileInfo(basic::FileSystem&) const;
+  basic::FileInfo getLinkInfo(basic::FileSystem&) const;
+};
+
+
 }
 }
 

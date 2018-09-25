@@ -8,7 +8,7 @@
 # RUN: %{llbuild} buildsystem build --serial --trace %t.initial.trace --chdir %t.build
 # RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file=%t.initial.trace %s
 #
-# CHECK-INITIAL: { "new-rule", "[[RULE_NAME:R[0-9]+]]", "Ddirexcludedfile" },
+# CHECK-INITIAL: { "new-rule", "[[RULE_NAME:R[0-9]+]]", "Sdirexcludedfile" },
 # CHECK-INITIAL: { "rule-needs-to-run", "[[RULE_NAME]]", "never-built" },
 
 
@@ -17,18 +17,17 @@
 # RUN: %{llbuild} buildsystem build --serial --trace %t.rebuild.trace --chdir %t.build
 # RUN: %{FileCheck} --check-prefix=CHECK-REBUILD --input-file=%t.rebuild.trace %s
 #
-# CHECK-REBUILD: { "new-rule", "[[RULE_NAME:R[0-9]+]]", "Ddirexcludedfile" },
+# CHECK-REBUILD: { "new-rule", "[[RULE_NAME:R[0-9]+]]", "Sdirexcludedfile" },
 # CHECK-REBUILD: { "rule-does-not-need-to-run", "[[RULE_NAME]]" },
 
-# A rebuild unfortunately rebuilds with even with excluded files.
-# rdar://41142590
+# A rebuild shouldn't rebuild the directory for excluded files.
 #
 # RUN: touch %t.build/dir/excludedfile
 # RUN: %{llbuild} buildsystem build --serial --trace %t.rebuild.trace --chdir %t.build
 # RUN: %{FileCheck} --check-prefix=CHECK-REBUILD2 --input-file=%t.rebuild.trace %s
 #
-# CHECK-REBUILD2: { "new-rule", "[[RULE_NAME:R[0-9]+]]", "Ddirexcludedfile" },
-# CHECK-REBUILD2: { "rule-needs-to-run", "[[RULE_NAME]]", "input-rebuilt", "[[RULE_NAME2:R[0-9]+]]" },
+# CHECK-REBUILD2: { "new-rule", "[[RULE_NAME:R[0-9]+]]", "Sdirexcludedfile" },
+# CHECK-REBUILD2: { "rule-does-not-need-to-run", "[[RULE_NAME]]" },
 
 
 # A rebuild after adding a new file should rebuild the directory.
@@ -37,8 +36,9 @@
 # RUN: %{llbuild} buildsystem build --serial --trace %t.modified.trace --chdir %t.build
 # RUN: %{FileCheck} --check-prefix=CHECK-MODIFIED --input-file=%t.modified.trace %s
 #
-# CHECK-MODIFIED: { "new-rule", "[[RULE_NAME:R[0-9]+]]", "Ddirexcludedfile" },
-# CHECK-MODIFIED: { "rule-needs-to-run", "[[RULE_NAME]]", "invalid-value" },
+# CHECK-MODIFIED: { "new-rule", "[[RULE_NAME:R[0-9]+]]", "Sdirexcludedfile" },
+# CHECK-MODIFIED: { "new-rule", "[[RULE2_NAME:R[0-9]+]]", "ddirexcludedfile" },
+# CHECK-MODIFIED: { "rule-needs-to-run", "[[RULE_NAME]]", "input-rebuilt", "[[RULE2_NAME]]" },
 
 client:
   name: basic
