@@ -51,7 +51,7 @@
 /// 1: Added `environment` parameter to llb_buildsystem_invocation_t.
 ///
 /// 0: Pre-history
-#include "version.h"
+#define LLBUILD_C_API_VERSION 6
 
 /// Get the full version of the llbuild library.
 LLBUILD_EXPORT const char* llb_get_full_version_string(void);
