@@ -90,6 +90,10 @@ class BuildValue {
 
     /// Sentinel value representing the result of "building" a top-level target.
     Target,
+
+    /// The filtered contents of a directory.
+    FilteredDirectoryContents,
+
   };
   static StringRef stringForKind(Kind);
 
@@ -121,12 +125,12 @@ class BuildValue {
   basic::StringList stringValues;
 
   bool kindHasCommandSignature() const {
-    return isSuccessfulCommand() || isDirectoryTreeSignature() ||
-      isDirectoryTreeStructureSignature();
+    return isSuccessfulCommand() ||
+        isDirectoryTreeSignature() || isDirectoryTreeStructureSignature();
   }
 
   bool kindHasStringList() const {
-    return isDirectoryContents() || isStaleFileRemoval();
+    return isDirectoryContents() || isFilteredDirectoryContents() || isStaleFileRemoval();
   }
 
   bool kindHasOutputInfo() const {
@@ -172,7 +176,6 @@ private:
     assert(kindHasStringList());
   }
 
-  
   std::vector<StringRef> getStringListValues() const {
     assert(kindHasStringList());
     return stringValues.getValues();
@@ -287,6 +290,9 @@ public:
   static BuildValue makeStaleFileRemoval(ArrayRef<std::string> values) {
     return BuildValue(Kind::StaleFileRemoval, values);
   }
+  static BuildValue makeFilteredDirectoryContents(ArrayRef<std::string> values) {
+    return BuildValue(Kind::FilteredDirectoryContents, values);
+  }
 
   /// @}
 
@@ -317,9 +323,12 @@ public:
   bool isCancelledCommand() const { return kind == Kind::CancelledCommand; }
   bool isSkippedCommand() const { return kind == Kind::SkippedCommand; }
   bool isTarget() const { return kind == Kind::Target; }
+  bool isFilteredDirectoryContents() const {
+    return kind == Kind::FilteredDirectoryContents;
+  }
 
   std::vector<StringRef> getDirectoryContents() const {
-    assert(isDirectoryContents() && "invalid call for value kind");
+    assert((isDirectoryContents() || isFilteredDirectoryContents()) && "invalid call for value kind");
     return getStringListValues();
   }
 

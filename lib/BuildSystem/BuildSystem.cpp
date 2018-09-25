@@ -124,6 +124,9 @@ class BuildSystemEngineDelegate : public BuildEngineDelegate {
   // FIXME: This is an inefficent map, the string is duplicated.
   std::unordered_map<std::string, std::unique_ptr<BuildNode>> dynamicNodes;
 
+  // FIXME: This is an inefficent map, the string is duplicated.
+  std::unordered_map<std::string, std::unique_ptr<StatNode>> dynamicStatNodes;
+
   /// The custom tasks which are owned by the build system.
   std::vector<std::unique_ptr<Command>> customTasks;
 
@@ -524,6 +527,47 @@ public:
   }
 };
 
+/// This is the task to "build" a file info node which represents raw stat info
+/// of a file system object.
+class StatTask : public Task {
+  StatNode& statnode;
+
+  virtual void start(BuildEngine& engine) override {
+    // Create a weak link on any potential producer nodes so that we get up to
+    // date stat information. We always run (see isResultValid) so this should
+    // be safe (unlike directory contents where it may not run).
+    engine.taskMustFollow(this, BuildKey::makeNode(statnode.getName()).toData());
+  }
+
+  virtual void providePriorValue(BuildEngine&,
+                                 const ValueType& value) override {
+  }
+
+  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+                            const ValueType& value) override {
+  }
+
+  virtual void inputsAvailable(BuildEngine& engine) override {
+    // FIXME: We should do this work in the background.
+
+    // Get the information on the file.
+    auto info = statnode.getFileInfo(getBuildSystem(engine).getFileSystem());
+    if (info.isMissing()) {
+      engine.taskIsComplete(this, BuildValue::makeMissingInput().toData());
+      return;
+    }
+
+    engine.taskIsComplete(this, BuildValue::makeExistingInput(info).toData());
+  }
+
+public:
+  StatTask(StatNode& statnode) : statnode(statnode) {}
+
+  static bool isResultValid(BuildEngine&, const StatNode&, const BuildValue&) {
+    // Always read the stat information
+    return false;
+  }
+};
 
 /// This is the task to "build" a directory node.
 ///
@@ -542,6 +586,7 @@ class DirectoryInputNodeTask : public Task {
     if (path.endswith("/") && path != "/") {
       path = path.substr(0, path.size() - 1);
     }
+
     engine.taskNeedsInput(
         this, BuildKey::makeDirectoryTreeSignature(path,
             node.contentExclusionPatterns()).toData(),
@@ -587,8 +632,7 @@ class DirectoryStructureInputNodeTask : public Task {
       path = path.substr(0, path.size() - 1);
     }
     engine.taskNeedsInput(
-        this, BuildKey::makeDirectoryTreeStructureSignature(path,
-            node.contentExclusionPatterns()).toData(),
+        this, BuildKey::makeDirectoryTreeStructureSignature(path).toData(),
         /*inputID=*/0);
   }
 
@@ -730,19 +774,16 @@ public:
 class DirectoryContentsTask : public Task {
   std::string path;
 
-  /// The exclusion filters used while computing the signature
-  StringList filters;
-
   /// The value for the input directory.
-  ValueType directoryValue;
+  BuildValue directoryValue;
   
   virtual void start(BuildEngine& engine) override {
     // Request the base directory node -- this task doesn't actually use the
     // value, but this connects the task to its producer if present.
 
-    // <rdar://41142590>
-    // FIXME: Temporarily revert part of PR #320, which causes tasks to execute
-    // in the wrong order under certain circumstances.
+    // FIXME:
+    //
+    //engine.taskMustFollow(this, BuildKey::makeNode(path).toData());
     //
     // The taskMustFollow method expresses the weak dependency we have on
     // 'path', but only at the task level. What we really want is to say at the
@@ -752,10 +793,10 @@ class DirectoryContentsTask : public Task {
     //
     // With the explicit dependency we are establishing with taskNeedsInput, we
     // will unfortunately mark directory contents as 'needs to be built' under
-    // situations where excluded content and/or non-releveant stat info has
-    // changed. This causes unnecessary rebuilds. See rdar://problem/30640904
+    // situations where non-releveant stat info has changed. This causes
+    // unnecessary rebuilds. See rdar://problem/30640904
     //
-    // * The 'final state' of a directory is also an thorny patch of toxic land
+    // * The 'final state' of a directory is also a thorny patch of toxic land
     // mines. We really want directory contents to weakly depend upon anything
     // that is currently and/or may be altered within it. i.e. if one rule
     // creates the directory and another rule writes a file into it, we want to
@@ -764,7 +805,6 @@ class DirectoryContentsTask : public Task {
     // not the second, in particular if rules are added in subsequent builds.
     // Related rdar://problem/30638921
     //
-    //engine.taskMustFollow(this, BuildKey::makeNode(path).toData());
     engine.taskNeedsInput(
         this, BuildKey::makeNode(path).toData(), /*inputID=*/0);
   }
@@ -776,7 +816,7 @@ class DirectoryContentsTask : public Task {
   virtual void provideValue(BuildEngine&, uintptr_t inputID,
                             const ValueType& value) override {
     if (inputID == 0) {
-      directoryValue = value;
+      directoryValue = BuildValue::fromData(value);
       return;
     }
   }
@@ -784,24 +824,169 @@ class DirectoryContentsTask : public Task {
   virtual void inputsAvailable(BuildEngine& engine) override {
     // FIXME: We should do this work in the background.
     
-    // Get the stat information on the directory.
-    //
-    // FIXME: We should probably be using the directory value here, but that
-    // requires reworking some of the value encoding for the directory.
-    auto info = getBuildSystem(engine).getFileSystem().getFileInfo(
-        path);
-    if (info.isMissing()) {
-      engine.taskIsComplete(
-          this, BuildValue::makeMissingInput().toData());
+    if (directoryValue.isMissingInput()) {
+      engine.taskIsComplete(this, BuildValue::makeMissingInput().toData());
       return;
     }
 
+    std::vector<std::string> filenames;
+    getContents(path, filenames);
+
+    // Create the result.
+    engine.taskIsComplete(
+        this, BuildValue::makeDirectoryContents(directoryValue.getOutputInfo(),
+                                                filenames).toData());
+  }
+
+
+  static void getContents(StringRef path, std::vector<std::string>& filenames) {
+    // Get the list of files in the directory.
+    // FIXME: This is not going through the filesystem object. Indeed the fs
+    // object does not currently support directory listing/iteration, but
+    // probably should so that clients may override it.
+    std::error_code ec;
+    for (auto it = llvm::sys::fs::directory_iterator(path, ec),
+         end = llvm::sys::fs::directory_iterator(); it != end;
+         it = it.increment(ec)) {
+      filenames.push_back(llvm::sys::path::filename(it->path()));
+    }
+
+    // Order the filenames.
+    std::sort(filenames.begin(), filenames.end(),
+              [](const std::string& a, const std::string& b) {
+                return a < b;
+              });
+  }
+
+
+public:
+  DirectoryContentsTask(StringRef path)
+      : path(path), directoryValue(BuildValue::makeInvalid()) {}
+
+  static bool isResultValid(BuildEngine& engine, StringRef path,
+                            const BuildValue& value) {
+    // The result is valid if the existence matches the existing value type, and
+    // the file information remains the same.
+    auto info = getBuildSystem(engine).getFileSystem().getFileInfo(
+        path);
+    if (info.isMissing()) {
+      return value.isMissingInput();
+    } else {
+      if (!value.isDirectoryContents())
+        return false;
+
+      // If the type changes rebuild
+      if (info.isDirectory() != value.getOutputInfo().isDirectory())
+        return false;
+
+      // For files, it is direct stat info that matters
+      if (!info.isDirectory())
+        return value.getOutputInfo() == info;
+
+      // With filters, we list the current filtered contents and then compare
+      // the lists.
+      std::vector<std::string> cur;
+      getContents(path, cur);
+      auto prev = value.getDirectoryContents();
+
+      if (cur.size() != prev.size())
+        return false;
+
+      auto cur_it = cur.begin();
+      auto prev_it = prev.begin();
+      for (; cur_it != cur.end() && prev_it != prev.end(); cur_it++, prev_it++) {
+        if (*cur_it != *prev_it) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+  }
+};
+
+
+/// This task is responsible for computing the filtered lists of files in
+/// directories.
+class FilteredDirectoryContentsTask : public Task {
+  std::string path;
+
+  /// The exclusion filters used while computing the signature
+  StringList filters;
+
+  /// The value for the input directory.
+  BuildValue directoryValue;
+
+  virtual void start(BuildEngine& engine) override {
+    // FIXME:
+    //
+    //engine.taskMustFollow(this, BuildKey::makeNode(path).toData());
+    //
+    // The taskMustFollow method expresses the weak dependency we have on
+    // 'path', but only at the task level. What we really want is to say at the
+    // 'isResultValid'/scanning level is 'must scan after'. That way we hold up
+    // this and downstream rules until the 'path' node has been set into its
+    // final state*.
+    //
+    // Here we depend on the file node so that it can be connected up to
+    // potential producers and the raw stat information, in case something else
+    // has changed the contents of the directory. The value does not encode the
+    // raw stat information, thus will produce the same result if the filtered
+    // contents is otherwise the same. This reduces unnecessary rebuilds. That
+    // said, we are still subject to the 'final state' problem:
+    //
+    // * The 'final state' of a directory is also a thorny patch of toxic land
+    // mines. We really want directory contents to weakly depend upon anything
+    // that is currently and/or may be altered within it. i.e. if one rule
+    // creates the directory and another rule writes a file into it, we want to
+    // defer scanning until both of them have been scanned and possibly run.
+    // Having a 'must scan after' would help with the first rule (mkdir), but
+    // not the second, in particular if rules are added in subsequent builds.
+    // Related rdar://problem/30638921
+    engine.taskNeedsInput(
+        this, BuildKey::makeNode(path).toData(), /*inputID=*/0);
+    engine.taskNeedsInput(
+        this, BuildKey::makeStat(path).toData(), /*inputID=*/1);
+  }
+
+  virtual void providePriorValue(BuildEngine&,
+                                 const ValueType& value) override {
+  }
+
+  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+                            const ValueType& value) override {
+    if (inputID == 1) {
+      directoryValue = BuildValue::fromData(value);
+      return;
+    }
+  }
+
+  virtual void inputsAvailable(BuildEngine& engine) override {
+    if (directoryValue.isMissingInput()) {
+      engine.taskIsComplete(this, BuildValue::makeMissingInput().toData());
+      return;
+    }
+
+    if (!directoryValue.isExistingInput()) {
+      engine.taskIsComplete(this, BuildValue::makeFailedInput().toData());
+      return;
+    }
+
+    auto& info = directoryValue.getOutputInfo();
+
+    // Non-directory things are just plain-ol' inputs
+    if (!info.isDirectory()) {
+      engine.taskIsComplete(this, BuildValue::makeExistingInput(info).toData());
+      return;
+    }
+
+    // Collect the filtered contents
     std::vector<std::string> filenames;
     getFilteredContents(path, filters, filenames);
 
     // Create the result.
     engine.taskIsComplete(
-        this, BuildValue::makeDirectoryContents(info, filenames).toData());
+        this, BuildValue::makeFilteredDirectoryContents(filenames).toData());
   }
 
 
@@ -838,56 +1023,16 @@ class DirectoryContentsTask : public Task {
 
 
 public:
-  DirectoryContentsTask(StringRef path, StringList&& filters)
-    : path(path), filters(std::move(filters)) {}
-
-  static bool isResultValid(BuildEngine& engine, StringRef path,
-                            const StringList& filters,
-                            const BuildValue& value) {
-    // The result is valid if the existence matches the existing value type, and
-    // the file information remains the same.
-    auto info = getBuildSystem(engine).getFileSystem().getFileInfo(
-        path);
-    if (info.isMissing()) {
-      return value.isMissingInput();
-    } else {
-      if (!value.isDirectoryContents())
-        return false;
-
-      // If the type changes rebuild
-      if (info.isDirectory() != value.getOutputInfo().isDirectory())
-        return false;
-
-      // For files, it is direct stat info that matters
-      if (!info.isDirectory())
-        return value.getOutputInfo() == info;
-
-      // With filters, we list the current filtered contents and then compare
-      // the lists.
-      std::vector<std::string> cur;
-      getFilteredContents(path, filters, cur);
-      auto prev = value.getDirectoryContents();
-
-      if (cur.size() != prev.size())
-        return false;
-
-      auto cur_it = cur.begin();
-      auto prev_it = prev.begin();
-      for (; cur_it != cur.end() && prev_it != prev.end(); cur_it++, prev_it++) {
-        if (*cur_it != *prev_it) {
-          return false;
-        }
-      }
-
-      return true;
-    }
-  }
+  FilteredDirectoryContentsTask(StringRef path, StringList&& filters)
+      : path(path), filters(std::move(filters))
+      , directoryValue(BuildValue::makeInvalid()) {}
 };
 
 
 
 /// This is the task to "build" a directory node which will encapsulate (via a
-/// signature) all of the contents of the directory, recursively.
+/// signature) a (optionally) filtered view of the contents of the directory,
+/// recursively.
 class DirectoryTreeSignatureTask : public Task {
   // The basic algorithm we need to follow:
   //
@@ -906,14 +1051,14 @@ class DirectoryTreeSignatureTask : public Task {
   struct SubpathInfo {
     /// The filename;
     std::string filename;
-    
+
     /// The result of requesting the node at this subpath, once available.
     ValueType value;
 
     /// The directory signature, if needed.
     llvm::Optional<ValueType> directorySignatureValue;
   };
-  
+
   /// The path we are taking the signature of.
   std::string path;
 
@@ -928,12 +1073,18 @@ class DirectoryTreeSignatureTask : public Task {
   /// Once we have the input directory information, we resize this to match the
   /// number of children to avoid dynamically resizing it.
   std::vector<SubpathInfo> childResults;
-  
+
   virtual void start(BuildEngine& engine) override {
     // Ask for the base directory directory contents.
-    engine.taskNeedsInput(
-        this, BuildKey::makeDirectoryContents(path, filters).toData(),
-        /*inputID=*/0);
+    if (filters.isEmpty()) {
+      engine.taskNeedsInput(
+          this, BuildKey::makeDirectoryContents(path).toData(),
+          /*inputID=*/0);
+    } else {
+      engine.taskNeedsInput(
+          this, BuildKey::makeFilteredDirectoryContents(path, filters).toData(),
+          /*inputID=*/0);
+    }
   }
 
   virtual void providePriorValue(BuildEngine&,
@@ -949,10 +1100,12 @@ class DirectoryTreeSignatureTask : public Task {
 
       // Request the inputs for each subpath.
       auto value = BuildValue::fromData(valueData);
-      if (value.isMissingInput())
+      if ((filters.isEmpty() && !value.isDirectoryContents()) ||
+          (!filters.isEmpty() && !value.isFilteredDirectoryContents())) {
         return;
+      }
 
-      assert(value.isDirectoryContents());
+      assert(value.isFilteredDirectoryContents() || value.isDirectoryContents());
       auto filenames = value.getDirectoryContents();
       for (size_t i = 0; i != filenames.size(); ++i) {
         SmallString<256> childPath{ path };
@@ -977,7 +1130,7 @@ class DirectoryTreeSignatureTask : public Task {
         if (value.getOutputInfo().isDirectory()) {
           SmallString<256> childPath{ path };
           llvm::sys::path::append(childPath, childResult.filename);
-        
+
           engine.taskNeedsInput(
               this, BuildKey::makeDirectoryTreeSignature(childPath,
                                                          filters).toData(),
@@ -1016,7 +1169,7 @@ class DirectoryTreeSignatureTask : public Task {
         code = hash_combine(code, 0XC183979C3E98722E);
       }
     }
-    
+
     // Compute the signature.
     engine.taskIsComplete(this, BuildValue::makeDirectoryTreeSignature(
                               CommandSignature(uint64_t(code))).toData());
@@ -1059,9 +1212,6 @@ class DirectoryTreeStructureSignatureTask : public Task {
   /// The path we are taking the signature of.
   std::string path;
 
-  /// The exclusion filters used while computing the signature
-  StringList filters;
-
   /// The value for the directory itself.
   ValueType directoryValue;
 
@@ -1074,7 +1224,7 @@ class DirectoryTreeStructureSignatureTask : public Task {
   virtual void start(BuildEngine& engine) override {
     // Ask for the base directory directory contents.
     engine.taskNeedsInput(
-        this, BuildKey::makeDirectoryContents(path, filters).toData(),
+        this, BuildKey::makeDirectoryContents(path).toData(),
         /*inputID=*/0);
   }
 
@@ -1122,8 +1272,7 @@ class DirectoryTreeStructureSignatureTask : public Task {
         
           engine.taskNeedsInput(
               this,
-              BuildKey::makeDirectoryTreeStructureSignature(childPath,
-                                                            filters).toData(),
+              BuildKey::makeDirectoryTreeStructureSignature(childPath).toData(),
               /*inputID=*/1 + childResults.size() + index);
         }
       }
@@ -1186,8 +1335,7 @@ class DirectoryTreeStructureSignatureTask : public Task {
   }
 
 public:
-  DirectoryTreeStructureSignatureTask(StringRef path, StringList&& filters)
-    : path(path), filters(std::move(filters)) {}
+  DirectoryTreeStructureSignatureTask(StringRef path) : path(path) {}
 };
 
 
@@ -1395,33 +1543,43 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
 
   case BuildKey::Kind::DirectoryContents: {
     std::string path = key.getDirectoryPath();
+    return Rule{
+      keyData,
+      /*Action=*/ [path](BuildEngine& engine) -> Task* {
+        return engine.registerTask(new DirectoryContentsTask(path));
+      },
+      /*IsValid=*/ [path](BuildEngine& engine, const Rule& rule,
+          const ValueType& value) mutable -> bool {
+        return DirectoryContentsTask::isResultValid(
+            engine, path, BuildValue::fromData(value));
+      }
+    };
+  }
+
+  case BuildKey::Kind::FilteredDirectoryContents: {
+    std::string path = key.getFilteredDirectoryPath();
     std::string patterns = key.getContentExclusionPatterns();
     return Rule{
       keyData,
       /*Action=*/ [path, patterns](BuildEngine& engine) -> Task* {
         BinaryDecoder decoder(patterns);
-        return engine.registerTask(new DirectoryContentsTask(path,
+        return engine.registerTask(new FilteredDirectoryContentsTask(path,
             StringList(decoder)));
       },
-      /*IsValid=*/ [path, patterns](BuildEngine& engine, const Rule& rule,
-          const ValueType& value) mutable -> bool {
-        BinaryDecoder decoder(patterns);
-        return DirectoryContentsTask::isResultValid(
-            engine, path, StringList(decoder), BuildValue::fromData(value));
-      }
+      /*IsValid=*/ nullptr
     };
   }
 
   case BuildKey::Kind::DirectoryTreeSignature: {
-    std::string path = key.getDirectoryPath();
+    std::string path = key.getDirectoryTreeSignaturePath();
     std::string filters = key.getContentExclusionPatterns();
     return Rule{
       keyData,
       /*Action=*/ [path, filters](
           BuildEngine& engine) mutable -> Task* {
         BinaryDecoder decoder(filters);
-        return engine.registerTask(new DirectoryTreeSignatureTask(path,
-            StringList(decoder)));
+        return engine.registerTask(new DirectoryTreeSignatureTask(
+            path, StringList(decoder)));
       },
         // Directory signatures don't require any validation outside of their
         // concrete dependencies.
@@ -1431,14 +1589,11 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
 
   case BuildKey::Kind::DirectoryTreeStructureSignature: {
     std::string path = key.getDirectoryPath();
-    std::string patterns = key.getContentExclusionPatterns();
     return Rule{
       keyData,
-      /*Action=*/ [path, patterns](
+      /*Action=*/ [path](
           BuildEngine& engine) mutable -> Task* {
-        BinaryDecoder decoder(patterns);
-        return engine.registerTask(new DirectoryTreeStructureSignatureTask(path,
-            StringList(decoder)));
+        return engine.registerTask(new DirectoryTreeStructureSignatureTask(path));
       },
         // Directory signatures don't require any validation outside of their
         // concrete dependencies.
@@ -1540,6 +1695,31 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     };
   }
 
+  case BuildKey::Kind::Stat: {
+    StatNode* statnode;
+    auto it = dynamicStatNodes.find(key.getStatName());
+    if (it != dynamicStatNodes.end()) {
+      statnode = it->second.get();
+    } else {
+      // Create nodes on the fly for any unknown ones.
+      auto statOwner = llvm::make_unique<StatNode>(key.getStatName());
+      statnode = statOwner.get();
+      dynamicStatNodes[key.getStatName()] = std::move(statOwner);
+    }
+
+    // Create the rule to construct this target.
+    return Rule{
+      keyData,
+        /*Action=*/ [statnode](BuildEngine& engine) -> Task* {
+        return engine.registerTask(new StatTask(*statnode));
+      },
+      /*IsValid=*/ [statnode](BuildEngine& engine, const Rule& rule,
+                            const ValueType& value) -> bool {
+        return StatTask::isResultValid(
+            engine, *statnode, BuildValue::fromData(value));
+      }
+    };
+  }
   case BuildKey::Kind::Target: {
     // Find the target.
     auto it = getBuildDescription().getTargets().find(key.getTargetName());

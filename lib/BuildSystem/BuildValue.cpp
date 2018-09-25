@@ -29,6 +29,7 @@ StringRef BuildValue::stringForKind(BuildValue::Kind kind) {
     CASE(ExistingInput);
     CASE(MissingInput);
     CASE(DirectoryContents);
+    CASE(FilteredDirectoryContents);
     CASE(DirectoryTreeSignature);
     CASE(DirectoryTreeStructureSignature);
     CASE(MissingOutput);

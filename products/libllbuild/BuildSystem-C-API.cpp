@@ -414,19 +414,25 @@ public:
         buildKey.kind = llb_build_key_kind_directory_contents;
         buildKey.key = strdup(key.getDirectoryPath().str().c_str());
         break;
+      case BuildKey::Kind::FilteredDirectoryContents:
+        buildKey.kind = llb_build_key_kind_filtered_directory_contents;
+        buildKey.key = strdup(key.getDirectoryPath().str().c_str());
+        break;
       case BuildKey::Kind::DirectoryTreeSignature:
         buildKey.kind = llb_build_key_kind_directory_tree_signature;
-        buildKey.key = strdup(
-                              key.getDirectoryPath().str().c_str());
+        buildKey.key = strdup(key.getDirectoryPath().str().c_str());
         break;
       case BuildKey::Kind::DirectoryTreeStructureSignature:
         buildKey.kind = llb_build_key_kind_directory_tree_structure_signature;
-        buildKey.key = strdup(
-                              key.getDirectoryPath().str().c_str());
+        buildKey.key = strdup(key.getDirectoryPath().str().c_str());
         break;
       case BuildKey::Kind::Node:
         buildKey.kind = llb_build_key_kind_node;
         buildKey.key = strdup(key.getNodeName().str().c_str());
+        break;
+      case BuildKey::Kind::Stat:
+        buildKey.kind = llb_build_key_kind_stat;
+        buildKey.key = strdup(key.getStatName().str().c_str());
         break;
       case BuildKey::Kind::Target:
         buildKey.kind = llb_build_key_kind_target;

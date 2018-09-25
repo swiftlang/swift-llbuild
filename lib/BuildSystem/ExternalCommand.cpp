@@ -250,7 +250,8 @@ void ExternalCommand::provideValue(BuildSystemCommandInterface& bsci,
     // If the value is an signature, existing, or virtual input, we are always
     // good.
     if (value.isDirectoryTreeSignature() ||
-        value.isDirectoryTreeStructureSignature() || value.isExistingInput() ||
+        value.isDirectoryTreeStructureSignature() ||
+        value.isExistingInput() ||
         value.isVirtualInput() || value.isStaleFileRemoval())
       return llvm::None;
 
