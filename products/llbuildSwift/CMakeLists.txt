@@ -3,17 +3,8 @@ set(SOURCES
   BuildSystemBindings.swift
   CoreBindings.swift)
 
-# Load version number from the XCConfig
-file(STRINGS "${CMAKE_SOURCE_DIR}/Xcode/Configs/Version.xcconfig" VERSION_XCCONFIG)
-if(VERSION_XCCONFIG MATCHES ".*LLBUILD_C_API_VERSION = ([0-9]+).*")
-  string(REGEX REPLACE ".*LLBUILD_C_API_VERSION = ([0-9]+).*" "\\1" LLBUILD_C_API_VERSION "${VERSION_XCCONFIG}")
-else(VERSION_XCCONFIG MATCHES ".*LLBUILD_C_API_VERSION = ([0-9]+).*")
-  message(FATAL_ERROR "Unable to find LLBUILD_C_API_VERSION in Version.xcconfig")
-endif(VERSION_XCCONFIG MATCHES ".*LLBUILD_C_API_VERSION = ([0-9]+).*")
-
-
 # Link C API.
-list(APPEND additional_args -DLLBUILD_C_API_VERSION_${LLBUILD_C_API_VERSION} -I ${CMAKE_CURRENT_SOURCE_DIR}/../libllbuild/include -lllbuild)
+list(APPEND additional_args -I ${CMAKE_CURRENT_SOURCE_DIR}/../libllbuild/include -lllbuild)
  
 if(APPLE)
   list(APPEND additional_args -target x86_64-apple-macosx10.10)

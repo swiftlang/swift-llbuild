@@ -10,16 +10,4 @@
 //
 //===----------------------------------------------------------------------===//
 
-// Define the C API version
-//
-// See products/libllbuild/include/llbuild/llbuild.h for version history
-LLBUILD_C_API_VERSION = 6
-
-// We define both the version value and a named version.  The latter is useful
-// in Swift conditional compilation, where we don't currently have the ability
-// to do more complex numeric comparisons.
-LLBUILD_VERSION_DEFINITIONS = LLBUILD_C_API_VERSION=$(LLBUILD_C_API_VERSION) LLBUILD_C_API_VERSION_$(LLBUILD_C_API_VERSION)
-
-LLBUILD_SWIFT_VERSION_DEFINITIONS = LLBUILD_C_API_VERSION_$(LLBUILD_C_API_VERSION)
-
 SWIFT_VERSION = 4.2

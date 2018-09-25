@@ -22,16 +22,6 @@ set_property(TARGET libllbuild PROPERTY MACOSX_RPATH ON)
 
 target_link_libraries(libllbuild ${DEPENDENCIES})
 
-# Load version number from the XCConfig
-file(STRINGS "${CMAKE_SOURCE_DIR}/Xcode/Configs/Version.xcconfig" VERSION_XCCONFIG)
-if(VERSION_XCCONFIG MATCHES ".*LLBUILD_C_API_VERSION = ([0-9]+).*")
-  string(REGEX REPLACE ".*LLBUILD_C_API_VERSION = ([0-9]+).*" "\\1" LLBUILD_C_API_VERSION "${VERSION_XCCONFIG}")
-else(VERSION_XCCONFIG MATCHES ".*LLBUILD_C_API_VERSION = ([0-9]+).*")
-  message(FATAL_ERROR "Unable to find LLBUILD_C_API_VERSION in Version.xcconfig")
-endif(VERSION_XCCONFIG MATCHES ".*LLBUILD_C_API_VERSION = ([0-9]+).*")
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/llbuild/version.h.in ${CMAKE_CURRENT_SOURCE_DIR}/include/llbuild/version.h)
-
 include_directories(BEFORE
   ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
