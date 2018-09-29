@@ -16,8 +16,6 @@
 #include "llbuild/Basic/CrossPlatformCompatibility.h"
 #include <inttypes.h>
 
-#include <functional>
-
 namespace llbuild {
 namespace buildsystem {
 
@@ -28,9 +26,6 @@ enum class CommandResult {
   Cancelled,
   Skipped,
 };
-
-typedef std::function<void(CommandResult)> CommandCompletionFn;
-
 
 /// Extended result of a command execution.
 struct CommandExtendedResult {

@@ -1384,13 +1384,13 @@ class CommandTask : public Task {
       }
     
       // Execute the command, with notifications to the delegate.
-      command.execute(bsci, this, context, [this, &bsci](BuildValue&& result){
-        // Inform the engine of the result.
-        if (result.isFailedCommand()) {
-          bsci.getDelegate().hadCommandFailure();
-        }
-        bsci.taskIsComplete(this, std::move(result));
-      });
+      auto result = command.execute(bsci, this, context);
+        
+      // Inform the engine of the result.
+      if (result.isFailedCommand()) {
+        bsci.getDelegate().hadCommandFailure();
+      }
+      bsci.taskIsComplete(this, std::move(result));
     };
     bsci.addJob({ &command, std::move(fn) });
   }
@@ -1847,15 +1847,11 @@ public:
     llvm::raw_svector_ostream(result) << getName();
   }
 
-  virtual void executeExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      Task* task,
-      QueueJobContext* context,
-      llvm::Optional<CommandCompletionFn> completionFn) override {
+  virtual CommandResult executeExternalCommand(BuildSystemCommandInterface& bsci,
+                                               Task* task,
+                                               QueueJobContext* context) override {
     // Nothing needs to be done for phony commands.
-    completionFn.unwrapIn([](CommandCompletionFn fn){
-      fn(CommandResult::Succeeded);
-    });
+    return CommandResult::Succeeded;
   }
 
   virtual BuildValue getResultForOutput(Node* node, const BuildValue& value) override {
@@ -2216,44 +2212,30 @@ public:
     return true;
   }
 
-  virtual void executeExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      Task* task,
-      QueueJobContext* context,
-      llvm::Optional<CommandCompletionFn> completionFn) override {
-
+  virtual CommandResult executeExternalCommand(BuildSystemCommandInterface& bsci,
+                                               Task* task,
+                                               QueueJobContext* context) override {
     // Execute the command.
-    bsci.getExecutionQueue().executeProcess(
+    auto result = bsci.getExecutionQueue().executeProcess(
         context, args, env,
         /*inheritEnvironment=*/inheritEnv,
-        /*canSafelyInterrupt=*/canSafelyInterrupt,
-        /*completionFn=*/{[this, &bsci, task, completionFn](CommandResult result) {
-          if (result != CommandResult::Succeeded) {
-            // If the command failed, there is no need to gather dependencies.
-            completionFn.unwrapIn([result](CommandCompletionFn fn){fn(result);});
-            return;
-          }
+        /*canSafelyInterrupt=*/canSafelyInterrupt);
 
-          // Collect the discovered dependencies, if used.
-          if (!depsPaths.empty()) {
-            // FIXME: Really want this job to go into a high priority fifo queue
-            // so as to not hold up downstream tasks.
-            bsci.addJob({ this, [this, &bsci, task, completionFn, result](QueueJobContext* context) {
-              if (!processDiscoveredDependencies(bsci, task, context)) {
-                // If we were unable to process the dependencies output, report a
-                // failure.
-                completionFn.unwrapIn([](CommandCompletionFn fn){
-                  fn(CommandResult::Failed);
-                });
-                return;
-              }
-              completionFn.unwrapIn([result](CommandCompletionFn fn){fn(result);});
-            }});
-            return;
-          }
-
-          completionFn.unwrapIn([result](CommandCompletionFn fn){fn(result);});
-        }});
+    if (result != CommandResult::Succeeded) {
+      // If the command failed, there is no need to gather dependencies.
+      return result;
+    }
+    
+    // Collect the discovered dependencies, if used.
+    if (!depsPaths.empty()) {
+      if (!processDiscoveredDependencies(bsci, task, context)) {
+        // If we were unable to process the dependencies output, report a
+        // failure.
+        return CommandResult::Failed;
+      }
+    }
+    
+    return result;
   }
 };
 
@@ -2404,39 +2386,27 @@ public:
     return ExternalCommand::configureAttribute(ctx, name, values);
   }
 
-  virtual void executeExternalCommand(BuildSystemCommandInterface& bsci,
-                                      Task* task,
-                                      QueueJobContext* context,
-                                      llvm::Optional<CommandCompletionFn> completionFn) override {
+  virtual CommandResult executeExternalCommand(BuildSystemCommandInterface& bsci,
+                                               Task* task,
+                                               QueueJobContext* context) override {
     // Execute the command.
-    bsci.getExecutionQueue().executeProcess(context, args, {}, true, true, {[this, &bsci, task, completionFn](CommandResult result){
+    auto result = bsci.getExecutionQueue().executeProcess(context, args);
 
-      if (result != CommandResult::Succeeded) {
-        // If the command failed, there is no need to gather dependencies.
-        completionFn.unwrapIn([result](CommandCompletionFn fn){fn(result);});
-        return;
+    if (result != CommandResult::Succeeded) {
+      // If the command failed, there is no need to gather dependencies.
+      return result;
+    }
+
+    // Otherwise, collect the discovered dependencies, if used.
+    if (!depsPath.empty()) {
+      if (!processDiscoveredDependencies(bsci, task, context)) {
+        // If we were unable to process the dependencies output, report a
+        // failure.
+        return CommandResult::Failed;
       }
+    }
 
-      // Otherwise, collect the discovered dependencies, if used.
-      if (!depsPath.empty()) {
-        // FIXME: Really want this job to go into a high priority fifo queue
-        // so as to not hold up downstream tasks.
-        bsci.addJob({ this, [this, &bsci, task, completionFn, result](QueueJobContext* context) {
-          if (!processDiscoveredDependencies(bsci, task, context)) {
-            // If we were unable to process the dependencies output, report a
-            // failure.
-            completionFn.unwrapIn([](CommandCompletionFn fn){
-              fn(CommandResult::Failed);
-            });
-            return;
-          }
-          completionFn.unwrapIn([result](CommandCompletionFn fn){fn(result);});
-        }});
-        return;
-      }
-
-      completionFn.unwrapIn([result](CommandCompletionFn fn){fn(result);});
-    }});
+    return result;
   }
 };
 
@@ -2536,10 +2506,9 @@ public:
                             uintptr_t inputID,
                             const BuildValue& value) override { }
 
-  virtual void execute(BuildSystemCommandInterface& bsci,
-                       core::Task* task,
-                       QueueJobContext* context,
-                       ResultFn resultFn) override {
+  virtual BuildValue execute(BuildSystemCommandInterface& bsci,
+                             core::Task* task,
+                             QueueJobContext* context) override {
     // Construct the command line used to query the swift compiler version.
     //
     // FIXME: Need a decent subprocess interface.
@@ -2568,8 +2537,8 @@ public:
     // command and relying on the signature to detect changes.
     //
     // FIXME: We should support BuildValues with arbitrary payloads.
-    resultFn(BuildValue::makeSuccessfulCommand(
-       basic::FileInfo{}, CommandSignature(result)));
+    return BuildValue::makeSuccessfulCommand(
+        basic::FileInfo{}, CommandSignature(result));
   }
 };
 
@@ -2940,48 +2909,31 @@ public:
     ExternalCommand::provideValue(bsci, task, inputID, value);
   }
 
-  virtual void executeExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      core::Task* task,
-      QueueJobContext* context,
-      llvm::Optional<CommandCompletionFn> completionFn) override {
+  virtual CommandResult executeExternalCommand(BuildSystemCommandInterface& bsci,
+                                               core::Task* task,
+                                               QueueJobContext* context) override {
     // FIXME: Need to add support for required parameters.
     if (sourcesList.empty()) {
       bsci.getDelegate().error("", {}, "no configured 'sources'");
-      completionFn.unwrapIn([](CommandCompletionFn fn){
-        fn(CommandResult::Failed);
-      });
-      return;
+      return CommandResult::Failed;
     }
     if (objectsList.empty()) {
       bsci.getDelegate().error("", {}, "no configured 'objects'");
-      completionFn.unwrapIn([](CommandCompletionFn fn){
-        fn(CommandResult::Failed);
-      });
-      return;
+      return CommandResult::Failed;
     }
     if (moduleName.empty()) {
       bsci.getDelegate().error("", {}, "no configured 'module-name'");
-      completionFn.unwrapIn([](CommandCompletionFn fn){
-        fn(CommandResult::Failed);
-      });
-      return;
+      return CommandResult::Failed;
     }
     if (tempsPath.empty()) {
       bsci.getDelegate().error("", {}, "no configured 'temps-path'");
-      completionFn.unwrapIn([](CommandCompletionFn fn){
-        fn(CommandResult::Failed);
-      });
-      return;
+      return CommandResult::Failed;
     }
 
     if (sourcesList.size() != objectsList.size()) {
       bsci.getDelegate().error(
           "", {}, "'sources' and 'objects' are not the same size");
-      completionFn.unwrapIn([](CommandCompletionFn fn){
-        fn(CommandResult::Failed);
-      });
-      return;
+      return CommandResult::Failed;
     }
 
     // Ensure the temporary directory exists.
@@ -3001,36 +2953,24 @@ public:
 
     // Write the output file map.
     std::vector<std::string> depsFiles;
-    if (!writeOutputFileMap(bsci, outputFileMapPath, depsFiles)) {
-      completionFn.unwrapIn([](CommandCompletionFn fn){
-        fn(CommandResult::Failed);
-      });
-      return;
-    }
+    if (!writeOutputFileMap(bsci, outputFileMapPath, depsFiles))
+      return CommandResult::Failed;
 
     // Execute the command.
     auto result = bsci.getExecutionQueue().executeProcess(context, commandLine);
 
     if (result != CommandResult::Succeeded) {
       // If the command failed, there is no need to gather dependencies.
-      completionFn.unwrapIn([result](CommandCompletionFn fn){fn(result);});
-      return;
+      return result;
     }
 
     // Load all of the discovered dependencies.
-    // FIXME: Really want this job to go into a high priority fifo queue
-    // so as to not hold up downstream tasks.
-    bsci.addJob({ this, [this, &bsci, task, completionFn, result, depsFiles](QueueJobContext* context) {
-      for (const auto& depsPath: depsFiles) {
-        if (!processDiscoveredDependencies(bsci, task, depsPath)) {
-          completionFn.unwrapIn([](CommandCompletionFn fn){
-            fn(CommandResult::Failed);
-          });
-          return;
-        }
-      }
-      completionFn.unwrapIn([result](CommandCompletionFn fn){fn(result);});
-    }});
+    for (const auto& depsPath: depsFiles) {
+      if (!processDiscoveredDependencies(bsci, task, depsPath))
+        return CommandResult::Failed;
+    }
+    
+    return result;
   }
 };
 
@@ -3120,24 +3060,17 @@ class MkdirCommand : public ExternalCommand {
     return true;
   }
   
-  virtual void executeExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      Task* task,
-      QueueJobContext* context,
-      llvm::Optional<CommandCompletionFn> completionFn) override {
+  virtual CommandResult executeExternalCommand(BuildSystemCommandInterface& bsci,
+                                               Task* task,
+                                               QueueJobContext* context) override {
     auto output = getOutputs()[0];
     if (!bsci.getFileSystem().createDirectories(
             output->getName())) {
       getBuildSystem(bsci.getBuildEngine()).getDelegate().commandHadError(this,
                      "unable to create directory '" + output->getName().str() + "'");
-      completionFn.unwrapIn([](CommandCompletionFn fn){
-        fn(CommandResult::Failed);
-      });
-      return;
+      return CommandResult::Failed;
     }
-    completionFn.unwrapIn([](CommandCompletionFn fn){
-      fn(CommandResult::Succeeded);
-    });
+    return CommandResult::Succeeded;
   }
   
 public:
@@ -3355,15 +3288,13 @@ class SymlinkCommand : public Command {
     assert(0 && "unexpected API call");
   }
 
-  virtual void execute(BuildSystemCommandInterface& bsci,
-                       core::Task* task,
-                       QueueJobContext* context,
-                       ResultFn resultFn) override {
+  virtual BuildValue execute(BuildSystemCommandInterface& bsci,
+                             core::Task* task,
+                             QueueJobContext* context) override {
     // It is an error if this command isn't configured properly.
     StringRef outputPath = getActualOutputPath();
     if (!output || outputPath.empty()) {
-      resultFn(BuildValue::makeFailedCommand());
-      return;
+      return BuildValue::makeFailedCommand();
     }
 
     // Create the directory containing the symlink, if necessary.
@@ -3396,8 +3327,7 @@ class SymlinkCommand : public Command {
     
     // Process the result.
     if (!success) {
-      resultFn(BuildValue::makeFailedCommand());
-      return;
+      return BuildValue::makeFailedCommand();
     }
 
     // Capture the *link* information of the output.
@@ -3405,7 +3335,7 @@ class SymlinkCommand : public Command {
         outputPath);
       
     // Complete with a successful result.
-    resultFn(BuildValue::makeSuccessfulCommand(outputInfo, getSignature()));
+    return BuildValue::makeSuccessfulCommand(outputInfo, getSignature());
   }
 
 public:
@@ -3448,28 +3378,19 @@ class ArchiveShellCommand : public ExternalCommand {
   std::string archiveName;
   std::vector<std::string> archiveInputs;
 
-  virtual void executeExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      Task* task,
-      QueueJobContext* context,
-      llvm::Optional<CommandCompletionFn> completionFn) override {
+  virtual CommandResult executeExternalCommand(BuildSystemCommandInterface& bsci,
+                                               Task* task,
+                                               QueueJobContext* context) override {
     // First delete the current archive
     // TODO instead insert, update and remove files from the archive
     if (llvm::sys::fs::remove(archiveName, /*IgnoreNonExisting*/ true)) {
-      completionFn.unwrapIn([](CommandCompletionFn fn){
-        fn(CommandResult::Failed);
-      });
-      return;
+      return CommandResult::Failed;
     }
 
     // Create archive
     auto args = getArgs();
-    bsci.getExecutionQueue().executeProcess(context,
-                                            std::vector<StringRef>(args.begin(), args.end()),
-                                            {}, true, true,
-                                            {[completionFn](CommandResult result) {
-      completionFn.unwrapIn([result](CommandCompletionFn fn){fn(result);});
-    }});
+    return bsci.getExecutionQueue().executeProcess(
+        context, std::vector<StringRef>(args.begin(), args.end()));
   }
 
   virtual void getShortDescription(SmallVectorImpl<char> &result) override {
@@ -3698,16 +3619,14 @@ class StaleFileRemovalCommand : public Command {
     computedFilesToDelete = true;
   }
 
-  virtual void execute(BuildSystemCommandInterface& bsci,
-                       core::Task* task,
-                       QueueJobContext* context,
-                       ResultFn resultFn) override {
+  virtual BuildValue execute(BuildSystemCommandInterface& bsci,
+                             core::Task* task,
+                             QueueJobContext* context) override {
     // Nothing to do if we do not have a prior result.
     if (!hasPriorResult || !priorValue.isStaleFileRemoval()) {
       bsci.getDelegate().commandStarted(this);
       bsci.getDelegate().commandFinished(this, CommandResult::Succeeded);
-      resultFn(BuildValue::makeStaleFileRemoval(expectedOutputs));
-      return;
+      return BuildValue::makeStaleFileRemoval(expectedOutputs);
     }
 
     computeFilesToDelete();
@@ -3749,7 +3668,7 @@ class StaleFileRemovalCommand : public Command {
     bsci.getDelegate().commandFinished(this, CommandResult::Succeeded);
 
     // Complete with a successful result.
-    resultFn(BuildValue::makeStaleFileRemoval(expectedOutputs));
+    return BuildValue::makeStaleFileRemoval(expectedOutputs);
   }
 
 public:

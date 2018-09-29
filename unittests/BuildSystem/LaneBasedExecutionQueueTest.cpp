@@ -87,9 +87,9 @@ namespace {
                                    const BuildValue& value) {}
     virtual void provideValue(BuildSystemCommandInterface&, core::Task*,
                               uintptr_t inputID, const BuildValue& value) {}
-    virtual void execute(BuildSystemCommandInterface&, core::Task*,
-                         QueueJobContext* context, ResultFn resultFn) {
-      resultFn(BuildValue::makeInvalid());
+    virtual BuildValue execute(BuildSystemCommandInterface&, core::Task*,
+                               QueueJobContext* context) {
+      return BuildValue::makeInvalid();
     }
   };
 
