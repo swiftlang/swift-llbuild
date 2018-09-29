@@ -650,8 +650,8 @@ public:
 
             std::thread([
                 this, pid, handle, command=context.job.getForCommand(),
-                outputFd{outputPipe[0]},
-                completionFn, subprocessInterval{std::move(subprocessInterval)}
+                outputFd=outputPipe[0],
+                completionFn, subprocessInterval=std::move(subprocessInterval)
             ]() mutable {
               if (shouldCaptureOutput)
                 captureExecutedProcessOutput(outputFd, handle, command);
