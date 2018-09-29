@@ -226,9 +226,9 @@ public:
   virtual void provideValue(BuildSystemCommandInterface&, Task*,
                                  uintptr_t inputID,
                                  const BuildValue&) override {}
-  virtual void execute(BuildSystemCommandInterface&, Task*,
-                       QueueJobContext*, ResultFn resultFn) override {
-    resultFn(BuildValue::makeFailedCommand());
+  virtual BuildValue execute(BuildSystemCommandInterface&, Task*,
+                             QueueJobContext*) override {
+    return BuildValue::makeFailedCommand();
   }
 };
 

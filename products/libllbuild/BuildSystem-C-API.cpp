@@ -726,10 +726,9 @@ class CAPIExternalCommand : public ExternalCommand {
     return true;
   }
 
-  virtual void executeExternalCommand(BuildSystemCommandInterface& bsci,
+  virtual CommandResult executeExternalCommand(BuildSystemCommandInterface& bsci,
                                                core::Task* task,
-                                               QueueJobContext* job_context,
-                                               llvm::Optional<CommandCompletionFn> completionFn) override {
+                                               QueueJobContext* job_context) override {
     auto result = cAPIDelegate.execute_command(
         cAPIDelegate.context, (llb_buildsystem_command_t*)this,
         (llb_buildsystem_command_interface_t*)&bsci,
@@ -738,8 +737,7 @@ class CAPIExternalCommand : public ExternalCommand {
 
     if (result != CommandResult::Succeeded) {
       // If the command failed, there is no need to gather dependencies.
-      completionFn.unwrapIn([result](CommandCompletionFn fn){fn(result);});
-      return;
+      return result;
     }
     
     // Otherwise, collect the discovered dependencies, if used.
@@ -747,12 +745,11 @@ class CAPIExternalCommand : public ExternalCommand {
       if (!processDiscoveredDependencies(bsci, task, job_context)) {
         // If we were unable to process the dependencies output, report a
         // failure.
-        completionFn.unwrapIn([](CommandCompletionFn fn){fn(CommandResult::Failed);});
-        return;
+        return CommandResult::Failed;
       }
     }
-
-    completionFn.unwrapIn([result](CommandCompletionFn fn){fn(result);});
+    
+    return result;
   }
   
 public:

@@ -17,7 +17,6 @@
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 
-#include <future>
 #include <vector>
 
 using namespace llbuild;
@@ -33,16 +32,7 @@ BuildExecutionQueue::~BuildExecutionQueue() {
 
 CommandResult BuildExecutionQueue::executeProcess(
     QueueJobContext* context, ArrayRef<StringRef> commandLine) {
-  // Promises are move constructible only, thus cannot be put into std::function
-  // objects that themselves get copied around. So we must create a shared_ptr
-  // here to allow it to go along with the labmda.
-  std::shared_ptr<std::promise<CommandResult>> p{new std::promise<CommandResult>};
-  auto result = p->get_future();
-  executeProcess(context, commandLine, {}, true, true,
-                 {[p](CommandResult result) mutable {
-    p->set_value(result);
-  }});
-  return result.get();
+  return executeProcess(context, commandLine, {});
 }
 
 bool BuildExecutionQueue::executeShellCommand(QueueJobContext* context,

@@ -15,9 +15,7 @@
 
 #include "llbuild/Basic/Compiler.h"
 #include "llbuild/Basic/LLVM.h"
-#include "llbuild/BuildSystem/CommandResult.h"
 
-#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/StringRef.h"
 
 #include <cstdint>
@@ -105,19 +103,13 @@ public:
   /// Execute the given command line.
   ///
   /// This will launch and execute the given command line and wait for it to
-  /// complete or release its execution lane.
+  /// complete.
   ///
   /// \param context The context object passed to the job's worker function.
   ///
   /// \param commandLine The command line to execute.
   ///
   /// \param environment The environment to launch with.
-  ///
-  /// \param completionFn An optional function that, if supplied, will be run
-  /// following the completion of the process. This may be run asynchronously
-  /// from another thread if the executed process asks the system to release its
-  /// execution lane. Callers should preferentially put cleanup and notification
-  /// work here, rather than waiting for the result future to resolve.
   ///
   /// \param inheritEnvironment If true, the supplied environment will be
   /// overlayed on top base environment supplied when creating the queue. If
@@ -127,16 +119,17 @@ public:
   /// the process to cancel it. If false, the process won't be interrupted
   /// during cancellation and will be given a chance to complete (if it fails to
   /// complete it will ultimately be sent a SIGKILL).
+  ///
+  /// \returns Result of the process execution.
   //
   // FIXME: This interface will need to get more complicated, and provide the
   // command result and facilities for dealing with the output.
-  virtual void
+  virtual CommandResult
   executeProcess(QueueJobContext* context,
                  ArrayRef<StringRef> commandLine,
                  ArrayRef<std::pair<StringRef, StringRef>> environment,
                  bool inheritEnvironment = true,
-                 bool canSafelyInterrupt = true,
-                 llvm::Optional<CommandCompletionFn> completionFn = {llvm::None}) = 0;
+                 bool canSafelyInterrupt = true) = 0;
 
   /// @}
 

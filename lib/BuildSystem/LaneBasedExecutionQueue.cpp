@@ -33,19 +33,16 @@
 
 #include <atomic>
 #include <condition_variable>
-#include <cstdlib>
 #include <deque>
 #include <memory>
 #include <mutex>
 #include <queue>
-#include <random>
 #include <string>
 #include <thread>
 #include <unordered_map>
 #include <vector>
 
 #include <fcntl.h>
-#include <poll.h>
 #include <pthread.h>
 #include <unistd.h>
 #include <signal.h>
@@ -96,8 +93,7 @@ qos_class_t _getDarwinQOSClass(QualityOfService level) {
 #endif
 
 struct LaneBasedExecutionQueueJobContext {
-  uint64_t jobID;
-  uint64_t laneNumber;
+  uint32_t laneNumber;
   
   QueueJob& job;
 };
@@ -124,9 +120,6 @@ public:
 //
 // FIXME: Consider trying to share this with the Ninja implementation.
 class LaneBasedExecutionQueue : public BuildExecutionQueue {
-  /// (Random) build identifier
-  uint32_t buildID;
-
   /// The number of lanes the queue was configured with.
   unsigned numLanes;
 
@@ -154,7 +147,7 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
   /// The base environment.
   const char* const* environment;
   
-  void executeLane(uint32_t buildID, uint32_t laneNumber) {
+  void executeLane(unsigned laneNumber) {
     // Set the thread name, if available.
 #if defined(__APPLE__)
     pthread_setname_np(
@@ -172,14 +165,7 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
     pthread_set_qos_class_self_np(
         _getDarwinQOSClass(defaultQualityOfService), 0);
 #endif
-
-    // Lane ID, used in creating reasonably unique task IDs, stores the buildID
-    // in the top 32 bits.  The laneID is stored in bits 16:31, and the job
-    // count is placed in the lower order 16 bits. These are not strictly
-    // guaranteed to be unique, but should be close enough for common use cases.
-    uint32_t jobCount = 0;
-    uint64_t laneID = (((uint64_t)buildID & 0xFFFF) << 32) + (((uint64_t)laneNumber & 0xFFFF) << 16);
-
+    
     // Execute items from the queue until shutdown.
     while (true) {
       // Take a job from the ready queue.
@@ -205,9 +191,7 @@ class LaneBasedExecutionQueue : public BuildExecutionQueue {
         break;
 
       // Process the job.
-      jobCount++;
-      uint64_t jobID = laneID + jobCount;
-      LaneBasedExecutionQueueJobContext context{ jobID, laneNumber, job };
+      LaneBasedExecutionQueueJobContext context{ laneNumber, job };
       {
         TracingExecutionQueueDepth(readyJobsCount);
 
@@ -256,13 +240,13 @@ public:
   LaneBasedExecutionQueue(BuildExecutionQueueDelegate& delegate,
                           unsigned numLanes,
                           const char* const* environment)
-  : BuildExecutionQueue(delegate), buildID(std::random_device()()), numLanes(numLanes),
+      : BuildExecutionQueue(delegate), numLanes(numLanes),
         readyJobs(Scheduler::make()), environment(environment)
   {
     for (unsigned i = 0; i != numLanes; ++i) {
       lanes.push_back(std::unique_ptr<std::thread>(
                           new std::thread(
-                              &LaneBasedExecutionQueue::executeLane, this, buildID, i)));
+                              &LaneBasedExecutionQueue::executeLane, this, i)));
     }
   }
   
@@ -319,30 +303,25 @@ public:
     }
   }
 
-  virtual void executeProcess(
-      QueueJobContext* opaqueContext,
-      ArrayRef<StringRef> commandLine,
-      ArrayRef<std::pair<StringRef, StringRef>> environment,
-      bool inheritEnvironment,
-      bool canSafelyInterrupt,
-      llvm::Optional<std::function<void(CommandResult)>> completionFn) override {
-
+  virtual CommandResult
+  executeProcess(QueueJobContext* opaqueContext,
+                 ArrayRef<StringRef> commandLine,
+                 ArrayRef<std::pair<StringRef,
+                                    StringRef>> environment,
+                 bool inheritEnvironment,
+                 bool canSafelyInterrupt) override {
     LaneBasedExecutionQueueJobContext& context =
       *reinterpret_cast<LaneBasedExecutionQueueJobContext*>(opaqueContext);
 
     llvm::SmallString<64> description;
     context.job.getForCommand()->getShortDescription(description);
-    TracingExecutionQueueSubprocess subprocessInterval(context.laneNumber,
-                                                       description.str());
+    TracingExecutionQueueSubprocess subprocessInterval(context.laneNumber, description.str());
 
     {
       std::unique_lock<std::mutex> lock(readyJobsMutex);
       // Do not execute new processes anymore after cancellation.
       if (cancelled) {
-        completionFn.unwrapIn([](CommandCompletionFn fn){
-          fn(CommandResult::Cancelled);
-        });
-        return;
+        return CommandResult::Cancelled;
       }
     }
 
@@ -356,18 +335,6 @@ public:
 
     getDelegate().commandProcessStarted(context.job.getForCommand(), handle);
     
-    if (commandLine.size() == 0) {
-      getDelegate().commandProcessHadError(context.job.getForCommand(), handle,
-                                           Twine("no arguments for command"));
-      getDelegate().commandProcessFinished(context.job.getForCommand(),
-                                           handle,
-                                           CommandExtendedResult::makeFailed());
-      completionFn.unwrapIn([](CommandCompletionFn fn){
-        fn(CommandResult::Failed);
-      });
-      return;
-    }
-
     // Initialize the spawn attributes.
     posix_spawnattr_t attributes;
     posix_spawnattr_init(&attributes);
@@ -429,29 +396,6 @@ public:
     posix_spawn_file_actions_addopen(
         &fileActions, 0, "/dev/null", O_RDONLY, 0);
 
-
-    // Create a pipe for the process to (potentially) release the lane while
-    // still running.
-    int releasePipe[2]{ -1, -1 };
-    if (basic::sys::pipe(releasePipe) < 0) {
-      getDelegate().commandProcessHadError(
-          context.job.getForCommand(), handle,
-          Twine("unable to open lane release pipe (") + strerror(errno) + ")");
-      getDelegate().commandProcessFinished(context.job.getForCommand(),
-                                           handle,
-                                           CommandExtendedResult::makeFailed());
-      completionFn.unwrapIn([](CommandCompletionFn fn){
-        fn(CommandResult::Failed);
-      });
-      return;
-    }
-#ifdef __APPLE__
-    posix_spawn_file_actions_addinherit_np(&fileActions, releasePipe[1]);
-#else
-    posix_spawn_file_actions_adddup2(&fileActions, releasePipe[1], releasePipe[1]);
-#endif
-    posix_spawn_file_actions_addclose(&fileActions, releasePipe[0]);
-
     // If we are capturing output, create a pipe and appropriate spawn actions.
     int outputPipe[2]{ -1, -1 };
     if (shouldCaptureOutput) {
@@ -460,12 +404,8 @@ public:
             context.job.getForCommand(), handle,
             Twine("unable to open output pipe (") + strerror(errno) + ")");
         getDelegate().commandProcessFinished(context.job.getForCommand(),
-                                             handle,
-                                             CommandExtendedResult::makeFailed());
-        completionFn.unwrapIn([](CommandCompletionFn fn){
-          fn(CommandResult::Failed);
-        });
-        return;
+                                             handle, CommandExtendedResult::makeFailed());
+        return CommandResult::Failed;
       }
 
       // Open the write end of the pipe as stdout and stderr.
@@ -497,11 +437,11 @@ public:
     POSIXEnvironment posixEnv;
 
     // Export a task ID to subprocesses.
-    auto taskID = Twine::utohexstr(context.jobID);
-    posixEnv.setIfMissing("LLBUILD_LANE_ID", Twine(context.laneNumber).str());
-    posixEnv.setIfMissing("LLBUILD_TASK_ID", taskID.str());
-    posixEnv.setIfMissing("LLBUILD_CONTROL_FD", Twine(releasePipe[1]).str());
-
+    //
+    // We currently only export the lane ID, but eventually will export a unique
+    // task ID for SR-6053.
+    posixEnv.setIfMissing("LLBUILD_TASK_ID", Twine(context.laneNumber).str());
+                          
     // Add the requested environment.
     for (const auto& entry: environment) {
       posixEnv.setIfMissing(entry.first, entry.second);
@@ -559,235 +499,45 @@ public:
 
     posix_spawn_file_actions_destroy(&fileActions);
     posix_spawnattr_destroy(&attributes);
-
-    // Close the write end of the release pipe
-    ::close(releasePipe[1]);
-
-
+    
     // If we failed to launch a process, clean up and abort.
     if (pid == -1) {
-      ::close(releasePipe[0]);
-
       if (shouldCaptureOutput) {
         ::close(outputPipe[1]);
         ::close(outputPipe[0]);
       }
-      auto result = wasCancelled ? CommandResult::Cancelled : CommandResult::Failed;
-      completionFn.unwrapIn([result](CommandCompletionFn fn){fn(result);});
-      return;
+      return wasCancelled ? CommandResult::Cancelled : CommandResult::Failed;
     }
-
-    // Set up our select() structures
-    pollfd readfds[] = {
-      { releasePipe[0], POLLIN, 0 },
-      { outputPipe[0], 0, 0 }
-    };
-    ControlProtocolState control(taskID.str());
-    std::function<bool (StringRef)> readCbs[] = {
-      // control callback handle
-      [this, &control, context, handle](StringRef buf) mutable -> bool {
-        std::string errstr;
-        int ret = control.read(buf, &errstr);
-        if (ret < 0) {
-          getDelegate().commandProcessHadError(
-              context.job.getForCommand(), handle,
-              Twine("control protocol error" + errstr));
-        }
-        return (ret == 0);
-      },
-      // output capture callback
-      [this, context, handle](StringRef buf) -> bool {
-        // Notify the client of the output.
-        getDelegate().commandProcessHadOutput(
-            context.job.getForCommand(), handle, buf);
-        return true;
-      }
-    };
-
-    int nfds = 1;
-    int activefds = 1;
 
     // Read the command output, if capturing.
     if (shouldCaptureOutput) {
-      readfds[1].events = POLLIN;
-      nfds = 2;
-      activefds = 2;
-
       // Close the write end of the output pipe.
       ::close(outputPipe[1]);
-    }
 
-    while (activefds) {
-      char buf[4096];
-
-      if (poll(readfds, nfds, -1) == -1) {
-        int err = errno;
-        getDelegate().commandProcessHadError(
-             context.job.getForCommand(), handle,
-             Twine("failed to poll (") + strerror(err) + ")");
-        break;
-      }
-
-
-      for (int i = 0; i < nfds; i++) {
-        if (readfds[i].revents & (POLLIN | POLLERR | POLLHUP)) {
-          ssize_t numBytes = read(readfds[i].fd, buf, sizeof(buf));
-          if (numBytes < 0) {
-            int err = errno;
-            getDelegate().commandProcessHadError(
-                context.job.getForCommand(), handle,
-                Twine("unable to read process output (") + strerror(err) + ")");
-          }
-          if (numBytes <= 0 || !readCbs[i](StringRef(buf, numBytes))) {
-            readfds[i].events = 0;
-            activefds--;
-            break;
-          }
-
-          if (control.shouldRelease()) {
-            // Close the read end of the release pipe.
-            ::close(releasePipe[0]);
-
-            std::thread([
-                this, pid, handle, command=context.job.getForCommand(),
-                outputFd{outputPipe[0]},
-                completionFn, subprocessInterval{std::move(subprocessInterval)}
-            ]() mutable {
-              if (shouldCaptureOutput)
-                captureExecutedProcessOutput(outputFd, handle, command);
-
-              cleanUpExecutedProcess(pid, handle, command, completionFn,
-                                     std::move(subprocessInterval));
-            }).detach();
-            return;
-          }
+      // Read all the data from the output pipe.
+      while (true) {
+        char buf[4096];
+        ssize_t numBytes = read(outputPipe[0], buf, sizeof(buf));
+        if (numBytes < 0) {
+          getDelegate().commandProcessHadError(
+              context.job.getForCommand(), handle,
+              Twine("unable to read process output (") + strerror(errno) + ")");
+          break;
         }
+
+        if (numBytes == 0)
+          break;
+
+        // Notify the client of the output.
+        getDelegate().commandProcessHadOutput(
+            context.job.getForCommand(), handle,
+            StringRef(buf, numBytes));
       }
-    }
 
-    // Close the read end of the release pipe.
-    ::close(releasePipe[0]);
-
-    if (shouldCaptureOutput) {
-      // Close the read end of the output pipe.
+      // Close the read end of the pipe.
       ::close(outputPipe[0]);
     }
-
-    cleanUpExecutedProcess(pid, handle, context.job.getForCommand(), completionFn,
-                           std::move(subprocessInterval));
-  }
-
-
-private:
-
-  class ControlProtocolState {
-    std::string controlID;
-
-    bool negotiated = false;
-    std::string partialMsg;
-    bool releaseSeen = false;
-
-    const size_t maxLength = 16;
-
-  public:
-    ControlProtocolState(const std::string& controlID) : controlID(controlID) {}
-
-    /// Reads incoming control message buffer
-    ///
-    /// \return 0 on success, 1 on completion, -1 on error.
-    int read(StringRef buf, std::string* errstr = nullptr) {
-      while (buf.size()) {
-        size_t nl = buf.find('\n');
-        if (nl == StringRef::npos) {
-          if (partialMsg.size() + buf.size() > maxLength) {
-            // protocol fault, msg length exceeded maximum
-            partialMsg.clear();
-            if (errstr) {
-              *errstr = "excessive message length";
-            }
-            return -1;
-          }
-
-          // incomplete msg, store and continue
-          partialMsg += buf.str();
-          return 0;
-        }
-
-        partialMsg += buf.slice(0, nl);
-
-        if (!negotiated) {
-          // negotiate protocol version
-          if (partialMsg != "llbuild.1") {
-            // incompatible protocol version
-            if (errstr) {
-              *errstr = "unsupported protocol: " + partialMsg;
-            }
-            partialMsg.clear();
-            return -1;
-          }
-          negotiated = true;
-        } else {
-          // check for supported control message
-          if (partialMsg == controlID) {
-            releaseSeen = true;
-          }
-
-          // We halt receiving anything after the first control message
-          if (errstr) {
-            *errstr = "bad ID";
-          }
-          partialMsg.clear();
-          return 1;
-        }
-
-        partialMsg.clear();
-        buf = buf.drop_front(nl + 1);
-      }
-      return 0;
-    }
-
-    bool shouldRelease() const { return releaseSeen; }
-  };
-
-
-  // Helper function to collect subprocess output
-  void captureExecutedProcessOutput(
-      int outputPipe,
-      struct BuildExecutionQueueDelegate::ProcessHandle handle,
-      Command* command
-  ) {
-    // Read all the data from the output pipe.
-    while (true) {
-      char buf[4096];
-      ssize_t numBytes = read(outputPipe, buf, sizeof(buf));
-      if (numBytes < 0) {
-        int err = errno;
-        getDelegate().commandProcessHadError(
-            command, handle,
-            Twine("unable to read process output (") + strerror(err) + ")");
-        break;
-      }
-
-      if (numBytes == 0)
-        break;
-
-      // Notify the client of the output.
-      getDelegate().commandProcessHadOutput(command, handle,
-                                            StringRef(buf, numBytes));
-    }
-
-    ::close(outputPipe);
-  }
-
-  // Helper function for cleaning up after a process has finished in
-  // executeProcess
-  void cleanUpExecutedProcess(
-      llbuild_pid_t pid,
-      struct BuildExecutionQueueDelegate::ProcessHandle handle,
-      Command* command,
-      llvm::Optional<std::function<void(CommandResult)>> completionFn,
-      TracingExecutionQueueSubprocess&& subprocessInterval
-  ) {
+    
     // Wait for the command to complete.
     struct rusage usage;
     int status, result = wait4(pid, &status, 0, &usage);
@@ -802,14 +552,11 @@ private:
 
     if (result == -1) {
       getDelegate().commandProcessHadError(
-          command, handle,
+          context.job.getForCommand(), handle,
           Twine("unable to wait for process (") + strerror(errno) + ")");
-      getDelegate().commandProcessFinished(command, handle,
+      getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
                                            CommandExtendedResult::makeFailed(status));
-      completionFn.unwrapIn([](CommandCompletionFn fn){
-        fn(CommandResult::Failed);
-      });
-      return;
+      return CommandResult::Failed;
     }
 
     // We report additional info in the tracing interval
@@ -831,12 +578,9 @@ private:
     CommandResult commandResult = cancelled ? CommandResult::Cancelled : (status == 0) ? CommandResult::Succeeded : CommandResult::Failed;
     CommandExtendedResult extendedResult(commandResult, status, pid, utime, stime,
                                          usage.ru_maxrss);
-    getDelegate().commandProcessFinished(command, handle,
+    getDelegate().commandProcessFinished(context.job.getForCommand(), handle,
                                          extendedResult);
-
-    completionFn.unwrapIn([commandResult](CommandCompletionFn fn){
-      fn(commandResult);
-    });
+    return commandResult;
   }
 };
 
