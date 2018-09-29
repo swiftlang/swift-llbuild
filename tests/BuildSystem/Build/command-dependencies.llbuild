@@ -26,6 +26,7 @@
 #
 # RUN: echo modified >> %t.build/input
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.rebuild.out
+# RUN: cat %t.rebuild.out
 # RUN: %{FileCheck} --check-prefix CHECK-REBUILD --input-file %t.rebuild.out %s
 # RUN: diff %t.build/output-1 %t.build/output-2
 #

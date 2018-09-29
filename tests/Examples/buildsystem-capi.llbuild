@@ -2,6 +2,7 @@
 #
 # RUN: cc -o %t.exe %{srcroot}/examples/c-api/buildsystem/main.c -I %{srcroot}/products/libllbuild/include -lllbuild -L %{llbuild-lib-dir} -Werror
 # RUN: env LD_LIBRARY_PATH=%{llbuild-lib-dir} %t.exe %s > %t.out
+# RUN: cat %t.out
 # RUN: %{FileCheck} %s --input-file %t.out
 #
 # CHECK: -- read file contents: {{.*}}/buildsystem-capi.llbuild
