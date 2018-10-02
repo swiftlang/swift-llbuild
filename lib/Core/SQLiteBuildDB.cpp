@@ -66,12 +66,13 @@ namespace {
 
 class SQLiteBuildDB : public BuildDB {
   /// Version History:
+  /// * 9: Add filtered directory contents, related build key changes
   /// * 8: Remove ID from rule results
   /// * 7: De-normalized the rule result dependencies.
   /// * 6: Added `ordinal` field for dependencies.
   /// * 5: Switched to using `WITHOUT ROWID` for dependencies.
   /// * 4: Pre-history
-  static const int currentSchemaVersion = 8;
+  static const int currentSchemaVersion = 9;
 
   std::string path;
   uint32_t clientSchemaVersion;
