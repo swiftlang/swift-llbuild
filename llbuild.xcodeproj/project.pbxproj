@@ -781,11 +781,17 @@
 		1484D21D2094E99900D3830F /* Memory.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.pascal; path = Memory.inc; sourceTree = "<group>"; };
 		1484D21E2094E9CE00D3830F /* LeanWindows.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = LeanWindows.h; path = ../../../lib/Basic/LeanWindows.h; sourceTree = "<group>"; };
 		402614262087B10B005BD956 /* Tracing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Tracing.cpp; sourceTree = "<group>"; };
-		40377C7B2061C44900C0FD4D /* generate-version-h.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "generate-version-h.sh"; sourceTree = "<group>"; };
 		40377C7C2061D24200C0FD4D /* Package.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; tabWidth = 4; };
 		403B1A48205312000018A322 /* version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = version.h; sourceTree = "<group>"; };
 		404C888E20924BF8000C201A /* DenseMapInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DenseMapInfo.h; sourceTree = "<group>"; };
 		4062058120C7263C00B28281 /* StringList.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = StringList.h; sourceTree = "<group>"; };
+		406A04FD21627FD900EBA895 /* requirements.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = requirements.txt; sourceTree = "<group>"; };
+		406A04FE21627FD900EBA895 /* Dockerfile-16.04 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "Dockerfile-16.04"; sourceTree = "<group>"; };
+		406A04FF21627FD900EBA895 /* docker-utils */ = {isa = PBXFileReference; explicitFileType = text.script.python; fileEncoding = 4; path = "docker-utils"; sourceTree = "<group>"; };
+		406A05002162813E00EBA895 /* Dockerfile-14.04 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "Dockerfile-14.04"; sourceTree = "<group>"; };
+		406A05012162815000EBA895 /* Dockerfile-18.04 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "Dockerfile-18.04"; sourceTree = "<group>"; };
+		406A05022162A20800EBA895 /* check-all */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "check-all"; sourceTree = "<group>"; };
+		406A05032162A5A200EBA895 /* build-and-test */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "build-and-test"; sourceTree = "<group>"; };
 		40B3C8FF20D3AEBC007C5847 /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		40B3C91A20D3AEC9007C5847 /* CAPITests */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = CAPITests; sourceTree = BUILT_PRODUCTS_DIR; };
 		40B3C91B20D3AF9B007C5847 /* C-API.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "C-API.cpp"; sourceTree = "<group>"; };
@@ -1407,6 +1413,18 @@
 			path = Windows;
 			sourceTree = "<group>";
 		};
+		406A04FC21627FD900EBA895 /* docker */ = {
+			isa = PBXGroup;
+			children = (
+				406A04FD21627FD900EBA895 /* requirements.txt */,
+				406A04FE21627FD900EBA895 /* Dockerfile-16.04 */,
+				406A05012162815000EBA895 /* Dockerfile-18.04 */,
+				406A05002162813E00EBA895 /* Dockerfile-14.04 */,
+				406A04FF21627FD900EBA895 /* docker-utils */,
+			);
+			path = docker;
+			sourceTree = "<group>";
+		};
 		40B3C8FE20D3AE80007C5847 /* CAPI */ = {
 			isa = PBXGroup;
 			children = (
@@ -1844,15 +1862,17 @@
 		E1A2246A19F998C30059043E /* utils */ = {
 			isa = PBXGroup;
 			children = (
-				1484D2042094E8B100D3830F /* check-coverage */,
-				1484D2052094E8C300D3830F /* create-dummy-ninja-from-DB.py */,
-				40377C7B2061C44900C0FD4D /* generate-version-h.sh */,
-				1484D2062094E8CE00D3830F /* install-sources */,
+				406A04FC21627FD900EBA895 /* docker */,
 				1484D2112094E90600D3830F /* emacs */,
 				1484D2072094E8DE00D3830F /* manifest-generator */,
 				1484D2092094E8E700D3830F /* ptreetime */,
 				E1A2254E19F9A74B0059043E /* Xcode */,
 				E1A2246B19F998C30059043E /* unittest */,
+				1484D2042094E8B100D3830F /* check-coverage */,
+				406A05022162A20800EBA895 /* check-all */,
+				406A05032162A5A200EBA895 /* build-and-test */,
+				1484D2052094E8C300D3830F /* create-dummy-ninja-from-DB.py */,
+				1484D2062094E8CE00D3830F /* install-sources */,
 			);
 			path = utils;
 			sourceTree = "<group>";

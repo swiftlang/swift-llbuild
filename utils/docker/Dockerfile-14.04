@@ -6,12 +6,12 @@
 # See http://swift.org/LICENSE.txt for license information
 # See http://swift.org/CONTRIBUTORS.txt for Swift project authors
 
-FROM ubuntu:16.04
+FROM ubuntu:14.04
 
 # Install necesary packages
 RUN apt-get -q update && \
     apt-get -q install -y \
-    clang \
+    clang-3.6 \
     cmake \
     ninja-build \
     sqlite3 \
@@ -19,12 +19,14 @@ RUN apt-get -q update && \
     libsqlite3-dev \
     libncurses5-dev
 RUN pip install lit
-RUN apt-get -q install -y llvm-3.7-tools
+RUN apt-get -q install -y llvm-3.6-tools
 RUN update-alternatives --install /bin/sh sh /bin/bash 100
+RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-3.6 100
+RUN update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-3.6 100
 
 ARG SNAPSHOT
-COPY $SNAPSHOT /
-RUN tar -xvzf $SNAPSHOT --directory / --strip-components=1 && \
+COPY "$SNAPSHOT" /
+RUN tar -xvzf "$SNAPSHOT" --directory / --strip-components=1 && \
     rm -rf swift-DEVELOPMENT-SNAPSHOT*
 
 # Set Swift Path
