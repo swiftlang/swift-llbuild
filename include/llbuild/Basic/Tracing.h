@@ -135,6 +135,7 @@ struct TracingEngineTaskCallback {
   ~TracingEngineTaskCallback() {
     if (!TracingEnabled) return;
     LLBUILD_TRACE_INTERVAL_END("engine_task_callback", "key:%llu", key);
+    key = 0;
   }
 private:
   uint64_t key;
@@ -162,6 +163,7 @@ struct TracingEngineQueueItemEvent {
   ~TracingEngineQueueItemEvent() {
     if (!TracingEnabled) return;
     LLBUILD_TRACE_INTERVAL_END("engine_queue_item_event", "key:%s", key)
+    key = nullptr;
   }
 private:
   char const *key;

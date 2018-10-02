@@ -17,68 +17,102 @@
 import argparse
 import urllib2
 import os
+import shutil
 import subprocess
+import tempfile
 import yaml
+
+
+defaultTarget = "16.04"
 
 def call(args):
     """Prints and executes a command."""
     print " ".join(args)
     return subprocess.call(args)
 
-def docker_run(command_args):
-    """Runs a command in the container."""
+def build(args):
+    """Builds a docker image with the latest snapshot."""
+    target = args.target
+    targetNoDot = target.replace(".", "")
+
+    # Create a temporary directory
+    tmpdir = tempfile.mkdtemp()
+
+    try:
+        # Get latest snapshot info.
+        latest_build_url = "https://swift.org/builds/development/ubuntu{}/latest-build.yml".format(targetNoDot)
+        latest_build_data = yaml.load(urllib2.urlopen(latest_build_url).read())
+        snapshot_filename = latest_build_data["download"]
+        # FIXME: We shouldn"t need to do this, it should be available in the API.
+        snapshot_name = snapshot_filename.replace("-ubuntu{}.tar.gz".format(target), "")
+        base_url = latest_build_url.rsplit("/", 1)[0]
+        latest_snapshot_url = base_url + "/" + snapshot_name + "/" + snapshot_filename
+        docker_dir = os.path.dirname(os.path.realpath(__file__))
+
+        # Check if we already have the desired snapshot image
+        curImages = subprocess.check_output([
+            "docker",
+            "images",
+            "--filter", "reference=llbuild-docker-{}:latest".format(targetNoDot),
+            "--filter", "label=swift-snapshot={}".format(snapshot_name),
+            "--format", "{{.ID}}"
+        ])
+
+        # Download latest snapshot (if necessary).
+        if len(curImages.split()) == 1:
+            print "Image exists for {} with {}".format(target, snapshot_name)
+            exit(0)
+        else:
+            result = call([
+                "docker",
+                "rmi", "-f",
+                "llbuild-docker-{}".format(target)
+            ])
+
+            if result != 0:
+                print "Unable to clean prior images"
+                exit(1)
+
+            result = call([
+                "curl",
+                "-o",
+                os.path.join(tmpdir, snapshot_filename),
+                latest_snapshot_url
+            ])
+
+            if result != 0:
+                print "Unable to fetch snapshot"
+                exit(1)
+
+        # Create docker image.
+        call([
+            "docker",
+            "build",
+            "-t", "llbuild-docker-{}".format(targetNoDot),
+            "--label", "swift-snapshot={}".format(snapshot_name),
+            "--build-arg", "SNAPSHOT=%s" % snapshot_filename,
+            "--file", os.path.join(docker_dir, "Dockerfile-{}".format(target)),
+            tmpdir
+        ])
+    finally:
+        shutil.rmtree(tmpdir)
+
+def run(args):
+    """Runs an executable in the container."""
+    target = args.target
+    targetNoDot = target.replace(".", "")
+
     call([
         "docker",
         "run",
         "-it",
+        "--cap-add=SYS_PTRACE",
         "--security-opt", "seccomp=unconfined",
         "-v", "%s:/llbuild" % os.getcwd(),
         "-w", "/llbuild",
         "--rm",
-        "llbuild-docker-1604"
-    ] + command_args)
-
-def build(_):
-    """Builds a docker image with the latest snapshot."""
-
-    # Get latest snapshot info.
-    latest_build_url = "https://swift.org/builds/development/ubuntu1604/latest-build.yml"
-    latest_build_data = yaml.load(urllib2.urlopen(latest_build_url).read())
-    snapshot_filename = latest_build_data["download"]
-    # FIXME: We shouldn"t need to do this, it should be available in the API.
-    snapshot_name = snapshot_filename.replace("-ubuntu16.04.tar.gz", "")
-    base_url = latest_build_url.rsplit("/", 1)[0]
-    latest_snapshot_url = base_url + "/" + snapshot_name + "/" + snapshot_filename
-    docker_dir = os.path.dirname(os.path.realpath(__file__))
-
-    # Download latest snapshot (if necessary).
-    if snapshot_filename in os.listdir(docker_dir):
-        print "Not downloading: " + latest_snapshot_url
-    else:
-        # FIXME: We should remove old tarballs if we have newer ones.
-        result = call([
-            "curl",
-            "-o",
-            docker_dir + "/" + snapshot_filename,
-            latest_snapshot_url
-        ])
-
-        if result != 0:
-            print "Unable to install package: " + latest_snapshot_url
-            exit(1)
-
-    # Create docker image.
-    call([
-        "docker",
-        "build",
-        "-t", "llbuild-docker-1604",
-        "--build-arg", "SNAPSHOT=%s" % snapshot_filename,
-        docker_dir
-    ])
-
-def run(args):
-    """Runs an executable in the container."""
-    docker_run(args.command)
+        "llbuild-docker-{}".format(targetNoDot)
+    ] + args.command)
 
 def main():
     """Main script entry-point."""
@@ -94,12 +128,20 @@ def main():
     parser_build = subparsers.add_parser(
         "build",
         help="builds a docker image from the latest snapshot.")
+    parser_build.add_argument(
+        "-t", "--target",
+        help="The target platform",
+        default=defaultTarget)
     parser_build.set_defaults(func=build)
 
     # run
     parser_run = subparsers.add_parser(
         "run",
         help="runs a command in a container.")
+    parser_run.add_argument(
+        "-t", "--target",
+        help="The target platform",
+        default=defaultTarget)
     parser_run.add_argument("command", help="the command to run with its arguments", nargs="*")
     parser_run.set_defaults(func=run)
 
