@@ -627,7 +627,7 @@ system while executing.
        under.
 
    * - LLBUILD_TASK_ID
-     - A (reasonably) identifier string for this individual task.
+     - A (reasonably unique) identifier string for this individual task.
 
    * - LLBUILD_CONTROL_FD
      - The file descriptor passed to the subprocess that may be written to with
