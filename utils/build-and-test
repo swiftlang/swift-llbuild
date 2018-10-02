@@ -1,0 +1,20 @@
+#!/bin/bash
+
+set -e
+
+TARGETS=${TARGETS:-"14.04 16.04 18.04"}
+
+# Check for required dependencies
+for c in pip docker; do
+  command -v $c >/dev/null 2>&1 || { echo >&2 "error: $c required, but not found"; exit 1; }
+done
+
+# Ensure the docker dependencies are installed
+pip install -r utils/docker/requirements.txt
+
+# Build all the base images
+for TARGET in ${TARGETS}; do
+    utils/docker/docker-utils build --target=${TARGET}
+done
+
+

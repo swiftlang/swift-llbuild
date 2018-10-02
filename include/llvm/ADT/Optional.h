@@ -20,6 +20,7 @@
 #include "llvm/Support/AlignOf.h"
 #include "llvm/Support/Compiler.h"
 #include <cassert>
+#include <functional>
 #include <new>
 #include <utility>
 
@@ -131,6 +132,15 @@ public:
   template <typename U>
   LLVM_CONSTEXPR T getValueOr(U &&value) const LLVM_LVALUE_FUNCTION {
     return hasValue() ? getValue() : std::forward<U>(value);
+  }
+
+  void unwrapIn(std::function<void(T&)> fn) {
+    if (hasValue())
+      fn(getValue());
+  }
+  void unwrapIn(std::function<void(const T&)> fn) const {
+    if (hasValue())
+      fn(getValue());
   }
 
 #if LLVM_HAS_RVALUE_REFERENCE_THIS

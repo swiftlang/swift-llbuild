@@ -611,6 +611,40 @@ the output file -- even if the output file was just regenerated. This is under
 the assumption that the build system can only truly know that a file was
 produced correctly if it produces it directly.
 
+The build system exposes several environment variables and a file descriptor
+that may be used by subprocesses to communicate information back to the build
+system while executing.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 80
+
+   * - Variable
+     - Description
+
+   * - LLBUILD_LANE_ID
+     - An identifier string representing the execution lane the task is running
+       under.
+
+   * - LLBUILD_TASK_ID
+     - A (reasonably unique) identifier string for this individual task.
+
+   * - LLBUILD_CONTROL_FD
+     - The file descriptor passed to the subprocess that may be written to with
+       the build system control protocol.
+
+The build system control protocol version 1 is currently limited to a single
+function that allows a subprocess to release its exclusive control of an
+execution lane while continuing to run. This may be accomplished by writing the
+newline delimted version string 'llbuild.1' followed by a newline delimited echo
+of the contents of LLBUILD_TASK_ID. For example:
+
+
+.. code-block:: shell
+
+   bash -c "printf 'llbuild.1\n${LLBUILD_TASK_ID}\n' >&${LLBUILD_CONTROL_FD}"
+
+
 .. note::
 
    One useful behavior not currently supported is the ability to modify and

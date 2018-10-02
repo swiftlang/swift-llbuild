@@ -100,9 +100,11 @@ protected:
   virtual basic::CommandSignature getSignature();
 
   /// Extension point for subclasses, to actually execute the command.
-  virtual CommandResult executeExternalCommand(BuildSystemCommandInterface& bsci,
-                                               core::Task* task,
-                                               QueueJobContext* context) = 0;
+  virtual void executeExternalCommand(
+      BuildSystemCommandInterface& bsci,
+      core::Task* task,
+      QueueJobContext* context,
+      llvm::Optional<CommandCompletionFn> completionFn = {llvm::None}) = 0;
   
 public:
   using Command::Command;
@@ -139,9 +141,10 @@ public:
                             uintptr_t inputID,
                             const BuildValue& value) override;
 
-  virtual BuildValue execute(BuildSystemCommandInterface& bsci,
-                             core::Task* task,
-                             QueueJobContext* context) override;
+  virtual void execute(BuildSystemCommandInterface& bsci,
+                       core::Task* task,
+                       QueueJobContext* context,
+                       ResultFn resultFn) override;
 };
 
 }
