@@ -234,6 +234,9 @@ typedef struct llb_task_delegate_t_ {
     /// User context pointer.
     void* context;
 
+    /// Callback for releasing the user context, called on task destruction.
+    void (*destroy_context)(void* context);
+
     /// The callback indicating the task has been started.
     ///
     /// Xparam context The task context pointer.

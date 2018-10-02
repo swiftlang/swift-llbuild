@@ -38,6 +38,8 @@
 ///
 /// Version History:
 ///
+/// 7: Added destroy_context task delegate method.
+///
 /// 6: Added delegate methods for specific diagnostics.
 ///
 /// 5: Added `llb_buildsystem_command_extended_result_t`, changed command_process_finished signature.
@@ -51,7 +53,7 @@
 /// 1: Added `environment` parameter to llb_buildsystem_invocation_t.
 ///
 /// 0: Pre-history
-#define LLBUILD_C_API_VERSION 6
+#define LLBUILD_C_API_VERSION 7
 
 /// Get the full version of the llbuild library.
 LLBUILD_EXPORT const char* llb_get_full_version_string(void);

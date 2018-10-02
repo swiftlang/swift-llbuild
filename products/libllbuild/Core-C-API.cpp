@@ -118,6 +118,12 @@ public:
              "missing task inputs_available function");
   }
 
+  virtual ~CAPITask() {
+    if (cAPIDelegate.destroy_context) {
+      cAPIDelegate.destroy_context(cAPIDelegate.context);
+    }
+  }
+
   virtual void start(BuildEngine& engine) override {
     CAPIBuildEngineDelegate* delegate =
       static_cast<CAPIBuildEngineDelegate*>(engine.getDelegate());
