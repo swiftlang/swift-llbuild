@@ -533,8 +533,10 @@ public class BuildEngine {
         //
         // FIXME: Separate the delegate from the context pointer.
         var taskDelegate = llb_task_delegate_t()
-        // FIXME: We need a deallocation callback in order to ensure this is released.
         taskDelegate.context = unsafeBitCast(Unmanaged.passRetained(taskWrapper), to: UnsafeMutableRawPointer.self)
+        taskDelegate.destroy_context = { (context) in
+            Unmanaged<TaskWrapper>.fromOpaque(context!).release()
+        }
         taskDelegate.start = { (context, engineContext, internalTask) in
             let taskWrapper = BuildEngine.toTaskWrapper(context!)
             taskWrapper.task.start(taskWrapper)
