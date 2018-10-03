@@ -82,6 +82,21 @@ struct TracingExecutionQueueJob {
   }
 };
 
+
+inline void TracingExecutionQueueSubprocessStart(uint32_t laneNumber,
+                                          llvm::StringRef commandName) {
+  if (!TracingEnabled) return;
+  LLBUILD_TRACE_INTERVAL_BEGIN("execution_queue_subprocess", "lane:%d;command:%s", laneNumber, commandName.str().c_str());
+}
+
+inline void TracingExecutionQueueSubprocessResult(uint32_t laneNumber, pid_t pid,
+                                           uint64_t utime, uint64_t stime,
+                                           long maxrss) {
+  if (!TracingEnabled) return;
+  LLBUILD_TRACE_INTERVAL_END("execution_queue_subprocess", "lane:%d;pid:%d;utime:%llu;stime:%llu;maxrss:%ld", laneNumber, pid, utime, stime, maxrss);
+}
+
+
 struct TracingExecutionQueueSubprocess {
   TracingExecutionQueueSubprocess(uint32_t laneNumber,
                                   llvm::StringRef commandName)

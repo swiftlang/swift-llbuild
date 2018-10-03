@@ -1,9 +1,12 @@
 add_llbuild_library(llbuildBasic
+  ExecutionQueue.cpp
   FileInfo.cpp
   FileSystem.cpp
   Hashing.cpp
+  LaneBasedExecutionQueue.cpp
   PlatformUtility.cpp
   SerialQueue.cpp
+  Subprocess.cpp
   Tracing.cpp
   Version.cpp
   ShellUtility.cpp

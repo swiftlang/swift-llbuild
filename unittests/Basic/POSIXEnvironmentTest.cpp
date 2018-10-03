@@ -10,12 +10,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "../../lib/BuildSystem/POSIXEnvironment.h"
+#include "llbuild/Basic/POSIXEnvironment.h"
 
 #include "gtest/gtest.h"
 
 using namespace llbuild;
-using namespace llbuild::buildsystem;
+using namespace llbuild::basic;
 
 namespace {
   TEST(POSIXEnvironmentTest, basic) {

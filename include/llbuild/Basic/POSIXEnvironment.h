@@ -32,7 +32,7 @@ namespace std {
 }
 
 namespace llbuild {
-namespace buildsystem {
+namespace basic {
 
 /// A helper class for constructing a POSIX-style environment.
 class POSIXEnvironment {

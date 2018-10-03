@@ -12,11 +12,11 @@
 
 #include "llbuild/BuildSystem/BuildExecutionQueue.h"
 
-#include "POSIXEnvironment.h"
 
 #include "llbuild/Basic/CrossPlatformCompatibility.h"
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/Basic/PlatformUtility.h"
+#include "llbuild/Basic/POSIXEnvironment.h"
 #include "llbuild/Basic/Tracing.h"
 
 #include "llbuild/BuildSystem/BuildDescription.h"
@@ -494,7 +494,7 @@ public:
     //
     // NOTE: We construct the environment in order of precedence, so
     // overridden keys should be defined first.
-    POSIXEnvironment posixEnv;
+    basic::POSIXEnvironment posixEnv;
 
     // Export a task ID to subprocesses.
     auto taskID = Twine::utohexstr(context.jobID);
