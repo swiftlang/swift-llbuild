@@ -11,7 +11,7 @@
 # CHECK: /usr/bin/env
 # CHECK: ENV_KEY=ENV_VALUE_1
 # CHECK-NOT: PATH=
-# CHECK-NEXT: /usr/bin/env
+# CHECK: /usr/bin/env
 # CHECK: ENV_KEY=ENV_VALUE_2
 # CHECK: LLBUILD_TASK_ID={{[a-f0-9]+}}
 # CHECK: PATH=random-overridden-path
@@ -68,7 +68,7 @@ commands:
   "<env-1>":
     tool: shell
     outputs: ["<env-1>"]
-    args: ["/usr/bin/env"]
+    args: /usr/bin/env | /usr/bin/sort
     env:
       ENV_KEY: ENV_VALUE_1
     inherit-env: false

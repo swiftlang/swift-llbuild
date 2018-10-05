@@ -14,6 +14,7 @@
 #define LLBUILD_BUILDSYSTEM_BUILDDESCRIPTION_H
 
 #include "llbuild/Basic/Compiler.h"
+#include "llbuild/Basic/ExecutionQueue.h"
 #include "llbuild/Basic/LLVM.h"
 
 #include "llvm/ADT/SmallString.h"
@@ -45,7 +46,6 @@ class BuildKey;
 class BuildValue;
 class Command;
 class Node;
-struct QueueJobContext;
 
 /// Context for information that may be needed for a configuration action.
 //
@@ -151,7 +151,7 @@ public:
 };
 
 /// Abstract command definition used by the build file.
-class Command {
+class Command : public basic::JobDescriptor {
   // DO NOT COPY
   Command(const Command&) LLBUILD_DELETED_FUNCTION;
   void operator=(const Command&) LLBUILD_DELETED_FUNCTION;
@@ -179,12 +179,14 @@ public:
   /// Controls whether the default status reporting shows status for the
   /// command.
   virtual bool shouldShowStatus() { return true; }
-  
+
+  virtual StringRef getOrdinalName() const override { return getName(); }
+
   /// Get a short description of the command, for use in status reporting.
-  virtual void getShortDescription(SmallVectorImpl<char> &result) = 0;
+  virtual void getShortDescription(SmallVectorImpl<char> &result) const override = 0;
   
   /// Get a verbose description of the command, for use in status reporting.
-  virtual void getVerboseDescription(SmallVectorImpl<char> &result) = 0;
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) const override = 0;
   
   /// @}
 
@@ -262,7 +264,7 @@ public:
   ///
   /// Note that resultFn may be executed asynchronously on a separate thread.
   virtual void execute(BuildSystemCommandInterface&, core::Task*,
-                       QueueJobContext* context, ResultFn resultFn) = 0;
+                       basic::QueueJobContext* context, ResultFn resultFn) = 0;
   
   /// @}
 };

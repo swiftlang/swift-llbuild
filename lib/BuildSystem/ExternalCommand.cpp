@@ -13,8 +13,8 @@
 #include "llbuild/BuildSystem/ExternalCommand.h"
 
 #include "llbuild/Basic/Hashing.h"
+#include "llbuild/Basic/ExecutionQueue.h"
 #include "llbuild/Basic/FileSystem.h"
-#include "llbuild/BuildSystem/BuildExecutionQueue.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildKey.h"
 #include "llbuild/BuildSystem/BuildNode.h"
@@ -388,21 +388,21 @@ void ExternalCommand::execute(BuildSystemCommandInterface& bsci,
     
   // Invoke the external command.
   bsci.getDelegate().commandStarted(this);
-  executeExternalCommand(bsci, task, context, {[this, &bsci, resultFn](CommandResult result){
-    bsci.getDelegate().commandFinished(this, result);
+  executeExternalCommand(bsci, task, context, {[this, &bsci, resultFn](ProcessResult result){
+    bsci.getDelegate().commandFinished(this, result.status);
 
     // Process the result.
-    switch (result) {
-    case CommandResult::Failed:
+    switch (result.status) {
+    case ProcessStatus::Failed:
       resultFn(BuildValue::makeFailedCommand());
       return;
-    case CommandResult::Cancelled:
+    case ProcessStatus::Cancelled:
       resultFn(BuildValue::makeCancelledCommand());
       return;
-    case CommandResult::Succeeded:
+    case ProcessStatus::Succeeded:
       resultFn(computeCommandResult(bsci));
       return;
-    case CommandResult::Skipped:
+    case ProcessStatus::Skipped:
       // It is illegal to get skipped result at this point.
       break;
     }

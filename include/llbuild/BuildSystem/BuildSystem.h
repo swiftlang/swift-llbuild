@@ -15,7 +15,7 @@
 
 #include "llbuild/Basic/Compiler.h"
 #include "llbuild/Basic/LLVM.h"
-#include "llbuild/BuildSystem/CommandResult.h"
+#include "llbuild/Basic/Subprocess.h"
 
 #include "llvm/ADT/Optional.h"
 #include "llvm/ADT/StringRef.h"
@@ -27,15 +27,13 @@
 
 namespace llbuild {
 namespace basic {
-
-class FileSystem;
-
+  class ExecutionQueue;
+  class FileSystem;
 }
 
 namespace buildsystem {
 
 class BuildDescription;
-class BuildExecutionQueue;
 class BuildKey;
 class BuildValue;
 class Command;
@@ -125,7 +123,7 @@ public:
   virtual std::unique_ptr<Tool> lookupTool(StringRef name) = 0;
 
   /// Called by the build system to get create the object used to dispatch work.
-  virtual std::unique_ptr<BuildExecutionQueue> createExecutionQueue() = 0;
+  virtual std::unique_ptr<basic::ExecutionQueue> createExecutionQueue() = 0;
   
   /// Called by the build system to report a command failure.
   virtual void hadCommandFailure() = 0;
@@ -194,8 +192,8 @@ public:
 
   /// Called by the build system to report a command has completed.
   ///
-  /// \param result - The result of command (e.g. success, failure, etc).
-  virtual void commandFinished(Command*, CommandResult result) = 0;
+  /// \param status - The status of command (e.g. success, failure, etc).
+  virtual void commandFinished(Command*, basic::ProcessStatus status) = 0;
 
   /// Called by the build system to report a command could not build due to
   /// missing inputs.
@@ -273,43 +271,6 @@ public:
 
   /// @}
 };
-
-// MARK: Quality of Service
-
-enum class QualityOfService {
-  /// A default quality of service (i.e. what the system would use without other
-  /// advisement, generally this would be comparable to what would be done by
-  /// `make`, `ninja`, etc.)
-  Normal,
-
-  /// User-initiated, high priority work.
-  UserInitiated,
-  
-  /// Batch work performed on behalf of the user.
-  Utility,
-
-  /// Background work that is not directly visible to the user.
-  Background
-};
-
-QualityOfService getDefaultQualityOfService();
-void setDefaultQualityOfService(QualityOfService level);
-
-// MARK: Execution Queue Scheduler Control
-
-enum class SchedulerAlgorithm {
-  /// Command name priority queue based scheduling [default]
-  CommandNamePriority = 0,
-
-  /// First in, first out
-  FIFO = 1
-};
-
-SchedulerAlgorithm getSchedulerAlgorithm();
-void setSchedulerAlgorithm(SchedulerAlgorithm algorithm);
-
-uint32_t getSchedulerLaneWidth();
-void setSchedulerLaneWidth(uint32_t width);
 
 }
 }

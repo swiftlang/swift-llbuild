@@ -10,10 +10,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llbuild/BuildSystem/BuildExecutionQueue.h"
 #include "llbuild/BuildSystem/BuildDescription.h"
 #include "llbuild/BuildSystem/BuildSystem.h"
 
+#include "llbuild/Basic/ExecutionQueue.h"
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/Basic/LLVM.h"
 
@@ -26,30 +26,31 @@
 
 using namespace llvm;
 using namespace llbuild;
+using namespace llbuild::basic;
 using namespace llbuild::buildsystem;
 
 namespace llbuild {
 namespace unittests {
 
-class MockExecutionQueueDelegate : public BuildExecutionQueueDelegate {
+class MockExecutionQueueDelegate : public ExecutionQueueDelegate {
 public:
   MockExecutionQueueDelegate();
 
 private:
-  virtual void commandJobStarted(Command*) {}
+  virtual void queueJobStarted(JobDescriptor*) override {}
 
-  virtual void commandJobFinished(Command*) {}
+  virtual void queueJobFinished(JobDescriptor*) override {}
 
-  virtual void commandProcessStarted(Command*, ProcessHandle handle) {}
+  virtual void processStarted(ProcessContext*, ProcessHandle handle) override {}
 
-  virtual void commandProcessHadError(Command*, ProcessHandle handle,
-                                      const Twine& message) {}
+  virtual void processHadError(ProcessContext*, ProcessHandle handle,
+                               const Twine& message) override {}
 
-  virtual void commandProcessHadOutput(Command*, ProcessHandle handle,
-                                       StringRef data) {}
+  virtual void processHadOutput(ProcessContext*, ProcessHandle handle,
+                                StringRef data) override {}
   
-  virtual void commandProcessFinished(Command*, ProcessHandle handle,
-                                      const CommandExtendedResult& result) {}
+  virtual void processFinished(ProcessContext*, ProcessHandle handle,
+                               const ProcessResult& result) override {}
 };
   
 class MockBuildSystemDelegate : public BuildSystemDelegate {
@@ -86,9 +87,10 @@ public:
     return nullptr;
   }
 
-  virtual std::unique_ptr<BuildExecutionQueue> createExecutionQueue() {
-    return std::unique_ptr<BuildExecutionQueue>(
+  virtual std::unique_ptr<ExecutionQueue> createExecutionQueue() {
+    return std::unique_ptr<ExecutionQueue>(
         createLaneBasedExecutionQueue(executionQueueDelegate, /*numLanes=*/1,
+                                      SchedulerAlgorithm::NamePriority,
                                       /*environment=*/nullptr));
   }
   
@@ -141,7 +143,7 @@ public:
     }
   }
 
-  virtual void commandFinished(Command* command, CommandResult result) {
+  virtual void commandFinished(Command* command, ProcessStatus result) {
     if (trackAllMessages) {
       std::unique_lock<std::mutex> lock(messagesMutex);
       messages.push_back(

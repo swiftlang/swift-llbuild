@@ -18,7 +18,6 @@
 #include "llbuild/BuildSystem/BuildKey.h"
 #include "llbuild/BuildSystem/BuildSystemCommandInterface.h"
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
-#include "llbuild/BuildSystem/CommandResult.h"
 #include "llbuild/BuildSystem/ExternalCommand.h"
 #include "llbuild/Core/BuildEngine.h"
 #include "llbuild/Core/DependencyInfoParser.h"
@@ -33,6 +32,7 @@
 #include <memory>
 
 using namespace llbuild;
+using namespace llbuild::basic;
 using namespace llbuild::buildsystem;
 
 /* Build Engine API */
@@ -138,15 +138,15 @@ public:
 class CAPIBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
   llb_buildsystem_delegate_t cAPIDelegate;
 
-  llb_buildsystem_command_result_t get_command_result(CommandResult commandResult) {
+  llb_buildsystem_command_result_t get_command_result(ProcessStatus commandResult) {
     switch (commandResult) {
-      case CommandResult::Succeeded:
+      case ProcessStatus::Succeeded:
         return llb_buildsystem_command_result_succeeded;
-      case CommandResult::Cancelled:
+      case ProcessStatus::Cancelled:
         return llb_buildsystem_command_result_cancelled;
-      case CommandResult::Failed:
+      case ProcessStatus::Failed:
         return llb_buildsystem_command_result_failed;
-      case CommandResult::Skipped:
+      case ProcessStatus::Skipped:
         return llb_buildsystem_command_result_skipped;
       default:
         assert(0 && "unknown command result");
@@ -239,7 +239,7 @@ public:
     }
   }
 
-  virtual void commandFinished(Command* command, CommandResult commandResult) override {
+  virtual void commandFinished(Command* command, ProcessStatus commandResult) override {
     if (cAPIDelegate.command_finished) {
       cAPIDelegate.command_finished(
           cAPIDelegate.context,
@@ -374,11 +374,11 @@ public:
   }
   
   virtual void commandProcessFinished(Command* command, ProcessHandle handle,
-                                      const CommandExtendedResult& commandResult) override {
+                                      const ProcessResult& commandResult) override {
     if (cAPIDelegate.command_process_finished) {
       llb_buildsystem_command_extended_result_t result;
-      result.result = get_command_result(commandResult.result);
-      result.exit_status = commandResult.exitStatus;
+      result.result = get_command_result(commandResult.status);
+      result.exit_status = commandResult.exitCode;
       result.pid = commandResult.pid;
       result.utime = commandResult.utime;
       result.stime = commandResult.stime;
@@ -729,16 +729,16 @@ class CAPIExternalCommand : public ExternalCommand {
   virtual void executeExternalCommand(BuildSystemCommandInterface& bsci,
                                                core::Task* task,
                                                QueueJobContext* job_context,
-                                               llvm::Optional<CommandCompletionFn> completionFn) override {
+                                               llvm::Optional<ProcessCompletionFn> completionFn) override {
     auto result = cAPIDelegate.execute_command(
         cAPIDelegate.context, (llb_buildsystem_command_t*)this,
         (llb_buildsystem_command_interface_t*)&bsci,
         (llb_task_t*)task, (llb_buildsystem_queue_job_context_t*)job_context)
-          ? CommandResult::Succeeded : CommandResult::Failed;
+          ? ProcessStatus::Succeeded : ProcessStatus::Failed;
 
-    if (result != CommandResult::Succeeded) {
+    if (result != ProcessStatus::Succeeded) {
       // If the command failed, there is no need to gather dependencies.
-      completionFn.unwrapIn([result](CommandCompletionFn fn){fn(result);});
+      completionFn.unwrapIn([result](ProcessCompletionFn fn){fn(result);});
       return;
     }
     
@@ -747,12 +747,12 @@ class CAPIExternalCommand : public ExternalCommand {
       if (!processDiscoveredDependencies(bsci, task, job_context)) {
         // If we were unable to process the dependencies output, report a
         // failure.
-        completionFn.unwrapIn([](CommandCompletionFn fn){fn(CommandResult::Failed);});
+        completionFn.unwrapIn([](ProcessCompletionFn fn){fn(ProcessStatus::Failed);});
         return;
       }
     }
 
-    completionFn.unwrapIn([result](CommandCompletionFn fn){fn(result);});
+    completionFn.unwrapIn([result](ProcessCompletionFn fn){fn(result);});
   }
   
 public:
@@ -761,12 +761,12 @@ public:
       : ExternalCommand(name), cAPIDelegate(delegate) {}
 
 
-  virtual void getShortDescription(SmallVectorImpl<char> &result) override {
+  virtual void getShortDescription(SmallVectorImpl<char> &result) const override {
     // FIXME: Provide client control.
     llvm::raw_svector_ostream(result) << getName();
   }
 
-  virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) const override {
     // FIXME: Provide client control.
     llvm::raw_svector_ostream(result) << getName();
   }
@@ -897,14 +897,14 @@ char* llb_buildsystem_command_get_verbose_description(
 }
 
 llb_quality_of_service_t llb_get_quality_of_service() {
-  switch (llbuild::buildsystem::getDefaultQualityOfService()) {
-  case llbuild::buildsystem::QualityOfService::Normal:
+  switch (getDefaultQualityOfService()) {
+  case QualityOfService::Normal:
     return llb_quality_of_service_default;
-  case llbuild::buildsystem::QualityOfService::UserInitiated:
+  case QualityOfService::UserInitiated:
     return llb_quality_of_service_user_initiated;
-  case llbuild::buildsystem::QualityOfService::Utility:
+  case QualityOfService::Utility:
     return llb_quality_of_service_utility;
-  case llbuild::buildsystem::QualityOfService::Background:
+  case QualityOfService::Background:
     return llb_quality_of_service_background;
   default:
     assert(0 && "unknown quality service level");
@@ -915,20 +915,16 @@ llb_quality_of_service_t llb_get_quality_of_service() {
 void llb_set_quality_of_service(llb_quality_of_service_t level) {
   switch (level) {
   case llb_quality_of_service_default:
-    llbuild::buildsystem::setDefaultQualityOfService(
-        llbuild::buildsystem::QualityOfService::Normal);
+    setDefaultQualityOfService(QualityOfService::Normal);
     break;
   case llb_quality_of_service_user_initiated:
-    llbuild::buildsystem::setDefaultQualityOfService(
-        llbuild::buildsystem::QualityOfService::UserInitiated);
+    setDefaultQualityOfService(QualityOfService::UserInitiated);
     break;
   case llb_quality_of_service_utility:
-    llbuild::buildsystem::setDefaultQualityOfService(
-        llbuild::buildsystem::QualityOfService::Utility);
+    setDefaultQualityOfService(QualityOfService::Utility);
     break;
   case llb_quality_of_service_background:
-    llbuild::buildsystem::setDefaultQualityOfService(
-        llbuild::buildsystem::QualityOfService::Background);
+    setDefaultQualityOfService(QualityOfService::Background);
     break;
   default:
     assert(0 && "unknown quality service level");
@@ -936,39 +932,3 @@ void llb_set_quality_of_service(llb_quality_of_service_t level) {
   }
 }
 
-
-llb_scheduler_algorithm_t llb_get_scheduler_algorithm() {
-  switch (llbuild::buildsystem::getSchedulerAlgorithm()) {
-    case llbuild::buildsystem::SchedulerAlgorithm::CommandNamePriority:
-      return llb_scheduler_algorithm_command_name_priority;
-    case llbuild::buildsystem::SchedulerAlgorithm::FIFO:
-      return llb_scheduler_algorithm_fifo;
-    default:
-      assert(0 && "unknown scheduler algorithm");
-      return llb_scheduler_algorithm_command_name_priority;
-  }
-}
-
-void llb_set_scheduler_algorithm(llb_scheduler_algorithm_t algorithm) {
-  switch (algorithm) {
-    case llb_scheduler_algorithm_command_name_priority:
-      llbuild::buildsystem::setSchedulerAlgorithm(
-          llbuild::buildsystem::SchedulerAlgorithm::CommandNamePriority);
-      break;
-    case llb_scheduler_algorithm_fifo:
-      llbuild::buildsystem::setSchedulerAlgorithm(
-          llbuild::buildsystem::SchedulerAlgorithm::FIFO);
-      break;
-    default:
-      assert(0 && "unknown scheduler algorithm");
-      break;
-  }
-}
-
-uint32_t llb_get_scheduler_lane_width() {
-  return llbuild::buildsystem::getSchedulerLaneWidth();
-}
-
-void llb_set_scheduler_lane_width(uint32_t width) {
-  llbuild::buildsystem::setSchedulerLaneWidth(width);
-}

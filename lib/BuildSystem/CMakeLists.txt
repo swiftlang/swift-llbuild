@@ -1,6 +1,5 @@
 add_llbuild_library(llbuildBuildSystem
   BuildDescription.cpp
-  BuildExecutionQueue.cpp
   BuildFile.cpp
   BuildKey.cpp
   BuildNode.cpp
@@ -8,5 +7,4 @@ add_llbuild_library(llbuildBuildSystem
   BuildSystemFrontend.cpp
   BuildValue.cpp
   ExternalCommand.cpp
-  LaneBasedExecutionQueue.cpp
   )

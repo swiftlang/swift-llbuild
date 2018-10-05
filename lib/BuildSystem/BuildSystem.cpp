@@ -13,8 +13,8 @@
 #include "llbuild/BuildSystem/BuildSystem.h"
 #include "llbuild/BuildSystem/BuildSystemCommandInterface.h"
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
-#include "llbuild/BuildSystem/CommandResult.h"
 
+#include "llbuild/Basic/ExecutionQueue.h"
 #include "llbuild/Basic/FileInfo.h"
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/Basic/Hashing.h"
@@ -25,7 +25,6 @@
 #include "llbuild/Core/BuildEngine.h"
 #include "llbuild/Core/DependencyInfoParser.h"
 #include "llbuild/Core/MakefileDepsParser.h"
-#include "llbuild/BuildSystem/BuildExecutionQueue.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildKey.h"
 #include "llbuild/BuildSystem/BuildNode.h"
@@ -187,7 +186,7 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
 
   /// The execution queue reference; this is only valid while a build is
   /// actually in progress.
-  std::unique_ptr<BuildExecutionQueue> executionQueue;
+  std::unique_ptr<ExecutionQueue> executionQueue;
 
   /// Flag indicating if the build has been aborted.
   bool buildWasAborted = false;
@@ -202,7 +201,7 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
     return buildEngine;
   }
   
-  virtual BuildExecutionQueue& getExecutionQueue() override {
+  virtual ExecutionQueue& getExecutionQueue() override {
     assert(executionQueue.get());
     return *executionQueue;
   }
@@ -1378,7 +1377,7 @@ class CommandTask : public Task {
         // We need to call commandFinished here because commandPreparing and
         // shouldCommandStart guarantee that they're followed by
         // commandFinished.
-        bsci.getDelegate().commandFinished(&command, CommandResult::Skipped);
+        bsci.getDelegate().commandFinished(&command, ProcessStatus::Skipped);
         bsci.taskIsComplete(this, BuildValue::makeSkippedCommand());
         return;
       }
@@ -1839,11 +1838,11 @@ public:
 
   virtual bool shouldShowStatus() override { return false; }
 
-  virtual void getShortDescription(SmallVectorImpl<char> &result) override {
+  virtual void getShortDescription(SmallVectorImpl<char> &result) const override {
     llvm::raw_svector_ostream(result) << getName();
   }
 
-  virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) const override {
     llvm::raw_svector_ostream(result) << getName();
   }
 
@@ -1851,10 +1850,10 @@ public:
       BuildSystemCommandInterface& bsci,
       Task* task,
       QueueJobContext* context,
-      llvm::Optional<CommandCompletionFn> completionFn) override {
+      llvm::Optional<ProcessCompletionFn> completionFn) override {
     // Nothing needs to be done for phony commands.
-    completionFn.unwrapIn([](CommandCompletionFn fn){
-      fn(CommandResult::Succeeded);
+    completionFn.unwrapIn([](ProcessCompletionFn fn){
+      fn(ProcessStatus::Succeeded);
     });
   }
 
@@ -2114,11 +2113,11 @@ class ShellCommand : public ExternalCommand {
 public:
   using ExternalCommand::ExternalCommand;
 
-  virtual void getShortDescription(SmallVectorImpl<char> &result) override {
+  virtual void getShortDescription(SmallVectorImpl<char> &result) const override {
     llvm::raw_svector_ostream(result) << getDescription();
   }
 
-  virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) const override {
     llvm::raw_svector_ostream os(result);
     bool first = true;
     for (const auto& arg: args) {
@@ -2220,17 +2219,17 @@ public:
       BuildSystemCommandInterface& bsci,
       Task* task,
       QueueJobContext* context,
-      llvm::Optional<CommandCompletionFn> completionFn) override {
+      llvm::Optional<ProcessCompletionFn> completionFn) override {
 
     // Execute the command.
     bsci.getExecutionQueue().executeProcess(
         context, args, env,
         /*inheritEnvironment=*/inheritEnv,
         /*canSafelyInterrupt=*/canSafelyInterrupt,
-        /*completionFn=*/{[this, &bsci, task, completionFn](CommandResult result) {
-          if (result != CommandResult::Succeeded) {
+        /*completionFn=*/{[this, &bsci, task, completionFn](ProcessResult result) {
+          if (result.status != ProcessStatus::Succeeded) {
             // If the command failed, there is no need to gather dependencies.
-            completionFn.unwrapIn([result](CommandCompletionFn fn){fn(result);});
+            completionFn.unwrapIn([result](ProcessCompletionFn fn){fn(result);});
             return;
           }
 
@@ -2242,17 +2241,17 @@ public:
               if (!processDiscoveredDependencies(bsci, task, context)) {
                 // If we were unable to process the dependencies output, report a
                 // failure.
-                completionFn.unwrapIn([](CommandCompletionFn fn){
-                  fn(CommandResult::Failed);
+                completionFn.unwrapIn([](ProcessCompletionFn fn){
+                  fn(ProcessStatus::Failed);
                 });
                 return;
               }
-              completionFn.unwrapIn([result](CommandCompletionFn fn){fn(result);});
+              completionFn.unwrapIn([result](ProcessCompletionFn fn){fn(result);});
             }});
             return;
           }
 
-          completionFn.unwrapIn([result](CommandCompletionFn fn){fn(result);});
+          completionFn.unwrapIn([result](ProcessCompletionFn fn){fn(result);});
         }});
   }
 };
@@ -2353,11 +2352,11 @@ class ClangShellCommand : public ExternalCommand {
 public:
   using ExternalCommand::ExternalCommand;
 
-  virtual void getShortDescription(SmallVectorImpl<char> &result) override {
+  virtual void getShortDescription(SmallVectorImpl<char> &result) const override {
     llvm::raw_svector_ostream(result) << getDescription();
   }
 
-  virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) const override {
     llvm::raw_svector_ostream os(result);
     bool first = true;
     for (const auto& arg: args) {
@@ -2407,13 +2406,13 @@ public:
   virtual void executeExternalCommand(BuildSystemCommandInterface& bsci,
                                       Task* task,
                                       QueueJobContext* context,
-                                      llvm::Optional<CommandCompletionFn> completionFn) override {
+                                      llvm::Optional<ProcessCompletionFn> completionFn) override {
     // Execute the command.
-    bsci.getExecutionQueue().executeProcess(context, args, {}, true, true, {[this, &bsci, task, completionFn](CommandResult result){
+    bsci.getExecutionQueue().executeProcess(context, args, {}, true, true, {[this, &bsci, task, completionFn](ProcessResult result){
 
-      if (result != CommandResult::Succeeded) {
+      if (result.status != ProcessStatus::Succeeded) {
         // If the command failed, there is no need to gather dependencies.
-        completionFn.unwrapIn([result](CommandCompletionFn fn){fn(result);});
+        completionFn.unwrapIn([result](ProcessCompletionFn fn){fn(result);});
         return;
       }
 
@@ -2425,17 +2424,17 @@ public:
           if (!processDiscoveredDependencies(bsci, task, context)) {
             // If we were unable to process the dependencies output, report a
             // failure.
-            completionFn.unwrapIn([](CommandCompletionFn fn){
-              fn(CommandResult::Failed);
+            completionFn.unwrapIn([](ProcessCompletionFn fn){
+              fn(ProcessStatus::Failed);
             });
             return;
           }
-          completionFn.unwrapIn([result](CommandCompletionFn fn){fn(result);});
+          completionFn.unwrapIn([result](ProcessCompletionFn fn){fn(result);});
         }});
         return;
       }
 
-      completionFn.unwrapIn([result](CommandCompletionFn fn){fn(result);});
+      completionFn.unwrapIn([result](ProcessCompletionFn fn){fn(result);});
     }});
   }
 };
@@ -2482,11 +2481,11 @@ public:
   // FIXME: Should create a CustomCommand class, to avoid all the boilerplate
   // required implementations.
 
-  virtual void getShortDescription(SmallVectorImpl<char> &result) override {
+  virtual void getShortDescription(SmallVectorImpl<char> &result) const override {
     llvm::raw_svector_ostream(result) << "Checking Swift Compiler Version";
   }
 
-  virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) const override {
     llvm::raw_svector_ostream(result) << '"' << executable << '"'
                                       << " --version";
   }
@@ -2666,13 +2665,13 @@ class SwiftCompilerShellCommand : public ExternalCommand {
 public:
   using ExternalCommand::ExternalCommand;
 
-  virtual void getShortDescription(SmallVectorImpl<char> &result) override {
+  virtual void getShortDescription(SmallVectorImpl<char> &result) const override {
       llvm::raw_svector_ostream(result)
         << "Compile Swift Module '" << moduleName
         << "' (" << sourcesList.size() << " sources)";
   }
 
-  virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) const override {
     SmallString<64> outputFileMapPath;
     getOutputFileMapPath(outputFileMapPath);
     
@@ -2944,33 +2943,33 @@ public:
       BuildSystemCommandInterface& bsci,
       core::Task* task,
       QueueJobContext* context,
-      llvm::Optional<CommandCompletionFn> completionFn) override {
+      llvm::Optional<ProcessCompletionFn> completionFn) override {
     // FIXME: Need to add support for required parameters.
     if (sourcesList.empty()) {
       bsci.getDelegate().error("", {}, "no configured 'sources'");
-      completionFn.unwrapIn([](CommandCompletionFn fn){
-        fn(CommandResult::Failed);
+      completionFn.unwrapIn([](ProcessCompletionFn fn){
+        fn(ProcessStatus::Failed);
       });
       return;
     }
     if (objectsList.empty()) {
       bsci.getDelegate().error("", {}, "no configured 'objects'");
-      completionFn.unwrapIn([](CommandCompletionFn fn){
-        fn(CommandResult::Failed);
+      completionFn.unwrapIn([](ProcessCompletionFn fn){
+        fn(ProcessStatus::Failed);
       });
       return;
     }
     if (moduleName.empty()) {
       bsci.getDelegate().error("", {}, "no configured 'module-name'");
-      completionFn.unwrapIn([](CommandCompletionFn fn){
-        fn(CommandResult::Failed);
+      completionFn.unwrapIn([](ProcessCompletionFn fn){
+        fn(ProcessStatus::Failed);
       });
       return;
     }
     if (tempsPath.empty()) {
       bsci.getDelegate().error("", {}, "no configured 'temps-path'");
-      completionFn.unwrapIn([](CommandCompletionFn fn){
-        fn(CommandResult::Failed);
+      completionFn.unwrapIn([](ProcessCompletionFn fn){
+        fn(ProcessStatus::Failed);
       });
       return;
     }
@@ -2978,8 +2977,8 @@ public:
     if (sourcesList.size() != objectsList.size()) {
       bsci.getDelegate().error(
           "", {}, "'sources' and 'objects' are not the same size");
-      completionFn.unwrapIn([](CommandCompletionFn fn){
-        fn(CommandResult::Failed);
+      completionFn.unwrapIn([](ProcessCompletionFn fn){
+        fn(ProcessStatus::Failed);
       });
       return;
     }
@@ -3002,8 +3001,8 @@ public:
     // Write the output file map.
     std::vector<std::string> depsFiles;
     if (!writeOutputFileMap(bsci, outputFileMapPath, depsFiles)) {
-      completionFn.unwrapIn([](CommandCompletionFn fn){
-        fn(CommandResult::Failed);
+      completionFn.unwrapIn([](ProcessCompletionFn fn){
+        fn(ProcessStatus::Failed);
       });
       return;
     }
@@ -3011,9 +3010,9 @@ public:
     // Execute the command.
     auto result = bsci.getExecutionQueue().executeProcess(context, commandLine);
 
-    if (result != CommandResult::Succeeded) {
+    if (result != ProcessStatus::Succeeded) {
       // If the command failed, there is no need to gather dependencies.
-      completionFn.unwrapIn([result](CommandCompletionFn fn){fn(result);});
+      completionFn.unwrapIn([result](ProcessCompletionFn fn){fn(result);});
       return;
     }
 
@@ -3023,13 +3022,13 @@ public:
     bsci.addJob({ this, [this, &bsci, task, completionFn, result, depsFiles](QueueJobContext* context) {
       for (const auto& depsPath: depsFiles) {
         if (!processDiscoveredDependencies(bsci, task, depsPath)) {
-          completionFn.unwrapIn([](CommandCompletionFn fn){
-            fn(CommandResult::Failed);
+          completionFn.unwrapIn([](ProcessCompletionFn fn){
+            fn(ProcessStatus::Failed);
           });
           return;
         }
       }
-      completionFn.unwrapIn([result](CommandCompletionFn fn){fn(result);});
+      completionFn.unwrapIn([result](ProcessCompletionFn fn){fn(result);});
     }});
   }
 };
@@ -3079,11 +3078,11 @@ public:
 #pragma mark - MkdirTool implementation
 
 class MkdirCommand : public ExternalCommand {
-  virtual void getShortDescription(SmallVectorImpl<char> &result) override {
+  virtual void getShortDescription(SmallVectorImpl<char> &result) const override {
     llvm::raw_svector_ostream(result) << getDescription();
   }
 
-  virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) const override {
     llvm::raw_svector_ostream os(result);
     os << "mkdir -p ";
     // FIXME: This isn't correct, we need utilities for doing shell quoting.
@@ -3124,19 +3123,19 @@ class MkdirCommand : public ExternalCommand {
       BuildSystemCommandInterface& bsci,
       Task* task,
       QueueJobContext* context,
-      llvm::Optional<CommandCompletionFn> completionFn) override {
+      llvm::Optional<ProcessCompletionFn> completionFn) override {
     auto output = getOutputs()[0];
     if (!bsci.getFileSystem().createDirectories(
             output->getName())) {
       getBuildSystem(bsci.getBuildEngine()).getDelegate().commandHadError(this,
                      "unable to create directory '" + output->getName().str() + "'");
-      completionFn.unwrapIn([](CommandCompletionFn fn){
-        fn(CommandResult::Failed);
+      completionFn.unwrapIn([](ProcessCompletionFn fn){
+        fn(ProcessStatus::Failed);
       });
       return;
     }
-    completionFn.unwrapIn([](CommandCompletionFn fn){
-      fn(CommandResult::Succeeded);
+    completionFn.unwrapIn([](ProcessCompletionFn fn){
+      fn(ProcessStatus::Succeeded);
     });
   }
   
@@ -3212,11 +3211,11 @@ class SymlinkCommand : public Command {
     description = value;
   }
 
-  virtual void getShortDescription(SmallVectorImpl<char> &result) override {
+  virtual void getShortDescription(SmallVectorImpl<char> &result) const override {
     llvm::raw_svector_ostream(result) << description;
   }
 
-  virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) const override {
     llvm::raw_svector_ostream os(result);
     os << "ln -sfh ";
     StringRef outputPath = getActualOutputPath();
@@ -3392,7 +3391,7 @@ class SymlinkCommand : public Command {
         success = false;
       }
     }
-    bsci.getDelegate().commandFinished(this, success ? CommandResult::Succeeded : CommandResult::Failed);
+    bsci.getDelegate().commandFinished(this, success ? ProcessStatus::Succeeded : ProcessStatus::Failed);
     
     // Process the result.
     if (!success) {
@@ -3452,12 +3451,12 @@ class ArchiveShellCommand : public ExternalCommand {
       BuildSystemCommandInterface& bsci,
       Task* task,
       QueueJobContext* context,
-      llvm::Optional<CommandCompletionFn> completionFn) override {
+      llvm::Optional<ProcessCompletionFn> completionFn) override {
     // First delete the current archive
     // TODO instead insert, update and remove files from the archive
     if (llvm::sys::fs::remove(archiveName, /*IgnoreNonExisting*/ true)) {
-      completionFn.unwrapIn([](CommandCompletionFn fn){
-        fn(CommandResult::Failed);
+      completionFn.unwrapIn([](ProcessCompletionFn fn){
+        fn(ProcessStatus::Failed);
       });
       return;
     }
@@ -3467,12 +3466,12 @@ class ArchiveShellCommand : public ExternalCommand {
     bsci.getExecutionQueue().executeProcess(context,
                                             std::vector<StringRef>(args.begin(), args.end()),
                                             {}, true, true,
-                                            {[completionFn](CommandResult result) {
-      completionFn.unwrapIn([result](CommandCompletionFn fn){fn(result);});
+                                            {[completionFn](ProcessResult result) {
+      completionFn.unwrapIn([result](ProcessCompletionFn fn){fn(result);});
     }});
   }
 
-  virtual void getShortDescription(SmallVectorImpl<char> &result) override {
+  virtual void getShortDescription(SmallVectorImpl<char> &result) const override {
     if (getDescription().empty()) {
       llvm::raw_svector_ostream(result) << "Archiving " + archiveName;
     } else {
@@ -3480,7 +3479,7 @@ class ArchiveShellCommand : public ExternalCommand {
     }
   }
 
-  virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) const override {
     llvm::raw_svector_ostream stream(result);
     bool first = true;
     for (const auto& arg: getArgs()) {
@@ -3524,7 +3523,7 @@ class ArchiveShellCommand : public ExternalCommand {
     }
   }
 
-  std::vector<std::string> getArgs() {
+  std::vector<std::string> getArgs() const {
     std::vector<std::string> args;
     args.push_back("ar");
     args.push_back("cr");
@@ -3572,9 +3571,9 @@ class StaleFileRemovalCommand : public Command {
   std::string description;
 
   std::vector<std::string> expectedOutputs;
-  std::vector<std::string> filesToDelete;
+  mutable std::vector<std::string> filesToDelete;
   std::vector<std::string> roots;
-  bool computedFilesToDelete = false;
+  mutable bool computedFilesToDelete = false;
 
   BuildValue priorValue;
   bool hasPriorResult = false;
@@ -3585,11 +3584,11 @@ class StaleFileRemovalCommand : public Command {
     description = value;
   }
 
-  virtual void getShortDescription(SmallVectorImpl<char> &result) override {
+  virtual void getShortDescription(SmallVectorImpl<char> &result) const override {
     llvm::raw_svector_ostream(result) << (description.empty() ? "Stale file removal" : description);
   }
 
-  virtual void getVerboseDescription(SmallVectorImpl<char> &result) override {
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) const override {
     computeFilesToDelete();
 
     getShortDescription(result);
@@ -3682,7 +3681,7 @@ class StaleFileRemovalCommand : public Command {
     assert(0 && "unexpected API call");
   }
 
-  void computeFilesToDelete() {
+  void computeFilesToDelete() const {
     if (computedFilesToDelete) {
       return;
     }
@@ -3705,7 +3704,7 @@ class StaleFileRemovalCommand : public Command {
     // Nothing to do if we do not have a prior result.
     if (!hasPriorResult || !priorValue.isStaleFileRemoval()) {
       bsci.getDelegate().commandStarted(this);
-      bsci.getDelegate().commandFinished(this, CommandResult::Succeeded);
+      bsci.getDelegate().commandFinished(this, ProcessStatus::Succeeded);
       resultFn(BuildValue::makeStaleFileRemoval(expectedOutputs));
       return;
     }
@@ -3746,7 +3745,7 @@ class StaleFileRemovalCommand : public Command {
       }
     }
 
-    bsci.getDelegate().commandFinished(this, CommandResult::Succeeded);
+    bsci.getDelegate().commandFinished(this, ProcessStatus::Succeeded);
 
     // Complete with a successful result.
     resultFn(BuildValue::makeStaleFileRemoval(expectedOutputs));

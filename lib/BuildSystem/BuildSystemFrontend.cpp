@@ -12,11 +12,11 @@
 
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
 
+#include "llbuild/Basic/ExecutionQueue.h"
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/Basic/PlatformUtility.h"
 #include "llbuild/BuildSystem/BuildDescription.h"
-#include "llbuild/BuildSystem/BuildExecutionQueue.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildKey.h"
 #include "llbuild/BuildSystem/BuildValue.h"
@@ -52,6 +52,7 @@ void BuildSystemInvocation::getUsage(int optionWidth, raw_ostream& os) {
     { "-f <PATH>", "load the build task file at PATH" },
     { "--serial", "do not build in parallel" },
     { "--scheduler <SCHEDULER>", "set scheduler algorithm" },
+    { "-j,--jobs <JOBS>", "set how many concurrent jobs (lanes) to run" },
     { "-v, --verbose", "show verbose status information" },
     { "--trace <PATH>", "trace build engine operation to PATH" },
   };
@@ -123,16 +124,31 @@ void BuildSystemInvocation::parse(llvm::ArrayRef<std::string> args,
       }
       auto algorithm = args[0];
       if (algorithm == "commandNamePriority" || algorithm == "default") {
-        llbuild::buildsystem::setSchedulerAlgorithm(
-            llbuild::buildsystem::SchedulerAlgorithm::CommandNamePriority);
+        schedulerAlgorithm = SchedulerAlgorithm::NamePriority;
       } else if (algorithm == "fifo") {
-        llbuild::buildsystem::setSchedulerAlgorithm(
-            llbuild::buildsystem::SchedulerAlgorithm::FIFO);
+        schedulerAlgorithm = SchedulerAlgorithm::FIFO;
       } else {
         error("unknown scheduler algorithm '" + algorithm + "'");
         break;
       }
       args = args.slice(1);
+    } else if (option == "-j" || option == "--jobs") {
+      if (args.empty()) {
+        error("missing argument to '" + option + "'");
+        break;
+      }
+      char *end;
+      schedulerLanes = ::strtol(args[0].c_str(), &end, 10);
+      if (*end != '\0') {
+        error("invalid argument '" + args[0] + "' to '" + option + "'");
+      }
+      args = args.slice(1);
+    } else if (StringRef(option).startswith("-j")) {
+      char *end;
+      schedulerLanes = ::strtol(&option[2], &end, 10);
+      if (*end != '\0') {
+        error("invalid argument to '-j'");
+      }
     } else if (option == "-v" || option == "--verbose") {
       showVerboseStatus = true;
     } else if (option == "--trace") {
@@ -208,7 +224,7 @@ namespace {
 struct BuildSystemFrontendDelegateImpl;
 
 class BuildSystemFrontendExecutionQueueDelegate
-      : public BuildExecutionQueueDelegate {
+      : public ExecutionQueueDelegate {
   BuildSystemFrontendDelegateImpl &delegateImpl;
   
   bool showVerboseOutput() const;
@@ -220,44 +236,48 @@ public:
           BuildSystemFrontendDelegateImpl& delegateImpl)
       : delegateImpl(delegateImpl) { }
   
-  virtual void commandJobStarted(Command* command) override {
+  virtual void queueJobStarted(JobDescriptor* command) override {
     static_cast<BuildSystemFrontendDelegate*>(&getSystem().getDelegate())->
-      commandJobStarted(command);
+      commandJobStarted(reinterpret_cast<Command*>(command));
   }
 
-  virtual void commandJobFinished(Command* command) override {
+  virtual void queueJobFinished(JobDescriptor* command) override {
     static_cast<BuildSystemFrontendDelegate*>(&getSystem().getDelegate())->
-      commandJobFinished(command);
+      commandJobFinished(reinterpret_cast<Command*>(command));
   }
 
-  virtual void commandProcessStarted(Command* command,
-                                     ProcessHandle handle) override {
+  virtual void processStarted(ProcessContext* command,
+                              ProcessHandle handle) override {
     static_cast<BuildSystemFrontendDelegate*>(&getSystem().getDelegate())->
       commandProcessStarted(
-          command, BuildSystemFrontendDelegate::ProcessHandle { handle.id });
+          reinterpret_cast<Command*>(command),
+          BuildSystemFrontendDelegate::ProcessHandle { handle.id });
   }
   
-  virtual void commandProcessHadError(Command* command, ProcessHandle handle,
-                                      const Twine& message) override {
+  virtual void processHadError(ProcessContext* command, ProcessHandle handle,
+                               const Twine& message) override {
     static_cast<BuildSystemFrontendDelegate*>(&getSystem().getDelegate())->
       commandProcessHadError(
-          command, BuildSystemFrontendDelegate::ProcessHandle { handle.id },
+          reinterpret_cast<Command*>(command),
+          BuildSystemFrontendDelegate::ProcessHandle { handle.id },
           message);
   }
   
-  virtual void commandProcessHadOutput(Command* command, ProcessHandle handle,
-                                       StringRef data) override {
+  virtual void processHadOutput(ProcessContext* command, ProcessHandle handle,
+                                StringRef data) override {
     static_cast<BuildSystemFrontendDelegate*>(&getSystem().getDelegate())->
       commandProcessHadOutput(
-          command, BuildSystemFrontendDelegate::ProcessHandle { handle.id },
+          reinterpret_cast<Command*>(command),
+          BuildSystemFrontendDelegate::ProcessHandle { handle.id },
           data);
   }
 
-  virtual void commandProcessFinished(Command* command, ProcessHandle handle,
-                                      const CommandExtendedResult& result) override {
+  virtual void processFinished(ProcessContext* command, ProcessHandle handle,
+                               const ProcessResult& result) override {
     static_cast<BuildSystemFrontendDelegate*>(&getSystem().getDelegate())->
       commandProcessFinished(
-          command, BuildSystemFrontendDelegate::ProcessHandle { handle.id },
+          reinterpret_cast<Command*>(command),
+          BuildSystemFrontendDelegate::ProcessHandle { handle.id },
           result);
   }
 };
@@ -419,18 +439,19 @@ BuildSystemFrontendDelegate::error(StringRef filename,
   fflush(stderr);
 }
 
-std::unique_ptr<BuildExecutionQueue>
+std::unique_ptr<ExecutionQueue>
 BuildSystemFrontendDelegate::createExecutionQueue() {
   auto impl = static_cast<BuildSystemFrontendDelegateImpl*>(this->impl);
   
   if (impl->invocation.useSerialBuild) {
-    return std::unique_ptr<BuildExecutionQueue>(
+    return std::unique_ptr<ExecutionQueue>(
         createLaneBasedExecutionQueue(impl->executionQueueDelegate, 1,
+                                      impl->invocation.schedulerAlgorithm,
                                       impl->invocation.environment));
   }
     
   // Get the number of CPUs to use.
-  unsigned numLanes = getSchedulerLaneWidth();
+  unsigned numLanes = impl->invocation.schedulerLanes;
   if (numLanes == 0) {
     unsigned numCPUs = std::thread::hardware_concurrency();
     if (numCPUs == 0) {
@@ -441,8 +462,9 @@ BuildSystemFrontendDelegate::createExecutionQueue() {
     }
   }
     
-  return std::unique_ptr<BuildExecutionQueue>(
+  return std::unique_ptr<ExecutionQueue>(
       createLaneBasedExecutionQueue(impl->executionQueueDelegate, numLanes,
+                                    impl->invocation.schedulerAlgorithm,
                                     impl->invocation.environment));
 }
 
@@ -534,7 +556,7 @@ void BuildSystemFrontendDelegate::commandHadWarning(Command* command, StringRef 
   fflush(stdout);
 }
 
-void BuildSystemFrontendDelegate::commandFinished(Command*, CommandResult) {
+void BuildSystemFrontendDelegate::commandFinished(Command*, ProcessStatus) {
 }
 
 void BuildSystemFrontendDelegate::commandCannotBuildOutputDueToMissingInputs(
@@ -621,7 +643,7 @@ commandProcessHadOutput(Command* command, ProcessHandle handle,
 
 void BuildSystemFrontendDelegate::
 commandProcessFinished(Command*, ProcessHandle handle,
-                       const CommandExtendedResult& result) {
+                       const ProcessResult& result) {
   auto impl = static_cast<BuildSystemFrontendDelegateImpl*>(this->impl);
   std::unique_lock<std::mutex> lock(impl->processOutputBuffersMutex);
 
