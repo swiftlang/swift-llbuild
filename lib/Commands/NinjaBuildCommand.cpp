@@ -14,6 +14,7 @@
 
 #include "llbuild/Basic/Compiler.h"
 #include "llbuild/Basic/CrossPlatformCompatibility.h"
+#include "llbuild/Basic/ExecutionQueue.h"
 #include "llbuild/Basic/FileInfo.h"
 #include "llbuild/Basic/Hashing.h"
 #include "llbuild/Basic/PlatformUtility.h"
@@ -139,85 +140,6 @@ static void usage(int exitCode=1) {
 }
 
 namespace {
-
-/// The build execution queue manages the actual parallel execution of jobs
-/// which have been enqueued as a result of command orocessing.
-///
-/// This queue guarantees serial execution when only configured with a single
-/// lane.
-struct BuildExecutionQueue {
-  /// The number of lanes the queue was configured with.
-  unsigned numLanes;
-
-  /// A thread for each lane.
-  std::vector<std::unique_ptr<std::thread>> lanes;
-
-  /// The ready queue of jobs to execute.
-  std::deque<std::function<void(unsigned)>> readyJobs;
-  std::mutex readyJobsMutex;
-  std::condition_variable readyJobsCondition;
-
-  /// Use LIFO execution.
-  bool useLIFO;
-
-public:
-  BuildExecutionQueue(unsigned numLanes, bool useLIFO)
-      : numLanes(numLanes), useLIFO(useLIFO)
-  {
-    for (unsigned i = 0; i != numLanes; ++i) {
-      lanes.push_back(std::unique_ptr<std::thread>(
-                          new std::thread(
-                              &BuildExecutionQueue::executeLane, this, i)));
-    }
-  }
-  ~BuildExecutionQueue() {
-    // Shut down the lanes.
-    for (unsigned i = 0; i != numLanes; ++i) {
-      addJob({});
-    }
-    for (unsigned i = 0; i != numLanes; ++i) {
-      lanes[i]->join();
-    }
-  }
-
-  void executeLane(unsigned laneNumber) {
-    // oust execute items from the queue until shutdown.
-    while (true) {
-      // Take a job from the ready queue.
-      std::function<void(unsigned)> job;
-      {
-        std::unique_lock<std::mutex> lock(readyJobsMutex);
-
-        // While the queue is empty, wait for an item.
-        while (readyJobs.empty()) {
-          readyJobsCondition.wait(lock);
-        }
-
-        // Take an item according to the chosen policy.
-        if (useLIFO) {
-          job = readyJobs.back();
-          readyJobs.pop_back();
-        } else {
-          job = readyJobs.front();
-          readyJobs.pop_front();
-        }
-      }
-
-      // If we got an empty job, the queue is shutting down.
-      if (!job)
-        break;
-
-      // Process the job.
-      job(laneNumber);
-    }
-  }
-
-  void addJob(std::function<void(unsigned)> job) {
-    std::lock_guard<std::mutex> guard(readyJobsMutex);
-    readyJobs.push_back(job);
-    readyJobsCondition.notify_one();
-  }
-};
 
 /// Result value that is computed by the rules for input and command files.
 class BuildValue {
@@ -419,7 +341,7 @@ struct NinjaBuildEngineDelegate : public core::BuildEngineDelegate {
 };
 
 /// Wrapper for information used during a single build.
-class BuildContext {
+class BuildContext : public ExecutionQueueDelegate {
 public:
   /// The build engine delegate.
   NinjaBuildEngineDelegate delegate;
@@ -481,8 +403,11 @@ public:
   /// The serial queue we used to order output consistently.
   SerialQueue outputQueue;
 
+  /// Pending process output
+  std::unordered_map<uint64_t, SmallString<1024>> outputBuffers;
+
   /// The limited queue we use to execute parallel jobs.
-  std::unique_ptr<BuildExecutionQueue> jobQueue;
+  std::unique_ptr<ExecutionQueue> jobQueue;
 
   /// The previous SIGINT handler.
   struct sigaction previousSigintHandler;
@@ -697,6 +622,54 @@ public:
     va_start(ap, fmt);
     emitNote(getFormattedString(fmt, ap));
     va_end(ap);
+  }
+
+  /// @}
+
+  /// @name Execution Queue Delegate
+  /// @{
+
+  void queueJobStarted(JobDescriptor*) override {}
+  void queueJobFinished(JobDescriptor*) override {}
+  void processStarted(ProcessContext* ctx, ProcessHandle handle) override {
+    outputBuffers.emplace(handle.id, SmallString<1024>());
+  }
+  void processHadError(ProcessContext*, ProcessHandle,
+                       const Twine& message) override {
+    emitError(message.str());
+  }
+  void processHadOutput(ProcessContext* ctx, ProcessHandle handle,
+                        StringRef data) override {
+    auto& outputData = outputBuffers[handle.id];
+    outputData.insert(outputData.end(), data.bytes_begin(), data.bytes_end());
+  }
+  void processFinished(ProcessContext* ctx, ProcessHandle handle,
+                       const ProcessResult& result) override {
+    ninja::Command* job = reinterpret_cast<ninja::Command*>(ctx);
+    auto& outputData = outputBuffers[handle.id];
+    if (result.status == ProcessStatus::Succeeded) {
+      if (!outputData.empty()) {
+        emitText(std::string(outputData.data(), outputData.size()));
+      }
+    } else {
+      // If the process was cancelled, assume it is because we were
+      // interrupted.
+      if (result.status == ProcessStatus::Cancelled) {
+        outputBuffers.erase(handle.id);
+        return;
+      }
+
+      // Otherwise, report the failure.
+      emitErrorAndText(
+          getFormattedString(
+              "process failed: %s", job->getCommandString().c_str()),
+          std::string(outputData.data(), outputData.size()));
+
+      // Update the count of failed commands.
+      incrementFailedCommands();
+    }
+
+    outputBuffers.erase(handle.id);
   }
 
   /// @}
@@ -1040,7 +1013,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       assert(!hasMissingInput);
 
       // Otherwise, enqueue the job to run later.
-      context.jobQueue->addJob([&] (unsigned bucket) {
+      context.jobQueue->addJob({command, [&] (QueueJobContext* qctx) {
           // Suppress static analyzer false positive on generalized lambda capture
           // (rdar://problem/22165130).
 #ifndef __clang_analyzer__
@@ -1048,6 +1021,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
           // before the queue executes this block.
           BuildContext& localContext(context);
           ninja::Command* localCommand(command);
+          auto bucket = qctx->laneID();
 
           if (localContext.profileFP) {
             localContext.outputQueue.sync(
@@ -1061,7 +1035,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
               });
           }
 
-          executeCommand();
+          executeCommand(qctx);
 
           if (localContext.profileFP) {
             localContext.outputQueue.sync(
@@ -1075,7 +1049,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
               });
           }
 #endif
-        });
+      }});
     }
 
     static unsigned getNumPossibleMaxCommands(BuildContext& context) {
@@ -1113,7 +1087,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         context.statusOutput.finishLine();
     }
 
-    void executeCommand() {
+    void executeCommand(QueueJobContext* qctx) {
       // If the build is cancelled, skip the job.
       if (context.isCancelled) {
         return completeTask(BuildValue::makeSkippedCommand());
@@ -1140,222 +1114,40 @@ buildCommand(BuildContext& context, ninja::Command* command) {
 #endif
       }
 
-      // Actually run the command.
-      if (!spawnAndWaitForCommand()) {
-        // If the command failed, complete the task with the failed result and
-        // always propagate.
-        return completeTask(BuildValue::makeFailedCommand(),
-                            /*ForceChange=*/true);
-      }
+      std::vector<StringRef> args;
+      args.push_back("/bin/sh");
+      args.push_back("-c");
+      args.push_back(command->getCommandString().c_str());
 
-      // Otherwise, the command succeeded so process the dependencies.
-      if (!processDiscoveredDependencies()) {
-        context.incrementFailedCommands();
-        return completeTask(BuildValue::makeFailedCommand(),
-                            /*ForceChange=*/true);
-      }
-
-      // Complete the task with a successful value.
-      //
-      // We always restat the output, but we honor Ninja's restat flag by
-      // forcing downstream propagation if it isn't set.
-      auto commandHash = CommandSignature(command->getCommandString());
-      BuildValue result = computeCommandResult(commandHash);
-      return completeTask(std::move(result),
-                          /*ForceChange=*/!command->hasRestatFlag());
-    }
-
-    /// Execute the command process and wait for it to complete.
-    ///
-    /// \returns True if the command succeeded.
-    bool spawnAndWaitForCommand() const {
-      bool isConsole = command->getExecutionPool() ==
-        context.manifest->getConsolePool();
-
-      // Initialize the spawn attributes.
-      posix_spawnattr_t attributes;
-      posix_spawnattr_init(&attributes);
-
-      // Unmask all signals
-      sigset_t noSignals;
-      sigemptyset(&noSignals);
-      posix_spawnattr_setsigmask(&attributes, &noSignals);
-
-      // Reset all signals to default behavior.
-      //
-      // On Linux, this can only be used to reset signals that are legal to
-      // modify, so we have to take care about the set we use.
-#if defined(__linux__)
-      sigset_t mostSignals;
-      sigemptyset(&mostSignals);
-      for (int i = 1; i < SIGSYS; ++i) {
-        if (i == SIGKILL || i == SIGSTOP) continue;
-        sigaddset(&mostSignals, i);
-      }
-      posix_spawnattr_setsigdefault(&attributes, &mostSignals);
-#else
-      sigset_t mostSignals;
-      sigfillset(&mostSignals);
-      sigdelset(&mostSignals, SIGKILL);
-      sigdelset(&mostSignals, SIGSTOP);
-      posix_spawnattr_setsigdefault(&attributes, &mostSignals);
-#endif
-
-      // Establish a separate process group.
-      posix_spawnattr_setpgroup(&attributes, 0);
-
-      // Set the attribute flags.
-      unsigned flags = POSIX_SPAWN_SETSIGMASK | POSIX_SPAWN_SETSIGDEF;
-      if (!isConsole)
-        flags |= POSIX_SPAWN_SETPGROUP;
-
-      // Close all other files by default.
-      //
-      // FIXME: This is an Apple-specific extension, and we will have to do
-      // something else on other platforms (and unfortunately, there isn't
-      // really an easy answer other than using a stub executable).
-#ifdef __APPLE__
-      flags |= POSIX_SPAWN_CLOEXEC_DEFAULT;
-#endif
-
-      posix_spawnattr_setflags(&attributes, flags);
-
-      // Setup the file actions.
-      posix_spawn_file_actions_t fileActions;
-      posix_spawn_file_actions_init(&fileActions);
-
-      // Open /dev/null as stdin.
-      posix_spawn_file_actions_addopen(
-        &fileActions, 0, "/dev/null", O_RDONLY, 0);
-
-      // Create a pipe to use to read the command output, if necessary.
-      int pipe[2]{ -1, -1 };
-      if (!isConsole) {
-        if (basic::sys::pipe(pipe) < 0) {
-          context.emitError("unable to create command pipe (%s)",
-                            strerror(errno));
-          return false;
-        }
-
-        // Open the write end of the pipe as stdout and stderr.
-        posix_spawn_file_actions_adddup2(&fileActions, pipe[1], 1);
-        posix_spawn_file_actions_adddup2(&fileActions, pipe[1], 2);
-
-        // Close the read and write ends of the pipe.
-        posix_spawn_file_actions_addclose(&fileActions, pipe[0]);
-        posix_spawn_file_actions_addclose(&fileActions, pipe[1]);
-      } else {
-        // Otherwise, propagate the current stdout/stderr.
-        posix_spawn_file_actions_adddup2(&fileActions, 1, 1);
-        posix_spawn_file_actions_adddup2(&fileActions, 2, 2);
-      }
-
-      // Spawn the command.
-      const char* args[4];
-      args[0] = "/bin/sh";
-      args[1] = "-c";
-      args[2] = command->getCommandString().c_str();
-      args[3] = nullptr;
-
-      // Spawn the command.
-      llbuild_pid_t pid;
-      {
-        // We need to hold the spawn processes lock when we spawn, to ensure that
-        // we don't create a process in between when we are cancelled.
-        std::lock_guard<std::mutex> guard(context.spawnedProcessesMutex);
-
-        int result = posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
-                                 /*attrp=*/&attributes, const_cast<char**>(args),
-                                 environ);
-        if (result != 0) {
-          context.emitError("unable to spawn process (%s)", strerror(result));
-          return false;
-        }
-
-        // The console process will get interrupted automatically.
-        if (!isConsole)
-          context.spawnedProcesses.insert(pid);
-      }
-
-      posix_spawn_file_actions_destroy(&fileActions);
-      posix_spawnattr_destroy(&attributes);
-
-      // Read the command output, if buffering.
-      SmallString<1024> outputData;
-      if (!isConsole) {
-        // Close the write end of the output pipe.
-        ::close(pipe[1]);
-
-        // Read all the data from the output pipe.
-        while (true) {
-          char buf[4096];
-          ssize_t numBytes = read(pipe[0], buf, sizeof(buf));
-          if (numBytes < 0) {
-            context.emitError("unable to read from output pipe (%s)",
-                              strerror(errno));
-            break;
+      context.jobQueue->executeProcess(qctx, args, {}, true, true, {
+        [&](ProcessResult result) {
+          // Actually run the command.
+          if (result.status != ProcessStatus::Succeeded) {
+            // If the command failed, complete the task with the failed result and
+            // always propagate.
+            return completeTask(BuildValue::makeFailedCommand(),
+                                /*ForceChange=*/true);
           }
 
-          if (numBytes == 0)
-            break;
+          // Otherwise, the command succeeded so process the dependencies.
+          if (!processDiscoveredDependencies()) {
+            context.incrementFailedCommands();
+            return completeTask(BuildValue::makeFailedCommand(),
+                                /*ForceChange=*/true);
+          }
 
-          outputData.insert(outputData.end(), &buf[0], &buf[numBytes]);
+          // Complete the task with a successful value.
+          //
+          // We always restat the output, but we honor Ninja's restat flag by
+          // forcing downstream propagation if it isn't set.
+          auto commandHash = CommandSignature(command->getCommandString());
+          BuildValue resultValue = computeCommandResult(commandHash);
+          return completeTask(std::move(resultValue),
+                              /*ForceChange=*/!command->hasRestatFlag());
         }
-
-        // Close the read end of the pipe.
-        ::close(pipe[0]);
-      }
-
-      // Wait for the command to complete.
-      int status, result = waitpid(pid, &status, 0);
-      while (result == -1 && errno == EINTR)
-        result = waitpid(pid, &status, 0);
-
-      // Update the set of spawned processes.
-      {
-        std::lock_guard<std::mutex> guard(context.spawnedProcessesMutex);
-        context.spawnedProcesses.erase(pid);
-      }
-
-      if (result == -1) {
-        context.emitError("unable to wait for process (%s)", strerror(errno));
-      }
-
-      // If the build has been interrupted, return without writing any output or
-      // command status (since they will also have been interrupted).
-      if (context.isCancelled && context.wasCancelledBySigint) {
-        // We still return an accurate status just in case the command actually
-        // completed successfully.
-        return status == 0;
-      }
-
-      // If the child failed, show the full command and the output.
-      if (status != 0) {
-        // If the process was killed by SIGINT, assume it is because we were
-        // interrupted.
-        bool cancelled = WIFSIGNALED(status) && (WTERMSIG(status) == SIGINT || WTERMSIG(status) == SIGKILL);
-        if (cancelled)
-          return false;
-
-        // Otherwise, report the failure.
-        context.emitErrorAndText(
-            getFormattedString(
-                "process failed: %s", command->getCommandString().c_str()),
-            std::string(outputData.data(), outputData.size()));
-
-        // Update the count of failed commands.
-        context.incrementFailedCommands();
-
-        return false;
-      } else {
-        // Write the output data, if buffered.
-        if (!outputData.empty()) {
-          context.emitText(std::string(outputData.data(), outputData.size()));
-        }
-      }
-
-      return true;
+      });
     }
+
 
     bool processDiscoveredDependencies() {
       // Process the discovered dependencies, if used.
@@ -1953,13 +1745,6 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     context.verbose = verbose;
 
     // Create the job queue to use.
-    //
-    // When running in parallel, we use a LIFO queue to work around the default
-    // traversal of the BuildEngine tending to build in BFS order. This is
-    // generally at avoiding clustering of links.
-    //
-    // FIXME: Do a serious analysis of scheduling, including ideally an active
-    // scheduler in the execution queue.
     if (numJobsInParallel == 0) {
       unsigned numCPUs = std::thread::hardware_concurrency();
       if (numCPUs == 0) {
@@ -1970,8 +1755,8 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
 
       numJobsInParallel = numCPUs + 2;
     }
-    bool useLIFO = (numJobsInParallel > 1);
-    context.jobQueue.reset(new BuildExecutionQueue(numJobsInParallel, useLIFO));
+    context.jobQueue.reset(createLaneBasedExecutionQueue(
+        context, numJobsInParallel, SchedulerAlgorithm::NamePriority, nullptr));
 
     // Load the manifest.
     BuildManifestActions actions(context);

@@ -5,8 +5,12 @@ import resource
 import sys
 import os
 
+controlfd = int(os.environ.get("LLBUILD_CONTROL_FD"))
+
 # Check if the given FD is valid).
 def is_fd(fd):
+    if fd == controlfd:
+        return False;
     fd2 = None
     try:
         fd2 = os.dup(fd)

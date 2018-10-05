@@ -9,12 +9,10 @@
 # RUN: %{llbuild} ninja build --jobs 1 --no-db --chdir %t.build &> %t.out
 # RUN: %{FileCheck} < %t.out %s
 
-# CHECK: [1/{{.*}}] "A"
-# CHECK: RULE A
-# CHECK: [2/{{.*}}] "B"
-# CHECK: RULE B
+# CHECK-DAG: [{{[1-2]}}/{{.*}}] "A"
+# CHECK-DAG: [{{[1-2]}}/{{.*}}] "B"
 # CHECK: [3/{{.*}}] "C"
-# CHECK: RULE C -- dummy-A dummy-B
+# CHECK-NEXT: RULE C -- dummy-A dummy-B
 
 rule A
      command = echo "RULE A"

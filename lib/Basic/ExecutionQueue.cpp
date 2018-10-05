@@ -26,6 +26,9 @@ using namespace llbuild::basic;
 JobDescriptor::~JobDescriptor() {
 }
 
+QueueJobContext::~QueueJobContext() {
+}
+
 ExecutionQueue::ExecutionQueue(ExecutionQueueDelegate& delegate)
   : delegate(delegate)
 {

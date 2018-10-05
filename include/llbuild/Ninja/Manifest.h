@@ -13,6 +13,7 @@
 #ifndef LLBUILD_NINJA_MANIFEST_H
 #define LLBUILD_NINJA_MANIFEST_H
 
+#include "llbuild/Basic/ExecutionQueue.h"
 #include "llbuild/Basic/LLVM.h"
 
 #include "llvm/ADT/ArrayRef.h"
@@ -109,7 +110,7 @@ public:
 /// A command represents something which can be executed to produce certain
 /// outputs from certain inputs.
 ///
-class Command {
+  class Command : public basic::JobDescriptor {
 public:
   enum class DepsStyleKind {
     /// The command doesn't use implicit dependencies.
@@ -285,6 +286,10 @@ public:
   void setExecutionPool(class Pool* value) {
     executionPool = value;
   }
+
+  StringRef getOrdinalName() const override { return StringRef(getEffectiveDescription()); }
+  void getShortDescription(SmallVectorImpl<char> &result) const override {}
+  void getVerboseDescription(SmallVectorImpl<char> &result) const override {}
 
   /// @}
 };

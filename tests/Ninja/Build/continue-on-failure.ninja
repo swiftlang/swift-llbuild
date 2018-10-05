@@ -8,9 +8,7 @@
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build --no-db &> %t1.out || true
 # RUN: %{FileCheck} --check-prefix CHECK-DEFAULT --input-file %t1.out %s
 #
-# CHECK-DEFAULT: [1/{{.*}}] echo > output-0
-# CHECK-DEFAULT-NEXT: [2/{{.*}}] false
-# CHECK-DEFAULT-NOT: [3/{{.*}}]
+# CHECK-DEFAULT: [{{.*}}/{{.*}}] false
 # CHECK-DEFAULT: stopping build due to command failures
 
 # Check that we honor -k 2.
@@ -21,11 +19,8 @@
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build --no-db -k 2 &> %t2.out || true
 # RUN: %{FileCheck} --check-prefix CHECK-TWO --input-file %t2.out %s
 #
-# CHECK-TWO: [1/{{.*}}] echo > output-0
-# CHECK-TWO-NEXT: [2/{{.*}}] false
-# CHECK-TWO: [3/{{.*}}] echo > output-2
-# CHECK-TWO-NEXT: [4/{{.*}}] false
-# CHECK-TWO-NOT: [5/{{.*}}]
+# CHECK-TWO: [{{.*}}/{{.*}}] false
+# CHECK-TWO: [{{.*}}/{{.*}}] false
 # CHECK-TWO: stopping build due to command failures
 
 # Check that we honor -k 0.
@@ -36,8 +31,8 @@
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build --no-db -k 0 &> %t3.out || true
 # RUN: %{FileCheck} --check-prefix CHECK-UNLIMITED --input-file %t3.out %s
 #
-# CHECK-UNLIMITED: [1/{{.*}}] echo > output-0
-# CHECK-UNLIMITED: [6/{{.*}}] echo > output-5
+# CHECK-DAG-UNLIMITED: [{{.*}}/{{.*}}] echo > output-0
+# CHECK-DAG-UNLIMITED: [{{.*}}/{{.*}}] echo > output-5
 # CHECK-UNLIMITED: build had 2 command failures
 
 rule CAT

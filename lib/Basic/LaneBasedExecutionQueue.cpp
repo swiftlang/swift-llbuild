@@ -45,11 +45,17 @@ struct QueueJobLess {
 
 namespace {
 
-struct LaneBasedExecutionQueueJobContext {
+struct LaneBasedExecutionQueueJobContext : public QueueJobContext {
   uint64_t jobID;
   uint64_t laneNumber;
 
   QueueJob& job;
+
+  LaneBasedExecutionQueueJobContext(
+      uint64_t jobID, uint64_t laneNumber, QueueJob& job)
+          : jobID(jobID), laneNumber(laneNumber), job(job) {}
+
+  unsigned laneID() const override { return laneNumber; }
 };
 
 

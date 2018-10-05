@@ -46,7 +46,11 @@ namespace llbuild {
     /// Opaque type which allows the queue implementation to maintain additional
     /// state and associate subsequent requests (e.g., \see executeProcess())
     /// with the dispatching job.
-    struct QueueJobContext;
+    class QueueJobContext {
+    public:
+      virtual ~QueueJobContext();
+      virtual unsigned laneID() const = 0;
+    };
 
     /// Wrapper for individual pieces of work that are added to the execution
     /// queue.
