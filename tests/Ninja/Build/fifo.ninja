@@ -1,0 +1,31 @@
+# Run a trivial dummy build.
+
+# We run the build in a sandbox in the temp directory to ensure we don't
+# interact with the source dirs.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: %{llbuild} ninja build --jobs 1 --scheduler fifo --no-db --chdir %t.build &> %t.out
+# RUN: %{FileCheck} < %t.out %s
+
+# CHECK: [1/{{.*}}] "A"
+# CHECK: [2/{{.*}}] "B"
+# CHECK: [3/{{.*}}] "C"
+# CHECK-NEXT: RULE C -- dummy-A dummy-B
+
+rule A
+     command = echo "RULE A"
+     description = "A"
+rule B
+     command = echo "RULE B"
+     description = "B"
+rule C
+     command = echo "RULE C -- ${in}"
+     description = "C"
+
+build dummy-A: A
+build dummy-B: B
+build dummy: C dummy-A dummy-B
+
+default dummy

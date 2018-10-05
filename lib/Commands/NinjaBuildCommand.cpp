@@ -118,6 +118,8 @@ static void usage(int exitCode=1) {
           "run a ninja tool. use 'list' to list available tools.");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "-j, --jobs <JOBS>",
           "number of jobs to build in parallel [default=cpu dependent]");
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--scheduler <SCHEDULER>",
+          "set scheduler algorithm");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--no-regenerate",
           "disable manifest auto-regeneration");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "--dump-graph <PATH>",
@@ -1114,10 +1116,11 @@ buildCommand(BuildContext& context, ninja::Command* command) {
 #endif
       }
 
-      std::vector<StringRef> args;
-      args.push_back("/bin/sh");
-      args.push_back("-c");
-      args.push_back(command->getCommandString().c_str());
+      StringRef args[] = {
+        "/bin/sh",
+        "-c",
+        command->getCommandString().c_str()
+      };
 
       context.jobQueue->executeProcess(qctx, args, {}, true, true, {
         [&](ProcessResult result) {
@@ -1527,6 +1530,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
   bool strict = false;
   bool verbose = false;
   unsigned numJobsInParallel = 0;
+  SchedulerAlgorithm schedulerAlgorithm = SchedulerAlgorithm::NamePriority;
   unsigned numFailedCommandsToTolerate = 1;
   double maximumLoadAverage = 0.0;
   std::vector<std::string> debugTools;
@@ -1623,6 +1627,23 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
           fprintf(stderr, "%s: error: invalid argument '%s' to '%s'\n\n",
                   getProgramName(), args[0].c_str(), option.c_str());
           usage();
+      }
+      args.erase(args.begin());
+    } else if (option == "--scheduler") {
+      if (args.empty()) {
+        fprintf(stderr, "%s: error: missing argument to '%s'\n\n",
+                getProgramName(), option.c_str());
+        break;
+      }
+      auto algorithm = args[0];
+      if (algorithm == "commandNamePriority" || algorithm == "default") {
+        schedulerAlgorithm = SchedulerAlgorithm::NamePriority;
+      } else if (algorithm == "fifo") {
+        schedulerAlgorithm = SchedulerAlgorithm::FIFO;
+      } else {
+        fprintf(stderr, "%s: error: unknown scheduler algorithm '%s'\n\n",
+                getProgramName(), args[0].c_str());
+        break;
       }
       args.erase(args.begin());
     } else if (StringRef(option).startswith("-j")) {
@@ -1756,7 +1777,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       numJobsInParallel = numCPUs + 2;
     }
     context.jobQueue.reset(createLaneBasedExecutionQueue(
-        context, numJobsInParallel, SchedulerAlgorithm::NamePriority, nullptr));
+        context, numJobsInParallel, schedulerAlgorithm, nullptr));
 
     // Load the manifest.
     BuildManifestActions actions(context);
