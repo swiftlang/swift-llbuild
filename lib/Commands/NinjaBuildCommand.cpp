@@ -414,10 +414,6 @@ public:
   /// The previous SIGINT handler.
   struct sigaction previousSigintHandler;
 
-  /// The set of spawned processes to cancel when interrupted.
-  std::unordered_set<llbuild_pid_t> spawnedProcesses;
-  std::mutex spawnedProcessesMutex;
-
   /// Low-level flag for when a SIGINT has been received.
   static std::atomic<bool> wasInterrupted;
 
@@ -433,21 +429,11 @@ public:
     sys::write(signalWatchingPipe[1], &byte, 1);
   }
 
-  void sendSignalToProcesses(int signal) {
-    std::unique_lock<std::mutex> lock(spawnedProcessesMutex);
-
-    for (llbuild_pid_t pid: spawnedProcesses) {
-      // We are killing the whole process group here, this depends on us
-      // spawning each process in its own group earlier.
-      ::kill(-pid, signal);
-    }
-  }
-
   /// Cancel the build in response to an interrupt event.
   void cancelBuildOnInterrupt() {
-    sendSignalToProcesses(SIGINT);
 
     emitNote("cancelling build.");
+    jobQueue->cancelAllJobs();
     isCancelled = true;
     wasCancelledBySigint = true;
 
