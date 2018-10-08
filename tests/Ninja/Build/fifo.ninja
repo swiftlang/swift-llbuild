@@ -6,11 +6,11 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
-# RUN: %{llbuild} ninja build --jobs 1 --no-db --chdir %t.build &> %t.out
+# RUN: %{llbuild} ninja build --jobs 1 --scheduler fifo --no-db --chdir %t.build &> %t.out
 # RUN: %{FileCheck} < %t.out %s
 
-# CHECK-DAG: [{{[1-2]}}/{{.*}}] "A"
-# CHECK-DAG: [{{[1-2]}}/{{.*}}] "B"
+# CHECK: [1/{{.*}}] "A"
+# CHECK: [2/{{.*}}] "B"
 # CHECK: [3/{{.*}}] "C"
 # CHECK-NEXT: RULE C -- dummy-A dummy-B
 

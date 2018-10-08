@@ -6,8 +6,8 @@
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t.out
 # RUN: %{FileCheck} < %t.out %s
 #
-# CHECK: [1/{{.*}}] touch output-A
-# CHECK: [2/{{.*}}] touch output-B
+# CHECK-DAG: [{{[1-2]}}/{{.*}}] touch output-A
+# CHECK-DAG: [{{[1-2]}}/{{.*}}] touch output-B
 # CHECK: [3/{{.*}}] cp output-B output-C
 # CHECK-NOT: [4/{{.*}}]
 

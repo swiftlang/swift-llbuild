@@ -14,6 +14,12 @@
 #define LLBUILD_BUILDSYSTEM_BUILDSYSTEMCOMMANDINTERFACE_H
 
 namespace llbuild {
+namespace basic {
+
+class ExecutionQueue;
+class QueueJob;
+
+}
 namespace core {
 
 class BuildEngine;
@@ -23,11 +29,9 @@ class Task;
 
 namespace buildsystem {
 
-class BuildExecutionQueue;
 class BuildKey;
 class BuildSystemDelegate;
 class BuildValue;
-class QueueJob;
 
 /// This is an abstract interface class which defines the API available to
 /// Commands when being invoked by the BuildSystem for the purposes of
@@ -45,7 +49,7 @@ public:
   
   virtual core::BuildEngine& getBuildEngine() = 0;
 
-  virtual BuildExecutionQueue& getExecutionQueue() = 0;
+  virtual basic::ExecutionQueue& getExecutionQueue() = 0;
   
   /// @}
   
@@ -72,7 +76,7 @@ public:
   virtual basic::FileSystem& getFileSystem() = 0;
 
   /// Add a job to be executed.
-  virtual void addJob(QueueJob&&) = 0;
+  virtual void addJob(basic::QueueJob&&) = 0;
 
   /// @}
 };

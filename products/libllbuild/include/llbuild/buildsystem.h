@@ -177,6 +177,15 @@ typedef enum {
   llb_cycle_action_supply_prior_value = 1,
 } llb_cycle_action_t;
 
+/// Scheduler algorithms
+typedef enum {
+  /// Command name priority queue based scheduling [default]
+  llb_scheduler_algorithm_command_name_priority = 0,
+
+  /// First in, first out
+  llb_scheduler_algorithm_fifo = 1
+} llb_scheduler_algorithm_t;
+
 /// The BuildKey encodes the key space used by the BuildSystem when using the
 /// core BuildEngine.
 typedef struct llb_build_key_t_ llb_build_key_t;
@@ -217,6 +226,10 @@ struct llb_buildsystem_invocation_t_ {
     
   /// Whether to use a serial build.
   bool useSerialBuild;
+
+  llb_scheduler_algorithm_t schedulerAlgorithm;
+
+  uint32_t schedulerLanes;
 };
   
 /// Delegate structure for callbacks required by the build system.
@@ -695,15 +708,6 @@ LLBUILD_EXPORT void
 llb_set_quality_of_service(llb_quality_of_service_t level);
 
 // MARK: Execution Queue Scheduler Control
-
-/// Scheduler algorithms
-typedef enum {
-  /// Command name priority queue based scheduling [default]
-  llb_scheduler_algorithm_command_name_priority = 0,
-
-  /// First in, first out
-  llb_scheduler_algorithm_fifo = 1
-} llb_scheduler_algorithm_t;
 
 /// Get the global scheduler algorithm setting.
 LLBUILD_EXPORT llb_scheduler_algorithm_t

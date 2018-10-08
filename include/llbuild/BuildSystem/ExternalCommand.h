@@ -16,7 +16,6 @@
 #include "llbuild/BuildSystem/BuildDescription.h"
 #include "llbuild/BuildSystem/BuildSystem.h"
 #include "llbuild/BuildSystem/BuildValue.h"
-#include "llbuild/BuildSystem/CommandResult.h"
 
 #include "llvm/ADT/Optional.h"
 #include "llvm/ADT/SmallPtrSet.h"
@@ -26,18 +25,18 @@
 #include <vector>
 
 namespace llbuild {
-namespace core {
-
-class Task;
-  
-}
+  namespace basic {
+    class QueueJobContext;
+  }
+  namespace core {
+    class Task;
+  }
   
 namespace buildsystem {
 
 class BuildNode;
 class BuildSystem;
-struct QueueJobContext;
-  
+
 /// This is a base class for defining commands which are run externally to the
 /// build system and interact using files. It defines common base behaviors
 /// which make sense for all such tools.
@@ -90,11 +89,11 @@ class ExternalCommand : public Command {
   bool canUpdateIfNewerWithResult(const BuildValue& result);
 
 protected:
-  const std::vector<BuildNode*>& getInputs() { return inputs; }
+  const std::vector<BuildNode*>& getInputs() const { return inputs; }
   
-  const std::vector<BuildNode*>& getOutputs() { return outputs; }
+  const std::vector<BuildNode*>& getOutputs() const { return outputs; }
   
-  StringRef getDescription() { return description; }
+  StringRef getDescription() const { return description; }
 
   /// This function must be overriden by subclasses for any additional keys.
   virtual basic::CommandSignature getSignature();
@@ -103,8 +102,8 @@ protected:
   virtual void executeExternalCommand(
       BuildSystemCommandInterface& bsci,
       core::Task* task,
-      QueueJobContext* context,
-      llvm::Optional<CommandCompletionFn> completionFn = {llvm::None}) = 0;
+      basic::QueueJobContext* context,
+      llvm::Optional<basic::ProcessCompletionFn> completionFn = {llvm::None}) = 0;
   
 public:
   using Command::Command;
@@ -143,7 +142,7 @@ public:
 
   virtual void execute(BuildSystemCommandInterface& bsci,
                        core::Task* task,
-                       QueueJobContext* context,
+                       basic::QueueJobContext* context,
                        ResultFn resultFn) override;
 };
 

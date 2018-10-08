@@ -13,6 +13,7 @@
 #ifndef LLBUILD_BUILDSYSTEM_BUILDSYSTEMFRONTEND_H
 #define LLBUILD_BUILDSYSTEM_BUILDSYSTEMFRONTEND_H
 
+#include "llbuild/Basic/ExecutionQueue.h"
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/BuildSystem/BuildSystem.h"
 #include "llbuild/BuildSystem/BuildNode.h"
@@ -142,7 +143,7 @@ public:
   virtual std::unique_ptr<Tool> lookupTool(StringRef name) override = 0;
 
   /// Provides an appropriate execution queue based on the invocation options.
-  virtual std::unique_ptr<BuildExecutionQueue> createExecutionQueue() override;
+  virtual std::unique_ptr<basic::ExecutionQueue> createExecutionQueue() override;
 
   /// Cancels the current build.
   virtual void cancel();
@@ -226,7 +227,7 @@ public:
   /// Called by the build system to report a command has completed.
   ///
   /// \param result - The result of command (e.g. success, failure, etc).
-  virtual void commandFinished(Command*, CommandResult result) override;
+  virtual void commandFinished(Command*, basic::ProcessStatus result) override;
 
   /// Called by the build system to report a command could not build due to
   /// missing inputs.
@@ -291,7 +292,7 @@ public:
   // FIXME: Need to include additional information on the status here, e.g., the
   // signal status, and the process output (if buffering).
   virtual void commandProcessFinished(Command*, ProcessHandle handle,
-                                      const CommandExtendedResult& result);
+                                      const basic::ProcessResult& result);
 
   /// Called when a cycle is detected by the build engine and it cannot make
   /// forward progress.
@@ -363,6 +364,11 @@ public:
 
   /// The path of the build trace output file to use, if any.
   std::string traceFilePath = "";
+
+  basic::SchedulerAlgorithm schedulerAlgorithm =
+      basic::SchedulerAlgorithm::NamePriority;
+
+  uint32_t schedulerLanes = 0;
 
   /// The base environment to use when executing subprocesses.
   ///

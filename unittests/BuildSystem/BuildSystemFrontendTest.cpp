@@ -151,7 +151,7 @@ public:
     super::commandStarted(command);
   }
 
-  virtual void commandFinished(Command* command, CommandResult result) override {
+  virtual void commandFinished(Command* command, ProcessStatus result) override {
     {
       std::lock_guard<std::mutex> lock(traceMutex);
       traceStream << __FUNCTION__ << ": " << command->getName() << ": " << (int)result << "\n";
@@ -177,11 +177,11 @@ public:
   }
 
   virtual void commandProcessFinished(Command* command, ProcessHandle handle,
-                                      const CommandExtendedResult& result) override {
+                                      const ProcessResult& result) override {
     {
         std::lock_guard<std::mutex> lock(traceMutex);
         traceStream << __FUNCTION__ << ": " << command->getName() << ": "
-                    << result.exitStatus << "\n";
+                    << result.exitCode << "\n";
     }
     super::commandProcessFinished(command, handle, result);
   }

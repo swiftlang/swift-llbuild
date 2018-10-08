@@ -564,6 +564,12 @@ public final class BuildSystem {
     /// The C environment, if used.
     private let _cEnvironment: CStyleEnvironment?
 
+    /// The current scheduler algorithm
+    private static var schedulerAlgorithm : SchedulerAlgorithm = .commandNamePriority
+
+    /// The number of scheduler lanes
+    private static var schedulerLanes : UInt32 = 0
+
     public init(buildFile: String, databaseFile: String, delegate: BuildSystemDelegate, environment: [String: String]? = nil, serial: Bool = false, traceFile: String? = nil) {
 
         // Safety check that we have linked against a compatibile llbuild framework version
@@ -594,6 +600,8 @@ public final class BuildSystem {
         _invocation.environment = _cEnvironment.map{ UnsafePointer($0.envp) }
         _invocation.showVerboseStatus = true
         _invocation.useSerialBuild = serial
+        _invocation.schedulerAlgorithm = BuildSystem.schedulerAlgorithm.llbValue()
+        _invocation.schedulerLanes = BuildSystem.schedulerLanes
 
         // Construct the system delegate.
         var _delegate = llb_buildsystem_delegate_t()
@@ -875,32 +883,35 @@ public final class BuildSystem {
                 self = .commandNamePriority
             }
         }
+
+        public func llbValue() -> llb_scheduler_algorithm_t {
+            switch self {
+            case .commandNamePriority:
+                return llb_scheduler_algorithm_command_name_priority
+            case .fifo:
+                return llb_scheduler_algorithm_fifo
+            }
+        }
     }
 
     /// Get the scheduler algorithm
-    public static func getSchedulerLaneWidth() -> SchedulerAlgorithm {
-        return SchedulerAlgorithm(llb_get_scheduler_algorithm())
+    public static func getSchedulerAlgorithm() -> SchedulerAlgorithm {
+        return schedulerAlgorithm
     }
 
     /// Set scheduler algorithm
     public static func setSchedulerAlgorithm(_ algorithm: SchedulerAlgorithm) {
-        switch (algorithm) {
-        case .commandNamePriority:
-            llb_set_scheduler_algorithm(
-                llb_scheduler_algorithm_command_name_priority)
-        case .fifo:
-            llb_set_scheduler_algorithm(llb_scheduler_algorithm_fifo)
-        }
+        schedulerAlgorithm = algorithm
     }
 
     /// Get scheduler lane width
     public static func getSchedulerLaneWidth() -> UInt32 {
-        return llb_get_scheduler_lane_width()
+        return schedulerLanes
     }
 
     /// Set scheduler lane width
     public static func setSchedulerLaneWidth(width: UInt32) {
-        llb_set_scheduler_lane_width(width)
+        schedulerLanes = width
     }
 }
 
