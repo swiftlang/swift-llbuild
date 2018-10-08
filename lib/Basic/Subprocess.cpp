@@ -83,6 +83,15 @@ void llbuild::basic::setCurrentThreadQualityOfService(QualityOfService level) {
 ProcessDelegate::~ProcessDelegate() {
 }
 
+
+ProcessGroup::~ProcessGroup() {
+  // Wait for all processes in the process group to terminate
+  std::unique_lock<std::mutex> lock(mutex);
+  while (!processes.empty()) {
+    processesCondition.wait(lock);
+  }
+}
+
 void ProcessGroup::signalAll(int signal) {
   std::lock_guard<std::mutex> lock(mutex);
 

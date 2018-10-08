@@ -21,6 +21,7 @@
 #include "llvm/ADT/Optional.h"
 
 #include <inttypes.h>
+#include <condition_variable>
 #include <functional>
 #include <mutex>
 #include <unordered_map>
@@ -74,10 +75,12 @@ namespace llbuild {
       ProcessGroup& operator=(ProcessGroup&&) LLBUILD_DELETED_FUNCTION;
 
       std::unordered_map<llbuild_pid_t, ProcessInfo> processes;
+      std::condition_variable processesCondition;
       bool closed = false;
 
     public:
       ProcessGroup() {}
+      ~ProcessGroup();
 
       std::mutex mutex;
 
@@ -90,8 +93,11 @@ namespace llbuild {
       }
 
       void remove(llbuild_pid_t pid) {
-        std::lock_guard<std::mutex> lock(mutex);
-        processes.erase(pid);
+        {
+          std::lock_guard<std::mutex> lock(mutex);
+          processes.erase(pid);
+        }
+        processesCondition.notify_all();
       }
 
       void signalAll(int signal);
