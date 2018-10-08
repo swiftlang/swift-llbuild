@@ -77,10 +77,13 @@ void checkRoundtrip(T value) {
 
 TEST(BinaryCodingTests, basic) {
   // Check the coding of basic types.
+  checkRoundtrip(bool(false));
+  checkRoundtrip(bool(true));
   checkRoundtrip(uint8_t(0xAB));
   checkRoundtrip(uint16_t(0xABCD));
   checkRoundtrip(uint32_t(0xABCD0123));
   checkRoundtrip(uint64_t(0xABCD01234567DCBAULL));
+  checkRoundtrip(std::string("hello"));
 }
 
 TEST(BinaryCodingTests, bytes) {
