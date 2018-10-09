@@ -523,29 +523,26 @@ void llbuild::basic::spawnProcess(
           readfds[i].events = 0;
           continue;
         }
-
-        activeEvents |= readfds[i].events;
-
-        if (control.shouldRelease()) {
-          // Close the read end of the release pipe.
-          ::close(releasePipe[0]);
-
-          releaseFn([
-              &delegate, &pgrp, pid, handle, ctx,
-              outputFd=outputPipe[0],
-              completionFn=std::move(completionFn)
-          ]() mutable {
-            if (shouldCaptureOutput)
-              captureExecutedProcessOutput(delegate, outputFd, handle, ctx);
-
-            cleanUpExecutedProcess(delegate, pgrp, pid, handle, ctx,
-                                   std::move(completionFn));
-          });
-          return;
-        }
-      } else {
-        activeEvents |= readfds[i].events;
       }
+      activeEvents |= readfds[i].events;
+    }
+
+    if (control.shouldRelease()) {
+      // Close the read end of the release pipe.
+      ::close(releasePipe[0]);
+
+      releaseFn([
+                 &delegate, &pgrp, pid, handle, ctx,
+                 outputFd=outputPipe[0],
+                 completionFn=std::move(completionFn)
+                 ]() mutable {
+        if (shouldCaptureOutput)
+          captureExecutedProcessOutput(delegate, outputFd, handle, ctx);
+
+        cleanUpExecutedProcess(delegate, pgrp, pid, handle, ctx,
+                               std::move(completionFn));
+      });
+      return;
     }
   } while (activeEvents);
 
