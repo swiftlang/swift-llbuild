@@ -407,6 +407,7 @@ public:
 
   /// Pending process output
   std::unordered_map<uint64_t, SmallString<1024>> outputBuffers;
+  std::mutex outputBufferMutex;
 
   /// The limited queue we use to execute parallel jobs.
   std::unique_ptr<ExecutionQueue> jobQueue;
@@ -620,6 +621,7 @@ public:
   void queueJobStarted(JobDescriptor*) override {}
   void queueJobFinished(JobDescriptor*) override {}
   void processStarted(ProcessContext* ctx, ProcessHandle handle) override {
+    std::lock_guard<std::mutex> lock(outputBufferMutex);
     outputBuffers.emplace(handle.id, SmallString<1024>());
   }
   void processHadError(ProcessContext*, ProcessHandle,
@@ -634,7 +636,9 @@ public:
   void processFinished(ProcessContext* ctx, ProcessHandle handle,
                        const ProcessResult& result) override {
     ninja::Command* job = reinterpret_cast<ninja::Command*>(ctx);
+    std::unique_lock<std::mutex> lock(outputBufferMutex);
     auto& outputData = outputBuffers[handle.id];
+    lock.unlock();
     if (result.status == ProcessStatus::Succeeded) {
       if (!outputData.empty()) {
         emitText(std::string(outputData.data(), outputData.size()));
@@ -643,6 +647,7 @@ public:
       // If the process was cancelled, assume it is because we were
       // interrupted.
       if (result.status == ProcessStatus::Cancelled) {
+        lock.lock();
         outputBuffers.erase(handle.id);
         return;
       }
@@ -657,6 +662,7 @@ public:
       incrementFailedCommands();
     }
 
+    lock.lock();
     outputBuffers.erase(handle.id);
   }
 
