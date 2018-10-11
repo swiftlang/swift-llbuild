@@ -21,6 +21,7 @@
 #include "llvm/Support/Program.h"
 
 #include <atomic>
+#include <iostream>
 #include <thread>
 
 #include <fcntl.h>
@@ -219,13 +220,17 @@ static void cleanUpExecutedProcess(
     llbuild_pid_t pid,
     ProcessHandle handle,
     ProcessContext* ctx,
-    ProcessCompletionFn&& completionFn
+    ProcessCompletionFn&& completionFn,
+    int releaseFd
 ) {
   // Wait for the command to complete.
   struct rusage usage;
   int exitCode, result = wait4(pid, &exitCode, 0, &usage);
   while (result == -1 && errno == EINTR)
     result = wait4(pid, &exitCode, 0, &usage);
+
+  // Close the release pipe
+  ::close(releaseFd);
 
   // Update the set of spawned processes.
   pgrp.remove(pid);
@@ -256,6 +261,7 @@ static void cleanUpExecutedProcess(
   ProcessStatus processStatus = cancelled ? ProcessStatus::Cancelled : (exitCode == 0) ? ProcessStatus::Succeeded : ProcessStatus::Failed;
   ProcessResult processResult(processStatus, exitCode, pid, utime, stime,
                               usage.ru_maxrss);
+  std::cout << "process finished: " << std::dec << exitCode << std::endl;
   delegate.processFinished(ctx, handle, processResult);
   completionFn(processResult);
 }
@@ -528,19 +534,17 @@ void llbuild::basic::spawnProcess(
     }
 
     if (control.shouldRelease()) {
-      // Close the read end of the release pipe.
-      ::close(releasePipe[0]);
-
       releaseFn([
                  &delegate, &pgrp, pid, handle, ctx,
                  outputFd=outputPipe[0],
+                 releaseFd=releasePipe[0],
                  completionFn=std::move(completionFn)
                  ]() mutable {
         if (shouldCaptureOutput)
           captureExecutedProcessOutput(delegate, outputFd, handle, ctx);
 
         cleanUpExecutedProcess(delegate, pgrp, pid, handle, ctx,
-                               std::move(completionFn));
+                               std::move(completionFn), releaseFd);
       });
       return;
     }
@@ -555,6 +559,6 @@ void llbuild::basic::spawnProcess(
   }
 
   cleanUpExecutedProcess(delegate, pgrp, pid, handle, ctx,
-                         std::move(completionFn));
+                         std::move(completionFn), releasePipe[0]);
 }
 
