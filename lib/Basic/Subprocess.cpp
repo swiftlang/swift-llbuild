@@ -21,7 +21,6 @@
 #include "llvm/Support/Program.h"
 
 #include <atomic>
-#include <iostream>
 #include <thread>
 
 #include <fcntl.h>
@@ -209,6 +208,8 @@ static void captureExecutedProcessOutput(
     delegate.processHadOutput(ctx, handle, StringRef(buf, numBytes));
   }
 
+  // We have receieved the zero byte read that indicates an EOF. Go ahead and
+  // close the pipe.
   ::close(outputPipe);
 }
 
@@ -230,6 +231,10 @@ static void cleanUpExecutedProcess(
     result = wait4(pid, &exitCode, 0, &usage);
 
   // Close the release pipe
+  //
+  // Note: We purposely hold this open until after the process has finished as
+  // it simplifies client implentation. If we close it early, clients need to be
+  // aware of and potentially handle a SIGPIPE.
   ::close(releaseFd);
 
   // Update the set of spawned processes.
@@ -261,7 +266,6 @@ static void cleanUpExecutedProcess(
   ProcessStatus processStatus = cancelled ? ProcessStatus::Cancelled : (exitCode == 0) ? ProcessStatus::Succeeded : ProcessStatus::Failed;
   ProcessResult processResult(processStatus, exitCode, pid, utime, stime,
                               usage.ru_maxrss);
-  std::cout << "process finished: " << std::dec << exitCode << std::endl;
   delegate.processFinished(ctx, handle, processResult);
   completionFn(processResult);
 }
@@ -550,11 +554,10 @@ void llbuild::basic::spawnProcess(
     }
   } while (activeEvents);
 
-  // Close the read end of the release pipe.
-  ::close(releasePipe[0]);
-
   if (shouldCaptureOutput) {
-    // Close the read end of the output pipe.
+    // If we have reached here, both the control and read pipes have given us
+    // the requisite EOF/hang-up events. Safe to close the read end of the
+    // output pipe.
     ::close(outputPipe[0]);
   }
 
