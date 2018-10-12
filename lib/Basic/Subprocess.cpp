@@ -208,6 +208,8 @@ static void captureExecutedProcessOutput(
     delegate.processHadOutput(ctx, handle, StringRef(buf, numBytes));
   }
 
+  // We have receieved the zero byte read that indicates an EOF. Go ahead and
+  // close the pipe.
   ::close(outputPipe);
 }
 
@@ -219,13 +221,21 @@ static void cleanUpExecutedProcess(
     llbuild_pid_t pid,
     ProcessHandle handle,
     ProcessContext* ctx,
-    ProcessCompletionFn&& completionFn
+    ProcessCompletionFn&& completionFn,
+    int releaseFd
 ) {
   // Wait for the command to complete.
   struct rusage usage;
   int exitCode, result = wait4(pid, &exitCode, 0, &usage);
   while (result == -1 && errno == EINTR)
     result = wait4(pid, &exitCode, 0, &usage);
+
+  // Close the release pipe
+  //
+  // Note: We purposely hold this open until after the process has finished as
+  // it simplifies client implentation. If we close it early, clients need to be
+  // aware of and potentially handle a SIGPIPE.
+  ::close(releaseFd);
 
   // Update the set of spawned processes.
   pgrp.remove(pid);
@@ -528,33 +538,30 @@ void llbuild::basic::spawnProcess(
     }
 
     if (control.shouldRelease()) {
-      // Close the read end of the release pipe.
-      ::close(releasePipe[0]);
-
       releaseFn([
                  &delegate, &pgrp, pid, handle, ctx,
                  outputFd=outputPipe[0],
+                 releaseFd=releasePipe[0],
                  completionFn=std::move(completionFn)
                  ]() mutable {
         if (shouldCaptureOutput)
           captureExecutedProcessOutput(delegate, outputFd, handle, ctx);
 
         cleanUpExecutedProcess(delegate, pgrp, pid, handle, ctx,
-                               std::move(completionFn));
+                               std::move(completionFn), releaseFd);
       });
       return;
     }
   } while (activeEvents);
 
-  // Close the read end of the release pipe.
-  ::close(releasePipe[0]);
-
   if (shouldCaptureOutput) {
-    // Close the read end of the output pipe.
+    // If we have reached here, both the control and read pipes have given us
+    // the requisite EOF/hang-up events. Safe to close the read end of the
+    // output pipe.
     ::close(outputPipe[0]);
   }
 
   cleanUpExecutedProcess(delegate, pgrp, pid, handle, ctx,
-                         std::move(completionFn));
+                         std::move(completionFn), releasePipe[0]);
 }
 
