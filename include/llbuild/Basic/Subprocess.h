@@ -58,7 +58,7 @@ namespace llbuild {
     /// Handle used to communicate information about a launched process.
     struct ProcessHandle {
       /// Opaque ID.
-      uint64_t id;
+      uintptr_t id;
     };
 
     struct ProcessInfo {
