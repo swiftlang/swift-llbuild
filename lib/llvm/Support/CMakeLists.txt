@@ -38,10 +38,20 @@ circular_raw_ostream.cpp
 raw_ostream.cpp
 )
 
+include(CheckAtomic)
+
+set(DEPENDENCIES pthread)
+
+if(NOT HAVE_CXX_ATOMICS64_WITHOUT_LIB)
+  list(APPEND DEPENDENCIES atomic)
+endif()
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
-  target_link_libraries(llvmSupport execinfo pthread)
+  list(APPEND DEPENDENCIES execinfo)
+  target_link_libraries(llvmSupport ${DEPENDENCIES})
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-  target_link_libraries(llvmSupport pthread dl)
+  list(APPEND DEPENDENCIES dl)
+  target_link_libraries(llvmSupport ${DEPENDENCIES})
 endif()
