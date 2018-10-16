@@ -424,7 +424,7 @@ public class BuildEngine {
     /// builds, or to attempt to attach multiple databases.
     public func attachDB(path: String, schemaVersion: Int = 0) throws {
         let errorPtr = UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>.allocate(capacity: 1)
-        defer { errorPtr.deinitialize(count: 1) }
+        defer { errorPtr.deallocate() }
 
         // FIXME: Why do I have to name the closure signature here?
         var errorMsgOpt: String? = nil
@@ -432,6 +432,7 @@ public class BuildEngine {
             if !llb_buildengine_attach_db(self._engine, ptr, UInt32(schemaVersion), errorPtr) {
                 // If there was an error, report it.
                 if let errorPointee = errorPtr.pointee {
+                    defer { errorPointee.deallocate() }
                     errorMsgOpt = String(cString: errorPointee)
                 }
             }
