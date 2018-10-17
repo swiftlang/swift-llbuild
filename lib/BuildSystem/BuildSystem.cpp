@@ -828,6 +828,11 @@ class DirectoryContentsTask : public Task {
       return;
     }
 
+    if (directoryValue.isFailedInput()) {
+      engine.taskIsComplete(this, BuildValue::makeFailedInput().toData());
+      return;
+    }
+
     std::vector<std::string> filenames;
     getContents(path, filenames);
 
