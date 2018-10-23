@@ -416,7 +416,7 @@ public:
         break;
       case BuildKey::Kind::FilteredDirectoryContents:
         buildKey.kind = llb_build_key_kind_filtered_directory_contents;
-        buildKey.key = strdup(key.getDirectoryPath().str().c_str());
+        buildKey.key = strdup(key.getFilteredDirectoryPath().str().c_str());
         break;
       case BuildKey::Kind::DirectoryTreeSignature:
         buildKey.kind = llb_build_key_kind_directory_tree_signature;
