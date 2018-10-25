@@ -191,7 +191,8 @@ std::string BuildSystemInvocation::formatDetectedCycle(const std::vector<core::R
         os << "directory-contents '" << key.getDirectoryPath() << "'";
         break;
       case BuildKey::Kind::FilteredDirectoryContents:
-        os << "filtered-directory-contents '" << key.getDirectoryPath() << "'";
+        os << "filtered-directory-contents '"
+        << key.getFilteredDirectoryPath() << "'";
         break;
       case BuildKey::Kind::DirectoryTreeSignature:
         os << "directory-tree-signature '"
