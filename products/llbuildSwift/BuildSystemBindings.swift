@@ -32,7 +32,7 @@ private func copiedDataFromBytes(_ bytes: [UInt8]) -> llb_data_t {
     let buf = UnsafeMutableBufferPointer(start: UnsafeMutablePointer<UInt8>.allocate(capacity: bytes.count), count: bytes.count)
 
     // Copy the data.
-    memcpy(buf.baseAddress!, UnsafePointer<UInt8>(bytes), buf.count)
+    memcpy(buf.baseAddress!, bytes, buf.count)
 
     // Fill in the result structure.
     return llb_data_t(length: UInt64(buf.count), data: unsafeBitCast(buf.baseAddress, to: UnsafePointer<UInt8>.self))
@@ -531,22 +531,29 @@ public protocol BuildSystemDelegate {
 /// Utility class for constructing a C-style environment.
 private final class CStyleEnvironment {
     /// The list of individual bindings, which must be deallocated.
-    private let bindings: [UnsafeMutablePointer<CChar>]
+    private let bindings: UnsafeMutableBufferPointer<UnsafePointer<CChar>?>
 
     /// The environment array, which will be a valid C-style environment pointer
     /// for the lifetime of the instance.
-    let envp: [UnsafePointer<CChar>?]
+    var envp: UnsafePointer<UnsafePointer<CChar>?> {
+        return UnsafePointer(bindings.baseAddress!)
+    }
 
     init(_ environment: [String: String]) {
         // Allocate the individual binding strings.
-        self.bindings = environment.map{ "\($0.0)=\($0.1)".withCString(strdup)! }
+        let bindingPtrs = environment.map{ "\($0.0)=\($0.1)".withCString(strdup)! }
 
-        // Allocate the envp array.
-        self.envp = self.bindings.map{ UnsafePointer($0) } + [nil]
+        // Allocate the bindings pointer buffer.
+        self.bindings = .allocate(capacity: bindingPtrs.count + 1)
+        _ = self.bindings.initialize(from: bindingPtrs)
+        self.bindings[bindingPtrs.count] = nil
     }
 
     deinit {
-        bindings.forEach{ free($0) }
+        for binding in bindings.dropLast() {
+            free(UnsafeMutablePointer(mutating: binding!))
+        }
+        bindings.deallocate()
     }
 }
 
@@ -597,7 +604,7 @@ public final class BuildSystem {
         _invocation.buildFilePath = UnsafePointer(pathPtr)
         _invocation.dbPath = UnsafePointer(dbPathPtr)
         _invocation.traceFilePath = UnsafePointer(tracePathPtr)
-        _invocation.environment = _cEnvironment.map{ UnsafePointer($0.envp) }
+        _invocation.environment = _cEnvironment?.envp
         _invocation.showVerboseStatus = true
         _invocation.useSerialBuild = serial
         _invocation.schedulerAlgorithm = BuildSystem.schedulerAlgorithm.llbValue()
