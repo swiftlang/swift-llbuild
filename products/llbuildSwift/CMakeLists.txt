@@ -12,9 +12,10 @@ else()
   # On Linux, use Foundation and Dispatch libraries built and provided by swift's build-script.
   if(FOUNDATION_BUILD_DIR)
     list(APPEND additional_args
-      -L${FOUNDATION_BUILD_DIR}/Foundation
-      -I${FOUNDATION_BUILD_DIR}/Foundation
-      -I${FOUNDATION_BUILD_DIR}/Foundation/usr/lib/swift)
+      -L${FOUNDATION_BUILD_DIR}
+      -Fsystem
+      ${FOUNDATION_BUILD_DIR}/CoreFoundation-prefix/System/Library/Frameworks
+      -I${FOUNDATION_BUILD_DIR}/swift)
   endif()
   if(LIBDISPATCH_BUILD_DIR)
     list(APPEND additional_args -L${LIBDISPATCH_BUILD_DIR})
