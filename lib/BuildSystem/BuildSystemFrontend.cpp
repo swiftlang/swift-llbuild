@@ -196,7 +196,7 @@ std::string BuildSystemInvocation::formatDetectedCycle(const std::vector<core::R
         break;
       case BuildKey::Kind::DirectoryTreeSignature:
         os << "directory-tree-signature '"
-        << key.getDirectoryPath() << "'";
+        << key.getDirectoryTreeSignaturePath() << "'";
         break;
       case BuildKey::Kind::DirectoryTreeStructureSignature:
         os << "directory-tree-structure-signature '"
