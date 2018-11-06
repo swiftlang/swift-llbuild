@@ -15,6 +15,7 @@
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/BuildSystem/BuildDescription.h"
 #include "llbuild/BuildSystem/BuildFile.h"
+#include "llbuild/BuildSystem/BuildKey.h"
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
 
 #include "llvm/Support/ErrorHandling.h"
@@ -487,6 +488,37 @@ client:
 
   ASSERT_FALSE(frontend.buildNode("/missing"));
   ASSERT_TRUE(delegate.checkTrace("error: missing input '/missing' and no rule to build it\n"));
+}
+
+
+TEST(BuildSystemInvocationTest, formatCycle) {
+  BuildSystemInvocation invocation;
+
+  core::Rule command{BuildKey::makeCommand("c").getKeyData()};
+  core::Rule customtask{BuildKey::makeCustomTask("c","t").getKeyData()};
+  core::Rule dircontents{BuildKey::makeDirectoryContents("/").getKeyData()};
+  core::Rule filtdircontents{BuildKey::makeFilteredDirectoryContents("/", {}).getKeyData()};
+  core::Rule dirtree{BuildKey::makeDirectoryTreeSignature("/", {}).getKeyData()};
+  core::Rule dirtreestruct{BuildKey::makeDirectoryTreeStructureSignature("/").getKeyData()};
+  core::Rule node{BuildKey::makeNode("n").getKeyData()};
+  core::Rule stat{BuildKey::makeStat("f").getKeyData()};
+  core::Rule target{BuildKey::makeTarget("t").getKeyData()};
+
+  std::vector<core::Rule*> cycle{
+    &command,
+    &customtask,
+    &dircontents,
+    &filtdircontents,
+    &dirtree,
+    &dirtreestruct,
+    &node,
+    &stat,
+    &target
+  };
+
+
+  auto cyclestr = invocation.formatDetectedCycle(cycle);
+  ASSERT_EQ(cyclestr, "cycle detected while building: command 'c' -> custom task 'c' -> directory-contents '/' -> filtered-directory-contents '/' -> directory-tree-signature '/' -> directory-tree-structure-signature '/' -> node 'n' -> stat 'f' -> target 't'");
 }
 
 }
