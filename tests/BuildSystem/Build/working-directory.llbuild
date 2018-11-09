@@ -1,0 +1,34 @@
+# Check that working directory attribute is processed properly
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.llbuild
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.out
+# RUN: test -d %t.build/subdir
+# RUN: test -f %t.build/subdir/file
+# RUN: test -f %t.build/file
+#
+# REQUIRES: platform=Darwin
+
+client:
+  name: basic
+
+targets:
+  "": ["<all>"]
+
+commands:
+  C.all:
+    tool: phony
+    inputs: ["subdir/file", "file"]
+    outputs: ["<all>"]
+  C.touch-subdir:
+    tool: shell
+    description: TOUCH-SUBDIR
+    args: ["touch", "file"]
+    working-directory: "subdir"
+    outputs: ["subdir/file"]
+  C.touch:
+    tool: shell
+    description: TOUCH
+    args: ["touch", "file"]
+    outputs: ["file"]

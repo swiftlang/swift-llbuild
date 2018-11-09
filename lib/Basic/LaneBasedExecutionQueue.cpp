@@ -256,7 +256,7 @@ public:
       ArrayRef<StringRef> commandLine,
       ArrayRef<std::pair<StringRef, StringRef>> environment,
       bool inheritEnvironment,
-      bool canSafelyInterrupt,
+      ProcessAttributes attributes,
       llvm::Optional<ProcessCompletionFn> completionFn) override {
 
     LaneBasedExecutionQueueJobContext& context =
@@ -330,7 +330,7 @@ public:
         handle,
         commandLine,
         posixEnv,
-        canSafelyInterrupt,
+        attributes,
         std::move(releaseFn),
         std::move(laneCompletionFn)
     );

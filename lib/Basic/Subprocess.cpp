@@ -33,6 +33,27 @@
 
 #ifdef __APPLE__
 #include <pthread/spawn.h>
+
+extern "C" {
+  // Provided by System.framework's libsystem_kernel interface
+  extern int __pthread_chdir(const char *path);
+  extern int __pthread_fchdir(int fd);
+}
+
+/// Set the thread specific working directory to the given path.
+int pthread_chdir_np(const char *path)
+{
+  return __pthread_chdir(path);
+}
+
+/// Set the thread specific working directory to that of the given file
+/// descriptor. Passing -1 clears the thread specific working directory,
+/// returning it to the process level working directory.
+int pthread_fchdir_np(int fd)
+{
+  return __pthread_fchdir(fd);
+}
+
 #endif
 
 using namespace llbuild;
@@ -278,7 +299,7 @@ void llbuild::basic::spawnProcess(
     ProcessHandle handle,
     ArrayRef<StringRef> commandLine,
     POSIXEnvironment environment,
-    bool canSafelyInterrupt,
+    ProcessAttributes attr,
     ProcessReleaseFn&& releaseFn,
     ProcessCompletionFn&& completionFn
 ) {
@@ -436,9 +457,36 @@ void llbuild::basic::spawnProcess(
 
     // If we have been cancelled since we started, do nothing.
     if (!wasCancelled) {
-      int result = posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
-                               /*attrp=*/&attributes, const_cast<char**>(args.data()),
-                               const_cast<char* const*>(environment.getEnvp()));
+      int result = 0;
+
+#ifdef __APPLE__
+      thread_local std::string threadWorkingDir;
+
+      if (attr.workingDir.empty()) {
+        if (!threadWorkingDir.empty()) {
+          pthread_fchdir_np(-1);
+          threadWorkingDir.clear();
+        }
+      } else {
+        if (threadWorkingDir != attr.workingDir) {
+          if (pthread_chdir_np(attr.workingDir.data()) == -1) {
+            result = errno;
+          } else {
+            threadWorkingDir = attr.workingDir;
+          }
+        }
+      }
+#else
+      assert(attr.workingDir.empty() &&
+             "setting process working directory unsupported");
+#endif
+
+      if (result == 0) {
+        result = posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
+                             /*attrp=*/&attributes, const_cast<char**>(args.data()),
+                             const_cast<char* const*>(environment.getEnvp()));
+      }
+
       if (result != 0) {
         auto processResult = ProcessResult::makeFailed();
         delegate.processHadError(ctx, handle,
@@ -446,7 +494,7 @@ void llbuild::basic::spawnProcess(
         delegate.processFinished(ctx, handle, processResult);
         pid = -1;
       } else {
-        ProcessInfo info{ canSafelyInterrupt };
+        ProcessInfo info{ attr.canSafelyInterrupt };
         pgrp.add(std::move(guard), pid, info);
       }
     }

@@ -224,6 +224,19 @@ namespace llbuild {
                                    const ProcessResult& result) = 0;
     };
 
+
+    struct ProcessAttributes {
+      /// If true, whether it is safe to attempt to SIGINT the process to cancel
+      /// it. If false, the process won't be interrupted during cancellation and
+      /// will be given a chance to complete (if it fails to complete it will
+      /// ultimately be sent a SIGKILL).
+      bool canSafelyInterrupt;
+
+      /// If set, the working directory to change into before spawning (only
+      /// supported on macOS)
+      StringRef workingDir = {};
+    };
+
     /// Execute the given command line.
     ///
     /// This will launch and execute the given command line and wait for it to
@@ -241,10 +254,7 @@ namespace llbuild {
     ///
     /// \param environment The environment to launch with.
     ///
-    /// \param canSafelyInterrupt If true, whether it is safe to attempt to SIGINT
-    /// the process to cancel it. If false, the process won't be interrupted
-    /// during cancellation and will be given a chance to complete (if it fails to
-    /// complete it will ultimately be sent a SIGKILL).
+    /// \param attributes Additional attributes for the process to be spawned.
     ///
     /// \param releaseFn Functional called when a process wishes to release its
     /// exclusive access to build system resources (namely an execution lane).
@@ -264,7 +274,7 @@ namespace llbuild {
                       ProcessHandle handle,
                       ArrayRef<StringRef> commandLine,
                       POSIXEnvironment environment,
-                      bool canSafelyInterrupt,
+                      ProcessAttributes attributes,
                       ProcessReleaseFn&& releaseFn,
                       ProcessCompletionFn&& completionFn);
 
