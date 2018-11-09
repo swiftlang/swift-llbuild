@@ -134,10 +134,7 @@ namespace llbuild {
       /// overlayed on top base environment supplied when creating the queue. If
       /// false, only the supplied environment will be passed to the subprocess.
       ///
-      /// \param canSafelyInterrupt If true, whether it is safe to attempt to
-      /// SIGINT the process to cancel it. If false, the process won't be
-      /// interrupted during cancellation and will be given a chance to complete
-      /// (if it fails to complete it will ultimately be sent a SIGKILL).
+      /// \param attributes Additional attributes for the process to be spawned.
       //
       // FIXME: This interface will need to get more complicated, and provide the
       // command result and facilities for dealing with the output.
@@ -146,7 +143,7 @@ namespace llbuild {
                      ArrayRef<StringRef> commandLine,
                      ArrayRef<std::pair<StringRef, StringRef>> environment,
                      bool inheritEnvironment = true,
-                     bool canSafelyInterrupt = true,
+                     ProcessAttributes attributes = {true},
                      llvm::Optional<ProcessCompletionFn> completionFn = {llvm::None}) = 0;
 
       /// @}

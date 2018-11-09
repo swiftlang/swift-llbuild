@@ -24,6 +24,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <ctime>
+#include <future>
 #include <mutex>
 
 using namespace llbuild;
@@ -66,6 +67,47 @@ namespace {
 
     auto fn = [&outputFile, &queue](QueueJobContext* context) {
       queue->executeShellCommand(context, "yes >" + outputFile);
+    };
+
+    DummyCommand dummyCommand;
+    queue->addJob(QueueJob(&dummyCommand, fn));
+
+    // Busy wait until `outputFile` appears which indicates that `yes` is
+    // running.
+    time_t start = ::time(NULL);
+    while (fs->getFileInfo(outputFile).isMissing()) {
+      if (::time(NULL) > start + 5) {
+        // We can't fail gracefully because the `LaneBasedExecutionQueue` will
+        // always wait for spawned processes to exit
+        abort();
+      }
+    }
+
+    queue->cancelAllJobs();
+    queue.reset();
+  }
+
+  TEST(LaneBasedExecutionQueueTest, workingDirectory) {
+    DummyDelegate delegate;
+    std::unique_ptr<FileSystem> fs = createLocalFileSystem();
+    TmpDir tempDir{"LaneBasedExecutionQueueTest"};
+    std::string outputFile = tempDir.str() + "/yes-output.txt";
+    auto queue = std::unique_ptr<ExecutionQueue>(
+        createLaneBasedExecutionQueue(delegate, 2,
+                                      SchedulerAlgorithm::NamePriority,
+                                      /*environment=*/nullptr));
+
+    auto fn = [&tempDir, &queue](QueueJobContext* context) {
+      std::string yescmd = "yes >yes-output.txt";
+      std::vector<StringRef> commandLine(
+                                         { "/bin/sh", "-c", yescmd.c_str() });
+      std::shared_ptr<std::promise<ProcessStatus>> p{new std::promise<ProcessStatus>};
+      auto result = p->get_future();
+      queue->executeProcess(context, commandLine, {}, true, {true, tempDir.str()},
+                     {[p](ProcessResult result) mutable {
+        p->set_value(result.status);
+      }});
+      result.get();
     };
 
     DummyCommand dummyCommand;

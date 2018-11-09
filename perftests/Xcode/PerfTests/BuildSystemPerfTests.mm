@@ -10,9 +10,16 @@
 //
 //===----------------------------------------------------------------------===//
 
+#import "llbuild/Basic/Subprocess.h"
 #import "llbuild/Commands/Commands.h"
 
+#include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/StringRef.h"
+
 #import <XCTest/XCTest.h>
+
+using namespace llbuild;
+using namespace llbuild::basic;
 
 @interface BuildSystemPerfTests : XCTestCase
 
@@ -58,5 +65,51 @@ static void ExecuteShellCommand(const char *String) {
             "parse", "--no-output", buildFilePath.UTF8String });
     }];
 }
+
+
+class PerfTestProcessDelegate : public ProcessDelegate {
+    void processStarted(ProcessContext*, ProcessHandle) {}
+    void processHadError(ProcessContext*, ProcessHandle, const Twine&) {}
+    void processHadOutput(ProcessContext*, ProcessHandle, StringRef) {}
+    void processFinished(ProcessContext*, ProcessHandle, const ProcessResult&) {}
+};
+
+
+- (void)testSupprocessSpawn {
+
+    [self measureBlock:^{
+        PerfTestProcessDelegate delegate;
+        ProcessAttributes attr{true};
+        ProcessGroup pgrp;
+        ProcessHandle handle;
+        std::vector<StringRef> cmd({"/usr/bin/true"});
+        POSIXEnvironment environment;
+
+        for (int i = 0; i < 200; i++) {
+            ProcessReleaseFn releaseFn = [](std::function<void()>&& pwait){ pwait(); };
+            ProcessCompletionFn completionFn = [](ProcessResult){};
+            spawnProcess(delegate, nullptr, pgrp, handle, cmd, environment, attr, std::move(releaseFn), std::move(completionFn));
+        }
+    }];
+}
+
+- (void)testSupprocessSpawnWorkingDirectory {
+
+    [self measureBlock:^{
+        PerfTestProcessDelegate delegate;
+        ProcessAttributes attr{true, "/tmp"};
+        ProcessGroup pgrp;
+        ProcessHandle handle;
+        std::vector<StringRef> cmd({"/usr/bin/true"});
+        POSIXEnvironment environment;
+
+        for (int i = 0; i < 200; i++) {
+            ProcessReleaseFn releaseFn = [](std::function<void()>&& pwait){ pwait(); };
+            ProcessCompletionFn completionFn = [](ProcessResult){};
+            spawnProcess(delegate, nullptr, pgrp, handle, cmd, environment, attr, std::move(releaseFn), std::move(completionFn));
+        }
+    }];
+}
+
 
 @end

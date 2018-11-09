@@ -1946,6 +1946,9 @@ class ShellCommand : public ExternalCommand {
   /// Whether it is safe to interrupt (SIGINT) the tool during cancellation.
   bool canSafelyInterrupt = true;
 
+  /// Working directory in which to spawn the external command
+  std::string workingDirectory;
+
   /// The cached signature, once computed -- 0 is used as a sentinel value.
   std::atomic<CommandSignature> cachedSignature{ };
   
@@ -2170,6 +2173,13 @@ public:
         return false;
       }
       inheritEnv = value == "true";
+    } else if (name == "working-directory") {
+#if __APPLE__
+      workingDirectory = value;
+#else
+      ctx.error("working-directory unsupported on this platform");
+      return false;
+#endif
     } else {
       return ExternalCommand::configureAttribute(ctx, name, value);
     }
@@ -2230,7 +2240,7 @@ public:
     bsci.getExecutionQueue().executeProcess(
         context, args, env,
         /*inheritEnvironment=*/inheritEnv,
-        /*canSafelyInterrupt=*/canSafelyInterrupt,
+        {canSafelyInterrupt, workingDirectory},
         /*completionFn=*/{[this, &bsci, task, completionFn](ProcessResult result) {
           if (result.status != ProcessStatus::Succeeded) {
             // If the command failed, there is no need to gather dependencies.
@@ -2413,7 +2423,7 @@ public:
                                       QueueJobContext* context,
                                       llvm::Optional<ProcessCompletionFn> completionFn) override {
     // Execute the command.
-    bsci.getExecutionQueue().executeProcess(context, args, {}, true, true, {[this, &bsci, task, completionFn](ProcessResult result){
+    bsci.getExecutionQueue().executeProcess(context, args, {}, true, {true}, {[this, &bsci, task, completionFn](ProcessResult result){
 
       if (result.status != ProcessStatus::Succeeded) {
         // If the command failed, there is no need to gather dependencies.
@@ -3470,7 +3480,7 @@ class ArchiveShellCommand : public ExternalCommand {
     auto args = getArgs();
     bsci.getExecutionQueue().executeProcess(context,
                                             std::vector<StringRef>(args.begin(), args.end()),
-                                            {}, true, true,
+                                            {}, true, {true},
                                             {[completionFn](ProcessResult result) {
       completionFn.unwrapIn([result](ProcessCompletionFn fn){fn(result);});
     }});

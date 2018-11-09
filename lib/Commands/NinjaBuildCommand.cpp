@@ -1114,7 +1114,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         command->getCommandString().c_str()
       };
 
-      context.jobQueue->executeProcess(qctx, args, {}, true, true, {
+      context.jobQueue->executeProcess(qctx, args, {}, true, {true}, {
         [&](ProcessResult result) {
           // Actually run the command.
           if (result.status != ProcessStatus::Succeeded) {
