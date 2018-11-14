@@ -469,7 +469,8 @@ void llbuild::basic::spawnProcess(
         }
       } else {
         if (threadWorkingDir != attr.workingDir) {
-          if (pthread_chdir_np(attr.workingDir.data()) == -1) {
+          const auto workingDir = attr.workingDir.str();
+          if (pthread_chdir_np(workingDir.c_str()) == -1) {
             result = errno;
           } else {
             threadWorkingDir = attr.workingDir;
