@@ -2706,7 +2706,7 @@ public:
 
   virtual void getShortDescription(SmallVectorImpl<char> &result) const override {
       llvm::raw_svector_ostream(result)
-        << "Compile Swift Module '" << moduleName
+        << "Compiling Swift Module '" << moduleName
         << "' (" << sourcesList.size() << " sources)";
   }
 
