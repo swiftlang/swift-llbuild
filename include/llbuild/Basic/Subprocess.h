@@ -235,6 +235,10 @@ namespace llbuild {
       /// If set, the working directory to change into before spawning (only
       /// supported on macOS)
       StringRef workingDir = {};
+
+      /// If true, exposes a control file descriptor that may be used to
+      /// communicate with the build system.
+      bool controlEnabled = true;
     };
 
     /// Execute the given command line.

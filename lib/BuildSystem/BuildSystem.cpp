@@ -1949,6 +1949,9 @@ class ShellCommand : public ExternalCommand {
   /// Working directory in which to spawn the external command
   std::string workingDirectory;
 
+  /// Whether the control pipe is enabled for this command
+  bool controlEnabled = true;
+
   /// The cached signature, once computed -- 0 is used as a sentinel value.
   std::atomic<CommandSignature> cachedSignature{ };
   
@@ -2180,6 +2183,13 @@ public:
       ctx.error("working-directory unsupported on this platform");
       return false;
 #endif
+    } else if (name == "control-enabled") {
+      if (value != "true" && value != "false") {
+        ctx.error("invalid value: '" + value + "' for attribute '" +
+                  name + "'");
+        return false;
+      }
+      controlEnabled = value == "true";
     } else {
       return ExternalCommand::configureAttribute(ctx, name, value);
     }
@@ -2240,7 +2250,7 @@ public:
     bsci.getExecutionQueue().executeProcess(
         context, args, env,
         /*inheritEnvironment=*/inheritEnv,
-        {canSafelyInterrupt, workingDirectory},
+        {canSafelyInterrupt, workingDirectory, controlEnabled},
         /*completionFn=*/{[this, &bsci, task, completionFn](ProcessResult result) {
           if (result.status != ProcessStatus::Succeeded) {
             // If the command failed, there is no need to gather dependencies.

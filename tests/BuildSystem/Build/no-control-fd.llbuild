@@ -1,0 +1,27 @@
+# Check that the control FD environment variable is not exported when it is
+# disabled.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.llbuild
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build --trace %t.trace > %t.out
+# RUN: %{FileCheck} --input-file=%t.out %s
+#
+# CHECK: /usr/bin/env
+# CHECK-NOT: LLBUILD_CONTROL_FD=
+# CHECK: LLBUILD_TASK_ID={{[a-f0-9]+}}
+
+
+client:
+  name: basic
+
+targets:
+  basic: ["<env>"]
+default: basic
+
+commands:
+  "<env>":
+    tool: shell
+    outputs: ["<env>"]
+    control-enabled: false
+    args: /usr/bin/env | /usr/bin/sort
