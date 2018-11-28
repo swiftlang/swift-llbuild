@@ -2123,6 +2123,8 @@ class ShellCommand : public ExternalCommand {
 
 public:
   using ExternalCommand::ExternalCommand;
+  ShellCommand(StringRef name, bool controlEnabled) : ExternalCommand(name),
+    controlEnabled(controlEnabled) { }
 
   virtual void getShortDescription(SmallVectorImpl<char> &result) const override {
     llvm::raw_svector_ostream(result) << getDescription();
@@ -2282,14 +2284,26 @@ public:
 };
 
 class ShellTool : public Tool {
+private:
+  bool controlEnabled = true;
+
 public:
   using Tool::Tool;
 
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
-    // No supported attributes.
-    ctx.error("unexpected attribute: '" + name + "'");
-    return false;
+    if (name == "control-enabled") {
+      if (value != "true" && value != "false") {
+        ctx.error("invalid value: '" + value + "' for attribute '" +
+                  name + "'");
+        return false;
+      }
+      controlEnabled = (value == "true");
+    } else {
+      ctx.error("unexpected attribute: '" + name + "'");
+      return false;
+    }
+    return true;
   }
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   ArrayRef<StringRef> values) override {
@@ -2306,7 +2320,7 @@ public:
   }
 
   virtual std::unique_ptr<Command> createCommand(StringRef name) override {
-    return llvm::make_unique<ShellCommand>(name);
+    return llvm::make_unique<ShellCommand>(name, controlEnabled);
   }
 };
 
