@@ -1949,6 +1949,9 @@ class ShellCommand : public ExternalCommand {
   /// Working directory in which to spawn the external command
   std::string workingDirectory;
 
+  /// Whether the control pipe is enabled for this command
+  bool controlEnabled = true;
+
   /// The cached signature, once computed -- 0 is used as a sentinel value.
   std::atomic<CommandSignature> cachedSignature{ };
   
@@ -2120,6 +2123,8 @@ class ShellCommand : public ExternalCommand {
 
 public:
   using ExternalCommand::ExternalCommand;
+  ShellCommand(StringRef name, bool controlEnabled) : ExternalCommand(name),
+    controlEnabled(controlEnabled) { }
 
   virtual void getShortDescription(SmallVectorImpl<char> &result) const override {
     llvm::raw_svector_ostream(result) << getDescription();
@@ -2180,6 +2185,13 @@ public:
       ctx.error("working-directory unsupported on this platform");
       return false;
 #endif
+    } else if (name == "control-enabled") {
+      if (value != "true" && value != "false") {
+        ctx.error("invalid value: '" + value + "' for attribute '" +
+                  name + "'");
+        return false;
+      }
+      controlEnabled = value == "true";
     } else {
       return ExternalCommand::configureAttribute(ctx, name, value);
     }
@@ -2240,7 +2252,7 @@ public:
     bsci.getExecutionQueue().executeProcess(
         context, args, env,
         /*inheritEnvironment=*/inheritEnv,
-        {canSafelyInterrupt, workingDirectory},
+        {canSafelyInterrupt, workingDirectory, controlEnabled},
         /*completionFn=*/{[this, &bsci, task, completionFn](ProcessResult result) {
           if (result.status != ProcessStatus::Succeeded) {
             // If the command failed, there is no need to gather dependencies.
@@ -2272,14 +2284,26 @@ public:
 };
 
 class ShellTool : public Tool {
+private:
+  bool controlEnabled = true;
+
 public:
   using Tool::Tool;
 
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
-    // No supported attributes.
-    ctx.error("unexpected attribute: '" + name + "'");
-    return false;
+    if (name == "control-enabled") {
+      if (value != "true" && value != "false") {
+        ctx.error("invalid value: '" + value + "' for attribute '" +
+                  name + "'");
+        return false;
+      }
+      controlEnabled = (value == "true");
+    } else {
+      ctx.error("unexpected attribute: '" + name + "'");
+      return false;
+    }
+    return true;
   }
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   ArrayRef<StringRef> values) override {
@@ -2296,7 +2320,7 @@ public:
   }
 
   virtual std::unique_ptr<Command> createCommand(StringRef name) override {
-    return llvm::make_unique<ShellCommand>(name);
+    return llvm::make_unique<ShellCommand>(name, controlEnabled);
   }
 };
 

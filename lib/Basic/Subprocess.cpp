@@ -256,7 +256,9 @@ static void cleanUpExecutedProcess(
   // Note: We purposely hold this open until after the process has finished as
   // it simplifies client implentation. If we close it early, clients need to be
   // aware of and potentially handle a SIGPIPE.
-  ::close(releaseFd);
+  if (releaseFd >= 0) {
+    ::close(releaseFd);
+  }
 
   // Update the set of spawned processes.
   pgrp.remove(pid);
@@ -381,20 +383,22 @@ void llbuild::basic::spawnProcess(
 
   // Create a pipe for the process to (potentially) release the lane while
   // still running.
-  int releasePipe[2]{ -1, -1 };
-  if (basic::sys::pipe(releasePipe) < 0) {
-    delegate.processHadError(ctx, handle,
-        Twine("unable to open lane release pipe (") + strerror(errno) + ")");
-    delegate.processFinished(ctx, handle, ProcessResult::makeFailed());
-    completionFn(ProcessStatus::Failed);
-    return;
+  int controlPipe[2]{ -1, -1 };
+  if (attr.controlEnabled) {
+    if (basic::sys::pipe(controlPipe) < 0) {
+      delegate.processHadError(ctx, handle,
+          Twine("unable to open control pipe (") + strerror(errno) + ")");
+      delegate.processFinished(ctx, handle, ProcessResult::makeFailed());
+      completionFn(ProcessStatus::Failed);
+      return;
+    }
+  #ifdef __APPLE__
+    posix_spawn_file_actions_addinherit_np(&fileActions, controlPipe[1]);
+  #else
+    posix_spawn_file_actions_adddup2(&fileActions, controlPipe[1], controlPipe[1]);
+  #endif
+    posix_spawn_file_actions_addclose(&fileActions, controlPipe[0]);
   }
-#ifdef __APPLE__
-  posix_spawn_file_actions_addinherit_np(&fileActions, releasePipe[1]);
-#else
-  posix_spawn_file_actions_adddup2(&fileActions, releasePipe[1], releasePipe[1]);
-#endif
-  posix_spawn_file_actions_addclose(&fileActions, releasePipe[0]);
 
   // If we are capturing output, create a pipe and appropriate spawn actions.
   int outputPipe[2]{ -1, -1 };
@@ -433,7 +437,9 @@ void llbuild::basic::spawnProcess(
   // Export a task ID to subprocesses.
   auto taskID = Twine::utohexstr(handle.id);
   environment.setIfMissing("LLBUILD_TASK_ID", taskID.str());
-  environment.setIfMissing("LLBUILD_CONTROL_FD", Twine(releasePipe[1]).str());
+  if (attr.controlEnabled) {
+    environment.setIfMissing("LLBUILD_CONTROL_FD", Twine(controlPipe[1]).str());
+  }
 
   // Resolve the executable path, if necessary.
   //
@@ -505,12 +511,15 @@ void llbuild::basic::spawnProcess(
   posix_spawnattr_destroy(&attributes);
 
   // Close the write end of the release pipe
-  ::close(releasePipe[1]);
-
+  if (attr.controlEnabled) {
+    ::close(controlPipe[1]);
+  }
 
   // If we failed to launch a process, clean up and abort.
   if (pid == -1) {
-    ::close(releasePipe[0]);
+    if (attr.controlEnabled) {
+      ::close(controlPipe[0]);
+    }
 
     if (shouldCaptureOutput) {
       ::close(outputPipe[1]);
@@ -523,9 +532,10 @@ void llbuild::basic::spawnProcess(
 
   // Set up our select() structures
   pollfd readfds[] = {
-    { releasePipe[0], POLLIN, 0 },
+    { controlPipe[0], 0, 0 },
     { outputPipe[0], 0, 0 }
   };
+  const int nfds = 2;
   ControlProtocolState control(taskID.str());
   std::function<bool (StringRef)> readCbs[] = {
     // control callback handle
@@ -546,19 +556,23 @@ void llbuild::basic::spawnProcess(
     }
   };
 
-  int nfds = 1;
+  int activeEvents = 0;
+
+  if (attr.controlEnabled) {
+    readfds[0].events = POLLIN;
+    activeEvents |= POLLIN;
+  }
 
   // Read the command output, if capturing.
   if (shouldCaptureOutput) {
     readfds[1].events = POLLIN;
-    nfds = 2;
+    activeEvents |= POLLIN;
 
     // Close the write end of the output pipe.
     ::close(outputPipe[1]);
   }
 
-  int activeEvents = 0;
-  do {
+  while (activeEvents) {
     char buf[4096];
     activeEvents = 0;
 
@@ -590,18 +604,18 @@ void llbuild::basic::spawnProcess(
       releaseFn([
                  &delegate, &pgrp, pid, handle, ctx,
                  outputFd=outputPipe[0],
-                 releaseFd=releasePipe[0],
+                 controlFd=controlPipe[0],
                  completionFn=std::move(completionFn)
                  ]() mutable {
         if (shouldCaptureOutput)
           captureExecutedProcessOutput(delegate, outputFd, handle, ctx);
 
         cleanUpExecutedProcess(delegate, pgrp, pid, handle, ctx,
-                               std::move(completionFn), releaseFd);
+                               std::move(completionFn), controlFd);
       });
       return;
     }
-  } while (activeEvents);
+  }
 
   if (shouldCaptureOutput) {
     // If we have reached here, both the control and read pipes have given us
@@ -611,6 +625,6 @@ void llbuild::basic::spawnProcess(
   }
 
   cleanUpExecutedProcess(delegate, pgrp, pid, handle, ctx,
-                         std::move(completionFn), releasePipe[0]);
+                         std::move(completionFn), controlPipe[0]);
 }
 
