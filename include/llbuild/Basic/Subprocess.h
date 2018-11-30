@@ -228,8 +228,8 @@ namespace llbuild {
       /// ultimately be sent a SIGKILL).
       bool canSafelyInterrupt;
 
-      /// If set, the working directory to change into before spawning (only
-      /// supported on macOS)
+      /// If set, the working directory to change into before spawning (support
+      /// not guaranteed on all platforms).
       StringRef workingDir = {};
 
       /// If true, exposes a control file descriptor that may be used to
