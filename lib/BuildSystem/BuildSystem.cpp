@@ -2205,17 +2205,12 @@ public:
       }
       inheritEnv = value == "true";
     } else if (name == "working-directory") {
-#if __APPLE__
       // Ensure the working directory is absolute. This will make sure any
       // relative directories are interpreted as relative to the CWD at the time
       // the rule is defined.
       SmallString<PATH_MAX> wd = value;
       llvm::sys::fs::make_absolute(wd);
       workingDirectory = StringRef(wd);
-#else
-      ctx.error("working-directory unsupported on this platform");
-      return false;
-#endif
     } else if (name == "control-enabled") {
       if (value != "true" && value != "false") {
         ctx.error("invalid value: '" + value + "' for attribute '" +
