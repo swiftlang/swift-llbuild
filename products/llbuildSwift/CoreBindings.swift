@@ -237,6 +237,17 @@ public protocol BuildEngineDelegate {
     /// requested Key cannot be supplied, the delegate should provide a dummy rule
     /// that the client can translate into an error.
     func lookupRule(_ key: Key) -> Rule
+
+    /// Handle error message reported by the engine
+    ///
+    /// The delegate should handle this, but a default implementation is
+    /// is provided that does nothing for backward compatiblity.
+    func error(_ message: String)
+}
+
+public extension BuildEngineDelegate {
+    func error(_ message: String) {
+    }
 }
 
 /// Wrapper to allow passing an opaque pointer to a protocol type.
@@ -393,6 +404,8 @@ public class BuildEngine {
 
         _delegate.lookup_rule = { BuildEngine.toEngine($0!).lookupRule($1!, $2!) }
         // FIXME: Include cycleDetected callback.
+
+        _delegate.error = { BuildEngine.toEngine($0!).delegate.error(String(cString: $1!)) }
 
         // Create the engine.
         _engine = llb_buildengine_create(_delegate)
