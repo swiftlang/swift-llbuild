@@ -326,6 +326,12 @@ public struct BuildKey {
         case target
         /// An invalid key kind.
         case unknown
+        /// A key used to identify the signature of a complete directory tree.
+        case directoryTreeStructureSignature
+        /// A key used to identify filtered directory contents.
+        case filteredDirectoryContents
+        /// A key used to identify a node.
+        case stat
 
         init(_ kind: llb_build_key_kind_t) {
             switch (kind) {
@@ -343,6 +349,12 @@ public struct BuildKey {
                 self = .target
             case llb_build_key_kind_unknown:
                 self = .unknown
+            case llb_build_key_kind_directory_tree_structure_signature:
+                self = .directoryTreeStructureSignature
+            case llb_build_key_kind_filtered_directory_contents:
+                self = .filteredDirectoryContents
+            case llb_build_key_kind_stat:
+                self = .stat
             default:
                 fatalError("unknown build key kind")
             }
