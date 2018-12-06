@@ -110,33 +110,7 @@ private final class CommandWrapper {
 
 /// Encapsulates a diagnostic as reported by the build system.
 public struct Diagnostic {
-    public enum Kind: CustomStringConvertible {
-        case note
-        case warning
-        case error
-
-        public init(_ kind: llb_buildsystem_diagnostic_kind_t) {
-            switch kind {
-            case llb_buildsystem_diagnostic_kind_note:
-                self = .note
-            case llb_buildsystem_diagnostic_kind_warning:
-                self = .warning
-            default:
-                self = .error
-            }
-        }
-
-        public var description: String {
-            switch self {
-            case .note:
-                return "note"
-            case .warning:
-                return "warning"
-            case .error:
-                return "error"
-            }
-        }
-    }
+    public typealias Kind = DiagnosticKind
 
     /// The kind of diagnostic.
     public let kind: Kind
@@ -146,6 +120,32 @@ public struct Diagnostic {
 
     /// The diagnostic text.
     public let message: String
+}
+
+extension DiagnosticKind: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .note:
+            return "note"
+        case .warning:
+            return "warning"
+        case .error:
+            return "error"
+        }
+    }
+}
+
+extension SchedulerAlgorithm {
+    public init?(rawValue: String) {
+        switch rawValue {
+        case "commandNamePriority":
+            self = .commandNamePriority
+        case "fifo":
+            self = .fifo
+        default:
+            return nil
+        }
+    }
 }
 
 /// Handle for a command as invoked by the low-level BuildSystem.
@@ -221,29 +221,6 @@ public struct ProcessHandle: Hashable {
     }
 }
 
-/// Result of a command execution.
-public enum CommandResult {
-    case succeeded
-    case failed
-    case cancelled
-    case skipped
-
-    init(_ result: llb_buildsystem_command_result_t) {
-        switch result {
-        case llb_buildsystem_command_result_succeeded:
-            self = .succeeded
-        case llb_buildsystem_command_result_failed:
-            self = .failed
-        case llb_buildsystem_command_result_cancelled:
-            self = .cancelled
-        case llb_buildsystem_command_result_skipped:
-            self = .skipped
-        default:
-            fatalError("unknown command result")
-        }
-    }
-}
-
 public struct CommandMetrics {
     public let utime: UInt64         /// User time (in us)
     public let stime: UInt64         /// Sys time (in us)
@@ -264,7 +241,7 @@ public struct CommandExtendedResult {
     public let metrics: CommandMetrics? /// Metrics about the executed command
 
     init(_ result: UnsafePointer<llb_buildsystem_command_extended_result_t>) {
-        self.result = CommandResult(result.pointee.result)
+        self.result = result.pointee.result
         self.exitStatus = result.pointee.exit_status
         if result.pointee.pid >= 0 {
             self.pid = result.pointee.pid
@@ -288,78 +265,10 @@ public struct CommandExtendedResult {
 
 }
 
-/// Status change event kinds.
-public enum CommandStatusKind {
-    case isScanning
-    case isUpToDate
-    case isComplete
-
-    init(_ kind: llb_buildsystem_command_status_kind_t) {
-        switch kind {
-        case llb_buildsystem_command_status_kind_is_scanning:
-            self = .isScanning
-        case llb_buildsystem_command_status_kind_is_up_to_date:
-            self = .isUpToDate
-        case llb_buildsystem_command_status_kind_is_complete:
-            self = .isComplete
-        default:
-            fatalError("unknown status kind")
-        }
-    }
-}
-
 /// The BuildKey encodes the key space used by the BuildSystem when using the
 /// core BuildEngine.
 public struct BuildKey {
-    public enum Kind {
-        /// A key used to identify a command.
-        case command
-        /// A key used to identify a custom task.
-        case customTask
-        /// A key used to identify directory contents.
-        case directoryContents
-        /// A key used to identify the signature of a complete directory tree.
-        case directoryTreeSignature
-        /// A key used to identify a node.
-        case node
-        /// A key used to identify a target.
-        case target
-        /// An invalid key kind.
-        case unknown
-        /// A key used to identify the signature of a complete directory tree.
-        case directoryTreeStructureSignature
-        /// A key used to identify filtered directory contents.
-        case filteredDirectoryContents
-        /// A key used to identify a node.
-        case stat
-
-        init(_ kind: llb_build_key_kind_t) {
-            switch (kind) {
-            case llb_build_key_kind_command:
-                self = .command
-            case llb_build_key_kind_custom_task:
-                self = .customTask
-            case llb_build_key_kind_directory_contents:
-                self = .directoryContents
-            case llb_build_key_kind_directory_tree_signature:
-                self = .directoryTreeSignature
-            case llb_build_key_kind_node:
-                self = .node
-            case llb_build_key_kind_target:
-                self = .target
-            case llb_build_key_kind_unknown:
-                self = .unknown
-            case llb_build_key_kind_directory_tree_structure_signature:
-                self = .directoryTreeStructureSignature
-            case llb_build_key_kind_filtered_directory_contents:
-                self = .filteredDirectoryContents
-            case llb_build_key_kind_stat:
-                self = .stat
-            default:
-                fatalError("unknown build key kind")
-            }
-        }
-    }
+    public typealias Kind = BuildKeyKind
 
     /// The kind of key
     public let kind: Kind
@@ -373,28 +282,9 @@ public struct BuildKey {
     }
 
     init(key: llb_build_key_t) {
-        self.init(kind: BuildKey.Kind(key.kind), key: String(cString: key.key))
+        self.init(kind: key.kind, key: String(cString: key.key))
     }
 }
-
-/// Cycle actions.
-public enum CycleAction {
-    case forceBuild
-    case supplyPriorValue
-
-    init(_ action: llb_cycle_action_t) {
-        switch action {
-        case llb_cycle_action_force_build:
-            self = .forceBuild
-        case llb_cycle_action_supply_prior_value:
-            self = .supplyPriorValue
-        default:
-            fatalError("unknown cycle action")
-        }
-    }
-}
-
-
 
 /// File system information for a particular file.
 ///
@@ -612,7 +502,7 @@ public final class BuildSystem {
         _invocation.environment = _cEnvironment.map{ UnsafePointer($0.envp) }
         _invocation.showVerboseStatus = true
         _invocation.useSerialBuild = serial
-        _invocation.schedulerAlgorithm = BuildSystem.schedulerAlgorithm.llbValue()
+        _invocation.schedulerAlgorithm = BuildSystem.schedulerAlgorithm
         _invocation.schedulerLanes = BuildSystem.schedulerLanes
 
         // Construct the system delegate.
@@ -631,7 +521,7 @@ public final class BuildSystem {
         _delegate.command_preparing = { BuildSystem.toSystem($0!).commandPreparing(Command($1)) }
         _delegate.command_started = { BuildSystem.toSystem($0!).commandStarted(Command($1)) }
         _delegate.should_command_start = { BuildSystem.toSystem($0!).shouldCommandStart(Command($1)) }
-        _delegate.command_finished = { BuildSystem.toSystem($0!).commandFinished(Command($1), CommandResult($2)) }
+        _delegate.command_finished = { BuildSystem.toSystem($0!).commandFinished(Command($1), $2) }
         _delegate.command_had_error = { BuildSystem.toSystem($0!).commandHadError(Command($1), $2!) }
         _delegate.command_had_note = { BuildSystem.toSystem($0!).commandHadNote(Command($1), $2!) }
         _delegate.command_had_warning = { BuildSystem.toSystem($0!).commandHadWarning(Command($1), $2!) }
@@ -659,11 +549,11 @@ public final class BuildSystem {
         _delegate.should_resolve_cycle = {
             var rules = [BuildKey]()
             UnsafeBufferPointer(start: $1, count: Int($2)).forEach {
-                rules.append(BuildKey(kind: BuildKey.Kind($0.kind), key: String(cString: $0.key)))
+                rules.append(BuildKey(kind: $0.kind, key: String(cString: $0.key)))
             }
-            let candidate = BuildKey(kind: BuildKey.Kind($3.kind), key: String(cString: $3.key))
+            let candidate = BuildKey(kind: $3.kind, key: String(cString: $3.key))
 
-            let result = BuildSystem.toSystem($0!).shouldResolveCycle(rules, candidate, CycleAction($4))
+            let result = BuildSystem.toSystem($0!).shouldResolveCycle(rules, candidate, $4)
 
             return (result) ? 1 : 0;
         }
@@ -792,9 +682,7 @@ public final class BuildSystem {
         delegate.hadCommandFailure()
     }
 
-    private func handleDiagnostic(_ _kind: llb_buildsystem_diagnostic_kind_t, _ filename: String, _ line: Int, _ column: Int, _ message: String) {
-        let kind: Diagnostic.Kind = Diagnostic.Kind(_kind)
-
+    private func handleDiagnostic(_ kind: DiagnosticKind, _ filename: String, _ line: Int, _ column: Int, _ message: String) {
         // Clean up the location.
         let location: (filename: String, line: Int, column: Int)?
         if filename == "<unknown>" || (line == -1 && column == -1) {
@@ -806,8 +694,8 @@ public final class BuildSystem {
         delegate.handleDiagnostic(Diagnostic(kind: kind, location: location, message: message))
     }
 
-    private func commandStatusChanged(_ command: Command, _ kind: llb_buildsystem_command_status_kind_t) {
-        delegate.commandStatusChanged(command, kind: CommandStatusKind(kind))
+    private func commandStatusChanged(_ command: Command, _ kind: CommandStatusKind) {
+        delegate.commandStatusChanged(command, kind: kind)
     }
 
     private func commandPreparing(_ command: Command) {
@@ -880,31 +768,7 @@ public final class BuildSystem {
         }
     }
 
-
-    public enum SchedulerAlgorithm: String {
-        case commandNamePriority
-        case fifo
-
-        init(_ algorithm: llb_scheduler_algorithm_t) {
-            switch algorithm {
-            case llb_scheduler_algorithm_command_name_priority:
-                self = .commandNamePriority
-            case llb_scheduler_algorithm_fifo:
-                self = .fifo
-            default:
-                self = .commandNamePriority
-            }
-        }
-
-        public func llbValue() -> llb_scheduler_algorithm_t {
-            switch self {
-            case .commandNamePriority:
-                return llb_scheduler_algorithm_command_name_priority
-            case .fifo:
-                return llb_scheduler_algorithm_fifo
-            }
-        }
-    }
+    public typealias SchedulerAlgorithm = llbuild.SchedulerAlgorithm
 
     /// Get the scheduler algorithm
     public static func getSchedulerAlgorithm() -> SchedulerAlgorithm {

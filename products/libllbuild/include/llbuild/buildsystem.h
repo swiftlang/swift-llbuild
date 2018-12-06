@@ -72,11 +72,11 @@ typedef struct llb_fs_file_info_t_ {
 /// @name Diagnostics
 /// @{
 
-typedef enum {
-  llb_buildsystem_diagnostic_kind_note,
-  llb_buildsystem_diagnostic_kind_warning,
-  llb_buildsystem_diagnostic_kind_error,
-} llb_buildsystem_diagnostic_kind_t;
+typedef enum LLBUILD_ENUM_ATTRIBUTES {
+  llb_buildsystem_diagnostic_kind_note = 0,
+  llb_buildsystem_diagnostic_kind_warning = 1,
+  llb_buildsystem_diagnostic_kind_error = 2,
+} llb_buildsystem_diagnostic_kind_t LLBUILD_SWIFT_NAME(DiagnosticKind);
 
 /// Get the name of the diagnostic kind.
 LLBUILD_EXPORT const char*
@@ -100,13 +100,13 @@ typedef struct llb_buildsystem_tool_t_ llb_buildsystem_tool_t;
 /// Opaque handle to a build system command's launched process.
 typedef struct llb_buildsystem_process_t_ llb_buildsystem_process_t;
 
-/// Result of a command execution
-typedef enum {
+/// Result of a command execution.
+typedef enum LLBUILD_ENUM_ATTRIBUTES {
   llb_buildsystem_command_result_succeeded = 0,
   llb_buildsystem_command_result_failed = 1,
   llb_buildsystem_command_result_cancelled = 2,
   llb_buildsystem_command_result_skipped = 3,
-} llb_buildsystem_command_result_t;
+} llb_buildsystem_command_result_t LLBUILD_SWIFT_NAME(CommandResult);
 
 /// Extended result of a command execution
 typedef struct llb_buildsystem_command_extended_result_t_ {
@@ -119,36 +119,36 @@ typedef struct llb_buildsystem_command_extended_result_t_ {
 } llb_buildsystem_command_extended_result_t;
 
 /// Status change event kinds.
-typedef enum {
+typedef enum LLBUILD_ENUM_ATTRIBUTES {
   /// Indicates the command is being scanned to determine if it needs to run.
   ///
   /// This type will always precede the other types for any particular
   /// command. Once scanning begins for a command, it is guaranteed to be
   /// followed by either an "is-up-to-date" or "is-complete" event.
-  llb_buildsystem_command_status_kind_is_scanning = 0,
+  llb_buildsystem_command_status_kind_is_scanning LLBUILD_SWIFT_NAME(isScanning) = 0,
 
   /// Indicates the command is up-to-date, and does not need to run.
-  llb_buildsystem_command_status_kind_is_up_to_date = 1,
+  llb_buildsystem_command_status_kind_is_up_to_date LLBUILD_SWIFT_NAME(isUpToDate) = 1,
 
   /// Indicates the command was run, and is now complete.
   ///
   /// The actual preparation and start of the command are handled via other
   /// individual delegate callbacks, and not status change events.
-  llb_buildsystem_command_status_kind_is_complete = 2,
-} llb_buildsystem_command_status_kind_t;
+  llb_buildsystem_command_status_kind_is_complete LLBUILD_SWIFT_NAME(isComplete) = 2,
+} llb_buildsystem_command_status_kind_t LLBUILD_SWIFT_NAME(CommandStatusKind);
 
-typedef enum {
+typedef enum LLBUILD_ENUM_ATTRIBUTES {
   /// A key used to identify a command.
   llb_build_key_kind_command = 0,
 
   /// A key used to identify a custom task.
-  llb_build_key_kind_custom_task = 1,
+  llb_build_key_kind_custom_task LLBUILD_SWIFT_NAME(customTask) = 1,
 
   /// A key used to identify directory contents.
-  llb_build_key_kind_directory_contents = 2,
+  llb_build_key_kind_directory_contents LLBUILD_SWIFT_NAME(directoryContents) = 2,
 
   /// A key used to identify the signature of a complete directory tree.
-  llb_build_key_kind_directory_tree_signature = 3,
+  llb_build_key_kind_directory_tree_signature LLBUILD_SWIFT_NAME(directoryTreeSignature) = 3,
 
   /// A key used to identify a node.
   llb_build_key_kind_node = 4,
@@ -160,31 +160,32 @@ typedef enum {
   llb_build_key_kind_unknown = 6,
 
   /// A key used to identify the signature of a complete directory tree.
-  llb_build_key_kind_directory_tree_structure_signature = 7,
+  llb_build_key_kind_directory_tree_structure_signature LLBUILD_SWIFT_NAME(directoryTreeStructureSignature) = 7,
 
   /// A key used to identify filtered directory contents.
-  llb_build_key_kind_filtered_directory_contents = 8,
+  llb_build_key_kind_filtered_directory_contents LLBUILD_SWIFT_NAME(filteredDirectoryContents) = 8,
 
   /// A key used to identify a node.
   llb_build_key_kind_stat = 10,
-} llb_build_key_kind_t;
+} llb_build_key_kind_t LLBUILD_SWIFT_NAME(BuildKeyKind);
 
-typedef enum {
+/// Cycle actions.
+typedef enum LLBUILD_ENUM_ATTRIBUTES {
   /// Indicates a rule will be forced to build.
-  llb_cycle_action_force_build = 0,
+  llb_cycle_action_force_build LLBUILD_SWIFT_NAME(forceBuild) = 0,
 
   /// Indicates a rule's prior value will be supplied to a downstream rule.
-  llb_cycle_action_supply_prior_value = 1,
-} llb_cycle_action_t;
+  llb_cycle_action_supply_prior_value LLBUILD_SWIFT_NAME(supplyPriorValue) = 1,
+} llb_cycle_action_t LLBUILD_SWIFT_NAME(CycleAction);
 
 /// Scheduler algorithms
-typedef enum {
+typedef enum LLBUILD_ENUM_ATTRIBUTES {
   /// Command name priority queue based scheduling [default]
-  llb_scheduler_algorithm_command_name_priority = 0,
+  llb_scheduler_algorithm_command_name_priority LLBUILD_SWIFT_NAME(commandNamePriority) = 0,
 
   /// First in, first out
   llb_scheduler_algorithm_fifo = 1
-} llb_scheduler_algorithm_t;
+} llb_scheduler_algorithm_t LLBUILD_SWIFT_NAME(SchedulerAlgorithm);
 
 /// The BuildKey encodes the key space used by the BuildSystem when using the
 /// core BuildEngine.
@@ -683,21 +684,21 @@ llb_buildsystem_command_get_verbose_description(
 // MARK: Quality of Service
 
 /// Quality of service levels.
-typedef enum {
+typedef enum LLBUILD_ENUM_ATTRIBUTES {
     /// A default quality of service (i.e. what the system would use without
     /// other advisement, generally this would be comparable to what would be
     /// done by `make`, `ninja`, etc.)
     llb_quality_of_service_default = 0,
 
     /// User-initiated, high priority work.
-    llb_quality_of_service_user_initiated = 1,
+    llb_quality_of_service_user_initiated LLBUILD_SWIFT_NAME(userInitiated) = 1,
 
     /// Batch work performed on behalf of the user.
     llb_quality_of_service_utility = 2,
 
     /// Background work that is not directly visible to the user.
     llb_quality_of_service_background = 3
-} llb_quality_of_service_t;
+} llb_quality_of_service_t LLBUILD_SWIFT_NAME(QualityOfService);
 
 /// Get the global quality of service level to use for processing.
 LLBUILD_EXPORT llb_quality_of_service_t

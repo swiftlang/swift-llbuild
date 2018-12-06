@@ -31,6 +31,22 @@
 #define LLBUILD_EXPORT extern
 #endif
 
+#ifndef __has_attribute
+#define __has_attribute(x) 0
+#endif
+
+#if __has_attribute(swift_name)
+# define LLBUILD_SWIFT_NAME(_name) __attribute__((swift_name(#_name)))
+#else
+# define LLBUILD_SWIFT_NAME(_name)
+#endif
+
+#if __has_attribute(enum_extensibility)
+#define LLBUILD_ENUM_ATTRIBUTES __attribute__((enum_extensibility(open)))
+#else
+#define LLBUILD_ENUM_ATTRIBUTES
+#endif
+
 /// A monotonically increasing indicator of the llbuild API version.
 ///
 /// The llbuild API is *not* stable. This value allows clients to conditionally

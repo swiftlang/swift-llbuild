@@ -46,17 +46,18 @@ typedef struct llb_data_t_ {
     const uint8_t* data;
 } llb_data_t;
 
-/// Status kind indications for Rules.
-typedef enum {
+/// Enumeration describing the possible status of a Rule, used by \see
+/// Rule.updateStatus().
+typedef enum LLBUILD_ENUM_ATTRIBUTES {
     /// Indicates the rule is being scanned.
-    llb_rule_is_scanning = 0,
+    llb_rule_is_scanning LLBUILD_SWIFT_NAME(isScanning) = 0,
 
     /// Indicates the rule is up-to-date, and doesn't need to run.
-    llb_rule_is_up_to_date = 1,
+    llb_rule_is_up_to_date LLBUILD_SWIFT_NAME(isUpToDate) = 1,
 
     /// Indicates the rule was run, and is now complete.
-    llb_rule_is_complete = 2
-} llb_rule_status_kind_t;
+    llb_rule_is_complete LLBUILD_SWIFT_NAME(isComplete) = 2
+} llb_rule_status_kind_t LLBUILD_SWIFT_NAME(RuleStatus);
 
 /// Rule representation.
 typedef struct llb_rule_t_ llb_rule_t;
