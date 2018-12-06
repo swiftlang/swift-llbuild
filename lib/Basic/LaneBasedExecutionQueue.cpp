@@ -20,6 +20,7 @@
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/Twine.h"
 
+#include <atomic>
 #include <future>
 #include <queue>
 #include <random>
@@ -99,6 +100,11 @@ class LaneBasedExecutionQueue : public ExecutionQueue {
   std::condition_variable queueCompleteCondition;
   std::mutex queueCompleteMutex;
   bool queueComplete { false };
+
+  /// Background (lane released) task management
+  unsigned backgroundTaskMax = 0;
+  std::atomic<unsigned> backgroundTaskCount{0};
+
 
   /// The base environment.
   const char* const* environment;
@@ -190,6 +196,7 @@ public:
   : ExecutionQueue(delegate), buildID(std::random_device()()), numLanes(numLanes),
         readyJobs(Scheduler::make(alg)), environment(environment)
   {
+    backgroundTaskMax = numLanes * 16;
     for (unsigned i = 0; i != numLanes; ++i) {
       lanes.push_back(std::unique_ptr<std::thread>(
                           new std::thread(
@@ -307,10 +314,26 @@ public:
     ProcessHandle handle;
     handle.id = context.jobID;
 
-    ProcessReleaseFn releaseFn = [](std::function<void()>&& processWait) {
-      std::thread([processWait=std::move(processWait)]() mutable {
+    ProcessReleaseFn releaseFn = [this](std::function<void()>&& processWait) {
+      bool releaseAllowed = false;
+      // This check is not guaranteed to prevent more than backgroundTaskMax
+      // tasks from releasing. We could race between the check and increment and
+      // thus have a few extra. However, for our purposes, this should be fine.
+      // The cap is primarly intended to prevent runaway explosions of tasks.
+      if (backgroundTaskCount < backgroundTaskMax) {
+        backgroundTaskCount++;
+        releaseAllowed = true;
+      }
+      if (releaseAllowed) {
+        // Launch the process wait on a detached thread
+        std::thread([this, processWait=std::move(processWait)]() mutable {
+          processWait();
+          backgroundTaskCount--;
+        }).detach();
+      } else {
+        // not allowed to release, call wait directly
         processWait();
-      }).detach();
+      }
     };
 
     ProcessCompletionFn laneCompletionFn{
