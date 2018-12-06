@@ -132,17 +132,6 @@ public struct Value: CustomStringConvertible {
     }
 }
 
-/// Enumeration describing the possible status of a Rule, used by \see
-/// Rule.updateStatus().
-public enum RuleStatus {
-    /// Indicates the rule is being scanned.
-    case IsScanning
-    /// Indicates the rule is up-to-date, and doesn't need to run.
-    case IsUpToDate
-    /// Indicates the rule was run, and is now complete.
-    case IsComplete
-}
-
 /// A rule represents an individual element of computation that can be performed
 /// by the build engine.
 ///
@@ -520,14 +509,6 @@ public class BuildEngine {
         }
         ruleOut.pointee.update_status =  { (context, engineContext, status) in
             let rule = BuildEngine.toRule(context!)
-            let status = { (kind: llb_rule_status_kind_t) -> RuleStatus in
-                switch kind.rawValue {
-                case llb_rule_is_scanning.rawValue: return .IsScanning
-                case llb_rule_is_up_to_date.rawValue: return .IsUpToDate
-                case llb_rule_is_complete.rawValue: return .IsComplete
-                default:
-                    fatalError("unknown status kind")
-                } }(status)
             return rule.updateStatus(status)
         }
     }
