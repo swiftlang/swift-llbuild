@@ -122,6 +122,46 @@ public struct Diagnostic {
     public let message: String
 }
 
+extension CommandStatusKind: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .isScanning:
+            return "isScanning"
+        case .isUpToDate:
+            return "isUpToDate"
+        case .isComplete:
+            return "isComplete"
+        }
+    }
+}
+
+extension BuildKeyKind: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .command:
+            return "command"
+        case .customTask:
+            return "customTask"
+        case .directoryContents:
+            return "directoryContents"
+        case .directoryTreeSignature:
+            return "directoryTreeSignature"
+        case .node:
+            return "node"
+        case .target:
+            return "target"
+        case .unknown:
+            return "unknown"
+        case .directoryTreeStructureSignature:
+            return "directoryTreeStructureSignature"
+        case .filteredDirectoryContents:
+            return "filteredDirectoryContents"
+        case .stat:
+            return "stat"
+        }
+    }
+}
+
 extension DiagnosticKind: CustomStringConvertible {
     public var description: String {
         switch self {
