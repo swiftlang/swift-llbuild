@@ -1527,6 +1527,12 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
   double maximumLoadAverage = 0.0;
   std::vector<std::string> debugTools;
 
+  if (basic::sys::raiseOpenFileLimit() != 0) {
+    fprintf(stderr, "%s: error: unable to raise open file limit\n\n",
+            getProgramName());
+    return -1;
+  }
+
   while (!args.empty() && args[0][0] == '-') {
     const std::string option = args[0];
     args.erase(args.begin());
