@@ -17,6 +17,7 @@
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
+#include "llvm/Support/ConvertUTF.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/Program.h"
 
@@ -24,12 +25,20 @@
 #include <thread>
 
 #include <fcntl.h>
+#if !defined(_WIN32)
 #include <poll.h>
+#endif
 #include <signal.h>
+#if defined(_WIN32)
+#include <process.h>
+#include <psapi.h>
+#include <windows.h>
+#else
 #include <spawn.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#endif
 
 #ifdef __APPLE__
 #include <pthread/spawn.h>
@@ -124,7 +133,11 @@ void ProcessGroup::signalAll(int signal) {
 
     // We are killing the whole process group here, this depends on us
     // spawning each process in its own group earlier.
+#if defined(_WIN32)
+    TerminateProcess(it.first, signal);
+#else
     ::kill(-it.first, signal);
+#endif
   }
 }
 
@@ -205,20 +218,35 @@ public:
 };
 
 // Helper function to collect subprocess output
-static void captureExecutedProcessOutput(
-    ProcessDelegate& delegate,
-    int outputPipe,
-    ProcessHandle handle,
-    ProcessContext* ctx
-) {
-  // Read all the data from the output pipe.
+static void captureExecutedProcessOutput(ProcessDelegate& delegate,
+                                         FD outputPipe, ProcessHandle handle,
+                                         ProcessContext* ctx) {
   while (true) {
     char buf[4096];
+#if defined(_WIN32)
+    DWORD numBytes;
+    if (!ReadFile(outputPipe, buf, sizeof(buf), &numBytes, nullptr)) {
+      int err = GetLastError();
+      wchar_t** errBuff;
+      int count = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM |
+                                     FORMAT_MESSAGE_ALLOCATE_BUFFER,
+                                 nullptr, err, 0, (LPWSTR)errBuff, 0, nullptr);
+      llvm::ArrayRef<wchar_t> wRef(*errBuff, *errBuff + count);
+      llvm::ArrayRef<char> uRef(reinterpret_cast<const char*>(wRef.begin()),
+                                reinterpret_cast<const char*>(wRef.end()));
+      std::string utf8Err;
+      llvm::convertUTF16ToUTF8String(ArrayRef<char>(uRef), utf8Err);
+      delegate.processHadError(ctx, handle,
+                               Twine("unable to read process output (") +
+                                   utf8Err + ")");
+      LocalFree(errBuff);
+#else
     ssize_t numBytes = ::read(outputPipe, buf, sizeof(buf));
     if (numBytes < 0) {
       int err = errno;
       delegate.processHadError(ctx, handle,
           Twine("unable to read process output (") + strerror(err) + ")");
+#endif
       break;
     }
 
@@ -228,23 +256,72 @@ static void captureExecutedProcessOutput(
     // Notify the client of the output.
     delegate.processHadOutput(ctx, handle, StringRef(buf, numBytes));
   }
-
   // We have receieved the zero byte read that indicates an EOF. Go ahead and
   // close the pipe.
-  ::close(outputPipe);
+  FileDescriptorTraits<>::Close(outputPipe);
 }
 
 // Helper function for cleaning up after a process has finished in
 // executeProcess
-static void cleanUpExecutedProcess(
-    ProcessDelegate& delegate,
-    ProcessGroup& pgrp,
-    llbuild_pid_t pid,
-    ProcessHandle handle,
-    ProcessContext* ctx,
-    ProcessCompletionFn&& completionFn,
-    int releaseFd
-) {
+static void cleanUpExecutedProcess(ProcessDelegate& delegate,
+                                   ProcessGroup& pgrp, llbuild_pid_t pid,
+                                   ProcessHandle handle, ProcessContext* ctx,
+                                   ProcessCompletionFn&& completionFn,
+                                   FD releaseFd) {
+#if defined(_WIN32)
+  FILETIME utimeTicks;
+  FILETIME stimeTicks;
+  int waitResult = WaitForSingleObject(pid, INFINITE);
+  int err = GetLastError();
+  DWORD exitCode;
+  GetExitCodeProcess(pid, &exitCode);
+
+  if (exitCode != 0 || waitResult == WAIT_FAILED ||
+      waitResult == WAIT_ABANDONED) {
+    auto result = ProcessResult::makeFailed(exitCode);
+    wchar_t** errBuff;
+    int count = FormatMessageW(
+        FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER, nullptr,
+        waitResult, 0, (LPWSTR)errBuff, 0, nullptr);
+    llvm::ArrayRef<wchar_t> wRef(*errBuff, *errBuff + count);
+    llvm::ArrayRef<char> uRef(reinterpret_cast<const char*>(wRef.begin()),
+                              reinterpret_cast<const char*>(wRef.end()));
+    std::string utf8Err;
+    llvm::convertUTF16ToUTF8String(ArrayRef<char>(uRef), utf8Err);
+    delegate.processHadError(
+        ctx, handle, Twine("unable to wait for process (") + utf8Err + ")");
+    delegate.processFinished(ctx, handle, result);
+    completionFn(result);
+    LocalFree(errBuff);
+    return;
+  }
+  PROCESS_MEMORY_COUNTERS counters;
+  GetProcessTimes(pid, nullptr, nullptr, &stimeTicks, &utimeTicks);
+  // Each tick is 100ns
+  uint64_t utime =
+      ((uint64_t)utimeTicks.dwHighDateTime << 32 | utimeTicks.dwLowDateTime) /
+      10;
+  uint64_t stime =
+      ((uint64_t)stimeTicks.dwHighDateTime << 32 | stimeTicks.dwLowDateTime) /
+      10;
+  GetProcessMemoryInfo(pid, &counters, sizeof(counters));
+  FileDescriptorTraits<>::Close(releaseFd);
+
+  pgrp.remove(pid);
+
+  // We report additional info in the tracing interval
+  //   - user time, in µs
+  //   - sys time, in µs
+  //   - memory usage, in bytes
+
+  // FIXME: We should report a statistic for how much output we read from the
+  // subprocess (probably as a new point sample).
+
+  // Notify of the process completion.
+  ProcessStatus processStatus = ProcessStatus::Succeeded;
+  ProcessResult processResult(processStatus, exitCode, pid, utime, stime,
+                              counters.PeakWorkingSetSize);
+#else
   // Wait for the command to complete.
   struct rusage usage;
   int exitCode, result = wait4(pid, &exitCode, 0, &usage);
@@ -257,7 +334,7 @@ static void cleanUpExecutedProcess(
   // it simplifies client implentation. If we close it early, clients need to be
   // aware of and potentially handle a SIGPIPE.
   if (releaseFd >= 0) {
-    ::close(releaseFd);
+    FileDescriptorTraits<>::Close(releaseFd);
   }
 
   // Update the set of spawned processes.
@@ -289,10 +366,10 @@ static void cleanUpExecutedProcess(
   ProcessStatus processStatus = cancelled ? ProcessStatus::Cancelled : (exitCode == 0) ? ProcessStatus::Succeeded : ProcessStatus::Failed;
   ProcessResult processResult(processStatus, exitCode, pid, utime, stime,
                               usage.ru_maxrss);
+#endif
   delegate.processFinished(ctx, handle, processResult);
   completionFn(processResult);
 }
-
 
 void llbuild::basic::spawnProcess(
     ProcessDelegate& delegate,
@@ -305,7 +382,6 @@ void llbuild::basic::spawnProcess(
     ProcessReleaseFn&& releaseFn,
     ProcessCompletionFn&& completionFn
 ) {
-
   // Whether or not we are capturing output.
   const bool shouldCaptureOutput = true;
 
@@ -319,6 +395,26 @@ void llbuild::basic::spawnProcess(
     return;
   }
 
+  // Form the complete C string command line.
+  std::vector<std::string> argsStorage(commandLine.begin(), commandLine.end());
+  std::vector<const char*> args(argsStorage.size() + 1);
+  for (size_t i = 0; i != argsStorage.size(); ++i) {
+    args[i] = argsStorage[i].c_str();
+  }
+  args[argsStorage.size()] = nullptr;
+
+#if defined(_WIN32)
+  // TODO: Implement using CreateProcessW on Windows
+  /*
+  CreateProcessW(
+      args.data(),
+      args.data() + 1
+      ...
+      );
+      */
+  abort();
+}
+#else
   // Initialize the spawn attributes.
   posix_spawnattr_t attributes;
   posix_spawnattr_init(&attributes);
@@ -424,15 +520,6 @@ void llbuild::basic::spawnProcess(
     posix_spawn_file_actions_adddup2(&fileActions, 1, 1);
     posix_spawn_file_actions_adddup2(&fileActions, 2, 2);
   }
-
-  // Form the complete C string command line.
-  std::vector<std::string> argsStorage(
-      commandLine.begin(), commandLine.end());
-  std::vector<const char*> args(argsStorage.size() + 1);
-  for (size_t i = 0; i != argsStorage.size(); ++i) {
-    args[i] = argsStorage[i].c_str();
-  }
-  args[argsStorage.size()] = nullptr;
 
   // Export a task ID to subprocesses.
   auto taskID = Twine::utohexstr(handle.id);
@@ -627,4 +714,4 @@ void llbuild::basic::spawnProcess(
   cleanUpExecutedProcess(delegate, pgrp, pid, handle, ctx,
                          std::move(completionFn), controlPipe[0]);
 }
-
+#endif

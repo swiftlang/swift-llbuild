@@ -135,15 +135,11 @@ namespace llbuild {
       /// Max RSS (in bytes)
       uint64_t maxrss;
 
-      ProcessResult(ProcessStatus status,
-                    int exitCode = -1,
-                    llbuild_pid_t pid = -1,
-                    uint64_t utime = 0,
-                    uint64_t stime = 0,
-                    uint64_t maxrss = 0)
-        : status(status), exitCode(exitCode), pid(pid)
-        , utime(utime), stime(stime), maxrss(maxrss)
-      {}
+      ProcessResult(ProcessStatus status, int exitCode = -1,
+                    llbuild_pid_t pid = (llbuild_pid_t)-1, uint64_t utime = 0,
+                    uint64_t stime = 0, uint64_t maxrss = 0)
+          : status(status), exitCode(exitCode), pid(pid), utime(utime),
+            stime(stime), maxrss(maxrss) {}
 
       static ProcessResult makeFailed(int exitCode = -1) {
         return ProcessResult(ProcessStatus::Failed, exitCode);

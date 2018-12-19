@@ -25,17 +25,21 @@
 #include <stdint.h>
 
 #ifdef _MSC_VER
-typedef int llbuild_pid_t;
+// Ignore the conflicting min/max defined in windows.h
+#define NOMINMAX
+#include <windows.h>
+typedef HANDLE llbuild_pid_t;
+typedef HANDLE FD;
 #else
-
 #if defined(__linux__) || defined(__GNU__)
 #include <termios.h>
 #else
 #include <sys/types.h>
-#endif
-
+#endif // defined(__linux__) || defined(__GNU__)
+#include <unistd.h>
 typedef pid_t llbuild_pid_t;
-#endif
+typedef int FD;
+#endif // _MSC_VER
 
 /// @name File System Behaviors
 /// @{

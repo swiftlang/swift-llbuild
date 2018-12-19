@@ -33,7 +33,11 @@
 #include <thread>
 
 #include <signal.h>
+#if defined(_WIN32)
+#include <windows.h>
+#else
 #include <unistd.h>
+#endif
 
 using namespace llbuild;
 using namespace llbuild::commands;
@@ -380,6 +384,10 @@ static void parseUsage(int exitCode) {
 }
 
 static int executeParseCommand(std::vector<std::string> args) {
+#if defined(_WIN32)
+  // TODO: Not yet implemented
+  abort();
+#else
   bool showOutput = true;
   
   while (!args.empty() && args[0][0] == '-') {
@@ -414,6 +422,7 @@ static int executeParseCommand(std::vector<std::string> args) {
   BuildFile buildFile(filename, delegate);
   buildFile.load();
 
+#endif
   return 0;
 }
 
@@ -421,6 +430,9 @@ static int executeParseCommand(std::vector<std::string> args) {
 /* Build Command */
 
 class BasicBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
+#if defined(_WIN32)
+  // TODO: Not yet implemented
+#else
   std::unique_ptr<basic::FileSystem> fileSystem;
 
   /// The previous SIGINT handler.
@@ -523,10 +535,15 @@ public:
     auto message = BuildSystemInvocation::formatDetectedCycle(cycle);
     error(message);
   }
+#endif
 };
 
+#if defined(_WIN32)
+// TODO: Not yet implemented
+#else
 std::atomic<bool> BasicBuildSystemFrontendDelegate::wasInterrupted{false};
 int BasicBuildSystemFrontendDelegate::signalWatchingPipe[2]{-1, -1};
+#endif
 
 static void buildUsage(int exitCode) {
   int optionWidth = 25;
@@ -538,6 +555,10 @@ static void buildUsage(int exitCode) {
 }
 
 static int executeBuildCommand(std::vector<std::string> args) {
+#if defined(_WIN32)
+  // TODO: Not yet implemented
+  abort();
+#else
   // The source manager to use for diagnostics.
   llvm::SourceMgr sourceMgr;
 
@@ -580,6 +601,7 @@ static int executeBuildCommand(std::vector<std::string> args) {
     return 1;
   }
 
+#endif
   return 0;
 }
 

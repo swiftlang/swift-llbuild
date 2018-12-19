@@ -13,6 +13,7 @@
 #ifndef LLBUILD_BASIC_TRACING_H
 #define LLBUILD_BASIC_TRACING_H
 
+#include "llbuild/Basic/CrossPlatformCompatibility.h"
 #include "llvm/ADT/StringRef.h"
 
 // os_signpost is included in mac OS 10.14, if that header is not available, we don't trace at all.
@@ -67,7 +68,6 @@ if (__builtin_available(macOS 10.12, *)) os_log(getLog(), ##__VA_ARGS__); \
 #endif // __has_include(<os/signpost.h>)
 
 namespace llbuild {
-  
 extern bool TracingEnabled;
   
 struct TracingExecutionQueueJob {
@@ -89,9 +89,10 @@ inline void TracingExecutionQueueSubprocessStart(uint32_t laneNumber,
   LLBUILD_TRACE_INTERVAL_BEGIN("execution_queue_subprocess", "lane:%d;command:%s", laneNumber, commandName.str().c_str());
 }
 
-inline void TracingExecutionQueueSubprocessResult(uint32_t laneNumber, pid_t pid,
-                                           uint64_t utime, uint64_t stime,
-                                           long maxrss) {
+inline void TracingExecutionQueueSubprocessResult(uint32_t laneNumber,
+                                                  llbuild_pid_t pid,
+                                                  uint64_t utime,
+                                                  uint64_t stime, long maxrss) {
   if (!TracingEnabled) return;
   LLBUILD_TRACE_INTERVAL_END("execution_queue_subprocess", "lane:%d;pid:%d;utime:%llu;stime:%llu;maxrss:%ld", laneNumber, pid, utime, stime, maxrss);
 }
@@ -110,8 +111,8 @@ struct TracingExecutionQueueSubprocess {
     : laneNumber(t.laneNumber), pid(t.pid), utime(t.utime), stime(t.stime), maxrss(t.maxrss) {
     t.active = false;
   }
-  
-  void update(pid_t pid, uint64_t utime, uint64_t stime, long maxrss) {
+
+  void update(llbuild_pid_t pid, uint64_t utime, uint64_t stime, long maxrss) {
     this->pid = pid;
     this->utime = utime;
     this->stime = stime;
@@ -126,7 +127,7 @@ struct TracingExecutionQueueSubprocess {
 private:
   bool active = true;
   uint32_t laneNumber;
-  pid_t pid;
+  llbuild_pid_t pid;
   uint64_t utime;
   uint64_t stime;
   long maxrss;
