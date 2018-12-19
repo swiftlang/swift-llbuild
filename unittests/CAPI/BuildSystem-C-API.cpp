@@ -11,6 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llbuild/llbuild.h"
+#include "llbuild/Basic/PlatformUtility.h"
 #include "llbuild/buildsystem.h"
 #include <stdlib.h>
 #include <string.h>
@@ -59,6 +60,10 @@ depinfo_tester_command_execute_command(void *context,
                                        llb_buildsystem_command_interface_t* bsci,
                                        llb_task_t* task,
                                        llb_buildsystem_queue_job_context_t* job) {
+#if defined(_WIN32)
+  // TODO: Not yet implemented
+  abort();
+#else
   // The tester tool is given a direct input file whose only contents are the
   // path of another, indirect input file.  It is also given the paths to which
   // it should emit the output file and an ld-style dependency-info file.  It
@@ -119,6 +124,7 @@ depinfo_tester_command_execute_command(void *context,
 
   // Clean up.
   free(desc);
+#endif
   return true;
 }
 
@@ -255,6 +261,10 @@ static void command_process_finished(void* context,
 }
 
 TEST(BuildSystemCAPI, CustomToolWithDiscoveredDependencies) {
+#if defined(_WIN32)
+  // TODO: Not yet implemented
+  abort();
+#else
   char tmpDirPathBuf[] = "/tmp/fileXXXXXX";
   std::string tmpDirPath = std::string(mkdtemp(tmpDirPathBuf));  
 
@@ -340,8 +350,8 @@ TEST(BuildSystemCAPI, CustomToolWithDiscoveredDependencies) {
   // Wait for at least a second because some filesystem only have file mod
   // times on the granularity of a second.
   // FIXME: might be better to just fake the timestamp on the file
-  sleep(1);
-  
+  llbuild::basic::sys::sleep(1);
+
   // Change the contents of the indirect (not the direct) file.
   writeFileContents(indirectInputFilePath, "2");
   
@@ -357,6 +367,7 @@ TEST(BuildSystemCAPI, CustomToolWithDiscoveredDependencies) {
   
   // Destroy the build system.
   llb_buildsystem_destroy(system);
+#endif
 }
 
 }

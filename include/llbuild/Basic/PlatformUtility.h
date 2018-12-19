@@ -18,8 +18,13 @@
 #ifndef LLBUILD_BASIC_PLATFORMUTILITY_H
 #define LLBUILD_BASIC_PLATFORMUTILITY_H
 
+#include "llbuild/Basic/CrossPlatformCompatibility.h"
+#include <cstdint>
 #include <cstdio>
+#include <string>
+#if !defined(_WIN32)
 #include <sys/resource.h>
+#endif
 
 namespace llbuild {
 namespace basic {
@@ -41,8 +46,17 @@ int write(int fileHandle, void *destinationBuffer, unsigned int maxCharCount);
 /// where soft_limit and hard_limit are gathered from the system.
 ///
 /// Returns: 0 on success, -1 on failure (check errno).
-int raiseOpenFileLimit(rlim_t limit = 2048);
+int raiseOpenFileLimit(llbuild_rlim_t limit = 2048);
 
+enum MATCH_RESULT { MATCH, NO_MATCH, MATCH_ERROR };
+// Test if a path or filename matches a wildcard pattern
+//
+// Returns MATCH if a match is detected, NO_MATCH if there is no match, and
+// MATCH_ERROR on error. Windows callers may use GetLastError to get additional
+// error information.
+MATCH_RESULT filenameMatch(const std::string& pattern, const std::string& filename);
+
+void sleep(int seconds);
 }
 }
 }

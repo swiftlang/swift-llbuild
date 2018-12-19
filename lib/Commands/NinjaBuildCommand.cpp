@@ -49,10 +49,14 @@
 
 #include <fcntl.h>
 #include <signal.h>
+#if defined(_WIN32)
+#include <process.h>
+#else
 #include <spawn.h>
 #include <unistd.h>
-#include <sys/stat.h>
 #include <sys/wait.h>
+#endif
+#include <sys/stat.h>
 
 using namespace llbuild;
 using namespace llbuild::basic;
@@ -413,7 +417,11 @@ public:
   std::unique_ptr<ExecutionQueue> jobQueue;
 
   /// The previous SIGINT handler.
+#if defined(_WIN32)
+  // TODO: Not yet implemented
+#else
   struct sigaction previousSigintHandler;
+#endif
 
   /// Low-level flag for when a SIGINT has been received.
   static std::atomic<bool> wasInterrupted;
@@ -485,6 +493,10 @@ public:
     : engine(delegate),
       isCancelled(false)
   {
+#if defined(_WIN32)
+    // TODO: Not yet implemented
+    abort();
+#else
     // Open the status output.
     std::string error;
     if (!statusOutput.open(&error)) {
@@ -508,9 +520,14 @@ public:
       perror("pipe");
     }
     new std::thread(&BuildContext::signalWaitThread, this);
+#endif
   }
 
   ~BuildContext() {
+#if defined(_WIN32)
+    // TODO: Not yet implemented
+    abort();
+#else
     // Ensure the output queue is done.
     outputQueue.sync([] {});
 
@@ -524,6 +541,7 @@ public:
     // Close the signal watching pipe.
     sys::close(BuildContext::signalWatchingPipe[1]);
     signalWatchingPipe[1] = -1;
+#endif
   }
 
   /// @name Diagnostics Output
@@ -1509,6 +1527,10 @@ void NinjaBuildEngineDelegate::error(const Twine& message) {
 }
 
 int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
+#if defined(_WIN32)
+  // TODO: Not yet implemented
+  abort();
+#else
   std::string chdirPath = "";
   std::string customTool = "";
   std::string dbFilename = "build.db";
@@ -2019,7 +2041,11 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       action.sa_handler = SIG_DFL;
       sigaction(SIGINT, &action, 0);
 
+#if defined(_WIN32)
+      raise(SIGINT);
+#else
       kill(getpid(), SIGINT);
+#endif
       std::this_thread::sleep_for(std::chrono::microseconds(1000));
       return 2;
     }
@@ -2047,6 +2073,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
         break;
   }
 
+#endif
   // Return an appropriate exit status.
   return 0;
 }

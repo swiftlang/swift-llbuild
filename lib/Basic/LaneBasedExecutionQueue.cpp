@@ -185,7 +185,11 @@ class LaneBasedExecutionQueue : public ExecutionQueue {
         queueCompleteCondition.wait_for(lock, std::chrono::seconds(10));
       }
 
+#if _WIN32
+      spawnedProcesses.signalAll(SIGTERM);
+#else
       spawnedProcesses.signalAll(SIGKILL);
+#endif
     }
   }
 

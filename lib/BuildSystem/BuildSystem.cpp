@@ -49,8 +49,12 @@
 #include <set>
 #include <sstream>
 
+#ifdef _WIN32
+#include <Shlwapi.h>
+#else
 #include <fnmatch.h>
 #include <unistd.h>
+#endif
 
 using namespace llbuild;
 using namespace llbuild::basic;
@@ -1009,7 +1013,9 @@ class FilteredDirectoryContentsTask : public Task {
       std::string filename = llvm::sys::path::filename(it->path());
       bool excluded = false;
       for (auto pattern : filterStrings) {
-        if (fnmatch(pattern.data(), filename.c_str(), 0) == 0) {
+        if (llbuild::basic::sys::filenameMatch(pattern.data(),
+                                               filename.c_str()) ==
+            llbuild::basic::sys::MATCH) {
           excluded = true;
           break;
         }

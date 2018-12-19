@@ -9,12 +9,16 @@
 
 #include "llbuild/Basic/PlatformUtility.h"
 #include "llbuild/Basic/Stat.h"
+#include "llvm/ADT/SmallVector.h"
+#include "llvm/Support/ConvertUTF.h"
 
 #if defined(_WIN32)
 #include "LeanWindows.h"
+#include <Shlwapi.h>
 #include <direct.h>
 #include <io.h>
 #else
+#include <fnmatch.h>
 #include <stdio.h>
 #include <unistd.h>
 #endif
@@ -136,7 +140,15 @@ int sys::write(int fileHandle, void *destinationBuffer,
 #endif
 }
 
-int sys::raiseOpenFileLimit(rlim_t limit) {
+int sys::raiseOpenFileLimit(llbuild_rlim_t limit) {
+#if defined(_WIN32)
+  int curLimit = _getmaxstdio();
+  if (curLimit >= limit) {
+    return 0;
+  }
+  // 2048 is the hard upper limit on Windows
+  return _setmaxstdio(std::min(limit, 2048));
+#else
   int ret = 0;
 
   struct rlimit rl;
@@ -152,4 +164,33 @@ int sys::raiseOpenFileLimit(rlim_t limit) {
   rl.rlim_cur = std::min(limit, rl.rlim_max);
 
   return setrlimit(RLIMIT_NOFILE, &rl);
+#endif
+}
+
+sys::MATCH_RESULT sys::filenameMatch(const std::string& pattern,
+                                     const std::string& filename) {
+#if defined(_WIN32)
+  llvm::SmallVector<UTF16, 20> wpattern;
+  llvm::SmallVector<UTF16, 20> wfilename;
+
+  llvm::convertUTF8ToUTF16String(pattern, wpattern);
+  llvm::convertUTF8ToUTF16String(filename, wfilename);
+
+  bool result =
+      PathMatchSpecW((LPCWSTR)wfilename.data(), (LPCWSTR)wpattern.data());
+  return result ? sys::MATCH : sys::NO_MATCH;
+#else
+  int result = fnmatch(pattern.c_str(), filename.c_str(), 0);
+  return result == 0 ? sys::MATCH
+                     : result == FNM_NOMATCH ? sys::NO_MATCH : sys::MATCH_ERROR;
+#endif
+}
+
+void sys::sleep(int seconds) {
+#if defined(_WIN32)
+  // Uses milliseconds
+  Sleep(seconds * 1000);
+#else
+  ::sleep(seconds);
+#endif
 }
