@@ -81,7 +81,7 @@ class PerfTestProcessDelegate : public ProcessDelegate {
         PerfTestProcessDelegate delegate;
         ProcessAttributes attr{true};
         ProcessGroup pgrp;
-        ProcessHandle handle;
+        ProcessHandle handle{0};
         std::vector<StringRef> cmd({"/usr/bin/true"});
         POSIXEnvironment environment;
 
