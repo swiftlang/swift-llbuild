@@ -1784,6 +1784,11 @@ BuildSystemImpl::lookupNode(StringRef name, bool isImplicit) {
 
 llvm::Optional<BuildValue> BuildSystemImpl::build(BuildKey key) {
 
+  if (basic::sys::raiseOpenFileLimit() != 0) {
+    error(getMainFilename(), "failed to raise open file limit");
+    return None;
+  }
+
   // Aquire lock and create execution queue.
   {
     std::lock_guard<std::mutex> guard(executionQueueMutex);

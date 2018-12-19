@@ -19,6 +19,7 @@
 #define LLBUILD_BASIC_PLATFORMUTILITY_H
 
 #include <cstdio>
+#include <sys/resource.h>
 
 namespace llbuild {
 namespace basic {
@@ -35,6 +36,13 @@ int rmdir(const char *path);
 int symlink(const char *source, const char *target);
 int unlink(const char *fileName);
 int write(int fileHandle, void *destinationBuffer, unsigned int maxCharCount);
+
+/// Sets the max open file limit to min(max(soft_limit, limit), hard_limit),
+/// where soft_limit and hard_limit are gathered from the system.
+///
+/// Returns: 0 on success, -1 on failure (check errno).
+int raiseOpenFileLimit(rlim_t limit = 2048);
+
 }
 }
 }

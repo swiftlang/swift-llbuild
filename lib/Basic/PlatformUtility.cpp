@@ -135,3 +135,21 @@ int sys::write(int fileHandle, void *destinationBuffer,
   return ::write(fileHandle, destinationBuffer, maxCharCount);
 #endif
 }
+
+int sys::raiseOpenFileLimit(rlim_t limit) {
+  int ret = 0;
+
+  struct rlimit rl;
+  ret = getrlimit(RLIMIT_NOFILE, &rl);
+  if (ret != 0) {
+    return ret;
+  }
+
+  if (rl.rlim_cur >= limit) {
+    return 0;
+  }
+
+  rl.rlim_cur = std::min(limit, rl.rlim_max);
+
+  return setrlimit(RLIMIT_NOFILE, &rl);
+}
