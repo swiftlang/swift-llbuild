@@ -243,6 +243,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		4035804021C3060F0091FE09 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1A2243519F9970D0059043E;
+			remoteInfo = llbuildNinja;
+		};
 		40B3C90220D3AEC9007C5847 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
@@ -2682,6 +2689,7 @@
 				E1A2252219F99ED60059043E /* PBXTargetDependency */,
 				E1A2251C19F99ED00059043E /* PBXTargetDependency */,
 				E1A2251E19F99ED10059043E /* PBXTargetDependency */,
+				4035804121C3060F0091FE09 /* PBXTargetDependency */,
 			);
 			name = NinjaTests;
 			productName = NinjaTests;
@@ -3344,6 +3352,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		4035804121C3060F0091FE09 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1A2243519F9970D0059043E /* llbuildNinja */;
+			targetProxy = 4035804021C3060F0091FE09 /* PBXContainerItemProxy */;
+		};
 		40B3C90120D3AEC9007C5847 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = E1A224DC19F99B0E0059043E /* gtest */;
