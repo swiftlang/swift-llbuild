@@ -32,33 +32,14 @@
 #endif // _WIN32
 
 #if defined(_WIN32)
-typedef HANDLE FD;
-#else
-typedef int FD;
-#endif
-
-#if defined(_WIN32)
 typedef HANDLE llbuild_pid_t;
+typedef HANDLE FD;
+typedef int llbuild_rlim_t;
+#define PATH_MAX MAX_PATH
 #else
 typedef pid_t llbuild_pid_t;
-#endif
-
-#if defined(_WIN32)
-typedef int llbuild_rlim_t;
-#else
+typedef int FD;
 typedef rlim_t llbuild_rlim_t;
-#endif
-
-template <typename = FD> struct FileDescriptorTraits;
-
-#if defined(_WIN32)
-template <> struct FileDescriptorTraits<HANDLE> {
-  static void Close(HANDLE hFile) { CloseHandle(hFile); }
-};
-#else
-template <> struct FileDescriptorTraits<int> {
-  static void Close(int fd) { close(fd); }
-};
 #endif
 
 #endif /* CrossPlatformCompatibility_h */

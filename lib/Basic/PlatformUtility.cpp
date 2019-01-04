@@ -140,6 +140,7 @@ int sys::write(int fileHandle, void *destinationBuffer,
 #endif
 }
 
+// Raise the open file limit, returns 0 on success, -1 on failure
 int sys::raiseOpenFileLimit(llbuild_rlim_t limit) {
 #if defined(_WIN32)
   int curLimit = _getmaxstdio();
@@ -147,7 +148,7 @@ int sys::raiseOpenFileLimit(llbuild_rlim_t limit) {
     return 0;
   }
   // 2048 is the hard upper limit on Windows
-  return _setmaxstdio(std::min(limit, 2048));
+  return _setmaxstdio(std::min(limit, 2048)) == -1 ? -1 : 0;
 #else
   int ret = 0;
 
@@ -192,5 +193,24 @@ void sys::sleep(int seconds) {
   Sleep(seconds * 1000);
 #else
   ::sleep(seconds);
+#endif
+}
+
+std::string sys::strerror(int error) {
+#if defined(_WIN32)
+  LPWSTR errBuff;
+  int count = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM |
+                                 FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                                 FORMAT_MESSAGE_IGNORE_INSERTS,
+                             nullptr, error, 0, (LPWSTR)&errBuff, 0, nullptr);
+  llvm::ArrayRef<wchar_t> wRef(errBuff, errBuff + count);
+  llvm::ArrayRef<char> uRef(reinterpret_cast<const char *>(wRef.begin()),
+                            reinterpret_cast<const char *>(wRef.end()));
+  std::string utf8Err;
+  llvm::convertUTF16ToUTF8String(llvm::ArrayRef<char>(uRef), utf8Err);
+  LocalFree(errBuff);
+  return utf8Err;
+#else
+  return ::strerror(error);
 #endif
 }
