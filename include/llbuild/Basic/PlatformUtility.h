@@ -41,6 +41,7 @@ int rmdir(const char *path);
 int symlink(const char *source, const char *target);
 int unlink(const char *fileName);
 int write(int fileHandle, void *destinationBuffer, unsigned int maxCharCount);
+std::string strerror(int error);
 
 /// Sets the max open file limit to min(max(soft_limit, limit), hard_limit),
 /// where soft_limit and hard_limit are gathered from the system.
@@ -57,6 +58,28 @@ enum MATCH_RESULT { MATCH, NO_MATCH, MATCH_ERROR };
 MATCH_RESULT filenameMatch(const std::string& pattern, const std::string& filename);
 
 void sleep(int seconds);
+template <typename = FD> struct FileDescriptorTraits;
+
+#if defined(_WIN32)
+template <> struct FileDescriptorTraits<HANDLE> {
+  static void Close(HANDLE hFile) { CloseHandle(hFile); }
+  static int Read(HANDLE hFile, void *destinationBuffer,
+                  unsigned int maxCharCount) {
+    DWORD numBytes;
+    if (!ReadFile(hFile, destinationBuffer, maxCharCount, &numBytes, nullptr)) {
+      return -1;
+    }
+    return numBytes;
+  }
+};
+#endif
+template <> struct FileDescriptorTraits<int> {
+  static void Close(int fd) { close(fd); }
+  static int Read(int hFile, void *destinationBuffer,
+                  unsigned int maxCharCount) {
+    return read(hFile, destinationBuffer, maxCharCount);
+  }
+};
 }
 }
 }

@@ -12,6 +12,7 @@
 
 #include "llbuild/Basic/Subprocess.h"
 
+#include "llbuild/Basic/CrossPlatformCompatibility.h"
 #include "llbuild/Basic/PlatformUtility.h"
 
 #include "llvm/ADT/ArrayRef.h"
@@ -78,6 +79,7 @@ int pthread_fchdir_np(int fd)
 #endif
 #endif
 
+#if !defined(_WIN32)
 static int posix_spawn_file_actions_addchdir(posix_spawn_file_actions_t * __restrict file_actions,
                                              const char * __restrict path) {
 #if HAVE_POSIX_SPAWN_CHDIR
@@ -88,6 +90,7 @@ static int posix_spawn_file_actions_addchdir(posix_spawn_file_actions_t * __rest
   return ENOSYS;
 #endif
 }
+#endif
 
 using namespace llbuild;
 using namespace llbuild::basic;
@@ -247,30 +250,13 @@ static void captureExecutedProcessOutput(ProcessDelegate& delegate,
                                          ProcessContext* ctx) {
   while (true) {
     char buf[4096];
-#if defined(_WIN32)
-    DWORD numBytes;
-    if (!ReadFile(outputPipe, buf, sizeof(buf), &numBytes, nullptr)) {
-      int err = GetLastError();
-      wchar_t** errBuff;
-      int count = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM |
-                                     FORMAT_MESSAGE_ALLOCATE_BUFFER,
-                                 nullptr, err, 0, (LPWSTR)errBuff, 0, nullptr);
-      llvm::ArrayRef<wchar_t> wRef(*errBuff, *errBuff + count);
-      llvm::ArrayRef<char> uRef(reinterpret_cast<const char*>(wRef.begin()),
-                                reinterpret_cast<const char*>(wRef.end()));
-      std::string utf8Err;
-      llvm::convertUTF16ToUTF8String(ArrayRef<char>(uRef), utf8Err);
-      delegate.processHadError(ctx, handle,
-                               Twine("unable to read process output (") +
-                                   utf8Err + ")");
-      LocalFree(errBuff);
-#else
-    ssize_t numBytes = ::read(outputPipe, buf, sizeof(buf));
+    ssize_t numBytes =
+        sys::FileDescriptorTraits<>::Read(outputPipe, buf, sizeof(buf));
     if (numBytes < 0) {
       int err = errno;
       delegate.processHadError(ctx, handle,
-          Twine("unable to read process output (") + strerror(err) + ")");
-#endif
+                               Twine("unable to read process output (") +
+                                   sys::strerror(err) + ")");
       break;
     }
 
@@ -282,7 +268,7 @@ static void captureExecutedProcessOutput(ProcessDelegate& delegate,
   }
   // We have receieved the zero byte read that indicates an EOF. Go ahead and
   // close the pipe.
-  FileDescriptorTraits<>::Close(outputPipe);
+  sys::FileDescriptorTraits<>::Close(outputPipe);
 }
 
 // Helper function for cleaning up after a process has finished in
@@ -293,6 +279,8 @@ static void cleanUpExecutedProcess(ProcessDelegate& delegate,
                                    ProcessCompletionFn&& completionFn,
                                    FD releaseFd) {
 #if defined(_WIN32)
+  FILETIME creationTime;
+  FILETIME exitTime;
   FILETIME utimeTicks;
   FILETIME stimeTicks;
   int waitResult = WaitForSingleObject(pid, INFINITE);
@@ -303,24 +291,24 @@ static void cleanUpExecutedProcess(ProcessDelegate& delegate,
   if (exitCode != 0 || waitResult == WAIT_FAILED ||
       waitResult == WAIT_ABANDONED) {
     auto result = ProcessResult::makeFailed(exitCode);
-    wchar_t** errBuff;
-    int count = FormatMessageW(
-        FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER, nullptr,
-        waitResult, 0, (LPWSTR)errBuff, 0, nullptr);
-    llvm::ArrayRef<wchar_t> wRef(*errBuff, *errBuff + count);
-    llvm::ArrayRef<char> uRef(reinterpret_cast<const char*>(wRef.begin()),
-                              reinterpret_cast<const char*>(wRef.end()));
-    std::string utf8Err;
-    llvm::convertUTF16ToUTF8String(ArrayRef<char>(uRef), utf8Err);
-    delegate.processHadError(
-        ctx, handle, Twine("unable to wait for process (") + utf8Err + ")");
+    delegate.processHadError(ctx, handle,
+                             Twine("unable to wait for process (") +
+                                 sys::strerror(GetLastError()) + ")");
     delegate.processFinished(ctx, handle, result);
     completionFn(result);
-    LocalFree(errBuff);
     return;
   }
   PROCESS_MEMORY_COUNTERS counters;
-  GetProcessTimes(pid, nullptr, nullptr, &stimeTicks, &utimeTicks);
+  bool res =
+      GetProcessTimes(pid, &creationTime, &exitTime, &stimeTicks, &utimeTicks);
+  if (!res) {
+    auto result = ProcessResult::makeCancelled();
+    delegate.processHadError(ctx, handle,
+                             Twine("unable to get statistics for process: ") +
+                                 sys::strerror(GetLastError()) + ")");
+    delegate.processFinished(ctx, handle, result);
+    return;
+  }
   // Each tick is 100ns
   uint64_t utime =
       ((uint64_t)utimeTicks.dwHighDateTime << 32 | utimeTicks.dwLowDateTime) /
@@ -329,7 +317,7 @@ static void cleanUpExecutedProcess(ProcessDelegate& delegate,
       ((uint64_t)stimeTicks.dwHighDateTime << 32 | stimeTicks.dwLowDateTime) /
       10;
   GetProcessMemoryInfo(pid, &counters, sizeof(counters));
-  FileDescriptorTraits<>::Close(releaseFd);
+  sys::FileDescriptorTraits<>::Close(releaseFd);
 
   pgrp.remove(pid);
 
@@ -345,7 +333,7 @@ static void cleanUpExecutedProcess(ProcessDelegate& delegate,
   ProcessStatus processStatus = ProcessStatus::Succeeded;
   ProcessResult processResult(processStatus, exitCode, pid, utime, stime,
                               counters.PeakWorkingSetSize);
-#else
+#else  // !defined(_WIN32)
   // Wait for the command to complete.
   struct rusage usage;
   int exitCode, result = wait4(pid, &exitCode, 0, &usage);
@@ -358,7 +346,7 @@ static void cleanUpExecutedProcess(ProcessDelegate& delegate,
   // it simplifies client implentation. If we close it early, clients need to be
   // aware of and potentially handle a SIGPIPE.
   if (releaseFd >= 0) {
-    FileDescriptorTraits<>::Close(releaseFd);
+    sys::FileDescriptorTraits<>::Close(releaseFd);
   }
 
   // Update the set of spawned processes.
@@ -390,7 +378,7 @@ static void cleanUpExecutedProcess(ProcessDelegate& delegate,
   ProcessStatus processStatus = cancelled ? ProcessStatus::Cancelled : (exitCode == 0) ? ProcessStatus::Succeeded : ProcessStatus::Failed;
   ProcessResult processResult(processStatus, exitCode, pid, utime, stime,
                               usage.ru_maxrss);
-#endif
+#endif // else !defined(_WIN32)
   delegate.processFinished(ctx, handle, processResult);
   completionFn(processResult);
 }
@@ -421,23 +409,39 @@ void llbuild::basic::spawnProcess(
 
   // Form the complete C string command line.
   std::vector<std::string> argsStorage(commandLine.begin(), commandLine.end());
+#if defined(_WIN32)
+  std::string args;
+  // TODO: WARNING fix Windows command line escaping. This doesn't work at all
+  // if the arguments contain spaces. This should instead use std::string
+  // flattenWindowsCommandLine(ArrayRef<StringRef> Args) from llvm once that
+  // gets pulled in.
+  std::for_each(std::begin(argsStorage) + 1, std::end(argsStorage),
+                [&args](auto arg) { args += arg + " "; });
+  args.pop_back();
+  // Convert the command line string to utf16
+  llvm::SmallVector<UTF16, 20> u16Executable;
+  llvm::SmallVector<UTF16, 20> u16CmdLine;
+  llvm::convertUTF8ToUTF16String(argsStorage[0], u16Executable);
+  llvm::convertUTF8ToUTF16String(args, u16CmdLine);
+#else
   std::vector<const char*> args(argsStorage.size() + 1);
   for (size_t i = 0; i != argsStorage.size(); ++i) {
     args[i] = argsStorage[i].c_str();
   }
   args[argsStorage.size()] = nullptr;
+#endif
 
 #if defined(_WIN32)
-  // TODO: Implement using CreateProcessW on Windows
-  /*
-  CreateProcessW(
-      args.data(),
-      args.data() + 1
-      ...
-      );
-      */
-  abort();
-}
+  DWORD creationFlags = NORMAL_PRIORITY_CLASS | CREATE_NEW_PROCESS_GROUP;
+  PROCESS_INFORMATION processInfo = {0};
+  STARTUPINFOW startupInfo = {0};
+
+  startupInfo.dwFlags = STARTF_USESTDHANDLES;
+  // Set NUL as stdin
+  HANDLE nul =
+      CreateFileA("NUL", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+                  OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+  startupInfo.hStdInput = nul;
 #else
   // Initialize the spawn attributes.
   posix_spawnattr_t attributes;
@@ -466,7 +470,7 @@ void llbuild::basic::spawnProcess(
   sigdelset(&mostSignals, SIGKILL);
   sigdelset(&mostSignals, SIGSTOP);
   posix_spawnattr_setsigdefault(&attributes, &mostSignals);
-#endif
+#endif // else !defined(_WIN32)
 
   // Establish a separate process group.
   posix_spawnattr_setpgroup(&attributes, 0);
@@ -506,8 +510,39 @@ void llbuild::basic::spawnProcess(
   // Open /dev/null as stdin.
   posix_spawn_file_actions_addopen(
       &fileActions, 0, "/dev/null", O_RDONLY, 0);
+#endif
 
+#if defined(_WIN32)
+  llvm::SmallVector<UTF16, 20> u16Cwd;
+  std::string workingDir = attr.workingDir.str();
+  if (!workingDir.empty()) {
+    llvm::convertUTF8ToUTF16String(workingDir, u16Cwd);
+  }
 
+  HANDLE controlPipe[2]{NULL, NULL};
+  HANDLE* controlReadPipe = controlPipe;
+  HANDLE* controlWritePipe = controlPipe + 1;
+  if (attr.controlEnabled) {
+    SECURITY_ATTRIBUTES secAttrs{sizeof(SECURITY_ATTRIBUTES), NULL, TRUE};
+    CreatePipe(controlReadPipe, controlWritePipe, &secAttrs, 0);
+    SetHandleInformation(controlReadPipe, HANDLE_FLAG_INHERIT, TRUE);
+    SetHandleInformation(controlWritePipe, HANDLE_FLAG_INHERIT, FALSE);
+  }
+
+  HANDLE outputPipe[2]{NULL, NULL};
+  if (shouldCaptureOutput) {
+    SECURITY_ATTRIBUTES secAttrs{sizeof(SECURITY_ATTRIBUTES), NULL, TRUE};
+    CreatePipe(outputPipe, outputPipe + 1, &secAttrs, 0);
+    SetHandleInformation(outputPipe[0], HANDLE_FLAG_INHERIT, FALSE);
+
+    startupInfo.hStdOutput = outputPipe[1];
+    startupInfo.hStdError = outputPipe[1];
+  } else {
+    // Otherwise, propagate the current stdout/stderr.
+    startupInfo.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+    startupInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+  }
+#else
   // Create a pipe for the process to (potentially) release the lane while
   // still running.
   int controlPipe[2]{ -1, -1 };
@@ -519,11 +554,11 @@ void llbuild::basic::spawnProcess(
       completionFn(ProcessStatus::Failed);
       return;
     }
-  #ifdef __APPLE__
+#ifdef __APPLE__
     posix_spawn_file_actions_addinherit_np(&fileActions, controlPipe[1]);
-  #else
+#else
     posix_spawn_file_actions_adddup2(&fileActions, controlPipe[1], controlPipe[1]);
-  #endif
+#endif
     posix_spawn_file_actions_addclose(&fileActions, controlPipe[0]);
   }
 
@@ -551,27 +586,33 @@ void llbuild::basic::spawnProcess(
     posix_spawn_file_actions_adddup2(&fileActions, 1, 1);
     posix_spawn_file_actions_adddup2(&fileActions, 2, 2);
   }
+#endif
 
   // Export a task ID to subprocesses.
   auto taskID = Twine::utohexstr(handle.id);
   environment.setIfMissing("LLBUILD_TASK_ID", taskID.str());
   if (attr.controlEnabled) {
-    environment.setIfMissing("LLBUILD_CONTROL_FD", Twine(controlPipe[1]).str());
+    environment.setIfMissing("LLBUILD_CONTROL_FD",
+                             Twine((int)controlPipe[1]).str());
   }
 
   // Resolve the executable path, if necessary.
   //
   // FIXME: This should be cached.
-  if (!llvm::sys::path::is_absolute(args[0])) {
-    auto res = llvm::sys::findProgramByName(args[0]);
+  if (!llvm::sys::path::is_absolute(argsStorage[0])) {
+    auto res = llvm::sys::findProgramByName(argsStorage[0]);
     if (!res.getError()) {
       argsStorage[0] = *res;
+#if defined(_WIN32)
+      llvm::convertUTF8ToUTF16String(argsStorage[0], u16Executable);
+#else
       args[0] = argsStorage[0].c_str();
+#endif
     }
   }
 
   // Spawn the command.
-  llbuild_pid_t pid = -1;
+  llbuild_pid_t pid = (llbuild_pid_t)-1;
   bool wasCancelled;
   {
     // We need to hold the spawn processes lock when we spawn, to ensure that
@@ -584,6 +625,8 @@ void llbuild::basic::spawnProcess(
       int result = 0;
 
       bool workingDirectoryUnsupported = false;
+
+#if !defined(_WIN32)
       if (usePosixSpawnChdirFallback) {
 #ifdef __APPLE__
         thread_local std::string threadWorkingDir;
@@ -601,64 +644,91 @@ void llbuild::basic::spawnProcess(
               threadWorkingDir = workingDir;
             }
           }
-        } 
+        }
 #else
         if (!workingDir.empty()) {
           workingDirectoryUnsupported = true;
           result = -1;
         }
-#endif
+#endif // ifdef __APPLE__
       }
+#endif // else !defined(_WIN32)
 
       if (result == 0) {
-        result = posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
-                             /*attrp=*/&attributes, const_cast<char**>(args.data()),
-                             const_cast<char* const*>(environment.getEnvp()));
+#if defined(_WIN32)
+        result = !CreateProcessW(
+            /*lpApplicationName=*/(LPWSTR)u16Executable.data(),
+            (LPWSTR)u16CmdLine.data(),
+            /*lpProcessAttributes=*/NULL,
+            /*lpThreadAttributes=*/NULL,
+            /*bInheritHandles=*/TRUE, creationFlags,
+            /*lpEnvironment=*/NULL,
+            /*lpCurrentDirectory=*/u16Cwd.empty() ? NULL
+                                                  : (LPWSTR)u16Cwd.data(),
+            &startupInfo, &processInfo);
+#else
+        result =
+            posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
+                        /*attrp=*/&attributes, const_cast<char**>(args.data()),
+                        const_cast<char* const*>(environment.getEnvp()));
+#endif
       }
 
       if (result != 0) {
         auto processResult = ProcessResult::makeFailed();
-        delegate.processHadError(ctx, handle,
+#if defined(_WIN32)
+        result = GetLastError();
+#endif
+        delegate.processHadError(
+            ctx, handle,
             workingDirectoryUnsupported
-              ? Twine("working-directory unsupported on this platform")
-              : Twine("unable to spawn process (") + strerror(result) + ")");
+                ? Twine("working-directory unsupported on this platform")
+                : Twine("unable to spawn process (") + sys::strerror(result) +
+                      ")");
         delegate.processFinished(ctx, handle, processResult);
-        pid = -1;
+        pid = (llbuild_pid_t)-1;
       } else {
+#if defined(_WIN32)
+        pid = processInfo.hProcess;
+#endif
         ProcessInfo info{ attr.canSafelyInterrupt };
         pgrp.add(std::move(guard), pid, info);
       }
     }
   }
 
+#if !defined(_WIN32)
   posix_spawn_file_actions_destroy(&fileActions);
   posix_spawnattr_destroy(&attributes);
-
+#endif
   // Close the write end of the release pipe
   if (attr.controlEnabled) {
-    ::close(controlPipe[1]);
+    sys::FileDescriptorTraits<>::Close(controlPipe[1]);
   }
 
   // If we failed to launch a process, clean up and abort.
-  if (pid == -1) {
+  if (pid == (llbuild_pid_t)-1) {
     if (attr.controlEnabled) {
-      ::close(controlPipe[0]);
+      sys::FileDescriptorTraits<>::Close(controlPipe[0]);
     }
 
     if (shouldCaptureOutput) {
-      ::close(outputPipe[1]);
-      ::close(outputPipe[0]);
+      sys::FileDescriptorTraits<>::Close(outputPipe[1]);
+      sys::FileDescriptorTraits<>::Close(outputPipe[0]);
     }
     auto result = wasCancelled ? ProcessResult::makeCancelled() : ProcessResult::makeFailed();
     completionFn(result);
     return;
   }
 
+#if !defined(_WIN32)
   // Set up our select() structures
   pollfd readfds[] = {
     { controlPipe[0], 0, 0 },
     { outputPipe[0], 0, 0 }
   };
+  int activeEvents = 0;
+#endif
   const int nfds = 2;
   ControlProtocolState control(taskID.str());
   std::function<bool (StringRef)> readCbs[] = {
@@ -679,23 +749,90 @@ void llbuild::basic::spawnProcess(
       return true;
     }
   };
+#if defined(_WIN32)
+  struct threadData {
+    std::function<void(void*)> reader;
+    HANDLE handle;
+    std::function<bool(StringRef)> cb;
+  };
+  HANDLE readers[2] = {NULL, NULL};
+  auto reader = [&](void* lpArgs) {
+    threadData* args = (threadData*)lpArgs;
+    for (;;) {
+      char buf[4096];
+      DWORD numBytes;
+      bool result = ReadFile(args->handle, buf, sizeof(buf), &numBytes, NULL);
 
-  int activeEvents = 0;
+      if (!result || numBytes == 0) {
+        if (GetLastError() == ERROR_BROKEN_PIPE) {
+          // Pipe done, exit
+          return;
+        } else {
+          delegate.processHadError(ctx, handle,
+                                   Twine("unable to read process output (") +
+                                       sys::strerror(GetLastError()) + ")");
+        }
+      }
+
+      if (numBytes <= 0 || !args->cb(StringRef(buf, numBytes))) {
+        continue;
+      }
+
+      if (control.shouldRelease()) {
+        releaseFn([&delegate, &pgrp, pid, handle, ctx, shouldCaptureOutput,
+                   outputFd = outputPipe[0], controlFd = controlPipe[0],
+                   completionFn = std::move(completionFn)]() mutable {
+          if (shouldCaptureOutput)
+            captureExecutedProcessOutput(delegate, outputFd, handle, ctx);
+
+          cleanUpExecutedProcess(delegate, pgrp, pid, handle, ctx,
+                                 std::move(completionFn), controlFd);
+        });
+        return;
+      }
+    }
+  };
+  struct threadData controlThreadParams = {reader, controlPipe[0], readCbs[0]};
+  struct threadData outputThreadParams = {reader, outputPipe[0], readCbs[1]};
+  HANDLE threads[2] = {NULL, NULL};
+#endif // defined(_WIN32)
 
   if (attr.controlEnabled) {
+#if defined(_WIN32)
+    threads[0] = (HANDLE)_beginthread(
+        [](LPVOID lpParams) { ((threadData*)lpParams)->reader(lpParams); }, 0,
+        &controlThreadParams);
+#else
     readfds[0].events = POLLIN;
     activeEvents |= POLLIN;
+#endif
   }
 
   // Read the command output, if capturing.
   if (shouldCaptureOutput) {
+#if defined(_WIN32)
+    threads[1] = (HANDLE)_beginthread(
+        [](LPVOID lpParams) { ((threadData*)lpParams)->reader(lpParams); }, 0,
+        &outputThreadParams);
+#else
     readfds[1].events = POLLIN;
     activeEvents |= POLLIN;
+#endif
 
     // Close the write end of the output pipe.
-    ::close(outputPipe[1]);
+    sys::FileDescriptorTraits<>::Close(outputPipe[1]);
   }
 
+#if defined(_WIN32)
+  DWORD waitResult = WaitForMultipleObjects(2, threads,
+                                            /*bWaitAll=*/false,
+                                            /*dwMilliseconds=*/INFINITE);
+  if (WAIT_FAILED == waitResult || WAIT_TIMEOUT == waitResult) {
+    int err = GetLastError();
+    delegate.processHadError(
+        ctx, handle, Twine("failed to poll (") + sys::strerror(err) + ")");
+  }
+#else  // !defined(_WIN32)
   while (activeEvents) {
     char buf[4096];
     activeEvents = 0;
@@ -740,15 +877,13 @@ void llbuild::basic::spawnProcess(
       return;
     }
   }
-
+#endif // else !defined(_WIN32)
   if (shouldCaptureOutput) {
     // If we have reached here, both the control and read pipes have given us
     // the requisite EOF/hang-up events. Safe to close the read end of the
     // output pipe.
-    ::close(outputPipe[0]);
+    sys::FileDescriptorTraits<>::Close(outputPipe[0]);
   }
-
   cleanUpExecutedProcess(delegate, pgrp, pid, handle, ctx,
                          std::move(completionFn), controlPipe[0]);
 }
-#endif

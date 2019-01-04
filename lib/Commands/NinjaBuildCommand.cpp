@@ -1127,8 +1127,13 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       }
 
       StringRef args[] = {
+#if defined(_WIN32)
+        "C:\\windows\\system32\\cmd.exe",
+        "/C",
+#else
         "/bin/sh",
         "-c",
+#endif
         command->getCommandString().c_str()
       };
 

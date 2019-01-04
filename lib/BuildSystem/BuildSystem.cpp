@@ -14,6 +14,7 @@
 #include "llbuild/BuildSystem/BuildSystemCommandInterface.h"
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
 
+#include "llbuild/Basic/CrossPlatformCompatibility.h"
 #include "llbuild/Basic/ExecutionQueue.h"
 #include "llbuild/Basic/FileInfo.h"
 #include "llbuild/Basic/FileSystem.h"
@@ -21,15 +22,15 @@
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/Basic/PlatformUtility.h"
 #include "llbuild/Basic/ShellUtility.h"
-#include "llbuild/Core/BuildDB.h"
-#include "llbuild/Core/BuildEngine.h"
-#include "llbuild/Core/DependencyInfoParser.h"
-#include "llbuild/Core/MakefileDepsParser.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildKey.h"
 #include "llbuild/BuildSystem/BuildNode.h"
 #include "llbuild/BuildSystem/BuildValue.h"
 #include "llbuild/BuildSystem/ExternalCommand.h"
+#include "llbuild/Core/BuildDB.h"
+#include "llbuild/Core/BuildEngine.h"
+#include "llbuild/Core/DependencyInfoParser.h"
+#include "llbuild/Core/MakefileDepsParser.h"
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/Hashing.h"
@@ -2172,8 +2173,14 @@ public:
       // When provided as a scalar string, we default to executing using the
       // shell.
       args.clear();
+#if defined(_WIN32)
+      args.push_back(ctx.getDelegate().getInternedString(
+          "C:\\windows\\system32\\cmd.exe"));
+      args.push_back(ctx.getDelegate().getInternedString("/C"));
+#else
       args.push_back(ctx.getDelegate().getInternedString("/bin/sh"));
       args.push_back(ctx.getDelegate().getInternedString("-c"));
+#endif
       args.push_back(ctx.getDelegate().getInternedString(value));
     } else if (name == "signature") {
       signatureData = value;
