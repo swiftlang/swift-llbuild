@@ -52,6 +52,7 @@
 #ifdef _WIN32
 #include <Shlwapi.h>
 #else
+#include <limits.h>
 #include <fnmatch.h>
 #include <unistd.h>
 #endif
@@ -2074,7 +2075,21 @@ class ShellCommand : public ExternalCommand {
       virtual void actOnRuleDependency(const char* dependency,
                                        uint64_t length,
                                        const StringRef unescapedWord) override {
-        bsci.taskDiscoveredDependency(task, BuildKey::makeNode(unescapedWord));
+        if (llvm::sys::path::is_absolute(unescapedWord)) {
+          bsci.taskDiscoveredDependency(task, BuildKey::makeNode(unescapedWord));
+          return;
+        }
+
+        // Generate absolute path
+        //
+        // NOTE: This is making the assumption that relative paths coming in a
+        // dependency file are in relation to the explictly set working
+        // directory, or the current working directory when it has not been set.
+        SmallString<PATH_MAX> absPath = StringRef(command->workingDirectory);
+        llvm::sys::path::append(absPath, unescapedWord);
+        llvm::sys::fs::make_absolute(absPath);
+
+        bsci.taskDiscoveredDependency(task, BuildKey::makeNode(absPath));
       }
 
       virtual void actOnRuleStart(const char* name, uint64_t length,
@@ -2191,7 +2206,12 @@ public:
       inheritEnv = value == "true";
     } else if (name == "working-directory") {
 #if __APPLE__
-      workingDirectory = value;
+      // Ensure the working directory is absolute. This will make sure any
+      // relative directories are interpreted as relative to the CWD at the time
+      // the rule is defined.
+      SmallString<PATH_MAX> wd = value;
+      llvm::sys::fs::make_absolute(wd);
+      workingDirectory = StringRef(wd);
 #else
       ctx.error("working-directory unsupported on this platform");
       return false;
