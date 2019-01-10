@@ -10,7 +10,7 @@ for c in pip docker; do
 done
 
 # Ensure the docker dependencies are installed
-pip install -r utils/docker/requirements.txt
+pip install --user -r utils/docker/requirements.txt
 
 # Check all targets
 for TARGET in ${TARGETS}; do
