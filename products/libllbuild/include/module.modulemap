@@ -1,9 +1,3 @@
 module "llbuild" {
   umbrella header "llbuild/llbuild.h"
-
-  // Hack: This allows the clients to autolink these system libraries when
-  // building using SwiftPM. We should declare this in the Package.swift
-  // manifest file once SwiftPM exposes an API for it.
-  link "sqlite3"
-  link "ncurses"
 }
