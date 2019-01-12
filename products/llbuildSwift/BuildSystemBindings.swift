@@ -131,6 +131,8 @@ extension CommandStatusKind: CustomStringConvertible {
             return "isUpToDate"
         case .isComplete:
             return "isComplete"
+        @unknown default:
+            return "unknown"
         }
     }
 }
@@ -158,6 +160,8 @@ extension BuildKeyKind: CustomStringConvertible {
             return "filteredDirectoryContents"
         case .stat:
             return "stat"
+        @unknown default:
+            return "unknown-\(rawValue)"
         }
     }
 }
@@ -171,6 +175,8 @@ extension DiagnosticKind: CustomStringConvertible {
             return "warning"
         case .error:
             return "error"
+        @unknown default:
+            return "unknown"
         }
     }
 }
