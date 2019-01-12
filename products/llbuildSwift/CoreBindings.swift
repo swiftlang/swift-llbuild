@@ -53,13 +53,8 @@ public struct Key: CustomStringConvertible, Equatable, Hashable {
 
     // MARK: Hashable Conformance
 
-    public var hashValue: Int {
-        // FIXME: Use a real hash function.
-        var result = data.count
-        for c in data {
-            result = result*31 + Int(c)
-        }
-        return result
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(data)
     }
 
     // MARK: Implementation
