@@ -295,6 +295,7 @@ public:
     POSIXEnvironment posixEnv;
 
     // Export lane ID to subprocesses.
+    posixEnv.setIfMissing("LLBUILD_BUILD_ID", Twine(buildID).str());
     posixEnv.setIfMissing("LLBUILD_LANE_ID", Twine(context.laneNumber).str());
 
     // Add the requested environment.
