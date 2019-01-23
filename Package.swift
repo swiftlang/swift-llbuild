@@ -1,7 +1,13 @@
-// swift-tools-version:5.0
+// swift-tools-version:4.0
 
 // This file defines Swift package manager support for llbuild. See:
 //  https://github.com/apple/swift-package-manager/tree/master/Documentation
+//
+// You can build using:
+//
+// ```shell
+// swift build -Xlinker -lsqlite3 -Xlinker -lncurses $(utils/generate-version-h.sh)
+// ```
 
 import PackageDescription
 
@@ -55,8 +61,7 @@ let package = Package(
         .target(
             name: "llbuildCore",
             dependencies: ["llbuildBasic"],
-            path: "lib/Core",
-            linkerSettings: [.linkedLibrary("sqlite3")]
+            path: "lib/Core"
         ),
         .target(
             name: "llbuildBuildSystem",
@@ -112,8 +117,7 @@ let package = Package(
 
         .target(
             name: "llvmSupport",
-            path: "lib/llvm/Support",
-            linkerSettings: [.linkedLibrary("ncurses")]
+            path: "lib/llvm/Support"
         ),
     ],
     cxxLanguageStandard: .cxx14
