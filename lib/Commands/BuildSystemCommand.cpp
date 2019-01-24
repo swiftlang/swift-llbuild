@@ -21,8 +21,8 @@
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
 #include "llbuild/BuildSystem/BuildValue.h"
 
-#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringMap.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/raw_ostream.h"
@@ -53,7 +53,7 @@ class ParseBuildFileDelegate : public BuildFileDelegate {
   StringRef bufferBeingParsed;
   std::unique_ptr<basic::FileSystem> fileSystem;
   llvm::StringMap<bool> internedStrings;
-  
+
 public:
   ParseBuildFileDelegate(bool showOutput)
       : showOutput(showOutput),
@@ -66,11 +66,11 @@ public:
     auto entry = internedStrings.insert(std::make_pair(value, true));
     return entry.first->getKey();
   }
-  
+
   virtual basic::FileSystem& getFileSystem() override { return *fileSystem; }
-  
+
   virtual void setFileContentsBeingParsed(StringRef buffer) override;
-  
+
   virtual void error(StringRef filename,
                      const BuildFileToken& at,
                      const Twine& message) override;
@@ -85,7 +85,7 @@ public:
                             const Target& target) override;
 
   virtual void loadedDefaultTarget(StringRef target) override;
-  
+
   virtual std::unique_ptr<Node> lookupNode(StringRef name,
                                            bool isImplicit) override;
 
@@ -95,11 +95,11 @@ public:
 
 class ParseDummyNode : public Node {
   ParseBuildFileDelegate& delegate;
-  
+
 public:
   ParseDummyNode(ParseBuildFileDelegate& delegate, StringRef name)
       : Node(name), delegate(delegate) {}
-  
+
   virtual bool configureAttribute(const ConfigureContext&, StringRef name,
                                   StringRef value) override {
     if (delegate.shouldShowOutput()) {
@@ -137,7 +137,7 @@ public:
 
 class ParseDummyCommand : public Command {
   ParseBuildFileDelegate& delegate;
-  
+
 public:
   ParseDummyCommand(ParseBuildFileDelegate& delegate, StringRef name)
       : Command(name), delegate(delegate) {}
@@ -156,7 +156,7 @@ public:
       printf("  -- 'description': '%s'", description.str().c_str());
     }
   }
-  
+
   virtual void configureInputs(const ConfigureContext&,
                                const std::vector<Node*>& inputs) override {
     if (delegate.shouldShowOutput()) {
@@ -238,11 +238,11 @@ public:
 
 class ParseDummyTool : public Tool {
   ParseBuildFileDelegate& delegate;
-  
+
 public:
   ParseDummyTool(ParseBuildFileDelegate& delegate, StringRef name)
       : Tool(name), delegate(delegate) {}
-  
+
   virtual bool configureAttribute(const ConfigureContext&, StringRef name,
                                   StringRef value) override {
     if (delegate.shouldShowOutput()) {
@@ -345,7 +345,7 @@ void ParseBuildFileDelegate::loadedTarget(StringRef name,
     printf("]\n");
   }
 }
-  
+
 void ParseBuildFileDelegate::loadedDefaultTarget(StringRef target) {
   if (showOutput) {
     printf("default_target('%s')\n", target.str().c_str());
@@ -384,12 +384,8 @@ static void parseUsage(int exitCode) {
 }
 
 static int executeParseCommand(std::vector<std::string> args) {
-#if defined(_WIN32)
-  // TODO: Not yet implemented
-  abort();
-#else
   bool showOutput = true;
-  
+
   while (!args.empty() && args[0][0] == '-') {
     const std::string option = args[0];
     args.erase(args.begin());
@@ -422,7 +418,6 @@ static int executeParseCommand(std::vector<std::string> args) {
   BuildFile buildFile(filename, delegate);
   buildFile.load();
 
-#endif
   return 0;
 }
 
@@ -430,13 +425,14 @@ static int executeParseCommand(std::vector<std::string> args) {
 /* Build Command */
 
 class BasicBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
-#if defined(_WIN32)
-  // TODO: Not yet implemented
-#else
   std::unique_ptr<basic::FileSystem> fileSystem;
 
-  /// The previous SIGINT handler.
+/// The previous SIGINT handler.
+#if defined(_WIN32)
+  void (*previousSigintHandler)(int);
+#else
   struct sigaction previousSigintHandler;
+#endif
 
   /// Low-level flag for when a SIGINT has been received.
   static std::atomic<bool> wasInterrupted;
@@ -486,7 +482,7 @@ class BasicBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
     basic::sys::close(signalWatchingPipe[0]);
     signalWatchingPipe[0] = -1;
   }
-  
+
 public:
   BasicBuildSystemFrontendDelegate(llvm::SourceMgr& sourceMgr,
                                    const BuildSystemInvocation& invocation)
@@ -494,9 +490,14 @@ public:
                                     "basic", /*version=*/0),
         fileSystem(basic::createLocalFileSystem()) {
     // Register an interrupt handler.
-    struct sigaction action{};
+#if defined(_WIN32)
+    previousSigintHandler =
+        signal(SIGINT, &BasicBuildSystemFrontendDelegate::sigintHandler);
+#else
+    struct sigaction action {};
     action.sa_handler = &BasicBuildSystemFrontendDelegate::sigintHandler;
     sigaction(SIGINT, &action, &previousSigintHandler);
+#endif
 
     // Create a pipe and thread to watch for signals.
     assert(BasicBuildSystemFrontendDelegate::signalWatchingPipe[0] == -1 &&
@@ -511,7 +512,11 @@ public:
 
   ~BasicBuildSystemFrontendDelegate() {
     // Restore any previous SIGINT handler.
+#if defined(_WIN32)
+    signal(SIGINT, previousSigintHandler);
+#else
     sigaction(SIGINT, &previousSigintHandler, NULL);
+#endif
 
     // Close the signal watching pipe.
     basic::sys::close(BasicBuildSystemFrontendDelegate::signalWatchingPipe[1]);
@@ -535,15 +540,10 @@ public:
     auto message = BuildSystemInvocation::formatDetectedCycle(cycle);
     error(message);
   }
-#endif
 };
 
-#if defined(_WIN32)
-// TODO: Not yet implemented
-#else
 std::atomic<bool> BasicBuildSystemFrontendDelegate::wasInterrupted{false};
 int BasicBuildSystemFrontendDelegate::signalWatchingPipe[2]{-1, -1};
-#endif
 
 static void buildUsage(int exitCode) {
   int optionWidth = 25;
@@ -555,10 +555,6 @@ static void buildUsage(int exitCode) {
 }
 
 static int executeBuildCommand(std::vector<std::string> args) {
-#if defined(_WIN32)
-  // TODO: Not yet implemented
-  abort();
-#else
   // The source manager to use for diagnostics.
   llvm::SourceMgr sourceMgr;
 
@@ -576,7 +572,7 @@ static int executeBuildCommand(std::vector<std::string> args) {
   } else if (invocation.hadErrors) {
     buildUsage(1);
   }
-  
+
   if (invocation.positionalArgs.size() > 1) {
     fprintf(stderr, "error: %s: invalid number of arguments\n",
             getProgramName());
@@ -601,11 +597,10 @@ static int executeBuildCommand(std::vector<std::string> args) {
     return 1;
   }
 
-#endif
   return 0;
 }
 
-}
+} // namespace
 
 #pragma mark - Build System Top-Level Command
 

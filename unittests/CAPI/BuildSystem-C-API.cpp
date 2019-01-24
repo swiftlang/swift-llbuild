@@ -60,10 +60,6 @@ depinfo_tester_command_execute_command(void *context,
                                        llb_buildsystem_command_interface_t* bsci,
                                        llb_task_t* task,
                                        llb_buildsystem_queue_job_context_t* job) {
-#if defined(_WIN32)
-  // TODO: Not yet implemented
-  abort();
-#else
   // The tester tool is given a direct input file whose only contents are the
   // path of another, indirect input file.  It is also given the paths to which
   // it should emit the output file and an ld-style dependency-info file.  It
@@ -82,12 +78,12 @@ depinfo_tester_command_execute_command(void *context,
   // a mutable copy that we then have to free, so we're free to modify it.
   char * desc = llb_buildsystem_command_get_description(command);
   char * ptr = desc;
-  strsep(&ptr, "|");  // skip over rule name
-  std::string directInputPath = strsep(&ptr, "|");
+  llbuild::basic::sys::strsep(&ptr, "|"); // skip over rule name
+  std::string directInputPath = llbuild::basic::sys::strsep(&ptr, "|");
   puts(directInputPath.c_str());
-  std::string outputPath = strsep(&ptr, "|");
+  std::string outputPath = llbuild::basic::sys::strsep(&ptr, "|");
   puts(outputPath.c_str());
-  std::string depInfoPath = strsep(&ptr, "|");
+  std::string depInfoPath = llbuild::basic::sys::strsep(&ptr, "|");
   puts(depInfoPath.c_str());
   
   // Read the absolute path of the indirect input from the direct input.
@@ -124,7 +120,6 @@ depinfo_tester_command_execute_command(void *context,
 
   // Clean up.
   free(desc);
-#endif
   return true;
 }
 
@@ -261,12 +256,7 @@ static void command_process_finished(void* context,
 }
 
 TEST(BuildSystemCAPI, CustomToolWithDiscoveredDependencies) {
-#if defined(_WIN32)
-  // TODO: Not yet implemented
-  abort();
-#else
-  char tmpDirPathBuf[] = "/tmp/fileXXXXXX";
-  std::string tmpDirPath = std::string(mkdtemp(tmpDirPathBuf));  
+  std::string tmpDirPath = llbuild::basic::sys::makeTmpDir();
 
   // We write out an indirectly referenced file containing data to be copied to
   // the output file.
@@ -367,7 +357,6 @@ TEST(BuildSystemCAPI, CustomToolWithDiscoveredDependencies) {
   
   // Destroy the build system.
   llb_buildsystem_destroy(system);
-#endif
 }
 
 }
