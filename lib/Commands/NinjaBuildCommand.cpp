@@ -30,8 +30,8 @@
 #include "llbuild/Ninja/ManifestLoader.h"
 
 #include "llvm/ADT/SmallString.h"
-#include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/TimeValue.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include "CommandLineStatusOutput.h"
 #include "CommandUtil.h"
@@ -53,8 +53,8 @@
 #include <process.h>
 #else
 #include <spawn.h>
-#include <unistd.h>
 #include <sys/wait.h>
+#include <unistd.h>
 #endif
 #include <sys/stat.h>
 
@@ -418,7 +418,7 @@ public:
 
   /// The previous SIGINT handler.
 #if defined(_WIN32)
-  // TODO: Not yet implemented
+  void (*previousSigintHandler)(int);
 #else
   struct sigaction previousSigintHandler;
 #endif
@@ -448,7 +448,7 @@ public:
 
     // Ask the engine to cancel.
     engine.cancelBuild();
-    
+
     // FIXME: In our model, we still wait for everything to terminate, which
     // means a process that refuses to respond to SIGINT will cause us to just
     // hang here. We should probably detect and report that and be willing to do
@@ -493,10 +493,6 @@ public:
     : engine(delegate),
       isCancelled(false)
   {
-#if defined(_WIN32)
-    // TODO: Not yet implemented
-    abort();
-#else
     // Open the status output.
     std::string error;
     if (!statusOutput.open(&error)) {
@@ -509,9 +505,13 @@ public:
     delegate.context = this;
 
     // Register an interrupt handler.
-    struct sigaction action{};
+#if defined(_WIN32)
+    previousSigintHandler = signal(SIGINT, BuildContext::sigintHandler);
+#else
+    struct sigaction action {};
     action.sa_handler = &BuildContext::sigintHandler;
     sigaction(SIGINT, &action, &previousSigintHandler);
+#endif
 
     // Create a pipe and thread to watch for signals.
     assert(BuildContext::signalWatchingPipe[0] == -1 &&
@@ -520,19 +520,18 @@ public:
       perror("pipe");
     }
     new std::thread(&BuildContext::signalWaitThread, this);
-#endif
   }
 
   ~BuildContext() {
-#if defined(_WIN32)
-    // TODO: Not yet implemented
-    abort();
-#else
     // Ensure the output queue is done.
     outputQueue.sync([] {});
 
     // Restore any previous SIGINT handler.
+#if defined(_WIN32)
+    signal(SIGINT, previousSigintHandler);
+#else
     sigaction(SIGINT, &previousSigintHandler, NULL);
+#endif
 
     // Close the status output.
     std::string error;
@@ -541,7 +540,6 @@ public:
     // Close the signal watching pipe.
     sys::close(BuildContext::signalWatchingPipe[1]);
     signalWatchingPipe[1] = -1;
-#endif
   }
 
   /// @name Diagnostics Output
@@ -1528,14 +1526,9 @@ void NinjaBuildEngineDelegate::error(const Twine& message) {
   // Cancel the build.
   context->isCancelled = true;
 }
-
-}
+} // namespace
 
 int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
-#if defined(_WIN32)
-  // TODO: Not yet implemented
-  abort();
-#else
   std::string chdirPath = "";
   std::string customTool = "";
   std::string dbFilename = "build.db";
@@ -2042,9 +2035,13 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     // to support proper shell behavior.
     if (context.wasCancelledBySigint) {
       // Ensure SIGINT action is default.
-      struct sigaction action{};
+#if defined(_WIN32)
+      signal(SIGINT, SIG_DFL);
+#else
+      struct sigaction action {};
       action.sa_handler = SIG_DFL;
       sigaction(SIGINT, &action, 0);
+#endif
 
 #if defined(_WIN32)
       raise(SIGINT);
@@ -2075,10 +2072,9 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     // If we reached here on the first iteration, then we don't need a second
     // and are done.
     if (iteration == 0)
-        break;
+      break;
   }
 
-#endif
   // Return an appropriate exit status.
   return 0;
 }

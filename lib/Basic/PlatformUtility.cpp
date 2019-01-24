@@ -19,9 +19,9 @@
 #include <io.h>
 #else
 #include <fnmatch.h>
-#include <stdio.h>
 #include <unistd.h>
 #endif
+#include <stdio.h>
 
 using namespace llbuild;
 using namespace llbuild::basic;
@@ -212,5 +212,41 @@ std::string sys::strerror(int error) {
   return utf8Err;
 #else
   return ::strerror(error);
+#endif
+}
+
+char *sys::strsep(char **stringp, const char *delim) {
+#if defined(_WIN32)
+  char *begin, *end = *stringp;
+  if (*stringp == NULL) {
+    return NULL;
+  }
+  int delimLen = strlen(delim);
+  bool found = false;
+  while (*end) {
+    for (int i = 0; i < delimLen; i++) {
+      if (*end == delim[i]) {
+        found = true;
+      }
+    }
+    if (found) {
+      *stringp = end + 1;
+    }
+  }
+  *end = '\0';
+  return begin;
+#else
+  return ::strsep(stringp, delim);
+#endif
+}
+
+std::string sys::makeTmpDir() {
+#if defined(_WIN32)
+  char path[MAX_PATH];
+  tmpnam_s(path, MAX_PATH);
+  return std::string(path);
+#else
+  char tmpDirPathBuf[] = "/tmp/fileXXXXXX";
+  return std::string(mkdtemp(tmpDirPathBuf));
 #endif
 }

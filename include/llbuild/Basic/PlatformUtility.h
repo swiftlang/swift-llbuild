@@ -42,6 +42,10 @@ int symlink(const char *source, const char *target);
 int unlink(const char *fileName);
 int write(int fileHandle, void *destinationBuffer, unsigned int maxCharCount);
 std::string strerror(int error);
+char *strsep(char **stringp, const char *delim);
+// Create a directory in the temporary folder which doesn't exist and return
+// it's path.
+std::string makeTmpDir();
 
 /// Sets the max open file limit to min(max(soft_limit, limit), hard_limit),
 /// where soft_limit and hard_limit are gathered from the system.
