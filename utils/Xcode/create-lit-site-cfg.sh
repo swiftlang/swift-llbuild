@@ -3,7 +3,7 @@
 set -e
 
 # Amend PATH with known location of LLVM tools
-BREW="$(which brew || true)"
+BREW="$(PATH="$PATH:/usr/local/bin" which brew || true)"
 if [ -n "${BREW}" ]; then
     PATH="$PATH:`${BREW} --prefix`/opt/llvm/bin"
 fi
