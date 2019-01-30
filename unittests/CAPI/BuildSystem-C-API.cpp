@@ -257,7 +257,11 @@ static void command_process_finished(void* context,
 
 TEST(BuildSystemCAPI, CustomToolWithDiscoveredDependencies) {
   std::string tmpDirPath = llbuild::basic::sys::makeTmpDir();
-
+  for (auto& c : tmpDirPath) {
+    if (c == '\\') {
+      c = '/';
+    }
+  }
   // We write out an indirectly referenced file containing data to be copied to
   // the output file.
   std::string indirectInputFilePath = tmpDirPath + "/" + "indirect-input-file";

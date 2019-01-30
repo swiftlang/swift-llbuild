@@ -3453,11 +3453,11 @@ class SymlinkCommand : public Command {
     // FIXME: Need to use the filesystem interfaces.
     bsci.getDelegate().commandStarted(this);
     auto success = true;
-    if (llvm::sys::fs::create_link(contents, outputPath)) {
+    if (basic::sys::symlink(contents.c_str(), outputPath.str().c_str())) {
       // On failure, we attempt to unlink the file and retry.
       basic::sys::unlink(outputPath.str().c_str());
-        
-      if (llvm::sys::fs::create_link(contents, outputPath)) {
+
+      if (basic::sys::symlink(contents.c_str(), outputPath.str().c_str())) {
         getBuildSystem(bsci.getBuildEngine()).getDelegate().commandHadError(this,
                        "unable to create symlink at '" + outputPath.str() + "'");
         success = false;
@@ -3650,7 +3650,7 @@ class StaleFileRemovalCommand : public Command {
   BuildValue priorValue;
   bool hasPriorResult = false;
 
-  char path_separator = llvm::sys::path::get_separator()[0];
+  std::string pathSeparators = llbuild::basic::sys::getPathSeparators();
 
   virtual void configureDescription(const ConfigureContext&, StringRef value) override {
     description = value;
@@ -3790,7 +3790,8 @@ class StaleFileRemovalCommand : public Command {
       bool isLocatedUnderRootPath = roots.size() == 0 ? true : false;
 
       // If root paths are defined, stale file paths should be absolute.
-      if (roots.size() > 0 && fileToDelete[0] != path_separator) {
+      if (roots.size() > 0 &&
+          pathSeparators.find(fileToDelete[0]) == std::string::npos) {
         bsci.getDelegate().commandHadWarning(this, "Stale file '" + fileToDelete + "' has a relative path. This is invalid in combination with the root path attribute.\n");
         continue;
       }
@@ -4012,10 +4013,14 @@ void BuildSystem::resetForBuild() {
 
 // This function checks if the given path is prefixed by another path.
 bool llbuild::buildsystem::pathIsPrefixedByPath(std::string path, std::string prefixPath) {
-  static char path_separator = llvm::sys::path::get_separator()[0];
-  auto res = std::mismatch(prefixPath.begin(), prefixPath.end(), path.begin());
+  std::string pathSeparators = llbuild::basic::sys::getPathSeparators();
+  auto res = std::mismatch(prefixPath.begin(), prefixPath.end(), path.begin(),
+                           path.end());
   // Check if `prefixPath` has been exhausted or just a separator remains.
-  bool isPrefix = res.first == prefixPath.end() || (*(res.first++) == path_separator);
+  bool isPrefix = res.first == prefixPath.end() ||
+                  (pathSeparators.find(*(res.first++)) != std::string::npos);
   // Check if `path` has been exhausted or just a separator remains.
-  return isPrefix && (res.second == path.end() || (*(res.second++) == path_separator));
+  return isPrefix &&
+         (res.second == path.end() ||
+          (pathSeparators.find(*(res.second++)) != std::string::npos));
 }

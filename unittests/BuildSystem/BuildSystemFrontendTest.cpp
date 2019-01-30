@@ -118,7 +118,7 @@ public:
   virtual void hadCommandFailure() override {
     {
       std::lock_guard<std::mutex> lock(traceMutex);
-      traceStream << __FUNCTION__ << "\n";
+      traceStream << __func__ << "\n";
     }
     super::hadCommandFailure();
   }
@@ -126,7 +126,7 @@ public:
   virtual void commandPreparing(Command* command) override {
     {
       std::lock_guard<std::mutex> lock(traceMutex);
-      traceStream << __FUNCTION__ << ": " << command->getName() << "\n";
+      traceStream << __func__ << ": " << command->getName() << "\n";
     }
     super::commandPreparing(command);
   }
@@ -134,7 +134,7 @@ public:
   virtual bool shouldCommandStart(Command* command) override {
     {
       std::lock_guard<std::mutex> lock(traceMutex);
-      traceStream << __FUNCTION__ << ": " << command->getName() << "\n";
+      traceStream << __func__ << ": " << command->getName() << "\n";
     }
 
     if (commandsToSkip.find(command->getName()) != commandsToSkip.end()) {
@@ -147,7 +147,7 @@ public:
   virtual void commandStarted(Command* command) override {
     {
       std::lock_guard<std::mutex> lock(traceMutex);
-      traceStream << __FUNCTION__ << ": " << command->getName() << "\n";
+      traceStream << __func__ << ": " << command->getName() << "\n";
     }
     super::commandStarted(command);
   }
@@ -155,7 +155,8 @@ public:
   virtual void commandFinished(Command* command, ProcessStatus result) override {
     {
       std::lock_guard<std::mutex> lock(traceMutex);
-      traceStream << __FUNCTION__ << ": " << command->getName() << ": " << (int)result << "\n";
+      traceStream << __func__ << ": " << command->getName() << ": "
+                  << (int)result << "\n";
     }
     super::commandFinished(command, result);
   }
@@ -163,7 +164,7 @@ public:
   virtual void commandProcessStarted(Command* command, ProcessHandle handle) override {
     {
       std::lock_guard<std::mutex> lock(traceMutex);
-      traceStream << __FUNCTION__ << ": " << command->getName() << "\n";
+      traceStream << __func__ << ": " << command->getName() << "\n";
     }
     super::commandProcessStarted(command, handle);
   }
@@ -172,7 +173,8 @@ public:
                                       const Twine& message) override {
     {
       std::lock_guard<std::mutex> lock(traceMutex);
-      traceStream << __FUNCTION__ << ": " << command->getName() << ": " << message << "\n";
+      traceStream << __func__ << ": " << command->getName() << ": " << message
+                  << "\n";
     }
     super::commandProcessHadError(command, handle, message);
   }
@@ -181,7 +183,7 @@ public:
                                       const ProcessResult& result) override {
     {
         std::lock_guard<std::mutex> lock(traceMutex);
-        traceStream << __FUNCTION__ << ": " << command->getName() << ": "
+        traceStream << __func__ << ": " << command->getName() << ": "
                     << result.exitCode << "\n";
     }
     super::commandProcessFinished(command, handle, result);
@@ -195,7 +197,7 @@ public:
 
   virtual void error(StringRef filename, const Token& at, const Twine& message) override {
     std::lock_guard<std::mutex> lock(traceMutex);
-    traceStream << __FUNCTION__ << ": " << message << "\n";
+    traceStream << __func__ << ": " << message << "\n";
   }
 };
 
@@ -343,6 +345,20 @@ commands:
     ASSERT_FALSE(frontend.build(""));
     ASSERT_EQ(1u, delegate.getNumFailedCommands());
 
+#if defined(_WIN32)
+    ASSERT_TRUE(delegate.checkTrace(R"END(
+commandPreparing: 2
+commandPreparing: 1
+shouldCommandStart: 1
+commandFinished: 1: 3
+shouldCommandStart: 2
+commandStarted: 2
+commandProcessStarted: 2
+commandProcessFinished: 2: 1
+commandFinished: 2: 1
+hadCommandFailure
+)END"));
+#else
     ASSERT_TRUE(delegate.checkTrace(R"END(
 commandPreparing: 2
 commandPreparing: 1
@@ -355,7 +371,7 @@ commandProcessFinished: 2: 256
 commandFinished: 2: 1
 hadCommandFailure
 )END"));
-
+#endif
     ASSERT_TRUE(fs->getFileInfo(tempDir.str() + "/1").isMissing());
     ASSERT_TRUE(fs->getFileInfo(tempDir.str() + "/2").isMissing());
   }
@@ -449,8 +465,13 @@ commands:
         tool: shell
         inputs: ["2"]
         outputs: ["3"]
-        args: rm 2
-)END");
+)END" +
+#if defined(_WIN32)
+                 std::string("        args: del 2")
+#else
+                 std::string("        args: rm 2")
+#endif
+  );
   // We need to delete the symlink ourselves, because llvm's remove()
   // currently refuses to delete symlinks.
 

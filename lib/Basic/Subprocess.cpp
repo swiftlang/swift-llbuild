@@ -285,11 +285,10 @@ static void cleanUpExecutedProcess(ProcessDelegate& delegate,
   FILETIME stimeTicks;
   int waitResult = WaitForSingleObject(pid, INFINITE);
   int err = GetLastError();
-  DWORD exitCode;
+  DWORD exitCode = 0;
   GetExitCodeProcess(pid, &exitCode);
 
-  if (exitCode != 0 || waitResult == WAIT_FAILED ||
-      waitResult == WAIT_ABANDONED) {
+  if (waitResult == WAIT_FAILED || waitResult == WAIT_ABANDONED) {
     auto result = ProcessResult::makeFailed(exitCode);
     delegate.processHadError(ctx, handle,
                              Twine("unable to wait for process (") +
@@ -298,6 +297,25 @@ static void cleanUpExecutedProcess(ProcessDelegate& delegate,
     completionFn(result);
     return;
   }
+#else
+  // Wait for the command to complete.
+  struct rusage usage;
+  int exitCode, result = wait4(pid, &exitCode, 0, &usage);
+  while (result == -1 && errno == EINTR)
+    result = wait4(pid, &exitCode, 0, &usage);
+#endif
+  // Close the release pipe
+  //
+  // Note: We purposely hold this open until after the process has finished as
+  // it simplifies client implentation. If we close it early, clients need to be
+  // aware of and potentially handle a SIGPIPE.
+  if (releaseFd >= 0) {
+    sys::FileDescriptorTraits<>::Close(releaseFd);
+  }
+
+  // Update the set of spawned processes.
+  pgrp.remove(pid);
+#if defined(_WIN32)
   PROCESS_MEMORY_COUNTERS counters;
   bool res =
       GetProcessTimes(pid, &creationTime, &exitTime, &stimeTicks, &utimeTicks);
@@ -317,9 +335,6 @@ static void cleanUpExecutedProcess(ProcessDelegate& delegate,
       ((uint64_t)stimeTicks.dwHighDateTime << 32 | stimeTicks.dwLowDateTime) /
       10;
   GetProcessMemoryInfo(pid, &counters, sizeof(counters));
-  sys::FileDescriptorTraits<>::Close(releaseFd);
-
-  pgrp.remove(pid);
 
   // We report additional info in the tracing interval
   //   - user time, in µs
@@ -330,32 +345,16 @@ static void cleanUpExecutedProcess(ProcessDelegate& delegate,
   // subprocess (probably as a new point sample).
 
   // Notify of the process completion.
-  ProcessStatus processStatus = ProcessStatus::Succeeded;
+  ProcessStatus processStatus =
+      (exitCode == 0) ? ProcessStatus::Succeeded : ProcessStatus::Failed;
   ProcessResult processResult(processStatus, exitCode, pid, utime, stime,
                               counters.PeakWorkingSetSize);
 #else  // !defined(_WIN32)
-  // Wait for the command to complete.
-  struct rusage usage;
-  int exitCode, result = wait4(pid, &exitCode, 0, &usage);
-  while (result == -1 && errno == EINTR)
-    result = wait4(pid, &exitCode, 0, &usage);
-
-  // Close the release pipe
-  //
-  // Note: We purposely hold this open until after the process has finished as
-  // it simplifies client implentation. If we close it early, clients need to be
-  // aware of and potentially handle a SIGPIPE.
-  if (releaseFd >= 0) {
-    sys::FileDescriptorTraits<>::Close(releaseFd);
-  }
-
-  // Update the set of spawned processes.
-  pgrp.remove(pid);
-
   if (result == -1) {
     auto result = ProcessResult::makeFailed(exitCode);
     delegate.processHadError(ctx, handle,
-                             Twine("unable to wait for process (") + strerror(errno) + ")");
+                             Twine("unable to wait for process (") +
+                                 strerror(errno) + ")");
     delegate.processFinished(ctx, handle, result);
     completionFn(result);
     return;
@@ -439,8 +438,8 @@ void llbuild::basic::spawnProcess(
   startupInfo.dwFlags = STARTF_USESTDHANDLES;
   // Set NUL as stdin
   HANDLE nul =
-      CreateFileA("NUL", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
-                  OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+      CreateFileW(L"NUL", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                  NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
   startupInfo.hStdInput = nul;
 #else
   // Initialize the spawn attributes.
