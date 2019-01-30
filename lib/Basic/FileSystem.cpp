@@ -171,10 +171,17 @@ public:
       return true;
     }
 
+#if defined(_WIN32)
+    // Windows sets EACCES if the file is a directory
+    if (errno != EACCES) {
+      return false;
+    }
+#else
     // Error can't be that `path` is actually a directory (on Linux `EISDIR` will be returned since 2.1.132).
     if (errno != EPERM && errno != EISDIR) {
       return false;
     }
+#endif
 
     // Check if `path` is a directory.
     llbuild::basic::sys::StatStruct statbuf;
