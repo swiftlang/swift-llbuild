@@ -437,7 +437,7 @@ Symlink Tool
 This tool is used to create a symbolic link at a particular location, with
 appropriate dependency tracking. Due to the nature of symbolic links it is
 important to use this tool when creating links during a build, as opposed to the
-usuall `shell` tool. The reason why is that the build system will, by default,
+usual `shell` tool. The reason why is that the build system will, by default,
 use `stat(2)` to examine the contents of output files for the purposes of
 evaluating the build state. In the case of a symbolic link this is incorrect, as
 it will retrieve the status information of the target, not the link itself. This
