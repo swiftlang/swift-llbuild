@@ -47,6 +47,9 @@ char *strsep(char **stringp, const char *delim);
 // it's path.
 std::string makeTmpDir();
 
+// Return a string containing all valid path separators on the current platform
+std::string getPathSeparators();
+
 /// Sets the max open file limit to min(max(soft_limit, limit), hard_limit),
 /// where soft_limit and hard_limit are gathered from the system.
 ///
