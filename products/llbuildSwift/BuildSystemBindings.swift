@@ -252,8 +252,8 @@ public struct ProcessHandle: Hashable {
         self.handle = handle
     }
 
-    public var hashValue: Int {
-        return handle.hashValue
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(handle.hashValue)
     }
 
     public static func ==(lhs: ProcessHandle, rhs: ProcessHandle) -> Bool {
