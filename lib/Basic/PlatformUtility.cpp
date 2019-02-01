@@ -11,14 +11,12 @@
 #include "llbuild/Basic/Stat.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/ConvertUTF.h"
-#include "llvm/Support/Path.h"
 
 #if defined(_WIN32)
 #include "LeanWindows.h"
 #include <Shlwapi.h>
 #include <direct.h>
 #include <io.h>
-#include <time.h>
 #else
 #include <fnmatch.h>
 #include <unistd.h>
@@ -30,9 +28,7 @@ using namespace llbuild::basic;
 
 bool sys::chdir(const char *fileName) {
 #if defined(_WIN32)
-  llvm::SmallVector<UTF16, 20> wFileName;
-  llvm::convertUTF8ToUTF16String(fileName, wFileName);
-  return SetCurrentDirectoryW((LPCWSTR)wFileName.data());
+  return SetCurrentDirectoryA(fileName);
 #else
   return ::chdir(fileName) == 0;
 #endif
@@ -46,68 +42,11 @@ int sys::close(int fileHandle) {
 #endif
 }
 
-#if defined(_WIN32)
-time_t filetimeToTime_t(FILETIME ft) {
-  long long ltime = ft.dwLowDateTime | ((long long)ft.dwHighDateTime << 32);
-  return (time_t)((ltime - 116444736000000000) / 10000000);
-}
-#endif
-
 int sys::lstat(const char *fileName, sys::StatStruct *buf) {
 #if defined(_WIN32)
-  llvm::SmallVector<UTF16, 20> wfilename;
-  llvm::convertUTF8ToUTF16String(fileName, wfilename);
-  HANDLE h = CreateFileW(
-      /*lpFileName=*/(LPCWSTR)wfilename.data(),
-      /*dwDesiredAccess=*/0,
-      /*dwShareMode=*/FILE_SHARE_READ,
-      /*lpSecurityAttributes=*/NULL,
-      /*dwCreationDisposition=*/OPEN_EXISTING,
-      /*dwFlagsAndAttributes=*/FILE_FLAG_OPEN_REPARSE_POINT |
-          FILE_FLAG_BACKUP_SEMANTICS,
-      /*hTemplateFile=*/NULL);
-  if (h == INVALID_HANDLE_VALUE) {
-    int err = GetLastError();
-    if (err == ERROR_FILE_NOT_FOUND) {
-      errno = ENOENT;
-    }
-    return -1;
-  }
-  BY_HANDLE_FILE_INFORMATION info;
-  GetFileInformationByHandle(h, &info);
-  // Group id is always 0 on Windows
-  buf->st_gid = 0;
-  buf->st_atime = filetimeToTime_t(info.ftLastAccessTime);
-  buf->st_ctime = filetimeToTime_t(info.ftCreationTime);
-  buf->st_dev = info.dwVolumeSerialNumber;
-  // inodes have meaning on FAT/HPFS/NTFS
-  buf->st_ino = 0;
-  buf->st_rdev = info.dwVolumeSerialNumber;
-  buf->st_mode =
-      // On a symlink to a directory, Windows sets both the REPARSE_POINT and
-      // DIRECTORY attributes. Since Windows doesn't provide S_IFLNK and we
-      // want unix style "symlinks to directories are not directories
-      // themselves, we say symlinks are regular files
-      (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
-          ? _S_IFREG
-          : (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? _S_IFDIR
-                                                               : _S_IFREG;
-  buf->st_mode |= (info.dwFileAttributes & FILE_ATTRIBUTE_READONLY)
-                      ? _S_IREAD
-                      : _S_IREAD | _S_IWRITE;
-  llvm::StringRef extension =
-      llvm::sys::path::extension(llvm::StringRef(fileName));
-  if (extension == ".exe" || extension == ".cmd" || extension == ".bat" ||
-      extension == ".com") {
-    buf->st_mode |= _S_IEXEC;
-  }
-  buf->st_mtime = filetimeToTime_t(info.ftLastWriteTime);
-  buf->st_nlink = info.nNumberOfLinks;
-  buf->st_size = ((long long)info.nFileSizeHigh << 32) | info.nFileSizeLow;
-  // Uid is always 0 on Windows systems
-  buf->st_uid = 0;
-  CloseHandle(h);
-  return 0;
+  // We deliberately ignore lstat on Windows, and delegate
+  // to stat.
+  return ::_stat(fileName, buf);
 #else
   return ::lstat(fileName, buf);
 #endif
@@ -170,25 +109,17 @@ int sys::stat(const char *fileName, StatStruct *buf) {
 #endif
 }
 
-// Create a symlink named linkPath which contains the string pointsTo
-int sys::symlink(const char *pointsTo, const char *linkPath) {
+int sys::symlink(const char *source, const char *target) {
 #if defined(_WIN32)
-  llvm::SmallVector<UTF16, 20> wPointsTo;
-  llvm::convertUTF8ToUTF16String(pointsTo, wPointsTo);
-  llvm::SmallVector<UTF16, 20> wLinkPath;
-  llvm::convertUTF8ToUTF16String(linkPath, wLinkPath);
-  DWORD attributes = GetFileAttributesW((LPCWSTR)wPointsTo.data());
-  DWORD directoryFlag = (attributes != INVALID_FILE_ATTRIBUTES &&
-                         attributes & FILE_ATTRIBUTE_DIRECTORY)
-                            ? SYMBOLIC_LINK_FLAG_DIRECTORY
-                            : 0;
-  // Note that CreateSymbolicLinkW takes its arguments in reverse order
-  // compared to symlink/_symlink
-  return !::CreateSymbolicLinkW(
-      (LPCWSTR)wLinkPath.data(), (LPCWSTR)wPointsTo.data(),
-      SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE | directoryFlag);
+  DWORD attributes = GetFileAttributesA(source);
+  if (attributes != INVALID_FILE_ATTRIBUTES &&
+      (attributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+    return ::CreateSymbolicLinkA(source, target, SYMBOLIC_LINK_FLAG_DIRECTORY);
+  }
+
+  return ::CreateSymbolicLinkA(source, target, 0);
 #else
-  return ::symlink(pointsTo, linkPath);
+  return ::symlink(source, target);
 #endif
 }
 
@@ -286,29 +217,23 @@ std::string sys::strerror(int error) {
 
 char *sys::strsep(char **stringp, const char *delim) {
 #if defined(_WIN32)
-  // If *stringp is NULL, the strsep() function returns NULL and does nothing
-  // else.
+  char *begin, *end = *stringp;
   if (*stringp == NULL) {
     return NULL;
   }
-  char *begin = *stringp;
-  char *end = *stringp;
-  do {
-    // Otherwise, this function finds the first token in the string *stringp,
-    // that is delimited by one of the bytes in the string delim.
-    for (int i = 0; delim[i] != '\0'; i++) {
+  int delimLen = strlen(delim);
+  bool found = false;
+  while (*end) {
+    for (int i = 0; i < delimLen; i++) {
       if (*end == delim[i]) {
-        // This token is terminated by overwriting the delimiter with a null
-        // byte ('\0'), and *stringp is updated to point past the token.
-        *end = '\0';
-        *stringp = end + 1;
-        return begin;
+        found = true;
       }
     }
-  } while (*(++end));
-  // In case no delimiter was found, the token is taken to be the entire string
-  // *stringp, and *stringp is made NULL.
-  *stringp = NULL;
+    if (found) {
+      *stringp = end + 1;
+    }
+  }
+  *end = '\0';
   return begin;
 #else
   return ::strsep(stringp, delim);
@@ -319,20 +244,9 @@ std::string sys::makeTmpDir() {
 #if defined(_WIN32)
   char path[MAX_PATH];
   tmpnam_s(path, MAX_PATH);
-  llvm::SmallVector<UTF16, 20> wPath;
-  llvm::convertUTF8ToUTF16String(path, wPath);
-  CreateDirectoryW((LPCWSTR)wPath.data(), NULL);
   return std::string(path);
 #else
   char tmpDirPathBuf[] = "/tmp/fileXXXXXX";
   return std::string(mkdtemp(tmpDirPathBuf));
-#endif
-}
-
-std::string sys::getPathSeparators() {
-#if defined(_WIN32)
-  return "/\\";
-#else
-  return "/";
 #endif
 }

@@ -120,7 +120,7 @@ public:
 
 /// Check that we evaluate a path key properly.
 TEST(BuildSystemTaskTests, basics) {
-  TmpDir tempDir(__func__);
+  TmpDir tempDir{ __FUNCTION__ };
 
   // Create a sample file.
   SmallString<256> path{ tempDir.str() };
@@ -148,7 +148,7 @@ TEST(BuildSystemTaskTests, basics) {
 
 /// Check that we evaluate a missing input path key properly.
 TEST(BuildSystemTaskTests, missingInput) {
-  TmpDir tempDir(__func__);
+  TmpDir tempDir{ __FUNCTION__ };
 
   // Create a non-existent sample file path.
   SmallString<256> path{ tempDir.str() };
@@ -169,7 +169,7 @@ TEST(BuildSystemTaskTests, missingInput) {
 
 /// Check the evaluation of directory contents.
 TEST(BuildSystemTaskTests, directoryContents) {
-  TmpDir tempDir(__func__);
+  TmpDir tempDir{ __FUNCTION__ };
 
   // Create a directory with sample files.
   SmallString<256> fileA{ tempDir.str() };
@@ -215,23 +215,14 @@ TEST(BuildSystemTaskTests, directoryContents) {
 
 /// Check that we evaluate a produced node dependency properly
 TEST(BuildSystemTaskTests, producedNode) {
-  TmpDir tempDir(__func__);
-
+  TmpDir tempDir{ __FUNCTION__ };
   auto localFS = createLocalFileSystem();
 
   // Create a outputFile path
   SmallString<256> outputFile{ tempDir.str() };
   sys::path::append(outputFile, "a.txt");
-  for (auto& c : outputFile) {
-    if (c == '\\')
-      c = '/';
-  }
 
   SmallString<256> manifest{ tempDir.str() };
-  for (auto& c : manifest) {
-    if (c == '\\')
-      c = '/';
-  }
   sys::path::append(manifest, "manifest.llbuild");
   {
     std::error_code ec;
@@ -284,7 +275,7 @@ TEST(BuildSystemTaskTests, producedNode) {
 
 /// Check the evaluation of directory signatures.
 TEST(BuildSystemTaskTests, directorySignature) {
-  TmpDir tempDir(__func__);
+  TmpDir tempDir{ __FUNCTION__ };
   auto localFS = createLocalFileSystem();
   
   // Create a directory with sample files.
@@ -370,13 +361,9 @@ TEST(BuildSystemTaskTests, directorySignature) {
 }
 
 TEST(BuildSystemTaskTests, doesNotProcessDependenciesAfterCancellation) {
-  TmpDir tempDir(__func__);
+  TmpDir tempDir{ __FUNCTION__ };
 
   std::string outputFile = tempDir.str() + "/output.txt";
-  for (auto& c : outputFile) {
-    if (c == '\\')
-      c = '/';
-  }
 
   SmallString<256> manifest{ tempDir.str() };
   sys::path::append(manifest, "manifest.llbuild");
@@ -437,7 +424,7 @@ TEST(BuildSystemTaskTests, doesNotProcessDependenciesAfterCancellation) {
 TEST(BuildSystemTaskTests, cancelAllInQueue) {
 // Disabled: <rdar://problem/32142112> BuildSystem/BuildSystemTests/BuildSystemTaskTests.cancelAllInQueue FAILED
 #ifdef false
-  TmpDir tempDir(__func__);
+  TmpDir tempDir{ __FUNCTION__ };
 
   SmallString<256> manifest{ tempDir.str() };
   sys::path::append(manifest, "manifest.llbuild");
@@ -502,7 +489,7 @@ commands:
 
 // Tests the behaviour of StaleFileRemovalTool
 TEST(BuildSystemTaskTests, staleFileRemoval) {
-  TmpDir tempDir(__func__);
+  TmpDir tempDir{ __FUNCTION__ };
 
   SmallString<256> manifest{ tempDir.str() };
   sys::path::append(manifest, "manifest.llbuild");
@@ -592,7 +579,7 @@ commands:
 }
 
 TEST(BuildSystemTaskTests, staleFileRemovalWithRoots) {
-  TmpDir tempDir(__func__);
+  TmpDir tempDir{ __FUNCTION__ };
 
   SmallString<256> manifest{ tempDir.str() };
   sys::path::append(manifest, "manifest.llbuild");
@@ -690,7 +677,7 @@ commands:
 }
 
 TEST(BuildSystemTaskTests, staleFileRemovalWithRootsEnforcesAbsolutePaths) {
-  TmpDir tempDir(__func__);
+  TmpDir tempDir{ __FUNCTION__ };
 
   SmallString<256> manifest{ tempDir.str() };
   sys::path::append(manifest, "manifest.llbuild");
@@ -777,7 +764,7 @@ commands:
 }
 
 TEST(BuildSystemTaskTests, staleFileRemovalWithRootsIsAgnosticToTrailingPathSeparator) {
-  TmpDir tempDir(__func__);
+  TmpDir tempDir{ __FUNCTION__ };
 
   SmallString<256> manifest{ tempDir.str() };
   sys::path::append(manifest, "manifest.llbuild");
@@ -872,7 +859,7 @@ commands:
 }
 
 TEST(BuildSystemTaskTests, staleFileRemovalWithManyFiles) {
-  TmpDir tempDir(__func__);
+  TmpDir tempDir{ __FUNCTION__ };
 
   SmallString<256> manifest{ tempDir.str() };
   sys::path::append(manifest, "manifest.llbuild");
@@ -988,22 +975,14 @@ TEST(BuildSystemTaskTests, staleFileRemovalPathIsPrefixedByPath) {
 /// Check that we evaluate properly handle a previously missing input that may
 /// now be produced.
 TEST(BuildSystemTaskTests, producedNodeAfterPreviouslyMissing) {
-  TmpDir tempDir(__func__);
+  TmpDir tempDir{ __FUNCTION__ };
   auto localFS = createLocalFileSystem();
 
   SmallString<256> builddb{ tempDir.str() };
   sys::path::append(builddb, "build.db");
-  for (auto& c : builddb) {
-    if (c == '\\')
-      c = '/';
-  }
 
   SmallString<256> outputFile{ tempDir.str() };
   sys::path::append(outputFile, "a.txt");
-  for (auto& c : outputFile) {
-    if (c == '\\')
-      c = '/';
-  }
 
   // Try to build the missing output file
   {
