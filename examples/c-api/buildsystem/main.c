@@ -22,6 +22,9 @@
 #include <string.h>
 
 #include <sys/stat.h>
+#if defined(_WIN32)
+#include <windows.h>
+#endif
 
 static const char* progname;
 static void usage() {
@@ -33,6 +36,27 @@ static const char* basename(const char* path) {
   const char* result = strrchr(path, '/');
   return result ? result : path;
 }
+
+#if defined(_WIN32)
+static wchar_t* convertToMultiByte(const char* s) {
+  int numChars = MultiByteToWideChar(
+      /*CodePage=*/CP_UTF8,
+      /*dwFlags=*/0,
+      /*lpMultibyteStr=*/s,
+      /*cbMultiByte=*/-1,
+      /*lpWideCharStr=*/NULL,
+      /*ccWideChar=*/0);
+  wchar_t* mbs = malloc(numChars * sizeof(wchar_t));
+  MultiByteToWideChar(
+      /*CodePage=*/CP_UTF8,
+      /*dwFlags=*/0,
+      /*lpMultibyteStr=*/s,
+      /*cbMultiByte=*/-1,
+      /*lpWideCharStr=*/mbs,
+      /*ccWideChar=*/numChars);
+  return mbs;
+}
+#endif
 
 // "Fancy" Command Implementation
 
@@ -61,18 +85,30 @@ fancy_tool_create_command(void *context, const llb_data_t* name) {
 
 static bool fs_get_file_contents(void* context, const char* path,
                                  llb_data_t* data_out) {
+
+#if defined(_WIN32)
+  wchar_t* wPath = convertToMultiByte(path);
+  wprintf(L" -- read file contents: %ls\n", wPath);
+  fflush(stdout);
+  FILE* fp;
+  if (_wfopen_s(&fp, wPath, L"rb")) {
+    free(wPath);
+    return false;
+  }
+  free(wPath);
+#else
   printf(" -- read file contents: %s\n", path);
   fflush(stdout);
-
   FILE *fp = fopen(path, "rb");
   if (!fp) {
     return false;
   }
-  
+#endif
+
   fseek(fp, 0, SEEK_END);
   long size = ftell(fp);
   fseek(fp, 0, SEEK_SET);
-  uint8_t* buffer = malloc(size);
+  uint8_t* buffer = (uint8_t*)llb_alloc(size);
   if (!buffer) {
     return false;
   }
@@ -107,7 +143,7 @@ static void fs_get_file_info(void* context, const char* path,
 static llb_buildsystem_tool_t* lookup_tool(void *context,
                                            const llb_data_t* name) {
   if (name->length == 5 && memcmp(name->data, "fancy", 5) == 0) {
-    llb_buildsystem_tool_delegate_t delegate = {};
+    llb_buildsystem_tool_delegate_t delegate = {0};
     delegate.create_command = fancy_tool_create_command;
     return llb_buildsystem_tool_create(name, delegate);
   }
@@ -136,7 +172,7 @@ static void command_started(void* context,
   llb_buildsystem_command_get_name(command, &name);
   printf("%s: %.*s -- %s\n", __FUNCTION__, (int)name.length, name.data,
          description);
-  free(description);
+  llb_free(description);
   fflush(stdout);
 }
 
@@ -192,12 +228,12 @@ int main(int argc, char **argv) {
   const char* buildFilePath = argv[1];
 
   // Create an invocation.
-  llb_buildsystem_invocation_t invocation = {};
+  llb_buildsystem_invocation_t invocation = {0};
   invocation.buildFilePath = buildFilePath;
   invocation.useSerialBuild = true;
 
   // Create a build system delegate.
-  llb_buildsystem_delegate_t delegate = {};
+  llb_buildsystem_delegate_t delegate = {0};
   delegate.context = NULL;
   delegate.fs_get_file_contents = fs_get_file_contents;
   delegate.fs_get_file_info = fs_get_file_info;

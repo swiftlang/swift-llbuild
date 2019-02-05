@@ -4,7 +4,7 @@
 # RUN: env LD_LIBRARY_PATH=%{llbuild-lib-dir} %t.exe %s > %t.out
 # RUN: %{FileCheck} %s --input-file %t.out
 #
-# CHECK: -- read file contents: {{.*}}/buildsystem-capi.llbuild
+# CHECK: -- read file contents: {{.*[/\\]}}buildsystem-capi.llbuild
 # CHECK: initial build:
 # CHECK: -- stat: /
 # CHECK: command_started: <hello> -- HELLO
