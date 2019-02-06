@@ -9,6 +9,12 @@ set(DEPENDENCIES
   llvmSupport
   sqlite3)
 
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+set(LIBLLBUILD_NAME libllbuild)
+else()
+set(LIBLLBUILD_NAME llbuild)
+endif()
+
 if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
   list(APPEND DEPENDENCIES curses)
 endif()
@@ -16,7 +22,7 @@ endif()
 add_llbuild_library(libllbuild
   ${SOURCES}
   SHARED
-  OUTPUT_NAME llbuild)
+  OUTPUT_NAME ${LIBLLBUILD_NAME})
 
 set_property(TARGET libllbuild PROPERTY MACOSX_RPATH ON)
 
