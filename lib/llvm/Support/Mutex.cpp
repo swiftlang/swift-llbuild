@@ -11,8 +11,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llvm/Config/config.h"
 #include "llvm/Support/Mutex.h"
+#include "llvm/Config/config.h"
+#include "llvm/Support/ErrorHandling.h"
 
 //===----------------------------------------------------------------------===//
 //=== WARNING: Implementation here must contain only TRULY operating system
@@ -46,12 +47,11 @@ MutexImpl::MutexImpl( bool recursive)
 {
   // Declare the pthread_mutex data structures
   pthread_mutex_t* mutex =
-    static_cast<pthread_mutex_t*>(malloc(sizeof(pthread_mutex_t)));
+    static_cast<pthread_mutex_t*>(safe_malloc(sizeof(pthread_mutex_t)));
+
   pthread_mutexattr_t attr;
 
   // Initialize the mutex attributes
-  // FIXME: We silence analyzer warnings about errorcode, but should probably
-  // be doing something more sensible at runtime with the checks (abort?).
   int errorcode = pthread_mutexattr_init(&attr);
   assert(errorcode == 0); (void)errorcode;
 
@@ -59,15 +59,15 @@ MutexImpl::MutexImpl( bool recursive)
   // otherwise.
   int kind = ( recursive  ? PTHREAD_MUTEX_RECURSIVE : PTHREAD_MUTEX_NORMAL );
   errorcode = pthread_mutexattr_settype(&attr, kind);
-  assert(errorcode == 0); (void)errorcode;
+  assert(errorcode == 0);
 
   // Initialize the mutex
   errorcode = pthread_mutex_init(mutex, &attr);
-  assert(errorcode == 0); (void)errorcode;
+  assert(errorcode == 0);
 
   // Destroy the attributes
   errorcode = pthread_mutexattr_destroy(&attr);
-  assert(errorcode == 0); (void)errorcode;
+  assert(errorcode == 0);
 
   // Assign the data member
   data_ = mutex;
@@ -116,9 +116,9 @@ MutexImpl::tryacquire()
 
 #elif defined(LLVM_ON_UNIX)
 #include "Unix/Mutex.inc"
-#elif defined( LLVM_ON_WIN32)
+#elif defined( _WIN32)
 #include "Windows/Mutex.inc"
 #else
-#warning Neither LLVM_ON_UNIX nor LLVM_ON_WIN32 was set in Support/Mutex.cpp
+#warning Neither LLVM_ON_UNIX nor _WIN32 was set in Support/Mutex.cpp
 #endif
 #endif

@@ -72,8 +72,8 @@ public:
     // Create a new memory buffer to copy the data to.
     //
     // FIXME: This is an unfortunate amount of copying.
-    auto result = llvm::MemoryBuffer::getNewUninitMemBuffer(data.length, path);
-    memcpy((char*)result->getBufferStart(), data.data, data.length);
+    llvm::StringRef fileContents = llvm::StringRef((const char*)data.data, data.length);
+    auto result = llvm::MemoryBuffer::getMemBufferCopy(fileContents, path);
 
     // Release the client memory.
     //
@@ -738,7 +738,8 @@ class CAPIExternalCommand : public ExternalCommand {
 
     if (result != ProcessStatus::Succeeded) {
       // If the command failed, there is no need to gather dependencies.
-      completionFn.unwrapIn([result](ProcessCompletionFn fn){fn(result);});
+      if (completionFn.hasValue())
+        completionFn.getValue()(result);
       return;
     }
     
@@ -747,12 +748,14 @@ class CAPIExternalCommand : public ExternalCommand {
       if (!processDiscoveredDependencies(bsci, task, job_context)) {
         // If we were unable to process the dependencies output, report a
         // failure.
-        completionFn.unwrapIn([](ProcessCompletionFn fn){fn(ProcessStatus::Failed);});
+        if (completionFn.hasValue())
+          completionFn.getValue()(ProcessStatus::Failed);
         return;
       }
     }
 
-    completionFn.unwrapIn([result](ProcessCompletionFn fn){fn(result);});
+    if (completionFn.hasValue())
+      completionFn.getValue()(result);
   }
   
 public:

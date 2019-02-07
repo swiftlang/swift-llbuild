@@ -78,7 +78,15 @@ MemoryBlock Memory::allocateMappedMemory(size_t NumBytes,
   // While we'd be happy to allocate single pages, the Windows allocation
   // granularity may be larger than a single page (in practice, it is 64K)
   // so mapping less than that will create an unreachable fragment of memory.
-  static const size_t Granularity = getAllocationGranularity();
+  // Avoid using one-time initialization of static locals here, since they
+  // aren't thread safe with MSVC.
+  static volatile size_t GranularityCached;
+  size_t Granularity = GranularityCached;
+  if (Granularity == 0) {
+    Granularity = getAllocationGranularity();
+    GranularityCached = Granularity;
+  }
+
   const size_t NumBlocks = (NumBytes+Granularity-1)/Granularity;
 
   uintptr_t Start = NearBlock ? reinterpret_cast<uintptr_t>(NearBlock->base()) +
@@ -150,86 +158,6 @@ MemoryBlock Memory::allocateMappedMemory(size_t NumBytes,
 void Memory::InvalidateInstructionCache(
     const void *Addr, size_t Len) {
   FlushInstructionCache(GetCurrentProcess(), Addr, Len);
-}
-
-
-MemoryBlock Memory::AllocateRWX(size_t NumBytes,
-                                const MemoryBlock *NearBlock,
-                                std::string *ErrMsg) {
-  MemoryBlock MB;
-  std::error_code EC;
-  MB = allocateMappedMemory(NumBytes, NearBlock,
-                            MF_READ|MF_WRITE|MF_EXEC, EC);
-  if (EC != std::error_code() && ErrMsg) {
-    MakeErrMsg(ErrMsg, EC.message());
-  }
-  return MB;
-}
-
-bool Memory::ReleaseRWX(MemoryBlock &M, std::string *ErrMsg) {
-  std::error_code EC = releaseMappedMemory(M);
-  if (EC == std::error_code())
-    return false;
-  MakeErrMsg(ErrMsg, EC.message());
-  return true;
-}
-
-static DWORD getProtection(const void *addr) {
-  MEMORY_BASIC_INFORMATION info;
-  if (sizeof(info) == ::VirtualQuery(addr, &info, sizeof(info))) {
-    return info.Protect;
-  }
-  return 0;
-}
-
-bool Memory::setWritable(MemoryBlock &M, std::string *ErrMsg) {
-  if (!setRangeWritable(M.Address, M.Size)) {
-    return MakeErrMsg(ErrMsg, "Cannot set memory to writeable: ");
-  }
-  return true;
-}
-
-bool Memory::setExecutable(MemoryBlock &M, std::string *ErrMsg) {
-  if (!setRangeExecutable(M.Address, M.Size)) {
-    return MakeErrMsg(ErrMsg, "Cannot set memory to executable: ");
-  }
-  return true;
-}
-
-bool Memory::setRangeWritable(const void *Addr, size_t Size) {
-  DWORD prot = getProtection(Addr);
-  if (!prot)
-    return false;
-
-  if (prot == PAGE_EXECUTE || prot == PAGE_EXECUTE_READ) {
-    prot = PAGE_EXECUTE_READWRITE;
-  } else if (prot == PAGE_NOACCESS || prot == PAGE_READONLY) {
-    prot = PAGE_READWRITE;
-  }
-
-  DWORD oldProt;
-  Memory::InvalidateInstructionCache(Addr, Size);
-  return ::VirtualProtect(const_cast<LPVOID>(Addr), Size, prot, &oldProt)
-            == TRUE;
-}
-
-bool Memory::setRangeExecutable(const void *Addr, size_t Size) {
-  DWORD prot = getProtection(Addr);
-  if (!prot)
-    return false;
-
-  if (prot == PAGE_NOACCESS) {
-    prot = PAGE_EXECUTE;
-  } else if (prot == PAGE_READONLY) {
-    prot = PAGE_EXECUTE_READ;
-  } else if (prot == PAGE_READWRITE) {
-    prot = PAGE_EXECUTE_READWRITE;
-  }
-
-  DWORD oldProt;
-  Memory::InvalidateInstructionCache(Addr, Size);
-  return ::VirtualProtect(const_cast<LPVOID>(Addr), Size, prot, &oldProt)
-            == TRUE;
 }
 
 } // namespace sys

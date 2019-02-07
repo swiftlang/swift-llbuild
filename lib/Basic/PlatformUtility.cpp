@@ -30,7 +30,7 @@ using namespace llbuild::basic;
 
 bool sys::chdir(const char *fileName) {
 #if defined(_WIN32)
-  llvm::SmallVector<UTF16, 20> wFileName;
+  llvm::SmallVector<llvm::UTF16, 20> wFileName;
   llvm::convertUTF8ToUTF16String(fileName, wFileName);
   return SetCurrentDirectoryW((LPCWSTR)wFileName.data());
 #else
@@ -55,7 +55,7 @@ time_t filetimeToTime_t(FILETIME ft) {
 
 int sys::lstat(const char *fileName, sys::StatStruct *buf) {
 #if defined(_WIN32)
-  llvm::SmallVector<UTF16, 20> wfilename;
+  llvm::SmallVector<llvm::UTF16, 20> wfilename;
   llvm::convertUTF8ToUTF16String(fileName, wfilename);
   HANDLE h = CreateFileW(
       /*lpFileName=*/(LPCWSTR)wfilename.data(),
@@ -173,9 +173,9 @@ int sys::stat(const char *fileName, StatStruct *buf) {
 // Create a symlink named linkPath which contains the string pointsTo
 int sys::symlink(const char *pointsTo, const char *linkPath) {
 #if defined(_WIN32)
-  llvm::SmallVector<UTF16, 20> wPointsTo;
+  llvm::SmallVector<llvm::UTF16, 20> wPointsTo;
   llvm::convertUTF8ToUTF16String(pointsTo, wPointsTo);
-  llvm::SmallVector<UTF16, 20> wLinkPath;
+  llvm::SmallVector<llvm::UTF16, 20> wLinkPath;
   llvm::convertUTF8ToUTF16String(linkPath, wLinkPath);
   DWORD attributes = GetFileAttributesW((LPCWSTR)wPointsTo.data());
   DWORD directoryFlag = (attributes != INVALID_FILE_ATTRIBUTES &&
@@ -240,8 +240,8 @@ int sys::raiseOpenFileLimit(llbuild_rlim_t limit) {
 sys::MATCH_RESULT sys::filenameMatch(const std::string& pattern,
                                      const std::string& filename) {
 #if defined(_WIN32)
-  llvm::SmallVector<UTF16, 20> wpattern;
-  llvm::SmallVector<UTF16, 20> wfilename;
+  llvm::SmallVector<llvm::UTF16, 20> wpattern;
+  llvm::SmallVector<llvm::UTF16, 20> wfilename;
 
   llvm::convertUTF8ToUTF16String(pattern, wpattern);
   llvm::convertUTF8ToUTF16String(filename, wfilename);
@@ -319,7 +319,7 @@ std::string sys::makeTmpDir() {
 #if defined(_WIN32)
   char path[MAX_PATH];
   tmpnam_s(path, MAX_PATH);
-  llvm::SmallVector<UTF16, 20> wPath;
+  llvm::SmallVector<llvm::UTF16, 20> wPath;
   llvm::convertUTF8ToUTF16String(path, wPath);
   CreateDirectoryW((LPCWSTR)wPath.data(), NULL);
   return std::string(path);

@@ -1870,9 +1870,8 @@ public:
       QueueJobContext* context,
       llvm::Optional<ProcessCompletionFn> completionFn) override {
     // Nothing needs to be done for phony commands.
-    completionFn.unwrapIn([](ProcessCompletionFn fn){
-      fn(ProcessStatus::Succeeded);
-    });
+    if (completionFn.hasValue())
+      completionFn.getValue()(ProcessStatus::Succeeded);
   }
 
   virtual BuildValue getResultForOutput(Node* node, const BuildValue& value) override {
@@ -2289,7 +2288,8 @@ public:
         /*completionFn=*/{[this, &bsci, task, completionFn](ProcessResult result) {
           if (result.status != ProcessStatus::Succeeded) {
             // If the command failed, there is no need to gather dependencies.
-            completionFn.unwrapIn([result](ProcessCompletionFn fn){fn(result);});
+            if (completionFn.hasValue())
+              completionFn.getValue()(result);
             return;
           }
 
@@ -2301,17 +2301,18 @@ public:
               if (!processDiscoveredDependencies(bsci, task, context)) {
                 // If we were unable to process the dependencies output, report a
                 // failure.
-                completionFn.unwrapIn([](ProcessCompletionFn fn){
-                  fn(ProcessStatus::Failed);
-                });
+                if (completionFn.hasValue())
+                  completionFn.getValue()(ProcessStatus::Failed);
                 return;
               }
-              completionFn.unwrapIn([result](ProcessCompletionFn fn){fn(result);});
+              if (completionFn.hasValue())
+                completionFn.getValue()(result);
             }});
             return;
           }
 
-          completionFn.unwrapIn([result](ProcessCompletionFn fn){fn(result);});
+          if (completionFn.hasValue())
+            completionFn.getValue()(result);
         }});
   }
 };
@@ -2484,7 +2485,8 @@ public:
 
       if (result.status != ProcessStatus::Succeeded) {
         // If the command failed, there is no need to gather dependencies.
-        completionFn.unwrapIn([result](ProcessCompletionFn fn){fn(result);});
+        if (completionFn.hasValue())
+          completionFn.getValue()(result);
         return;
       }
 
@@ -2496,17 +2498,18 @@ public:
           if (!processDiscoveredDependencies(bsci, task, context)) {
             // If we were unable to process the dependencies output, report a
             // failure.
-            completionFn.unwrapIn([](ProcessCompletionFn fn){
-              fn(ProcessStatus::Failed);
-            });
+            if (completionFn.hasValue())
+              completionFn.getValue()(ProcessStatus::Failed);
             return;
           }
-          completionFn.unwrapIn([result](ProcessCompletionFn fn){fn(result);});
+          if (completionFn.hasValue())
+            completionFn.getValue()(result);
         }});
         return;
       }
 
-      completionFn.unwrapIn([result](ProcessCompletionFn fn){fn(result);});
+      if (completionFn.hasValue())
+        completionFn.getValue()(result);
     }});
   }
 };
@@ -3019,39 +3022,34 @@ public:
     // FIXME: Need to add support for required parameters.
     if (sourcesList.empty()) {
       bsci.getDelegate().error("", {}, "no configured 'sources'");
-      completionFn.unwrapIn([](ProcessCompletionFn fn){
-        fn(ProcessStatus::Failed);
-      });
+      if (completionFn.hasValue())
+        completionFn.getValue()(ProcessStatus::Failed);
       return;
     }
     if (objectsList.empty()) {
       bsci.getDelegate().error("", {}, "no configured 'objects'");
-      completionFn.unwrapIn([](ProcessCompletionFn fn){
-        fn(ProcessStatus::Failed);
-      });
+      if (completionFn.hasValue())
+        completionFn.getValue()(ProcessStatus::Failed);
       return;
     }
     if (moduleName.empty()) {
       bsci.getDelegate().error("", {}, "no configured 'module-name'");
-      completionFn.unwrapIn([](ProcessCompletionFn fn){
-        fn(ProcessStatus::Failed);
-      });
+      if (completionFn.hasValue())
+        completionFn.getValue()(ProcessStatus::Failed);
       return;
     }
     if (tempsPath.empty()) {
       bsci.getDelegate().error("", {}, "no configured 'temps-path'");
-      completionFn.unwrapIn([](ProcessCompletionFn fn){
-        fn(ProcessStatus::Failed);
-      });
+      if (completionFn.hasValue())
+        completionFn.getValue()(ProcessStatus::Failed);
       return;
     }
 
     if (sourcesList.size() != objectsList.size()) {
       bsci.getDelegate().error(
           "", {}, "'sources' and 'objects' are not the same size");
-      completionFn.unwrapIn([](ProcessCompletionFn fn){
-        fn(ProcessStatus::Failed);
-      });
+      if (completionFn.hasValue())
+        completionFn.getValue()(ProcessStatus::Failed);
       return;
     }
 
@@ -3073,9 +3071,8 @@ public:
     // Write the output file map.
     std::vector<std::string> depsFiles;
     if (!writeOutputFileMap(bsci, outputFileMapPath, depsFiles)) {
-      completionFn.unwrapIn([](ProcessCompletionFn fn){
-        fn(ProcessStatus::Failed);
-      });
+      if (completionFn.hasValue())
+        completionFn.getValue()(ProcessStatus::Failed);
       return;
     }
 
@@ -3084,7 +3081,8 @@ public:
 
     if (result != ProcessStatus::Succeeded) {
       // If the command failed, there is no need to gather dependencies.
-      completionFn.unwrapIn([result](ProcessCompletionFn fn){fn(result);});
+      if (completionFn.hasValue())
+        completionFn.getValue()(result);
       return;
     }
 
@@ -3094,13 +3092,13 @@ public:
     bsci.addJob({ this, [this, &bsci, task, completionFn, result, depsFiles](QueueJobContext* context) {
       for (const auto& depsPath: depsFiles) {
         if (!processDiscoveredDependencies(bsci, task, depsPath)) {
-          completionFn.unwrapIn([](ProcessCompletionFn fn){
-            fn(ProcessStatus::Failed);
-          });
+          if (completionFn.hasValue())
+            completionFn.getValue()(ProcessStatus::Failed);
           return;
         }
       }
-      completionFn.unwrapIn([result](ProcessCompletionFn fn){fn(result);});
+      if (completionFn.hasValue())
+        completionFn.getValue()(result);
     }});
   }
 };
@@ -3201,14 +3199,12 @@ class MkdirCommand : public ExternalCommand {
             output->getName())) {
       getBuildSystem(bsci.getBuildEngine()).getDelegate().commandHadError(this,
                      "unable to create directory '" + output->getName().str() + "'");
-      completionFn.unwrapIn([](ProcessCompletionFn fn){
-        fn(ProcessStatus::Failed);
-      });
+      if (completionFn.hasValue())
+        completionFn.getValue()(ProcessStatus::Failed);
       return;
     }
-    completionFn.unwrapIn([](ProcessCompletionFn fn){
-      fn(ProcessStatus::Succeeded);
-    });
+    if (completionFn.hasValue())
+      completionFn.getValue()(ProcessStatus::Succeeded);
   }
   
 public:
@@ -3527,9 +3523,8 @@ class ArchiveShellCommand : public ExternalCommand {
     // First delete the current archive
     // TODO instead insert, update and remove files from the archive
     if (llvm::sys::fs::remove(archiveName, /*IgnoreNonExisting*/ true)) {
-      completionFn.unwrapIn([](ProcessCompletionFn fn){
-        fn(ProcessStatus::Failed);
-      });
+      if (completionFn.hasValue())
+        completionFn.getValue()(ProcessStatus::Failed);
       return;
     }
 
@@ -3539,7 +3534,8 @@ class ArchiveShellCommand : public ExternalCommand {
                                             std::vector<StringRef>(args.begin(), args.end()),
                                             {}, true, {true},
                                             {[completionFn](ProcessResult result) {
-      completionFn.unwrapIn([result](ProcessCompletionFn fn){fn(result);});
+      if (completionFn.hasValue())
+        completionFn.getValue()(result);
     }});
   }
 

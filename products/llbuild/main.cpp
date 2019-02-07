@@ -37,7 +37,7 @@ static void usage() {
 
 int main(int argc, const char **argv) {
   // Print stacks on error.
-  llvm::sys::PrintStackTraceOnErrorSignal();
+  llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
   
   // Support use of llbuild as a replacement for ninja by indirecting to the
   // `ninja build` subtool when invoked under the name `ninja.
