@@ -281,9 +281,8 @@ public:
       std::unique_lock<std::mutex> lock(readyJobsMutex);
       // Do not execute new processes anymore after cancellation.
       if (cancelled) {
-        completionFn.unwrapIn([](ProcessCompletionFn fn){
-          fn(ProcessResult::makeCancelled());
-        });
+        if (completionFn.hasValue())
+          completionFn.getValue()(ProcessResult::makeCancelled());
         return;
       }
     }
@@ -345,9 +344,8 @@ public:
       [completionFn, lane=context.laneNumber](ProcessResult result) mutable {
         TracingExecutionQueueSubprocessResult(lane, result.pid, result.utime,
                                               result.stime, result.maxrss);
-        completionFn.unwrapIn([result](ProcessCompletionFn fn){
-          fn(result);
-        });
+        if (completionFn.hasValue())
+          completionFn.getValue()(result);
       }
     };
 

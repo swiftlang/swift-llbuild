@@ -11,11 +11,12 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llvm/ADT/StringExtras.h"
-#include "llvm/Config/config.h"
-#include "llvm/Support/ErrorHandling.h"
-#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Process.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/StringExtras.h"
+#include "llvm/Config/llvm-config.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Path.h"
 #include "llvm/Support/Program.h"
 
 using namespace llvm;
@@ -26,27 +27,15 @@ using namespace sys;
 //===          independent code.
 //===----------------------------------------------------------------------===//
 
-/// \brief A helper function to compute the elapsed wall-time since the program
-/// started.
-///
-/// Note that this routine actually computes the elapsed wall time since the
-/// first time it was called. However, we arrange to have it called during the
-/// startup of the process to get approximately correct results.
-static TimeValue getElapsedWallTime() {
-  static TimeValue &StartTime = *new TimeValue(TimeValue::now());
-  return TimeValue::now() - StartTime;
+Optional<std::string> Process::FindInEnvPath(StringRef EnvName,
+                                             StringRef FileName) {
+  return FindInEnvPath(EnvName, FileName, {});
 }
 
-/// \brief A special global variable to ensure we call \c getElapsedWallTime
-/// during global initialization of the program.
-///
-/// Note that this variable is never referenced elsewhere. Doing so could
-/// create race conditions during program startup or shutdown.
-static volatile TimeValue DummyTimeValue = getElapsedWallTime();
-
-Optional<std::string> Process::FindInEnvPath(const std::string& EnvName,
-                                             const std::string& FileName)
-{
+Optional<std::string> Process::FindInEnvPath(StringRef EnvName,
+                                             StringRef FileName,
+                                             ArrayRef<std::string> IgnoreList) {
+  assert(!path::is_absolute(FileName));
   Optional<std::string> FoundPath;
   Optional<std::string> OptPath = Process::GetEnv(EnvName);
   if (!OptPath.hasValue())
@@ -56,8 +45,11 @@ Optional<std::string> Process::FindInEnvPath(const std::string& EnvName,
   SmallVector<StringRef, 8> Dirs;
   SplitString(OptPath.getValue(), Dirs, EnvPathSeparatorStr);
 
-  for (const auto &Dir : Dirs) {
+  for (StringRef Dir : Dirs) {
     if (Dir.empty())
+      continue;
+
+    if (any_of(IgnoreList, [&](StringRef S) { return fs::equivalent(S, Dir); }))
       continue;
 
     SmallString<128> FilePath(Dir);
@@ -90,10 +82,17 @@ static const char colorcodes[2][2][8][10] = {
  { ALLCOLORS("4",""), ALLCOLORS("4","1;") }
 };
 
+// This is set to true when Process::PreventCoreFiles() is called.
+static bool coreFilesPrevented = false;
+
+bool Process::AreCoreFilesPrevented() {
+  return coreFilesPrevented;
+}
+
 // Include the platform-specific parts of this class.
 #ifdef LLVM_ON_UNIX
 #include "Unix/Process.inc"
 #endif
-#ifdef LLVM_ON_WIN32
+#ifdef _WIN32
 #include "Windows/Process.inc"
 #endif

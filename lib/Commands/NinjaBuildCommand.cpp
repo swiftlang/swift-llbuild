@@ -30,7 +30,6 @@
 #include "llbuild/Ninja/ManifestLoader.h"
 
 #include "llvm/ADT/SmallString.h"
-#include "llvm/Support/TimeValue.h"
 #include "llvm/Support/raw_ostream.h"
 
 #include "CommandLineStatusOutput.h"
@@ -69,8 +68,8 @@ extern "C" {
 #endif
 
 static uint64_t getTimeInMicroseconds() {
-  llvm::sys::TimeValue now = llvm::sys::TimeValue::now();
-  return now.msec();
+  auto now = std::chrono::high_resolution_clock::now();
+  return std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count();
 }
 
 static std::string getFormattedString(const char* fmt, va_list ap1) {

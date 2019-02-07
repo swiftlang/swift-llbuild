@@ -101,8 +101,8 @@ static int execute(ArrayRef<std::string> args) {
 
 int main(int argc, const char **argv) {
   // Print stacks on error.
-  llvm::sys::PrintStackTraceOnErrorSignal();
-  
+  llvm::sys::PrintStackTraceOnErrorSignal(argv[0]);
+
   std::vector<std::string> args;
   for (int i = 1; i != argc; ++i) {
     args.push_back(argv[i]);

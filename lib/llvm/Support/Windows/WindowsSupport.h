@@ -26,34 +26,65 @@
 #undef _WIN32_WINNT
 #undef _WIN32_IE
 
-// Require at least Windows XP(5.1) API.
-#define _WIN32_WINNT 0x0501
-#define _WIN32_IE    0x0600 // MinGW at it again.
+// Require at least Windows 7 API.
+#define _WIN32_WINNT 0x0601
+#define _WIN32_IE    0x0800 // MinGW at it again. FIXME: verify if still needed.
 #define WIN32_LEAN_AND_MEAN
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/StringExtras.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/Config/config.h" // Get build system configuration settings
+#include "llvm/Support/Chrono.h"
 #include "llvm/Support/Compiler.h"
-#include <system_error>
-#include <windows.h>
-#include <wincrypt.h>
 #include <cassert>
 #include <string>
-#include <vector>
+#include <system_error>
+#include <windows.h>
 
-inline bool MakeErrMsg(std::string* ErrMsg, const std::string& prefix) {
+// Must be included after windows.h
+#include <wincrypt.h>
+
+/// Determines if the program is running on Windows 8 or newer. This
+/// reimplements one of the helpers in the Windows 8.1 SDK, which are intended
+/// to supercede raw calls to GetVersionEx. Old SDKs, Cygwin, and MinGW don't
+/// yet have VersionHelpers.h, so we have our own helper.
+inline bool RunningWindows8OrGreater() {
+  // Windows 8 is version 6.2, service pack 0.
+  OSVERSIONINFOEXW osvi = {};
+  osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+  osvi.dwMajorVersion = 6;
+  osvi.dwMinorVersion = 2;
+  osvi.wServicePackMajor = 0;
+
+  DWORDLONG Mask = 0;
+  Mask = VerSetConditionMask(Mask, VER_MAJORVERSION, VER_GREATER_EQUAL);
+  Mask = VerSetConditionMask(Mask, VER_MINORVERSION, VER_GREATER_EQUAL);
+  Mask = VerSetConditionMask(Mask, VER_SERVICEPACKMAJOR, VER_GREATER_EQUAL);
+
+  return VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION |
+                                       VER_SERVICEPACKMAJOR,
+                            Mask) != FALSE;
+}
+
+inline bool MakeErrMsg(std::string *ErrMsg, const std::string &prefix) {
   if (!ErrMsg)
     return true;
   char *buffer = NULL;
-  DWORD R = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                          FORMAT_MESSAGE_FROM_SYSTEM,
-                          NULL, GetLastError(), 0, (LPSTR)&buffer, 1, NULL);
+  DWORD LastError = GetLastError();
+  DWORD R = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                               FORMAT_MESSAGE_FROM_SYSTEM |
+                               FORMAT_MESSAGE_MAX_WIDTH_MASK,
+                           NULL, LastError, 0, (LPSTR)&buffer, 1, NULL);
   if (R)
-    *ErrMsg = prefix + buffer;
+    *ErrMsg = prefix + ": " + buffer;
   else
-    *ErrMsg = prefix + "Unknown error";
+    *ErrMsg = prefix + ": Unknown error";
+  *ErrMsg += " (0x" + llvm::utohexstr(LastError) + ")";
 
   LocalFree(buffer);
   return R != 0;
@@ -139,6 +170,22 @@ struct CryptContextTraits : CommonHandleTraits {
   }
 };
 
+struct RegTraits : CommonHandleTraits {
+  typedef HKEY handle_type;
+
+  static handle_type GetInvalid() {
+    return NULL;
+  }
+
+  static void Close(handle_type h) {
+    ::RegCloseKey(h);
+  }
+
+  static bool IsValid(handle_type h) {
+    return h != GetInvalid();
+  }
+};
+
 struct FindHandleTraits : CommonHandleTraits {
   static void Close(handle_type h) {
     ::FindClose(h);
@@ -150,6 +197,7 @@ struct FileHandleTraits : CommonHandleTraits {};
 typedef ScopedHandle<CommonHandleTraits> ScopedCommonHandle;
 typedef ScopedHandle<FileHandleTraits>   ScopedFileHandle;
 typedef ScopedHandle<CryptContextTraits> ScopedCryptContext;
+typedef ScopedHandle<RegTraits>          ScopedRegHandle;
 typedef ScopedHandle<FindHandleTraits>   ScopedFindHandle;
 typedef ScopedHandle<JobHandleTraits>    ScopedJobHandle;
 
@@ -166,18 +214,45 @@ c_str(SmallVectorImpl<T> &str) {
 }
 
 namespace sys {
-namespace path {
-std::error_code widenPath(const Twine &Path8,
-                          SmallVectorImpl<wchar_t> &Path16);
-} // end namespace path
+
+inline std::chrono::nanoseconds toDuration(FILETIME Time) {
+  ULARGE_INTEGER TimeInteger;
+  TimeInteger.LowPart = Time.dwLowDateTime;
+  TimeInteger.HighPart = Time.dwHighDateTime;
+
+  // FILETIME's are # of 100 nanosecond ticks (1/10th of a microsecond)
+  return std::chrono::nanoseconds(100 * TimeInteger.QuadPart);
+}
+
+inline TimePoint<> toTimePoint(FILETIME Time) {
+  ULARGE_INTEGER TimeInteger;
+  TimeInteger.LowPart = Time.dwLowDateTime;
+  TimeInteger.HighPart = Time.dwHighDateTime;
+
+  // Adjust for different epoch
+  TimeInteger.QuadPart -= 11644473600ll * 10000000;
+
+  // FILETIME's are # of 100 nanosecond ticks (1/10th of a microsecond)
+  return TimePoint<>(std::chrono::nanoseconds(100 * TimeInteger.QuadPart));
+}
+
+inline FILETIME toFILETIME(TimePoint<> TP) {
+  ULARGE_INTEGER TimeInteger;
+  TimeInteger.QuadPart = TP.time_since_epoch().count() / 100;
+  TimeInteger.QuadPart += 11644473600ll * 10000000;
+
+  FILETIME Time;
+  Time.dwLowDateTime = TimeInteger.LowPart;
+  Time.dwHighDateTime = TimeInteger.HighPart;
+  return Time;
+}
 
 namespace windows {
-std::error_code UTF8ToUTF16(StringRef utf8, SmallVectorImpl<wchar_t> &utf16);
-std::error_code UTF16ToUTF8(const wchar_t *utf16, size_t utf16_len,
-                            SmallVectorImpl<char> &utf8);
-/// Convert from UTF16 to the current code page used in the system
-std::error_code UTF16ToCurCP(const wchar_t *utf16, size_t utf16_len,
-                             SmallVectorImpl<char> &utf8);
+// Returns command line arguments. Unlike arguments given to main(),
+// this function guarantees that the returned arguments are encoded in
+// UTF-8 regardless of the current code page setting.
+std::error_code GetCommandLineArguments(SmallVectorImpl<const char *> &Args,
+                                        BumpPtrAllocator &Alloc);
 } // end namespace windows
 } // end namespace sys
 } // end namespace llvm.

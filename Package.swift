@@ -1,4 +1,4 @@
-// swift-tools-version:4.0
+// swift-tools-version:4.2.0
 
 // This file defines Swift package manager support for llbuild. See:
 //  https://github.com/apple/swift-package-manager/tree/master/Documentation
@@ -6,7 +6,7 @@
 // You can build using:
 //
 // ```shell
-// swift build -Xlinker -lsqlite3 -Xlinker -lncurses $(utils/generate-version-h.sh)
+// swift build -Xlinker -lsqlite3 -Xlinker -lncurses
 // ```
 
 import PackageDescription
@@ -114,9 +114,14 @@ let package = Package(
             ]),
         
         // MARK: Ingested LLVM code.
+        .target(
+          name: "llvmDemangle",
+          path: "lib/llvm/Demangle"
+        ),
 
         .target(
             name: "llvmSupport",
+            dependencies: ["llvmDemangle"],
             path: "lib/llvm/Support"
         ),
     ],

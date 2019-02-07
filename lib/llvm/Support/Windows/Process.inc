@@ -12,6 +12,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llvm/Support/Allocator.h"
+#include "llvm/Support/ConvertUTF.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/WindowsError.h"
 #include <malloc.h>
@@ -24,14 +25,7 @@
 #include <psapi.h>
 #include <shellapi.h>
 
-#ifdef __MINGW32__
- #if (HAVE_LIBPSAPI != 1)
-  #error "libpsapi.a should be present"
- #endif
- #if (HAVE_LIBSHELL32 != 1)
-  #error "libshell32.a should be present"
- #endif
-#else
+#if !defined(__MINGW32__)
  #pragma comment(lib, "psapi.lib")
  #pragma comment(lib, "shell32.lib")
 #endif
@@ -47,19 +41,6 @@
 #endif
 
 using namespace llvm;
-using namespace sys;
-
-static TimeValue getTimeValueFromFILETIME(FILETIME Time) {
-  ULARGE_INTEGER TimeInteger;
-  TimeInteger.LowPart = Time.dwLowDateTime;
-  TimeInteger.HighPart = Time.dwHighDateTime;
-
-  // FILETIME's are # of 100 nanosecond ticks (1/10th of a microsecond)
-  return TimeValue(
-      static_cast<TimeValue::SecondsType>(TimeInteger.QuadPart / 10000000),
-      static_cast<TimeValue::NanoSecondsType>(
-          (TimeInteger.QuadPart % 10000000) * 100));
-}
 
 // This function retrieves the page size using GetNativeSystemInfo() and is
 // present solely so it can be called once to initialize the self_process member
@@ -93,17 +74,17 @@ Process::GetMallocUsage()
   return size;
 }
 
-void Process::GetTimeUsage(TimeValue &elapsed, TimeValue &user_time,
-                           TimeValue &sys_time) {
-  elapsed = TimeValue::now();
+void Process::GetTimeUsage(TimePoint<> &elapsed, std::chrono::nanoseconds &user_time,
+                           std::chrono::nanoseconds &sys_time) {
+  elapsed = std::chrono::system_clock::now();;
 
   FILETIME ProcCreate, ProcExit, KernelTime, UserTime;
   if (GetProcessTimes(GetCurrentProcess(), &ProcCreate, &ProcExit, &KernelTime,
                       &UserTime) == 0)
     return;
 
-  user_time = getTimeValueFromFILETIME(UserTime);
-  sys_time = getTimeValueFromFILETIME(KernelTime);
+  user_time = toDuration(UserTime);
+  sys_time = toDuration(KernelTime);
 }
 
 // Some LLVM programs such as bugpoint produce core files as a normal part of
@@ -123,6 +104,8 @@ void Process::PreventCoreFiles() {
   SetErrorMode(SEM_FAILCRITICALERRORS |
                SEM_NOGPFAULTERRORBOX |
                SEM_NOOPENFILEERRORBOX);
+
+  coreFilesPrevented = true;
 }
 
 /// Returns the environment variable \arg Name's value as a string encoded in
@@ -140,9 +123,10 @@ Optional<std::string> Process::GetEnv(StringRef Name) {
   size_t Size = MAX_PATH;
   do {
     Buf.reserve(Size);
+    SetLastError(NO_ERROR);
     Size =
-        GetEnvironmentVariableW(NameUTF16.data(), Buf.data(), Buf.capacity());
-    if (Size == 0)
+      GetEnvironmentVariableW(NameUTF16.data(), Buf.data(), Buf.capacity());
+    if (Size == 0 && GetLastError() == ERROR_ENVVAR_NOT_FOUND)
       return None;
 
     // Try again with larger buffer.
@@ -156,43 +140,38 @@ Optional<std::string> Process::GetEnv(StringRef Name) {
   return std::string(Res.data());
 }
 
-static std::error_code windows_error(DWORD E) {
-  return mapWindowsError(E);
-}
-
-static void AllocateAndPush(const SmallVectorImpl<char> &S,
-                            SmallVectorImpl<const char *> &Vector,
-                            SpecificBumpPtrAllocator<char> &Allocator) {
-  char *Buffer = Allocator.Allocate(S.size() + 1);
-  ::memcpy(Buffer, S.data(), S.size());
-  Buffer[S.size()] = '\0';
-  Vector.push_back(Buffer);
+static const char *AllocateString(const SmallVectorImpl<char> &S,
+                                  BumpPtrAllocator &Alloc) {
+  char *Buf = reinterpret_cast<char *>(Alloc.Allocate(S.size() + 1, 1));
+  ::memcpy(Buf, S.data(), S.size());
+  Buf[S.size()] = '\0';
+  return Buf;
 }
 
 /// Convert Arg from UTF-16 to UTF-8 and push it onto Args.
-static std::error_code
-ConvertAndPushArg(const wchar_t *Arg, SmallVectorImpl<const char *> &Args,
-                  SpecificBumpPtrAllocator<char> &Allocator) {
+static std::error_code ConvertAndPushArg(const wchar_t *Arg,
+                                         SmallVectorImpl<const char *> &Args,
+                                         BumpPtrAllocator &Alloc) {
   SmallVector<char, MAX_PATH> ArgString;
   if (std::error_code ec = windows::UTF16ToUTF8(Arg, wcslen(Arg), ArgString))
     return ec;
-  AllocateAndPush(ArgString, Args, Allocator);
+  Args.push_back(AllocateString(ArgString, Alloc));
   return std::error_code();
 }
 
-/// \brief Perform wildcard expansion of Arg, or just push it into Args if it
+/// Perform wildcard expansion of Arg, or just push it into Args if it
 /// doesn't have wildcards or doesn't match any files.
-static std::error_code
-WildcardExpand(const wchar_t *Arg, SmallVectorImpl<const char *> &Args,
-               SpecificBumpPtrAllocator<char> &Allocator) {
+static std::error_code WildcardExpand(const wchar_t *Arg,
+                                      SmallVectorImpl<const char *> &Args,
+                                      BumpPtrAllocator &Alloc) {
   if (!wcspbrk(Arg, L"*?")) {
     // Arg does not contain any wildcard characters. This is the common case.
-    return ConvertAndPushArg(Arg, Args, Allocator);
+    return ConvertAndPushArg(Arg, Args, Alloc);
   }
 
   if (wcscmp(Arg, L"/?") == 0 || wcscmp(Arg, L"-?") == 0) {
     // Don't wildcard expand /?. Always treat it as an option.
-    return ConvertAndPushArg(Arg, Args, Allocator);
+    return ConvertAndPushArg(Arg, Args, Alloc);
   }
 
   // Extract any directory part of the argument.
@@ -203,10 +182,13 @@ WildcardExpand(const wchar_t *Arg, SmallVectorImpl<const char *> &Args,
   const int DirSize = Dir.size();
 
   // Search for matching files.
+  // FIXME:  This assumes the wildcard is only in the file name and not in the
+  // directory portion of the file path.  For example, it doesn't handle
+  // "*\foo.c" nor "s?c\bar.cpp".
   WIN32_FIND_DATAW FileData;
   HANDLE FindHandle = FindFirstFileW(Arg, &FileData);
   if (FindHandle == INVALID_HANDLE_VALUE) {
-    return ConvertAndPushArg(Arg, Args, Allocator);
+    return ConvertAndPushArg(Arg, Args, Alloc);
   }
 
   std::error_code ec;
@@ -217,9 +199,9 @@ WildcardExpand(const wchar_t *Arg, SmallVectorImpl<const char *> &Args,
     if (ec)
       break;
 
-    // Push the filename onto Dir, and remove it afterwards.
+    // Append FileName to Dir, and remove it afterwards.
     llvm::sys::path::append(Dir, StringRef(FileName.data(), FileName.size()));
-    AllocateAndPush(Dir, Args, Allocator);
+    Args.push_back(AllocateString(Dir, Alloc));
     Dir.resize(DirSize);
   } while (FindNextFileW(FindHandle, &FileData));
 
@@ -227,27 +209,65 @@ WildcardExpand(const wchar_t *Arg, SmallVectorImpl<const char *> &Args,
   return ec;
 }
 
-std::error_code
-Process::GetArgumentVector(SmallVectorImpl<const char *> &Args,
-                           ArrayRef<const char *>,
-                           SpecificBumpPtrAllocator<char> &ArgAllocator) {
-  int ArgCount;
-  wchar_t **UnicodeCommandLine =
-      CommandLineToArgvW(GetCommandLineW(), &ArgCount);
-  if (!UnicodeCommandLine)
-    return windows_error(::GetLastError());
-
-  Args.reserve(ArgCount);
-  std::error_code ec;
-
-  for (int i = 0; i < ArgCount; ++i) {
-    ec = WildcardExpand(UnicodeCommandLine[i], Args, ArgAllocator);
-    if (ec)
-      break;
+static std::error_code GetExecutableName(SmallVectorImpl<char> &Filename) {
+  // The first argument may contain just the name of the executable (e.g.,
+  // "clang") rather than the full path, so swap it with the full path.
+  wchar_t ModuleName[MAX_PATH];
+  size_t Length = ::GetModuleFileNameW(NULL, ModuleName, MAX_PATH);
+  if (Length == 0 || Length == MAX_PATH) {
+    return mapWindowsError(GetLastError());
   }
 
-  LocalFree(UnicodeCommandLine);
-  return ec;
+  // If the first argument is a shortened (8.3) name (which is possible even
+  // if we got the module name), the driver will have trouble distinguishing it
+  // (e.g., clang.exe v. clang++.exe), so expand it now.
+  Length = GetLongPathNameW(ModuleName, ModuleName, MAX_PATH);
+  if (Length == 0)
+    return mapWindowsError(GetLastError());
+  if (Length > MAX_PATH) {
+    // We're not going to try to deal with paths longer than MAX_PATH, so we'll
+    // treat this as an error.  GetLastError() returns ERROR_SUCCESS, which
+    // isn't useful, so we'll hardcode an appropriate error value.
+    return mapWindowsError(ERROR_INSUFFICIENT_BUFFER);
+  }
+
+  std::error_code EC = windows::UTF16ToUTF8(ModuleName, Length, Filename);
+  if (EC)
+    return EC;
+
+  StringRef Base = sys::path::filename(Filename.data());
+  Filename.assign(Base.begin(), Base.end());
+  return std::error_code();
+}
+
+std::error_code
+windows::GetCommandLineArguments(SmallVectorImpl<const char *> &Args,
+                                 BumpPtrAllocator &Alloc) {
+  int ArgCount;
+  std::unique_ptr<wchar_t *[], decltype(&LocalFree)> UnicodeCommandLine{
+    CommandLineToArgvW(GetCommandLineW(), &ArgCount), &LocalFree};
+  if (!UnicodeCommandLine)
+    return mapWindowsError(::GetLastError());
+
+  std::error_code EC;
+
+  Args.reserve(ArgCount);
+
+  for (int I = 0; I < ArgCount; ++I) {
+    EC = WildcardExpand(UnicodeCommandLine[I], Args, Alloc);
+    if (EC)
+      return EC;
+  }
+
+  SmallVector<char, MAX_PATH> Arg0(Args[0], Args[0] + strlen(Args[0]));
+  SmallVector<char, MAX_PATH> Filename;
+  sys::path::remove_filename(Arg0);
+  EC = GetExecutableName(Filename);
+  if (EC)
+    return EC;
+  sys::path::append(Arg0, Filename);
+  Args[0] = AllocateString(Arg0, Alloc);
+  return std::error_code();
 }
 
 std::error_code Process::FixupStandardFileDescriptors() {
@@ -421,16 +441,23 @@ const char *Process::ResetColor() {
   return 0;
 }
 
+// Include GetLastError() in a fatal error message.
+static void ReportLastErrorFatal(const char *Msg) {
+  std::string ErrMsg;
+  MakeErrMsg(&ErrMsg, Msg);
+  report_fatal_error(ErrMsg);
+}
+
 unsigned Process::GetRandomNumber() {
   HCRYPTPROV HCPC;
   if (!::CryptAcquireContextW(&HCPC, NULL, NULL, PROV_RSA_FULL,
                               CRYPT_VERIFYCONTEXT))
-    report_fatal_error("Could not acquire a cryptographic context");
+    ReportLastErrorFatal("Could not acquire a cryptographic context");
 
   ScopedCryptContext CryptoProvider(HCPC);
   unsigned Ret;
   if (!::CryptGenRandom(CryptoProvider, sizeof(Ret),
                         reinterpret_cast<BYTE *>(&Ret)))
-    report_fatal_error("Could not generate a random number");
+    ReportLastErrorFatal("Could not generate a random number");
   return Ret;
 }

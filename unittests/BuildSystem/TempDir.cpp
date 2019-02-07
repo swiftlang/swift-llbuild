@@ -42,7 +42,7 @@ llbuild::TmpDir::~TmpDir() {
   // of it first.
   wchar_t wCurrPath[MAX_PATH];
   GetCurrentDirectoryW(MAX_PATH, wCurrPath);
-  llvm::SmallVector<UTF16, 20> wTmpPath;
+  llvm::SmallVector<llvm::UTF16, 20> wTmpPath;
   llvm::convertUTF8ToUTF16String(str(), wTmpPath);
   if (lstrcmpW(wCurrPath, (LPCWSTR)wTmpPath.data()) == 0) {
     std::string currPath = str();

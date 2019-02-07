@@ -1,4 +1,4 @@
-//===--- YAMLParser.h - Simple YAML parser --------------------------------===//
+//===- YAMLParser.h - Simple YAML parser ------------------------*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -38,54 +38,64 @@
 #ifndef LLVM_SUPPORT_YAMLPARSER_H
 #define LLVM_SUPPORT_YAMLPARSER_H
 
-#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Allocator.h"
-#include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/SMLoc.h"
-#include <limits>
+#include <cassert>
+#include <cstddef>
+#include <iterator>
 #include <map>
-#include <utility>
+#include <memory>
+#include <string>
+#include <system_error>
 
 namespace llvm {
+
+class MemoryBufferRef;
 class SourceMgr;
 class raw_ostream;
 class Twine;
 
 namespace yaml {
 
-class document_iterator;
 class Document;
+class document_iterator;
 class Node;
 class Scanner;
 struct Token;
 
-/// \brief Dump all the tokens in this stream to OS.
+/// Dump all the tokens in this stream to OS.
 /// \returns true if there was an error, false otherwise.
 bool dumpTokens(StringRef Input, raw_ostream &);
 
-/// \brief Scans all tokens in input without outputting anything. This is used
+/// Scans all tokens in input without outputting anything. This is used
 ///        for benchmarking the tokenizer.
 /// \returns true if there was an error, false otherwise.
 bool scanTokens(StringRef Input);
 
-/// \brief Escape \a Input for a double quoted scalar.
-std::string escape(StringRef Input);
+/// Escape \a Input for a double quoted scalar; if \p EscapePrintable
+/// is true, all UTF8 sequences will be escaped, if \p EscapePrintable is
+/// false, those UTF8 sequences encoding printable unicode scalars will not be
+/// escaped, but emitted verbatim.
+std::string escape(StringRef Input, bool EscapePrintable = true);
 
-/// \brief This class represents a YAML stream potentially containing multiple
+/// This class represents a YAML stream potentially containing multiple
 ///        documents.
 class Stream {
 public:
-  /// \brief This keeps a reference to the string referenced by \p Input.
-  Stream(StringRef Input, SourceMgr &);
+  /// This keeps a reference to the string referenced by \p Input.
+  Stream(StringRef Input, SourceMgr &, bool ShowColors = true,
+         std::error_code *EC = nullptr);
 
-  Stream(MemoryBufferRef InputBuffer, SourceMgr &);
+  Stream(MemoryBufferRef InputBuffer, SourceMgr &, bool ShowColors = true,
+         std::error_code *EC = nullptr);
   ~Stream();
 
   document_iterator begin();
   document_iterator end();
   void skip();
   bool failed();
+
   bool validate() {
     skip();
     return !failed();
@@ -94,13 +104,13 @@ public:
   void printError(Node *N, const Twine &Msg);
 
 private:
+  friend class Document;
+
   std::unique_ptr<Scanner> scanner;
   std::unique_ptr<Document> CurrentDoc;
-
-  friend class Document;
 };
 
-/// \brief Abstract base class for all Nodes.
+/// Abstract base class for all Nodes.
 class Node {
   virtual void anchor();
 
@@ -108,6 +118,7 @@ public:
   enum NodeKind {
     NK_Null,
     NK_Scalar,
+    NK_BlockScalar,
     NK_KeyValue,
     NK_Mapping,
     NK_Sequence,
@@ -117,15 +128,32 @@ public:
   Node(unsigned int Type, std::unique_ptr<Document> &, StringRef Anchor,
        StringRef Tag);
 
-  /// \brief Get the value of the anchor attached to this node. If it does not
+  // It's not safe to copy YAML nodes; the document is streamed and the position
+  // is part of the state.
+  Node(const Node &) = delete;
+  void operator=(const Node &) = delete;
+
+  void *operator new(size_t Size, BumpPtrAllocator &Alloc,
+                     size_t Alignment = 16) noexcept {
+    return Alloc.Allocate(Size, Alignment);
+  }
+
+  void operator delete(void *Ptr, BumpPtrAllocator &Alloc,
+                       size_t Size) noexcept {
+    Alloc.Deallocate(Ptr, Size);
+  }
+
+  void operator delete(void *) noexcept = delete;
+
+  /// Get the value of the anchor attached to this node. If it does not
   ///        have one, getAnchor().size() will be 0.
   StringRef getAnchor() const { return Anchor; }
 
-  /// \brief Get the tag as it was written in the document. This does not
+  /// Get the tag as it was written in the document. This does not
   ///   perform tag resolution.
   StringRef getRawTag() const { return Tag; }
 
-  /// \brief Get the verbatium tag for a given Node. This performs tag resoluton
+  /// Get the verbatium tag for a given Node. This performs tag resoluton
   ///   and substitution.
   std::string getVerbatimTag() const;
 
@@ -144,50 +172,39 @@ public:
 
   unsigned int getType() const { return TypeID; }
 
-  void *operator new(size_t Size, BumpPtrAllocator &Alloc,
-                     size_t Alignment = 16) throw() {
-    return Alloc.Allocate(Size, Alignment);
-  }
-
-  void operator delete(void *Ptr, BumpPtrAllocator &Alloc, size_t Size) throw() {
-    Alloc.Deallocate(Ptr, Size);
-  }
-
 protected:
   std::unique_ptr<Document> &Doc;
   SMRange SourceRange;
 
-  void operator delete(void *) throw() {}
-
-  virtual ~Node() {}
+  ~Node() = default;
 
 private:
   unsigned int TypeID;
   StringRef Anchor;
-  /// \brief The tag as typed in the document.
+  /// The tag as typed in the document.
   StringRef Tag;
 };
 
-/// \brief A null value.
+/// A null value.
 ///
 /// Example:
 ///   !!null null
-class NullNode : public Node {
+class NullNode final : public Node {
   void anchor() override;
 
 public:
   NullNode(std::unique_ptr<Document> &D)
       : Node(NK_Null, D, StringRef(), StringRef()) {}
 
-  static inline bool classof(const Node *N) { return N->getType() == NK_Null; }
+  static bool classof(const Node *N) { return N->getType() == NK_Null; }
 };
 
-/// \brief A scalar node is an opaque datum that can be presented as a
+/// A scalar node is an opaque datum that can be presented as a
 ///        series of zero or more Unicode scalar values.
 ///
 /// Example:
 ///   Adena
-class ScalarNode : public Node {
+class ScalarNode final : public Node {
   void anchor() override;
 
 public:
@@ -204,14 +221,14 @@ public:
   // utf8).
   StringRef getRawValue() const { return Value; }
 
-  /// \brief Gets the value of this node as a StringRef.
+  /// Gets the value of this node as a StringRef.
   ///
   /// \param Storage is used to store the content of the returned StringRef iff
   ///        it requires any modification from how it appeared in the source.
   ///        This happens with escaped characters and multi-line literals.
   StringRef getValue(SmallVectorImpl<char> &Storage) const;
 
-  static inline bool classof(const Node *N) {
+  static bool classof(const Node *N) {
     return N->getType() == NK_Scalar;
   }
 
@@ -223,29 +240,58 @@ private:
                                  SmallVectorImpl<char> &Storage) const;
 };
 
-/// \brief A key and value pair. While not technically a Node under the YAML
+/// A block scalar node is an opaque datum that can be presented as a
+///        series of zero or more Unicode scalar values.
+///
+/// Example:
+///   |
+///     Hello
+///     World
+class BlockScalarNode final : public Node {
+  void anchor() override;
+
+public:
+  BlockScalarNode(std::unique_ptr<Document> &D, StringRef Anchor, StringRef Tag,
+                  StringRef Value, StringRef RawVal)
+      : Node(NK_BlockScalar, D, Anchor, Tag), Value(Value) {
+    SMLoc Start = SMLoc::getFromPointer(RawVal.begin());
+    SMLoc End = SMLoc::getFromPointer(RawVal.end());
+    SourceRange = SMRange(Start, End);
+  }
+
+  /// Gets the value of this node as a StringRef.
+  StringRef getValue() const { return Value; }
+
+  static bool classof(const Node *N) {
+    return N->getType() == NK_BlockScalar;
+  }
+
+private:
+  StringRef Value;
+};
+
+/// A key and value pair. While not technically a Node under the YAML
 ///        representation graph, it is easier to treat them this way.
 ///
 /// TODO: Consider making this not a child of Node.
 ///
 /// Example:
 ///   Section: .text
-class KeyValueNode : public Node {
+class KeyValueNode final : public Node {
   void anchor() override;
 
 public:
   KeyValueNode(std::unique_ptr<Document> &D)
-      : Node(NK_KeyValue, D, StringRef(), StringRef()), Key(nullptr),
-        Value(nullptr) {}
+      : Node(NK_KeyValue, D, StringRef(), StringRef()) {}
 
-  /// \brief Parse and return the key.
+  /// Parse and return the key.
   ///
   /// This may be called multiple times.
   ///
   /// \returns The key, or nullptr if failed() == true.
   Node *getKey();
 
-  /// \brief Parse and return the value.
+  /// Parse and return the value.
   ///
   /// This may be called multiple times.
   ///
@@ -253,29 +299,32 @@ public:
   Node *getValue();
 
   void skip() override {
-    getKey()->skip();
-    getValue()->skip();
+    if (Node *Key = getKey()) {
+      Key->skip();
+      if (Node *Val = getValue())
+        Val->skip();
+    }
   }
 
-  static inline bool classof(const Node *N) {
+  static bool classof(const Node *N) {
     return N->getType() == NK_KeyValue;
   }
 
 private:
-  Node *Key;
-  Node *Value;
+  Node *Key = nullptr;
+  Node *Value = nullptr;
 };
 
-/// \brief This is an iterator abstraction over YAML collections shared by both
+/// This is an iterator abstraction over YAML collections shared by both
 ///        sequences and maps.
 ///
 /// BaseT must have a ValueT* member named CurrentEntry and a member function
 /// increment() which must set CurrentEntry to 0 to create an end iterator.
 template <class BaseT, class ValueT>
 class basic_collection_iterator
-    : public std::iterator<std::forward_iterator_tag, ValueT> {
+    : public std::iterator<std::input_iterator_tag, ValueT> {
 public:
-  basic_collection_iterator() : Base(nullptr) {}
+  basic_collection_iterator() = default;
   basic_collection_iterator(BaseT *B) : Base(B) {}
 
   ValueT *operator->() const {
@@ -289,18 +338,29 @@ public:
     return *Base->CurrentEntry;
   }
 
-  explicit operator ValueT *() const {
+  operator ValueT *() const {
     assert(Base && Base->CurrentEntry && "Attempted to access end iterator!");
     return Base->CurrentEntry;
   }
 
+  /// Note on EqualityComparable:
+  ///
+  /// The iterator is not re-entrant,
+  /// it is meant to be used for parsing YAML on-demand
+  /// Once iteration started - it can point only to one entry at a time
+  /// hence Base.CurrentEntry and Other.Base.CurrentEntry are equal
+  /// iff Base and Other.Base are equal.
   bool operator==(const basic_collection_iterator &Other) const {
-    if (Base != Other.Base)
-      return false;
-    return !Base || Base->CurrentEntry == Other.Base->CurrentEntry;
+    if (Base && (Base == Other.Base)) {
+      assert((Base->CurrentEntry == Other.Base->CurrentEntry)
+             && "Equal Bases expected to point to equal Entries");
+    }
+
+    return Base == Other.Base;
   }
-  bool operator!=(const basic_collection_iterator &Other) {
-    return !(*this == Other);
+
+  bool operator!=(const basic_collection_iterator &Other) const {
+    return !(Base == Other.Base);
   }
 
   basic_collection_iterator &operator++() {
@@ -313,7 +373,7 @@ public:
   }
 
 private:
-  BaseT *Base;
+  BaseT *Base = nullptr;
 };
 
 // The following two templates are used for both MappingNode and Sequence Node.
@@ -335,14 +395,14 @@ template <class CollectionType> void skip(CollectionType &C) {
       i->skip();
 }
 
-/// \brief Represents a YAML map created from either a block map for a flow map.
+/// Represents a YAML map created from either a block map for a flow map.
 ///
 /// This parses the YAML stream as increment() is called.
 ///
 /// Example:
 ///   Name: _main
 ///   Scope: Global
-class MappingNode : public Node {
+class MappingNode final : public Node {
   void anchor() override;
 
 public:
@@ -354,11 +414,12 @@ public:
 
   MappingNode(std::unique_ptr<Document> &D, StringRef Anchor, StringRef Tag,
               MappingType MT)
-      : Node(NK_Mapping, D, Anchor, Tag), Type(MT), IsAtBeginning(true),
-        IsAtEnd(false), CurrentEntry(nullptr) {}
+      : Node(NK_Mapping, D, Anchor, Tag), Type(MT) {}
 
   friend class basic_collection_iterator<MappingNode, KeyValueNode>;
-  typedef basic_collection_iterator<MappingNode, KeyValueNode> iterator;
+
+  using iterator = basic_collection_iterator<MappingNode, KeyValueNode>;
+
   template <class T> friend typename T::iterator yaml::begin(T &);
   template <class T> friend void yaml::skip(T &);
 
@@ -368,20 +429,20 @@ public:
 
   void skip() override { yaml::skip(*this); }
 
-  static inline bool classof(const Node *N) {
+  static bool classof(const Node *N) {
     return N->getType() == NK_Mapping;
   }
 
 private:
   MappingType Type;
-  bool IsAtBeginning;
-  bool IsAtEnd;
-  KeyValueNode *CurrentEntry;
+  bool IsAtBeginning = true;
+  bool IsAtEnd = false;
+  KeyValueNode *CurrentEntry = nullptr;
 
   void increment();
 };
 
-/// \brief Represents a YAML sequence created from either a block sequence for a
+/// Represents a YAML sequence created from either a block sequence for a
 ///        flow sequence.
 ///
 /// This parses the YAML stream as increment() is called.
@@ -389,7 +450,7 @@ private:
 /// Example:
 ///   - Hello
 ///   - World
-class SequenceNode : public Node {
+class SequenceNode final : public Node {
   void anchor() override;
 
 public:
@@ -408,13 +469,12 @@ public:
 
   SequenceNode(std::unique_ptr<Document> &D, StringRef Anchor, StringRef Tag,
                SequenceType ST)
-      : Node(NK_Sequence, D, Anchor, Tag), SeqType(ST), IsAtBeginning(true),
-        IsAtEnd(false),
-        WasPreviousTokenFlowEntry(true), // Start with an imaginary ','.
-        CurrentEntry(nullptr) {}
+      : Node(NK_Sequence, D, Anchor, Tag), SeqType(ST) {}
 
   friend class basic_collection_iterator<SequenceNode, Node>;
-  typedef basic_collection_iterator<SequenceNode, Node> iterator;
+
+  using iterator = basic_collection_iterator<SequenceNode, Node>;
+
   template <class T> friend typename T::iterator yaml::begin(T &);
   template <class T> friend void yaml::skip(T &);
 
@@ -426,23 +486,23 @@ public:
 
   void skip() override { yaml::skip(*this); }
 
-  static inline bool classof(const Node *N) {
+  static bool classof(const Node *N) {
     return N->getType() == NK_Sequence;
   }
 
 private:
   SequenceType SeqType;
-  bool IsAtBeginning;
-  bool IsAtEnd;
-  bool WasPreviousTokenFlowEntry;
-  Node *CurrentEntry;
+  bool IsAtBeginning = true;
+  bool IsAtEnd = false;
+  bool WasPreviousTokenFlowEntry = true; // Start with an imaginary ','.
+  Node *CurrentEntry = nullptr;
 };
 
-/// \brief Represents an alias to a Node with an anchor.
+/// Represents an alias to a Node with an anchor.
 ///
 /// Example:
 ///   *AnchorName
-class AliasNode : public Node {
+class AliasNode final : public Node {
   void anchor() override;
 
 public:
@@ -452,26 +512,26 @@ public:
   StringRef getName() const { return Name; }
   Node *getTarget();
 
-  static inline bool classof(const Node *N) { return N->getType() == NK_Alias; }
+  static bool classof(const Node *N) { return N->getType() == NK_Alias; }
 
 private:
   StringRef Name;
 };
 
-/// \brief A YAML Stream is a sequence of Documents. A document contains a root
+/// A YAML Stream is a sequence of Documents. A document contains a root
 ///        node.
 class Document {
 public:
-  /// \brief Root for parsing a node. Returns a single node.
-  Node *parseBlockNode();
-
   Document(Stream &ParentStream);
 
-  /// \brief Finish parsing the current document and return true if there are
+  /// Root for parsing a node. Returns a single node.
+  Node *parseBlockNode();
+
+  /// Finish parsing the current document and return true if there are
   ///        more. Return false otherwise.
   bool skip();
 
-  /// \brief Parse and return the root level node.
+  /// Parse and return the root level node.
   Node *getRoot() {
     if (Root)
       return Root;
@@ -484,18 +544,18 @@ private:
   friend class Node;
   friend class document_iterator;
 
-  /// \brief Stream to read tokens from.
+  /// Stream to read tokens from.
   Stream &stream;
 
-  /// \brief Used to allocate nodes to. All are destroyed without calling their
+  /// Used to allocate nodes to. All are destroyed without calling their
   ///        destructor when the document is destroyed.
   BumpPtrAllocator NodeAllocator;
 
-  /// \brief The root node. Used to support skipping a partially parsed
+  /// The root node. Used to support skipping a partially parsed
   ///        document.
   Node *Root;
 
-  /// \brief Maps tag prefixes to their expansion.
+  /// Maps tag prefixes to their expansion.
   std::map<StringRef, StringRef> TagMap;
 
   Token &peekNext();
@@ -503,32 +563,34 @@ private:
   void setError(const Twine &Message, Token &Location) const;
   bool failed() const;
 
-  /// \brief Parse %BLAH directives and return true if any were encountered.
+  /// Parse %BLAH directives and return true if any were encountered.
   bool parseDirectives();
 
-  /// \brief Parse %YAML
+  /// Parse %YAML
   void parseYAMLDirective();
 
-  /// \brief Parse %TAG
+  /// Parse %TAG
   void parseTAGDirective();
 
-  /// \brief Consume the next token and error if it is not \a TK.
+  /// Consume the next token and error if it is not \a TK.
   bool expectToken(int TK);
 };
 
-/// \brief Iterator abstraction for Documents over a Stream.
+/// Iterator abstraction for Documents over a Stream.
 class document_iterator {
 public:
-  document_iterator() : Doc(nullptr) {}
+  document_iterator() = default;
   document_iterator(std::unique_ptr<Document> &D) : Doc(&D) {}
 
-  bool operator==(const document_iterator &Other) {
+  bool operator==(const document_iterator &Other) const {
     if (isAtEnd() || Other.isAtEnd())
       return isAtEnd() && Other.isAtEnd();
 
     return Doc == Other.Doc;
   }
-  bool operator!=(const document_iterator &Other) { return !(*this == Other); }
+  bool operator!=(const document_iterator &Other) const {
+    return !(*this == Other);
+  }
 
   document_iterator operator++() {
     assert(Doc && "incrementing iterator past the end.");
@@ -548,11 +610,11 @@ public:
 private:
   bool isAtEnd() const { return !Doc || !*Doc; }
 
-  std::unique_ptr<Document> *Doc;
+  std::unique_ptr<Document> *Doc = nullptr;
 };
 
-} // End namespace yaml.
+} // end namespace yaml
 
-} // End namespace llvm.
+} // end namespace llvm
 
-#endif
+#endif // LLVM_SUPPORT_YAMLPARSER_H

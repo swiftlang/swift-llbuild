@@ -14,6 +14,8 @@
 #include "llbuild/llbuild.h"
 #include "llbuild/buildsystem.h"
 #include "llvm/Support/ConvertUTF.h"
+#include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/StringRef.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -136,7 +138,7 @@ depinfo_tester_tool_create_command(void *context, const llb_data_t* name) {
 static bool fs_get_file_contents(void* context, const char* path,
                                 llb_data_t* data_out) {
 #if defined(_WIN32)
-  llvm::SmallVector<UTF16, 20> wPath;
+  llvm::SmallVector<llvm::UTF16, 20> wPath;
   llvm::convertUTF8ToUTF16String(path, wPath);
   wprintf(L" -- read file contents: %ls\n", (LPCWSTR)wPath.data());
   fflush(stdout);

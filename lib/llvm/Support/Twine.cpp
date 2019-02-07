@@ -9,7 +9,9 @@
 
 #include "llvm/ADT/Twine.h"
 #include "llvm/ADT/SmallString.h"
+#include "llvm/Config/llvm-config.h"
 #include "llvm/Support/Debug.h"
+#include "llvm/Support/FormatVariadic.h"
 #include "llvm/Support/raw_ostream.h"
 using namespace llvm;
 
@@ -17,6 +19,11 @@ std::string Twine::str() const {
   // If we're storing only a std::string, just return it.
   if (LHSKind == StdStringKind && RHSKind == EmptyKind)
     return *LHS.stdString;
+
+  // If we're storing a formatv_object, we can avoid an extra copy by formatting
+  // it immediately and returning the result.
+  if (LHSKind == FormatvObjectKind && RHSKind == EmptyKind)
+    return LHS.formatvObject->str();
 
   // Otherwise, flatten and copy the contents first.
   SmallString<256> Vec;
@@ -26,13 +33,6 @@ std::string Twine::str() const {
 void Twine::toVector(SmallVectorImpl<char> &Out) const {
   raw_svector_ostream OS(Out);
   print(OS);
-}
-
-StringRef Twine::toStringRef(SmallVectorImpl<char> &Out) const {
-  if (isSingleStringRef())
-    return getSingleStringRef();
-  toVector(Out);
-  return StringRef(Out.data(), Out.size());
 }
 
 StringRef Twine::toNullTerminatedStringRef(SmallVectorImpl<char> &Out) const {
@@ -71,6 +71,12 @@ void Twine::printOneChild(raw_ostream &OS, Child Ptr,
     break;
   case Twine::StringRefKind:
     OS << *Ptr.stringRef;
+    break;
+  case Twine::SmallStringKind:
+    OS << *Ptr.smallString;
+    break;
+  case Twine::FormatvObjectKind:
+    OS << *Ptr.formatvObject;
     break;
   case Twine::CharKind:
     OS << Ptr.character;
@@ -122,6 +128,12 @@ void Twine::printOneChildRepr(raw_ostream &OS, Child Ptr,
     OS << "stringref:\""
        << Ptr.stringRef << "\"";
     break;
+  case Twine::SmallStringKind:
+    OS << "smallstring:\"" << *Ptr.smallString << "\"";
+    break;
+  case Twine::FormatvObjectKind:
+    OS << "formatv:\"" << *Ptr.formatvObject << "\"";
+    break;
   case Twine::CharKind:
     OS << "char:\"" << Ptr.character << "\"";
     break;
@@ -162,10 +174,12 @@ void Twine::printRepr(raw_ostream &OS) const {
   OS << ")";
 }
 
-void Twine::dump() const {
+#if !defined(NDEBUG) || defined(LLVM_ENABLE_DUMP)
+LLVM_DUMP_METHOD void Twine::dump() const {
   print(dbgs());
 }
 
-void Twine::dumpRepr() const {
+LLVM_DUMP_METHOD void Twine::dumpRepr() const {
   printRepr(dbgs());
 }
+#endif
