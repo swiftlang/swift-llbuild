@@ -409,16 +409,8 @@ void llbuild::basic::spawnProcess(
   // Form the complete C string command line.
   std::vector<std::string> argsStorage(commandLine.begin(), commandLine.end());
 #if defined(_WIN32)
-  std::string args;
-  // TODO: WARNING fix Windows command line escaping. This doesn't work at all
-  // if the arguments contain spaces. This should instead use std::string
-  // flattenWindowsCommandLine(ArrayRef<StringRef> Args) from llvm once that
-  // gets pulled in.
-  std::for_each(std::begin(argsStorage), std::end(argsStorage),
-                [&args](auto arg) { args += arg + " "; });
-  if (!args.empty()) {
-    args.pop_back();
-  }
+  std::string args = llvm::sys::flattenWindowsCommandLine(commandLine);
+
   // Convert the command line string to utf16
   llvm::SmallVector<llvm::UTF16, 20> u16Executable;
   llvm::SmallVector<llvm::UTF16, 20> u16CmdLine;
