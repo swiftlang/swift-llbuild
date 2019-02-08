@@ -254,11 +254,11 @@ typedef struct llb_buildsystem_delegate_t_ {
   ///
   /// \\returns True on success (the directory was created, or already exists).
   bool (*fs_create_directory)(void* context, const char* path);
-  
+
   /// Get the file contents for the given path.
   ///
   /// The contents *MUST* be returned in a new buffer allocated with \see
-  /// malloc().
+  /// llb_alloc().
   ///
   /// Xparam path The path to provide the contents for.
   ///
@@ -735,7 +735,18 @@ llb_get_scheduler_lane_width();
 /// be automatically translated into the number of cores detected on the host.
 LLBUILD_EXPORT void
 llb_set_scheduler_lane_width(uint32_t width);
+/// @}
 
+/// @name Memory APIs
+// MARK: Allocating and freeing memory
+/// Allocate memory usable by the build system
+/// \param size The number bytes to allocate
+LLBUILD_EXPORT void*
+llb_alloc(size_t size);
+/// Free memory allocated for or by the build system
+/// \param ptr A pointer to the allocated memory to free
+LLBUILD_EXPORT void
+llb_free(void* ptr);
 /// @}
 
 #endif

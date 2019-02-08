@@ -932,3 +932,5 @@ void llb_set_quality_of_service(llb_quality_of_service_t level) {
   }
 }
 
+void* llb_alloc(size_t size) { return malloc(size); }
+void llb_free(void* ptr) { free(ptr); }

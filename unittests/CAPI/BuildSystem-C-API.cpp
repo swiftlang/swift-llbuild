@@ -10,9 +10,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llbuild/llbuild.h"
 #include "llbuild/Basic/PlatformUtility.h"
+#include "llbuild/llbuild.h"
 #include "llbuild/buildsystem.h"
+#include "llvm/Support/ConvertUTF.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -119,7 +120,7 @@ depinfo_tester_command_execute_command(void *context,
   writeFileContents(depInfoPath, depInfoContents);
 
   // Clean up.
-  free(desc);
+  llb_free(desc);
   return true;
 }
 
@@ -134,18 +135,29 @@ depinfo_tester_tool_create_command(void *context, const llb_data_t* name) {
 
 static bool fs_get_file_contents(void* context, const char* path,
                                 llb_data_t* data_out) {
+#if defined(_WIN32)
+  llvm::SmallVector<UTF16, 20> wPath;
+  llvm::convertUTF8ToUTF16String(path, wPath);
+  wprintf(L" -- read file contents: %ls\n", (LPCWSTR)wPath.data());
+  fflush(stdout);
+  FILE* fp;
+  if (_wfopen_s(&fp, (LPCWSTR)wPath.data(), L"rb")) {
+    return false;
+  }
+#else
   printf(" -- read file contents: %s\n", path);
   fflush(stdout);
-  
+
   FILE *fp = fopen(path, "rb");
   if (!fp) {
     return false;
   }
-  
+#endif
+
   fseek(fp, 0, SEEK_END);
   long size = ftell(fp);
   fseek(fp, 0, SEEK_SET);
-  uint8_t* buffer = (uint8_t *)malloc(size);
+  uint8_t* buffer = (uint8_t*)llb_alloc(size);
   if (!buffer) {
     return false;
   }
@@ -209,7 +221,7 @@ static void command_started(void* context,
   llb_buildsystem_command_get_name(command, &name);
   printf("%s: %.*s -- %s\n", __FUNCTION__, (int)name.length, name.data,
          description);
-  free(description);
+  llb_free(description);
   fflush(stdout);
 }
 
