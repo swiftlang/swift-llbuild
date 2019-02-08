@@ -45,6 +45,7 @@
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <iomanip>
 #include <memory>
 #include <mutex>
 #include <set>
@@ -2856,12 +2857,35 @@ public:
     return ExternalCommand::configureAttribute(ctx, name, values);
   }
 
+  template <typename String>
+  std::string escapeForJson(String const& in) const {
+    std::ostringstream ss;
+    for (auto i = in.begin(); i != in.end(); i++) {
+      switch (*i) {
+      case '\\': ss << "\\\\"; break;
+      case '"': ss << "\\\""; break;
+      case '\b': ss << "\\b"; break;
+      case '\n': ss << "\\n"; break;
+      case '\f': ss << "\\f"; break;
+      case '\r': ss << "\\r"; break;
+      case '\t': ss << "\\t"; break;
+      default:
+        if ('\x00' <= *i && *i <= '\x1f') {
+          ss << "\\u" << std::hex << std::setw(4) << std::setfill('0')
+             << (int)*i;
+        } else {
+          ss << *i;
+        }
+      }
+    }
+    return ss.str();
+  }
+
   bool writeOutputFileMap(BuildSystemCommandInterface& bsci,
                           StringRef outputFileMapPath,
                           std::vector<std::string>& depsFiles_out) const {
-    // FIXME: We need to properly escape everything we write here.
     assert(sourcesList.size() == objectsList.size());
-    
+
     SmallString<16> data;
     std::error_code ec;
     llvm::raw_fd_ostream os(outputFileMapPath, ec,
@@ -2873,7 +2897,7 @@ public:
     }
 
     os << "{\n";
-    
+
     // Write the master file dependencies entry.
     SmallString<16> masterDepsPath;
     llvm::sys::path::append(masterDepsPath, tempsPath, "master.swiftdeps");
@@ -2884,10 +2908,10 @@ public:
       depsFiles_out.push_back(depsPath.str());
       SmallString<16> object;
       llvm::sys::path::append(object, tempsPath, moduleName + ".o");
-      os << "    \"dependencies\": \"" << depsPath << "\",\n";
-      os << "    \"object\": \"" << object << "\",\n";
+      os << "    \"dependencies\": \"" << escapeForJson(depsPath) << "\",\n";
+      os << "    \"object\": \"" << escapeForJson(object) << "\",\n";
     }
-    os << "    \"swift-dependencies\": \"" << masterDepsPath << "\"\n";
+    os << "    \"swift-dependencies\": \"" << escapeForJson(masterDepsPath) << "\"\n";
     os << "  },\n";
 
     // Write out the entries for each source file.
@@ -2902,22 +2926,22 @@ public:
       SmallString<16> swiftDepsPath;
       llvm::sys::path::append(swiftDepsPath, objectDir,
                               sourceStem + ".swiftdeps");
-      
-      os << "  \"" << source << "\": {\n";
+
+      os << "  \"" << escapeForJson(source) << "\": {\n";
       if (!enableWholeModuleOptimization) {
         SmallString<16> depsPath;
         llvm::sys::path::append(depsPath, objectDir, sourceStem + ".d");
-        os << "    \"dependencies\": \"" << depsPath << "\",\n";
+        os << "    \"dependencies\": \"" << escapeForJson(depsPath) << "\",\n";
         depsFiles_out.push_back(depsPath.str());
       }
-      os << "    \"object\": \"" << object << "\",\n";
-      os << "    \"swiftmodule\": \"" << partialModulePath << "\",\n";
-      os << "    \"swift-dependencies\": \"" << swiftDepsPath << "\"\n";
+      os << "    \"object\": \"" << escapeForJson(object) << "\",\n";
+      os << "    \"swiftmodule\": \"" << escapeForJson(partialModulePath) << "\",\n";
+      os << "    \"swift-dependencies\": \"" << escapeForJson(swiftDepsPath) << "\"\n";
       os << "  }" << ((i + 1) < sourcesList.size() ? "," : "") << "\n";
     }
-    
+
     os << "}\n";
-    
+
     os.close();
 
     return true;
