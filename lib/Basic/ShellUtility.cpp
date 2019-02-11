@@ -27,27 +27,32 @@ void appendShellEscapedString(llvm::raw_ostream& os, StringRef string) {
     return;
   }
 
+#if defined(_WIN32)
+  std::string escQuote = "\"";
+#else
+  std::string escQuote = "'";
+#endif
   // We only need to escape the single quote, if it isn't present we can
   // escape using single quotes.
-  auto singleQuotePos = string.find_first_of("'", pos);
+  auto singleQuotePos = string.find_first_of(escQuote, pos);
   if (singleQuotePos == std::string::npos) {
-    os << "'";
+    os << escQuote;
     os << string;
-    os << "'";
+    os << escQuote;
     return;
   }
 
   // Otherwise iterate and escape all the single quotes.
-  os << "'";
+  os << escQuote;
   os << string.slice(0, singleQuotePos);
   for (auto idx = singleQuotePos; idx < string.size(); idx++) {
-    if (string[idx] == '\'') {
-      os << "'\\''";
+    if (string[idx] == escQuote[0]) {
+      os << escQuote << "\\" << escQuote << escQuote;
     } else {
       os << string[idx];
     }
   }
-  os << "'";
+  os << escQuote;
 }
 
 std::string shellEscaped(StringRef string) {
