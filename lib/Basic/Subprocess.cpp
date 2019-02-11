@@ -414,7 +414,7 @@ void llbuild::basic::spawnProcess(
   // if the arguments contain spaces. This should instead use std::string
   // flattenWindowsCommandLine(ArrayRef<StringRef> Args) from llvm once that
   // gets pulled in.
-  std::for_each(std::begin(argsStorage) + 1, std::end(argsStorage),
+  std::for_each(std::begin(argsStorage), std::end(argsStorage),
                 [&args](auto arg) { args += arg + " "; });
   if (!args.empty()) {
     args.pop_back();
