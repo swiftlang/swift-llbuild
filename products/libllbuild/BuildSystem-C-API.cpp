@@ -536,7 +536,7 @@ class CAPIBuildSystem {
   std::unique_ptr<BuildSystemFrontend> frontend;
 
   void handleDiagnostic(const llvm::SMDiagnostic& diagnostic) {
-    llb_buildsystem_diagnostic_kind_t kind;
+    llb_buildsystem_diagnostic_kind_t kind = llb_buildsystem_diagnostic_kind_note;
     switch (diagnostic.getKind()) {
     case llvm::SourceMgr::DK_Error:
       kind = llb_buildsystem_diagnostic_kind_error;
@@ -545,6 +545,7 @@ class CAPIBuildSystem {
       kind = llb_buildsystem_diagnostic_kind_warning;
       break;
     case llvm::SourceMgr::DK_Note:
+    case llvm::SourceMgr::DK_Remark:
       kind = llb_buildsystem_diagnostic_kind_note;
       break;
     }

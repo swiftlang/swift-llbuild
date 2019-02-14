@@ -145,6 +145,13 @@
 /* #undef HAVE_MALLOC_H */
 #endif
 
+/* Define to 1 if you have the <malloc/malloc.h> header file. */
+#if __has_include(<malloc/malloc.h>)
+#define HAVE_MALLOC_MALLOC_H
+#else
+/* #undef HAVE_MALLOC_MALLOC_H */
+#endif
+
 /* Define to 1 if you have the `malloc_zone_statistics' function. */
 #define HAVE_MALLOC_ZONE_STATISTICS 1
 

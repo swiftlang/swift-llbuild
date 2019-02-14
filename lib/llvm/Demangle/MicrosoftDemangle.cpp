@@ -592,6 +592,7 @@ void Type::outputPre(OutputStream &OS, Type &Ty) {
   case StorageClass::PublicStatic:
   case StorageClass::ProtectedStatic:
     OS << "static ";
+    break;
   default:
     break;
   }
