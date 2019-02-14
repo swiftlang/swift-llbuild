@@ -2594,6 +2594,7 @@ Node *Db::parseCtorDtorName(Node *&SoFar, NameState *State) {
     case SpecialSubKind::ostream:
     case SpecialSubKind::iostream:
       SoFar = make<ExpandedSpecialSubstitution>(SSK);
+      break;
     default:
       break;
     }

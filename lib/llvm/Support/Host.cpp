@@ -866,7 +866,7 @@ static void getAvailableFeatures(unsigned ECX, unsigned EDX, unsigned MaxLeaf,
                                  unsigned *Features2Out) {
   unsigned Features = 0;
   unsigned Features2 = 0;
-  unsigned EAX, EBX;
+  unsigned EAX = 0, EBX = 0;
 
   if ((EDX >> 15) & 1)
     Features |= 1 << X86::FEATURE_CMOV;

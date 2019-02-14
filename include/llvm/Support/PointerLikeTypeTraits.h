@@ -39,7 +39,7 @@ template <typename T, typename U = void> struct HasPointerLikeTypeTraits {
 
 // sizeof(T) is valid only for a complete T.
 template <typename T> struct HasPointerLikeTypeTraits<
-  T, decltype((sizeof(PointerLikeTypeTraits<T>) + sizeof(T)), void())> {
+  T, decltype(static_cast<void>((sizeof(PointerLikeTypeTraits<T>) + sizeof(T))), void())> {
   static const bool value = true;
 };
 
