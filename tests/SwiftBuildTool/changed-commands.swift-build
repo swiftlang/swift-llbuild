@@ -9,19 +9,22 @@
 # RUN: mkdir -p %t.build
 # RUN: touch %t.build/s1.swift %t.build/s2.swift
 #
+# RUN: sed -e "s#SOURCEDIR#%/S#g" < %S/Inputs/swiftc-shim.cpp > %t.build/swiftc-shim.cpp
+# RUN: clang++ %t.build/swiftc-shim.cpp -o %t.build/swiftc-shim.exe
+#
 # RUN: grep -A1000 "VERSION-BEGIN-[1]" %s | grep -B10000 "VERSION-END-1" | grep -ve '^--$' > %t.build/build.swift-build.tmp
-# RUN: sed -e "s#SOURCEDIR#%S#g" -e "s#TMPDIR#%t#g" < %t.build/build.swift-build.tmp > %t.build/build.swift-build
+# RUN: sed -e "s#SOURCEDIR#%/S#g" -e "s#TMPDIR#%/t#g" < %t.build/build.swift-build.tmp > %t.build/build.swift-build
 # RUN: %{swift-build-tool} -v --chdir %t.build > %t1.out
 # RUN: %{FileCheck} --check-prefix CHECK-VERSION-1 --input-file %t1.out %s
 #
 # RUN: grep -A1000 "VERSION-BEGIN-[2]" %s | grep -B10000 "VERSION-END-2" | grep -ve '^--$' > %t.build/build.swift-build.tmp
-# RUN: sed -e "s#SOURCEDIR#%S#g" -e "s#TMPDIR#%t#g" < %t.build/build.swift-build.tmp > %t.build/build.swift-build
+# RUN: sed -e "s#SOURCEDIR#%/S#g" -e "s#TMPDIR#%/t#g" < %t.build/build.swift-build.tmp > %t.build/build.swift-build
 # RUN: %{swift-build-tool} -v --chdir %t.build > %t2.out
 # RUN: %{FileCheck} --check-prefix CHECK-VERSION-2 --input-file %t2.out %s
 
 ##### VERSION-BEGIN-1 #####
 
-# CHECK-VERSION-1: swiftc {{.*}} s1.swift s2.swift
+# CHECK-VERSION-1: swiftc-shim.exe {{.*}} s1.swift s2.swift
 client:
   name: swift-build
 
@@ -33,7 +36,7 @@ commands:
     tool: swift-compiler
     inputs: ["s1.swift", "s2.swift"]
     outputs: ["s1.o", "s2.o"]
-    executable: SOURCEDIR/Inputs/pseudo-swiftc
+    executable: TMPDIR.build/swiftc-shim.exe
     module-name: Foo
     module-output-path: Foo.swiftmodule
     sources: ["s1.swift", "s2.swift"]
@@ -45,7 +48,7 @@ commands:
 
 ##### VERSION-BEGIN-2 #####
 
-# CHECK-VERSION-2: swiftc {{.*}} s1.swift
+# CHECK-VERSION-2: swiftc-shim.exe {{.*}} s1.swift
 client:
   name: swift-build
 
@@ -57,7 +60,7 @@ commands:
     tool: swift-compiler
     inputs: ["s1.swift"]
     outputs: ["s1.o"]
-    executable: SOURCEDIR/Inputs/pseudo-swiftc
+    executable: TMPDIR.build/swiftc-shim.exe
     module-name: Foo
     module-output-path: Foo.swiftmodule
     sources: ["s1.swift"]

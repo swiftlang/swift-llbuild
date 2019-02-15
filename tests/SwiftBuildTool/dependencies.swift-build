@@ -2,12 +2,14 @@
 #
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
+# RUN: sed -e "s#SOURCEDIR#%/S#g" < %S/Inputs/swiftc-shim.cpp > %t.build/swiftc-shim.cpp
+# RUN: clang++ %t.build/swiftc-shim.cpp -o %t.build/swiftc-shim.exe
 # RUN: touch %t.build/input
-# RUN: sed -e "s#SOURCEDIR#%S#g" -e "s#TMPDIR#%t#g" < %s > %t.build/build.swift-build
+# RUN: sed -e "s#SOURCEDIR#%/S#g" -e "s#TMPDIR#%/t#g" < %s > %t.build/build.swift-build
 # RUN: %{swift-build-tool} -v --chdir %t.build > %t.out
 # RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file %t.out %s
 #
-# CHECK-INITIAL: {{.*}}/pseudo-swiftc
+# CHECK-INITIAL: {{.*}}/swiftc-shim
 
 # Check that the next build is null.
 #
@@ -23,7 +25,7 @@
 # RUN: %{swift-build-tool} -v --chdir %t.build > %t.out
 # RUN: %{FileCheck} --check-prefix=CHECK-REBUILD --input-file %t.out %s
 #
-# CHECK-REBUILD: {{.*}}/pseudo-swiftc
+# CHECK-REBUILD: {{.*}}/swiftc-shim
 
 client:
   name: swift-build
@@ -35,7 +37,7 @@ commands:
   C1:
     tool: swift-compiler
     outputs: ["<output>"]
-    executable: SOURCEDIR/Inputs/pseudo-swiftc
+    executable: TMPDIR.build/swiftc-shim.exe
     module-name: Foo
     sources: input.swift
     objects: output.o
