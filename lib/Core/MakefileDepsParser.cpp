@@ -26,6 +26,7 @@ static bool isWordChar(int c) {
   switch (c) {
   case '\0':
   case '\t':
+  case '\r':
   case '\n':
   case ' ':
   case '$':
@@ -48,7 +49,7 @@ static void skipWhitespaceAndComments(const char*& cur, const char* end) {
       continue;
     }
 
-    if (c == ' ' || c == '\t' || c == '\n')
+    if (c == ' ' || c == '\t' || c == '\n' || c == '\r')
       continue;
 
     break;
@@ -60,7 +61,7 @@ static void skipNonNewlineWhitespace(const char*& cur, const char* end) {
     int c = *cur;
 
     // Skip regular whitespace.
-    if (c == ' ' || c == '\t')
+    if (c == ' ' || c == '\t' || c == '\r')
       continue;
 
     // If this is an escaped newline, also skip it.
