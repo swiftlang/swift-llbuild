@@ -109,7 +109,7 @@ void Lexer::skipToEndOfLine() {
   // (which we want to generate a Newline token).
   for (;;) {
     int c = peekNextChar();
-    if (c == -1 || c == '\n')
+    if (c == -1 || c == '\n' || c == '\r')
       break;
     getNextChar();
   }
@@ -161,7 +161,7 @@ Token& Lexer::lexIdentifier(Token& result) {
 }
 
 static bool isNonNewlineSpace(int c) {
-  return isspace(c) && c != '\n';
+  return isspace(c) && c != '\n' && c != '\r';
 }
 
 Token &Lexer::lexPathString(Token &result) {
@@ -209,7 +209,7 @@ Token& Lexer::lexVariableString(Token& result) {
     }
 
     // Otherwise, continue only if this is not the EOL or EOF.
-    if (c == '\n' || c == -1)
+    if (c == '\n' || c == -1 || c == '\r')
       break;
 
     getNextChar();
@@ -247,7 +247,9 @@ Token& Lexer::lex(Token& result) {
     // Check for escape sequences.
     if (c == '$' && columnNumber != 0) {
       // If this is a newline escape, consume it.
-      if (bufferPos + 1 != buffer.end() && bufferPos[1] == '\n') {
+      if ((bufferPos + 1 != buffer.end() && bufferPos[1] == '\n') ||
+          (bufferPos + 2 != buffer.end() && bufferPos[1] == '\r' &&
+           bufferPos[2] == '\n')) {
         getNextChar();
         getNextChar();
       } else {
@@ -269,7 +271,7 @@ Token& Lexer::lex(Token& result) {
   result.column = columnNumber;
 
   // Check if we are at a string mode independent token.
-  if (c == '\n') {
+  if (c == '\n' || c == '\r') {
     getNextChar();
     return setTokenKind(result, Token::Kind::Newline);
   }
