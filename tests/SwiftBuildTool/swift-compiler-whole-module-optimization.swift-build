@@ -1,3 +1,5 @@
+# Windows doesn't have a way to exec python files
+# UNSUPPORTED: platform=Windows
 # Check that we communicate properly with the Swift compiler.
 #
 # RUN: rm -rf %t.build
