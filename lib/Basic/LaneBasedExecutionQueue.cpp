@@ -200,7 +200,17 @@ public:
   : ExecutionQueue(delegate), buildID(std::random_device()()), numLanes(numLanes),
         readyJobs(Scheduler::make(alg)), environment(environment)
   {
-    backgroundTaskMax = numLanes * 16;
+    // Configure the background task maximum. We currently support an
+    // environmental override for experimentation pursposes, but otherwise limit
+    // to a small multiple of the core count, since we currently burn one thread
+    // per background task.
+    char *p = getenv("LLBUILD_BACKGROUND_TASK_MAX");
+    if (p && !StringRef(p).getAsInteger(10, backgroundTaskMax)) {
+      // Parsed.
+    } else {
+      backgroundTaskMax = numLanes * 16;
+    }
+            
     for (unsigned i = 0; i != numLanes; ++i) {
       lanes.push_back(std::unique_ptr<std::thread>(
                           new std::thread(
