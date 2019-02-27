@@ -15,6 +15,7 @@
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/Basic/PlatformUtility.h"
+#include "llbuild/Core/BuildDB.h"
 #include "llbuild/BuildSystem/BuildDescription.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildSystem.h"
@@ -46,7 +47,7 @@ using namespace llbuild::buildsystem;
 
 namespace {
 
-/*  Parse Command */
+#pragma mark - Parse Command
 
 class ParseBuildFileDelegate : public BuildFileDelegate {
   bool showOutput;
@@ -422,7 +423,7 @@ static int executeParseCommand(std::vector<std::string> args) {
 }
 
 
-/* Build Command */
+#pragma mark - Build Command
 
 class BasicBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
   std::unique_ptr<basic::FileSystem> fileSystem;
@@ -600,6 +601,127 @@ static int executeBuildCommand(std::vector<std::string> args) {
   return 0;
 }
 
+#pragma mark - DB Command
+
+static void dbUsage(int exitCode) {
+  int optionWidth = 20;
+  fprintf(stderr, "Usage: %s buildsystem db [options] [action]\n",
+          getProgramName());
+  fprintf(stderr, "\nOptions:\n");
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--help",
+          "show this help message and exit");
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "--db <path>",
+          "database path [default: 'build.db']");
+  fprintf(stderr, "\nActions:\n");
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "get <key>...",
+          "get the build value of the specified key");
+  ::exit(exitCode);
+}
+
+
+class KeyMapDelegate : public BuildDBDelegate {
+public:
+  llvm::StringMap<KeyID> keyTable;
+
+  KeyID getKeyID(const KeyType& key) override {
+    auto it = keyTable.insert(std::make_pair(key, 0)).first;
+    return (KeyID)(uintptr_t)it->getKey().data();
+  }
+
+  KeyType getKeyForID(KeyID key) override {
+    // Note that we don't need to lock `keyTable` here because the key entries
+    // themselves don't change once created.
+    return llvm::StringMapEntry<KeyID>::GetStringMapEntryFromKeyData(
+      (const char*)(uintptr_t)key).getKey();
+  }
+};
+
+
+static int executeDBCommand(std::vector<std::string> args) {
+  std::string dbPath = "build.db";
+
+  // Parse options
+  while (!args.empty() && args[0][0] == '-') {
+    const std::string option = args[0];
+    args.erase(args.begin());
+
+    if (option == "--")
+      break;
+
+    if (option == "--help") {
+      dbUsage(0);
+    } else if (option == "--db") {
+      if (args.empty()) {
+        fprintf(stderr, "error: %s: missing db path\n\n",
+                getProgramName());
+        dbUsage(1);
+      }
+      dbPath = args[0];
+      args.erase(args.begin());
+    } else {
+      fprintf(stderr, "error: %s: invalid option: '%s'\n\n",
+              getProgramName(), option.c_str());
+      dbUsage(1);
+    }
+  }
+
+  if (args.size() < 1) {
+    fprintf(stderr, "error: %s: invalid number of arguments\n",
+            getProgramName());
+    dbUsage(1);
+  }
+
+  // Load database
+  std::string error;
+  std::unique_ptr<BuildDB> buildDB = createSQLiteBuildDB(dbPath, BuildSystem::getSchemaVersion(), &error);
+  if (!buildDB) {
+    fprintf(stderr, "error: failed to load build db: %s\n\n", error.c_str());
+    ::exit(1);
+  }
+
+  KeyMapDelegate keymap;
+  buildDB->attachDelegate(&keymap);
+
+  // Process requested action
+  const std::string action = args[0];
+  args.erase(args.begin());
+
+  if (action == "get") {
+    for (KeyType key : args) {
+      std::string error;
+      Result result;
+      if (!buildDB->lookupRuleResult(keymap.getKeyID(key), key, &result, &error)) {
+        if (error.length()) {
+          fprintf(stderr, "error: failed to lookup key: %s\n\n", error.c_str());
+          ::exit(1);
+        }
+        printf("\nkey: %s\n  not found\n", key.c_str());
+        continue;
+      }
+
+      printf("\nkey: %s\ncomputed: %llu\nbuilt: %llu\ndependencies:\n",
+             key.c_str(), result.computedAt, result.builtAt);
+      for (auto keyID : result.dependencies) {
+        printf("  %s\n", keymap.getKeyForID(keyID).c_str());
+      }
+
+      // TODO - print build value
+      printf("value:\n  ");
+      fflush(stdout);
+      BuildValue value = BuildValue::fromData(result.value);
+      value.dump(llvm::outs());
+      printf("\n");
+    }
+  } else {
+    fprintf(stderr, "error: %s: invalid action: '%s'\n\n",
+            getProgramName(), action.c_str());
+    dbUsage(1);
+  }
+
+  return 0;
+}
+
+
 } // namespace
 
 #pragma mark - Build System Top-Level Command
@@ -611,6 +733,7 @@ static void usage(int exitCode) {
   fprintf(stderr, "Available commands:\n");
   fprintf(stderr, "  parse         -- Parse a build file\n");
   fprintf(stderr, "  build         -- Build using a build file\n");
+  fprintf(stderr, "  db            -- Interrogate a build.db\n");
   fprintf(stderr, "\n");
   exit(exitCode);
 }
@@ -624,6 +747,8 @@ int commands::executeBuildSystemCommand(const std::vector<std::string> &args) {
     return executeParseCommand({args.begin()+1, args.end()});
   } else if (args[0] == "build") {
     return executeBuildCommand({args.begin()+1, args.end()});
+  } else if (args[0] == "db") {
+    return executeDBCommand({args.begin()+1, args.end()});
   } else {
     fprintf(stderr, "error: %s: unknown command '%s'\n", getProgramName(),
             args[0].c_str());

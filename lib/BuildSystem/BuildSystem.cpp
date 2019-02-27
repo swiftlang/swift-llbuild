@@ -154,6 +154,7 @@ public:
 };
 
 class BuildSystemImpl : public BuildSystemCommandInterface {
+public:
   /// The internal schema version.
   ///
   /// Version History:
@@ -164,7 +165,8 @@ class BuildSystemImpl : public BuildSystemCommandInterface {
   /// * 5: Switch BuildValue to be BinaryCoding based
   /// * 4: Pre-history
   static const uint32_t internalSchemaVersion = 9;
-  
+
+private:
   BuildSystem& buildSystem;
 
   /// The delegate the BuildSystem was configured with.
@@ -4029,6 +4031,10 @@ void BuildSystem::cancel() {
 
 void BuildSystem::resetForBuild() {
   static_cast<BuildSystemImpl*>(impl)->resetForBuild();
+}
+
+uint32_t BuildSystem::getSchemaVersion() {
+  return BuildSystemImpl::internalSchemaVersion;
 }
 
 // This function checks if the given path is prefixed by another path.
