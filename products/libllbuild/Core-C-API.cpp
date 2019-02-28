@@ -80,8 +80,14 @@ class CAPIBuildEngineDelegate : public BuildEngineDelegate, public basic::Execut
   }
 
   virtual void cycleDetected(const std::vector<core::Rule*>& items) override {
-    // FIXME.
-    assert(0 && "unexpected cycle!");
+    std::vector<llb_data_t> keys;
+    keys.reserve(items.size());
+    for (auto item : items) {
+      const KeyType &key = item->key;
+      keys.push_back({ key.size(), (const uint8_t*)key.data() });
+    }
+
+    cAPIDelegate.cycle_detected(cAPIDelegate.context, keys.data(), keys.size());
   }
 
   virtual void error(const Twine& message) override {

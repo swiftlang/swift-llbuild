@@ -125,6 +125,18 @@ typedef struct llb_buildengine_delegate_t_ {
     /// Xparam context The user context pointer.
     /// Xparam message Error message.
     void (*error)(void* context, const char* message);
+
+    /// Callback for cycles detected by the build engine.
+    ///
+    /// Xparam context The user context pointer.
+    /// Xparam keys The ordered list of keys for rules comprising the cycle,
+    /// starting from the rule which was requested to build and ending with the
+    /// first rule in the cycle (i.e., the rule participating in the cycle will
+    /// appear twice).
+    /// Xparam key_count The number of keys involved in the cycle.
+    void (*cycle_detected)(void* context,
+                           const llb_data_t* keys,
+                           uint64_t key_count);
 } llb_buildengine_delegate_t;
 
 /// Create a new build engine object.
