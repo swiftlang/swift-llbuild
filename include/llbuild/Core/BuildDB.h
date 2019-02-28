@@ -85,7 +85,10 @@ public:
   // FIXME: Figure out if we want a more lazy approach where we make the
   // database cache result objects and we query them only when needed. This may
   // scale better to very large build graphs.
-  virtual bool lookupRuleResult(KeyID keyID, const Rule& rule, Result* result_out, std::string* error_out) = 0;
+  inline bool lookupRuleResult(KeyID keyID, const Rule& rule, Result* result_out, std::string* error_out) {
+    return lookupRuleResult(keyID, rule.key, result_out, error_out);
+  }
+  virtual bool lookupRuleResult(KeyID keyID, const KeyType& key, Result* result_out, std::string* error_out) = 0;
 
   /// Update the stored result for a rule.
   ///

@@ -269,6 +269,7 @@ public:
   /// Cancel the current build.
   void cancel();
 
+  static uint32_t getSchemaVersion();
   /// @}
 };
 

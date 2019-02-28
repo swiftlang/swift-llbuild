@@ -438,7 +438,7 @@ TEST(BuildEngineTest, incrementalDependency) {
     }
     virtual bool setCurrentIteration(uint64_t value, std::string* error_out) override { return true; }
     virtual bool lookupRuleResult(KeyID keyID,
-                                  const Rule& rule,
+                                  const KeyType& key,
                                   Result* result_out,
                                   std::string* error_out) override {
       return false;

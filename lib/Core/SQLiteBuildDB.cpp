@@ -405,7 +405,7 @@ public:
       "WHERE key_id == ?;");
   sqlite3_stmt* fastFindRuleResultStmt = nullptr;
 
-  virtual bool lookupRuleResult(KeyID keyID, const Rule& rule,
+  virtual bool lookupRuleResult(KeyID keyID, const KeyType& key,
                                 Result* result_out,
                                 std::string *error_out) override {
     assert(delegate != nullptr);
@@ -466,7 +466,7 @@ public:
       result = sqlite3_clear_bindings(findRuleResultStmt);
       checkSQLiteResultOKReturnFalse(result);
       result = sqlite3_bind_text(findRuleResultStmt, /*index=*/1,
-                                 rule.key.data(), rule.key.size(),
+                                 key.data(), key.size(),
                                  SQLITE_STATIC);
       checkSQLiteResultOKReturnFalse(result);
 
