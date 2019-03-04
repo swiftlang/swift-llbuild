@@ -644,6 +644,84 @@ public:
     close();
   }
 
+  virtual bool getKeys(std::vector<KeyType>& keys_out, std::string* error_out) override {
+    std::lock_guard<std::mutex> guard(dbMutex);
+
+    if (!open(error_out))
+      return false;
+
+    // Search for the key in the database
+    int result;
+    sqlite3_stmt* stmt;
+    result = sqlite3_prepare_v2(db, "SELECT key FROM key_names;",
+                                -1, &stmt, nullptr);
+    checkSQLiteResultOKReturnFalse(result);
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+      assert(sqlite3_column_count(stmt) == 1);
+
+      auto size = sqlite3_column_bytes(stmt, 0);
+      auto text = (const char*) sqlite3_column_text(stmt, 0);
+
+      keys_out.push_back(KeyType(text, size));
+    }
+
+    sqlite3_finalize(stmt);
+
+    return true;
+  }
+
+  virtual void dump(raw_ostream& os) override {
+    std::lock_guard<std::mutex> guard(dbMutex);
+
+    std::string error;
+    if (!open(&error)) {
+      os << "error: " << getCurrentErrorMessage() << "\n";
+      return;
+    }
+
+    // Dump Keys
+    int result;
+    sqlite3_stmt* stmt;
+    result = sqlite3_prepare_v2(db, "SELECT key, id FROM key_names;",
+                                -1, &stmt, nullptr);
+    if (result != SQLITE_OK)
+      return;
+
+    os << "keys:\n";
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+      assert(sqlite3_column_count(stmt) == 1);
+
+      auto size = sqlite3_column_bytes(stmt, 0);
+      auto text = (const char*) sqlite3_column_text(stmt, 0);
+
+      auto id = sqlite3_column_int64(stmt, 1);
+
+      os << id << " -- " << KeyType(text, size).c_str() << "\n";
+    }
+
+    sqlite3_finalize(stmt);
+
+    // Dump Keys
+    result = sqlite3_prepare_v2(db, "SELECT key_id, built_at, computed_at FROM rule_results;",
+                                -1, &stmt, nullptr);
+    if (result != SQLITE_OK)
+      return;
+
+    os << "\nresults:\n";
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+      assert(sqlite3_column_count(stmt) == 1);
+
+      auto id = sqlite3_column_int64(stmt, 0);
+      auto built = sqlite3_column_int64(stmt, 1);
+      auto computed = sqlite3_column_int64(stmt, 2);
+
+      os << id << " -- " << built << ", " << computed << "\n";
+    }
+
+    sqlite3_finalize(stmt);
+  }
+
   /// @}
 
   

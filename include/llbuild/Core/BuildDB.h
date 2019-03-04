@@ -121,6 +121,16 @@ public:
   /// modifications within the scope of a single build in a single transaction,
   /// or it may choose to eagerly commit partial results from the build.
   virtual void buildComplete() = 0;
+
+
+  /// Get a list of the keys known by the database
+  ///
+  /// \param keys_out [out] The known keys will be appended to this vector.
+  /// \param error_out [out] Error string if return value is false.
+  virtual bool getKeys(std::vector<KeyType>& keys_out, std::string* error_out) = 0;
+
+  /// Dump a debug view of the database contents
+  virtual void dump(raw_ostream& os) { (void)os; }
 };
 
 /// Create a BuildDB instance backed by a SQLite3 database.
