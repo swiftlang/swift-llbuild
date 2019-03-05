@@ -615,6 +615,10 @@ static void dbUsage(int exitCode) {
   fprintf(stderr, "\nActions:\n");
   fprintf(stderr, "  %-*s %s\n", optionWidth, "get <key>...",
           "get the build value of the specified key");
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "list-keys",
+          "list build keys known by the database");
+  fprintf(stderr, "  %-*s %s\n", optionWidth, "dump",
+          "dump debug database contents");
   ::exit(exitCode);
 }
 
@@ -712,6 +716,19 @@ static int executeDBCommand(std::vector<std::string> args) {
       value.dump(llvm::outs());
       printf("\n");
     }
+  } else if (action == "list-keys") {
+    std::string error;
+    std::vector<KeyType> keys;
+    if (!buildDB->getKeys(keys, &error)) {
+      fprintf(stderr, "error: failed to get keys: %s\n\n", error.c_str());
+      ::exit(1);
+    }
+
+    for (auto key: keys) {
+      printf("%s\n", key.c_str());
+    }
+  } else if (action == "dump") {
+    buildDB->dump(llvm::outs());
   } else {
     fprintf(stderr, "error: %s: invalid action: '%s'\n\n",
             getProgramName(), action.c_str());

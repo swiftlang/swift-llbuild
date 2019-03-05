@@ -452,6 +452,7 @@ TEST(BuildEngineTest, incrementalDependency) {
     }
     virtual bool buildStarted(std::string* error_out) override { return true; }
     virtual void buildComplete() override {}
+    virtual bool getKeys(std::vector<KeyType>& keys_out, std::string* error_out) override { return false; }
   };
   CustomDB *db = new CustomDB();
   std::string error;
