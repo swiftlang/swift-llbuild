@@ -119,6 +119,8 @@ public:
   ShellCommand(StringRef name, bool controlEnabled) : ExternalCommand(name),
     controlEnabled(controlEnabled) { }
 
+  virtual const std::vector<StringRef>& getArgs() const { return args; }
+  
   virtual void getShortDescription(SmallVectorImpl<char> &result) const override {
     llvm::raw_svector_ostream(result) << getDescription();
   }

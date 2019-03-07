@@ -12,6 +12,7 @@
 
 #include "llbuild/BuildSystem/BuildSystem.h"
 #include "llbuild/BuildSystem/BuildSystemCommandInterface.h"
+#include "llbuild/BuildSystem/BuildSystemExtensions.h"
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
 #include "llbuild/BuildSystem/BuildSystemHandlers.h"
 
@@ -65,6 +66,9 @@ using namespace llbuild;
 using namespace llbuild::basic;
 using namespace llbuild::core;
 using namespace llbuild::buildsystem;
+
+/// The extension manager singleton.
+static BuildSystemExtensionManager extensionManager{};
 
 BuildSystemDelegate::~BuildSystemDelegate() {}
 
@@ -241,9 +245,15 @@ private:
   }
 
   virtual std::unique_ptr<ShellCommandHandler>
-  resolveShellCommandHandler(ShellCommand*) override {
-    // FIXME: Implement.
-    return nullptr;
+  resolveShellCommandHandler(ShellCommand* command) override {
+    // Check if we have a plugin for this command.
+    if (command->getArgs().empty()) { return nullptr; }
+    
+    auto* extension = extensionManager.lookupByCommandPath(
+        command->getArgs()[0]);
+    if (!extension) return nullptr;
+
+    return extension->resolveShellCommandHandler(command);
   }
   
   /// @}
