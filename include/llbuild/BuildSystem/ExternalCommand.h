@@ -36,6 +36,7 @@ namespace buildsystem {
 
 class BuildNode;
 class BuildSystem;
+class ExternalCommandHandler;
 
 /// This is a base class for defining commands which are run externally to the
 /// build system and interact using files. It defines common base behaviors

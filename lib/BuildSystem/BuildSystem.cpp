@@ -13,6 +13,7 @@
 #include "llbuild/BuildSystem/BuildSystem.h"
 #include "llbuild/BuildSystem/BuildSystemCommandInterface.h"
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
+#include "llbuild/BuildSystem/BuildSystemHandlers.h"
 
 #include "llbuild/Basic/CrossPlatformCompatibility.h"
 #include "llbuild/Basic/ExecutionQueue.h"
@@ -239,6 +240,12 @@ private:
     executionQueue->addJob(std::move(job));
   }
 
+  virtual std::unique_ptr<ShellCommandHandler>
+  resolveShellCommandHandler(ShellCommand*) override {
+    // FIXME: Implement.
+    return nullptr;
+  }
+  
   /// @}
 
 public:

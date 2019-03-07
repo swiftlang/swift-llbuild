@@ -13,6 +13,7 @@
 #ifndef LLBUILD_BUILDSYSTEM_SHELLCOMMAND_H
 #define LLBUILD_BUILDSYSTEM_SHELLCOMMAND_H
 
+#include "llbuild/BuildSystem/BuildSystemHandlers.h"
 #include "llbuild/BuildSystem/ExternalCommand.h"
 
 #include "llbuild/Basic/ShellUtility.h"
@@ -84,6 +85,12 @@ class ShellCommand : public ExternalCommand {
 
   /// The cached signature, once computed -- 0 is used as a sentinel value.
   std::atomic<basic::CommandSignature> cachedSignature{ };
+
+  /// The handler to use for this command, if present.
+  std::unique_ptr<ShellCommandHandler> handler;
+
+  /// The handler state, if used.
+  std::unique_ptr<HandlerState> handlerState;
 
   virtual void start(BuildSystemCommandInterface& bsci,
                      core::Task* task) override;
