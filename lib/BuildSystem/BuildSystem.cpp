@@ -1842,7 +1842,7 @@ bool BuildSystemImpl::build(StringRef target) {
   }
 
   // Validate the target name.
-  auto &targets = getBuildDescription().getTargets();
+  auto& targets = getBuildDescription().getTargets();
   if (targets.find(target) == targets.end()) {
     error(getMainFilename(), "No target named '" + target + "' in build description");
     return false;
