@@ -154,6 +154,7 @@ class SQLiteBuildDB : public BuildDB {
         clientVersion = sqlite3_column_int(stmt, 1);
       } else {
         *error_out = getCurrentErrorMessage();
+        sqlite3_finalize(stmt);
         return false;
       }
       sqlite3_finalize(stmt);
@@ -347,6 +348,7 @@ public:
     if (result != SQLITE_ROW) {
       *success_out = false;
       *error_out = getCurrentErrorMessage();
+      sqlite3_finalize(stmt);
       return 0;
     }
 
@@ -378,6 +380,7 @@ public:
     result = sqlite3_step(stmt);
     if (result != SQLITE_DONE) {
       *error_out = getCurrentErrorMessage();
+      sqlite3_finalize(stmt);
       return false;
     }
 
