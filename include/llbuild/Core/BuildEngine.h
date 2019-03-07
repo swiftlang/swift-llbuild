@@ -14,6 +14,7 @@
 #define LLBUILD_CORE_BUILDENGINE_H
 
 #include "llbuild/Basic/Compiler.h"
+#include "llbuild/Basic/Hashing.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
@@ -45,6 +46,9 @@ typedef uint64_t Timestamp;
 struct Result {
   /// The last value that resulted from executing the task.
   ValueType value = {};
+
+  /// The signature of the node that generated the result.
+  basic::CommandSignature signature;
 
   /// The build timestamp during which the result \see Value was computed.
   uint64_t computedAt = 0;
@@ -179,6 +183,9 @@ public:
 
   /// The key computed by the rule.
   KeyType key;
+
+  /// The signature of the rule.
+  basic::CommandSignature signature;
 
   /// Called to create the task to build the rule, when necessary.
   std::function<Task*(BuildEngine&)> action;

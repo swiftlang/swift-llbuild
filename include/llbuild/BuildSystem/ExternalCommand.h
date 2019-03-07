@@ -60,14 +60,6 @@ class ExternalCommand : public Command {
   /// Whether to treat the command as always being out-of-date.
   bool alwaysOutOfDate = false;
 
-  // Build specific data.
-  //
-  // FIXME: We should probably factor this out somewhere else, so we can enforce
-  // it is never used when initialized incorrectly.
-
-  /// The previous build result command signature, if available.
-  basic::CommandSignature priorResultCommandSignature;
-  
   /// If not None, the command should be skipped with the provided BuildValue.
   llvm::Optional<BuildValue> skipValue;
 
@@ -96,7 +88,7 @@ protected:
   StringRef getDescription() const { return description; }
 
   /// This function must be overriden by subclasses for any additional keys.
-  virtual basic::CommandSignature getSignature();
+  virtual basic::CommandSignature getSignature() const override;
 
   /// Extension point for subclasses, to actually execute the command.
   virtual void executeExternalCommand(

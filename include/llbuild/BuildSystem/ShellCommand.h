@@ -83,12 +83,12 @@ class ShellCommand : public ExternalCommand {
   bool controlEnabled = true;
 
   /// The cached signature, once computed -- 0 is used as a sentinel value.
-  std::atomic<basic::CommandSignature> cachedSignature{ };
+  mutable std::atomic<basic::CommandSignature> cachedSignature{ };
 
   virtual void start(BuildSystemCommandInterface& bsci,
                      core::Task* task) override;
   
-  virtual basic::CommandSignature getSignature() override;
+  virtual basic::CommandSignature getSignature() const override;
 
   bool processDiscoveredDependencies(BuildSystemCommandInterface& bsci,
                                      core::Task* task,

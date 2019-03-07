@@ -19,6 +19,11 @@ Node::~Node() {}
 
 Command::~Command() {}
 
+basic::CommandSignature Command::getSignature() const {
+  return basic::CommandSignature().combine(name);
+}
+
+
 Tool::~Tool() {}
 
 std::unique_ptr<Command> Tool::createCustomCommand(const BuildKey& key) {

@@ -33,30 +33,27 @@ namespace buildsystem {
   
 // FIXME: Figure out how this is going to be organized.
 class BuildNode : public Node {
-  /// Whether or not this node represents a full directory.
-  //
-  // FIXME: We need a type enumeration here.
-  bool directory;
 
-  /// Whether or not this node represents the full directory structure.
-  //
-  // FIXME: We need a type enumeration here.
-  bool directoryStructure;
-  
-  /// Whether or not this node is "virtual" (i.e., not a filesystem path).
-  bool virtualNode;
+  enum class NodeType : unsigned char {
+    Plain = 0,
+    Directory = 1,
+    DirectoryStructure = 2,
+    Virtual = 3,
+  };
+
+  NodeType type = NodeType::Plain;
 
   /// Whether this node represents a "command timestamp".
   ///
   /// Such nodes should always also be virtual.
-  bool commandTimestamp;
+  bool commandTimestamp = false;
 
   /// Whether this node is mutated by the build.
   ///
   /// This flag cannot currently be honored to provide a strongly consistent
   /// build, but it is used to detect when the file system information on a node
   /// cannot be safely used to track *output* file state.
-  bool mutated;
+  bool mutated = false;
 
   /// Exclusion filters for directory listings
   ///
@@ -64,24 +61,20 @@ class BuildNode : public Node {
   /// signature for directory and directory structure nodes.
   basic::StringList exclusionPatterns;
 
-public:
-  explicit BuildNode(StringRef name, bool isDirectory,
-                     bool isDirectoryStructure, bool isVirtual,
-                     bool isCommandTimestamp, bool isMutated)
-      : Node(name), directory(isDirectory),
-        directoryStructure(isDirectoryStructure), virtualNode(isVirtual),
-        commandTimestamp(isCommandTimestamp), mutated(isMutated) {}
+  explicit BuildNode(StringRef name, NodeType type)
+      : Node(name), type(type) {}
 
+public:
   /// Check whether this is a "virtual" (non-filesystem related) node.
-  bool isVirtual() const { return virtualNode; }
+  bool isVirtual() const { return (type == NodeType::Virtual); }
 
   /// Check whether this node is intended to represent a directory's contents
   /// recursively.
-  bool isDirectory() const { return directory; }
+  bool isDirectory() const { return (type == NodeType::Directory); }
 
   /// Check whether this node is intended to represent a directory's structure
   /// recursively.
-  bool isDirectoryStructure() const { return directoryStructure; }
+  bool isDirectoryStructure() const { return (type == NodeType::DirectoryStructure); }
 
   bool isCommandTimestamp() const { return commandTimestamp; }
 
@@ -101,6 +94,20 @@ public:
 
   basic::FileInfo getFileInfo(basic::FileSystem&) const;
   basic::FileInfo getLinkInfo(basic::FileSystem&) const;
+
+  basic::CommandSignature getSignature() const;
+
+  static std::unique_ptr<BuildNode> makePlain(StringRef name) {
+    return std::unique_ptr<BuildNode>(new BuildNode(name, NodeType::Plain));
+  }
+
+  static std::unique_ptr<BuildNode> makeDirectory(StringRef name) {
+    return std::unique_ptr<BuildNode>(new BuildNode(name, NodeType::Directory));
+  }
+
+  static std::unique_ptr<BuildNode> makeVirtual(StringRef name) {
+    return std::unique_ptr<BuildNode>(new BuildNode(name, NodeType::Virtual));
+  }
 };
 
 

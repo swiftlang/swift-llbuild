@@ -41,6 +41,7 @@ StringRef BuildValue::stringForKind(BuildValue::Kind kind) {
     CASE(SkippedCommand);
     CASE(Target);
     CASE(StaleFileRemoval);
+    CASE(SuccessfulCommandWithOutputSignature);
 #undef CASE
   }
   return "<unknown>";
@@ -48,8 +49,8 @@ StringRef BuildValue::stringForKind(BuildValue::Kind kind) {
   
 void BuildValue::dump(raw_ostream& os) const {
   os << "BuildValue(" << stringForKind(kind);
-  if (kindHasCommandSignature()) {
-    os << ", signature=" << commandSignature.value;
+  if (kindHasSignature()) {
+    os << ", signature=" << signature.value;
   }
   if (kindHasOutputInfo()) {
     os << ", outputInfos=[";
