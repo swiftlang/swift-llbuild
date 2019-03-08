@@ -703,7 +703,7 @@ static int executeDBCommand(std::vector<std::string> args) {
         continue;
       }
 
-      printf("\nkey: %s\ncomputed: %llu\nbuilt: %llu\ndependencies:\n",
+      printf("\nkey: %s\ncomputed: %" PRIu64 "\nbuilt: %" PRIu64 "\ndependencies:\n",
              key.c_str(), result.computedAt, result.builtAt);
       for (auto keyID : result.dependencies) {
         printf("  %s\n", keymap.getKeyForID(keyID).c_str());
