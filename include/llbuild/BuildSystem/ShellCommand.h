@@ -87,7 +87,7 @@ class ShellCommand : public ExternalCommand {
   std::atomic<basic::CommandSignature> cachedSignature{ };
 
   /// The handler to use for this command, if present.
-  std::unique_ptr<ShellCommandHandler> handler;
+  ShellCommandHandler* handler;
 
   /// The handler state, if used.
   std::unique_ptr<HandlerState> handlerState;
@@ -120,6 +120,11 @@ public:
     controlEnabled(controlEnabled) { }
 
   virtual const std::vector<StringRef>& getArgs() const { return args; }
+
+  virtual const SmallVector<std::pair<StringRef, StringRef>, 1>&
+  getEnv() const { return env; }
+
+  bool getInheritEnv() const { return inheritEnv; }
   
   virtual void getShortDescription(SmallVectorImpl<char> &result) const override {
     llvm::raw_svector_ostream(result) << getDescription();

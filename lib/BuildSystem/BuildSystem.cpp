@@ -208,6 +208,9 @@ private:
 
   /// Flag indicating if the build has been cancelled.
   std::atomic<bool> isCancelled_{ false };
+
+  /// Cache of instantiated shell command handlers.
+  llvm::StringMap<std::unique_ptr<ShellCommandHandler>> shellHandlers;
   
   /// @name BuildSystemCommandInterface Implementation
   /// @{
@@ -244,16 +247,28 @@ private:
     executionQueue->addJob(std::move(job));
   }
 
-  virtual std::unique_ptr<ShellCommandHandler>
+  virtual ShellCommandHandler*
   resolveShellCommandHandler(ShellCommand* command) override {
-    // Check if we have a plugin for this command.
+    // Ignore empty commands.
     if (command->getArgs().empty()) { return nullptr; }
-    
-    auto* extension = extensionManager.lookupByCommandPath(
-        command->getArgs()[0]);
-    if (!extension) return nullptr;
 
-    return extension->resolveShellCommandHandler(command);
+    // Check the cache.
+    auto toolPath = command->getArgs()[0];
+    auto it = shellHandlers.find(toolPath);
+    if (it != shellHandlers.end()) return it->second.get();
+
+    // If missing, check for an extension which can provide it.
+    auto* extension = extensionManager.lookupByCommandPath(toolPath);
+    if (!extension) {
+      shellHandlers[toolPath] = nullptr; // Negative caching
+      return nullptr;
+    }
+
+    auto handler = extension->createShellCommandHandler(toolPath);
+    auto *result = handler.get();
+    shellHandlers[toolPath] = std::move(handler);
+
+    return result;
   }
   
   /// @}

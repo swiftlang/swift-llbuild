@@ -87,7 +87,7 @@ public:
   /// @name BuildSystem Extensions API
   /// @{
 
-  virtual std::unique_ptr<ShellCommandHandler>
+  virtual ShellCommandHandler*
   resolveShellCommandHandler(ShellCommand*) = 0;
   
   /// @}

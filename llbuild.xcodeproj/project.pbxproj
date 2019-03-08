@@ -3035,7 +3035,6 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				English,
-				en,
 				Base,
 			);
 			mainGroup = E1A223E819F98F1C0059043E;

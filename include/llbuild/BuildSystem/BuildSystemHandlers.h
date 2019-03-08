@@ -28,24 +28,24 @@ namespace core {
 namespace buildsystem {
 
 class BuildSystemCommandInterface;
-class ExternalCommand;
+class ShellCommand;
 
 class HandlerState {
 public:
-  explicit HandlerState();
+  explicit HandlerState() {}
   virtual ~HandlerState();
 };
   
 class ShellCommandHandler {
 public:
-  explicit ShellCommandHandler();
+  explicit ShellCommandHandler() {}
   virtual ~ShellCommandHandler();
   
   virtual std::unique_ptr<HandlerState>
-  start(BuildSystemCommandInterface&, ExternalCommand* command) const = 0;
+  start(BuildSystemCommandInterface&, ShellCommand* command) const = 0;
 
   virtual void
-  execute(HandlerState*, ExternalCommand* command, BuildSystemCommandInterface&,
+  execute(HandlerState*, ShellCommand* command, BuildSystemCommandInterface&,
           core::Task* task, basic::QueueJobContext* context,
           basic::ProcessCompletionFn) const = 0;
 };
