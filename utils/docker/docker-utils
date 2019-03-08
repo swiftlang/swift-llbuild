@@ -41,7 +41,7 @@ def build(args):
     try:
         # Get latest snapshot info.
         latest_build_url = "https://swift.org/builds/development/ubuntu{}/latest-build.yml".format(targetNoDot)
-        latest_build_data = yaml.load(urllib2.urlopen(latest_build_url).read())
+        latest_build_data = yaml.safe_load(urllib2.urlopen(latest_build_url).read())
         snapshot_filename = latest_build_data["download"]
         # FIXME: We shouldn"t need to do this, it should be available in the API.
         snapshot_name = snapshot_filename.replace("-ubuntu{}.tar.gz".format(target), "")
