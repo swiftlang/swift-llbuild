@@ -7,4 +7,5 @@ add_llbuild_library(llbuildBuildSystem
   BuildSystemFrontend.cpp
   BuildValue.cpp
   ExternalCommand.cpp
+  ShellCommand.cpp
   )
