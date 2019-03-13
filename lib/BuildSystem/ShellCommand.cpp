@@ -29,6 +29,14 @@ using namespace llbuild::buildsystem;
 
 void ShellCommand::start(BuildSystemCommandInterface& bsci,
                                  core::Task* task) {
+  // Resolve the plugin state.
+  handler = bsci.resolveShellCommandHandler(this);
+
+  // Delegate to handler, if used.
+  if (auto p = handler.get()) {
+    handlerState = p->start(bsci, this);
+  }
+
   this->ExternalCommand::start(bsci, task);
 }
 
@@ -354,6 +362,15 @@ void ShellCommand::executeExternalCommand(
     if (completionFn.hasValue())
       completionFn.getValue()(result);
   };
+      
+  // Delegate to the handler, if present.
+  if (auto *p = handler.get()) {
+    // FIXME: We should consider making this interface capable of feeding
+    // back the dependencies directly.
+    p->execute(
+        handlerState.get(), this, bsci, task, context, commandCompletionFn);
+    return;
+  }
 
   // Execute the command.
   bsci.getExecutionQueue().executeProcess(

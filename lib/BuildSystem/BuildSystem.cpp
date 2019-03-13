@@ -12,7 +12,9 @@
 
 #include "llbuild/BuildSystem/BuildSystem.h"
 #include "llbuild/BuildSystem/BuildSystemCommandInterface.h"
+#include "llbuild/BuildSystem/BuildSystemExtensions.h"
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
+#include "llbuild/BuildSystem/BuildSystemHandlers.h"
 
 #include "llbuild/Basic/CrossPlatformCompatibility.h"
 #include "llbuild/Basic/ExecutionQueue.h"
@@ -64,6 +66,9 @@ using namespace llbuild;
 using namespace llbuild::basic;
 using namespace llbuild::core;
 using namespace llbuild::buildsystem;
+
+/// The extension manager singleton.
+static BuildSystemExtensionManager extensionManager{};
 
 BuildSystemDelegate::~BuildSystemDelegate() {}
 
@@ -239,6 +244,18 @@ private:
     executionQueue->addJob(std::move(job));
   }
 
+  virtual std::unique_ptr<ShellCommandHandler>
+  resolveShellCommandHandler(ShellCommand* command) override {
+    // Check if we have a plugin for this command.
+    if (command->getArgs().empty()) { return nullptr; }
+    
+    auto* extension = extensionManager.lookupByCommandPath(
+        command->getArgs()[0]);
+    if (!extension) return nullptr;
+
+    return extension->resolveShellCommandHandler(command);
+  }
+  
   /// @}
 
 public:

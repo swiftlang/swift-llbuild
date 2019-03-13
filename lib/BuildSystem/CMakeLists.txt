@@ -4,6 +4,7 @@ add_llbuild_library(llbuildBuildSystem
   BuildKey.cpp
   BuildNode.cpp
   BuildSystem.cpp
+  BuildSystemExtensionManager.cpp
   BuildSystemFrontend.cpp
   BuildValue.cpp
   ExternalCommand.cpp
