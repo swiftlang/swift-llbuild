@@ -205,7 +205,7 @@ static int runAckermannBuild(int m, int n, int recomputeCount,
     virtual core::Rule lookupRule(const core::KeyType& keyData) override {
       ++numRules;
       auto key = AckermannKey(keyData);
-      return core::Rule{key, [key] (core::BuildEngine& engine) {
+      return core::Rule{key, {}, [key] (core::BuildEngine& engine) {
           return new AckermannTask(engine, key.m, key.n); } };
     }
 

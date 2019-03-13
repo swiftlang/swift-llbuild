@@ -88,6 +88,7 @@ public:
     void ruleScanningDeferredOnTask(const Rule* forRule,
                                     const Task* inputTask);
     void ruleNeedsToRunBecauseNeverBuilt(const Rule* forRule);
+    void ruleNeedsToRunBecauseSignatureChanged(const Rule* forRule);
     void ruleNeedsToRunBecauseInvalidValue(const Rule* forRule);
     void ruleNeedsToRunBecauseInputMissing(const Rule* forRule);
     void ruleNeedsToRunBecauseInputRebuilt(const Rule* forRule,

@@ -74,7 +74,7 @@ class CAPIBuildEngineDelegate : public BuildEngineDelegate {
 
     return Rule{
       // FIXME: This is a wasteful copy.
-      key,
+      key, {},
       [rule, engineContext] (BuildEngine& engine) {
         return (Task*) rule.create_task(rule.context, engineContext);
       },

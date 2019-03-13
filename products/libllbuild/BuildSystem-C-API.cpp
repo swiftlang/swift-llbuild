@@ -775,7 +775,7 @@ public:
     llvm::raw_svector_ostream(result) << getName();
   }
 
-  virtual llbuild::basic::CommandSignature getSignature() override {
+  virtual llbuild::basic::CommandSignature getSignature() const override {
     auto sig = ExternalCommand::getSignature();
     if (cAPIDelegate.get_signature) {
       llb_data_t data;

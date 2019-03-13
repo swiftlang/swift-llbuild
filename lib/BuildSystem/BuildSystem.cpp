@@ -479,8 +479,7 @@ class TargetTask : public Task {
 public:
   TargetTask(Target& target) : target(target) {}
 
-  static bool isResultValid(BuildEngine& engine, Target& node,
-                            const BuildValue& value) {
+  static bool isResultValid(BuildEngine&, Target&, const BuildValue&) {
     // Always treat target tasks as invalid.
     return false;
   }
@@ -777,7 +776,7 @@ public:
   ProducedNodeTask(Node& node)
       : node(node), nodeResult(BuildValue::makeInvalid()) {}
   
-  static bool isResultValid(BuildEngine&, Node& node,
+  static bool isResultValid(BuildEngine& engine, Node& node,
                             const BuildValue& value) {
     // If the result was failure, we always need to rebuild (it may produce an
     // error).
@@ -1501,11 +1500,11 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       // If there is no such command, produce an error task.
       return Rule{
         keyData,
+        /*signature=*/{},
         /*Action=*/ [](BuildEngine& engine) -> Task* {
           return engine.registerTask(new MissingCommandTask());
         },
-        /*IsValid=*/ [](BuildEngine&, const Rule& rule,
-                        const ValueType& value) -> bool {
+        /*IsValid=*/ [](BuildEngine&, const Rule&, const ValueType&) -> bool {
           // The cached result for a missing command is never valid.
           return false;
         }
@@ -1516,6 +1515,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     Command* command = it->second.get();
     return Rule{
       keyData,
+      command->getSignature(),
       /*Action=*/ [command](BuildEngine& engine) -> Task* {
         return engine.registerTask(new CommandTask(*command));
       },
@@ -1548,6 +1548,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       
       return Rule{
         keyData,
+        command->getSignature(),
         /*Action=*/ [command](BuildEngine& engine) -> Task* {
           return engine.registerTask(new CommandTask(*command));
         },
@@ -1563,11 +1564,11 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     // task.
     return Rule{
       keyData,
+      /*signature=*/{},
       /*Action=*/ [](BuildEngine& engine) -> Task* {
         return engine.registerTask(new MissingCommandTask());
       },
-      /*IsValid=*/ [](BuildEngine&, const Rule& rule,
-                      const ValueType& value) -> bool {
+      /*IsValid=*/ [](BuildEngine&, const Rule&, const ValueType&) -> bool {
         // The cached result for a missing command is never valid.
         return false;
       }
@@ -1578,6 +1579,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     std::string path = key.getDirectoryPath();
     return Rule{
       keyData,
+      /*signature=*/{},
       /*Action=*/ [path](BuildEngine& engine) -> Task* {
         return engine.registerTask(new DirectoryContentsTask(path));
       },
@@ -1594,6 +1596,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     std::string patterns = key.getContentExclusionPatterns();
     return Rule{
       keyData,
+      /*signature=*/{},
       /*Action=*/ [path, patterns](BuildEngine& engine) -> Task* {
         BinaryDecoder decoder(patterns);
         return engine.registerTask(new FilteredDirectoryContentsTask(path,
@@ -1608,6 +1611,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     std::string filters = key.getContentExclusionPatterns();
     return Rule{
       keyData,
+      /*signature=*/{},
       /*Action=*/ [path, filters](
           BuildEngine& engine) mutable -> Task* {
         BinaryDecoder decoder(filters);
@@ -1624,6 +1628,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     std::string path = key.getDirectoryPath();
     return Rule{
       keyData,
+      /*signature=*/{},
       /*Action=*/ [path](
           BuildEngine& engine) mutable -> Task* {
         return engine.registerTask(new DirectoryTreeStructureSignatureTask(path));
@@ -1665,6 +1670,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       if (node->isVirtual()) {
         return Rule{
           keyData,
+          node->getSignature(),
           /*Action=*/ [](BuildEngine& engine) -> Task* {
             return engine.registerTask(new VirtualInputNodeTask());
           },
@@ -1679,7 +1685,8 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       if (node->isDirectory()) {
         return Rule{
           keyData,
-            /*Action=*/ [node](BuildEngine& engine) -> Task* {
+          node->getSignature(),
+          /*Action=*/ [node](BuildEngine& engine) -> Task* {
             return engine.registerTask(new DirectoryInputNodeTask(*node));
           },
             // Directory nodes don't require any validation outside of their
@@ -1691,7 +1698,8 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       if (node->isDirectoryStructure()) {
         return Rule{
           keyData,
-            /*Action=*/ [node](BuildEngine& engine) -> Task* {
+          node->getSignature(),
+          /*Action=*/ [node](BuildEngine& engine) -> Task* {
             return engine.registerTask(
                 new DirectoryStructureInputNodeTask(*node));
           },
@@ -1703,6 +1711,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       
       return Rule{
         keyData,
+        node->getSignature(),
         /*Action=*/ [node](BuildEngine& engine) -> Task* {
           return engine.registerTask(new FileInputNodeTask(*node));
         },
@@ -1717,6 +1726,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     // Otherwise, create a task for a produced node.
     return Rule{
       keyData,
+      node->getSignature(),
       /*Action=*/ [node](BuildEngine& engine) -> Task* {
         return engine.registerTask(new ProducedNodeTask(*node));
       },
@@ -1743,7 +1753,8 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     // Create the rule to construct this target.
     return Rule{
       keyData,
-        /*Action=*/ [statnode](BuildEngine& engine) -> Task* {
+      /*signature=*/{},
+      /*Action=*/ [statnode](BuildEngine& engine) -> Task* {
         return engine.registerTask(new StatTask(*statnode));
       },
       /*IsValid=*/ [statnode](BuildEngine& engine, const Rule& rule,
@@ -1766,7 +1777,8 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     Target* target = it->second.get();
     return Rule{
       keyData,
-        /*Action=*/ [target](BuildEngine& engine) -> Task* {
+      /*signature=*/{},
+      /*Action=*/ [target](BuildEngine& engine) -> Task* {
         return engine.registerTask(new TargetTask(*target));
       },
       /*IsValid=*/ [target](BuildEngine& engine, const Rule& rule,
@@ -1802,13 +1814,15 @@ void BuildSystemEngineDelegate::error(const Twine& message) {
 
 std::unique_ptr<BuildNode>
 BuildSystemImpl::lookupNode(StringRef name, bool isImplicit) {
-  bool isDirectory = name.endswith("/");
-  bool isVirtual = !name.empty() && name[0] == '<' && name.back() == '>';
-  return llvm::make_unique<BuildNode>(name, isDirectory,
-                                      /*isDirectoryStructure=*/false,
-                                      isVirtual,
-                                      /*isCommandTimestamp=*/false,
-                                      /*isMutable=*/false);
+  if (name.endswith("/")) {
+    return BuildNode::makeDirectory(name);
+  }
+
+  if (!name.empty() && name[0] == '<' && name.back() == '>') {
+    return BuildNode::makeVirtual(name);
+  }
+
+  return BuildNode::makePlain(name);
 }
 
 llvm::Optional<BuildValue> BuildSystemImpl::build(BuildKey key) {
@@ -1993,7 +2007,7 @@ class ClangShellCommand : public ExternalCommand {
   /// The path to the dependency output file, if used.
   std::string depsPath;
   
-  virtual CommandSignature getSignature() override {
+  virtual CommandSignature getSignature() const override {
     return ExternalCommand::getSignature()
         .combine(args);
   }
@@ -2268,7 +2282,7 @@ public:
     // command and relying on the signature to detect changes.
     //
     // FIXME: We should support BuildValues with arbitrary payloads.
-    resultFn(BuildValue::makeSuccessfulCommand(
+    resultFn(BuildValue::makeSuccessfulCommandWithOutputSignature(
        basic::FileInfo{}, CommandSignature(result)));
   }
 };
@@ -2309,7 +2323,7 @@ class SwiftCompilerShellCommand : public ExternalCommand {
   /// Note: This is only used when whole module optimization is enabled.
   std::string numThreads = "0";
 
-  virtual CommandSignature getSignature() override {
+  virtual CommandSignature getSignature() const override {
     return ExternalCommand::getSignature()
         .combine(executable)
         .combine(moduleName)
@@ -2914,7 +2928,7 @@ class SymlinkCommand : public Command {
       StringRef(linkOutputPath);
   }
   
-  virtual CommandSignature getSignature() {
+  virtual CommandSignature getSignature() const override {
     CommandSignature code(output->getName());
     code = code.combine(contents);
     for (const auto* input: inputs) {
@@ -3030,10 +3044,6 @@ class SymlinkCommand : public Command {
     // If the prior value wasn't for a successful command, recompute.
     if (!value.isSuccessfulCommand())
       return false;
-    
-    // If the command's signature has changed since it was built, rebuild.
-    if (value.getCommandSignature() != getSignature())
-      return false;
 
     // If the prior command doesn't look like one for a link, recompute.
     if (value.getNumOutputs() != 1)
@@ -3121,7 +3131,7 @@ class SymlinkCommand : public Command {
         outputPath);
       
     // Complete with a successful result.
-    resultFn(BuildValue::makeSuccessfulCommand(outputInfo, getSignature()));
+    resultFn(BuildValue::makeSuccessfulCommand(outputInfo));
   }
 
 public:

@@ -261,6 +261,13 @@ void BuildEngineTrace::ruleNeedsToRunBecauseNeverBuilt(const Rule* forRule) {
           getRuleName(forRule));
 }
 
+void BuildEngineTrace::ruleNeedsToRunBecauseSignatureChanged(const Rule* forRule) {
+  FILE *fp = static_cast<FILE*>(outputPtr);
+
+  fprintf(fp, "{ \"rule-needs-to-run\", \"%s\", \"signature-changed\" },\n",
+          getRuleName(forRule));
+}
+
 void BuildEngineTrace::ruleNeedsToRunBecauseInvalidValue(const Rule* forRule) {
   FILE *fp = static_cast<FILE*>(outputPtr);
 

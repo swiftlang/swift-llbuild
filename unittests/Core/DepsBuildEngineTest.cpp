@@ -134,16 +134,16 @@ TEST(DepsBuildEngineTest, BogusConcurrentDepScan) {
   // isn't immediately obvious it needs to run).
   int dirListValue = 2 * 3;
   engine.addRule({
-      "dir-list-input",
+      "dir-list-input", {},
       simpleAction({}, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("dir-list-input");
           return dirListValue; }),
-      [&](BuildEngine&, const Rule& rule, const ValueType& value) {
+      [&](BuildEngine&, const Rule&, const ValueType&) {
         // Always rebuild
         return false;
       } });
   engine.addRule({
-      "dir-list",
+      "dir-list", {},
       simpleAction({ "dir-list-input" }, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("dir-list");
           assert(inputs.size() == 1);
@@ -151,20 +151,20 @@ TEST(DepsBuildEngineTest, BogusConcurrentDepScan) {
 
   // These are the rules for individual discovered "files".
   engine.addRule({
-      "input-2",
+      "input-2", {},
       simpleAction({}, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("input-2");
           return 5; }),
-      [&](BuildEngine&, const Rule& rule, const ValueType& value) {
+      [&](BuildEngine&, const Rule&, const ValueType&) {
         // Always rebuild
         return false;
       } });
   engine.addRule({
-      "input-3",
+      "input-3", {},
       simpleAction({}, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("input-3");
           return 7; }),
-      [&](BuildEngine&, const Rule& rule, const ValueType& value) {
+      [&](BuildEngine&, const Rule&, const ValueType&) {
         // Always rebuild
         return false;
       } });
@@ -205,7 +205,7 @@ TEST(DepsBuildEngineTest, BogusConcurrentDepScan) {
     }
   };
   engine.addRule({
-      "output",
+      "output", {},
       [&builtKeys] (BuildEngine& engine) {
         builtKeys.push_back("output");
         return engine.registerTask(new DynamicTask());
@@ -265,17 +265,17 @@ TEST(DepsBuildEngineTest, KeysWithNull) {
     std::string inputA{"i\0A", 3};
     std::string inputB{"i\0B", 3};
     engine.addRule({
-        inputA,
+        inputA, {},
         simpleAction({}, [&] (const std::vector<int>& inputs) {
             builtKeys.push_back(inputA);
             return 2; }) });
     engine.addRule({
-        inputB,
+        inputB, {},
         simpleAction({}, [&] (const std::vector<int>& inputs) {
             builtKeys.push_back(inputB);
             return 3; }) });
     engine.addRule({
-        "output",
+        "output", {},
         simpleAction({ inputA, inputB }, [&] (const std::vector<int>& inputs) {
             assert(inputs.size() == 2);
             builtKeys.push_back("output");

@@ -34,7 +34,7 @@ using namespace llbuild;
 using namespace llbuild::basic;
 using namespace llbuild::buildsystem;
 
-CommandSignature ExternalCommand::getSignature() {
+CommandSignature ExternalCommand::getSignature() const {
   CommandSignature code(getName());
   for (const auto* input: inputs) {
     code = code.combine(input->getName());
@@ -164,10 +164,6 @@ bool ExternalCommand::isResultValid(BuildSystem& system,
   if (!value.isSuccessfulCommand())
     return false;
     
-  // If the command's signature has changed since it was built, rebuild.
-  if (value.getCommandSignature() != getSignature())
-    return false;
-
   // Check the timestamps on each of the outputs.
   for (unsigned i = 0, e = outputs.size(); i != e; ++i) {
     auto* node = outputs[i];
@@ -226,7 +222,6 @@ void ExternalCommand::providePriorValue(BuildSystemCommandInterface&,
                                         const BuildValue& value) {
   if (value.isSuccessfulCommand()) {
     hasPriorResult = true;
-    priorResultCommandSignature = value.getCommandSignature();
   }
 }
 
@@ -336,7 +331,7 @@ ExternalCommand::computeCommandResult(BuildSystemCommandInterface& bsci) {
                                 bsci.getFileSystem()));
     }
   }
-  return BuildValue::makeSuccessfulCommand(outputInfos, getSignature());
+  return BuildValue::makeSuccessfulCommand(outputInfos);
 }
 
 void ExternalCommand::execute(BuildSystemCommandInterface& bsci,
@@ -360,8 +355,7 @@ void ExternalCommand::execute(BuildSystemCommandInterface& bsci,
   assert(missingInputNodes.empty());
 
   // If it is legal to simply update the command, then see if we can do so.
-  if (canUpdateIfNewer &&
-      hasPriorResult && priorResultCommandSignature == getSignature()) {
+  if (canUpdateIfNewer && hasPriorResult) {
     BuildValue result = computeCommandResult(bsci);
     if (canUpdateIfNewerWithResult(result)) {
       resultFn(std::move(result));
