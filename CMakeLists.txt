@@ -238,7 +238,7 @@ if (SWIFTC_FOUND)
   set(SWIFT_VERSION ${LLBUILD_OBJ_DIR}/swift-version)
   add_custom_target(
       swiftversion ALL
-      COMMAND ${CMAKE_SOURCE_DIR}/utils/write-swift-version ${SWIFTC_EXECUTABLE} ${SWIFT_VERSION}
+      COMMAND python ${CMAKE_SOURCE_DIR}/utils/write-swift-version.py ${SWIFTC_EXECUTABLE} ${SWIFT_VERSION}
       BYPRODUCTS ${SWIFT_VERSION}
       COMMENT "Checking Swift compiler version"
   )
