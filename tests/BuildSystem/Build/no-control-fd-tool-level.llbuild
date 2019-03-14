@@ -3,11 +3,11 @@
 #
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
-# RUN: cp %s %t.build/build.llbuild
+# RUN: cat %s | sed -e 's#ENV_PATH#%{env}#g' -e 's#SORT_PATH#%{sort}#g' >  %t.build/build.llbuild
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build --trace %t.trace > %t.out
 # RUN: %{FileCheck} --input-file=%t.out %s
 #
-# CHECK: /usr/bin/env
+# CHECK: env
 # CHECK-NOT: LLBUILD_CONTROL_FD=
 # CHECK: LLBUILD_TASK_ID={{[a-f0-9]+}}
 
@@ -27,4 +27,4 @@ commands:
   "<env>":
     tool: shell
     outputs: ["<env>"]
-    args: /usr/bin/env | /usr/bin/sort
+    args: ENV_PATH | SORT_PATH

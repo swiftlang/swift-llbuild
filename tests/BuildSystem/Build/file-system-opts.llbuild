@@ -3,18 +3,18 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: touch "%t.build/input A"
-# RUN: cp %s %t.build/build.llbuild
+# RUN: cat %s | sed -e 's#ENV_PATH#%{env}#g' -e 's#SORT_PATH#%{sort}#g' >  %t.build/build.llbuild
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build --trace %t.trace > %t.out
 # RUN: %{FileCheck} --input-file=%t.out %s
 # RUN: diff "%t.build/input A" %t.build/output
 #
-# CHECK: /usr/bin/env
+# CHECK: env
 # CHECK: ENV_KEY=ENV_VALUE_1
-# CHECK-NOT: PATH=
-# CHECK: /usr/bin/env
+# CHECK-NOT: {{^PATH=}}
+# CHECK: env
 # CHECK: ENV_KEY=ENV_VALUE_2
 # CHECK: LLBUILD_TASK_ID={{[a-f0-9]+}}
-# CHECK: PATH=random-overridden-path
+# CHECK: {{^PATH=random-overridden-path}}
 # CHECK: cp 'input A' output
 
 # Check the engine trace.
@@ -54,6 +54,7 @@
 #
 # CHECK-REBUILD-OUTPUT-REMOVED: cp 'input A' output
 
+
 client:
   name: basic
   file-system: device-agnostic
@@ -68,7 +69,7 @@ commands:
   "<env-1>":
     tool: shell
     outputs: ["<env-1>"]
-    args: /usr/bin/env | /usr/bin/sort
+    args: ENV_PATH | SORT_PATH
     env:
       ENV_KEY: ENV_VALUE_1
     inherit-env: false
@@ -77,7 +78,7 @@ commands:
     tool: shell
     inputs: ["<env-1>"]
     outputs: ["<env-2>"]
-    args: /usr/bin/env | /usr/bin/sort
+    args: ENV_PATH | SORT_PATH
     env:
       ENV_KEY: ENV_VALUE_2
       PATH: random-overridden-path
@@ -87,6 +88,7 @@ commands:
     inputs: ["input A", "<env-1>", "<env-2>"]
     outputs: ["output"]
     # FIXME: Design a limited mechanism for substitution. Might be tool specific.
+    description: "cp 'input A' output"
     args: ["cp", "input A", "output"]
 
 
