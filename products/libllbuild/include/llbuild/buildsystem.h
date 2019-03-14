@@ -27,6 +27,7 @@
 #ifdef _MSC_VER
 // Ignore the conflicting min/max defined in windows.h
 #define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 typedef HANDLE llbuild_pid_t;
 typedef HANDLE FD;
