@@ -10,6 +10,9 @@
 
 #if os(Linux)
 import Glibc
+#elseif os(Windows)
+import MSVCRT
+import WinSDK
 #else
 import Darwin.C
 #endif
@@ -289,7 +292,12 @@ public struct CommandExtendedResult {
     init(_ result: UnsafePointer<llb_buildsystem_command_extended_result_t>) {
         self.result = result.pointee.result
         self.exitStatus = result.pointee.exit_status
-        if result.pointee.pid >= 0 {
+        #if os(Windows)
+        let invalidFile = INVALID_HANDLE_VALUE
+        #else
+        let invalidFile = 0
+        #endif
+        if result.pointee.pid != invalidFile {
             self.pid = result.pointee.pid
         } else {
             self.pid = nil
@@ -692,6 +700,9 @@ public final class BuildSystem {
         #if os(macOS)
         info.pointee.mod_time.seconds = UInt64(s.st_mtimespec.tv_sec)
         info.pointee.mod_time.nanoseconds = UInt64(s.st_mtimespec.tv_nsec)
+        #elseif os(Windows)
+        info.pointee.mod_time.seconds = UInt64(s.st_mtime)
+        info.pointee.mod_time.nanoseconds = 0
         #else
         info.pointee.mod_time.seconds = UInt64(s.st_mtim.tv_sec)
         info.pointee.mod_time.nanoseconds = UInt64(s.st_mtim.tv_nsec)
