@@ -27,8 +27,8 @@ fi
 
 # If we still haven't found FileCheck, bail
 if [ ! -f "${FILECHECK}" ]; then
-    echo "$0: error: unable to find 'FileCheck' testing utility"
-    exit 1
+    echo "$0: warning: unable to find 'FileCheck' testing utility; llbuild unit tests will not be available"
+    exit 0
 fi
 
 mkdir -p "${BUILT_PRODUCTS_DIR}/tests/Unit"
