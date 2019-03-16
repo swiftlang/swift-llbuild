@@ -10,7 +10,7 @@
 # Initial build where 'a.h' is produced by rule C.1
 #
 # RUN: grep -A1000 "VERSION-BEGIN-[1]" %s | grep -B10000 "VERSION-END-1" | grep -ve '^--$' > %t.build/build-1.llbuild
-# RUN: touch %t.build/a.i
+# RUN: echo "t1" > %t.build/a.i
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build -f build-1.llbuild > %t.1.out
 # RUN: echo "END-OF-FILE" >> %t.1.out
 # RUN: %{FileCheck} --check-prefix CHECK-VERSION-1 --input-file=%t.1.out %s
@@ -54,7 +54,7 @@
 # should be properly re-established, thus we expect the generate to occur and
 # then be followed by the compile.
 #
-# RUN: touch %t.build/a.i
+# RUN: echo "t4" >> %t.build/a.i
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build -f build-1.llbuild > %t.4.out
 # RUN: echo "END-OF-FILE" >> %t.4.out
 # RUN: %{FileCheck} --check-prefix CHECK-VERSION-4 --input-file %t.4.out %s
