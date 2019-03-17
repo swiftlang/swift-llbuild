@@ -18,8 +18,14 @@
 # CHECK-VERSION-1: END-OF-FILE
 #
 #
+# a.h is now produced by C.1 by processing 'a.i'.  Note that a.i must be
+# non-trivially different from a.h (i.e. its statinfo must be different), as
+# we are not currently hashing the contents of the files.  Since low time
+# resolution file systems, such as HFS+, do not pick up rapid fire changes we 
+# accomplish this by writing more bytes into the file than in the first test.
+#
 # RUN: grep -A1000 "VERSION-BEGIN-[2]" %s | grep -B10000 "VERSION-END-2" | grep -ve '^--$' > %t.build/build-2.llbuild
-# RUN: echo "t2" > %t.build/a.i
+# RUN: echo "t2 -- now with more bytes!" > %t.build/a.i
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build -f build-2.llbuild > %t.2.out
 # RUN: echo "END-OF-FILE" >> %t.2.out
 # RUN: %{FileCheck} --check-prefix CHECK-VERSION-2 --input-file %t.2.out %s
