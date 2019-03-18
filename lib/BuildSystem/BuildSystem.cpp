@@ -62,6 +62,7 @@
 #include <unistd.h>
 #endif
 
+using namespace llvm;
 using namespace llbuild;
 using namespace llbuild::basic;
 using namespace llbuild::core;
