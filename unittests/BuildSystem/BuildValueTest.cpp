@@ -55,73 +55,100 @@ TEST(BuildValueTest, virtualValueSerialization) {
 }
 
 TEST(BuildValueTest, commandValueSingleOutputSerialization) {
-  auto signature = llbuild::basic::CommandSignature(0xDEADBEEF);
   basic::FileInfo infos[1] = {};
   infos[0].size = 1;
   
   // Check that two identical values are equivalent.
   {
-    BuildValue a = BuildValue::makeSuccessfulCommand(infos, signature);
-    EXPECT_EQ(a.toData(),
-              BuildValue::makeSuccessfulCommand(infos, signature).toData());
+    BuildValue a = BuildValue::makeSuccessfulCommand(infos);
+    EXPECT_EQ(a.toData(), BuildValue::makeSuccessfulCommand(infos).toData());
   }
 
   // Check that a moved complex value is equivalent.
   {
-    BuildValue tmp = BuildValue::makeSuccessfulCommand(infos, signature);
+    BuildValue tmp = BuildValue::makeSuccessfulCommand(infos);
     BuildValue a = std::move(tmp);
-    EXPECT_EQ(a.toData(),
-              BuildValue::makeSuccessfulCommand(infos, signature).toData());
+    EXPECT_EQ(a.toData(), BuildValue::makeSuccessfulCommand(infos).toData());
   }
 
   // Check that an rvalue initialized complex value is equivalent.
   {
-    BuildValue tmp = BuildValue::makeSuccessfulCommand(infos, signature);
+    BuildValue tmp = BuildValue::makeSuccessfulCommand(infos);
     BuildValue a{ std::move(tmp) };
-    EXPECT_EQ(a.toData(),
-              BuildValue::makeSuccessfulCommand(infos, signature).toData());
+    EXPECT_EQ(a.toData(), BuildValue::makeSuccessfulCommand(infos).toData());
   }
 
   // Check that a round-tripped value is equivalent.
-  EXPECT_EQ(BuildValue::makeSuccessfulCommand(infos, signature).toData(),
+  EXPECT_EQ(BuildValue::makeSuccessfulCommand(infos).toData(),
             BuildValue::fromData(
-                BuildValue::makeSuccessfulCommand(
-                    infos, signature).toData()).toData());
+                BuildValue::makeSuccessfulCommand(infos).toData()).toData());
 }
 
 TEST(BuildValueTest, commandValueMultipleOutputsSerialization) {
-  auto signature = llbuild::basic::CommandSignature(0xDEADBEEF);
   basic::FileInfo infos[2] = {};
   infos[0].size = 1;
   infos[1].size = 2;
   
   // Check that two identical values are equivalent.
   {
-    BuildValue a = BuildValue::makeSuccessfulCommand(infos, signature);
+    BuildValue a = BuildValue::makeSuccessfulCommand(infos);
     EXPECT_EQ(a.toData(),
-              BuildValue::makeSuccessfulCommand(infos, signature).toData());
+              BuildValue::makeSuccessfulCommand(infos).toData());
   }
 
   // Check that a moved complex value is equivalent.
   {
-    BuildValue tmp = BuildValue::makeSuccessfulCommand(infos, signature);
+    BuildValue tmp = BuildValue::makeSuccessfulCommand(infos);
     BuildValue a = std::move(tmp);
     EXPECT_EQ(a.toData(),
-              BuildValue::makeSuccessfulCommand(infos, signature).toData());
+              BuildValue::makeSuccessfulCommand(infos).toData());
   }
 
   // Check that an rvalue initialized complex value is equivalent.
   {
-    BuildValue tmp = BuildValue::makeSuccessfulCommand(infos, signature);
+    BuildValue tmp = BuildValue::makeSuccessfulCommand(infos);
     BuildValue a{ std::move(tmp) };
-    EXPECT_EQ(a.toData(),
-              BuildValue::makeSuccessfulCommand(infos, signature).toData());
+    EXPECT_EQ(a.toData(), BuildValue::makeSuccessfulCommand(infos).toData());
   }
 
   // Check that a round-tripped value is equivalent.
-  EXPECT_EQ(BuildValue::makeSuccessfulCommand(infos, signature).toData(),
+  EXPECT_EQ(BuildValue::makeSuccessfulCommand(infos).toData(),
             BuildValue::fromData(
-                BuildValue::makeSuccessfulCommand(
+                BuildValue::makeSuccessfulCommand(infos).toData()).toData());
+}
+
+TEST(BuildValueTest, commandValueWithSignatureSingleOutputSerialization) {
+  auto signature = llbuild::basic::CommandSignature(0xDEADBEEF);
+  basic::FileInfo infos[1] = {};
+  infos[0].size = 1;
+
+  // Check that two identical values are equivalent.
+  {
+    BuildValue a = BuildValue::makeSuccessfulCommandWithOutputSignature(infos, signature);
+    EXPECT_EQ(a.toData(),
+              BuildValue::makeSuccessfulCommandWithOutputSignature(infos, signature).toData());
+  }
+
+  // Check that a moved complex value is equivalent.
+  {
+    BuildValue tmp = BuildValue::makeSuccessfulCommandWithOutputSignature(infos, signature);
+    BuildValue a = std::move(tmp);
+    EXPECT_EQ(a.toData(),
+              BuildValue::makeSuccessfulCommandWithOutputSignature(infos, signature).toData());
+  }
+
+  // Check that an rvalue initialized complex value is equivalent.
+  {
+    BuildValue tmp = BuildValue::makeSuccessfulCommandWithOutputSignature(infos, signature);
+    BuildValue a{ std::move(tmp) };
+    EXPECT_EQ(a.toData(),
+              BuildValue::makeSuccessfulCommandWithOutputSignature(infos, signature).toData());
+  }
+
+  // Check that a round-tripped value is equivalent.
+  EXPECT_EQ(BuildValue::makeSuccessfulCommandWithOutputSignature(infos, signature).toData(),
+            BuildValue::fromData(
+                BuildValue::makeSuccessfulCommandWithOutputSignature(
                     infos, signature).toData()).toData());
 }
 

@@ -3031,10 +3031,10 @@
 			};
 			buildConfigurationList = E1A223EC19F98F1C0059043E /* Build configuration list for PBXProject "llbuild" */;
 			compatibilityVersion = "Xcode 3.2";
-			developmentRegion = English;
+			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				English,
+				en,
 				Base,
 			);
 			mainGroup = E1A223E819F98F1C0059043E;

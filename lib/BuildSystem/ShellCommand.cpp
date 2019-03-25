@@ -40,7 +40,7 @@ void ShellCommand::start(BuildSystemCommandInterface& bsci,
   this->ExternalCommand::start(bsci, task);
 }
 
-CommandSignature ShellCommand::getSignature() {
+CommandSignature ShellCommand::getSignature() const {
   CommandSignature signature = cachedSignature;
   if (!signature.isNull())
     return signature;

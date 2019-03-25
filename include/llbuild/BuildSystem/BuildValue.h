@@ -94,6 +94,8 @@ class BuildValue {
     /// The filtered contents of a directory.
     FilteredDirectoryContents,
 
+    /// A value produced by a successful command with an output signature.
+    SuccessfulCommandWithOutputSignature,
   };
   static StringRef stringForKind(Kind);
 
@@ -105,8 +107,8 @@ class BuildValue {
   /// The number of attached output infos.
   uint32_t numOutputInfos = 0;
 
-  /// The command hash, for successful commands.
-  basic::CommandSignature commandSignature;
+  /// A hash value (used by some build value types).
+  basic::CommandSignature signature;
 
   union {
     /// The file info for the rule output, for existing inputs, successful
@@ -124,9 +126,9 @@ class BuildValue {
   // customized to each exact value.
   basic::StringList stringValues;
 
-  bool kindHasCommandSignature() const {
-    return isSuccessfulCommand() ||
-        isDirectoryTreeSignature() || isDirectoryTreeStructureSignature();
+  bool kindHasSignature() const {
+    return isDirectoryTreeSignature() || isDirectoryTreeStructureSignature() ||
+        kind == Kind::SuccessfulCommandWithOutputSignature;
   }
 
   bool kindHasStringList() const {
@@ -144,12 +146,12 @@ private:
 
   BuildValue() {}
   BuildValue(basic::BinaryDecoder& decoder);
-  BuildValue(Kind kind, basic::CommandSignature commandSignature = basic::CommandSignature())
-      : kind(kind), commandSignature(commandSignature) { }
+  BuildValue(Kind kind, basic::CommandSignature signature = basic::CommandSignature())
+      : kind(kind), signature(signature) { }
   BuildValue(Kind kind, ArrayRef<FileInfo> outputInfos,
-             basic::CommandSignature commandSignature = basic::CommandSignature())
+             basic::CommandSignature signature = basic::CommandSignature())
       : kind(kind), numOutputInfos(outputInfos.size()),
-        commandSignature(commandSignature)
+        signature(signature)
   {
     assert(numOutputInfos >= 1);
     if (numOutputInfos == 1) {
@@ -197,7 +199,7 @@ public:
   BuildValue(BuildValue&& rhs) : numOutputInfos(rhs.numOutputInfos) {
     kind = rhs.kind;
     numOutputInfos = rhs.numOutputInfos;
-    commandSignature = rhs.commandSignature;
+    signature = rhs.signature;
     if (rhs.hasMultipleOutputs()) {
       valueData.asOutputInfos = rhs.valueData.asOutputInfos;
       rhs.valueData.asOutputInfos = nullptr;
@@ -217,7 +219,7 @@ public:
       // Move the data.
       kind = rhs.kind;
       numOutputInfos = rhs.numOutputInfos;
-      commandSignature = rhs.commandSignature;
+      signature = rhs.signature;
       if (rhs.hasMultipleOutputs()) {
         valueData.asOutputInfos = rhs.valueData.asOutputInfos;
         rhs.valueData.asOutputInfos = nullptr;
@@ -268,9 +270,8 @@ public:
   static BuildValue makeFailedInput() {
     return BuildValue(Kind::FailedInput);
   }
-  static BuildValue makeSuccessfulCommand(
-      ArrayRef<FileInfo> outputInfos, basic::CommandSignature commandSignature) {
-    return BuildValue(Kind::SuccessfulCommand, outputInfos, commandSignature);
+  static BuildValue makeSuccessfulCommand(ArrayRef<FileInfo> outputInfos) {
+    return BuildValue(Kind::SuccessfulCommand, outputInfos);
   }
   static BuildValue makeFailedCommand() {
     return BuildValue(Kind::FailedCommand);
@@ -292,6 +293,9 @@ public:
   }
   static BuildValue makeFilteredDirectoryContents(ArrayRef<std::string> values) {
     return BuildValue(Kind::FilteredDirectoryContents, values);
+  }
+  static BuildValue makeSuccessfulCommandWithOutputSignature(ArrayRef<FileInfo> outputInfos, basic::CommandSignature signature) {
+    return BuildValue(Kind::SuccessfulCommandWithOutputSignature, outputInfos, signature);
   }
 
   /// @}
@@ -315,7 +319,11 @@ public:
   
   bool isMissingOutput() const { return kind == Kind::MissingOutput; }
   bool isFailedInput() const { return kind == Kind::FailedInput; }
-  bool isSuccessfulCommand() const {return kind == Kind::SuccessfulCommand; }
+  bool isSuccessfulCommand() const {
+    return kind == Kind::SuccessfulCommand ||
+        kind == Kind::SuccessfulCommandWithOutputSignature;
+
+  }
   bool isFailedCommand() const { return kind == Kind::FailedCommand; }
   bool isPropagatedFailureCommand() const {
     return kind == Kind::PropagatedFailureCommand;
@@ -339,13 +347,13 @@ public:
   
   basic::CommandSignature getDirectoryTreeSignature() const {
     assert(isDirectoryTreeSignature() && "invalid call for value kind");
-    return commandSignature;
+    return signature;
   }
   
   basic::CommandSignature getDirectoryTreeStructureSignature() const {
     assert(isDirectoryTreeStructureSignature() &&
            "invalid call for value kind");
-    return commandSignature;
+    return signature;
   }
 
   bool hasMultipleOutputs() const {
@@ -375,9 +383,9 @@ public:
     }
   }
 
-  basic::CommandSignature getCommandSignature() const {
-    assert(isSuccessfulCommand() && "invalid call for value kind");
-    return commandSignature;
+  basic::CommandSignature getOutputSignature() const {
+    assert(kind == Kind::SuccessfulCommandWithOutputSignature && "invalid call for value kind");
+    return signature;
   }
 
   /// @}
@@ -427,8 +435,8 @@ inline buildsystem::BuildValue::BuildValue(basic::BinaryDecoder& coder) {
   }
   
   coder.read(kind);
-  if (kindHasCommandSignature())
-    coder.read(commandSignature);
+  if (kindHasSignature())
+    coder.read(signature);
   if (kindHasOutputInfo()) {
     coder.read(numOutputInfos);
     if (numOutputInfos > 1) {
@@ -447,8 +455,8 @@ inline buildsystem::BuildValue::BuildValue(basic::BinaryDecoder& coder) {
 inline core::ValueType buildsystem::BuildValue::toData() const {
   basic::BinaryEncoder coder;
   coder.write(kind);
-  if (kindHasCommandSignature())
-    coder.write(commandSignature);
+  if (kindHasSignature())
+    coder.write(signature);
   if (kindHasOutputInfo()) {
     coder.write(numOutputInfos);
     for (uint32_t i = 0; i != numOutputInfos; ++i) {

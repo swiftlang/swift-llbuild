@@ -169,17 +169,17 @@ static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
       char InputName[32];
       sprintf(InputName, "i%d", i+1);
       Engine.addRule({
-          Name, simpleAction({ InputName },
+          Name, {}, simpleAction({ InputName },
                              [] (const std::vector<int>& Inputs) {
                                return Inputs[0]; }) });
     } else {
       Engine.addRule({
-          Name,
+          Name, {},
           simpleAction({},
                        [&] (const std::vector<int>& Inputs) {
                          return LastInputValue; }),
-          [&](BuildEngine&, const Rule& rule, const ValueType& Value) {
-              return LastInputValue == IntFromValue(Value);
+          [&](BuildEngine&, const Rule&, const ValueType& value) {
+              return LastInputValue == IntFromValue(value);
           } });
     }
   }
@@ -256,16 +256,16 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
           Inputs.push_back(InputName);
         }
         Engine.addRule({
-            Name, simpleAction(Inputs, [] (const std::vector<int>& Inputs) {
+            Name, {}, simpleAction(Inputs, [] (const std::vector<int>& Inputs) {
                 return Inputs[0]; }) });
       } else {
         Engine.addRule({
-            Name,
+            Name, {},
             simpleAction({},
                          [&] (const std::vector<int>& Inputs) {
                            return LastInputValue; }),
-            [&](BuildEngine&, const Rule& rule, const ValueType& Value) {
-              return LastInputValue == IntFromValue(Value);
+            [&](BuildEngine&, const Rule&, const ValueType& value) {
+              return LastInputValue == IntFromValue(value);
             } });
       }
     }
@@ -337,7 +337,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
         char InputBName[32];
         sprintf(InputBName, "i%d,%d", i, j+1);
         Engine.addRule({
-            Name, simpleAction({ InputAName, InputBName },
+            Name, {}, simpleAction({ InputAName, InputBName },
                                [] (const std::vector<int>& Inputs) {
                                  return Inputs[0]; }) });
       } else if (i != M) {
@@ -346,7 +346,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
         char InputName[32];
         sprintf(InputName, "i%d,%d", i+1, j);
         Engine.addRule({
-            Name, simpleAction({ InputName },
+            Name, {}, simpleAction({ InputName },
                                [] (const std::vector<int>& Inputs) {
                                  return Inputs[0]; }) });
       } else if (j != N) {
@@ -355,19 +355,19 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
         char InputName[32];
         sprintf(InputName, "i%d,%d", i, j+1);
         Engine.addRule({
-            Name, simpleAction({ InputName },
+            Name, {}, simpleAction({ InputName },
                                [] (const std::vector<int>& Inputs) {
                                  return Inputs[0]; }) });
       } else {
         // Top-right corner node.
         assert(i == M && j == N);
         Engine.addRule({
-            Name,
+            Name, {},
             simpleAction({},
                          [&] (const std::vector<int>& Inputs) {
                            return LastInputValue; }),
-            [&](BuildEngine&, const Rule& rule, const ValueType& Value) {
-              return LastInputValue == IntFromValue(Value);
+            [&](BuildEngine&, const Rule&, const ValueType& value) {
+              return LastInputValue == IntFromValue(value);
             } });
       }
     }

@@ -1,0 +1,108 @@
+# Check that we properly handle changing rule definitions where intermediate
+# steps have removed production rule(s)
+#
+# We use 'grep' to slice out two different subfiles from the same file.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+#
+#
+# Initial build where 'a.h' is produced by rule C.1
+#
+# RUN: grep -A1000 "VERSION-BEGIN-[1]" %s | grep -B10000 "VERSION-END-1" | grep -ve '^--$' > %t.build/build-1.llbuild
+# RUN: echo "t1" > %t.build/a.i
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build -f build-1.llbuild > %t.1.out
+# RUN: echo "END-OF-FILE" >> %t.1.out
+# RUN: %{FileCheck} --check-prefix CHECK-VERSION-1 --input-file=%t.1.out %s
+#
+# CHECK-VERSION-1: GENERATE-HEADER
+# CHECK-VERSION-1: COMPILE
+# CHECK-VERSION-1: END-OF-FILE
+#
+#
+# Second build where 'a.i' exists and is the same as before, but is no longer
+# produced by anything in the manifest (i.e. is now a plain file node). This
+# should be a null incremental build, as the input is still up to date. As such
+# this will implicitly drop the dependency on C.1.
+#
+# RUN: grep -A1000 "VERSION-BEGIN-[2]" %s | grep -B10000 "VERSION-END-2" | grep -ve '^--$' > %t.build/build-2.llbuild
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build -f build-2.llbuild > %t.2.out
+# RUN: echo "END-OF-FILE" >> %t.2.out
+# RUN: %{FileCheck} --check-prefix CHECK-VERSION-2 --input-file %t.2.out %s
+#
+# CHECK-VERSION-2-NOT: GENERATE-HEADER
+# CHECK-VERSION-2-NOT: COMPILE
+# CHECK-VERSION-2: END-OF-FILE
+#
+#
+# Third build where the rule to produce 'a.h' has been added back.  In this case
+# it is still up to date, so we expect the build to continue to be null.
+# However, we do expect that the build system scans rule C.1.
+#
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build -f build-1.llbuild --trace %t.3.trace > %t.3.out
+# RUN: echo "END-OF-FILE" >> %t.3.out
+# RUN: %{FileCheck} --check-prefix CHECK-VERSION-3 --input-file %t.3.out %s
+# RUN: %{FileCheck} --check-prefix CHECK-TRACE-3 --input-file %t.3.trace %s
+#
+# CHECK-VERSION-3-NOT: GENERATE-HEADER
+# CHECK-VERSION-3-NOT: COMPILE
+# CHECK-VERSION-3: END-OF-FILE
+#
+# CHECK-TRACE-3: "CC.1"
+#
+# Fourth build where we have actually changed 'a.i'. Our production relationship
+# should be properly re-established, thus we expect the generate to occur and
+# then be followed by the compile.
+#
+# RUN: echo "t4" >> %t.build/a.i
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build -f build-1.llbuild > %t.4.out
+# RUN: echo "END-OF-FILE" >> %t.4.out
+# RUN: %{FileCheck} --check-prefix CHECK-VERSION-4 --input-file %t.4.out %s
+#
+# CHECK-VERSION-4: GENERATE-HEADER
+# CHECK-VERSION-4: COMPILE
+# CHECK-VERSION-4: END-OF-FILE
+#
+
+##### VERSION-BEGIN-1 #####
+
+client:
+  name: basic
+
+targets:
+  "": ["<all>","<c.1>"]
+
+commands:
+  "C.1":
+    tool: shell
+    description: GENERATE-HEADER
+    inputs: ["a.i"]
+    args: cp a.i a.h
+    outputs: ["a.h","<c.1>"]
+
+  "C.2":
+    tool: shell
+    description: COMPILE
+    inputs: ["a.h"]
+    args: cp a.h a.c
+    outputs: ["<all>"]
+
+##### VERSION-END-1 #####
+
+##### VERSION-BEGIN-2 #####
+
+client:
+  name: basic
+
+targets:
+  "": ["<all>"]
+
+commands:
+  "C.2":
+    tool: shell
+    description: COMPILE
+    inputs: ["a.h"]
+    args: cp a.h a.c
+    outputs: ["<all>"]
+
+##### VERSION-END-2 #####

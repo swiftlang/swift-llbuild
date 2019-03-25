@@ -15,6 +15,7 @@
 
 #include "llbuild/Basic/Compiler.h"
 #include "llbuild/Basic/ExecutionQueue.h"
+#include "llbuild/Basic/Hashing.h"
 #include "llbuild/Basic/LLVM.h"
 
 #include "llvm/ADT/SmallString.h"
@@ -187,6 +188,8 @@ public:
   
   /// Get a verbose description of the command, for use in status reporting.
   virtual void getVerboseDescription(SmallVectorImpl<char> &result) const override = 0;
+
+  virtual basic::CommandSignature getSignature() const;
   
   /// @}
 

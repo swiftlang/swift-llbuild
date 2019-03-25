@@ -422,6 +422,13 @@ private:
       return true;
     }
 
+    if (ruleInfo.rule.signature != ruleInfo.result.signature) {
+      if (trace)
+        trace->ruleNeedsToRunBecauseSignatureChanged(&ruleInfo.rule);
+      ruleInfo.state = RuleInfo::StateKind::NeedsToRun;
+      return true;
+    }
+
     // If the rule indicates its computed value is out of date, it needs to run.
     //
     // FIXME: We should probably try and move this so that it can be done by
@@ -523,7 +530,8 @@ private:
     // alternately, maybe there should just be an API call to fetch this, and
     // the clients that want it can ask? It's cheap to provide here, so
     // ultimately this is mostly a matter of cleanliness.
-    if (ruleInfo.result.builtAt != 0) {
+    if (ruleInfo.result.builtAt != 0 &&
+        ruleInfo.rule.signature == ruleInfo.result.signature) {
       TracingEngineTaskCallback i(EngineTaskCallbackKind::ProvidePriorValue, ruleInfo.keyID);
       task->providePriorValue(buildEngine, ruleInfo.result.value);
     }
@@ -1601,6 +1609,10 @@ public:
 
     RuleInfo* ruleInfo = taskInfo->forRuleInfo;
     assert(taskInfo == ruleInfo->getPendingTaskInfo());
+
+    // Update the signature of the result (even if we ultimately computed the
+    // same value).
+    ruleInfo->result.signature = ruleInfo->rule.signature;
 
     // Process the provided result.
     if (!forceChange && value == ruleInfo->result.value) {

@@ -130,7 +130,7 @@ TEST(BuildEngineCancellationTest, basic) {
   core::BuildEngine engine(delegate);
   bool cancelIt = false;
   engine.addRule({
-      "value-A", simpleAction({}, [&] (const std::vector<int>& inputs) {
+      "value-A", {}, simpleAction({}, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("value-A");
           fprintf(stderr, "building A (and cancelling ? %d)\n", cancelIt);
           if (cancelIt) {
@@ -138,7 +138,7 @@ TEST(BuildEngineCancellationTest, basic) {
           }
           return 2; }) });
   engine.addRule({
-      "result",
+      "result", {},
       simpleAction({"value-A"},
                    [&] (const std::vector<int>& inputs) {
                      EXPECT_EQ(1U, inputs.size());
@@ -168,7 +168,7 @@ TEST(BuildEngineCancellationDueToDuplicateTaskTest, basic) {
   core::BuildEngine engine(delegate);
   Task* taskA = nullptr;
   engine.addRule({
-     "value-A", simpleActionExternalTask({"value-B"},
+     "value-A", {}, simpleActionExternalTask({"value-B"},
         [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("value-A");
           fprintf(stderr, "building A\n");
@@ -177,13 +177,13 @@ TEST(BuildEngineCancellationDueToDuplicateTaskTest, basic) {
         &taskA)
     });
   engine.addRule({
-     "value-B", simpleAction({}, [&] (const std::vector<int>& inputs) {
+     "value-B", {}, simpleAction({}, [&] (const std::vector<int>& inputs) {
        builtKeys.push_back("value-B");
        fprintf(stderr, "building B (and reporting A complete early)\n");
        engine.taskIsComplete(taskA, intToValue(2));
        return 3; }) });
   engine.addRule({
-      "result",
+      "result", {},
       simpleAction({"value-A", "value-B"},
                    [&] (const std::vector<int>& inputs) {
                      EXPECT_EQ(2U, inputs.size());

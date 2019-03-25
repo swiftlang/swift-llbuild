@@ -1,0 +1,80 @@
+# Check that we properly handle changing rule definitions where a previously
+# plain file input node is now a produced node
+#
+# We use 'grep' to slice out two different subfiles from the same file.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+#
+#
+#
+# RUN: grep -A1000 "VERSION-BEGIN-[1]" %s | grep -B10000 "VERSION-END-1" | grep -ve '^--$' > %t.build/build-1.llbuild
+# RUN: echo "t1" > %t.build/a.h
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build -f build-1.llbuild > %t.1.out
+# RUN: echo "END-OF-FILE" >> %t.1.out
+# RUN: %{FileCheck} --check-prefix CHECK-VERSION-1 --input-file=%t.1.out %s
+#
+# CHECK-VERSION-1: COMPILE
+# CHECK-VERSION-1: END-OF-FILE
+#
+#
+# a.h is now produced by C.1 by processing 'a.i'.  Note that a.i must be
+# non-trivially different from a.h (i.e. its statinfo must be different), as
+# we are not currently hashing the contents of the files.  Since low time
+# resolution file systems, such as HFS+, do not pick up rapid fire changes we 
+# accomplish this by writing more bytes into the file than in the first test.
+#
+# RUN: grep -A1000 "VERSION-BEGIN-[2]" %s | grep -B10000 "VERSION-END-2" | grep -ve '^--$' > %t.build/build-2.llbuild
+# RUN: echo "t2 -- now with more bytes!" > %t.build/a.i
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build -f build-2.llbuild > %t.2.out
+# RUN: echo "END-OF-FILE" >> %t.2.out
+# RUN: %{FileCheck} --check-prefix CHECK-VERSION-2 --input-file %t.2.out %s
+#
+# CHECK-VERSION-2: GENERATE-HEADER
+# CHECK-VERSION-2: COMPILE
+# CHECK-VERSION-2: END-OF-FILE
+#
+
+##### VERSION-BEGIN-1 #####
+
+client:
+  name: basic
+
+targets:
+  "": ["<all>"]
+
+commands:
+  "C.2":
+    tool: shell
+    description: COMPILE
+    inputs: ["a.h"]
+    args: cp a.h a.c
+    outputs: ["<all>"]
+
+##### VERSION-END-1 #####
+
+##### VERSION-BEGIN-2 #####
+
+client:
+  name: basic
+
+targets:
+  "": ["<all>"]
+
+commands:
+  "C.1":
+    tool: shell
+    description: GENERATE-HEADER
+    inputs: ["a.i"]
+    args: cp a.i a.h
+    outputs: ["a.h"]
+
+  "C.2":
+    tool: shell
+    description: COMPILE
+    inputs: ["a.h"]
+    args: cp a.h a.c
+    outputs: ["<all>"]
+
+##### VERSION-END-2 #####
+

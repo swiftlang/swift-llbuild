@@ -1484,6 +1484,7 @@ core::Rule NinjaBuildEngineDelegate::lookupRule(const core::KeyType& key) {
 
   return core::Rule{
     node->getPath(),
+    {},
       [&, node] (core::BuildEngine&) {
       return buildInput(*context, node);
     },
@@ -1865,11 +1866,12 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       if (command->getOutputs().size() == 1) {
         context.engine.addRule({
             command->getOutputs()[0]->getPath(),
+            {},
             [=, &context](core::BuildEngine& engine) {
               return buildCommand(context, command);
             },
             [=, &context](core::BuildEngine&, const core::Rule& rule,
-                          const core::ValueType value) {
+                          const core::ValueType& value) {
               // If simulating, assume cached results are valid.
               if (context.simulate)
                 return true;
@@ -1898,11 +1900,12 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       // outputs.
       context.engine.addRule({
           compositeRuleName,
+          {},
           [=, &context](core::BuildEngine& engine) {
             return buildCommand(context, command);
           },
           [=, &context](core::BuildEngine&, const core::Rule& rule,
-                        const core::ValueType value) {
+                        const core::ValueType& value) {
             // If simulating, assume cached results are valid.
             if (context.simulate)
               return true;
@@ -1918,12 +1921,13 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       for (unsigned i = 0, e = command->getOutputs().size(); i != e; ++i) {
         context.engine.addRule({
             command->getOutputs()[i]->getPath(),
+            {},
             [=, &context] (core::BuildEngine&) {
               return selectCompositeBuildResult(context, command, i,
                                                 compositeRuleName);
             },
             [=, &context] (core::BuildEngine&, const core::Rule& rule,
-                           const core::ValueType value) {
+                           const core::ValueType& value) {
               // If simulating, assume cached results are valid.
               if (context.simulate)
                 return true;
@@ -2004,6 +2008,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       // Create a dummy rule to build all targets.
       context.engine.addRule({
           "<<build>>",
+          {},
           [&](core::BuildEngine&) {
             return buildTargets(context, targetsToBuild);
           },

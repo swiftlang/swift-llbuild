@@ -425,7 +425,8 @@ void llbuild::basic::spawnProcess(
 #endif
 
 #if defined(_WIN32)
-  DWORD creationFlags = NORMAL_PRIORITY_CLASS | CREATE_NEW_PROCESS_GROUP;
+  DWORD creationFlags = NORMAL_PRIORITY_CLASS | CREATE_NEW_PROCESS_GROUP |
+                        CREATE_UNICODE_ENVIRONMENT;
   PROCESS_INFORMATION processInfo = {0};
   STARTUPINFOW startupInfo = {0};
 
@@ -586,7 +587,7 @@ void llbuild::basic::spawnProcess(
   environment.setIfMissing("LLBUILD_TASK_ID", taskID.str());
   if (attr.controlEnabled) {
     environment.setIfMissing("LLBUILD_CONTROL_FD",
-                             Twine((int)controlPipe[1]).str());
+                             Twine((long long)controlPipe[1]).str());
   }
 
   // Resolve the executable path, if necessary.
@@ -650,13 +651,14 @@ void llbuild::basic::spawnProcess(
 
       if (result == 0) {
 #if defined(_WIN32)
+        auto unicodeEnv = environment.getWindowsEnvp();
         result = !CreateProcessW(
             /*lpApplicationName=*/(LPWSTR)u16Executable.data(),
             (LPWSTR)u16CmdLine.data(),
             /*lpProcessAttributes=*/NULL,
             /*lpThreadAttributes=*/NULL,
             /*bInheritHandles=*/TRUE, creationFlags,
-            /*lpEnvironment=*/NULL,
+            /*lpEnvironment=*/unicodeEnv.get(),
             /*lpCurrentDirectory=*/u16Cwd.empty() ? NULL
                                                   : (LPWSTR)u16Cwd.data(),
             &startupInfo, &processInfo);
@@ -791,9 +793,10 @@ void llbuild::basic::spawnProcess(
   HANDLE threads[2] = {NULL, NULL};
 #endif // defined(_WIN32)
 
+  int threadCount = 0;
   if (attr.controlEnabled) {
 #if defined(_WIN32)
-    threads[0] = (HANDLE)_beginthread(
+    threads[threadCount++] = (HANDLE)_beginthread(
         [](LPVOID lpParams) { ((threadData*)lpParams)->reader(lpParams); }, 0,
         &controlThreadParams);
 #else
@@ -805,7 +808,7 @@ void llbuild::basic::spawnProcess(
   // Read the command output, if capturing.
   if (shouldCaptureOutput) {
 #if defined(_WIN32)
-    threads[1] = (HANDLE)_beginthread(
+    threads[threadCount++] = (HANDLE)_beginthread(
         [](LPVOID lpParams) { ((threadData*)lpParams)->reader(lpParams); }, 0,
         &outputThreadParams);
 #else
@@ -818,7 +821,7 @@ void llbuild::basic::spawnProcess(
   }
 
 #if defined(_WIN32)
-  DWORD waitResult = WaitForMultipleObjects(2, threads,
+  DWORD waitResult = WaitForMultipleObjects(threadCount, threads,
                                             /*bWaitAll=*/false,
                                             /*dwMilliseconds=*/INFINITE);
   if (WAIT_FAILED == waitResult || WAIT_TIMEOUT == waitResult) {

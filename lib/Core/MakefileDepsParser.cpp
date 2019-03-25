@@ -126,8 +126,17 @@ static void lexWord(const char*& cur, const char* end,
     }
 
     // Otherwise, if this is not a valid word character then skip it.
-    if (!isWordChar(c))
+    if (!isWordChar(c)) {
+#if defined(_WIN32)
+      // If we encounter a colon and it looks like a driver letter separator, use
+      // it as that instead of separating the word.
+      if (c == ':' && cur + 1 != end && (*(cur + 1) == '/' || *(cur + 1) == '\\')) {
+        unescapedWord.push_back(':');
+        continue;
+      }
+#endif
       break;
+    }
     unescapedWord.push_back(c);
   }
 }
