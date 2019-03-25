@@ -1870,6 +1870,10 @@ llvm::Optional<BuildValue> BuildSystemImpl::build(BuildKey key) {
   // completion).
   executionQueue.reset();
 
+  // Clear out the shell handlers, as we do not want to hold on to them across
+  // multiple builds.
+  shellHandlers.clear();
+
   if (buildWasAborted)
     return None;
   return BuildValue::fromData(result);
