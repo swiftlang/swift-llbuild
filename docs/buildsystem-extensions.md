@@ -27,7 +27,7 @@ and without needing a complex system-wide registration process).
 ### Extension Discovery
 
 llbuild dynamically discovers the presence of an "extension" for a particular
-tool, but searching the file system for an additional extension configuration
+tool, by searching the file system for an additional extension configuration
 executable adjacent to the tool in the file system. This executable is
 identified by appending `-for-llbuild` to the original tool name. This mechanism
 allows projects to transparently provide llbuild extension support simply by

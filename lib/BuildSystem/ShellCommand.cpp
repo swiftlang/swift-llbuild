@@ -33,8 +33,8 @@ void ShellCommand::start(BuildSystemCommandInterface& bsci,
   handler = bsci.resolveShellCommandHandler(this);
 
   // Delegate to handler, if used.
-  if (auto p = handler.get()) {
-    handlerState = p->start(bsci, this);
+  if (handler) {
+    handlerState = handler->start(bsci, this);
   }
 
   this->ExternalCommand::start(bsci, task);
@@ -364,10 +364,16 @@ void ShellCommand::executeExternalCommand(
   };
       
   // Delegate to the handler, if present.
-  if (auto *p = handler.get()) {
+  if (handler) {
     // FIXME: We should consider making this interface capable of feeding
     // back the dependencies directly.
-    p->execute(
+    //
+    // FIXME: This needs to honor certain properties of the execution queue
+    // (like indicating when the work starts and stops, and communicating with
+    // the execution queue delegate controlling how output is handled). It could
+    // be the case that this should actually be delegating this work to run on
+    // the execution queue, and the queue handles the handoff.
+    handler->execute(
         handlerState.get(), this, bsci, task, context, commandCompletionFn);
     return;
   }

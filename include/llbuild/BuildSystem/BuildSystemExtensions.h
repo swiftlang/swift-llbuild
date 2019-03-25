@@ -45,13 +45,20 @@ public:
 };
 
 /// A concrete build system extension.
+///
+/// NOTE: This class *must* be thread-safe.
 class BuildSystemExtension {
 public:
-  explicit BuildSystemExtension();
+  explicit BuildSystemExtension() {}
   virtual ~BuildSystemExtension();
 
+  /// Instantiate a shell command handler for the given toolpah.
+  ///
+  /// The build system will always create a unique handler for each build
+  /// invocation; the extension should cache the handler if necessary for
+  /// performance.
   virtual std::unique_ptr<ShellCommandHandler>
-  resolveShellCommandHandler(ShellCommand*) = 0;
+  createShellCommandHandler(StringRef toolPath) = 0;
 };
 
 }
