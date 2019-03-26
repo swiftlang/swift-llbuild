@@ -3271,7 +3271,10 @@ class ArchiveShellCommand : public ExternalCommand {
 
   std::vector<std::string> getArgs() const {
     std::vector<std::string> args;
-    args.push_back("ar");
+    if (const char *ar = std::getenv("AR"))
+      args.push_back(std::string(ar));
+    else
+      args.push_back("ar");
     args.push_back("cr");
     args.push_back(archiveName);
     args.insert(args.end(), archiveInputs.begin(), archiveInputs.end());
