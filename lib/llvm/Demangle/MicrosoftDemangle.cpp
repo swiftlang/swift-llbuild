@@ -559,9 +559,11 @@ static void outputName(OutputStream &OS, const Name *TheName) {
     OS << "~";
 
   if (TheName->Operator == "ctor" || TheName->Operator == "dtor") {
-    OS << Previous->Str;
-    if (Previous->TParams)
-      outputParameterList(OS, *Previous->TParams);
+    if (Previous) {
+      OS << Previous->Str;
+      if (Previous->TParams)
+        outputParameterList(OS, *Previous->TParams);
+    }
     return;
   }
 
@@ -1897,6 +1899,7 @@ ArrayType *Demangler::demangleArrayType(StringView &MangledName) {
 // Reads a function or a template parameters.
 FunctionParams
 Demangler::demangleFunctionParameterList(StringView &MangledName) {
+#ifndef __clang_analyzer__
   // Empty parameter list.
   if (MangledName.consumeFront('X'))
     return {};
@@ -1950,13 +1953,14 @@ Demangler::demangleFunctionParameterList(StringView &MangledName) {
     return *Head;
   }
 
+#endif
   Error = true;
   return {};
 }
 
 TemplateParams *
 Demangler::demangleTemplateParameterList(StringView &MangledName) {
-  TemplateParams *Head;
+  TemplateParams *Head = nullptr;
   TemplateParams **Current = &Head;
   while (!Error && !MangledName.startsWith('@')) {
     // Template parameter lists don't participate in back-referencing.

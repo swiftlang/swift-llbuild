@@ -802,6 +802,7 @@ void llbuild::basic::spawnProcess(
 #else
     readfds[0].events = POLLIN;
     activeEvents |= POLLIN;
+    (void)threadCount;
 #endif
   }
 

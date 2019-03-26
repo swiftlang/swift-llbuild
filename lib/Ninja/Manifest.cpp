@@ -32,7 +32,9 @@ bool Rule::isValidParameterName(StringRef name) {
 Manifest::Manifest() {
   // Create the built-in console pool, and add it to the pool map.
   consolePool = new (getAllocator()) Pool("console");
-  consolePool->setDepth(1);
+  assert(consolePool != nullptr);
+  if (consolePool)
+    consolePool->setDepth(1);
   pools["console"] = consolePool;
 
   // Create the built-in phony rule, and add it to the rule map.
