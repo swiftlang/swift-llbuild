@@ -792,9 +792,18 @@ bool BuildSystemFrontend::build(StringRef targetToBuild) {
   if (!buildSystem->build(targetToBuild))
     return false;
 
+  bool wasCancelled = false;
+  auto impl = static_cast<BuildSystemFrontendDelegateImpl*>(delegate.impl);
+  if (impl->getStatus() == BuildSystemFrontendDelegateImpl::Status::Cancelled) {
+    wasCancelled = true;
+  }
+
   // The build was successful if there were no failed commands or unspecified
-  // errors.
+  // errors, including cancellation. We explicitly include cancellation because
+  // it is possible for a build to complete with no failed commands or errors,
+  // yet not have done any actual work (i.e. if we are cancelled immediately).
   //
   // It is the job of the client to report a summary, if desired.
-  return delegate.getNumFailedCommands() == 0 && delegate.getNumErrors() == 0;
+  return !wasCancelled && delegate.getNumFailedCommands() == 0
+      && delegate.getNumErrors() == 0;
 }
