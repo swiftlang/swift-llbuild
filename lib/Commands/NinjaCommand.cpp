@@ -406,7 +406,7 @@ static int executeLoadManifestCommand(const std::vector<std::string>& args,
   if (pos != std::string::npos) {
     if (!sys::chdir(filename.substr(0, pos).c_str())) {
       fprintf(stderr, "error: %s: unable to chdir(): %s\n",
-              getProgramName(), strerror(errno));
+              getProgramName(), sys::strerror(errno).c_str());
       return 1;
     }
     filename = filename.substr(pos+1);

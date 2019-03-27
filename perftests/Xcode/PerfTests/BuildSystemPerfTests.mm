@@ -18,6 +18,11 @@
 
 #import <XCTest/XCTest.h>
 
+extern "C" {
+    // Provided by System.framework's libsystem_kernel interface
+    extern int __pthread_fchdir(int fd);
+}
+
 using namespace llbuild;
 using namespace llbuild::basic;
 
@@ -109,6 +114,10 @@ class PerfTestProcessDelegate : public ProcessDelegate {
             spawnProcess(delegate, nullptr, pgrp, handle, cmd, environment, attr, std::move(releaseFn), std::move(completionFn));
         }
     }];
+
+    // Reset (remove) per-thread working directory in case it was set by the
+    // above process spawning.
+    __pthread_fchdir(-1);
 }
 
 
