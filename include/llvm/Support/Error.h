@@ -698,6 +698,7 @@ inline void cantFail(Error Err, const char *Msg = nullptr) {
   if (Err) {
     if (!Msg)
       Msg = "Failure value returned from cantFail wrapped call";
+    (void)Msg;
     llvm_unreachable(Msg);
   }
 }

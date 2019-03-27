@@ -225,7 +225,7 @@ readExponent(StringRef::iterator begin, StringRef::iterator end)
     absExponent = value;
   }
 
-  assert(p == end && "Invalid exponent in exponent");
+  assert(p == end && "Invalid exponent in exponent"); (void)p;
 
   if (isNegative)
     return -(int) absExponent;
@@ -538,16 +538,16 @@ powerOf5(APFloatBase::integerPart *dst, unsigned int power) {
 
   unsigned int partsCount[16] = { 1 };
   APFloatBase::integerPart scratch[maxPowerOfFiveParts], *p1, *p2, *pow5;
-  unsigned int result;
+  unsigned int result = 1;
   assert(power <= maxExponent);
 
+#ifndef __clang_analyzer__
   p1 = dst;
   p2 = scratch;
 
   *p1 = firstEightPowers[power & 7];
   power >>= 3;
 
-  result = 1;
   pow5 = pow5s;
 
   for (unsigned int n = 0; power; power >>= 1, n++) {
@@ -585,6 +585,7 @@ powerOf5(APFloatBase::integerPart *dst, unsigned int power) {
 
   if (p1 != dst)
     APInt::tcAssign(dst, p1, result);
+#endif
 
   return result;
 }
@@ -1024,6 +1025,7 @@ lostFraction IEEEFloat::multiplySignificand(const IEEEFloat &rhs,
     lost_fraction = extendedAddend.shiftSignificandRight(1);
     assert(lost_fraction == lfExactlyZero &&
            "Lost precision while shifting addend for fused-multiply-add.");
+    (void)lost_fraction;
 
     lost_fraction = addOrSubtractSignificand(extendedAddend, false);
 
@@ -1726,13 +1728,13 @@ IEEEFloat::opStatus IEEEFloat::remainder(const IEEEFloat &rhs) {
 
   fs = V.convertFromZeroExtendedInteger(x, parts * integerPartWidth, true,
                                         rmNearestTiesToEven);
-  assert(fs==opOK);   // should always work
+  assert(fs==opOK); (void)fs; // should always work
 
   fs = V.multiply(rhs, rmNearestTiesToEven);
-  assert(fs==opOK || fs==opInexact);   // should not overflow or underflow
+  assert(fs==opOK || fs==opInexact); (void)fs; // should not overflow or underflow
 
   fs = subtract(V, rmNearestTiesToEven);
-  assert(fs==opOK || fs==opInexact);   // likewise
+  assert(fs==opOK || fs==opInexact); (void)fs; // likewise
 
   if (isZero())
     sign = origSign;    // IEEE754 requires this
@@ -4416,8 +4418,9 @@ APFloat::Storage::Storage(IEEEFloat F, const fltSemantics &Semantics) {
     return;
   }
   if (usesLayout<DoubleAPFloat>(Semantics)) {
+    const auto& semantics = F.getSemantics();
     new (&Double)
-        DoubleAPFloat(Semantics, APFloat(std::move(F), F.getSemantics()),
+        DoubleAPFloat(Semantics, APFloat(std::move(F), semantics),
                       APFloat(semIEEEdouble));
     return;
   }

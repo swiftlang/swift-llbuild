@@ -75,6 +75,8 @@
 		40EA264C2165221C00068954 /* LaneBasedExecutionQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 40EA264B2165221C00068954 /* LaneBasedExecutionQueue.cpp */; };
 		40EA264F2166AA9400068954 /* POSIXEnvironmentTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 40EA264E2166AA9400068954 /* POSIXEnvironmentTest.cpp */; };
 		40EA26512166AB5A00068954 /* LaneBasedExecutionQueueTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 40EA26502166AB5A00068954 /* LaneBasedExecutionQueueTest.cpp */; };
+		40FA6485224AC2FC00D0B79A /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
+		40FA6486224AC34400D0B79A /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
 		913540F2220E5CC1009C82D6 /* UnicodeCaseFold.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 913540F1220E5CC1009C82D6 /* UnicodeCaseFold.cpp */; };
 		91BFB728220E3FBD00259E9F /* APFloat.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 91FD9A90220E3EA700BE004E /* APFloat.cpp */; };
 		91BFB729220E3FBD00259E9F /* APInt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 91FD9A8A220E3EA600BE004E /* APInt.cpp */; };
@@ -1218,6 +1220,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				40FA6485224AC2FC00D0B79A /* libllbuildBasic.a in Frameworks */,
+				40FA6486224AC34400D0B79A /* libllvmSupport.a in Frameworks */,
 				40B3C92720D3B24D007C5847 /* libllbuild.dylib in Frameworks */,
 				40B3C91020D3AEC9007C5847 /* libcurses.tbd in Frameworks */,
 				40B3C91120D3AEC9007C5847 /* libgtest.a in Frameworks */,
@@ -4242,6 +4246,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_CODE_COVERAGE = NO;
+				CLANG_STATIC_ANALYZER_MODE_ON_ANALYZE_ACTION = shallow;
 				CLANG_WARN_COMMA = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/include";
 			};
@@ -4251,6 +4256,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_CODE_COVERAGE = NO;
+				CLANG_STATIC_ANALYZER_MODE_ON_ANALYZE_ACTION = shallow;
 				CLANG_WARN_COMMA = NO;
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/include";
 			};
