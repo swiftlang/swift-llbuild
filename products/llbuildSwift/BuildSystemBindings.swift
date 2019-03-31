@@ -197,17 +197,28 @@ extension SchedulerAlgorithm {
     }
 }
 
+/// Represents a BuildSystem command.
+public protocol CommandProtocol: CustomStringConvertible, CustomDebugStringConvertible {
+    /// The command name.
+    //
+    // FIXME: We shouldn't need to expose this to use for mapping purposes, we should be able to use something more efficient.
+    var name: String { get }
+
+    /// Whether the default status reporting shows status for the command.
+    var shouldShowStatus: Bool { get }
+
+    /// The verbose description provided by the command.
+    var verboseDescription: String { get }
+}
+
 /// Handle for a command as invoked by the low-level BuildSystem.
-public struct Command: Hashable, CustomStringConvertible, CustomDebugStringConvertible {
+public struct Command: CommandProtocol, Hashable {
     fileprivate let handle: OpaquePointer?
 
     fileprivate init(_ handle: OpaquePointer?) {
         self.handle = handle
     }
 
-    /// The command name.
-    //
-    // FIXME: We shouldn't need to expose this to use for mapping purposes, we should be able to use something more efficient.
     public var name: String {
         var data = llb_data_t()
         withUnsafeMutablePointer(to: &data) { (ptr: UnsafeMutablePointer<llb_data_t>) in
@@ -216,7 +227,6 @@ public struct Command: Hashable, CustomStringConvertible, CustomDebugStringConve
         return stringFromData(data)
     }
 
-    /// Whether the default status reporting shows status for the command.
     public var shouldShowStatus: Bool {
         return llb_buildsystem_command_should_show_status(handle)
     }
@@ -229,7 +239,6 @@ public struct Command: Hashable, CustomStringConvertible, CustomDebugStringConve
         return String(cString: name)
     }
 
-    /// The verbose description provided by the command.
     public var verboseDescription: String {
         let name = llb_buildsystem_command_get_verbose_description(handle)!
         defer { free(name) }
@@ -389,43 +398,43 @@ public protocol BuildSystemDelegate {
     ///
     /// The system guarantees that any commandStart() call will be paired with
     /// exactly one \see commandFinished() call.
-    func commandStatusChanged(_ command: Command, kind: CommandStatusKind)
+    func commandStatusChanged(_ command: CommandProtocol, kind: CommandStatusKind)
 
     /// Called when a command is preparing to start.
     ///
     /// The system guarantees that any commandStart() call will be paired with
     /// exactly one \see commandFinished() call.
-    func commandPreparing(_ command: Command)
+    func commandPreparing(_ command: CommandProtocol)
 
     /// Called when a command has been started.
     ///
     /// The system guarantees that any commandStart() call will be paired with
     /// exactly one \see commandFinished() call.
-    func commandStarted(_ command: Command)
+    func commandStarted(_ command: CommandProtocol)
 
     /// Called to allow the delegate to skip commands without cancelling their
     /// dependents. See llbuild's should_command_start.
-    func shouldCommandStart(_ command: Command) -> Bool
+    func shouldCommandStart(_ command: CommandProtocol) -> Bool
 
     /// Called when a command has been finished.
-    func commandFinished(_ command: Command, result: CommandResult)
+    func commandFinished(_ command: CommandProtocol, result: CommandResult)
 
     /// Called to report an error during the execution of a command.
-    func commandHadError(_ command: Command, message: String)
+    func commandHadError(_ command: CommandProtocol, message: String)
 
     /// Called to report a note during the execution of a command.
-    func commandHadNote(_ command: Command, message: String)
+    func commandHadNote(_ command: CommandProtocol, message: String)
 
     /// Called to report a warning during the execution of a command.
-    func commandHadWarning(_ command: Command, message: String)
+    func commandHadWarning(_ command: CommandProtocol, message: String)
 
     /// Called by the build system to report a command could not build due to
     /// missing inputs.
-    func commandCannotBuildOutputDueToMissingInputs(_ command: Command, output: BuildKey, inputs: [BuildKey])
+    func commandCannotBuildOutputDueToMissingInputs(_ command: CommandProtocol, output: BuildKey, inputs: [BuildKey])
 
     /// Called by the build system to report a node could not be built
     /// because multiple commands are producing it.
-    func cannotBuildNodeDueToMultipleProducers(output: BuildKey, commands: [Command])
+    func cannotBuildNodeDueToMultipleProducers(output: BuildKey, commands: [CommandProtocol])
 
     /// Called when a command's job has started executing an external process.
     ///
@@ -437,19 +446,19 @@ public protocol BuildSystemDelegate {
     /// different status calls relating to the same process. It is only
     /// guaranteed to be unique from when it has been provided here to when it
     /// has been provided to the \see commandProcessFinished() call.
-    func commandProcessStarted(_ command: Command, process: ProcessHandle)
+    func commandProcessStarted(_ command: CommandProtocol, process: ProcessHandle)
 
     /// Called to report an error in the management of a command process.
     ///
     /// - parameter process: The process handle.
     /// - parameter message: The error message.
-    func commandProcessHadError(_ command: Command, process: ProcessHandle, message: String)
+    func commandProcessHadError(_ command: CommandProtocol, process: ProcessHandle, message: String)
 
     /// Called to report a command processes' (merged) standard output and error.
     ///
     /// - parameter process: The process handle.
     /// - parameter data: The process output.
-    func commandProcessHadOutput(_ command: Command, process: ProcessHandle, data: [UInt8])
+    func commandProcessHadOutput(_ command: CommandProtocol, process: ProcessHandle, data: [UInt8])
 
     /// Called when a command's job has finished executing an external process.
     ///
@@ -459,7 +468,7 @@ public protocol BuildSystemDelegate {
     ///
     /// - parameter result: Whether the process suceeded, failed or was cancelled.
     /// - parameter exitStatus: The raw exit status of the process.
-    func commandProcessFinished(_ command: Command, process: ProcessHandle, result: CommandExtendedResult)
+    func commandProcessFinished(_ command: CommandProtocol, process: ProcessHandle, result: CommandExtendedResult)
 
     /// Called when a cycle is detected by the build engine and it cannot make
     /// forward progress.
