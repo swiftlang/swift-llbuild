@@ -73,7 +73,7 @@ private final class ToolWrapper {
         _delegate.execute_command = { return BuildSystem.toCommandWrapper($0!).executeCommand($1!, $2!, $3!, $4!) }
 
         // Create the low-level command.
-        wrapper._command = Command(llb_buildsystem_external_command_create(name, _delegate))
+        wrapper._command = Command(handle: llb_buildsystem_external_command_create(name, _delegate))
 
         return wrapper._command.handle
     }
@@ -99,7 +99,7 @@ private final class CommandWrapper {
 
     init(command: ExternalCommand) {
         self.command = command
-        self._command = Command(nil)
+        self._command = Command(handle: nil)
     }
 
     func getSignature(_: OpaquePointer, _ data: UnsafeMutablePointer<llb_data_t>) {
@@ -199,42 +199,91 @@ extension SchedulerAlgorithm {
 
 /// Handle for a command as invoked by the low-level BuildSystem.
 public struct Command: Hashable, CustomStringConvertible, CustomDebugStringConvertible {
-    fileprivate let handle: OpaquePointer?
+    private struct Values: Hashable {
+        let name: String
+        let shouldShowStatus: Bool
+        let description: String
+        let verboseDescription: String
+    }
 
-    fileprivate init(_ handle: OpaquePointer?) {
-        self.handle = handle
+    private enum Representation: Hashable {
+        case handle(OpaquePointer?)
+        case values(Values)
+    }
+
+    private let representation: Representation
+
+    fileprivate init(handle: OpaquePointer?) {
+        self.representation = .handle(handle)
+    }
+
+    /// Creates a dummy `Command` with specific values for testing purposes.
+    public init(name: String, shouldShowStatus: Bool, description: String, verboseDescription: String) {
+        self.representation = .values(Values(
+            name: name,
+            shouldShowStatus: shouldShowStatus,
+            description: description,
+            verboseDescription: verboseDescription
+        ))
+    }
+
+    fileprivate var handle: OpaquePointer? {
+        switch representation {
+        case .handle(let handle):
+            return handle
+        case .values:
+            return nil
+        }
     }
 
     /// The command name.
     //
     // FIXME: We shouldn't need to expose this to use for mapping purposes, we should be able to use something more efficient.
     public var name: String {
-        var data = llb_data_t()
-        withUnsafeMutablePointer(to: &data) { (ptr: UnsafeMutablePointer<llb_data_t>) in
-            llb_buildsystem_command_get_name(handle, ptr)
+        switch representation {
+        case .handle(let handle):
+            var data = llb_data_t()
+            withUnsafeMutablePointer(to: &data) { (ptr: UnsafeMutablePointer<llb_data_t>) in
+                llb_buildsystem_command_get_name(handle, ptr)
+            }
+            return stringFromData(data)
+        case .values(let values):
+            return values.name
         }
-        return stringFromData(data)
     }
 
     /// Whether the default status reporting shows status for the command.
     public var shouldShowStatus: Bool {
-        return llb_buildsystem_command_should_show_status(handle)
+        switch representation {
+        case .handle(let handle):
+            return llb_buildsystem_command_should_show_status(handle)
+        case .values(let values):
+            return values.shouldShowStatus
+        }
     }
 
     /// The description provided by the command.
     public var description: String {
-        let name = llb_buildsystem_command_get_description(handle)!
-        defer { free(name) }
-
-        return String(cString: name)
+        switch representation {
+        case .handle(let handle):
+            let name = llb_buildsystem_command_get_description(handle)!
+            defer { free(name) }
+            return String(cString: name)
+        case .values(let values):
+            return values.description
+        }
     }
 
     /// The verbose description provided by the command.
     public var verboseDescription: String {
-        let name = llb_buildsystem_command_get_verbose_description(handle)!
-        defer { free(name) }
-
-        return String(cString: name)
+        switch representation {
+        case .handle(let handle):
+            let name = llb_buildsystem_command_get_verbose_description(handle)!
+            defer { free(name) }
+            return String(cString: name)
+        case .values(let values):
+            return values.verboseDescription
+        } 
     }
 
     /// The debug description provides the verbose description.
@@ -243,11 +292,11 @@ public struct Command: Hashable, CustomStringConvertible, CustomDebugStringConve
     }
 
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(handle!)
+        hasher.combine(representation)
     }
 
     public static func ==(lhs: Command, rhs: Command) -> Bool {
-        return lhs.handle == rhs.handle
+        return lhs.representation == rhs.representation
     }
 }
 
@@ -571,28 +620,28 @@ public final class BuildSystem {
         _delegate.lookup_tool = { return BuildSystem.toSystem($0!).lookupTool($1!) }
         _delegate.had_command_failure = { BuildSystem.toSystem($0!).hadCommandFailure() }
         _delegate.handle_diagnostic = { BuildSystem.toSystem($0!).handleDiagnostic($1, String(cString: $2!), Int($3), Int($4), String(cString: $5!)) }
-        _delegate.command_status_changed = { BuildSystem.toSystem($0!).commandStatusChanged(Command($1), $2) }
-        _delegate.command_preparing = { BuildSystem.toSystem($0!).commandPreparing(Command($1)) }
-        _delegate.command_started = { BuildSystem.toSystem($0!).commandStarted(Command($1)) }
-        _delegate.should_command_start = { BuildSystem.toSystem($0!).shouldCommandStart(Command($1)) }
-        _delegate.command_finished = { BuildSystem.toSystem($0!).commandFinished(Command($1), $2) }
-        _delegate.command_had_error = { BuildSystem.toSystem($0!).commandHadError(Command($1), $2!) }
-        _delegate.command_had_note = { BuildSystem.toSystem($0!).commandHadNote(Command($1), $2!) }
-        _delegate.command_had_warning = { BuildSystem.toSystem($0!).commandHadWarning(Command($1), $2!) }
+        _delegate.command_status_changed = { BuildSystem.toSystem($0!).commandStatusChanged(Command(handle: $1), $2) }
+        _delegate.command_preparing = { BuildSystem.toSystem($0!).commandPreparing(Command(handle: $1)) }
+        _delegate.command_started = { BuildSystem.toSystem($0!).commandStarted(Command(handle: $1)) }
+        _delegate.should_command_start = { BuildSystem.toSystem($0!).shouldCommandStart(Command(handle: $1)) }
+        _delegate.command_finished = { BuildSystem.toSystem($0!).commandFinished(Command(handle: $1), $2) }
+        _delegate.command_had_error = { BuildSystem.toSystem($0!).commandHadError(Command(handle: $1), $2!) }
+        _delegate.command_had_note = { BuildSystem.toSystem($0!).commandHadNote(Command(handle: $1), $2!) }
+        _delegate.command_had_warning = { BuildSystem.toSystem($0!).commandHadWarning(Command(handle: $1), $2!) }
         _delegate.command_cannot_build_output_due_to_missing_inputs = {
             let inputsPtr = $3!
             let inputs = (0..<Int($4)).map { BuildKey(key: inputsPtr[$0]) }
-            BuildSystem.toSystem($0!).commandCannotBuildOutputDueToMissingInputs(Command($1), BuildKey(key: $2!.pointee), inputs)
+            BuildSystem.toSystem($0!).commandCannotBuildOutputDueToMissingInputs(Command(handle: $1), BuildKey(key: $2!.pointee), inputs)
         }
         _delegate.cannot_build_node_due_to_multiple_producers = {
             let commandsPtr = $2!
-            let commands = (0..<Int($3)).map { Command(commandsPtr[$0]) }
+            let commands = (0..<Int($3)).map { Command(handle: commandsPtr[$0]) }
             BuildSystem.toSystem($0!).cannotBuildNodeDueToMultipleProducers(BuildKey(key: $1!.pointee), commands)
         }
-        _delegate.command_process_started = { BuildSystem.toSystem($0!).commandProcessStarted(Command($1), ProcessHandle($2!)) }
-        _delegate.command_process_had_error = { BuildSystem.toSystem($0!).commandProcessHadError(Command($1), ProcessHandle($2!), $3!) }
-        _delegate.command_process_had_output = { BuildSystem.toSystem($0!).commandProcessHadOutput(Command($1), ProcessHandle($2!), $3!) }
-        _delegate.command_process_finished = { BuildSystem.toSystem($0!).commandProcessFinished(Command($1), ProcessHandle($2!), CommandExtendedResult($3!)) }
+        _delegate.command_process_started = { BuildSystem.toSystem($0!).commandProcessStarted(Command(handle: $1), ProcessHandle($2!)) }
+        _delegate.command_process_had_error = { BuildSystem.toSystem($0!).commandProcessHadError(Command(handle: $1), ProcessHandle($2!), $3!) }
+        _delegate.command_process_had_output = { BuildSystem.toSystem($0!).commandProcessHadOutput(Command(handle: $1), ProcessHandle($2!), $3!) }
+        _delegate.command_process_finished = { BuildSystem.toSystem($0!).commandProcessFinished(Command(handle: $1), ProcessHandle($2!), CommandExtendedResult($3!)) }
         _delegate.cycle_detected = {
             var rules = [BuildKey]()
             UnsafeBufferPointer(start: $1, count: Int($2)).forEach {
