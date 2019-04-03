@@ -13,8 +13,8 @@ else()
   if(FOUNDATION_BUILD_DIR)
     list(APPEND additional_args
       -L${FOUNDATION_BUILD_DIR}
-      -Fsystem
-      ${FOUNDATION_BUILD_DIR}/CoreFoundation-prefix/System/Library/Frameworks
+      -Fsystem ${FOUNDATION_BUILD_DIR}
+      -Fsystem ${FOUNDATION_BUILD_DIR}/CoreFoundation-prefix/System/Library/Frameworks
       -I${FOUNDATION_BUILD_DIR}/swift)
   endif()
   if(LIBDISPATCH_BUILD_DIR)
