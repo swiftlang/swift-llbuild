@@ -1,7 +1,8 @@
 # Set sources.
 set(SOURCES 
   BuildSystemBindings.swift
-  CoreBindings.swift)
+  CoreBindings.swift
+  BuildDBBindings.swift)
 
 # Link C API.
 list(APPEND additional_args -I ${CMAKE_CURRENT_SOURCE_DIR}/../libllbuild/include -lllbuild)

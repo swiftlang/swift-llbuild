@@ -1,7 +1,8 @@
 set(SOURCES 
   BuildSystem-C-API.cpp
   C-API.cpp
-  Core-C-API.cpp)
+  Core-C-API.cpp
+  BuildDB-C-API.cpp)
 set(DEPENDENCIES
   llbuildBuildSystem
   llbuildCore

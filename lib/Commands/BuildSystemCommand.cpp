@@ -718,14 +718,15 @@ static int executeDBCommand(std::vector<std::string> args) {
     }
   } else if (action == "list-keys") {
     std::string error;
-    std::vector<KeyType> keys;
+    std::map<KeyID, KeyType> keys;
+    
     if (!buildDB->getKeys(keys, &error)) {
       fprintf(stderr, "error: failed to get keys: %s\n\n", error.c_str());
       ::exit(1);
     }
 
     for (auto key: keys) {
-      printf("%s\n", key.c_str());
+      printf("%llu: %s\n", std::get<0>(key), std::get<1>(key).c_str());
     }
   } else if (action == "dump") {
     buildDB->dump(llvm::outs());
