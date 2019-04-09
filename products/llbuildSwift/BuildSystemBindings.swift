@@ -42,10 +42,9 @@ private func copiedDataFromBytes(_ bytes: [UInt8]) -> llb_data_t {
 }
 
 // FIXME: We should eventually eliminate the need for this.
-private func stringFromData(_ data: llb_data_t) -> String {
+internal func stringFromData(_ data: llb_data_t) -> String {
     return String(decoding: UnsafeBufferPointer(start: data.data, count: Int(data.length)), as: Unicode.UTF8.self)
 }
-
 
 public protocol Tool: class {
     /// Called to create a specific command instance of this tool.

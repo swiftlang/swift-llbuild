@@ -7,28 +7,29 @@
 //
 
 import llbuild
+import Foundation
 
-class DBDelegate: BuildDBDelegate {
-  func getKeyID(key: KeyType) -> KeyID {
-    return 1
-  }
+let path = "/Users/benjaminherzog/Library/Developer/Xcode/DerivedData/Xcode-dsrbecsbudaaencdxnuiisivqcqe/Build/Intermediates.noindex/XCBuildData/build.db"
+
+class Delegate: BuildDBDelegate {
+  var allKeys: BuildDBFetchKeysResult?
   
   func getKey(id: KeyID) -> KeyType {
-    return "foobar"
+    return allKeys?.getKey(id: id) ?? ""
+  }
+  func getKeyID(key: KeyType) -> KeyID {
+    return allKeys?.getKeyID(key: key) ?? 0
   }
 }
 
-
-let delegate = DBDelegate()
-
-let path = "/Users/benjaminherzog/Library/Developer/Xcode/DerivedData/MyLibrary-dlfxkvgmyqjkrzewapdqjktwlglm/Build/Intermediates.noindex/XCBuildData/build.db"
-
 do {
-  let db = try BuildDB(path: path, clientSchemaVersion: 9, delegate: delegate)
+  let delegate = Delegate()
+  try Database(path: path, clientSchemaVersion: 9, delegate: delegate)
+    .startSession { db in
+      delegate.allKeys = try db.getKeys()
+      dump(try db.lookupRuleResult(keyID: 2))
+    }
   
-  for element in try db.getKeys() {
-    dump(element)
-  }
 } catch {
   dump(error)
 }
