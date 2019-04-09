@@ -3234,11 +3234,11 @@ class ArchiveShellCommand : public ExternalCommand {
     llvm::raw_svector_ostream stream(result);
     bool first = true;
     for (const auto& arg: getArgs()) {
-      stream << arg;
       if (!first) {
         stream << " ";
-        first = false;
       }
+      first = false;
+      stream << arg;
     }
   }
   
