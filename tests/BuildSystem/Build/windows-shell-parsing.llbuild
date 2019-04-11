@@ -1,0 +1,80 @@
+# REQUIRES: platform=Windows
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: mkdir -p "%t.build/dir with space"
+# RUN: touch "%t.build/dir with space/file with space"
+# RUN: cp %s %t.build/build.llbuild
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.out
+# RUN: %{FileCheck} --input-file=%t.out %s
+#
+# CHECK: fake\1\
+# CHECK: fake\2\
+# CHECK: %FOO%
+# CHECK: BAZ
+# CHECK: BUZZ
+# CHECK: \"wonky quote\\\"
+# CHECK-NEXT: next\"
+# CHECK: file\ with\ space
+# CHECK: foo"
+
+client:
+  name: basic
+
+targets:
+  "": ["<fake8>"]
+
+commands:
+  path:
+    tool: shell
+    outputs: ["<fake1>"]
+    args: echo fake\1\
+  path-end:
+    tool: shell
+    inputs: ["<fake1>"]
+    outputs: ["<fake2>"]
+    args: ["echo", "fake\\2\\"]
+# Directly invoking echo should not parse the environment variable
+  escape1:
+    tool: shell
+    inputs: ["<fake2>"]
+    outputs: ["<fake3>"]
+    env:
+        FOO: BAR
+    inherit-env: false
+    args: ["echo", "%FOO%"]
+# But invoking through cmd.exe should parse the environment variable
+  escape2:
+    tool: shell
+    inputs: ["<fake3>"]
+    outputs: ["<fake4>"]
+    inherit-env: false
+    env:
+        FOO: BAZ
+    args: echo %FOO%
+  escape3:
+    tool: shell
+    inputs: ["<fake4>"]
+    outputs: ["<fake5>"]
+    inherit-env: false
+    env:
+        FOO: BUZZ
+    args: ["cmd.exe", "/C", "echo %FOO%"]
+  escape4:
+    tool: shell
+    inputs: ["<fake5>"]
+    outputs: ["<fake6>"]
+    inherit-env: false
+    env:
+        INPUT1: quote
+    args: echo "wonky %INPUT1%\"&echo next"
+  spaces:
+    tool: shell
+    inputs: ["<fake6>"]
+    outputs: ["<fake7>"]
+    args: ["dir", "dir with space"]
+  quote:
+    tool: shell
+    inputs: ["<fake7>"]
+    outputs: ["<fake8>"]
+    args: ["echo", "foo\""]

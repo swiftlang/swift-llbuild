@@ -22,6 +22,7 @@
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Path.h"
 
+using namespace llvm;
 using namespace llbuild;
 using namespace llbuild::basic;
 using namespace llbuild::core;

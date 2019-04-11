@@ -14,6 +14,7 @@
 
 #include "llbuild/Basic/CrossPlatformCompatibility.h"
 #include "llbuild/Basic/PlatformUtility.h"
+#include "llbuild/Basic/ShellUtility.h"
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringRef.h"
@@ -409,7 +410,7 @@ void llbuild::basic::spawnProcess(
   // Form the complete C string command line.
   std::vector<std::string> argsStorage(commandLine.begin(), commandLine.end());
 #if defined(_WIN32)
-  std::string args = llvm::sys::flattenWindowsCommandLine(commandLine);
+  std::string args = llbuild::basic::formatWindowsCommandString(argsStorage);
 
   // Convert the command line string to utf16
   llvm::SmallVector<llvm::UTF16, 20> u16Executable;
