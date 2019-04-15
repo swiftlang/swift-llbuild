@@ -185,12 +185,7 @@ function(add_swift_module target name deps sources additional_args)
   )
   
   # Link and create dynamic framework.
-  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    set(DYLIB_EXT dylib)
-  else()
-    set(DYLIB_EXT so)
-  endif()
-  set(DYLIB_OUTPUT ${LLBUILD_LIBRARY_OUTPUT_INTDIR}/${target}.${DYLIB_EXT})
+  set(DYLIB_OUTPUT ${LLBUILD_LIBRARY_OUTPUT_INTDIR}/${target}${CMAKE_SHARED_LIBRARY_SUFFIX})
   
   if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     list(APPEND DYLYB_ARGS -sdk ${CMAKE_OSX_SYSROOT})
@@ -203,20 +198,21 @@ function(add_swift_module target name deps sources additional_args)
     list(APPEND DYLYB_ARGS ${arg})
   endforeach()
 
-  # Add rpath to lookup the linked dylibs adjacent to itself.
-  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
+    # Add rpath to lookup the linked dylibs adjacent to itself.
     list(APPEND DYLYB_ARGS -Xlinker -rpath -Xlinker @loader_path)
-    list(APPEND DYLYB_ARGS -Xlinker -install_name -Xlinker @rpath/${target}.${DYLIB_EXT})
-  else()
-    list(APPEND DYLYB_ARGS -Xlinker "-rpath=\\$$ORIGIN")
-  endif()
+    list(APPEND DYLYB_ARGS -Xlinker -install_name -Xlinker @rpath/${target}${CMAKE_SHARED_LIBRARY_SUFFIX})
 
-  # Runpath for finding Swift core libraries in the toolchain.
-  # FIXME: Ideally, this should be passed from the swift-ci invocation.
-  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    # Runpath for finding Swift core libraries in the toolchain.
+    # FIXME: Ideally, this should be passed from the swift-ci invocation.
     list(APPEND DYLYB_ARGS -Xlinker -rpath -Xlinker @loader_path/../../macosx)
-  else()
+  elseif(CMAKE_SYSTEM_NAME STREQUAL Linux)
+    list(APPEND DYLYB_ARGS -Xlinker "-rpath=\\$$ORIGIN")
     list(APPEND DYLYB_ARGS -Xlinker "-rpath=\\$$ORIGIN/../../linux")
+  elseif(CMAKE_SYSTEM_NAME STREQUAL Windows)
+    # Windows does not support rpaths
+  else()
+    message(SEND_ERROR "do not know how to set up RPATH for ${CMAKE_SYSTEM_NAME}")
   endif()
 
   list(APPEND DYLYB_ARGS -L ${LLBUILD_LIBRARY_OUTPUT_INTDIR})
