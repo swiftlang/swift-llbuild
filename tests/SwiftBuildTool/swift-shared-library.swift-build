@@ -1,0 +1,36 @@
+# Check the shared libraryu tool.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: sed -e "s#SOURCEDIR#%S#g" -e "s#TMPDIR#%t#g" < %s > %t.build/build.swift-build
+# RUN: echo "" > %t.build/s1.swift
+# RUN: echo "" > %t.build/s2.swift
+#
+# RUN: %{swift-build-tool} -v --chdir %t.build > %t3.out
+# RUN: %{FileCheck} --check-prefix=CHECK-CONTENTS --input-file=%t.build/Foo.so %s
+# CHECK-CONTENTS: <dummy>
+
+client:
+  name: swift-build
+
+targets:
+  "": ["Foo.so"]
+
+commands:
+  C1.makeObjects:
+    tool: swift-compiler
+    sources: ["s1.swift", "s2.swift"]
+    inputs: ["s1.swift", "s2.swift"]
+    objects: ["s1.o", "s2.o"]
+    outputs: ["s1.o", "s2.o"]
+    executable: SOURCEDIR/Inputs/pseudo-swiftc
+    module-name: Foo
+    module-output-path: Foo.swiftmodule
+    temps-path: temps
+    is-library: true
+  C2.sharedlib:
+    tool: shared-library
+    executable: SOURCEDIR/Inputs/pseudo-swiftc
+    compiler-style: swiftc
+    inputs: ["s1.o", "s2.o"]
+    outputs: ["Foo.so"]

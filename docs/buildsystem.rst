@@ -785,6 +785,28 @@ A typical use for this tool is creating static libraries.
    preferable in future to correctly update/delete/create the archive file
    as required.
 
+Shared Library Tool
+------------
+
+**Identifier**: *shared-library*
+
+A tool used to create a shared library (``.so``, ``.dll``)
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 80
+
+   * - Name
+     - Description
+
+   * - executable
+     - A string indicating the path to a compiler that will be used to link
+       the objects
+
+   * - compiler-style
+     - The type of compiler pass, one of: ``swiftc``, ``clang``, ``cl``
+
+
 Stale File Removal Tool
 -----------------------
 
