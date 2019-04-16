@@ -2,14 +2,13 @@
 //  main.swift
 //  BuildDBSwiftBindingTest
 //
-//  Created by Benjamin Herzog on 4/5/19.
 //  Copyright © 2019 Apple Inc. All rights reserved.
 //
 
 import llbuild
 import Foundation
 
-let path = "/Users/benjaminherzog/Library/Developer/Xcode/DerivedData/Xcode-dsrbecsbudaaencdxnuiisivqcqe/Build/Intermediates.noindex/XCBuildData/build.db"
+let path = "/Users/benjaminherzog/Library/Developer/Xcode/DerivedData/TEMPApp-bairfqxgkpxvqbglrdmnhebkyovk/Build/Intermediates.noindex/XCBuildData/build.db"
 
 class Delegate: BuildDBDelegate {
   var allKeys: BuildDBFetchKeysResult?

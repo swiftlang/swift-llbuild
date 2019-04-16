@@ -2,17 +2,16 @@
 //  BuildDBBindings.swift
 //  llbuild-framework
 //
-//  Created by Benjamin Herzog on 4/5/19.
 //  Copyright © 2019 Apple Inc. All rights reserved.
 //
 
-#if os(Linux)
-import Glibc
+#if os(macOS)
+import Darwin.C
 #elseif os(Windows)
 import MSVCRT
 import WinSDK
 #else
-import Darwin.C
+import Glibc
 #endif
 
 import Foundation

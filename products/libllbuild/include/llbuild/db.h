@@ -2,7 +2,6 @@
 //  db.h
 //  llbuild
 //
-//  Created by Benjamin Herzog on 4/4/19.
 //  Copyright © 2019 Apple Inc. All rights reserved.
 //
 
@@ -58,14 +57,14 @@ typedef struct llb_database_delegate_t_ {
 typedef struct llb_database_t_ llb_database_t;
 
 /// Create a new build database instance
-LLBUILD_EXPORT llb_database_t* llb_database_create(char *path, uint32_t clientSchemaVersion, llb_database_delegate_t delegate, llb_data_t *error_out);
+LLBUILD_EXPORT const llb_database_t* llb_database_create(char *path, uint32_t clientSchemaVersion, llb_database_delegate_t delegate, llb_data_t *error_out);
 
 /// Destroy a build system instance
 LLBUILD_EXPORT void
 llb_database_destroy(llb_database_t *database);
 
 /// Get the current build iteration from the database
-LLBUILD_EXPORT uint64_t
+LLBUILD_EXPORT const uint64_t
 llb_database_get_current_iteration(llb_database_t *database, bool *success_out, llb_data_t *error_out);
 
 /// Set the current build iteration to the database
@@ -73,7 +72,7 @@ LLBUILD_EXPORT void
 llb_database_set_current_iteration(llb_database_t *database, uint64_t value, llb_data_t *error_out);
 
 /// Lookup the result of a rule in the database. result_out needs to be destroyed by calling llb_database_destroy_result.
-LLBUILD_EXPORT bool
+LLBUILD_EXPORT const bool
 llb_database_lookup_rule_result(llb_database_t *database, llb_database_key_id keyID, llb_database_key_type ruleKey, llb_database_result_t *result_out, llb_data_t *error_out);
 
 // TODO: Rule is currently not supported
@@ -81,7 +80,7 @@ llb_database_lookup_rule_result(llb_database_t *database, llb_database_key_id ke
 //llb_database_set_rule_result(llb_database_t *database, llb_database_key_id keyID, llb_rule_t rule, llb_database_result_t result, char **error_out);
 
 /// Start an exclusive session in the database
-LLBUILD_EXPORT bool
+LLBUILD_EXPORT const bool
 llb_database_build_started(llb_database_t *database, llb_data_t *error_out);
 
 /// End the previously started exclusive session in the database
@@ -92,7 +91,7 @@ llb_database_build_complete(llb_database_t *database);
 typedef struct llb_database_result_keys_t_ llb_database_result_keys_t;
 
 /// Method for getting the number of keys from a result keys object
-LLBUILD_EXPORT llb_database_key_id
+LLBUILD_EXPORT const llb_database_key_id
 llb_database_result_keys_get_count(llb_database_result_keys_t *result);
 
 /// Method for getting the key for a given id from a result keys object
@@ -100,7 +99,7 @@ LLBUILD_EXPORT void
 llb_database_result_keys_get_key_for_id(llb_database_result_keys_t *result, llb_database_key_id keyID, llb_data_t *key_out);
 
 /// Method for getting the id for a given key from a result keys object
-LLBUILD_EXPORT llb_database_key_id
+LLBUILD_EXPORT const llb_database_key_id
 llb_database_result_keys_get_id_for_key(llb_database_result_keys_t *result, llb_database_key_type key);
 
 /// Destroys the given result keys object, call this when the object is not used anymore
@@ -108,7 +107,7 @@ LLBUILD_EXPORT void
 llb_database_destroy_result_keys(llb_database_result_keys_t *result);
 
 /// Fetch all keys from the database. The keysResult_out object needs to be destroyed when not used anymore via \see llb_database_destroy_result_keys
-LLBUILD_EXPORT bool
+LLBUILD_EXPORT const bool
 llb_database_get_keys(llb_database_t *database, llb_database_result_keys_t **keysResult_out, llb_data_t *error_out);
 
 /// Dumps an overview of the database's content to stdout
