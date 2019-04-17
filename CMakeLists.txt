@@ -235,13 +235,13 @@ endif()
 
 # Add an always out-of-date target to get the Swift compiler version.
 if (SWIFTC_FOUND)
-  execute_process(COMMAND ${SWIFTC_EXECUTABLE} -version
-      OUTPUT_FILE ${LLBUILD_OBJ_DIR}/swift-version
-      OUTPUT_STRIP_TRAILING_WHITESPACE)
-  add_custom_target(swiftversion
-                    DEPENDS
-                      ${LLBUILD_OBJ_DIR}/swift-version
-                      ${SWIFTC_EXECUTABLE})
+  set(SWIFT_VERSION ${LLBUILD_OBJ_DIR}/swift-version)
+  add_custom_target(
+      swiftversion ALL
+      COMMAND ${CMAKE_SOURCE_DIR}/utils/write-swift-version ${SWIFTC_EXECUTABLE} ${SWIFT_VERSION}
+      BYPRODUCTS ${SWIFT_VERSION}
+      COMMENT "Checking Swift compiler version"
+  )
 endif()
 
 ###
