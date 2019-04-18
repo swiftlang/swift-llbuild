@@ -660,7 +660,7 @@ public:
     close();
   }
 
-  virtual bool getKeys(std::map<KeyID, KeyType>& keys_out, std::string* error_out) override {
+  virtual bool getKeys(std::vector<KeyType>& keys_out, std::string* error_out) override {
     std::lock_guard<std::mutex> guard(dbMutex);
 
     if (!open(error_out))
@@ -669,18 +669,17 @@ public:
     // Search for the key in the database
     int result;
     sqlite3_stmt* stmt;
-    result = sqlite3_prepare_v2(db, "SELECT id, key FROM key_names;",
+    result = sqlite3_prepare_v2(db, "SELECT key FROM key_names;",
                                 -1, &stmt, nullptr);
     checkSQLiteResultOKReturnFalse(result);
 
     while (sqlite3_step(stmt) == SQLITE_ROW) {
-      assert(sqlite3_column_count(stmt) == 2);
+      assert(sqlite3_column_count(stmt) == 1);
 
-      auto id = sqlite3_column_int64(stmt, 0);
-      auto size = sqlite3_column_bytes(stmt, 1);
-      auto text = (const char*) sqlite3_column_text(stmt, 1);
-      
-      keys_out[id] = KeyType(text, size);
+      auto size = sqlite3_column_bytes(stmt, 0);
+      auto text = (const char*) sqlite3_column_text(stmt, 0);
+
+      keys_out.push_back(KeyType(text, size));
     }
 
     sqlite3_finalize(stmt);

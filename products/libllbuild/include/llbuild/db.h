@@ -40,24 +40,11 @@ typedef struct llb_database_result_t_ {
 LLBUILD_EXPORT void
 llb_database_destroy_result(llb_database_result_t *result);
 
-/// C api for the delegate of a build database
-typedef struct llb_database_delegate_t_ {
-  /// User context pointer, used to associate the delegate with the database
-  void* context;
-  
-  /// Gets an identifier for a given key
-  llb_database_key_id (*get_key_id)(void *context, const llb_database_key_type key);
-  
-  /// Gets a key for a given identifier
-  void (*get_key_for_id)(void *context, llb_database_key_id keyID, llb_database_key_type *key_out);
-  
-} llb_database_delegate_t;
-
 /// Opaque handler to a database
 typedef struct llb_database_t_ llb_database_t;
 
 /// Create a new build database instance
-LLBUILD_EXPORT const llb_database_t* llb_database_create(char *path, uint32_t clientSchemaVersion, llb_database_delegate_t delegate, llb_data_t *error_out);
+LLBUILD_EXPORT const llb_database_t* llb_database_create(char *path, uint32_t clientSchemaVersion, llb_data_t *error_out);
 
 /// Destroy a build system instance
 LLBUILD_EXPORT void
@@ -73,7 +60,7 @@ llb_database_set_current_iteration(llb_database_t *database, uint64_t value, llb
 
 /// Lookup the result of a rule in the database. result_out needs to be destroyed by calling llb_database_destroy_result.
 LLBUILD_EXPORT const bool
-llb_database_lookup_rule_result(llb_database_t *database, llb_database_key_id keyID, llb_database_key_type ruleKey, llb_database_result_t *result_out, llb_data_t *error_out);
+llb_database_lookup_rule_result(llb_database_t *database, llb_database_key_id keyID, llb_database_result_t *result_out, llb_data_t *error_out);
 
 // TODO: Rule is currently not supported
 //LLBUILD_EXPORT bool
@@ -96,11 +83,7 @@ llb_database_result_keys_get_count(llb_database_result_keys_t *result);
 
 /// Method for getting the key for a given id from a result keys object
 LLBUILD_EXPORT void
-llb_database_result_keys_get_key_for_id(llb_database_result_keys_t *result, llb_database_key_id keyID, llb_data_t *key_out);
-
-/// Method for getting the id for a given key from a result keys object
-LLBUILD_EXPORT const llb_database_key_id
-llb_database_result_keys_get_id_for_key(llb_database_result_keys_t *result, llb_database_key_type key);
+llb_database_result_keys_get_key_at_index(llb_database_result_keys_t *result, llb_database_key_id keyID, llb_data_t *key_out);
 
 /// Destroys the given result keys object, call this when the object is not used anymore
 LLBUILD_EXPORT void

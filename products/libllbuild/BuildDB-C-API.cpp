@@ -14,76 +14,62 @@
 #include <algorithm>
 #include <cassert>
 #include <memory>
+#include <mutex>
 
 using namespace llbuild;
 using namespace llbuild::core;
 
 namespace {
 
-class CAPIBuildDBResultKeys {
+class CAPIBuildDBKeysResult {
 private:
-  std::unique_ptr<std::map<KeyID, KeyType>> keys;
-  std::unique_ptr<std::map<KeyType, KeyID>> ids;
+  std::vector<KeyType> keys;
   
 public:
-  CAPIBuildDBResultKeys(std::map<KeyID, KeyType> keys): keys(llvm::make_unique<std::map<KeyID, KeyType>>(keys)) {
-    ids = llvm::make_unique<std::map<KeyType, KeyID>>();
-    for (const auto &pair : keys) {
-      (*ids.get())[std::get<1>(pair)] = std::get<0>(pair);
-    }
-  }
+  CAPIBuildDBKeysResult(std::vector<KeyType> keys): keys(keys) { }
   
-  CAPIBuildDBResultKeys(const CAPIBuildDBResultKeys&) LLBUILD_DELETED_FUNCTION;
-  CAPIBuildDBResultKeys& operator=(const CAPIBuildDBResultKeys&) LLBUILD_DELETED_FUNCTION;
+  CAPIBuildDBKeysResult(const CAPIBuildDBKeysResult&) LLBUILD_DELETED_FUNCTION;
+  CAPIBuildDBKeysResult& operator=(const CAPIBuildDBKeysResult&) LLBUILD_DELETED_FUNCTION;
   
   const uint32_t size() {
-    return keys.get()->size();
+    return keys.size();
   }
   
-  const KeyType keyForID(KeyID index) {
-    return (*keys.get())[index];
-  }
-  
-  const KeyID idForKey(KeyType key) {
-    return (*ids.get())[key];
+  const KeyType keyAtIndex(KeyID index) {
+    return keys[index];
   }
 };
   
-class CAPIBuildDBDelegate: public BuildDBDelegate {
-  llb_database_delegate_t cAPIDelegate;
+class CAPIBuildDB: public BuildDBDelegate {
+  /// The key table, used when there is no database.
+  llvm::StringMap<KeyID> keyTable;
   
-public:
-  CAPIBuildDBDelegate(llb_database_delegate_t delegate): cAPIDelegate(delegate) { }
-  
-  KeyType getKeyForID(KeyID keyID) override {
-    if (!cAPIDelegate.get_key_for_id) {
-      return nullptr;
-    }
-    
-    llb_database_key_type key;
-    cAPIDelegate.get_key_for_id(cAPIDelegate.context, keyID, &key);
-    
-    return std::string(key);
-  }
-  
-  KeyID getKeyID(const KeyType &key) override {
-    if (!cAPIDelegate.get_key_id) {
-      return 0;
-    }
-    
-    return cAPIDelegate.get_key_id(cAPIDelegate.context, (char *)key.c_str());
-  }
-};
-  
-class CAPIBuildDB {
-  CAPIBuildDBDelegate cAPIDelegate;
+  /// The mutex that protects the key table.
+  std::mutex keyTableMutex;
   
   std::unique_ptr<BuildDB> _db;
   
 public:
-  CAPIBuildDB(StringRef path, uint32_t clientSchemaVersion, CAPIBuildDBDelegate delegate, std::string *error_out): cAPIDelegate(delegate) {
+  CAPIBuildDB(StringRef path, uint32_t clientSchemaVersion, std::string *error_out) {
     _db = createSQLiteBuildDB(path, clientSchemaVersion, error_out);
-    _db.get()->attachDelegate(&cAPIDelegate);
+    _db.get()->attachDelegate(this);
+  }
+  
+  virtual KeyID getKeyID(const KeyType& key) override {
+    std::lock_guard<std::mutex> guard(keyTableMutex);
+    
+    // The RHS of the mapping is actually ignored, we use the StringMap's ptr
+    // identity because it allows us to efficiently map back to the key string
+    // in `getRuleInfoForKey`.
+    auto it = keyTable.insert(std::make_pair(key, 0)).first;
+    return (KeyID)(uintptr_t)it->getKey().data();
+  }
+  
+  virtual KeyType getKeyForID(KeyID key) override {
+    // Note that we don't need to lock `keyTable` here because the key entries
+    // themselves don't change once created.
+    return llvm::StringMapEntry<KeyID>::GetStringMapEntryFromKeyData(
+                                                                     (const char*)(uintptr_t)key).getKey();
   }
   
   const uint64_t getCurrentIteration(bool *success_out, std::string *error_out) {
@@ -94,7 +80,8 @@ public:
     _db.get()->setCurrentIteration(value, error_out);
   }
   
-  const bool lookupRuleResult(KeyID keyID, KeyType ruleKey, Result *result_out, std::string *error_out) {
+  const bool lookupRuleResult(KeyID keyID, Result *result_out, std::string *error_out) {
+    auto ruleKey = this->getKeyForID(keyID);
     return _db.get()->lookupRuleResult(keyID, ruleKey, result_out, error_out);
   }
   
@@ -106,7 +93,7 @@ public:
     _db.get()->buildComplete();
   }
   
-  const bool getKeys(std::map<KeyID, KeyType>& keys_out, std::string *error_out) {
+  const bool getKeys(std::vector<KeyType>& keys_out, std::string *error_out) {
     return _db.get()->getKeys(keys_out, error_out);
   }
   
@@ -154,14 +141,10 @@ void llb_database_destroy_result(llb_database_result_t *result) {
 const llb_database_t* llb_database_create(
                                     char *path,
                                     uint32_t clientSchemaVersion,
-                                    llb_database_delegate_t delegate,
                                     llb_data_t *error_out) {
-  assert(delegate.get_key_for_id);
-  assert(delegate.get_key_id);
-  
   std::string error;
   
-  auto database = new CAPIBuildDB(StringRef(path), clientSchemaVersion, delegate, &error);
+  auto database = new CAPIBuildDB(StringRef(path), clientSchemaVersion, &error);
   
   if (!error.empty() && error_out) {
     error_out->length = error.size();
@@ -201,13 +184,14 @@ void llb_database_set_current_iteration(llb_database_t *database, uint64_t value
   }
 }
 
-const bool llb_database_lookup_rule_result(llb_database_t *database, llb_database_key_id keyID, llb_database_key_type ruleKey, llb_database_result_t *result_out, llb_data_t *error_out) {
+const bool llb_database_lookup_rule_result(llb_database_t *database, llb_database_key_id keyID, llb_database_result_t *result_out, llb_data_t *error_out) {
   
   auto db = (CAPIBuildDB *)database;
   
   std::string error;
   Result result;
-  auto stored = db->lookupRuleResult(keyID, KeyType(ruleKey), &result, &error);
+  
+  auto stored = db->lookupRuleResult(keyID, &result, &error);
   
   if (result_out) {
     *result_out = mapResult(result);
@@ -241,30 +225,25 @@ void llb_database_build_complete(llb_database_t *database) {
 }
 
 const llb_database_key_id llb_database_result_keys_get_count(llb_database_result_keys_t *result) {
-  auto resultKeys = (CAPIBuildDBResultKeys *)result;
+  auto resultKeys = (CAPIBuildDBKeysResult *)result;
   return resultKeys->size();
 }
 
-void llb_database_result_keys_get_key_for_id(llb_database_result_keys_t *result, llb_database_key_id keyID, llb_data_t *key_out) {
-  auto resultKeys = (CAPIBuildDBResultKeys *)result;
-  auto key = resultKeys->keyForID(keyID);
+void llb_database_result_keys_get_key_at_index(llb_database_result_keys_t *result, llb_database_key_id keyID, llb_data_t *key_out) {
+  auto resultKeys = (CAPIBuildDBKeysResult *)result;
+  auto key = resultKeys->keyAtIndex(keyID);
   key_out->length = key.size();
   key_out->data = (const uint8_t*) strdup(key.data());
 }
 
-const llb_database_key_id llb_database_result_keys_get_id_for_key(llb_database_result_keys_t *result, llb_database_key_type key) {
-  auto resultKeys = (CAPIBuildDBResultKeys *)result;
-  return resultKeys->idForKey(std::string(key));
-}
-
 void llb_database_destroy_result_keys(llb_database_result_keys_t *result) {
-  delete (CAPIBuildDBResultKeys *)result;
+  delete (CAPIBuildDBKeysResult *)result;
 }
 
 const bool llb_database_get_keys(llb_database_t *database, llb_database_result_keys_t **keysResult_out, llb_data_t *error_out) {
   auto db = (CAPIBuildDB *)database;
   
-  std::map<KeyID, KeyType> keys;
+  std::vector<KeyType> keys;
   std::string error;
   
   auto success = db->getKeys(keys, &error);
@@ -275,7 +254,7 @@ const bool llb_database_get_keys(llb_database_t *database, llb_database_result_k
     return success;
   }
   
-  auto resultKeys = new CAPIBuildDBResultKeys(keys);
+  auto resultKeys = new CAPIBuildDBKeysResult(keys);
   *keysResult_out = (llb_database_result_keys_t *)resultKeys;
   
   return success;
