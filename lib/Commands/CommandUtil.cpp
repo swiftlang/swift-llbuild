@@ -163,6 +163,7 @@ bool util::readFileContents(std::string path,
     size_t result = ::fread(data.get() + pos, 1, size - pos, fp);
     if (result <= 0) {
       *error_out = std::string("unable to read input: ") + path;
+      ::fclose(fp);
       return false;
     }
 
