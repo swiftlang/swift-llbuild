@@ -197,30 +197,6 @@ public final class BuildDB {
         buildComplete()
         llb_database_destroy(_database)
     }
-        
-    /// Returns the current iteration of the build
-    public func getCurrentIteration() throws -> UInt64 {
-        var success = false
-        
-        let errorPtr = MutableStringPointer()
-        let iteration = llb_database_get_current_iteration(_database, &success, &errorPtr.ptr)
-        if let error = errorPtr.msg {
-            throw Error.operationDidFail(error)
-        }
-        if !success {
-            throw Error.unknownError
-        }
-        return iteration
-    }
-    
-    /// Saves the current build iteration to the database
-    public func setCurrentIteration(_ iteration: UInt64) throws {
-        let errorPtr = MutableStringPointer()
-        llb_database_set_current_iteration(_database, iteration, &errorPtr.ptr)
-        if let error = errorPtr.msg {
-            throw Error.operationDidFail(error)
-        }
-    }
     
     /// Get the result for a given keyID
     public func lookupRuleResult(keyID: KeyID) throws -> RuleResult? {
@@ -262,11 +238,6 @@ public final class BuildDB {
         }
         
         return BuildDBKeysResult(result: resultKeys)
-    }
-    
-    /// Dumps an overview of the database to stdout
-    public func dump() {
-        llb_database_dump(_database)
     }
     
     /// Starts an exclusive build session

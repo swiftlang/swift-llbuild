@@ -72,14 +72,6 @@ public:
                                                                      (const char*)(uintptr_t)key).getKey();
   }
   
-  const uint64_t getCurrentIteration(bool *success_out, std::string *error_out) {
-    return _db.get()->getCurrentIteration(success_out, error_out);
-  }
-  
-  void setCurrentIteration(uint64_t value, std::string *error_out) {
-    _db.get()->setCurrentIteration(value, error_out);
-  }
-  
   const bool lookupRuleResult(KeyID keyID, Result *result_out, std::string *error_out) {
     auto ruleKey = this->getKeyForID(keyID);
     return _db.get()->lookupRuleResult(keyID, ruleKey, result_out, error_out);
@@ -95,10 +87,6 @@ public:
   
   const bool getKeys(std::vector<KeyType>& keys_out, std::string *error_out) {
     return _db.get()->getKeys(keys_out, error_out);
-  }
-  
-  void dump() {
-    _db.get()->dump(llvm::outs());
   }
 };
 
@@ -156,32 +144,6 @@ const llb_database_t* llb_database_create(
 
 void llb_database_destroy(llb_database_t *database) {
   delete (CAPIBuildDB *)database;
-}
-
-const uint64_t llb_database_get_current_iteration(llb_database_t *database, bool *success_out, llb_data_t *error_out) {
-  auto db = (CAPIBuildDB *)database;
-  std::string error;
-  
-  auto iteration = db->getCurrentIteration(success_out, &error);
-  
-  if (!error.empty() && error_out) {
-    error_out->length = error.size();
-    error_out->data = (const uint8_t*)strdup(error.c_str());
-  }
-  
-  return iteration;
-}
-
-void llb_database_set_current_iteration(llb_database_t *database, uint64_t value, llb_data_t *error_out) {
-  auto db = (CAPIBuildDB *)database;
-  std::string error;
-  
-  db->setCurrentIteration(value, &error);
-  
-  if (!error.empty() && error_out) {
-    error_out->length = error.size();
-    error_out->data = (const uint8_t*)strdup(error.c_str());
-  }
 }
 
 const bool llb_database_lookup_rule_result(llb_database_t *database, llb_database_key_id keyID, llb_database_result_t *result_out, llb_data_t *error_out) {
@@ -258,8 +220,4 @@ const bool llb_database_get_keys(llb_database_t *database, llb_database_result_k
   *keysResult_out = (llb_database_result_keys_t *)resultKeys;
   
   return success;
-}
-
-void llb_database_dump(llb_database_t *database) {
-  ((CAPIBuildDB *)database)->dump();
 }

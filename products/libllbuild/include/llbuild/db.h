@@ -50,21 +50,9 @@ LLBUILD_EXPORT const llb_database_t* llb_database_create(char *path, uint32_t cl
 LLBUILD_EXPORT void
 llb_database_destroy(llb_database_t *database);
 
-/// Get the current build iteration from the database
-LLBUILD_EXPORT const uint64_t
-llb_database_get_current_iteration(llb_database_t *database, bool *success_out, llb_data_t *error_out);
-
-/// Set the current build iteration to the database
-LLBUILD_EXPORT void
-llb_database_set_current_iteration(llb_database_t *database, uint64_t value, llb_data_t *error_out);
-
 /// Lookup the result of a rule in the database. result_out needs to be destroyed by calling llb_database_destroy_result.
 LLBUILD_EXPORT const bool
 llb_database_lookup_rule_result(llb_database_t *database, llb_database_key_id keyID, llb_database_result_t *result_out, llb_data_t *error_out);
-
-// TODO: Rule is currently not supported
-//LLBUILD_EXPORT bool
-//llb_database_set_rule_result(llb_database_t *database, llb_database_key_id keyID, llb_rule_t rule, llb_database_result_t result, char **error_out);
 
 /// Start an exclusive session in the database
 LLBUILD_EXPORT const bool
@@ -92,9 +80,5 @@ llb_database_destroy_result_keys(llb_database_result_keys_t *result);
 /// Fetch all keys from the database. The keysResult_out object needs to be destroyed when not used anymore via \see llb_database_destroy_result_keys
 LLBUILD_EXPORT const bool
 llb_database_get_keys(llb_database_t *database, llb_database_result_keys_t **keysResult_out, llb_data_t *error_out);
-
-/// Dumps an overview of the database's content to stdout
-LLBUILD_EXPORT void
-llb_database_dump(llb_database_t *database);
 
 #endif /* db_h */
