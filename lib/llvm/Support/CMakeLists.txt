@@ -1,7 +1,7 @@
 # Disable implicit-fallthrough, if used.
 append_if(CXX_SUPPORTS_IMPLICIT_FALLTHROUGH_FLAG "-Wno-implicit-fallthrough" CMAKE_CXX_FLAGS)
 
-add_llbuild_library(llvmSupport
+add_llbuild_library(llvmSupport STATIC
 APFloat.cpp
 APInt.cpp
 APSInt.cpp
