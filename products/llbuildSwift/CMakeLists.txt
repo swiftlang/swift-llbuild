@@ -37,14 +37,51 @@ if (SWIFTC_FOUND)
     set(DYLIB_EXT so)
   endif()
 
-  # Install both libllbuild and libllbuildSwift.
-  list(APPEND LLBUILD_LIBRARIES "${LLBUILD_LIBRARY_OUTPUT_INTDIR}/libllbuild.${DYLIB_EXT}")
-  list(APPEND LLBUILD_LIBRARIES "${LLBUILD_LIBRARY_OUTPUT_INTDIR}/libllbuildSwift.${DYLIB_EXT}")
-  
-  install(FILES ${LLBUILD_LIBRARIES}
-    DESTINATION lib/swift/pm/llbuild
-    COMPONENT libllbuildSwift)
-  
+  install(TARGETS ${LIBLLBUILD_NAME}
+          ARCHIVE DESTINATION lib${LLBUILD_LIBDIR_SUFFIX}/swift/pm/llbuild
+          LIBRARY DESTINATION lib${LLBUILD_LIBDIR_SUFFIX}/swift/pm/llbuild
+          RUNTIME DESTINATION bin
+          COMPONENT ${LIBLLBUILD_NAME}Swift)
+
+  include(SwiftSupport)
+
+  string(TOLOWER ${CMAKE_SYSTEM_NAME} swift_os)
+  get_swift_host_arch(swift_arch)
+
+
+  install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/llbuildSwift.swiftdoc
+    ${CMAKE_CURRENT_BINARY_DIR}/llbuildSwift.swiftmodule
+    DESTINATION
+    lib/swift/${swift_os}/${swift_arch})
+
+  if(BUILD_SHARED_LIBS)
+    set(library_kind SHARED)
+    set(swift_dir swift)
+  else()
+    set(library_kind STATIC)
+    set(swift_dir swift_static)
+  endif()
+
+  set(llbuildSwift_OUTPUT_FILE
+    ${LLBUILD_LIBRARY_OUTPUT_INTDIR}/${CMAKE_${library_kind}_LIBRARY_PREFIX}llbuildSwift${CMAKE_${library_kind}_LIBRARY_SUFFIX})
+
+  if(CMAKE_SYSTEM_NAME STREQUAL Windows AND BUILD_SHARED_LIBS)
+    install(FILES
+              ${llbuildSwift_OUTPUT_FILE}
+            DESTINATION
+              bin)
+    install(FILES
+              ${LLBUILD_LIBRARY_OUTPUT_INTDIR}/${CMAKE_IMPORT_LIBRARY_PREFIX}llbuildSwift${CMAKE_IMPORT_LIBRARY_SUFFIX}
+            DESTINATION
+              lib/${swift_dir}/${swift_os})
+  else()
+    install(FILES
+              ${llbuildSwift_OUTPUT_FILE}
+            DESTINATION
+              lib/${swift_dir}/${swift_os})
+  endif()
+
   # Add install target.
   add_custom_target(install-libllbuildSwift
     DEPENDS libllbuildSwift
