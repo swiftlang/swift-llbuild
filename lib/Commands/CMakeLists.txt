@@ -1,4 +1,4 @@
-add_llbuild_library(llbuildCommands
+add_llbuild_library(llbuildCommands STATIC
   BuildEngineCommand.cpp
   BuildSystemCommand.cpp
   CommandLineStatusOutput.cpp
@@ -6,3 +6,5 @@ add_llbuild_library(llbuildCommands
   NinjaBuildCommand.cpp
   NinjaCommand.cpp
   )
+
+target_link_libraries(llbuildCommands PRIVATE llbuildBuildSystem llbuildCore llbuildNinja)

@@ -12,6 +12,8 @@ else()
   set(cmake_3_2_USES_TERMINAL USES_TERMINAL)
 endif()
 
+option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
+
 # Configure the default set of bindings to build.
 if(NOT DEFINED LLBUILD_SUPPORT_BINDINGS)
   set(LLBUILD_SUPPORT_BINDINGS "")
