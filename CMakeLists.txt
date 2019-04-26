@@ -146,44 +146,40 @@ if (XCODE)
   # Disable headermaps.
   set(CMAKE_XCODE_ATTRIBUTE_USE_HEADERMAP "NO") 
 elseif(MSVC)
-  # Disable unknown pragma warnings (e.g. for #pragma mark).
-  add_compile_options(-wd4068)
-
-  # TODO: these warnings come from llvmSupport. Since we don't want to diverge from llvmSupport by
-  # addressing these warnings , disable these for now to clean the build log.
-  # If/when we move to use LLVM's own llvmSupport, we should reenable these warnings.
-  # Unfortunately, the headers are intermingled into the public headers
-  # directory so we cannot mark the include search path as a SYSTEM directory
-  # and avoid the warnings.
   add_compile_options(
-    -wd4141 # 'inline' used more than once
-    -wd4146 # Unary minus applied to unsigned type
-    -wd4244 # Signed conversion
-    -wd4267 # Possible loss of data conversions
-    -wd4291 # operator new with no matching delete found
-    -wd4800 # Forcing value to bool 'true' or 'false'
-    -wd4996 # POSIX name for this item is deprecated
-  )
+    # Disable unknown pragma warnings (e.g. for #pragma mark).
+    "-wd4068"
+
+    # TODO: these warnings come from llvmSupport. Since we don't want to diverge from llvmSupport by
+    # addressing these warnings , disable these for now to clean the build log.
+    # If/when we move to use LLVM's own llvmSupport, we should reenable these warnings.
+    "-wd4141" # 'inline' used more than once.
+    "-wd4146" # Unary minus applied to unsigned type.
+    "-wd4244" # Signed conversion.
+    "-wd4267" # Possible loss of data conversions.
+    "-wd4291" # Operator new with no matching delete found.
+    "-wd4800" # Forcing value to bool 'true' or 'false'.
+    "-wd4996" # POSIX name for this item is deprecated.
+    "/EHsc")
 else ()
-  # Compile with C++14, without RTTI or exceptions.
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti -fno-exceptions")
-  # Enable additional Clang warnings.
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wmost")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wdocumentation  -Woverloaded-virtual")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wparentheses -Wswitch")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wunused-function -Wunused-variable")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wunused-value -Wempty-body")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wuninitialized -Wconstant-conversion")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wint-conversion -Wbool-conversion")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wenum-conversion -Wsign-compare")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wnewline-eof -Wdeprecated-declarations")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Winvalid-offsetof")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wnon-virtual-dtor")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wimplicit-fallthrough")
+  add_compile_options(
+    # Enable additional Clang warnings.
+   "-Wmost"
+   "-Wdocumentation" "-Woverloaded-virtual"
+   "-Wparentheses" "-Wswitch"
+   "-Wunused-function" "-Wunused-variable"
+   "-Wunused-value" "-Wempty-body"
+   "-Wuninitialized" "-Wconstant-conversion"
+   "-Wint-conversion" "-Wbool-conversion"
+   "-Wenum-conversion" "-Wsign-compare"
+   "-Wnewline-eof" "-Wdeprecated-declarations"
+   "-Winvalid-offsetof"
+   "-Wnon-virtual-dtor"
+   "-Wimplicit-fallthrough")
 endif ()
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DLLVM_ON_WIN32")
+  add_compile_definitions("LLVM_ON_WIN32")
 endif()
 
 # On Linux, we may need to include a workaround for legacy libstdc++.

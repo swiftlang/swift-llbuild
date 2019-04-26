@@ -88,6 +88,11 @@ macro(add_llbuild_library name)
 
   set_output_directory(${name} ${LLBUILD_EXECUTABLE_OUTPUT_INTDIR} ${LLBUILD_LIBRARY_OUTPUT_INTDIR})
 
+  if(NOT ARG_OUTPUT_NAME)
+    set(ARG_OUTPUT_NAME ${name})
+  endif()
+  set_target_properties(${name} PROPERTIES PDB_NAME lib${ARG_OUTPUT_NAME})
+
   if(ARG_OUTPUT_NAME)
     set_target_properties(${name}
       PROPERTIES
@@ -187,7 +192,7 @@ function(add_swift_module target name deps sources additional_args)
   )
   
   # Link and create dynamic framework.
-  set(DYLIB_OUTPUT ${LLBUILD_LIBRARY_OUTPUT_INTDIR}/${target}${CMAKE_SHARED_LIBRARY_SUFFIX})
+  set(DYLIB_OUTPUT ${LLBUILD_LIBRARY_OUTPUT_INTDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}${name}${CMAKE_SHARED_LIBRARY_SUFFIX})
   
   if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     list(APPEND DYLYB_ARGS -sdk ${CMAKE_OSX_SYSROOT})

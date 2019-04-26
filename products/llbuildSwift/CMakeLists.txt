@@ -4,15 +4,9 @@ set(SOURCES
   CoreBindings.swift)
 
 # Link C API.
-if(CMAKE_SYSTEM_NAME STREQUAL Windows)
-  list(APPEND additional_args
-    -I ${CMAKE_CURRENT_SOURCE_DIR}/../libllbuild/include
-    -llibllbuild)
-else()
-  list(APPEND additional_args
-    -I ${CMAKE_CURRENT_SOURCE_DIR}/../libllbuild/include
-    -lllbuild)
-endif()
+list(APPEND additional_args
+  -I ${CMAKE_CURRENT_SOURCE_DIR}/../libllbuild/include
+  -lllbuild)
  
 if(APPLE)
   list(APPEND additional_args -target x86_64-apple-macosx10.10)
@@ -39,6 +33,10 @@ else()
     foreach(library ${SQLite3_LIBRARIES})
       list(APPEND additional_args -l${library})
     endforeach()
+    if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+      list(APPEND additional_args -Xcc;-D_DLL;-Xlinker;/NODEFAULTLIB:libcmt)
+      list(APPEND additional_args -Xcc;-D_CRT_NONSTDC_NO_DEPRECATE)
+    endif()
   endif()
 endif()
 
@@ -46,17 +44,10 @@ endif()
 if (SWIFTC_FOUND)
   add_swift_module(libllbuildSwift llbuildSwift libllbuild "${SOURCES}" "${additional_args}")
 
-  # Install the library.
   # Install both libllbuild and libllbuildSwift.
-  if(CMAKE_SYSTEM_NAME STREQUAL Windows)
-    list(APPEND LLBUILD_LIBRARIES
-      "${LLBUILD_LIBRARY_OUTPUT_INTDIR}/${CMAKE_IMPORT_LIBRARY_PREFIX}llbuild${CMAKE_IMPORT_LIBRARY_SUFFIX}"
-      "${LLBUILD_LIBRARY_OUTPUT_INTDIR}/libllbuildSwift${CMAKE_IMPORT_LIBRARY_SUFFIX}")
-  else()
-    list(APPEND LLBUILD_LIBRARIES
-      "${LLBUILD_LIBRARY_OUTPUT_INTDIR}/libllbuild${CMAKE_SHARED_LIBRARY_SUFFIX}"
-      "${LLBUILD_LIBRARY_OUTPUT_INTDIR}/libllbuildSwift${CMAKE_SHARED_LIBRARY_SUFFIX}")
-  endif()
+  list(APPEND LLBUILD_LIBRARIES
+    "${LLBUILD_LIBRARY_OUTPUT_INTDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}llbuild${CMAKE_SHARED_LIBRARY_SUFFIX}"
+    "${LLBUILD_LIBRARY_OUTPUT_INTDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}llbuildSwift${CMAKE_SHARED_LIBRARY_SUFFIX}")
   
   if(CMAKE_SYSTEM_NAME STREQUAL Windows)
     install(FILES ${LLBUILD_EXECUTABLE_OUTPUT_INTDIR}/libllbuild${CMAKE_SHARED_LIBRARY_SUFFIX}
