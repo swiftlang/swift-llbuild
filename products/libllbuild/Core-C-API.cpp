@@ -179,6 +179,7 @@ bool llb_buildengine_attach_db(llb_buildengine_t* engine_p,
                                   std::string((char*)path->data,
                                               path->length),
                                   schema_version,
+                                  /* recreateUnmatchedVersion = */ true,
                                   &error));
   if (!db) {
     *error_out = strdup(error.c_str());

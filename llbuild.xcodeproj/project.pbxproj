@@ -110,6 +110,10 @@
 		9DB047BC1DF9D4AA006CDF52 /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
 		9DB047BD1DF9D4B0006CDF52 /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
 		9DDD8BE11DDCAB9A00FB62D2 /* SQLiteBuildDBTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9DDD8BDF1DDCAB9A00FB62D2 /* SQLiteBuildDBTest.cpp */; };
+		B505BFB3228FCB3E00255BD7 /* BuildDB-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B505BFB1228FCB3000255BD7 /* BuildDB-C-API.cpp */; };
+		B505BFB4228FCB3F00255BD7 /* BuildDB-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B505BFB1228FCB3000255BD7 /* BuildDB-C-API.cpp */; };
+		B505BFB8228FCFEE00255BD7 /* BuildDBBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B505BFB6228FCFAF00255BD7 /* BuildDBBindings.swift */; };
+		B5A84D0C22943F9200A59064 /* db.h in Headers */ = {isa = PBXBuildFile; fileRef = B505BFB5228FCBAB00255BD7 /* db.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		BC669C54205A2C2000942C3B /* BuildSystemBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8DEF0620300AAF00E9EF0C /* BuildSystemBindings.swift */; };
 		BC669C55205A2C2000942C3B /* CoreBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8DEF0720300AAF00E9EF0C /* CoreBindings.swift */; };
 		C5740D091E03523100567DD8 /* BuildSystemFrontendTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5740D081E03523100567DD8 /* BuildSystemFrontendTest.cpp */; };
@@ -918,6 +922,9 @@
 		9DADBBAC1E256C52005B4869 /* PlatformUtility.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PlatformUtility.cpp; sourceTree = "<group>"; };
 		9DB047A81DF9D43D006CDF52 /* BuildSystemTests */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = BuildSystemTests; sourceTree = BUILT_PRODUCTS_DIR; };
 		9DDD8BDF1DDCAB9A00FB62D2 /* SQLiteBuildDBTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SQLiteBuildDBTest.cpp; sourceTree = "<group>"; };
+		B505BFB1228FCB3000255BD7 /* BuildDB-C-API.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "BuildDB-C-API.cpp"; sourceTree = "<group>"; };
+		B505BFB5228FCBAB00255BD7 /* db.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = db.h; sourceTree = "<group>"; };
+		B505BFB6228FCFAF00255BD7 /* BuildDBBindings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildDBBindings.swift; sourceTree = "<group>"; };
 		B563CEA620A6252500276198 /* CrossPlatformCompatibility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CrossPlatformCompatibility.h; sourceTree = "<group>"; };
 		BC8DEF0520300AAF00E9EF0C /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; tabWidth = 2; };
 		BC8DEF0620300AAF00E9EF0C /* BuildSystemBindings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BuildSystemBindings.swift; sourceTree = "<group>"; };
@@ -1666,6 +1673,7 @@
 				BC8DEF0520300AAF00E9EF0C /* CMakeLists.txt */,
 				BC8DEF0620300AAF00E9EF0C /* BuildSystemBindings.swift */,
 				BC8DEF0720300AAF00E9EF0C /* CoreBindings.swift */,
+				B505BFB6228FCFAF00255BD7 /* BuildDBBindings.swift */,
 			);
 			indentWidth = 4;
 			path = llbuildSwift;
@@ -2133,6 +2141,7 @@
 				E1ADC2321A85923800D5387C /* Public API */,
 				E1ADC2301A85922F00D5387C /* CMakeLists.txt */,
 				E1DD22761C472A3F00555A5D /* BuildSystem-C-API.cpp */,
+				B505BFB1228FCB3000255BD7 /* BuildDB-C-API.cpp */,
 				E1ADC2311A85922F00D5387C /* C-API.cpp */,
 				E1DD22741C47259900555A5D /* Core-C-API.cpp */,
 			);
@@ -2156,6 +2165,7 @@
 				E1192CEC1C49D84500F85890 /* buildsystem.h */,
 				E1BE0AAD1C46F93000AD0883 /* core.h */,
 				E1ADC2351A8592AA00D5387C /* llbuild.h */,
+				B505BFB5228FCBAB00255BD7 /* db.h */,
 			);
 			path = llbuild;
 			sourceTree = "<group>";
@@ -2548,6 +2558,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B5A84D0C22943F9200A59064 /* db.h in Headers */,
 				E1D191CA1B472440000C4E95 /* llbuild.h in Headers */,
 				E1BE0AAE1C46F94000AD0883 /* core.h in Headers */,
 				E1192CED1C49D84500F85890 /* buildsystem.h in Headers */,
@@ -3410,6 +3421,7 @@
 				E1ADC23E1A85938C00D5387C /* C-API.cpp in Sources */,
 				E1DD22771C472A3F00555A5D /* BuildSystem-C-API.cpp in Sources */,
 				E1DD22751C47259900555A5D /* Core-C-API.cpp in Sources */,
+				B505BFB4228FCB3F00255BD7 /* BuildDB-C-API.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3508,6 +3520,8 @@
 				E1192CEF1C49DBA900F85890 /* Core-C-API.cpp in Sources */,
 				BC669C54205A2C2000942C3B /* BuildSystemBindings.swift in Sources */,
 				BC669C55205A2C2000942C3B /* CoreBindings.swift in Sources */,
+				B505BFB8228FCFEE00255BD7 /* BuildDBBindings.swift in Sources */,
+				B505BFB3228FCB3E00255BD7 /* BuildDB-C-API.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

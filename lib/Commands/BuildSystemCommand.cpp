@@ -677,7 +677,7 @@ static int executeDBCommand(std::vector<std::string> args) {
 
   // Load database
   std::string error;
-  std::unique_ptr<BuildDB> buildDB = createSQLiteBuildDB(dbPath, BuildSystem::getSchemaVersion(), &error);
+  std::unique_ptr<BuildDB> buildDB = createSQLiteBuildDB(dbPath, BuildSystem::getSchemaVersion(), /* recreateUnmatchedVersion = */ true, &error);
   if (!buildDB) {
     fprintf(stderr, "error: failed to load build db: %s\n\n", error.c_str());
     ::exit(1);

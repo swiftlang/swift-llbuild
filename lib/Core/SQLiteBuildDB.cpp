@@ -77,6 +77,9 @@ class SQLiteBuildDB : public BuildDB {
 
   std::string path;
   uint32_t clientSchemaVersion;
+  /// If this is `true`, the database will be re-created if the client/schema version mismatches.
+  /// If `false`, it will not be re-created but returns an error instead.
+  bool recreateOnUnmatchedVersion;
 
   sqlite3 *db = nullptr;
 
@@ -165,6 +168,12 @@ class SQLiteBuildDB : public BuildDB {
         clientVersion != clientSchemaVersion) {
       // Close the database before we try to recreate it.
       sqlite3_close(db);
+      
+      if (!recreateOnUnmatchedVersion) {
+        // We don't re-create the database in this case and return an error
+        *error_out = std::string("Version mismatch. (database-schema: ") + std::to_string(version) + std::string(" requested schema: ") + std::to_string(currentSchemaVersion) + std::string(". database-client: ") + std::to_string(clientVersion) + std::string(" requested client: ") + std::to_string(clientSchemaVersion) + std::string(")");
+        return false;
+      }
 
       // Always recreate the database from scratch when the schema changes.
       result = basic::sys::unlink(path.c_str());
@@ -310,8 +319,8 @@ class SQLiteBuildDB : public BuildDB {
   }
 
 public:
-  SQLiteBuildDB(StringRef path, uint32_t clientSchemaVersion)
-    : path(path), clientSchemaVersion(clientSchemaVersion) { }
+  SQLiteBuildDB(StringRef path, uint32_t clientSchemaVersion, bool recreateOnUnmatchedVersion)
+    : path(path), clientSchemaVersion(clientSchemaVersion), recreateOnUnmatchedVersion(recreateOnUnmatchedVersion) { }
 
   virtual ~SQLiteBuildDB() {
     std::lock_guard<std::mutex> guard(dbMutex);
@@ -867,13 +876,14 @@ if (result != SQLITE_OK) { \
 #undef checkSQLiteResultOKReturnKeyID
   }
 };
-
+  
 }
 
 std::unique_ptr<BuildDB> core::createSQLiteBuildDB(StringRef path,
                                                    uint32_t clientSchemaVersion,
-                                                   std::string* error_out) {
-  return llvm::make_unique<SQLiteBuildDB>(path, clientSchemaVersion);
+                                                   bool recreateUnmatchedVersion,
+                                                   std::string *error_out) {
+  return llvm::make_unique<SQLiteBuildDB>(path, clientSchemaVersion, recreateUnmatchedVersion);
 }
 
 #undef checkSQLiteResultOKReturnFalse

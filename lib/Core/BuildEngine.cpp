@@ -1306,6 +1306,8 @@ public:
     return currentTimestamp;
   }
 
+  // When changing the implementation of those, do also copy
+  // the changes to CAPIBuildDB.
   virtual const KeyID getKeyID(const KeyType& key) override {
     std::lock_guard<std::mutex> guard(keyTableMutex);
 
