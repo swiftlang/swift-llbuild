@@ -1306,7 +1306,7 @@ public:
     return currentTimestamp;
   }
 
-  virtual KeyID getKeyID(const KeyType& key) override {
+  virtual const KeyID getKeyID(const KeyType& key) override {
     std::lock_guard<std::mutex> guard(keyTableMutex);
 
     // The RHS of the mapping is actually ignored, we use the StringMap's ptr
@@ -1316,7 +1316,7 @@ public:
     return (KeyID)(uintptr_t)it->getKey().data();
   }
 
-  virtual KeyType getKeyForID(KeyID key) override {
+  virtual KeyType getKeyForID(const KeyID key) override {
     // Note that we don't need to lock `keyTable` here because the key entries
     // themselves don't change once created.
     return llvm::StringMapEntry<KeyID>::GetStringMapEntryFromKeyData(
