@@ -20,10 +20,10 @@ using namespace llbuild;
 using namespace llbuild::core;
 
 namespace {
-  
+
   class CAPIBuildDBKeysResult {
   private:
-    const std::vector<KeyType>& keys;
+    const std::vector<KeyType> keys;
     
   public:
     CAPIBuildDBKeysResult(const std::vector<KeyType>& keys): keys(keys) { }
@@ -31,7 +31,7 @@ namespace {
     CAPIBuildDBKeysResult(const CAPIBuildDBKeysResult&) LLBUILD_DELETED_FUNCTION;
     CAPIBuildDBKeysResult& operator=(const CAPIBuildDBKeysResult&) LLBUILD_DELETED_FUNCTION;
     
-    const uint32_t size() {
+    const size_t size() {
       return keys.size();
     }
     
@@ -39,7 +39,7 @@ namespace {
       return keys[index];
     }
   };
-  
+
   class CAPIBuildDB: public BuildDBDelegate {
     /// The key table, for memory caching of key to key id mapping.
     llvm::StringMap<KeyID> keyTable;
@@ -49,19 +49,30 @@ namespace {
     
     std::unique_ptr<BuildDB> _db;
     
-  public:
     CAPIBuildDB(StringRef path, uint32_t clientSchemaVersion, std::string *error_out) {
       _db = createSQLiteBuildDB(path, clientSchemaVersion, /* recreateUnmatchedVersion = */ false, error_out);
-      if (error_out != NULL) {
-        return;
+    }
+    
+  public:
+    static CAPIBuildDB *create(StringRef path, uint32_t clientSchemaVersion, std::string *error_out) {
+      auto databaseObject = new CAPIBuildDB(path, clientSchemaVersion, error_out);
+      if (databaseObject->_db == nullptr || !error_out->empty() || !databaseObject->buildStarted(error_out)) {
+        delete databaseObject;
+        return nullptr;
       }
-      // The delegate  caches keys for key ids
-      _db.get()->attachDelegate(this);
       
-      if (!buildStarted(error_out)) {
-        buildComplete();
-        return;
+      // The delegate  caches keys for key ids
+      databaseObject->_db.get()->attachDelegate(databaseObject);
+      
+      return databaseObject;
+    }
+    
+    bool isValid(std::string *error_out) {
+      if (_db == nullptr) {
+        return false;
       }
+      
+      return buildStarted(error_out);
     }
     
     virtual const KeyID getKeyID(const KeyType& key) override {
@@ -93,16 +104,16 @@ namespace {
       return _db.get()->getKeys(keys_out, error_out);
     }
   };
-  
+
 }
 
 const llb_database_t* llb_database_open(
-                                          char *path,
-                                          uint32_t clientSchemaVersion,
-                                          llb_data_t *error_out) {
+                                        char *path,
+                                        uint32_t clientSchemaVersion,
+                                        llb_data_t *error_out) {
   std::string error;
   
-  auto database = new CAPIBuildDB(StringRef(path), clientSchemaVersion, &error);
+  auto database = CAPIBuildDB::create(StringRef(path), clientSchemaVersion, &error);
   
   if (!error.empty() && error_out) {
     error_out->length = error.size();
