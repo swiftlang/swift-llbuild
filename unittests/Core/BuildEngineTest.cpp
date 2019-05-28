@@ -848,7 +848,7 @@ TEST(BuildEngineTest, basicIncrementalSignatureChange) {
     // Attach the database.
     {
       std::string error;
-      auto db = createSQLiteBuildDB(dbPath, 1, &error);
+      auto db = createSQLiteBuildDB(dbPath, 1, /* recreateUnmatchedVersion = */ true, &error);
       EXPECT_EQ(bool(db), true);
       if (!db) {
         fprintf(stderr, "unable to open database: %s\n", error.c_str());

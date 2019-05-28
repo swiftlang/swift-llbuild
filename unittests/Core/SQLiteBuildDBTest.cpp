@@ -31,7 +31,7 @@ TEST(SQLiteBuildDBTest, ErrorHandling) {
     fprintf(stderr, "using db: %s\n", path);
 
     std::string error;
-    std::unique_ptr<BuildDB> buildDB = createSQLiteBuildDB(dbPath, 1, &error);
+    std::unique_ptr<BuildDB> buildDB = createSQLiteBuildDB(dbPath, 1, /* recreateUnmatchedVersion = */ true, &error);
     EXPECT_TRUE(buildDB != nullptr);
     EXPECT_EQ(error, "");
 
@@ -39,7 +39,7 @@ TEST(SQLiteBuildDBTest, ErrorHandling) {
     sqlite3_open(path, &db);
     sqlite3_exec(db, "PRAGMA locking_mode = EXCLUSIVE; BEGIN EXCLUSIVE;", nullptr, nullptr, nullptr);
 
-    buildDB = createSQLiteBuildDB(dbPath, 1, &error);
+    buildDB = createSQLiteBuildDB(dbPath, 1, /* recreateUnmatchedVersion = */ true, &error);
     EXPECT_FALSE(buildDB == nullptr);
 
     // The database is opened lazily, thus run an operation that will cause it
@@ -70,11 +70,11 @@ TEST(SQLiteBuildDBTest, LockedWhileBuilding) {
   fprintf(stderr, "using db: %s\n", path);
 
   std::string error;
-  std::unique_ptr<BuildDB> buildDB = createSQLiteBuildDB(dbPath, 1, &error);
+  std::unique_ptr<BuildDB> buildDB = createSQLiteBuildDB(dbPath, 1, /* recreateUnmatchedVersion = */ true, &error);
   EXPECT_TRUE(buildDB != nullptr);
   EXPECT_EQ(error, "");
 
-  std::unique_ptr<BuildDB> secondBuildDB = createSQLiteBuildDB(dbPath, 1, &error);
+  std::unique_ptr<BuildDB> secondBuildDB = createSQLiteBuildDB(dbPath, 1, /* recreateUnmatchedVersion = */ true, &error);
   EXPECT_TRUE(buildDB != nullptr);
   EXPECT_EQ(error, "");
 
@@ -90,7 +90,7 @@ TEST(SQLiteBuildDBTest, LockedWhileBuilding) {
   EXPECT_EQ(error, out.str());
 
   // Tests that we cannot create new connections while a build is running
-  std::unique_ptr<BuildDB> otherBuildDB = createSQLiteBuildDB(dbPath, 1, &error);
+  std::unique_ptr<BuildDB> otherBuildDB = createSQLiteBuildDB(dbPath, 1, /* recreateUnmatchedVersion = */ true, &error);
   EXPECT_FALSE(otherBuildDB == nullptr);
 
   // The database is opened lazily, thus run an operation that will cause it

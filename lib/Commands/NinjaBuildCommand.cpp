@@ -1842,6 +1842,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       std::unique_ptr<core::BuildDB> db(
         core::createSQLiteBuildDB(dbFilename,
                                   BuildValue::currentSchemaVersion,
+                                  /* recreateUnmatchedVersion = */ true,
                                   &error));
       if (!db || !context.engine.attachDB(std::move(db), &error)) {
         context.emitError("unable to open build database: %s", error.c_str());
