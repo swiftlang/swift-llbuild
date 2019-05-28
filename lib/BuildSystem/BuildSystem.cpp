@@ -363,8 +363,7 @@ public:
     // FIXME: How do we pass the client schema version here, if we haven't
     // loaded the file yet.
     std::unique_ptr<core::BuildDB> db(
-        core::createSQLiteBuildDB(filename, getMergedSchemaVersion(),
-                                  error_out));
+                                      core::createSQLiteBuildDB(filename, getMergedSchemaVersion(), /* recreateUnmatchedVersion = */ true, error_out));
     if (!db)
       return false;
 
