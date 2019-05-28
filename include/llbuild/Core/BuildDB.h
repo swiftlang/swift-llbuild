@@ -138,7 +138,7 @@ public:
 /// \param clientSchemaVersion An uninterpreted version number for use by the
 /// client to allow batch changes to the stored build results; if the stored
 /// schema does not match the provided version the database will be cleared upon
-/// opening; to avoid this behavior, use `createNondestructiveSQLiteBuildDB`.
+/// opening; to avoid this behavior, pass `false` for `recreateUnmatchedVersion`.
 std::unique_ptr<BuildDB> createSQLiteBuildDB(StringRef path,
                                              uint32_t clientSchemaVersion,
                                              bool recreateUnmatchedVersion,
