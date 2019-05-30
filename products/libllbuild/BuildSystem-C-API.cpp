@@ -148,6 +148,8 @@ class CAPIBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
         return llb_buildsystem_command_result_failed;
       case ProcessStatus::Skipped:
         return llb_buildsystem_command_result_skipped;
+      case ProcessStatus::Fatal:
+        return llb_buildsystem_command_result_fatal;
       default:
         assert(0 && "unknown command result");
         break;

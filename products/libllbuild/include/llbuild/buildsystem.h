@@ -111,6 +111,7 @@ typedef enum LLBUILD_ENUM_ATTRIBUTES {
   llb_buildsystem_command_result_failed = 1,
   llb_buildsystem_command_result_cancelled = 2,
   llb_buildsystem_command_result_skipped = 3,
+  llb_buildsystem_command_result_fatal = 4,
 } llb_buildsystem_command_result_t LLBUILD_SWIFT_NAME(CommandResult);
 
 /// Extended result of a command execution

@@ -112,6 +112,7 @@ namespace llbuild {
       Failed,
       Cancelled,
       Skipped,
+      Fatal,
     };
 
     /// Result of a process execution.

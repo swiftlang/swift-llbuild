@@ -388,6 +388,7 @@ void ExternalCommand::execute(BuildSystemCommandInterface& bsci,
     // Process the result.
     switch (result.status) {
     case ProcessStatus::Failed:
+    case ProcessStatus::Fatal:
       resultFn(BuildValue::makeFailedCommand());
       return;
     case ProcessStatus::Cancelled:
