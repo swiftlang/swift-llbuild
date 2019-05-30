@@ -112,6 +112,7 @@ namespace llbuild {
       Failed,
       Cancelled,
       Skipped,
+      /// A fatal status should fail its related process as well
       Fatal,
     };
 

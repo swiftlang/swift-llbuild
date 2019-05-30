@@ -2170,7 +2170,7 @@ public:
             // If we were unable to process the dependencies output, report a
             // failure.
             if (completionFn.hasValue())
-              completionFn.getValue()(ProcessStatus::Failed);
+              completionFn.getValue()(ProcessStatus::Fatal);
             return;
           }
           if (completionFn.hasValue())
@@ -2787,7 +2787,7 @@ public:
       for (const auto& depsPath: depsFiles) {
         if (!processDiscoveredDependencies(bsci, task, depsPath)) {
           if (completionFn.hasValue())
-            completionFn.getValue()(ProcessStatus::Failed);
+            completionFn.getValue()(ProcessStatus::Fatal);
           return;
         }
       }
