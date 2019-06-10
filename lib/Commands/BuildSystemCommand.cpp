@@ -627,12 +627,12 @@ class KeyMapDelegate : public BuildDBDelegate {
 public:
   llvm::StringMap<KeyID> keyTable;
 
-  KeyID getKeyID(const KeyType& key) override {
+  const KeyID getKeyID(const KeyType& key) override {
     auto it = keyTable.insert(std::make_pair(key, 0)).first;
     return (KeyID)(uintptr_t)it->getKey().data();
   }
 
-  KeyType getKeyForID(KeyID key) override {
+  KeyType getKeyForID(const KeyID key) override {
     // Note that we don't need to lock `keyTable` here because the key entries
     // themselves don't change once created.
     return llvm::StringMapEntry<KeyID>::GetStringMapEntryFromKeyData(

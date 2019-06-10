@@ -14,6 +14,7 @@
 
 #include "llbuild/Basic/CrossPlatformCompatibility.h"
 #include "llbuild/Basic/PlatformUtility.h"
+#include "llbuild/Basic/ShellUtility.h"
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringRef.h"
@@ -72,6 +73,7 @@ int pthread_fchdir_np(int fd)
 
 #ifndef HAVE_POSIX_SPAWN_CHDIR
 #if defined(__sun) || \
+  (defined(__MAC_OS_X_VERSION_MIN_REQUIRED) && __MAC_OS_X_VERSION_MIN_REQUIRED >= 101500) || \
   __GLIBC_PREREQ(2, 29)
 #define HAVE_POSIX_SPAWN_CHDIR 1
 #else
@@ -85,6 +87,12 @@ static int posix_spawn_file_actions_addchdir(posix_spawn_file_actions_t * __rest
 #if HAVE_POSIX_SPAWN_CHDIR
   return ::posix_spawn_file_actions_addchdir_np(file_actions, path);
 #else
+#if defined(__APPLE__) && __MAC_OS_X_VERSION_MAX_ALLOWED >= 101500
+  if (__builtin_available(macOS 10.15, *)) {
+    return ::posix_spawn_file_actions_addchdir_np(file_actions, path);
+  }
+#endif
+
   // Any other POSIX platform returns ENOSYS (Function not implemented),
   // to simplify the fallback logic around the call site.
   return ENOSYS;
@@ -409,7 +417,7 @@ void llbuild::basic::spawnProcess(
   // Form the complete C string command line.
   std::vector<std::string> argsStorage(commandLine.begin(), commandLine.end());
 #if defined(_WIN32)
-  std::string args = llvm::sys::flattenWindowsCommandLine(commandLine);
+  std::string args = llbuild::basic::formatWindowsCommandString(argsStorage);
 
   // Convert the command line string to utf16
   llvm::SmallVector<llvm::UTF16, 20> u16Executable;

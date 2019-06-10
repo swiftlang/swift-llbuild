@@ -15,11 +15,19 @@
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/raw_ostream.h"
-
-using namespace llvm;
+#include <vector>
 
 namespace llbuild {
 namespace basic {
+
+#if defined(_WIN32)
+/// Formats a command line using the Windows command line escaping rules a la a
+/// reverse CommandLineToArgVW
+///
+/// \param args The arugments to escape
+///
+std::string formatWindowsCommandString(std::vector<std::string> args);
+#endif
 
 /// Appends a shell escaped string to an output stream.
 /// For e.g. hello -> hello, hello$world -> 'hello$world', input A -> 'input A'
@@ -27,15 +35,15 @@ namespace basic {
 /// \param os Reference of the output stream to append to.
 ///
 /// \param string The string to be escaped and appended.
-/// 
-void appendShellEscapedString(llvm::raw_ostream& os, StringRef string);
+///
+void appendShellEscapedString(llvm::raw_ostream& os, llvm::StringRef string);
 
 /// Creates and returns a shell escaped string of the input.
 ///
 /// \param string The string to be escaped.
 ///
 /// \returns escaped string.
-std::string shellEscaped(StringRef string);
+std::string shellEscaped(llvm::StringRef string);
 
 }
 }

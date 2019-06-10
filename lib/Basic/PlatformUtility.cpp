@@ -22,6 +22,9 @@
 #else
 #include <fnmatch.h>
 #include <unistd.h>
+#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+#include <dlfcn.h>
+#endif
 #endif
 #include <stdio.h>
 
@@ -336,3 +339,37 @@ std::string sys::getPathSeparators() {
   return "/";
 #endif
 }
+
+sys::ModuleTraits<>::Handle sys::OpenLibrary(const char *path) {
+#if defined(_WIN32)
+  int cchLength =
+      MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, strlen(path),
+                          nullptr, 0);
+  std::u16string buffer(cchLength + 1, 0);
+  MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, strlen(path),
+                      const_cast<LPWSTR>(reinterpret_cast<LPCWSTR>(buffer.data())),
+                      buffer.size());
+
+  return LoadLibraryW(reinterpret_cast<LPCWSTR>(buffer.data()));
+#else
+  return dlopen(path, RTLD_LAZY);
+#endif
+}
+
+void *sys::GetSymbolByname(sys::ModuleTraits<>::Handle handle,
+                           const char *name) {
+#if defined(_WIN32)
+  return GetProcAddress(handle, name);
+#else
+  return dlsym(handle, name);
+#endif
+}
+
+void sys::CloseLibrary(sys::ModuleTraits<>::Handle handle) {
+#if defined(_WIN32)
+  FreeLibrary(handle);
+#else
+  dlclose(handle);
+#endif
+}
+

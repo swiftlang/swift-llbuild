@@ -35,7 +35,7 @@ if(MSVC AND MSVC_VERSION EQUAL 1700)
   add_definitions(-D_VARIADIC_MAX=10)
 endif ()
 
-add_llbuild_library(gtest
+add_llbuild_library(gtest STATIC
   googletest/src/gtest-all.cc
   )
 

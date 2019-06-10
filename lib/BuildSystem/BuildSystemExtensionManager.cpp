@@ -13,11 +13,10 @@
 #include "llbuild/BuildSystem/BuildSystemExtensions.h"
 
 #include "llbuild/Basic/Subprocess.h"
+#include "llbuild/Basic/PlatformUtility.h"
 
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/raw_ostream.h"
-
-#include <dlfcn.h>
 
 using namespace llbuild;
 using namespace llbuild::basic;
@@ -93,15 +92,15 @@ BuildSystemExtensionManager::lookupByCommandPath(StringRef path) {
   }
 
   // Load the plugin.
-  auto handle = dlopen(extensionPath.c_str(), RTLD_LAZY);
-  if (!handle) {
+  auto handle = sys::OpenLibrary(extensionPath.c_str());
+  if (handle == nullptr)
     return {};
-  }
 
-  auto registrationFn = (BuildSystemExtension*(*)(void)) dlsym(
-      handle, "initialize_llbuild_buildsystem_extension_v0");
+  BuildSystemExtension *(*registrationFn)(void) =
+      reinterpret_cast<decltype(registrationFn)>(sys::GetSymbolByname(handle,
+                                                                      "initialize_llbuild_buildsystem_extension_v0"));
   if (!registrationFn) {
-    dlclose(handle);
+    sys::CloseLibrary(handle);
     return {};
   }
 
@@ -111,11 +110,11 @@ BuildSystemExtensionManager::lookupByCommandPath(StringRef path) {
   // FIXME: This needs to be reworked to go through a C API.
   auto *extension = registrationFn();
   if (!extension) {
-    dlclose(handle);
+    sys::CloseLibrary(handle);
     return {};
   }
 
   extensions[path] = std::unique_ptr<BuildSystemExtension>(extension);
   return extension;
 }
-  
+
