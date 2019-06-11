@@ -61,7 +61,7 @@ private final class ToolWrapper {
 
     /// The owning list of all created commands.
     //
-    // FIXME: This is lame, we should be able to destroy these naturally.
+    // FIXME: This is unfortunate, we should be able to destroy these naturally.
     private var commandWrappers: [CommandWrapper] = []
     func createCommand(_ name: UnsafePointer<llb_data_t>) -> OpaquePointer? {
         let command = tool.createCommand(stringFromData(name.pointee))
@@ -765,7 +765,7 @@ public final class BuildSystem {
 
     /// The owning list of all created tools.
     //
-    // FIXME: This is lame, we should be able to destroy these naturally.
+    // FIXME: This is unfortunate, we should be able to destroy these naturally.
     private var toolWrappers: [ToolWrapper] = []
     private func lookupTool(_ name: UnsafePointer<llb_data_t>) -> OpaquePointer? {
         // Look up the named tool.

@@ -706,7 +706,7 @@ public:
 
     os << "keys:\n";
     while (sqlite3_step(stmt) == SQLITE_ROW) {
-      assert(sqlite3_column_count(stmt) == 1);
+      assert(sqlite3_column_count(stmt) == 2);
 
       auto size = sqlite3_column_bytes(stmt, 0);
       auto text = (const char*) sqlite3_column_text(stmt, 0);
@@ -726,7 +726,7 @@ public:
 
     os << "\nresults:\n";
     while (sqlite3_step(stmt) == SQLITE_ROW) {
-      assert(sqlite3_column_count(stmt) == 1);
+      assert(sqlite3_column_count(stmt) == 3);
 
       auto id = sqlite3_column_int64(stmt, 0);
       auto built = sqlite3_column_int64(stmt, 1);

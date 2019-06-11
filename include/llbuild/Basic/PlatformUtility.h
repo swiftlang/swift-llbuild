@@ -22,6 +22,9 @@
 #include <cstdint>
 #include <cstdio>
 #include <string>
+#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+#include <unistd.h>
+#endif
 #if !defined(_WIN32)
 #include <sys/resource.h>
 #endif
@@ -87,6 +90,37 @@ template <> struct FileDescriptorTraits<int> {
     return read(hFile, destinationBuffer, maxCharCount);
   }
 };
+
+enum class OSStyle {
+  Windows,
+  POSIX,
+
+#if defined(_WIN32)
+  Default = Windows,
+#elif defined(_POSIX_VERSION)
+  Default = POSIX,
+#endif
+};
+
+template <OSStyle = OSStyle::Default>
+struct ModuleTraits;
+
+#if defined(_WIN32)
+template <>
+struct ModuleTraits<OSStyle::Windows> {
+  using Handle = HMODULE;
+};
+#endif
+
+template <>
+struct ModuleTraits<OSStyle::POSIX> {
+  using Handle = void *;
+};
+
+ModuleTraits<>::Handle OpenLibrary(const char *);
+void *GetSymbolByname(ModuleTraits<>::Handle, const char *);
+void CloseLibrary(ModuleTraits<>::Handle);
+
 }
 }
 }

@@ -1,3 +1,3 @@
-add_llbuild_library(gtest_main TestMain.cpp)
+add_llbuild_library(gtest_main STATIC TestMain.cpp)
 
-target_link_libraries(gtest_main gtest)
+target_link_libraries(gtest_main PRIVATE gtest)

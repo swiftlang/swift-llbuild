@@ -574,6 +574,7 @@ public:
     invocation.environment = cAPIInvocation.environment;
     invocation.useSerialBuild = cAPIInvocation.useSerialBuild;
     invocation.showVerboseStatus = cAPIInvocation.showVerboseStatus;
+    invocation.schedulerLanes = cAPIInvocation.schedulerLanes;
 
     // Register a custom diagnostic handler with the source manager.
     sourceMgr.setDiagHandler([](const llvm::SMDiagnostic& diagnostic,

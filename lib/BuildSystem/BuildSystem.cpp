@@ -62,6 +62,7 @@
 #include <unistd.h>
 #endif
 
+using namespace llvm;
 using namespace llbuild;
 using namespace llbuild::basic;
 using namespace llbuild::core;
@@ -1873,7 +1874,13 @@ llvm::Optional<BuildValue> BuildSystemImpl::build(BuildKey key) {
   // queue to have notified the engine of the last task completion, but still
   // have other work to perform (e.g., informing the client of command
   // completion).
-  executionQueue.reset();
+  //
+  // This must hold the lock to prevent data racing on the executionQueue
+  // pointer (as can happen with cancellation) - rdar://problem/50993380
+  {
+    std::lock_guard<std::mutex> guard(executionQueueMutex);
+    executionQueue.reset();
+  }
 
   // Clear out the shell handlers, as we do not want to hold on to them across
   // multiple builds.
@@ -3234,11 +3241,11 @@ class ArchiveShellCommand : public ExternalCommand {
     llvm::raw_svector_ostream stream(result);
     bool first = true;
     for (const auto& arg: getArgs()) {
-      stream << arg;
       if (!first) {
         stream << " ";
-        first = false;
       }
+      first = false;
+      stream << arg;
     }
   }
   

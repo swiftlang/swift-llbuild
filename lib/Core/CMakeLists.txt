@@ -1,4 +1,4 @@
-add_llbuild_library(llbuildCore
+add_llbuild_library(llbuildCore STATIC
   BuildDB.cpp
   BuildEngine.cpp
   BuildEngineTrace.cpp
@@ -6,3 +6,5 @@ add_llbuild_library(llbuildCore
   MakefileDepsParser.cpp
   SQLiteBuildDB.cpp
 )
+
+target_link_libraries(llbuildCore PRIVATE llbuildBasic llvmSupport sqlite3)

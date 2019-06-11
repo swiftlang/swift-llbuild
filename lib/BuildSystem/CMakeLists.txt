@@ -1,4 +1,4 @@
-add_llbuild_library(llbuildBuildSystem
+add_llbuild_library(llbuildBuildSystem STATIC
   BuildDescription.cpp
   BuildFile.cpp
   BuildKey.cpp
@@ -10,3 +10,5 @@ add_llbuild_library(llbuildBuildSystem
   ExternalCommand.cpp
   ShellCommand.cpp
   )
+
+target_link_libraries(llbuildBuildSystem PRIVATE llbuildCore llbuildBasic llvmSupport)
