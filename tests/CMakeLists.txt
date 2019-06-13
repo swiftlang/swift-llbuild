@@ -40,7 +40,7 @@ if(PYTHONINTERP_FOUND AND LIT_FOUND AND FILECHECK_FOUND)
   add_custom_target(test-llbuild
     COMMAND ${lit_command} ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "Running llbuild tests..."
-    ${cmake_3_2_USES_TERMINAL})
+    USES_TERMINAL)
   set_target_properties(test-llbuild PROPERTIES FOLDER "Tests")
 
   add_dependencies(test-llbuild ${test_target_dependencies})

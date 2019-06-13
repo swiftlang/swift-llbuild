@@ -6,12 +6,6 @@ if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
-if(CMAKE_VERSION VERSION_LESS 3.1.20141117)
-  set(cmake_3_2_USES_TERMINAL)
-else()
-  set(cmake_3_2_USES_TERMINAL USES_TERMINAL)
-endif()
-
 option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
 
 # Configure the default set of bindings to build.
