@@ -25,11 +25,8 @@ ProcessorCount(NUM_PROCESSORS)
 project(llbuild)
 
 # Add path for custom modules
-set(CMAKE_MODULE_PATH
-  ${CMAKE_MODULE_PATH}
-  "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
-  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules"
-  )
+list(APPEND CMAKE_MODULE_PATH
+  ${PROJECT_SOURCE_DIR}/cmake/modules)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE YES)
 
