@@ -17,5 +17,6 @@ target_link_libraries(llbuildBasic PRIVATE
   Threads::Threads)
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-  target_link_libraries(llbuildBasic ShlWapi.lib)
+  target_link_libraries(llbuildBasic PRIVATE
+    ShlWapi.lib)
 endif()

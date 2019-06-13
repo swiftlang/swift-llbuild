@@ -7,13 +7,14 @@ add_llbuild_unittest(CoreTests
   SQLiteBuildDBTest.cpp
   )
 
-target_link_libraries(CoreTests
+target_link_libraries(CoreTests PRIVATE
   llbuildCore
   llbuildBasic
   llvmSupport
   SQLite::SQLite3)
 
 if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-  target_link_libraries(CoreTests curses)
+  target_link_libraries(CoreTests PRIVATE
+    curses)
 endif()
 

@@ -1,7 +1,7 @@
 add_llbuild_executable(swift-build-tool
   main.cpp)
 
-target_link_libraries(swift-build-tool
+target_link_libraries(swift-build-tool PRIVATE
   llbuildBuildSystem
   llbuildCore
   llbuildBasic
@@ -9,7 +9,8 @@ target_link_libraries(swift-build-tool
   SQLite::SQLite3)
 
 if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-  target_link_libraries(swift-build-tool curses)
+  target_link_libraries(swift-build-tool PRIVATE
+    curses)
 endif()
 
 install(TARGETS swift-build-tool

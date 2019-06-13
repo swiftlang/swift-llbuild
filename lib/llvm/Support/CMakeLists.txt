@@ -54,12 +54,13 @@ raw_ostream.cpp
   )
 
 
-target_link_libraries(llvmSupport LLVMDemangle)
 target_link_libraries(llvmSupport PRIVATE
+  LLVMDemangle
   Threads::Threads
   ${CMAKE_DL_LIBS})
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
-  target_link_libraries(llvmSupport execinfo)
+  target_link_libraries(llvmSupport PRIVATE
+    execinfo)
 endif()
 

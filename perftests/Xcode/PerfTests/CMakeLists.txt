@@ -26,7 +26,7 @@ set_target_properties(XcodePerfTests
   BUNDLE true
   BUNDLE_EXTENSION xctest)
 
-target_link_libraries(XcodePerfTests
+target_link_libraries(XcodePerfTests PRIVATE
   llvmSupport
   llbuildBasic
   llbuildCore

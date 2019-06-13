@@ -11,4 +11,7 @@ add_llbuild_library(llbuildBuildSystem STATIC
   ShellCommand.cpp
   )
 
-target_link_libraries(llbuildBuildSystem PRIVATE llbuildCore llbuildBasic llvmSupport)
+target_link_libraries(llbuildBuildSystem PRIVATE
+  llbuildCore
+  llbuildBasic
+  llvmSupport)

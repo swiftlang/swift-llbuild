@@ -7,4 +7,7 @@ add_llbuild_library(llbuildCommands STATIC
   NinjaCommand.cpp
   )
 
-target_link_libraries(llbuildCommands PRIVATE llbuildBuildSystem llbuildCore llbuildNinja)
+target_link_libraries(llbuildCommands PRIVATE
+  llbuildBuildSystem
+  llbuildCore
+  llbuildNinja)
