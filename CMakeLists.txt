@@ -157,18 +157,23 @@ if (XCODE)
   set(CMAKE_XCODE_ATTRIBUTE_USE_HEADERMAP "NO") 
 elseif(MSVC)
   # Disable unknown pragma warnings (e.g. for #pragma mark).
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4068")
+  add_compile_options(-wd4068)
 
   # TODO: these warnings come from llvmSupport. Since we don't want to diverge from llvmSupport by
   # addressing these warnings , disable these for now to clean the build log.
   # If/when we move to use LLVM's own llvmSupport, we should reenable these warnings.
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4996") # POSIX name for this item is deprecated.
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4244") # Signed conversion.
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4267") # Possible loss of data conversions.
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4291") # Operator new with no matching delete found.
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4800") # Forcing value to bool 'true' or 'false'.
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4146") # Unary minus applied to unsigned type.
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4141") # 'inline' used more than once.
+  # Unfortunately, the headers are intermingled into the public headers
+  # directory so we cannot mark the include search path as a SYSTEM directory
+  # and avoid the warnings.
+  add_compile_options(
+    -wd4141 # 'inline' used more than once
+    -wd4146 # Unary minus applied to unsigned type
+    -wd4244 # Signed conversion
+    -wd4267 # Possible loss of data conversions
+    -wd4291 # operator new with no matching delete found
+    -wd4800 # Forcing value to bool 'true' or 'false'
+    -wd4996 # POSIX name for this item is deprecated
+  )
 else ()
   # Compile with C++14, without RTTI or exceptions.
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti -fno-exceptions")
