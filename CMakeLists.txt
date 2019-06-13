@@ -169,8 +169,6 @@ elseif(MSVC)
 else ()
   # Compile with C++14, without RTTI or exceptions.
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fno-rtti -fno-exceptions")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
-  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS}")
   # Enable additional Clang warnings.
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wmost")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wdocumentation  -Woverloaded-virtual")
