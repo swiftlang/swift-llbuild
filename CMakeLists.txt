@@ -28,6 +28,9 @@ project(llbuild)
 list(APPEND CMAKE_MODULE_PATH
   ${PROJECT_SOURCE_DIR}/cmake/modules)
 
+set(CMAKE_CXX_EXTENSIONS NO)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_POSITION_INDEPENDENT_CODE YES)
 
 # Include custom modules.
@@ -168,7 +171,7 @@ elseif(MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4141") # 'inline' used more than once.
 else ()
   # Compile with C++14, without RTTI or exceptions.
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fno-rtti -fno-exceptions")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti -fno-exceptions")
   # Enable additional Clang warnings.
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wmost")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wdocumentation  -Woverloaded-virtual")
