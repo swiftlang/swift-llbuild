@@ -1,11 +1,5 @@
 cmake_minimum_required(VERSION 3.4.3)
 
-# Default to building the Debug configuration.
-if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-  message(STATUS "No build type selected, default to Debug")
-  set(CMAKE_BUILD_TYPE "Debug")
-endif()
-
 option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
 
 # Configure the default set of bindings to build.
