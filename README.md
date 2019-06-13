@@ -247,6 +247,9 @@ Mitchell for his work describing the Shake algorithm which provided the
 inspiration for the mechanism llbuild uses to allow additional work to be
 discovered on the fly.
 
+For similar projects, see [Adapton](http://adapton.org/)
+and [Salsa](https://github.com/salsa-rs/salsa).
+
 
 License
 -------
