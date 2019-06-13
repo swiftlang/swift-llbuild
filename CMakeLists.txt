@@ -36,6 +36,8 @@ set(CMAKE_POSITION_INDEPENDENT_CODE YES)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 
+find_package(SQLite3 REQUIRED)
+
 # Include custom modules.
 include(Utility)
 
@@ -103,21 +105,6 @@ endif()
 # Find includes in the source directory.
 include_directories(BEFORE
   ${CMAKE_SOURCE_DIR}/include)
-
-# On FreeBSD, /usr/local/* is not used by default. In order to build LLVM
-# with sqlite3, etc., we must add /usr/local paths.
-if(${CMAKE_SYSTEM_NAME} MATCHES "(FreeBSD|DragonFly)")
-  include_directories("/usr/local/include")
-  link_directories("/usr/local/lib")
-endif(${CMAKE_SYSTEM_NAME} MATCHES "(FreeBSD|DragonFly)")
-
-if(NOT ${LLBUILD_PATH_TO_SQLITE_SOURCE} STREQUAL "")
-  include_directories("${LLBUILD_PATH_TO_SQLITE_SOURCE}")
-endif()
-
-if(NOT "${LLBUILD_PATH_TO_SQLITE_BUILD}" STREQUAL "")
-  link_directories("${LLBUILD_PATH_TO_SQLITE_BUILD}")
-endif()
 
 # Xcode: Use libc++ and c++14 using proper build settings.
 if (XCODE)

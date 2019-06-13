@@ -9,8 +9,7 @@ add_llbuild_unittest(CAPITests
 
 target_link_libraries(CAPITests
   libllbuild
-  sqlite3
-  )
+  SQLite::SQLite3)
 
 if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
   target_link_libraries(CAPITests curses)

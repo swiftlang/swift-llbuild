@@ -12,8 +12,7 @@ target_link_libraries(BuildSystemTests
   llbuildCore
   llbuildBasic
   llvmSupport
-  sqlite3
-  )
+  SQLite::SQLite3)
 
 if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
   target_link_libraries(BuildSystemTests curses)

@@ -7,7 +7,7 @@ set(DEPENDENCIES
   llbuildCore
   llbuildBasic
   llvmSupport
-  sqlite3)
+  SQLite::SQLite3)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 set(LIBLLBUILD_NAME libllbuild)
