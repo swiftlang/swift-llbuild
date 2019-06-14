@@ -6,15 +6,15 @@ add_llbuild_unittest(BuildSystemTests
   TempDir.cpp
   )
 
-target_link_libraries(BuildSystemTests
+target_link_libraries(BuildSystemTests PRIVATE
   llbuildBuildSystem
   llvmSupport
   llbuildCore
   llbuildBasic
   llvmSupport
-  sqlite3
-  )
+  SQLite::SQLite3)
 
 if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-  target_link_libraries(BuildSystemTests curses)
+  target_link_libraries(BuildSystemTests PRIVATE
+    curses)
 endif()

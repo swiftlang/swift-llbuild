@@ -2,21 +2,11 @@ set(SOURCES
   BuildSystem-C-API.cpp
   C-API.cpp
   Core-C-API.cpp)
-set(DEPENDENCIES
-  llbuildBuildSystem
-  llbuildCore
-  llbuildBasic
-  llvmSupport
-  sqlite3)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 set(LIBLLBUILD_NAME libllbuild)
 else()
 set(LIBLLBUILD_NAME llbuild)
-endif()
-
-if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-  list(APPEND DEPENDENCIES curses)
 endif()
 
 add_llbuild_library(libllbuild
@@ -26,7 +16,16 @@ add_llbuild_library(libllbuild
 
 set_property(TARGET libllbuild PROPERTY MACOSX_RPATH ON)
 
-target_link_libraries(libllbuild ${DEPENDENCIES})
+target_link_libraries(libllbuild PRIVATE
+  llbuildBuildSystem
+  llbuildCore
+  llbuildBasic
+  llvmSupport
+  SQLite::SQLite3)
+if(NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
+  target_link_libraries(libllbuild PRIVATE
+    curses)
+endif()
 
 include_directories(BEFORE
   ${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -62,7 +61,13 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set_target_properties(llbuild-framework PROPERTIES OUTPUT_NAME llbuild)
   set_target_properties(llbuild-framework PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LLBUILD_LIBRARY_OUTPUT_INTDIR})
   set_target_properties(llbuild-framework PROPERTIES LINK_FLAGS " -compatibility_version 1 -current_version 1")
-  target_link_libraries(llbuild-framework ${DEPENDENCIES})
+  target_link_libraries(llbuild-framework PRIVATE
+    llbuildBuildSystem
+    llbuildCore
+    llbuildBasic
+    llvmSupport
+    SQLite::SQLite3
+    curses)
 
   # Manually set up the remaining framework structure.
   set(LLBUILD_FW_INPUTS)

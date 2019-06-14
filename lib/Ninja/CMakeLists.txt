@@ -5,4 +5,6 @@ add_llbuild_library(llbuildNinja STATIC
   Parser.cpp
   )
 
-target_link_libraries(llbuildNinja PRIVATE llbuildBasic llvmSupport)
+target_link_libraries(llbuildNinja PRIVATE
+  llbuildBasic
+  llvmSupport)

@@ -7,4 +7,7 @@ add_llbuild_library(llbuildCore STATIC
   SQLiteBuildDB.cpp
 )
 
-target_link_libraries(llbuildCore PRIVATE llbuildBasic llvmSupport sqlite3)
+target_link_libraries(llbuildCore PRIVATE
+  llbuildBasic
+  llvmSupport
+  SQLite::SQLite3)

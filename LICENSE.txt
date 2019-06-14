@@ -224,3 +224,4 @@ Program             Directory
 -------             ---------
 Google Test         llbuild/utils/unittest/googletest
 LLVM                llbuild/lib/llvm, llbuild/include/llvm
+CMake               cmake/modules/FindSQLite3.cmake

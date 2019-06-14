@@ -101,7 +101,9 @@ function(add_unittest test_suite test_name)
 
   add_llbuild_executable(${test_name} ${ARGN})
   set_output_directory(${test_name} ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR} "unused")
-  target_link_libraries(${test_name} gtest gtest_main)
+  target_link_libraries(${test_name} PRIVATE
+    gtest
+    gtest_main)
 
   add_dependencies(${test_suite} ${test_name})
   get_target_property(test_suite_folder ${test_suite} FOLDER)

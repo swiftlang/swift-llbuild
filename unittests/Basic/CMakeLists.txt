@@ -7,8 +7,11 @@ add_llbuild_unittest(BasicTests
   ../BuildSystem/TempDir.cpp
   )
 
-target_link_libraries(BasicTests llbuildBasic llvmSupport)
+target_link_libraries(BasicTests PRIVATE
+  llbuildBasic
+  llvmSupport)
 
 if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-  target_link_libraries(BasicTests curses)
+  target_link_libraries(BasicTests PRIVATE
+    curses)
 endif()

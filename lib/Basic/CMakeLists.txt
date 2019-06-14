@@ -12,12 +12,11 @@ add_llbuild_library(llbuildBasic STATIC
   ShellUtility.cpp
   )
 
-target_link_libraries(llbuildBasic PRIVATE llvmSupport)
-
-if(${CMAKE_SYSTEM_NAME} MATCHES ".*BSD" OR ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-  target_link_libraries(llbuildBasic pthread)
-endif()
+target_link_libraries(llbuildBasic PRIVATE
+  llvmSupport
+  Threads::Threads)
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-  target_link_libraries(llbuildBasic ShlWapi.lib)
+  target_link_libraries(llbuildBasic PRIVATE
+    ShlWapi.lib)
 endif()
