@@ -87,7 +87,7 @@ static int posix_spawn_file_actions_addchdir(posix_spawn_file_actions_t * __rest
 #if HAVE_POSIX_SPAWN_CHDIR
   return ::posix_spawn_file_actions_addchdir_np(file_actions, path);
 #else
-#if defined(__APPLE__) && __MAC_OS_X_VERSION_MAX_ALLOWED >= 101500
+#ifdef __APPLE__
   if (__builtin_available(macOS 10.15, *)) {
     return ::posix_spawn_file_actions_addchdir_np(file_actions, path);
   }
