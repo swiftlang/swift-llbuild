@@ -8,6 +8,8 @@ add_llbuild_unittest(CAPITests
   )
 
 target_link_libraries(CAPITests PRIVATE
+  llvmSupport
+  llbuildBasic
   libllbuild
   SQLite::SQLite3)
 
