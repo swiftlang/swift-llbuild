@@ -880,6 +880,13 @@ class DirectoryContentsTask : public Task {
       return;
     }
 
+    // The input directory may be a 'mkdir' command, which can be cancelled or
+    // skipped by the engine or the delegate. rdar://problem/50380532
+    if (directoryValue.isSkippedCommand()) {
+      engine.taskIsComplete(this, BuildValue::makeSkippedCommand().toData());
+      return;
+    }
+
     std::vector<std::string> filenames;
     getContents(path, filenames);
 
@@ -1294,7 +1301,7 @@ class DirectoryTreeStructureSignatureTask : public Task {
 
       // Request the inputs for each subpath.
       auto value = BuildValue::fromData(valueData);
-      if (value.isMissingInput())
+      if (value.isMissingInput() || value.isSkippedCommand())
         return;
 
       assert(value.isDirectoryContents());
