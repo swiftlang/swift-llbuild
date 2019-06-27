@@ -227,5 +227,6 @@ function(add_swift_module target name deps sources additional_args)
   )
   
   # Add the target.    
-  add_custom_target(${target} ALL DEPENDS ${deps} ${DYLIB_OUTPUT} ${sources} swiftversion)
+  add_custom_target(${target} ALL DEPENDS ${deps} ${DYLIB_OUTPUT} ${sources})
+  add_dependencies(${target} ${SWIFTC_EXECUTABLE})
 endfunction()

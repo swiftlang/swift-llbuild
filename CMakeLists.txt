@@ -202,17 +202,6 @@ if(LLBUILD_ENABLE_ASSERTIONS)
   string(REPLACE "-DNDEBUG" "" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
 endif()
 
-# Add an always out-of-date target to get the Swift compiler version.
-if (SWIFTC_FOUND)
-  set(SWIFT_VERSION ${LLBUILD_OBJ_DIR}/swift-version)
-  add_custom_target(
-    swiftversion ALL
-    COMMAND ${CMAKE_SOURCE_DIR}/utils/write-swift-version ${SWIFTC_EXECUTABLE} ${SWIFT_VERSION}
-    BYPRODUCTS ${SWIFT_VERSION}
-    COMMENT "Checking Swift compiler version"
-  )
-endif()
-
 ###
 
 # Process CMakeLists files for our subdirectories.
