@@ -1078,3 +1078,91 @@ TEST(BuildSystemTaskTests, producedNodeAfterPreviouslyMissing) {
     ASSERT_TRUE(!afterFileInfo.isMissing());
   }
 }
+
+/// Check that directory contents properly handles when commands have been
+/// skipped. rdar://problem/50380532
+TEST(BuildSystemTaskTests, directoryContentsWithSkippedCommand) {
+  TmpDir tempDir(__func__);
+
+  SmallString<256> manifest{ tempDir.str() };
+  for (auto& c : manifest) {
+    if (c == '\\')
+      c = '/';
+  }
+  sys::path::append(manifest, "manifest.llbuild");
+
+
+  {
+    std::error_code ec;
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    assert(!ec);
+
+    os <<
+    "client:\n"
+    "  name: mock\n"
+    "\n"
+    "targets:\n"
+    "  \"\": [\"<all>\"]\n"
+    "\n"
+    "commands:\n"
+    "  \"mkdir-inputDir\":\n"
+    "    tool: mkdir\n"
+    "    outputs: [\"inputDir\"]\n"
+    "  \"read-inputDir\":\n"
+    "    tool: shell\n"
+    "    inputs: [\"inputDir/\"]\n"
+    "    outputs: [\"read-inputDir\"]\n"
+    "    description: \"read-inputDir\"\n"
+    "    args:\n"
+    "      touch read-inputDir\n"
+    "  \"<all>\":\n"
+    "    tool: phony\n"
+    "    inputs: [\"read-inputDir\"]\n"
+    "    outputs: [\"<all>\"]";
+  }
+
+  class CancellingDelegate: public MockBuildSystemDelegate {
+  public:
+    BuildSystem* system = nullptr;
+
+    CancellingDelegate(): MockBuildSystemDelegate() { }
+
+    virtual bool shouldCommandStart(Command* command) override {
+      if (command->getName() == "mkdir-inputDir") {
+        return false;
+      }
+      return true;
+    }
+  };
+
+  // Create the build system.
+  CancellingDelegate delegate;
+  BuildSystem system(delegate, createLocalFileSystem());
+  delegate.system = &system;
+  bool loadingResult = system.loadDescription(manifest);
+  ASSERT_TRUE(loadingResult);
+
+  // Build the default target
+  auto result = system.build(BuildKey::makeTarget(""));
+  ASSERT_TRUE(result.hasValue());
+
+  // The contents should propagate the skipped command
+  result = system.build(BuildKey::makeDirectoryContents("inputDir"));
+  ASSERT_TRUE(result.hasValue());
+  ASSERT_TRUE(result.getValue().isSkippedCommand());
+
+  // Signatures don't need the contents and should be fine with encoding the
+  // skipped value in the signature.
+  result = system.build(BuildKey::makeDirectoryTreeSignature("inputDir", {}));
+  ASSERT_TRUE(result.hasValue());
+  ASSERT_FALSE(result.getValue().isSkippedCommand());
+
+  auto filters = StringList({"filter"});
+  result = system.build(BuildKey::makeDirectoryTreeSignature("inputDir", filters));
+  ASSERT_TRUE(result.hasValue());
+  ASSERT_FALSE(result.getValue().isSkippedCommand());
+
+  result = system.build(BuildKey::makeDirectoryTreeStructureSignature("inputDir"));
+  ASSERT_TRUE(result.hasValue());
+  ASSERT_FALSE(result.getValue().isSkippedCommand());
+}
