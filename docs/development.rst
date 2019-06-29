@@ -188,7 +188,7 @@ Swift conventions.
 
 * Examples of using `llbuild` are available under `examples/`.
 
-* There are two kinds of correctness tests include in the project:
+* There are three kinds of correctness tests include in the project:
 
   **LLVM-Style Functional Tests**
 
@@ -203,6 +203,11 @@ Swift conventions.
     These tests are located under `unittests/` and then layed out according to
     library. The tests are written using the
     [Googletest](https://code.google.com/p/googletest/) framework.
+
+  **SwiftPM Unit Tests**
+
+    These tests are located under `unittests/Swift`. The tests are written using
+    the XCTest framework. Run them by executing `swift test` in the root level.
 
   All of these tests are run by default (by `lit`) during the build.
 

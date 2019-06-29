@@ -51,12 +51,6 @@ public struct Key: CustomStringConvertible, Equatable, Hashable {
         return "<Key: '\(toString())'>"
     }
 
-    // MARK: Hashable Conformance
-
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(data)
-    }
-
     // MARK: Implementation
 
     public init(_ data: [UInt8]) { self.data = data }
@@ -81,12 +75,8 @@ public struct Key: CustomStringConvertible, Equatable, Hashable {
     }
 }
 
-public func ==(lhs: Key, rhs: Key) -> Bool {
-    return lhs.data == rhs.data
-}
-
 /// Value objects are the result of building rules.
-public struct Value: CustomStringConvertible {
+public struct Value: CustomStringConvertible, Equatable, Hashable {
     public let data: [UInt8]
 
     public var description: String {

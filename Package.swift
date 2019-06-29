@@ -92,6 +92,10 @@ let package = Package(
             name: "llbuildNinjaTests",
             dependencies: ["llbuildNinja", "gtest"],
             path: "unittests/Ninja"),
+        .testTarget(
+            name: "llbuildSwiftTests",
+            dependencies: ["llbuildSwift"],
+            path: "unittests/Swift"),
         
         // MARK: GoogleTest
 

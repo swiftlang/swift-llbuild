@@ -15,3 +15,10 @@ mkdir -p "${BUILDROOT}"
 cd "${BUILDROOT}"
 cmake -G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ "${SRCROOT}"
 ninja test
+
+# run Swift package tests if `swift` is available
+if [ -x "$(command -v swift)" ]; then
+  swift test
+elif
+  echo 'Skipping Swift package tests because `swift` couldn\'t be found.'
+fi

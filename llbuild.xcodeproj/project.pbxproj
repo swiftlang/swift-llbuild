@@ -112,6 +112,8 @@
 		9DDD8BE11DDCAB9A00FB62D2 /* SQLiteBuildDBTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9DDD8BDF1DDCAB9A00FB62D2 /* SQLiteBuildDBTest.cpp */; };
 		B505BFB3228FCB3E00255BD7 /* BuildDB-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B505BFB1228FCB3000255BD7 /* BuildDB-C-API.cpp */; };
 		B505BFB4228FCB3F00255BD7 /* BuildDB-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B505BFB1228FCB3000255BD7 /* BuildDB-C-API.cpp */; };
+		B546B39922C65CFB007046C0 /* llbuild.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1D191BE1B47232B000C4E95 /* llbuild.framework */; };
+		B546B3A922CA49AB007046C0 /* BuildSystemBindingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B546B3A022C65DF0007046C0 /* BuildSystemBindingsTests.swift */; };
 		B5A84D0C22943F9200A59064 /* db.h in Headers */ = {isa = PBXBuildFile; fileRef = B505BFB5228FCBAB00255BD7 /* db.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		BC669C54205A2C2000942C3B /* BuildSystemBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8DEF0620300AAF00E9EF0C /* BuildSystemBindings.swift */; };
 		BC669C55205A2C2000942C3B /* CoreBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8DEF0720300AAF00E9EF0C /* CoreBindings.swift */; };
@@ -340,6 +342,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 9DB047A71DF9D43D006CDF52;
 			remoteInfo = BuildSystemTests;
+		};
+		B546B39A22C65CFB007046C0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1D191BD1B47232B000C4E95;
+			remoteInfo = "llbuild-framework";
 		};
 		E104FAF81B655BB2005C68A0 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -923,6 +932,9 @@
 		9DDD8BDF1DDCAB9A00FB62D2 /* SQLiteBuildDBTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SQLiteBuildDBTest.cpp; sourceTree = "<group>"; };
 		B505BFB1228FCB3000255BD7 /* BuildDB-C-API.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "BuildDB-C-API.cpp"; sourceTree = "<group>"; };
 		B505BFB5228FCBAB00255BD7 /* db.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = db.h; sourceTree = "<group>"; };
+		B546B39422C65CFB007046C0 /* llbuildSwiftTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = llbuildSwiftTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B546B39822C65CFB007046C0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = ../../llbuildSwiftTests/Info.plist; sourceTree = "<group>"; };
+		B546B3A022C65DF0007046C0 /* BuildSystemBindingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildSystemBindingsTests.swift; sourceTree = "<group>"; };
 		B563CEA620A6252500276198 /* CrossPlatformCompatibility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CrossPlatformCompatibility.h; sourceTree = "<group>"; };
 		BC8DEF0520300AAF00E9EF0C /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; tabWidth = 2; };
 		BC8DEF0620300AAF00E9EF0C /* BuildSystemBindings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BuildSystemBindings.swift; sourceTree = "<group>"; };
@@ -1246,6 +1258,14 @@
 				9DB047BC1DF9D4AA006CDF52 /* libllvmSupport.a in Frameworks */,
 				9DB047BA1DF9D4A4006CDF52 /* libgtest_main.a in Frameworks */,
 				9DB047BB1DF9D4A4006CDF52 /* libgtest.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B546B39122C65CFB007046C0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B546B39922C65CFB007046C0 /* llbuild.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1665,6 +1685,15 @@
 			path = BuildSystem;
 			sourceTree = "<group>";
 		};
+		B546B39F22C65D2E007046C0 /* Swift */ = {
+			isa = PBXGroup;
+			children = (
+				B546B39822C65CFB007046C0 /* Info.plist */,
+				B546B3A022C65DF0007046C0 /* BuildSystemBindingsTests.swift */,
+			);
+			path = Swift;
+			sourceTree = "<group>";
+		};
 		BC8DEF0420300AAF00E9EF0C /* llbuildSwift */ = {
 			isa = PBXGroup;
 			children = (
@@ -1800,6 +1829,7 @@
 				E1604CB11BB9E01D001153A1 /* swift-build-tool */,
 				9DB047A81DF9D43D006CDF52 /* BuildSystemTests */,
 				40B3C91A20D3AEC9007C5847 /* CAPITests */,
+				B546B39422C65CFB007046C0 /* llbuildSwiftTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -2087,6 +2117,7 @@
 				E1A224B419F998D40059043E /* Core */,
 				9DB0478A1DF9D39E006CDF52 /* BuildSystem */,
 				E1A224B819F998D40059043E /* Ninja */,
+				B546B39F22C65D2E007046C0 /* Swift */,
 				E1A224B319F998D40059043E /* CMakeLists.txt */,
 			);
 			path = unittests;
@@ -2608,6 +2639,24 @@
 			productReference = 9DB047A81DF9D43D006CDF52 /* BuildSystemTests */;
 			productType = "com.apple.product-type.tool";
 		};
+		B546B39322C65CFB007046C0 /* llbuildSwiftTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B546B39C22C65CFB007046C0 /* Build configuration list for PBXNativeTarget "llbuildSwiftTests" */;
+			buildPhases = (
+				B546B39022C65CFB007046C0 /* Sources */,
+				B546B39122C65CFB007046C0 /* Frameworks */,
+				B546B39222C65CFB007046C0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B546B39B22C65CFB007046C0 /* PBXTargetDependency */,
+			);
+			name = llbuildSwiftTests;
+			productName = llbuildSwiftTests;
+			productReference = B546B39422C65CFB007046C0 /* llbuildSwiftTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		E10D5CD919FEBF6A00211ED4 /* LitXCTestAdaptor */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = E10D5CE219FEBF6A00211ED4 /* Build configuration list for PBXNativeTarget "LitXCTestAdaptor" */;
@@ -2960,6 +3009,10 @@
 						CreatedOnToolsVersion = 8.3;
 						ProvisioningStyle = Automatic;
 					};
+					B546B39322C65CFB007046C0 = {
+						CreatedOnToolsVersion = 10.0;
+						ProvisioningStyle = Manual;
+					};
 					E10D5CD919FEBF6A00211ED4 = {
 						CreatedOnToolsVersion = 6.3;
 						ProvisioningStyle = Manual;
@@ -3077,11 +3130,19 @@
 				E1A2254219F9A20D0059043E /* test */,
 				E10D5CD919FEBF6A00211ED4 /* LitXCTestAdaptor */,
 				E1C404AB1A0308F3003392BA /* PerfTests */,
+				B546B39322C65CFB007046C0 /* llbuildSwiftTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		B546B39222C65CFB007046C0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E10D5CD819FEBF6A00211ED4 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -3278,6 +3339,14 @@
 				9D0A6D811E1FFEA800BE636F /* TempDir.cpp in Sources */,
 				E1075ED71E4EA417007D52C6 /* BuildSystemTaskTests.cpp in Sources */,
 				E1B3B9DC1E4D5A7A00DF1FBC /* MockBuildSystemDelegate.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B546B39022C65CFB007046C0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B546B3A922CA49AB007046C0 /* BuildSystemBindingsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3574,6 +3643,11 @@
 			target = 9DB047A71DF9D43D006CDF52 /* BuildSystemTests */;
 			targetProxy = 9DB047BE1DF9D4B8006CDF52 /* PBXContainerItemProxy */;
 		};
+		B546B39B22C65CFB007046C0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1D191BD1B47232B000C4E95 /* llbuild-framework */;
+			targetProxy = B546B39A22C65CFB007046C0 /* PBXContainerItemProxy */;
+		};
 		E104FAF91B655BB2005C68A0 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = E1B839481B541BFD00DB876B /* llbuildBuildSystem */;
@@ -3867,6 +3941,24 @@
 			};
 			name = Release;
 		};
+		B546B39D22C65CFB007046C0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INFOPLIST_FILE = unittests/Swift/Info.plist;
+				PRODUCT_BUNDLE_IDENTIFIER = com.apple.llbuildSwiftTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		B546B39E22C65CFB007046C0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INFOPLIST_FILE = unittests/Swift/Info.plist;
+				PRODUCT_BUNDLE_IDENTIFIER = com.apple.llbuildSwiftTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		E10D5CE019FEBF6A00211ED4 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -3887,6 +3979,7 @@
 		E10D5CE119FEBF6A00211ED4 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(DEVELOPER_FRAMEWORKS_DIR)",
 					"$(inherited)",
@@ -4371,6 +4464,15 @@
 			buildConfigurations = (
 				9DB047AD1DF9D43D006CDF52 /* Debug */,
 				9DB047AE1DF9D43D006CDF52 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B546B39C22C65CFB007046C0 /* Build configuration list for PBXNativeTarget "llbuildSwiftTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B546B39D22C65CFB007046C0 /* Debug */,
+				B546B39E22C65CFB007046C0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
