@@ -78,7 +78,10 @@ void setCurrentDebugTypes(const char **Types, unsigned Count) {
 } // namespace llvm
 
 // All Debug.h functionality is a no-op in NDEBUG mode.
-#ifndef NDEBUG
+//
+// LLBUILD-ONLY: Debug.h macros are disabled for llbuild (they inject static
+// constructors into library code).
+#if !defined(NDEBUG) && defined(LLVM_CODE_DISABLED_FOR_LLBUILD)
 
 // -debug - Command line option to enable the DEBUG statements in the passes.
 // This flag may only be enabled in debug builds.
