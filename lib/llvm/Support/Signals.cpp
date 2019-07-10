@@ -38,10 +38,13 @@ using namespace llvm;
 
 // Use explicit storage to avoid accessing cl::opt in a signal handler.
 static bool DisableSymbolicationFlag = false;
+
+#if defined(LLVM_CODE_DISABLED_FOR_LLBUILD)
 static cl::opt<bool, true>
     DisableSymbolication("disable-symbolication",
                          cl::desc("Disable symbolizing crash backtraces."),
                          cl::location(DisableSymbolicationFlag), cl::Hidden);
+#endif
 
 // Callbacks to run in signal handler must be lock-free because a signal handler
 // could be running as we add new callbacks. We don't add unbounded numbers of
