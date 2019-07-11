@@ -112,7 +112,9 @@
 		9DDD8BE11DDCAB9A00FB62D2 /* SQLiteBuildDBTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9DDD8BDF1DDCAB9A00FB62D2 /* SQLiteBuildDBTest.cpp */; };
 		B505BFB3228FCB3E00255BD7 /* BuildDB-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B505BFB1228FCB3000255BD7 /* BuildDB-C-API.cpp */; };
 		B505BFB4228FCB3F00255BD7 /* BuildDB-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B505BFB1228FCB3000255BD7 /* BuildDB-C-API.cpp */; };
+		B505BFB8228FCFEE00255BD7 /* BuildDBBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B505BFB6228FCFAF00255BD7 /* BuildDBBindings.swift */; };
 		B546B39922C65CFB007046C0 /* llbuild.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1D191BE1B47232B000C4E95 /* llbuild.framework */; };
+		B546B3A522CA161A007046C0 /* BuildDBBindingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B546B3A422CA161A007046C0 /* BuildDBBindingsTests.swift */; };
 		B546B3A922CA49AB007046C0 /* BuildSystemBindingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B546B3A022C65DF0007046C0 /* BuildSystemBindingsTests.swift */; };
 		B5A84D0C22943F9200A59064 /* db.h in Headers */ = {isa = PBXBuildFile; fileRef = B505BFB5228FCBAB00255BD7 /* db.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		BC669C54205A2C2000942C3B /* BuildSystemBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8DEF0620300AAF00E9EF0C /* BuildSystemBindings.swift */; };
@@ -932,9 +934,11 @@
 		9DDD8BDF1DDCAB9A00FB62D2 /* SQLiteBuildDBTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SQLiteBuildDBTest.cpp; sourceTree = "<group>"; };
 		B505BFB1228FCB3000255BD7 /* BuildDB-C-API.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "BuildDB-C-API.cpp"; sourceTree = "<group>"; };
 		B505BFB5228FCBAB00255BD7 /* db.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = db.h; sourceTree = "<group>"; };
+		B505BFB6228FCFAF00255BD7 /* BuildDBBindings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildDBBindings.swift; sourceTree = "<group>"; };
 		B546B39422C65CFB007046C0 /* llbuildSwiftTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = llbuildSwiftTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B546B39822C65CFB007046C0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = ../../llbuildSwiftTests/Info.plist; sourceTree = "<group>"; };
 		B546B3A022C65DF0007046C0 /* BuildSystemBindingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildSystemBindingsTests.swift; sourceTree = "<group>"; };
+		B546B3A422CA161A007046C0 /* BuildDBBindingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildDBBindingsTests.swift; sourceTree = "<group>"; };
 		B563CEA620A6252500276198 /* CrossPlatformCompatibility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CrossPlatformCompatibility.h; sourceTree = "<group>"; };
 		BC8DEF0520300AAF00E9EF0C /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; tabWidth = 2; };
 		BC8DEF0620300AAF00E9EF0C /* BuildSystemBindings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BuildSystemBindings.swift; sourceTree = "<group>"; };
@@ -1690,6 +1694,7 @@
 			children = (
 				B546B39822C65CFB007046C0 /* Info.plist */,
 				B546B3A022C65DF0007046C0 /* BuildSystemBindingsTests.swift */,
+				B546B3A422CA161A007046C0 /* BuildDBBindingsTests.swift */,
 			);
 			path = Swift;
 			sourceTree = "<group>";
@@ -1700,6 +1705,7 @@
 				BC8DEF0520300AAF00E9EF0C /* CMakeLists.txt */,
 				BC8DEF0620300AAF00E9EF0C /* BuildSystemBindings.swift */,
 				BC8DEF0720300AAF00E9EF0C /* CoreBindings.swift */,
+				B505BFB6228FCFAF00255BD7 /* BuildDBBindings.swift */,
 			);
 			indentWidth = 4;
 			path = llbuildSwift;
@@ -3347,6 +3353,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B546B3A922CA49AB007046C0 /* BuildSystemBindingsTests.swift in Sources */,
+				B546B3A522CA161A007046C0 /* BuildDBBindingsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3586,6 +3593,7 @@
 				E1192CEF1C49DBA900F85890 /* Core-C-API.cpp in Sources */,
 				BC669C54205A2C2000942C3B /* BuildSystemBindings.swift in Sources */,
 				BC669C55205A2C2000942C3B /* CoreBindings.swift in Sources */,
+				B505BFB8228FCFEE00255BD7 /* BuildDBBindings.swift in Sources */,
 				B505BFB3228FCB3E00255BD7 /* BuildDB-C-API.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
