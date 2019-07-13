@@ -1,0 +1,26 @@
+# Check that rules are properly scoped in subninja files (1.6+ semantics).
+#
+# RUN: %{llbuild} ninja load-manifest %s > %t 2> %t.err
+# RUN: %{FileCheck} < %t %s
+# RUN: %{FileCheck} --check-prefix=CHECK-ERR < %t.err %s
+
+# Check that subninja establishes a new rule context; this will also create
+# a new command using ${parent_var} so we can check the parent scope worked
+# properly.
+#
+# CHECK: build "subninja1": ECHO
+# CHECK-NEXT: command = "echo 1"
+subninja Inputs/subninja-rule-scoping-1.ninja
+# CHECK: build "subninja2": ECHO
+# CHECK-NEXT: command = "echo 2"
+subninja Inputs/subninja-rule-scoping-2.ninja
+
+# Verify no duplicate rules are detected.
+#
+# CHECK-ERR-NOT: duplicate rule
+
+# Verify that the build commandin subninja-2 preceeding the rule declaration was
+# diagnosed.
+#
+# CHECK-ERR: Inputs/subninja-rule-scoping-2.ninja:1:21: error: unknown rule
+# CHEC-ERR-NEXT: build subninja2-err: ECHO

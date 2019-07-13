@@ -39,7 +39,7 @@ Manifest::Manifest() {
 
   // Create the built-in phony rule, and add it to the rule map.
   phonyRule = new (getAllocator()) Rule("phony");
-  rules["phony"] = phonyRule;
+  getRootScope().getRules()["phony"] = phonyRule;
 }
 
 Node* Manifest::getOrCreateNode(StringRef path) {

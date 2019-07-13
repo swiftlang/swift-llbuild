@@ -320,9 +320,9 @@ public:
     StringRef name(nameTok.start, nameTok.length);
 
     // Resolve the rule.
-    auto it = theManifest->getRules().find(name);
+    auto it = getCurrentScope().getRules().find(name);
     Rule* rule;
-    if (it == theManifest->getRules().end()) {
+    if (it == getCurrentScope().getRules().end()) {
       error("unknown rule", nameTok);
 
       // Ensure we always have a rule for each command.
@@ -579,7 +579,7 @@ public:
     StringRef name(nameTok.start, nameTok.length);
 
     // Find the hash slot.
-    auto& result = theManifest->getRules()[name];
+    auto& result = getCurrentScope().getRules()[name];
 
     // Diagnose if the rule already exists (we still create a new one).
     if (result) {

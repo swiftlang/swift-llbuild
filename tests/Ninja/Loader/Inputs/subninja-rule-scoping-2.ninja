@@ -1,0 +1,6 @@
+build subninja2-err: ECHO
+
+rule ECHO
+  command = echo 2
+
+build subninja2: ECHO

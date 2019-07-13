@@ -1563,7 +1563,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     if (option == "--version") {
       // Report a fake version for tools (like CMake) that detect compatibility
       // based on the 'Ninja' version.
-      printf("1.5 Ninja Compatible (%s)\n", getLLBuildFullVersion().c_str());
+      printf("1.6 Ninja Compatible (%s)\n", getLLBuildFullVersion().c_str());
       return 0;
     } else if (option == "--help") {
       usage(/*exitCode=*/0);
