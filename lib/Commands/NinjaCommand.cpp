@@ -426,9 +426,9 @@ static int executeLoadManifestCommand(const std::vector<std::string>& args,
 
   // Dump the top-level bindings.
   std::cout << "# Top-Level Bindings\n";
-  assert(manifest->getBindings().getParentScope() == nullptr);
+  assert(manifest->getRootScope().getParent() == nullptr);
   std::vector<std::pair<std::string, std::string>> bindings;
-  for (const auto& entry: manifest->getBindings().getEntries()) {
+  for (const auto& entry: manifest->getRootScope().getBindings()) {
     bindings.push_back({ entry.getKey(), entry.getValue() });
   }
   std::sort(bindings.begin(), bindings.end());
