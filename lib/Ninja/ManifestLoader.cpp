@@ -47,15 +47,15 @@ class ManifestLoaderImpl: public ParseActions {
     std::unique_ptr<char[]> data;
     /// The parser for the file.
     std::unique_ptr<Parser> parser;
-    /// The active binding set.
-    BindingSet& bindings;
+    /// The active scope..
+    Scope& scope;
 
     IncludeEntry(StringRef filename,
                  std::unique_ptr<char[]> data,
                  std::unique_ptr<class Parser> parser,
-                 BindingSet& bindings)
+                 Scope& scope)
       : filename(filename), data(std::move(data)), parser(std::move(parser)),
-        bindings(bindings) {}
+        scope(scope) {}
   };
 
   std::string mainFilename;
@@ -80,7 +80,7 @@ public:
     theManifest.reset(new Manifest);
 
     // Enter the main file.
-    if (!enterFile(mainFilename, theManifest->getBindings()))
+    if (!enterFile(mainFilename, theManifest->getRootScope()))
       return nullptr;
 
     // Run the parser.
@@ -91,7 +91,7 @@ public:
     return std::move(theManifest);
   }
 
-  bool enterFile(const std::string& filename, BindingSet& bindings,
+  bool enterFile(const std::string& filename, Scope& scope,
                  const Token* forToken = nullptr) {
     // Load the file data.
     std::unique_ptr<char[]> data;
@@ -106,7 +106,7 @@ public:
     auto fileParser = llvm::make_unique<Parser>(data.get(), length, *this);
     includeStack.push_back(IncludeEntry(filename, std::move(data),
                                         std::move(fileParser),
-                                        bindings));
+                                        scope));
 
     return true;
   }
@@ -124,9 +124,9 @@ public:
     assert(!includeStack.empty());
     return includeStack.back().filename;
   }
-  BindingSet& getCurrentBindings() const {
+  Scope& getCurrentScope() const {
     assert(!includeStack.empty());
-    return includeStack.back().bindings;
+    return includeStack.back().scope;
   }
 
   void evalString(void* userContext, StringRef string, raw_ostream& result,
@@ -232,14 +232,14 @@ public:
 
   /// Given a string template token, evaluate it against the given \arg Bindings
   /// and return the resulting string.
-  void evalString(const Token& value, const BindingSet& bindings,
+  void evalString(const Token& value, const Scope& scope,
                   SmallVectorImpl<char>& storage) {
     assert(value.tokenKind == Token::Kind::String && "invalid token kind");
     
     llvm::raw_svector_ostream result(storage);
     evalString(nullptr, StringRef(value.start, value.length), result,
                /*Lookup=*/ [&](void*, StringRef name, raw_ostream& result) {
-                 result << bindings.lookup(name);
+                 result << scope.lookupBinding(name);
                },
                /*Error=*/ [this, &value](const std::string& msg) {
                  error(msg, value);
@@ -266,11 +266,11 @@ public:
     // Extract the name string.
     StringRef name(nameTok.start, nameTok.length);
 
-    // Evaluate the value string with the current top-level bindings.
+    // Evaluate the value string with the current bindings.
     SmallString<256> value;
-    evalString(valueTok, getCurrentBindings(), value);
+    evalString(valueTok, getCurrentScope(), value);
 
-    getCurrentBindings().insert(name, value.str());
+    getCurrentScope().insertBinding(name, value.str());
   }
 
   virtual void actOnDefaultDecl(ArrayRef<Token> nameToks) override {
@@ -291,20 +291,20 @@ public:
   virtual void actOnIncludeDecl(bool isInclude,
                                 const Token& pathTok) override {
     SmallString<256> path;
-    evalString(pathTok, getCurrentBindings(), path);
+    evalString(pathTok, getCurrentScope(), path);
 
     // Enter the new file, with a new binding scope if this is a "subninja"
     // decl.
     if (isInclude) {
-      if (enterFile(path.str(), getCurrentBindings(), &pathTok)) {
+      if (enterFile(path.str(), getCurrentScope(), &pathTok)) {
         // Run the parser for the included file.
         getCurrentParser()->parse();
       }
     } else {
       // Establish a local binding set and use that to contain the bindings for
       // the subninja.
-      BindingSet subninjaBindings(&getCurrentBindings());
-      if (enterFile(path.str(), subninjaBindings, &pathTok)) {
+      Scope subninjaScope(&getCurrentScope());
+      if (enterFile(path.str(), subninjaScope, &pathTok)) {
         // Run the parser for the included file.
         getCurrentParser()->parse();
       }
@@ -337,7 +337,7 @@ public:
     for (const auto& token: outputTokens) {
       // Evaluate the token string.
       SmallString<256> path;
-      evalString(token, getCurrentBindings(), path);
+      evalString(token, getCurrentScope(), path);
       if (path.empty()) {
         error("empty output path", token);
       }
@@ -346,7 +346,7 @@ public:
     for (const auto& token: inputTokens) {
       // Evaluate the token string.
       SmallString<256> path;
-      evalString(token, getCurrentBindings(), path);
+      evalString(token, getCurrentScope(), path);
       if (path.empty()) {
         error("empty input path", token);
       }
@@ -373,7 +373,7 @@ public:
     // The value in a build decl is always evaluated immediately, but only in
     // the context of the top-level bindings.
     SmallString<256> value;
-    evalString(valueTok, getCurrentBindings(), value);
+    evalString(valueTok, getCurrentScope(), value);
     
     decl->getParameters()[name] = value.str();
   }
@@ -431,7 +431,7 @@ public:
       return;
     }
       
-    result << context->loader.getCurrentBindings().lookup(name);
+    result << context->loader.getCurrentScope().lookupBinding(name);
   }
   StringRef lookupNamedBuildParameter(Command* decl, const Token& startTok,
                                       StringRef name,
@@ -551,7 +551,7 @@ public:
 
     // Evaluate the value string with the current top-level bindings.
     SmallString<256> value;
-    evalString(valueTok, getCurrentBindings(), value);
+    evalString(valueTok, getCurrentScope(), value);
 
     if (name == "depth") {
       long intValue;

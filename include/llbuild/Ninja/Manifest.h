@@ -34,41 +34,42 @@ namespace ninja {
 class Pool;
 class Rule;
 
-/// This class represents a set of name to value variable bindings.
-class BindingSet {
-  /// The parent binding scope, if any.
-  const BindingSet *parentScope = 0;
+/// This class represents a Ninja manifest scope (used to contain variable
+/// bindings).
+class Scope {
+  /// The parent scope, if any.
+  const Scope *parent = 0;
 
-  /// The actual bindings, mapping from Name to Value.
+  /// The variable bindings, mapping from Name to Value.
   llvm::StringMap<std::string> entries;
 
 public:
-  BindingSet(const BindingSet* parentScope = 0) : parentScope(parentScope) {}
+  Scope(const Scope* parent = 0) : parent(parent) {}
 
   /// Get the parent scope.
-  const BindingSet* getParentScope() const {
-    return parentScope;
+  const Scope* getParent() const {
+    return parent;
   }
 
-  /// Get the map of bindings.
-  const llvm::StringMap<std::string>& getEntries() const {
+  /// Get the map of variable bindings.
+  const llvm::StringMap<std::string>& getBindings() const {
     return entries;
   }
 
   /// Insert a binding into the set.
-  void insert(StringRef name, StringRef value) {
+  void insertBinding(StringRef name, StringRef value) {
     entries[name] = value;
   }
 
   /// Look up the given variable name in the binding set, returning its value or
   /// the empty string if not found.
-  StringRef lookup(StringRef name) const {
+  StringRef lookupBinding(StringRef name) const {
     auto it = entries.find(name);
     if (it != entries.end())
       return it->second;
 
-    if (parentScope)
-      return parentScope->lookup(name);
+    if (parent)
+      return parent->lookupBinding(name);
 
     return "";
   }
@@ -329,8 +330,8 @@ class Manifest {
   /// The pool allocator used for manifest objects.
   llvm::BumpPtrAllocator allocator;
   
-  /// The top level variable bindings.
-  BindingSet bindings;
+  /// The root scope for variable bindings.
+  Scope rootScope;
 
   /// The nodes in the manifest, stored as a map on the node name.
   //
@@ -371,10 +372,10 @@ public:
   /// Get the allocator to use for manifest objects.
   llvm::BumpPtrAllocator& getAllocator() { return allocator; }
 
-  /// Get the final set of top level variable bindings.
-  BindingSet& getBindings() { return bindings; }
-  /// Get the final set of top level variable bindings.
-  const BindingSet& getBindings() const { return bindings; }
+  /// Get the root scope.
+  Scope& getRootScope() { return rootScope; }
+  /// Get the root scope.
+  const Scope& getRootScope() const { return rootScope; }
 
   node_set& getNodes() {
     return nodes;
