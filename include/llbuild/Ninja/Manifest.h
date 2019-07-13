@@ -43,6 +43,13 @@ class Scope {
   /// The variable bindings, mapping from Name to Value.
   llvm::StringMap<std::string> entries;
 
+  /// The rules in the manifest, stored as a map on the rule name.
+  //
+  // FIXME: This is an inefficent map, given that the string is contained
+  // inside the rule.
+  typedef llvm::StringMap<Rule*> rule_set;
+  rule_set rules;
+
 public:
   Scope(const Scope* parent = 0) : parent(parent) {}
 
@@ -56,6 +63,16 @@ public:
     return entries;
   }
 
+  /// Get the map of rule bindings.
+  rule_set& getRules() {
+    return rules;
+  }
+
+  /// Get the map of rule bindings.
+  const rule_set& getRules() const {
+    return rules;
+  }
+  
   /// Insert a binding into the set.
   void insertBinding(StringRef name, StringRef value) {
     entries[name] = value;
@@ -350,13 +367,6 @@ class Manifest {
   typedef llvm::StringMap<Pool*> pool_set;
   pool_set pools;
 
-  /// The rules in the manifest, stored as a map on the rule name.
-  //
-  // FIXME: This is an inefficent map, given that the string is contained
-  // inside the rule.
-  typedef llvm::StringMap<Rule*> rule_set;
-  rule_set rules;
-
   /// The default targets, if specified.
   std::vector<Node*> defaultTargets;
 
@@ -399,13 +409,6 @@ public:
   }
   const pool_set& getPools() const {
     return pools;
-  }
-
-  rule_set& getRules() {
-    return rules;
-  }
-  const rule_set& getRules() const {
-    return rules;
   }
 
   std::vector<Node*>& getDefaultTargets() {

@@ -1,0 +1,4 @@
+rule ECHO
+  command = echo 1
+
+build subninja1: ECHO

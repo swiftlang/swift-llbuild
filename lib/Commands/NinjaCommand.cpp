@@ -461,7 +461,7 @@ static int executeLoadManifestCommand(const std::vector<std::string>& args,
   // Dump the rules.
   std::cout << "# Rules\n";
   std::vector<ninja::Rule*> rules;
-  for (const auto& entry: manifest->getRules()) {
+  for (const auto& entry: manifest->getRootScope().getRules()) {
     rules.push_back(entry.getValue());
   }
   std::sort(rules.begin(), rules.end(), [] (ninja::Rule* a, ninja::Rule* b) {
