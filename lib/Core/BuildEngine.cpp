@@ -904,6 +904,13 @@ private:
               ruleInfo->keyID, ruleInfo->rule, ruleInfo->result, &error);
           if (!result) {
             delegate.error(error);
+
+            // Decrement our count of outstanding tasks. This must be done prior
+            // the subsequent synchronous cancellation, since it will otherwise
+            // deadlock waiting for the task we have already popped off the
+            // queue. rdar://problem/50203529
+            --numOutstandingUnfinishedTasks;
+
             cancelRemainingTasks();
             return false;
           }
