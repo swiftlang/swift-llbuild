@@ -1,25 +1,34 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python
 
-set -e
+import sys
+import subprocess
 
-# This script writes the Swift compiler version to a file. If the file is
-# already present, it'll only update if the version has changed.
+def write_file_if_changed(path, data):
+    try:
+        with open(path) as f:
+            old_data = f.read()
+    except:
+        old_data = None
+    if old_data == data:
+        return
 
-if ! [ $# -eq 2 ]; then
-    echo "Usage: <compiler-path> <file-path>"
-    exit
-fi
+    # Write the contents.
+    with open(path, "w") as f:
+        f.write(data)
 
-SWIFTC=$1
-FILEPATH=$2
+def main():
+    args = sys.argv
+    if len(sys.argv) != 3:
+        print("Usage: <compiler-path> <file-path>")
+        raise SystemExit(1)
 
-VERSION="$($SWIFTC -version | tr -d '\n')"
+    file_path = args[2]
+    compiler = args[1]
+    data = subprocess.check_output(
+        [compiler, "-version"], universal_newlines=True).strip()
 
-if [[ -f $FILEPATH ]]; then
-    FILECONTENT="$(cat $FILEPATH)"
-    if [[ "$FILECONTENT" != "$VERSION" ]]; then
-        echo $VERSION > $FILEPATH
-    fi
-else
-    echo $VERSION > $FILEPATH
-fi
+    write_file_if_changed(file_path, data)
+
+if __name__ == '__main__':
+    main()
+
