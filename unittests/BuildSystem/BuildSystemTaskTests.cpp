@@ -1157,7 +1157,7 @@ TEST(BuildSystemTaskTests, directoryContentsWithSkippedCommand) {
   ASSERT_TRUE(result.hasValue());
   ASSERT_FALSE(result.getValue().isSkippedCommand());
 
-  auto filters = StringList({"filter"});
+  auto filters = StringList("filter");
   result = system.build(BuildKey::makeDirectoryTreeSignature("inputDir", filters));
   ASSERT_TRUE(result.hasValue());
   ASSERT_FALSE(result.getValue().isSkippedCommand());
