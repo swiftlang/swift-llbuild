@@ -46,6 +46,10 @@ typedef struct llb_data_t_ {
     const uint8_t* data;
 } llb_data_t;
 
+/// Frees allocated memory for a data object
+LLBUILD_EXPORT void
+llb_data_destroy(llb_data_t *data);
+
 /// Enumeration describing the possible status of a Rule, used by \see
 /// Rule.updateStatus().
 typedef enum LLBUILD_ENUM_ATTRIBUTES {

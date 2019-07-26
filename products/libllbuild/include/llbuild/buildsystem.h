@@ -199,7 +199,7 @@ struct llb_build_key_t_ {
   /// The kind of key
   llb_build_key_kind_t kind;
   /// The actual key data
-  const char* key;
+  llb_data_t key;
 } ;
 
 /// Invocation parameters for a build system.
@@ -595,14 +595,6 @@ llb_buildsystem_tool_create(const llb_data_t* name,
 /// Opaque handle to a queue job context.
 typedef struct llb_buildsystem_queue_job_context_t_
   llb_buildsystem_queue_job_context_t;
-
-/// Opaque handle to a build key.
-typedef struct llb_buildsystem_key_t_
-  llb_buildsystem_key_t;
-
-/// Opaque handle to a build value.
-typedef struct llb_buildsystem_value_t_
-  llb_buildsystem_value_t;
 
 /// Opaque handle to the interfaces for a running command.
 //

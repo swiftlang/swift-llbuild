@@ -107,54 +107,54 @@ public:
 
   /// Create a key for computing a command result.
   static BuildKey makeCommand(StringRef name) {
-    return BuildKey('C', name);
+    return BuildKey(identifierForKind(Kind::Command), name);
   }
 
   /// Create a key for computing a custom task (manged by a particular command).
   static BuildKey makeCustomTask(StringRef name, StringRef taskData) {
-    return BuildKey('X', name, taskData);
+    return BuildKey(identifierForKind(Kind::CustomTask), name, taskData);
   }
 
   /// Create a key for computing the contents of a directory.
   static BuildKey makeDirectoryContents(StringRef path) {
-    return BuildKey('D', path);
+    return BuildKey(identifierForKind(Kind::DirectoryContents), path);
   }
 
   /// Create a key for computing the filtered contents of a directory.
   static BuildKey makeFilteredDirectoryContents(StringRef path,
                                         const basic::StringList& filters) {
-    return BuildKey('d', path, filters);
+    return BuildKey(identifierForKind(Kind::FilteredDirectoryContents), path, filters);
   }
 
   /// Create a key for computing the contents of a directory.
   static BuildKey makeDirectoryTreeSignature(StringRef path,
                                         const basic::StringList& filters) {
-    return BuildKey('S', path, filters);
+    return BuildKey(identifierForKind(Kind::DirectoryTreeSignature), path, filters);
   }
 
   /// Create a key for computing the structure of a directory.
   static BuildKey makeDirectoryTreeStructureSignature(StringRef path) {
-    return BuildKey('s', path);
+    return BuildKey(identifierForKind(Kind::DirectoryTreeStructureSignature), path);
   }
 
   /// Create a key for computing a node result.
   static BuildKey makeNode(StringRef path) {
-    return BuildKey('N', path);
+    return BuildKey(identifierForKind(Kind::Node), path);
   }
 
   /// Create a key for computing a node result.
   static BuildKey makeNode(const Node* node) {
-    return BuildKey('N', node->getName());
+    return BuildKey(identifierForKind(Kind::Node), node->getName());
   }
 
   /// Create a key for computing a file system stat info result.
   static BuildKey makeStat(StringRef path) {
-    return BuildKey('I', path);
+    return BuildKey(identifierForKind(Kind::Stat), path);
   }
 
   /// Createa a key for computing a target.
   static BuildKey makeTarget(StringRef name) {
-    return BuildKey('T', name);
+    return BuildKey(identifierForKind(Kind::Target), name);
   }
 
   /// @}
@@ -164,7 +164,11 @@ public:
   const KeyType& getKeyData() const { return key; }
 
   Kind getKind() const {
-    switch (key[0]) {
+    return kindForIdentifier(key[0]);
+  }
+  
+  static Kind kindForIdentifier(char identifier) {
+    switch (identifier) {
     case 'C': return Kind::Command;
     case 'D': return Kind::DirectoryContents;
     case 'd': return Kind::FilteredDirectoryContents;
@@ -176,6 +180,21 @@ public:
     case 'X': return Kind::CustomTask;
     default:
       return Kind::Unknown;
+    }
+  }
+  
+  static char identifierForKind(Kind kind) {
+    switch (kind) {
+    case Kind::Command: return 'C';
+    case Kind::DirectoryContents: return 'D';
+    case Kind::FilteredDirectoryContents: return 'd';
+    case Kind::Node: return 'N';
+    case Kind::Stat: return 'I';
+    case Kind::DirectoryTreeSignature: return 'S';
+    case Kind::DirectoryTreeStructureSignature: return 's';
+    case Kind::Target: return 'T';
+    case Kind::CustomTask: return 'X';
+    case Kind::Unknown: return ' ';
     }
   }
 
@@ -242,6 +261,12 @@ public:
     memcpy(&nameSize, &key[1], sizeof(uint32_t));
     uint32_t dataSize = key.size() - 1 - sizeof(uint32_t) - nameSize;
     return StringRef(&key[1 + sizeof(uint32_t) + nameSize], dataSize);
+  }
+  
+  basic::StringList getContentExclusionPatternsAsStringList() const {
+    basic::BinaryDecoder decoder(getContentExclusionPatterns());
+    basic::StringList filters = basic::StringList(decoder);
+    return filters;
   }
 
   StringRef getNodeName() const {

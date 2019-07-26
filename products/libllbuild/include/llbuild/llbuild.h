@@ -108,4 +108,6 @@ LLBUILD_EXPORT int llb_get_api_version(void);
 // The Database component.
 #include "db.h"
 
+#include "buildkey.h"
+
 #endif
