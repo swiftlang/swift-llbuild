@@ -118,7 +118,10 @@
 		B546B3A522CA161A007046C0 /* BuildDBBindingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B546B3A422CA161A007046C0 /* BuildDBBindingsTests.swift */; };
 		B546B3A922CA49AB007046C0 /* BuildSystemBindingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B546B3A022C65DF0007046C0 /* BuildSystemBindingsTests.swift */; };
 		B5A308C522F310E900699B4C /* BuildSystem-C-API-Private.h in Headers */ = {isa = PBXBuildFile; fileRef = B5BE9BB222E8A31000777A06 /* BuildSystem-C-API-Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		B5A308CE22F315A800699B4C /* Internals.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5A308CD22F315A800699B4C /* Internals.swift */; };
 		B5A84D0C22943F9200A59064 /* db.h in Headers */ = {isa = PBXBuildFile; fileRef = B505BFB5228FCBAB00255BD7 /* db.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		B5BE9BA322E8549F00777A06 /* BuildKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5BE9BA222E8549F00777A06 /* BuildKey.swift */; };
+		B5BE9BA522E854C600777A06 /* BuildKeyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5BE9BA422E854C600777A06 /* BuildKeyTests.swift */; };
 		B5BE9BA722E854E300777A06 /* BuildKey-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5BE9BA622E854E300777A06 /* BuildKey-C-API.cpp */; };
 		B5BE9BA822E854E300777A06 /* BuildKey-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5BE9BA622E854E300777A06 /* BuildKey-C-API.cpp */; };
 		B5BE9BAC22E887CD00777A06 /* buildkey.h in Headers */ = {isa = PBXBuildFile; fileRef = B5BE9BAB22E885D900777A06 /* buildkey.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -949,6 +952,9 @@
 		B546B3A422CA161A007046C0 /* BuildDBBindingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildDBBindingsTests.swift; sourceTree = "<group>"; };
 		B563CEA620A6252500276198 /* CrossPlatformCompatibility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CrossPlatformCompatibility.h; sourceTree = "<group>"; };
 		B58006ED22F9E847004869A2 /* Clock.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Clock.h; sourceTree = "<group>"; };
+		B5A308CD22F315A800699B4C /* Internals.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Internals.swift; sourceTree = "<group>"; };
+		B5BE9BA222E8549F00777A06 /* BuildKey.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BuildKey.swift; sourceTree = "<group>"; };
+		B5BE9BA422E854C600777A06 /* BuildKeyTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BuildKeyTests.swift; sourceTree = "<group>"; };
 		B5BE9BA622E854E300777A06 /* BuildKey-C-API.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "BuildKey-C-API.cpp"; sourceTree = "<group>"; };
 		B5BE9BAB22E885D900777A06 /* buildkey.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = buildkey.h; sourceTree = "<group>"; };
 		B5BE9BB222E8A31000777A06 /* BuildSystem-C-API-Private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "BuildSystem-C-API-Private.h"; sourceTree = "<group>"; };
@@ -1707,6 +1713,7 @@
 				B546B39822C65CFB007046C0 /* Info.plist */,
 				B546B3A022C65DF0007046C0 /* BuildSystemBindingsTests.swift */,
 				B546B3A422CA161A007046C0 /* BuildDBBindingsTests.swift */,
+				B5BE9BA422E854C600777A06 /* BuildKeyTests.swift */,
 			);
 			path = Swift;
 			sourceTree = "<group>";
@@ -1718,6 +1725,8 @@
 				BC8DEF0620300AAF00E9EF0C /* BuildSystemBindings.swift */,
 				BC8DEF0720300AAF00E9EF0C /* CoreBindings.swift */,
 				B505BFB6228FCFAF00255BD7 /* BuildDBBindings.swift */,
+				B5BE9BA222E8549F00777A06 /* BuildKey.swift */,
+				B5A308CD22F315A800699B4C /* Internals.swift */,
 			);
 			indentWidth = 4;
 			path = llbuildSwift;
@@ -3373,6 +3382,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B5BE9BA522E854C600777A06 /* BuildKeyTests.swift in Sources */,
 				B546B3A922CA49AB007046C0 /* BuildSystemBindingsTests.swift in Sources */,
 				B546B3A522CA161A007046C0 /* BuildDBBindingsTests.swift in Sources */,
 			);
@@ -3614,6 +3624,8 @@
 				B5BE9BA722E854E300777A06 /* BuildKey-C-API.cpp in Sources */,
 				E1D191C91B472437000C4E95 /* C-API.cpp in Sources */,
 				E1192CEE1C49DBA600F85890 /* BuildSystem-C-API.cpp in Sources */,
+				B5BE9BA322E8549F00777A06 /* BuildKey.swift in Sources */,
+				B5A308CE22F315A800699B4C /* Internals.swift in Sources */,
 				E1192CEF1C49DBA900F85890 /* Core-C-API.cpp in Sources */,
 				BC669C54205A2C2000942C3B /* BuildSystemBindings.swift in Sources */,
 				BC669C55205A2C2000942C3B /* CoreBindings.swift in Sources */,
