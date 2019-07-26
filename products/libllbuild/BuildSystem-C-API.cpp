@@ -22,6 +22,8 @@
 #include "llbuild/Core/BuildEngine.h"
 #include "llbuild/Core/DependencyInfoParser.h"
 
+#include "BuildSystem-C-API-Private.h"
+
 #include "llvm/ADT/Hashing.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/SourceMgr.h"
@@ -38,6 +40,22 @@ using namespace llbuild::buildsystem;
 /* Build Engine API */
 
 namespace {
+
+static llb_build_key_t convertBuildKey(const BuildKey& key) {
+  llb_build_key_t buildKey;
+
+  auto data = key.toData();
+  // we need to remove the first character since it's used for the kind identifier
+  data.erase(data.begin(), data.begin() + 1);
+  
+  buildKey.kind = internalToPublicBuildKeyKind(key.getKind());
+  buildKey.key = {
+    data.length(),
+    (const uint8_t *) strdup(data.c_str()),
+  };
+
+  return buildKey;
+}
 
 class CAPIFileSystem : public basic::FileSystem {
   llb_buildsystem_delegate_t cAPIDelegate;
@@ -281,8 +299,8 @@ public:
   virtual void commandCannotBuildOutputDueToMissingInputs(Command* command,
                Node* outputNode, SmallPtrSet<Node*, 1> inputNodes) override {
     if (cAPIDelegate.command_cannot_build_output_due_to_missing_inputs) {
-      llb_build_key_t output = { llb_build_key_kind_node,
-        strdup(outputNode->getName().str().c_str()) };
+      auto str = outputNode->getName().str();
+      llb_build_key_t output = { llb_build_key_kind_node, { str.size(), (const uint8_t *)strdup(str.c_str()) }};
 
       CAPINodesVector inputs(inputNodes);
 
@@ -294,7 +312,7 @@ public:
         inputs.count()
       );
 
-      free((char *)output.key);
+      llb_data_destroy(&output.key);
     }
   }
 
@@ -308,13 +326,14 @@ public:
       for (auto inputNode : inputNodes) {
         auto& buildKey = keys[idx++];
         buildKey.kind = llb_build_key_kind_node;
-        buildKey.key = strdup(inputNode->getName().str().c_str());
+        auto name = inputNode->getName().str();
+        buildKey.key = { name.size(), (const uint8_t *) strdup(name.c_str()) };
       }
     }
 
     ~CAPINodesVector() {
       for (auto& key : keys) {
-        free((char *)key.key);
+        llb_data_destroy(&key.key);
       }
     }
 
@@ -325,8 +344,8 @@ public:
   virtual void cannotBuildNodeDueToMultipleProducers(Node* outputNode,
                std::vector<Command*> commands) override {
     if (cAPIDelegate.cannot_build_node_due_to_multiple_producers) {
-      llb_build_key_t output = { llb_build_key_kind_node,
-        strdup(outputNode->getName().str().c_str()) };
+      auto str = outputNode->getName().str();
+      llb_build_key_t output = { llb_build_key_kind_node, { str.size(), (const uint8_t *)strdup(str.c_str()) }};
 
       cAPIDelegate.cannot_build_node_due_to_multiple_producers(
         cAPIDelegate.context,
@@ -334,6 +353,8 @@ public:
         (llb_buildsystem_command_t**)commands.data(),
         commands.size()
       );
+      
+      llb_data_destroy(&output.key);
     }
   }
 
@@ -397,56 +418,6 @@ public:
     BuildSystemFrontendDelegate::cancel();
   }
 
-
-  static llb_build_key_t convertBuildKey(const BuildKey& key) {
-    llb_build_key_t buildKey;
-
-    switch (key.getKind()) {
-      case BuildKey::Kind::Command:
-        buildKey.kind = llb_build_key_kind_command;
-        buildKey.key = strdup(key.getCommandName().str().c_str());
-        break;
-      case BuildKey::Kind::CustomTask:
-        buildKey.kind = llb_build_key_kind_custom_task;
-        buildKey.key = strdup(key.getCustomTaskName().str().c_str());
-        break;
-      case BuildKey::Kind::DirectoryContents:
-        buildKey.kind = llb_build_key_kind_directory_contents;
-        buildKey.key = strdup(key.getDirectoryPath().str().c_str());
-        break;
-      case BuildKey::Kind::FilteredDirectoryContents:
-        buildKey.kind = llb_build_key_kind_filtered_directory_contents;
-        buildKey.key = strdup(key.getFilteredDirectoryPath().str().c_str());
-        break;
-      case BuildKey::Kind::DirectoryTreeSignature:
-        buildKey.kind = llb_build_key_kind_directory_tree_signature;
-        buildKey.key = strdup(key.getDirectoryTreeSignaturePath().str().c_str());
-        break;
-      case BuildKey::Kind::DirectoryTreeStructureSignature:
-        buildKey.kind = llb_build_key_kind_directory_tree_structure_signature;
-        buildKey.key = strdup(key.getDirectoryPath().str().c_str());
-        break;
-      case BuildKey::Kind::Node:
-        buildKey.kind = llb_build_key_kind_node;
-        buildKey.key = strdup(key.getNodeName().str().c_str());
-        break;
-      case BuildKey::Kind::Stat:
-        buildKey.kind = llb_build_key_kind_stat;
-        buildKey.key = strdup(key.getStatName().str().c_str());
-        break;
-      case BuildKey::Kind::Target:
-        buildKey.kind = llb_build_key_kind_target;
-        buildKey.key = strdup(key.getTargetName().str().c_str());
-        break;
-      case BuildKey::Kind::Unknown:
-        buildKey.kind = llb_build_key_kind_unknown;
-        buildKey.key = strdup("((unknown))");
-        break;
-    }
-
-    return buildKey;
-  }
-
   class CAPIRulesVector {
   private:
     std::vector<llb_build_key_t> rules;
@@ -464,7 +435,7 @@ public:
 
     ~CAPIRulesVector() {
       for (auto& rule : rules) {
-        free((char *)rule.key);
+        llb_data_destroy(&rule.key);
       }
     }
 
@@ -506,7 +477,7 @@ public:
                                                        candidate,
                                                        convertCycleAction(action));
 
-    free((char *)candidate.key);
+    llb_data_destroy(&candidate.key);
 
     return (result);
   }

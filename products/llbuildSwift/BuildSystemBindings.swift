@@ -385,7 +385,7 @@ public struct BuildKey {
     }
 
     init(key: llb_build_key_t) {
-        self.init(kind: key.kind, key: String(cString: key.key))
+        self.init(kind: key.kind, key: String(cString: key.key.data))
     }
 }
 
@@ -652,9 +652,9 @@ public final class BuildSystem {
         _delegate.should_resolve_cycle = {
             var rules = [BuildKey]()
             UnsafeBufferPointer(start: $1, count: Int($2)).forEach {
-                rules.append(BuildKey(kind: $0.kind, key: String(cString: $0.key)))
+                rules.append(BuildKey(kind: $0.kind, key: String(cString: $0.key.data)))
             }
-            let candidate = BuildKey(kind: $3.kind, key: String(cString: $3.key))
+            let candidate = BuildKey(kind: $3.kind, key: String(cString: $3.key.data))
 
             let result = BuildSystem.toSystem($0!).shouldResolveCycle(rules, candidate, $4)
 

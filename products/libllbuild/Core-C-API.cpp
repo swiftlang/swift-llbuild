@@ -168,6 +168,10 @@ void llb_buildengine_destroy(llb_buildengine_t* engine) {
   delete (CAPIBuildEngine*)engine;
 }
 
+void llb_data_destroy(llb_data_t *data) {
+  free((char *)data->data);
+}
+
 bool llb_buildengine_attach_db(llb_buildengine_t* engine_p,
                                const llb_data_t* path,
                                uint32_t schema_version,
