@@ -32,22 +32,16 @@ public typealias KeyType = [UInt8]
 /// Wraps calls to the llbuild database, but all results are fetched and available with this result
 public class BuildDBKeysResult {
     /// Opaque pointer to the actual result object
-    private let result: OpaquePointer?
-    
-    fileprivate init() {
-        self.result = nil
-    }
+    private let result: OpaquePointer
     
     fileprivate init(result: OpaquePointer) {
         self.result = result
     }
     
-    private lazy var _count: Int = result.map { Int(llb_database_result_keys_get_count($0)) } ?? 0
+    private lazy var _count: Int = Int(llb_database_result_keys_get_count(result))
     
     /// Get the key at the given index
     public func getKey(at index: KeyID) -> KeyType {
-        assert(result != nil, "Can't get key without fetching the data first.")
-        
         var data = llb_data_t()
         withUnsafeMutablePointer(to: &data) { ptr in
             llb_database_result_keys_get_key_at_index(self.result, index, ptr)
