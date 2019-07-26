@@ -29,24 +29,6 @@ private func bytesFromData(_ data: llb_data_t) -> [UInt8] {
     return Array(UnsafeBufferPointer(start: data.data, count: Int(data.length)))
 }
 
-/// Create a new `llb_data_t` instance containing an allocated copy of the given `bytes`.
-private func copiedDataFromBytes(_ bytes: [UInt8]) -> llb_data_t {
-    // Create the data.
-    let buf = UnsafeMutableBufferPointer(start: UnsafeMutablePointer<UInt8>.allocate(capacity: bytes.count), count: bytes.count)
-
-    // Copy the data.
-    memcpy(buf.baseAddress!, UnsafePointer<UInt8>(bytes), buf.count)
-
-    // Fill in the result structure.
-    return llb_data_t(length: UInt64(buf.count), data: unsafeBitCast(buf.baseAddress, to: UnsafePointer<UInt8>.self))
-}
-
-// FIXME: We should eventually eliminate the need for this.
-internal func stringFromData(_ data: llb_data_t) -> String {
-    return String(decoding: UnsafeBufferPointer(start: data.data, count: Int(data.length)), as: Unicode.UTF8.self)
-}
-
-
 public protocol Tool: class {
     /// Called to create a specific command instance of this tool.
     func createCommand(_ name: String) -> ExternalCommand
@@ -368,27 +350,6 @@ public struct CommandExtendedResult {
 
 }
 
-/// The BuildKey encodes the key space used by the BuildSystem when using the
-/// core BuildEngine.
-public struct BuildKey {
-    public typealias Kind = BuildKeyKind
-
-    /// The kind of key
-    public let kind: Kind
-
-    /// The actual key data
-    public let key: String
-
-    public init(kind: Kind, key: String) {
-        self.kind = kind
-        self.key = key
-    }
-
-    init(key: llb_build_key_t) {
-        self.init(kind: key.kind, key: String(cString: key.key.data))
-    }
-}
-
 /// File system information for a particular file.
 ///
 /// This is a simple wrapper for stat() information.
@@ -630,13 +591,13 @@ public final class BuildSystem {
         _delegate.command_had_warning = { BuildSystem.toSystem($0!).commandHadWarning(Command(handle: $1), $2!) }
         _delegate.command_cannot_build_output_due_to_missing_inputs = {
             let inputsPtr = $3!
-            let inputs = (0..<Int($4)).map { BuildKey(key: inputsPtr[$0]) }
-            BuildSystem.toSystem($0!).commandCannotBuildOutputDueToMissingInputs(Command(handle: $1), BuildKey(key: $2!.pointee), inputs)
+            let inputs = (0..<Int($4)).map { BuildKey.construct(key: inputsPtr[$0]) }
+            BuildSystem.toSystem($0!).commandCannotBuildOutputDueToMissingInputs(Command(handle: $1), BuildKey.construct(key: $2!.pointee), inputs)
         }
         _delegate.cannot_build_node_due_to_multiple_producers = {
             let commandsPtr = $2!
             let commands = (0..<Int($3)).map { Command(handle: commandsPtr[$0]) }
-            BuildSystem.toSystem($0!).cannotBuildNodeDueToMultipleProducers(BuildKey(key: $1!.pointee), commands)
+            BuildSystem.toSystem($0!).cannotBuildNodeDueToMultipleProducers(BuildKey.construct(key: $1!.pointee), commands)
         }
         _delegate.command_process_started = { BuildSystem.toSystem($0!).commandProcessStarted(Command(handle: $1), ProcessHandle($2!)) }
         _delegate.command_process_had_error = { BuildSystem.toSystem($0!).commandProcessHadError(Command(handle: $1), ProcessHandle($2!), $3!) }
@@ -645,16 +606,16 @@ public final class BuildSystem {
         _delegate.cycle_detected = {
             var rules = [BuildKey]()
             UnsafeBufferPointer(start: $1, count: Int($2)).forEach {
-                rules.append(BuildKey(key: $0))
+                rules.append(BuildKey.construct(key: $0))
             }
             BuildSystem.toSystem($0!).cycleDetected(rules)
         }
         _delegate.should_resolve_cycle = {
             var rules = [BuildKey]()
             UnsafeBufferPointer(start: $1, count: Int($2)).forEach {
-                rules.append(BuildKey(kind: $0.kind, key: String(cString: $0.key.data)))
+                rules.append(BuildKey.construct(key: $0))
             }
-            let candidate = BuildKey(kind: $3.kind, key: String(cString: $3.key.data))
+            let candidate = BuildKey.construct(key: $3)
 
             let result = BuildSystem.toSystem($0!).shouldResolveCycle(rules, candidate, $4)
 

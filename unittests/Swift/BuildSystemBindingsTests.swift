@@ -62,14 +62,6 @@ class BuildSystemBindingsTests: XCTestCase {
     XCTAssertEqual(result.metrics?.maxRSS, 3)
   }
   
-  func testBuildKey() {
-    for kind: BuildKey.Kind in [.command, .customTask, .directoryContents, .directoryTreeSignature, .directoryTreeStructureSignature, .filteredDirectoryContents, .node, .stat, .target, .unknown] {
-      let buildKey = BuildKey(kind: kind, key: "foobar\(kind)")
-      XCTAssertEqual(buildKey.kind, kind)
-      XCTAssertEqual(buildKey.key, "foobar\(kind)")
-    }
-  }
-  
   func testKey() {
     let key1 = Key("foobar")
     XCTAssertEqual(key1.toString(), "foobar")
