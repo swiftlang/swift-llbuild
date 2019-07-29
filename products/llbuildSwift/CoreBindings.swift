@@ -55,6 +55,7 @@ public struct Key: CustomStringConvertible, Equatable, Hashable {
 
     public init(_ data: [UInt8]) { self.data = data }
     public init(_ str: String) { self.init(Array(str.utf8)) }
+    public init(_ buildKey: BuildKey) { self.init(buildKey.keyData) }
 
     /// Convert to a string representation.
     public func toString() -> String {

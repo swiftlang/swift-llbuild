@@ -40,23 +40,6 @@ using namespace llbuild::buildsystem;
 /* Build Engine API */
 
 namespace {
-
-static llb_build_key_t convertBuildKey(const BuildKey& key) {
-  llb_build_key_t buildKey;
-
-  auto data = key.toData();
-  // we need to remove the first character since it's used for the kind identifier
-  data.erase(data.begin(), data.begin() + 1);
-  
-  buildKey.kind = internalToPublicBuildKeyKind(key.getKind());
-  buildKey.key = {
-    data.length(),
-    (const uint8_t *) strdup(data.c_str()),
-  };
-
-  return buildKey;
-}
-
 class CAPIFileSystem : public basic::FileSystem {
   llb_buildsystem_delegate_t cAPIDelegate;
   std::unique_ptr<basic::FileSystem> localFileSystem;

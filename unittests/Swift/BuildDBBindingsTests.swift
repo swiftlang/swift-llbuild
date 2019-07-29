@@ -19,9 +19,9 @@ private func createExampleBuildDB(at path: String, file: StaticString = #file, l
   typealias Compute = ([String]) -> String
   
   enum Keys {
-    static let A = Key("A")
-    static let B = Key("B")
-    static let C = Key("C")
+    static let A = Key(BuildKey.Command(name: "A"))
+    static let B = Key(BuildKey.Target(name: "B"))
+    static let C = Key(BuildKey.Node(path: "C"))
   }
   
   class ExampleTask: Task {
@@ -65,10 +65,10 @@ private func createExampleBuildDB(at path: String, file: StaticString = #file, l
   class ExampleDelegate: BuildEngineDelegate {
     func lookupRule(_ key: Key) -> Rule {
       switch key {
-      case Keys.A: return ExampleRule { _ in Keys.A.toString() }
-      case Keys.B: return ExampleRule { _ in Keys.B.toString() }
+      case Keys.A: return ExampleRule { _ in String(Keys.A.toString().dropFirst()) }
+      case Keys.B: return ExampleRule { _ in String(Keys.B.toString().dropFirst()) }
       case Keys.C: return ExampleRule(inputs: [Keys.A, Keys.B]) { values in
-        values.joined().appending(Keys.C.toString())
+        values.joined().appending(String(Keys.C.toString().dropFirst()))
         }
       default: fatalError("Unexpected key: \(key.toString())")
       }
@@ -150,7 +150,9 @@ class BuildDBBindingsTests: XCTestCase {
     let keys = try db.getKeys()
     
     XCTAssertEqual(keys.count, 3)
-    XCTAssertEqual(keys.map { String(bytes: $0, encoding: .utf8) }, ["B", "A", "C"])
+    XCTAssertEqual(keys[0] as? BuildKey.Target, BuildKey.Target(name: "B"))
+    XCTAssertEqual(keys[1] as? BuildKey.Command, BuildKey.Command(name: "A"))
+    XCTAssertEqual(keys[2] as? BuildKey.Node, BuildKey.Node(path: "C"))
   }
   
 }

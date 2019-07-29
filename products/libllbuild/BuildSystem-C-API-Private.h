@@ -21,7 +21,7 @@ using namespace llbuild::buildsystem;
 using namespace llbuild::core;
 
 namespace {
-static llb_build_key_kind_t internalToPublicBuildKeyKind(const BuildKey::Kind kind) {
+static inline llb_build_key_kind_t internalToPublicBuildKeyKind(const BuildKey::Kind kind) {
   switch (kind) {
     case BuildKey::Kind::Command:
       return llb_build_key_kind_command;
@@ -44,6 +44,22 @@ static llb_build_key_kind_t internalToPublicBuildKeyKind(const BuildKey::Kind ki
     case BuildKey::Kind::Unknown:
       return llb_build_key_kind_unknown;
   }
+}
+
+static inline llb_build_key_t convertBuildKey(const BuildKey& key) {
+  llb_build_key_t buildKey;
+
+  auto data = key.toData();
+  // we need to remove the first character since it's used for the kind identifier
+  data.erase(data.begin(), data.begin() + 1);
+  
+  buildKey.kind = internalToPublicBuildKeyKind(key.getKind());
+  buildKey.key = {
+    data.length(),
+    (const uint8_t *) strdup(data.c_str()),
+  };
+
+  return buildKey;
 }
 
 }

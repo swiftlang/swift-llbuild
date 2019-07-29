@@ -18,6 +18,8 @@
 #error Clients must include the "llbuild.h" umbrella header.
 #endif
 
+#include "buildkey.h"
+
 LLBUILD_ASSUME_NONNULL_BEGIN
 
 /// Defines a key identifier _(should match \see KeyID in BuildEngine.h)_
@@ -43,8 +45,8 @@ LLBUILD_EXPORT const llb_database_key_id
 llb_database_result_keys_get_count(llb_database_result_keys_t *result);
 
 /// Method for getting the key for a given id from a result keys object
-LLBUILD_EXPORT void
-llb_database_result_keys_get_key_at_index(llb_database_result_keys_t *result, llb_database_key_id keyID, llb_data_t *key_out);
+LLBUILD_EXPORT llb_build_key_t
+llb_database_result_keys_get_key_at_index(llb_database_result_keys_t *result, llb_database_key_id keyID);
 
 /// Destroys the given result keys object, call this when the object is not used anymore
 LLBUILD_EXPORT void
