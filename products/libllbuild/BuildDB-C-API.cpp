@@ -12,7 +12,10 @@
 
 #include <llbuild/llbuild.h>
 
+#include "llbuild/BuildSystem/BuildKey.h"
 #include "llbuild/Core/BuildDB.h"
+
+#include "BuildSystem-C-API-Private.h"
 
 #include <mutex>
 
@@ -35,8 +38,9 @@ namespace {
       return keys.size();
     }
     
-    const KeyType keyAtIndex(KeyID index) {
-      return keys[index];
+    llb_build_key_t keyAtIndex(KeyID index) {
+      auto buildKey = BuildKey::fromData(keys[index]);
+      return convertBuildKey(buildKey);
     }
   };
 
@@ -136,11 +140,9 @@ const llb_database_key_id llb_database_result_keys_get_count(llb_database_result
   return resultKeys->size();
 }
 
-void llb_database_result_keys_get_key_at_index(llb_database_result_keys_t *result, llb_database_key_id keyID, llb_data_t *key_out) {
+llb_build_key_t llb_database_result_keys_get_key_at_index(llb_database_result_keys_t *result, llb_database_key_id keyID) {
   auto resultKeys = (CAPIBuildDBKeysResult *)result;
-  auto key = resultKeys->keyAtIndex(keyID);
-  key_out->length = key.size();
-  key_out->data = (const uint8_t*) strdup(key.data());
+  return resultKeys->keyAtIndex(keyID);
 }
 
 void llb_database_destroy_result_keys(llb_database_result_keys_t *result) {

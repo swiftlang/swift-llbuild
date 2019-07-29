@@ -41,14 +41,8 @@ public class BuildDBKeysResult {
     private lazy var _count: Int = Int(llb_database_result_keys_get_count(result))
     
     /// Get the key at the given index
-    public func getKey(at index: KeyID) -> KeyType {
-        var data = llb_data_t()
-        withUnsafeMutablePointer(to: &data) { ptr in
-            llb_database_result_keys_get_key_at_index(self.result, index, ptr)
-        }
-        defer { data.data?.deallocate() }
-        
-        return KeyType(UnsafeBufferPointer(start: data.data, count: Int(data.length)))
+    public func getKey(at index: KeyID) -> BuildKey {
+        BuildKey.construct(key: llb_database_result_keys_get_key_at_index(self.result, index))
     }
     
     deinit {
@@ -58,7 +52,7 @@ public class BuildDBKeysResult {
 
 extension BuildDBKeysResult: Collection {
     public typealias Index = KeyID
-    public typealias Element = KeyType
+    public typealias Element = BuildKey
     
     public var startIndex: Index {
         return 0
@@ -84,6 +78,13 @@ extension BuildDBKeysResult: CustomReflectable {
     public var customMirror: Mirror {
         let keys = (startIndex..<endIndex).map { getKey(at: $0) }
         return Mirror(BuildDBKeysResult.self, unlabeledChildren: keys, displayStyle: .collection)
+    }
+}
+
+extension BuildDBKeysResult: CustomStringConvertible {
+    public var description: String {
+        let keyDescriptions = (startIndex..<endIndex).map { "\(getKey(at: $0))" }
+        return "[\(keyDescriptions.joined(separator: ", "))]"
     }
 }
 
