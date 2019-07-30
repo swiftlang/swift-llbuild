@@ -20,6 +20,8 @@
 
 #include "gtest/gtest.h"
 
+#include <future>
+#include <condition_variable>
 #include <unordered_map>
 #include <vector>
 
@@ -33,6 +35,9 @@ class SimpleBuildEngineDelegate : public core::BuildEngineDelegate {
 public:
   std::vector<std::string> cycle;
   bool resolveCycle = false;
+
+  std::vector<std::string> errors;
+  bool expectedError = false;
 
 private:
   virtual core::Rule lookupRule(const core::KeyType& key) override {
@@ -56,8 +61,11 @@ private:
   }
 
   virtual void error(const Twine& message) override {
-    fprintf(stderr, "error: %s\n", message.str().c_str());
-    abort();
+    errors.push_back(message.str());
+    if (!expectedError) {
+      fprintf(stderr, "error: %s\n", message.str().c_str());
+      abort();
+    }
   }
 };
 
@@ -911,6 +919,63 @@ TEST(BuildEngineTest, basicIncrementalSignatureChange) {
   setupEngine(*engine);
   EXPECT_EQ(valueA * valueB * 5, intFromValue(engine->build("value-R")));
   EXPECT_EQ(0U, builtKeys.size());
+}
+
+TEST(BuildEngineTest, concurrentProtection) {
+  // Cross thread coordination
+  std::mutex mutex;
+  bool started = false;
+  std::condition_variable started_cv;
+  bool done = false;
+  std::condition_variable done_cv;
+
+  // Basic 1-rule build graph
+  SimpleBuildEngineDelegate delegate;
+  core::BuildEngine engine(delegate);
+  engine.addRule({
+    "result", {}, simpleAction({}, [&] (const std::vector<int>& inputs) {
+      auto lock = std::unique_lock<std::mutex>(mutex);
+      started = true;
+      started_cv.notify_all();
+      while (!done) {
+        done_cv.wait(lock);
+      }
+      return 1;
+    })
+  });
+
+  // Start a build on another thread
+  auto build1 = std::async( std::launch::async, [&](){
+    // We expect that this build should eventually succeed with the build value
+    // of '1' from above.
+    EXPECT_EQ(1, intFromValue(engine.build("result")));
+  });
+
+  // Wait for the build to actually start
+  auto lock = std::unique_lock<std::mutex>(mutex);
+  while (!started) {
+    started_cv.wait(lock);
+  }
+  lock.unlock();
+
+  // Expect that we'll get an error trying to start this build
+  delegate.expectedError = true;
+  engine.build("result");
+  EXPECT_EQ(1U, delegate.errors.size());
+  EXPECT_TRUE(delegate.errors[0].find("busy") != std::string::npos);
+
+  // Wrap up the first build
+  lock.lock();
+  done = true;
+  lock.unlock();
+  done_cv.notify_all();
+  build1.wait();
+
+  // Ensure that we can build again
+  delegate.errors.clear();
+  delegate.expectedError = false;
+  EXPECT_EQ(1, intFromValue(engine.build("result")));
+  EXPECT_EQ(0U, delegate.errors.size());
 }
 
 }
