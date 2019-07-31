@@ -27,6 +27,7 @@ import llbuild
 
 public typealias KeyID = UInt64
 public typealias KeyType = [UInt8]
+public typealias ValueType = [UInt8]
 
 /// Defines the result of a call to fetch all keys from the database
 /// Wraps calls to the llbuild database, but all results are fetched and available with this result

@@ -155,6 +155,7 @@ class BuildKeyTests: XCTestCase {
           return
         }
         try expectation(key)
+        XCTAssertEqual(instance, key, file: file, line: line)
       }
     }
 
