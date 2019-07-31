@@ -41,18 +41,13 @@ public class BuildDBKeysResult {
     
     private lazy var _count: Int = Int(llb_database_result_keys_get_count(result))
     
-    /// Get the key at the given index
-    public func getKey(at index: KeyID) -> BuildKey {
-        BuildKey.construct(key: llb_database_result_keys_get_key_at_index(self.result, index))
-    }
-    
     deinit {
         llb_database_destroy_result_keys(result)
     }
 }
 
 extension BuildDBKeysResult: Collection {
-    public typealias Index = KeyID
+    public typealias Index = Int
     public typealias Element = BuildKey
     
     public var startIndex: Index {
@@ -60,32 +55,77 @@ extension BuildDBKeysResult: Collection {
     }
     
     public var endIndex: Index {
-        return UInt64(self._count) + startIndex
+        return self._count + startIndex
     }
     
     public subscript(index: Index) -> Iterator.Element {
         guard (startIndex..<endIndex).contains(index) else {
             fatalError("Index \(index) is out of bounds (\(startIndex)..<\(endIndex))")
         }
-        return getKey(at: index)
+        return BuildKey.construct(key: llb_database_result_keys_get_key_at_index(self.result, Int32(index)))
     }
     
-    public func index(after i: KeyID) -> KeyID {
+    public func index(after i: Index) -> Index {
         return i + 1
     }
 }
 
 extension BuildDBKeysResult: CustomReflectable {
     public var customMirror: Mirror {
-        let keys = (startIndex..<endIndex).map { getKey(at: $0) }
+        let keys = (startIndex..<endIndex).map { self[$0] }
         return Mirror(BuildDBKeysResult.self, unlabeledChildren: keys, displayStyle: .collection)
     }
 }
 
 extension BuildDBKeysResult: CustomStringConvertible {
     public var description: String {
-        let keyDescriptions = (startIndex..<endIndex).map { "\(getKey(at: $0))" }
+        let keyDescriptions = (startIndex..<endIndex).map { "\(self[$0]))" }
         return "[\(keyDescriptions.joined(separator: ", "))]"
+    }
+}
+
+/// Defines the result of a built task
+public class RuleResult {
+    /// Reference to the C API result instance (for desctruction)
+    private let result: BuildDBResult
+    /// The value of the result
+    public let value: BuildValue
+    /// Signature of the node that generated the result
+    public let signature: UInt64
+    /// The build iteration this result was computed at
+    public let computedAt: UInt64
+    /// The build iteration this result was built at
+    public let builtAt: UInt64
+    /// The start of the command as a duration since a reference time
+    public let start: Double
+    /// The duration since a reference time of when the command finished computing
+    public let end: Double
+    /// The duration in seconds the result needed to finish
+    public var duration: Double {
+        max(end - start, 0)
+    }
+    /// A list of the dependencies of the computed task, use the database's allKeys to check for their key
+    public let dependencies: [BuildKey]
+    
+    fileprivate init?(result: BuildDBResult) {
+        self.result = result
+        guard let value = BuildValue.construct(from: Value(ValueType(UnsafeBufferPointer(start: result.value.data, count: Int(result.value.length))))) else {
+            return nil
+        }
+        self.value = value
+        self.signature = result.signature
+        self.computedAt = result.computed_at
+        self.builtAt = result.built_at
+        self.start = result.start
+        self.end = result.end
+        self.dependencies = UnsafeBufferPointer(start: result.dependencies, count: Int(result.dependencies_count))
+                                .map(BuildKey.construct(key:))
+    }
+    
+    deinit {
+        withUnsafePointer(to: result) { ptr in
+            llb_database_destroy_result(ptr)
+        }
     }
 }
 
@@ -168,6 +208,24 @@ public final class BuildDB {
         }
         
         return BuildDBKeysResult(result: resultKeys)
+    }
+    
+    /// Get the result for a given keyID
+    public func lookupRuleResult(buildKey: BuildKey) throws -> RuleResult? {
+        let errorPtr = MutableStringPointer()
+        var result = BuildDBResult()
+        
+        let stored = llb_database_lookup_rule_result(_database, buildKey.key, &result, &errorPtr.ptr)
+        
+        if let error = errorPtr.msg {
+            throw Error.operationDidFail(error: error)
+        }
+        
+        if !stored {
+            return nil
+        }
+        
+        return RuleResult(result: result)
     }
     
     // MARK: - Private functions for wrapping C++ API

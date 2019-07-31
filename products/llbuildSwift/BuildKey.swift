@@ -95,6 +95,10 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
     fileprivate func equal(to other: BuildKey) -> Bool {
         preconditionFailure("equal(to:) needs to be overridden in \(type(of: self))")
     }
+
+    public var key: llb_build_key_t {
+        llb_build_key_t(kind: self.kind, key: copiedDataFromBytes(self.keyData))
+    }
     
     public func hash(into hasher: inout Hasher) {
         hasher.combine(keyData)

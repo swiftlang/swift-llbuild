@@ -38,7 +38,7 @@ namespace {
       return keys.size();
     }
     
-    llb_build_key_t keyAtIndex(KeyID index) {
+    llb_build_key_t keyAtIndex(int32_t index) {
       auto buildKey = BuildKey::fromData(keys[index]);
       return convertBuildKey(buildKey);
     }
@@ -96,6 +96,10 @@ namespace {
                                                                        (const char*)(uintptr_t)key).getKey();
     }
     
+    const bool lookupRuleResult(const KeyType &key, Result *result_out, std::string *error_out) {
+      return _db.get()->lookupRuleResult(this->getKeyID(key), key, result_out, error_out);
+    }
+    
     const bool buildStarted(std::string *error_out) {
       return _db.get()->buildStarted(error_out);
     }
@@ -109,6 +113,50 @@ namespace {
     }
   };
 
+}
+
+const llb_data_t mapData(std::vector<uint8_t> input) {
+  const auto data = input.data();
+  const auto size = sizeof(data) * input.size();
+  const auto newData = (uint8_t *)malloc(size);
+  memcpy(newData, data, size);
+  
+  return llb_data_t {
+    input.size(),
+    newData
+  };
+}
+
+const llb_database_result_t mapResult(CAPIBuildDB &db, Result result) {
+  
+  auto count = result.dependencies.size();
+  std::vector<llb_build_key_t> buildKeys;
+  for (auto keyID: result.dependencies) {
+    auto buildKey = db.getKeyForID(keyID);
+    auto bar = BuildKey::fromData(buildKey);
+    buildKeys.insert(buildKeys.end(), convertBuildKey(bar));
+  }
+  
+  auto data = buildKeys.data();
+  auto size = sizeof(*data) * count;
+  llb_build_key_t *deps = (llb_build_key_t *)malloc(size);
+  memcpy(deps, data, size);
+  
+  return llb_database_result_t {
+    mapData(result.value),
+    result.signature.value,
+    result.computedAt,
+    result.builtAt,
+    result.start,
+    result.end,
+    deps,
+    static_cast<uint32_t>(count)
+  };
+}
+
+void llb_database_destroy_result(const llb_database_result_t *result) {
+  delete result->value.data;
+  delete result->dependencies;
 }
 
 const llb_database_t* llb_database_open(
@@ -135,14 +183,35 @@ void llb_database_destroy(llb_database_t *database) {
   delete db;
 }
 
+const bool llb_database_lookup_rule_result(llb_database_t *database, llb_build_key_t key, llb_database_result_t *result_out, llb_data_t *error_out) {
+  
+  auto db = (CAPIBuildDB *)database;
+  
+  std::string error;
+  Result result;
+  
+  auto stored = db->lookupRuleResult(KeyType(key.key.data, key.key.data + key.key.length), &result, &error);
+  
+  if (result_out) {
+    *result_out = mapResult(*db, result);
+  }
+  
+  if (!error.empty() && error_out) {
+    error_out->length = error.size();
+    error_out->data = (const uint8_t*)strdup(error.c_str());
+  }
+  
+  return stored;
+}
+
 const llb_database_key_id llb_database_result_keys_get_count(llb_database_result_keys_t *result) {
   auto resultKeys = (CAPIBuildDBKeysResult *)result;
   return resultKeys->size();
 }
 
-llb_build_key_t llb_database_result_keys_get_key_at_index(llb_database_result_keys_t *result, llb_database_key_id keyID) {
+llb_build_key_t llb_database_result_keys_get_key_at_index(llb_database_result_keys_t *result, int32_t index) {
   auto resultKeys = (CAPIBuildDBKeysResult *)result;
-  return resultKeys->keyAtIndex(keyID);
+  return resultKeys->keyAtIndex(index);
 }
 
 void llb_database_destroy_result_keys(llb_database_result_keys_t *result) {

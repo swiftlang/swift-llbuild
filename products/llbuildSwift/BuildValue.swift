@@ -95,8 +95,8 @@ public class BuildValue: CustomStringConvertible, Equatable, Hashable {
     /// Tries to construct a BuildValue from the given data
     ///
     /// NOTE: If the data is malformed this code might assert.
-    public static func construct(data: ValueType) -> BuildValue? {
-        var llbData = copiedDataFromBytes(data)
+    public static func construct(from value: Value) -> BuildValue? {
+        var llbData = copiedDataFromBytes(value.data)
         defer {
             llb_data_destroy(&llbData)
         }
