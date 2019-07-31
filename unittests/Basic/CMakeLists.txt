@@ -1,5 +1,6 @@
 add_llbuild_unittest(BasicTests
   BinaryCodingTests.cpp
+  Defer.cpp
   FileSystemTest.cpp
   POSIXEnvironmentTest.cpp
   SerialQueueTest.cpp

@@ -12,6 +12,7 @@
 
 #include "llbuild/Core/BuildEngine.h"
 
+#include "llbuild/Basic/Defer.h"
 #include "llbuild/Basic/Tracing.h"
 #include "llbuild/Core/BuildDB.h"
 
@@ -80,6 +81,9 @@ class BuildEngineImpl : public BuildDBDelegate {
 
   /// Whether the build should be cancelled.
   std::atomic<bool> buildCancelled{ false };
+
+  /// Whether a build is currently running.
+  std::atomic<bool> buildRunning{ false };
   
   /// The queue of input requests to process.
   struct TaskInputRequest {
@@ -1398,6 +1402,16 @@ public:
   /// @{
 
   const ValueType& build(const KeyType& key) {
+    // Protect the engine against invalid concurrent use.
+    if (buildRunning.exchange(true)) {
+      delegate.error("build engine busy");
+      static ValueType emptyValue{};
+      return emptyValue;
+    }
+    llbuild_defer {
+      buildRunning = false;
+    };
+
     if (db) {
       std::string error;
       bool result = db->buildStarted(&error);
