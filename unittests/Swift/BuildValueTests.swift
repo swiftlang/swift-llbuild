@@ -213,7 +213,7 @@ class BuildValueTests: XCTestCase {
   func testConstruct() {
     func test<T: BuildValue>(_ instance: T, test: (T) -> Void) {
       let data = instance.valueData
-      guard let constructed = BuildValue.construct(data: data) else {
+      guard let constructed = BuildValue.construct(from: Value(data)) else {
         XCTFail("Expected to be able to construct a build value of type \(T.self) from \(data).")
         return
       }

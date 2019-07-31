@@ -16,7 +16,7 @@ import llbuild
 #endif
 
 private func createExampleBuildDB(at path: String, file: StaticString = #file, line: UInt = #line) throws {
-  typealias Compute = ([String]) -> String
+  typealias Compute = ([BuildValue]) -> BuildValue
   
   enum Keys {
     static let A = Key(BuildKey.Command(name: "A"))
@@ -24,9 +24,15 @@ private func createExampleBuildDB(at path: String, file: StaticString = #file, l
     static let C = Key(BuildKey.Node(path: "C"))
   }
   
+  enum FileInfo {
+    static let A = BuildValue.FileInfo()
+    static let B = BuildValue.FileInfo()
+    static let C = BuildValue.FileInfo()
+  }
+  
   class ExampleTask: Task {
     let inputs: [Key]
-    private var values: [Int: String] = [:]
+    private var values: [Int: BuildValue] = [:]
     let compute: Compute
     
     init(inputs: [Key], compute: @escaping Compute) {
@@ -40,11 +46,11 @@ private func createExampleBuildDB(at path: String, file: StaticString = #file, l
       }
     }
     func provideValue(_ engine: TaskBuildEngine, inputID: Int, value: Value) {
-      values[inputID] = value.toString()
+      values[inputID] = BuildValue.construct(from: value)
     }
     func inputsAvailable(_ engine: TaskBuildEngine) {
       let inputValues = inputs.indices.map { self.values[$0]! }
-      engine.taskIsComplete(Value(self.compute(inputValues)))
+      engine.taskIsComplete(Value(self.compute(inputValues).valueData))
     }
   }
   
@@ -65,10 +71,10 @@ private func createExampleBuildDB(at path: String, file: StaticString = #file, l
   class ExampleDelegate: BuildEngineDelegate {
     func lookupRule(_ key: Key) -> Rule {
       switch key {
-      case Keys.A: return ExampleRule { _ in String(Keys.A.toString().dropFirst()) }
-      case Keys.B: return ExampleRule { _ in String(Keys.B.toString().dropFirst()) }
+      case Keys.A: return ExampleRule { _ in BuildValue.SuccessfulCommand(outputInfos: [FileInfo.A]) }
+      case Keys.B: return ExampleRule { _ in BuildValue.SuccessfulCommand(outputInfos: [FileInfo.B]) }
       case Keys.C: return ExampleRule(inputs: [Keys.A, Keys.B]) { values in
-        values.joined().appending(String(Keys.C.toString().dropFirst()))
+        BuildValue.SuccessfulCommand(outputInfos: values.flatMap { ($0 as? BuildValue.SuccessfulCommand)?.outputInfos ?? [FileInfo.C] })
         }
       default: fatalError("Unexpected key: \(key.toString())")
       }
@@ -80,7 +86,7 @@ private func createExampleBuildDB(at path: String, file: StaticString = #file, l
   try engine.attachDB(path: path, schemaVersion: 9)
   
   let result = engine.build(key: Keys.C)
-  XCTAssertEqual(result.toString(), "ABC", file: file, line: line)
+  XCTAssertNotNil(BuildValue.construct(from: result) as? BuildValue.SuccessfulCommand, file: file, line: line)
 }
 
 class BuildDBBindingsTests: XCTestCase {
@@ -150,9 +156,42 @@ class BuildDBBindingsTests: XCTestCase {
     let keys = try db.getKeys()
     
     XCTAssertEqual(keys.count, 3)
-    XCTAssertEqual(keys[0] as? BuildKey.Target, BuildKey.Target(name: "B"))
-    XCTAssertEqual(keys[1] as? BuildKey.Command, BuildKey.Command(name: "A"))
-    XCTAssertEqual(keys[2] as? BuildKey.Node, BuildKey.Node(path: "C"))
+    XCTAssertEqual(keys[0], BuildKey.Target(name: "B"))
+    XCTAssertEqual(keys[1], BuildKey.Command(name: "A"))
+    XCTAssertEqual(keys[2], BuildKey.Node(path: "C"))
+  }
+  
+  func testGetResults() throws {
+    let db = try exampleDB(path: exampleBuildDBPath)
+    
+    guard let result1 = try db.lookupRuleResult(buildKey: BuildKey.Node(path: "C")) else {
+      return XCTFail("Expected to get result for build key C.")
+    }
+    
+    XCTAssertGreaterThan(result1.start, 0)
+    XCTAssertGreaterThanOrEqual(result1.end, result1.start)
+    XCTAssertEqual(result1.dependencies.count, 2)
+    XCTAssertEqual(result1.dependencies[0], BuildKey.Command(name: "A"))
+    XCTAssertEqual(result1.dependencies[1], BuildKey.Target(name: "B"))
+    XCTAssertEqual(result1.value, BuildValue.SuccessfulCommand(outputInfos: [BuildValue.SuccessfulCommand.FileInfo(), BuildValue.SuccessfulCommand.FileInfo()]))
+    
+    guard let result2 = try db.lookupRuleResult(buildKey: BuildKey.Target(name: "B")) else {
+      return XCTFail("Expected to get result for build key B.")
+    }
+    
+    XCTAssertGreaterThan(result2.start, 0)
+    XCTAssertGreaterThanOrEqual(result2.end, result2.start)
+    XCTAssertTrue(result2.dependencies.isEmpty)
+    XCTAssertEqual(result2.value, BuildValue.SuccessfulCommand(outputInfos: [BuildValue.SuccessfulCommand.FileInfo()]))
+    
+    guard let result3 = try db.lookupRuleResult(buildKey: BuildKey.Command(name: "A")) else {
+      return XCTFail("Expected to get result for build key A.")
+    }
+    
+    XCTAssertGreaterThan(result3.start, 0)
+    XCTAssertGreaterThanOrEqual(result3.end, result3.start)
+    XCTAssertTrue(result3.dependencies.isEmpty)
+    XCTAssertEqual(result3.value, BuildValue.SuccessfulCommand(outputInfos: [BuildValue.SuccessfulCommand.FileInfo()]))
   }
   
 }
