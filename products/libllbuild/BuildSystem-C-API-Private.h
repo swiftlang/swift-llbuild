@@ -16,6 +16,7 @@
 #include <llbuild/llbuild.h>
 
 #include "llbuild/BuildSystem/BuildKey.h"
+#include "llbuild/BuildSystem/BuildValue.h"
 
 using namespace llbuild::buildsystem;
 using namespace llbuild::core;
@@ -61,6 +62,6 @@ static inline llb_build_key_t convertBuildKey(const BuildKey& key) {
 
   return buildKey;
 }
-
 }
+
 #endif

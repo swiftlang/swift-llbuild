@@ -40,6 +40,7 @@ namespace buildsystem {
 class BuildValue {
   using FileInfo = basic::FileInfo;
 
+public:
   enum class Kind : uint32_t {
     /// An invalid value, for sentinel purposes.
     Invalid = 0,
@@ -97,6 +98,8 @@ class BuildValue {
     /// A value produced by a successful command with an output signature.
     SuccessfulCommandWithOutputSignature,
   };
+  
+private:
   static StringRef stringForKind(Kind);
 
   friend struct basic::BinaryCodingTraits<BuildValue::Kind>;
@@ -303,6 +306,8 @@ public:
   /// @name Accessors
   /// @{
 
+  BuildValue::Kind getKind() const { return kind; }
+  
   bool isInvalid() const { return kind == Kind::Invalid; }
   bool isVirtualInput() const { return kind == Kind::VirtualInput; }
   bool isExistingInput() const { return kind == Kind::ExistingInput; }
