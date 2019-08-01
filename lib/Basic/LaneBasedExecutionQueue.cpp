@@ -202,13 +202,13 @@ public:
   {
     // Configure the background task maximum. We currently support an
     // environmental override for experimentation pursposes, but otherwise limit
-    // to a small multiple of the core count, since we currently burn one thread
+    // to a modest multiple of the core count, since we currently burn one thread
     // per background task.
     char *p = getenv("LLBUILD_BACKGROUND_TASK_MAX");
     if (p && !StringRef(p).getAsInteger(10, backgroundTaskMax)) {
       // Parsed.
     } else {
-      backgroundTaskMax = numLanes * 16;
+      backgroundTaskMax = std::min(1024U, numLanes * 64U);
     }
             
     for (unsigned i = 0; i != numLanes; ++i) {
