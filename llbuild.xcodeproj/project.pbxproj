@@ -118,11 +118,12 @@
 		B546B3A522CA161A007046C0 /* BuildDBBindingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B546B3A422CA161A007046C0 /* BuildDBBindingsTests.swift */; };
 		B546B3A922CA49AB007046C0 /* BuildSystemBindingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B546B3A022C65DF0007046C0 /* BuildSystemBindingsTests.swift */; };
 		B5A308CF22F3164E00699B4C /* buildvalue.h in Headers */ = {isa = PBXBuildFile; fileRef = B5A308B922F30E0700699B4C /* buildvalue.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		B5A308D022F3165800699B4C /* BuildSystem-C-API-Private.h in Headers */ = {isa = PBXBuildFile; fileRef = B5BE9BB222E8A31000777A06 /* BuildSystem-C-API-Private.h */; };
 		B5A308D122F3166000699B4C /* BuildValue-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5A308B622F30DF000699B4C /* BuildValue-C-API.cpp */; };
 		B5A308D222F3166100699B4C /* BuildValue-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5A308B622F30DF000699B4C /* BuildValue-C-API.cpp */; };
 		B5A308D322F3166900699B4C /* Internals.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5A308CD22F315A800699B4C /* Internals.swift */; };
 		B5A308D422F3166C00699B4C /* BuildValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5A308BD22F30EE800699B4C /* BuildValue.swift */; };
+		B5A308D922F3391F00699B4C /* BuildKey-C-API-Private.h in Headers */ = {isa = PBXBuildFile; fileRef = B5A308D822F3391F00699B4C /* BuildKey-C-API-Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		B5A308DA22F3391F00699B4C /* BuildKey-C-API-Private.h in Headers */ = {isa = PBXBuildFile; fileRef = B5A308D822F3391F00699B4C /* BuildKey-C-API-Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		B5A84D0C22943F9200A59064 /* db.h in Headers */ = {isa = PBXBuildFile; fileRef = B505BFB5228FCBAB00255BD7 /* db.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		B5BE9BA322E8549F00777A06 /* BuildKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5BE9BA222E8549F00777A06 /* BuildKey.swift */; };
 		B5BE9BA522E854C600777A06 /* BuildKeyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5BE9BA422E854C600777A06 /* BuildKeyTests.swift */; };
@@ -963,11 +964,11 @@
 		B5A308BD22F30EE800699B4C /* BuildValue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BuildValue.swift; sourceTree = "<group>"; };
 		B5A308C222F30F2000699B4C /* BuildValueTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BuildValueTests.swift; sourceTree = "<group>"; };
 		B5A308CD22F315A800699B4C /* Internals.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Internals.swift; sourceTree = "<group>"; };
+		B5A308D822F3391F00699B4C /* BuildKey-C-API-Private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "BuildKey-C-API-Private.h"; sourceTree = "<group>"; };
 		B5BE9BA222E8549F00777A06 /* BuildKey.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BuildKey.swift; sourceTree = "<group>"; };
 		B5BE9BA422E854C600777A06 /* BuildKeyTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BuildKeyTests.swift; sourceTree = "<group>"; };
 		B5BE9BA622E854E300777A06 /* BuildKey-C-API.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "BuildKey-C-API.cpp"; sourceTree = "<group>"; };
 		B5BE9BAB22E885D900777A06 /* buildkey.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = buildkey.h; sourceTree = "<group>"; };
-		B5BE9BB222E8A31000777A06 /* BuildSystem-C-API-Private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "BuildSystem-C-API-Private.h"; sourceTree = "<group>"; };
 		BC8DEF0520300AAF00E9EF0C /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; tabWidth = 2; };
 		BC8DEF0620300AAF00E9EF0C /* BuildSystemBindings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BuildSystemBindings.swift; sourceTree = "<group>"; };
 		BC8DEF0720300AAF00E9EF0C /* CoreBindings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CoreBindings.swift; sourceTree = "<group>"; };
@@ -2210,11 +2211,11 @@
 			children = (
 				E1ADC2321A85923800D5387C /* Public API */,
 				E1ADC2301A85922F00D5387C /* CMakeLists.txt */,
-				B5BE9BB222E8A31000777A06 /* BuildSystem-C-API-Private.h */,
 				E1DD22761C472A3F00555A5D /* BuildSystem-C-API.cpp */,
 				B505BFB1228FCB3000255BD7 /* BuildDB-C-API.cpp */,
 				E1ADC2311A85922F00D5387C /* C-API.cpp */,
 				E1DD22741C47259900555A5D /* Core-C-API.cpp */,
+				B5A308D822F3391F00699B4C /* BuildKey-C-API-Private.h */,
 				B5BE9BA622E854E300777A06 /* BuildKey-C-API.cpp */,
 				B5A308B622F30DF000699B4C /* BuildValue-C-API.cpp */,
 			);
@@ -2608,7 +2609,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E1ADC23F1A8593AD00D5387C /* llbuild.h in Headers */,
-				B5A308D022F3165800699B4C /* BuildSystem-C-API-Private.h in Headers */,
+				B5A308DA22F3391F00699B4C /* BuildKey-C-API-Private.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2638,8 +2639,8 @@
 				B5A84D0C22943F9200A59064 /* db.h in Headers */,
 				E1D191CA1B472440000C4E95 /* llbuild.h in Headers */,
 				B5BE9BAC22E887CD00777A06 /* buildkey.h in Headers */,
-				B5BE9BB322E8A31000777A06 /* BuildSystem-C-API-Private.h in Headers */,
 				E1BE0AAE1C46F94000AD0883 /* core.h in Headers */,
+				B5A308D922F3391F00699B4C /* BuildKey-C-API-Private.h in Headers */,
 				E1192CED1C49D84500F85890 /* buildsystem.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

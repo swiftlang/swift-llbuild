@@ -22,7 +22,7 @@
 #include "llbuild/Core/BuildEngine.h"
 #include "llbuild/Core/DependencyInfoParser.h"
 
-#include "BuildSystem-C-API-Private.h"
+#include "BuildKey-C-API-Private.h"
 
 #include "llvm/ADT/Hashing.h"
 #include "llvm/ADT/SmallString.h"
@@ -283,44 +283,41 @@ public:
                Node* outputNode, SmallPtrSet<Node*, 1> inputNodes) override {
     if (cAPIDelegate.command_cannot_build_output_due_to_missing_inputs) {
       auto str = outputNode->getName().str();
-      llb_build_key_t output = { llb_build_key_kind_node, { str.size(), (const uint8_t *)strdup(str.c_str()) }};
+      auto output = new CAPIBuildKey(BuildKey::makeNode(str));
 
       CAPINodesVector inputs(inputNodes);
 
       cAPIDelegate.command_cannot_build_output_due_to_missing_inputs(
         cAPIDelegate.context,
         (llb_buildsystem_command_t*) command,
-        &output,
+        (llb_build_key_t **)&output,
         inputs.data(),
         inputs.count()
       );
 
-      llb_data_destroy(&output.key);
+      llb_build_key_destroy((llb_build_key_t *)output);
     }
   }
 
   class CAPINodesVector {
   private:
-    std::vector<llb_build_key_t> keys;
+    std::vector<CAPIBuildKey *> keys;
 
   public:
     CAPINodesVector(const SmallPtrSet<Node*, 1> inputNodes) : keys(inputNodes.size()) {
       int idx = 0;
       for (auto inputNode : inputNodes) {
-        auto& buildKey = keys[idx++];
-        buildKey.kind = llb_build_key_kind_node;
-        auto name = inputNode->getName().str();
-        buildKey.key = { name.size(), (const uint8_t *) strdup(name.c_str()) };
+        keys[idx++] = new CAPIBuildKey(BuildKey::makeNode(inputNode->getName()));
       }
     }
 
     ~CAPINodesVector() {
       for (auto& key : keys) {
-        llb_data_destroy(&key.key);
+        llb_build_key_destroy((llb_build_key_t *)key);
       }
     }
 
-    llb_build_key_t* data() { return &keys[0]; }
+    llb_build_key_t** data() { return (llb_build_key_t **)&keys[0]; }
     uint64_t count() { return keys.size(); }
   };
 
@@ -328,7 +325,7 @@ public:
                std::vector<Command*> commands) override {
     if (cAPIDelegate.cannot_build_node_due_to_multiple_producers) {
       auto str = outputNode->getName().str();
-      llb_build_key_t output = { llb_build_key_kind_node, { str.size(), (const uint8_t *)strdup(str.c_str()) }};
+      auto output = (llb_build_key_t *)new CAPIBuildKey(BuildKey::makeNode(str));
 
       cAPIDelegate.cannot_build_node_due_to_multiple_producers(
         cAPIDelegate.context,
@@ -337,7 +334,7 @@ public:
         commands.size()
       );
       
-      llb_data_destroy(&output.key);
+      llb_build_key_destroy(output);
     }
   }
 
@@ -403,7 +400,7 @@ public:
 
   class CAPIRulesVector {
   private:
-    std::vector<llb_build_key_t> rules;
+    std::vector<CAPIBuildKey *> rules;
 
   public:
     CAPIRulesVector(const std::vector<core::Rule*>& items) : rules(items.size()) {
@@ -412,17 +409,17 @@ public:
       for (std::vector<core::Rule*>::const_iterator it = items.begin(); it != items.end(); ++it) {
         core::Rule* rule = *it;
         auto key = BuildKey::fromData(rule->key);
-        rules[idx++] = convertBuildKey(key);
+        rules[idx++] = new CAPIBuildKey(key);
       }
     }
 
     ~CAPIRulesVector() {
       for (auto& rule : rules) {
-        llb_data_destroy(&rule.key);
+        llb_build_key_destroy((llb_build_key_t *)rule);
       }
     }
 
-    llb_build_key_t* data() { return &rules[0]; }
+    llb_build_key_t** data() { return (llb_build_key_t** )&rules[0]; }
     uint64_t count() { return rules.size(); }
   };
 
@@ -452,7 +449,7 @@ public:
 
     CAPIRulesVector rules(items);
     auto key = BuildKey::fromData(candidateRule->key);
-    llb_build_key_t candidate = convertBuildKey(key);
+    auto candidate = (llb_build_key_t *)new CAPIBuildKey(key);
 
     uint8_t result = cAPIDelegate.should_resolve_cycle(cAPIDelegate.context,
                                                        rules.data(),
@@ -460,7 +457,7 @@ public:
                                                        candidate,
                                                        convertCycleAction(action));
 
-    llb_data_destroy(&candidate.key);
+    llb_build_key_destroy(candidate);
 
     return (result);
   }

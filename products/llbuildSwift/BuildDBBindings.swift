@@ -215,7 +215,7 @@ public final class BuildDB {
         let errorPtr = MutableStringPointer()
         var result = BuildDBResult()
         
-        let stored = llb_database_lookup_rule_result(_database, buildKey.key, &result, &errorPtr.ptr)
+        let stored = llb_database_lookup_rule_result(_database, buildKey.internalBuildKey, &result, &errorPtr.ptr)
         
         if let error = errorPtr.msg {
             throw Error.operationDidFail(error: error)
@@ -226,11 +226,5 @@ public final class BuildDB {
         }
         
         return RuleResult(result: result)
-    }
-    
-    // MARK: - Private functions for wrapping C++ API
-    
-    static private func toDB(_ context: UnsafeMutableRawPointer) -> BuildDB {
-        return Unmanaged<BuildDB>.fromOpaque(UnsafeRawPointer(context)).takeUnretainedValue()
     }
 }

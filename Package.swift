@@ -35,7 +35,7 @@ let package = Package(
             name: "llbuildSwift",
             dependencies: ["libllbuild"],
             path: "products/llbuildSwift",
-            exclude: ["llbuild.swift"]
+            exclude: []
         ),
 
         /// The public llbuild API.

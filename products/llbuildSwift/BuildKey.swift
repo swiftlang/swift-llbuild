@@ -44,7 +44,7 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
     }
     
     /// The opaque pointer to the BuildKey object
-    fileprivate let internalBuildKey: OpaquePointer
+    internal let internalBuildKey: OpaquePointer
     
     fileprivate init(_ buildKey: OpaquePointer) {
         self.internalBuildKey = buildKey
@@ -64,8 +64,7 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
     /// Constructs a build key from internal representation.
     /// It returns a specific subclass, depending on the kind of the given key.
     /// - Parameter key: The internal representation of the build key.
-    public static func construct(key: llb_build_key_t) -> BuildKey {
-        let key = llb_build_key_make(key)
+    public static func construct(key: OpaquePointer) -> BuildKey {
         let kind = llb_build_key_get_kind(key)
         switch kind {
         case .command: return Command(key)
@@ -95,9 +94,9 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
     fileprivate func equal(to other: BuildKey) -> Bool {
         preconditionFailure("equal(to:) needs to be overridden in \(type(of: self))")
     }
-
-    public var key: llb_build_key_t {
-        llb_build_key_t(kind: self.kind, key: copiedDataFromBytes(self.keyData))
+    
+    public static func construct(data: llb_data_t) -> BuildKey {
+        construct(key: withUnsafePointer(to: data, llb_build_key_make))
     }
     
     public func hash(into hasher: inout Hasher) {
@@ -186,7 +185,7 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
     public final class FilteredDirectoryContents: BuildKey {
         public convenience init(path: String, filters: [String]) {
             let ptr = filters.withCArrayOfStrings { ptr in
-                llb_build_key_make_filtered_directory_contents(path, ptr, filters.count)
+                llb_build_key_make_filtered_directory_contents(path, ptr, Int32(filters.count))
             }
             
             self.init(ptr)
@@ -225,7 +224,7 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
     public final class DirectoryTreeSignature: BuildKey {
         public convenience init(path: String, filters: [String]) {
             let ptr = filters.withCArrayOfStrings { ptr in
-                llb_build_key_make_directory_tree_signature(path, ptr, filters.count)
+                llb_build_key_make_directory_tree_signature(path, ptr, Int32(filters.count))
             }
             
             self.init(ptr)

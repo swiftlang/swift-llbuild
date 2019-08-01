@@ -50,7 +50,7 @@ typedef struct llb_database_result_t_ {
   
    /// A list of the dependencies of the computed task (\see dependencies_count for getting the count).
   /// When the result is not needed anymore, call \see llb_database_destroy_result!
-  llb_build_key_t *_Nullable dependencies;
+  llb_build_key_t *_Nonnull *_Nullable dependencies;
 
    /// The number of dependencies for iterating over \see dependencies
   uint32_t dependencies_count;
@@ -68,7 +68,7 @@ llb_database_destroy(llb_database_t *database);
 
 /// Lookup the result of a rule in the database. result_out needs to be destroyed by calling llb_database_destroy_result.
 LLBUILD_EXPORT const bool
-llb_database_lookup_rule_result(llb_database_t *database, llb_build_key_t key, llb_database_result_t *result_out, llb_data_t *error_out);
+llb_database_lookup_rule_result(llb_database_t *database, llb_build_key_t *key, llb_database_result_t *result_out, llb_data_t *error_out);
 
 /// Destroys a result object by freeing its memory
 LLBUILD_EXPORT void
@@ -82,7 +82,7 @@ LLBUILD_EXPORT const llb_database_key_id
 llb_database_result_keys_get_count(llb_database_result_keys_t *result);
 
 /// Method for getting the key for a given id from a result keys object
-LLBUILD_EXPORT llb_build_key_t
+LLBUILD_EXPORT llb_build_key_t *
 llb_database_result_keys_get_key_at_index(llb_database_result_keys_t *result, int32_t index);
 
 /// Destroys the given result keys object, call this when the object is not used anymore
