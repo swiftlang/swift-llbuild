@@ -47,6 +47,26 @@
 #define LLBUILD_ENUM_ATTRIBUTES
 #endif
 
+#ifndef __has_feature
+# define __has_feature(x) 0
+#endif
+#if !__has_feature(nullability)
+# ifndef _Nullable
+#  define _Nullable
+# endif
+# ifndef _Nonnull
+#  define _Nonnull
+# endif
+#endif
+
+#if __has_feature(assume_nonnull)
+#define LLBUILD_ASSUME_NONNULL_BEGIN _Pragma("clang assume_nonnull begin")
+#define LLBUILD_ASSUME_NONNULL_END   _Pragma("clang assume_nonnull end")
+#else
+#define LLBUILD_ASSUME_NONNULL_BEGIN
+#define LLBUILD_ASSUME_NONNULL_END
+#endif
+
 /// A monotonically increasing indicator of the llbuild API version.
 ///
 /// The llbuild API is *not* stable. This value allows clients to conditionally

@@ -115,7 +115,7 @@ const llb_database_t* llb_database_open(
   
   auto database = CAPIBuildDB::create(StringRef(path), clientSchemaVersion, &error);
   
-  if (!error.empty() && error_out) {
+  if (!error.empty()) {
     error_out->length = error.size();
     error_out->data = (const uint8_t*)strdup(error.c_str());
     delete database;
