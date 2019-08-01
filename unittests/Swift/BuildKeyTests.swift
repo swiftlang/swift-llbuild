@@ -146,16 +146,16 @@ class BuildKeyTests: XCTestCase {
   func testConstruct() throws {
     // This test creates a raw llb_build_key_t and constructs a BuildKey from the given BuildKey instance
     func test<T: BuildKey>(_ instance: T, file: StaticString = #file, line: UInt = #line, _ expectation: (T) throws -> Void) throws {
-      let keyData = Array(instance.keyData.dropFirst())
+      let keyData = instance.keyData
       try keyData.withUnsafeBufferPointer { ptr in
         let data = llb_data_t(length: UInt64(keyData.count), data: ptr.baseAddress)
-        let internalKey = llb_build_key_t(kind: instance.kind, key: data)
-        guard let key = BuildKey.construct(key: internalKey) as? T else {
-          XCTFail("Expected to be able to construct a build key from \(internalKey), but BuildKey.construct(key:) returned nil.", file: file, line: line)
+        let constructedKey = BuildKey.construct(data: data)
+        guard let typedKey = constructedKey as? T else {
+          XCTFail("Expected to be able to construct a build key of type \(T.self) from \(data), but BuildKey.construct(data:) returned \(constructedKey) of type \(type(of: constructedKey)).", file: file, line: line)
           return
         }
-        try expectation(key)
-        XCTAssertEqual(instance, key, file: file, line: line)
+        try expectation(typedKey)
+        XCTAssertEqual(instance, typedKey, file: file, line: line)
       }
     }
 

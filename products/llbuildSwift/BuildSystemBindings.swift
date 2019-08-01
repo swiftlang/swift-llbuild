@@ -591,13 +591,13 @@ public final class BuildSystem {
         _delegate.command_had_warning = { BuildSystem.toSystem($0!).commandHadWarning(Command(handle: $1), $2!) }
         _delegate.command_cannot_build_output_due_to_missing_inputs = {
             let inputsPtr = $3!
-            let inputs = (0..<Int($4)).map { BuildKey.construct(key: inputsPtr[$0]) }
-            BuildSystem.toSystem($0!).commandCannotBuildOutputDueToMissingInputs(Command(handle: $1), BuildKey.construct(key: $2!.pointee), inputs)
+            let inputs = (0..<Int($4)).map { BuildKey.construct(key: inputsPtr[$0]!) }
+            BuildSystem.toSystem($0!).commandCannotBuildOutputDueToMissingInputs(Command(handle: $1), BuildKey.construct(key: $2!.pointee!), inputs)
         }
         _delegate.cannot_build_node_due_to_multiple_producers = {
             let commandsPtr = $2!
             let commands = (0..<Int($3)).map { Command(handle: commandsPtr[$0]) }
-            BuildSystem.toSystem($0!).cannotBuildNodeDueToMultipleProducers(BuildKey.construct(key: $1!.pointee), commands)
+            BuildSystem.toSystem($0!).cannotBuildNodeDueToMultipleProducers(BuildKey.construct(key: $1!.pointee!), commands)
         }
         _delegate.command_process_started = { BuildSystem.toSystem($0!).commandProcessStarted(Command(handle: $1), ProcessHandle($2!)) }
         _delegate.command_process_had_error = { BuildSystem.toSystem($0!).commandProcessHadError(Command(handle: $1), ProcessHandle($2!), $3!) }
@@ -606,16 +606,16 @@ public final class BuildSystem {
         _delegate.cycle_detected = {
             var rules = [BuildKey]()
             UnsafeBufferPointer(start: $1, count: Int($2)).forEach {
-                rules.append(BuildKey.construct(key: $0))
+                rules.append(BuildKey.construct(key: $0!))
             }
             BuildSystem.toSystem($0!).cycleDetected(rules)
         }
         _delegate.should_resolve_cycle = {
             var rules = [BuildKey]()
             UnsafeBufferPointer(start: $1, count: Int($2)).forEach {
-                rules.append(BuildKey.construct(key: $0))
+                rules.append(BuildKey.construct(key: $0!))
             }
-            let candidate = BuildKey.construct(key: $3)
+            let candidate = BuildKey.construct(key: $3!)
 
             let result = BuildSystem.toSystem($0!).shouldResolveCycle(rules, candidate, $4)
 

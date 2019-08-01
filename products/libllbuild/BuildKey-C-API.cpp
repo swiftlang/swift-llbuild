@@ -15,7 +15,7 @@
 
 #include "llbuild/BuildSystem/BuildKey.h"
 
-#include "BuildSystem-C-API-Private.h"
+#include "BuildKey-C-API-Private.h"
 
 #include "llvm/ADT/ArrayRef.h"
 
@@ -23,16 +23,34 @@ using namespace llbuild;
 using namespace llbuild::buildsystem;
 
 namespace {
-/// This class is used as a context pointer in the client
-class CAPIBuildKey {
-public:
-  BuildKey internalBuildKey;
-  CAPIBuildKey(const BuildKey &buildKey): internalBuildKey(buildKey) {}
-  
-  llb_build_key_kind_t getKind() {
-    return internalToPublicBuildKeyKind(internalBuildKey.getKind());
+static inline llb_build_key_kind_t internalToPublicBuildKeyKind(const BuildKey::Kind kind) {
+  switch (kind) {
+    case BuildKey::Kind::Command:
+      return llb_build_key_kind_command;
+    case BuildKey::Kind::CustomTask:
+      return llb_build_key_kind_custom_task;
+    case BuildKey::Kind::DirectoryContents:
+      return llb_build_key_kind_directory_contents;
+    case BuildKey::Kind::FilteredDirectoryContents:
+      return llb_build_key_kind_filtered_directory_contents;
+    case BuildKey::Kind::DirectoryTreeSignature:
+      return llb_build_key_kind_directory_tree_signature;
+    case BuildKey::Kind::DirectoryTreeStructureSignature:
+      return llb_build_key_kind_directory_tree_structure_signature;
+    case BuildKey::Kind::Node:
+      return llb_build_key_kind_node;
+    case BuildKey::Kind::Stat:
+      return llb_build_key_kind_stat;
+    case BuildKey::Kind::Target:
+      return llb_build_key_kind_target;
+    case BuildKey::Kind::Unknown:
+      return llb_build_key_kind_unknown;
   }
-};
+}
+
+llb_build_key_kind_t CAPIBuildKey::getKind() {
+   return internalToPublicBuildKeyKind(internalBuildKey.getKind());
+ }
 
 static const BuildKey::Kind publicToInternalBuildKeyKind(llb_build_key_kind_t kind) {
     switch (kind) {
@@ -58,33 +76,24 @@ static const BuildKey::Kind publicToInternalBuildKeyKind(llb_build_key_kind_t ki
       return BuildKey::Kind::Stat;
   }
 }
-
-static BuildKey convertBuildKey(llb_build_key_t& key) {
-  BuildKey::Kind kind = publicToInternalBuildKeyKind(key.kind);
-  
-  KeyType prefix(1, BuildKey::identifierForKind(kind));
-  KeyType suffix((char*) key.key.data, key.key.length);
-  return BuildKey::fromData(prefix + suffix);
-}
 }
 
-llb_build_key *llb_build_key_make(llb_build_key_t key) {
-  auto buildKey = convertBuildKey(key);
-  return (llb_build_key *)new CAPIBuildKey(buildKey);
+llb_build_key_t *llb_build_key_make(const llb_data_t *data) {
+  return (llb_build_key_t *)new CAPIBuildKey(BuildKey::fromData(core::KeyType(data->data, data->data + data->length)));
 }
 
-llb_build_key_kind_t llb_build_key_get_kind(llb_build_key *_Nonnull key) {
+llb_build_key_kind_t llb_build_key_get_kind(llb_build_key_t *_Nonnull key) {
   return ((CAPIBuildKey *)key)->getKind();
 }
 
-void llb_build_key_get_key_data(llb_build_key *_Nonnull key, void *_Nullable context, void (* _Nonnull iteration)(void *_Nullable context, uint8_t data)) {
-  auto keyData = ((CAPIBuildKey *)key)->internalBuildKey.getKeyData();
+void llb_build_key_get_key_data(llb_build_key_t *_Nonnull key, void *_Nullable context, void (* _Nonnull iteration)(void *_Nullable context, uint8_t data)) {
+  auto keyData = ((CAPIBuildKey *)key)->getInternalBuildKey().getKeyData();
   for (auto element: keyData) {
     iteration(context, element);
   }
 }
 
-void llb_build_key_destroy(llb_build_key *key) {
+void llb_build_key_destroy(llb_build_key_t *key) {
   delete (CAPIBuildKey *)key;
 }
 
@@ -96,60 +105,60 @@ llb_build_key_kind_t llb_build_key_kind_for_identifier(char identifier) {
   return internalToPublicBuildKeyKind(BuildKey::kindForIdentifier(identifier));
 }
 
-llb_build_key *llb_build_key_make_command(const char *name) {
-  return (llb_build_key *)new CAPIBuildKey(BuildKey::makeCommand(StringRef(name)));
+llb_build_key_t *llb_build_key_make_command(const char *name) {
+  return (llb_build_key_t *)new CAPIBuildKey(BuildKey::makeCommand(StringRef(name)));
 }
 
-void llb_build_key_get_command_name(llb_build_key *key, llb_data_t *out_name) {
-  auto name = ((CAPIBuildKey *)key)->internalBuildKey.getCommandName();
+void llb_build_key_get_command_name(llb_build_key_t *key, llb_data_t *out_name) {
+  auto name = ((CAPIBuildKey *)key)->getInternalBuildKey().getCommandName();
   out_name->length = name.size();
   out_name->data = (const uint8_t*)strdup(name.str().c_str());
 }
 
-llb_build_key *llb_build_key_make_custom_task(const char *name, const char *taskData) {
-  return (llb_build_key *)new CAPIBuildKey(BuildKey::makeCustomTask(StringRef(name), StringRef(taskData)));
+llb_build_key_t *llb_build_key_make_custom_task(const char *name, const char *taskData) {
+  return (llb_build_key_t *)new CAPIBuildKey(BuildKey::makeCustomTask(StringRef(name), StringRef(taskData)));
 }
 
-void llb_build_key_get_custom_task_name(llb_build_key *key, llb_data_t *out_name) {
-  auto name = ((CAPIBuildKey *)key)->internalBuildKey.getCustomTaskName();
+void llb_build_key_get_custom_task_name(llb_build_key_t *key, llb_data_t *out_name) {
+  auto name = ((CAPIBuildKey *)key)->getInternalBuildKey().getCustomTaskName();
   out_name->length = name.size();
   out_name->data = (const uint8_t*)strdup(name.str().c_str());
 }
 
-void llb_build_key_get_custom_task_data(llb_build_key *key, llb_data_t *out_task_data) {
-  auto data = ((CAPIBuildKey *)key)->internalBuildKey.getCustomTaskData();
+void llb_build_key_get_custom_task_data(llb_build_key_t *key, llb_data_t *out_task_data) {
+  auto data = ((CAPIBuildKey *)key)->getInternalBuildKey().getCustomTaskData();
   out_task_data->length = data.size();
   out_task_data->data = (const uint8_t*)strdup(data.str().c_str());
 }
 
-llb_build_key *llb_build_key_make_directory_contents(const char *path) {
-  return (llb_build_key *)new CAPIBuildKey(BuildKey::makeDirectoryContents(StringRef(path)));
+llb_build_key_t *llb_build_key_make_directory_contents(const char *path) {
+  return (llb_build_key_t *)new CAPIBuildKey(BuildKey::makeDirectoryContents(StringRef(path)));
 }
 
-void llb_build_key_get_directory_path(llb_build_key *key, llb_data_t *out_path) {
-  auto path = ((CAPIBuildKey *)key)->internalBuildKey.getDirectoryPath();
+void llb_build_key_get_directory_path(llb_build_key_t *key, llb_data_t *out_path) {
+  auto path = ((CAPIBuildKey *)key)->getInternalBuildKey().getDirectoryPath();
   out_path->length = path.size();
   out_path->data = (const uint8_t*)strdup(path.str().c_str());
 }
 
-llb_build_key *llb_build_key_make_filtered_directory_contents(const char *path, const char *const *filters, size_t count_filters) {
+llb_build_key_t *llb_build_key_make_filtered_directory_contents(const char *path, const char *const *filters, int32_t count_filters) {
   auto filtersToPass = std::vector<StringRef>();
   for (int i = 0; i < count_filters; i++) {
     filtersToPass.push_back(StringRef(filters[i]));
   }
   
-  return (llb_build_key *)new CAPIBuildKey(BuildKey::makeFilteredDirectoryContents(StringRef(path), basic::StringList(ArrayRef<StringRef>(filtersToPass))));
+  return (llb_build_key_t *)new CAPIBuildKey(BuildKey::makeFilteredDirectoryContents(StringRef(path), basic::StringList(ArrayRef<StringRef>(filtersToPass))));
 }
 
-void llb_build_key_get_filtered_directory_path(llb_build_key *key, llb_data_t *out_path) {
-  auto path = ((CAPIBuildKey *)key)->internalBuildKey.getFilteredDirectoryPath();
+void llb_build_key_get_filtered_directory_path(llb_build_key_t *key, llb_data_t *out_path) {
+  auto path = ((CAPIBuildKey *)key)->getInternalBuildKey().getFilteredDirectoryPath();
   out_path->length = path.size();
   out_path->data = (const uint8_t*)strdup(path.str().c_str());
 }
 
-void llb_build_key_get_filtered_directory_filters(llb_build_key *key, void *context, IteratorFunction iterator) {
-  auto filters = ((CAPIBuildKey *)key)->internalBuildKey.getContentExclusionPatternsAsStringList();
-  size_t index = 0;
+void llb_build_key_get_filtered_directory_filters(llb_build_key_t *key, void *context, IteratorFunction iterator) {
+  auto filters = ((CAPIBuildKey *)key)->getInternalBuildKey().getContentExclusionPatternsAsStringList();
+  int32_t index = 0;
   for (auto filter: filters.getValues()) {
     llb_data_t data;
     data.length = filter.size();
@@ -160,61 +169,61 @@ void llb_build_key_get_filtered_directory_filters(llb_build_key *key, void *cont
   }
 }
 
-llb_build_key *llb_build_key_make_directory_tree_signature(const char *_Nonnull path, const char* const* filters, size_t count_filters) {
+llb_build_key_t *llb_build_key_make_directory_tree_signature(const char *_Nonnull path, const char* const* filters, int32_t count_filters) {
   auto filtersToPass = std::vector<StringRef>();
   for (int i = 0; i < count_filters; i++) {
     filtersToPass.push_back(StringRef(filters[i]));
   }
   
-  return (llb_build_key *)new CAPIBuildKey(BuildKey::makeDirectoryTreeSignature(StringRef(path), basic::StringList(ArrayRef<StringRef>(filtersToPass))));
+  return (llb_build_key_t *)new CAPIBuildKey(BuildKey::makeDirectoryTreeSignature(StringRef(path), basic::StringList(ArrayRef<StringRef>(filtersToPass))));
 }
 
-void llb_build_key_get_directory_tree_signature_path(llb_build_key *key, llb_data_t *out_path) {
-  auto path = ((CAPIBuildKey *)key)->internalBuildKey.getDirectoryTreeSignaturePath();
+void llb_build_key_get_directory_tree_signature_path(llb_build_key_t *key, llb_data_t *out_path) {
+  auto path = ((CAPIBuildKey *)key)->getInternalBuildKey().getDirectoryTreeSignaturePath();
   out_path->length = path.size();
   out_path->data = (const uint8_t*)strdup(path.str().c_str());
 }
 
-void llb_build_key_get_directory_tree_signature_filters(llb_build_key *key, void *context, IteratorFunction iterator) {
+void llb_build_key_get_directory_tree_signature_filters(llb_build_key_t *key, void *context, IteratorFunction iterator) {
   llb_build_key_get_filtered_directory_filters(key, context, iterator);
 }
 
-llb_build_key *llb_build_key_make_directory_tree_structure_signature(const char *path) {
-  return (llb_build_key *)new CAPIBuildKey(BuildKey::makeDirectoryTreeStructureSignature(StringRef(path)));
+llb_build_key_t *llb_build_key_make_directory_tree_structure_signature(const char *path) {
+  return (llb_build_key_t *)new CAPIBuildKey(BuildKey::makeDirectoryTreeStructureSignature(StringRef(path)));
 }
 
-void llb_build_key_get_directory_tree_structure_signature_path(llb_build_key *key, llb_data_t *out_path) {
-  auto path = ((CAPIBuildKey *)key)->internalBuildKey.getDirectoryPath();
+void llb_build_key_get_directory_tree_structure_signature_path(llb_build_key_t *key, llb_data_t *out_path) {
+  auto path = ((CAPIBuildKey *)key)->getInternalBuildKey().getDirectoryPath();
   out_path->length = path.size();
   out_path->data = (const uint8_t*)strdup(path.str().c_str());
 }
 
-llb_build_key *llb_build_key_make_node(const char *path) {
-  return (llb_build_key *)new CAPIBuildKey(BuildKey::makeNode(StringRef(path)));
+llb_build_key_t *llb_build_key_make_node(const char *path) {
+  return (llb_build_key_t *)new CAPIBuildKey(BuildKey::makeNode(StringRef(path)));
 }
 
-void llb_build_key_get_node_path(llb_build_key *key, llb_data_t *out_path) {
-  auto path = ((CAPIBuildKey *)key)->internalBuildKey.getNodeName();
+void llb_build_key_get_node_path(llb_build_key_t *key, llb_data_t *out_path) {
+  auto path = ((CAPIBuildKey *)key)->getInternalBuildKey().getNodeName();
   out_path->length = path.size();
   out_path->data = (const uint8_t*)strdup(path.str().c_str());
 }
 
-llb_build_key *llb_build_key_make_stat(const char *path) {
-  return (llb_build_key *)new CAPIBuildKey(BuildKey::makeStat(StringRef(path)));
+llb_build_key_t *llb_build_key_make_stat(const char *path) {
+  return (llb_build_key_t *)new CAPIBuildKey(BuildKey::makeStat(StringRef(path)));
 }
 
-void llb_build_key_get_stat_path(llb_build_key *key, llb_data_t *out_path) {
-  auto path = ((CAPIBuildKey *)key)->internalBuildKey.getStatName();
+void llb_build_key_get_stat_path(llb_build_key_t *key, llb_data_t *out_path) {
+  auto path = ((CAPIBuildKey *)key)->getInternalBuildKey().getStatName();
   out_path->length = path.size();
   out_path->data = (const uint8_t*)strdup(path.str().c_str());
 }
 
-llb_build_key *llb_build_key_make_target(const char *name) {
-  return (llb_build_key *)new CAPIBuildKey(BuildKey::makeTarget(StringRef(name)));
+llb_build_key_t *llb_build_key_make_target(const char *name) {
+  return (llb_build_key_t *)new CAPIBuildKey(BuildKey::makeTarget(StringRef(name)));
 }
 
-void llb_build_key_get_target_name(llb_build_key *key, llb_data_t *out_name) {
-  auto name = ((CAPIBuildKey *)key)->internalBuildKey.getTargetName();
+void llb_build_key_get_target_name(llb_build_key_t *key, llb_data_t *out_name) {
+  auto name = ((CAPIBuildKey *)key)->getInternalBuildKey().getTargetName();
   out_name->length = name.size();
   out_name->data = (const uint8_t*)strdup(name.str().c_str());
 }

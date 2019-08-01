@@ -15,12 +15,13 @@
 #include "llbuild/BuildSystem/BuildKey.h"
 #include "llbuild/Core/BuildDB.h"
 
-#include "BuildSystem-C-API-Private.h"
+#include "BuildKey-C-API-Private.h"
 
 #include <mutex>
 
 using namespace llbuild;
 using namespace llbuild::core;
+using namespace llbuild::buildsystem;
 
 namespace {
 
@@ -38,9 +39,9 @@ namespace {
       return keys.size();
     }
     
-    llb_build_key_t keyAtIndex(int32_t index) {
+    llb_build_key_t *keyAtIndex(int32_t index) {
       auto buildKey = BuildKey::fromData(keys[index]);
-      return convertBuildKey(buildKey);
+      return (llb_build_key_t *)new CAPIBuildKey(buildKey);
     }
   };
 
@@ -130,16 +131,16 @@ const llb_data_t mapData(std::vector<uint8_t> input) {
 const llb_database_result_t mapResult(CAPIBuildDB &db, Result result) {
   
   auto count = result.dependencies.size();
-  std::vector<llb_build_key_t> buildKeys;
+  std::vector<llb_build_key_t *> buildKeys;
   for (auto keyID: result.dependencies) {
     auto buildKey = db.getKeyForID(keyID);
-    auto bar = BuildKey::fromData(buildKey);
-    buildKeys.insert(buildKeys.end(), convertBuildKey(bar));
+    auto internalBuildKey = BuildKey::fromData(buildKey);
+    buildKeys.insert(buildKeys.end(), (llb_build_key_t *)new CAPIBuildKey(internalBuildKey));
   }
   
   auto data = buildKeys.data();
   auto size = sizeof(*data) * count;
-  llb_build_key_t *deps = (llb_build_key_t *)malloc(size);
+  llb_build_key_t **deps = (llb_build_key_t **)malloc(size);
   memcpy(deps, data, size);
   
   return llb_database_result_t {
@@ -183,14 +184,14 @@ void llb_database_destroy(llb_database_t *database) {
   delete db;
 }
 
-const bool llb_database_lookup_rule_result(llb_database_t *database, llb_build_key_t key, llb_database_result_t *result_out, llb_data_t *error_out) {
+const bool llb_database_lookup_rule_result(llb_database_t *database, llb_build_key_t *key, llb_database_result_t *result_out, llb_data_t *error_out) {
   
   auto db = (CAPIBuildDB *)database;
   
   std::string error;
   Result result;
   
-  auto stored = db->lookupRuleResult(KeyType(key.key.data, key.key.data + key.key.length), &result, &error);
+  auto stored = db->lookupRuleResult(((CAPIBuildKey *)key)->getInternalBuildKey().toData(), &result, &error);
   
   if (result_out) {
     *result_out = mapResult(*db, result);
@@ -209,7 +210,7 @@ const llb_database_key_id llb_database_result_keys_get_count(llb_database_result
   return resultKeys->size();
 }
 
-llb_build_key_t llb_database_result_keys_get_key_at_index(llb_database_result_keys_t *result, int32_t index) {
+llb_build_key_t * llb_database_result_keys_get_key_at_index(llb_database_result_keys_t *result, int32_t index) {
   auto resultKeys = (CAPIBuildDBKeysResult *)result;
   return resultKeys->keyAtIndex(index);
 }

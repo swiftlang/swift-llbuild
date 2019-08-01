@@ -21,6 +21,8 @@
 #error Clients must include the "llbuild.h" umbrella header.
 #endif
 
+#include "buildkey.h"
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -142,38 +144,6 @@ typedef enum LLBUILD_ENUM_ATTRIBUTES {
   llb_buildsystem_command_status_kind_is_complete LLBUILD_SWIFT_NAME(isComplete) = 2,
 } llb_buildsystem_command_status_kind_t LLBUILD_SWIFT_NAME(CommandStatusKind);
 
-typedef enum LLBUILD_ENUM_ATTRIBUTES {
-  /// A key used to identify a command.
-  llb_build_key_kind_command = 0,
-
-  /// A key used to identify a custom task.
-  llb_build_key_kind_custom_task LLBUILD_SWIFT_NAME(customTask) = 1,
-
-  /// A key used to identify directory contents.
-  llb_build_key_kind_directory_contents LLBUILD_SWIFT_NAME(directoryContents) = 2,
-
-  /// A key used to identify the signature of a complete directory tree.
-  llb_build_key_kind_directory_tree_signature LLBUILD_SWIFT_NAME(directoryTreeSignature) = 3,
-
-  /// A key used to identify a node.
-  llb_build_key_kind_node = 4,
-
-  /// A key used to identify a target.
-  llb_build_key_kind_target = 5,
-
-  /// An invalid key kind.
-  llb_build_key_kind_unknown = 6,
-
-  /// A key used to identify the signature of a complete directory tree.
-  llb_build_key_kind_directory_tree_structure_signature LLBUILD_SWIFT_NAME(directoryTreeStructureSignature) = 7,
-
-  /// A key used to identify filtered directory contents.
-  llb_build_key_kind_filtered_directory_contents LLBUILD_SWIFT_NAME(filteredDirectoryContents) = 8,
-
-  /// A key used to identify a node.
-  llb_build_key_kind_stat = 10,
-} llb_build_key_kind_t LLBUILD_SWIFT_NAME(BuildKeyKind);
-
 /// Cycle actions.
 typedef enum LLBUILD_ENUM_ATTRIBUTES {
   /// Indicates a rule will be forced to build.
@@ -191,16 +161,6 @@ typedef enum LLBUILD_ENUM_ATTRIBUTES {
   /// First in, first out
   llb_scheduler_algorithm_fifo = 1
 } llb_scheduler_algorithm_t LLBUILD_SWIFT_NAME(SchedulerAlgorithm);
-
-/// The BuildKey encodes the key space used by the BuildSystem when using the
-/// core BuildEngine.
-typedef struct llb_build_key_t_ llb_build_key_t;
-struct llb_build_key_t_ {
-  /// The kind of key
-  llb_build_key_kind_t kind;
-  /// The actual key data
-  llb_data_t key;
-} ;
 
 /// Invocation parameters for a build system.
 typedef struct llb_buildsystem_invocation_t_ llb_buildsystem_invocation_t;
@@ -403,14 +363,14 @@ typedef struct llb_buildsystem_delegate_t_ {
   /// Called to report a command could not build due to missing inputs.
   void (*command_cannot_build_output_due_to_missing_inputs)(void *context,
                            llb_buildsystem_command_t* command,
-                           llb_build_key_t* output,
-                           llb_build_key_t* inputs,
+                           llb_build_key_t** output,
+                           llb_build_key_t** inputs,
                            uint64_t input_count);
 
   /// Called by the build system to report a node could not be built
   /// because multiple commands are producing it.
   void (*cannot_build_node_due_to_multiple_producers)(void *context,
-                           llb_build_key_t* output,
+                           llb_build_key_t** output,
                            llb_buildsystem_command_t** commands,
                            uint64_t command_count);
 
@@ -465,7 +425,7 @@ typedef struct llb_buildsystem_delegate_t_ {
   /// the node which was requested to build and ending with the first node in
   /// the cycle (i.e., the node participating in the cycle will appear twice).
   /// Xparam rule_count The number of rules comprising the cycle.
-  void (*cycle_detected)(void* context, llb_build_key_t* rules, uint64_t rule_count);
+  void (*cycle_detected)(void* context, llb_build_key_t** rules, uint64_t rule_count);
 
   /// Called when a cycle is detected by the build engine to check if it should
   /// attempt to resolve the cycle and continue
@@ -483,9 +443,9 @@ typedef struct llb_buildsystem_delegate_t_ {
   /// action may yield unexpected results and thus this should be opted into
   /// with care.
   uint8_t (*should_resolve_cycle)(void* context,
-                                  llb_build_key_t* rules,
+                                  llb_build_key_t** rules,
                                   uint64_t rule_count,
-                                  llb_build_key_t candidate_rule,
+                                  llb_build_key_t* candidate_rule,
                                   llb_cycle_action_t action);
   
   /// @}
