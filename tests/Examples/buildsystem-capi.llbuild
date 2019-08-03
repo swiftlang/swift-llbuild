@@ -9,7 +9,7 @@
 # CHECK: -- stat: /
 # CHECK: command_started: <hello> -- HELLO
 # CHECK: command_finished: <hello>
-# CHECK: command_started: <fancy-thing>
+# CHECK: command_started: <fancy-thing> -- RUNNING FANCY
 # CHECK: fancy_command_execute_command
 # CHECK: command_finished: <fancy-thing>
 # CHECK: command_started: <error> -- FAILING-COMMAND
@@ -47,6 +47,7 @@ commands:
 
   "<fancy-thing>":
     tool: fancy
+    description: RUNNING FANCY
     inputs: ["<hello>"]
     outputs: ["<fancy-thing>"]
     
