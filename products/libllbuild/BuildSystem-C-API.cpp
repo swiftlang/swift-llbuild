@@ -768,12 +768,20 @@ public:
 
   virtual void getShortDescription(SmallVectorImpl<char> &result) const override {
     // FIXME: Provide client control.
-    llvm::raw_svector_ostream(result) << getName();
+    if (!getDescription().empty()) {
+      llvm::raw_svector_ostream(result) << getDescription();
+    } else {
+      llvm::raw_svector_ostream(result) << getName();
+    }
   }
 
   virtual void getVerboseDescription(SmallVectorImpl<char> &result) const override {
     // FIXME: Provide client control.
-    llvm::raw_svector_ostream(result) << getName();
+    if (!getDescription().empty()) {
+      llvm::raw_svector_ostream(result) << getDescription();
+    } else {
+      llvm::raw_svector_ostream(result) << getName();
+    }
   }
 
   virtual llbuild::basic::CommandSignature getSignature() const override {
