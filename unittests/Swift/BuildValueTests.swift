@@ -16,31 +16,12 @@ import llbuildSwift
 import llbuild
 #endif
 
-private func toBytes<T: BinaryInteger>(element: T, count: Int) -> ValueType {
-  (0..<count).map { UInt8(truncatingIfNeeded: element << ($0 * 8)) }
-}
-
-private extension Sequence where Element: Any {
-  var asValue: ValueType {
-    reduce(into: [ValueType]()) { result, element in
-      switch element {
-      case is UInt8: result.append([element as! UInt8])
-      case is Int8: result.append([UInt8(element as! Int8)])
-      case is Int: result.append(toBytes(element: element as! Int, count: 4))
-      case is UInt64: result.append(toBytes(element: element as! UInt64, count: 8))
-      default:
-        XCTFail("Cannot convert \(element) to [UInt8] because it's not implemented.")
-      }
-    }.flatMap { $0 }
-  }
-}
-
 class BuildValueTests: XCTestCase {
 
   func testInvalid() {
     let buildValue = BuildValue.Invalid()
     XCTAssertEqual(buildValue.kind, .invalid)
-    XCTAssertEqual(buildValue.valueData, [0])
+    XCTAssertFalse(buildValue.valueData.isEmpty)
     XCTAssertEqual(buildValue.description, "<BuildValue.Invalid>")
     XCTAssertEqual(buildValue, BuildValue.Invalid())
     XCTAssertNotEqual(buildValue, BuildValue.CancelledCommand())
@@ -49,7 +30,7 @@ class BuildValueTests: XCTestCase {
   func testVirtualInput() {
     let buildValue = BuildValue.VirtualInput()
     XCTAssertEqual(buildValue.kind, .virtualInput)
-    XCTAssertEqual(buildValue.valueData, [1])
+    XCTAssertFalse(buildValue.valueData.isEmpty)
     XCTAssertEqual(buildValue.description, "<BuildValue.VirtualInput>")
     XCTAssertEqual(buildValue, BuildValue.VirtualInput())
     XCTAssertNotEqual(buildValue, BuildValue.CancelledCommand())
@@ -59,7 +40,7 @@ class BuildValueTests: XCTestCase {
     let fileInfo = BuildValue.FileInfo(device: 1, inode: 2, mode: 3, size: 4, modTime: BuildValue.FileTimestamp(seconds: 5, nanoseconds: 6))
     let buildValue = BuildValue.ExistingInput(fileInfo: fileInfo)
     XCTAssertEqual(buildValue.kind, .existingInput)
-    XCTAssertEqual(buildValue.valueData, [UInt8(2), 1, UInt64(1), UInt64(2), UInt64(3), UInt64(4), UInt64(5), UInt64(6)].asValue)
+    XCTAssertFalse(buildValue.valueData.isEmpty)
     XCTAssertEqual(buildValue.fileInfo, fileInfo)
     XCTAssertEqual(buildValue.description, "<BuildValue.ExistingInput fileInfo=<FileInfo device=1 inode=2 mode=3 size=4 modTime=<FileTimestamp seconds=5 nanoseconds=6>>>")
     XCTAssertEqual(buildValue, BuildValue.ExistingInput(fileInfo: fileInfo))
@@ -69,7 +50,7 @@ class BuildValueTests: XCTestCase {
   func testMissingInput() {
     let buildValue = BuildValue.MissingInput()
     XCTAssertEqual(buildValue.kind, .missingInput)
-    XCTAssertEqual(buildValue.valueData, [3])
+    XCTAssertFalse(buildValue.valueData.isEmpty)
     XCTAssertEqual(buildValue.description, "<BuildValue.MissingInput>")
     XCTAssertEqual(buildValue, BuildValue.MissingInput())
     XCTAssertNotEqual(buildValue, BuildValue.CancelledCommand())
@@ -89,7 +70,7 @@ class BuildValueTests: XCTestCase {
     let buildValue = BuildValue.DirectoryTreeSignature(signature: 42)
     XCTAssertEqual(buildValue.kind, .directoryTreeSignature)
     XCTAssertEqual(buildValue.signature, 42)
-    XCTAssertEqual(buildValue.valueData, [UInt8(5), UInt64(42)].asValue)
+    XCTAssertFalse(buildValue.valueData.isEmpty)
     XCTAssertEqual(buildValue.description, "<BuildValue.DirectoryTreeSignature signature=42>")
     XCTAssertEqual(buildValue, BuildValue.DirectoryTreeSignature(signature: 42))
     XCTAssertNotEqual(buildValue, BuildValue.DirectoryTreeSignature(signature: 2))
@@ -99,7 +80,7 @@ class BuildValueTests: XCTestCase {
     let buildValue = BuildValue.DirectoryTreeStructureSignature(signature: 42)
     XCTAssertEqual(buildValue.kind, .directoryTreeStructureSignature)
     XCTAssertEqual(buildValue.signature, 42)
-    XCTAssertEqual(buildValue.valueData, [UInt8(6), UInt64(42)].asValue)
+    XCTAssertFalse(buildValue.valueData.isEmpty)
     XCTAssertEqual(buildValue.description, "<BuildValue.DirectoryTreeStructureSignature signature=42>")
     XCTAssertEqual(buildValue, BuildValue.DirectoryTreeStructureSignature(signature: 42))
     XCTAssertNotEqual(buildValue, BuildValue.DirectoryTreeStructureSignature(signature: 2))
@@ -108,7 +89,7 @@ class BuildValueTests: XCTestCase {
   func testMissingOutput() {
     let buildValue = BuildValue.MissingOutput()
     XCTAssertEqual(buildValue.kind, .missingOutput)
-    XCTAssertEqual(buildValue.valueData, [UInt8(8)].asValue)
+    XCTAssertFalse(buildValue.valueData.isEmpty)
     XCTAssertEqual(buildValue.description, "<BuildValue.MissingOutput>")
     XCTAssertEqual(buildValue, BuildValue.MissingOutput())
     XCTAssertNotEqual(buildValue, BuildValue.CancelledCommand())
@@ -117,7 +98,7 @@ class BuildValueTests: XCTestCase {
   func testFailedInput() {
     let buildValue = BuildValue.FailedInput()
     XCTAssertEqual(buildValue.kind, .failedInput)
-    XCTAssertEqual(buildValue.valueData, [UInt8(9)].asValue)
+    XCTAssertFalse(buildValue.valueData.isEmpty)
     XCTAssertEqual(buildValue.description, "<BuildValue.FailedInput>")
     XCTAssertEqual(buildValue, BuildValue.FailedInput())
     XCTAssertNotEqual(buildValue, BuildValue.CancelledCommand())
@@ -138,7 +119,7 @@ class BuildValueTests: XCTestCase {
   func testFailedCommand() {
     let buildValue = BuildValue.FailedCommand()
     XCTAssertEqual(buildValue.kind, .failedCommand)
-    XCTAssertEqual(buildValue.valueData, [UInt8(11)].asValue)
+    XCTAssertFalse(buildValue.valueData.isEmpty)
     XCTAssertEqual(buildValue.description, "<BuildValue.FailedCommand>")
     XCTAssertEqual(buildValue, BuildValue.FailedCommand())
     XCTAssertNotEqual(buildValue, BuildValue.CancelledCommand())
@@ -147,7 +128,7 @@ class BuildValueTests: XCTestCase {
   func testPropagatedFailedCommand() {
     let buildValue = BuildValue.PropagatedFailureCommand()
     XCTAssertEqual(buildValue.kind, .propagatedFailureCommand)
-    XCTAssertEqual(buildValue.valueData, [UInt8(12)].asValue)
+    XCTAssertFalse(buildValue.valueData.isEmpty)
     XCTAssertEqual(buildValue.description, "<BuildValue.PropagatedFailureCommand>")
     XCTAssertEqual(buildValue, BuildValue.PropagatedFailureCommand())
     XCTAssertNotEqual(buildValue, BuildValue.CancelledCommand())
@@ -156,7 +137,7 @@ class BuildValueTests: XCTestCase {
   func testCancelledCommand() {
     let buildValue = BuildValue.CancelledCommand()
     XCTAssertEqual(buildValue.kind, .cancelledCommand)
-    XCTAssertEqual(buildValue.valueData, [UInt8(13)].asValue)
+    XCTAssertFalse(buildValue.valueData.isEmpty)
     XCTAssertEqual(buildValue.description, "<BuildValue.CancelledCommand>")
     XCTAssertEqual(buildValue, BuildValue.CancelledCommand())
     XCTAssertNotEqual(buildValue, BuildValue.SkippedCommand())
@@ -165,7 +146,7 @@ class BuildValueTests: XCTestCase {
   func testSkippedCommand() {
     let buildValue = BuildValue.SkippedCommand()
     XCTAssertEqual(buildValue.kind, .skippedCommand)
-    XCTAssertEqual(buildValue.valueData, [UInt8(14)].asValue)
+    XCTAssertFalse(buildValue.valueData.isEmpty)
     XCTAssertEqual(buildValue.description, "<BuildValue.SkippedCommand>")
     XCTAssertEqual(buildValue, BuildValue.SkippedCommand())
     XCTAssertNotEqual(buildValue, BuildValue.CancelledCommand())
@@ -174,7 +155,7 @@ class BuildValueTests: XCTestCase {
   func testTarget() {
     let buildValue = BuildValue.Target()
     XCTAssertEqual(buildValue.kind, .target)
-    XCTAssertEqual(buildValue.valueData, [UInt8(15)].asValue)
+    XCTAssertFalse(buildValue.valueData.isEmpty)
     XCTAssertEqual(buildValue.description, "<BuildValue.Target>")
     XCTAssertEqual(buildValue, BuildValue.Target())
     XCTAssertNotEqual(buildValue, BuildValue.CancelledCommand())

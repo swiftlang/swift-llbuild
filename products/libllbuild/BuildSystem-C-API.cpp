@@ -312,7 +312,7 @@ public:
     }
 
     ~CAPINodesVector() {
-      for (auto& key : keys) {
+      for (auto key : keys) {
         llb_build_key_destroy((llb_build_key_t *)key);
       }
     }
@@ -414,7 +414,7 @@ public:
     }
 
     ~CAPIRulesVector() {
-      for (auto& rule : rules) {
+      for (auto rule : rules) {
         llb_build_key_destroy((llb_build_key_t *)rule);
       }
     }

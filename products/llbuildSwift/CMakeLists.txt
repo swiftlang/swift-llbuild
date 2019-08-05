@@ -1,7 +1,11 @@
 # Set sources.
 set(SOURCES 
   BuildSystemBindings.swift
-  CoreBindings.swift)
+  CoreBindings.swift
+  BuildDBBindings.swift
+  BuildKey.swift
+  Internals.swift
+  BuildValue.swift)
 
 # Link C API.
 if(CMAKE_SYSTEM_NAME STREQUAL Windows)

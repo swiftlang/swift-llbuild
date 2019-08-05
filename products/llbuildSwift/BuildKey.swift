@@ -27,8 +27,15 @@ import llbuild
 public class BuildKey: CustomStringConvertible, Equatable, Hashable {
     public typealias Kind = BuildKeyKind
     
+    /// Returns the kind of the key
     public var kind: Kind {
         llb_build_key_get_kind(internalBuildKey)
+    }
+    
+    /// Returns the key data without the identifier for the kind
+    /// This can't be removed for legacy reasons.
+    public var key: String {
+        String(cString: Array(self.keyData.dropFirst() + [0]))
     }
     
     /// This raw data is used for internal representation and is encoded differently per subclass

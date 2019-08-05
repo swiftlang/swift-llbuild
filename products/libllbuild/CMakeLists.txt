@@ -1,7 +1,10 @@
 set(SOURCES 
   BuildSystem-C-API.cpp
   C-API.cpp
-  Core-C-API.cpp)
+  Core-C-API.cpp
+  BuildDB-C-API.cpp
+  BuildKey-C-API.cpp
+  BuildValue-C-API.cpp)
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 set(LIBLLBUILD_NAME libllbuild)

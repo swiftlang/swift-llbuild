@@ -129,19 +129,16 @@ const llb_data_t mapData(std::vector<uint8_t> input) {
 }
 
 const llb_database_result_t mapResult(CAPIBuildDB &db, Result result) {
-  
   auto count = result.dependencies.size();
-  std::vector<llb_build_key_t *> buildKeys;
+  auto size = sizeof(llb_build_key_t*) * count;
+  llb_build_key_t **deps = (llb_build_key_t **)malloc(size);
+  int index = 0;
   for (auto keyID: result.dependencies) {
     auto buildKey = db.getKeyForID(keyID);
     auto internalBuildKey = BuildKey::fromData(buildKey);
-    buildKeys.insert(buildKeys.end(), (llb_build_key_t *)new CAPIBuildKey(internalBuildKey));
+    deps[index] = (llb_build_key_t *)new CAPIBuildKey(internalBuildKey);
+    index++;
   }
-  
-  auto data = buildKeys.data();
-  auto size = sizeof(*data) * count;
-  llb_build_key_t **deps = (llb_build_key_t **)malloc(size);
-  memcpy(deps, data, size);
   
   return llb_database_result_t {
     mapData(result.value),

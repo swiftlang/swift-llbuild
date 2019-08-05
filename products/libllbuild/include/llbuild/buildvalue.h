@@ -122,7 +122,7 @@ LLBUILD_EXPORT llb_build_value_file_info_t llb_build_value_get_output_info(llb_b
 LLBUILD_EXPORT llb_build_value * llb_build_value_make_missing_input();
 
 // Directory Contents
-LLBUILD_EXPORT llb_build_value * llb_build_value_make_directory_contents(llb_build_value_file_info_t directoryInfo, const char *_Nonnull const *_Nonnull values, size_t count_values);
+LLBUILD_EXPORT llb_build_value * llb_build_value_make_directory_contents(llb_build_value_file_info_t directoryInfo, const char *_Nonnull const *_Nonnull values, int32_t count_values);
 LLBUILD_EXPORT void llb_build_value_get_directory_contents(llb_build_value * value, void *_Nullable context, void (* iterator)(void *_Nullable context, llb_data_t data));
 
 // Directory Tree Signature
@@ -141,7 +141,7 @@ LLBUILD_EXPORT llb_build_value * llb_build_value_make_missing_output();
 LLBUILD_EXPORT llb_build_value * llb_build_value_make_failed_input();
 
 // Successful Command
-LLBUILD_EXPORT llb_build_value * llb_build_value_make_successful_command(const llb_build_value_file_info_t * outputInfos, size_t count_outputInfos);
+LLBUILD_EXPORT llb_build_value * llb_build_value_make_successful_command(const llb_build_value_file_info_t * outputInfos, int32_t count_outputInfos);
 LLBUILD_EXPORT void llb_build_value_get_file_infos(llb_build_value * value, void *_Nullable context, void (* iterator)(void *_Nullable context, llb_build_value_file_info_t fileInfo));
 
 // Failed Command
@@ -160,14 +160,14 @@ LLBUILD_EXPORT llb_build_value * llb_build_value_make_skipped_command();
 LLBUILD_EXPORT llb_build_value * llb_build_value_make_target();
 
 // Stale File Removal
-LLBUILD_EXPORT llb_build_value * llb_build_value_make_stale_file_removal(const char *_Nonnull const *_Nonnull values, size_t count_values);
+LLBUILD_EXPORT llb_build_value * llb_build_value_make_stale_file_removal(const char *_Nonnull const *_Nonnull values, int32_t count_values);
 LLBUILD_EXPORT void llb_build_value_get_stale_file_list(llb_build_value * value, void *_Nullable context, void(* iterator)(void *_Nullable context, llb_data_t data));
 
 // Filtered Directory Contents
-LLBUILD_EXPORT llb_build_value * llb_build_value_make_filtered_directory_contents(const char *_Nonnull const *_Nonnull values, size_t count_values);
+LLBUILD_EXPORT llb_build_value * llb_build_value_make_filtered_directory_contents(const char *_Nonnull const *_Nonnull values, int32_t count_values);
 
 // Successful Command With Output Signature
-LLBUILD_EXPORT llb_build_value * llb_build_value_make_successful_command_with_output_signature(const llb_build_value_file_info_t * outputInfos, size_t count_outputInfos, llb_build_value_command_signature_t signature);
+LLBUILD_EXPORT llb_build_value * llb_build_value_make_successful_command_with_output_signature(const llb_build_value_file_info_t * outputInfos, int32_t count_outputInfos, llb_build_value_command_signature_t signature);
 LLBUILD_EXPORT llb_build_value_command_signature_t llb_build_value_get_output_signature(llb_build_value * value);
 
 LLBUILD_ASSUME_NONNULL_END
