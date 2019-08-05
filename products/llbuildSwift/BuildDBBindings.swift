@@ -101,9 +101,7 @@ public class RuleResult {
     /// The duration since a reference time of when the command finished computing
     public let end: Double
     /// The duration in seconds the result needed to finish
-    public var duration: Double {
-        max(end - start, 0)
-    }
+    public var duration: Double { end - start }
     /// A list of the dependencies of the computed task, use the database's allKeys to check for their key
     public let dependencies: [BuildKey]
     

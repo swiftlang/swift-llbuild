@@ -205,7 +205,7 @@ public class BuildValue: CustomStringConvertible, Equatable, Hashable {
     public final class DirectoryContents: BuildValue {
         public convenience init(directoryInfo: FileInfo, contents: [String]) {
             let ptr = contents.withCArrayOfStrings { ptr in
-                llb_build_value_make_directory_contents(directoryInfo, ptr, contents.count)
+                llb_build_value_make_directory_contents(directoryInfo, ptr, Int32(contents.count))
             }
             self.init(ptr)
         }
@@ -296,7 +296,7 @@ public class BuildValue: CustomStringConvertible, Equatable, Hashable {
     /// A value produced by a successful command.
     public final class SuccessfulCommand: BuildValue {
         public convenience init(outputInfos: [FileInfo]) {
-            self.init(llb_build_value_make_successful_command(outputInfos, outputInfos.count))
+            self.init(llb_build_value_make_successful_command(outputInfos, Int32(outputInfos.count)))
         }
         
         /// Information about the outputs of the command
@@ -360,7 +360,7 @@ public class BuildValue: CustomStringConvertible, Equatable, Hashable {
     public final class StaleFileRemoval: BuildValue {
         public convenience init(fileList: [String]) {
             let ptr = fileList.withCArrayOfStrings { ptr in
-                llb_build_value_make_stale_file_removal(ptr, fileList.count)
+                llb_build_value_make_stale_file_removal(ptr, Int32(fileList.count))
             }
             self.init(ptr)
         }
@@ -390,7 +390,7 @@ public class BuildValue: CustomStringConvertible, Equatable, Hashable {
     public final class FilteredDirectoryContents: BuildValue {
         public convenience init(contents: [String]) {
             let ptr = contents.withCArrayOfStrings { ptr in
-                llb_build_value_make_filtered_directory_contents(ptr, contents.count)
+                llb_build_value_make_filtered_directory_contents(ptr, Int32(contents.count))
             }
             self.init(ptr)
         }
@@ -419,7 +419,7 @@ public class BuildValue: CustomStringConvertible, Equatable, Hashable {
     /// A value produced by a successful command with an output signature.
     public final class SuccessfulCommandWithOutputSignature: BuildValue {
         public convenience init(outputInfos: [FileInfo], signature: CommandSignature) {
-            self.init(llb_build_value_make_successful_command_with_output_signature(outputInfos, outputInfos.count, signature))
+            self.init(llb_build_value_make_successful_command_with_output_signature(outputInfos, Int32(outputInfos.count), signature))
         }
         
         /// Information about the outputs of the command

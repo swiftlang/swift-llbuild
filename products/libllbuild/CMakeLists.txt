@@ -1,7 +1,10 @@
 set(SOURCES 
   BuildSystem-C-API.cpp
   C-API.cpp
-  Core-C-API.cpp)
+  Core-C-API.cpp
+  BuildDB-C-API.cpp
+  BuildKey-C-API.cpp
+  BuildValue-C-API.cpp)
 
 add_llbuild_library(libllbuild
   ${SOURCES}

@@ -22,7 +22,7 @@ private:
 public:
   
   CAPIBuildKey(const BuildKey &buildKey): internalBuildKey(buildKey) {}
-    
+  
   BuildKey &getInternalBuildKey() {
     return internalBuildKey;
   }

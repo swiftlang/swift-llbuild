@@ -20,17 +20,6 @@ enum DatabaseError: Error {
     case AttachFailure(message: String)
 }
 
-private func stringFromData(data: llb_data_t) -> String {
-    // Convert as a UTF8 string, if possible.
-    let tmp = Data(UnsafeBufferPointer(start: unsafeBitCast(data.data, to: UnsafePointer<UInt8>.self), count: Int(data.length)))
-    if let str = String(data: tmp, encoding: String.Encoding.utf8) {
-        return str
-    }
-
-    // Otherwise, return a string representation of the bytes.
-    return String(describing: [UInt8](UnsafeBufferPointer(start: data.data, count: Int(data.length))))
-}
-
 private func stringFromUInt8Array(_ data: [UInt8]) -> String {
     // Convert as a UTF8 string, if possible.
     if let str = String(data: Data(data), encoding: String.Encoding.utf8) {

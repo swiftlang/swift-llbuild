@@ -144,9 +144,9 @@ llb_build_value *_Nonnull llb_build_value_make_missing_input() {
   return (llb_build_value *)new CAPIBuildValue(BuildValue::makeMissingInput());
 }
 
-llb_build_value *_Nonnull llb_build_value_make_directory_contents(llb_build_value_file_info_t directoryInfo, const char *_Nonnull const *_Nonnull values, size_t count_values) {
+llb_build_value *_Nonnull llb_build_value_make_directory_contents(llb_build_value_file_info_t directoryInfo, const char *_Nonnull const *_Nonnull values, int32_t count_values) {
   auto valuesToPass = std::vector<std::string>();
-  for (int i = 0; i < count_values; i++) {
+  for (int32_t i = 0; i < count_values; i++) {
     valuesToPass.push_back(values[i]);
   }
   return (llb_build_value *)new CAPIBuildValue(BuildValue::makeDirectoryContents(convertFileInfo(directoryInfo), valuesToPass));
@@ -187,9 +187,9 @@ llb_build_value *_Nonnull llb_build_value_make_failed_input() {
   return (llb_build_value *)new CAPIBuildValue(BuildValue::makeFailedInput());
 }
 
-llb_build_value *_Nonnull llb_build_value_make_successful_command(const llb_build_value_file_info_t *_Nonnull outputInfos, size_t count_outputInfos) {
+llb_build_value *_Nonnull llb_build_value_make_successful_command(const llb_build_value_file_info_t *_Nonnull outputInfos, int32_t count_outputInfos) {
   basic::FileInfo fileInfos[count_outputInfos];
-  for (int index = 0; index < count_outputInfos; index++) {
+  for (int32_t index = 0; index < count_outputInfos; index++) {
     fileInfos[index] = convertFileInfo(outputInfos[index]);
   }
   return (llb_build_value *)new CAPIBuildValue(BuildValue::makeSuccessfulCommand(ArrayRef<basic::FileInfo>(fileInfos, count_outputInfos)));
@@ -224,9 +224,9 @@ llb_build_value *_Nonnull llb_build_value_make_target() {
   return (llb_build_value *)new CAPIBuildValue(BuildValue::makeTarget());
 }
 
-llb_build_value *_Nonnull llb_build_value_make_stale_file_removal(const char *_Nonnull const *_Nonnull values, size_t count_values) {
+llb_build_value *_Nonnull llb_build_value_make_stale_file_removal(const char *_Nonnull const *_Nonnull values, int32_t count_values) {
   auto valuesToPass = std::vector<std::string>();
-  for (int i = 0; i < count_values; i++) {
+  for (int32_t i = 0; i < count_values; i++) {
     valuesToPass.push_back(values[i]);
   }
   return (llb_build_value *)new CAPIBuildValue(BuildValue::makeStaleFileRemoval(valuesToPass));
@@ -243,17 +243,17 @@ void llb_build_value_get_stale_file_list(llb_build_value *_Nonnull value, void *
   }
 }
 
-LLBUILD_EXPORT llb_build_value *_Nonnull llb_build_value_make_filtered_directory_contents(const char *_Nonnull const *_Nonnull values, size_t count_values) {
+LLBUILD_EXPORT llb_build_value *_Nonnull llb_build_value_make_filtered_directory_contents(const char *_Nonnull const *_Nonnull values, int32_t count_values) {
   auto valuesToPass = std::vector<std::string>();
-  for (int i = 0; i < count_values; i++) {
+  for (int32_t i = 0; i < count_values; i++) {
     valuesToPass.push_back(values[i]);
   }
   return (llb_build_value *)new CAPIBuildValue(BuildValue::makeFilteredDirectoryContents(valuesToPass));
 }
 
-llb_build_value *_Nonnull llb_build_value_make_successful_command_with_output_signature(const llb_build_value_file_info_t *_Nonnull outputInfos, size_t count_outputInfos, llb_build_value_command_signature_t signature) {
+llb_build_value *_Nonnull llb_build_value_make_successful_command_with_output_signature(const llb_build_value_file_info_t *_Nonnull outputInfos, int32_t count_outputInfos, llb_build_value_command_signature_t signature) {
   basic::FileInfo fileInfos[count_outputInfos];
-  for (int index = 0; index < count_outputInfos; index++) {
+  for (int32_t index = 0; index < count_outputInfos; index++) {
     fileInfos[index] = convertFileInfo(outputInfos[index]);
   }
   return (llb_build_value *)new CAPIBuildValue(BuildValue::makeSuccessfulCommandWithOutputSignature(ArrayRef<basic::FileInfo>(fileInfos, count_outputInfos), basic::CommandSignature(signature)));
