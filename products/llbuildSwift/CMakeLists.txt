@@ -39,6 +39,11 @@ else()
     foreach(library ${SQLite3_LIBRARIES})
       list(APPEND additional_args -l${library})
     endforeach()
+
+    if(CMAKE_SYSTEM_NAME STREQUAL Windows)
+      list(APPEND additional_args -Xcc;-D_DLL)
+      list(APPEND additional_args -Xlinker;-nodefaultlib:libcmt)
+    endif()
   endif()
 endif()
 
