@@ -3332,6 +3332,183 @@ public:
   }
 };
 
+#pragma mark - SharedLibraryTool implementation
+
+class SharedLibraryShellCommand : public ExternalCommand {
+
+  // Defaults compilers. Can be overwritten on the build config is required.
+  std::string executable = "";
+  std::string sharedLibName;
+  std::string compilerStyle;
+  std::vector<std::string> sharedLibInputs;
+  /// Additional arguments, as a string.
+  std::vector<std::string> otherArgs;
+
+  virtual void executeExternalCommand(
+      BuildSystemCommandInterface& bsci, Task* task, QueueJobContext* context,
+      llvm::Optional<ProcessCompletionFn> completionFn) override {
+
+    auto args = getArgs();
+    bsci.getExecutionQueue().executeProcess(
+        context, std::vector<StringRef>(args.begin(), args.end()), {}, true,
+        {true}, {[completionFn](ProcessResult result) {
+          if (completionFn.hasValue())
+            completionFn.getValue()(result);
+        }});
+  }
+
+  virtual void
+  getShortDescription(SmallVectorImpl<char>& result) const override {
+    if (getDescription().empty()) {
+      llvm::raw_svector_ostream(result)
+          << "Creating Shared library: " + sharedLibName;
+    } else {
+      llvm::raw_svector_ostream(result) << getDescription();
+    }
+  }
+
+  virtual void
+  getVerboseDescription(SmallVectorImpl<char>& result) const override {
+    llvm::raw_svector_ostream stream(result);
+    bool first = true;
+    for (const auto& arg : getArgs()) {
+      if (first) {
+        first = false;
+      } else {
+        stream << " ";
+      }
+      stream << arg;
+    }
+  }
+
+  virtual void configureInputs(const ConfigureContext& ctx,
+                               const std::vector<Node*>& value) override {
+    ExternalCommand::configureInputs(ctx, value);
+
+    for (const auto& input : getInputs()) {
+      if (!input->isVirtual()) {
+        sharedLibInputs.push_back(input->getName());
+      }
+    }
+    if (sharedLibInputs.empty()) {
+      ctx.error("SharedLibraryTool requires inputs to be specified");
+    }
+  }
+
+  virtual void configureOutputs(const ConfigureContext& ctx,
+                                const std::vector<Node*>& value) override {
+    ExternalCommand::configureOutputs(ctx, value);
+
+    for (const auto& output : getOutputs()) {
+      if (!output->isVirtual()) {
+        if (sharedLibName.empty()) {
+          sharedLibName = output->getName();
+        } else {
+          ctx.error("unexpected explicit output: " + output->getName());
+        }
+      }
+    }
+    if (sharedLibName.empty()) {
+      ctx.error("SharedLibraryTool requires the resulting shared library name "
+                "to be specified");
+    }
+  }
+
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  StringRef value) override {
+    if (name == "executable") {
+      executable = value;
+    } else if (name == "other-args") {
+      SmallVector<StringRef, 32> args;
+      StringRef(value).split(args, " ", /*MaxSplit=*/-1,
+                             /*KeepEmpty=*/false);
+      otherArgs = std::vector<std::string>(args.begin(), args.end());
+    } else if (name == "compiler-style") {
+      if (value != "cl" && value != "clang" && value != "swiftc") {
+        ctx.error("Unsupported : compiler-style'" + value +
+                  "' for shared libraries'.  Supported styles are cl, clang, "
+                  "and swiftc");
+      }
+      compilerStyle = value;
+    }
+    return true;
+  }
+
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  ArrayRef<StringRef> values) override {
+    if (name == "other-args") {
+      otherArgs = std::vector<std::string>(values.begin(), values.end());
+    } else {
+      return ExternalCommand::configureAttribute(ctx, name, values);
+    }
+
+    return true;
+  }
+
+  std::vector<std::string> getArgs() const {
+    std::vector<std::string> args;
+
+    if (compilerStyle == "swiftc") {
+      args.push_back(executable);
+      args.push_back("-emit-library");
+      args.insert(args.end(), sharedLibInputs.begin(), sharedLibInputs.end());
+      args.push_back("-o");
+      args.push_back(sharedLibName);
+      args.insert(args.end(), otherArgs.begin(), otherArgs.end());
+    } else if (compilerStyle == "clang") {
+      args.push_back(executable);
+      args.insert(args.end(), sharedLibInputs.begin(), sharedLibInputs.end());
+      args.push_back("-o");
+      args.push_back(sharedLibName);
+      args.insert(args.end(), otherArgs.begin(), otherArgs.end());
+      args.push_back("-shared");
+    } else if (compilerStyle == "cl") {
+      args.push_back(executable);
+      args.insert(args.end(), sharedLibInputs.begin(), sharedLibInputs.end());
+      args.push_back("/o");
+      args.push_back(sharedLibName);
+      args.push_back("/LD");
+      args.push_back("/MD");
+      args.push_back("/link");
+      args.push_back("MSVCRT.lib");
+    }
+
+    return args;
+  }
+
+public:
+  using ExternalCommand::ExternalCommand;
+};
+
+class SharedLibraryTool : public Tool {
+public:
+  using Tool::Tool;
+
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  StringRef value) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  ArrayRef<StringRef> values) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+  virtual bool configureAttribute(
+      const ConfigureContext& ctx, StringRef name,
+      ArrayRef<std::pair<StringRef, StringRef>> values) override {
+    // No supported attributes.
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
+  }
+
+  virtual std::unique_ptr<Command> createCommand(StringRef name) override {
+    return llvm::make_unique<SharedLibraryShellCommand>(name);
+  }
+};
+
 #pragma mark - StaleFileRemovalTool implementation
 
 class StaleFileRemovalCommand : public Command {
@@ -3621,6 +3798,8 @@ BuildSystemFileDelegate::lookupTool(StringRef name) {
     return llvm::make_unique<SymlinkTool>(name);
   } else if (name == "archive") {
     return llvm::make_unique<ArchiveTool>(name);
+  } else if (name == "shared-library") {
+    return llvm::make_unique<SharedLibraryTool>(name);
   } else if (name == "stale-file-removal") {
     return llvm::make_unique<StaleFileRemovalTool>(name);
   } else if (name == "swift-compiler") {

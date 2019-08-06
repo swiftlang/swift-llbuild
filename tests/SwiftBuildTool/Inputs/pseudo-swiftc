@@ -12,6 +12,7 @@ def main():
     parser.add_argument('-module-name', type=str)
     parser.add_argument('-output-file-map', type=str)
     parser.add_argument('-incremental', action='store_true')
+    parser.add_argument('-emit-library', dest='emit_library', action='store_true')
     parser.add_argument('-emit-module', action='store_true')
     parser.add_argument('-emit-module-path', type=str)
     parser.add_argument('-emit-dependencies', action='store_true')
@@ -20,6 +21,7 @@ def main():
     parser.add_argument('-num-threads', type=int) 
     parser.add_argument('-I', type=str)
     parser.add_argument('-O', type=str)
+    parser.add_argument('-o', dest='output_file', type=str)
     parser.add_argument('-c', dest="compile", action='store_true')
     parser.add_argument('-###', dest="show_commands", action='store_true')
     parser.add_argument('-v', dest="verbose", action='store_true')
@@ -75,6 +77,8 @@ def main():
             if writeAllDeps:
                 deps = item["dependencies"]
             writeDeps(object, deps, args.add_dep, not writeAllDeps)
+    if args.emit_library:
+        writeObject(args.output_file)
 
 def writeDeps(object, deps, add_dep, append):
     with open(deps, "a" if append else "w") as f:
