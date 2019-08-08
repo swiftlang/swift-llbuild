@@ -335,7 +335,7 @@ public:
     this->delegate = delegate;
   }
 
-  virtual uint64_t getCurrentIteration(bool* success_out, std::string *error_out) override {
+  virtual Epoch getCurrentEpoch(bool* success_out, std::string *error_out) override {
     std::lock_guard<std::mutex> guard(dbMutex);
 
     if (!open(error_out)) {
