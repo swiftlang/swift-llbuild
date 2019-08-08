@@ -943,6 +943,7 @@
 		B546B3A022C65DF0007046C0 /* BuildSystemBindingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildSystemBindingsTests.swift; sourceTree = "<group>"; };
 		B546B3A422CA161A007046C0 /* BuildDBBindingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildDBBindingsTests.swift; sourceTree = "<group>"; };
 		B563CEA620A6252500276198 /* CrossPlatformCompatibility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CrossPlatformCompatibility.h; sourceTree = "<group>"; };
+		B58006ED22F9E847004869A2 /* Clock.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Clock.h; sourceTree = "<group>"; };
 		BC8DEF0520300AAF00E9EF0C /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; tabWidth = 2; };
 		BC8DEF0620300AAF00E9EF0C /* BuildSystemBindings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BuildSystemBindings.swift; sourceTree = "<group>"; };
 		BC8DEF0720300AAF00E9EF0C /* CoreBindings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CoreBindings.swift; sourceTree = "<group>"; };
@@ -1954,6 +1955,7 @@
 			isa = PBXGroup;
 			children = (
 				E120B9EF1E4E65FC00B28469 /* BinaryCoding.h */,
+				B58006ED22F9E847004869A2 /* Clock.h */,
 				E182BE111ABA2B8D001840AD /* Compiler.h */,
 				B563CEA620A6252500276198 /* CrossPlatformCompatibility.h */,
 				40C71A8022F0EBCF008FDC9C /* Defer.h */,

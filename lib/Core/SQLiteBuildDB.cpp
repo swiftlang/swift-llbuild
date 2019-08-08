@@ -66,6 +66,7 @@ namespace {
 
 class SQLiteBuildDB : public BuildDB {
   /// Version History:
+  /// * 11: Add result timestamps
   /// * 10: Add result signature
   /// * 9: Add filtered directory contents, related build key changes
   /// * 8: Remove ID from rule results
@@ -73,7 +74,7 @@ class SQLiteBuildDB : public BuildDB {
   /// * 6: Added `ordinal` field for dependencies.
   /// * 5: Switched to using `WITHOUT ROWID` for dependencies.
   /// * 4: Pre-history
-  static const int currentSchemaVersion = 10;
+  static const int currentSchemaVersion = 11;
 
   std::string path;
   uint32_t clientSchemaVersion;
@@ -228,6 +229,8 @@ class SQLiteBuildDB : public BuildDB {
                "signature INTEGER, "
                "built_at INTEGER, "
                "computed_at INTEGER, "
+               "start REAL, "
+               "end REAL, "
                "dependencies BLOB, "
                "FOREIGN KEY(key_id) REFERENCES key_names(id));"),
           nullptr, nullptr, &cError);
@@ -409,13 +412,13 @@ public:
   // equivalent to the mapping we would have to do for the DBKeyID, but defers
   // the creation of new IDs until we actually need them in setRuleResult().
   static constexpr const char *findRuleResultStmtSQL = (
-      "SELECT rule_results.key_id, value, built_at, computed_at, dependencies, signature FROM rule_results "
+      "SELECT rule_results.key_id, value, built_at, computed_at, start, end, dependencies, signature FROM rule_results "
       "INNER JOIN key_names ON key_names.id = rule_results.key_id WHERE key == ?;");
   sqlite3_stmt* findRuleResultStmt = nullptr;
 
   // Fast path find result for rules we already know they ID for
   static constexpr const char *fastFindRuleResultStmtSQL = (
-      "SELECT key_id, value, built_at, computed_at, dependencies, signature FROM rule_results "
+      "SELECT key_id, value, built_at, computed_at, start, end, dependencies, signature FROM rule_results "
       "WHERE key_id == ?;");
   sqlite3_stmt* fastFindRuleResultStmt = nullptr;
 
@@ -459,7 +462,7 @@ public:
       }
 
       // Otherwise, read the result contents from the row.
-      assert(sqlite3_column_count(fastFindRuleResultStmt) == 6);
+      assert(sqlite3_column_count(fastFindRuleResultStmt) == 8);
       dbKeyID = DBKeyID(sqlite3_column_int64(fastFindRuleResultStmt, 0));
       int numValueBytes = sqlite3_column_bytes(fastFindRuleResultStmt, 1);
       result_out->value.resize(numValueBytes);
@@ -468,14 +471,16 @@ public:
              numValueBytes);
       result_out->builtAt = sqlite3_column_int64(fastFindRuleResultStmt, 2);
       result_out->computedAt = sqlite3_column_int64(fastFindRuleResultStmt, 3);
+      result_out->start = sqlite3_column_double(fastFindRuleResultStmt, 4);
+      result_out->end = sqlite3_column_double(fastFindRuleResultStmt, 5);
 
       // Extract the dependencies binary blob.
-      numDependencyBytes = sqlite3_column_bytes(fastFindRuleResultStmt, 4);
-      dependencyBytes = sqlite3_column_blob(fastFindRuleResultStmt, 4);
+      numDependencyBytes = sqlite3_column_bytes(fastFindRuleResultStmt, 6);
+      dependencyBytes = sqlite3_column_blob(fastFindRuleResultStmt, 6);
 
       // Extract the signature
       result_out->signature =
-        basic::CommandSignature(sqlite3_column_int64(fastFindRuleResultStmt, 5));
+        basic::CommandSignature(sqlite3_column_int64(fastFindRuleResultStmt, 7));
     } else {
       // KeyID is not known, perform the 'normal' search using the key value
 
@@ -498,7 +503,7 @@ public:
       }
 
       // Otherwise, read the result contents from the row.
-      assert(sqlite3_column_count(findRuleResultStmt) == 6);
+      assert(sqlite3_column_count(findRuleResultStmt) == 8);
       dbKeyID = DBKeyID(sqlite3_column_int64(findRuleResultStmt, 0));
       int numValueBytes = sqlite3_column_bytes(findRuleResultStmt, 1);
       result_out->value.resize(numValueBytes);
@@ -507,18 +512,20 @@ public:
              numValueBytes);
       result_out->builtAt = sqlite3_column_int64(findRuleResultStmt, 2);
       result_out->computedAt = sqlite3_column_int64(findRuleResultStmt, 3);
+      result_out->start = sqlite3_column_double(findRuleResultStmt, 4);
+      result_out->end = sqlite3_column_double(findRuleResultStmt, 5);
 
       // Cache the engine key mapping
       engineKeyIDs[dbKeyID] = keyID;
       dbKeyIDs[keyID] = dbKeyID;
 
       // Extract the dependencies binary blob.
-      numDependencyBytes = sqlite3_column_bytes(findRuleResultStmt, 4);
-      dependencyBytes = sqlite3_column_blob(findRuleResultStmt, 4);
+      numDependencyBytes = sqlite3_column_bytes(findRuleResultStmt, 6);
+      dependencyBytes = sqlite3_column_blob(findRuleResultStmt, 6);
 
       // Extract the signature
       result_out->signature =
-        basic::CommandSignature(sqlite3_column_int64(findRuleResultStmt, 5));
+        basic::CommandSignature(sqlite3_column_int64(findRuleResultStmt, 7));
     }
 
 
@@ -548,7 +555,7 @@ public:
   }
 
   static constexpr const char *insertIntoRuleResultsStmtSQL =
-    "INSERT OR REPLACE INTO rule_results VALUES (?, ?, ?, ?, ?, ?);";
+    "INSERT OR REPLACE INTO rule_results VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
   sqlite3_stmt* insertIntoRuleResultsStmt = nullptr;
 
   static constexpr const char *findKeyIDForKeyStmtSQL = (
@@ -622,7 +629,13 @@ public:
     result = sqlite3_bind_int64(insertIntoRuleResultsStmt, /*index=*/5,
                                 ruleResult.computedAt);
     checkSQLiteResultOKReturnFalse(result);
-    result = sqlite3_bind_blob(insertIntoRuleResultsStmt, /*index=*/6,
+    result = sqlite3_bind_double(insertIntoRuleResultsStmt, /*index=*/6,
+                                ruleResult.start);
+    checkSQLiteResultOKReturnFalse(result);
+    result = sqlite3_bind_double(insertIntoRuleResultsStmt, /*index=*/7,
+                                ruleResult.end);
+    checkSQLiteResultOKReturnFalse(result);
+    result = sqlite3_bind_blob(insertIntoRuleResultsStmt, /*index=*/8,
                                encoder.data(),
                                encoder.size(),
                                SQLITE_STATIC);
@@ -728,20 +741,22 @@ public:
     sqlite3_finalize(stmt);
 
     // Dump Keys
-    result = sqlite3_prepare_v2(db, "SELECT key_id, built_at, computed_at FROM rule_results;",
+    result = sqlite3_prepare_v2(db, "SELECT key_id, built_at, computed_at, start, end FROM rule_results;",
                                 -1, &stmt, nullptr);
     if (result != SQLITE_OK)
       return;
 
     os << "\nresults:\n";
     while (sqlite3_step(stmt) == SQLITE_ROW) {
-      assert(sqlite3_column_count(stmt) == 3);
+      assert(sqlite3_column_count(stmt) == 5);
 
       auto id = sqlite3_column_int64(stmt, 0);
       auto built = sqlite3_column_int64(stmt, 1);
       auto computed = sqlite3_column_int64(stmt, 2);
+      auto start = sqlite3_column_double(stmt, 3);
+      auto end = sqlite3_column_double(stmt, 4);
 
-      os << id << " -- " << built << ", " << computed << "\n";
+      os << id << " -- " << built << ", " << computed << ", " << end-start << "s\n";
     }
 
     sqlite3_finalize(stmt);

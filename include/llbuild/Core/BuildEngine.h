@@ -16,6 +16,8 @@
 #include "llbuild/Basic/Compiler.h"
 #include "llbuild/Basic/Hashing.h"
 
+#include "llbuild/Basic/Clock.h"
+
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
 
@@ -70,6 +72,12 @@ struct Result {
   // FIXME: At some point, figure out the optimal representation for this field,
   // which is likely to be a lot of the resident memory size.
   std::vector<KeyID> dependencies;
+  
+  /// The start of the command as a timestamp since a reference time
+  basic::Clock::Timestamp start;
+  
+  /// The timestamp of when the command finished computing
+  basic::Clock::Timestamp end;
 };
 
 /// A task object represents an abstract in-progress computation in the build

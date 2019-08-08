@@ -201,6 +201,12 @@ class BuildEngineImpl : public BuildDBDelegate {
       return state == StateKind::Complete &&
         result.builtAt == engine->getCurrentEpoch();
     }
+    
+    void setComputing(const BuildEngineImpl* engine) {
+      assert(isInProgressWaiting());
+      state = StateKind::InProgressComputing;
+      result.start = basic::Clock::now();
+    }
 
     void setComplete(const BuildEngineImpl* engine) {
       state = StateKind::Complete;
@@ -212,6 +218,7 @@ class BuildEngineImpl : public BuildDBDelegate {
       // Result to being totally managed by the database. However, it is just a
       // matter of keeping an extra timestamp outside the Result to fix.
       result.builtAt = engine->getCurrentEpoch();
+      result.end = basic::Clock::now();
     }
 
     void setCancelled() {
@@ -825,8 +832,7 @@ private:
             trace->readiedTask(taskInfo->task.get(), &ruleInfo->rule);
 
         // Transition the rule state.
-        assert(ruleInfo->isInProgressWaiting());
-        ruleInfo->state = RuleInfo::StateKind::InProgressComputing;
+        ruleInfo->setComputing(this);
 
         // Inform the task its inputs are ready and it should finish.
         //

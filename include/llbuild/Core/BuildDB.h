@@ -65,7 +65,7 @@ public:
   ///
   /// \param success_out [out] Whether or not the query succeeded.
   /// \param error_out [out] Error string if success_out is false.
-  virtual uint64_t getCurrentIteration(bool* success_out, std::string* error_out) = 0;
+  virtual Epoch getCurrentEpoch(bool* success_out, std::string* error_out) = 0;
 
   /// Set the current build iteration.
   ///
