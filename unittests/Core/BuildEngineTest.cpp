@@ -442,7 +442,7 @@ TEST(BuildEngineTest, incrementalDependency) {
 
     virtual void attachDelegate(BuildDBDelegate* delegate) override { ; }
 
-    virtual uint64_t getCurrentIteration(bool* success_out, std::string* error_out) override {
+    virtual uint64_t getCurrentEpoch(bool* success_out, std::string* error_out) override {
       return 0;
     }
     virtual bool setCurrentIteration(uint64_t value, std::string* error_out) override { return true; }

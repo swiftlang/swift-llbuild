@@ -45,7 +45,7 @@ TEST(SQLiteBuildDBTest, ErrorHandling) {
     // The database is opened lazily, thus run an operation that will cause it
     // to be opened and verify that it fails as expected.
     bool result = true;
-    buildDB->getCurrentIteration(&result, &error);
+    buildDB->getCurrentEpoch(&result, &error);
     EXPECT_FALSE(result);
 
     std::stringstream out;
@@ -96,7 +96,7 @@ TEST(SQLiteBuildDBTest, LockedWhileBuilding) {
   // The database is opened lazily, thus run an operation that will cause it
   // to be opened and verify that it fails as expected.
   bool success = true;
-  otherBuildDB->getCurrentIteration(&success, &error);
+  otherBuildDB->getCurrentEpoch(&success, &error);
   EXPECT_FALSE(success);
   EXPECT_EQ(error, out.str());
 

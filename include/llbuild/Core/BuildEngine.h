@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2019 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -37,9 +37,9 @@ typedef std::vector<uint8_t> ValueType;
 class BuildDB;
 class BuildEngine;
 
-/// A monotonically increasing timestamp identifying which iteration of a build
+/// A monotonically increasing number identifying which iteration of a build
 /// an event occurred during.
-typedef uint64_t Timestamp;
+typedef uint64_t Epoch;
 
 /// This object contains the result of executing a task to produce the value for
 /// a key.
@@ -51,7 +51,7 @@ struct Result {
   basic::CommandSignature signature;
 
   /// The build timestamp during which the result \see Value was computed.
-  uint64_t computedAt = 0;
+  Epoch computedAt = 0;
 
   /// The build timestamp at which this result was last checked to be
   /// up-to-date.
@@ -63,7 +63,7 @@ struct Result {
   // of the \see builtAt fields up to date. That is unfortunate from a
   // persistence perspective, where it would be ideal if we didn't touch any
   // disk state for null builds.
-  uint64_t builtAt = 0;
+  Epoch builtAt = 0;
 
   /// The explicit dependencies required by the generation.
   //
@@ -287,11 +287,11 @@ public:
   /// Return the delegate the engine was configured with.
   BuildEngineDelegate* getDelegate();
 
-  /// Get the current build timestamp used by the engine.
+  /// Get the current build epoch used by the engine.
   ///
-  /// The timestamp is a monotonically increasing value which is incremented
+  /// The iteration is a monotonically increasing value which is incremented
   /// with each requested build.
-  Timestamp getCurrentTimestamp();
+  Epoch getCurrentEpoch();
 
   /// @name Rule Definition
   /// @{

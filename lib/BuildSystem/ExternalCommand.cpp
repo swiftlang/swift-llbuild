@@ -322,7 +322,7 @@ ExternalCommand::computeCommandResult(BuildSystemCommandInterface& bsci) {
       // info, but need to refactor the command result to just store the node
       // subvalues instead.
       FileInfo info{};
-      info.size = bsci.getBuildEngine().getCurrentTimestamp();
+      info.size = bsci.getBuildEngine().getCurrentEpoch();
       outputInfos.push_back(info);
     } else if (node->isVirtual()) {
       outputInfos.push_back(FileInfo{});

@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2019 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -77,7 +77,7 @@ class BuildEngineImpl : public BuildDBDelegate {
   std::unique_ptr<BuildEngineTrace> trace;
 
   /// The current build iteration, used to sequentially timestamp build results.
-  uint64_t currentTimestamp = 0;
+  Epoch currentEpoch = 0;
 
   /// Whether the build should be cancelled.
   std::atomic<bool> buildCancelled{ false };
@@ -199,7 +199,7 @@ class BuildEngineImpl : public BuildDBDelegate {
 
     bool isComplete(const BuildEngineImpl* engine) const {
       return state == StateKind::Complete &&
-        result.builtAt == engine->getCurrentTimestamp();
+        result.builtAt == engine->getCurrentEpoch();
     }
 
     void setComplete(const BuildEngineImpl* engine) {
@@ -211,7 +211,7 @@ class BuildEngineImpl : public BuildDBDelegate {
       // FIXME: This is a bit dubious, and wouldn't work anymore if we moved the
       // Result to being totally managed by the database. However, it is just a
       // matter of keeping an extra timestamp outside the Result to fix.
-      result.builtAt = engine->getCurrentTimestamp();
+      result.builtAt = engine->getCurrentEpoch();
     }
 
     void setCancelled() {
@@ -864,7 +864,7 @@ private:
 
         // The task was changed if was computed in the current iteration.
         if (trace) {
-          bool wasChanged = ruleInfo->result.computedAt == currentTimestamp;
+          bool wasChanged = ruleInfo->result.computedAt == currentEpoch;
           trace->finishedTask(taskInfo->task.get(), &ruleInfo->rule,
                               wasChanged);
         }
@@ -1313,8 +1313,8 @@ public:
     return &delegate;
   }
 
-  Timestamp getCurrentTimestamp() {
-    return currentTimestamp;
+  Epoch getCurrentEpoch() {
+    return currentEpoch;
   }
 
   // When changing the implementation of those, do also copy
@@ -1437,7 +1437,7 @@ public:
     // an additional mark. When a rule is demanded, if its builtAt index isn't
     // up-to-date then we lazily reset it to be Incomplete, \see demandRule()
     // and \see RuleInfo::isComplete().
-    ++currentTimestamp;
+    ++currentEpoch;
 
     if (trace)
       trace->buildStarted();
@@ -1451,7 +1451,7 @@ public:
     // FIXME: Is it correct to do this here, or earlier?
     if (db) {
       std::string error;
-      bool result = db->setCurrentIteration(currentTimestamp, &error);
+      bool result = db->setCurrentIteration(currentEpoch, &error);
       if (!result) {
         delegate.error(error);
         static ValueType emptyValue{};
@@ -1495,14 +1495,14 @@ public:
   
   bool attachDB(std::unique_ptr<BuildDB> database, std::string* error_out) {
     assert(!db && "invalid attachDB() call");
-    assert(currentTimestamp == 0 && "invalid attachDB() call");
+    assert(currentEpoch == 0 && "invalid attachDB() call");
     assert(ruleInfos.empty() && "invalid attachDB() call");
     db = std::move(database);
     db->attachDelegate(this);
 
     // Load our initial state from the database.
     bool success;
-    currentTimestamp = db->getCurrentIteration(&success, error_out);
+    currentEpoch = db->getCurrentEpoch(&success, error_out);
     return success;
   }
 
@@ -1643,7 +1643,7 @@ public:
     } else {
         // Otherwise, updated the result and the computed at time.
         ruleInfo->result.value = std::move(value);
-        ruleInfo->result.computedAt = currentTimestamp;
+        ruleInfo->result.computedAt = currentEpoch;
     }
 
     // Enqueue the finished task.
@@ -1661,7 +1661,7 @@ public:
   /// @name Internal APIs
   /// @{
 
-  uint64_t getCurrentTimestamp() const { return currentTimestamp; }
+  Epoch getCurrentEpoch() const { return currentEpoch; }
 
   /// @}
 };
@@ -1683,8 +1683,8 @@ BuildEngineDelegate* BuildEngine::getDelegate() {
   return static_cast<BuildEngineImpl*>(impl)->getDelegate();
 }
 
-Timestamp BuildEngine::getCurrentTimestamp() {
-  return static_cast<BuildEngineImpl*>(impl)->getCurrentTimestamp();
+Epoch BuildEngine::getCurrentEpoch() {
+  return static_cast<BuildEngineImpl*>(impl)->getCurrentEpoch();
 }
 
 void BuildEngine::addRule(Rule&& rule) {
