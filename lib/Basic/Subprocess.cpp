@@ -680,7 +680,7 @@ void llbuild::basic::spawnProcess(
             ctx, handle,
             workingDirectoryUnsupported
                 ? Twine("working-directory unsupported on this platform")
-                : Twine("unable to spawn process (") + sys::strerror(result) +
+                : Twine("unable to spawn process '") + args[0] + "' (" + sys::strerror(result) +
                       ")");
         delegate.processFinished(ctx, handle, processResult);
         pid = (llbuild_pid_t)-1;
