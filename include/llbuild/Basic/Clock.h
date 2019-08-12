@@ -31,7 +31,7 @@ public:
   inline static Timestamp now() {
     // steady_clock is monotonic
     auto now = std::chrono::steady_clock::now();
-    std::chrono::duration<double> difference = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch());
+    auto difference = std::chrono::duration_cast<std::chrono::duration<double>>(now.time_since_epoch());
     return difference.count();
   }
 };
