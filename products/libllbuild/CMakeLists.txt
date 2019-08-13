@@ -3,16 +3,10 @@ set(SOURCES
   C-API.cpp
   Core-C-API.cpp)
 
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-set(LIBLLBUILD_NAME libllbuild)
-else()
-set(LIBLLBUILD_NAME llbuild)
-endif()
-
 add_llbuild_library(libllbuild
   ${SOURCES}
   SHARED
-  OUTPUT_NAME ${LIBLLBUILD_NAME})
+  OUTPUT_NAME llbuild)
 
 set_property(TARGET libllbuild PROPERTY MACOSX_RPATH ON)
 
@@ -22,6 +16,11 @@ target_link_libraries(libllbuild PRIVATE
   llbuildBasic
   llvmSupport
   SQLite::SQLite3)
+
+if(CMAKE_SYSTEM_NAME STREQUAL Windows)
+    set_target_properties(libllbuild PROPERTIES LINK_FLAGS "/INCREMENTAL:NO")
+endif()
+
 if(NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
   target_link_libraries(libllbuild PRIVATE
     curses)
