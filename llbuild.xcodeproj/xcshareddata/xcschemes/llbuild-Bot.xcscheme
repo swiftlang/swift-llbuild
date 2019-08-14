@@ -48,6 +48,20 @@
                ReferencedContainer = "container:llbuild.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "B546B39322C65CFB007046C0"
+               BuildableName = "llbuildSwiftTests.xctest"
+               BlueprintName = "llbuildSwiftTests"
+               ReferencedContainer = "container:llbuild.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -64,6 +78,16 @@
                BlueprintIdentifier = "E10D5CD919FEBF6A00211ED4"
                BuildableName = "LitXCTestAdaptor.xctest"
                BlueprintName = "LitXCTestAdaptor"
+               ReferencedContainer = "container:llbuild.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "B546B39322C65CFB007046C0"
+               BuildableName = "llbuildSwiftTests.xctest"
+               BlueprintName = "llbuildSwiftTests"
                ReferencedContainer = "container:llbuild.xcodeproj">
             </BuildableReference>
          </TestableReference>
