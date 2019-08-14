@@ -53,8 +53,12 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
     /// The opaque pointer to the BuildKey object
     internal let internalBuildKey: OpaquePointer
     
-    fileprivate init(_ buildKey: OpaquePointer) {
+    /// Will only destroy the internalBuildKey on deinit if this is `false`.
+    private let weakPointer: Bool
+    
+    fileprivate init(_ buildKey: OpaquePointer, weakPointer: Bool = false) {
         self.internalBuildKey = buildKey
+        self.weakPointer = weakPointer
     }
     
     /// Makes use of APIs easier that use out parameter of type `llb_data_t`.
@@ -74,18 +78,18 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
     public static func construct(key: OpaquePointer) -> BuildKey {
         let kind = llb_build_key_get_kind(key)
         switch kind {
-        case .command: return Command(key)
-        case .customTask: return CustomTask(key)
-        case .directoryContents: return DirectoryContents(key)
-        case .filteredDirectoryContents: return FilteredDirectoryContents(key)
-        case .directoryTreeSignature: return DirectoryTreeSignature(key)
-        case .directoryTreeStructureSignature: return DirectoryTreeStructureSignature(key)
-        case .node: return Node(key)
-        case .stat: return Stat(key)
-        case .target: return Target(key)
+        case .command: return Command(key, weakPointer: true)
+        case .customTask: return CustomTask(key, weakPointer: true)
+        case .directoryContents: return DirectoryContents(key, weakPointer: true)
+        case .filteredDirectoryContents: return FilteredDirectoryContents(key, weakPointer: true)
+        case .directoryTreeSignature: return DirectoryTreeSignature(key, weakPointer: true)
+        case .directoryTreeStructureSignature: return DirectoryTreeStructureSignature(key, weakPointer: true)
+        case .node: return Node(key, weakPointer: true)
+        case .stat: return Stat(key, weakPointer: true)
+        case .target: return Target(key, weakPointer: true)
         default:
             assertionFailure("Unknown key kind: \(kind) - couldn't create concrete BuildKey class.")
-            return BuildKey(key)
+            return BuildKey(key, weakPointer: true)
         }
     }
     
