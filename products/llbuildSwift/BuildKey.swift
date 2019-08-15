@@ -115,6 +115,7 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
     }
     
     deinit {
+        if weakPointer { return }
         llb_build_key_destroy(internalBuildKey)
     }
     
