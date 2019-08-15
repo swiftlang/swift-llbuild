@@ -194,4 +194,17 @@ class BuildDBBindingsTests: XCTestCase {
     XCTAssertEqual(result3.value, BuildValue.SuccessfulCommand(outputInfos: [BuildValue.SuccessfulCommand.FileInfo()]))
   }
   
+  func testRuleResult() throws {
+    let deps = [BuildKey.CustomTask(name: "name", taskData: "taskData"), BuildKey.Command(name: "command")]
+    let result = RuleResult(value: BuildValue.FailedCommand(), signature: 0xff, computedAt: 1, builtAt: 2, start: 3, end: 4, dependencies: deps)
+    XCTAssertEqual(result.value, BuildValue.FailedCommand())
+    XCTAssertEqual(result.signature, 0xff)
+    XCTAssertEqual(result.computedAt, 1)
+    XCTAssertEqual(result.builtAt, 2)
+    XCTAssertEqual(result.start, 3)
+    XCTAssertEqual(result.end, 4)
+    XCTAssertEqual(result.dependencies.count, 2)
+    XCTAssertEqual(result.dependencies, deps)
+  }
+  
 }

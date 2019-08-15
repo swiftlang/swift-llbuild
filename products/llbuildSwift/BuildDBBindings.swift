@@ -120,10 +120,28 @@ public class RuleResult {
                                 .map(BuildKey.construct(key:))
     }
     
+    public convenience init(value: BuildValue, signature: UInt64, computedAt: UInt64, builtAt: UInt64, start: Double, end: Double, dependencies: [BuildKey]) {
+        let ptr = UnsafeMutablePointer<OpaquePointer>.allocate(capacity: dependencies.count)
+        for (index, dep) in dependencies.enumerated() {
+            var data = copiedDataFromBytes(dep.keyData)
+            ptr[index] = llb_build_key_make(&data)
+        }
+        
+        let dbResult = BuildDBResult(value: copiedDataFromBytes(value.valueData), signature: signature, computed_at: computedAt, built_at: builtAt, start: start, end: end, dependencies: ptr, dependencies_count: UInt32(dependencies.count))
+        // We know this can't fail because the data is well formed
+        self.init(result: dbResult)!
+    }
+    
     deinit {
         withUnsafePointer(to: result) { ptr in
             llb_database_destroy_result(ptr)
         }
+    }
+}
+
+extension RuleResult: Equatable {
+    public static func == (lhs: RuleResult, rhs: RuleResult) -> Bool {
+        lhs.value == rhs.value && lhs.signature == rhs.signature && lhs.computedAt == rhs.computedAt && lhs.builtAt == rhs.builtAt && lhs.start == rhs.start && lhs.end == rhs.end && lhs.dependencies == rhs.dependencies
     }
 }
 
