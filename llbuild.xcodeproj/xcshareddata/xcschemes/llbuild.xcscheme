@@ -146,6 +146,34 @@
                ReferencedContainer = "container:llbuild.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "B5D741DB23057690002B4114"
+               BuildableName = "llbuildAnalysis.framework"
+               BlueprintName = "llbuildAnalysis"
+               ReferencedContainer = "container:llbuild.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "B5D741E323057690002B4114"
+               BuildableName = "llbuildAnalysisTests.xctest"
+               BlueprintName = "llbuildAnalysisTests"
+               ReferencedContainer = "container:llbuild.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -182,6 +210,16 @@
                BlueprintIdentifier = "B546B39322C65CFB007046C0"
                BuildableName = "llbuildSwiftTests.xctest"
                BlueprintName = "llbuildSwiftTests"
+               ReferencedContainer = "container:llbuild.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "B5D741E323057690002B4114"
+               BuildableName = "llbuildAnalysisTests.xctest"
+               BlueprintName = "llbuildAnalysisTests"
                ReferencedContainer = "container:llbuild.xcodeproj">
             </BuildableReference>
          </TestableReference>

@@ -14,6 +14,9 @@ let package = Package(
         .library(
             name: "llbuildSwift",
             targets: ["llbuildSwift"]),
+        .library(
+            name: "llbuildAnalysis",
+            targets: ["llbuildAnalysis"]),
     ],
     targets: [
         /// The llbuild testing tool.
@@ -73,6 +76,11 @@ let package = Package(
             dependencies: ["llbuildCore", "llbuildBuildSystem", "llbuildNinja"],
             path: "lib/Commands"
         ),
+        .target(
+            name: "llbuildAnalysis",
+            dependencies: ["llbuildSwift"],
+            path: "lib/Analysis"
+        ),
 
         // MARK: Test Targets
 
@@ -96,6 +104,10 @@ let package = Package(
             name: "llbuildSwiftTests",
             dependencies: ["llbuildSwift"],
             path: "unittests/Swift"),
+        .testTarget(
+            name: "llbuildAnalysisTests",
+            dependencies: ["llbuildAnalysis"],
+            path: "unittests/Analysis"),
         
         // MARK: GoogleTest
 

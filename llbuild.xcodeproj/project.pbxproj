@@ -130,8 +130,12 @@
 		B5BE9BA722E854E300777A06 /* BuildKey-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5BE9BA622E854E300777A06 /* BuildKey-C-API.cpp */; };
 		B5BE9BA822E854E300777A06 /* BuildKey-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5BE9BA622E854E300777A06 /* BuildKey-C-API.cpp */; };
 		B5BE9BAC22E887CD00777A06 /* buildkey.h in Headers */ = {isa = PBXBuildFile; fileRef = B5BE9BAB22E885D900777A06 /* buildkey.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		B5BE9BB322E8A31000777A06 /* BuildSystem-C-API-Private.h in Headers */ = {isa = PBXBuildFile; fileRef = B5BE9BB222E8A31000777A06 /* BuildSystem-C-API-Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		B5D741E523057690002B4114 /* llbuildAnalysis.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B5D741DC23057690002B4114 /* llbuildAnalysis.framework */; };
+		B5D741EA23057690002B4114 /* CriticalPathSolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D741E923057690002B4114 /* CriticalPathSolverTests.swift */; };
+		B5D741F3230576A8002B4114 /* CriticalPathSolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D741D423057621002B4114 /* CriticalPathSolver.swift */; };
+		B5D741F623057A6C002B4114 /* CriticalPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5D741F523057A6C002B4114 /* CriticalPath.swift */; };
 		B5DB3A6D22FDB9B000625133 /* BuildValueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5A308C222F30F2000699B4C /* BuildValueTests.swift */; };
+		B5F525602305B27C00D53105 /* llbuild.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1D191BE1B47232B000C4E95 /* llbuild.framework */; };
 		BC669C54205A2C2000942C3B /* BuildSystemBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8DEF0620300AAF00E9EF0C /* BuildSystemBindings.swift */; };
 		BC669C55205A2C2000942C3B /* CoreBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8DEF0720300AAF00E9EF0C /* CoreBindings.swift */; };
 		C5740D091E03523100567DD8 /* BuildSystemFrontendTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5740D081E03523100567DD8 /* BuildSystemFrontendTest.cpp */; };
@@ -361,6 +365,20 @@
 			remoteInfo = BuildSystemTests;
 		};
 		B546B39A22C65CFB007046C0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1D191BD1B47232B000C4E95;
+			remoteInfo = "llbuild-framework";
+		};
+		B5D741E623057690002B4114 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B5D741DB23057690002B4114;
+			remoteInfo = "llbuild-analysis";
+		};
+		B5F525612305B27F00D53105 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
 			proxyType = 1;
@@ -958,7 +976,6 @@
 		B546B3A422CA161A007046C0 /* BuildDBBindingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildDBBindingsTests.swift; sourceTree = "<group>"; };
 		B563CEA620A6252500276198 /* CrossPlatformCompatibility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CrossPlatformCompatibility.h; sourceTree = "<group>"; };
 		B58006ED22F9E847004869A2 /* Clock.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Clock.h; sourceTree = "<group>"; };
-		B5A308CD22F315A800699B4C /* Internals.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Internals.swift; sourceTree = "<group>"; };
 		B5A308B622F30DF000699B4C /* BuildValue-C-API.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "BuildValue-C-API.cpp"; sourceTree = "<group>"; };
 		B5A308B922F30E0700699B4C /* buildvalue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = buildvalue.h; sourceTree = "<group>"; };
 		B5A308BD22F30EE800699B4C /* BuildValue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BuildValue.swift; sourceTree = "<group>"; };
@@ -969,6 +986,13 @@
 		B5BE9BA422E854C600777A06 /* BuildKeyTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BuildKeyTests.swift; sourceTree = "<group>"; };
 		B5BE9BA622E854E300777A06 /* BuildKey-C-API.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "BuildKey-C-API.cpp"; sourceTree = "<group>"; };
 		B5BE9BAB22E885D900777A06 /* buildkey.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = buildkey.h; sourceTree = "<group>"; };
+		B5D741D423057621002B4114 /* CriticalPathSolver.swift */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = CriticalPathSolver.swift; sourceTree = "<group>"; tabWidth = 4; };
+		B5D741DC23057690002B4114 /* llbuildAnalysis.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = llbuildAnalysis.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		B5D741DF23057690002B4114 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B5D741E423057690002B4114 /* llbuildAnalysisTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = llbuildAnalysisTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B5D741E923057690002B4114 /* CriticalPathSolverTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = CriticalPathSolverTests.swift; sourceTree = "<group>"; tabWidth = 4; };
+		B5D741EB23057690002B4114 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B5D741F523057A6C002B4114 /* CriticalPath.swift */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = CriticalPath.swift; sourceTree = "<group>"; tabWidth = 4; };
 		BC8DEF0520300AAF00E9EF0C /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; tabWidth = 2; };
 		BC8DEF0620300AAF00E9EF0C /* BuildSystemBindings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BuildSystemBindings.swift; sourceTree = "<group>"; };
 		BC8DEF0720300AAF00E9EF0C /* CoreBindings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CoreBindings.swift; sourceTree = "<group>"; };
@@ -1299,6 +1323,22 @@
 			buildActionMask = 2147483647;
 			files = (
 				B546B39922C65CFB007046C0 /* llbuild.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B5D741D923057690002B4114 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B5F525602305B27C00D53105 /* llbuild.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B5D741E123057690002B4114 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B5D741E523057690002B4114 /* llbuildAnalysis.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1730,6 +1770,25 @@
 			path = Swift;
 			sourceTree = "<group>";
 		};
+		B5D741D623057639002B4114 /* Analysis */ = {
+			isa = PBXGroup;
+			children = (
+				B5D741F523057A6C002B4114 /* CriticalPath.swift */,
+				B5D741D423057621002B4114 /* CriticalPathSolver.swift */,
+				B5D741DF23057690002B4114 /* Info.plist */,
+			);
+			path = Analysis;
+			sourceTree = "<group>";
+		};
+		B5D741F423057709002B4114 /* Analysis */ = {
+			isa = PBXGroup;
+			children = (
+				B5D741E923057690002B4114 /* CriticalPathSolverTests.swift */,
+				B5D741EB23057690002B4114 /* Info.plist */,
+			);
+			path = Analysis;
+			sourceTree = "<group>";
+		};
 		BC8DEF0420300AAF00E9EF0C /* llbuildSwift */ = {
 			isa = PBXGroup;
 			children = (
@@ -1871,6 +1930,8 @@
 				9DB047A81DF9D43D006CDF52 /* BuildSystemTests */,
 				40B3C91A20D3AEC9007C5847 /* CAPITests */,
 				B546B39422C65CFB007046C0 /* llbuildSwiftTests.xctest */,
+				B5D741DC23057690002B4114 /* llbuildAnalysis.framework */,
+				B5D741E423057690002B4114 /* llbuildAnalysisTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1907,6 +1968,7 @@
 				E1B839581B541C1F00DB876B /* BuildSystem */,
 				E1A2241919F991530059043E /* Ninja */,
 				E1A2240919F991530059043E /* Commands */,
+				B5D741D623057639002B4114 /* Analysis */,
 				1484D1F72094548A00D3830F /* libstdc++14-workaround.h */,
 				E1A2240819F991530059043E /* CMakeLists.txt */,
 			);
@@ -2161,6 +2223,7 @@
 				9DB0478A1DF9D39E006CDF52 /* BuildSystem */,
 				E1A224B819F998D40059043E /* Ninja */,
 				B546B39F22C65D2E007046C0 /* Swift */,
+				B5D741F423057709002B4114 /* Analysis */,
 				E1A224B319F998D40059043E /* CMakeLists.txt */,
 			);
 			path = unittests;
@@ -2561,6 +2624,13 @@
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
+		B5D741D723057690002B4114 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E1A2242319F991B40059043E /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -2707,6 +2777,43 @@
 			name = llbuildSwiftTests;
 			productName = llbuildSwiftTests;
 			productReference = B546B39422C65CFB007046C0 /* llbuildSwiftTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		B5D741DB23057690002B4114 /* llbuildAnalysis */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B5D741ED23057690002B4114 /* Build configuration list for PBXNativeTarget "llbuildAnalysis" */;
+			buildPhases = (
+				B5D741D723057690002B4114 /* Headers */,
+				B5D741D823057690002B4114 /* Sources */,
+				B5D741D923057690002B4114 /* Frameworks */,
+				B5D741DA23057690002B4114 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B5F525622305B27F00D53105 /* PBXTargetDependency */,
+			);
+			name = llbuildAnalysis;
+			productName = "llbuild-analysis";
+			productReference = B5D741DC23057690002B4114 /* llbuildAnalysis.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		B5D741E323057690002B4114 /* llbuildAnalysisTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B5D741F023057690002B4114 /* Build configuration list for PBXNativeTarget "llbuildAnalysisTests" */;
+			buildPhases = (
+				B5D741E023057690002B4114 /* Sources */,
+				B5D741E123057690002B4114 /* Frameworks */,
+				B5D741E223057690002B4114 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B5D741E723057690002B4114 /* PBXTargetDependency */,
+			);
+			name = llbuildAnalysisTests;
+			productName = "llbuild-analysisTests";
+			productReference = B5D741E423057690002B4114 /* llbuildAnalysisTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		E10D5CD919FEBF6A00211ED4 /* LitXCTestAdaptor */ = {
@@ -3054,6 +3161,7 @@
 			isa = PBXProject;
 			attributes = {
 				DefaultBuildSystemTypeForWorkspace = Latest;
+				LastSwiftUpdateCheck = 1100;
 				LastUpgradeCheck = 9900;
 				ORGANIZATIONNAME = "Apple Inc.";
 				TargetAttributes = {
@@ -3064,6 +3172,12 @@
 					B546B39322C65CFB007046C0 = {
 						CreatedOnToolsVersion = 10.0;
 						ProvisioningStyle = Manual;
+					};
+					B5D741DB23057690002B4114 = {
+						CreatedOnToolsVersion = 11.0;
+					};
+					B5D741E323057690002B4114 = {
+						CreatedOnToolsVersion = 11.0;
 					};
 					E10D5CD919FEBF6A00211ED4 = {
 						CreatedOnToolsVersion = 6.3;
@@ -3183,12 +3297,28 @@
 				E10D5CD919FEBF6A00211ED4 /* LitXCTestAdaptor */,
 				E1C404AB1A0308F3003392BA /* PerfTests */,
 				B546B39322C65CFB007046C0 /* llbuildSwiftTests */,
+				B5D741DB23057690002B4114 /* llbuildAnalysis */,
+				B5D741E323057690002B4114 /* llbuildAnalysisTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		B546B39222C65CFB007046C0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B5D741DA23057690002B4114 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B5D741E223057690002B4114 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -3402,6 +3532,23 @@
 				B5BE9BA522E854C600777A06 /* BuildKeyTests.swift in Sources */,
 				B546B3A922CA49AB007046C0 /* BuildSystemBindingsTests.swift in Sources */,
 				B546B3A522CA161A007046C0 /* BuildDBBindingsTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B5D741D823057690002B4114 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B5D741F3230576A8002B4114 /* CriticalPathSolver.swift in Sources */,
+				B5D741F623057A6C002B4114 /* CriticalPath.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B5D741E023057690002B4114 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B5D741EA23057690002B4114 /* CriticalPathSolverTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3712,6 +3859,16 @@
 			target = E1D191BD1B47232B000C4E95 /* llbuild-framework */;
 			targetProxy = B546B39A22C65CFB007046C0 /* PBXContainerItemProxy */;
 		};
+		B5D741E723057690002B4114 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B5D741DB23057690002B4114 /* llbuildAnalysis */;
+			targetProxy = B5D741E623057690002B4114 /* PBXContainerItemProxy */;
+		};
+		B5F525622305B27F00D53105 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1D191BD1B47232B000C4E95 /* llbuild-framework */;
+			targetProxy = B5F525612305B27F00D53105 /* PBXContainerItemProxy */;
+		};
 		E104FAF91B655BB2005C68A0 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = E1B839481B541BFD00DB876B /* llbuildBuildSystem */;
@@ -4019,6 +4176,50 @@
 			buildSettings = {
 				INFOPLIST_FILE = unittests/Swift/Info.plist;
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.llbuildSwiftTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		B5D741EE23057690002B4114 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEFINES_MODULE = YES;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = "$(SRCROOT)/lib/Analysis/Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.apple.dt.llbuild-analysis";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		B5D741EF23057690002B4114 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEFINES_MODULE = YES;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = "$(SRCROOT)/lib/Analysis/Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.apple.dt.llbuild-analysis";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		B5D741F123057690002B4114 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INFOPLIST_FILE = "$(SRCROOT)/unittests/Analysis/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.apple.dt.llbuild-analysisTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		B5D741F223057690002B4114 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				INFOPLIST_FILE = "$(SRCROOT)/unittests/Analysis/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.apple.dt.llbuild-analysisTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -4537,6 +4738,24 @@
 			buildConfigurations = (
 				B546B39D22C65CFB007046C0 /* Debug */,
 				B546B39E22C65CFB007046C0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B5D741ED23057690002B4114 /* Build configuration list for PBXNativeTarget "llbuildAnalysis" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B5D741EE23057690002B4114 /* Debug */,
+				B5D741EF23057690002B4114 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B5D741F023057690002B4114 /* Build configuration list for PBXNativeTarget "llbuildAnalysisTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B5D741F123057690002B4114 /* Debug */,
+				B5D741F223057690002B4114 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
