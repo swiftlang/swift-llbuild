@@ -154,6 +154,9 @@ const llb_database_result_t mapResult(CAPIBuildDB &db, Result result) {
 
 void llb_database_destroy_result(const llb_database_result_t *result) {
   delete result->value.data;
+  for (uint32_t index = 0; index < result->dependencies_count; index++) {
+    llb_build_key_destroy(result->dependencies[index]);
+  }
   delete result->dependencies;
 }
 
