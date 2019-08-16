@@ -188,11 +188,12 @@ llb_build_value *_Nonnull llb_build_value_make_failed_input() {
 }
 
 llb_build_value *_Nonnull llb_build_value_make_successful_command(const llb_build_value_file_info_t *_Nonnull outputInfos, int32_t count_outputInfos) {
-  basic::FileInfo fileInfos[count_outputInfos];
-  for (int32_t index = 0; index < count_outputInfos; index++) {
-    fileInfos[index] = convertFileInfo(outputInfos[index]);
+  std::vector<basic::FileInfo> info;
+  info.reserve(count_outputInfos);
+  for (int32_t index = 0; index < count_outputInfos; ++index) {
+    info.push_back(convertFileInfo(outputInfos[index]));
   }
-  return (llb_build_value *)new CAPIBuildValue(BuildValue::makeSuccessfulCommand(ArrayRef<basic::FileInfo>(fileInfos, count_outputInfos)));
+  return reinterpret_cast<llb_build_value *>(new CAPIBuildValue(BuildValue::makeSuccessfulCommand(ArrayRef<basic::FileInfo>(info.data(), count_outputInfos))));
 }
 
 void llb_build_value_get_file_infos(llb_build_value *_Nonnull value, void *_Nullable context, void (*_Nonnull iterator)(void *_Nullable context, llb_build_value_file_info_t fileInfo)) {
@@ -252,11 +253,12 @@ LLBUILD_EXPORT llb_build_value *_Nonnull llb_build_value_make_filtered_directory
 }
 
 llb_build_value *_Nonnull llb_build_value_make_successful_command_with_output_signature(const llb_build_value_file_info_t *_Nonnull outputInfos, int32_t count_outputInfos, llb_build_value_command_signature_t signature) {
-  basic::FileInfo fileInfos[count_outputInfos];
-  for (int32_t index = 0; index < count_outputInfos; index++) {
-    fileInfos[index] = convertFileInfo(outputInfos[index]);
+  std::vector<basic::FileInfo> info;
+  info.reserve(count_outputInfos);
+  for (int32_t index = 0; index < count_outputInfos; ++index) {
+    info.push_back(convertFileInfo(outputInfos[index]));
   }
-  return (llb_build_value *)new CAPIBuildValue(BuildValue::makeSuccessfulCommandWithOutputSignature(ArrayRef<basic::FileInfo>(fileInfos, count_outputInfos), basic::CommandSignature(signature)));
+  return reinterpret_cast<llb_build_value *>(new CAPIBuildValue(BuildValue::makeSuccessfulCommandWithOutputSignature(ArrayRef<basic::FileInfo>(info.data(), count_outputInfos), basic::CommandSignature(signature))));
 }
 
 llb_build_value_command_signature_t llb_build_value_get_output_signature(llb_build_value *_Nonnull value) {
