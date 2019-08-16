@@ -1,3 +1,8 @@
+include(ProcessorCount)
+
+# Compute the number of processors.
+ProcessorCount(NUM_PROCESSORS)
+
 function(append_if condition value)
   if (${condition})
     foreach(variable ${ARGN})
