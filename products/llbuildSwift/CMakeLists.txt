@@ -45,24 +45,23 @@ else()
 endif()
 
 # Add swift bindings target if swift compiler is present.
-if (SWIFTC_FOUND)
+if(SWIFTC_FOUND)
   add_swift_module(libllbuildSwift llbuildSwift libllbuild "${SOURCES}" "${additional_args}")
 
-  # Install both libllbuild and libllbuildSwift.
-  list(APPEND LLBUILD_LIBRARIES
-    "${LLBUILD_LIBRARY_OUTPUT_INTDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}llbuild${CMAKE_SHARED_LIBRARY_SUFFIX}"
-    "${LLBUILD_LIBRARY_OUTPUT_INTDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}llbuildSwift${CMAKE_SHARED_LIBRARY_SUFFIX}")
-  
   if(CMAKE_SYSTEM_NAME STREQUAL Windows)
-    install(FILES ${LLBUILD_EXECUTABLE_OUTPUT_INTDIR}/libllbuild${CMAKE_SHARED_LIBRARY_SUFFIX}
-      ${LLBUILD_LIBRARY_OUTPUT_INTDIR}/libllbuildSwift${CMAKE_SHARED_LIBRARY_SUFFIX}
+    install(FILES ${LLBUILD_LIBRARY_OUTPUT_INTDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}llbuildSwift${CMAKE_SHARED_LIBRARY_SUFFIX}
       DESTINATION bin
       COMPONENT libllbuildSwift)
+
+    install(FILES ${LLBUILD_LIBRARY_OUTPUT_INTDIR}/${CMAKE_IMPORT_LIBRARY_PREFIX}llbuildSwift${CMAKE_IMPORT_LIBRARY_SUFFIX}
+      DESTINATION lib
+      COMPONENT libllbuildSwift)
+  else()
+    install(FILES ${LLBUILD_LIBRARY_OUTPUT_INTDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}llbuildSwift${CMAKE_SHARED_LIBRARY_SUFFIX}
+      DESTINATION lib/swift/pm/llbuild
+      COMPONENT libllbuildSwift)
   endif()
-  install(FILES ${LLBUILD_LIBRARIES}
-    DESTINATION lib/swift/pm/llbuild
-    COMPONENT libllbuildSwift)
-  
+
   # Add install target.
   add_custom_target(install-libllbuildSwift
     DEPENDS libllbuildSwift
@@ -70,5 +69,4 @@ if (SWIFTC_FOUND)
     COMMAND "${CMAKE_COMMAND}"
       -DCMAKE_INSTALL_COMPONENT=libllbuildSwift
       -P "${CMAKE_BINARY_DIR}/cmake_install.cmake")
-  
 endif()
