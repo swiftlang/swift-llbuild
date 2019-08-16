@@ -50,6 +50,14 @@ install(TARGETS libllbuild
   RUNTIME DESTINATION bin
   COMPONENT libllbuild)
 
+if(SWIFTC_FOUND)
+  if(NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
+    install(TARGETS libllbuild
+      DESTINATION lib/swift/pm/llbuild
+      COMPONENT libllbuildSwift)
+  endif()
+endif()
+
 add_custom_target(install-libllbuild
                   DEPENDS libllbuild
                   COMMENT "Installing libllbuild..."
