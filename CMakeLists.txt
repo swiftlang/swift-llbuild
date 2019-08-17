@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.4.3)
 
+project(llbuild LANGUAGES CXX)
+
 option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
 
 # Configure the default set of bindings to build.
@@ -14,8 +16,6 @@ execute_process(
     COMMAND xcrun --sdk macosx --show-sdk-path
     OUTPUT_VARIABLE CMAKE_OSX_SYSROOT
     OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-project(llbuild)
 
 # Add path for custom modules
 list(APPEND CMAKE_MODULE_PATH
