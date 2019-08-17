@@ -18,17 +18,24 @@
 #define LLBUILD_PUBLIC_LLBUILD_H
 
 #if defined(__cplusplus)
-#if defined(_WIN32)
-#define LLBUILD_EXPORT extern "C" __declspec(dllexport)
+#define LLBUILD_EXTERN extern "C"
 #else
-#define LLBUILD_EXPORT extern "C" __attribute__((visibility("default")))
+#define LLBUILD_EXTERN extern
 #endif
-#elif __GNUC__
-#define LLBUILD_EXPORT extern __attribute__((visibility("default")))
-#elif defined(_WIN32)
-#define LLBUILD_EXPORT extern __declspec(dllexport)
+
+#if defined(__ELF__) || (defined(__APPLE__) && defined(__MACH__))
+#define LLBUILD_EXPORT LLBUILD_EXTERN __attribute__((__visibility__("default")))
 #else
-#define LLBUILD_EXPORT extern
+// asume PE/COFF
+#if defined(_DLL)
+#if defined(libllbuild_EXPORTS)
+#define LLBUILD_EXPORT LLBUILD_EXTERN __declspec(dllexport)
+#else
+#define LLBUILD_EXPORT LLBUILD_EXTERN __declspec(dllimport)
+#endif
+#else
+#define LLBUILD_EXPORT LLBUILD_EXTERN
+#endif
 #endif
 
 #ifndef __has_attribute
