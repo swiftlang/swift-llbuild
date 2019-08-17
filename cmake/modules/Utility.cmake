@@ -1,4 +1,5 @@
 include(ProcessorCount)
+include(CMakeParseArguments)
 
 # Compute the number of processors.
 ProcessorCount(NUM_PROCESSORS)

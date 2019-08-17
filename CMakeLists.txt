@@ -8,7 +8,6 @@ option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
 set(LLBUILD_SUPPORT_BINDINGS "" CACHE STRING "bindings to build")
 
 # Include standard CMake modules.
-include(CMakeParseArguments)
 include(CheckCXXCompilerFlag)
 
 # Get the SDK path for OSX.
