@@ -1,4 +1,4 @@
-add_llbuild_executable(llbuild
+add_executable(llbuild
   main.cpp)
 
 target_link_libraries(llbuild PRIVATE

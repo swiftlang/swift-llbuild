@@ -11,10 +11,6 @@ function(append_if condition value)
   endif()
 endfunction()
 
-macro(add_llbuild_executable name)
-  add_executable(${name} ${ARGN})
-endmacro()
-
 macro(add_llbuild_library name)
   cmake_parse_arguments(ARG
     "SHARED" "OUTPUT_NAME" ""
@@ -71,7 +67,7 @@ endmacro()
 function(add_unittest test_suite test_name)
   include_directories(${LLBUILD_SRC_DIR}/utils/unittest/googletest/include)
 
-  add_llbuild_executable(${test_name} ${ARGN})
+  add_executable(${test_name} ${ARGN})
   target_link_libraries(${test_name} PRIVATE
     gtest
     gtest_main)
