@@ -11,44 +11,8 @@ function(append_if condition value)
   endif()
 endfunction()
 
-# Set each output directory according to ${CMAKE_CONFIGURATION_TYPES}.
-# Note: Don't set variables CMAKE_*_OUTPUT_DIRECTORY any more,
-# or a certain builder, for eaxample, msbuild.exe, would be confused.
-function(set_output_directory target bindir libdir)
-  # Do nothing if *_OUTPUT_INTDIR is empty.
-  if("${bindir}" STREQUAL "")
-    return()
-  endif()
-
-  # moddir -- corresponding to LIBRARY_OUTPUT_DIRECTORY.
-  # It affects output of add_library(MODULE).
-  if(WIN32 OR CYGWIN)
-    # DLL platform
-    set(moddir ${bindir})
-  else()
-    set(moddir ${libdir})
-  endif()
-  if(NOT "${CMAKE_CFG_INTDIR}" STREQUAL ".")
-    foreach(build_mode ${CMAKE_CONFIGURATION_TYPES})
-      string(TOUPPER "${build_mode}" CONFIG_SUFFIX)
-      string(REPLACE ${CMAKE_CFG_INTDIR} ${build_mode} bi ${bindir})
-      string(REPLACE ${CMAKE_CFG_INTDIR} ${build_mode} li ${libdir})
-      string(REPLACE ${CMAKE_CFG_INTDIR} ${build_mode} mi ${moddir})
-      set_target_properties(${target} PROPERTIES "RUNTIME_OUTPUT_DIRECTORY_${CONFIG_SUFFIX}" ${bi})
-      set_target_properties(${target} PROPERTIES "ARCHIVE_OUTPUT_DIRECTORY_${CONFIG_SUFFIX}" ${li})
-      set_target_properties(${target} PROPERTIES "LIBRARY_OUTPUT_DIRECTORY_${CONFIG_SUFFIX}" ${mi})
-    endforeach()
-  else()
-    set_target_properties(${target} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${bindir})
-    set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${libdir})
-    set_target_properties(${target} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${moddir})
-  endif()
-endfunction()
-
 macro(add_llbuild_executable name)
   add_executable(${name} ${ARGN})
-
-  set_output_directory(${name} ${LLBUILD_EXECUTABLE_OUTPUT_INTDIR} ${LLBUILD_LIBRARY_OUTPUT_INTDIR})
 endmacro()
 
 macro(add_llbuild_library name)
@@ -91,8 +55,6 @@ macro(add_llbuild_library name)
     add_library(${name} ${ALL_FILES})
   endif()
 
-  set_output_directory(${name} ${LLBUILD_EXECUTABLE_OUTPUT_INTDIR} ${LLBUILD_LIBRARY_OUTPUT_INTDIR})
-
   if(NOT ARG_OUTPUT_NAME)
     set(ARG_OUTPUT_NAME ${name})
   endif()
@@ -110,7 +72,6 @@ function(add_unittest test_suite test_name)
   include_directories(${LLBUILD_SRC_DIR}/utils/unittest/googletest/include)
 
   add_llbuild_executable(${test_name} ${ARGN})
-  set_output_directory(${test_name} ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR} "unused")
   target_link_libraries(${test_name} PRIVATE
     gtest
     gtest_main)
@@ -197,7 +158,11 @@ function(add_swift_module target name deps sources additional_args)
   )
   
   # Link and create dynamic framework.
-  set(DYLIB_OUTPUT ${LLBUILD_LIBRARY_OUTPUT_INTDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}${name}${CMAKE_SHARED_LIBRARY_SUFFIX})
+  if(CMAKE_SYSTEM_NAME STREQUAL Windows)
+    set(DYLIB_OUTPUT ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}${name}${CMAKE_SHARED_LIBRARY_SUFFIX})
+  else()
+    set(DYLIB_OUTPUT ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}${name}${CMAKE_SHARED_LIBRARY_SUFFIX})
+  endif()
   
   if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     list(APPEND DYLYB_ARGS -sdk ${CMAKE_OSX_SYSROOT})
@@ -227,7 +192,7 @@ function(add_swift_module target name deps sources additional_args)
     message(SEND_ERROR "do not know how to setup RPATH for ${CMAKE_SYSTEM_NAME}")
   endif()
 
-  list(APPEND DYLYB_ARGS -L ${LLBUILD_LIBRARY_OUTPUT_INTDIR})
+  list(APPEND DYLYB_ARGS -L ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
   
   add_custom_command(
       OUTPUT    ${DYLIB_OUTPUT}
