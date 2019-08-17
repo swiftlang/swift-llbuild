@@ -3,9 +3,7 @@ cmake_minimum_required(VERSION 3.4.3)
 option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
 
 # Configure the default set of bindings to build.
-if(NOT DEFINED LLBUILD_SUPPORT_BINDINGS)
-  set(LLBUILD_SUPPORT_BINDINGS "")
-endif()
+set(LLBUILD_SUPPORT_BINDINGS "" CACHE STRING "bindings to build")
 
 # Include standard CMake modules.
 include(CMakeParseArguments)
