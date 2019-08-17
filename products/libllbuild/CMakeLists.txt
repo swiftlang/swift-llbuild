@@ -71,7 +71,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set_target_properties(llbuild-framework PROPERTIES FRAMEWORK 1)
   set_target_properties(llbuild-framework PROPERTIES MACOSX_RPATH "@rpath")
   set_target_properties(llbuild-framework PROPERTIES OUTPUT_NAME llbuild)
-  set_target_properties(llbuild-framework PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${LLBUILD_LIBRARY_OUTPUT_INTDIR})
+  set_target_properties(llbuild-framework PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
   set_target_properties(llbuild-framework PROPERTIES LINK_FLAGS " -compatibility_version 1 -current_version 1")
   target_link_libraries(llbuild-framework PRIVATE
     llbuildBuildSystem
@@ -88,22 +88,22 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   file(GLOB headers include/llbuild/*.h)
   foreach(header ${headers})
     get_filename_component(name ${header} NAME)
-    set(dst ${LLBUILD_LIBRARY_OUTPUT_INTDIR}/llbuild.framework/Versions/A/Headers/${name})
+    set(dst ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/llbuild.framework/Versions/A/Headers/${name})
     list(APPEND LLBUILD_FW_INPUTS ${dst})
-    add_custom_command(OUTPUT ${dst} COMMAND ${CMAKE_COMMAND} -E make_directory ${LLBUILD_LIBRARY_OUTPUT_INTDIR}/llbuild.framework/Versions/A/Headers/ COMMAND ${CMAKE_COMMAND} -E copy ${header} ${dst} DEPENDS ${header})
+    add_custom_command(OUTPUT ${dst} COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/llbuild.framework/Versions/A/Headers/ COMMAND ${CMAKE_COMMAND} -E copy ${header} ${dst} DEPENDS ${header})
   endforeach()
 
   # Copy the framework module map.
   set(src ${CMAKE_CURRENT_SOURCE_DIR}/../llbuild-framework/llbuild-module.modulemap)
-  set(dst ${LLBUILD_LIBRARY_OUTPUT_INTDIR}/llbuild.framework/Versions/A/Modules/module.modulemap)
+  set(dst ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/llbuild.framework/Versions/A/Modules/module.modulemap)
   list(APPEND LLBUILD_FW_INPUTS ${dst})
-  add_custom_command(OUTPUT ${dst} COMMAND ${CMAKE_COMMAND} -E make_directory ${LLBUILD_LIBRARY_OUTPUT_INTDIR}/llbuild.framework/Versions/A/Modules/ COMMAND ${CMAKE_COMMAND} -E copy ${src} ${dst} DEPENDS ${src})
+  add_custom_command(OUTPUT ${dst} COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/llbuild.framework/Versions/A/Modules/ COMMAND ${CMAKE_COMMAND} -E copy ${src} ${dst} DEPENDS ${src})
 
   # Create the appropriate symlinks.
-  set(dst ${LLBUILD_LIBRARY_OUTPUT_INTDIR}/llbuild.framework/Headers)
+  set(dst ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/llbuild.framework/Headers)
   list(APPEND LLBUILD_FW_INPUTS ${dst})
   add_custom_command(OUTPUT ${dst} COMMAND ${CMAKE_COMMAND} -E create_symlink Versions/Current/Headers ${dst})
-  set(dst ${LLBUILD_LIBRARY_OUTPUT_INTDIR}/llbuild.framework/Modules)
+  set(dst ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/llbuild.framework/Modules)
   list(APPEND LLBUILD_FW_INPUTS ${dst})
   add_custom_command(OUTPUT ${dst} COMMAND ${CMAKE_COMMAND} -E create_symlink Versions/Current/Modules ${dst})
 

@@ -1,4 +1,4 @@
-add_llbuild_executable(swift-build-tool
+add_executable(swift-build-tool
   main.cpp)
 
 target_link_libraries(swift-build-tool PRIVATE

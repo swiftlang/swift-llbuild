@@ -1,14 +1,13 @@
 cmake_minimum_required(VERSION 3.4.3)
 
+project(llbuild LANGUAGES CXX)
+
 option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
 
 # Configure the default set of bindings to build.
-if(NOT DEFINED LLBUILD_SUPPORT_BINDINGS)
-  set(LLBUILD_SUPPORT_BINDINGS "")
-endif()
+set(LLBUILD_SUPPORT_BINDINGS "" CACHE STRING "bindings to build")
 
 # Include standard CMake modules.
-include(CMakeParseArguments)
 include(CheckCXXCompilerFlag)
 
 # Get the SDK path for OSX.
@@ -16,8 +15,6 @@ execute_process(
     COMMAND xcrun --sdk macosx --show-sdk-path
     OUTPUT_VARIABLE CMAKE_OSX_SYSROOT
     OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-project(llbuild)
 
 # Add path for custom modules
 list(APPEND CMAKE_MODULE_PATH
@@ -27,6 +24,16 @@ set(CMAKE_CXX_EXTENSIONS NO)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_POSITION_INDEPENDENT_CODE YES)
+
+if(CMAKE_CONFIGURATION_TYPES AND NOT "${CMAKE_CFG_INTDIR}" STREQUAL ".")
+  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/$<LOWER_CASE:${CMAKE_BUILD_TYPE}>/lib)
+  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/$<LOWER_CASE:${CMAKE_BUILD_TYPE}>/lib)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/$<LOWER_CASE:${CMAKE_BUILD_TYPE}>/bin)
+else()
+  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+endif()
 
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
@@ -62,8 +69,6 @@ set(LLBUILD_OBJ_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 # Shared output directories for executables and libraries.
 set(LLBUILD_LIBDIR_SUFFIX "${LIB_SUFFIX}" CACHE STRING "Set default library folder suffix. Ex: set it to 64 and it will use lib64")
-set(LLBUILD_EXECUTABLE_OUTPUT_INTDIR ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/bin)
-set(LLBUILD_LIBRARY_OUTPUT_INTDIR ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/lib${LLBUILD_LIBDIR_SUFFIX})
 
 ###
 # Support Tools
