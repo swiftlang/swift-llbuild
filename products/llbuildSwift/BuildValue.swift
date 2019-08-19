@@ -8,13 +8,15 @@
 
 // This file contains Swift bindings for the llbuild C API.
 
-#if os(macOS)
+#if canImport(Darwin)
 import Darwin.C
 #elseif os(Windows)
 import MSVCRT
 import WinSDK
-#else
+#elseif canImport(Glibc)
 import Glibc
+#else
+#error("Missing libc or equivalent")
 #endif
 
 // We don't need this import if we're building
