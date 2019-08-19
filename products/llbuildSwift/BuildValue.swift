@@ -52,25 +52,25 @@ extension BuildValueKind: CustomStringConvertible {
 
 extension BuildValueFileInfo: Equatable {
     public static func == (lhs: BuildValueFileInfo, rhs: BuildValueFileInfo) -> Bool {
-        lhs.device == rhs.device && lhs.inode == rhs.inode && lhs.mode == rhs.mode && lhs.size == rhs.size && lhs.modTime == rhs.modTime
+        return lhs.device == rhs.device && lhs.inode == rhs.inode && lhs.mode == rhs.mode && lhs.size == rhs.size && lhs.modTime == rhs.modTime
     }
 }
 
 extension BuildValueFileInfo: CustomStringConvertible {
     public var description: String {
-        "<FileInfo device=\(device) inode=\(inode) mode=\(mode) size=\(size) modTime=\(modTime)>"
+        return "<FileInfo device=\(device) inode=\(inode) mode=\(mode) size=\(size) modTime=\(modTime)>"
     }
 }
 
 extension BuildValueFileTimestamp: Equatable {
     public static func == (lhs: llb_build_value_file_timestamp_t_, rhs: BuildValueFileTimestamp) -> Bool {
-        lhs.seconds == rhs.seconds && lhs.nanoseconds == rhs.nanoseconds
+        return lhs.seconds == rhs.seconds && lhs.nanoseconds == rhs.nanoseconds
     }
 }
 
 extension BuildValueFileTimestamp: CustomStringConvertible {
     public var description: String {
-        "<FileTimestamp seconds=\(seconds) nanoseconds=\(nanoseconds)>"
+        return "<FileTimestamp seconds=\(seconds) nanoseconds=\(nanoseconds)>"
     }
 }
 
@@ -144,7 +144,7 @@ public class BuildValue: CustomStringConvertible, Equatable, Hashable {
     }
     
     public var description: String {
-        "<BuildValue.\(type(of: self))>"
+        return "<BuildValue.\(type(of: self))>"
     }
     
     public static func ==(lhs: BuildValue, rhs: BuildValue) -> Bool {
@@ -157,7 +157,7 @@ public class BuildValue: CustomStringConvertible, Equatable, Hashable {
     
     /// This needs to be overriden in subclass if properties need to be checked
     fileprivate func equal(to other: BuildValue) -> Bool {
-        type(of: self) == type(of: other)
+        return type(of: self) == type(of: other)
     }
     
     /// An invalid value, for sentinel purposes.
@@ -186,11 +186,11 @@ public class BuildValue: CustomStringConvertible, Equatable, Hashable {
         }
         
         override func equal(to other: BuildValue) -> Bool {
-            (other as? Self)?.fileInfo == fileInfo
+            return (other as? ExistingInput)?.fileInfo == fileInfo
         }
         
         public override var description: String {
-            "<BuildValue.\(type(of: self)) fileInfo=\(fileInfo)>"
+            return "<BuildValue.\(type(of: self)) fileInfo=\(fileInfo)>"
         }
     }
 
@@ -227,12 +227,12 @@ public class BuildValue: CustomStringConvertible, Equatable, Hashable {
         }
         
         override func equal(to other: BuildValue) -> Bool {
-            guard let other = other as? Self else { return false }
+            guard let other = other as? DirectoryContents else { return false }
             return fileInfo == other.fileInfo && contents == other.contents
         }
         
         public override var description: String {
-            "<BuildValue.\(type(of: self)) fileInfo=\(fileInfo) contents=[\(contents.joined(separator: ", "))]>"
+            return "<BuildValue.\(type(of: self)) fileInfo=\(fileInfo) contents=[\(contents.joined(separator: ", "))]>"
         }
     }
 
@@ -248,12 +248,12 @@ public class BuildValue: CustomStringConvertible, Equatable, Hashable {
         }
         
         override func equal(to other: BuildValue) -> Bool {
-            guard let other = other as? Self else { return false }
+            guard let other = other as? DirectoryTreeSignature else { return false }
             return signature == other.signature
         }
         
         public override var description: String {
-            "<BuildValue.\(type(of: self)) signature=\(signature)>"
+            return "<BuildValue.\(type(of: self)) signature=\(signature)>"
         }
     }
 
@@ -269,12 +269,12 @@ public class BuildValue: CustomStringConvertible, Equatable, Hashable {
         }
         
         override func equal(to other: BuildValue) -> Bool {
-            guard let other = other as? Self else { return false }
+            guard let other = other as? DirectoryTreeStructureSignature else { return false }
             return signature == other.signature
         }
         
         public override var description: String {
-            "<BuildValue.\(type(of: self)) signature=\(signature)>"
+            return "<BuildValue.\(type(of: self)) signature=\(signature)>"
         }
     }
 
@@ -311,12 +311,12 @@ public class BuildValue: CustomStringConvertible, Equatable, Hashable {
         }
         
         override func equal(to other: BuildValue) -> Bool {
-            guard let other = other as? Self else { return false }
+            guard let other = other as? SuccessfulCommand else { return false }
             return outputInfos == other.outputInfos
         }
         
         public override var description: String {
-            "<BuildValue.\(type(of: self)) outputInfos=[\(outputInfos.map { $0.description }.joined(separator: ", "))]>"
+            return "<BuildValue.\(type(of: self)) outputInfos=[\(outputInfos.map { $0.description }.joined(separator: ", "))]>"
         }
     }
 
@@ -377,12 +377,12 @@ public class BuildValue: CustomStringConvertible, Equatable, Hashable {
         }
         
         override func equal(to other: BuildValue) -> Bool {
-            guard let other = other as? Self else { return false }
+            guard let other = other as? StaleFileRemoval else { return false }
             return fileList == other.fileList
         }
         
         public override var description: String {
-            "<BuildValue.\(type(of: self)) fileList=[\(fileList.joined(separator: ", "))]>"
+            return "<BuildValue.\(type(of: self)) fileList=[\(fileList.joined(separator: ", "))]>"
         }
     }
 
@@ -407,12 +407,12 @@ public class BuildValue: CustomStringConvertible, Equatable, Hashable {
         }
         
         override func equal(to other: BuildValue) -> Bool {
-            guard let other = other as? Self else { return false }
+            guard let other = other as? FilteredDirectoryContents else { return false }
             return contents == other.contents
         }
         
         public override var description: String {
-            "<BuildValue.\(type(of: self)) contents=[\(contents.joined(separator: ", "))]>"
+            return "<BuildValue.\(type(of: self)) contents=[\(contents.joined(separator: ", "))]>"
         }
     }
 
@@ -439,12 +439,12 @@ public class BuildValue: CustomStringConvertible, Equatable, Hashable {
         }
         
         override func equal(to other: BuildValue) -> Bool {
-            guard let other = other as? Self else { return false }
+            guard let other = other as? SuccessfulCommandWithOutputSignature else { return false }
             return outputInfos == other.outputInfos && signature == other.signature
         }
         
         public override var description: String {
-            "<BuildValue.\(type(of: self)) outputInfos=[\(outputInfos.map { $0.description }.joined(separator: ", "))] signature=\(signature)>"
+            return "<BuildValue.\(type(of: self)) outputInfos=[\(outputInfos.map { $0.description }.joined(separator: ", "))] signature=\(signature)>"
         }
     }
 

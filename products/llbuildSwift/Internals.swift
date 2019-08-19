@@ -41,8 +41,8 @@ internal func stringFromData(_ data: llb_data_t) -> String {
 }
 
 extension Array where Element == String {
-    internal func withCArrayOfStrings<T>(_ body: (UnsafePointer<UnsafePointer<CChar>>) -> T) -> T {
-        func appendPointer(_ index: Self.Index, to target: inout Array<UnsafePointer<CChar>>) -> T {
+    internal func withCArrayOfStrings<T>(_ body: @escaping (UnsafePointer<UnsafePointer<CChar>>) -> T) -> T {
+        func appendPointer(_ index: Array.Index, to target: inout Array<UnsafePointer<CChar>>) -> T {
             if index == self.endIndex {
                 return body(&target)
             } else {
