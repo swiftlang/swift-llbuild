@@ -29,13 +29,13 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
     
     /// Returns the kind of the key
     public var kind: Kind {
-        llb_build_key_get_kind(internalBuildKey)
+        return llb_build_key_get_kind(internalBuildKey)
     }
     
     /// Returns the key data without the identifier for the kind
     /// This can't be removed for legacy reasons.
     public var key: String {
-        String(cString: Array(self.keyData.dropFirst() + [0]))
+        return String(cString: Array(self.keyData.dropFirst() + [0]))
     }
     
     /// This raw data is used for internal representation and is encoded differently per subclass
@@ -94,7 +94,7 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
     }
     
     public var description: String {
-        "<\(type(of: self))>"
+        return "<\(type(of: self))>"
     }
     
     public static func ==(lhs: BuildKey, rhs: BuildKey) -> Bool {
@@ -107,7 +107,7 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
     }
     
     public static func construct(data: llb_data_t) -> BuildKey {
-        construct(key: withUnsafePointer(to: data, llb_build_key_make))
+        return construct(key: withUnsafePointer(to: data, llb_build_key_make))
     }
     
     public func hash(into hasher: inout Hasher) {
@@ -127,16 +127,16 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
         
         /// The name of the command
         public var name: String {
-            formString { llb_build_key_get_command_name(internalBuildKey, &$0) }
+            return formString { llb_build_key_get_command_name(internalBuildKey, &$0) }
         }
         
         override func equal(to other: BuildKey) -> Bool {
-            guard let rhs = other as? Self else { return false }
+            guard let rhs = other as? Command else { return false }
             return name == rhs.name
         }
         
         public override var description: String {
-            "<BuildKey.\(type(of: self)) name=\(name)>"
+            return "<BuildKey.\(type(of: self)) name=\(name)>"
         }
     }
 
@@ -148,25 +148,25 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
         
         /// The name of the task
         public var name: String {
-            formString {
+            return formString {
                 llb_build_key_get_custom_task_name(internalBuildKey, &$0)
             }
         }
         
         /// Custom data attached to the task
         public var taskData: String {
-            formString {
+            return formString {
                 llb_build_key_get_custom_task_data(internalBuildKey, &$0)
             }
         }
         
         override func equal(to other: BuildKey) -> Bool {
-            guard let rhs = other as? Self else { return false }
+            guard let rhs = other as? CustomTask else { return false }
             return name == rhs.name && taskData == rhs.taskData
         }
         
         public override var description: String {
-            "<BuildKey.\(type(of: self)) name=\(name) taskData=\(taskData)>"
+            return "<BuildKey.\(type(of: self)) name=\(name) taskData=\(taskData)>"
         }
     }
 
@@ -178,18 +178,18 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
         
         /// The path of the directory
         public var path: String {
-            formString {
+            return formString {
                 llb_build_key_get_directory_path(internalBuildKey, &$0)
             }
         }
         
         override func equal(to other: BuildKey) -> Bool {
-            guard let rhs = other as? Self else { return false }
+            guard let rhs = other as? DirectoryContents else { return false }
             return path == rhs.path
         }
         
         public override var description: String {
-            "<BuildKey.\(type(of: self)) path=\(path)>"
+            return "<BuildKey.\(type(of: self)) path=\(path)>"
         }
     }
 
@@ -205,7 +205,7 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
         
         /// The path of the directory
         public var path: String {
-            formString {
+            return formString {
                 llb_build_key_get_filtered_directory_path(internalBuildKey, &$0)
             }
         }
@@ -223,12 +223,12 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
         }
         
         override func equal(to other: BuildKey) -> Bool {
-            guard let rhs = other as? Self else { return false }
+            guard let rhs = other as? FilteredDirectoryContents else { return false }
             return path == rhs.path && filters == rhs.filters
         }
         
         public override var description: String {
-            "<BuildKey.\(type(of: self)) path=\(path) filters=[\(filters.joined(separator: ", "))]>"
+            return "<BuildKey.\(type(of: self)) path=\(path) filters=[\(filters.joined(separator: ", "))]>"
         }
     }
 
@@ -244,7 +244,7 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
         
         /// The path of the directory
         public var path: String {
-            formString {
+            return formString {
                 llb_build_key_get_directory_tree_signature_path(internalBuildKey, &$0)
             }
         }
@@ -262,12 +262,12 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
         }
         
         override func equal(to other: BuildKey) -> Bool {
-            guard let rhs = other as? Self else { return false }
+            guard let rhs = other as? DirectoryTreeSignature else { return false }
             return path == rhs.path && filters == rhs.filters
         }
         
         public override var description: String {
-            "<BuildKey.\(type(of: self)) path=\(path) filters=[\(filters.joined(separator: ", "))]>"
+            return "<BuildKey.\(type(of: self)) path=\(path) filters=[\(filters.joined(separator: ", "))]>"
         }
     }
 
@@ -279,18 +279,18 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
         
         /// The path of the directory
         public var path: String {
-            formString {
+            return formString {
                 llb_build_key_get_directory_tree_structure_signature_path(internalBuildKey, &$0)
             }
         }
         
         override func equal(to other: BuildKey) -> Bool {
-            guard let rhs = other as? Self else { return false }
+            guard let rhs = other as? DirectoryTreeStructureSignature else { return false }
             return path == rhs.path
         }
         
         public override var description: String {
-            "<BuildKey.\(type(of: self)) path=\(path)>"
+            return "<BuildKey.\(type(of: self)) path=\(path)>"
         }
     }
 
@@ -302,18 +302,18 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
         
         /// The path of the node
         public var path: String {
-            formString {
+            return formString {
                 llb_build_key_get_node_path(internalBuildKey, &$0)
             }
         }
         
         override func equal(to other: BuildKey) -> Bool {
-            guard let rhs = other as? Self else { return false }
+            guard let rhs = other as? Node else { return false }
             return path == rhs.path
         }
         
         public override var description: String {
-            "<BuildKey.\(type(of: self)) path=\(path)>"
+            return "<BuildKey.\(type(of: self)) path=\(path)>"
         }
     }
 
@@ -325,18 +325,18 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
         
         /// The path of the node
         public var path: String {
-            formString {
+            return formString {
                 llb_build_key_get_stat_path(internalBuildKey, &$0)
             }
         }
         
         override func equal(to other: BuildKey) -> Bool {
-            guard let rhs = other as? Self else { return false }
+            guard let rhs = other as? Stat else { return false }
             return path == rhs.path
         }
         
         public override var description: String {
-            "<BuildKey.\(type(of: self)) path=\(path)>"
+            return "<BuildKey.\(type(of: self)) path=\(path)>"
         }
     }
 
@@ -348,18 +348,18 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
         
         /// The name of the target
         public var name: String {
-            formString {
+            return formString {
                 llb_build_key_get_target_name(internalBuildKey, &$0)
             }
         }
         
         override func equal(to other: BuildKey) -> Bool {
-            guard let rhs = other as? Self else { return false }
+            guard let rhs = other as? Target else { return false }
             return name == rhs.name
         }
         
         public override var description: String {
-            "<BuildKey.\(type(of: self)) name=\(name)>"
+            return "<BuildKey.\(type(of: self)) name=\(name)>"
         }
     }
 
