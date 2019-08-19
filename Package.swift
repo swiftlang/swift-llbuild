@@ -14,6 +14,10 @@ let package = Package(
         .library(
             name: "llbuildSwift",
             targets: ["llbuildSwift"]),
+        .library(
+            name: "llbuild-framework",
+            type: .dynamic,
+            targets: ["llbuildSwift"]),
     ],
     targets: [
         /// The llbuild testing tool.
