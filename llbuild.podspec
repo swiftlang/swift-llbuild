@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
   s.name         = "llbuild"
-  s.version      = "0.1.1"
+  s.version      = ENV['LLBUILD_PODSPEC_VERSION'] || "9999.0.0"
   s.summary      = "A low-level build system."
 
   s.description  = <<-DESC.strip_heredoc
