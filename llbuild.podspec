@@ -18,13 +18,10 @@ Pod::Spec.new do |s|
   s.license      = { type: 'Apache 2.0', file: "LICENSE.txt" }
 
   s.documentation_url  = "https://llbuild.readthedocs.io/"
-
   s.author             = "Apple"
 
   s.ios.deployment_target     = "9.0"
   s.osx.deployment_target     = "10.10"
-  s.watchos.deployment_target = "2.0"
-  s.tvos.deployment_target    = "9.0"
 
   s.source = { git: "https://github.com/apple/swift-llbuild",
                tag: s.version }
