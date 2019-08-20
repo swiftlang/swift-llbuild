@@ -23,7 +23,7 @@ Pod::Spec.new do |s|
   s.ios.deployment_target     = "10.0"
   s.osx.deployment_target     = "10.10"
 
-  s.source = { git: "https://github.com/apple/swift-llbuild",
+  s.source = { git: "https://github.com/apple/swift-llbuild.git",
                tag: s.version }
 
   s.default_subspecs = ['Swift']
