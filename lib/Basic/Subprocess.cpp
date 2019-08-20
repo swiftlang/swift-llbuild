@@ -310,7 +310,7 @@ static void cleanUpExecutedProcess(ProcessDelegate& delegate,
   // Note: We purposely hold this open until after the process has finished as
   // it simplifies client implentation. If we close it early, clients need to be
   // aware of and potentially handle a SIGPIPE.
-  if (releaseFd >= 0) {
+  if (sys::FileDescriptorTraits<>::IsValid(releaseFd)) {
     sys::FileDescriptorTraits<>::Close(releaseFd);
   }
 
