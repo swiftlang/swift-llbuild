@@ -74,7 +74,7 @@ Pod::Spec.new do |s|
     sp.source_files = 'lib/BuildSystem/**/*.cpp'
     # internal header files, used this way to prevent header clash between subspecs
     sp.preserve_paths = 'include/llbuild/BuildSystem', 'lib/BuildSystem/**/*.h'
-    sp.compiler_flags = '-I${PODS_TARGET_SRCROOT}/include'
+    sp.compiler_flags = '-I${PODS_TARGET_SRCROOT}/include -Wno-error=c++11-narrowing'
 
     sp.dependency 'llbuild/Core'
   end
