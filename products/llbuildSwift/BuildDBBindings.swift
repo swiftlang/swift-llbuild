@@ -141,7 +141,7 @@ public class RuleResult {
 
 extension RuleResult: Equatable {
     public static func == (lhs: RuleResult, rhs: RuleResult) -> Bool {
-        lhs.value == rhs.value && lhs.signature == rhs.signature && lhs.computedAt == rhs.computedAt && lhs.builtAt == rhs.builtAt && lhs.start == rhs.start && lhs.end == rhs.end && lhs.dependencies == rhs.dependencies
+        return lhs.value == rhs.value && lhs.signature == rhs.signature && lhs.computedAt == rhs.computedAt && lhs.builtAt == rhs.builtAt && lhs.start == rhs.start && lhs.end == rhs.end && lhs.dependencies == rhs.dependencies
     }
 }
 
