@@ -40,13 +40,11 @@ Pod::Spec.new do |s|
   end
 
   s.subspec 'Library' do |sp|
-    sp.osx.source_files = 'products/libllbuild/**/*.cpp', 'products/libllbuild/include/llbuild/*.h'
-    sp.ios.source_files = 'products/libllbuild/**/*.cpp', 'products/libllbuild/include/llbuild/{llbuild,core,buildkey,buildvalue,db}.h'
+    sp.source_files = 'products/libllbuild/**/*.cpp', 'products/libllbuild/include/llbuild/*.h'
 
     # the first is an 'umbrella header', the rest have to be public because 
     # otherwise modular header warnings abound
-    sp.ios.public_header_files = 'products/libllbuild/include/llbuild/llbuild.h', 'products/libllbuild/include/llbuild/{core,buildkey,buildvalue,db}.h'
-    sp.osx.public_header_files = 'products/libllbuild/include/llbuild/llbuild.h', 'products/libllbuild/include/llbuild/*.h'
+    sp.public_header_files = 'products/libllbuild/include/llbuild/llbuild.h', 'products/libllbuild/include/llbuild/*.h'
     sp.preserve_paths = 'products/libllbuild/BuildKey-C-API-Private.h'
     
     sp.dependency 'llbuild/Core'
