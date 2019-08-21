@@ -44,7 +44,8 @@
 
 #ifdef __APPLE__
 #include <pthread/spawn.h>
-
+#include "TargetConditionals.h"
+#if !TARGET_OS_IPHONE
 extern "C" {
   // Provided by System.framework's libsystem_kernel interface
   extern int __pthread_chdir(const char *path);
@@ -64,7 +65,7 @@ int pthread_fchdir_np(int fd)
 {
   return __pthread_fchdir(fd);
 }
-
+#endif
 #endif
 
 #ifndef __GLIBC_PREREQ
@@ -624,7 +625,7 @@ void llbuild::basic::spawnProcess(
 
 #if !defined(_WIN32)
       if (usePosixSpawnChdirFallback) {
-#ifdef __APPLE__
+#if defined(__APPLE__) && !TARGET_OS_IPHONE
         thread_local std::string threadWorkingDir;
 
         if (workingDir.empty()) {
@@ -646,7 +647,7 @@ void llbuild::basic::spawnProcess(
           workingDirectoryUnsupported = true;
           result = -1;
         }
-#endif // ifdef __APPLE__
+#endif // if defined(__APPLE__) && !TARGET_OS_IPHONE
       }
 #endif // else !defined(_WIN32)
 
