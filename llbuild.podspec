@@ -20,7 +20,7 @@ Pod::Spec.new do |s|
   s.documentation_url  = "https://llbuild.readthedocs.io/"
   s.author             = "Apple"
 
-  s.ios.deployment_target     = "10.0"
+  s.ios.deployment_target     = "9.0"
   s.osx.deployment_target     = "10.10"
 
   s.source = { git: "https://github.com/apple/swift-llbuild.git",
