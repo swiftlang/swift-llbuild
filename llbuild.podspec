@@ -45,7 +45,7 @@ Pod::Spec.new do |s|
     # the first is an 'umbrella header', the rest have to be public because 
     # otherwise modular header warnings abound
     sp.public_header_files = 'products/libllbuild/include/llbuild/llbuild.h', 'products/libllbuild/include/llbuild/*.h'
-    sp.preserve_paths = 'products/libllbuild/BuildKey-C-API-Private.h'
+    sp.preserve_paths = 'products/libllbuild/BuildKey-C-API-Private.h', 'include/llbuild/BuildSystem/{BuildDescription,BuildKey,BuildValue}.h'
     
     sp.dependency 'llbuild/Core'
     sp.osx.dependency 'llbuild/BuildSystem' 
