@@ -256,7 +256,10 @@
 #if defined(__APPLE__)
 #include "TargetConditionals.h"
 #endif
-#if !defined(__APPLE__) || !TARGET_OS_IPHONE
+
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+#undef HAVE_TERMINFO
+#else
 #define HAVE_TERMINFO 1
 #endif
 
