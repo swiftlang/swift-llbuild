@@ -117,10 +117,10 @@ LLBUILD_EXPORT int llb_get_api_version(void);
 #if !defined(__APPLE__) || !TARGET_OS_IPHONE
 // The BuildSystem component.
 #include "llbuild/buildsystem.h"
+#endif
 
 // The Database component.
 #include "llbuild/db.h"
-#endif
 
 #include "llbuild/buildkey.h"
 #include "llbuild/buildvalue.h"
