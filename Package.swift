@@ -129,7 +129,7 @@ let package = Package(
             name: "llvmSupport",
             dependencies: ["llvmDemangle"],
             path: "lib/llvm/Support",
-            linkerSettings: [.linkedLibrary("ncurses")]
+            linkerSettings: [.linkedLibrary("ncurses", .when(platforms: [.linux, .macOS]))]
         ),
     ],
     cxxLanguageStandard: .cxx14
