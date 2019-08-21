@@ -36,17 +36,16 @@ Pod::Spec.new do |s|
 
   s.subspec 'Swift' do |sp|
     sp.source_files = 'products/llbuildSwift/**/*.swift'
-    sp.ios.exclude_files = 'products/llbuildSwift/**/{BuildDBBindings,BuildSystemBindings}.swift'
     sp.dependency 'llbuild/Library'
   end
 
   s.subspec 'Library' do |sp|
     sp.osx.source_files = 'products/libllbuild/**/*.cpp', 'products/libllbuild/include/llbuild/*.h'
-    sp.ios.source_files = 'products/libllbuild/**/*.cpp', 'products/libllbuild/include/llbuild/{llbuild,core,buildkey,buildvalue}.h'
-    sp.ios.exclude_files = 'products/libllbuild/{BuildDB-C-API,BuildSystem-C-API}.cpp'
+    sp.ios.source_files = 'products/libllbuild/**/*.cpp', 'products/libllbuild/include/llbuild/{llbuild,core,buildkey,buildvalue,db}.h'
+
     # the first is an 'umbrella header', the rest have to be public because 
     # otherwise modular header warnings abound
-    sp.ios.public_header_files = 'products/libllbuild/include/llbuild/llbuild.h', 'products/libllbuild/include/llbuild/{core,buildkey,buildvalue}.h'
+    sp.ios.public_header_files = 'products/libllbuild/include/llbuild/llbuild.h', 'products/libllbuild/include/llbuild/{core,buildkey,buildvalue,db}.h'
     sp.osx.public_header_files = 'products/libllbuild/include/llbuild/llbuild.h', 'products/libllbuild/include/llbuild/*.h'
     sp.preserve_paths = 'products/libllbuild/BuildKey-C-API-Private.h'
     
