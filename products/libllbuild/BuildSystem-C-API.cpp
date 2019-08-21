@@ -13,6 +13,10 @@
 // Include the public API.
 #include <llbuild/llbuild.h>
 
+#ifdef __APPLE__
+#include "TargetConditionals.h"
+#endif
+
 #if !defined(__APPLE__) || !TARGET_OS_IPHONE
 
 #include "llbuild/Basic/FileSystem.h"
