@@ -28,7 +28,7 @@ Pod::Spec.new do |s|
 
   s.default_subspecs = ['Swift']
   s.pod_target_xcconfig = { 
-    'OTHER_LDFLAGS' => '-lsqlite3 -lncurses',
+    'OTHER_LDFLAGS' => '-lsqlite3',
     'GCC_C_LANGUAGE_STANDARD' => 'c11',
     'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
     'CLANG_CXX_LIBRARY' => 'libc++',
