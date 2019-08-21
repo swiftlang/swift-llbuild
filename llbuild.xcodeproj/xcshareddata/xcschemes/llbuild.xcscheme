@@ -185,6 +185,16 @@
                ReferencedContainer = "container:llbuild.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "B5587532230D913F00AEF124"
+               BuildableName = "AnalysisToolCommandsTests.xctest"
+               BlueprintName = "AnalysisToolCommandsTests"
+               ReferencedContainer = "container:llbuild.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
