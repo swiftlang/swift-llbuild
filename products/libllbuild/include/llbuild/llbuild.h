@@ -109,16 +109,26 @@ LLBUILD_EXPORT const char* llb_get_full_version_string(void);
 LLBUILD_EXPORT int llb_get_api_version(void);
 
 // The Core component.
-#include "core.h"
+#if __has_include("llbuild/core.h")
+#include "llbuild/core.h"
+#endif
 
 // The BuildSystem component.
-#include "buildsystem.h"
+#if __has_include("llbuild/buildsystem.h")
+#include "llbuild/buildsystem.h"
+#endif
 
 // The Database component.
-#include "db.h"
+#if __has_include("llbuild/db.h")
+#include "llbuild/db.h"
+#endif
 
-#include "buildkey.h"
+#if __has_include("llbuild/buildkey.h")
+#include "llbuild/buildkey.h"
+#endif
 
-#include "buildvalue.h"
+#if __has_include("llbuild/buildvalue.h")
+#include "llbuild/buildvalue.h"
+#endif
 
 #endif

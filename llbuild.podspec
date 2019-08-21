@@ -28,7 +28,7 @@ Pod::Spec.new do |s|
 
   s.default_subspecs = ['Swift']
   s.pod_target_xcconfig = { 
-    'OTHER_LDFLAGS' => '-lsqlite3',
+    'OTHER_CFLAGS' => '-I${PODS_TARGET_SRCROOT}/include', 
     'GCC_C_LANGUAGE_STANDARD' => 'c11',
     'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
     'CLANG_CXX_LIBRARY' => 'libc++',
@@ -36,36 +36,40 @@ Pod::Spec.new do |s|
 
   s.subspec 'Swift' do |sp|
     sp.source_files = 'products/llbuildSwift/**/*.swift'
+    sp.ios.exclude_files = 'products/llbuildSwift/**/{BuildDBBindings,BuildSystemBindings}.swift'
     sp.dependency 'llbuild/Library'
   end
 
   s.subspec 'Library' do |sp|
-    sp.source_files = 'products/libllbuild/**/*.cpp', 'products/libllbuild/include/llbuild/*.h'
+    sp.osx.source_files = 'products/libllbuild/**/*.cpp', 'products/libllbuild/include/llbuild/*.h'
+    sp.ios.source_files = 'products/libllbuild/**/*.cpp', 'products/libllbuild/include/llbuild/{llbuild,core,buildkey,buildvalue}.h'
+    sp.ios.exclude_files = 'products/libllbuild/{BuildDB-C-API,BuildSystem-C-API}.cpp'
     # the first is an 'umbrella header', the rest have to be public because 
     # otherwise modular header warnings abound
-    sp.public_header_files = 'products/libllbuild/include/llbuild/llbuild.h', 'products/libllbuild/include/llbuild/*.h'
+    sp.ios.public_header_files = 'products/libllbuild/include/llbuild/llbuild.h', 'products/libllbuild/include/llbuild/{core,buildkey,buildvalue}.h'
+    sp.osx.public_header_files = 'products/libllbuild/include/llbuild/llbuild.h', 'products/libllbuild/include/llbuild/*.h'
     sp.preserve_paths = 'products/libllbuild/BuildKey-C-API-Private.h'
-    sp.compiler_flags = '-I${PODS_TARGET_SRCROOT}/include'
-
+    
     sp.dependency 'llbuild/Core'
-    sp.dependency 'llbuild/BuildSystem' 
+    sp.osx.dependency 'llbuild/BuildSystem' 
   end
 
   s.subspec 'Core' do |sp|
     sp.source_files = 'lib/Core/**/*.cpp'
     # internal header files, used this way to prevent header clash between subspecs
     sp.preserve_paths = 'include/llbuild/Core', 'lib/Core/**/*.h'
-    sp.compiler_flags = '-I${PODS_TARGET_SRCROOT}/include'
 
+    sp.libraries = 'sqlite3'
     sp.dependency 'llbuild/Basic'
   end
 
   s.subspec 'Basic' do |sp|
-    sp.source_files = 'lib/Basic/**/*.cpp'
+    sp.osx.source_files = 'lib/Basic/**/*.cpp'
+    sp.ios.source_files = 'lib/Basic/**/{PlatformUtility,Tracing,Version}.cpp'
+
     # internal header files, used this way to prevent header clash between subspecs
     sp.preserve_paths = 'include/llbuild/Basic', 'lib/Basic/**/*.h'
     sp.exclude_files = 'include/llbuild/Basic/LeanWindows.h'
-    sp.compiler_flags = '-I${PODS_TARGET_SRCROOT}/include'
 
     sp.dependency 'llbuild/llvmSupport'
   end
@@ -74,15 +78,22 @@ Pod::Spec.new do |s|
     sp.source_files = 'lib/BuildSystem/**/*.cpp'
     # internal header files, used this way to prevent header clash between subspecs
     sp.preserve_paths = 'include/llbuild/BuildSystem', 'lib/BuildSystem/**/*.h'
-    sp.compiler_flags = '-I${PODS_TARGET_SRCROOT}/include -Wno-error=c++11-narrowing'
+    sp.compiler_flags = '-I${PODS_TARGET_SRCROOT}/include'
 
     sp.dependency 'llbuild/Core'
   end
 
   s.subspec 'llvmSupport' do |sp|
     sp.source_files = 'lib/llvm/{Support,Demangle}/**/*.cpp'
+    sp.ios.exclude_files = [
+      'lib/llvm/Support/CommandLine.cpp',
+      'lib/llvm/Support/YAMLParser.cpp',
+      'lib/llvm/Support/SourceMgr.cpp',
+      'lib/llvm/Support/Atomic.cpp',
+    ]
     # internal header files, used this way to prevent header clash between subspecs
     sp.preserve_paths = 'include/llvm', 'include/llvm-c', 'lib/llvm/Support/Unix', 'lib/llvm/Demangle/**/*.h'
-    sp.compiler_flags = '-I${PODS_TARGET_SRCROOT}/include'
+
+    s.osx.libraries = 'ncurses'
   end
 end
