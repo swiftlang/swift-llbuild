@@ -18,7 +18,7 @@ let package = Package(
             name: "llbuildSwift",
             targets: ["llbuildSwift"]),
         .library(
-            name: "llbuild-framework",
+            name: "llbuildSwiftDynamic",
             type: .dynamic,
             targets: ["llbuildSwift"]),
     ],
