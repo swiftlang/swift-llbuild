@@ -116,7 +116,7 @@ public:
   /// Handle used to communicate information about a launched process.
   struct ProcessHandle {
     /// Opaque ID.
-    uintptr_t id;
+    uint64_t id;
   };
   
 private:

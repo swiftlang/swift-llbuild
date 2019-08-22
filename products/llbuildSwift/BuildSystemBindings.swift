@@ -8,13 +8,15 @@
 
 // This file contains Swift bindings for the llbuild C API.
 
-#if os(Linux)
-import Glibc
+#if canImport(Darwin)
+import Darwin.C
 #elseif os(Windows)
 import MSVCRT
 import WinSDK
+#elseif canImport(Glibc)
+import Glibc
 #else
-import Darwin.C
+#error("Missing libc or equivalent")
 #endif
 
 import Foundation
@@ -24,6 +26,8 @@ import Foundation
 #if !LLBUILD_FRAMEWORK
 import llbuild
 #endif
+
+#if !os(iOS)
 
 private func bytesFromData(_ data: llb_data_t) -> [UInt8] {
     return Array(UnsafeBufferPointer(start: data.data, count: Int(data.length)))
@@ -707,15 +711,17 @@ public final class BuildSystem {
         info.pointee.inode = UInt64(s.st_ino)
         info.pointee.mode = UInt64(s.st_mode)
         info.pointee.size = UInt64(s.st_size)
-        #if os(macOS)
+        #if canImport(Darwin)
         info.pointee.mod_time.seconds = UInt64(s.st_mtimespec.tv_sec)
         info.pointee.mod_time.nanoseconds = UInt64(s.st_mtimespec.tv_nsec)
         #elseif os(Windows)
         info.pointee.mod_time.seconds = UInt64(s.st_mtime)
         info.pointee.mod_time.nanoseconds = 0
-        #else
+        #elseif canImport(Glibc)
         info.pointee.mod_time.seconds = UInt64(s.st_mtim.tv_sec)
         info.pointee.mod_time.nanoseconds = UInt64(s.st_mtim.tv_nsec)
+        #else
+        #error("Missing libc or equivalent")
         #endif
     }
 
@@ -858,3 +864,4 @@ public final class BuildSystem {
     }
 }
 
+#endif

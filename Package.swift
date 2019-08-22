@@ -7,12 +7,19 @@ import PackageDescription
 
 let package = Package(
     name: "llbuild",
+    platforms: [
+        .macOS(.v10_10), .iOS(.v9),
+    ],
     products: [
         .library(
             name: "libllbuild",
             targets: ["libllbuild"]),
         .library(
             name: "llbuildSwift",
+            targets: ["llbuildSwift"]),
+        .library(
+            name: "llbuildSwiftDynamic",
+            type: .dynamic,
             targets: ["llbuildSwift"]),
     ],
     targets: [
@@ -122,7 +129,7 @@ let package = Package(
             name: "llvmSupport",
             dependencies: ["llvmDemangle"],
             path: "lib/llvm/Support",
-            linkerSettings: [.linkedLibrary("ncurses")]
+            linkerSettings: [.linkedLibrary("ncurses", .when(platforms: [.linux, .macOS]))]
         ),
     ],
     cxxLanguageStandard: .cxx14

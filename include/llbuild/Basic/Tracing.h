@@ -19,6 +19,7 @@
 // os_signpost is included in mac OS 10.14, if that header is not available, we don't trace at all.
 #if __has_include(<os/signpost.h>)
 #include <os/signpost.h>
+#include <dispatch/dispatch.h>
 
 /// Returns the singleton instance of os_log_t to use with os_log and os_signpost API.
 API_AVAILABLE(macos(10.12), ios(10.0), watchos(3.0), tvos(10.0))

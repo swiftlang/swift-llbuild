@@ -253,7 +253,15 @@
 #define HAVE_SYS_TYPES_H 1
 
 /* Define if the setupterm() function is supported this platform. */
+#if defined(__APPLE__)
+#include "TargetConditionals.h"
+#endif
+
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+#undef HAVE_TERMINFO
+#else
 #define HAVE_TERMINFO 1
+#endif
 
 /* Define if the xar_open() function is supported this platform. */
 #define HAVE_LIBXAR 1

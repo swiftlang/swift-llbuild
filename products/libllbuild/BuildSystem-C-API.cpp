@@ -13,6 +13,12 @@
 // Include the public API.
 #include <llbuild/llbuild.h>
 
+#ifdef __APPLE__
+#include "TargetConditionals.h"
+#endif
+
+#if !defined(__APPLE__) || !TARGET_OS_IPHONE
+
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildKey.h"
@@ -898,3 +904,5 @@ void llb_set_quality_of_service(llb_quality_of_service_t level) {
 
 void* llb_alloc(size_t size) { return malloc(size); }
 void llb_free(void* ptr) { free(ptr); }
+
+#endif
