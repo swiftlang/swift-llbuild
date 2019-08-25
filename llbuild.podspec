@@ -1,7 +1,14 @@
-Pod::Spec.new do |s|
+def self.infer_version_from_git
+  return nil unless Dir.exist?('.git')
 
+  `git tag --list '*.*.*' --sort=committerdate`.split.select do |tag|
+    Version.correct?(tag)
+  end.last
+end
+
+Pod::Spec.new do |s|
   s.name         = "llbuild"
-  s.version      = ENV['LLBUILD_PODSPEC_VERSION'] || "9999.0.0"
+  s.version      = infer_version_from_git || (raise Informative, 'Could not infer `llbuild` version from git')
   s.summary      = "A low-level build system."
 
   s.description  = <<-DESC.strip_heredoc
