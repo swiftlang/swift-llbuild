@@ -21,6 +21,8 @@
 #error Clients must include the "llbuild.h" umbrella header.
 #endif
 
+#include <stddef.h>
+
 LLBUILD_ASSUME_NONNULL_BEGIN
 
 typedef enum LLBUILD_ENUM_ATTRIBUTES {
@@ -58,7 +60,13 @@ typedef enum LLBUILD_ENUM_ATTRIBUTES {
 typedef struct llb_build_key_t_ llb_build_key_t;
 
 LLBUILD_EXPORT llb_build_key_t *llb_build_key_make(const llb_data_t *data);
-LLBUILD_EXPORT void llb_build_key_get_key_data(llb_build_key_t *key, void *_Nullable context, void (*iteration)(void *_Nullable context, uint8_t data));
+
+LLBUILD_EXPORT bool llb_build_key_equal(llb_build_key_t *key1, llb_build_key_t *key2);
+
+LLBUILD_EXPORT size_t llb_build_key_hash(llb_build_key_t *key);
+
+LLBUILD_EXPORT void llb_build_key_get_key_data(llb_build_key_t *key, void *_Nonnull context, void (*_Nonnull iteration)(void *context, uint8_t *data, size_t count));
+
 LLBUILD_EXPORT llb_build_key_kind_t llb_build_key_get_kind(llb_build_key_t *key);
 
 LLBUILD_EXPORT void llb_build_key_destroy(llb_build_key_t *key);

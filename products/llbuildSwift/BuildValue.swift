@@ -128,6 +128,10 @@ public class BuildValue: CustomStringConvertible, Equatable, Hashable {
         }
     }
     
+    deinit {
+        llb_build_value_destroy(internalBuildValue)
+    }
+    
     /// The kind of the build value.
     /// The kind also defines the subclass, so kind == .invalid means the instance should be of type Invalid
     public var kind: Kind {

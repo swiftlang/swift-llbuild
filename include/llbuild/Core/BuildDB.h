@@ -129,6 +129,16 @@ public:
   /// \param error_out [out] Error string if return value is false.
   virtual bool getKeys(std::vector<KeyType>& keys_out, std::string* error_out) = 0;
 
+  /// Get a list of all keys and their results known by the database.
+  ///
+  /// \param keys_out [out] The known keys will be appended to this vector.
+  /// \param results_out [out] The results to the known keys will be appended to this vector.
+  /// \param error_out [out] Error string if return value is false
+  ///
+  /// \note The number of keys and results added to the out parameters is always
+  /// the same.
+  virtual bool getKeysWithResult(std::vector<KeyType> &keys_out, std::vector<Result> &results_out, std::string* error_out) = 0;
+  
   /// Dump a debug view of the database contents
   virtual void dump(raw_ostream& os) { (void)os; }
 };

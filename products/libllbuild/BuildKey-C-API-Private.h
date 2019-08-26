@@ -10,6 +10,7 @@
 #define BuildKey_C_API_Private_h
 
 #include "llbuild/BuildSystem/BuildKey.h"
+#include "llbuild/Core/BuildEngine.h"
 
 namespace {
 using namespace llbuild::buildsystem;
@@ -18,15 +19,36 @@ using namespace llbuild::buildsystem;
 class CAPIBuildKey {
   
 private:
+  llbuild::core::KeyID identifier;
+  bool hasIdentifier;
   BuildKey internalBuildKey;
+  size_t hashValue;
 public:
   
-  CAPIBuildKey(const BuildKey &buildKey): internalBuildKey(buildKey) {}
+  CAPIBuildKey(const BuildKey &buildKey): hasIdentifier(false), internalBuildKey(buildKey) {
+    hashValue = std::hash<std::string>{}(internalBuildKey.getKeyData());
+  }
+  
+  CAPIBuildKey(const BuildKey &buildKey, llbuild::core::KeyID identifier): identifier(identifier), hasIdentifier(true), internalBuildKey(buildKey) {
+    hashValue = std::hash<std::string>{}(internalBuildKey.getKeyData());
+  }
   
   BuildKey &getInternalBuildKey() {
     return internalBuildKey;
   }
+  size_t getHashValue() {
+    return hashValue;
+  }
   llb_build_key_kind_t getKind();
+  
+  bool operator ==(const CAPIBuildKey &b);
+};
+}
+
+namespace std {
+template <>
+struct hash<CAPIBuildKey> {
+  size_t operator()(CAPIBuildKey& key) const;
 };
 }
 

@@ -106,23 +106,17 @@ class BuildDBBindingsTests: XCTestCase {
   
   override func setUp() {
     super.setUp()
-    let tmpDir = "/tmp/llbuild-test/\(UUID())"
+    let tmpDir = "/tmp/llbuild-test/\(self.name)"
+    
+    // We intentionally ignore errors here since the directory might not exist yet
+    do { try FileManager.default.removeItem(atPath: tmpDir) } catch {}
     
     do {
       try FileManager.default.createDirectory(atPath: tmpDir, withIntermediateDirectories: true)
     } catch {
-      fatalError("Could not create temporary directory for test case BuildDBBindingsTests at path: \(tmpDir)")
+      fatalError("Could not create or remove temporary directory for test case BuildDBBindingsTests at path: \(tmpDir)")
     }
     self.tmpDirectory = tmpDir
-  }
-  
-  override func tearDown() {
-    super.tearDown()
-    do {
-      try FileManager.default.removeItem(atPath: self.tmpDirectory)
-    } catch {
-      // intentionally left empty as we don't care about already removed directories
-    }
   }
   
   func testCouldNotOpenDatabaseErrors() {
