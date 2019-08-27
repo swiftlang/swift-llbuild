@@ -89,22 +89,31 @@ Note: this assumes you have installed `lit` as a user, by running `easy_install 
 
 * Build sqlite3, using `/MDd` for a Debug build, and `/MD` for a Release build::
    
-    $ cl shell.c sqlite3.c /MDd -Fe:sqlite3.exe
-    $ lib shell.obj sqlite3.obj /out:sqlite3.lib
+    > cl shell.c sqlite3.c /MDd -Fe:sqlite3.exe
+    > lib shell.obj sqlite3.obj /out:sqlite3.lib
 
 * Build LLVM, in order to use `FileCheck` and `llvm-lit`.
 
 * Build::
 
-    $ mkdir build && cd build
-    $ cmake -G "Ninja"^
-     -DCMAKE_BUILD_TYPE=Debug^
-     -DLIT_EXECUTABLE="<llvm-bin-directory>/llvm-lit.py"^
-     -DFILECHECK_EXECUTABLE="<llvm-bin-directory>/FileCheck.exe"^
-     -DLLBUILD_PATH_TO_SQLITE_SOURCE="<directory-containing-sqlite3.h>"^
-     -DLLBUILD_PATH_TO_SQLITE_BUILD="<directory-containing-sqlite3.lib>"^
-     "C:/Users/hbellamy/Documents/GitHub/my-swift/llbuild"
-    $ ninja
+    > md build && cd build
+    > set AR=llvm-ar
+    > cmake -G Ninja^
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo^
+        -DCMAKE_C_COMPILER=cl^
+        -DCMAKE_CXX_COMPILER=cl^
+        -DSQLite3_INCLUDE_DIR=<directory-containing-sqlite3.h>^
+        -DSQLite3_LIBRARY=<directory-containing-sqlite3.lib>^
+        -DFOUNDATION_BUILD_DIR=<foundation-build-directory>^
+        -DLIBDISPATCH_BUILD_DIR=<libdispatch-build-directory>^
+        -DLIBDISPATCH_SOURCE_DIR=<libdispatch-source-directory>^
+        -DLLBUILD_SUPPORT_BINDINGS=Swift^
+        "<llbuild-source-directory>"
+    > ninja
+
+You can build without Swift bindings by omitting the `LLBUILD_SUPPORT_BINDINGS`
+flag which will also allow you to omit the foundation and libdispatch paths and
+dependencies.
 
 Notes
 -----
