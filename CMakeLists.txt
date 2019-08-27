@@ -164,7 +164,7 @@ elseif(MSVC)
 else ()
   add_compile_options(
     # Enable additional Clang warnings.
-   "-Wmost"
+   "-fno-rtti" "-fno-exceptions" "-Wmost"
    "-Wdocumentation" "-Woverloaded-virtual"
    "-Wparentheses" "-Wswitch"
    "-Wunused-function" "-Wunused-variable"
