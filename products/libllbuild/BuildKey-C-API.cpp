@@ -22,6 +22,10 @@
 using namespace llbuild;
 using namespace llbuild::buildsystem;
 
+size_t std::hash<CAPIBuildKey>::operator()(CAPIBuildKey &key) const {
+  return key.getHashValue();
+}
+
 namespace {
 static inline llb_build_key_kind_t internalToPublicBuildKeyKind(const BuildKey::Kind kind) {
   switch (kind) {
@@ -51,6 +55,13 @@ static inline llb_build_key_kind_t internalToPublicBuildKeyKind(const BuildKey::
 llb_build_key_kind_t CAPIBuildKey::getKind() {
    return internalToPublicBuildKeyKind(internalBuildKey.getKind());
  }
+
+bool CAPIBuildKey::operator ==(const CAPIBuildKey &other) {
+  if (hasIdentifier && other.hasIdentifier) {
+    return identifier == other.identifier;
+  }
+  return internalBuildKey.getKeyData() == other.internalBuildKey.getKeyData();
+}
 
 static const BuildKey::Kind publicToInternalBuildKeyKind(llb_build_key_kind_t kind) {
     switch (kind) {
@@ -82,15 +93,21 @@ llb_build_key_t *llb_build_key_make(const llb_data_t *data) {
   return (llb_build_key_t *)new CAPIBuildKey(BuildKey::fromData(core::KeyType(data->data, data->data + data->length)));
 }
 
+bool llb_build_key_equal(llb_build_key_t *key1, llb_build_key_t *key2) {
+  return (*(CAPIBuildKey *)key1) == (*(CAPIBuildKey *)key2);
+}
+
+size_t llb_build_key_hash(llb_build_key_t *key) {
+  return std::hash<CAPIBuildKey>{}(*((CAPIBuildKey *)key));
+}
+
 llb_build_key_kind_t llb_build_key_get_kind(llb_build_key_t *_Nonnull key) {
   return ((CAPIBuildKey *)key)->getKind();
 }
 
-void llb_build_key_get_key_data(llb_build_key_t *_Nonnull key, void *_Nullable context, void (* _Nonnull iteration)(void *_Nullable context, uint8_t data)) {
-  auto keyData = ((CAPIBuildKey *)key)->getInternalBuildKey().getKeyData();
-  for (auto element: keyData) {
-    iteration(context, element);
-  }
+void llb_build_key_get_key_data(llb_build_key_t *key, void *_Nonnull context, void (*_Nonnull iteration)(void *context, uint8_t *data, size_t count)) {
+  auto &keyData = ((CAPIBuildKey *)key)->getInternalBuildKey().getKeyData();
+  iteration(context, (uint8_t *)keyData.data(), keyData.size());
 }
 
 void llb_build_key_destroy(llb_build_key_t *key) {

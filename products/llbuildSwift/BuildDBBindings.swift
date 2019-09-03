@@ -33,7 +33,7 @@ public typealias ValueType = [UInt8]
 
 /// Defines the result of a call to fetch all keys from the database
 /// Wraps calls to the llbuild database, but all results are fetched and available with this result
-public class BuildDBKeysResult {
+public final class BuildDBKeysResult {
     /// Opaque pointer to the actual result object
     private let result: OpaquePointer
     
@@ -41,10 +41,26 @@ public class BuildDBKeysResult {
         self.result = result
     }
     
-    private lazy var _count: Int = Int(llb_database_result_keys_get_count(result))
+    private lazy var _count: Int = Int(llb_database_fetch_result_get_count(result))
     
     deinit {
-        llb_database_destroy_result_keys(result)
+        llb_database_destroy_fetch_result(result)
+    }
+}
+
+public final class BuildDBKeysWithResult {
+    /// Opaque pointer to the actual result object
+    private let result: OpaquePointer
+    
+    fileprivate init(result: OpaquePointer) {
+        self.result = result
+        assert(llb_database_fetch_result_contains_rule_results(result))
+    }
+    
+    private lazy var _count: Int = Int(llb_database_fetch_result_get_count(result))
+    
+    deinit {
+        llb_database_destroy_fetch_result(result)
     }
 }
 
@@ -64,7 +80,44 @@ extension BuildDBKeysResult: Collection {
         guard (startIndex..<endIndex).contains(index) else {
             fatalError("Index \(index) is out of bounds (\(startIndex)..<\(endIndex))")
         }
-        return BuildKey.construct(key: llb_database_result_keys_get_key_at_index(self.result, Int32(index)))
+        return BuildKey.construct(key: llb_database_fetch_result_get_key_at_index(self.result, Int32(index)))
+    }
+    
+    public func index(after i: Index) -> Index {
+        return i + 1
+    }
+}
+
+extension BuildDBKeysWithResult: Collection {
+    public struct Element: Hashable {
+        public let key: BuildKey
+        public let result: RuleResult
+        
+        public func hash(into hasher: inout Hasher) {
+            hasher.combine(key)
+        }
+    }
+    
+    public typealias Index = Int
+    
+    public var startIndex: Index {
+        return 0
+    }
+    
+    public var endIndex: Index {
+        return self._count + startIndex
+    }
+    
+    public subscript(index: Index) -> Iterator.Element {
+        guard (startIndex..<endIndex).contains(index) else {
+            fatalError("Index \(index) is out of bounds (\(startIndex)..<\(endIndex))")
+        }
+        guard let result = llb_database_fetch_result_get_result_at_index(self.result, Int32(index)) else {
+            fatalError("Build database fetch result doesn't contain result at index \(index) although the count is given at \(count)")
+        }
+        let key = BuildKey.construct(key: llb_database_fetch_result_get_key_at_index(self.result, Int32(index)))
+        let ruleResult = RuleResult(result: result.pointee)!
+        return Element(key: key, result: ruleResult)
     }
     
     public func index(after i: Index) -> Index {
@@ -87,9 +140,7 @@ extension BuildDBKeysResult: CustomStringConvertible {
 }
 
 /// Defines the result of a built task
-public class RuleResult {
-    /// Reference to the C API result instance (for desctruction)
-    private let result: BuildDBResult
+public struct RuleResult {
     /// The value of the result
     public let value: BuildValue
     /// Signature of the node that generated the result
@@ -107,43 +158,35 @@ public class RuleResult {
     /// A list of the dependencies of the computed task, use the database's allKeys to check for their key
     public let dependencies: [BuildKey]
     
+    public init(value: BuildValue, signature: UInt64, computedAt: UInt64, builtAt: UInt64, start: Double, end: Double, dependencies: [BuildKey]) {
+        self.value = value
+        self.signature = signature
+        self.computedAt = computedAt
+        self.builtAt = builtAt
+        self.start = start
+        self.end = end
+        self.dependencies = dependencies
+    }
+    
     fileprivate init?(result: BuildDBResult) {
-        self.result = result
         guard let value = BuildValue.construct(from: Value(ValueType(UnsafeBufferPointer(start: result.value.data, count: Int(result.value.length))))) else {
             return nil
         }
-        self.value = value
-        self.signature = result.signature
-        self.computedAt = result.computed_at
-        self.builtAt = result.built_at
-        self.start = result.start
-        self.end = result.end
-        self.dependencies = UnsafeBufferPointer(start: result.dependencies, count: Int(result.dependencies_count))
-                                .map(BuildKey.construct(key:))
-    }
-    
-    public convenience init(value: BuildValue, signature: UInt64, computedAt: UInt64, builtAt: UInt64, start: Double, end: Double, dependencies: [BuildKey]) {
-        let ptr = UnsafeMutablePointer<OpaquePointer>.allocate(capacity: dependencies.count)
-        for (index, dep) in dependencies.enumerated() {
-            var data = copiedDataFromBytes(dep.keyData)
-            ptr[index] = llb_build_key_make(&data)
-        }
-        
-        let dbResult = BuildDBResult(value: copiedDataFromBytes(value.valueData), signature: signature, computed_at: computedAt, built_at: builtAt, start: start, end: end, dependencies: ptr, dependencies_count: UInt32(dependencies.count))
-        // We know this can't fail because the data is well formed
-        self.init(result: dbResult)!
-    }
-    
-    deinit {
-        withUnsafePointer(to: result) { ptr in
-            llb_database_destroy_result(ptr)
-        }
+        let dependencies = UnsafeBufferPointer(start: result.dependencies, count: Int(result.dependencies_count))
+                            .map(BuildKey.construct(key:))
+        self.init(value: value, signature: result.signature, computedAt: result.computed_at, builtAt: result.built_at, start: result.start, end: result.end, dependencies: dependencies)
     }
 }
 
 extension RuleResult: Equatable {
     public static func == (lhs: RuleResult, rhs: RuleResult) -> Bool {
         return lhs.value == rhs.value && lhs.signature == rhs.signature && lhs.computedAt == rhs.computedAt && lhs.builtAt == rhs.builtAt && lhs.start == rhs.start && lhs.end == rhs.end && lhs.dependencies == rhs.dependencies
+    }
+}
+
+extension RuleResult: CustomStringConvertible {
+    public var description: String {
+        return "<RuleResult value=\(value) signature=\(String(format: "0x%X", signature)) computedAt=\(computedAt) builtAt=\(builtAt) duration=\(duration)sec dependenciesCount=\(dependencies.count)>"
     }
 }
 
@@ -228,6 +271,25 @@ public final class BuildDB {
         return BuildDBKeysResult(result: resultKeys)
     }
     
+    public func getKeysWithResult() throws -> BuildDBKeysWithResult {
+        let errorPtr = MutableStringPointer()
+        let keys = UnsafeMutablePointer<OpaquePointer?>.allocate(capacity: 1)
+        let success = llb_database_get_keys_and_results(_database, keys, &errorPtr.ptr)
+        
+        if let error = errorPtr.msg {
+            throw Error.operationDidFail(error: error)
+        }
+        if !success {
+            throw Error.unknownError
+        }
+        
+        guard let resultKeys = keys.pointee else {
+            throw Error.unknownError
+        }
+        
+        return BuildDBKeysWithResult(result: resultKeys)
+    }
+    
     /// Get the result for a given keyID
     public func lookupRuleResult(buildKey: BuildKey) throws -> RuleResult? {
         let errorPtr = MutableStringPointer()
@@ -243,6 +305,8 @@ public final class BuildDB {
             return nil
         }
         
-        return RuleResult(result: result)
+        let mappedResult = RuleResult(result: result)
+        llb_database_destroy_result(&result)
+        return mappedResult
     }
 }

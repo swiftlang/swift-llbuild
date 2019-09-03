@@ -25,96 +25,144 @@ using namespace llbuild::buildsystem;
 
 namespace {
 
-  class CAPIBuildDBKeysResult {
-  private:
-    const std::vector<KeyType> keys;
-    
-  public:
-    CAPIBuildDBKeysResult(const std::vector<KeyType>& keys): keys(keys) { }
-    
-    CAPIBuildDBKeysResult(const CAPIBuildDBKeysResult&) LLBUILD_DELETED_FUNCTION;
-    CAPIBuildDBKeysResult& operator=(const CAPIBuildDBKeysResult&) LLBUILD_DELETED_FUNCTION;
-    
-    const size_t size() {
-      return keys.size();
+class CAPIBuildDB: public BuildDBDelegate {
+private:
+  /// The key table, for memory caching of key to key id mapping.
+  llvm::StringMap<KeyID> keyTable;
+  
+  /// The mutex that protects the key table.
+  std::mutex keyTableMutex;
+  
+  std::unique_ptr<BuildDB> _db;
+  
+  /// The mutex that protects the key cache.
+  std::mutex keyCacheMutex;
+  
+  std::unordered_map<KeyID, CAPIBuildKey *> keyCache;
+  
+  bool keyCacheInitialized = false;
+  
+  CAPIBuildDB(StringRef path, uint32_t clientSchemaVersion, std::string *error_out) {
+    _db = createSQLiteBuildDB(path, clientSchemaVersion, /* recreateUnmatchedVersion = */ false, error_out);
+  }
+  
+  bool fetchKeysIfNecessary(std::string *error) {
+    if (keyCacheInitialized) {
+      return true;
     }
     
-    llb_build_key_t *keyAtIndex(int32_t index) {
-      auto buildKey = BuildKey::fromData(keys[index]);
-      return (llb_build_key_t *)new CAPIBuildKey(buildKey);
-    }
-  };
-
-  class CAPIBuildDB: public BuildDBDelegate {
-    /// The key table, for memory caching of key to key id mapping.
-    llvm::StringMap<KeyID> keyTable;
+    std::vector<KeyType> keys;
+    auto success = getKeys(keys, error);
     
-    /// The mutex that protects the key table.
-    std::mutex keyTableMutex;
-    
-    std::unique_ptr<BuildDB> _db;
-    
-    CAPIBuildDB(StringRef path, uint32_t clientSchemaVersion, std::string *error_out) {
-      _db = createSQLiteBuildDB(path, clientSchemaVersion, /* recreateUnmatchedVersion = */ false, error_out);
+    if (!error->empty()) {
+      return success;
     }
     
-  public:
-    static CAPIBuildDB *create(StringRef path, uint32_t clientSchemaVersion, std::string *error_out) {
-      auto databaseObject = new CAPIBuildDB(path, clientSchemaVersion, error_out);
-      if (databaseObject->_db == nullptr || !error_out->empty() || !databaseObject->buildStarted(error_out)) {
-        delete databaseObject;
-        return nullptr;
-      }
-      
-      // The delegate  caches keys for key ids
-      databaseObject->_db.get()->attachDelegate(databaseObject);
-      
-      return databaseObject;
+    return success;
+  }
+  
+  /// This method needs keyCacheMutex to be locked to ensure thread safety.
+  void buildUpKeyCache(std::vector<KeyType> &allKeys) {
+    if (keyCache.size() == allKeys.size()) {
+      // There's not need to build up the cache multiple times
+      return;
     }
     
-    bool isValid(std::string *error_out) {
-      if (_db == nullptr) {
-        return false;
-      }
-      
-      return buildStarted(error_out);
+    // Since we're holding the lock already, we don't lock in the destroy method
+    destroyKeyCache();
+    
+    keyCache = std::unordered_map<KeyID, CAPIBuildKey *>();
+    keyCache.reserve(allKeys.size());
+    for (auto rawKey: allKeys) {
+      const KeyID engineID = getKeyID(rawKey);
+      keyCache[engineID] = new CAPIBuildKey(BuildKey::fromData(rawKey), engineID);
+    }
+    keyCacheInitialized = true;
+  }
+  
+  /// This method needs keyCacheMutex to be locked to ensure thread safety.
+  void destroyKeyCache() {
+    // every key in the keyCache is owned by the database, so we need to destroy them
+    for (std::pair<KeyID, CAPIBuildKey *>element: keyCache) {
+      llb_build_key_destroy((llb_build_key_t *)element.second);
+    }
+  }
+  
+public:
+  static CAPIBuildDB *create(StringRef path, uint32_t clientSchemaVersion, std::string *error_out) {
+    auto databaseObject = new CAPIBuildDB(path, clientSchemaVersion, error_out);
+    if (databaseObject->_db == nullptr || !error_out->empty() || !databaseObject->buildStarted(error_out)) {
+      delete databaseObject;
+      return nullptr;
     }
     
-    virtual const KeyID getKeyID(const KeyType& key) override {
-      std::lock_guard<std::mutex> guard(keyTableMutex);
-      
-      // The RHS of the mapping is actually ignored, we use the StringMap's ptr
-      // identity because it allows us to efficiently map back to the key string
-      // in `getRuleInfoForKey`.
-      auto it = keyTable.insert(std::make_pair(key, 0)).first;
-      return (KeyID)(uintptr_t)it->getKey().data();
+    // The delegate  caches keys for key ids
+    databaseObject->_db.get()->attachDelegate(databaseObject);
+    
+    return databaseObject;
+  }
+  
+  ~CAPIBuildDB() {
+    std::lock_guard<std::mutex> guard(keyCacheMutex);
+    destroyKeyCache();
+  }
+  
+  CAPIBuildKey *buildKeyForIdentifier(KeyID keyIdentifier, std::string *error) {
+    if (!fetchKeysIfNecessary(error)) {
+      return nullptr;
     }
     
-    virtual KeyType getKeyForID(const KeyID key) override {
-      // Note that we don't need to lock `keyTable` here because the key entries
-      // themselves don't change once created.
-      return llvm::StringMapEntry<KeyID>::GetStringMapEntryFromKeyData(
-                                                                       (const char*)(uintptr_t)key).getKey();
+    std::lock_guard<std::mutex> guard(keyCacheMutex);
+    auto buildKey = keyCache[keyIdentifier];
+    if (buildKey == nullptr) {
+      *error = "Unable to get build key for identifier " + std::to_string(keyIdentifier);
     }
+    return buildKey;
+  }
+  
+  virtual const KeyID getKeyID(const KeyType& key) override {
+    std::lock_guard<std::mutex> guard(keyTableMutex);
     
-    const bool lookupRuleResult(const KeyType &key, Result *result_out, std::string *error_out) {
-      return _db.get()->lookupRuleResult(this->getKeyID(key), key, result_out, error_out);
-    }
-    
-    const bool buildStarted(std::string *error_out) {
-      return _db.get()->buildStarted(error_out);
-    }
-    
-    void buildComplete() {
-      _db.get()->buildComplete();
-    }
-    
-    const bool getKeys(std::vector<KeyType>& keys_out, std::string *error_out) {
-      return _db.get()->getKeys(keys_out, error_out);
-    }
-  };
-
-}
+    // The RHS of the mapping is actually ignored, we use the StringMap's ptr
+    // identity because it allows us to efficiently map back to the key string
+    // in `getRuleInfoForKey`.
+    auto it = keyTable.insert(std::make_pair(key, 0)).first;
+    return (KeyID)(uintptr_t)it->getKey().data();
+  }
+  
+  virtual KeyType getKeyForID(const KeyID key) override {
+    // Note that we don't need to lock `keyTable` here because the key entries
+    // themselves don't change once created.
+    return llvm::StringMapEntry<KeyID>::GetStringMapEntryFromKeyData(
+                                                                     (const char*)(uintptr_t)key).getKey();
+  }
+  
+  const bool lookupRuleResult(const KeyType &key, Result *result_out, std::string *error_out) {
+    return _db.get()->lookupRuleResult(this->getKeyID(key), key, result_out, error_out);
+  }
+  
+  const bool buildStarted(std::string *error_out) {
+    return _db.get()->buildStarted(error_out);
+  }
+  
+  void buildComplete() {
+    _db.get()->buildComplete();
+  }
+  
+  const bool getKeys(std::vector<KeyType>& keys_out, std::string *error_out) {
+    auto success = _db.get()->getKeys(keys_out, error_out);
+    std::lock_guard<std::mutex> guard(keyCacheMutex);
+    buildUpKeyCache(keys_out);
+    return success;
+  }
+  
+  const bool getKeysWithResult(std::vector<KeyType> &keys_out, std::vector<Result> &results_out, std::string *error_out) {
+    auto success = _db.get()->getKeysWithResult(keys_out, results_out, error_out);
+    std::lock_guard<std::mutex> guard(keyCacheMutex);
+    buildUpKeyCache(keys_out);
+    return success;
+  }
+};
 
 const llb_data_t mapData(std::vector<uint8_t> input) {
   const auto data = input.data();
@@ -134,9 +182,13 @@ const llb_database_result_t mapResult(CAPIBuildDB &db, Result result) {
   llb_build_key_t **deps = (llb_build_key_t **)malloc(size);
   int index = 0;
   for (auto keyID: result.dependencies) {
-    auto buildKey = db.getKeyForID(keyID);
-    auto internalBuildKey = BuildKey::fromData(buildKey);
-    deps[index] = (llb_build_key_t *)new CAPIBuildKey(internalBuildKey);
+    std::string error;
+    auto buildKey = db.buildKeyForIdentifier(keyID, &error);
+    if (!error.empty() || buildKey == nullptr) {
+      assert(0 && "Got dependency from database and don't know this identifier.");
+      continue;
+    }
+    deps[index] = (llb_build_key_t *)buildKey;
     index++;
   }
   
@@ -152,11 +204,45 @@ const llb_database_result_t mapResult(CAPIBuildDB &db, Result result) {
   };
 }
 
-void llb_database_destroy_result(const llb_database_result_t *result) {
-  delete result->value.data;
-  for (uint32_t index = 0; index < result->dependencies_count; index++) {
-    llb_build_key_destroy(result->dependencies[index]);
+class CAPIBuildDBFetchResult {
+private:
+  const std::vector<KeyID> keys;
+  std::vector<llb_database_result_t> results;
+  CAPIBuildDB &db;
+  
+public:
+  const bool hasResults;
+  
+  CAPIBuildDBFetchResult(const std::vector<KeyID>& keys, CAPIBuildDB& db): keys(keys), results({}), db(db), hasResults(false) {}
+  CAPIBuildDBFetchResult(const std::vector<KeyID>& keys, const std::vector<llb_database_result_t> results, CAPIBuildDB &db): keys(keys), results(results), db(db), hasResults(true) {
+    assert(keys.size() == results.size() && "The size of keys and results should be the same when initializing a database fetch result.");
   }
+  
+  CAPIBuildDBFetchResult(const CAPIBuildDBFetchResult&) LLBUILD_DELETED_FUNCTION;
+  CAPIBuildDBFetchResult& operator=(const CAPIBuildDBFetchResult&) LLBUILD_DELETED_FUNCTION;
+  
+  const size_t size() {
+    return keys.size();
+  }
+  
+  llb_build_key_t *keyAtIndex(int32_t index) {
+    std::string error;
+    auto buildKey = db.buildKeyForIdentifier(keys[index], &error);
+    if (!error.empty() || buildKey == nullptr) {
+      assert(0 && "Couldn't find build key for unknown identifier");
+    }
+    return (llb_build_key_t *)buildKey;
+  }
+  
+  llb_database_result_t *resultAtIndex(int32_t index) {
+    return &results[index];
+  }
+};
+
+}
+
+void llb_database_destroy_result(llb_database_result_t *result) {\
+  llb_data_destroy(&result->value);
   delete result->dependencies;
 }
 
@@ -205,21 +291,31 @@ const bool llb_database_lookup_rule_result(llb_database_t *database, llb_build_k
   return stored;
 }
 
-const llb_database_key_id llb_database_result_keys_get_count(llb_database_result_keys_t *result) {
-  auto resultKeys = (CAPIBuildDBKeysResult *)result;
+const llb_database_key_id llb_database_fetch_result_get_count(llb_database_fetch_result_t *result) {
+  auto resultKeys = (CAPIBuildDBFetchResult *)result;
   return resultKeys->size();
 }
 
-llb_build_key_t * llb_database_result_keys_get_key_at_index(llb_database_result_keys_t *result, int32_t index) {
-  auto resultKeys = (CAPIBuildDBKeysResult *)result;
+llb_build_key_t * llb_database_fetch_result_get_key_at_index(llb_database_fetch_result_t *result, int32_t index) {
+  auto resultKeys = (CAPIBuildDBFetchResult *)result;
   return resultKeys->keyAtIndex(index);
 }
 
-void llb_database_destroy_result_keys(llb_database_result_keys_t *result) {
-  delete (CAPIBuildDBKeysResult *)result;
+const bool llb_database_fetch_result_contains_rule_results(llb_database_fetch_result_t *result) {
+  return ((CAPIBuildDBFetchResult *)result)->hasResults;
 }
 
-const bool llb_database_get_keys(llb_database_t *database, llb_database_result_keys_t **keysResult_out, llb_data_t *error_out) {
+llb_database_result_t *llb_database_fetch_result_get_result_at_index(llb_database_fetch_result_t *result, int32_t index) {
+  auto resultKeys = (CAPIBuildDBFetchResult *)result;
+  // TODO: Check if results were fetched
+  return resultKeys->resultAtIndex(index);
+}
+
+void llb_database_destroy_fetch_result(llb_database_fetch_result_t *result) {
+  delete (CAPIBuildDBFetchResult *)result;
+}
+
+const bool llb_database_get_keys(llb_database_t *database, llb_database_fetch_result_t **keysResult_out, llb_data_t *error_out) {
   auto db = (CAPIBuildDB *)database;
   
   std::vector<KeyType> keys;
@@ -233,9 +329,47 @@ const bool llb_database_get_keys(llb_database_t *database, llb_database_result_k
     return success;
   }
   
-  auto resultKeys = new CAPIBuildDBKeysResult(keys);
-  *keysResult_out = (llb_database_result_keys_t *)resultKeys;
+  std::vector<KeyID> buildKeys;
+  buildKeys.reserve(keys.size());
+  for (auto rawKey: keys) {
+    buildKeys.emplace_back(db->getKeyID(rawKey));
+  }
   
+  auto resultKeys = new CAPIBuildDBFetchResult(buildKeys, *db);
+  *keysResult_out = (llb_database_fetch_result_t *)resultKeys;
+  
+  return success;
+}
+
+const bool llb_database_get_keys_and_results(llb_database_t *database, llb_database_fetch_result_t *_Nullable *_Nonnull keysAndResults_out, llb_data_t *_Nullable error_out) {
+  
+  auto db = (CAPIBuildDB *)database;
+  
+  std::vector<KeyType> keys;
+  std::vector<Result> results;
+  std::string error;
+  
+  auto success = db->getKeysWithResult(keys, results, &error);
+  
+  if (!error.empty() && error_out) {
+    error_out->length = error.size();
+    error_out->data = (const uint8_t *)strdup(error.c_str());
+    return success;
+  }
+  assert(keys.size() == results.size());
+  
+  std::vector<KeyID> keyIDs;
+  keyIDs.reserve(keys.size());
+  std::vector<llb_database_result_t> databaseResults;
+  databaseResults.reserve(results.size());
+  
+  for (int index = 0; index < keys.size(); index++) {
+    keyIDs.emplace_back(db->getKeyID(keys[index]));
+    databaseResults.emplace_back(mapResult(*db, results[index]));
+  }
+  
+  auto keysAndResults = new CAPIBuildDBFetchResult(keyIDs, databaseResults, *db);
+  *keysAndResults_out = (llb_database_fetch_result_t *)keysAndResults;
   return success;
 }
 

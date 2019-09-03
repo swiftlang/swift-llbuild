@@ -294,6 +294,11 @@ class SQLiteBuildDB : public BuildDB {
       db, fastFindRuleResultStmtSQL,
       -1, &fastFindRuleResultStmt, nullptr);
     checkSQLiteResultOKReturnFalse(result);
+    
+    result = sqlite3_prepare_v2(
+      db, getKeysWithResultStmtSQL,
+      -1, &getKeysWithResultStmt, nullptr);
+    checkSQLiteResultOKReturnFalse(result);
 
     return true;
   }
@@ -421,6 +426,11 @@ public:
       "SELECT key_id, value, built_at, computed_at, start, end, dependencies, signature FROM rule_results "
       "WHERE key_id == ?;");
   sqlite3_stmt* fastFindRuleResultStmt = nullptr;
+  
+  static constexpr const char *getKeysWithResultStmtSQL = (
+      "SELECT rule_results.key_id, key_names.key, rule_results.value, rule_results.built_at, rule_results.computed_at, rule_results.start, rule_results.end, rule_results.dependencies, rule_results.signature FROM rule_results "
+      "JOIN key_names WHERE rule_results.key_id == key_names.id;");
+  sqlite3_stmt* getKeysWithResultStmt = nullptr;
 
   virtual bool lookupRuleResult(KeyID keyID, const KeyType& key,
                                 Result* result_out,
@@ -706,6 +716,75 @@ public:
 
     sqlite3_finalize(stmt);
 
+    return true;
+  }
+  
+  bool getKeysWithResult(std::vector<KeyType> &keys_out, std::vector<Result> &results_out, std::string* error_out) override {
+    
+    assert(delegate != nullptr);
+    std::lock_guard<std::mutex> guard(dbMutex);
+    
+    if (!open(error_out))
+      return false;
+    
+    auto stmt = getKeysWithResultStmt;
+    
+    int result = sqlite3_reset(stmt);
+    checkSQLiteResultOKReturnFalse(result);
+    
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+      assert(sqlite3_column_count(stmt) == 9);
+      
+      auto dbKeyID = DBKeyID(sqlite3_column_int64(stmt, 0));
+      auto key = KeyType((const char *)sqlite3_column_text(stmt, 1), sqlite3_column_bytes(stmt, 1));
+      
+      auto engineKeyID = delegate->getKeyID(key);
+      engineKeyIDs[dbKeyID] = engineKeyID;
+      dbKeyIDs[engineKeyID] = dbKeyID;
+      
+      Result result;
+      int numValueBytes = sqlite3_column_bytes(stmt, 2);
+      result.value.resize(numValueBytes);
+      memcpy(result.value.data(),
+             sqlite3_column_blob(stmt, 2),
+             numValueBytes);
+      result.builtAt = sqlite3_column_int64(stmt, 3);
+      result.computedAt = sqlite3_column_int64(stmt, 4);
+      result.start = sqlite3_column_double(stmt, 5);
+      result.end = sqlite3_column_double(stmt, 6);
+      auto numDependencyBytes = sqlite3_column_bytes(stmt, 7);
+      auto dependencyBytes = sqlite3_column_blob(stmt, 7);
+      
+      // map dependencies
+      int numDependencies = numDependencyBytes / sizeof(uint64_t);
+      if (numDependencyBytes != numDependencies * sizeof(uint64_t)) {
+        *error_out = (llvm::Twine("unexpected contents for database result: ") +
+                      llvm::Twine((int)dbKeyID.value)).str();
+        return false;
+      }
+
+      result.dependencies.resize(numDependencies);
+      basic::BinaryDecoder decoder(
+                                   StringRef((const char*)dependencyBytes, numDependencyBytes));
+      for (auto i = 0; i != numDependencies; ++i) {
+        DBKeyID dbKeyID;
+        decoder.read(dbKeyID.value);
+        
+        // Map the database key ID into an engine key ID (note that we already
+        // hold the dbMutex at this point as required by getKeyIDforID())
+        KeyID keyID = getKeyIDForID(dbKeyID, error_out);
+        if (!error_out->empty()) {
+          return false;
+        }
+        result.dependencies[i] = keyID;
+      }
+      
+      result.signature = basic::CommandSignature(sqlite3_column_int64(stmt, 8));
+      
+      keys_out.push_back(key);
+      results_out.push_back(result);
+    }
+    
     return true;
   }
 
