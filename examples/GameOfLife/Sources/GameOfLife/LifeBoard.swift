@@ -26,3 +26,12 @@ public final class LifeBoard: Codable {
         }
     }
 }
+
+extension LifeBoard: CustomStringConvertible {
+    public var description: String {
+        let rows = data.map { row in
+            row.map{ return $0 ? "*" : "-" }.joined(separator: "")
+        }
+        return rows.joined(separator: "\n")
+    }
+}
