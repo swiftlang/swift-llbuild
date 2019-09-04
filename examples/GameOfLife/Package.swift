@@ -4,14 +4,18 @@ import PackageDescription
 
 let package = Package(
     name: "GameOfLife",
+    products: [
+        .executable(
+            name: "game-of-life",
+            targets: ["game-of-life"])
+    ],
     dependencies: [
-        .package(url: "https://github.com/swift-server/http", from: "0.0.0"),
         .package(url: "../..", .branch("master")),
     ],
     targets: [
         .target(
-            name: "LifeServer",
-            dependencies: ["GameOfLife", "HTTP"]),
+            name: "game-of-life",
+            dependencies: ["GameOfLife"]),
 
         .target(
             name: "GameOfLife",
