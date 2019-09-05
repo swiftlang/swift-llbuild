@@ -11,10 +11,12 @@ set(LLBUILD_SUPPORT_BINDINGS "" CACHE STRING "bindings to build")
 include(CheckCXXCompilerFlag)
 
 # Get the SDK path for OSX.
-execute_process(
-    COMMAND xcrun --sdk macosx --show-sdk-path
-    OUTPUT_VARIABLE CMAKE_OSX_SYSROOT
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
+if (CMAKE_HOST_SYSTEM_NAME STREQUAL Darwin)
+  execute_process(
+      COMMAND xcrun --sdk macosx --show-sdk-path
+      OUTPUT_VARIABLE CMAKE_OSX_SYSROOT
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif()
 
 # Add path for custom modules
 list(APPEND CMAKE_MODULE_PATH
