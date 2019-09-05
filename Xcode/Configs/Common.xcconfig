@@ -38,7 +38,7 @@ CLANG_CXX_LIBRARY = libc++
 #include "Version.xcconfig"
 
 COMMON_PREPROCESSOR_DEFINITIONS = $(LLBUILD_VERSION_DEFINITIONS)
-OTHER_CPLUSPLUSFLAGS = $(OTHER_CFLAGS) -Wimplicit-fallthrough -Wall
+OTHER_CPLUSPLUSFLAGS = $(OTHER_CFLAGS) -Wimplicit-fallthrough -Wsign-compare -Wall
 
 // MARK: Signing Support
 
