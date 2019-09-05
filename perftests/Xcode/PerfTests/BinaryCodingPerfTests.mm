@@ -33,7 +33,7 @@ using namespace llbuild::basic;
                 coder.write(uint64_t(0xAABBCCDDAABBCCDDULL));
             }
             auto result = coder.contents();
-            XCTAssertEqual(result.size(), 1 << 20);
+            XCTAssertEqual(result.size(), (size_t) 1 << 20);
         }
     }];
 }
@@ -47,7 +47,7 @@ using namespace llbuild::basic;
         coder.write(uint64_t(0xAABBCCDDAABBCCDDULL ^ i));
     }
     auto data = coder.contents();
-    XCTAssertEqual(data.size(), 1 << 20);
+    XCTAssertEqual(data.size(), (size_t) 1 << 20);
     
     [self measureBlock:^{
         // We do 1000 iterations to sum to 100 MBs.

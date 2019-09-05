@@ -363,7 +363,7 @@ const bool llb_database_get_keys_and_results(llb_database_t *database, llb_datab
   std::vector<llb_database_result_t> databaseResults;
   databaseResults.reserve(results.size());
   
-  for (int index = 0; index < keys.size(); index++) {
+  for (size_t index = 0; index < keys.size(); index++) {
     keyIDs.emplace_back(db->getKeyID(keys[index]));
     databaseResults.emplace_back(mapResult(*db, results[index]));
   }
