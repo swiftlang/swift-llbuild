@@ -415,6 +415,8 @@ public:
   /// The limited queue we use to execute parallel jobs.
   std::unique_ptr<ExecutionQueue> jobQueue;
 
+  std::unique_ptr<std::thread> signalHandlerThread;
+
   /// The previous SIGINT handler.
 #if defined(_WIN32)
   void (*previousSigintHandler)(int);
@@ -518,7 +520,7 @@ public:
     if (basic::sys::pipe(BuildContext::signalWatchingPipe) < 0) {
       perror("pipe");
     }
-    new std::thread(&BuildContext::signalWaitThread, this);
+    signalHandlerThread.reset(new std::thread(&BuildContext::signalWaitThread, this));
   }
 
   ~BuildContext() {
@@ -539,6 +541,10 @@ public:
     // Close the signal watching pipe.
     sys::close(BuildContext::signalWatchingPipe[1]);
     signalWatchingPipe[1] = -1;
+
+    // Wait for our signal handler thread to terminate and reset signal pipes,
+    // otherwise we may race with subsequent iterations. rdar://problem/55036265
+    signalHandlerThread->join();
   }
 
   /// @name Diagnostics Output
