@@ -100,7 +100,7 @@ namespace {
     auto fn = [&tempDir, &queue](QueueJobContext* context) {
       std::string yescmd = "yes >yes-output.txt";
       std::vector<StringRef> commandLine(
-                                         { "/bin/sh", "-c", yescmd.c_str() });
+                                         { DefaultShellPath, "-c", yescmd.c_str() });
       std::shared_ptr<std::promise<ProcessStatus>> p{new std::promise<ProcessStatus>};
       auto result = p->get_future();
       queue->executeProcess(context, commandLine, {}, true, {true, tempDir.str()},

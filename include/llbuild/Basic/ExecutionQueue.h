@@ -26,6 +26,9 @@ namespace llbuild {
     
     class ExecutionQueueDelegate;
 
+    // Default shell system path
+    const std::string DefaultShellPath = "/bin/sh";
+
     /// Description of the queue job, used for scheduling and diagnostics.
     class JobDescriptor {
     public:

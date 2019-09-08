@@ -232,7 +232,7 @@ bool ShellCommand::configureAttribute(const ConfigureContext& ctx, StringRef nam
                        "C:\\windows\\system32\\cmd.exe"));
     args.push_back(ctx.getDelegate().getInternedString("/C"));
 #else
-    args.push_back(ctx.getDelegate().getInternedString("/bin/sh"));
+    args.push_back(ctx.getDelegate().getInternedString(DefaultShellPath));
     args.push_back(ctx.getDelegate().getInternedString("-c"));
 #endif
     args.push_back(ctx.getDelegate().getInternedString(value));

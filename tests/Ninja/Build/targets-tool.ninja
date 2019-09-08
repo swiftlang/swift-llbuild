@@ -10,7 +10,7 @@
 
 # Check that we error on an unsupported argument.
 #
-# RUN: /bin/sh -c "%{llbuild} ninja build -f %s -t targets depth 2; echo \"exit code: $?\"" &> %t2.out
+# RUN: %{sh-invoke} -c "%{llbuild} ninja build -f %s -t targets depth 2; echo \"exit code: $?\"" &> %t2.out
 # RUN: %{FileCheck} --check-prefix CHECK-TARGETS-ERR --input-file %t2.out %s
 
 # CHECK-TARGETS-ERR: unsupported argument to tool 'targets': 'depth'

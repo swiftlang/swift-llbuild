@@ -2122,7 +2122,7 @@ public:
       // When provided as a scalar string, we default to executing using the
       // shell.
       args.clear();
-      args.push_back(ctx.getDelegate().getInternedString("/bin/sh"));
+      args.push_back(ctx.getDelegate().getInternedString(DefaultShellPath));
       args.push_back(ctx.getDelegate().getInternedString("-c"));
       args.push_back(ctx.getDelegate().getInternedString(value));
     } else if (name == "deps") {

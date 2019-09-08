@@ -1134,7 +1134,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         "C:\\windows\\system32\\cmd.exe",
         "/C",
 #else
-        "/bin/sh",
+        DefaultShellPath,
         "-c",
 #endif
         command->getCommandString().c_str()
