@@ -21,6 +21,12 @@ let package = Package(
             name: "llbuildSwiftDynamic",
             type: .dynamic,
             targets: ["llbuildSwift"]),
+        .executable(
+            name: "llbuild-analyze",
+            targets: ["llbuildAnalyzeTool"]),
+    ],
+    dependencies: [
+        .package(url: "https://github.com/apple/swift-tools-support-core.git", .branch("master"))
     ],
     targets: [
         /// The llbuild testing tool.
@@ -51,6 +57,11 @@ let package = Package(
             dependencies: ["llbuildCore", "llbuildBuildSystem"],
             path: "products/libllbuild"
         ),
+        
+        .target(
+            name: "llbuildAnalyzeTool",
+            dependencies: ["SwiftToolsSupport-auto"],
+            path: "products/llbuild-analyze"),
         
         // MARK: Components
         
