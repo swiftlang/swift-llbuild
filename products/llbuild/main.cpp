@@ -14,7 +14,12 @@
 
 #include "llbuild/Commands/Commands.h"
 
+#include "llvm/ADT/ArrayRef.h"
+#include "llvm/Support/Errno.h"
+#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
+#include "llvm/Support/Process.h"
+#include "llvm/Support/Program.h"
 #include "llvm/Support/Signals.h"
 
 #include <cstdio>
@@ -31,8 +36,41 @@ static void usage() {
   fprintf(stderr, "  ninja       -- Run the Ninja subtool\n");
   fprintf(stderr, "  buildengine -- Run the build engine subtool\n");
   fprintf(stderr, "  buildsystem -- Run the build system subtool\n");
+  fprintf(stderr, "  analyze     -- Run the analyze subtool\n");
   fprintf(stderr, "\n");
   exit(0);
+}
+
+std::string getExecutablePath(std::string programName) {
+  void *P = (void *)(intptr_t)getExecutablePath;
+  return llvm::sys::fs::getMainExecutable(programName.c_str(), P);
+}
+
+int executeExternalCommand(std::string command, std::vector<std::string> args) {
+  // We are running as a subcommand, try to find the subcommand adjacent to
+  // the executable we are running as.
+  SmallString<256> SubcommandPath(
+                                  llvm::sys::path::parent_path(getExecutablePath(command)));
+  llvm::sys::path::append(SubcommandPath, command);
+  
+  // If we didn't find the tool there, let the OS search for it.
+  if (!llvm::sys::fs::exists(SubcommandPath)) {
+    // Search for the program and use the path if found.
+    auto result = llvm::sys::findProgramByName(command);
+    if (!result.getError()) {
+      SubcommandPath = *result;
+    } else {
+      fprintf(stderr, "error: %s: unknown command '%s'\n", getProgramName(),
+              command.c_str());
+      return -1;
+    }
+  }
+  
+  std::vector<StringRef> argRefs(args.size());
+  std::transform(args.begin(), args.end(), argRefs.begin(), [](std::string element) { return StringRef(strdup(element.c_str())); });
+  llvm::sys::ExecuteAndWait(StringRef(SubcommandPath), ArrayRef<StringRef>(argRefs));
+  
+  return 0;
 }
 
 int main(int argc, const char **argv) {
@@ -78,6 +116,11 @@ int main(int argc, const char **argv) {
     return executeBuildEngineCommand(args);
   } else if (command == "buildsystem") {
     return executeBuildSystemCommand(args);
+  } else if (command == "analyze") {
+    // Next to the llbuild binary we build a llbuild-analyze binary with SwiftPM
+    // which we treat as a subtool to llbuild. If that doesn't exist, the exec
+    // will fail.
+    return executeExternalCommand("llbuild-analyze", args);
   } else {
     fprintf(stderr, "error: %s: unknown command '%s'\n", getProgramName(),
             command.c_str());

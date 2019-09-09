@@ -130,7 +130,6 @@
 		B5BE9BA722E854E300777A06 /* BuildKey-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5BE9BA622E854E300777A06 /* BuildKey-C-API.cpp */; };
 		B5BE9BA822E854E300777A06 /* BuildKey-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5BE9BA622E854E300777A06 /* BuildKey-C-API.cpp */; };
 		B5BE9BAC22E887CD00777A06 /* buildkey.h in Headers */ = {isa = PBXBuildFile; fileRef = B5BE9BAB22E885D900777A06 /* buildkey.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		B5BE9BB322E8A31000777A06 /* BuildSystem-C-API-Private.h in Headers */ = {isa = PBXBuildFile; fileRef = B5BE9BB222E8A31000777A06 /* BuildSystem-C-API-Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		B5DB3A6D22FDB9B000625133 /* BuildValueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5A308C222F30F2000699B4C /* BuildValueTests.swift */; };
 		BC669C54205A2C2000942C3B /* BuildSystemBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8DEF0620300AAF00E9EF0C /* BuildSystemBindings.swift */; };
 		BC669C55205A2C2000942C3B /* CoreBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC8DEF0720300AAF00E9EF0C /* CoreBindings.swift */; };
@@ -958,7 +957,6 @@
 		B546B3A422CA161A007046C0 /* BuildDBBindingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildDBBindingsTests.swift; sourceTree = "<group>"; };
 		B563CEA620A6252500276198 /* CrossPlatformCompatibility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CrossPlatformCompatibility.h; sourceTree = "<group>"; };
 		B58006ED22F9E847004869A2 /* Clock.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Clock.h; sourceTree = "<group>"; };
-		B5A308CD22F315A800699B4C /* Internals.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Internals.swift; sourceTree = "<group>"; };
 		B5A308B622F30DF000699B4C /* BuildValue-C-API.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "BuildValue-C-API.cpp"; sourceTree = "<group>"; };
 		B5A308B922F30E0700699B4C /* buildvalue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = buildvalue.h; sourceTree = "<group>"; };
 		B5A308BD22F30EE800699B4C /* BuildValue.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BuildValue.swift; sourceTree = "<group>"; };
@@ -3054,6 +3052,7 @@
 			isa = PBXProject;
 			attributes = {
 				DefaultBuildSystemTypeForWorkspace = Latest;
+				LastSwiftUpdateCheck = 1100;
 				LastUpgradeCheck = 9900;
 				ORGANIZATIONNAME = "Apple Inc.";
 				TargetAttributes = {
