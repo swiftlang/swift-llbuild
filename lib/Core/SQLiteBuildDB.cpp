@@ -169,6 +169,7 @@ class SQLiteBuildDB : public BuildDB {
         clientVersion != clientSchemaVersion) {
       // Close the database before we try to recreate it.
       sqlite3_close(db);
+      db = nullptr;
       
       if (!recreateOnUnmatchedVersion) {
         // We don't re-create the database in this case and return an error
@@ -183,6 +184,7 @@ class SQLiteBuildDB : public BuildDB {
           *error_out = std::string("unable to unlink existing database: ") +
             ::strerror(errno);
           sqlite3_close(db);
+          db = nullptr;
           return false;
         }
       } else {
@@ -255,6 +257,7 @@ class SQLiteBuildDB : public BuildDB {
                       + ")");
         sqlite3_free(cError);
         sqlite3_close(db);
+        db = nullptr;
         return false;
       }
     }
@@ -321,8 +324,10 @@ class SQLiteBuildDB : public BuildDB {
     insertIntoKeysStmt = nullptr;
     sqlite3_finalize(insertIntoRuleResultsStmt);
     insertIntoRuleResultsStmt = nullptr;
+    sqlite3_finalize(getKeysWithResultStmt);
+    getKeysWithResultStmt = nullptr;
 
-    sqlite3_close(db);
+    assert(sqlite3_close(db) == SQLITE_OK && "The database connection could not be closed. That means there are prepared statements that are not finalized, data blobs that are not closed or backups not finished.");
     db = nullptr;
   }
 
