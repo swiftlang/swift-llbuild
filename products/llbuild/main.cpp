@@ -66,11 +66,18 @@ int executeExternalCommand(std::string command, std::vector<std::string> args) {
     }
   }
   
-  std::vector<StringRef> argRefs(args.size());
-  std::transform(args.begin(), args.end(), argRefs.begin(), [](std::string element) { return StringRef(strdup(element.c_str())); });
-  llvm::sys::ExecuteAndWait(StringRef(SubcommandPath), ArrayRef<StringRef>(argRefs));
+  std::vector<char*> argsAsCStrings(args.size());
+  std::transform(args.begin(), args.end(), argsAsCStrings.begin(), [](std::string element) { return strdup(element.c_str()); });
+  std::vector<StringRef> argRefs(argsAsCStrings.size());
+  std::transform(argsAsCStrings.begin(), argsAsCStrings.end(), argRefs.begin(), [](char *element) { return StringRef(element); });
+  // Actually execute the command and wait for it to finish
+  int exitStatus = llvm::sys::ExecuteAndWait(StringRef(SubcommandPath), ArrayRef<StringRef>(argRefs));
   
-  return 0;
+  for (auto cString: argsAsCStrings) {
+    free(cString);
+  }
+  
+  return exitStatus;
 }
 
 int main(int argc, const char **argv) {
