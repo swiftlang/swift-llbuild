@@ -327,7 +327,9 @@ class SQLiteBuildDB : public BuildDB {
     sqlite3_finalize(getKeysWithResultStmt);
     getKeysWithResultStmt = nullptr;
 
-    assert(sqlite3_close(db) == SQLITE_OK && "The database connection could not be closed. That means there are prepared statements that are not finalized, data blobs that are not closed or backups not finished.");
+    int result;
+    result = sqlite3_close(db);
+    assert(result == SQLITE_OK && "The database connection could not be closed. That means there are prepared statements that are not finalized, data blobs that are not closed or backups not finished.");
     db = nullptr;
   }
 
