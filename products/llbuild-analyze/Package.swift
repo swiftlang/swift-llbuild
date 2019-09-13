@@ -16,12 +16,13 @@ let package = Package(
             targets: ["llbuildAnalyzeTool"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-tools-support-core.git", .branch("master"))
+        .package(url: "https://github.com/apple/swift-tools-support-core.git", .branch("master")),
+        .package(path: "../../"),
     ],
     targets: [
         .target(
             name: "llbuildAnalyzeTool",
-            dependencies: ["SwiftToolsSupport-auto"],
+            dependencies: ["SwiftToolsSupport-auto", "llbuildAnalysis"],
             path: "Sources"),
     ]
 )

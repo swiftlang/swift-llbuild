@@ -120,7 +120,7 @@
 		B52912CC232BF0AE00FD3389 /* CriticalPathTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B52912CB232BF0AE00FD3389 /* CriticalPathTests.swift */; };
 		B52912D6232BF17900FD3389 /* CriticalBuildPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = B52912D5232BF17900FD3389 /* CriticalBuildPath.swift */; };
 		B52912D8232BF19600FD3389 /* CriticalPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = B52912D7232BF19600FD3389 /* CriticalPath.swift */; };
-		B52912DA232BF1AC00FD3389 /* Performance.swift in Sources */ = {isa = PBXBuildFile; fileRef = B52912D9232BF1AC00FD3389 /* Performance.swift */; };
+		B52912DA232BF1AC00FD3389 /* IdentifierFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = B52912D9232BF1AC00FD3389 /* IdentifierFactory.swift */; };
 		B52912DB232BF1DA00FD3389 /* llbuild.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1D191BE1B47232B000C4E95 /* llbuild.framework */; };
 		B546B39922C65CFB007046C0 /* llbuild.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1D191BE1B47232B000C4E95 /* llbuild.framework */; };
 		B546B3A522CA161A007046C0 /* BuildDBBindingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B546B3A422CA161A007046C0 /* BuildDBBindingsTests.swift */; };
@@ -994,11 +994,11 @@
 		B52912BE232BF0AD00FD3389 /* llbuildAnalysis.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = llbuildAnalysis.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		B52912C1232BF0AD00FD3389 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B52912C6232BF0AE00FD3389 /* llbuildAnalysisTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = llbuildAnalysisTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		B52912CB232BF0AE00FD3389 /* CriticalPathTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CriticalPathTests.swift; sourceTree = "<group>"; };
+		B52912CB232BF0AE00FD3389 /* CriticalPathTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = CriticalPathTests.swift; sourceTree = "<group>"; tabWidth = 4; };
 		B52912CD232BF0AE00FD3389 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		B52912D5232BF17900FD3389 /* CriticalBuildPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CriticalBuildPath.swift; sourceTree = "<group>"; };
-		B52912D7232BF19600FD3389 /* CriticalPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CriticalPath.swift; sourceTree = "<group>"; };
-		B52912D9232BF1AC00FD3389 /* Performance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Performance.swift; sourceTree = "<group>"; };
+		B52912D5232BF17900FD3389 /* CriticalBuildPath.swift */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = CriticalBuildPath.swift; sourceTree = "<group>"; tabWidth = 4; };
+		B52912D7232BF19600FD3389 /* CriticalPath.swift */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = CriticalPath.swift; sourceTree = "<group>"; tabWidth = 4; };
+		B52912D9232BF1AC00FD3389 /* IdentifierFactory.swift */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = IdentifierFactory.swift; sourceTree = "<group>"; tabWidth = 4; };
 		B546B39422C65CFB007046C0 /* llbuildSwiftTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = llbuildSwiftTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B546B39822C65CFB007046C0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = ../../llbuildSwiftTests/Info.plist; sourceTree = "<group>"; };
 		B546B3A022C65DF0007046C0 /* BuildSystemBindingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildSystemBindingsTests.swift; sourceTree = "<group>"; };
@@ -1802,7 +1802,7 @@
 				B52912C1232BF0AD00FD3389 /* Info.plist */,
 				B52912D5232BF17900FD3389 /* CriticalBuildPath.swift */,
 				B52912D7232BF19600FD3389 /* CriticalPath.swift */,
-				B52912D9232BF1AC00FD3389 /* Performance.swift */,
+				B52912D9232BF1AC00FD3389 /* IdentifierFactory.swift */,
 			);
 			path = Analysis;
 			sourceTree = "<group>";
@@ -3602,7 +3602,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B52912DA232BF1AC00FD3389 /* Performance.swift in Sources */,
+				B52912DA232BF1AC00FD3389 /* IdentifierFactory.swift in Sources */,
 				B52912D6232BF17900FD3389 /* CriticalBuildPath.swift in Sources */,
 				B52912D8232BF19600FD3389 /* CriticalPath.swift in Sources */,
 			);

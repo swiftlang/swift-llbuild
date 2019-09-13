@@ -165,20 +165,20 @@ open class Tool<Options: Option>: Runnable {
     }
 }
 
-public extension Sequence where Element == Runnable.Type {
-    func run(args: [String] = CommandLine.arguments) throws {
-        var args = args
+func run(tools: [Runnable.Type], args: [String] = CommandLine.arguments) throws {
+    var args = args
+    if let first = args.first, first.hasSuffix("llbuild-analyze") {
         args.removeFirst() // remove the binary name
-        guard let toolName = args.first?.lowercased() else {
-            throw StringError("Pass tool name to determine which command should run.")
-        }
-        for toolType in self {
-            guard toolType.toolName.lowercased() == toolName else { continue }
-            let tool = try toolType.init(args: Array(args.dropFirst()))
-            return tool.run()
-        }
-        throw ArgumentParserError.unknownOption(toolName, suggestion: map { $0.toolName }.joined(separator: ", "))
     }
+    guard let toolName = args.first?.lowercased() else {
+        throw StringError("Pass tool name to determine which command should run.")
+    }
+    for toolType in tools {
+        guard toolType.toolName.lowercased() == toolName else { continue }
+        let tool = try toolType.init(args: Array(args.dropFirst()))
+        return tool.run()
+    }
+    throw ArgumentParserError.unknownOption(toolName, suggestion: tools.map { $0.toolName }.joined(separator: ", "))
 }
 
 public func handle(error: Any) {
