@@ -21,6 +21,14 @@ let package = Package(
             name: "llbuildSwiftDynamic",
             type: .dynamic,
             targets: ["llbuildSwift"]),
+        
+        .library(
+            name: "llbuildAnalysis",
+            targets: ["llbuildAnalysis"]),
+        .library(
+            name: "llbuildAnalysisDynamic",
+            type: .dynamic,
+            targets: ["llbuildAnalysis"]),
     ],
     targets: [
         /// The llbuild testing tool.
@@ -81,6 +89,14 @@ let package = Package(
             path: "lib/Commands"
         ),
 
+        // MARK: Analysis Components
+        
+        .target(
+            name: "llbuildAnalysis",
+            dependencies: ["llbuildSwift"],
+            path: "lib/Analysis"
+        ),
+        
         // MARK: Test Targets
 
         .target(
@@ -103,6 +119,10 @@ let package = Package(
             name: "llbuildSwiftTests",
             dependencies: ["llbuildSwift"],
             path: "unittests/Swift"),
+        .testTarget(
+            name: "AnalysisTests",
+            dependencies: ["llbuildAnalysis"],
+            path: "unittests/Analysis"),
         
         // MARK: GoogleTest
 
