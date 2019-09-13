@@ -159,6 +159,19 @@
                BlueprintName = "adjust-times"
                ReferencedContainer = "container:llbuild.xcodeproj">
             </BuildableReference>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "B52912BD232BF0AD00FD3389"
+               BuildableName = "llbuildAnalysis.framework"
+               BlueprintName = "Analysis"
+               ReferencedContainer = "container:llbuild.xcodeproj">
+            </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
@@ -196,6 +209,16 @@
                BlueprintIdentifier = "B546B39322C65CFB007046C0"
                BuildableName = "llbuildSwiftTests.xctest"
                BlueprintName = "llbuildSwiftTests"
+               ReferencedContainer = "container:llbuild.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "B52912C5232BF0AE00FD3389"
+               BuildableName = "llbuildAnalysisTests.xctest"
+               BlueprintName = "AnalysisTests"
                ReferencedContainer = "container:llbuild.xcodeproj">
             </BuildableReference>
          </TestableReference>
