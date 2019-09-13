@@ -159,6 +159,7 @@
                BlueprintName = "adjust-times"
                ReferencedContainer = "container:llbuild.xcodeproj">
             </BuildableReference>
+         </BuildActionEntry>
          <BuildActionEntry
             buildForTesting = "YES"
             buildForRunning = "YES"

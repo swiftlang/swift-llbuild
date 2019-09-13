@@ -21,13 +21,8 @@ let package = Package(
             name: "llbuildSwiftDynamic",
             type: .dynamic,
             targets: ["llbuildSwift"]),
-        
         .library(
             name: "llbuildAnalysis",
-            targets: ["llbuildAnalysis"]),
-        .library(
-            name: "llbuildAnalysisDynamic",
-            type: .dynamic,
             targets: ["llbuildAnalysis"]),
     ],
     targets: [
