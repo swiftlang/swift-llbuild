@@ -31,3 +31,5 @@ xcuserdata
 # Visual Studio cache/options directory
 .vs/
 
+# Ingore SwiftPM's configuration/cache directory.
+.swiftpm
