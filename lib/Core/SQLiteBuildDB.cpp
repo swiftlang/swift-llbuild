@@ -327,8 +327,8 @@ class SQLiteBuildDB : public BuildDB {
     sqlite3_finalize(getKeysWithResultStmt);
     getKeysWithResultStmt = nullptr;
 
-    int result;
-    result = sqlite3_close(db);
+    int result = sqlite3_close(db);
+    (void)result; // use the variable if we're building without asserts
     assert(result == SQLITE_OK && "The database connection could not be closed. That means there are prepared statements that are not finalized, data blobs that are not closed or backups not finished.");
     db = nullptr;
   }
