@@ -395,7 +395,8 @@ public:
   }
 
   /// Get or create the unique node for the given path.
-  Node* getOrCreateNode(StringRef path);
+  Node* findNode(StringRef workingDirectory, StringRef path);
+  Node* findOrCreateNode(StringRef workingDirectory, StringRef path);
 
   std::vector<Command*>& getCommands() {
     return commands;

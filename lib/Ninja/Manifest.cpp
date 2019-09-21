@@ -1,4 +1,4 @@
-//===-- ManifestLoader.cpp ------------------------------------------------===//
+//===-- Manifest.cpp ------------------------------------------------------===//
 //
 // This source file is part of the Swift.org open source project
 //
@@ -13,6 +13,9 @@
 #include "llbuild/Ninja/Manifest.h"
 
 #include "llbuild/Basic/LLVM.h"
+
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Path.h"
 
 using namespace llbuild;
 using namespace llbuild::ninja;
@@ -42,7 +45,39 @@ Manifest::Manifest() {
   getRootScope().getRules()["phony"] = phonyRule;
 }
 
-Node* Manifest::getOrCreateNode(StringRef path) {
+Node* Manifest::findNode(StringRef workingDirectory, StringRef path0) {
+  StringRef path;
+  SmallString<256> absPathTmp;
+
+  if (llvm::sys::path::is_absolute(path0)) {
+    path = path0;
+  } else {
+    absPathTmp = path0;
+    llvm::sys::fs::make_absolute(workingDirectory, absPathTmp);
+    assert(absPathTmp[0] == '/');
+    path = absPathTmp;
+  }
+
+  auto it = nodes.find(path);
+  if (it == nodes.end()) {
+    return nullptr;
+  }
+  return it->second;
+}
+
+Node* Manifest::findOrCreateNode(StringRef workingDirectory, StringRef path0) {
+  StringRef path;
+  SmallString<256> absPathTmp;
+
+  if (llvm::sys::path::is_absolute(path0)) {
+    path = path0;
+  } else {
+    absPathTmp = path0;
+    llvm::sys::fs::make_absolute(workingDirectory, absPathTmp);
+    assert(absPathTmp[0] == '/');
+    path = absPathTmp;
+  }
+
   auto& result = nodes[path];
   if (!result)
     result = new (getAllocator()) Node(path);

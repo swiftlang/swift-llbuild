@@ -62,7 +62,7 @@ class ManifestLoader {
   void *impl;
 
 public:
-  ManifestLoader(std::string mainFilename, ManifestLoaderActions& actions);
+  ManifestLoader(StringRef workingDirectory, StringRef mainFilename, ManifestLoaderActions& actions);
   ~ManifestLoader();
 
   /// Load the manifest.

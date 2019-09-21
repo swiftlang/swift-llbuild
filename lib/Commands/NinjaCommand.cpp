@@ -18,6 +18,7 @@
 #include "llbuild/Ninja/Manifest.h"
 #include "llbuild/Ninja/ManifestLoader.h"
 #include "llbuild/Ninja/Parser.h"
+#include "llvm/Support/FileSystem.h"
 
 #include "CommandUtil.h"
 #include "NinjaBuildCommand.h"
@@ -412,8 +413,16 @@ static int executeLoadManifestCommand(const std::vector<std::string>& args,
     filename = filename.substr(pos+1);
   }
 
+  SmallString<128> current_dir;
+  if (std::error_code ec = llvm::sys::fs::current_path(current_dir)) {
+    fprintf(stderr, "%s: error: cannot determine current directory\n",
+            getProgramName());
+    return 1;
+  }
+  const std::string workingDirectory = current_dir.str();
+
   LoadManifestActions actions;
-  ninja::ManifestLoader loader(filename, actions);
+  ninja::ManifestLoader loader(workingDirectory, filename, actions);
   std::unique_ptr<ninja::Manifest> manifest = loader.load();
 
   // If only loading, we are done.

@@ -30,6 +30,8 @@
 #include "llbuild/Ninja/ManifestLoader.h"
 
 #include "llvm/ADT/SmallString.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
 
 #include "CommandLineStatusOutput.h"
@@ -336,6 +338,7 @@ public:
 };
 
 struct NinjaBuildEngineDelegate : public core::BuildEngineDelegate {
+  std::string workingDirectory;
   class BuildContext* context = nullptr;
 
   virtual core::Rule lookupRule(const core::KeyType& key) override;
@@ -343,11 +346,16 @@ struct NinjaBuildEngineDelegate : public core::BuildEngineDelegate {
   virtual void cycleDetected(const std::vector<core::Rule*>& items) override;
 
   virtual void error(const Twine& message) override;
+
+  NinjaBuildEngineDelegate(StringRef workingDirectory)
+    : workingDirectory(workingDirectory) { }
 };
 
 /// Wrapper for information used during a single build.
 class BuildContext : public ExecutionQueueDelegate {
 public:
+  const std::string workingDirectory;
+
   /// The build engine delegate.
   NinjaBuildEngineDelegate delegate;
 
@@ -490,14 +498,16 @@ public:
   }
 
 public:
-  BuildContext()
-    : engine(delegate),
+  BuildContext(StringRef workingDirectory)
+    : workingDirectory(workingDirectory),
+      delegate({workingDirectory}),
+      engine(delegate),
       isCancelled(false)
   {
     // Open the status output.
     std::string error;
     if (!statusOutput.open(&error)) {
-      fprintf(stderr, "error: %s: unable to open output: %s\n",
+      fprintf(stderr, "%s: error: unable to open output: %s\n",
               getProgramName(), error.c_str());
       exit(1);
     }
@@ -1204,25 +1214,38 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         struct DepsActions : public core::MakefileDepsParser::ParseActions {
           BuildContext& context;
           NinjaCommandTask* task;
-          const std::string& path;
+          const StringRef workingDirectory;
+          const StringRef path;
           unsigned numErrors{0};
 
           DepsActions(BuildContext& context, NinjaCommandTask* task,
-                      const std::string& path)
-            : context(context), task(task), path(path) {}
+                      const StringRef workingDirectory,
+                      const StringRef path)
+            : context(context), task(task), workingDirectory(workingDirectory), path(path) { }
 
           virtual void error(const char* message, uint64_t position) override {
             context.emitError(
                 "error reading dependency file: %s (%s) at offset %u",
-                path.c_str(), message, unsigned(position));
+                path.str().c_str(), message, unsigned(position));
             ++numErrors;
           }
 
           virtual void actOnRuleDependency(const char* dependency,
                                            uint64_t length,
-                                           const StringRef
-                                             unescapedWord) override {
-            context.engine.taskDiscoveredDependency(task, unescapedWord);
+                                           const StringRef unescapedWord) override {
+            StringRef path;
+            SmallString<256> absPathTmp;
+
+            if (llvm::sys::path::is_absolute(unescapedWord)) {
+              path = unescapedWord;
+            } else {
+              absPathTmp = unescapedWord;
+              llvm::sys::fs::make_absolute(workingDirectory, absPathTmp);
+              assert(absPathTmp[0] == '/');
+              path = absPathTmp;
+            }
+
+            context.engine.taskDiscoveredDependency(task, path);
           }
 
           virtual void actOnRuleStart(const char* name, uint64_t length,
@@ -1230,7 +1253,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
           virtual void actOnRuleEnd() override {}
         };
 
-        DepsActions actions(context, this, command->getDepsFile());
+        DepsActions actions(context, this, context.workingDirectory, command->getDepsFile());
         core::MakefileDepsParser(data.get(), length, actions).parse();
         return actions.numErrors == 0;
       }
@@ -1486,7 +1509,7 @@ core::Rule NinjaBuildEngineDelegate::lookupRule(const core::KeyType& key) {
   // FIXME: This is frequently a redundant lookup, given that the caller might
   // well have had the Node* available. This is something that would be nice
   // to avoid when we support generic key types.
-  ninja::Node* node = context->manifest->getOrCreateNode(key);
+  ninja::Node* node = context->manifest->findOrCreateNode(workingDirectory, key);
 
   return core::Rule{
     node->getPath(),
@@ -1774,6 +1797,14 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     }
   }
 
+  SmallString<128> current_dir;
+  if (std::error_code ec = llvm::sys::fs::current_path(current_dir)) {
+    fprintf(stderr, "%s: error: cannot determine current directory\n",
+            getProgramName());
+    return 1;
+  }
+  const std::string workingDirectory = current_dir.str();
+
   // Run up to two iterations, the first one loads the manifest and rebuilds it
   // if necessary, the second only runs if the manifest needs to be reloaded.
   //
@@ -1781,7 +1812,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
   // reloaded (we reopen the database, for example), but we don't expect that to
   // be a common case spot in practice.
   for (int iteration = 0; iteration != 2; ++iteration) {
-    BuildContext context;
+    BuildContext context{workingDirectory};
 
     context.numFailedCommandsToTolerate = numFailedCommandsToTolerate;
     context.quiet = quiet;
@@ -1805,7 +1836,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
 
     // Load the manifest.
     BuildManifestActions actions(context);
-    ninja::ManifestLoader loader(manifestFilename, actions);
+    ninja::ManifestLoader loader(workingDirectory, manifestFilename, actions);
     context.manifest = loader.load();
 
     // If there were errors loading, we are done.
@@ -1838,9 +1869,6 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     }
 
     // Otherwise, run the build.
-
-    // Parse the positional arguments.
-    std::vector<std::string> targetsToBuild(args);
 
     // Attach the database, if requested.
     if (!dbFilename.empty()) {
@@ -1946,7 +1974,9 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
 
     // If this is the first iteration, build the manifest, unless disabled.
     if (autoRegenerateManifest && iteration == 0) {
-      context.engine.build(manifestFilename);
+      SmallString<256> absManifestFilename = StringRef(manifestFilename);
+      llvm::sys::fs::make_absolute(workingDirectory, absManifestFilename);
+      context.engine.build(StringRef(absManifestFilename));
 
       // If the manifest was rebuilt, then reload it and build again.
       if (context.numBuiltCommands) {
@@ -1970,6 +2000,19 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       }
 
       fprintf(context.profileFP, "[\n");
+    }
+
+    // Parse the positional arguments.
+    std::vector<std::string> targetsToBuild;
+
+    for (const std::string& arg: args) {
+      if (auto *node = context.manifest->findNode(context.workingDirectory, arg)) {
+          targetsToBuild.push_back(node->getPath());
+      } else {
+        fprintf(stderr, "%s: error: unknown target: '%s'\n",
+            getProgramName(), arg.c_str());
+        exit(1);
+      }
     }
 
     // If no explicit targets were named, build the default targets.
