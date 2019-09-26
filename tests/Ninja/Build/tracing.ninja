@@ -11,7 +11,7 @@
 
 # The first task we see is for the "dummy" rule...
 #
-# CHECK: { "new-rule", "[[RULE1:.*]]", "dummy" },
+# CHECK: { "new-rule", "[[RULE1:.*]]", "{{/.*/}}dummy" },
 # CHECK: { "checking-rule-needs-to-run", "[[RULE1]]" },
 # CHECK: { "rule-needs-to-run", "[[RULE1]]", "never-built" },
 # CHECK: { "new-task", "[[TASK1:.*]]" },
@@ -20,7 +20,7 @@
 # ... which then asks for the input from the "dummy-A" rule, which triggers the
 # creation of its task (and registers the pending task [[TASK1]] with that rule).
 #
-# CHECK: { "new-rule", "[[RULE2:.*]]", "dummy-A" },
+# CHECK: { "new-rule", "[[RULE2:.*]]", "{{/.*/}}dummy-A" },
 # CHECK: { "handling-task-input-request", "[[TASK1]]", "[[RULE2]]" },
 # CHECK: { "new-task", "[[TASK2:.*]]" },
 # CHECK: { "created-task-for-rule", "[[TASK2]]", "[[RULE2]]" },
