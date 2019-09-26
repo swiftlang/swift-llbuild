@@ -703,7 +703,7 @@ public:
     // We simply report the missing input here, the build will be cancelled when
     // a rule sees it missing.
     emitError("missing input '%s' and no rule to build it",
-              node->getPath().c_str());
+              node->getScreenPath().c_str());
   }
 
   void incrementFailedCommands() {
@@ -871,14 +871,14 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         if (!context.strict && isPhony && isImmediatelyCyclicInput(*it))
           continue;
 
-        engine.taskNeedsInput(this, (*it)->getPath(), id);
+        engine.taskNeedsInput(this, (*it)->getCanonicalPath(), id);
       }
       for (auto it = command->implicitInputs_begin(),
              ie = command->implicitInputs_end(); it != ie; ++it, ++id) {
         if (!context.strict && isPhony && isImmediatelyCyclicInput(*it))
           continue;
 
-        engine.taskNeedsInput(this, (*it)->getPath(), id);
+        engine.taskNeedsInput(this, (*it)->getCanonicalPath(), id);
       }
 
       // Request all of the order-only inputs.
@@ -887,7 +887,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         if (!context.strict && isPhony && isImmediatelyCyclicInput(*it))
           continue;
 
-        engine.taskMustFollow(this, (*it)->getPath());
+        engine.taskMustFollow(this, (*it)->getCanonicalPath());
       }
     }
 
@@ -907,13 +907,13 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       if (numOutputs == 1) {
         return BuildValue::makeSuccessfulCommand(
             FileInfo::getInfoForPath(
-                command->getOutputs()[0]->getPath()),
+                command->getOutputs()[0]->getCanonicalPath()),
             commandHash);
       } else {
         std::vector<FileInfo> outputInfos(numOutputs);
         for (unsigned i = 0; i != numOutputs; ++i) {
           outputInfos[i] = FileInfo::getInfoForPath(
-              command->getOutputs()[i]->getPath());
+              command->getOutputs()[i]->getCanonicalPath());
         }
         return BuildValue::makeSuccessfulCommand(outputInfos.data(), numOutputs,
                                                  commandHash);
@@ -1027,7 +1027,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         // If this command had a failed input, treat it as having failed.
         if (hasMissingInput) {
           context.emitError("cannot build '%s' due to missing input",
-                            command->getOutputs()[0]->getPath().c_str());
+                            command->getOutputs()[0]->getScreenPath().c_str());
 
           // Update the count of failed commands.
           context.incrementFailedCommands();
@@ -1233,6 +1233,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
           virtual void actOnRuleDependency(const char* dependency,
                                            uint64_t length,
                                            const StringRef unescapedWord) override {
+
             StringRef path;
             SmallString<256> absPathTmp;
 
@@ -1287,7 +1288,7 @@ static core::Task* buildInput(BuildContext& context, ninja::Node* input) {
         return;
       }
 
-      auto outputInfo = FileInfo::getInfoForPath(node->getPath());
+      auto outputInfo = FileInfo::getInfoForPath(node->getCanonicalPath());
       if (outputInfo.isMissing()) {
         engine.taskIsComplete(this, BuildValue::makeMissingInput().toValue());
         return;
@@ -1420,7 +1421,7 @@ static bool buildInputIsResultValid(ninja::Node* node,
   //
   // We can solve this by caching ourselves but I wonder if it is something the
   // engine should support more naturally.
-  auto info = FileInfo::getInfoForPath(node->getPath());
+  auto info = FileInfo::getInfoForPath(node->getCanonicalPath());
   if (info.isMissing())
     return false;
 
@@ -1445,7 +1446,7 @@ static bool buildCommandIsResultValid(ninja::Command* command,
   // Check the timestamps on each of the outputs.
   for (unsigned i = 0, e = command->getOutputs().size(); i != e; ++i) {
     // Always rebuild if the output is missing.
-    auto info = FileInfo::getInfoForPath(command->getOutputs()[i]->getPath());
+    auto info = FileInfo::getInfoForPath(command->getOutputs()[i]->getCanonicalPath());
     if (info.isMissing())
       return false;
 
@@ -1512,7 +1513,7 @@ core::Rule NinjaBuildEngineDelegate::lookupRule(const core::KeyType& key) {
   ninja::Node* node = context->manifest->findOrCreateNode(workingDirectory, key);
 
   return core::Rule{
-    node->getPath(),
+    node->getScreenPath(),
     {},
       [&, node] (core::BuildEngine&) {
       return buildInput(*context, node);
@@ -1860,7 +1861,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
 
       for (const auto command: context.manifest->getCommands()) {
         for (const auto& output: command->getOutputs()) {
-          fprintf(stdout, "%s: %s\n", output->getPath().c_str(),
+          fprintf(stdout, "%s: %s\n", output->getScreenPath().c_str(),
                   command->getRule()->getName().c_str());
         }
       }
@@ -1900,7 +1901,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       // If this command has a single output, create the trivial rule.
       if (command->getOutputs().size() == 1) {
         context.engine.addRule({
-            command->getOutputs()[0]->getPath(),
+            command->getOutputs()[0]->getCanonicalPath(),
             {},
             [=, &context](core::BuildEngine& engine) {
               return buildCommand(context, command);
@@ -1928,7 +1929,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       for (auto& output: command->getOutputs()) {
         if (!compositeRuleName.empty())
           compositeRuleName += "&&";
-        compositeRuleName += output->getPath();
+        compositeRuleName += output->getCanonicalPath();
       }
 
       // Add the composite rule, which will run the command and build all
@@ -1955,7 +1956,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       // result from the composite result.
       for (unsigned i = 0, e = command->getOutputs().size(); i != e; ++i) {
         context.engine.addRule({
-            command->getOutputs()[i]->getPath(),
+            command->getOutputs()[i]->getCanonicalPath(),
             {},
             [=, &context] (core::BuildEngine&) {
               return selectCompositeBuildResult(context, command, i,
@@ -2007,7 +2008,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
 
     for (const std::string& arg: args) {
       if (auto *node = context.manifest->findNode(context.workingDirectory, arg)) {
-          targetsToBuild.push_back(node->getPath());
+          targetsToBuild.push_back(node->getCanonicalPath());
       } else {
         fprintf(stderr, "%s: error: unknown target: '%s'\n",
             getProgramName(), arg.c_str());
@@ -2018,7 +2019,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     // If no explicit targets were named, build the default targets.
     if (targetsToBuild.empty()) {
       for (auto& target: context.manifest->getDefaultTargets())
-        targetsToBuild.push_back(target->getPath());
+        targetsToBuild.push_back(target->getCanonicalPath());
 
       // If there are no default targets, then build all of the root targets.
       if (targetsToBuild.empty()) {
@@ -2035,7 +2036,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
         for (const auto& command: context.manifest->getCommands()) {
           for (const auto& output: command->getOutputs()) {
             if (!inputNodes.count(output)) {
-              targetsToBuild.push_back(output->getPath());
+              targetsToBuild.push_back(output->getCanonicalPath());
             }
           }
         }

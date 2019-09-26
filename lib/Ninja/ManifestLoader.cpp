@@ -400,7 +400,7 @@ public:
       for (unsigned i = 0, ie = decl->getNumExplicitInputs(); i != ie; ++i) {
         if (i != 0)
           result << " ";
-        auto& path = decl->getInputs()[i]->getPath();
+        auto& path = decl->getInputs()[i]->getScreenPath();
         result << (context->shellEscapeInAndOut ? basic::shellEscaped(path)
                                                 : path);
       }
@@ -409,7 +409,7 @@ public:
       for (unsigned i = 0, ie = decl->getOutputs().size(); i != ie; ++i) {
         if (i != 0)
           result << " ";
-        auto& path = decl->getOutputs()[i]->getPath();
+        auto& path = decl->getOutputs()[i]->getScreenPath();
         result << (context->shellEscapeInAndOut ? basic::shellEscaped(path)
                                                 : path);
       }

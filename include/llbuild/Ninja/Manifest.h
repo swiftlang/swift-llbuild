@@ -96,12 +96,14 @@ public:
 //
 // FIXME: Figure out what the deal is with normalization.
 class Node {
-  std::string path;
+  std::string canonicalPath;
+  std::string screenPath;
 
 public:
-  explicit Node(StringRef path) : path(path) {}
+  explicit Node(StringRef canonicalPath, StringRef screenPath) : canonicalPath(canonicalPath), screenPath(screenPath) {}
 
-  const std::string& getPath() const { return path; }
+  const std::string& getCanonicalPath() const { return canonicalPath; }
+  const std::string& getScreenPath() const { return screenPath; }
 };
 
 /// A pool represents a generic bucket for organizing commands.

@@ -80,6 +80,6 @@ Node* Manifest::findOrCreateNode(StringRef workingDirectory, StringRef path0) {
 
   auto& result = nodes[path];
   if (!result)
-    result = new (getAllocator()) Node(path);
+    result = new (getAllocator()) Node(path, path0);
   return result;
 }
