@@ -18,6 +18,9 @@
 
 #include "llbuild/Basic/Clock.h"
 
+#include "llbuild/Core/AttributedKeyIDs.h"
+#include "llbuild/Core/KeyID.h"
+
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
 
@@ -33,7 +36,6 @@ namespace core {
 
 // FIXME: Need to abstract KeyType;
 typedef std::string KeyType;
-typedef uint64_t KeyID;
 typedef std::vector<uint8_t> ValueType;
 
 class BuildDB;
@@ -68,10 +70,7 @@ struct Result {
   Epoch builtAt = 0;
 
   /// The explicit dependencies required by the generation.
-  //
-  // FIXME: At some point, figure out the optimal representation for this field,
-  // which is likely to be a lot of the resident memory size.
-  std::vector<KeyID> dependencies;
+  AttributedKeyIDs dependencies;
   
   /// The start of the command as a timestamp since a reference time
   basic::Clock::Timestamp start;
