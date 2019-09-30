@@ -349,7 +349,7 @@ private class TaskWrapper: CustomStringConvertible, TaskBuildEngine {
 /// instances.
 public class BuildEngine {
     /// The client delegate.
-    private var delegate: BuildEngineDelegate
+    public let delegate: BuildEngineDelegate
 
     /// The internal llbuild build engine.
     private var _engine: OpaquePointer?
