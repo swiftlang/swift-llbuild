@@ -70,6 +70,12 @@ static void skipNonNewlineWhitespace(const char*& cur, const char* end) {
       continue;
     }
 
+    // Also skip \r\n newlines
+    if (c == '\\' && cur + 2 < end && cur[1] == '\r' && cur[2] == '\n') {
+      cur += 2;
+      continue;
+    }
+
     // Otherwise, stop scanning.
     break;
   }

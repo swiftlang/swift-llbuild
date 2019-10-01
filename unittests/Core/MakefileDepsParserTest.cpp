@@ -100,6 +100,15 @@ TEST(MakefileDepsParserTest, basic) {
   EXPECT_EQ(RuleRecord("out", { "in1" }),
             actions.records[0]);
 
+  input = "out: \\\r\n  in1\n";
+  actions.errors.clear();
+  actions.records.clear();
+  MakefileDepsParser(input.data(), input.size(), actions).parse();
+  EXPECT_EQ(0U, actions.errors.size());
+  EXPECT_EQ(1U, actions.records.size());
+  EXPECT_EQ(RuleRecord("out", { "in1" }),
+            actions.records[0]);
+
   // Check error case if leading garbage.
   actions.errors.clear();
   actions.records.clear();
