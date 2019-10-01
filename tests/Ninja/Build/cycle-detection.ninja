@@ -6,7 +6,7 @@
 # RUN: %{sh-invoke} -c "%{llbuild} ninja build --jobs 1 --no-db --chdir %t.build; echo \"exit code: $?\"" &> %t.out
 # RUN: %{FileCheck} < %t.out %s
 
-# CHECK: cycle detected among targets: "output" -> "output-1" -> "intermediate" -> "output-2" -> "output-1"
+# CHECK: cycle detected among targets: "{{/.*/}}output" -> "{{/.*/}}output-1" -> "{{/.*/}}intermediate" -> "{{/.*/}}output-2" -> "{{/.*/}}output-1"
 # CHECK-NOT: command failure
 # CHECK: exit code: 1
 

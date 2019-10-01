@@ -18,6 +18,7 @@
 #include "llbuild/Ninja/Manifest.h"
 #include "llbuild/Ninja/ManifestLoader.h"
 #include "llbuild/Ninja/Parser.h"
+#include "llvm/Support/FileSystem.h"
 
 #include "CommandUtil.h"
 #include "NinjaBuildCommand.h"
@@ -412,8 +413,16 @@ static int executeLoadManifestCommand(const std::vector<std::string>& args,
     filename = filename.substr(pos+1);
   }
 
+  SmallString<128> current_dir;
+  if (std::error_code ec = llvm::sys::fs::current_path(current_dir)) {
+    fprintf(stderr, "%s: error: cannot determine current directory\n",
+            getProgramName());
+    return 1;
+  }
+  const std::string workingDirectory = current_dir.str();
+
   LoadManifestActions actions;
-  ninja::ManifestLoader loader(filename, actions);
+  ninja::ManifestLoader loader(workingDirectory, filename, actions);
   std::unique_ptr<ninja::Manifest> manifest = loader.load();
 
   // If only loading, we are done.
@@ -490,15 +499,15 @@ static int executeLoadManifestCommand(const std::vector<std::string>& args,
             [] (ninja::Command* a, ninja::Command* b) {
               // Commands can not have duplicate outputs, so comparing based
               // only on the first still provides a total ordering.
-              return a->getOutputs()[0]->getPath() <
-                b->getOutputs()[0]->getPath();
+              return a->getOutputs()[0]->getScreenPath() <
+                b->getOutputs()[0]->getScreenPath();
             });
   std::cout << "# Commands\n";
   for (const auto& command: commands) {
     // Write the command entry.
     std::cout << "build";
     for (const auto& node: command->getOutputs()) {
-      std::cout << " \"" << util::escapedString(node->getPath()) << "\"";
+      std::cout << " \"" << util::escapedString(node->getScreenPath()) << "\"";
     }
     std::cout << ": " << command->getRule()->getName();
     unsigned count = 0;
@@ -510,7 +519,7 @@ static int executeLoadManifestCommand(const std::vector<std::string>& args,
                            command->getNumImplicitInputs())) {
         std::cout << "|| ";
       }
-      std::cout << "\"" << util::escapedString(node->getPath()) << "\"";
+      std::cout << "\"" << util::escapedString(node->getScreenPath()) << "\"";
       ++count;
     }
     std::cout << "\n";
@@ -552,13 +561,13 @@ static int executeLoadManifestCommand(const std::vector<std::string>& args,
     std::vector<ninja::Node*> defaultTargets = manifest->getDefaultTargets();
     std::sort(defaultTargets.begin(), defaultTargets.end(),
               [] (ninja::Node* a, ninja::Node* b) {
-        return a->getPath() < b->getPath();
+        return a->getScreenPath() < b->getScreenPath();
       });
     std::cout << "default ";
     for (const auto& node: defaultTargets) {
       if (node != defaultTargets[0])
         std::cout << " ";
-      std::cout << "\"" << node->getPath() << "\"";
+      std::cout << "\"" << node->getScreenPath() << "\"";
     }
     std::cout << "\n\n";
   }

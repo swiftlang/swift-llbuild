@@ -1,0 +1,31 @@
+# Check that touching absolute transitive dependencies affect relative targets.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: touch %t.build/test.c %t.build/include-level-1 %t.build/include-level-2
+# RUN: echo "aggregate-include: include-level-1 include-level-2" > %t.build/aggregate-include.d
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out
+# RUN: touch %t.build/include-level-2
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t2.out
+# RUN: %{FileCheck} --input-file %t2.out %s
+
+# CHECK: [1/2] cat include-level-1 > aggregate-include
+# CHECK-NEXT: [2/2] touch test.o &&
+
+rule GENERATE
+     command = cat $in > $out
+     depfile = $DEPS
+
+rule MOCKCC
+     command = touch $out && echo "$out: $${PWD}/test.c $${PWD}/aggregate-include" > $DEPS
+     depfile = $DEPS
+
+build aggregate-include: GENERATE include-level-1
+      DEPS = aggregate-include.d
+
+build test.o: MOCKCC test.c || aggregate-include
+      DEPS = test.d
+
+build all: phony test.o
+

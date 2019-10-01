@@ -10,19 +10,21 @@
 # RUN: %{FileCheck} < %t.dot %s
 #
 # CHECK: digraph {{.*}} {
-# CHECK: "a.c"
 #
-# CHECK: "a.o"
-# CHECK-NEXT: "a.o" -> "a.c"
+# CHECK: "{{/.*/}}a.o"
+# CHECK-NEXT: "{{/.*/}}a.o" -> "a.c"
 #
-# CHECK: "a.out"
+# CHECK: "{{/.*/}}a.out"
 # We skip a -next here, to avoid a dependency on the traversal order.
-# CHECK: "a.out" -> "a.o"
+# CHECK: "{{/.*/}}a.out" -> "{{/.*/}}a.o"
+#
+# CHECK: "{{/.*/}}b.o"
+# CHECK-NEXT: "{{/.*/}}b.o" -> "b.c"
+#
+# CHECK: "a.c"
 #
 # CHECK: "b.c"
 #
-# CHECK: "b.o"
-# CHECK-NEXT: "b.o" -> "b.c"
 
 rule CC
      command = cc -c -o ${out} ${in}

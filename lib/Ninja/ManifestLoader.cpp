@@ -58,6 +58,7 @@ class ManifestLoaderImpl: public ParseActions {
         scope(scope) {}
   };
 
+  std::string workingDirectory;
   std::string mainFilename;
   ManifestLoaderActions& actions;
   std::unique_ptr<Manifest> theManifest;
@@ -70,10 +71,9 @@ class ManifestLoaderImpl: public ParseActions {
   SmallString<10 * 1024> buildDescription;
 
 public:
-  ManifestLoaderImpl(std::string mainFilename, ManifestLoaderActions& actions)
-    : mainFilename(mainFilename), actions(actions), theManifest(nullptr)
-  {
-  }
+  ManifestLoaderImpl(StringRef workingDirectory, StringRef mainFilename, ManifestLoaderActions& actions)
+    : workingDirectory(workingDirectory), mainFilename(mainFilename), actions(actions), theManifest(nullptr)
+  { }
 
   std::unique_ptr<Manifest> load() {
     // Create the manifest.
@@ -277,14 +277,14 @@ public:
     // Resolve all of the inputs and outputs.
     for (const auto& nameTok: nameToks) {
       StringRef name(nameTok.start, nameTok.length);
+      Node* node = theManifest->findNode(workingDirectory, name);
 
-      auto it = theManifest->getNodes().find(name);
-      if (it == theManifest->getNodes().end()) {
+      if (node == nullptr) {
         error("unknown target name", nameTok);
         continue;
       }
 
-      theManifest->getDefaultTargets().push_back(it->second);
+      theManifest->getDefaultTargets().push_back(node);
     }
   }
 
@@ -341,7 +341,7 @@ public:
       if (path.empty()) {
         error("empty output path", token);
       }
-      outputs.push_back(theManifest->getOrCreateNode(path.str()));
+      outputs.push_back(theManifest->findOrCreateNode(workingDirectory, path));
     }
     for (const auto& token: inputTokens) {
       // Evaluate the token string.
@@ -350,7 +350,7 @@ public:
       if (path.empty()) {
         error("empty input path", token);
       }
-      inputs.push_back(theManifest->getOrCreateNode(path.str()));
+      inputs.push_back(theManifest->findOrCreateNode(workingDirectory, path));
     }
 
     Command* decl = new (theManifest->getAllocator())
@@ -400,7 +400,7 @@ public:
       for (unsigned i = 0, ie = decl->getNumExplicitInputs(); i != ie; ++i) {
         if (i != 0)
           result << " ";
-        auto& path = decl->getInputs()[i]->getPath();
+        auto& path = decl->getInputs()[i]->getScreenPath();
         result << (context->shellEscapeInAndOut ? basic::shellEscaped(path)
                                                 : path);
       }
@@ -409,7 +409,7 @@ public:
       for (unsigned i = 0, ie = decl->getOutputs().size(); i != ie; ++i) {
         if (i != 0)
           result << " ";
-        auto& path = decl->getOutputs()[i]->getPath();
+        auto& path = decl->getOutputs()[i]->getScreenPath();
         result << (context->shellEscapeInAndOut ? basic::shellEscaped(path)
                                                 : path);
       }
@@ -624,9 +624,10 @@ public:
 
 #pragma mark - ManifestLoader
 
-ManifestLoader::ManifestLoader(std::string filename,
+ManifestLoader::ManifestLoader(StringRef workingDirectory,
+                               StringRef filename,
                                ManifestLoaderActions &actions)
-  : impl(static_cast<void*>(new ManifestLoaderImpl(filename, actions)))
+  : impl(static_cast<void*>(new ManifestLoaderImpl(workingDirectory, filename, actions)))
 {
 }
 

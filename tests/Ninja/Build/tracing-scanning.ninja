@@ -18,7 +18,7 @@
 # needs to be deferred waiting for "input-2" to complete. After it completes, we
 # rescan "output" and realize it needs to run.
 #
-# CHECK: { "new-rule", "[[RULE1:.*]]", "output" },
+# CHECK: { "new-rule", "[[RULE1:.*]]", "{{/.*/}}output" },
 # CHECK: { "checking-rule-needs-to-run", "[[RULE1]]" },
 # CHECK: { "paused-input-request-for-rule-scan", "[[RULE1]]" },
 # CHECK: { "new-rule", "[[RULE2:.*]]", "input-1" },

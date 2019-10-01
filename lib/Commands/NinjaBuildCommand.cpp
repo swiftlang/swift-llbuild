@@ -30,6 +30,8 @@
 #include "llbuild/Ninja/ManifestLoader.h"
 
 #include "llvm/ADT/SmallString.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
 
 #include "CommandLineStatusOutput.h"
@@ -336,6 +338,7 @@ public:
 };
 
 struct NinjaBuildEngineDelegate : public core::BuildEngineDelegate {
+  std::string workingDirectory;
   class BuildContext* context = nullptr;
 
   virtual core::Rule lookupRule(const core::KeyType& key) override;
@@ -343,11 +346,16 @@ struct NinjaBuildEngineDelegate : public core::BuildEngineDelegate {
   virtual void cycleDetected(const std::vector<core::Rule*>& items) override;
 
   virtual void error(const Twine& message) override;
+
+  NinjaBuildEngineDelegate(StringRef workingDirectory)
+    : workingDirectory(workingDirectory) { }
 };
 
 /// Wrapper for information used during a single build.
 class BuildContext : public ExecutionQueueDelegate {
 public:
+  const std::string workingDirectory;
+
   /// The build engine delegate.
   NinjaBuildEngineDelegate delegate;
 
@@ -490,14 +498,16 @@ public:
   }
 
 public:
-  BuildContext()
-    : engine(delegate),
+  BuildContext(StringRef workingDirectory)
+    : workingDirectory(workingDirectory),
+      delegate({workingDirectory}),
+      engine(delegate),
       isCancelled(false)
   {
     // Open the status output.
     std::string error;
     if (!statusOutput.open(&error)) {
-      fprintf(stderr, "error: %s: unable to open output: %s\n",
+      fprintf(stderr, "%s: error: unable to open output: %s\n",
               getProgramName(), error.c_str());
       exit(1);
     }
@@ -693,7 +703,7 @@ public:
     // We simply report the missing input here, the build will be cancelled when
     // a rule sees it missing.
     emitError("missing input '%s' and no rule to build it",
-              node->getPath().c_str());
+              node->getScreenPath().c_str());
   }
 
   void incrementFailedCommands() {
@@ -861,14 +871,14 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         if (!context.strict && isPhony && isImmediatelyCyclicInput(*it))
           continue;
 
-        engine.taskNeedsInput(this, (*it)->getPath(), id);
+        engine.taskNeedsInput(this, (*it)->getCanonicalPath(), id);
       }
       for (auto it = command->implicitInputs_begin(),
              ie = command->implicitInputs_end(); it != ie; ++it, ++id) {
         if (!context.strict && isPhony && isImmediatelyCyclicInput(*it))
           continue;
 
-        engine.taskNeedsInput(this, (*it)->getPath(), id);
+        engine.taskNeedsInput(this, (*it)->getCanonicalPath(), id);
       }
 
       // Request all of the order-only inputs.
@@ -877,7 +887,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         if (!context.strict && isPhony && isImmediatelyCyclicInput(*it))
           continue;
 
-        engine.taskMustFollow(this, (*it)->getPath());
+        engine.taskMustFollow(this, (*it)->getCanonicalPath());
       }
     }
 
@@ -897,13 +907,13 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       if (numOutputs == 1) {
         return BuildValue::makeSuccessfulCommand(
             FileInfo::getInfoForPath(
-                command->getOutputs()[0]->getPath()),
+                command->getOutputs()[0]->getCanonicalPath()),
             commandHash);
       } else {
         std::vector<FileInfo> outputInfos(numOutputs);
         for (unsigned i = 0; i != numOutputs; ++i) {
           outputInfos[i] = FileInfo::getInfoForPath(
-              command->getOutputs()[i]->getPath());
+              command->getOutputs()[i]->getCanonicalPath());
         }
         return BuildValue::makeSuccessfulCommand(outputInfos.data(), numOutputs,
                                                  commandHash);
@@ -1017,7 +1027,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         // If this command had a failed input, treat it as having failed.
         if (hasMissingInput) {
           context.emitError("cannot build '%s' due to missing input",
-                            command->getOutputs()[0]->getPath().c_str());
+                            command->getOutputs()[0]->getScreenPath().c_str());
 
           // Update the count of failed commands.
           context.incrementFailedCommands();
@@ -1204,25 +1214,39 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         struct DepsActions : public core::MakefileDepsParser::ParseActions {
           BuildContext& context;
           NinjaCommandTask* task;
-          const std::string& path;
+          const StringRef workingDirectory;
+          const StringRef path;
           unsigned numErrors{0};
 
           DepsActions(BuildContext& context, NinjaCommandTask* task,
-                      const std::string& path)
-            : context(context), task(task), path(path) {}
+                      const StringRef workingDirectory,
+                      const StringRef path)
+            : context(context), task(task), workingDirectory(workingDirectory), path(path) { }
 
           virtual void error(const char* message, uint64_t position) override {
             context.emitError(
                 "error reading dependency file: %s (%s) at offset %u",
-                path.c_str(), message, unsigned(position));
+                path.str().c_str(), message, unsigned(position));
             ++numErrors;
           }
 
           virtual void actOnRuleDependency(const char* dependency,
                                            uint64_t length,
-                                           const StringRef
-                                             unescapedWord) override {
-            context.engine.taskDiscoveredDependency(task, unescapedWord);
+                                           const StringRef unescapedWord) override {
+
+            StringRef path;
+            SmallString<256> absPathTmp;
+
+            if (llvm::sys::path::is_absolute(unescapedWord)) {
+              path = unescapedWord;
+            } else {
+              absPathTmp = unescapedWord;
+              llvm::sys::fs::make_absolute(workingDirectory, absPathTmp);
+              assert(absPathTmp[0] == '/');
+              path = absPathTmp;
+            }
+
+            context.engine.taskDiscoveredDependency(task, path);
           }
 
           virtual void actOnRuleStart(const char* name, uint64_t length,
@@ -1230,7 +1254,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
           virtual void actOnRuleEnd() override {}
         };
 
-        DepsActions actions(context, this, command->getDepsFile());
+        DepsActions actions(context, this, context.workingDirectory, command->getDepsFile());
         core::MakefileDepsParser(data.get(), length, actions).parse();
         return actions.numErrors == 0;
       }
@@ -1264,7 +1288,7 @@ static core::Task* buildInput(BuildContext& context, ninja::Node* input) {
         return;
       }
 
-      auto outputInfo = FileInfo::getInfoForPath(node->getPath());
+      auto outputInfo = FileInfo::getInfoForPath(node->getCanonicalPath());
       if (outputInfo.isMissing()) {
         engine.taskIsComplete(this, BuildValue::makeMissingInput().toValue());
         return;
@@ -1397,7 +1421,7 @@ static bool buildInputIsResultValid(ninja::Node* node,
   //
   // We can solve this by caching ourselves but I wonder if it is something the
   // engine should support more naturally.
-  auto info = FileInfo::getInfoForPath(node->getPath());
+  auto info = FileInfo::getInfoForPath(node->getCanonicalPath());
   if (info.isMissing())
     return false;
 
@@ -1422,7 +1446,7 @@ static bool buildCommandIsResultValid(ninja::Command* command,
   // Check the timestamps on each of the outputs.
   for (unsigned i = 0, e = command->getOutputs().size(); i != e; ++i) {
     // Always rebuild if the output is missing.
-    auto info = FileInfo::getInfoForPath(command->getOutputs()[i]->getPath());
+    auto info = FileInfo::getInfoForPath(command->getOutputs()[i]->getCanonicalPath());
     if (info.isMissing())
       return false;
 
@@ -1486,10 +1510,10 @@ core::Rule NinjaBuildEngineDelegate::lookupRule(const core::KeyType& key) {
   // FIXME: This is frequently a redundant lookup, given that the caller might
   // well have had the Node* available. This is something that would be nice
   // to avoid when we support generic key types.
-  ninja::Node* node = context->manifest->getOrCreateNode(key);
+  ninja::Node* node = context->manifest->findOrCreateNode(workingDirectory, key);
 
   return core::Rule{
-    node->getPath(),
+    node->getScreenPath(),
     {},
       [&, node] (core::BuildEngine&) {
       return buildInput(*context, node);
@@ -1774,6 +1798,14 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     }
   }
 
+  SmallString<128> current_dir;
+  if (std::error_code ec = llvm::sys::fs::current_path(current_dir)) {
+    fprintf(stderr, "%s: error: cannot determine current directory\n",
+            getProgramName());
+    return 1;
+  }
+  const std::string workingDirectory = current_dir.str();
+
   // Run up to two iterations, the first one loads the manifest and rebuilds it
   // if necessary, the second only runs if the manifest needs to be reloaded.
   //
@@ -1781,7 +1813,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
   // reloaded (we reopen the database, for example), but we don't expect that to
   // be a common case spot in practice.
   for (int iteration = 0; iteration != 2; ++iteration) {
-    BuildContext context;
+    BuildContext context{workingDirectory};
 
     context.numFailedCommandsToTolerate = numFailedCommandsToTolerate;
     context.quiet = quiet;
@@ -1805,7 +1837,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
 
     // Load the manifest.
     BuildManifestActions actions(context);
-    ninja::ManifestLoader loader(manifestFilename, actions);
+    ninja::ManifestLoader loader(workingDirectory, manifestFilename, actions);
     context.manifest = loader.load();
 
     // If there were errors loading, we are done.
@@ -1829,7 +1861,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
 
       for (const auto command: context.manifest->getCommands()) {
         for (const auto& output: command->getOutputs()) {
-          fprintf(stdout, "%s: %s\n", output->getPath().c_str(),
+          fprintf(stdout, "%s: %s\n", output->getScreenPath().c_str(),
                   command->getRule()->getName().c_str());
         }
       }
@@ -1838,9 +1870,6 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     }
 
     // Otherwise, run the build.
-
-    // Parse the positional arguments.
-    std::vector<std::string> targetsToBuild(args);
 
     // Attach the database, if requested.
     if (!dbFilename.empty()) {
@@ -1872,7 +1901,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       // If this command has a single output, create the trivial rule.
       if (command->getOutputs().size() == 1) {
         context.engine.addRule({
-            command->getOutputs()[0]->getPath(),
+            command->getOutputs()[0]->getCanonicalPath(),
             {},
             [=, &context](core::BuildEngine& engine) {
               return buildCommand(context, command);
@@ -1900,7 +1929,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       for (auto& output: command->getOutputs()) {
         if (!compositeRuleName.empty())
           compositeRuleName += "&&";
-        compositeRuleName += output->getPath();
+        compositeRuleName += output->getCanonicalPath();
       }
 
       // Add the composite rule, which will run the command and build all
@@ -1927,7 +1956,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       // result from the composite result.
       for (unsigned i = 0, e = command->getOutputs().size(); i != e; ++i) {
         context.engine.addRule({
-            command->getOutputs()[i]->getPath(),
+            command->getOutputs()[i]->getCanonicalPath(),
             {},
             [=, &context] (core::BuildEngine&) {
               return selectCompositeBuildResult(context, command, i,
@@ -1946,7 +1975,9 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
 
     // If this is the first iteration, build the manifest, unless disabled.
     if (autoRegenerateManifest && iteration == 0) {
-      context.engine.build(manifestFilename);
+      SmallString<256> absManifestFilename = StringRef(manifestFilename);
+      llvm::sys::fs::make_absolute(workingDirectory, absManifestFilename);
+      context.engine.build(StringRef(absManifestFilename));
 
       // If the manifest was rebuilt, then reload it and build again.
       if (context.numBuiltCommands) {
@@ -1972,10 +2003,23 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       fprintf(context.profileFP, "[\n");
     }
 
+    // Parse the positional arguments.
+    std::vector<std::string> targetsToBuild;
+
+    for (const std::string& arg: args) {
+      if (auto *node = context.manifest->findNode(context.workingDirectory, arg)) {
+          targetsToBuild.push_back(node->getCanonicalPath());
+      } else {
+        fprintf(stderr, "%s: error: unknown target: '%s'\n",
+            getProgramName(), arg.c_str());
+        exit(1);
+      }
+    }
+
     // If no explicit targets were named, build the default targets.
     if (targetsToBuild.empty()) {
       for (auto& target: context.manifest->getDefaultTargets())
-        targetsToBuild.push_back(target->getPath());
+        targetsToBuild.push_back(target->getCanonicalPath());
 
       // If there are no default targets, then build all of the root targets.
       if (targetsToBuild.empty()) {
@@ -1992,7 +2036,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
         for (const auto& command: context.manifest->getCommands()) {
           for (const auto& output: command->getOutputs()) {
             if (!inputNodes.count(output)) {
-              targetsToBuild.push_back(output->getPath());
+              targetsToBuild.push_back(output->getCanonicalPath());
             }
           }
         }
