@@ -1,0 +1,12 @@
+# Check order-only dependency formatting.
+#
+# RUN: %{llbuild} ninja load-manifest %s > %t
+# RUN: %{FileCheck} < %t %s
+
+# CHECK: "target-a": phony | "target-b"
+# CHECK: "target-b": phony || "target-a"
+# CHECK: "target-c": phony | "target-a" || "target-b"
+
+build target-a: phony | target-b
+build target-b: phony || target-a
+build target-c: phony | target-a || target-b

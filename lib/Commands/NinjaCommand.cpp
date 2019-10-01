@@ -513,11 +513,11 @@ static int executeLoadManifestCommand(const std::vector<std::string>& args,
     unsigned count = 0;
     for (const auto& node: command->getInputs()) {
       std::cout << " ";
-      if (count == command->getNumExplicitInputs()) {
-        std::cout << "| ";
-      } else if (count == (command->getNumExplicitInputs() +
+      if (count == (command->getNumExplicitInputs() +
                            command->getNumImplicitInputs())) {
         std::cout << "|| ";
+      } else if (count == command->getNumExplicitInputs()) {
+        std::cout << "| ";
       }
       std::cout << "\"" << util::escapedString(node->getScreenPath()) << "\"";
       ++count;
