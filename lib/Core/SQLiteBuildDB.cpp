@@ -66,6 +66,7 @@ namespace {
 
 class SQLiteBuildDB : public BuildDB {
   /// Version History:
+  /// * 12: Tagging dependencies with order-only flag.
   /// * 11: Add result timestamps
   /// * 10: Add result signature
   /// * 9: Add filtered directory contents, related build key changes
@@ -74,7 +75,7 @@ class SQLiteBuildDB : public BuildDB {
   /// * 6: Added `ordinal` field for dependencies.
   /// * 5: Switched to using `WITHOUT ROWID` for dependencies.
   /// * 4: Pre-history
-  static const int currentSchemaVersion = 11;
+  static const int currentSchemaVersion = 12;
 
   std::string path;
   uint32_t clientSchemaVersion;
