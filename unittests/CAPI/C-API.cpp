@@ -12,6 +12,8 @@
 
 #include "llbuild/llbuild.h"
 
+#include "llvm/Support/Host.h"
+
 #include "gtest/gtest.h"
 
 namespace {
@@ -20,6 +22,12 @@ namespace {
 TEST(CAPI, GetAPIVersion) {
   auto version = llb_get_api_version();
   EXPECT_EQ(version, LLBUILD_C_API_VERSION);
+}
+
+/// We should correctly convey the LLVM triple.
+TEST(CAPI, GetDefaultTargetTriple) {
+  auto triple = llb_get_default_target_triple();
+  EXPECT_EQ(triple, llvm::sys::getDefaultTargetTriple());
 }
 
 }

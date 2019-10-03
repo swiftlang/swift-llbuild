@@ -131,4 +131,11 @@ class BuildSystemBindingsTests: XCTestCase {
     XCTAssertEqual(delegate.rules, [Key("foo"): Delegate.DummyRule(key: Key("foo"))])
     XCTAssertTrue(delegate.errors.isEmpty)
   }
+
+  func testDefaultTargetTriple() {
+    let triple = BuildSystem.defaultTargetTriple
+    let dashCount = triple.filter { $0 == "-" }.count
+    XCTAssertGreaterThanOrEqual(dashCount, 2)
+    XCTAssertLessThanOrEqual(dashCount, 3)
+  }
 }

@@ -14,6 +14,7 @@
 #include <llbuild/llbuild.h>
 
 #include "llbuild/Basic/Version.h"
+#include "llvm/Support/Host.h"
 
 using namespace llbuild;
 
@@ -28,4 +29,11 @@ const char* llb_get_full_version_string(void) {
 
 int llb_get_api_version(void) {
     return LLBUILD_C_API_VERSION;
+}
+
+const char * llb_get_default_target_triple() {
+  // Use a static local to store the triple, to avoid lifetime issues.
+  static std::string tripleString = llvm::sys::getDefaultTargetTriple();
+
+  return tripleString.c_str();
 }

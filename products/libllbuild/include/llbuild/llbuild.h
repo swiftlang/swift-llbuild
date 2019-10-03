@@ -108,6 +108,9 @@ LLBUILD_EXPORT const char* llb_get_full_version_string(void);
 /// Get the C API version number.
 LLBUILD_EXPORT int llb_get_api_version(void);
 
+/// Get the default target triple for the host machine computed by LLVM.
+LLBUILD_EXPORT const char * llb_get_default_target_triple();
+
 // The Core component.
 #include "llbuild/core.h"
 

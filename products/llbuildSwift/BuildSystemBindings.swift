@@ -862,6 +862,8 @@ public final class BuildSystem {
     public static func setSchedulerLaneWidth(width: UInt32) {
         schedulerLanes = width
     }
+
+    public static let defaultTargetTriple = String(cString: llb_get_default_target_triple())
 }
 
 #endif
