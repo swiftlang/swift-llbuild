@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2019 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -365,6 +365,12 @@ public:
   /// The Ninja manifest we are operating on.
   std::unique_ptr<ninja::Manifest> manifest;
 
+  /// User-defined prefix for the status line.
+  std::string statusLinePrefixFormat = "[%f/%t] ";
+
+  /// Build start time.
+  const std::chrono::steady_clock::time_point buildStartTime = std::chrono::steady_clock::now();
+
   /// Whether commands should print status information.
   bool quiet = false;
   /// Whether the build is being "simulated", in which case commands won't be
@@ -510,6 +516,10 @@ public:
       fprintf(stderr, "%s: error: unable to open output: %s\n",
               getProgramName(), error.c_str());
       exit(1);
+    }
+
+    if (const char *statusFormat = getenv("NINJA_STATUS")) {
+      statusLinePrefixFormat = std::string(statusFormat);
     }
 
     // Register the context with the delegate.
@@ -718,6 +728,169 @@ public:
       isCancelled = true;
     }
   }
+
+  unsigned getNumPossibleMaxCommands() const {
+    // Compute the "possible" number of maximum commands that will be
+    // run. This is only the "possible" max because we can start running
+    // commands before dependency scanning is complete -- we include the
+    // number of commands that are being scanned so that this number will
+    // always be greater than the number of commands that have been executed
+    // until the very last command is run.
+    int totalPossibleMaxCommands = numCommandsCompleted + numCommandsScanning;
+
+    // Compute the number of max commands to show, subtracting out all the
+    // commands that we avoided running.
+    int possibleMaxCommands = totalPossibleMaxCommands -
+      (numCommandsUpToDate + numCommandsUpdated);
+
+    return possibleMaxCommands;
+  }
+
+  /// Return a formatted status line prefix according to
+  /// user preferences (NINJA_STATUS env).
+  std::string statusLinePrefix(const std::string& format) const {
+    auto begin = format.begin();
+    auto end = format.end();
+
+    std::string s;
+    s.reserve(format.size() * 4);
+
+    for (auto it = begin; it != end; it++) {
+      char c = *it;
+      if (c == '%') {
+        if (++it == end) {
+          s += c;
+          break;
+        }
+        c = *it;
+        switch (c) {
+        case 'e':
+          // Elapsed time.
+          {
+            auto now = std::chrono::steady_clock::now();
+            auto elapsed = now - buildStartTime;
+            auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+            char buf[64];
+            snprintf(buf, sizeof(buf), "%.3f", (double)elapsedMs / 1000.0);
+            s.append(buf);
+          }
+          break;
+        case 'f':
+          // Number completed.
+          s.append(std::to_string(numOutputDescriptions));;
+          break;
+        case 'o': case 'c':
+          // Undifferentiated task completion rate.
+          {
+            auto now = std::chrono::steady_clock::now();
+            auto elapsed = now - buildStartTime;
+            auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+            double rate = 1000.0 * (double)(numOutputDescriptions) / elapsedMs;
+            char buf[64];
+            snprintf(buf, sizeof(buf), "%.1f", rate);
+            s.append(buf);
+          }
+          break;
+        case 'p':
+          // Percentage completed.
+          {
+            long percentage_started = 100 * numOutputDescriptions / getNumPossibleMaxCommands();
+            char buf[64];
+            snprintf(buf, sizeof(buf), "%3ld%%", percentage_started);
+            s.append(buf);
+          }
+          break;
+        case 'r':
+          // Number of edges running.
+          {
+            auto running = numCommandsScanning + 0;
+            s.append(std::to_string(running));
+          }
+          break;
+        case 's':
+          // Number of edges started.
+          s.append(std::to_string(numCommandsScanning));
+          break;
+        case 't':
+          // Estimated number of edges.
+          s.append(std::to_string(getNumPossibleMaxCommands()));
+          break;
+        case 'u':
+          // Remaining number of edges.
+          {
+            auto remaining = getNumPossibleMaxCommands() - numOutputDescriptions;
+            s.append(std::to_string(remaining));
+          }
+          break;
+        case '%':
+          s += '%';
+          break;
+        default:
+          s += '%';
+          s += c;
+          break;
+        }
+      } else if (c == '\\') {
+        if (++it == end) {
+          s += c;
+          break;
+        }
+        c = *it;
+        switch (c) {
+        case 'a': s += '\a'; break;
+        case 'b': s += '\b'; break;
+        case 'e': s += '\e'; break;
+        case 'f': s += '\f'; break;
+        case 'n': s += '\n'; break;
+        case 'r': s += '\r'; break;
+        case 't': s += '\t'; break;
+        case 'v': s += '\v'; break;
+        case '\\': s += '\\'; break;
+        case '0':
+          {
+            uint8_t result;
+            // The '\0033' and '\033' sequences should yield the same result.
+            // The first one is canonical, the second one is a fallback.
+            // For example, try:
+            //  > echo -en '\0033[32mgreen\033[31mred\x1b[0m'
+            if (end - it >= 4 && StringRef(&(*(it + 1)), 3).getAsInteger(8, result) == false) {
+              it += 3;
+              s += result;
+            } else if (end - it >= 3 && StringRef(&(*it), 3).getAsInteger(8, result) == false) {
+              it += 2;
+              s += result;
+            } else {
+              s += '\\';
+              s += c;
+            }
+          }
+          break;
+        case 'x':
+          {
+            uint8_t result;
+            if (end - it >= 3 && StringRef(&(*(it + 1)), 2).getAsInteger(16, result) == false) {
+              s += result;
+              it += 2;
+            } else {
+              s += '\\';
+              s += c;
+            }
+          }
+          break;
+        default:
+          s += '\\';
+          s += c;
+          break;
+        }
+      } else {
+        // Not '%' or '\\'
+        s += c;
+        continue;
+      }
+    }
+    return s;
+  }
+
 };
 
 std::atomic<bool> BuildContext::wasInterrupted{false};
@@ -1077,32 +1250,15 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       }});
     }
 
-    static unsigned getNumPossibleMaxCommands(BuildContext& context) {
-      // Compute the "possible" number of maximum commands that will be
-      // run. This is only the "possible" max because we can start running
-      // commands before dependency scanning is complete -- we include the
-      // number of commands that are being scanned so that this number will
-      // always be greater than the number of commands that have been executed
-      // until the very last command is run.
-      int totalPossibleMaxCommands =
-        context.numCommandsCompleted + context.numCommandsScanning;
-
-      // Compute the number of max commands to show, subtracting out all the
-      // commands that we avoided running.
-      int possibleMaxCommands = totalPossibleMaxCommands -
-        (context.numCommandsUpToDate + context.numCommandsUpdated);
-
-      return possibleMaxCommands;
-    }
-
     static void writeDescription(BuildContext& context,
                                  ninja::Command* command) {
       const std::string& description =
         context.verbose ? command->getCommandString() :
         command->getEffectiveDescription();
-      context.emitStatus(
-          "[%d/%d] %s", ++context.numOutputDescriptions,
-          getNumPossibleMaxCommands(context), description.c_str());
+      ++context.numOutputDescriptions;
+      context.emitStatus("%s%s",
+        context.statusLinePrefix(context.statusLinePrefixFormat).c_str(),
+        description.c_str());
 
       // Whenever we write a description for a console job, make sure to finish
       // the output under the expectation that the console job might write to
