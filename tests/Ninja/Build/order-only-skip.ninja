@@ -1,0 +1,25 @@
+# Check that touching order-only dependencies regenerates only the dependency.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: touch %t.build/test.in %t.build/include-source
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out
+# RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file %t1.out %s
+# CHECK-INITIAL: [1/{{.*}}] cat include-source > generated-include
+# CHECK-INITIAL-NEXT: [2/{{.*}}] cat test.in > test.out
+#
+# RUN: echo "modified" >> %t.build/include-source
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t2.out
+# RUN: %{FileCheck} --check-prefix CHECK-AFTER-TOUCH --input-file %t2.out %s
+# CHECK-AFTER-TOUCH: [1/{{.*}}]
+# CHECK-AFTER-TOUCH-NOT: [2/{{.*}}]
+
+rule CAT
+     command = cat $in > $out
+
+build generated-include: CAT include-source
+
+build test.out: CAT test.in || generated-include
+
+build all: phony test.out

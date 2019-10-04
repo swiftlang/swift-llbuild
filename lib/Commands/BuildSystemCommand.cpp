@@ -628,8 +628,8 @@ public:
   llvm::StringMap<KeyID> keyTable;
 
   const KeyID getKeyID(const KeyType& key) override {
-    auto it = keyTable.insert(std::make_pair(key, 0)).first;
-    return (KeyID)(uintptr_t)it->getKey().data();
+    auto it = keyTable.insert(std::make_pair(key, KeyID::novalue())).first;
+    return KeyID(it->getKey().data());
   }
 
   KeyType getKeyForID(const KeyID key) override {
@@ -705,8 +705,8 @@ static int executeDBCommand(std::vector<std::string> args) {
 
       printf("\nkey: %s\ncomputed: %" PRIu64 "\nbuilt: %" PRIu64 "\ndependencies:\n",
              key.c_str(), result.computedAt, result.builtAt);
-      for (auto keyID : result.dependencies) {
-        printf("  %s\n", keymap.getKeyForID(keyID).c_str());
+      for (auto keyIDAndFlag : result.dependencies) {
+        printf("  %s\n", keymap.getKeyForID(keyIDAndFlag.keyID).c_str());
       }
 
       // TODO - print build value

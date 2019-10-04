@@ -66,6 +66,7 @@ namespace {
 
 class SQLiteBuildDB : public BuildDB {
   /// Version History:
+  /// * 12: Tagging dependencies with order-only flag.
   /// * 11: Add result timestamps
   /// * 10: Add result signature
   /// * 9: Add filtered directory contents, related build key changes
@@ -74,7 +75,7 @@ class SQLiteBuildDB : public BuildDB {
   /// * 6: Added `ordinal` field for dependencies.
   /// * 5: Switched to using `WITHOUT ROWID` for dependencies.
   /// * 4: Pre-history
-  static const int currentSchemaVersion = 11;
+  static const int currentSchemaVersion = 12;
 
   std::string path;
   uint32_t clientSchemaVersion;
@@ -556,8 +557,10 @@ public:
     basic::BinaryDecoder decoder(
         StringRef((const char*)dependencyBytes, numDependencyBytes));
     for (auto i = 0; i != numDependencies; ++i) {
-      DBKeyID dbKeyID;
-      decoder.read(dbKeyID.value);
+      uint64_t raw;
+      decoder.read(raw);
+      bool flag = raw & 1;
+      DBKeyID dbKeyID(raw >> 1);
 
       // Map the database key ID into an engine key ID (note that we already
       // hold the dbMutex at this point as required by getKeyIDforID())
@@ -565,7 +568,7 @@ public:
       if (!error_out->empty()) {
         return false;
       }
-      result_out->dependencies[i] = keyID;
+      result_out->dependencies.set(i, keyID, flag);
     }
 
     return true;
@@ -611,17 +614,17 @@ public:
     // FIXME: We could save some reallocation by having a templated SmallVector
     // size here.
     basic::BinaryEncoder encoder{};
-    for (auto keyID: ruleResult.dependencies) {
+    for (auto keyIDAndFlag: ruleResult.dependencies) {
       // Map the enging keyID to a database key ID
       //
       // FIXME: This is naively mapping all keys with no caching at this point,
       // thus likely to perform poorly.  Should refactor this into a bulk
       // query or a DB layer cache.
-      auto dbKeyID = getKeyID(keyID, error_out);
+      auto dbKeyID = getKeyID(keyIDAndFlag.keyID, error_out);
       if (!error_out->empty()) {
         return false;
       }
-      encoder.write(dbKeyID.value);
+      encoder.write((dbKeyID.value << 1) + keyIDAndFlag.flag);
     }
 
     // Insert the actual rule result.
@@ -774,8 +777,10 @@ public:
       basic::BinaryDecoder decoder(
                                    StringRef((const char*)dependencyBytes, numDependencyBytes));
       for (auto i = 0; i != numDependencies; ++i) {
-        DBKeyID dbKeyID;
-        decoder.read(dbKeyID.value);
+        uint64_t raw;
+        decoder.read(raw);
+        bool flag = raw & 1;
+        DBKeyID dbKeyID(raw >> 1);
         
         // Map the database key ID into an engine key ID (note that we already
         // hold the dbMutex at this point as required by getKeyIDforID())
@@ -783,7 +788,7 @@ public:
         if (!error_out->empty()) {
           return false;
         }
-        result.dependencies[i] = keyID;
+        result.dependencies.set(i, keyID, flag);
       }
       
       result.signature = basic::CommandSignature(sqlite3_column_int64(stmt, 8));
@@ -934,7 +939,7 @@ if (result != SQLITE_OK) { \
   ///
   /// This method is not thread-safe. The caller must protect access via the
   /// dbMutex.
-  KeyID getKeyIDForID(DBKeyID keyID, std::string *error_out) {
+  KeyID getKeyIDForID(DBKeyID dbKeyID, std::string *error_out) {
 #define checkSQLiteResultOKReturnKeyID(result) \
 if (result != SQLITE_OK) { \
   *error_out = getCurrentErrorMessage(); \
@@ -942,7 +947,7 @@ if (result != SQLITE_OK) { \
 }
 
     // Search local db <-> engine mapping cache
-    auto it = engineKeyIDs.find(keyID);
+    auto it = engineKeyIDs.find(dbKeyID);
     if (it != engineKeyIDs.end())
       return it->second;
 
@@ -952,7 +957,7 @@ if (result != SQLITE_OK) { \
     checkSQLiteResultOKReturnKeyID(result);
     result = sqlite3_clear_bindings(findKeyNameForKeyIDStmt);
     checkSQLiteResultOKReturnKeyID(result);
-    result = sqlite3_bind_int64(findKeyNameForKeyIDStmt, /*index=*/1, keyID.value);
+    result = sqlite3_bind_int64(findKeyNameForKeyIDStmt, /*index=*/1, dbKeyID.value);
     checkSQLiteResultOKReturnKeyID(result);
 
     result = sqlite3_step(findKeyNameForKeyIDStmt);
@@ -970,8 +975,8 @@ if (result != SQLITE_OK) { \
     auto engineKeyID = delegate->getKeyID(KeyType(text, size));
 
     // Cache the mapping locally
-    engineKeyIDs[keyID] = engineKeyID;
-    dbKeyIDs[engineKeyID] = keyID;
+    engineKeyIDs[dbKeyID] = engineKeyID;
+    dbKeyIDs[engineKeyID] = dbKeyID;
 
     return engineKeyID;
 #undef checkSQLiteResultOKReturnKeyID

@@ -126,8 +126,8 @@ public:
     // The RHS of the mapping is actually ignored, we use the StringMap's ptr
     // identity because it allows us to efficiently map back to the key string
     // in `getRuleInfoForKey`.
-    auto it = keyTable.insert(std::make_pair(key, 0)).first;
-    return (KeyID)(uintptr_t)it->getKey().data();
+    auto it = keyTable.insert(std::make_pair(key, KeyID::novalue())).first;
+    return KeyID(it->getKey().data());
   }
   
   virtual KeyType getKeyForID(const KeyID key) override {
@@ -181,9 +181,9 @@ const llb_database_result_t mapResult(CAPIBuildDB &db, Result result) {
   auto size = sizeof(llb_build_key_t*) * count;
   llb_build_key_t **deps = (llb_build_key_t **)malloc(size);
   int index = 0;
-  for (auto keyID: result.dependencies) {
+  for (auto keyIDAndFlag: result.dependencies) {
     std::string error;
-    auto buildKey = db.buildKeyForIdentifier(keyID, &error);
+    auto buildKey = db.buildKeyForIdentifier(keyIDAndFlag.keyID, &error);
     if (!error.empty() || buildKey == nullptr) {
       assert(0 && "Got dependency from database and don't know this identifier.");
       continue;
