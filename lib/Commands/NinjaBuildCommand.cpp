@@ -1774,6 +1774,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
 
   if (!customTool.empty()) {
     std::vector<std::string> availableTools = {
+      "clean",
       "targets",
       "list",
     };
@@ -1867,6 +1868,18 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       }
 
       return 0;
+    }
+
+    // Emulate `-t clean` by removing the database.
+    if (!customTool.empty() && customTool == "clean") {
+      if(dbFilename.empty()) {
+        context.emitError("unable to clean without a database. Command ignored.");
+        return 1;
+      } else {
+        (void)basic::sys::unlink(dbFilename.c_str());
+        context.emitNote("cleaned the build database, artifacts preserved.");
+        return 0;
+      }
     }
 
     // Otherwise, run the build.

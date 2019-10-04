@@ -1,0 +1,27 @@
+# Check that we emulate -t clean
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: touch %t.build/input
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build > %t1.out
+# RUN: test -f %t.build/build.db
+# RUN: %{FileCheck} --check-prefix=CHECK-BEFORE-CLEAN < %t1.out %s
+#
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build -t clean > %t2.out
+# RUN: test ! -f %t.build/build.db
+# RUN: %{FileCheck} --check-prefix=CHECK-AFTER-CLEAN < %t2.out %s
+#
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build > %t3.out
+# RUN: %{FileCheck} --check-prefix=CHECK-REBUILD < %t3.out %s
+
+# CHECK-BEFORE-CLEAN: [1/{{.*}}] cp
+# CHECK-AFTER-CLEAN-NOT: [1/{{.*}}]
+# CHECK-REBUILD: [1/{{.*}}] cp
+
+rule CP
+  command = cp $in $out
+
+build output: CP input
+
+default output
