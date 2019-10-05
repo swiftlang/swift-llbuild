@@ -428,6 +428,10 @@ public:
   Rule* getPhonyRule() const {
     return phonyRule;
   }
+
+  /// Make the node path absolute and syntactically remove . and .. components.
+  /// Returns false if normalization did not succeed.
+  static bool normalize_path(StringRef workingDirectory, SmallVectorImpl<char>& path);
 };
 
 }

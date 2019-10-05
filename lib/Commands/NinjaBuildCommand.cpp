@@ -1392,18 +1392,12 @@ buildCommand(BuildContext& context, ninja::Command* command) {
                                            uint64_t length,
                                            const StringRef unescapedWord) override {
 
-            StringRef path;
-            SmallString<256> absPathTmp;
-
-            if (llvm::sys::path::is_absolute(unescapedWord)) {
-              path = unescapedWord;
-            } else {
-              absPathTmp = unescapedWord;
-              llvm::sys::fs::make_absolute(workingDirectory, absPathTmp);
-              assert(absPathTmp[0] == '/');
-              path = absPathTmp;
+            SmallString<256> absPathTmp = unescapedWord;
+            if (!llbuild::ninja::Manifest::normalize_path(workingDirectory, absPathTmp)) {
+              return;
             }
 
+            StringRef path = absPathTmp;
             context.engine.taskDiscoveredDependency(task, path);
           }
 
@@ -2146,9 +2140,9 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
 
     // If this is the first iteration, build the manifest, unless disabled.
     if (autoRegenerateManifest && iteration == 0) {
-      SmallString<256> absManifestFilename = StringRef(manifestFilename);
-      llvm::sys::fs::make_absolute(workingDirectory, absManifestFilename);
-      context.engine.build(StringRef(absManifestFilename));
+      SmallString<256> absManifestPath = StringRef(manifestFilename);
+      llbuild::ninja::Manifest::normalize_path(workingDirectory, absManifestPath);
+      context.engine.build(StringRef(absManifestPath));
 
       // If the manifest was rebuilt, then reload it and build again.
       if (context.numBuiltCommands) {
