@@ -23,6 +23,9 @@ struct CommandLineStatusOutputImpl {
   /// The output stream.
   FILE* fp{nullptr};
 
+  /// Whether the output device supports ANSI color.
+  bool stripColor{true};
+
   /// Whether the output stream honors '\r'.
   bool termHonorsCarriageReturn{false};
 
@@ -60,10 +63,15 @@ struct CommandLineStatusOutputImpl {
 
       // We assume the terminal honors '\r' if it is either not-"dumb", or it is
       // "dumb" and we are inside Emacs (comint-mode reports as "dumb").
-      if (term) {
-        termHonorsCarriageReturn = (term != std::string("dumb") ||
-                                    ::getenv("INSIDE_EMACS") != nullptr);
+      if ((term && term != std::string("dumb"))
+         || ::getenv("INSIDE_EMACS") != nullptr) {
+        termHonorsCarriageReturn = true;
+        stripColor = false;
       }
+    }
+
+    if (const char *force = ::getenv("CLICOLOR_FORCE")) {
+      stripColor = std::string(force) == "0";
     }
 
     return true;
@@ -109,29 +117,69 @@ struct CommandLineStatusOutputImpl {
     return result;
   }
 
-  void setCurrentLine(const std::string& text) {
+  static size_t countBytesIgnoringColors(const std::string& s) {
+    size_t count = 0;
+    bool inAnsiSequence = false;
+    for(auto src_it = s.begin(); src_it < s.end(); src_it++) {
+      if (*src_it == '\e') {
+        inAnsiSequence = true;
+      } else if (inAnsiSequence) {
+        inAnsiSequence = !::isalpha(*src_it);
+      } else {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  void stripColorCodes(std::string& s) {
+    if (!stripColor) {
+      return;
+    }
+    auto src_it = s.begin();
+    auto dst_it = s.begin();
+    for(bool inAnsiSequence = false; src_it < s.end(); src_it++) {
+      if (*src_it == '\e') {
+        inAnsiSequence = true;
+      } else if (inAnsiSequence) {
+        inAnsiSequence = !::isalpha(*src_it);
+      } else {
+        *dst_it++ = *src_it;
+      }
+    }
+    s.resize(dst_it - s.begin());
+  }
+
+  void setCurrentLine(const std::string& attributedText) {
     assert(isOpen());
-    assert(text.find('\r') == std::string::npos);
-    assert(text.find('\n') == std::string::npos);
+    assert(attributedText.find('\r') == std::string::npos);
+    assert(attributedText.find('\n') == std::string::npos);
 
     // Clear the line before writing, this tends to produce better results than
     // clearing the unwritten tail of the line written below.
     clearOutput();
 
+    std::string text = attributedText;
+    stripColorCodes(text);
+
     // Write the line, trimming it to fit in the current terminal.
     int columns = getNumColumns();
     if (columns > 0 && (int)text.size() > columns) {
       // Elide the middle of the text.
+      // TODO: the long colored prefix output might mess with this logic:
+      // 1. The modified output might be shorter than the terminal width.
+      // 2. The modified output might not contain the decoloring sequence,
+      //    coloring up the rest of the terminal output.
+      // These effects will only be visible with an unusually long NINJA_STATUS
+      // environment variable that contains ANSI color sequences.
       int midpoint = columns / 2;
-      std::string elided = text.substr(0, std::max(0, midpoint - 2)) + "..." +
+      text = text.substr(0, std::max(0, midpoint - 2)) + "..." +
         text.substr(text.size() - (columns - (midpoint + 1)));
-      assert(columns < 3 || (int)elided.size() == columns);
-      fprintf(fp, "%s", elided.c_str());
-      numCurrentCharacters = elided.size();
-    } else {
-      fprintf(fp, "%s", text.c_str());
-      numCurrentCharacters = text.size();
+      assert(columns < 3 || (int)text.size() == columns);
     }
+
+    fprintf(fp, "%s", text.c_str());
+    numCurrentCharacters = countBytesIgnoringColors(text);
     fflush(fp);
 
     hasOutput = numCurrentCharacters != 0;
@@ -154,7 +202,7 @@ struct CommandLineStatusOutputImpl {
     }
   }
 
-  void writeText(const std::string& text) {
+  void writeText(std::string&& text) {
     assert(isOpen());
     assert(text.size() && text.back() == '\n');
 
@@ -162,6 +210,7 @@ struct CommandLineStatusOutputImpl {
     if (hasOutput)
       clearOutput();
 
+    stripColorCodes(text);
     fwrite(text.c_str(), text.size(), 1, fp);
     fflush(fp);
   }
@@ -212,9 +261,14 @@ void CommandLineStatusOutput::finishLine() {
   return static_cast<CommandLineStatusOutputImpl*>(impl)->finishLine();
 }
 
-void CommandLineStatusOutput::writeText(const std::string& text) {
+void CommandLineStatusOutput::writeText(std::string&& text) {
   return
-    static_cast<CommandLineStatusOutputImpl*>(impl)->writeText(text);
+    static_cast<CommandLineStatusOutputImpl*>(impl)->writeText(std::move(text));
+}
+
+void CommandLineStatusOutput::stripColorCodes(std::string& text) {
+  return
+    static_cast<CommandLineStatusOutputImpl*>(impl)->stripColorCodes(text);
 }
 
 }

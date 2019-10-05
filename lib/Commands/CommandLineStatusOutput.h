@@ -57,7 +57,10 @@ public:
   /// Write a non-overwritable block of text to the output.
   ///
   /// Any text written by this method should always end with a newline.
-  void writeText(const std::string& text);
+  void writeText(std::string&& text);
+
+  /// Destructively strip the ANSI codes if the terminal can not support them.
+  void stripColorCodes(std::string& str);
 };
 
 }

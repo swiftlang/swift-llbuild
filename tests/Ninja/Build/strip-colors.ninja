@@ -1,0 +1,23 @@
+# Check that colored output from the commands is eliminated.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: touch %t.build/test.in
+#
+# RUN: env CLICOLOR_FORCE=0 %{llbuild} ninja build --jobs 1 --chdir %t.build -v &> %t1.out
+# RUN: %{FileCheck} --check-prefix=CHECK-STRIP --input-file %t1.out %s
+# CHECK-STRIP: [1/{{.*}}] echo
+# CHECK-STRIP-NEXT: <test.in>
+#
+# RUN: env CLICOLOR_FORCE=1 %{llbuild} ninja build --jobs 1 --chdir %t.build -v &> %t2.out
+# RUN: %{FileCheck} --check-prefix=CHECK-RETAIN --input-file %t2.out %s
+# CHECK-RETAIN: [1/{{.*}}] echo
+# CHECK-RETAIN-NEXT: <{{.....}}test.in{{....}}>
+#
+
+rule SHOW
+     command = echo "<\x1b[32m$in\033[0m>"
+
+build test.out: SHOW test.in
+
