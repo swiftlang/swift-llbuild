@@ -597,8 +597,9 @@ public:
 
   /// Emit a diagnostic followed by a block of text, ensuring the text
   /// immediately follows the diagnostic.
-  void emitDiagnosticAndText(std::string kind, std::string message,
-                             std::string text) {
+  void emitDiagnosticAndText(std::string kind, std::string&& message,
+                             std::string&& text) {
+    statusOutput.stripColorCodes(text);
     outputQueue.async([this, kind=std::move(kind), message=std::move(message),
                        text=std::move(text)] {
         statusOutput.finishLine();
@@ -611,7 +612,8 @@ public:
   }
 
   /// Emit a block of text to the output.
-  void emitText(std::string text) {
+  void emitText(std::string&& text) {
+    statusOutput.stripColorCodes(text);
     outputQueue.async([this, text=std::move(text)] {
         statusOutput.finishLine();
         fwrite(text.data(), text.size(), 1, stdout);
@@ -632,7 +634,7 @@ public:
   }
 
   void emitErrorAndText(std::string&& message, std::string&& text) {
-    emitDiagnosticAndText("error", std::move(message), text);
+    emitDiagnosticAndText("error", std::move(message), std::move(text));
     ++numErrors;
   }
 
