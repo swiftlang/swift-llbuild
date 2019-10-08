@@ -10,10 +10,15 @@
 # CHECK-INITIAL-NEXT: [2/{{.*}}] cat test.in > test.out
 #
 # RUN: echo "modified" >> %t.build/include-source
+# RUN: touch -A02 %t.build/include-source
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t2.out
 # RUN: %{FileCheck} --check-prefix CHECK-AFTER-TOUCH --input-file %t2.out %s
 # CHECK-AFTER-TOUCH: [1/{{.*}}]
 # CHECK-AFTER-TOUCH-NOT: [2/{{.*}}]
+
+# Modify back when timestamp handling is fixed.
+# REQUIRES: platform=Darwin
+
 
 rule CAT
      command = cat $in > $out

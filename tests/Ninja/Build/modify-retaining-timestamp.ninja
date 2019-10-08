@@ -1,0 +1,25 @@
+# Check regeneration without timestamp modification.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: touch %t.build/test.in
+# RUN: touch -r %t.build/build.ninja %t.build/test.in
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out
+# RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file %t1.out %s
+# CHECK-INITIAL: [1/{{.*}}] cat test.in > test.out
+#
+# RUN: echo "modified" >> %t.build/test.in
+# RUN: touch -r %t.build/build.ninja %t.build/test.in
+# RUN: touch -A02 %t.build/test.in  # This should not be necessary
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t2.out
+# RUN: %{FileCheck} --check-prefix CHECK-AFTER-TOUCH --input-file %t2.out %s
+# CHECK-AFTER-TOUCH: [1/{{.*}}] cat test.in > test.out
+#
+# FIXME: Disabled on Linux until timestamps are fixed.
+# REQUIRES: platform=Darwin
+
+rule CAT
+     command = cat $in > $out
+
+build test.out: CAT test.in
