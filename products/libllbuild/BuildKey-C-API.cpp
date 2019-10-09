@@ -63,7 +63,7 @@ bool CAPIBuildKey::operator ==(const CAPIBuildKey &other) {
   return internalBuildKey.getKeyData() == other.internalBuildKey.getKeyData();
 }
 
-static const BuildKey::Kind publicToInternalBuildKeyKind(llb_build_key_kind_t kind) {
+static BuildKey::Kind publicToInternalBuildKeyKind(llb_build_key_kind_t kind) {
     switch (kind) {
     case llb_build_key_kind_command:
       return BuildKey::Kind::Command;

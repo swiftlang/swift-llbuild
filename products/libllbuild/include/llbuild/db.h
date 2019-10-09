@@ -67,7 +67,7 @@ LLBUILD_EXPORT void
 llb_database_destroy(llb_database_t *database);
 
 /// Lookup the result of a rule in the database. result_out needs to be destroyed by calling llb_database_destroy_result.
-LLBUILD_EXPORT const bool
+LLBUILD_EXPORT bool
 llb_database_lookup_rule_result(llb_database_t *database, llb_build_key_t *key, llb_database_result_t *result_out, llb_data_t *error_out);
 
 /// Destroys a result object by freeing its memory
@@ -78,7 +78,7 @@ llb_database_destroy_result(llb_database_result_t *result);
 typedef struct llb_database_result_keys_t_ llb_database_fetch_result_t;
 
 /// Method for getting the number of keys from a fetch result object
-LLBUILD_EXPORT const llb_database_key_id
+LLBUILD_EXPORT llb_database_key_id
 llb_database_fetch_result_get_count(llb_database_fetch_result_t *result);
 
 /// Method for getting the key for a given id from a fetch result object
@@ -86,7 +86,7 @@ LLBUILD_EXPORT llb_build_key_t *
 llb_database_fetch_result_get_key_at_index(llb_database_fetch_result_t *result, int32_t index);
 
 /// Returns `true` if the result contains rule results. If it does, it's safe to call `llb_database_fetch_result_get_result_at_index` for any index between 0 and `llb_database_fetch_result_get_count`.
-LLBUILD_EXPORT const bool llb_database_fetch_result_contains_rule_results(llb_database_fetch_result_t *result);
+LLBUILD_EXPORT bool llb_database_fetch_result_contains_rule_results(llb_database_fetch_result_t *result);
 
 /// Method for getting the result at a given index from a fetch result object. The returned pointer might be nil if the fetch didn't include results
 LLBUILD_EXPORT llb_database_result_t *_Nullable
@@ -97,9 +97,9 @@ LLBUILD_EXPORT void
 llb_database_destroy_fetch_result(llb_database_fetch_result_t *result);
 
 /// Fetch all keys from the database. The keysResult_out object needs to be destroyed when not used anymore via \see llb_database_destroy_fetch_result
-LLBUILD_EXPORT const bool
+LLBUILD_EXPORT bool
 llb_database_get_keys(llb_database_t *database, llb_database_fetch_result_t *_Nullable *_Nonnull keysResult_out, llb_data_t *_Nullable error_out);
 
-LLBUILD_EXPORT const bool llb_database_get_keys_and_results(llb_database_t *database, llb_database_fetch_result_t *_Nullable *_Nonnull keysAndResults_out, llb_data_t *_Nullable error_out);
+LLBUILD_EXPORT bool llb_database_get_keys_and_results(llb_database_t *database, llb_database_fetch_result_t *_Nullable *_Nonnull keysAndResults_out, llb_data_t *_Nullable error_out);
 
 LLBUILD_ASSUME_NONNULL_END
