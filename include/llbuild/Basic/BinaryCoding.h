@@ -114,7 +114,7 @@ public:
   }
 
   /// Get the size of the encoded binary data
-  const size_t size() const {
+  size_t size() const {
     return encdata.size();
   }
 };

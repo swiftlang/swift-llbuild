@@ -137,11 +137,11 @@ public:
                                                                      (const char*)(uintptr_t)key).getKey();
   }
   
-  const bool lookupRuleResult(const KeyType &key, Result *result_out, std::string *error_out) {
+  bool lookupRuleResult(const KeyType &key, Result *result_out, std::string *error_out) {
     return _db.get()->lookupRuleResult(this->getKeyID(key), key, result_out, error_out);
   }
   
-  const bool buildStarted(std::string *error_out) {
+  bool buildStarted(std::string *error_out) {
     return _db.get()->buildStarted(error_out);
   }
   
@@ -149,14 +149,14 @@ public:
     _db.get()->buildComplete();
   }
   
-  const bool getKeys(std::vector<KeyType>& keys_out, std::string *error_out) {
+  bool getKeys(std::vector<KeyType>& keys_out, std::string *error_out) {
     auto success = _db.get()->getKeys(keys_out, error_out);
     std::lock_guard<std::mutex> guard(keyCacheMutex);
     buildUpKeyCache(keys_out);
     return success;
   }
   
-  const bool getKeysWithResult(std::vector<KeyType> &keys_out, std::vector<Result> &results_out, std::string *error_out) {
+  bool getKeysWithResult(std::vector<KeyType> &keys_out, std::vector<Result> &results_out, std::string *error_out) {
     auto success = _db.get()->getKeysWithResult(keys_out, results_out, error_out);
     std::lock_guard<std::mutex> guard(keyCacheMutex);
     buildUpKeyCache(keys_out);
@@ -221,7 +221,7 @@ public:
   CAPIBuildDBFetchResult(const CAPIBuildDBFetchResult&) LLBUILD_DELETED_FUNCTION;
   CAPIBuildDBFetchResult& operator=(const CAPIBuildDBFetchResult&) LLBUILD_DELETED_FUNCTION;
   
-  const size_t size() {
+  size_t size() {
     return keys.size();
   }
   
@@ -270,7 +270,7 @@ void llb_database_destroy(llb_database_t *database) {
   delete db;
 }
 
-const bool llb_database_lookup_rule_result(llb_database_t *database, llb_build_key_t *key, llb_database_result_t *result_out, llb_data_t *error_out) {
+bool llb_database_lookup_rule_result(llb_database_t *database, llb_build_key_t *key, llb_database_result_t *result_out, llb_data_t *error_out) {
   
   auto db = (CAPIBuildDB *)database;
   
@@ -291,7 +291,7 @@ const bool llb_database_lookup_rule_result(llb_database_t *database, llb_build_k
   return stored;
 }
 
-const llb_database_key_id llb_database_fetch_result_get_count(llb_database_fetch_result_t *result) {
+llb_database_key_id llb_database_fetch_result_get_count(llb_database_fetch_result_t *result) {
   auto resultKeys = (CAPIBuildDBFetchResult *)result;
   return resultKeys->size();
 }
@@ -301,7 +301,7 @@ llb_build_key_t * llb_database_fetch_result_get_key_at_index(llb_database_fetch_
   return resultKeys->keyAtIndex(index);
 }
 
-const bool llb_database_fetch_result_contains_rule_results(llb_database_fetch_result_t *result) {
+bool llb_database_fetch_result_contains_rule_results(llb_database_fetch_result_t *result) {
   return ((CAPIBuildDBFetchResult *)result)->hasResults;
 }
 
@@ -315,7 +315,7 @@ void llb_database_destroy_fetch_result(llb_database_fetch_result_t *result) {
   delete (CAPIBuildDBFetchResult *)result;
 }
 
-const bool llb_database_get_keys(llb_database_t *database, llb_database_fetch_result_t **keysResult_out, llb_data_t *error_out) {
+bool llb_database_get_keys(llb_database_t *database, llb_database_fetch_result_t **keysResult_out, llb_data_t *error_out) {
   auto db = (CAPIBuildDB *)database;
   
   std::vector<KeyType> keys;
@@ -341,7 +341,7 @@ const bool llb_database_get_keys(llb_database_t *database, llb_database_fetch_re
   return success;
 }
 
-const bool llb_database_get_keys_and_results(llb_database_t *database, llb_database_fetch_result_t *_Nullable *_Nonnull keysAndResults_out, llb_data_t *_Nullable error_out) {
+bool llb_database_get_keys_and_results(llb_database_t *database, llb_database_fetch_result_t *_Nullable *_Nonnull keysAndResults_out, llb_data_t *_Nullable error_out) {
   
   auto db = (CAPIBuildDB *)database;
   
