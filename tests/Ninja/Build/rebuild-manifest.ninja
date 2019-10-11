@@ -5,15 +5,12 @@
 # RUN: mkdir -p %t.build
 # RUN: touch %t.build/input
 # RUN: cp %s %t.build/build.ninja
+# RUN: touch -r / %t.build/build.ninja
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} < %t1.out %s
 
 # CHECK: [1/{{.*}}] GENERATE MANIFEST
 # CHECK: [1/{{.*}}] cat input > output
-
-# FIXME: This test fails non-deterministically on Linux, we need to investigate (rdar://problem/23239574).
-#
-# REQUIRES: platform=Darwin
 
 rule GENERATE_MANIFEST
      command = echo "build output: CAT input" >> build.ninja
