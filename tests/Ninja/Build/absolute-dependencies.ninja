@@ -5,7 +5,9 @@
 # RUN: cp %s %t.build/build.ninja
 # RUN: touch %t.build/test.c %t.build/include-level-1 %t.build/include-level-2
 # RUN: echo "aggregate-include: include-level-1 include-level-2" > %t.build/aggregate-include.d
+# RUN: touch -r / %t.build/include-level-2
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out
+# RUN: %{FileCheck} --input-file %t2.out %s
 # RUN: touch %t.build/include-level-2
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t2.out
 # RUN: %{FileCheck} --input-file %t2.out %s
