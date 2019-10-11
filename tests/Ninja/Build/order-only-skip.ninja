@@ -4,17 +4,20 @@
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
 # RUN: touch %t.build/test.in %t.build/include-source
-# RUN: touch -r / %t.build/include-source
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file %t1.out %s
 # CHECK-INITIAL: [1/{{.*}}] cat include-source > generated-include
 # CHECK-INITIAL-NEXT: [2/{{.*}}] cat test.in > test.out
 #
 # RUN: echo "modified" >> %t.build/include-source
+# RUN: touch -A02 %t.build/include-source
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t2.out
 # RUN: %{FileCheck} --check-prefix CHECK-AFTER-TOUCH --input-file %t2.out %s
 # CHECK-AFTER-TOUCH: [1/{{.*}}]
 # CHECK-AFTER-TOUCH-NOT: [2/{{.*}}]
+#
+# Moving a clock forward through `touch -A` is only supported on Darwin.
+# REQUIRES: platform=Darwin
 
 
 rule CAT
