@@ -45,20 +45,100 @@ Manifest::Manifest() {
   getRootScope().getRules()["phony"] = phonyRule;
 }
 
-Node* Manifest::findNode(StringRef workingDirectory, StringRef path0) {
-  StringRef path;
-  SmallString<256> absPathTmp;
+bool Manifest::normalize_path(StringRef workingDirectory, SmallVectorImpl<char>& tmp){
+  auto separatorRef = llvm::sys::path::get_separator();
+  assert(separatorRef.size() == 1);
+  char slash = *separatorRef.data();
 
-  if (llvm::sys::path::is_absolute(path0)) {
-    path = path0;
-  } else {
-    absPathTmp = path0;
-    llvm::sys::fs::make_absolute(workingDirectory, absPathTmp);
-    assert(absPathTmp[0] == '/');
-    path = absPathTmp;
+  if (llvm::sys::fs::make_absolute(workingDirectory, tmp) != std::error_code()) {
+    return false;
+  }
+  if (tmp.size() == 0 || tmp[0] != slash) {
+      return false;
   }
 
-  auto it = nodes.find(path);
+  // Ignore root "network" prefixes, such as "//net/".
+  StringRef tmpRef{tmp.data(), tmp.size()};
+  auto rootNameLength = llvm::sys::path::root_name(tmpRef).size();
+
+  auto begin = tmp.begin() + rootNameLength;
+  auto src_it = begin;
+  auto dst_it = begin;
+  auto end = tmp.end();
+  for (; src_it < end; ++src_it) {
+    if (LLVM_LIKELY(*src_it != slash)) {
+        *dst_it++ = *src_it;
+        continue;
+    }
+
+    if (dst_it == begin || *(dst_it-1) != slash) {
+      *dst_it++ = slash;
+    }
+
+    // Current fragment "/"
+    if (LLVM_UNLIKELY(src_it + 1 >= end)) {
+      break;
+    }
+
+    if (LLVM_LIKELY(*(src_it + 1) != '.')) {
+      continue;
+    }
+
+    // Current fragment "/."
+    if (src_it + 2 >= end) {
+      ++src_it;
+      continue;
+    }
+
+    if (*(src_it + 2) != '.') {
+      if (*(src_it + 2) == slash) {
+        // Means "/./"
+        ++src_it;
+      } else {
+        // "/.?"
+        *dst_it++ = *++src_it;
+      }
+      continue;
+    }
+
+    if (src_it + 3 < end && *(src_it + 3) != slash) {
+      continue;
+    }
+
+    // Move destination pointer to the previous directory.
+    if (dst_it - begin <= 1) {
+      // Already at the top.
+    } else {
+      for (dst_it -= 2; dst_it > begin; --dst_it) {
+        if (LLVM_UNLIKELY(*dst_it == slash)) {
+          ++dst_it;
+          break;
+        }
+      }
+      if (dst_it == begin) {
+        *dst_it++ = slash;
+      }
+    }
+
+    if (src_it + 3 < end) {
+      src_it += 2;
+    } else {
+      break;
+    }
+  }
+
+  tmp.resize(dst_it - tmp.begin());
+
+  return true;
+}
+
+Node* Manifest::findNode(StringRef workingDirectory, StringRef path0) {
+  SmallString<256> absPathTmp = path0;
+  if (!normalize_path(workingDirectory, absPathTmp)) {
+    return nullptr;
+  }
+
+  auto it = nodes.find(absPathTmp);
   if (it == nodes.end()) {
     return nullptr;
   }
@@ -66,17 +146,12 @@ Node* Manifest::findNode(StringRef workingDirectory, StringRef path0) {
 }
 
 Node* Manifest::findOrCreateNode(StringRef workingDirectory, StringRef path0) {
-  StringRef path;
-  SmallString<256> absPathTmp;
-
-  if (llvm::sys::path::is_absolute(path0)) {
-    path = path0;
-  } else {
-    absPathTmp = path0;
-    llvm::sys::fs::make_absolute(workingDirectory, absPathTmp);
-    assert(absPathTmp[0] == '/');
-    path = absPathTmp;
+  SmallString<256> absPathTmp = path0;
+  if (!normalize_path(workingDirectory, absPathTmp)) {
+    return nullptr;
   }
+
+  StringRef path = absPathTmp;
 
   auto& result = nodes[path];
   if (!result)

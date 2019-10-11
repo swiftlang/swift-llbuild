@@ -1,0 +1,28 @@
+# Check syntactic path normalization.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+#
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out
+# RUN: %{FileCheck} --check-prefix=CHECK-DEFAULT --input-file %t1.out %s
+# CHECK-DEFAULT: [1/{{.*}}] true
+#
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t2.out ./generated
+# RUN: %{FileCheck} --check-prefix=CHECK-RELATIVE --input-file %t2.out %s
+# CHECK-RELATIVE: [1/{{.*}}] true
+#
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t2.out .//generated
+# RUN: %{FileCheck} --check-prefix=CHECK-DOUBLE --input-file %t2.out %s
+# CHECK-DOUBLE: [1/{{.*}}] true
+#
+# Syntactic normalization is supposed to eat the "unimportant" part:
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t3.out unimportant/../generated
+# RUN: %{FileCheck} --check-prefix=CHECK-PARENT --input-file %t3.out %s
+# CHECK-PARENT: [1/{{.*}}] true
+
+rule GEN
+     command = true
+
+build generated: GEN
+

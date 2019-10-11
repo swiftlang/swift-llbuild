@@ -1,5 +1,6 @@
 add_llbuild_unittest(NinjaTests
   LexerTest.cpp
+  ManifestTest.cpp
   )
 
 target_link_libraries(NinjaTests PRIVATE
