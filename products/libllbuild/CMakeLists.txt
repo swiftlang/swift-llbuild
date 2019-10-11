@@ -20,6 +20,8 @@ target_link_libraries(libllbuild PRIVATE
   llvmSupport
   SQLite::SQLite3)
 
+set_property(GLOBAL APPEND PROPERTY LLBuild_EXPORTS libllbuild)
+
 if(CMAKE_SYSTEM_NAME STREQUAL Windows)
     set_target_properties(libllbuild PROPERTIES LINK_FLAGS "/INCREMENTAL:NO")
 endif()
@@ -28,6 +30,11 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
   target_link_libraries(libllbuild PRIVATE
     curses)
 endif()
+
+target_include_directories(libllbuild
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 
 include_directories(BEFORE
   ${CMAKE_CURRENT_SOURCE_DIR}/include)
