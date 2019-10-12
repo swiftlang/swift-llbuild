@@ -850,7 +850,7 @@ public:
         case '\\': s += '\\'; break;
         case '0':
           {
-            uint8_t result;
+            uint8_t result = 0;
             // The '\0033' and '\033' sequences should yield the same result.
             // The first one is canonical, the second one is a fallback.
             // For example, try:
@@ -869,7 +869,7 @@ public:
           break;
         case 'x':
           {
-            uint8_t result;
+            uint8_t result = 0;
             if (end - it >= 3 && StringRef(&(*(it + 1)), 2).getAsInteger(16, result) == false) {
               s += result;
               it += 2;
