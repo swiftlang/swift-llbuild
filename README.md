@@ -64,7 +64,11 @@ components independently and are used as part of the test suite.
 If you want to rep your use of llbuild in public, you can proudly leverage our
 conveniently provided sticker (PSD version adjacent). 😁
 
-![I'm not always a ninja, but when I am I'm an llbuild ninja](docs/im-an-llbuild-ninja-sticker.png)
+<p align="center">
+<a href="docs/im-an-llbuild-ninja-sticker.png">
+<img src="docs/im-an-llbuild-ninja-sticker.png" alt="I'm not always a ninja, but when I am I'm an llbuild ninja." width=200/>
+</a>
+</p>
 
 #### Build Trace Files
 
