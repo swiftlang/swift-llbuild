@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.4.3)
 project(llbuild LANGUAGES CXX)
 
 option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
+option(LLBUILD_ENABLE_ASSERTIONS "enable assertions in release mode" NO)
 
 # Configure the default set of bindings to build.
 set(LLBUILD_SUPPORT_BINDINGS "" CACHE STRING "bindings to build")
@@ -185,19 +186,22 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 endif()
 
 # On Linux, we may need to include a workaround for legacy libstdc++.
-if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -include \"${LLBUILD_SRC_DIR}/include/libstdc++14-workaround.h\"")
-endif ()
+if(CMAKE_SYSTEM_NAME STREQUAL Linux)
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-include$<SEMICOLON>${LLBUILD_SRC_DIR}/include/libstdc++14-workaround.h>)
+endif()
 
 # Check for -Wunreachable-code-aggressive instead of -Wunreachable-code, as that indicates
 # that we have the newer -Wunreachable-code implementation.
 check_cxx_compiler_flag("-Werror -Wunreachable-code-aggressive" CXX_SUPPORTS_UNREACHABLE_CODE_FLAG)
-append_if(CXX_SUPPORTS_UNREACHABLE_CODE_FLAG "-Wunreachable-code" CMAKE_CXX_FLAGS)
+if(CXX_SUPPORTS_UNREACHABLE_CODE_FLAG)
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Wunreachable-code>)
+endif()
 
 # Release configuration has assertions disabled, enable them if asked to.
 if(LLBUILD_ENABLE_ASSERTIONS)
-  string(REPLACE "-DNDEBUG" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
-  string(REPLACE "-DNDEBUG" "" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
+  # NOTE(compnerd) theoretically, we should be able to use `add_definitions` but
+  # the generator expression support prevents that.
+  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-UNDEBUG>)
 endif()
 
 # Add an always out-of-date target to get the Swift compiler version.
