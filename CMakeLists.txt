@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.4.3)
+cmake_minimum_required(VERSION 3.15.1)
 
 project(llbuild LANGUAGES CXX)
 
@@ -80,28 +80,6 @@ find_package(Lit)
 find_package(FileCheck)
 find_package(PythonInterp)
 
-# Check if we should build the Swift bindings.
-if (";${LLBUILD_SUPPORT_BINDINGS};" MATCHES ";Swift;")
-  if (SWIFTC_EXECUTABLE)
-    set(SWIFTC_FOUND TRUE)
-    message(STATUS "Using provided swiftc: ${SWIFTC_EXECUTABLE}")
-  # Find swiftc on OSX using `xcrun --find swiftc` and `find_package` on Linux.
-  elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    execute_process(
-        COMMAND xcrun --find swiftc
-        OUTPUT_VARIABLE SWIFTC_EXECUTABLE
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
-    set(SWIFTC_FOUND TRUE)
-    message(STATUS "Found swiftc: ${SWIFTC_EXECUTABLE}")
-  else()
-    find_package(Swiftc)
-  endif()
-else()
-  message(STATUS "Not building Swift bindings")
-  set(SWIFTC_EXECUTABLE)
-  set(SWIFTC_FOUND FALSE)
-endif()
-
 ###
 # Setup compiler and project build settings
 
@@ -167,29 +145,28 @@ elseif(MSVC)
 else ()
   add_compile_options(
     # Enable additional Clang warnings.
-   "$<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>"
-   "$<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>"
-   "$<$<COMPILE_LANGUAGE:CXX>:-Wbool-conversion>"
-   "$<$<COMPILE_LANGUAGE:CXX>:-Wconstant-conversion>"
-   "$<$<COMPILE_LANGUAGE:CXX>:-Wdeprecated-declarations>"
-   "$<$<COMPILE_LANGUAGE:CXX>:-Wdocumentation>"
-   "$<$<COMPILE_LANGUAGE:CXX>:-Wempty-body>"
-   "$<$<COMPILE_LANGUAGE:CXX>:-Wenum-conversion>"
-   "$<$<COMPILE_LANGUAGE:CXX>:-Wimplicit-fallthrough>"
-   "$<$<COMPILE_LANGUAGE:CXX>:-Wint-conversion>"
-   "$<$<COMPILE_LANGUAGE:CXX>:-Winvalid-offsetof>"
-   "$<$<COMPILE_LANGUAGE:CXX>:-Wmost>"
-   "$<$<COMPILE_LANGUAGE:CXX>:-Wnewline-eof>"
-   "$<$<COMPILE_LANGUAGE:CXX>:-Wnon-virtual-dtor>"
-   "$<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>"
-   "$<$<COMPILE_LANGUAGE:CXX>:-Wparentheses>"
-   "$<$<COMPILE_LANGUAGE:CXX>:-Wsign-compare>"
-   "$<$<COMPILE_LANGUAGE:CXX>:-Wswitch>"
-   "$<$<COMPILE_LANGUAGE:CXX>:-Wuninitialized>"
-   "$<$<COMPILE_LANGUAGE:CXX>:-Wunused-function>"
-   "$<$<COMPILE_LANGUAGE:CXX>:-Wunused-value>"
-   "$<$<COMPILE_LANGUAGE:CXX>:-Wunused-variable>"
-   )
+    "$<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-Wbool-conversion>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-Wconstant-conversion>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-Wdeprecated-declarations>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-Wdocumentation>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-Wempty-body>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-Wenum-conversion>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-Wimplicit-fallthrough>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-Wint-conversion>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-Winvalid-offsetof>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-Wmost>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-Wnewline-eof>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-Wnon-virtual-dtor>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-Wparentheses>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-Wsign-compare>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-Wswitch>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-Wuninitialized>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-Wunused-function>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-Wunused-value>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-Wunused-variable>")
 endif ()
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
@@ -213,17 +190,6 @@ if(LLBUILD_ENABLE_ASSERTIONS)
   # NOTE(compnerd) theoretically, we should be able to use `add_definitions` but
   # the generator expression support prevents that.
   add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-UNDEBUG>)
-endif()
-
-# Add an always out-of-date target to get the Swift compiler version.
-if (SWIFTC_FOUND)
-  set(SWIFT_VERSION ${LLBUILD_OBJ_DIR}/swift-version)
-  add_custom_target(
-    swiftversion ALL
-    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/utils/write-swift-version ${SWIFTC_EXECUTABLE} ${SWIFT_VERSION}
-    BYPRODUCTS ${SWIFT_VERSION}
-    COMMENT "Checking Swift compiler version"
-  )
 endif()
 
 ###
