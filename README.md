@@ -61,6 +61,11 @@ primarily only useful for developers interested in working on the Ninja
 support. These commands allow testing the lexer, parser, and manifest loading
 components independently and are used as part of the test suite.
 
+If you want to rep your use of llbuild in public, you can proudly leverage our
+conveniently provided sticker (PSD version adjacent). 😁
+
+![I'm not always a ninja, but when I am I'm an llbuild ninja](docs/im-an-llbuild-ninja-sticker.png)
+
 #### Build Trace Files
 
 Inspired by Buck, `llbuild ninja` supports a `--profile PATH` option to generate
