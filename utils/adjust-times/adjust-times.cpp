@@ -3,9 +3,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <libgen.h>
+#include <time.h>
 #include <sysexits.h>
 #include <sys/stat.h>
-#include <time.h>
+#include <sys/time.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <math.h>
@@ -28,50 +29,46 @@ static void usage(const char* progname, bool help_screen = false) {
     , progname);
 }
 
-/// Get the current wall clock time.
-struct timespec get_current_time() {
-  struct timespec now;
-#if defined(_WIN32)
-  struct timeval tv;
-  if (gettimeofday(&tv, 0) == -1) {
-    fprintf(stderr, "gettimeofday(): %s\n", strerror(errno));
-    exit(EX_OSERR);
-  }
-  now.tv_sec = tv.tv_sec;
-  now.tv_nsec = tv.tv_usec * 1000;
-#else
-  if (clock_gettime(CLOCK_REALTIME, &now) == -1) {
-    fprintf(stderr, "clock_gettime(): %s\n", strerror(errno));
-    exit(EX_OSERR);
-  }
-#endif
-  return now;
-}
-
 /// Set the file time access and modification times to a specified time,
 /// or to the current time.
-int file_time_set_fixed(const char* filename, struct timespec time_to_set) {
-#if defined(_WIN32)
+static int file_time_set_fixed(const char* filename, struct timespec time_to_set) {
+#if defined __APPLE__
+  if (__builtin_available(macOS 10.13, *)) {
+    struct timespec times[2] = { time_to_set, time_to_set };
+    return utimensat(AT_FDCWD, filename, times, 0);
+  } else {
+    // If requested to reset atime/mtime to "now", use the shortcut
+    // instead of computing and using the current time.
+    if (time_to_set.tv_nsec == UTIME_NOW) {
+      return utimes(filename, NULL);
+    }
+    struct timeval tv;
+    tv.tv_sec = time_to_set.tv_sec;
+    tv.tv_usec = (__darwin_suseconds_t)(time_to_set.tv_nsec / 1000);
+    struct timeval times[2] = { tv, tv };
+    return utimes(filename, times);
+  }
+#elif defined __linux__
+  struct timespec times[2] = { time_to_set, time_to_set };
+  return utimensat(AT_FDCWD, filename, times, 0);
+#else
   // If requested to reset atime/mtime to "now", use the shortcut
   // instead of computing and using the current time.
   if (time_to_set.tv_nsec == UTIME_NOW) {
     return utime(filename, NULL);
   }
-  struct utimbuf times = { time_to_set.tv_sec, time_to_set.tv_sec };
+  struct utimbuf times = { time_to_set.tv_sec, time_to_sec.tv_sec };
   return utime(filename, &times);
-#else
-  struct timespec times[2] = { time_to_set, time_to_set };
-  return utimensat(AT_FDCWD, filename, times, 0);
 #endif
 }
 
 static struct timespec stat_mtime_as_timespec(const struct stat* sb) {
 #if defined(__APPLE__)
-  return { sb->st_mtimespec.tv_sec, sb->st_mtimespec.tv_nsec };
+  return sb->st_mtimespec;
 #elif defined(_WIN32)
   return { sb->st_mtime, 0 };
 #else
-  return { sb->st_mtim.tv_sec, sb->st_mtim.tv_usec * 1000 };
+  return sb->st_mtim;
 #endif
 }
 
