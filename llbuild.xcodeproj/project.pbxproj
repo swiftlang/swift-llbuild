@@ -78,6 +78,8 @@
 		40EA26512166AB5A00068954 /* LaneBasedExecutionQueueTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 40EA26502166AB5A00068954 /* LaneBasedExecutionQueueTest.cpp */; };
 		40FA6485224AC2FC00D0B79A /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
 		40FA6486224AC34400D0B79A /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
+		8C561C0723551C90000D242D /* adjust-times.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8C561C0623551C8F000D242D /* adjust-times.cpp */; };
+		8C561C0823551D57000D242D /* adjust-times in Resources */ = {isa = PBXBuildFile; fileRef = 8C561BFF23551C4A000D242D /* adjust-times */; };
 		913540F2220E5CC1009C82D6 /* UnicodeCaseFold.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 913540F1220E5CC1009C82D6 /* UnicodeCaseFold.cpp */; };
 		91BFB728220E3FBD00259E9F /* APFloat.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 91FD9A90220E3EA700BE004E /* APFloat.cpp */; };
 		91BFB729220E3FBD00259E9F /* APInt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 91FD9A8A220E3EA600BE004E /* APInt.cpp */; };
@@ -742,6 +744,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
+		8C561BFD23551C4A000D242D /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		9DB047A61DF9D43D006CDF52 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -887,6 +898,8 @@
 		40F638EC2053043D00A1CFBE /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 		54E187B61CD296EA00F7EC89 /* BuildNode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildNode.h; sourceTree = "<group>"; };
 		54E187B71CD296EA00F7EC89 /* ExternalCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ExternalCommand.h; sourceTree = "<group>"; };
+		8C561BFF23551C4A000D242D /* adjust-times */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "adjust-times"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8C561C0623551C8F000D242D /* adjust-times.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "adjust-times.cpp"; path = "utils/adjust-times/adjust-times.cpp"; sourceTree = SOURCE_ROOT; };
 		913540F1220E5CC1009C82D6 /* UnicodeCaseFold.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = UnicodeCaseFold.cpp; sourceTree = "<group>"; };
 		914D00E5220E3F6C009E16B2 /* abi-breaking.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "abi-breaking.h"; sourceTree = "<group>"; };
 		914D00E6220E3F7B009E16B2 /* AArch64TargetParser.def */ = {isa = PBXFileReference; lastKnownFileType = text; path = AArch64TargetParser.def; sourceTree = "<group>"; };
@@ -1274,6 +1287,13 @@
 				40B3C91020D3AEC9007C5847 /* libcurses.tbd in Frameworks */,
 				40B3C91120D3AEC9007C5847 /* libgtest.a in Frameworks */,
 				40B3C91220D3AEC9007C5847 /* libgtest_main.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8C561BFC23551C4A000D242D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1687,6 +1707,15 @@
 			path = buildsystem;
 			sourceTree = "<group>";
 		};
+		8C561C0023551C4A000D242D /* adjust-times */ = {
+			isa = PBXGroup;
+			children = (
+				8C561C0623551C8F000D242D /* adjust-times.cpp */,
+			);
+			name = "adjust-times";
+			path = "../adjust-times";
+			sourceTree = "<group>";
+		};
 		91BFB73C220E41C800259E9F /* Demangle */ = {
 			isa = PBXGroup;
 			children = (
@@ -1869,6 +1898,7 @@
 				9DB047A81DF9D43D006CDF52 /* BuildSystemTests */,
 				40B3C91A20D3AEC9007C5847 /* CAPITests */,
 				B546B39422C65CFB007046C0 /* llbuildSwiftTests.xctest */,
+				8C561BFF23551C4A000D242D /* adjust-times */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -2043,6 +2073,7 @@
 		E1A2246A19F998C30059043E /* utils */ = {
 			isa = PBXGroup;
 			children = (
+				8C561C0023551C4A000D242D /* adjust-times */,
 				406A04FC21627FD900EBA895 /* docker */,
 				1484D2112094E90600D3830F /* emacs */,
 				1484D2072094E8DE00D3830F /* manifest-generator */,
@@ -2667,6 +2698,23 @@
 			productReference = 40B3C91A20D3AEC9007C5847 /* CAPITests */;
 			productType = "com.apple.product-type.tool";
 		};
+		8C561BFE23551C4A000D242D /* adjust-times */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8C561C0523551C4A000D242D /* Build configuration list for PBXNativeTarget "adjust-times" */;
+			buildPhases = (
+				8C561BFB23551C4A000D242D /* Sources */,
+				8C561BFC23551C4A000D242D /* Frameworks */,
+				8C561BFD23551C4A000D242D /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "adjust-times";
+			productName = "adjust-times";
+			productReference = 8C561BFF23551C4A000D242D /* adjust-times */;
+			productType = "com.apple.product-type.tool";
+		};
 		9DB047A71DF9D43D006CDF52 /* BuildSystemTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 9DB047AC1DF9D43D006CDF52 /* Build configuration list for PBXNativeTarget "BuildSystemTests" */;
@@ -3056,6 +3104,10 @@
 				LastUpgradeCheck = 9900;
 				ORGANIZATIONNAME = "Apple Inc.";
 				TargetAttributes = {
+					8C561BFE23551C4A000D242D = {
+						CreatedOnToolsVersion = 11.0;
+						ProvisioningStyle = Automatic;
+					};
 					9DB047A71DF9D43D006CDF52 = {
 						CreatedOnToolsVersion = 8.3;
 						ProvisioningStyle = Automatic;
@@ -3182,6 +3234,7 @@
 				E10D5CD919FEBF6A00211ED4 /* LitXCTestAdaptor */,
 				E1C404AB1A0308F3003392BA /* PerfTests */,
 				B546B39322C65CFB007046C0 /* llbuildSwiftTests */,
+				8C561BFE23551C4A000D242D /* adjust-times */,
 			);
 		};
 /* End PBXProject section */
@@ -3198,6 +3251,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8C561C0823551D57000D242D /* adjust-times in Resources */,
 				E10D5CE619FEF40100211ED4 /* LitTests.py in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -3378,6 +3432,14 @@
 			files = (
 				9ADD8B2320D7009F0066BE9A /* BuildSystem-C-API.cpp in Sources */,
 				40B3C91C20D3B075007C5847 /* C-API.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8C561BFB23551C4A000D242D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8C561C0723551C90000D242D /* adjust-times.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3990,6 +4052,53 @@
 			};
 			name = Release;
 		};
+		8C561C0323551C4A000D242D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		8C561C0423551C4A000D242D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		9DB047AD1DF9D43D006CDF52 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -4518,6 +4627,15 @@
 			buildConfigurations = (
 				40B3C91820D3AEC9007C5847 /* Debug */,
 				40B3C91920D3AEC9007C5847 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		8C561C0523551C4A000D242D /* Build configuration list for PBXNativeTarget "adjust-times" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8C561C0323551C4A000D242D /* Debug */,
+				8C561C0423551C4A000D242D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

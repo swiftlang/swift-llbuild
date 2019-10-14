@@ -146,6 +146,20 @@
                ReferencedContainer = "container:llbuild.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "8C561BFE23551C4A000D242D"
+               BuildableName = "adjust-times"
+               BlueprintName = "adjust-times"
+               ReferencedContainer = "container:llbuild.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
