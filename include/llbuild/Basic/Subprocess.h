@@ -228,9 +228,18 @@ namespace llbuild {
       /// ultimately be sent a SIGKILL).
       bool canSafelyInterrupt;
 
+      /// Whether to connect the spawned process directly to the console.
+      bool connectToConsole = false;
+
       /// If set, the working directory to change into before spawning (support
       /// not guaranteed on all platforms).
       StringRef workingDir = {};
+
+      /// If true, the supplied environment will be overlayed on top base
+      /// environment supplied when creating the queue.
+      /// If false, only the supplied environment will be passed
+      /// to the subprocess.
+      bool inheritEnvironment = true;
 
       /// If true, exposes a control file descriptor that may be used to
       /// communicate with the build system.

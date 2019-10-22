@@ -133,10 +133,6 @@ namespace llbuild {
       /// system to release its execution lane. Callers should put cleanup and
       /// notification work here.
       ///
-      /// \param inheritEnvironment If true, the supplied environment will be
-      /// overlayed on top base environment supplied when creating the queue. If
-      /// false, only the supplied environment will be passed to the subprocess.
-      ///
       /// \param attributes Additional attributes for the process to be spawned.
       //
       // FIXME: This interface will need to get more complicated, and provide the
@@ -145,7 +141,6 @@ namespace llbuild {
       executeProcess(QueueJobContext* context,
                      ArrayRef<StringRef> commandLine,
                      ArrayRef<std::pair<StringRef, StringRef>> environment,
-                     bool inheritEnvironment = true,
                      ProcessAttributes attributes = {true},
                      llvm::Optional<ProcessCompletionFn> completionFn = {llvm::None}) = 0;
 

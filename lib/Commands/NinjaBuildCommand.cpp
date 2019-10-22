@@ -1266,8 +1266,9 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       // the output under the expectation that the console job might write to
       // the output. We don't make any attempt to lock this in case the console
       // job can run concurrently with anything else.
-      if (command->getExecutionPool() == context.manifest->getConsolePool())
+      if (command->getExecutionPool() == context.manifest->getConsolePool()) {
         context.statusOutput.finishLine();
+      }
     }
 
     void executeCommand(QueueJobContext* qctx) {
@@ -1275,6 +1276,9 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       if (context.isCancelled) {
         return completeTask(BuildValue::makeSkippedCommand());
       }
+
+      // The console pool is a bit special in the way it flushes its output.
+      bool isConsolePool = command->getExecutionPool() == context.manifest->getConsolePool();
 
       // Write the description on the output queue, taking care to not rely on
       // the ``this`` object, which may disappear before the queue executes this
@@ -1285,7 +1289,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
 #ifndef __clang_analyzer__
         // If this is a console job, do the write synchronously to ensure it
         // appears before the task might start.
-        if (command->getExecutionPool() == context.manifest->getConsolePool()) {
+        if (isConsolePool) {
           context.outputQueue.sync([&context=context, command=command] {
               writeDescription(context, command);
             });
@@ -1308,7 +1312,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         command->getCommandString().c_str()
       };
 
-      context.jobQueue->executeProcess(qctx, args, {}, true, {true}, {
+      context.jobQueue->executeProcess(qctx, args, {}, {true, isConsolePool}, {
         [&](ProcessResult result) {
           // Actually run the command.
           if (result.status != ProcessStatus::Succeeded) {

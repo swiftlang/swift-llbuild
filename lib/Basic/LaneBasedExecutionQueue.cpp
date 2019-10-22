@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014-2018 Apple Inc. and the Swift project authors
+// Copyright (c) 2014-2019 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -276,7 +276,6 @@ public:
       QueueJobContext* opaqueContext,
       ArrayRef<StringRef> commandLine,
       ArrayRef<std::pair<StringRef, StringRef>> environment,
-      bool inheritEnvironment,
       ProcessAttributes attributes,
       llvm::Optional<ProcessCompletionFn> completionFn) override {
 
@@ -316,7 +315,7 @@ public:
     //
     // FIXME: This involves a lot of redundant allocation, currently. We could
     // cache this for the common case of a directly inherited environment.
-    if (inheritEnvironment) {
+    if (attributes.inheritEnvironment) {
       for (const char* const* p = this->environment; *p != nullptr; ++p) {
         auto pair = StringRef(*p).split('=');
         posixEnv.setIfMissing(pair.first, pair.second);

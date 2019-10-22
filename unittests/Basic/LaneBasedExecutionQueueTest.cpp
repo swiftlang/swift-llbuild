@@ -103,7 +103,7 @@ namespace {
                                          { DefaultShellPath, "-c", yescmd.c_str() });
       std::shared_ptr<std::promise<ProcessStatus>> p{new std::promise<ProcessStatus>};
       auto result = p->get_future();
-      queue->executeProcess(context, commandLine, {}, true, {true, tempDir.str()},
+      queue->executeProcess(context, commandLine, {}, {true, false, tempDir.str()},
                      {[p](ProcessResult result) mutable {
         p->set_value(result.status);
       }});

@@ -44,7 +44,7 @@ ProcessStatus ExecutionQueue::executeProcess(QueueJobContext* context,
   // here to allow it to go along with the labmda.
   std::shared_ptr<std::promise<ProcessStatus>> p{new std::promise<ProcessStatus>};
   auto result = p->get_future();
-  executeProcess(context, commandLine, {}, true, {true},
+  executeProcess(context, commandLine, {}, {true},
                  {[p](ProcessResult result) mutable {
     p->set_value(result.status);
   }});
