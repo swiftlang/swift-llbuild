@@ -39,14 +39,11 @@ ExecutionQueue::~ExecutionQueue() {
 
 ProcessStatus ExecutionQueue::executeProcess(QueueJobContext* context,
                                              ArrayRef<StringRef> commandLine) {
-  // Promises are move constructible only, thus cannot be put into std::function
-  // objects that themselves get copied around. So we must create a shared_ptr
-  // here to allow it to go along with the labmda.
-  std::shared_ptr<std::promise<ProcessStatus>> p{new std::promise<ProcessStatus>};
-  auto result = p->get_future();
+  std::promise<ProcessStatus> p;
+  auto result = p.get_future();
   executeProcess(context, commandLine, {}, {true},
-                 {[p](ProcessResult result) mutable {
-    p->set_value(result.status);
+                 {[&p](ProcessResult result) mutable {
+    p.set_value(result.status);
   }});
   return result.get();
 }

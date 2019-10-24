@@ -38,6 +38,7 @@
 #include "CommandUtil.h"
 
 #include <atomic>
+#include <future>
 #include <cerrno>
 #include <chrono>
 #include <condition_variable>
@@ -420,7 +421,7 @@ public:
   CommandLineStatusOutput statusOutput;
 
   /// The serial queue we used to order output consistently.
-  SerialQueue outputQueue;
+  SerialQueue consoleQueue;
 
   /// Pending process output
   std::unordered_map<uint64_t, SmallString<1024>> outputBuffers;
@@ -544,8 +545,8 @@ public:
   }
 
   ~BuildContext() {
-    // Ensure the output queue is done.
-    outputQueue.sync([] {});
+    // Ensure the console queue tasks have been run to completion.
+    consoleQueue.sync([] {});
 
     // Restore any previous SIGINT handler.
 #if defined(_WIN32)
@@ -572,7 +573,7 @@ public:
 
   /// Emit a status line, which can be updated.
   ///
-  /// This method should only be called from the outputQueue.
+  /// This method should only be called from the console queue.
   void emitStatus(const char* fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
@@ -588,7 +589,7 @@ public:
 
   /// Emit a diagnostic to the error stream.
   void emitDiagnostic(std::string kind, std::string message) {
-    outputQueue.async([this, kind=std::move(kind), message=std::move(message)] {
+    consoleQueue.async([this, kind=std::move(kind), message=std::move(message)] {
         statusOutput.finishLine();
         fprintf(stderr, "%s: %s: %s\n", getProgramName(), kind.c_str(),
                 message.c_str());
@@ -600,7 +601,7 @@ public:
   void emitDiagnosticAndText(std::string kind, std::string&& message,
                              std::string&& text) {
     statusOutput.stripColorCodes(text);
-    outputQueue.async([this, kind=std::move(kind), message=std::move(message),
+    consoleQueue.async([this, kind=std::move(kind), message=std::move(message),
                        text=std::move(text)] {
         statusOutput.finishLine();
         fprintf(stderr, "%s: %s: %s\n", getProgramName(), kind.c_str(),
@@ -614,7 +615,7 @@ public:
   /// Emit a block of text to the output.
   void emitText(std::string&& text) {
     statusOutput.stripColorCodes(text);
-    outputQueue.async([this, text=std::move(text)] {
+    consoleQueue.async([this, text=std::move(text)] {
         statusOutput.finishLine();
         fwrite(text.data(), text.size(), 1, stdout);
         fflush(stdout);
@@ -1212,8 +1213,9 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       }
       assert(!hasMissingInput);
 
-      // Otherwise, enqueue the job to run later.
-      context.jobQueue->addJob({command, [&] (QueueJobContext* qctx) {
+      auto addExecuteJob = [&](std::function<void(void)>&& jobFullyExecuted) {
+        // Otherwise, enqueue the job to run later.
+        context.jobQueue->addJob({command, [&, done=std::move(jobFullyExecuted)] (QueueJobContext* qctx) {
           // Suppress static analyzer false positive on generalized lambda capture
           // (rdar://problem/22165130).
 #ifndef __clang_analyzer__
@@ -1224,7 +1226,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
           auto bucket = qctx->laneID();
 
           if (localContext.profileFP) {
-            localContext.outputQueue.sync(
+            localContext.consoleQueue.async(
               [&localContext=localContext, localCommand=localCommand, bucket] {
                 uint64_t startTime = getTimeInMicroseconds();
                 fprintf(localContext.profileFP,
@@ -1238,7 +1240,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
           executeCommand(qctx);
 
           if (localContext.profileFP) {
-            localContext.outputQueue.sync(
+            localContext.consoleQueue.async(
               [&localContext=localContext, localCommand=localCommand, bucket] {
                 uint64_t endTime = getTimeInMicroseconds();
                 fprintf(localContext.profileFP,
@@ -1248,8 +1250,22 @@ buildCommand(BuildContext& context, ninja::Command* command) {
                         static_cast<unsigned long long>(endTime));
               });
           }
+          done();
 #endif
-      }});
+        }});
+      };
+
+      bool isConsolePool = command->getExecutionPool() == context.manifest->getConsolePool();
+      if (isConsolePool) {
+        context.consoleQueue.async([addExecuteJob=std::move(addExecuteJob)] {
+          std::promise<void> p;
+          auto result = p.get_future();
+          addExecuteJob([&p]{ p.set_value(); });
+          result.get();
+        });
+      } else {
+        addExecuteJob([]{});
+      }
     }
 
     static void writeDescription(BuildContext& context,
@@ -1290,13 +1306,13 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         // If this is a console job, do the write synchronously to ensure it
         // appears before the task might start.
         if (isConsolePool) {
-          context.outputQueue.sync([&context=context, command=command] {
-              writeDescription(context, command);
-            });
+          // Jobs in a console pool are guaranteed to run on a pool's console queue,
+          // so the output won't get intermixed.
+          writeDescription(context, command);
         } else {
-          context.outputQueue.async([&context=context, command=command] {
-              writeDescription(context, command);
-            });
+          context.consoleQueue.async([&context=context, command=command] {
+            writeDescription(context, command);
+          });
         }
 #endif
       }
