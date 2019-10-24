@@ -1,0 +1,28 @@
+# Check that jobs in a console pool always run in a given order.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out
+# RUN: %{FileCheck} --input-file %t1.out %s
+
+# CHECK: [{{.*}}/4] echo console1
+# CHECK-NEXT: console1 on console
+# CHECK: [{{.*}}/4] echo console2
+# CHECK-NEXT: console2 on console
+
+rule BACKGROUND
+  command = echo "${out}: random $${RANDOM}"
+
+rule CONSOLE
+  pool = console
+  command = echo ${out} on console
+
+build random1: BACKGROUND
+build random2: BACKGROUND
+build console1: CONSOLE
+build console2: CONSOLE
+
+build all: phony random1 random2 console1 console2
+
+default all
