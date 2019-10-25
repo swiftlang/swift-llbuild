@@ -379,10 +379,11 @@ void ShellCommand::executeExternalCommand(
     return;
   }
 
+  bool connectToConsole = false;
+
   // Execute the command.
   bsci.getExecutionQueue().executeProcess(
       context, args, env,
-      /*inheritEnvironment=*/inheritEnv,
-      {canSafelyInterrupt, workingDirectory, controlEnabled},
+      {canSafelyInterrupt, connectToConsole, workingDirectory, inheritEnv, controlEnabled},
       /*completionFn=*/{commandCompletionFn});
 }

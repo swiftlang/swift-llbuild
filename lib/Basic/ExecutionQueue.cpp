@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2018 Apple Inc. and the Swift project authors
+// Copyright (c) 2018 - 2019 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -39,14 +39,11 @@ ExecutionQueue::~ExecutionQueue() {
 
 ProcessStatus ExecutionQueue::executeProcess(QueueJobContext* context,
                                              ArrayRef<StringRef> commandLine) {
-  // Promises are move constructible only, thus cannot be put into std::function
-  // objects that themselves get copied around. So we must create a shared_ptr
-  // here to allow it to go along with the labmda.
-  std::shared_ptr<std::promise<ProcessStatus>> p{new std::promise<ProcessStatus>};
-  auto result = p->get_future();
-  executeProcess(context, commandLine, {}, true, {true},
-                 {[p](ProcessResult result) mutable {
-    p->set_value(result.status);
+  std::promise<ProcessStatus> p;
+  auto result = p.get_future();
+  executeProcess(context, commandLine, {}, {true},
+                 {[&p](ProcessResult result) mutable {
+    p.set_value(result.status);
   }});
   return result.get();
 }

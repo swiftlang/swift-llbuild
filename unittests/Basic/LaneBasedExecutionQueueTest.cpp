@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2018 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2019 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -101,11 +101,11 @@ namespace {
       std::string yescmd = "yes >yes-output.txt";
       std::vector<StringRef> commandLine(
                                          { DefaultShellPath, "-c", yescmd.c_str() });
-      std::shared_ptr<std::promise<ProcessStatus>> p{new std::promise<ProcessStatus>};
-      auto result = p->get_future();
-      queue->executeProcess(context, commandLine, {}, true, {true, tempDir.str()},
-                     {[p](ProcessResult result) mutable {
-        p->set_value(result.status);
+      std::promise<ProcessStatus> p;
+      auto result = p.get_future();
+      queue->executeProcess(context, commandLine, {}, {true, false, tempDir.str()},
+                     {[&p](ProcessResult result) mutable {
+        p.set_value(result.status);
       }});
       result.get();
     };

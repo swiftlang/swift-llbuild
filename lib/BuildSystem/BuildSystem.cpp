@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2019 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -2158,7 +2158,7 @@ public:
                                       QueueJobContext* context,
                                       llvm::Optional<ProcessCompletionFn> completionFn) override {
     // Execute the command.
-    bsci.getExecutionQueue().executeProcess(context, args, {}, true, {true}, {[this, &bsci, task, completionFn](ProcessResult result){
+    bsci.getExecutionQueue().executeProcess(context, args, {}, {true}, {[this, &bsci, task, completionFn](ProcessResult result){
 
       if (result.status != ProcessStatus::Succeeded) {
         // If the command failed, there is no need to gather dependencies.
@@ -3228,7 +3228,7 @@ class ArchiveShellCommand : public ExternalCommand {
     auto args = getArgs();
     bsci.getExecutionQueue().executeProcess(context,
                                             std::vector<StringRef>(args.begin(), args.end()),
-                                            {}, true, {true},
+                                            {}, {true},
                                             {[completionFn](ProcessResult result) {
       if (completionFn.hasValue())
         completionFn.getValue()(result);
@@ -3350,7 +3350,7 @@ class SharedLibraryShellCommand : public ExternalCommand {
 
     auto args = getArgs();
     bsci.getExecutionQueue().executeProcess(
-        context, std::vector<StringRef>(args.begin(), args.end()), {}, true,
+        context, std::vector<StringRef>(args.begin(), args.end()), {},
         {true}, {[completionFn](ProcessResult result) {
           if (completionFn.hasValue())
             completionFn.getValue()(result);

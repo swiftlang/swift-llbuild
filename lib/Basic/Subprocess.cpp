@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2018 Apple Inc. and the Swift project authors
+// Copyright (c) 2018 - 2019 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -396,7 +396,7 @@ void llbuild::basic::spawnProcess(
     ProcessCompletionFn&& completionFn
 ) {
   // Whether or not we are capturing output.
-  const bool shouldCaptureOutput = true;
+  const bool shouldCaptureOutput = !attr.connectToConsole;
 
   delegate.processStarted(ctx, handle);
 
@@ -430,14 +430,7 @@ void llbuild::basic::spawnProcess(
   DWORD creationFlags = NORMAL_PRIORITY_CLASS | CREATE_NEW_PROCESS_GROUP |
                         CREATE_UNICODE_ENVIRONMENT;
   PROCESS_INFORMATION processInfo = {0};
-  STARTUPINFOW startupInfo = {0};
 
-  startupInfo.dwFlags = STARTF_USESTDHANDLES;
-  // Set NUL as stdin
-  HANDLE nul =
-      CreateFileW(L"NUL", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
-                  NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-  startupInfo.hStdInput = nul;
 #else
   // Initialize the spawn attributes.
   posix_spawnattr_t attributes;
@@ -473,7 +466,9 @@ void llbuild::basic::spawnProcess(
 
   // Set the attribute flags.
   unsigned flags = POSIX_SPAWN_SETSIGMASK | POSIX_SPAWN_SETSIGDEF;
-  flags |= POSIX_SPAWN_SETPGROUP;
+  if (!attr.connectToConsole) {
+    flags |= POSIX_SPAWN_SETPGROUP;
+  }
 
   // Close all other files by default.
   //
@@ -503,9 +498,6 @@ void llbuild::basic::spawnProcess(
     usePosixSpawnChdirFallback = false;
   }
 
-  // Open /dev/null as stdin.
-  posix_spawn_file_actions_addopen(
-      &fileActions, 0, "/dev/null", O_RDONLY, 0);
 #endif
 
 #if defined(_WIN32)
@@ -513,6 +505,18 @@ void llbuild::basic::spawnProcess(
   std::string workingDir = attr.workingDir.str();
   if (!workingDir.empty()) {
     llvm::convertUTF8ToUTF16String(workingDir, u16Cwd);
+  }
+
+  STARTUPINFOW startupInfo = {0};
+  startupInfo.dwFlags = STARTF_USESTDHANDLES;
+  if (attr.connectToConsole) {
+    startupInfo.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+  } else {
+    // Set NUL as stdin
+    HANDLE nul =
+      CreateFileW(L"NUL", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                  NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    startupInfo.hStdInput = nul;
   }
 
   HANDLE controlPipe[2]{NULL, NULL};
@@ -539,6 +543,18 @@ void llbuild::basic::spawnProcess(
     startupInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);
   }
 #else
+
+  if (attr.connectToConsole) {
+#ifdef __APPLE__
+    posix_spawn_file_actions_addinherit_np(&fileActions, STDIN_FILENO);
+#else
+    posix_spawn_file_actions_adddup2(&fileActions, STDIN_FILENO, STDIN_FILENO);
+#endif
+  } else {
+    // Open /dev/null as stdin.
+    posix_spawn_file_actions_addopen(&fileActions, STDIN_FILENO, "/dev/null", O_RDONLY, 0);
+  }
+
   // Create a pipe for the process to (potentially) release the lane while
   // still running.
   int controlPipe[2]{ -1, -1 };
@@ -780,8 +796,11 @@ void llbuild::basic::spawnProcess(
         releaseFn([&delegate, &pgrp, pid, handle, ctx, shouldCaptureOutput,
                    outputFd = outputPipe[0], controlFd = controlPipe[0],
                    completionFn = std::move(completionFn)]() mutable {
-          if (shouldCaptureOutput)
+          if (shouldCaptureOutput) {
             captureExecutedProcessOutput(delegate, outputFd, handle, ctx);
+          } else {
+            assert(outputFd == NULL);
+          }
 
           cleanUpExecutedProcess(delegate, pgrp, pid, handle, ctx,
                                  std::move(completionFn), controlFd);
@@ -864,12 +883,16 @@ void llbuild::basic::spawnProcess(
     if (control.shouldRelease()) {
       releaseFn([
                  &delegate, &pgrp, pid, handle, ctx,
+                 shouldCaptureOutput,
                  outputFd=outputPipe[0],
                  controlFd=controlPipe[0],
                  completionFn=std::move(completionFn)
                  ]() mutable {
-        if (shouldCaptureOutput)
+        if (shouldCaptureOutput) {
           captureExecutedProcessOutput(delegate, outputFd, handle, ctx);
+        } else {
+          assert(outputFd == -1);
+        }
 
         cleanUpExecutedProcess(delegate, pgrp, pid, handle, ctx,
                                std::move(completionFn), controlFd);

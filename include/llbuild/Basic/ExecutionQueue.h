@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2018 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2019 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -133,10 +133,6 @@ namespace llbuild {
       /// system to release its execution lane. Callers should put cleanup and
       /// notification work here.
       ///
-      /// \param inheritEnvironment If true, the supplied environment will be
-      /// overlayed on top base environment supplied when creating the queue. If
-      /// false, only the supplied environment will be passed to the subprocess.
-      ///
       /// \param attributes Additional attributes for the process to be spawned.
       //
       // FIXME: This interface will need to get more complicated, and provide the
@@ -145,7 +141,6 @@ namespace llbuild {
       executeProcess(QueueJobContext* context,
                      ArrayRef<StringRef> commandLine,
                      ArrayRef<std::pair<StringRef, StringRef>> environment,
-                     bool inheritEnvironment = true,
                      ProcessAttributes attributes = {true},
                      llvm::Optional<ProcessCompletionFn> completionFn = {llvm::None}) = 0;
 
