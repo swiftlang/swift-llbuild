@@ -643,6 +643,9 @@ public final class BuildSystem {
     /// - returns: True if the build was successful, false otherwise.
     public func build(node: String) -> Bool {
         var data = copiedDataFromBytes([UInt8](node.utf8))
+        defer {
+            llb_data_destroy(&data)
+        }
         return llb_buildsystem_build_node(_system, &data)
     }
 
@@ -654,6 +657,9 @@ public final class BuildSystem {
     /// - returns: True if the build was successful, false otherwise.
     public func build(target: String? = nil) -> Bool {
         var data = target.map({ copiedDataFromBytes([UInt8]($0.utf8)) }) ?? llb_data_t(length: 0, data: nil)
+        defer {
+            llb_data_destroy(&data)
+        }
         return llb_buildsystem_build(_system, &data)
     }
 
