@@ -53,7 +53,7 @@ bool Manifest::normalize_path(StringRef workingDirectory, SmallVectorImpl<char>&
   if (llvm::sys::fs::make_absolute(workingDirectory, tmp) != std::error_code()) {
     return false;
   }
-  if (tmp.size() == 0 || tmp[0] != slash) {
+  if (tmp.size() == 0 || !llvm::sys::path::is_absolute(tmp)) {
       return false;
   }
 
