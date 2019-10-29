@@ -7,7 +7,7 @@
 # RUN: echo "aggregate-include: include-level-1 include-level-2" > %t.build/aggregate-include.d
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --input-file %t1.out %s
-# RUN: %{adjust-times} --now-plus-ulp %t.build/include-level-2
+# RUN: %{adjust-times} -now-plus-ulp %t.build/include-level-2
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t2.out
 # RUN: %{FileCheck} --input-file %t2.out %s
 
