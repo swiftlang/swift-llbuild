@@ -22,7 +22,7 @@ rule CUSTOM
   command = ${COMMAND}
 
 build first: CUSTOM
-  command = touch executing && source ./close-control-fd && ./wait-for-file stop && rm -f executing
+  command = touch executing && . ./close-control-fd && ./wait-for-file stop && rm -f executing
 
 build second: CUSTOM
   command = test ! -f executing
