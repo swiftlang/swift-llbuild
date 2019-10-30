@@ -1,9 +1,9 @@
-# Check that jobs in a console pool jobs can read from stdin.
+# Check that jobs in a console pool can read from stdin.
 
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
-# RUN: echo "something" | %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out
+# RUN: echo "something" | %{llbuild} ninja build --jobs 2 --no-db --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --input-file %t1.out %s
 
 # CHECK: [1/2] read input
