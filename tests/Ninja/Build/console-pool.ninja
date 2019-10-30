@@ -3,8 +3,8 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
-# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out
-# RUN: %{FileCheck} --input-file %t1.out %s
+# RUN: %{llbuild} ninja build --jobs 4 --no-db --chdir %t.build &> %t.out
+# RUN: %{FileCheck} --input-file %t.out %s
 
 # CHECK: [{{.*}}/4] echo console1
 # CHECK-NEXT: console1 on console

@@ -398,6 +398,11 @@ void llbuild::basic::spawnProcess(
   // Whether or not we are capturing output.
   const bool shouldCaptureOutput = !attr.connectToConsole;
 
+  // Don't use lane release feature for console workloads.
+  if (attr.connectToConsole) {
+    attr.controlEnabled = false;
+  }
+
   delegate.processStarted(ctx, handle);
 
   if (commandLine.size() == 0) {

@@ -1,0 +1,32 @@
+# Check that jobs in a console pool can't be released.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: cp %S/Inputs/close-control-fd %t.build
+# RUN: cp %S/Inputs/wait-for-file %t.build
+# RUN: %{llbuild} ninja build --jobs 3 --no-db --chdir %t.build &> %t.out
+# RUN: %{FileCheck} < %t.out %s
+#
+# CHECK: [1/{{.*}}] touch executing
+# CHECK: [{{.*}}] test ! -f executing
+# CHECK: [{{.*}}] touch stop
+
+rule STOP
+  command = touch stop
+
+build stop: STOP
+
+rule CUSTOM
+  pool = console
+  command = ${COMMAND}
+
+build first: CUSTOM
+  command = touch executing && . ./close-control-fd && ./wait-for-file stop && rm -f executing
+
+build second: CUSTOM
+  command = test ! -f executing
+
+build output: phony first second stop
+
+default output
