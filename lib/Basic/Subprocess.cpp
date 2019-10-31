@@ -22,9 +22,11 @@
 #include "llvm/Support/ConvertUTF.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/Program.h"
+#include "llvm/Support/Compiler.h"
 
 #include <atomic>
 #include <thread>
+#include <memory>
 
 #include <fcntl.h>
 #if !defined(_WIN32)
@@ -170,6 +172,136 @@ void ProcessGroup::signalAll(int signal) {
   }
 }
 
+/// Remember to automatically close the descriptor when it goes out of scope.
+/// This helps to keep the file descriptor alive until forwarded to the process.
+/// After that we don't need to keep it around.
+class ManagedDescriptor {
+public:
+
+  /// A short-hand type for a platform-independent descriptor.
+  using FileDescriptor = sys::FileDescriptorTraits<>::DescriptorType;
+
+private:
+
+  /// Open the trait namespace to shorten the code.
+  using fdTraits = sys::FileDescriptorTraits<>;
+
+  /// Underlying file descriptor.
+  FileDescriptor _descriptor = fdTraits::InvalidDescriptor;
+
+#ifndef  NDEBUG
+  /// Whether the descriptor has been properly closed.
+  bool _closedProperly = true;
+
+  /// File and line number this descriptor was allocated at.
+  const char *_file = nullptr;
+  unsigned _line = 0;
+#endif
+
+public:
+
+  /// Create the descriptor which doesn't describe anything.
+  ManagedDescriptor() : _descriptor(fdTraits::InvalidDescriptor) { }
+
+  /// Store and retrieve the source code information.
+  /// Useful for tracking leaking descriptors.
+#ifndef NDEBUG
+  ManagedDescriptor(const char *file, unsigned line)
+    : _file(file), _line(line) { (void)_file; (void)_line; }
+  const char *file() { return _file; }
+  unsigned line() { return _line; }
+#else
+  ManagedDescriptor(const char *file, unsigned line) { }
+  const char *file() { return __FILE__; }
+  unsigned line() { return 0; }
+#endif
+
+  /// Create the descriptor which autocloses if it goes out of scope.
+  ManagedDescriptor(FileDescriptor &fd) { reset(fd); }
+
+  /// Must not ever copy to avoid double-closure.
+  ManagedDescriptor(const ManagedDescriptor &) LLBUILD_DELETED_FUNCTION;
+
+  /// Can move descriptors just fine.
+  ManagedDescriptor(ManagedDescriptor&& other) {
+    _descriptor = other._descriptor;
+    other._descriptor = fdTraits::InvalidDescriptor;
+#ifndef NDEBUG
+    assert(_closedProperly);
+    _closedProperly = isValid() ? false : other._closedProperly;
+    other._closedProperly = true;
+    _file = other._file;
+    _line = other._line;
+#endif
+  }
+
+  /// Close the file descriptor.
+  /// Safely autocloses in release mode.
+  /// Asserts if the descriptors was about to be autoclosed.
+  ~ManagedDescriptor() {
+    assert(!isValid() && _closedProperly);
+    close();
+  }
+
+  /// Copy the underlying descriptor out.
+  FileDescriptor unsafeDescriptor() const {
+    return _descriptor;
+  }
+
+  /// Whether descriptor has been initialized to a valid value and not closed.
+  bool isValid() const {
+    return fdTraits::IsValid(_descriptor);
+  }
+
+  /// Replace the existing descriptor with a given one,
+  /// invalidating the passed descriptor.
+  ManagedDescriptor &reset(FileDescriptor &fd) {
+    close();
+    _descriptor = fd;
+#ifndef NDEBUG
+    _closedProperly = false;
+#endif
+    fd = fdTraits::InvalidDescriptor;
+    return *this;
+  }
+
+  /// Set inheritability of a given file descriptor.
+  /// true  - Ensure the descriptor is inherited by the child process.
+  /// false - Prevent leaking the descriptor into a child process.
+  ManagedDescriptor &childMayInherit(bool yes) {
+    if (isValid()) {
+      return *this;
+    }
+
+    auto fd = _descriptor;
+
+#if defined(_WIN32)
+    SetHandleInformation(fd, HANDLE_FLAG_INHERIT, yes ? TRUE : FALSE);
+#else
+    if (yes) {
+      fcntl(fd, F_SETFD, fcntl(fd, F_GETFD) | FD_CLOEXEC);
+    } else {
+      fcntl(fd, F_SETFD, fcntl(fd, F_GETFD) & ~FD_CLOEXEC);
+    }
+#endif
+    return *this;
+  }
+
+  /// Explicitly close the descriptor.
+  bool close() {
+    if (!isValid()) {
+      return false;
+    }
+
+    auto fd = _descriptor;
+    _descriptor = fdTraits::InvalidDescriptor;
+#ifndef NDEBUG
+    _closedProperly = true;
+#endif
+    fdTraits::Close(fd);
+    return true;
+  }
+};
 
 // Manage the state of a control protocol channel
 //
@@ -246,14 +378,16 @@ public:
   bool shouldRelease() const { return releaseSeen; }
 };
 
-// Helper function to collect subprocess output
+// Helper function to collect subprocess output.
+// Consumes and closes the outputPipe descriptor.
 static void captureExecutedProcessOutput(ProcessDelegate& delegate,
-                                         FD outputPipe, ProcessHandle handle,
+                                         ManagedDescriptor& outputPipe,
+                                         ProcessHandle handle,
                                          ProcessContext* ctx) {
   while (true) {
     char buf[4096];
     ssize_t numBytes =
-        sys::FileDescriptorTraits<>::Read(outputPipe, buf, sizeof(buf));
+        sys::FileDescriptorTraits<>::Read(outputPipe.unsafeDescriptor(), buf, sizeof(buf));
     if (numBytes < 0) {
       int err = errno;
       delegate.processHadError(ctx, handle,
@@ -268,9 +402,9 @@ static void captureExecutedProcessOutput(ProcessDelegate& delegate,
     // Notify the client of the output.
     delegate.processHadOutput(ctx, handle, StringRef(buf, numBytes));
   }
-  // We have receieved the zero byte read that indicates an EOF. Go ahead and
-  // close the pipe.
-  sys::FileDescriptorTraits<>::Close(outputPipe);
+  // We have receieved the zero byte read that indicates an EOF.
+  // Go ahead and close the pipe (it was going to be closed automatically).
+  outputPipe.close();
 }
 
 // Helper function for cleaning up after a process has finished in
@@ -279,7 +413,7 @@ static void cleanUpExecutedProcess(ProcessDelegate& delegate,
                                    ProcessGroup& pgrp, llbuild_pid_t pid,
                                    ProcessHandle handle, ProcessContext* ctx,
                                    ProcessCompletionFn&& completionFn,
-                                   FD releaseFd) {
+                                   ManagedDescriptor& releaseFd) {
 #if defined(_WIN32)
   FILETIME creationTime;
   FILETIME exitTime;
@@ -291,6 +425,7 @@ static void cleanUpExecutedProcess(ProcessDelegate& delegate,
   GetExitCodeProcess(pid, &exitCode);
 
   if (waitResult == WAIT_FAILED || waitResult == WAIT_ABANDONED) {
+    releaseFd.close();
     auto result = ProcessResult::makeFailed(exitCode);
     delegate.processHadError(ctx, handle,
                              Twine("unable to wait for process (") +
@@ -311,9 +446,7 @@ static void cleanUpExecutedProcess(ProcessDelegate& delegate,
   // Note: We purposely hold this open until after the process has finished as
   // it simplifies client implentation. If we close it early, clients need to be
   // aware of and potentially handle a SIGPIPE.
-  if (sys::FileDescriptorTraits<>::IsValid(releaseFd)) {
-    sys::FileDescriptorTraits<>::Close(releaseFd);
-  }
+  releaseFd.close();
 
   // Update the set of spawned processes.
   pgrp.remove(pid);
@@ -384,6 +517,121 @@ static void cleanUpExecutedProcess(ProcessDelegate& delegate,
   completionFn(processResult);
 }
 
+#if defined(_WIN32)
+  using PlatformSpecificPipesConfig = STARTUPINFOW;
+#else
+  using PlatformSpecificPipesConfig = posix_spawn_file_actions_t;
+#endif
+
+/// Create all or no communication pipes.
+enum class CommunicationPipesCreationError {
+  NO_ERROR,
+  OUTPUT_PIPE_FAILED,
+  CONTROL_PIPE_FAILED
+};
+static std::pair<CommunicationPipesCreationError, int> createCommunicationPipes(const ProcessAttributes &attr,
+        PlatformSpecificPipesConfig& pipesConfig,
+        ManagedDescriptor& outputPipeParentEnd,
+        ManagedDescriptor& outputPipeChildEnd,
+        ManagedDescriptor& controlPipeParentEnd,
+        ManagedDescriptor& controlPipeChildEnd) {
+#if defined(_WIN32)
+  STARTUPINFOW& startupInfo = pipesConfig,
+  startupInfo.dwFlags = STARTF_USESTDHANDLES;
+  if (attr.connectToConsole) {
+    // Connect to the current stdout/stderr.
+    startupInfo.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+    startupInfo.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+    startupInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+  } else {
+    // Set NUL as stdin
+    HANDLE nul =
+      CreateFileW(L"NUL", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                  NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE outputPipe[2]{NULL, NULL};
+    SECURITY_ATTRIBUTES secAttrs{sizeof(SECURITY_ATTRIBUTES), NULL, TRUE};
+    if (CreatePipe(&outputPipe[0], &outputPipe[1], &secAttrs, 0) == 0) {
+      return std::make_pair(CommunicationPipesCreationError::OUTPUT_PIPE_FAILED, errno);
+    }
+    startupInfo.hStdInput = nul;
+    startupInfo.hStdOutput = outputPipe[1];
+    startupInfo.hStdError = outputPipe[1];
+    outputPipeParentEnd.reset(outputPipe[0]).childMayInherit(false);
+    outputPipeChildEnd.reset(outputPipe[1]);
+  }
+
+  if (attr.controlEnabled) {
+    HANDLE controlPipe[2]{NULL, NULL};
+    SECURITY_ATTRIBUTES secAttrs{sizeof(SECURITY_ATTRIBUTES), NULL, TRUE};
+    if (CreatePipe(&controlPipe[0], &controlPipe[1], &secAttrs, 0) == 0) {
+      outputPipeParentEnd.close();
+      outputPipeChildEnd.close();
+      return std::make_pair(CommunicationPipesCreationError::OUTPUT_PIPE_FAILED, errno);
+    }
+    controlPipeParentEnd.reset(controlPipe[0]).childMayInherit(false);
+    controlPipeChildEnd.reset(controlPipe[1]);
+  }
+#else
+
+  posix_spawn_file_actions_t& fileActions = pipesConfig;
+
+  // If we are capturing output, create a pipe and appropriate spawn actions.
+  if (attr.connectToConsole) {
+#ifdef __APPLE__
+    posix_spawn_file_actions_addinherit_np(&fileActions, STDIN_FILENO);
+#else
+    posix_spawn_file_actions_adddup2(&fileActions, STDIN_FILENO, STDIN_FILENO);
+#endif
+    // Propagate the current stdout/stderr.
+    posix_spawn_file_actions_adddup2(&fileActions, STDOUT_FILENO, STDOUT_FILENO);
+    posix_spawn_file_actions_adddup2(&fileActions, STDERR_FILENO, STDERR_FILENO);
+  } else {
+    // Open /dev/null as stdin.
+    posix_spawn_file_actions_addopen(&fileActions, STDIN_FILENO, "/dev/null", O_RDONLY, 0);
+
+    int outputPipe[2]{ -1, -1 };
+    if (basic::sys::pipe(outputPipe) < 0) {
+      return std::make_pair(CommunicationPipesCreationError::OUTPUT_PIPE_FAILED, errno);
+    }
+    outputPipeParentEnd.reset(outputPipe[0]).childMayInherit(false);
+    outputPipeChildEnd.reset(outputPipe[1]);
+
+    // Open the write end of the pipe as stdout and stderr.
+    // The code is safe.
+    posix_spawn_file_actions_adddup2(&fileActions, outputPipeChildEnd.unsafeDescriptor(), STDOUT_FILENO);
+    posix_spawn_file_actions_adddup2(&fileActions, outputPipeChildEnd.unsafeDescriptor(), STDERR_FILENO);
+
+    // Close the child end of the pipe known under a different number.
+    posix_spawn_file_actions_addclose(&fileActions, outputPipeChildEnd.unsafeDescriptor());
+  }
+
+  // Create a pipe for the process to (potentially) release the lane while
+  // still running.
+  if (attr.controlEnabled) {
+    int controlPipe[2]{ -1, -1 };
+    if (basic::sys::pipe(controlPipe) < 0) {
+      outputPipeParentEnd.close();
+      outputPipeChildEnd.close();
+      return std::make_pair(CommunicationPipesCreationError::CONTROL_PIPE_FAILED, errno);
+    }
+
+    controlPipeParentEnd.reset(controlPipe[0]).childMayInherit(false);
+    controlPipeChildEnd.reset(controlPipe[1]);
+
+    // Make sure that the descriptor is properly inherited by the child.
+    // The code is safe.
+#ifdef __APPLE__
+    posix_spawn_file_actions_addinherit_np(&fileActions, controlPipeChildEnd.unsafeDescriptor());
+#else
+    posix_spawn_file_actions_adddup2(&fileActions, controlPipeChildEnd.unsafeDescriptor(), controlPipeChildEnd.unsafeDescriptor());
+#endif
+  }
+
+#endif
+
+  return std::make_pair(CommunicationPipesCreationError::NO_ERROR, 0);
+}
+
 void llbuild::basic::spawnProcess(
     ProcessDelegate& delegate,
     ProcessContext* ctx,
@@ -395,13 +643,16 @@ void llbuild::basic::spawnProcess(
     ProcessReleaseFn&& releaseFn,
     ProcessCompletionFn&& completionFn
 ) {
-  // Whether or not we are capturing output.
-  const bool shouldCaptureOutput = !attr.connectToConsole;
 
   // Don't use lane release feature for console workloads.
   if (attr.connectToConsole) {
     attr.controlEnabled = false;
   }
+
+#if defined(_WIN32)
+  // Control channel support is broken (thread-unsafe) on Windows.
+  attr.controlEnabled = false;
+#endif
 
   delegate.processStarted(ctx, handle);
 
@@ -506,112 +757,30 @@ void llbuild::basic::spawnProcess(
 #endif
 
 #if defined(_WIN32)
+  /// Process startup information for Windows.
+  STARTUPINFOW startupInfo = {0};
+  PlatformSpecificPipesConfig& pipesConfig = startupInfo;
+#else
+  PlatformSpecificPipesConfig& pipesConfig = fileActions;
+#endif
+
+  // Automatically managed (released) descriptors for output and control pipes.
+  // The child ends are forwarded to the child (and quickly released in the
+  // parent). The parent ends are retained and read/written by the parent.
+  ManagedDescriptor outputPipeParentEnd{__FILE__, __LINE__};
+  ManagedDescriptor controlPipeParentEnd{__FILE__, __LINE__};
+
+#if defined(_WIN32)
   llvm::SmallVector<llvm::UTF16, 20> u16Cwd;
   std::string workingDir = attr.workingDir.str();
   if (!workingDir.empty()) {
     llvm::convertUTF8ToUTF16String(workingDir, u16Cwd);
-  }
-
-  STARTUPINFOW startupInfo = {0};
-  startupInfo.dwFlags = STARTF_USESTDHANDLES;
-  if (attr.connectToConsole) {
-    startupInfo.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
-  } else {
-    // Set NUL as stdin
-    HANDLE nul =
-      CreateFileW(L"NUL", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
-                  NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    startupInfo.hStdInput = nul;
-  }
-
-  HANDLE controlPipe[2]{NULL, NULL};
-  HANDLE* controlReadPipe = controlPipe;
-  HANDLE* controlWritePipe = controlPipe + 1;
-  if (attr.controlEnabled) {
-    SECURITY_ATTRIBUTES secAttrs{sizeof(SECURITY_ATTRIBUTES), NULL, TRUE};
-    CreatePipe(controlReadPipe, controlWritePipe, &secAttrs, 0);
-    SetHandleInformation(controlReadPipe, HANDLE_FLAG_INHERIT, TRUE);
-    SetHandleInformation(controlWritePipe, HANDLE_FLAG_INHERIT, FALSE);
-  }
-
-  HANDLE outputPipe[2]{NULL, NULL};
-  if (shouldCaptureOutput) {
-    SECURITY_ATTRIBUTES secAttrs{sizeof(SECURITY_ATTRIBUTES), NULL, TRUE};
-    CreatePipe(outputPipe, outputPipe + 1, &secAttrs, 0);
-    SetHandleInformation(outputPipe[0], HANDLE_FLAG_INHERIT, FALSE);
-
-    startupInfo.hStdOutput = outputPipe[1];
-    startupInfo.hStdError = outputPipe[1];
-  } else {
-    // Otherwise, propagate the current stdout/stderr.
-    startupInfo.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
-    startupInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);
-  }
-#else
-
-  if (attr.connectToConsole) {
-#ifdef __APPLE__
-    posix_spawn_file_actions_addinherit_np(&fileActions, STDIN_FILENO);
-#else
-    posix_spawn_file_actions_adddup2(&fileActions, STDIN_FILENO, STDIN_FILENO);
-#endif
-  } else {
-    // Open /dev/null as stdin.
-    posix_spawn_file_actions_addopen(&fileActions, STDIN_FILENO, "/dev/null", O_RDONLY, 0);
-  }
-
-  // Create a pipe for the process to (potentially) release the lane while
-  // still running.
-  int controlPipe[2]{ -1, -1 };
-  if (attr.controlEnabled) {
-    if (basic::sys::pipe(controlPipe) < 0) {
-      delegate.processHadError(ctx, handle,
-          Twine("unable to open control pipe (") + strerror(errno) + ")");
-      delegate.processFinished(ctx, handle, ProcessResult::makeFailed());
-      completionFn(ProcessStatus::Failed);
-      return;
-    }
-#ifdef __APPLE__
-    posix_spawn_file_actions_addinherit_np(&fileActions, controlPipe[1]);
-#else
-    posix_spawn_file_actions_adddup2(&fileActions, controlPipe[1], controlPipe[1]);
-#endif
-    posix_spawn_file_actions_addclose(&fileActions, controlPipe[0]);
-  }
-
-  // If we are capturing output, create a pipe and appropriate spawn actions.
-  int outputPipe[2]{ -1, -1 };
-  if (shouldCaptureOutput) {
-    if (basic::sys::pipe(outputPipe) < 0) {
-      auto result = ProcessResult::makeFailed();
-      delegate.processHadError(ctx, handle,
-          Twine("unable to open output pipe (") + strerror(errno) + ")");
-      delegate.processFinished(ctx, handle, result);
-      completionFn(result);
-      return;
-    }
-
-    // Open the write end of the pipe as stdout and stderr.
-    posix_spawn_file_actions_adddup2(&fileActions, outputPipe[1], 1);
-    posix_spawn_file_actions_adddup2(&fileActions, outputPipe[1], 2);
-
-    // Close the read and write ends of the pipe.
-    posix_spawn_file_actions_addclose(&fileActions, outputPipe[0]);
-    posix_spawn_file_actions_addclose(&fileActions, outputPipe[1]);
-  } else {
-    // Otherwise, propagate the current stdout/stderr.
-    posix_spawn_file_actions_adddup2(&fileActions, 1, 1);
-    posix_spawn_file_actions_adddup2(&fileActions, 2, 2);
   }
 #endif
 
   // Export a task ID to subprocesses.
   auto taskID = Twine::utohexstr(handle.id);
   environment.setIfMissing("LLBUILD_TASK_ID", taskID.str());
-  if (attr.controlEnabled) {
-    environment.setIfMissing("LLBUILD_CONTROL_FD",
-                             Twine((long long)controlPipe[1]).str());
-  }
 
   // Resolve the executable path, if necessary.
   //
@@ -632,14 +801,38 @@ void llbuild::basic::spawnProcess(
   // Spawn the command.
   llbuild_pid_t pid = (llbuild_pid_t)-1;
   bool wasCancelled;
-  {
-    // We need to hold the spawn processes lock when we spawn, to ensure that
-    // we don't create a process in between when we are cancelled.
-    std::lock_guard<std::mutex> guard(pgrp.mutex);
-    wasCancelled = pgrp.isClosed();
+  do {
+      // We need to hold the spawn processes lock when we spawn, to ensure that
+      // we don't create a process in between when we are cancelled.
+      std::lock_guard<std::mutex> guard(pgrp.mutex);
+      wasCancelled = pgrp.isClosed();
 
-    // If we have been cancelled since we started, do nothing.
-    if (!wasCancelled) {
+      // If we have been cancelled since we started, skip startup.
+      if (wasCancelled) { break; }
+
+      // The partf of the control pipes that are inherited by the child.
+      ManagedDescriptor outputPipeChildEnd{__FILE__, __LINE__};
+      ManagedDescriptor controlPipeChildEnd{__FILE__, __LINE__};
+
+      // Open the communication channel under the mutex to avoid
+      // leaking the wrong channel into other children started concurrently.
+      auto errorPair = createCommunicationPipes(attr, pipesConfig, outputPipeParentEnd, outputPipeChildEnd, controlPipeParentEnd, controlPipeChildEnd);
+      if (errorPair.first != CommunicationPipesCreationError::NO_ERROR) {
+        std::string whatPipe = errorPair.first == CommunicationPipesCreationError::OUTPUT_PIPE_FAILED ? "output pipe" : "control pipe";
+        posix_spawn_file_actions_destroy(&fileActions);
+        posix_spawnattr_destroy(&attributes);
+        delegate.processHadError(ctx, handle,
+            Twine("unable to open " + whatPipe + " (") + strerror(errorPair.second) + ")");
+        delegate.processFinished(ctx, handle, ProcessResult::makeFailed());
+        completionFn(ProcessStatus::Failed);
+        return;
+      }
+
+      if (controlPipeChildEnd.isValid()) {
+        long long controlFd = (long long)controlPipeChildEnd.unsafeDescriptor();
+        environment.setIfMissing("LLBUILD_CONTROL_FD", Twine(controlFd).str());
+      }
+
       int result = 0;
 
       bool workingDirectoryUnsupported = false;
@@ -713,44 +906,45 @@ void llbuild::basic::spawnProcess(
         ProcessInfo info{ attr.canSafelyInterrupt };
         pgrp.add(std::move(guard), pid, info);
       }
-    }
-  }
+
+    // Close the child ends of the forwarded output and control pipes.
+    controlPipeChildEnd.close();
+    outputPipeChildEnd.close();
+  } while(false);
 
 #if !defined(_WIN32)
   posix_spawn_file_actions_destroy(&fileActions);
   posix_spawnattr_destroy(&attributes);
 #endif
-  // Close the write end of the release pipe
-  if (attr.controlEnabled) {
-    sys::FileDescriptorTraits<>::Close(controlPipe[1]);
-  }
 
   // If we failed to launch a process, clean up and abort.
   if (pid == (llbuild_pid_t)-1) {
-    if (attr.controlEnabled) {
-      sys::FileDescriptorTraits<>::Close(controlPipe[0]);
-    }
-
-    if (shouldCaptureOutput) {
-      sys::FileDescriptorTraits<>::Close(outputPipe[1]);
-      sys::FileDescriptorTraits<>::Close(outputPipe[0]);
-    }
+    // Manually close to avoid triggering debug-time leak check.
+    outputPipeParentEnd.close();
+    controlPipeParentEnd.close();
     auto result = wasCancelled ? ProcessResult::makeCancelled() : ProcessResult::makeFailed();
     completionFn(result);
     return;
   }
 
 #if !defined(_WIN32)
-  // Set up our select() structures
+  // Set up our poll() structures. We use assert() to ensure
+  // the file descriptors are alive.
   pollfd readfds[] = {
-    { controlPipe[0], 0, 0 },
-    { outputPipe[0], 0, 0 }
+    { outputPipeParentEnd.unsafeDescriptor(), 0, 0 },
+    { controlPipeParentEnd.unsafeDescriptor(), 0, 0 }
   };
-  int activeEvents = 0;
+  bool activeEvents = false;
 #endif
   const int nfds = 2;
   ControlProtocolState control(taskID.str());
   std::function<bool (StringRef)> readCbs[] = {
+    // output capture callback
+    [&delegate, ctx, handle](StringRef buf) -> bool {
+      // Notify the client of the output.
+      delegate.processHadOutput(ctx, handle, buf);
+      return true;
+    },
     // control callback handle
     [&delegate, &control, ctx, handle](StringRef buf) mutable -> bool {
       std::string errstr;
@@ -760,27 +954,21 @@ void llbuild::basic::spawnProcess(
                                  Twine("control protocol error" + errstr));
       }
       return (ret == 0);
-    },
-    // output capture callback
-    [&delegate, ctx, handle](StringRef buf) -> bool {
-      // Notify the client of the output.
-      delegate.processHadOutput(ctx, handle, buf);
-      return true;
     }
   };
 #if defined(_WIN32)
   struct threadData {
     std::function<void(void*)> reader;
-    HANDLE handle;
+    const ManagedDescriptor& handle;
     std::function<bool(StringRef)> cb;
   };
   HANDLE readers[2] = {NULL, NULL};
-  auto reader = [&](void* lpArgs) {
+  auto reader = [&delegate, handle, ctx](void* lpArgs) {
     threadData* args = (threadData*)lpArgs;
     for (;;) {
       char buf[4096];
       DWORD numBytes;
-      bool result = ReadFile(args->handle, buf, sizeof(buf), &numBytes, NULL);
+      bool result = ReadFile(args->handle.unsafeDescriptor(), buf, sizeof(buf), &numBytes, NULL);
 
       if (!result || numBytes == 0) {
         if (GetLastError() == ERROR_BROKEN_PIPE) {
@@ -796,55 +984,39 @@ void llbuild::basic::spawnProcess(
       if (numBytes <= 0 || !args->cb(StringRef(buf, numBytes))) {
         continue;
       }
-
-      if (control.shouldRelease()) {
-        releaseFn([&delegate, &pgrp, pid, handle, ctx, shouldCaptureOutput,
-                   outputFd = outputPipe[0], controlFd = controlPipe[0],
-                   completionFn = std::move(completionFn)]() mutable {
-          if (shouldCaptureOutput) {
-            captureExecutedProcessOutput(delegate, outputFd, handle, ctx);
-          } else {
-            assert(outputFd == NULL);
-          }
-
-          cleanUpExecutedProcess(delegate, pgrp, pid, handle, ctx,
-                                 std::move(completionFn), controlFd);
-        });
-        return;
-      }
     }
   };
-  struct threadData controlThreadParams = {reader, controlPipe[0], readCbs[0]};
-  struct threadData outputThreadParams = {reader, outputPipe[0], readCbs[1]};
+
+  struct threadData outputThreadParams = {reader, outputPipeParentEnd, readCbs[0]};
+  struct threadData controlThreadParams = {reader, controlPipeParentEnd, readCbs[1]};
   HANDLE threads[2] = {NULL, NULL};
 #endif // defined(_WIN32)
 
   int threadCount = 0;
+
+  // Read the command output, if capturing instead of pass-throughing.
+  if (!attr.connectToConsole) {
+#if defined(_WIN32)
+    threads[threadCount++] = (HANDLE)_beginthread(
+        [](LPVOID lpParams) { ((threadData*)lpParams)->reader(lpParams); }, 0,
+        &outputThreadParams);
+#else
+    readfds[0].events = POLLIN;
+    activeEvents = true;
+    (void)threadCount;
+#endif
+  }
+
+  // Process the control channel input.
   if (attr.controlEnabled) {
 #if defined(_WIN32)
     threads[threadCount++] = (HANDLE)_beginthread(
         [](LPVOID lpParams) { ((threadData*)lpParams)->reader(lpParams); }, 0,
         &controlThreadParams);
 #else
-    readfds[0].events = POLLIN;
-    activeEvents |= POLLIN;
-    (void)threadCount;
-#endif
-  }
-
-  // Read the command output, if capturing.
-  if (shouldCaptureOutput) {
-#if defined(_WIN32)
-    threads[threadCount++] = (HANDLE)_beginthread(
-        [](LPVOID lpParams) { ((threadData*)lpParams)->reader(lpParams); }, 0,
-        &outputThreadParams);
-#else
     readfds[1].events = POLLIN;
-    activeEvents |= POLLIN;
+    activeEvents = true;
 #endif
-
-    // Close the write end of the output pipe.
-    sys::FileDescriptorTraits<>::Close(outputPipe[1]);
   }
 
 #if defined(_WIN32)
@@ -859,7 +1031,12 @@ void llbuild::basic::spawnProcess(
 #else  // !defined(_WIN32)
   while (activeEvents) {
     char buf[4096];
-    activeEvents = 0;
+    activeEvents = false;
+
+    // Ensure we haven't autoclosed the file descriptors,
+    // or move()d somewhere they could be autoclosed in.
+    assert(readfds[0].fd == outputPipeParentEnd.unsafeDescriptor());
+    assert(readfds[1].fd == controlPipeParentEnd.unsafeDescriptor());
 
     if (poll(readfds, nfds, -1) == -1) {
       int err = errno;
@@ -867,7 +1044,6 @@ void llbuild::basic::spawnProcess(
           Twine("failed to poll (") + strerror(err) + ")");
       break;
     }
-
 
     for (int i = 0; i < nfds; i++) {
       if (readfds[i].revents & (POLLIN | POLLERR | POLLHUP)) {
@@ -882,36 +1058,32 @@ void llbuild::basic::spawnProcess(
           continue;
         }
       }
-      activeEvents |= readfds[i].events;
+      activeEvents |= readfds[i].events != 0;
     }
 
     if (control.shouldRelease()) {
-      releaseFn([
-                 &delegate, &pgrp, pid, handle, ctx,
-                 shouldCaptureOutput,
-                 outputFd=outputPipe[0],
-                 controlFd=controlPipe[0],
-                 completionFn=std::move(completionFn)
-                 ]() mutable {
-        if (shouldCaptureOutput) {
-          captureExecutedProcessOutput(delegate, outputFd, handle, ctx);
-        } else {
-          assert(outputFd == -1);
+      std::shared_ptr<ManagedDescriptor> outputFdShared
+        = std::make_shared<ManagedDescriptor>(std::move(outputPipeParentEnd));
+      std::shared_ptr<ManagedDescriptor> controlFdShared
+        = std::make_shared<ManagedDescriptor>(std::move(controlPipeParentEnd));
+      releaseFn([&delegate, &pgrp, pid, handle, ctx,
+                 outputFdShared, controlFdShared,
+                 completionFn=std::move(completionFn)]() mutable {
+        if (outputFdShared->isValid()) {
+          captureExecutedProcessOutput(delegate, *outputFdShared, handle, ctx);
         }
-
         cleanUpExecutedProcess(delegate, pgrp, pid, handle, ctx,
-                               std::move(completionFn), controlFd);
+                               std::move(completionFn), *controlFdShared);
       });
       return;
     }
+
   }
 #endif // else !defined(_WIN32)
-  if (shouldCaptureOutput) {
-    // If we have reached here, both the control and read pipes have given us
-    // the requisite EOF/hang-up events. Safe to close the read end of the
-    // output pipe.
-    sys::FileDescriptorTraits<>::Close(outputPipe[0]);
-  }
+  // If we have reached here, both the control and read pipes have given us
+  // the requisite EOF/hang-up events. Safe to close the read end of the
+  // output pipe.
+  outputPipeParentEnd.close();
   cleanUpExecutedProcess(delegate, pgrp, pid, handle, ctx,
-                         std::move(completionFn), controlPipe[0]);
+                         std::move(completionFn), controlPipeParentEnd);
 }
