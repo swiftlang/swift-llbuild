@@ -53,6 +53,10 @@ std::string makeTmpDir();
 // Return a string containing all valid path separators on the current platform
 std::string getPathSeparators();
 
+/// Gets the max open file limit for the current process.
+/// Returns: 0 on failure, otherwise the max number of open files.
+llbuild_rlim_t getOpenFileLimit();
+
 /// Sets the max open file limit to min(max(soft_limit, limit), hard_limit),
 /// where soft_limit and hard_limit are gathered from the system.
 ///

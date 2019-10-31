@@ -1,0 +1,63 @@
+# Check operation under max file descriptor constraints
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: cp %S/Inputs/close-control-fd %t.build
+# RUN: cp %S/Inputs/ulimited %t.build
+# RUN: %t.build/ulimited -n 30 %{llbuild} ninja build --jobs 02 --chdir %t.build &> %t.out
+# RUN: %t.build/ulimited -n 40 %{llbuild} ninja build --jobs 04 --chdir %t.build &> %t.out
+# RUN: %t.build/ulimited -n 60 %{llbuild} ninja build --jobs 10 --chdir %t.build &> %t.out
+# RUN: %t.build/ulimited -n 80 %{llbuild} ninja build --jobs 10 --chdir %t.build &> %t.out
+#
+rule WAIT
+  command = ./close-control-fd sleep 0.1
+
+build 00: WAIT
+build 01: WAIT
+build 02: WAIT
+build 03: WAIT
+build 04: WAIT
+build 05: WAIT
+build 06: WAIT
+build 07: WAIT
+build 08: WAIT
+build 09: WAIT
+build 10: WAIT
+build 11: WAIT
+build 12: WAIT
+build 13: WAIT
+build 14: WAIT
+build 15: WAIT
+build 16: WAIT
+build 17: WAIT
+build 18: WAIT
+build 19: WAIT
+build 20: WAIT
+build 21: WAIT
+build 22: WAIT
+build 23: WAIT
+build 24: WAIT
+build 25: WAIT
+build 26: WAIT
+build 27: WAIT
+build 28: WAIT
+build 29: WAIT
+build 30: WAIT
+build 31: WAIT
+build 32: WAIT
+build 33: WAIT
+build 34: WAIT
+build 35: WAIT
+build 36: WAIT
+build 37: WAIT
+build 38: WAIT
+build 39: WAIT
+
+build output: phony $
+  00 01 02 03 04 05 06 07 08 09 $
+  10 11 12 13 14 15 16 17 18 19 $
+  20 21 22 23 24 25 26 27 28 29 $
+  30 31 32 33 34 35 36 37 38 39
+
+default output
