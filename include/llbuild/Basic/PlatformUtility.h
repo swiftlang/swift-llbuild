@@ -72,6 +72,7 @@ template <typename = FD> struct FileDescriptorTraits;
 
 #if defined(_WIN32)
 template <> struct FileDescriptorTraits<HANDLE> {
+  typedef HANDLE DescriptorType;
   static bool IsValid(HANDLE hFile) { return hFile != INVALID_HANDLE_VALUE; }
   static void Close(HANDLE hFile) { CloseHandle(hFile); }
   static int Read(HANDLE hFile, void *destinationBuffer,
@@ -85,6 +86,8 @@ template <> struct FileDescriptorTraits<HANDLE> {
 };
 #endif
 template <> struct FileDescriptorTraits<int> {
+  typedef int DescriptorType;
+  static const int InvalidDescriptor = -1;
   static bool IsValid(int fd) { return fd >= 0; }
   static void Close(int fd) { close(fd); }
   static int Read(int hFile, void *destinationBuffer,
