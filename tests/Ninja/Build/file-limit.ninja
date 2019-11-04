@@ -3,7 +3,7 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
-# RUN: cp %S/Inputs/close-control-fd %t.build
+# RUN: cp %S/Inputs/run-releasing-control-fd %t.build
 # RUN: cp %S/Inputs/ulimited %t.build
 # RUN: %t.build/ulimited -n 30 %{llbuild} ninja build --jobs 02 --chdir %t.build &> %t.out
 # RUN: %t.build/ulimited -n 40 %{llbuild} ninja build --jobs 04 --chdir %t.build &> %t.out
@@ -11,7 +11,7 @@
 # RUN: %t.build/ulimited -n 80 %{llbuild} ninja build --jobs 10 --chdir %t.build &> %t.out
 #
 rule WAIT
-  command = ./close-control-fd sleep 0.1
+  command = exec ./run-releasing-control-fd "sleep 0.1"
 
 build 00: WAIT
 build 01: WAIT
