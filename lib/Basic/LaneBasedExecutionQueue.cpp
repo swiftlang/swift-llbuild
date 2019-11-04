@@ -11,6 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llbuild/Basic/ExecutionQueue.h"
+#include "llbuild/Basic/PlatformUtility.h"
 
 #include "llbuild/Basic/Tracing.h"
 
@@ -195,22 +196,16 @@ class LaneBasedExecutionQueue : public ExecutionQueue {
 
 public:
   LaneBasedExecutionQueue(ExecutionQueueDelegate& delegate,
-                          unsigned numLanes, SchedulerAlgorithm alg,
+                          unsigned numLanesSuggestion, SchedulerAlgorithm alg,
                           const char* const* environment)
-  : ExecutionQueue(delegate), buildID(std::random_device()()), numLanes(numLanes),
+  : ExecutionQueue(delegate), buildID(std::random_device()()),
         readyJobs(Scheduler::make(alg)), environment(environment)
   {
-    // Configure the background task maximum. We currently support an
-    // environmental override for experimentation pursposes, but otherwise limit
-    // to a modest multiple of the core count, since we currently burn one thread
-    // per background task.
-    char *p = getenv("LLBUILD_BACKGROUND_TASK_MAX");
-    if (p && !StringRef(p).getAsInteger(10, backgroundTaskMax)) {
-      // Parsed.
-    } else {
-      backgroundTaskMax = std::min(1024U, numLanes * 64U);
-    }
-            
+
+    auto taskLimits = estimateTaskLimits(numLanesSuggestion);
+    numLanes = taskLimits.first;
+    backgroundTaskMax = taskLimits.second;
+
     for (unsigned i = 0; i != numLanes; ++i) {
       lanes.push_back(std::unique_ptr<std::thread>(
                           new std::thread(
@@ -241,6 +236,52 @@ public:
         killAfterTimeoutThread->join();
       }
     }
+  }
+
+  /// Returns the number of allowed foreground and background tasks.
+  static auto estimateTaskLimits(unsigned numLanes) -> std::pair<unsigned, unsigned> {
+    llbuild_rlim_t curOpenFileLimit = llbuild::basic::sys::getOpenFileLimit();
+    const unsigned reservedFileCount = (STDERR_FILENO+1) + 2 /* Database */
+                                       + 1 /* Logging */
+                                       + 2 /* Additional fds during spawn */
+                                       + 2 /* Fudge factor */;
+    if (curOpenFileLimit < reservedFileCount) {
+      assert(curOpenFileLimit < reservedFileCount);
+      // Certainly can't afford background tasks.
+      // Maybe even can't afford building altogether, but let's risk it.
+      return std::make_pair(1, 0);
+    }
+
+    unsigned allowedFilesForTasks = static_cast<unsigned>(std::min(curOpenFileLimit, static_cast<llbuild_rlim_t>(INT_MAX))) - reservedFileCount;
+    unsigned filesPerTask = 2;  // A task has output [and control] file descriptors.
+    unsigned maxConcurrentTasks = allowedFilesForTasks / filesPerTask;
+
+    if (numLanes > maxConcurrentTasks) {
+      // Can't afford background tasks, and maybe won't even support
+      // the full extent of requested concurrency.
+      numLanes = std::max(1u, maxConcurrentTasks);
+      return std::make_pair(numLanes, 0);
+    }
+
+    // Number of tasks that can be run, according to open file limits.
+    unsigned extraTasksMax = maxConcurrentTasks - numLanes;
+
+    // Configure the background task maximum. We currently support an
+    // environmental override for experimentation purposes, but otherwise
+    // limit to a modest multiple of the core count, since we currently burn
+    // one thread per background task.
+    unsigned backgroundTaskMax = 0;
+    char *p = getenv("LLBUILD_BACKGROUND_TASK_MAX");
+    if (p && !StringRef(p).getAsInteger(10, backgroundTaskMax)) {
+      // Parsed.
+    } else {
+      backgroundTaskMax = std::min(1024U, numLanes * 64U);
+    }
+
+    // The number of background can't exceed available concurrency.
+    backgroundTaskMax = std::min(backgroundTaskMax, extraTasksMax);
+
+    return std::make_pair(numLanes, backgroundTaskMax);
   }
 
   virtual void addJob(QueueJob job) override {
@@ -328,22 +369,15 @@ public:
     handle.id = context.jobID;
 
     ProcessReleaseFn releaseFn = [this](std::function<void()>&& processWait) {
-      bool releaseAllowed = false;
-      // This check is not guaranteed to prevent more than backgroundTaskMax
-      // tasks from releasing. We could race between the check and increment and
-      // thus have a few extra. However, for our purposes, this should be fine.
-      // The cap is primarly intended to prevent runaway explosions of tasks.
-      if (backgroundTaskCount < backgroundTaskMax) {
-        backgroundTaskCount++;
-        releaseAllowed = true;
-      }
-      if (releaseAllowed) {
+      auto previousTaskCount = backgroundTaskCount.fetch_add(1);
+      if (previousTaskCount < backgroundTaskMax) {
         // Launch the process wait on a detached thread
         std::thread([this, processWait=std::move(processWait)]() mutable {
           processWait();
           backgroundTaskCount--;
         }).detach();
       } else {
+        backgroundTaskCount--;
         // not allowed to release, call wait directly
         processWait();
       }

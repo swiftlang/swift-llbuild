@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+
+# Example usage:
+#   > ./ulimited -n 50 echo foo
+#   Prior RLIMIT_NOFILE: soft=256, hard=RLIM_INFINITY
+#   Reset RLIMIT_NOFILE: soft=50, hard=RLIM_INFINITY
+#   foo
+#   >
+
+
+from __future__ import print_function
+import errno
+import subprocess
+import resource
+import sys
+import os
+
+
+def main(argv):
+    if len(argv) < 4 or argv[1] != "-n":
+        print("Expected: -n <n> <command-exe> [args...]")
+        sys.exit(1)
+
+    try:
+        new_limit = int(argv[2])
+    except ValueError as e:
+        print("-n: %s" % e)
+        sys.exit(os.EX_USAGE)
+
+    execute_with_limit(new_limit, argv[3:])
+
+    print("%s: Cannot execute", argv[3])
+    exit(os.EX_OSERR)
+
+
+def execute_with_limit(new_limit, arguments):
+    max_fd_soft, max_fd_hard = get_and_show_limit("Prior", "RLIMIT_NOFILE")
+    resource.setrlimit(resource.RLIMIT_NOFILE, [new_limit, max_fd_hard])
+    _ = get_and_show_limit("Reset", "RLIMIT_NOFILE")
+    os.execvp(arguments[0], arguments)
+
+
+def stringify_limit(limit):
+    if limit == resource.RLIM_INFINITY:
+        return "RLIM_INFINITY"
+    return limit
+
+
+def get_and_show_limit(prefix, name):
+    max_fd_soft, max_fd_hard = resource.getrlimit(getattr(resource, name))
+    max_fd_soft_s = stringify_limit(max_fd_soft)
+    max_fd_hard_s = stringify_limit(max_fd_hard)
+    print("%s %s: {soft: %s, hard: %s}"
+          % (prefix, name, max_fd_soft_s, max_fd_hard_s), file=sys.stderr)
+    return (max_fd_soft, max_fd_hard)
+
+
+if __name__ == '__main__':
+    main(sys.argv)

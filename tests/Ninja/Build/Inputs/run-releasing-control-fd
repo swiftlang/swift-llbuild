@@ -1,0 +1,49 @@
+#!/usr/bin/env python
+
+# Close the control channel and run a given command.
+# Example usage:
+#
+#   > exec ./run-releasing-control-fd sleep 10
+#
+# The `exec` prefix is necessary to prevent the file descriptor being held
+# by the outer shell while running the `run-relesing-control-fd`.
+
+from __future__ import print_function
+import subprocess
+import sys
+import os
+
+def usage():
+    print("Expected: [--require-control-fd] <command> [args...]")
+    sys.exit(1)
+
+def main(argv):
+    require_control_fd = False
+
+    # Parse command line options
+    if len(argv) <= 1:
+        usage()
+    elif argv[1] == "--require-control-fd":
+        if len(argv) == 2:
+            usage()
+        argv=argv[1:]
+        require_control_fd = True
+    elif argv[1][0:1] == "-":
+        usage()
+
+    exec_args = argv[1:]
+
+    # Close the control descriptor, if given.
+    control_fd = os.environ.get("LLBUILD_CONTROL_FD")
+    if control_fd is None and require_control_fd:
+        print("%s: missing LLBUILD_CONTROL_FD" % exec_args[0], file=sys.stderr)
+        sys.exit(1)
+    elif control_fd is not None:
+        del os.environ["LLBUILD_CONTROL_FD"]
+        os.close(int(control_fd))
+
+    use_shell = len(exec_args) == 1 and ' ' in exec_args[0]
+    subprocess.check_call(exec_args, shell=use_shell)
+
+if __name__ == '__main__':
+    main(sys.argv)

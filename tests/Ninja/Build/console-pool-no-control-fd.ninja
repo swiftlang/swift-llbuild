@@ -3,7 +3,7 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.ninja
-# RUN: cp %S/Inputs/close-control-fd %t.build
+# RUN: cp %S/Inputs/run-releasing-control-fd %t.build
 # RUN: cp %S/Inputs/wait-for-file %t.build
 # RUN: %{llbuild} ninja build --jobs 3 --no-db --chdir %t.build &> %t.out
 # RUN: %{FileCheck} < %t.out %s
@@ -22,7 +22,7 @@ rule CUSTOM
   command = ${COMMAND}
 
 build first: CUSTOM
-  command = touch executing && . ./close-control-fd && ./wait-for-file stop && rm -f executing
+  command = touch executing && exec ./run-releasing-control-fd "./wait-for-file stop && rm -f executing"
 
 build second: CUSTOM
   command = test ! -f executing
