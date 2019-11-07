@@ -11,7 +11,7 @@
 # CHECK-INITIAL: [2/3] cp input-1 output-1
 # CHECK-INITIAL: [3/3] cat output-1 output-2 > output
 
-# RUN: echo "mod" > %t.build/input-1
+# RUN: %{adjust-times} --now-plus-ulp %t.build/input-1
 # RUN: %{llbuild} ninja build --strict --jobs 1 --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix=CHECK-INCREMENTAL < %t1.out %s
 #
@@ -31,7 +31,3 @@ build output-1: CP input-1
 build output-2: CP input-2
 build output: CAT output-1 output-2
 
-
-# This test is disabled pending investigation of CI flakiness (rdar://problem/23089862)
-#
-# REQUIRES: disabled
