@@ -151,34 +151,45 @@ if (XCODE)
 elseif(MSVC)
   add_compile_options(
     # Disable unknown pragma warnings (e.g. for #pragma mark).
-    "-wd4068"
+    "$<$<COMPILE_LANGUAGE:CXX>:-wd4068>"
 
     # TODO: these warnings come from llvmSupport. Since we don't want to diverge from llvmSupport by
     # addressing these warnings , disable these for now to clean the build log.
     # If/when we move to use LLVM's own llvmSupport, we should reenable these warnings.
-    "-wd4141" # 'inline' used more than once.
-    "-wd4146" # Unary minus applied to unsigned type.
-    "-wd4244" # Signed conversion.
-    "-wd4267" # Possible loss of data conversions.
-    "-wd4291" # Operator new with no matching delete found.
-    "-wd4800" # Forcing value to bool 'true' or 'false'.
-    "-wd4996" # POSIX name for this item is deprecated.
-    "/EHsc")
+    "$<$<COMPILE_LANGUAGE:CXX>:-wd4141>" # 'inline' used more than once.
+    "$<$<COMPILE_LANGUAGE:CXX>:-wd4146>" # Unary minus applied to unsigned type.
+    "$<$<COMPILE_LANGUAGE:CXX>:-wd4244>" # Signed conversion.
+    "$<$<COMPILE_LANGUAGE:CXX>:-wd4267>" # Possible loss of data conversions.
+    "$<$<COMPILE_LANGUAGE:CXX>:-wd4291>" # Operator new with no matching delete found.
+    "$<$<COMPILE_LANGUAGE:CXX>:-wd4800>" # Forcing value to bool 'true' or 'false'.
+    "$<$<COMPILE_LANGUAGE:CXX>:-wd4996>" # POSIX name for this item is deprecated.
+    "$<$<COMPILE_LANGUAGE:CXX>:/EHsc>")
 else ()
   add_compile_options(
     # Enable additional Clang warnings.
-   "-fno-rtti" "-fno-exceptions" "-Wmost"
-   "-Wdocumentation" "-Woverloaded-virtual"
-   "-Wparentheses" "-Wswitch"
-   "-Wunused-function" "-Wunused-variable"
-   "-Wunused-value" "-Wempty-body"
-   "-Wuninitialized" "-Wconstant-conversion"
-   "-Wint-conversion" "-Wbool-conversion"
-   "-Wenum-conversion" "-Wsign-compare"
-   "-Wnewline-eof" "-Wdeprecated-declarations"
-   "-Winvalid-offsetof"
-   "-Wnon-virtual-dtor"
-   "-Wimplicit-fallthrough")
+   "$<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>"
+   "$<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>"
+   "$<$<COMPILE_LANGUAGE:CXX>:-Wbool-conversion>"
+   "$<$<COMPILE_LANGUAGE:CXX>:-Wconstant-conversion>"
+   "$<$<COMPILE_LANGUAGE:CXX>:-Wdeprecated-declarations>"
+   "$<$<COMPILE_LANGUAGE:CXX>:-Wdocumentation>"
+   "$<$<COMPILE_LANGUAGE:CXX>:-Wempty-body>"
+   "$<$<COMPILE_LANGUAGE:CXX>:-Wenum-conversion>"
+   "$<$<COMPILE_LANGUAGE:CXX>:-Wimplicit-fallthrough>"
+   "$<$<COMPILE_LANGUAGE:CXX>:-Wint-conversion>"
+   "$<$<COMPILE_LANGUAGE:CXX>:-Winvalid-offsetof>"
+   "$<$<COMPILE_LANGUAGE:CXX>:-Wmost>"
+   "$<$<COMPILE_LANGUAGE:CXX>:-Wnewline-eof>"
+   "$<$<COMPILE_LANGUAGE:CXX>:-Wnon-virtual-dtor>"
+   "$<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>"
+   "$<$<COMPILE_LANGUAGE:CXX>:-Wparentheses>"
+   "$<$<COMPILE_LANGUAGE:CXX>:-Wsign-compare>"
+   "$<$<COMPILE_LANGUAGE:CXX>:-Wswitch>"
+   "$<$<COMPILE_LANGUAGE:CXX>:-Wuninitialized>"
+   "$<$<COMPILE_LANGUAGE:CXX>:-Wunused-function>"
+   "$<$<COMPILE_LANGUAGE:CXX>:-Wunused-value>"
+   "$<$<COMPILE_LANGUAGE:CXX>:-Wunused-variable>"
+   )
 endif ()
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
