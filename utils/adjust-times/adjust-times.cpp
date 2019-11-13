@@ -1,33 +1,31 @@
 #define _GNU_SOURCE 1
-#include <getopt.h>
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
-#include <libgen.h>
 #include <time.h>
-#include <sysexits.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <math.h>
 #include <string.h>
+#include "llvm/Support/CommandLine.h"
 
-/// Show adjust-mtime help screen.
-static void usage(const char* progname, bool help_screen = false) {
-  fprintf(help_screen ? stdout : stderr,
-    "Modify timestamps of existing files\n"
-    "Usage: %s [OPTIONS] <filename> ...\n"
-    "Where OPTIONS are:\n"
-    " -a, --adjust=<[-]seconds>  Move access and modification times\n"
-    "     --mtime-add-ulp        Move the a/mtime a smallest amount backward\n"
-    "     --mtime-minus-ulp      Move the a/mtime a smallest amount forward\n"
-    "     --now-plus-ulp         Set to current time plus epsilon\n"
-    "     --now-minus-ulp        Set to current time minus epsilon\n"
-    " -f, --from-file=<FILE>     Set access and modification times from FILE\n"
-    " -v, --verbose              Show what is being done\n"
-    " -h, --help                 Show this screen\n"
-    , progname);
-}
+#if defined(_WIN32)
+  #include <time.h>
+  #include <sys/utime.h>
+  #define UTIME_NOW ((1l << 30) - 1l)
+  #define UTIME_OMIT ((1l << 30) - 2l)
+#else
+  #include <sys/time.h>
+#endif
+
+#if __has_include(<sysexit.h>)
+#include <sysexists.h>
+#else
+#define EX_USAGE 64
+#define EX_DATAERR 65
+#define EX_NOINPUT 66
+#endif
 
 /// Set the file time access and modification times to a specified time,
 /// or to the current time.
@@ -57,7 +55,7 @@ static int file_time_set_fixed(const char* filename, struct timespec time_to_set
   if (time_to_set.tv_nsec == UTIME_NOW) {
     return utime(filename, NULL);
   }
-  struct utimbuf times = { time_to_set.tv_sec, time_to_sec.tv_sec };
+  struct utimbuf times = { time_to_set.tv_sec, time_to_set.tv_sec };
   return utime(filename, &times);
 #endif
 }
@@ -165,18 +163,21 @@ static void time_format(char *buf, size_t size, struct timespec ts) {
 }
 
 int main(int argc, char **argv) {
-  const char* progname = basename(argv[0]);
-  static struct option cli_options[] = {
-    { "adjust",    required_argument, 0, 'a' },
-    { "mtime-minus-ulp", no_argument, 0, 'M' },
-    { "mtime-plus-ulp",  no_argument, 0, 'P' },
-    { "now-minus-ulp", no_argument,   0, 'm' },
-    { "now-plus-ulp",   no_argument,  0, 'p' },
-    { "from-file", required_argument, 0, 'f' },
-    { "verbose",   no_argument,       0, 'v' },
-    { "help",      no_argument,       0, 'h' },
-    { 0, 0, 0, 0 }
-  };
+  using namespace llvm;
+
+  cl::opt<int>         Adjust   ("adjust", cl::init(0), cl::desc("Move access and modification times"));
+  cl::alias            AdjustA  ("a", cl::aliasopt(Adjust));
+  cl::opt<bool>        MTimeA   ("mtime-add-ulp", cl::desc("Move the a/mtime a smallest amount backwards"));
+  cl::opt<bool>        MTimeM   ("mtime-minus-ulp", cl::desc("Move the a/mtime a smallest amount Forwards"));
+  cl::opt<bool>        NowP     ("now-plus-ulp", cl::desc("Set to current time plus epsilon"));
+  cl::opt<bool>        NowM     ("now-minus-ulp", cl::desc("Set to current time minus epsilon"));
+  cl::opt<std::string> Filename ("from-file", cl::init(""), cl::desc("Set access and modification times from FILE"), cl::value_desc("file"));
+  cl::alias            FilenameA("f", cl::aliasopt(Filename));
+  cl::opt<bool>        Verbose  ("verbose", cl::desc("Show what is being done"));
+  cl::alias            VerboseA ("v", cl::aliasopt(Verbose));
+  cl::list<std::string> InputFilenames(cl::Positional, cl::desc("<Input files>"), cl::OneOrMore);
+
+  cl::ParseCommandLineOptions(argc, argv, "Modify timestamps of existing files\n");
 
   enum mode {
     ModeSetToNow,
@@ -190,79 +191,51 @@ int main(int argc, char **argv) {
 
   struct timespec time_to_set = { 0, UTIME_NOW };
   double adjust_relative_sec = 0;
-  bool verbose = false;
 
-  for (;;) {
-    int c = getopt_long(argc, argv, "a:f:vh", cli_options, 0);
-
-    switch (c) {
-    case 'M':
-      mode = ModeMtimeMinusULP;
-      continue;
-    case 'P':
-      mode = ModeMtimePlusULP;
-      continue;
-    case 'm':
-      mode = ModeNowMinusULP;
-      continue;
-    case 'p':
-      mode = ModeNowPlusULP;
-      continue;
-    case 'a':
-      {
-        char *end = NULL;
-        errno = 0;
-        double value = strtod(optarg, &end);
-        if (!isfinite(value) || value < -1000000 || value > 1000000 || !end || *end != '\0') {
-          errno = ERANGE;
-        }
-        if (errno != 0) {
-          fprintf(stderr, "--adjust %s: %s\n", optarg, strerror(errno));
-          exit(EX_DATAERR);
-        }
-        adjust_relative_sec = value;
-        mode = ModeAdjustMtime;
-      }
-      continue;
-    case 'f':
-      {
-        if (get_file_mtime(optarg, &time_to_set) == -1) {
-          fprintf(stderr, "--from-file %s: %s\n", optarg, strerror(errno));
-          exit(EX_DATAERR);
-        }
-        mode = ModeSetToFile;
-      }
-      continue;
-    case 'v':
-      verbose = true;
-      continue;
-    case 'h':
-      usage(progname, true);
-      exit(EX_OK);
-    case -1:
-      break;
-    case ':':
-    case '?':
-      exit(EX_USAGE);
-    default:
-      usage(progname);
-      exit(EX_USAGE);
+  if (MTimeM) {
+    mode = ModeMtimeMinusULP;
+  }
+  if (MTimeA) {
+    mode = ModeMtimePlusULP;
+  }
+  if (NowP) {
+    mode = ModeNowPlusULP;
+  }
+  if (NowM) {
+    mode = ModeNowMinusULP;
+  }
+  if (Adjust) {
+    double value = Adjust;
+    if (value < -1000000 || value > 1000000) {
+      errno = ERANGE;
     }
-    break;
+    if (errno != 0) {
+      std::cerr << "--adjust " << Adjust << ": " << strerror(errno) << std::endl;
+      exit(EX_DATAERR);
+    }
+    adjust_relative_sec = value;
+    mode = ModeAdjustMtime;
+  }
+  if (!Filename.empty()) {
+    if (get_file_mtime(Filename.c_str(), &time_to_set) == -1) {
+      std::cerr << "--from-file " << Filename << ": " << strerror(errno) << std::endl;
+      exit(EX_DATAERR);
+    }
+    mode = ModeSetToFile;
   }
 
   // A list of filenames is required.
-  if (optind == argc) {
-    usage(progname);
+  if (InputFilenames.empty()) {
+    cl::PrintHelpMessage();
     exit(EX_USAGE);
   }
 
   // Modify all files' access and modification times.
-  for (; optind < argc; optind++) {
-    const char* filename = argv[optind];
+  for (std::string file : InputFilenames) {
+    const char* filename = file.c_str();
 
     struct timespec previous_timestamp = { 0, UTIME_OMIT };
-    if (verbose) {
+    if (Verbose) {
       if (get_file_mtime(filename, &previous_timestamp) == -1) {
         fprintf(stderr, "%s: %s\n", filename, strerror(errno));
         exit(EX_NOINPUT);
@@ -304,7 +277,7 @@ int main(int argc, char **argv) {
       break;
     }
 
-    if (verbose) {
+    if (Verbose) {
       struct timespec final_timestamp;
       if (get_file_mtime(filename, &final_timestamp) == -1) {
         fprintf(stderr, "%s: %s\n", filename, strerror(errno));

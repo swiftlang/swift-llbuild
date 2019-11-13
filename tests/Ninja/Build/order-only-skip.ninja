@@ -9,7 +9,7 @@
 # CHECK-INITIAL: [1/{{.*}}] cat include-source > generated-include
 # CHECK-INITIAL-NEXT: [2/{{.*}}] cat test.in > test.out
 #
-# RUN: %{adjust-times} --now-plus-ulp %t.build/include-source -v
+# RUN: %{adjust-times} -now-plus-ulp %t.build/include-source -v
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t2.out
 # RUN: %{FileCheck} --check-prefix CHECK-AFTER-TOUCH --input-file %t2.out %s
 # CHECK-AFTER-TOUCH: [1/{{.*}}]

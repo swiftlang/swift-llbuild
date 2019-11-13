@@ -80,6 +80,8 @@
 		40FA6486224AC34400D0B79A /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
 		8C561C0723551C90000D242D /* adjust-times.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8C561C0623551C8F000D242D /* adjust-times.cpp */; };
 		8C561C0823551D57000D242D /* adjust-times in Resources */ = {isa = PBXBuildFile; fileRef = 8C561BFF23551C4A000D242D /* adjust-times */; };
+		8CAE6850237B9EFA00C82351 /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
+		8CAE6853237B9F1D00C82351 /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.tbd */; };
 		913540F2220E5CC1009C82D6 /* UnicodeCaseFold.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 913540F1220E5CC1009C82D6 /* UnicodeCaseFold.cpp */; };
 		91BFB728220E3FBD00259E9F /* APFloat.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 91FD9A90220E3EA700BE004E /* APFloat.cpp */; };
 		91BFB729220E3FBD00259E9F /* APInt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 91FD9A8A220E3EA600BE004E /* APInt.cpp */; };
@@ -324,6 +326,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = E1ADC2391A85936400D5387C;
 			remoteInfo = libllbuild;
+		};
+		8CAE6851237B9EFA00C82351 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1B838981B52E7DE00DB876B;
+			remoteInfo = llvmSupport;
 		};
 		9D2107C31DF9FBFA00BE26FF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -927,6 +936,7 @@
 		54E187B71CD296EA00F7EC89 /* ExternalCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ExternalCommand.h; sourceTree = "<group>"; };
 		8C561BFF23551C4A000D242D /* adjust-times */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "adjust-times"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8C561C0623551C8F000D242D /* adjust-times.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "adjust-times.cpp"; path = "utils/adjust-times/adjust-times.cpp"; sourceTree = SOURCE_ROOT; };
+		8CAE684F237B9EE300C82351 /* libncurses.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libncurses.tbd; path = usr/lib/libncurses.tbd; sourceTree = SDKROOT; };
 		913540F1220E5CC1009C82D6 /* UnicodeCaseFold.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = UnicodeCaseFold.cpp; sourceTree = "<group>"; };
 		914D00E5220E3F6C009E16B2 /* abi-breaking.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "abi-breaking.h"; sourceTree = "<group>"; };
 		914D00E6220E3F7B009E16B2 /* AArch64TargetParser.def */ = {isa = PBXFileReference; lastKnownFileType = text; path = AArch64TargetParser.def; sourceTree = "<group>"; };
@@ -1329,6 +1339,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8CAE6850237B9EFA00C82351 /* libllvmSupport.a in Frameworks */,
+				8CAE6853237B9F1D00C82351 /* libcurses.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1865,6 +1877,7 @@
 		E13B5E411A00395300EA0405 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				8CAE684F237B9EE300C82351 /* libncurses.tbd */,
 				E15B6EC61B546A2C00643066 /* libcurses.tbd */,
 				E1E221081A00B82100957481 /* libsqlite3.tbd */,
 				E10D5CE319FEF3BD00211ED4 /* Python.framework */,
@@ -2791,6 +2804,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				8CAE6852237B9EFA00C82351 /* PBXTargetDependency */,
 			);
 			name = "adjust-times";
 			productName = "adjust-times";
@@ -3898,6 +3912,11 @@
 			isa = PBXTargetDependency;
 			target = E1ADC2391A85936400D5387C /* libllbuild */;
 			targetProxy = 40B3C92520D3B248007C5847 /* PBXContainerItemProxy */;
+		};
+		8CAE6852237B9EFA00C82351 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1B838981B52E7DE00DB876B /* llvmSupport */;
+			targetProxy = 8CAE6851237B9EFA00C82351 /* PBXContainerItemProxy */;
 		};
 		9D2107C41DF9FBFA00BE26FF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
