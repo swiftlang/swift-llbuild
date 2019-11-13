@@ -1925,8 +1925,15 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
   }
 
   if (!debugTools.empty()) {
-    fprintf(stderr, "%s: warning: debug tools not implemented\n",
-            getProgramName());
+    if (std::find(debugTools.begin(), debugTools.end(), "list")
+        != debugTools.end()) {
+      printf("debugging modes:\n");
+      printf("no debugging modes supported\n");
+    } else {
+      fprintf(stderr, "%s: error: unknown debug mode '%s'\n",
+              getProgramName(), debugTools.front().c_str());
+    }
+    return 1;
   }
 
   // Honor the --chdir option, if used.
