@@ -164,7 +164,6 @@ static void time_format(char *buf, size_t size, struct timespec ts) {
 
 int main(int argc, char **argv) {
   using namespace llvm;
-  cl::ParseCommandLineOptions(argc, argv, "Modify timestamps of existing files\n");
 
   cl::opt<int>         Adjust   ("adjust", cl::init(0), cl::desc("Move access and modification times"));
   cl::alias            AdjustA  ("a", cl::aliasopt(Adjust));
@@ -177,6 +176,8 @@ int main(int argc, char **argv) {
   cl::opt<bool>        Verbose  ("verbose", cl::desc("Show what is being done"));
   cl::alias            VerboseA ("v", cl::aliasopt(Verbose));
   cl::list<std::string> InputFilenames(cl::Positional, cl::desc("<Input files>"), cl::OneOrMore);
+
+  cl::ParseCommandLineOptions(argc, argv, "Modify timestamps of existing files\n");
 
   enum mode {
     ModeSetToNow,
