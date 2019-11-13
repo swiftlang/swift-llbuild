@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift.org open source project
 //
-// Copyright (c) 2014 - 2015 Apple Inc. and the Swift project authors
+// Copyright (c) 2014 - 2019 Apple Inc. and the Swift project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See http://swift.org/LICENSE.txt for license information
@@ -17,7 +17,7 @@
 namespace llbuild {
 
 std::string getLLBuildFullVersion(StringRef productName) {
-  std::string result = productName.str() + " version 3.0";
+  std::string result = productName.str() + " version 5.2";
 
   // Include the additional build version information, if present.
 #ifdef LLBUILD_VENDOR_STRING
