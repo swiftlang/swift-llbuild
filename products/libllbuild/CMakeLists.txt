@@ -57,7 +57,7 @@ install(TARGETS libllbuild
   RUNTIME DESTINATION bin
   COMPONENT libllbuild)
 
-if(SWIFTC_FOUND)
+if(Swift IN_LIST LLBUILD_SUPPORT_BINDINGS)
   if(NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
     install(TARGETS libllbuild
       DESTINATION lib/swift/pm/llbuild
