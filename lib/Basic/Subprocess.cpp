@@ -536,7 +536,7 @@ static std::pair<CommunicationPipesCreationError, int> createCommunicationPipes(
         ManagedDescriptor& controlPipeParentEnd,
         ManagedDescriptor& controlPipeChildEnd) {
 #if defined(_WIN32)
-  STARTUPINFOW& startupInfo = pipesConfig,
+  STARTUPINFOW& startupInfo = pipesConfig;
   startupInfo.dwFlags = STARTF_USESTDHANDLES;
   if (attr.connectToConsole) {
     // Connect to the current stdout/stderr.
