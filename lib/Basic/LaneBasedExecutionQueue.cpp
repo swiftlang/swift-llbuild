@@ -241,7 +241,7 @@ public:
   /// Returns the number of allowed foreground and background tasks.
   static auto estimateTaskLimits(unsigned numLanes) -> std::pair<unsigned, unsigned> {
     llbuild_rlim_t curOpenFileLimit = llbuild::basic::sys::getOpenFileLimit();
-    const unsigned reservedFileCount = (STDERR_FILENO+1) + 2 /* Database */
+    const unsigned reservedFileCount = (fileno(stderr) + 1) + 2 /* Database */
                                        + 1 /* Logging */
                                        + 2 /* Additional fds during spawn */
                                        + 2 /* Fudge factor */;
