@@ -819,8 +819,10 @@ void llbuild::basic::spawnProcess(
       auto errorPair = createCommunicationPipes(attr, pipesConfig, outputPipeParentEnd, outputPipeChildEnd, controlPipeParentEnd, controlPipeChildEnd);
       if (errorPair.first != CommunicationPipesCreationError::ERROR_NONE) {
         std::string whatPipe = errorPair.first == CommunicationPipesCreationError::OUTPUT_PIPE_FAILED ? "output pipe" : "control pipe";
+#if !defined(_WIN32)
         posix_spawn_file_actions_destroy(&fileActions);
         posix_spawnattr_destroy(&attributes);
+#endif
         delegate.processHadError(ctx, handle,
             Twine("unable to open " + whatPipe + " (") + strerror(errorPair.second) + ")");
         delegate.processFinished(ctx, handle, ProcessResult::makeFailed());
