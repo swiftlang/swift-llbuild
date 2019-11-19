@@ -525,7 +525,7 @@ static void cleanUpExecutedProcess(ProcessDelegate& delegate,
 
 /// Create all or no communication pipes.
 enum class CommunicationPipesCreationError {
-  NO_ERROR,
+  ERROR_NONE,
   OUTPUT_PIPE_FAILED,
   CONTROL_PIPE_FAILED
 };
@@ -629,7 +629,7 @@ static std::pair<CommunicationPipesCreationError, int> createCommunicationPipes(
 
 #endif
 
-  return std::make_pair(CommunicationPipesCreationError::NO_ERROR, 0);
+  return std::make_pair(CommunicationPipesCreationError::ERROR_NONE, 0);
 }
 
 void llbuild::basic::spawnProcess(
@@ -817,7 +817,7 @@ void llbuild::basic::spawnProcess(
       // Open the communication channel under the mutex to avoid
       // leaking the wrong channel into other children started concurrently.
       auto errorPair = createCommunicationPipes(attr, pipesConfig, outputPipeParentEnd, outputPipeChildEnd, controlPipeParentEnd, controlPipeChildEnd);
-      if (errorPair.first != CommunicationPipesCreationError::NO_ERROR) {
+      if (errorPair.first != CommunicationPipesCreationError::ERROR_NONE) {
         std::string whatPipe = errorPair.first == CommunicationPipesCreationError::OUTPUT_PIPE_FAILED ? "output pipe" : "control pipe";
         posix_spawn_file_actions_destroy(&fileActions);
         posix_spawnattr_destroy(&attributes);
