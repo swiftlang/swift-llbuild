@@ -28,6 +28,11 @@
 #endif
 #include <stdio.h>
 
+#if defined(_WIN32)
+const HANDLE llbuild::basic::sys::FileDescriptorTraits<HANDLE>::InvalidDescriptor =
+    INVALID_HANDLE_VALUE;
+#endif
+
 using namespace llbuild;
 using namespace llbuild::basic;
 
