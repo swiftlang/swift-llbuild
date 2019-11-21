@@ -26,33 +26,39 @@ let package = Package(
             targets: ["llbuildAnalysis"]),
     ],
     targets: [
-        /// The llbuild testing tool.
+        // MARK: Products
+
+        /// The llbuild multitool (primarily for testing).
         .target(
             name: "llbuild",
             dependencies: ["llbuildCommands"],
             path: "products/llbuild"
         ),
 
-        /// The custom build tool used by the Swift package manager.
+        /// The custom build tool used by the Swift package manager (SwiftPM).
+        ///
+        /// SwiftPM has now switched to using llbuild's Swift bindings API to
+        /// build, but this tool is still used for SwiftPM's bootstrapping. Once
+        /// that step has been eliminated, this tool can be removed.
         .target(
             name: "swift-build-tool",
             dependencies: ["llbuildBuildSystem"],
             path: "products/swift-build-tool"
         ),
 
-        /// The custom build tool used by the Swift package manager.
+        /// The public llbuild C API.
+        .target(
+            name: "libllbuild",
+            dependencies: ["llbuildCore", "llbuildBuildSystem"],
+            path: "products/libllbuild"
+        ),
+
+        /// The public llbuild Swift API.
         .target(
             name: "llbuildSwift",
             dependencies: ["libllbuild"],
             path: "products/llbuildSwift",
             exclude: []
-        ),
-
-        /// The public llbuild API.
-        .target(
-            name: "libllbuild",
-            dependencies: ["llbuildCore", "llbuildBuildSystem"],
-            path: "products/libllbuild"
         ),
 
         // MARK: Components
