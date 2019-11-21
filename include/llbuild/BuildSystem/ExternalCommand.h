@@ -16,6 +16,7 @@
 #include "llbuild/BuildSystem/BuildDescription.h"
 #include "llbuild/BuildSystem/BuildSystem.h"
 #include "llbuild/BuildSystem/BuildValue.h"
+#include "llbuild/BuildSystem/Command.h"
 
 #include "llvm/ADT/Optional.h"
 #include "llvm/ADT/SmallPtrSet.h"
