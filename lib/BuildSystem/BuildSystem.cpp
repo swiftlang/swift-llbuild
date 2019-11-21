@@ -30,6 +30,7 @@
 #include "llbuild/BuildSystem/BuildValue.h"
 #include "llbuild/BuildSystem/ExternalCommand.h"
 #include "llbuild/BuildSystem/ShellCommand.h"
+#include "llbuild/BuildSystem/Tool.h"
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/BuildEngine.h"
 #include "llbuild/Core/DependencyInfoParser.h"
