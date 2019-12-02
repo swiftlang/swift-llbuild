@@ -1,5 +1,17 @@
 cmake_minimum_required(VERSION 3.15.1)
 
+# Get the SDK path for OSX.
+# Please the position of this snippet is important, as
+# CMAKE_OSX_SYSROOT needs to be set before Darwin.cmake and
+# Darwin-initialize.cmake are invoked so to set the build environment
+# appropriately
+if (CMAKE_HOST_SYSTEM_NAME STREQUAL Darwin)
+  execute_process(
+      COMMAND xcrun --sdk macosx --show-sdk-path
+      OUTPUT_VARIABLE CMAKE_OSX_SYSROOT
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif()
+
 project(llbuild LANGUAGES CXX)
 
 option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
@@ -11,13 +23,6 @@ set(LLBUILD_SUPPORT_BINDINGS "" CACHE STRING "bindings to build")
 # Include standard CMake modules.
 include(CheckCXXCompilerFlag)
 
-# Get the SDK path for OSX.
-if (CMAKE_HOST_SYSTEM_NAME STREQUAL Darwin)
-  execute_process(
-      COMMAND xcrun --sdk macosx --show-sdk-path
-      OUTPUT_VARIABLE CMAKE_OSX_SYSROOT
-      OUTPUT_STRIP_TRAILING_WHITESPACE)
-endif()
 
 # Add path for custom modules
 list(APPEND CMAKE_MODULE_PATH
