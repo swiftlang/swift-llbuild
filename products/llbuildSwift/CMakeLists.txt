@@ -8,6 +8,11 @@ if(CMAKE_VERSION VERSION_LESS 3.16)
     set(CMAKE_SHARED_LIBRARY_RUNTIME_Swift_FLAG "-Xlinker -rpath -Xlinker ")
     set(CMAKE_SHARED_LIBRARY_RUNTIME_Swift_FLAG_SEP ":")
   endif()
+
+  if(CMAKE_SYSTEM_NAME STREQUAL Windows)
+    set(CMAKE_LINK_LIBRARY_FLAG "-l")
+    set(CMAKE_LINK_LIBRARY_SUFFIX "")
+  endif()
 endif()
 
 # TODO(compnerd) move both of these outside of the CMake into the invocation
