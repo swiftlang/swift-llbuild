@@ -63,6 +63,7 @@ else()
 endif()
 set_target_properties(llbuildSwift PROPERTIES
   Swift_MODULE_NAME llbuildSwift
+  INTERFACE_LINK_LIBRARIES libllbuild
   INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_BINARY_DIR})
 
 install(TARGETS llbuildSwift
