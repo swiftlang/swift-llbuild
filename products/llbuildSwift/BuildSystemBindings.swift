@@ -33,9 +33,39 @@ private func bytesFromData(_ data: llb_data_t) -> [UInt8] {
     return Array(UnsafeBufferPointer(start: data.data, count: Int(data.length)))
 }
 
+/// Interface into the build system to modify the dependencies of a command.
+public struct BuildSystemCommandInterface {
+    // This struct wraps a bsci object, which should be global, and a task object, which is different for each command.
+    // At this time, it is not required to expose the task to the client, so this wrapper abstracts from the task itself.
+    // and each command will get a personalized instance of the command interface.
+    private let _bsci: OpaquePointer
+    private let _task: OpaquePointer
+
+    fileprivate init(_ bsci: OpaquePointer, _ task: OpaquePointer) {
+        _bsci = bsci
+        _task = task
+    }
+
+    /// Requests an input from the build system which will be provided to the command when it is available
+    /// using the `provideValue` method.
+    public func commandNeedsInput(key: BuildKey, inputID: UInt) {
+        llb_buildsystem_command_interface_task_needs_input(_bsci, _task, key.internalBuildKey, inputID)
+    }
+}
+
 public protocol Tool: class {
     /// Called to create a specific command instance of this tool.
     func createCommand(_ name: String) -> ExternalCommand
+
+    /// Called to create a custom command, if the tool accepts the requested CustomTask BuildKey.
+    func createCustomCommand(_ buildKey: BuildKey.CustomTask) -> ExternalCommand?
+}
+
+public extension Tool {
+    // Default implementation to allow clients to avoid declaring this method if not required.
+    func createCustomCommand(_ buildKey: BuildKey.CustomTask) -> ExternalCommand? {
+        return nil
+    }
 }
 
 private final class ToolWrapper {
@@ -49,13 +79,38 @@ private final class ToolWrapper {
     //
     // FIXME: This is unfortunate, we should be able to destroy these naturally.
     private var commandWrappers: [CommandWrapper] = []
+
     func createCommand(_ name: UnsafePointer<llb_data_t>) -> OpaquePointer? {
         let command = tool.createCommand(stringFromData(name.pointee))
+        return buildCommand(name, command)
+    }
+
+    func createCustomCommand(_ key: OpaquePointer) -> OpaquePointer? {
+        // Only process CustomTask keys, as we shouldn't be expecting anything else.
+        guard let buildKey = BuildKey.construct(key: key) as? BuildKey.CustomTask,
+            let command = tool.createCustomCommand(buildKey) else {
+            return nil
+        }
+
+        // Since this is a custom task, we can request the name directly instead of doing the roundtrips of
+        // data copy when using the BuildKey's name field.
+        var name = llb_data_t()
+        llb_build_key_get_custom_task_name(key, &name)
+        defer {
+            llb_data_destroy(&name)
+        }
+
+        return buildCommand(&name, command)
+    }
+
+    private func buildCommand(_ name: UnsafePointer<llb_data_t>, _ command: ExternalCommand) -> OpaquePointer? {
         let wrapper = CommandWrapper(command: command)
         self.commandWrappers.append(wrapper)
         var _delegate = llb_buildsystem_external_command_delegate_t()
         _delegate.context = Unmanaged.passUnretained(wrapper).toOpaque()
         _delegate.get_signature = { return BuildSystem.toCommandWrapper($0!).getSignature($1!, $2!) }
+        _delegate.start = { return BuildSystem.toCommandWrapper($0!).start($1!, $2!, $3!) }
+        _delegate.provide_value = { return BuildSystem.toCommandWrapper($0!).provideValue($1!, $2!, $3!, $4!, $5) }
         _delegate.execute_command = { return BuildSystem.toCommandWrapper($0!).executeCommand($1!, $2!, $3!, $4!) }
 
         // Create the low-level command.
@@ -71,11 +126,33 @@ public protocol ExternalCommand: class {
     /// This is checked to determine if the command needs to rebuild versus the last time it was run.
     func getSignature(_ command: Command) -> [UInt8]
 
+    /// Called when the command is starting. Commands can request dynamic dependencies using the
+    /// commandInterface object.
+    ///
+    /// - command: A handle to the starting command.
+    /// - commandInterface: A handle to the build system's command interface.
+    func start(_ command: Command, _ commandInterface: BuildSystemCommandInterface)
+
+    /// Called when the build system obtained a BuildValue from a requested BuildKey. The command may choose
+    /// to request additional dependencies through the commandInterface object.
+    ///
+    /// - command: A handle to the command that is receving the values.
+    /// - commandInterface: A handle to the build system's command interface.
+    /// - buildValue: The build value requested.
+    /// - inputID: Integer for associating requested keys to provided values.
+    func provideValue(_ command: Command, _ commandInterface: BuildSystemCommandInterface, _ buildValue: BuildValue, _ inputID: UInt)
+
     /// Called to execute the given command.
     ///
     /// - command: A handle to the executing command.
     /// - returns: True on success.
     func execute(_ command: Command) -> Bool
+}
+
+// Default implementations for these hooks since they're optional to the client.
+public extension ExternalCommand {
+    func start(_ command: Command, _ commandInterface: BuildSystemCommandInterface) {}
+    func provideValue(_ command: Command, _ commandInterface: BuildSystemCommandInterface, _ buildValue: BuildValue, _ inputID: UInt) {}
 }
 
 // FIXME: The terminology is really confusing here, we have ExternalCommand which is divorced from the actual internal command implementation of the same name.
@@ -90,6 +167,21 @@ private final class CommandWrapper {
 
     func getSignature(_: OpaquePointer, _ data: UnsafeMutablePointer<llb_data_t>) {
         data.pointee = copiedDataFromBytes(command.getSignature(_command))
+    }
+
+    func start(_: OpaquePointer, _ bsci: OpaquePointer, _ task: OpaquePointer) {
+        let commandInterface = BuildSystemCommandInterface(bsci, task)
+        return command.start(_command, commandInterface)
+    }
+
+    func provideValue(_: OpaquePointer, _ bsci: OpaquePointer, _ task: OpaquePointer, _ value: OpaquePointer, _ inputID: UInt) {
+
+        guard let buildValue = BuildValue.construct(from: value) else {
+            fatalError("Could not decode incoming build value.")
+        }
+
+        let commandInterface = BuildSystemCommandInterface(bsci, task)
+        return command.provideValue(_command, commandInterface, buildValue, inputID)
     }
 
     func executeCommand(_: OpaquePointer, _ bsci: OpaquePointer, _ task: OpaquePointer, _ jobContext: OpaquePointer) -> Bool {
@@ -751,6 +843,7 @@ public final class BuildSystem {
         var _delegate = llb_buildsystem_tool_delegate_t()
         _delegate.context = Unmanaged.passUnretained(wrapper).toOpaque()
         _delegate.create_command = { return BuildSystem.toToolWrapper($0!).createCommand($1!) }
+        _delegate.create_custom_command = { return BuildSystem.toToolWrapper($0!).createCustomCommand($1!) }
 
         // Create the tool.
         return llb_buildsystem_tool_create(name, _delegate)
