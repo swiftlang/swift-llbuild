@@ -54,7 +54,7 @@ static inline llb_build_key_kind_t internalToPublicBuildKeyKind(const BuildKey::
 
 llb_build_key_kind_t CAPIBuildKey::getKind() {
    return internalToPublicBuildKeyKind(internalBuildKey.getKind());
- }
+}
 
 bool CAPIBuildKey::operator ==(const CAPIBuildKey &other) {
   if (hasIdentifier && other.hasIdentifier) {

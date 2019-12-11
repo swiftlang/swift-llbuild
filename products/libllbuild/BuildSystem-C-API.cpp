@@ -30,6 +30,7 @@
 #include "llbuild/Core/DependencyInfoParser.h"
 
 #include "BuildKey-C-API-Private.h"
+#include "BuildValue-C-API-Private.h"
 
 #include "llvm/ADT/Hashing.h"
 #include "llvm/ADT/SmallString.h"
@@ -626,9 +627,9 @@ public:
 
   virtual std::unique_ptr<Command>
   createCustomCommand(const BuildKey& key) override {
-    // FIXME: Support dynamic commands in client tools.
-    
-    return Tool::createCustomCommand(key);
+    auto key_p = (llb_build_key_t *)new CAPIBuildKey(key);
+    return std::unique_ptr<Command>(
+        (Command*) cAPIDelegate.create_custom_command(cAPIDelegate.context, key_p));
   }
 };
 
@@ -694,10 +695,38 @@ class CAPIExternalCommand : public ExternalCommand {
     return true;
   }
 
+  virtual void startExternalCommand(BuildSystemCommandInterface& bsci,
+                                    core::Task* task) override {
+    cAPIDelegate.start(cAPIDelegate.context,
+                       (llb_buildsystem_command_t*)this,
+                       (llb_buildsystem_command_interface_t*)&bsci,
+                       (llb_task_t*)task);
+  }
+
+  virtual void provideValueExternalCommand(BuildSystemCommandInterface& bsci,
+                                    core::Task* task,
+                                    uintptr_t inputID,
+                                    const BuildValue& value) override {
+
+    // FIXME: Need to figure out how to convert the reference into a BuildValue that CAPIBuildValue can
+    // accept. Use this temporary value for now.
+    BuildValue tmp = BuildValue::makeInvalid();
+    auto value_p = (llb_build_value *)new CAPIBuildValue(std::move(tmp));
+    cAPIDelegate.provide_value(cAPIDelegate.context,
+                               (llb_buildsystem_command_t*)this,
+                               (llb_buildsystem_command_interface_t*)&bsci,
+                               (llb_task_t*)task,
+                               value_p,
+                               inputID);
+  }
+
   virtual void executeExternalCommand(BuildSystemCommandInterface& bsci,
                                                core::Task* task,
                                                QueueJobContext* job_context,
                                                llvm::Optional<ProcessCompletionFn> completionFn) override {
+    // FIXME: We should extend this API to allow more generic data to be piped through from the execution
+    // of the external command. The current SUCCESS/FAILURE options are not rich enough to leverage llbuild
+    // value system as a client.
     auto result = cAPIDelegate.execute_command(
         cAPIDelegate.context, (llb_buildsystem_command_t*)this,
         (llb_buildsystem_command_interface_t*)&bsci,
@@ -836,6 +865,8 @@ llb_buildsystem_external_command_create(
     const llb_data_t* name,
     llb_buildsystem_external_command_delegate_t delegate) {
   // Check that all required methods are provided.
+  assert(delegate.start);
+  assert(delegate.provide_value);
   assert(delegate.execute_command);
   
   return (llb_buildsystem_command_t*) new CAPIExternalCommand(
@@ -873,6 +904,11 @@ char* llb_buildsystem_command_get_verbose_description(
   SmallString<256> result;
   command->getVerboseDescription(result);
   return strdup(result.c_str());
+}
+
+void llb_buildsystem_command_interface_task_needs_input(llb_buildsystem_command_interface_t* bsci_p, llb_task_t* task_p, llb_build_key_t* key, uintptr_t inputID) {
+  auto bsci = (BuildSystemCommandInterface *)bsci_p;
+  bsci->taskNeedsInput((core::Task *)task_p, ((CAPIBuildKey *)key)->getInternalBuildKey(), inputID);
 }
 
 llb_quality_of_service_t llb_get_quality_of_service() {

@@ -186,6 +186,7 @@ private:
     return stringValues.getValues();
   }
 
+public:
   FileInfo& getNthOutputInfo(unsigned n) {
     assert(kindHasOutputInfo() && "invalid call for value kind");
     assert(n < getNumOutputs());
@@ -197,7 +198,6 @@ private:
     }
   }
 
-public:
   // BuildValues can only be moved, not copied.
   BuildValue(BuildValue&& rhs) : numOutputInfos(rhs.numOutputInfos) {
     kind = rhs.kind;

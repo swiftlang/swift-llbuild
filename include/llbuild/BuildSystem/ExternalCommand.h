@@ -92,7 +92,19 @@ protected:
   /// This function must be overriden by subclasses for any additional keys.
   virtual basic::CommandSignature getSignature() const override;
 
-  /// Extension point for subclasses, to actually execute the command.
+  /// Extension point for subclases, to modify the command dependencies if needed.
+  virtual void startExternalCommand(
+      BuildSystemCommandInterface& bsci,
+      core::Task* task) = 0;
+
+  /// Extension point for subclasses, to retrieve the BuildValue requested. May request new keys from this extension.
+  virtual void provideValueExternalCommand(
+      BuildSystemCommandInterface& bsci,
+      core::Task* task,
+      uintptr_t inputID,
+      const BuildValue& value) = 0;
+
+  /// Extension point for subclasses, to actually execute the command after all dependencies have been calculated.
   virtual void executeExternalCommand(
       BuildSystemCommandInterface& bsci,
       core::Task* task,

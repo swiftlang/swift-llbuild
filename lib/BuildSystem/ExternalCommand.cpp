@@ -215,6 +215,9 @@ void ExternalCommand::start(BuildSystemCommandInterface& bsci,
   for (auto it = inputs.begin(), ie = inputs.end(); it != ie; ++it, ++id) {
     bsci.taskNeedsInput(task, BuildKey::makeNode(*it), id);
   }
+
+  // Delegate to the subclass in case it needs more custom inputs.
+  startExternalCommand(bsci, task);
 }
 
 void ExternalCommand::providePriorValue(BuildSystemCommandInterface&,
@@ -226,10 +229,15 @@ void ExternalCommand::providePriorValue(BuildSystemCommandInterface&,
 }
 
 void ExternalCommand::provideValue(BuildSystemCommandInterface& bsci,
-                                   core::Task*,
+                                   core::Task* task,
                                    uintptr_t inputID,
                                    const BuildValue& value) {
-  // Process the input value to see if we should skip this command.
+  if (value.isSuccessfulCommand() || value.isFailedCommand()) {
+    // If the value is a successful command, it must probably be a value that was requested for a custom task, so
+    // skip the input processing and invoke the subclass instead to process it accordingly.
+    provideValueExternalCommand(bsci, task, inputID, value);
+    return;
+  }
 
   // All direct inputs should be individual node values.
   assert(!value.hasMultipleOutputs());
@@ -331,6 +339,18 @@ ExternalCommand::computeCommandResult(BuildSystemCommandInterface& bsci) {
                                 bsci.getFileSystem()));
     }
   }
+
+  // FIXME: If the outputs are empty, it might mean that this instance is for a custom task, which does not
+  // currently have any hooks for specifying what the outputs are. It might make sense to create a new BuildValue
+  // for a successful command with custom data, so that we can avoid the file system for commands that don't require
+  // the filesystem. For now, hackily insert the timestamp just to differentiate between 2 build values that ran at
+  // different times.
+  if (outputs.size() == 0) {
+    FileInfo info{};
+    info.size = bsci.getBuildEngine().getCurrentEpoch();
+    outputInfos.push_back(info);
+  }
+
   return BuildValue::makeSuccessfulCommand(outputInfos);
 }
 

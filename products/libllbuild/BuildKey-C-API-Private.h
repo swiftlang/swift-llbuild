@@ -1,10 +1,14 @@
+//===-- BuildKey-C-API-Private.h ------------------------------------------===//
 //
-//  BuildKey-C-API-Private.h
-//  llbuild
+// This source file is part of the Swift.org open source project
 //
-//  Created by Benjamin Herzog on 01.08.19.
-//  Copyright © 2019 Apple Inc. All rights reserved.
+// Copyright (c) 2019 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
 //
+// See http://swift.org/LICENSE.txt for license information
+// See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+//
+//===----------------------------------------------------------------------===//
 
 #ifndef BuildKey_C_API_Private_h
 #define BuildKey_C_API_Private_h

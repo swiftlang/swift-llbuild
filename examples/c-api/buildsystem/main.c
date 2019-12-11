@@ -60,6 +60,18 @@ static wchar_t* convertToMultiByte(const char* s) {
 
 // "Fancy" Command Implementation
 
+static void fancy_command_start(void* context,
+                                         llb_buildsystem_command_t* command,
+                                         llb_buildsystem_command_interface_t* bsci,
+                                         llb_task_t* task) {}
+
+static void fancy_command_provide_value(void* context,
+                                                 llb_buildsystem_command_t* command,
+                                                 llb_buildsystem_command_interface_t* bsci,
+                                                 llb_task_t* task,
+                                                 const llb_build_value* value,
+                                                 uintptr_t inputID) {}
+
 static bool
 fancy_command_execute_command(
     void *context, llb_buildsystem_command_t* command,
@@ -77,6 +89,8 @@ fancy_tool_create_command(void *context, const llb_data_t* name) {
   llb_buildsystem_external_command_delegate_t delegate;
   delegate.context = NULL;
   delegate.get_signature = NULL;
+  delegate.start = fancy_command_start;
+  delegate.provide_value = fancy_command_provide_value;
   delegate.execute_command = fancy_command_execute_command;
   return llb_buildsystem_external_command_create(name, delegate);
 }

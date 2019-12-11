@@ -64,6 +64,9 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		2D0FB84C2395ED1B0088DAB4 /* BuildValue-C-API-Private.h in Headers */ = {isa = PBXBuildFile; fileRef = 2D0FB84B2395D8690088DAB4 /* BuildValue-C-API-Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		2D0FB84D2395ED1B0088DAB4 /* BuildValue-C-API-Private.h in Headers */ = {isa = PBXBuildFile; fileRef = 2D0FB84B2395D8690088DAB4 /* BuildValue-C-API-Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		2D86C6E0238D932B006E61FB /* Tool.h in Headers */ = {isa = PBXBuildFile; fileRef = 2D86C6DF238D932B006E61FB /* Tool.h */; };
 		402614272087B10B005BD956 /* Tracing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 402614262087B10B005BD956 /* Tracing.cpp */; };
 		40B3C91020D3AEC9007C5847 /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.tbd */; };
 		40B3C91120D3AEC9007C5847 /* libgtest.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A224DD19F99B0E0059043E /* libgtest.a */; };
@@ -887,6 +890,8 @@
 		1484D21C2094E99900D3830F /* Mutex.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.pascal; path = Mutex.inc; sourceTree = "<group>"; };
 		1484D21D2094E99900D3830F /* Memory.inc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.pascal; path = Memory.inc; sourceTree = "<group>"; };
 		1484D21E2094E9CE00D3830F /* LeanWindows.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = LeanWindows.h; path = ../../../lib/Basic/LeanWindows.h; sourceTree = "<group>"; };
+		2D0FB84B2395D8690088DAB4 /* BuildValue-C-API-Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "BuildValue-C-API-Private.h"; sourceTree = "<group>"; };
+		2D86C6DF238D932B006E61FB /* Tool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Tool.h; sourceTree = "<group>"; };
 		402614262087B10B005BD956 /* Tracing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Tracing.cpp; sourceTree = "<group>"; };
 		40377C7C2061D24200C0FD4D /* Package.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; tabWidth = 4; };
 		404C888E20924BF8000C201A /* DenseMapInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DenseMapInfo.h; sourceTree = "<group>"; };
@@ -2337,6 +2342,7 @@
 				E1ADC2311A85922F00D5387C /* C-API.cpp */,
 				E1DD22741C47259900555A5D /* Core-C-API.cpp */,
 				B5A308D822F3391F00699B4C /* BuildKey-C-API-Private.h */,
+				2D0FB84B2395D8690088DAB4 /* BuildValue-C-API-Private.h */,
 				B5BE9BA622E854E300777A06 /* BuildKey-C-API.cpp */,
 				B5A308B622F30DF000699B4C /* BuildValue-C-API.cpp */,
 			);
@@ -2615,6 +2621,7 @@
 				E11470911B7517C800ED84CF /* BuildValue.h */,
 				54E187B71CD296EA00F7EC89 /* ExternalCommand.h */,
 				E162C583223315A20078FD2E /* ShellCommand.h */,
+				2D86C6DF238D932B006E61FB /* Tool.h */,
 			);
 			name = Headers;
 			path = include/llbuild/BuildSystem;
@@ -2737,7 +2744,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				E1ADC23F1A8593AD00D5387C /* llbuild.h in Headers */,
+				2D0FB84D2395ED1B0088DAB4 /* BuildValue-C-API-Private.h in Headers */,
 				B5A308DA22F3391F00699B4C /* BuildKey-C-API-Private.h in Headers */,
+				2D86C6E0238D932B006E61FB /* Tool.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2769,6 +2778,7 @@
 				B5BE9BAC22E887CD00777A06 /* buildkey.h in Headers */,
 				E1BE0AAE1C46F94000AD0883 /* core.h in Headers */,
 				B5A308D922F3391F00699B4C /* BuildKey-C-API-Private.h in Headers */,
+				2D0FB84C2395ED1B0088DAB4 /* BuildValue-C-API-Private.h in Headers */,
 				E1192CED1C49D84500F85890 /* buildsystem.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

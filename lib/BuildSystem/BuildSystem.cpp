@@ -1937,6 +1937,22 @@ public:
     llvm::raw_svector_ostream(result) << getName();
   }
 
+  virtual void startExternalCommand(
+      BuildSystemCommandInterface& bsci,
+      Task* task) override {
+    return;
+  }
+
+  virtual void provideValueExternalCommand(
+      BuildSystemCommandInterface& bsci,
+      core::Task* task,
+      uintptr_t inputID,
+      const BuildValue& value) override {
+    // Should never get here, since we're not requesting inputs in start.
+    assert(0 && "unexpected API call");
+    return;
+  }
+
   virtual void executeExternalCommand(
       BuildSystemCommandInterface& bsci,
       Task* task,
@@ -2152,6 +2168,22 @@ public:
       const ConfigureContext& ctx, StringRef name,
       ArrayRef<std::pair<StringRef, StringRef>> values) override {
     return ExternalCommand::configureAttribute(ctx, name, values);
+  }
+
+  virtual void startExternalCommand(
+      BuildSystemCommandInterface& bsci,
+      Task* task) override {
+    return;
+  }
+
+  virtual void provideValueExternalCommand(
+      BuildSystemCommandInterface& bsci,
+      core::Task* task,
+      uintptr_t inputID,
+      const BuildValue& value) override {
+    // Should never get here, since we're not requesting inputs in start.
+    assert(0 && "unexpected API call");
+    return;
   }
 
   virtual void executeExternalCommand(BuildSystemCommandInterface& bsci,
@@ -2715,6 +2747,22 @@ public:
     ExternalCommand::provideValue(bsci, task, inputID, value);
   }
 
+  virtual void startExternalCommand(
+      BuildSystemCommandInterface& bsci,
+      Task* task) override {
+    return;
+  }
+
+  virtual void provideValueExternalCommand(
+      BuildSystemCommandInterface& bsci,
+      core::Task* task,
+      uintptr_t inputID,
+      const BuildValue& value) override {
+    // Should never get here, since we're not requesting inputs in start.
+    assert(0 && "unexpected API call");
+    return;
+  }
+
   virtual void executeExternalCommand(
       BuildSystemCommandInterface& bsci,
       core::Task* task,
@@ -2890,6 +2938,22 @@ class MkdirCommand : public ExternalCommand {
     return true;
   }
   
+  virtual void startExternalCommand(
+      BuildSystemCommandInterface& bsci,
+      Task* task) override {
+    return;
+  }
+
+  virtual void provideValueExternalCommand(
+      BuildSystemCommandInterface& bsci,
+      core::Task* task,
+      uintptr_t inputID,
+      const BuildValue& value) override {
+    // Should never get here, since we're not requesting inputs in start.
+    assert(0 && "unexpected API call");
+    return;
+  }
+
   virtual void executeExternalCommand(
       BuildSystemCommandInterface& bsci,
       Task* task,
@@ -3211,6 +3275,22 @@ class ArchiveShellCommand : public ExternalCommand {
   std::string archiveName;
   std::vector<std::string> archiveInputs;
 
+  virtual void startExternalCommand(
+      BuildSystemCommandInterface& bsci,
+      Task* task) override {
+    return;
+  }
+
+  virtual void provideValueExternalCommand(
+      BuildSystemCommandInterface& bsci,
+      core::Task* task,
+      uintptr_t inputID,
+      const BuildValue& value) override {
+    // Should never get here, since we're not requesting inputs in start.
+    assert(0 && "unexpected API call");
+    return;
+  }
+
   virtual void executeExternalCommand(
       BuildSystemCommandInterface& bsci,
       Task* task,
@@ -3343,6 +3423,22 @@ class SharedLibraryShellCommand : public ExternalCommand {
   std::vector<std::string> sharedLibInputs;
   /// Additional arguments, as a string.
   std::vector<std::string> otherArgs;
+
+  virtual void startExternalCommand(
+      BuildSystemCommandInterface& bsci,
+      Task* task) override {
+    return;
+  }
+
+  virtual void provideValueExternalCommand(
+      BuildSystemCommandInterface& bsci,
+      core::Task* task,
+      uintptr_t inputID,
+      const BuildValue& value) override {
+    // Should never get here, since we're not requesting inputs in start.
+    assert(0 && "unexpected API call");
+    return;
+  }
 
   virtual void executeExternalCommand(
       BuildSystemCommandInterface& bsci, Task* task, QueueJobContext* context,
