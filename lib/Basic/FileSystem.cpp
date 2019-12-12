@@ -149,6 +149,15 @@ public:
       if (errno != EEXIST) {
         return false;
       }
+
+      // Target exists, check that it is actually a directory
+      llbuild::basic::sys::StatStruct statbuf;
+      if (llbuild::basic::sys::lstat(path.c_str(), &statbuf) != 0) {
+        return false;
+      }
+      if (!S_ISDIR(statbuf.st_mode)) {
+        return false;
+      }
     }
     return true;
   }
