@@ -522,6 +522,8 @@ private final class CStyleEnvironment {
 
 /// This class allows building using llbuild's native BuildSystem component.
 public final class BuildSystem {
+    public typealias SchedulerAlgorithm = llbuild.SchedulerAlgorithm
+
     /// The build file that the system is configured with.
     public let buildFile: String
 
@@ -534,13 +536,7 @@ public final class BuildSystem {
     /// The C environment, if used.
     private let _cEnvironment: CStyleEnvironment?
 
-    /// The current scheduler algorithm
-    private static var schedulerAlgorithm : SchedulerAlgorithm = .commandNamePriority
-
-    /// The number of scheduler lanes
-    private static var schedulerLanes : UInt32 = 0
-
-    public init(buildFile: String, databaseFile: String, delegate: BuildSystemDelegate, environment: [String: String]? = nil, serial: Bool = false, traceFile: String? = nil) {
+    public init(buildFile: String, databaseFile: String, delegate: BuildSystemDelegate, environment: [String: String]? = nil, serial: Bool = false, traceFile: String? = nil, schedulerAlgorithm: SchedulerAlgorithm = .commandNamePriority, schedulerLanes: UInt32 = 0) {
 
         // Safety check that we have linked against a compatibile llbuild framework version
         if llb_get_api_version() != LLBUILD_C_API_VERSION {
@@ -570,8 +566,8 @@ public final class BuildSystem {
         _invocation.environment = _cEnvironment.map{ UnsafePointer($0.envp) }
         _invocation.showVerboseStatus = true
         _invocation.useSerialBuild = serial
-        _invocation.schedulerAlgorithm = BuildSystem.schedulerAlgorithm
-        _invocation.schedulerLanes = BuildSystem.schedulerLanes
+        _invocation.schedulerAlgorithm = schedulerAlgorithm
+        _invocation.schedulerLanes = schedulerLanes
 
         // Construct the system delegate.
         var _delegate = llb_buildsystem_delegate_t()
@@ -847,26 +843,26 @@ public final class BuildSystem {
         }
     }
 
-    public typealias SchedulerAlgorithm = llbuild.SchedulerAlgorithm
-
     /// Get the scheduler algorithm
     public static func getSchedulerAlgorithm() -> SchedulerAlgorithm {
-        return schedulerAlgorithm
+        // OBSOLETE: remove once downstream client(s) have adopted initializer
+        return .commandNamePriority
     }
 
     /// Set scheduler algorithm
     public static func setSchedulerAlgorithm(_ algorithm: SchedulerAlgorithm) {
-        schedulerAlgorithm = algorithm
+        // OBSOLETE: remove once downstream clients have adopted initializer
     }
 
     /// Get scheduler lane width
     public static func getSchedulerLaneWidth() -> UInt32 {
-        return schedulerLanes
+        // OBSOLETE: remove once downstream clients have adopted initializer
+        return 0
     }
 
     /// Set scheduler lane width
     public static func setSchedulerLaneWidth(width: UInt32) {
-        schedulerLanes = width
+        // OBSOLETE: remove once downstream clients have adopted initializer
     }
 }
 
