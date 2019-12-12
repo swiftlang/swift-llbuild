@@ -577,6 +577,9 @@ public final class BuildSystem {
             _delegate.fs_get_file_info = { BuildSystem.toSystem($0!).fsGetFileInfo(String(cString: $1!), $2!) }
             // FIXME: This should be a separate callback, not shared with getFileInfo (or get FileInfo should take a parameter).
             _delegate.fs_get_link_info = { BuildSystem.toSystem($0!).fsGetFileInfo(String(cString: $1!), $2!) }
+
+            // FIXME: should support fs_create_symlink, but for now explicitly defers to built-in symlink
+            _delegate.fs_create_symlink = nil
         }
         _delegate.lookup_tool = { return BuildSystem.toSystem($0!).lookupTool($1!) }
         _delegate.had_command_failure = { BuildSystem.toSystem($0!).hadCommandFailure() }

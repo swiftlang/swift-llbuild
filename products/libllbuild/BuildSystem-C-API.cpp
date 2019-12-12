@@ -141,6 +141,14 @@ public:
     result.modTime.nanoseconds = file_info.mod_time.nanoseconds;
     return result;
   }
+
+  virtual bool createSymlink(const std::string& src, const std::string& target) override {
+    if (!cAPIDelegate.fs_create_symlink) {
+      return localFileSystem->createSymlink(src, target);
+    }
+
+    return cAPIDelegate.fs_create_symlink(cAPIDelegate.context, src.c_str(), target.c_str());
+  }
 };
   
 class CAPIBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {

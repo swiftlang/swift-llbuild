@@ -86,6 +86,10 @@ public:
   virtual FileInfo getLinkInfo(const std::string& path) override {
     return realFS->getLinkInfo(path);
   }
+
+  virtual bool createSymlink(const std::string& src, const std::string& target) override {
+    return realFS->createSymlink(src, target);
+  }
 };
 
 /// Wrap a file system object reference so that tests may create a unique object
@@ -115,6 +119,10 @@ public:
 
   virtual FileInfo getLinkInfo(const std::string& path) override {
     return realFS.getLinkInfo(path);
+  }
+
+  virtual bool createSymlink(const std::string& src, const std::string& target) override {
+    return realFS.createSymlink(src, target);
   }
 };
 
@@ -1165,4 +1173,171 @@ TEST(BuildSystemTaskTests, directoryContentsWithSkippedCommand) {
   result = system.build(BuildKey::makeDirectoryTreeStructureSignature("inputDir"));
   ASSERT_TRUE(result.hasValue());
   ASSERT_FALSE(result.getValue().isSkippedCommand());
+}
+
+
+
+// Check that mkdir properly fails when the target exists and the type is not
+// a directory (underlying cause of rdar://problem/57807186)
+TEST(BuildSystemTaskTests, mkdirShouldFailWithTypeDifference) {
+  TmpDir tempDir(__func__);
+  auto localFS = createLocalFileSystem();
+
+  SmallString<256> builddb{ tempDir.str() };
+  sys::path::append(builddb, "build.db");
+  for (auto& c : builddb) {
+    if (c == '\\')
+      c = '/';
+  }
+
+  SmallString<256> outputDir{ tempDir.str() };
+  sys::path::append(outputDir, "output");
+  for (auto& c : outputDir) {
+    if (c == '\\')
+      c = '/';
+  }
+  // Write `output` as a file
+  {
+    std::error_code ec;
+    llvm::raw_fd_ostream os(outputDir, ec, llvm::sys::fs::F_Text);
+    assert(!ec);
+    os << "output";
+  }
+
+  // Build with a mkdir rule
+  {
+    SmallString<256> manifest{ tempDir.str() };
+    sys::path::append(manifest, "manifest.llbuild");
+    {
+      std::error_code ec;
+      llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+      assert(!ec);
+
+      os <<
+      "client:\n"
+      "  name: mock\n"
+      "\n"
+      "targets:\n"
+      "  \"\": [\"<all>\"]\n"
+      "\n"
+      "nodes:\n"
+      "  \"" << outputDir << "\": {}\n"
+      "\n"
+      "commands:\n"
+      "  \"mkdir-output\":\n"
+      "    tool: mkdir\n"
+      "    outputs: [\"" << outputDir << "\"]\n"
+      "    description: \"mkdir-output\"\n"
+      "  \"<all>\":\n"
+      "    tool: phony\n"
+      "    inputs: [\"" << outputDir << "\"]\n"
+      "    outputs: [\"<all>\"]\n";
+    }
+
+    // Create the build system.
+    auto keyToBuild = BuildKey::makeTarget("");
+    MockBuildSystemDelegate delegate;
+    BuildSystem system(delegate, createLocalFileSystem());
+    system.attachDB(builddb.c_str(), nullptr);
+    bool loadingResult = system.loadDescription(manifest);
+    ASSERT_TRUE(loadingResult);
+
+    // Build a specific key.
+    auto result = system.build(keyToBuild);
+    ASSERT_TRUE(result.hasValue());
+
+    // Ensure that we have not had any missing inputs
+    bool found = false;
+    for (auto message : delegate.getMessages()) {
+      if (message.find("unable to create directory") != std::string::npos) {
+        found = true;
+        break;
+      }
+    }
+    ASSERT_TRUE(found);
+  }
+}
+
+
+// Check that directory contents task expectations are met when upstream tasks
+// like mkdir fail (rdar://problem/57807186)
+TEST(BuildSystemTaskTests, dirContentsHandleUpstreamFailure) {
+  TmpDir tempDir(__func__);
+  auto localFS = createLocalFileSystem();
+
+  SmallString<256> builddb{ tempDir.str() };
+  sys::path::append(builddb, "build.db");
+  for (auto& c : builddb) {
+    if (c == '\\')
+      c = '/';
+  }
+
+  SmallString<256> outputDir{ tempDir.str() };
+  sys::path::append(outputDir, "output");
+  for (auto& c : outputDir) {
+    if (c == '\\')
+      c = '/';
+  }
+  SmallString<256> fakeDir{ tempDir.str() };
+  sys::path::append(fakeDir, "fake");
+  for (auto& c : fakeDir) {
+    if (c == '\\')
+      c = '/';
+  }
+
+  // Write `output` as a symlink to something that doesn't exist
+  ASSERT_TRUE(localFS->createSymlink(fakeDir.str(), outputDir.str()));
+
+  // Build with a mkdir rule
+  {
+    SmallString<256> manifest{ tempDir.str() };
+    sys::path::append(manifest, "manifest.llbuild");
+    {
+      std::error_code ec;
+      llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+      assert(!ec);
+
+      os <<
+      "client:\n"
+      "  name: mock\n"
+      "\n"
+      "targets:\n"
+      "  \"\": [\"<all>\"]\n"
+      "\n"
+      "nodes:\n"
+      "  \"" << outputDir << "\": {}\n"
+      "\n"
+      "commands:\n"
+      "  \"mkdir-output\":\n"
+      "    tool: mkdir\n"
+      "    outputs: [\"" << outputDir << "\"]\n"
+      "    description: \"mkdir-output\"\n"
+      "  \"<all>\":\n"
+      "    tool: phony\n"
+      "    inputs: [\"" << outputDir << "/\"]\n"
+      "    outputs: [\"<all>\"]\n";
+    }
+
+    // Create the build system.
+    auto keyToBuild = BuildKey::makeTarget("");
+    MockBuildSystemDelegate delegate;
+    BuildSystem system(delegate, createLocalFileSystem());
+    system.attachDB(builddb.c_str(), nullptr);
+    bool loadingResult = system.loadDescription(manifest);
+    ASSERT_TRUE(loadingResult);
+
+    // Build a specific key.
+    auto result = system.build(keyToBuild);
+    ASSERT_TRUE(result.hasValue());
+
+    // Ensure that we have not had any missing inputs
+    bool found = false;
+    for (auto message : delegate.getMessages()) {
+      if (message.find("unable to create directory") != std::string::npos) {
+        found = true;
+        break;
+      }
+    }
+    ASSERT_TRUE(found);
+  }
 }
