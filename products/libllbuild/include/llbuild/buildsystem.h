@@ -257,6 +257,10 @@ typedef struct llb_buildsystem_delegate_t_ {
   void (*fs_get_link_info)(void* context, const char* path,
                            llb_fs_file_info_t* data_out);
 
+  /// Create a symlink.
+  bool (*fs_create_symlink)(void* context, const char* src,
+                           const char* target);
+
   /// @}
 
   /// @name Build System Behaviors

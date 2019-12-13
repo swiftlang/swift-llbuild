@@ -898,6 +898,8 @@
 		406A05012162815000EBA895 /* Dockerfile-18.04 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "Dockerfile-18.04"; sourceTree = "<group>"; };
 		406A05022162A20800EBA895 /* check-all */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "check-all"; sourceTree = "<group>"; };
 		406A05032162A5A200EBA895 /* build-and-test */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "build-and-test"; sourceTree = "<group>"; };
+		40942C05237F6A8900A9B341 /* KeyID.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = KeyID.h; sourceTree = "<group>"; };
+		40942C06237F6A8900A9B341 /* AttributedKeyIDs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AttributedKeyIDs.h; sourceTree = "<group>"; };
 		40B3C8FF20D3AEBC007C5847 /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		40B3C91A20D3AEC9007C5847 /* CAPITests */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = CAPITests; sourceTree = BUILT_PRODUCTS_DIR; };
 		40B3C91B20D3AF9B007C5847 /* C-API.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "C-API.cpp"; sourceTree = "<group>"; };
@@ -2136,6 +2138,8 @@
 		E1A2245719F997FE0059043E /* Headers */ = {
 			isa = PBXGroup;
 			children = (
+				40942C06237F6A8900A9B341 /* AttributedKeyIDs.h */,
+				40942C05237F6A8900A9B341 /* KeyID.h */,
 				E1E221041A0067EF00957481 /* BuildDB.h */,
 				E1A2245819F997FE0059043E /* BuildEngine.h */,
 				1484D1F62094540400D3830F /* DependencyInfoParser.h */,

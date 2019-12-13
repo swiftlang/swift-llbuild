@@ -3130,27 +3130,27 @@ class SymlinkCommand : public Command {
       return;
     }
 
+    auto& fs = bsci.getFileSystem();
+
     // Create the directory containing the symlink, if necessary.
     //
     // FIXME: Shared behavior with ExternalCommand.
     {
       auto parent = llvm::sys::path::parent_path(outputPath);
       if (!parent.empty()) {
-        (void) bsci.getFileSystem().createDirectories(parent);
+        (void) fs.createDirectories(parent);
       }
     }
 
     // Create the symbolic link (note that despite the poorly chosen LLVM
     // name, this is a symlink).
-    //
-    // FIXME: Need to use the filesystem interfaces.
     bsci.getDelegate().commandStarted(this);
     auto success = true;
-    if (basic::sys::symlink(contents.c_str(), outputPath.str().c_str())) {
+    if (!fs.createSymlink(contents, outputPath.str())) {
       // On failure, we attempt to unlink the file and retry.
-      basic::sys::unlink(outputPath.str().c_str());
+      fs.remove(outputPath.str());
 
-      if (basic::sys::symlink(contents.c_str(), outputPath.str().c_str())) {
+      if (!fs.createSymlink(contents, outputPath.str())) {
         getBuildSystem(bsci.getBuildEngine()).getDelegate().commandHadError(this,
                        "unable to create symlink at '" + outputPath.str() + "'");
         success = false;
@@ -3165,8 +3165,7 @@ class SymlinkCommand : public Command {
     }
 
     // Capture the *link* information of the output.
-    FileInfo outputInfo = bsci.getFileSystem().getLinkInfo(
-        outputPath);
+    FileInfo outputInfo = fs.getLinkInfo(outputPath);
       
     // Complete with a successful result.
     resultFn(BuildValue::makeSuccessfulCommand(outputInfo));

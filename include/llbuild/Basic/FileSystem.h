@@ -80,6 +80,11 @@ public:
   /// \returns The FileInfo for the given path, which will be missing if the
   /// path does not exist (or any error was encountered).
   virtual FileInfo getLinkInfo(const std::string& path) = 0;
+
+  /// Create a symbolic link
+  ///
+  /// \returns True on success (the symlink was created)
+  virtual bool createSymlink(const std::string& src, const std::string& target) = 0;
 };
 
 /// Create a FileSystem instance suitable for accessing the local filesystem.
@@ -141,6 +146,10 @@ public:
     info.inode = 0;
 
     return info;
+  }
+
+  virtual bool createSymlink(const std::string& src, const std::string& target) override {
+    return impl->createSymlink(src, target);
   }
 };
 

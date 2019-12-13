@@ -80,7 +80,9 @@ namespace {
   error_code _remove_all_r(StringRef path, file_type ft, uint32_t &count) {
     if (ft == file_type::directory_file) {
       error_code ec;
-      directory_iterator i(path, ec);
+      // For removal purposes, we should not follow through symlinks. Rather,
+      // we just want to remove the symlink itself.
+      directory_iterator i(path, ec, /* FollowSymlinks */ false);
       if (ec)
         return ec;
 
@@ -147,6 +149,15 @@ public:
       if (errno != EEXIST) {
         return false;
       }
+
+      // Target exists, check that it is actually a directory
+      llbuild::basic::sys::StatStruct statbuf;
+      if (llbuild::basic::sys::lstat(path.c_str(), &statbuf) != 0) {
+        return false;
+      }
+      if (!S_ISDIR(statbuf.st_mode)) {
+        return false;
+      }
     }
     return true;
   }
@@ -206,6 +217,11 @@ public:
   
   virtual FileInfo getLinkInfo(const std::string& path) override {
     return FileInfo::getInfoForPath(path, /*isLink:*/ true);
+  }
+
+  virtual bool createSymlink(const std::string& src,
+                             const std::string& target) override {
+    return (llbuild::basic::sys::symlink(src.c_str(), target.c_str()) == 0);
   }
 };
   

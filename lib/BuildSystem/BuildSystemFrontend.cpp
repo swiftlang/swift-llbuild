@@ -699,7 +699,8 @@ bool BuildSystemFrontend::initialize() {
   // Enable tracing, if requested.
   if (!invocation.traceFilePath.empty()) {
     const auto dir = llvm::sys::path::parent_path(invocation.traceFilePath);
-    if (!buildSystem->getFileSystem().createDirectories(dir)) {
+    if (!buildSystem->getFileSystem().createDirectories(dir) &&
+        !buildSystem->getFileSystem().getFileInfo(dir).isDirectory()) {
       getDelegate().error(Twine("unable to create tracing directory: " + dir));
       return false;
     }
