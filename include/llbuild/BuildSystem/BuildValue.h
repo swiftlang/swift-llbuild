@@ -143,8 +143,6 @@ private:
   }
   
 private:
-  // Copying is disabled.
-  BuildValue(const BuildValue&) LLBUILD_DELETED_FUNCTION;
   void operator=(const BuildValue&) LLBUILD_DELETED_FUNCTION;
 
   BuildValue() {}
@@ -198,7 +196,7 @@ public:
     }
   }
 
-  // BuildValues can only be moved, not copied.
+  // BuildValues preferentially should be moved, not copied.
   BuildValue(BuildValue&& rhs) : numOutputInfos(rhs.numOutputInfos) {
     kind = rhs.kind;
     numOutputInfos = rhs.numOutputInfos;
@@ -235,6 +233,29 @@ public:
     }
     return *this;
   }
+
+  // While we generally prefer to only move build values, passing them to CAPI
+  // clients requires that we produce a copy. To avoid unnecessary serialization
+  // this method gives the CAPI a lower cost means to explicityly produce such a
+  // copy.
+  explicit BuildValue(const BuildValue& rhs) : numOutputInfos(rhs.numOutputInfos) {
+    kind = rhs.kind;
+    signature = rhs.signature;
+    if (rhs.hasMultipleOutputs()) {
+      auto newOutputInfos = new FileInfo[numOutputInfos];
+      for (uint32_t i = 0; i < numOutputInfos; ++i) {
+        newOutputInfos[i] = rhs.valueData.asOutputInfos[i];
+      }
+      valueData.asOutputInfos = newOutputInfos;
+    } else {
+      valueData.asOutputInfo = rhs.valueData.asOutputInfo;
+    }
+
+    if (rhs.kindHasStringList()) {
+      stringValues = basic::StringList(ArrayRef<StringRef>(rhs.stringValues.getValues()));
+    }
+  }
+
   ~BuildValue() {
     if (hasMultipleOutputs()) {
       delete[] valueData.asOutputInfos;

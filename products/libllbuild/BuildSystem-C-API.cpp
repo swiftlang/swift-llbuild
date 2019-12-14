@@ -709,9 +709,7 @@ class CAPIExternalCommand : public ExternalCommand {
                                     const BuildValue& value) override {
 
     // FIXME: Need to figure out how to convert the reference into a BuildValue that CAPIBuildValue can
-    // accept. Use this temporary value for now.
-    BuildValue tmp = BuildValue::makeInvalid();
-    auto value_p = (llb_build_value *)new CAPIBuildValue(std::move(tmp));
+    auto value_p = (llb_build_value *)new CAPIBuildValue(BuildValue(value));
     cAPIDelegate.provide_value(cAPIDelegate.context,
                                (llb_buildsystem_command_t*)this,
                                (llb_buildsystem_command_interface_t*)&bsci,
