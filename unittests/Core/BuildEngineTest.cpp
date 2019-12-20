@@ -132,8 +132,8 @@ typedef std::function<Task*(BuildEngine&)> ActionFn;
 static ActionFn simpleAction(const std::vector<KeyType>& inputs,
                              SimpleTask::ComputeFnType compute) {
   return [=] (BuildEngine& engine) {
-    return engine.registerTask(new SimpleTask([inputs]{ return inputs; },
-                                              compute)); };
+    return new SimpleTask([inputs]{ return inputs; }, compute);
+  };
 }
 
 TEST(BuildEngineTest, basic) {
@@ -605,7 +605,7 @@ TEST(BuildEngineTest, discoveredDependencies) {
       "output", {},
       [&valueB, &builtKeys] (BuildEngine& engine) {
         builtKeys.push_back("output");
-        return engine.registerTask(new TaskWithDiscoveredDependency(valueB));
+        return new TaskWithDiscoveredDependency(valueB);
       } });
 
   // Build the first result.
@@ -740,7 +740,7 @@ TEST(BuildEngineTest, CycleDuringScanningFromTop) {
   engine.addRule({
       "A", {},
       [&](BuildEngine& engine) {
-        return engine.registerTask(
+        return
             new SimpleTask(
                 [&]() -> std::vector<std::string> {
                   switch (iteration) {
@@ -753,7 +753,7 @@ TEST(BuildEngineTest, CycleDuringScanningFromTop) {
                   }
                 },
                 [&](const std::vector<int>& inputs) {
-                  return 2; }));
+                  return 2; });
         },
       [&](BuildEngine&, const Rule&, const ValueType&) {
         // Always rebuild
@@ -763,7 +763,7 @@ TEST(BuildEngineTest, CycleDuringScanningFromTop) {
   engine.addRule({
       "B", {},
       [&](BuildEngine& engine) {
-        return engine.registerTask(
+        return
             new SimpleTask(
                 [&]() -> std::vector<std::string> {
                   switch (iteration) {
@@ -776,7 +776,7 @@ TEST(BuildEngineTest, CycleDuringScanningFromTop) {
                   }
                 },
                 [&](const std::vector<int>& inputs) {
-                  return 2; }));
+                  return 2; });
         },
       [&](BuildEngine&, const Rule&, const ValueType&) {
         // Always rebuild
@@ -786,7 +786,7 @@ TEST(BuildEngineTest, CycleDuringScanningFromTop) {
   engine.addRule({
       "C", {},
       [&](BuildEngine& engine) {
-        return engine.registerTask(
+        return
             new SimpleTask(
                 [&]() -> std::vector<std::string> {
                   switch (iteration) {
@@ -799,7 +799,7 @@ TEST(BuildEngineTest, CycleDuringScanningFromTop) {
                   }
                 },
                 [&](const std::vector<int>& inputs) {
-                  return 2; }));
+                  return 2; });
         },
       [&](BuildEngine&, const Rule&, const ValueType&) {
         // Always rebuild

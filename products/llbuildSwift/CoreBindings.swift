@@ -521,12 +521,9 @@ public class BuildEngine {
         }
 
         // Create the internal task.
-        taskWrapper.taskInternal = llb_task_create(taskDelegate)
-
-        // FIXME: Why do we have both of these, it is kind of annoying. It makes
-        // some amount of sense in the C++ API, but the C API should probably just
-        // collapse them.
-        return llb_buildengine_register_task(self._engine, taskWrapper.taskInternal)
+        let lltask = llb_task_create(taskDelegate)
+        taskWrapper.taskInternal = lltask
+        return lltask!
     }
 }
 

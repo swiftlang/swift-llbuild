@@ -91,8 +91,7 @@ typedef std::function<Task*(BuildEngine&)> ActionFn;
 
 static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
                              SimpleTask::ComputeFnType Compute) {
-  return [=] (BuildEngine& engine) {
-    return engine.registerTask(new SimpleTask(Inputs, Compute)); };
+  return [=] (BuildEngine& engine) { return new SimpleTask(Inputs, Compute); };
 }
 
 }

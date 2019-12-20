@@ -356,14 +356,6 @@ public:
   /// @name Task Management APIs
   /// @{
 
-  /// Register the given task, in response to a Rule evaluation.
-  ///
-  /// The engine tasks ownership of the \arg Task, and it is expected to
-  /// subsequently be returned as the task to execute for a Rule evaluation.
-  ///
-  /// \returns The provided task, for the convenience of the client.
-  Task* registerTask(Task* task);
-
   /// The maximum allowed input ID.
   static const uintptr_t kMaximumInputID = ~(uintptr_t)0xFF;
 

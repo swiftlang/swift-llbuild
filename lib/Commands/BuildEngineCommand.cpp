@@ -139,7 +139,6 @@ struct AckermannTask : core::Task {
   AckermannValue recursiveResultB = {};
 
   AckermannTask(core::BuildEngine& engine, int m, int n) : m(m), n(n) {
-    engine.registerTask(this);
   }
 
   /// Called when the task is started.

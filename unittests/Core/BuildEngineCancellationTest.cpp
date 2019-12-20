@@ -113,15 +113,15 @@ typedef std::function<Task*(BuildEngine&)> ActionFn;
 static ActionFn simpleAction(const std::vector<KeyType>& inputs,
                              SimpleTask::ComputeFnType compute) {
   return [=] (BuildEngine& engine) {
-    return engine.registerTask(new SimpleTask([inputs]{ return inputs; },
-                                              compute)); };
+    return new SimpleTask([inputs]{ return inputs; }, compute);
+  };
 }
 
 static ActionFn simpleActionExternalTask(const std::vector<KeyType>& inputs,
                              SimpleTask::ComputeFnType compute, Task** task) {
   return [=] (BuildEngine& engine) {
     *task = new SimpleTask([inputs]{ return inputs; }, compute);
-    return engine.registerTask(*task); };
+    return *task; };
 }
 
 TEST(BuildEngineCancellationTest, basic) {

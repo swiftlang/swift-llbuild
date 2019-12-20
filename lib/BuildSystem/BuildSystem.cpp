@@ -1530,7 +1530,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
         keyData,
         /*signature=*/{},
         /*Action=*/ [](BuildEngine& engine) -> Task* {
-          return engine.registerTask(new MissingCommandTask());
+          return new MissingCommandTask();
         },
         /*IsValid=*/ [](BuildEngine&, const Rule&, const ValueType&) -> bool {
           // The cached result for a missing command is never valid.
@@ -1545,7 +1545,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       keyData,
       command->getSignature(),
       /*Action=*/ [command](BuildEngine& engine) -> Task* {
-        return engine.registerTask(new CommandTask(*command));
+        return new CommandTask(*command);
       },
       /*IsValid=*/ [command](BuildEngine& engine, const Rule& rule,
                              const ValueType& value) -> bool {
@@ -1578,7 +1578,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
         keyData,
         command->getSignature(),
         /*Action=*/ [command](BuildEngine& engine) -> Task* {
-          return engine.registerTask(new CommandTask(*command));
+          return new CommandTask(*command);
         },
         /*IsValid=*/ [command](BuildEngine& engine, const Rule& rule,
                                const ValueType& value) -> bool {
@@ -1594,7 +1594,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       keyData,
       /*signature=*/{},
       /*Action=*/ [](BuildEngine& engine) -> Task* {
-        return engine.registerTask(new MissingCommandTask());
+        return new MissingCommandTask();
       },
       /*IsValid=*/ [](BuildEngine&, const Rule&, const ValueType&) -> bool {
         // The cached result for a missing command is never valid.
@@ -1609,7 +1609,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       keyData,
       /*signature=*/{},
       /*Action=*/ [path](BuildEngine& engine) -> Task* {
-        return engine.registerTask(new DirectoryContentsTask(path));
+        return new DirectoryContentsTask(path);
       },
       /*IsValid=*/ [path](BuildEngine& engine, const Rule& rule,
           const ValueType& value) mutable -> bool {
@@ -1627,8 +1627,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       /*signature=*/{},
       /*Action=*/ [path, patterns](BuildEngine& engine) -> Task* {
         BinaryDecoder decoder(patterns);
-        return engine.registerTask(new FilteredDirectoryContentsTask(path,
-            StringList(decoder)));
+        return new FilteredDirectoryContentsTask(path, StringList(decoder));
       },
       /*IsValid=*/ nullptr
     };
@@ -1643,8 +1642,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       /*Action=*/ [path, filters](
           BuildEngine& engine) mutable -> Task* {
         BinaryDecoder decoder(filters);
-        return engine.registerTask(new DirectoryTreeSignatureTask(
-            path, StringList(decoder)));
+        return new DirectoryTreeSignatureTask(path, StringList(decoder));
       },
         // Directory signatures don't require any validation outside of their
         // concrete dependencies.
@@ -1659,7 +1657,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       /*signature=*/{},
       /*Action=*/ [path](
           BuildEngine& engine) mutable -> Task* {
-        return engine.registerTask(new DirectoryTreeStructureSignatureTask(path));
+        return new DirectoryTreeStructureSignatureTask(path);
       },
         // Directory signatures don't require any validation outside of their
         // concrete dependencies.
@@ -1700,7 +1698,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
           keyData,
           node->getSignature(),
           /*Action=*/ [](BuildEngine& engine) -> Task* {
-            return engine.registerTask(new VirtualInputNodeTask());
+            return new VirtualInputNodeTask();
           },
           /*IsValid=*/ [node](BuildEngine& engine, const Rule& rule,
                                 const ValueType& value) -> bool {
@@ -1715,7 +1713,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
           keyData,
           node->getSignature(),
           /*Action=*/ [node](BuildEngine& engine) -> Task* {
-            return engine.registerTask(new DirectoryInputNodeTask(*node));
+            return new DirectoryInputNodeTask(*node);
           },
             // Directory nodes don't require any validation outside of their
             // concrete dependencies.
@@ -1728,8 +1726,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
           keyData,
           node->getSignature(),
           /*Action=*/ [node](BuildEngine& engine) -> Task* {
-            return engine.registerTask(
-                new DirectoryStructureInputNodeTask(*node));
+            return new DirectoryStructureInputNodeTask(*node);
           },
             // Directory nodes don't require any validation outside of their
             // concrete dependencies.
@@ -1741,7 +1738,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
         keyData,
         node->getSignature(),
         /*Action=*/ [node](BuildEngine& engine) -> Task* {
-          return engine.registerTask(new FileInputNodeTask(*node));
+          return new FileInputNodeTask(*node);
         },
         /*IsValid=*/ [node](BuildEngine& engine, const Rule& rule,
                             const ValueType& value) -> bool {
@@ -1756,7 +1753,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       keyData,
       node->getSignature(),
       /*Action=*/ [node](BuildEngine& engine) -> Task* {
-        return engine.registerTask(new ProducedNodeTask(*node));
+        return new ProducedNodeTask(*node);
       },
       /*IsValid=*/ [node](BuildEngine& engine, const Rule& rule,
                           const ValueType& value) -> bool {
@@ -1783,7 +1780,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       keyData,
       /*signature=*/{},
       /*Action=*/ [statnode](BuildEngine& engine) -> Task* {
-        return engine.registerTask(new StatTask(*statnode));
+        return new StatTask(*statnode);
       },
       /*IsValid=*/ [statnode](BuildEngine& engine, const Rule& rule,
                             const ValueType& value) -> bool {
@@ -1807,7 +1804,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       keyData,
       /*signature=*/{},
       /*Action=*/ [target](BuildEngine& engine) -> Task* {
-        return engine.registerTask(new TargetTask(*target));
+        return new TargetTask(*target);
       },
       /*IsValid=*/ [target](BuildEngine& engine, const Rule& rule,
                             const ValueType& value) -> bool {

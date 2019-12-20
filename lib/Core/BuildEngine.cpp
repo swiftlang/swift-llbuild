@@ -516,9 +516,12 @@ private:
     Task* task = ruleInfo.rule.action(buildEngine);
     assert(task && "rule action returned null task");
 
-    // Find the task info for this task.
-    auto taskInfo = getTaskInfo(task);
-    assert(taskInfo && "rule action returned an unregistered task");
+    // register the task
+    taskInfosMutex.lock();
+    auto result = taskInfos.emplace(task, TaskInfo(task));
+    assert(result.second && "task already registered");
+    auto taskInfo = &(result.first)->second;
+    taskInfosMutex.unlock();
     taskInfo->forRuleInfo = &ruleInfo;
 
     if (trace)
@@ -1583,16 +1586,6 @@ public:
   /// @name Task Management Client APIs
   /// @{
 
-  Task* registerTask(Task* task) {
-    {
-      std::lock_guard<std::mutex> guard(taskInfosMutex);
-      auto result = taskInfos.emplace(task, TaskInfo(task));
-      assert(result.second && "task already registered");
-      (void)result;
-    }
-    return task;
-  }
-
   void taskNeedsInput(Task* task, const KeyType& key, uintptr_t inputID) {
     // Validate the InputID.
     if (inputID > BuildEngine::kMaximumInputID) {
@@ -1718,10 +1711,6 @@ bool BuildEngine::attachDB(std::unique_ptr<BuildDB> database, std::string* error
 bool BuildEngine::enableTracing(const std::string& path,
                                 std::string* error_out) {
   return static_cast<BuildEngineImpl*>(impl)->enableTracing(path, error_out);
-}
-
-Task* BuildEngine::registerTask(Task* task) {
-  return static_cast<BuildEngineImpl*>(impl)->registerTask(task);
 }
 
 void BuildEngine::taskNeedsInput(Task* task, const KeyType& key,
