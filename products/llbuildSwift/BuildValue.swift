@@ -103,9 +103,12 @@ public class BuildValue: CustomStringConvertible, Equatable, Hashable {
             llb_data_destroy(&llbData)
         }
         
-        let buildValue = llb_build_value_make(&llbData)
-        
-        switch llb_build_value_get_kind(buildValue) {
+        return construct(from: llb_build_value_make(&llbData))
+    }
+
+    public static func construct(from buildValue: OpaquePointer) -> BuildValue? {
+        let kind = llb_build_value_get_kind(buildValue)
+        switch kind {
         case .invalid: return Invalid(buildValue)
         case .virtualInput: return VirtualInput(buildValue)
         case .existingInput: return ExistingInput(buildValue)

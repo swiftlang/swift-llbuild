@@ -56,6 +56,17 @@ static void writeFileContents(std::string path, std::string str) {
   }
 }
 
+static void depinfo_tester_command_start(void* context,
+                                         llb_buildsystem_command_t* command,
+                                         llb_buildsystem_command_interface_t* bsci,
+                                         llb_task_t* task) {}
+
+static void depinfo_tester_command_provide_value(void* context,
+                                                 llb_buildsystem_command_t* command,
+                                                 llb_buildsystem_command_interface_t* bsci,
+                                                 llb_task_t* task,
+                                                 const llb_build_value* value,
+                                                 uintptr_t inputID) {}
   
 static bool
 depinfo_tester_command_execute_command(void *context,
@@ -131,6 +142,8 @@ depinfo_tester_tool_create_command(void *context, const llb_data_t* name) {
   llb_buildsystem_external_command_delegate_t delegate;
   delegate.context = NULL;
   delegate.get_signature = NULL;
+  delegate.start = depinfo_tester_command_start;
+  delegate.provide_value = depinfo_tester_command_provide_value;
   delegate.execute_command = depinfo_tester_command_execute_command;
   return llb_buildsystem_external_command_create(name, delegate);
 }

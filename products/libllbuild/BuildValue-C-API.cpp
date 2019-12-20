@@ -16,6 +16,8 @@
 #include "llbuild/Basic/FileInfo.h"
 #include "llbuild/BuildSystem/BuildValue.h"
 
+#include "BuildValue-C-API-Private.h"
+
 #include "llvm/ADT/STLExtras.h"
 
 using namespace llbuild;
@@ -63,16 +65,9 @@ static llb_build_value_kind_t internalToPublicBuildValueKind(const BuildValue::K
   }
 }
 
-// This class is used as a context pointer in the client
-class CAPIBuildValue {
-public:
-  const BuildValue internalBuildValue;
-  CAPIBuildValue(BuildValue buildValue): internalBuildValue(std::move(buildValue)) {}
-  
-  llb_build_value_kind_t getKind() {
-    return internalToPublicBuildValueKind(internalBuildValue.getKind());
-  }
-};
+llb_build_value_kind_t CAPIBuildValue::getKind() {
+   return internalToPublicBuildValueKind(internalBuildValue.getKind());
+}
 }
 
 static const basic::FileInfo convertFileInfo(const llb_build_value_file_info_t &fileInfo) {
@@ -113,7 +108,7 @@ llb_build_value_kind_t llb_build_value_get_kind(llb_build_value *value) {
 
 void llb_build_value_get_value_data(llb_build_value *value, void *context, void (* iteration)(void *context, uint8_t data)) {
   auto buildValue = (CAPIBuildValue *)value;
-  auto valueData = buildValue->internalBuildValue.toData();
+  auto valueData = buildValue->getInternalBuildValue().toData();
   for (auto number: valueData) {
     iteration(context, number);
   }
@@ -136,7 +131,7 @@ llb_build_value *llb_build_value_make_existing_input(llb_build_value_file_info_t
 }
 
 llb_build_value_file_info_t llb_build_value_get_output_info(llb_build_value *_Nonnull value) {
-  auto fileInfo = ((CAPIBuildValue *)value)->internalBuildValue.getOutputInfo();
+  auto fileInfo = ((CAPIBuildValue *)value)->getInternalBuildValue().getOutputInfo();
   return convertFileInfo(fileInfo);
 }
 
@@ -153,7 +148,7 @@ llb_build_value *_Nonnull llb_build_value_make_directory_contents(llb_build_valu
 }
 
 void llb_build_value_get_directory_contents(llb_build_value *_Nonnull value, void *_Nullable context, void (*_Nonnull iterator)(void *_Nullable context, llb_data_t data)) {
-  auto contents = ((CAPIBuildValue *)value)->internalBuildValue.getDirectoryContents();
+  auto contents = ((CAPIBuildValue *)value)->getInternalBuildValue().getDirectoryContents();
   for (auto content: contents) {
     llb_data_t data;
     data.length = content.size();
@@ -168,7 +163,7 @@ llb_build_value *_Nonnull llb_build_value_make_directory_tree_signature(llb_buil
 }
 
 llb_build_value_command_signature_t llb_build_value_get_directory_tree_signature(llb_build_value *value) {
-  return ((CAPIBuildValue *)value)->internalBuildValue.getDirectoryTreeSignature().value;
+  return ((CAPIBuildValue *)value)->getInternalBuildValue().getDirectoryTreeSignature().value;
 }
 
 llb_build_value *_Nonnull llb_build_value_make_directory_tree_structure_signature(llb_build_value_command_signature_t signature) {
@@ -176,7 +171,7 @@ llb_build_value *_Nonnull llb_build_value_make_directory_tree_structure_signatur
 }
 
 llb_build_value_command_signature_t llb_build_value_get_directory_tree_structure_signature(llb_build_value *value) {
-  return ((CAPIBuildValue *)value)->internalBuildValue.getDirectoryTreeStructureSignature().value;
+  return ((CAPIBuildValue *)value)->getInternalBuildValue().getDirectoryTreeStructureSignature().value;
 }
 
 llb_build_value *_Nonnull llb_build_value_make_missing_output() {
@@ -197,7 +192,7 @@ llb_build_value *_Nonnull llb_build_value_make_successful_command(const llb_buil
 }
 
 void llb_build_value_get_file_infos(llb_build_value *_Nonnull value, void *_Nullable context, void (*_Nonnull iterator)(void *_Nullable context, llb_build_value_file_info_t fileInfo)) {
-  auto internalBuildValue = &((CAPIBuildValue *)value)->internalBuildValue;
+  auto internalBuildValue = &((CAPIBuildValue *)value)->getInternalBuildValue();
   auto count = internalBuildValue->getNumOutputs();
   for (unsigned index = 0; index < count; index++) {
     auto fileInfo = internalBuildValue->getNthOutputInfo(index);
@@ -234,7 +229,7 @@ llb_build_value *_Nonnull llb_build_value_make_stale_file_removal(const char *_N
 }
 
 void llb_build_value_get_stale_file_list(llb_build_value *_Nonnull value, void *_Nullable context, void(*_Nonnull iterator)(void *_Nullable context, llb_data_t data)) {
-  auto stringList = ((CAPIBuildValue *)value)->internalBuildValue.getStaleFileList();
+  auto stringList = ((CAPIBuildValue *)value)->getInternalBuildValue().getStaleFileList();
   for (auto string: stringList) {
     llb_data_t data;
     data.length = string.size();
@@ -262,5 +257,5 @@ llb_build_value *_Nonnull llb_build_value_make_successful_command_with_output_si
 }
 
 llb_build_value_command_signature_t llb_build_value_get_output_signature(llb_build_value *_Nonnull value) {
-  return ((CAPIBuildValue *)value)->internalBuildValue.getOutputSignature().value;
+  return ((CAPIBuildValue *)value)->getInternalBuildValue().getOutputSignature().value;
 }

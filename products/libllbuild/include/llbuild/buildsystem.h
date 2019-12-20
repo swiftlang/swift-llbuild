@@ -22,6 +22,7 @@
 #endif
 
 #include "buildkey.h"
+#include "buildvalue.h"
 
 #ifdef __APPLE__
 #include "TargetConditionals.h"
@@ -546,6 +547,9 @@ typedef struct llb_buildsystem_tool_delegate_t_ {
   llb_buildsystem_command_t* (*create_command)(void* context,
                                                const llb_data_t* name);
 
+  llb_buildsystem_command_t* (*create_custom_command)(void* context,
+                                                      const llb_build_key_t* key);
+
   // FIXME: Support dynamic tool commands.
 } llb_buildsystem_tool_delegate_t;
 
@@ -587,6 +591,24 @@ typedef struct llb_buildsystem_external_command_delegate_t_ {
   /// malloc().
   void (*get_signature)(void* context, llb_buildsystem_command_t* command,
                         llb_data_t* data_out);
+
+  /// Called by the build system when about to start processing the command.
+  /// At this point, the command may choose to request more dependencies
+  /// through the build system command interface (bsci) reference.
+  void (*start)(void* context, llb_buildsystem_command_t* command,
+                llb_buildsystem_command_interface_t* bsci,
+                llb_task_t* task);
+
+  /// Called by the build system when one of the requested dependencies has
+  /// become available. The command can identify which key the provided value
+  /// corresponds to through `inputID`. At this point, the command may choose
+  /// to request additional dependencies based on the contents of the provided
+  /// value.
+  void (*provide_value)(void* context, llb_buildsystem_command_t* command,
+                        llb_buildsystem_command_interface_t* bsci,
+                        llb_task_t* task,
+                        const llb_build_value* value,
+                        uintptr_t inputID);
 
   /// Called by the build system's execution queue after the command's inputs
   /// are available and the execution queue is ready to schedule the command.
@@ -647,6 +669,12 @@ llb_buildsystem_command_get_description(llb_buildsystem_command_t* command);
 LLBUILD_EXPORT char*
 llb_buildsystem_command_get_verbose_description(
     llb_buildsystem_command_t* command);
+
+/// Requests a new build key dependency associated to a particular inputID value.
+/// When this value is available, it will be provided through the provide_value
+/// method.
+LLBUILD_EXPORT void
+llb_buildsystem_command_interface_task_needs_input(llb_buildsystem_command_interface_t* bsci, llb_task_t* task, llb_build_key_t* key, uintptr_t inputID);
 
 // MARK: Quality of Service
 

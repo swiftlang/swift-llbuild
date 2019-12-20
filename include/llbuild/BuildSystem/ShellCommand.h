@@ -150,6 +150,19 @@ public:
       const ConfigureContext& ctx, StringRef name,
       ArrayRef<std::pair<StringRef, StringRef>> values) override;
 
+
+  // Shell command doesn't have any dynamic dependencies, so do nothing.
+  virtual void startExternalCommand(
+      BuildSystemCommandInterface& bsci,
+      core::Task* task) override {};
+
+  // Not expecting any dependencies, so do nothing.
+  virtual void provideValueExternalCommand(
+      BuildSystemCommandInterface& bsci,
+      core::Task* task,
+      uintptr_t inputID,
+      const BuildValue& value) override {};
+
   virtual void executeExternalCommand(
       BuildSystemCommandInterface& bsci,
       core::Task* task,
