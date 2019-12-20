@@ -21,13 +21,17 @@ class FailureCommand: ExternalCommand {
         return []
     }
 
-    func execute(_ command: Command) -> Bool {
+    func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> Bool {
         return false
     }
 }
 
+protocol ExpectationCommand: class {
+    func isFulfilled() -> Bool
+}
+
 // Command that expects to be executed.
-class ExpectationCommand: ExternalCommand {
+class BasicCommand: ExternalCommand, ExpectationCommand {
     private var executed = false
 
     func getSignature(_ command: Command) -> [UInt8] {
@@ -38,7 +42,7 @@ class ExpectationCommand: ExternalCommand {
 
     func provideValue(_ command: Command, _ commandInterface: BuildSystemCommandInterface, _ buildValue: BuildValue, _ inputID: UInt) {}
 
-    func execute(_ command: Command) -> Bool {
+    func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> Bool {
         executed = true
         return true
     }
@@ -49,15 +53,18 @@ class ExpectationCommand: ExternalCommand {
 }
 
 // Command that expects to be executed after dependencies have executed.
-class DependentCommand: ExpectationCommand {
+class DependentCommand: BasicCommand {
     private var expectedValues: Set<UInt> = []
     private let dependencyNames: [String]
+    private let discoveredDependencyNames: [String]
 
-    init(dependencyNames: [String]) {
+    init(dependencyNames: [String] = [], discoveredDependencyNames: [String] = []) {
         self.dependencyNames = dependencyNames
+        self.discoveredDependencyNames = discoveredDependencyNames
     }
 
     override func start(_ command: Command, _ commandInterface: BuildSystemCommandInterface) {
+        super.start(command, commandInterface)
         for (index, name) in dependencyNames.enumerated() {
             let key = BuildKey.CustomTask(name: name, taskData: "")
             let inputID = UInt(index)
@@ -67,7 +74,17 @@ class DependentCommand: ExpectationCommand {
     }
 
     override func provideValue(_ command: Command, _ commandInterface: BuildSystemCommandInterface, _ buildValue: BuildValue, _ inputID: UInt) {
+        super.provideValue(command, commandInterface, buildValue, inputID)
         expectedValues.remove(inputID)
+    }
+
+    override func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> Bool {
+        let result = super.execute(command, commandInterface)
+        discoveredDependencyNames.forEach { name in
+            let key = BuildKey.CustomTask(name: name, taskData: "")
+            commandInterface.commandDiscoveredDependency(key: key)
+        }
+        return result
     }
 
     override func isFulfilled() -> Bool {
@@ -169,6 +186,26 @@ class TestBuildSystem {
 
 class BuildSystemEngineTests: XCTestCase {
 
+    let basicBuildManifest = """
+client:
+  name: basic
+  version: 0
+  file-system: default
+
+tools:
+  testtool: {}
+
+targets:
+  all: ["<all>"]
+
+commands:
+  maincommand:
+    tool: testtool
+    inputs: []
+    outputs: ["<all>"]
+
+"""
+
     /// Create a temporary file with the given contents and returns the path to the file.
     func makeTemporaryFile(_ contents: String? = nil) -> String {
         let directory = NSTemporaryDirectory()
@@ -199,30 +236,11 @@ class BuildSystemEngineTests: XCTestCase {
     }
 
     func testCommand() {
-
-        let buildFile = makeTemporaryFile("""
-client:
-  name: basic
-  version: 0
-  file-system: default
-
-tools:
-  testtool: {}
-
-targets:
-  all: ["<all>"]
-
-commands:
-  maincommand:
-    tool: testtool
-    inputs: []
-    outputs: ["<all>"]
-
-""")
+        let buildFile = makeTemporaryFile(basicBuildManifest)
         let databaseFile = makeTemporaryFile()
 
         let expectedCommands = [
-            "maincommand": ExpectationCommand()
+            "maincommand": BasicCommand()
         ]
 
         let buildSystem = TestBuildSystem(
@@ -238,31 +256,12 @@ commands:
     }
 
     func testDynamicCommand() {
-
-        let buildFile = makeTemporaryFile("""
-client:
-  name: basic
-  version: 0
-  file-system: default
-
-tools:
-  testtool: {}
-
-targets:
-  all: ["<all>"]
-
-commands:
-  maincommand:
-    tool: testtool
-    inputs: []
-    outputs: ["<all>"]
-
-""")
+        let buildFile = makeTemporaryFile(basicBuildManifest)
         let databaseFile = makeTemporaryFile()
 
         let expectedCommands = [
             "maincommand": DependentCommand(dependencyNames: ["dependency1"]),
-            "dependency1": ExpectationCommand()
+            "dependency1": BasicCommand()
         ]
 
 
@@ -279,33 +278,14 @@ commands:
     }
 
     func testSerialTransitiveDynamicCommand() {
-
-        let buildFile = makeTemporaryFile("""
-client:
-  name: basic
-  version: 0
-  file-system: default
-
-tools:
-  testtool: {}
-
-targets:
-  all: ["<all>"]
-
-commands:
-  maincommand:
-    tool: testtool
-    inputs: []
-    outputs: ["<all>"]
-
-""")
+        let buildFile = makeTemporaryFile(basicBuildManifest)
         let databaseFile = makeTemporaryFile()
 
         let expectedCommands = [
             "maincommand": DependentCommand(dependencyNames: ["dependency1"]),
             "dependency1": DependentCommand(dependencyNames: ["dependency2"]),
             "dependency2": DependentCommand(dependencyNames: ["dependency3"]),
-            "dependency3": ExpectationCommand(),
+            "dependency3": BasicCommand(),
         ]
 
 
@@ -322,33 +302,35 @@ commands:
     }
 
     func testParallelTransitiveDynamicCommand() {
-
-        let buildFile = makeTemporaryFile("""
-client:
-  name: basic
-  version: 0
-  file-system: default
-
-tools:
-  testtool: {}
-
-targets:
-  all: ["<all>"]
-
-commands:
-  maincommand:
-    tool: testtool
-    inputs: []
-    outputs: ["<all>"]
-
-""")
+        let buildFile = makeTemporaryFile(basicBuildManifest)
         let databaseFile = makeTemporaryFile()
 
         let expectedCommands = [
             "maincommand": DependentCommand(dependencyNames: ["dependency1", "dependency2", "dependency3"]),
-            "dependency1": ExpectationCommand(),
-            "dependency2": ExpectationCommand(),
-            "dependency3": ExpectationCommand(),
+            "dependency1": BasicCommand(),
+            "dependency2": BasicCommand(),
+            "dependency3": BasicCommand(),
+        ]
+
+        let buildSystem = TestBuildSystem(
+            buildFile: buildFile,
+            databaseFile: databaseFile,
+            expectedCommands: expectedCommands
+        )
+        buildSystem.run(target: "all")
+
+        for (name, command) in expectedCommands {
+            XCTAssert(command.isFulfilled(), "\(name) is not fulfilled")
+        }
+    }
+
+    func testDiscoveredDependenciesCommand() {
+        let buildFile = makeTemporaryFile(basicBuildManifest)
+        let databaseFile = makeTemporaryFile()
+
+        let expectedCommands = [
+            "maincommand": DependentCommand(discoveredDependencyNames: ["discoveredDependency1"]),
+            "discoveredDependency1": BasicCommand(),
         ]
 
         let buildSystem = TestBuildSystem(

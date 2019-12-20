@@ -902,6 +902,11 @@ char* llb_buildsystem_command_get_verbose_description(
   return strdup(result.c_str());
 }
 
+void llb_buildsystem_command_interface_task_discovered_dependency(llb_buildsystem_command_interface_t* bsci_p, llb_task_t* task_p, llb_build_key_t* key) {
+  auto bsci = (BuildSystemCommandInterface *)bsci_p;
+  bsci->taskDiscoveredDependency((core::Task *)task_p, ((CAPIBuildKey *)key)->getInternalBuildKey());
+}
+
 void llb_buildsystem_command_interface_task_needs_input(llb_buildsystem_command_interface_t* bsci_p, llb_task_t* task_p, llb_build_key_t* key, uintptr_t inputID) {
   auto bsci = (BuildSystemCommandInterface *)bsci_p;
   bsci->taskNeedsInput((core::Task *)task_p, ((CAPIBuildKey *)key)->getInternalBuildKey(), inputID);

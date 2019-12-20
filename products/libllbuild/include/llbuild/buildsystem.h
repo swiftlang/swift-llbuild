@@ -676,6 +676,10 @@ llb_buildsystem_command_get_verbose_description(
 LLBUILD_EXPORT void
 llb_buildsystem_command_interface_task_needs_input(llb_buildsystem_command_interface_t* bsci, llb_task_t* task, llb_build_key_t* key, uintptr_t inputID);
 
+/// Marks a key as a discovered dependency for the task.
+LLBUILD_EXPORT void
+llb_buildsystem_command_interface_task_discovered_dependency(llb_buildsystem_command_interface_t* bsci_p, llb_task_t* task_p, llb_build_key_t* key);
+
 // MARK: Quality of Service
 
 /// Quality of service levels.

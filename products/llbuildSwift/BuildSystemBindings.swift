@@ -51,6 +51,11 @@ public struct BuildSystemCommandInterface {
     public func commandNeedsInput(key: BuildKey, inputID: UInt) {
         llb_buildsystem_command_interface_task_needs_input(_bsci, _task, key.internalBuildKey, inputID)
     }
+
+    /// Marks a build key as a runtime found dependency for the command.
+    public func commandDiscoveredDependency(key: BuildKey) {
+        llb_buildsystem_command_interface_task_discovered_dependency(_bsci, _task, key.internalBuildKey)
+    }
 }
 
 public protocol Tool: class {
@@ -144,9 +149,32 @@ public protocol ExternalCommand: class {
 
     /// Called to execute the given command.
     ///
+    /// This method is deprecated in favor of the execute(Command, BuildSystemCommandInterface) method.
+    ///
     /// - command: A handle to the executing command.
     /// - returns: True on success.
     func execute(_ command: Command) -> Bool
+
+    /// Called to execute the given command.
+    ///
+    /// - command: A handle to the executing command.
+    /// - commandInterface: A handle to the build system's command interface.
+    /// - returns: True on success.
+    func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> Bool
+}
+
+// Extension to provide a default implementation of execute(_ Command, _ commandInterface) to allow clients to
+// migrate in a staggered manner.
+public extension ExternalCommand {
+    func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> Bool {
+        return execute(command)
+    }
+
+    // If this implementation is invoked, it means that the client implementing ExternalCommand did not
+    // implement either of the execute methods, which is a programmer error.
+    func execute(_ command: Command) -> Bool {
+        fatalError("This should never be called.")
+    }
 }
 
 // Default implementations for these hooks since they're optional to the client.
@@ -185,7 +213,8 @@ private final class CommandWrapper {
     }
 
     func executeCommand(_: OpaquePointer, _ bsci: OpaquePointer, _ task: OpaquePointer, _ jobContext: OpaquePointer) -> Bool {
-        return command.execute(_command)
+        let commandInterface = BuildSystemCommandInterface(bsci, task)
+        return command.execute(_command, commandInterface)
     }
 }
 
