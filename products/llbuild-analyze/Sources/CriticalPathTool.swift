@@ -12,13 +12,14 @@ import llbuildAnalysis
 import llbuildSwift
 
 import struct Foundation.Data
+import class Foundation.ListFormatter
 import class Foundation.FileManager
 import class Foundation.JSONEncoder
 
 public final class CriticalPathTool: Tool<CriticalPathTool.Options> {
     
     public struct Options: Option {
-        public enum OutputFormat: String, CaseIterable {
+        public enum OutputFormat: String, CaseIterable, CommandLineArgumentChoices {
             case json, graphviz
         }
         
@@ -56,7 +57,7 @@ public final class CriticalPathTool: Tool<CriticalPathTool.Options> {
             to: { $0.clientSchemaVersion = $1 })
         
         binder.bind(
-            option: parser.add(option: "--outputFormat", shortName: "-f", usage: "The format of the output, default is json. Possible values: \(Options.OutputFormat.allCases.map({ $0.rawValue }))."),
+            option: parser.add(option: "--outputFormat", shortName: "-f", usage: "The format of the output, default is json. Possible values: \(Options.OutputFormat.helpDescription)."),
             to: { $0.outputFormat = Options.OutputFormat(rawValue: $1) ?? .json })
         
         binder.bind(
@@ -270,5 +271,20 @@ struct EncodableRuleResult: Encodable {
         try container.encode(result.duration, forKey: .duration)
         let deps = result.dependencies.map(lookup.identifier(element:))
         try container.encode(deps, forKey: .dependencies)
+    }
+}
+private protocol CommandLineArgumentChoices: CaseIterable, RawRepresentable where RawValue == String {
+    static var helpDescription: String { get }
+}
+
+private extension CommandLineArgumentChoices {
+    static var helpDescription: String {
+        let strings = Self.allCases.map { "\"\($0.rawValue)\"" }
+        if #available(OSX 10.15, *) {
+            let formatter = ListFormatter()
+            return formatter.string(for: strings)!
+        } else {
+            return strings.joined(separator: ",")
+        }
     }
 }
