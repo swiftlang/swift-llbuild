@@ -22,11 +22,17 @@ public final class CriticalPathTool: Tool<CriticalPathTool.Options> {
         public enum OutputFormat: String, CaseIterable, CommandLineArgumentChoices {
             case json, graphviz
         }
+
+        public enum GraphvizDisplay: String, CaseIterable, CommandLineArgumentChoices {
+            case criticalPath
+            case everything
+        }
         
         var database: AbsolutePath!
         var outputPath: AbsolutePath?
         var clientSchemaVersion = 9
         var outputFormat: OutputFormat = .json
+        var graphvizDisplay: GraphvizDisplay = .criticalPath
         var pretty = false
         var quiet = false
         
@@ -63,6 +69,11 @@ public final class CriticalPathTool: Tool<CriticalPathTool.Options> {
         binder.bind(
             option: parser.add(option: "--pretty", usage: "If output format is json, the output will be pretty printed"),
             to: { $0.pretty = $1 })
+
+        binder.bind(
+            option: parser.add(option: "--graphvizOutput", usage: "Graphviz display options. Possible values: \(Options.GraphvizDisplay.helpDescription)."),
+            to: { $0.graphvizDisplay = Options.GraphvizDisplay(rawValue: $1) ?? .everything }
+        )
         
         binder.bind(
             option: parser.add(option: "--quiet", shortName: "-q", usage: "There will be no output on stdout."),
@@ -117,18 +128,25 @@ public final class CriticalPathTool: Tool<CriticalPathTool.Options> {
     
     private func graphViz(_ path: CriticalBuildPath, buildKeyLookup: IdentifierFactory<BuildKey>) -> Data {
         var result = "digraph G {\n\tedge [style=dotted]\n"
-        
-        func string(for key: BuildKey) -> String {
-            // TODO: This is obviously just temporary - need a shorter version for visualization
-            return buildKeyLookup.identifier(element: key).description
-        }
-        
-        for element in path {
-            for dep in element.result.dependencies {
-                result += "\t\"\(string(for: dep))\" -> \"\(string(for: element.key))\"\n"
+
+        var edges = Set<DirectedEdge>()
+
+        if var last = path.first {
+            for item in path[1..<path.endIndex] {
+                edges.insert(DirectedEdge(a: last.key, b: item.key, isCritical: true))
+                last = item
             }
         }
-        
+
+        if options.graphvizDisplay == .everything {
+            for element in path {
+                for dep in element.result.dependencies {
+                    edges.insert(DirectedEdge(a: dep, b: element.key))
+                }
+            }
+        }
+
+        result += edges.map{ $0.graphVizString }.joined()
         result += "}"
         return result.data(using: .utf8) ?? Data()
     }
@@ -273,6 +291,107 @@ struct EncodableRuleResult: Encodable {
         try container.encode(deps, forKey: .dependencies)
     }
 }
+
+
+protocol GraphVizNode {
+    var graphVizName: String { get }
+}
+
+extension BuildKey.Command: GraphVizNode {
+    var graphVizName: String {
+        "Command:\(self.name)"
+    }
+}
+
+extension BuildKey.CustomTask: GraphVizNode {
+    var graphVizName: String {
+        "CustomTask:\(self.name)"
+    }
+}
+
+extension BuildKey.DirectoryContents: GraphVizNode {
+    var graphVizName: String {
+        "DirectoryContents:\(self.path)"
+    }
+}
+
+extension BuildKey.FilteredDirectoryContents: GraphVizNode {
+    var graphVizName: String {
+        "FilteredDirectoryContents:\(self.path)"
+    }
+}
+
+extension BuildKey.DirectoryTreeSignature: GraphVizNode {
+    var graphVizName: String {
+        "DirectoryTreeSignature:\(self.path)"
+    }
+}
+
+extension BuildKey.DirectoryTreeStructureSignature: GraphVizNode {
+    var graphVizName: String {
+        "DirectoryTreeStructureSignature:\(self.path)"
+    }
+}
+
+extension BuildKey.Node: GraphVizNode {
+    var graphVizName: String {
+        "Node:\(self.path)"
+    }
+}
+
+extension BuildKey.Stat: GraphVizNode {
+    var graphVizName: String {
+        "Stat:\(self.path)"
+    }
+}
+
+extension BuildKey.Target: GraphVizNode {
+    var graphVizName: String {
+        "Target:\(self.name)"
+    }
+}
+
+/// Struct to represent a directed edge in GraphViz from a -> b.
+/// `hash()` and `==` only take the both edges into account, not
+/// `isCritical`, so the graph can be represented as a `Set<DirectedEdge>`
+/// and gurantee that there is only one edge between two verticies.
+struct DirectedEdge: Hashable, Equatable {
+    /// Source `BuildKey`
+    let a: BuildKey
+
+    /// Destination `BuildKey`
+    let b: BuildKey
+
+    /// Flag if the edge is on critical build path.
+    var isCritical: Bool = false
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.a == rhs.a && lhs.b == rhs.b
+    }
+
+    func hash(into hasher: inout Hasher) {
+        a.hash(into: &hasher)
+        b.hash(into: &hasher)
+    }
+
+    /// Style attributes for the edge.
+    private var style: String {
+        if isCritical {
+            return "[style=bold]"
+        }
+        return ""
+    }
+
+    /// GraphViz representation of the Edge.
+    var graphVizString: String {
+        guard let a = a as? GraphVizNode, let b = b as? GraphVizNode else {
+            fatalError("Both edges need to conform to GraphvizNode")
+        }
+        return "\t\"\(a.graphVizName)\" -> \"\(b.graphVizName)\"\(style)\n"
+    }
+
+}
+
 private protocol CommandLineArgumentChoices: CaseIterable, RawRepresentable where RawValue == String {
     static var helpDescription: String { get }
 }
