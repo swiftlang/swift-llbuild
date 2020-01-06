@@ -707,8 +707,6 @@ class CAPIExternalCommand : public ExternalCommand {
                                     core::Task* task,
                                     uintptr_t inputID,
                                     const BuildValue& value) override {
-
-    // FIXME: Need to figure out how to convert the reference into a BuildValue that CAPIBuildValue can
     auto value_p = (llb_build_value *)new CAPIBuildValue(BuildValue(value));
     cAPIDelegate.provide_value(cAPIDelegate.context,
                                (llb_buildsystem_command_t*)this,
@@ -902,6 +900,11 @@ char* llb_buildsystem_command_get_verbose_description(
   SmallString<256> result;
   command->getVerboseDescription(result);
   return strdup(result.c_str());
+}
+
+void llb_buildsystem_command_interface_task_discovered_dependency(llb_buildsystem_command_interface_t* bsci_p, llb_task_t* task_p, llb_build_key_t* key) {
+  auto bsci = (BuildSystemCommandInterface *)bsci_p;
+  bsci->taskDiscoveredDependency((core::Task *)task_p, ((CAPIBuildKey *)key)->getInternalBuildKey());
 }
 
 void llb_buildsystem_command_interface_task_needs_input(llb_buildsystem_command_interface_t* bsci_p, llb_task_t* task_p, llb_build_key_t* key, uintptr_t inputID) {

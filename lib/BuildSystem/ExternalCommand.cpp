@@ -232,7 +232,7 @@ void ExternalCommand::provideValue(BuildSystemCommandInterface& bsci,
                                    core::Task* task,
                                    uintptr_t inputID,
                                    const BuildValue& value) {
-  if (value.isSuccessfulCommand() || value.isFailedCommand()) {
+  if (value.isSuccessfulCommand() || value.isFailedCommand() || value.isPropagatedFailureCommand()) {
     // If the value is a successful command, it must probably be a value that was requested for a custom task, so
     // skip the input processing and invoke the subclass instead to process it accordingly.
     provideValueExternalCommand(bsci, task, inputID, value);
@@ -291,7 +291,10 @@ void ExternalCommand::provideValue(BuildSystemCommandInterface& bsci,
   if (skipValueForInput.hasValue()) {
     skipValue = std::move(skipValueForInput);
     if (value.isMissingInput()) {
-      missingInputNodes.insert(inputs[inputID]);
+      // FIXME: This should also account for dependencies that were added dynamically.
+      if (inputs.size() > inputID) {
+        missingInputNodes.insert(inputs[inputID]);
+      }
     }
   } else {
     // If there is a missing input file (from a successful command), we always
