@@ -30,12 +30,12 @@ using namespace llbuild::core;
 namespace {
 
 class SimpleBuildEngineDelegate : public core::BuildEngineDelegate {
-  virtual core::Rule lookupRule(const core::KeyType& key) override {
+  virtual std::unique_ptr<core::Rule> lookupRule(const core::KeyType& key) override {
     // We never expect dynamic rule lookup.
     fprintf(stderr, "error: unexpected rule lookup for \"%s\"\n",
             key.c_str());
     abort();
-    return core::Rule();
+    return nullptr;
   }
 
   virtual void cycleDetected(const std::vector<core::Rule*>& items) override {
@@ -106,11 +106,26 @@ public:
 // Helper function for creating a simple action.
 typedef std::function<Task*(BuildEngine&)> ActionFn;
 
-static ActionFn simpleAction(const std::vector<KeyType>& inputs,
-                             SimpleTask::ComputeFnType compute) {
-  return [=] (BuildEngine& engine) {
-    return new SimpleTask(inputs, compute); };
-}
+class SimpleRule: public Rule {
+public:
+    typedef std::function<bool(const ValueType& value)> ValidFnType;
+
+private:
+    SimpleTask::ComputeFnType compute;
+    std::vector<KeyType> inputs;
+    ValidFnType valid;
+public:
+    SimpleRule(const KeyType& key, const std::vector<KeyType>& inputs,
+               SimpleTask::ComputeFnType compute, ValidFnType valid = nullptr)
+        : Rule(key), compute(compute), inputs(inputs), valid(valid) { }
+
+    Task* createTask(BuildEngine&) override { return new SimpleTask(inputs, compute); }
+
+    bool isResultValid(BuildEngine&, const ValueType& value) override {
+        if (!valid) return true;
+        return valid(value);
+    }
+};
 
 // Test for a tricky case involving concurrent dependency scanning.
 //
@@ -133,41 +148,37 @@ TEST(DepsBuildEngineTest, BogusConcurrentDepScan) {
   // behavior (so that when "output" is considering its "dir-list" input, it
   // isn't immediately obvious it needs to run).
   int dirListValue = 2 * 3;
-  engine.addRule({
-      "dir-list-input", {},
-      simpleAction({}, [&] (const std::vector<int>& inputs) {
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "dir-list-input", {}, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("dir-list-input");
-          return dirListValue; }),
-      [&](BuildEngine&, const Rule&, const ValueType&) {
+          return dirListValue; },
+      [&](const ValueType&) {
         // Always rebuild
         return false;
-      } });
-  engine.addRule({
-      "dir-list", {},
-      simpleAction({ "dir-list-input" }, [&] (const std::vector<int>& inputs) {
+      } )));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "dir-list", { "dir-list-input" }, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("dir-list");
           assert(inputs.size() == 1);
-          return inputs[0]; }) });
+          return inputs[0]; })));
 
   // These are the rules for individual discovered "files".
-  engine.addRule({
-      "input-2", {},
-      simpleAction({}, [&] (const std::vector<int>& inputs) {
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "input-2", {}, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("input-2");
-          return 5; }),
-      [&](BuildEngine&, const Rule&, const ValueType&) {
+          return 5; },
+      [&](const ValueType&) {
         // Always rebuild
         return false;
-      } });
-  engine.addRule({
-      "input-3", {},
-      simpleAction({}, [&] (const std::vector<int>& inputs) {
+      } )));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "input-3", {}, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("input-3");
-          return 7; }),
-      [&](BuildEngine&, const Rule&, const ValueType&) {
+          return 7; },
+      [&](const ValueType&) {
         // Always rebuild
         return false;
-      } });
+      } )));
 
   // This models a rule which uses the dynamic content to drive some other
   // action (compiling files).
@@ -204,12 +215,18 @@ TEST(DepsBuildEngineTest, BogusConcurrentDepScan) {
       engine.taskIsComplete(this, intToValue(result));
     }
   };
-  engine.addRule({
-      "output", {},
-      [&builtKeys] (BuildEngine& engine) {
-        builtKeys.push_back("output");
-        return new DynamicTask();
-      } });
+
+  class DynamicRule: public Rule {
+    std::vector<std::string>& builtKeys;
+  public:
+    DynamicRule(const KeyType& key, std::vector<std::string>& builtKeys)
+      : Rule(key), builtKeys(builtKeys) { }
+    Task* createTask(BuildEngine&) override {
+      builtKeys.push_back(key);
+      return new DynamicTask();
+    }
+  };
+  engine.addRule(std::unique_ptr<core::Rule>(new DynamicRule("output", builtKeys)));
 
   // Build the first result.
   EXPECT_EQ(2 * 3 * 5 * 7, intFromValue(engine.build("output")));
@@ -264,22 +281,19 @@ TEST(DepsBuildEngineTest, KeysWithNull) {
 
     std::string inputA{"i\0A", 3};
     std::string inputB{"i\0B", 3};
-    engine.addRule({
-        inputA, {},
-        simpleAction({}, [&] (const std::vector<int>& inputs) {
+    engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+        inputA, {}, [&] (const std::vector<int>& inputs) {
             builtKeys.push_back(inputA);
-            return 2; }) });
-    engine.addRule({
-        inputB, {},
-        simpleAction({}, [&] (const std::vector<int>& inputs) {
+            return 2; })));
+    engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+        inputB, {}, [&] (const std::vector<int>& inputs) {
             builtKeys.push_back(inputB);
-            return 3; }) });
-    engine.addRule({
-        "output", {},
-        simpleAction({ inputA, inputB }, [&] (const std::vector<int>& inputs) {
+            return 3; })));
+    engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+        "output", { inputA, inputB }, [&] (const std::vector<int>& inputs) {
             assert(inputs.size() == 2);
             builtKeys.push_back("output");
-            return inputs[0] * inputs[1]; }) });
+            return inputs[0] * inputs[1]; })));
 
     // Run the build.
     builtKeys.clear();

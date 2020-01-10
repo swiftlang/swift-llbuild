@@ -517,15 +517,21 @@ client:
 TEST(BuildSystemInvocationTest, formatCycle) {
   BuildSystemInvocation invocation;
 
-  core::Rule command{BuildKey::makeCommand("c").getKeyData()};
-  core::Rule customtask{BuildKey::makeCustomTask("c","t").getKeyData()};
-  core::Rule dircontents{BuildKey::makeDirectoryContents("/").getKeyData()};
-  core::Rule filtdircontents{BuildKey::makeFilteredDirectoryContents("/", {}).getKeyData()};
-  core::Rule dirtree{BuildKey::makeDirectoryTreeSignature("/", {}).getKeyData()};
-  core::Rule dirtreestruct{BuildKey::makeDirectoryTreeStructureSignature("/").getKeyData()};
-  core::Rule node{BuildKey::makeNode("n").getKeyData()};
-  core::Rule stat{BuildKey::makeStat("f").getKeyData()};
-  core::Rule target{BuildKey::makeTarget("t").getKeyData()};
+  class NullRule : public core::Rule {
+  public:
+    NullRule(const KeyType& key) : Rule(key) { }
+    Task* createTask(core::BuildEngine&) override { return nullptr; }
+  };
+
+  NullRule command{BuildKey::makeCommand("c").getKeyData()};
+  NullRule customtask{BuildKey::makeCustomTask("c","t").getKeyData()};
+  NullRule dircontents{BuildKey::makeDirectoryContents("/").getKeyData()};
+  NullRule filtdircontents{BuildKey::makeFilteredDirectoryContents("/", {}).getKeyData()};
+  NullRule dirtree{BuildKey::makeDirectoryTreeSignature("/", {}).getKeyData()};
+  NullRule dirtreestruct{BuildKey::makeDirectoryTreeStructureSignature("/").getKeyData()};
+  NullRule node{BuildKey::makeNode("n").getKeyData()};
+  NullRule stat{BuildKey::makeStat("f").getKeyData()};
+  NullRule target{BuildKey::makeTarget("t").getKeyData()};
 
   std::vector<core::Rule*> cycle{
     &command,

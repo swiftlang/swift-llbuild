@@ -342,7 +342,7 @@ struct NinjaBuildEngineDelegate : public core::BuildEngineDelegate {
   std::string workingDirectory;
   class BuildContext* context = nullptr;
 
-  virtual core::Rule lookupRule(const core::KeyType& key) override;
+  virtual std::unique_ptr<core::Rule> lookupRule(const core::KeyType& key) override;
 
   virtual void cycleDetected(const std::vector<core::Rule*>& items) override;
 
@@ -1672,7 +1672,7 @@ static void updateCommandStatus(BuildContext& context,
   }
 }
 
-core::Rule NinjaBuildEngineDelegate::lookupRule(const core::KeyType& key) {
+std::unique_ptr<core::Rule> NinjaBuildEngineDelegate::lookupRule(const core::KeyType& key) {
   // We created rules for all of the commands up front, so if we are asked for a
   // rule here it is because we are looking for an input.
 
@@ -1683,20 +1683,27 @@ core::Rule NinjaBuildEngineDelegate::lookupRule(const core::KeyType& key) {
   // to avoid when we support generic key types.
   ninja::Node* node = context->manifest->findOrCreateNode(workingDirectory, key);
 
-  return core::Rule{
-    node->getScreenPath(),
-    {},
-      [&, node] (core::BuildEngine&) {
+  class NinjaInputRule: public core::Rule {
+    BuildContext* context;
+    ninja::Node* node;
+
+  public:
+    NinjaInputRule(const core::KeyType& key, BuildContext* context, ninja::Node* node)
+      : core::Rule(key), context(context), node(node) { }
+
+    core::Task* createTask(core::BuildEngine&) override {
       return buildInput(*context, node);
-    },
-    [&, node] (core::BuildEngine&, const core::Rule&,
-               const core::ValueType& value) {
+    }
+
+    bool isResultValid(core::BuildEngine&, const core::ValueType& value) override {
       // If simulating, assume cached results are valid.
-      if (context->simulate)
-        return true;
+      if (context->simulate) return true;
 
       return buildInputIsResultValid(node, value);
-    } };
+    }
+  };
+
+  return std::unique_ptr<core::Rule>(new NinjaInputRule(node->getScreenPath(), context, node));
 }
 
 void NinjaBuildEngineDelegate::cycleDetected(
@@ -1728,6 +1735,7 @@ void NinjaBuildEngineDelegate::error(const Twine& message) {
   context->isCancelled = true;
 }
 } // namespace
+
 
 int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
   std::string chdirPath = "";
@@ -2085,29 +2093,81 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
       }
     }
 
+    class NinjaBuildCommandRule: public core::Rule {
+      BuildContext& context;
+      ninja::Command* command;
+    public:
+      NinjaBuildCommandRule(const core::KeyType& key, BuildContext& context,
+                            ninja::Command* command)
+        : core::Rule(key), context(context), command(command) {}
+
+      core::Task* createTask(core::BuildEngine&) override {
+        return buildCommand(context, command);
+      }
+
+      bool isResultValid(core::BuildEngine&, const core::ValueType& value) override {
+        // If simulating, assume cached results are valid.
+        if (context.simulate)
+          return true;
+
+        return buildCommandIsResultValid(command, value);
+      }
+
+      void updateStatus(core::BuildEngine&, core::Rule::StatusKind status) override {
+        updateCommandStatus(context, command, status);
+      }
+    };
+
+    class NinjaCompositeResultRule: public core::Rule {
+      BuildContext& context;
+      ninja::Command* command;
+      int index;
+      const core::KeyType compositeRuleName;
+    public:
+      NinjaCompositeResultRule(const core::KeyType& key, BuildContext& context,
+                            ninja::Command* command, int index,
+                               const core::KeyType& compositeRuleName)
+        : core::Rule(key), context(context), command(command), index(index)
+        , compositeRuleName(compositeRuleName) {}
+
+      core::Task* createTask(core::BuildEngine&) override {
+        return selectCompositeBuildResult(context, command, index, compositeRuleName);
+      }
+
+      bool isResultValid(core::BuildEngine&, const core::ValueType& value) override {
+        // If simulating, assume cached results are valid.
+        if (context.simulate)
+          return true;
+
+        return selectCompositeIsResultValid(command, value);
+      }
+    };
+
+    class NinjaBuildTargetsRule: public core::Rule {
+      BuildContext& context;
+      std::vector<std::string> targets;
+    public:
+      NinjaBuildTargetsRule(const core::KeyType& key, BuildContext& context,
+                            const std::vector<std::string>& targets)
+        : core::Rule(key), context(context), targets(targets) {}
+
+      core::Task* createTask(core::BuildEngine&) override {
+        return buildTargets(context, targets);
+      }
+
+      bool isResultValid(core::BuildEngine&, const core::ValueType& value) override {
+        return false;
+      }
+    };
+
+
     // Create rules for all of the build commands up front.
     //
     // FIXME: We should probably also move this to be dynamic.
     for (const auto command: context.manifest->getCommands()) {
       // If this command has a single output, create the trivial rule.
       if (command->getOutputs().size() == 1) {
-        context.engine.addRule({
-            command->getOutputs()[0]->getCanonicalPath(),
-            {},
-            [=, &context](core::BuildEngine& engine) {
-              return buildCommand(context, command);
-            },
-            [=, &context](core::BuildEngine&, const core::Rule& rule,
-                          const core::ValueType& value) {
-              // If simulating, assume cached results are valid.
-              if (context.simulate)
-                return true;
-
-              return buildCommandIsResultValid(command, value);
-            },
-            [=, &context](core::BuildEngine&, core::Rule::StatusKind status) {
-              updateCommandStatus(context, command, status);
-            } });
+        context.engine.addRule(std::unique_ptr<core::Rule>(new NinjaBuildCommandRule(command->getOutputs()[0]->getCanonicalPath(), context, command)));
         continue;
       }
 
@@ -2125,42 +2185,12 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
 
       // Add the composite rule, which will run the command and build all
       // outputs.
-      context.engine.addRule({
-          compositeRuleName,
-          {},
-          [=, &context](core::BuildEngine& engine) {
-            return buildCommand(context, command);
-          },
-          [=, &context](core::BuildEngine&, const core::Rule& rule,
-                        const core::ValueType& value) {
-            // If simulating, assume cached results are valid.
-            if (context.simulate)
-              return true;
-
-            return buildCommandIsResultValid(command, value);
-          },
-          [=, &context](core::BuildEngine&, core::Rule::StatusKind status) {
-            updateCommandStatus(context, command, status);
-          } });
+      context.engine.addRule(std::unique_ptr<core::Rule>(new NinjaBuildCommandRule(compositeRuleName, context, command)));
 
       // Create the per-output selection rules that select the individual output
       // result from the composite result.
       for (unsigned i = 0, e = command->getOutputs().size(); i != e; ++i) {
-        context.engine.addRule({
-            command->getOutputs()[i]->getCanonicalPath(),
-            {},
-            [=, &context] (core::BuildEngine&) {
-              return selectCompositeBuildResult(context, command, i,
-                                                compositeRuleName);
-            },
-            [=, &context] (core::BuildEngine&, const core::Rule& rule,
-                           const core::ValueType& value) {
-              // If simulating, assume cached results are valid.
-              if (context.simulate)
-                return true;
-
-              return selectCompositeIsResultValid(command, value);
-            } });
+        context.engine.addRule(std::unique_ptr<core::Rule>(new NinjaCompositeResultRule(command->getOutputs()[i]->getCanonicalPath(), context, command, i, compositeRuleName)));
       }
     }
 
@@ -2248,17 +2278,8 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     // for the client to implement on top of the existing API.
     if (targetsToBuild.size() > 1) {
       // Create a dummy rule to build all targets.
-      context.engine.addRule({
-          "<<build>>",
-          {},
-          [&](core::BuildEngine&) {
-            return buildTargets(context, targetsToBuild);
-          },
-          [&](core::BuildEngine&, const core::Rule&, const core::ValueType&) {
-            // Always rebuild the dummy rule.
-            return false;
-          } });
-
+      context.engine.addRule(std::unique_ptr<core::Rule>(new NinjaBuildTargetsRule("<<build>>", context,
+                                                       targetsToBuild)));
       context.engine.build("<<build>>");
     } else {
       context.engine.build(targetsToBuild[0]);

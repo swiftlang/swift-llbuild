@@ -912,6 +912,8 @@
 		40B3C91B20D3AF9B007C5847 /* C-API.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "C-API.cpp"; sourceTree = "<group>"; };
 		40C71A8022F0EBCF008FDC9C /* Defer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Defer.h; sourceTree = "<group>"; };
 		40C71A8122F0FA1D008FDC9C /* Defer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Defer.cpp; sourceTree = "<group>"; };
+		40D5A32823AD9C5A004B56EA /* Command.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Command.h; sourceTree = "<group>"; };
+		40D5A32923AD9C5A004B56EA /* Tool.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Tool.h; sourceTree = "<group>"; };
 		40EA26452164253500068954 /* Subprocess.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Subprocess.h; sourceTree = "<group>"; };
 		40EA26462164289500068954 /* ExecutionQueue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ExecutionQueue.h; sourceTree = "<group>"; };
 		40EA264721651D2C00068954 /* ExecutionQueue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ExecutionQueue.cpp; sourceTree = "<group>"; };
@@ -2622,6 +2624,7 @@
 				E1AAD28B1BC60A0F00F54680 /* BuildSystemFrontend.h */,
 				E15305922236C8DF0097CDE6 /* BuildSystemHandlers.h */,
 				E11470911B7517C800ED84CF /* BuildValue.h */,
+				40D5A32823AD9C5A004B56EA /* Command.h */,
 				54E187B71CD296EA00F7EC89 /* ExternalCommand.h */,
 				E162C583223315A20078FD2E /* ShellCommand.h */,
 				2D86C6DF238D932B006E61FB /* Tool.h */,

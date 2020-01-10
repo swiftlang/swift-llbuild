@@ -32,54 +32,50 @@ class CAPIBuildEngineDelegate : public BuildEngineDelegate {
 
   friend class CAPITask;
 
+  struct CAPIRule : public Rule {
+    llb_rule_t rule;
+    void* engineContext = nullptr;
+
+    CAPIRule(const KeyType& key) : Rule(key) { }
+
+    Task* createTask(BuildEngine& engine) override {
+      return (Task*) rule.create_task(rule.context, engineContext);
+    }
+
+    bool isResultValid(BuildEngine&, const ValueType& value) override {
+      if (!rule.is_result_valid) return true;
+
+      llb_data_t value_data{ value.size(), value.data() };
+      return rule.is_result_valid(rule.context, engineContext, &rule,
+                                  &value_data);
+    }
+
+    void updateStatus(BuildEngine&, Rule::StatusKind status) override {
+      if (!rule.update_status) return;
+
+      rule.update_status(rule.context, engineContext,
+                         (llb_rule_status_kind_t)status);
+    }
+  };
+
   virtual ~CAPIBuildEngineDelegate() {
     if (cAPIDelegate.destroy_context) {
       cAPIDelegate.destroy_context(cAPIDelegate.context);
     }
   }
 
-  virtual Rule lookupRule(const KeyType& key) override {
-    void* engineContext = cAPIDelegate.context;
-    llb_rule_t rule{};
+  virtual std::unique_ptr<Rule> lookupRule(const KeyType& key) override {
+    CAPIRule* capiRule = new CAPIRule(key);
+    capiRule->engineContext = cAPIDelegate.context;
     llb_data_t key_data{ key.length(), (const uint8_t*)key.data() };
-    cAPIDelegate.lookup_rule(cAPIDelegate.context, &key_data, &rule);
+    cAPIDelegate.lookup_rule(cAPIDelegate.context, &key_data, &capiRule->rule);
 
     // FIXME: Check that the client created the rule appropriately. We should
     // change the API to be type safe here, by forcing the client to return a
     // handle created by the C API.
-    assert(rule.create_task && "client failed to initialize rule");
+    assert(capiRule->rule.create_task && "client failed to initialize rule");
 
-    std::function<bool(BuildEngine&, const Rule&,
-                       const ValueType&)> isResultValid;
-    if (rule.is_result_valid) {
-      isResultValid = [rule, engineContext] (BuildEngine&,
-                                             const Rule& nativeRule,
-                                             const ValueType& value) {
-        // FIXME: Why do we pass the rule here, it is redundant. NativeRule
-        // should be == rule here.
-        llb_data_t value_data{ value.size(), value.data() };
-        return rule.is_result_valid(rule.context, engineContext, &rule,
-                                    &value_data);
-      };
-    }
-
-    std::function<void(BuildEngine&, Rule::StatusKind)> updateStatus;
-    if (rule.update_status) {
-      updateStatus = [rule, engineContext] (BuildEngine&,
-                                            Rule::StatusKind kind) {
-        return rule.update_status(rule.context, engineContext,
-                                  (llb_rule_status_kind_t)kind);
-      };
-    }
-
-    return Rule{
-      // FIXME: This is a wasteful copy.
-      key, {},
-      [rule, engineContext] (BuildEngine& engine) {
-        return (Task*) rule.create_task(rule.context, engineContext);
-      },
-      isResultValid,
-      updateStatus };
+    return std::unique_ptr<Rule>(capiRule);
   }
 
   virtual void cycleDetected(const std::vector<core::Rule*>& items) override {

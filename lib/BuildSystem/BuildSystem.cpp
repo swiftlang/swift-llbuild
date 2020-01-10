@@ -146,7 +146,7 @@ class BuildSystemEngineDelegate : public BuildEngineDelegate {
 
   const BuildDescription& getBuildDescription() const;
 
-  virtual Rule lookupRule(const KeyType& keyData) override;
+  virtual std::unique_ptr<Rule> lookupRule(const KeyType& keyData) override;
   virtual bool shouldResolveCycle(const std::vector<Rule*>& items,
                                   Rule* candidateRule,
                                   Rule::CycleAction action) override;
@@ -1513,7 +1513,54 @@ convertStatusKind(core::Rule::StatusKind kind) {
   return BuildSystemDelegate::CommandStatusKind::IsScanning;
 }
 
-Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
+class BuildSystemRule : public Rule {
+private:
+  /// Called to create the task to build the rule, when necessary.
+  std::function<Task*(BuildEngine&)> action;
+
+  /// Called to check whether the previously computed value for this rule is
+  /// still valid.
+  ///
+  /// This callback is designed for use in synchronizing values which represent
+  /// state managed externally to the build engine. For example, a rule which
+  /// computes something on the file system may use this to verify that the
+  /// computed output has not changed since it was built.
+  std::function<bool(BuildEngine&, const Rule&,
+                     const ValueType&)> resultValid;
+
+  /// Called to indicate a change in the rule status.
+  std::function<void(BuildEngine&, StatusKind)> update;
+
+public:
+  BuildSystemRule(
+    const KeyType& key,
+    const basic::CommandSignature& signature,
+    std::function<Task*(BuildEngine&)> action,
+    std::function<bool(BuildEngine&, const Rule&, const ValueType&)> valid = nullptr,
+    std::function<void(BuildEngine&, StatusKind)> update = nullptr)
+  : Rule(key, signature), action(action), resultValid(valid), update(update)
+  { }
+
+public:
+  Task* createTask(BuildEngine& engine) override {
+    return action(engine);
+  }
+
+  bool isResultValid(BuildEngine& engine, const ValueType& value) override {
+    if (!resultValid) return true;
+    return resultValid(engine, *this, value);
+  }
+
+  void updateStatus(BuildEngine& engine, Rule::StatusKind status) override {
+    if (update) update(engine, status);
+  }
+};
+
+
+
+
+
+std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
   // Decode the key.
   auto key = BuildKey::fromData(keyData);
 
@@ -1526,7 +1573,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     auto it = getBuildDescription().getCommands().find(key.getCommandName());
     if (it == getBuildDescription().getCommands().end()) {
       // If there is no such command, produce an error task.
-      return Rule{
+      return std::unique_ptr<Rule>(new BuildSystemRule(
         keyData,
         /*signature=*/{},
         /*Action=*/ [](BuildEngine& engine) -> Task* {
@@ -1536,12 +1583,12 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
           // The cached result for a missing command is never valid.
           return false;
         }
-      };
+      ));
     }
 
     // Create the rule for the command.
     Command* command = it->second.get();
-    return Rule{
+    return std::unique_ptr<Rule>(new BuildSystemRule(
       keyData,
       command->getSignature(),
       /*Action=*/ [command](BuildEngine& engine) -> Task* {
@@ -1557,7 +1604,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
         return ::getBuildSystem(engine).getDelegate().commandStatusChanged(
             command, convertStatusKind(status));
       }
-    };
+    ));
   }
 
   case BuildKey::Kind::CustomTask: {
@@ -1574,7 +1621,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
       customTasks.emplace_back(std::move(result));
       Command *command = customTasks.back().get();
       
-      return Rule{
+      return std::unique_ptr<Rule>(new BuildSystemRule(
         keyData,
         command->getSignature(),
         /*Action=*/ [command](BuildEngine& engine) -> Task* {
@@ -1585,12 +1632,12 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
           return CommandTask::isResultValid(
               engine, *command, BuildValue::fromData(value));
         }
-      };
+      ));
     }
     
     // We were unable to create an appropriate custom command, produce an error
     // task.
-    return Rule{
+    return std::unique_ptr<Rule>(new BuildSystemRule(
       keyData,
       /*signature=*/{},
       /*Action=*/ [](BuildEngine& engine) -> Task* {
@@ -1600,12 +1647,12 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
         // The cached result for a missing command is never valid.
         return false;
       }
-    };
+    ));
   }
 
   case BuildKey::Kind::DirectoryContents: {
     std::string path = key.getDirectoryPath();
-    return Rule{
+    return std::unique_ptr<Rule>(new BuildSystemRule(
       keyData,
       /*signature=*/{},
       /*Action=*/ [path](BuildEngine& engine) -> Task* {
@@ -1616,13 +1663,13 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
         return DirectoryContentsTask::isResultValid(
             engine, path, BuildValue::fromData(value));
       }
-    };
+    ));
   }
 
   case BuildKey::Kind::FilteredDirectoryContents: {
     std::string path = key.getFilteredDirectoryPath();
     std::string patterns = key.getContentExclusionPatterns();
-    return Rule{
+    return std::unique_ptr<Rule>(new BuildSystemRule(
       keyData,
       /*signature=*/{},
       /*Action=*/ [path, patterns](BuildEngine& engine) -> Task* {
@@ -1630,13 +1677,13 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
         return new FilteredDirectoryContentsTask(path, StringList(decoder));
       },
       /*IsValid=*/ nullptr
-    };
+    ));
   }
 
   case BuildKey::Kind::DirectoryTreeSignature: {
     std::string path = key.getDirectoryTreeSignaturePath();
     std::string filters = key.getContentExclusionPatterns();
-    return Rule{
+    return std::unique_ptr<Rule>(new BuildSystemRule(
       keyData,
       /*signature=*/{},
       /*Action=*/ [path, filters](
@@ -1647,12 +1694,12 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
         // Directory signatures don't require any validation outside of their
         // concrete dependencies.
       /*IsValid=*/ nullptr
-    };
+    ));
   }
 
   case BuildKey::Kind::DirectoryTreeStructureSignature: {
     std::string path = key.getDirectoryPath();
-    return Rule{
+    return std::unique_ptr<Rule>(new BuildSystemRule(
       keyData,
       /*signature=*/{},
       /*Action=*/ [path](
@@ -1662,7 +1709,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
         // Directory signatures don't require any validation outside of their
         // concrete dependencies.
       /*IsValid=*/ nullptr
-    };
+    ));
   }
     
   case BuildKey::Kind::Node: {
@@ -1694,7 +1741,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     // Create an input node if there are no producers.
     if (node->getProducers().empty()) {
       if (node->isVirtual()) {
-        return Rule{
+        return std::unique_ptr<Rule>(new BuildSystemRule(
           keyData,
           node->getSignature(),
           /*Action=*/ [](BuildEngine& engine) -> Task* {
@@ -1705,11 +1752,11 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
             return VirtualInputNodeTask::isResultValid(
                 engine, *node, BuildValue::fromData(value));
           }
-        };
+        ));
       }
 
       if (node->isDirectory()) {
-        return Rule{
+        return std::unique_ptr<Rule>(new BuildSystemRule(
           keyData,
           node->getSignature(),
           /*Action=*/ [node](BuildEngine& engine) -> Task* {
@@ -1718,11 +1765,11 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
             // Directory nodes don't require any validation outside of their
             // concrete dependencies.
           /*IsValid=*/ nullptr
-        };
+        ));
       }
 
       if (node->isDirectoryStructure()) {
-        return Rule{
+        return std::unique_ptr<Rule>(new BuildSystemRule(
           keyData,
           node->getSignature(),
           /*Action=*/ [node](BuildEngine& engine) -> Task* {
@@ -1731,10 +1778,10 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
             // Directory nodes don't require any validation outside of their
             // concrete dependencies.
           /*IsValid=*/ nullptr
-        };
+        ));
       }
       
-      return Rule{
+      return std::unique_ptr<Rule>(new BuildSystemRule(
         keyData,
         node->getSignature(),
         /*Action=*/ [node](BuildEngine& engine) -> Task* {
@@ -1745,11 +1792,11 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
           return FileInputNodeTask::isResultValid(
               engine, *node, BuildValue::fromData(value));
         }
-      };
+      ));
     }
 
     // Otherwise, create a task for a produced node.
-    return Rule{
+    return std::unique_ptr<Rule>(new BuildSystemRule(
       keyData,
       node->getSignature(),
       /*Action=*/ [node](BuildEngine& engine) -> Task* {
@@ -1760,7 +1807,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
         return ProducedNodeTask::isResultValid(
             engine, *node, BuildValue::fromData(value));
       }
-    };
+    ));
   }
 
   case BuildKey::Kind::Stat: {
@@ -1776,7 +1823,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
     }
 
     // Create the rule to construct this target.
-    return Rule{
+    return std::unique_ptr<Rule>(new BuildSystemRule(
       keyData,
       /*signature=*/{},
       /*Action=*/ [statnode](BuildEngine& engine) -> Task* {
@@ -1787,7 +1834,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
         return StatTask::isResultValid(
             engine, *statnode, BuildValue::fromData(value));
       }
-    };
+    ));
   }
   case BuildKey::Kind::Target: {
     // Find the target.
@@ -1800,7 +1847,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
 
     // Create the rule to construct this target.
     Target* target = it->second.get();
-    return Rule{
+    return std::unique_ptr<Rule>(new BuildSystemRule(
       keyData,
       /*signature=*/{},
       /*Action=*/ [target](BuildEngine& engine) -> Task* {
@@ -1811,7 +1858,7 @@ Rule BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
         return TargetTask::isResultValid(
             engine, *target, BuildValue::fromData(value));
       }
-    };
+    ));
   }
   }
 

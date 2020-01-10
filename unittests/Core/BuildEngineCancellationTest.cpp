@@ -31,12 +31,12 @@ class SimpleBuildEngineDelegate : public core::BuildEngineDelegate {
 public:
   bool expectError = false;
 private:
-  virtual core::Rule lookupRule(const core::KeyType& key) override {
+  virtual std::unique_ptr<core::Rule> lookupRule(const core::KeyType& key) override {
     // We never expect dynamic rule lookup.
     fprintf(stderr, "error: unexpected rule lookup for \"%s\"\n",
             key.c_str());
     abort();
-    return core::Rule();
+    return nullptr;
   }
 
   virtual void cycleDetected(const std::vector<core::Rule*>& items) override {
@@ -110,42 +110,53 @@ public:
 // Helper function for creating a simple action.
 typedef std::function<Task*(BuildEngine&)> ActionFn;
 
-static ActionFn simpleAction(const std::vector<KeyType>& inputs,
-                             SimpleTask::ComputeFnType compute) {
-  return [=] (BuildEngine& engine) {
-    return new SimpleTask([inputs]{ return inputs; }, compute);
-  };
-}
 
-static ActionFn simpleActionExternalTask(const std::vector<KeyType>& inputs,
-                             SimpleTask::ComputeFnType compute, Task** task) {
-  return [=] (BuildEngine& engine) {
-    *task = new SimpleTask([inputs]{ return inputs; }, compute);
-    return *task; };
-}
+class SimpleRule: public Rule {
+public:
+  typedef std::function<bool(const ValueType& value)> ValidFnType;
+
+private:
+  SimpleTask::ComputeFnType compute;
+  std::vector<KeyType> inputs;
+  Task** task;
+public:
+  SimpleRule(const KeyType& key, const std::vector<KeyType>& inputs,
+             SimpleTask::ComputeFnType compute, Task** task = nullptr)
+    : Rule(key), compute(compute), inputs(inputs), task(task) { }
+
+  Task* createTask(BuildEngine&) override {
+    auto ret = new SimpleTask([this]{ return inputs; }, compute);
+
+    if (task)
+      *task = ret;
+
+    return ret;
+  }
+};
+
+
 
 TEST(BuildEngineCancellationTest, basic) {
   std::vector<std::string> builtKeys;
   SimpleBuildEngineDelegate delegate;
   core::BuildEngine engine(delegate);
   bool cancelIt = false;
-  engine.addRule({
-      "value-A", {}, simpleAction({}, [&] (const std::vector<int>& inputs) {
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-A", {}, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("value-A");
           fprintf(stderr, "building A (and cancelling ? %d)\n", cancelIt);
           if (cancelIt) {
             engine.cancelBuild();
           }
-          return 2; }) });
-  engine.addRule({
-      "result", {},
-      simpleAction({"value-A"},
+          return 2; })));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "result", {"value-A"},
                    [&] (const std::vector<int>& inputs) {
                      EXPECT_EQ(1U, inputs.size());
                      EXPECT_EQ(2, inputs[0]);
                      builtKeys.push_back("result");
                      return inputs[0] * 3;
-                   }) });
+                   })));
 
   // Build the result, cancelling during the first task.
   cancelIt = true;
@@ -167,31 +178,30 @@ TEST(BuildEngineCancellationDueToDuplicateTaskTest, basic) {
   SimpleBuildEngineDelegate delegate;
   core::BuildEngine engine(delegate);
   Task* taskA = nullptr;
-  engine.addRule({
-     "value-A", {}, simpleActionExternalTask({"value-B"},
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+     "value-A", {"value-B"},
         [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("value-A");
           fprintf(stderr, "building A\n");
           return 2;
         },
         &taskA)
-    });
-  engine.addRule({
-     "value-B", {}, simpleAction({}, [&] (const std::vector<int>& inputs) {
+    ));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+     "value-B", {}, [&] (const std::vector<int>& inputs) {
        builtKeys.push_back("value-B");
        fprintf(stderr, "building B (and reporting A complete early)\n");
        engine.taskIsComplete(taskA, intToValue(2));
-       return 3; }) });
-  engine.addRule({
-      "result", {},
-      simpleAction({"value-A", "value-B"},
+       return 3; })));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "result", {"value-A", "value-B"},
                    [&] (const std::vector<int>& inputs) {
                      EXPECT_EQ(2U, inputs.size());
                      EXPECT_EQ(2, inputs[0]);
                      EXPECT_EQ(3, inputs[1]);
                      builtKeys.push_back("result");
                      return inputs[0] * 3 + inputs[1];
-                   }) });
+                   })));
 
   // Build the result, expecting error
   //

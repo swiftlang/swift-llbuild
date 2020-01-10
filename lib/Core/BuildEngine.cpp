@@ -40,6 +40,10 @@ using namespace llbuild::core;
 
 Task::~Task() {}
 
+Rule::~Rule() {}
+bool Rule::isResultValid(BuildEngine&, const ValueType&) { return true; }
+void Rule::updateStatus(BuildEngine&, StatusKind) {}
+
 BuildEngineDelegate::~BuildEngineDelegate() {}
 
 bool BuildEngineDelegate::shouldResolveCycle(const std::vector<Rule*>& items,
@@ -156,13 +160,13 @@ class BuildEngineImpl : public BuildDBDelegate {
       Complete
     };
 
-    RuleInfo(KeyID keyID, Rule&& rule) : keyID(keyID), rule(rule) {}
+    RuleInfo(KeyID keyID, std::unique_ptr<Rule>&& rule) : keyID(keyID), rule(std::move(rule)) {}
 
     /// The ID for the rule key.
     KeyID keyID;
 
     /// The rule this information describes.
-    Rule rule;
+    std::unique_ptr<Rule> rule;
     
     /// The state dependent record for in-progress information.
     union {
@@ -303,11 +307,11 @@ class BuildEngineImpl : public BuildDBDelegate {
       fprintf(stderr,
               "<TaskInfo:%p: task:%p, for-rule:\"%s\", wait-count:%d>\n",
               this, task.get(),
-              forRuleInfo ? forRuleInfo->rule.key.c_str() : "(null)",
+              forRuleInfo ? forRuleInfo->rule->key.c_str() : "(null)",
               waitCount);
       for (const auto& request: requestedBy) {
         fprintf(stderr, "  requested by: %s\n",
-                request.taskInfo->forRuleInfo->rule.key.c_str());
+                request.taskInfo->forRuleInfo->rule->key.c_str());
       }
     }
 #endif    
@@ -421,25 +425,24 @@ private:
 
     // Otherwise, start scanning the rule.
     if (trace)
-      trace->checkingRuleNeedsToRun(&ruleInfo.rule);
+      trace->checkingRuleNeedsToRun(ruleInfo.rule.get());
 
     // Report the status change.
-    if (ruleInfo.rule.updateStatus)
-      ruleInfo.rule.updateStatus(buildEngine, Rule::StatusKind::IsScanning);
+    ruleInfo.rule->updateStatus(buildEngine, Rule::StatusKind::IsScanning);
 
     ruleInfo.wasForced = false;
 
     // If the rule has never been run, it needs to run.
     if (ruleInfo.result.builtAt == 0) {
       if (trace)
-        trace->ruleNeedsToRunBecauseNeverBuilt(&ruleInfo.rule);
+        trace->ruleNeedsToRunBecauseNeverBuilt(ruleInfo.rule.get());
       ruleInfo.state = RuleInfo::StateKind::NeedsToRun;
       return true;
     }
 
-    if (ruleInfo.rule.signature != ruleInfo.result.signature) {
+    if (ruleInfo.rule->signature != ruleInfo.result.signature) {
       if (trace)
-        trace->ruleNeedsToRunBecauseSignatureChanged(&ruleInfo.rule);
+        trace->ruleNeedsToRunBecauseSignatureChanged(ruleInfo.rule.get());
       ruleInfo.state = RuleInfo::StateKind::NeedsToRun;
       return true;
     }
@@ -449,11 +452,9 @@ private:
     // FIXME: We should probably try and move this so that it can be done by
     // clients in the background, either by us backgrounding it, or by using a
     // completion model as we do for inputs.
-    if (ruleInfo.rule.isResultValid &&
-        !ruleInfo.rule.isResultValid(buildEngine, ruleInfo.rule,
-                                     ruleInfo.result.value)) {
+    if (!ruleInfo.rule->isResultValid(buildEngine, ruleInfo.result.value)) {
       if (trace)
-        trace->ruleNeedsToRunBecauseInvalidValue(&ruleInfo.rule);
+        trace->ruleNeedsToRunBecauseInvalidValue(ruleInfo.rule.get());
       ruleInfo.state = RuleInfo::StateKind::NeedsToRun;
       return true;
     }
@@ -461,7 +462,7 @@ private:
     // If the rule has no dependencies, then it is ready to run.
     if (ruleInfo.result.dependencies.empty()) {
       if (trace)
-        trace->ruleDoesNotNeedToRun(&ruleInfo.rule);
+        trace->ruleDoesNotNeedToRun(ruleInfo.rule.get());
       ruleInfo.state = RuleInfo::StateKind::DoesNotNeedToRun;
       return true;
     }
@@ -473,7 +474,7 @@ private:
     // inputs, but in my experiments with that approach it has always performed
     // significantly worse.
     if (trace)
-      trace->ruleScheduledForScanning(&ruleInfo.rule);
+      trace->ruleScheduledForScanning(ruleInfo.rule.get());
     ruleInfo.state = RuleInfo::StateKind::IsScanning;
     ruleInfo.setPendingScanRecord(newRuleScanRecord());
     ruleInfosToScan.push_back({ &ruleInfo, /*InputIndex=*/0, nullptr, false });
@@ -503,8 +504,7 @@ private:
       ruleInfo.setComplete(this);
 
       // Report the status change.
-      if (ruleInfo.rule.updateStatus)
-        ruleInfo.rule.updateStatus(buildEngine, Rule::StatusKind::IsUpToDate);
+      ruleInfo.rule->updateStatus(buildEngine, Rule::StatusKind::IsUpToDate);
 
       return true;
     }
@@ -513,7 +513,7 @@ private:
     assert(ruleInfo.state == RuleInfo::StateKind::NeedsToRun);
 
     // Create the task for this rule.
-    Task* task = ruleInfo.rule.action(buildEngine);
+    Task* task = ruleInfo.rule->createTask(buildEngine);
     assert(task && "rule action returned null task");
 
     // register the task
@@ -525,7 +525,7 @@ private:
     taskInfo->forRuleInfo = &ruleInfo;
 
     if (trace)
-      trace->createdTaskForRule(taskInfo->task.get(), &ruleInfo.rule);
+      trace->createdTaskForRule(taskInfo->task.get(), ruleInfo.rule.get());
 
     // Transition the rule state.
     ruleInfo.state = RuleInfo::StateKind::InProgressWaiting;
@@ -549,7 +549,7 @@ private:
     // the clients that want it can ask? It's cheap to provide here, so
     // ultimately this is mostly a matter of cleanliness.
     if (ruleInfo.result.builtAt != 0 &&
-        ruleInfo.rule.signature == ruleInfo.result.signature) {
+        ruleInfo.rule->signature == ruleInfo.result.signature) {
       TracingEngineTaskCallback i(EngineTaskCallbackKind::ProvidePriorValue, ruleInfo.keyID);
       task->providePriorValue(buildEngine, ruleInfo.result.value);
     }
@@ -593,15 +593,15 @@ private:
       if (!isScanned) {
         assert(inputRuleInfo.isScanning());
         if (trace)
-          trace->ruleScanningDeferredOnInput(&ruleInfo.rule,
-                                             &inputRuleInfo.rule);
+          trace->ruleScanningDeferredOnInput(ruleInfo.rule.get(),
+                                             inputRuleInfo.rule.get());
         inputRuleInfo.getPendingScanRecord()
           ->deferredScanRequests.push_back(request);
         return;
       }
 
       if (trace)
-        trace->ruleScanningNextInput(&ruleInfo.rule, &inputRuleInfo.rule);
+        trace->ruleScanningNextInput(ruleInfo.rule.get(), inputRuleInfo.rule.get());
 
       // Demand the input.
       bool isAvailable = demandRule(inputRuleInfo);
@@ -614,7 +614,7 @@ private:
       if (!isAvailable) {
         if (trace)
           trace->ruleScanningDeferredOnTask(
-            &ruleInfo.rule, inputRuleInfo.getPendingTaskInfo()->task.get());
+            ruleInfo.rule.get(), inputRuleInfo.getPendingTaskInfo()->task.get());
         assert(inputRuleInfo.isInProgress());
         inputRuleInfo.getPendingTaskInfo()->
             deferredScanRequests.push_back(request);
@@ -630,7 +630,7 @@ private:
         if (ruleInfo.result.builtAt < inputRuleInfo.result.computedAt) {
           if (trace)
             trace->ruleNeedsToRunBecauseInputRebuilt(
-              &ruleInfo.rule, &inputRuleInfo.rule);
+              ruleInfo.rule.get(), inputRuleInfo.rule.get());
           finishScanRequest(ruleInfo, RuleInfo::StateKind::NeedsToRun);
           return;
         }
@@ -644,7 +644,7 @@ private:
 
     // If we reached the end of the inputs, the rule does not need to run.
     if (trace)
-      trace->ruleDoesNotNeedToRun(&ruleInfo.rule);
+      trace->ruleDoesNotNeedToRun(ruleInfo.rule.get());
     finishScanRequest(ruleInfo, RuleInfo::StateKind::DoesNotNeedToRun);
   }
 
@@ -732,9 +732,9 @@ private:
         if (trace) {
           if (request.taskInfo) {
             trace->handlingTaskInputRequest(request.taskInfo->task.get(),
-                                            &request.inputRuleInfo->rule);
+                                            request.inputRuleInfo->rule.get());
           } else {
-            trace->handlingBuildInputRequest(&request.inputRuleInfo->rule);
+            trace->handlingBuildInputRequest(request.inputRuleInfo->rule.get());
           }
         }
 
@@ -746,7 +746,7 @@ private:
           assert(request.inputRuleInfo->isScanning());
           if (trace)
             trace->pausedInputRequestForRuleScan(
-              &request.inputRuleInfo->rule);
+              request.inputRuleInfo->rule.get());
           request.inputRuleInfo->getPendingScanRecord()
             ->pausedInputRequests.push_back(request);
           continue;
@@ -763,13 +763,13 @@ private:
         if (isAvailable) {
           if (trace)
             trace->readyingTaskInputRequest(request.taskInfo->task.get(),
-                                            &request.inputRuleInfo->rule);
+                                            request.inputRuleInfo->rule.get());
           finishedInputRequests.push_back(request);
         } else {
           // Otherwise, record the pending input request.
           assert(request.inputRuleInfo->getPendingTaskInfo());
           if (trace)
-            trace->addedRulePendingTask(&request.inputRuleInfo->rule,
+            trace->addedRulePendingTask(request.inputRuleInfo->rule.get(),
                                         request.taskInfo->task.get());
           request.inputRuleInfo->getPendingTaskInfo()->requestedBy.push_back(
             request);
@@ -787,7 +787,7 @@ private:
 
         if (trace)
           trace->completedTaskInputRequest(request.taskInfo->task.get(),
-                                           &request.inputRuleInfo->rule);
+                                           request.inputRuleInfo->rule.get());
 
         // Otherwise, we are processing a regular input dependency.
 
@@ -835,7 +835,7 @@ private:
         assert(taskInfo == ruleInfo->getPendingTaskInfo());
 
         if (trace)
-            trace->readiedTask(taskInfo->task.get(), &ruleInfo->rule);
+            trace->readiedTask(taskInfo->task.get(), ruleInfo->rule.get());
 
         // Transition the rule state.
         ruleInfo->setComputing(this);
@@ -877,7 +877,7 @@ private:
         // The task was changed if was computed in the current iteration.
         if (trace) {
           bool wasChanged = ruleInfo->result.computedAt == currentEpoch;
-          trace->finishedTask(taskInfo->task.get(), &ruleInfo->rule,
+          trace->finishedTask(taskInfo->task.get(), ruleInfo->rule.get(),
                               wasChanged);
         }
 
@@ -888,9 +888,7 @@ private:
         ruleInfo->setComplete(this);
 
         // Report the status change.
-        if (ruleInfo->rule.updateStatus)
-          ruleInfo->rule.updateStatus(buildEngine,
-                                      Rule::StatusKind::IsComplete);
+        ruleInfo->rule->updateStatus(buildEngine, Rule::StatusKind::IsComplete);
 
         // Add all of the task's discovered dependencies.
         //
@@ -914,7 +912,7 @@ private:
         if (db) {
           std::string error;
           bool result = db->setRuleResult(
-              ruleInfo->keyID, ruleInfo->rule, ruleInfo->result, &error);
+              ruleInfo->keyID, *ruleInfo->rule, ruleInfo->result, &error);
           if (!result) {
             delegate.error(error);
 
@@ -938,7 +936,7 @@ private:
         if (trace) {
           for (auto& request: taskInfo->requestedBy) {
             trace->readyingTaskInputRequest(request.taskInfo->task.get(),
-                                            &request.inputRuleInfo->rule);
+                                            request.inputRuleInfo->rule.get());
           }
         }
         finishedInputRequests.insert(finishedInputRequests.end(),
@@ -1033,13 +1031,13 @@ private:
       std::vector<Rule*> successors;
       for (const auto& request: taskInfo.requestedBy) {
         assert(request.taskInfo->forRuleInfo);
-        successors.push_back(&request.taskInfo->forRuleInfo->rule);
+        successors.push_back(request.taskInfo->forRuleInfo->rule.get());
       }
       for (const auto& request: taskInfo.deferredScanRequests) {
         // Add the sucessor for the deferred relationship itself.
-        successors.push_back(&request.ruleInfo->rule);
+        successors.push_back(request.ruleInfo->rule.get());
       }
-      successorGraph.insert({ &taskInfo.forRuleInfo->rule, successors });
+      successorGraph.insert({ taskInfo.forRuleInfo->rule.get(), successors });
     }
 
     // Add the pending scan records for every rule.
@@ -1068,16 +1066,14 @@ private:
       // For each paused request, add the dependency.
       for (const auto& request: record->pausedInputRequests) {
         if (request.taskInfo) {
-          successorGraph[&request.inputRuleInfo->rule].push_back(
-                                                                 &request.taskInfo->forRuleInfo->rule);
+          successorGraph[request.inputRuleInfo->rule.get()].push_back(request.taskInfo->forRuleInfo->rule.get());
         }
       }
 
       // Process the deferred scan requests.
       for (const auto& request: record->deferredScanRequests) {
         // Add the sucessor for the deferred relationship itself.
-        successorGraph[&request.inputRuleInfo->rule].push_back(
-                                                               &request.ruleInfo->rule);
+        successorGraph[request.inputRuleInfo->rule.get()].push_back(request.ruleInfo->rule.get());
 
         // Add the active rule scan record which needs to be traversed.
         assert(request.ruleInfo->isScanning() || request.ruleInfo->wasForced);
@@ -1115,7 +1111,7 @@ private:
     std::vector<Rule*> cycleList;
     std::unordered_set<Rule*> cycleItems;
     std::vector<WorkItem> stack{
-      WorkItem{ &getRuleInfoForKey(buildKey).rule } };
+      WorkItem{ getRuleInfoForKey(buildKey).rule.get() } };
     while (!stack.empty()) {
       // Take the top item.
       auto& entry = stack.back();
@@ -1163,11 +1159,11 @@ private:
       if (ruleInfo.isScanning()) {
         // Ask the delegate if we should try to resolve this cycle by forcing
         // a rule to be built?
-        if (!delegate.shouldResolveCycle(cycleList, &ruleInfo.rule, Rule::CycleAction::ForceBuild))
+        if (!delegate.shouldResolveCycle(cycleList, ruleInfo.rule.get(), Rule::CycleAction::ForceBuild))
           return false;
 
         if (trace) {
-          trace->cycleForceRuleNeedsToRun(&ruleInfo.rule);
+          trace->cycleForceRuleNeedsToRun(ruleInfo.rule.get());
         }
 
         // Find the rule scan request, if not already deferred, for this rule
@@ -1203,12 +1199,12 @@ private:
 
         // Ask the delegate if we should try to resolve this cycle by supplying
         // a prior value?
-        if (!delegate.shouldResolveCycle(cycleList, &ruleInfo.rule, Rule::CycleAction::SupplyPriorValue))
+        if (!delegate.shouldResolveCycle(cycleList, ruleInfo.rule.get(), Rule::CycleAction::SupplyPriorValue))
           return false;
 
         // supply the prior value to the node
         if (trace) {
-          trace->cycleSupplyPriorValue(&ruleInfo.rule, it->taskInfo->task.get());
+          trace->cycleSupplyPriorValue(ruleInfo.rule.get(), it->taskInfo->task.get());
         }
         it->forcePriorValue = true;
         finishedInputRequests.insert(finishedInputRequests.end(), *it);
@@ -1377,14 +1373,14 @@ public:
   /// @name Rule Definition
   /// @{
 
-  RuleInfo& addRule(Rule&& rule) {
-    return addRule(getKeyID(rule.key), std::move(rule));
+  RuleInfo& addRule(std::unique_ptr<Rule>&& rule) {
+    return addRule(getKeyID(rule->key), std::move(rule));
   }
   
-  RuleInfo& addRule(KeyID keyID, Rule&& rule) {
+  RuleInfo& addRule(KeyID keyID, std::unique_ptr<Rule>&& rule) {
     auto result = ruleInfos.emplace(keyID, RuleInfo(keyID, std::move(rule)));
     if (!result.second) {
-      delegate.error("attempt to register duplicate rule \"" + rule.key + "\"\n");
+      delegate.error("attempt to register duplicate rule \"" + rule->key + "\"\n");
 
       // Set cancelled, but return something 'valid' for use until it is
       // processed.
@@ -1400,7 +1396,7 @@ public:
     RuleInfo& ruleInfo = result.first->second;
     if (db) {
       std::string error;
-      db->lookupRuleResult(ruleInfo.keyID, ruleInfo.rule, &ruleInfo.result, &error);
+      db->lookupRuleResult(ruleInfo.keyID, *ruleInfo.rule, &ruleInfo.result, &error);
       if (!error.empty()) {
         // FIXME: Investigate changing the database error handling model to
         // allow builds to proceed without the database.
@@ -1546,16 +1542,16 @@ public:
       orderedRuleInfos.push_back(&entry.second);
     std::sort(orderedRuleInfos.begin(), orderedRuleInfos.end(),
               [] (const RuleInfo* a, const RuleInfo* b) {
-        return a->rule.key < b->rule.key;
+        return a->rule->key < b->rule->key;
       });
 
     // Write out all of the rules.
     for (const auto& ruleInfo: orderedRuleInfos) {
-      fprintf(fp, "\"%s\"\n", ruleInfo->rule.key.c_str());
+      fprintf(fp, "\"%s\"\n", ruleInfo->rule->key.c_str());
       for (auto keyIDAndFlag: ruleInfo->result.dependencies) {
         const auto& dependency = getRuleInfoForKey(keyIDAndFlag.keyID);
-        fprintf(fp, "\"%s\" -> \"%s\"\n", ruleInfo->rule.key.c_str(),
-                dependency.rule.key.c_str());
+        fprintf(fp, "\"%s\" -> \"%s\"\n", ruleInfo->rule->key.c_str(),
+                dependency.rule->key.c_str());
       }
       fprintf(fp, "\n");
     }
@@ -1636,7 +1632,7 @@ public:
 
     // Update the signature of the result (even if we ultimately computed the
     // same value).
-    ruleInfo->result.signature = ruleInfo->rule.signature;
+    ruleInfo->result.signature = ruleInfo->rule->signature;
 
     // Process the provided result.
     if (!forceChange && value == ruleInfo->result.value) {
@@ -1688,7 +1684,7 @@ Epoch BuildEngine::getCurrentEpoch() {
   return static_cast<BuildEngineImpl*>(impl)->getCurrentEpoch();
 }
 
-void BuildEngine::addRule(Rule&& rule) {
+void BuildEngine::addRule(std::unique_ptr<Rule>&& rule) {
   static_cast<BuildEngineImpl*>(impl)->addRule(std::move(rule));
 }
 
