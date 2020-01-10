@@ -154,15 +154,6 @@ LLBUILD_EXPORT void
 llb_buildengine_build(llb_buildengine_t* engine, const llb_data_t* key,
                       llb_data_t* result_out);
 
-/// Register the given task, in response to a Rule evaluation.
-///
-/// The engine tasks ownership of the \arg task, and it is expected to
-/// subsequently be returned as the task to execute for a rule evaluation.
-///
-/// \returns The provided task, for the convenience of the client.
-LLBUILD_EXPORT llb_task_t*
-llb_buildengine_register_task(llb_buildengine_t* engine, llb_task_t* task);
-
 /// Specify the given \arg Task depends upon the result of computing \arg Key.
 ///
 /// The result, when available, will be provided to the task via \see

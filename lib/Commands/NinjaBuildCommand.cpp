@@ -1437,7 +1437,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
     }
   };
 
-  return context.engine.registerTask(new NinjaCommandTask(context, command));
+  return new NinjaCommandTask(context, command);
 }
 
 static core::Task* buildInput(BuildContext& context, ninja::Node* input) {
@@ -1471,7 +1471,7 @@ static core::Task* buildInput(BuildContext& context, ninja::Node* input) {
     }
   };
 
-  return context.engine.registerTask(new NinjaInputTask(context, input));
+  return new NinjaInputTask(context, input);
 }
 
 static core::Task*
@@ -1511,7 +1511,7 @@ buildTargets(BuildContext& context,
     }
   };
 
-  return context.engine.registerTask(new TargetsTask(context, targetsToBuild));
+  return new TargetsTask(context, targetsToBuild);
 }
 
 static core::Task*
@@ -1573,8 +1573,7 @@ selectCompositeBuildResult(BuildContext& context, ninja::Command* command,
     }
   };
 
-  return context.engine.registerTask(
-    new SelectResultTask(context, command, inputIndex, compositeRuleName));
+  return new SelectResultTask(context, command, inputIndex, compositeRuleName);
 }
 
 static bool buildInputIsResultValid(ninja::Node* node,

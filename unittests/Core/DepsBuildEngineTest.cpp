@@ -109,7 +109,7 @@ typedef std::function<Task*(BuildEngine&)> ActionFn;
 static ActionFn simpleAction(const std::vector<KeyType>& inputs,
                              SimpleTask::ComputeFnType compute) {
   return [=] (BuildEngine& engine) {
-    return engine.registerTask(new SimpleTask(inputs, compute)); };
+    return new SimpleTask(inputs, compute); };
 }
 
 // Test for a tricky case involving concurrent dependency scanning.
@@ -208,7 +208,7 @@ TEST(DepsBuildEngineTest, BogusConcurrentDepScan) {
       "output", {},
       [&builtKeys] (BuildEngine& engine) {
         builtKeys.push_back("output");
-        return engine.registerTask(new DynamicTask());
+        return new DynamicTask();
       } });
 
   // Build the first result.

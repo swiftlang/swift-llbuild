@@ -204,13 +204,6 @@ void llb_buildengine_build(llb_buildengine_t* engine_p, const llb_data_t* key,
   *result_out = llb_data_t{ result.size(), result.data() };
 }
 
-llb_task_t* llb_buildengine_register_task(llb_buildengine_t* engine_p,
-                                          llb_task_t* task) {
-  auto& engine = ((CAPIBuildEngine*) engine_p)->engine;
-  engine->registerTask((Task*)task);
-  return task;
-}
-
 void llb_buildengine_task_needs_input(llb_buildengine_t* engine_p,
                                       llb_task_t* task,
                                       const llb_data_t* key,

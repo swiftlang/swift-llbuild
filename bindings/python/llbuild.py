@@ -90,7 +90,7 @@ def _rule_create_task(context, engine_context):
     delegate.inputs_available = _task_inputs_available
 
     task._task = libllbuild.llb_task_create(delegate[0])
-    return libllbuild.llb_buildengine_register_task(engine._engine, task._task)
+    return task._task
 
 @ffi.callback("bool(void*, void*, llb_rule_t*, llb_data_t*)")
 def _rule_is_result_valid(context, engine_context, rule, value):
