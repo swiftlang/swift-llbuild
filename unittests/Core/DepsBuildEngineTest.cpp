@@ -225,6 +225,7 @@ TEST(DepsBuildEngineTest, BogusConcurrentDepScan) {
       builtKeys.push_back(key);
       return new DynamicTask();
     }
+    bool isResultValid(BuildEngine&, const ValueType&) override { return true; }
   };
   engine.addRule(std::unique_ptr<core::Rule>(new DynamicRule("output", builtKeys)));
 

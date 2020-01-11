@@ -41,7 +41,6 @@ using namespace llbuild::core;
 Task::~Task() {}
 
 Rule::~Rule() {}
-bool Rule::isResultValid(BuildEngine&, const ValueType&) { return true; }
 void Rule::updateStatus(BuildEngine&, StatusKind) {}
 
 BuildEngineDelegate::~BuildEngineDelegate() {}

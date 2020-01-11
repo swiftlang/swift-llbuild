@@ -214,7 +214,7 @@ public:
   /// state managed externally to the build engine. For example, a rule which
   /// computes something on the file system may use this to verify that the
   /// computed output has not changed since it was built.
-  virtual bool isResultValid(BuildEngine&, const ValueType&);
+  virtual bool isResultValid(BuildEngine&, const ValueType&) = 0;
 
   /// Called to indicate a change in the rule status.
   virtual void updateStatus(BuildEngine&, StatusKind);

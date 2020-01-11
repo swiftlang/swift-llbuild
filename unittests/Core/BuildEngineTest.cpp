@@ -625,6 +625,7 @@ TEST(BuildEngineTest, discoveredDependencies) {
       builtKeys.push_back(key);
       return new TaskWithDiscoveredDependency(dep);
     }
+    bool isResultValid(BuildEngine&, const ValueType&) override { return true; }
   };
   engine.addRule(std::unique_ptr<core::Rule>(new RuleWithDiscoveredDependency("output", builtKeys, valueB)));
 

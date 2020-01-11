@@ -132,6 +132,8 @@ public:
 
     return ret;
   }
+
+  bool isResultValid(BuildEngine&, const ValueType&) override { return true; }
 };
 
 

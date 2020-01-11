@@ -521,6 +521,9 @@ TEST(BuildSystemInvocationTest, formatCycle) {
   public:
     NullRule(const KeyType& key) : Rule(key) { }
     Task* createTask(core::BuildEngine&) override { return nullptr; }
+    bool isResultValid(core::BuildEngine&, const core::ValueType&) override {
+      return true;
+    }
   };
 
   NullRule command{BuildKey::makeCommand("c").getKeyData()};
