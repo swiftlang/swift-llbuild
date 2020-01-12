@@ -37,7 +37,7 @@
 # Check that a modification triggers both uses.
 #
 # RUN: echo "MOD" >> %t.build/input
-# RUN: %{llbuild} buildsystem build --serial --chdir %t.build --trace /tmp/x.trace > %t3.out
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build --trace %t.trace > %t3.out
 # RUN: %{FileCheck} --input-file=%t3.out %s --check-prefix=CHECK-AFTER-MOD
 # RUN: diff %t.build/input %t.build/generated-input
 # RUN: diff %t.build/input %t.build/output

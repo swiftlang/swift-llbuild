@@ -348,8 +348,17 @@ std::string sys::makeTmpDir() {
   CreateDirectoryW((LPCWSTR)wPath.data(), NULL);
   return std::string(path);
 #else
-  char tmpDirPathBuf[] = "/tmp/fileXXXXXX";
-  return std::string(mkdtemp(tmpDirPathBuf));
+  if (const char *tmpDir = std::getenv("TMPDIR")) {
+    char *tmpDirPath = nullptr;
+    asprintf(&tmpDirPath, "%s/fileXXXXXX", tmpDir);
+    auto tmpDirString = std::string(mkdtemp(tmpDirPath));
+    free(tmpDirPath);
+    return tmpDirString;
+  }
+  else {
+    char tmpDirPathBuf[] = "/tmp/fileXXXXXX";
+    return std::string(mkdtemp(tmpDirPathBuf));
+  }
 #endif
 }
 
