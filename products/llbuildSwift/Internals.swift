@@ -31,7 +31,9 @@ internal func copiedDataFromBytes(_ bytes: [UInt8]) -> llb_data_t {
     let buf = UnsafeMutableBufferPointer(start: UnsafeMutablePointer<UInt8>.allocate(capacity: bytes.count), count: bytes.count)
 
     // Copy the data.
-    memcpy(buf.baseAddress!, UnsafePointer<UInt8>(bytes), buf.count)
+    _ = bytes.withUnsafeBufferPointer { bytesPtr in
+        memcpy(buf.baseAddress!, bytesPtr.baseAddress!, buf.count)
+    }
 
     // Fill in the result structure.
     return llb_data_t(length: UInt64(buf.count), data: unsafeBitCast(buf.baseAddress, to: UnsafePointer<UInt8>.self))
