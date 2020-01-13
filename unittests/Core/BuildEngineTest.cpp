@@ -40,12 +40,12 @@ public:
   bool expectedError = false;
 
 private:
-  virtual core::Rule lookupRule(const core::KeyType& key) override {
+  virtual std::unique_ptr<core::Rule> lookupRule(const core::KeyType& key) override {
     // We never expect dynamic rule lookup.
     fprintf(stderr, "error: unexpected rule lookup for \"%s\"\n",
             key.c_str());
     abort();
-    return core::Rule();
+    return nullptr;
   }
 
   virtual void cycleDetected(const std::vector<core::Rule*>& items) override {
@@ -129,36 +129,59 @@ public:
 // Helper function for creating a simple action.
 typedef std::function<Task*(BuildEngine&)> ActionFn;
 
-static ActionFn simpleAction(const std::vector<KeyType>& inputs,
-                             SimpleTask::ComputeFnType compute) {
-  return [=] (BuildEngine& engine) {
-    return new SimpleTask([inputs]{ return inputs; }, compute);
-  };
-}
+class SimpleRule: public Rule {
+public:
+  typedef std::function<bool(const ValueType& value)> ValidFnType;
+  typedef std::function<void(core::Rule::StatusKind status)> StatusFnType;
+
+private:
+  SimpleTask::ComputeFnType compute;
+  std::vector<KeyType> inputs;
+  ValidFnType valid;
+  StatusFnType update;
+public:
+  SimpleRule(const KeyType& key, const std::vector<KeyType>& inputs,
+             SimpleTask::ComputeFnType compute, ValidFnType valid = nullptr,
+             StatusFnType update = nullptr, const basic::CommandSignature& sig = {})
+    : Rule(key, sig), compute(compute), inputs(inputs), valid(valid), update(update) { }
+
+  Task* createTask(BuildEngine&) override { return new SimpleTask([this]{ return inputs; }, compute); }
+
+  bool isResultValid(BuildEngine&, const ValueType& value) override {
+    if (!valid) return true;
+    return valid(value);
+  }
+
+  void updateStatus(BuildEngine&, core::Rule::StatusKind status) override {
+    if (update) update(status);
+  }
+
+};
+
+
 
 TEST(BuildEngineTest, basic) {
   // Check a trivial build graph.
   std::vector<std::string> builtKeys;
   SimpleBuildEngineDelegate delegate;
   core::BuildEngine engine(delegate);
-  engine.addRule({
-    "value-A", {}, simpleAction({}, [&] (const std::vector<int>& inputs) {
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+    "value-A", {}, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("value-A");
-          return 2; }) });
-  engine.addRule({
-      "value-B", {}, simpleAction({}, [&] (const std::vector<int>& inputs) {
+          return 2; })));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-B", {}, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("value-B");
-          return 3; }) });
-  engine.addRule({
-      "result", {},
-      simpleAction({"value-A", "value-B"},
+          return 3; })));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "result", {"value-A", "value-B"},
                    [&] (const std::vector<int>& inputs) {
                      EXPECT_EQ(2U, inputs.size());
                      EXPECT_EQ(2, inputs[0]);
                      EXPECT_EQ(3, inputs[1]);
                      builtKeys.push_back("result");
                      return inputs[0] * inputs[1] * 5;
-                   }) });
+                   })));
 
   // Build the result.
   EXPECT_EQ(2 * 3 * 5, intFromValue(engine.build("result")));
@@ -186,34 +209,32 @@ TEST(BuildEngineTest, basicWithSharedInput) {
   std::vector<std::string> builtKeys;
   SimpleBuildEngineDelegate delegate;
   core::BuildEngine engine(delegate);
-  engine.addRule({
-      "value-A", {}, simpleAction({}, [&] (const std::vector<int>& inputs) {
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-A", {}, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("value-A");
-          return 2; }) });
-  engine.addRule({
-      "value-B", {}, simpleAction({}, [&] (const std::vector<int>& inputs) {
+          return 2; })));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-B", {}, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("value-B");
-          return 3; }) });
-  engine.addRule({
-      "value-C", {},
-      simpleAction({"value-A", "value-B"},
+          return 3; })));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-C", {"value-A", "value-B"},
                    [&] (const std::vector<int>& inputs) {
                      EXPECT_EQ(2U, inputs.size());
                      EXPECT_EQ(2, inputs[0]);
                      EXPECT_EQ(3, inputs[1]);
                      builtKeys.push_back("value-C");
                      return inputs[0] * inputs[1] * 5;
-                   }) });
-  engine.addRule({
-      "value-R", {},
-      simpleAction({"value-A", "value-C"},
+                   })));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-R", {"value-A", "value-C"},
                    [&] (const std::vector<int>& inputs) {
                      EXPECT_EQ(2U, inputs.size());
                      EXPECT_EQ(2, inputs[0]);
                      EXPECT_EQ(2 * 3 * 5, inputs[1]);
                      builtKeys.push_back("value-R");
                      return inputs[0] * inputs[1] * 7;
-                   }) });
+                   })));
 
   // Build the result.
   EXPECT_EQ(2 * 2 * 3 * 5 * 7, intFromValue(engine.build("value-R")));
@@ -234,30 +255,29 @@ TEST(BuildEngineTest, veryBasicIncremental) {
   core::BuildEngine engine(delegate);
   int valueA = 2;
   int valueB = 3;
-  engine.addRule({
-      "value-A", {}, simpleAction({}, [&] (const std::vector<int>& inputs) {
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-A", {}, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("value-A");
-          return valueA; }),
-      [&](core::BuildEngine&, const Rule& rule, const ValueType& value) {
+          return valueA; },
+      [&](const ValueType& value) {
         return valueA == intFromValue(value);
-      } });
-  engine.addRule({
-      "value-B", {}, simpleAction({}, [&] (const std::vector<int>& inputs) {
+      } )));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-B", {}, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("value-B");
-          return valueB; }),
-      [&](core::BuildEngine&, const Rule& rule, const ValueType& value) {
+          return valueB; },
+      [&](const ValueType& value) {
         return valueB == intFromValue(value);
-      } });
-  engine.addRule({
-      "value-R", {},
-      simpleAction({"value-A", "value-B"},
+      } )));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-R", {"value-A", "value-B"},
                    [&] (const std::vector<int>& inputs) {
                      EXPECT_EQ(2U, inputs.size());
                      EXPECT_EQ(valueA, inputs[0]);
                      EXPECT_EQ(valueB, inputs[1]);
                      builtKeys.push_back("value-R");
                      return inputs[0] * inputs[1] * 5;
-                   }) });
+                   })));
 
   // Build the first result.
   builtKeys.clear();
@@ -300,60 +320,56 @@ TEST(BuildEngineTest, basicIncremental) {
   core::BuildEngine engine(delegate);
   int valueA = 2;
   int valueB = 3;
-  engine.addRule({
-      "value-A", {}, simpleAction({}, [&] (const std::vector<int>& inputs) {
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-A", {}, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("value-A");
-          return valueA; }),
-      [&](core::BuildEngine&, const Rule& rule, const ValueType& value) {
+          return valueA; },
+      [&](const ValueType& value) {
         return valueA == intFromValue(value);
-      } });
-  engine.addRule({
-      "value-B", {}, simpleAction({}, [&] (const std::vector<int>& inputs) {
+      })));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-B", {}, [&] (const std::vector<int>& inputs) {
           builtKeys.push_back("value-B");
-          return valueB; }),
-      [&](core::BuildEngine&, const Rule& rule, const ValueType& value) {
+          return valueB; },
+      [&](const ValueType& value) {
         return valueB == intFromValue(value);
-      } });
-  engine.addRule({
-      "value-C", {},
-      simpleAction({"value-A", "value-B"},
+      })));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-C", {"value-A", "value-B"},
                    [&] (const std::vector<int>& inputs) {
                      EXPECT_EQ(2U, inputs.size());
                      EXPECT_EQ(valueA, inputs[0]);
                      EXPECT_EQ(valueB, inputs[1]);
                      builtKeys.push_back("value-C");
                      return inputs[0] * inputs[1] * 5;
-                   }) });
-  engine.addRule({
-      "value-R", {},
-      simpleAction({"value-A", "value-C"},
+                   })));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-R", {"value-A", "value-C"},
                    [&] (const std::vector<int>& inputs) {
                      EXPECT_EQ(2U, inputs.size());
                      EXPECT_EQ(valueA, inputs[0]);
                      EXPECT_EQ(valueA * valueB * 5, inputs[1]);
                      builtKeys.push_back("value-R");
                      return inputs[0] * inputs[1] * 7;
-                   }) });
-  engine.addRule({
-      "value-D", {},
-      simpleAction({"value-R"},
+                   })));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-D", {"value-R"},
                    [&] (const std::vector<int>& inputs) {
                      EXPECT_EQ(1U, inputs.size());
                      EXPECT_EQ(valueA * valueA * valueB * 5 * 7,
                                inputs[0]);
                      builtKeys.push_back("value-D");
                      return inputs[0] * 11;
-                   }) });
-  engine.addRule({
-      "value-R2", {},
-      simpleAction({"value-D"},
+                   })));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-R2", {"value-D"},
                    [&] (const std::vector<int>& inputs) {
                      EXPECT_EQ(1U, inputs.size());
                      EXPECT_EQ(valueA * valueA * valueB * 5 * 7 * 11,
                                inputs[0]);
                      builtKeys.push_back("value-R2");
                      return inputs[0] * 13;
-                   }) });
+                   })));
 
   // Build the first result.
   builtKeys.clear();
@@ -469,20 +485,19 @@ TEST(BuildEngineTest, incrementalDependency) {
   engine.attachDB(std::unique_ptr<CustomDB>(db), &error);
 
   int valueA = 2;
-  engine.addRule({
-      "value-A", {}, simpleAction({}, [&] (const std::vector<int>& inputs) {
-          return valueA; }),
-      [&](core::BuildEngine&, const Rule& rule, const ValueType& value) {
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-A", {}, [&] (const std::vector<int>& inputs) {
+          return valueA; },
+      [&](const ValueType& value) {
         return valueA == intFromValue(value);
-      } });
-  engine.addRule({
-      "value-R", {},
-      simpleAction({"value-A"},
+      })));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-R", {"value-A"},
                    [&] (const std::vector<int>& inputs) {
                      EXPECT_EQ(1U, inputs.size());
                      EXPECT_EQ(valueA, inputs[0]);
                      return inputs[0] * 3;
-                   }) });
+                   })));
 
   // Build the first result.
   EXPECT_EQ(valueA * 3, intFromValue(engine.build("value-R")));
@@ -516,22 +531,21 @@ TEST(BuildEngineTest, deepDependencyScanningStack) {
     if (i != depth-1) {
       char inputName[32];
       sprintf(inputName, "input-%d", i+1);
-      engine.addRule({
-          name, {}, simpleAction({ inputName },
+      engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+          name, { inputName },
                              [] (const std::vector<int>& inputs) {
-                               return inputs[0]; }) });
+                               return inputs[0]; })));
     } else {
-      engine.addRule({
+      engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
           name, {},
-          simpleAction({},
                        [&] (const std::vector<int>& inputs) {
-                         return lastInputValue; }),
-          [&](core::BuildEngine&, const Rule& rule, const ValueType& value) {
+                         return lastInputValue; },
+          [&](const ValueType& value) {
             // FIXME: Once we have custom ValueType objects, we would like to
             // have timestamps on the value and just compare to a timestamp
             // (similar to what we would do for a file).
             return lastInputValue == intFromValue(value);
-          } });
+          })));
     }
   }
 
@@ -581,32 +595,39 @@ TEST(BuildEngineTest, discoveredDependencies) {
   core::BuildEngine engine(delegate);
   int valueA = 2;
   int valueB = 3;
-  engine.addRule({
-      "value-A", {},
-      simpleAction({ },
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-A", { },
                    [&] (const std::vector<int>& inputs) {
                      builtKeys.push_back("value-A");
                      return valueA;
-                   }),
-      [&](BuildEngine&, const Rule& rule, const ValueType& value) {
+                   },
+      [&](const ValueType& value) {
         return valueA == intFromValue(value);
-      } });
-  engine.addRule({
-      "value-B", {},
-      simpleAction({ },
+      })));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-B", { },
                    [&] (const std::vector<int>& inputs) {
                      builtKeys.push_back("value-B");
                      return valueB;
-                   }),
-      [&](BuildEngine&, const Rule& rule, const ValueType& value) {
+                   },
+      [&](const ValueType& value) {
         return valueB == intFromValue(value);
-      } });
-  engine.addRule({
-      "output", {},
-      [&valueB, &builtKeys] (BuildEngine& engine) {
-        builtKeys.push_back("output");
-        return new TaskWithDiscoveredDependency(valueB);
-      } });
+      })));
+
+  class RuleWithDiscoveredDependency: public Rule {
+    std::vector<std::string>& builtKeys;
+    int& dep;
+  public:
+    RuleWithDiscoveredDependency(const KeyType& key,
+                                 std::vector<std::string>& builtKeys, int& dep)
+      : Rule(key), builtKeys(builtKeys), dep(dep) { }
+    Task* createTask(BuildEngine&) override {
+      builtKeys.push_back(key);
+      return new TaskWithDiscoveredDependency(dep);
+    }
+    bool isResultValid(BuildEngine&, const ValueType&) override { return true; }
+  };
+  engine.addRule(std::unique_ptr<core::Rule>(new RuleWithDiscoveredDependency("output", builtKeys, valueB)));
 
   // Build the first result.
   builtKeys.clear();
@@ -638,24 +659,22 @@ TEST(BuildEngineTest, unchangedOutputs) {
   std::vector<std::string> builtKeys;
   SimpleBuildEngineDelegate delegate;
   core::BuildEngine engine(delegate);
-  engine.addRule({
-      "value", {},
-      simpleAction({}, [&] (const std::vector<int>& inputs) {
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value", {}, [&] (const std::vector<int>& inputs) {
         builtKeys.push_back("value");
-        return 2; }),
-      [&](BuildEngine&, const Rule&, const ValueType&) {
+        return 2; },
+      [&](const ValueType&) {
         // Always rebuild
         return false;
-      } });
-  engine.addRule({
-      "result", {},
-      simpleAction({"value"},
+      })));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "result", {"value"},
                    [&] (const std::vector<int>& inputs) {
                      EXPECT_EQ(1U, inputs.size());
                      EXPECT_EQ(2, inputs[0]);
                      builtKeys.push_back("result");
                      return inputs[0] * 3;
-                   }) });
+                   })));
 
   // Build the result.
   EXPECT_EQ(2 * 3, intFromValue(engine.build("result")));
@@ -678,34 +697,32 @@ TEST(BuildEngineTest, StatusCallbacks) {
   unsigned numComplete = 0;
   SimpleBuildEngineDelegate delegate;
   core::BuildEngine engine(delegate);
-  engine.addRule({
-      "input", {},
-      simpleAction({}, [&] (const std::vector<int>& inputs) {
-          return 2; }),
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "input", {}, [&] (const std::vector<int>& inputs) {
+          return 2; },
       nullptr,
-      [&] (BuildEngine&, core::Rule::StatusKind status) {
+      [&] (core::Rule::StatusKind status) {
         if (status == core::Rule::StatusKind::IsScanning) {
           ++numScanned;
         } else {
           assert(status == core::Rule::StatusKind::IsComplete);
           ++numComplete;
         }
-      } });
-  engine.addRule({
-      "output", {},
-      simpleAction({"input"},
+      } )));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "output", {"input"},
                    [&] (const std::vector<int>& inputs) {
                      return inputs[0] * 3;
-                   }),
+                   },
       nullptr,
-      [&] (BuildEngine&, core::Rule::StatusKind status) {
+      [&] (core::Rule::StatusKind status) {
         if (status == core::Rule::StatusKind::IsScanning) {
           ++numScanned;
         } else {
           assert(status == core::Rule::StatusKind::IsComplete);
           ++numComplete;
         }
-      } });
+      } )));
 
   // Build the result.
   EXPECT_EQ(2 * 3, intFromValue(engine.build("output")));
@@ -717,14 +734,12 @@ TEST(BuildEngineTest, StatusCallbacks) {
 TEST(BuildEngineTest, SimpleCycle) {
   SimpleBuildEngineDelegate delegate;
   core::BuildEngine engine(delegate);
-  engine.addRule({
-      "A", {},
-      simpleAction({"B"}, [&](const std::vector<int>& inputs) {
-          return 2; }) });
-  engine.addRule({
-      "B", {},
-      simpleAction({"A"}, [&](const std::vector<int>& inputs) {
-          return 2; }) });
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "A", {"B"}, [&](const std::vector<int>& inputs) {
+          return 2; })));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "B", {"A"}, [&](const std::vector<int>& inputs) {
+          return 2; })));
 
   // Build the result.
   auto result = engine.build("A");
@@ -737,75 +752,67 @@ TEST(BuildEngineTest, CycleDuringScanningFromTop) {
   SimpleBuildEngineDelegate delegate;
   core::BuildEngine engine(delegate);
   unsigned iteration = 0;
-  engine.addRule({
-      "A", {},
-      [&](BuildEngine& engine) {
-        return
-            new SimpleTask(
-                [&]() -> std::vector<std::string> {
-                  switch (iteration) {
-                  case 0:
-                    return { "B", "C" };
-                  case 1:
-                    return { "B" };
-                  default:
-                    llvm::report_fatal_error("unexpected iterator");
-                  }
-                },
-                [&](const std::vector<int>& inputs) {
-                  return 2; });
-        },
-      [&](BuildEngine&, const Rule&, const ValueType&) {
-        // Always rebuild
-        return true;
+  class CycleRule: public Rule {
+  public:
+    typedef std::function<std::vector<std::string>()> InputFnType;
+    typedef std::function<int(const std::vector<int>&)> ComputeFnType;
+  private:
+    InputFnType input;
+    ComputeFnType compute;
+    bool valid;
+  public:
+    CycleRule(const KeyType& key, InputFnType input, ComputeFnType compute, bool valid = true)
+      : Rule(key), input(input), compute(compute), valid(valid) { }
+    Task* createTask(BuildEngine&) override {
+      return new SimpleTask(input, compute);
+    }
+    bool isResultValid(BuildEngine&, const ValueType&) override {
+      return valid;
+    }
+  };
+  engine.addRule(std::unique_ptr<core::Rule>(new CycleRule(
+    "A",
+    [&iteration]() -> std::vector<std::string> {
+      switch (iteration) {
+      case 0:
+        return { "B", "C" };
+      case 1:
+        return { "B" };
+      default:
+        llvm::report_fatal_error("unexpected iterator");
       }
-    });
-  engine.addRule({
-      "B", {},
-      [&](BuildEngine& engine) {
-        return
-            new SimpleTask(
-                [&]() -> std::vector<std::string> {
-                  switch (iteration) {
-                  case 0:
-                    return { "C" };
-                  case 1:
-                    return { "C" };
-                  default:
-                    llvm::report_fatal_error("unexpected iterator");
-                  }
-                },
-                [&](const std::vector<int>& inputs) {
-                  return 2; });
-        },
-      [&](BuildEngine&, const Rule&, const ValueType&) {
-        // Always rebuild
-        return true;
+    },
+    [](const std::vector<int>& inputs) { return 2; }
+  )));
+  engine.addRule(std::unique_ptr<core::Rule>(new CycleRule(
+    "B",
+    [&iteration]() -> std::vector<std::string> {
+      switch (iteration) {
+      case 0:
+        return { "C" };
+      case 1:
+        return { "C" };
+      default:
+        llvm::report_fatal_error("unexpected iterator");
       }
-    });
-  engine.addRule({
-      "C", {},
-      [&](BuildEngine& engine) {
-        return
-            new SimpleTask(
-                [&]() -> std::vector<std::string> {
-                  switch (iteration) {
-                  case 0:
-                    return { };
-                  case 1:
-                    return { "B" };
-                  default:
-                    llvm::report_fatal_error("unexpected iterator");
-                  }
-                },
-                [&](const std::vector<int>& inputs) {
-                  return 2; });
-        },
-      [&](BuildEngine&, const Rule&, const ValueType&) {
-        // Always rebuild
-        return false;
+    },
+    [](const std::vector<int>& inputs) { return 2; }
+  )));
+  engine.addRule(std::unique_ptr<core::Rule>(new CycleRule(
+    "C",
+    [&iteration]() -> std::vector<std::string> {
+      switch (iteration) {
+      case 0:
+        return { };
+      case 1:
+        return { "B" };
+      default:
+        llvm::report_fatal_error("unexpected iterator");
       }
-    });
+    },
+    [](const std::vector<int>& inputs) { return 2; },
+    false // always rebuild
+  )));
 
   // Build the result.
   {
@@ -866,30 +873,29 @@ TEST(BuildEngineTest, basicIncrementalSignatureChange) {
       engine.attachDB(std::move(db), &error);
     }
 
-    engine.addRule({
-      "value-A", basic::CommandSignature(sigA), simpleAction({}, [&] (const std::vector<int>& inputs) {
+    engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-A", {}, [&] (const std::vector<int>& inputs) {
         builtKeys.push_back("value-A");
-        return valueA; }),
-      [&](core::BuildEngine&, const Rule& rule, const ValueType& value) {
+        return valueA; },
+      [&](const ValueType& value) {
         return valueA == intFromValue(value);
-      } });
-    engine.addRule({
-      "value-B", basic::CommandSignature(sigB), simpleAction({}, [&] (const std::vector<int>& inputs) {
+      }, nullptr, basic::CommandSignature(sigA))));
+    engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-B", {}, [&] (const std::vector<int>& inputs) {
         builtKeys.push_back("value-B");
-        return valueB; }),
-      [&](core::BuildEngine&, const Rule& rule, const ValueType& value) {
+        return valueB; },
+      [&](const ValueType& value) {
         return valueB == intFromValue(value);
-      } });
-    engine.addRule({
-      "value-R", {},
-      simpleAction({"value-A", "value-B"},
+      }, nullptr, basic::CommandSignature(sigB))));
+    engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-R", {"value-A", "value-B"},
                    [&] (const std::vector<int>& inputs) {
                      EXPECT_EQ(2U, inputs.size());
                      EXPECT_EQ(valueA, inputs[0]);
                      EXPECT_EQ(valueB, inputs[1]);
                      builtKeys.push_back("value-R");
                      return inputs[0] * inputs[1] * 5;
-                   }) });
+                   })));
   };
 
   std::unique_ptr<core::BuildEngine> engine;
@@ -933,8 +939,8 @@ TEST(BuildEngineTest, concurrentProtection) {
   // Basic 1-rule build graph
   SimpleBuildEngineDelegate delegate;
   core::BuildEngine engine(delegate);
-  engine.addRule({
-    "result", {}, simpleAction({}, [&] (const std::vector<int>& inputs) {
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+    "result", {}, [&] (const std::vector<int>& inputs) {
       auto lock = std::unique_lock<std::mutex>(mutex);
       started = true;
       started_cv.notify_all();
@@ -943,7 +949,7 @@ TEST(BuildEngineTest, concurrentProtection) {
       }
       return 1;
     })
-  });
+  ));
 
   // Start a build on another thread
   auto build1 = std::async( std::launch::async, [&](){

@@ -197,15 +197,25 @@ static int runAckermannBuild(int m, int n, int recomputeCount,
   // Define the delegate which will dynamically construct rules of the form
   // "ack(M,N)".
   class AckermannDelegate : public core::BuildEngineDelegate {
+    class AckermannRule : public core::Rule {
+    public:
+      AckermannRule(const core::KeyType& key) : core::Rule(key) { }
+      core::Task* createTask(core::BuildEngine& engine) override {
+        auto k = AckermannKey(key);
+        return new AckermannTask(engine, k.m, k.n);
+      }
+      bool isResultValid(core::BuildEngine&, const core::ValueType&) override {
+        return true;
+      }
+    };
+
   public:
     int numRules = 0;
 
     /// Get the rule to use for the given Key.
-    virtual core::Rule lookupRule(const core::KeyType& keyData) override {
+    virtual std::unique_ptr<core::Rule> lookupRule(const core::KeyType& keyData) override {
       ++numRules;
-      auto key = AckermannKey(keyData);
-      return core::Rule{key, {}, [key] (core::BuildEngine& engine) {
-          return new AckermannTask(engine, key.m, key.n); } };
+      return std::unique_ptr<core::Rule>(new AckermannRule(keyData));
     }
 
     /// Called when a cycle is detected by the build engine and it cannot make

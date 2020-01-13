@@ -188,14 +188,24 @@ public:
     SupplyPriorValue = 1
   };
 
+public:
   /// The key computed by the rule.
-  KeyType key;
+  const KeyType key;
 
   /// The signature of the rule.
-  basic::CommandSignature signature;
+  const basic::CommandSignature signature;
+
+private:
+  Rule(const Rule&) LLBUILD_DELETED_FUNCTION;
+  void operator=(const Rule&) LLBUILD_DELETED_FUNCTION;
+
+public:
+  Rule(const KeyType& key, const basic::CommandSignature& signature = {})
+    : key(key), signature(signature) { }
+  virtual ~Rule() = 0;
 
   /// Called to create the task to build the rule, when necessary.
-  std::function<Task*(BuildEngine&)> action;
+  virtual Task* createTask(BuildEngine&) = 0;
 
   /// Called to check whether the previously computed value for this rule is
   /// still valid.
@@ -204,11 +214,10 @@ public:
   /// state managed externally to the build engine. For example, a rule which
   /// computes something on the file system may use this to verify that the
   /// computed output has not changed since it was built.
-  std::function<bool(BuildEngine&, const Rule&,
-                     const ValueType&)> isResultValid;
+  virtual bool isResultValid(BuildEngine&, const ValueType&) = 0;
 
   /// Called to indicate a change in the rule status.
-  std::function<void(BuildEngine&, StatusKind)> updateStatus;
+  virtual void updateStatus(BuildEngine&, StatusKind);
 };
 
 /// Delegate interface for use with the build engine.
@@ -223,7 +232,7 @@ public:
   /// Task through mechanisms such as \see BuildEngine::taskNeedsInput(). If a
   /// requested Key cannot be supplied, the delegate should provide a dummy rule
   /// that the client can translate into an error.
-  virtual Rule lookupRule(const KeyType& key) = 0;
+  virtual std::unique_ptr<Rule> lookupRule(const KeyType& key) = 0;
 
   /// Called when a cycle is detected by the build engine to check if it should
   /// attempt to resolve the cycle and continue
@@ -304,7 +313,7 @@ public:
   /// @{
 
   /// Add a rule which the engine can use to produce outputs.
-  void addRule(Rule&& rule);
+  void addRule(std::unique_ptr<Rule>&& rule);
 
   /// @}
 

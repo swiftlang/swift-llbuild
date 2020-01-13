@@ -89,10 +89,27 @@ public:
 // Helper function for creating a simple action.
 typedef std::function<Task*(BuildEngine&)> ActionFn;
 
-static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
-                             SimpleTask::ComputeFnType Compute) {
-  return [=] (BuildEngine& engine) { return new SimpleTask(Inputs, Compute); };
-}
+
+class SimpleRule: public Rule {
+public:
+    typedef std::function<bool(const ValueType& value)> ValidFnType;
+
+private:
+    SimpleTask::ComputeFnType compute;
+    std::vector<KeyType> inputs;
+    ValidFnType valid;
+public:
+    SimpleRule(const KeyType& key, SimpleTask::ComputeFnType compute,
+               const std::vector<KeyType>& inputs, ValidFnType valid = nullptr)
+        : Rule(key), compute(compute), inputs(inputs), valid(valid) { }
+
+    Task* createTask(BuildEngine&) override { return new SimpleTask(inputs, compute); }
+
+    bool isResultValid(BuildEngine&, const ValueType& value) override {
+        if (!valid) return true;
+        return valid(value);
+    }
+};
 
 }
 
@@ -140,12 +157,12 @@ static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
 
   // Set up the build rules.
   struct LinearDelegate : public BuildEngineDelegate {
-    virtual core::Rule lookupRule(const core::KeyType& Key) override {
+    virtual std::unique_ptr<core::Rule> lookupRule(const core::KeyType& Key) override {
       // We never expect dynamic rule lookup.
       fprintf(stderr, "error: unexpected rule lookup for \"%s\"\n",
               Key.c_str());
       abort();
-      return core::Rule();
+      return nullptr;
     }
     virtual void cycleDetected(const std::vector<core::Rule*>& Cycle) override {
       // We never expect to find a cycle.
@@ -167,19 +184,18 @@ static ActionFn simpleAction(const std::vector<KeyType>& Inputs,
     if (i != M) {
       char InputName[32];
       sprintf(InputName, "i%d", i+1);
-      Engine.addRule({
-          Name, {}, simpleAction({ InputName },
-                             [] (const std::vector<int>& Inputs) {
-                               return Inputs[0]; }) });
+      Engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(Name,
+                                    [] (const std::vector<int>& Inputs) {
+                                        return Inputs[0];
+                                    },
+                                    { InputName })));
     } else {
-      Engine.addRule({
-          Name, {},
-          simpleAction({},
+      Engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(Name,
                        [&] (const std::vector<int>& Inputs) {
-                         return LastInputValue; }),
-          [&](BuildEngine&, const Rule&, const ValueType& value) {
+          return LastInputValue; }, {},
+          [&](const ValueType& value) {
               return LastInputValue == IntFromValue(value);
-          } });
+          })));
     }
   }
 
@@ -221,12 +237,12 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
 
   // Set up the build rules.
   struct NaryTreeDelegate : public BuildEngineDelegate {
-    virtual core::Rule lookupRule(const core::KeyType& Key) override {
+    virtual std::unique_ptr<core::Rule> lookupRule(const core::KeyType& Key) override {
       // We never expect dynamic rule lookup.
       fprintf(stderr, "error: unexpected rule lookup for \"%s\"\n",
               Key.c_str());
       abort();
-      return core::Rule();
+      return nullptr;
     }
     virtual void cycleDetected(const std::vector<core::Rule*>& Cycle) override {
       // We never expect to find a cycle.
@@ -254,18 +270,17 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
           sprintf(InputName, "i%d,%d", i+1, 1 + (j - 1)*N + (k - 1));
           Inputs.push_back(InputName);
         }
-        Engine.addRule({
-            Name, {}, simpleAction(Inputs, [] (const std::vector<int>& Inputs) {
-                return Inputs[0]; }) });
+        Engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+            Name, [] (const std::vector<int>& Inputs) {
+            return Inputs[0]; }, {})));
       } else {
-        Engine.addRule({
-            Name, {},
-            simpleAction({},
-                         [&] (const std::vector<int>& Inputs) {
-                           return LastInputValue; }),
-            [&](BuildEngine&, const Rule&, const ValueType& value) {
-              return LastInputValue == IntFromValue(value);
-            } });
+        Engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+            Name,
+            [&] (const std::vector<int>& Inputs) {
+            return LastInputValue; }, {},
+            [&](const ValueType& value) {
+                return LastInputValue == IntFromValue(value);
+            })));
       }
     }
   }
@@ -305,12 +320,12 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
 
   // Set up the build rules.
   struct MatrixDelegate : public BuildEngineDelegate {
-    virtual core::Rule lookupRule(const core::KeyType& Key) override {
+    virtual std::unique_ptr<core::Rule> lookupRule(const core::KeyType& Key) override {
       // We never expect dynamic rule lookup.
       fprintf(stderr, "error: unexpected rule lookup for \"%s\"\n",
               Key.c_str());
       abort();
-      return core::Rule();
+      return nullptr;
     }
     virtual void cycleDetected(const std::vector<core::Rule*>& Cycle) override {
       // We never expect to find a cycle.
@@ -335,39 +350,31 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
         sprintf(InputAName, "i%d,%d", i+1, j);
         char InputBName[32];
         sprintf(InputBName, "i%d,%d", i, j+1);
-        Engine.addRule({
-            Name, {}, simpleAction({ InputAName, InputBName },
-                               [] (const std::vector<int>& Inputs) {
-                                 return Inputs[0]; }) });
+        Engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+            Name, [] (const std::vector<int>& Inputs) { return Inputs[0]; }, { InputAName, InputBName })));
       } else if (i != M) {
         // Top edge.
         assert(j == N);
         char InputName[32];
         sprintf(InputName, "i%d,%d", i+1, j);
-        Engine.addRule({
-            Name, {}, simpleAction({ InputName },
-                               [] (const std::vector<int>& Inputs) {
-                                 return Inputs[0]; }) });
+        Engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+            Name, [] (const std::vector<int>& Inputs) { return Inputs[0]; }, { InputName })));
       } else if (j != N) {
         // Right edge.
         assert(i == M);
         char InputName[32];
         sprintf(InputName, "i%d,%d", i, j+1);
-        Engine.addRule({
-            Name, {}, simpleAction({ InputName },
-                               [] (const std::vector<int>& Inputs) {
-                                 return Inputs[0]; }) });
+        Engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+            Name, [] (const std::vector<int>& Inputs) { return Inputs[0]; }, { InputName })));
       } else {
         // Top-right corner node.
         assert(i == M && j == N);
-        Engine.addRule({
-            Name, {},
-            simpleAction({},
-                         [&] (const std::vector<int>& Inputs) {
-                           return LastInputValue; }),
-            [&](BuildEngine&, const Rule&, const ValueType& value) {
+        Engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+            Name, [&] (const std::vector<int>& Inputs) { return LastInputValue; },
+            {},
+            [&](const ValueType& value) {
               return LastInputValue == IntFromValue(value);
-            } });
+            })));
       }
     }
   }
