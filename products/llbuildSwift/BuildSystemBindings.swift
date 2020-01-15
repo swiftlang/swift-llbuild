@@ -622,22 +622,38 @@ public protocol BuildSystemDelegate {
 /// Utility class for constructing a C-style environment.
 private final class CStyleEnvironment {
     /// The list of individual bindings, which must be deallocated.
-    private let bindings: [UnsafeMutablePointer<CChar>]
+    private let bindings: [UnsafeMutablePointer<CChar>]?
 
     /// The environment array, which will be a valid C-style environment pointer
     /// for the lifetime of the instance.
-    let envp: [UnsafePointer<CChar>?]
+    private let envp: [UnsafePointer<CChar>?]?
 
-    init(_ environment: [String: String]) {
-        // Allocate the individual binding strings.
-        self.bindings = environment.map{ "\($0.0)=\($0.1)".withCString(strdup)! }
+    init(_ environment: [String: String]?) {
+        if let environment = environment {
+            // Allocate the individual binding strings.
+            let bindings = environment.map{ "\($0.0)=\($0.1)".withCString(strdup)! }
+            self.bindings = bindings
 
-        // Allocate the envp array.
-        self.envp = self.bindings.map{ UnsafePointer($0) } + [nil]
+            // Allocate the envp array.
+            self.envp = bindings.map{ UnsafePointer($0) } + [nil]
+        } else {
+            self.bindings = nil
+            self.envp = nil
+        }
+    }
+
+    func withUnsafeEnvPointer(_ body: (UnsafePointer<UnsafePointer<CChar>?>?) -> Void) -> Void {
+        if let env = envp {
+            env.withUnsafeBufferPointer { ptr in
+                body(ptr.baseAddress)
+            }
+        } else {
+            body(nil)
+        }
     }
 
     deinit {
-        bindings.forEach{ free($0) }
+        bindings?.forEach{ free($0) }
     }
 }
 
@@ -655,7 +671,7 @@ public final class BuildSystem {
     private var _system: OpaquePointer? = nil
 
     /// The C environment, if used.
-    private let _cEnvironment: CStyleEnvironment?
+    private let _cEnvironment: CStyleEnvironment
 
     public init(buildFile: String, databaseFile: String, delegate: BuildSystemDelegate, environment: [String: String]? = nil, serial: Bool = false, traceFile: String? = nil, schedulerAlgorithm: SchedulerAlgorithm = .commandNamePriority, schedulerLanes: UInt32 = 0) {
 
@@ -678,76 +694,78 @@ public final class BuildSystem {
         defer { free(tracePathPtr) }
 
         // Allocate a C style environment, if necessary.
-        _cEnvironment = environment.map{ CStyleEnvironment($0) }
+        _cEnvironment = CStyleEnvironment(environment)
 
-        var _invocation = llb_buildsystem_invocation_t()
-        _invocation.buildFilePath = UnsafePointer(pathPtr)
-        _invocation.dbPath = UnsafePointer(dbPathPtr)
-        _invocation.traceFilePath = UnsafePointer(tracePathPtr)
-        _invocation.environment = _cEnvironment.map{ UnsafePointer($0.envp) }
-        _invocation.showVerboseStatus = true
-        _invocation.useSerialBuild = serial
-        _invocation.schedulerAlgorithm = schedulerAlgorithm
-        _invocation.schedulerLanes = schedulerLanes
+        _cEnvironment.withUnsafeEnvPointer { envp in
+            var _invocation = llb_buildsystem_invocation_t()
+            _invocation.buildFilePath = UnsafePointer(pathPtr)
+            _invocation.dbPath = UnsafePointer(dbPathPtr)
+            _invocation.traceFilePath = UnsafePointer(tracePathPtr)
+            _invocation.environment = envp
+            _invocation.showVerboseStatus = true
+            _invocation.useSerialBuild = serial
+            _invocation.schedulerAlgorithm = schedulerAlgorithm
+            _invocation.schedulerLanes = schedulerLanes
 
-        // Construct the system delegate.
-        var _delegate = llb_buildsystem_delegate_t()
-        _delegate.context = Unmanaged.passUnretained(self).toOpaque()
-        if delegate.fs != nil {
-            _delegate.fs_get_file_contents = { BuildSystem.toSystem($0!).fsGetFileContents(String(cString: $1!), $2!) }
-            _delegate.fs_get_file_info = { BuildSystem.toSystem($0!).fsGetFileInfo(String(cString: $1!), $2!) }
-            // FIXME: This should be a separate callback, not shared with getFileInfo (or get FileInfo should take a parameter).
-            _delegate.fs_get_link_info = { BuildSystem.toSystem($0!).fsGetFileInfo(String(cString: $1!), $2!) }
+            // Construct the system delegate.
+            var _delegate = llb_buildsystem_delegate_t()
+            _delegate.context = Unmanaged.passUnretained(self).toOpaque()
+            if delegate.fs != nil {
+                _delegate.fs_get_file_contents = { BuildSystem.toSystem($0!).fsGetFileContents(String(cString: $1!), $2!) }
+                _delegate.fs_get_file_info = { BuildSystem.toSystem($0!).fsGetFileInfo(String(cString: $1!), $2!) }
+                // FIXME: This should be a separate callback, not shared with getFileInfo (or get FileInfo should take a parameter).
+                _delegate.fs_get_link_info = { BuildSystem.toSystem($0!).fsGetFileInfo(String(cString: $1!), $2!) }
 
-            // FIXME: should support fs_create_symlink, but for now explicitly defers to built-in symlink
-            _delegate.fs_create_symlink = nil
-        }
-        _delegate.lookup_tool = { return BuildSystem.toSystem($0!).lookupTool($1!) }
-        _delegate.had_command_failure = { BuildSystem.toSystem($0!).hadCommandFailure() }
-        _delegate.handle_diagnostic = { BuildSystem.toSystem($0!).handleDiagnostic($1, String(cString: $2!), Int($3), Int($4), String(cString: $5!)) }
-        _delegate.command_status_changed = { BuildSystem.toSystem($0!).commandStatusChanged(Command(handle: $1), $2) }
-        _delegate.command_preparing = { BuildSystem.toSystem($0!).commandPreparing(Command(handle: $1)) }
-        _delegate.command_started = { BuildSystem.toSystem($0!).commandStarted(Command(handle: $1)) }
-        _delegate.should_command_start = { BuildSystem.toSystem($0!).shouldCommandStart(Command(handle: $1)) }
-        _delegate.command_finished = { BuildSystem.toSystem($0!).commandFinished(Command(handle: $1), $2) }
-        _delegate.command_had_error = { BuildSystem.toSystem($0!).commandHadError(Command(handle: $1), $2!) }
-        _delegate.command_had_note = { BuildSystem.toSystem($0!).commandHadNote(Command(handle: $1), $2!) }
-        _delegate.command_had_warning = { BuildSystem.toSystem($0!).commandHadWarning(Command(handle: $1), $2!) }
-        _delegate.command_cannot_build_output_due_to_missing_inputs = {
-            let inputsPtr = $3!
-            let inputs = (0..<Int($4)).map { BuildKey.construct(key: inputsPtr[$0]!) }
-            BuildSystem.toSystem($0!).commandCannotBuildOutputDueToMissingInputs(Command(handle: $1), BuildKey.construct(key: $2!.pointee!), inputs)
-        }
-        _delegate.cannot_build_node_due_to_multiple_producers = {
-            let commandsPtr = $2!
-            let commands = (0..<Int($3)).map { Command(handle: commandsPtr[$0]) }
-            BuildSystem.toSystem($0!).cannotBuildNodeDueToMultipleProducers(BuildKey.construct(key: $1!.pointee!), commands)
-        }
-        _delegate.command_process_started = { BuildSystem.toSystem($0!).commandProcessStarted(Command(handle: $1), ProcessHandle($2!)) }
-        _delegate.command_process_had_error = { BuildSystem.toSystem($0!).commandProcessHadError(Command(handle: $1), ProcessHandle($2!), $3!) }
-        _delegate.command_process_had_output = { BuildSystem.toSystem($0!).commandProcessHadOutput(Command(handle: $1), ProcessHandle($2!), $3!) }
-        _delegate.command_process_finished = { BuildSystem.toSystem($0!).commandProcessFinished(Command(handle: $1), ProcessHandle($2!), CommandExtendedResult($3!)) }
-        _delegate.cycle_detected = {
-            var rules = [BuildKey]()
-            UnsafeBufferPointer(start: $1, count: Int($2)).forEach {
-                rules.append(BuildKey.construct(key: $0!))
+                // FIXME: should support fs_create_symlink, but for now explicitly defers to built-in symlink
+                _delegate.fs_create_symlink = nil
             }
-            BuildSystem.toSystem($0!).cycleDetected(rules)
-        }
-        _delegate.should_resolve_cycle = {
-            var rules = [BuildKey]()
-            UnsafeBufferPointer(start: $1, count: Int($2)).forEach {
-                rules.append(BuildKey.construct(key: $0!))
+            _delegate.lookup_tool = { return BuildSystem.toSystem($0!).lookupTool($1!) }
+            _delegate.had_command_failure = { BuildSystem.toSystem($0!).hadCommandFailure() }
+            _delegate.handle_diagnostic = { BuildSystem.toSystem($0!).handleDiagnostic($1, String(cString: $2!), Int($3), Int($4), String(cString: $5!)) }
+            _delegate.command_status_changed = { BuildSystem.toSystem($0!).commandStatusChanged(Command(handle: $1), $2) }
+            _delegate.command_preparing = { BuildSystem.toSystem($0!).commandPreparing(Command(handle: $1)) }
+            _delegate.command_started = { BuildSystem.toSystem($0!).commandStarted(Command(handle: $1)) }
+            _delegate.should_command_start = { BuildSystem.toSystem($0!).shouldCommandStart(Command(handle: $1)) }
+            _delegate.command_finished = { BuildSystem.toSystem($0!).commandFinished(Command(handle: $1), $2) }
+            _delegate.command_had_error = { BuildSystem.toSystem($0!).commandHadError(Command(handle: $1), $2!) }
+            _delegate.command_had_note = { BuildSystem.toSystem($0!).commandHadNote(Command(handle: $1), $2!) }
+            _delegate.command_had_warning = { BuildSystem.toSystem($0!).commandHadWarning(Command(handle: $1), $2!) }
+            _delegate.command_cannot_build_output_due_to_missing_inputs = {
+                let inputsPtr = $3!
+                let inputs = (0..<Int($4)).map { BuildKey.construct(key: inputsPtr[$0]!) }
+                BuildSystem.toSystem($0!).commandCannotBuildOutputDueToMissingInputs(Command(handle: $1), BuildKey.construct(key: $2!.pointee!), inputs)
             }
-            let candidate = BuildKey.construct(key: $3!)
+            _delegate.cannot_build_node_due_to_multiple_producers = {
+                let commandsPtr = $2!
+                let commands = (0..<Int($3)).map { Command(handle: commandsPtr[$0]) }
+                BuildSystem.toSystem($0!).cannotBuildNodeDueToMultipleProducers(BuildKey.construct(key: $1!.pointee!), commands)
+            }
+            _delegate.command_process_started = { BuildSystem.toSystem($0!).commandProcessStarted(Command(handle: $1), ProcessHandle($2!)) }
+            _delegate.command_process_had_error = { BuildSystem.toSystem($0!).commandProcessHadError(Command(handle: $1), ProcessHandle($2!), $3!) }
+            _delegate.command_process_had_output = { BuildSystem.toSystem($0!).commandProcessHadOutput(Command(handle: $1), ProcessHandle($2!), $3!) }
+            _delegate.command_process_finished = { BuildSystem.toSystem($0!).commandProcessFinished(Command(handle: $1), ProcessHandle($2!), CommandExtendedResult($3!)) }
+            _delegate.cycle_detected = {
+                var rules = [BuildKey]()
+                UnsafeBufferPointer(start: $1, count: Int($2)).forEach {
+                    rules.append(BuildKey.construct(key: $0!))
+                }
+                BuildSystem.toSystem($0!).cycleDetected(rules)
+            }
+            _delegate.should_resolve_cycle = {
+                var rules = [BuildKey]()
+                UnsafeBufferPointer(start: $1, count: Int($2)).forEach {
+                    rules.append(BuildKey.construct(key: $0!))
+                }
+                let candidate = BuildKey.construct(key: $3!)
 
-            let result = BuildSystem.toSystem($0!).shouldResolveCycle(rules, candidate, $4)
+                let result = BuildSystem.toSystem($0!).shouldResolveCycle(rules, candidate, $4)
 
-            return (result) ? 1 : 0;
+                return (result) ? 1 : 0;
+            }
+
+            // Create the system.
+            _system = llb_buildsystem_create(_delegate, _invocation)
         }
-
-        // Create the system.
-        _system = llb_buildsystem_create(_delegate, _invocation)
     }
 
     deinit {
