@@ -1681,7 +1681,7 @@ std::unique_ptr<core::Rule> NinjaBuildEngineDelegate::lookupRule(const core::Key
   // FIXME: This is frequently a redundant lookup, given that the caller might
   // well have had the Node* available. This is something that would be nice
   // to avoid when we support generic key types.
-  ninja::Node* node = context->manifest->findOrCreateNode(workingDirectory, key);
+  ninja::Node* node = context->manifest->findOrCreateNode(workingDirectory, key.str());
 
   class NinjaInputRule: public core::Rule {
     BuildContext* context;
@@ -1716,7 +1716,7 @@ void NinjaBuildEngineDelegate::cycleDetected(
   for (const auto* rule: cycle) {
     if (!first)
       messageStream << " ->";
-    messageStream << " \"" << rule->key << '"';
+    messageStream << " \"" << rule->key.str() << '"';
     first = false;
   }
 

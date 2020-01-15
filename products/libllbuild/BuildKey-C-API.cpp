@@ -90,7 +90,11 @@ static BuildKey::Kind publicToInternalBuildKeyKind(llb_build_key_kind_t kind) {
 }
 
 llb_build_key_t *llb_build_key_make(const llb_data_t *data) {
-  return (llb_build_key_t *)new CAPIBuildKey(BuildKey::fromData(core::KeyType(data->data, data->data + data->length)));
+  return (llb_build_key_t *)new CAPIBuildKey(
+    BuildKey::fromData(core::KeyType(
+      reinterpret_cast<const char*>(data->data), static_cast<size_t>(data->length)
+    ))
+  );
 }
 
 bool llb_build_key_equal(llb_build_key_t *key1, llb_build_key_t *key2) {

@@ -630,7 +630,7 @@ public:
   llvm::StringMap<KeyID> keyTable;
 
   const KeyID getKeyID(const KeyType& key) override {
-    auto it = keyTable.insert(std::make_pair(key, KeyID::novalue())).first;
+    auto it = keyTable.insert(std::make_pair(key.str(), KeyID::novalue())).first;
     return KeyID(it->getKey().data());
   }
 

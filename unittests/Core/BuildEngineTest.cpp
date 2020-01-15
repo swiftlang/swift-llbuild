@@ -51,7 +51,7 @@ private:
   virtual void cycleDetected(const std::vector<core::Rule*>& items) override {
     cycle.clear();
     std::transform(items.begin(), items.end(), std::back_inserter(cycle),
-                   [](auto rule) { return std::string(rule->key); });
+                   [](auto rule) { return rule->key.str(); });
   }
 
   virtual bool shouldResolveCycle(const std::vector<Rule*>& items,
@@ -638,7 +638,7 @@ TEST(BuildEngineTest, discoveredDependencies) {
                                  std::vector<std::string>& builtKeys, int& dep)
       : Rule(key), builtKeys(builtKeys), dep(dep) { }
     Task* createTask(BuildEngine&) override {
-      builtKeys.push_back(key);
+      builtKeys.push_back(key.str());
       return new TaskWithDiscoveredDependency(dep);
     }
     bool isResultValid(BuildEngine&, const ValueType&) override { return true; }
@@ -770,7 +770,7 @@ TEST(BuildEngineTest, CycleDuringScanningFromTop) {
   unsigned iteration = 0;
   class CycleRule: public Rule {
   public:
-    typedef std::function<std::vector<std::string>()> InputFnType;
+    typedef std::function<std::vector<KeyType>()> InputFnType;
     typedef std::function<int(const std::vector<int>&)> ComputeFnType;
   private:
     InputFnType input;
@@ -788,7 +788,7 @@ TEST(BuildEngineTest, CycleDuringScanningFromTop) {
   };
   engine.addRule(std::unique_ptr<core::Rule>(new CycleRule(
     "A",
-    [&iteration]() -> std::vector<std::string> {
+    [&iteration]() -> std::vector<KeyType> {
       switch (iteration) {
       case 0:
         return { "B", "C" };
@@ -802,7 +802,7 @@ TEST(BuildEngineTest, CycleDuringScanningFromTop) {
   )));
   engine.addRule(std::unique_ptr<core::Rule>(new CycleRule(
     "B",
-    [&iteration]() -> std::vector<std::string> {
+    [&iteration]() -> std::vector<KeyType> {
       switch (iteration) {
       case 0:
         return { "C" };
@@ -816,7 +816,7 @@ TEST(BuildEngineTest, CycleDuringScanningFromTop) {
   )));
   engine.addRule(std::unique_ptr<core::Rule>(new CycleRule(
     "C",
-    [&iteration]() -> std::vector<std::string> {
+    [&iteration]() -> std::vector<KeyType> {
       switch (iteration) {
       case 0:
         return { };

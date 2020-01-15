@@ -72,9 +72,11 @@ private:
 private:
   BuildKey(const KeyType& key) : key(key) {}
   BuildKey(char kindCode, StringRef str) {
-    key.reserve(1 + str.size());
-    key.push_back(kindCode);
-    key.append(str.begin(), str.end());
+    std::string encodedKey;
+    encodedKey.reserve(1 + str.size());
+    encodedKey.push_back(kindCode);
+    encodedKey.append(str.begin(), str.end());
+    key = encodedKey;
   }
 
   template<typename BinaryEncodable>
@@ -88,17 +90,19 @@ private:
     encoder.write(data);
     uint32_t dataSize = encoder.contents().size();
 
-    key.resize(1 + sizeof(uint32_t) + nameSize + dataSize);
+    std::string encodedKey;
+    encodedKey.resize(1 + sizeof(uint32_t) + nameSize + dataSize);
     uint32_t pos = 0;
-    key[pos] = kindCode; pos += 1;
-    memcpy(&key[pos], &nameSize, sizeof(uint32_t));
+    encodedKey[pos] = kindCode; pos += 1;
+    memcpy(&encodedKey[pos], &nameSize, sizeof(uint32_t));
     pos += sizeof(uint32_t);
-    memcpy(&key[pos], name.data(), nameSize);
+    memcpy(&encodedKey[pos], name.data(), nameSize);
     pos += nameSize;
-    memcpy(&key[pos], encoder.contents().data(), dataSize);
+    memcpy(&encodedKey[pos], encoder.contents().data(), dataSize);
     pos += dataSize;
-    assert(key.size() == pos);
+    assert(encodedKey.size() == pos);
     (void)pos;
+    key = encodedKey;
   }
 
 public:
@@ -164,7 +168,7 @@ public:
   const KeyType& getKeyData() const { return key; }
 
   Kind getKind() const {
-    return kindForIdentifier(key[0]);
+    return kindForIdentifier(key.data()[0]);
   }
   
   static Kind kindForIdentifier(char identifier) {
@@ -224,16 +228,16 @@ public:
   StringRef getCustomTaskName() const {
     assert(isCustomTask());
     uint32_t nameSize;
-    memcpy(&nameSize, &key[1], sizeof(uint32_t));
-    return StringRef(&key[1 + sizeof(uint32_t)], nameSize);
+    memcpy(&nameSize, &key.data()[1], sizeof(uint32_t));
+    return StringRef(&key.data()[1 + sizeof(uint32_t)], nameSize);
   }
 
   StringRef getCustomTaskData() const {
     assert(isCustomTask());
     uint32_t nameSize;
-    memcpy(&nameSize, &key[1], sizeof(uint32_t));
+    memcpy(&nameSize, &key.data()[1], sizeof(uint32_t));
     uint32_t dataSize = key.size() - 1 - sizeof(uint32_t) - nameSize;
-    return StringRef(&key[1 + sizeof(uint32_t) + nameSize], dataSize);
+    return StringRef(&key.data()[1 + sizeof(uint32_t) + nameSize], dataSize);
   }
 
   StringRef getDirectoryPath() const {
@@ -244,23 +248,23 @@ public:
   StringRef getDirectoryTreeSignaturePath() const {
     assert(isDirectoryTreeSignature());
     uint32_t nameSize;
-    memcpy(&nameSize, &key[1], sizeof(uint32_t));
-    return StringRef(&key[1 + sizeof(uint32_t)], nameSize);
+    memcpy(&nameSize, &key.data()[1], sizeof(uint32_t));
+    return StringRef(&key.data()[1 + sizeof(uint32_t)], nameSize);
   }
 
   StringRef getFilteredDirectoryPath() const {
     assert(isFilteredDirectoryContents());
     uint32_t nameSize;
-    memcpy(&nameSize, &key[1], sizeof(uint32_t));
-    return StringRef(&key[1 + sizeof(uint32_t)], nameSize);
+    memcpy(&nameSize, &key.data()[1], sizeof(uint32_t));
+    return StringRef(&key.data()[1 + sizeof(uint32_t)], nameSize);
   }
 
   StringRef getContentExclusionPatterns() const {
     assert(isDirectoryTreeSignature() || isFilteredDirectoryContents());
     uint32_t nameSize;
-    memcpy(&nameSize, &key[1], sizeof(uint32_t));
+    memcpy(&nameSize, &key.data()[1], sizeof(uint32_t));
     uint32_t dataSize = key.size() - 1 - sizeof(uint32_t) - nameSize;
-    return StringRef(&key[1 + sizeof(uint32_t) + nameSize], dataSize);
+    return StringRef(&key.data()[1 + sizeof(uint32_t) + nameSize], dataSize);
   }
   
   basic::StringList getContentExclusionPatternsAsStringList() const {

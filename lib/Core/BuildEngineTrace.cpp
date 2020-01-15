@@ -102,7 +102,7 @@ const char* BuildEngineTrace::getRuleName(const Rule* rule) {
   // Report the newly seen rule.
   // FIXME: This is currently encoding the key by merely stripping the
   // non-printable characters. Should probably encode this into a real encoding.
-  std::string encoded = rule->key;
+  std::string encoded = rule->key.str();
   encoded.erase(
                 std::remove_if(encoded.begin(), encoded.end(),
                                [](char c) -> bool {

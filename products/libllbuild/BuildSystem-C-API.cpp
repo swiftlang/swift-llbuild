@@ -572,7 +572,7 @@ public:
     return getFrontend().initialize();
   }
 
-  bool build(const core::KeyType& key) {
+  bool build(llvm::StringRef key) {
     // Reset mutable build state.
     frontendDelegate->resetForBuild();
 
@@ -581,7 +581,7 @@ public:
     return getFrontend().build(key);
   }
 
-  bool buildNode(const core::KeyType& key) {
+  bool buildNode(llvm::StringRef key) {
     frontendDelegate->resetForBuild();
     return getFrontend().buildNode(key);
   }
@@ -843,12 +843,12 @@ bool llb_buildsystem_initialize(llb_buildsystem_t* system_p) {
 
 bool llb_buildsystem_build(llb_buildsystem_t* system_p, const llb_data_t* key) {
   CAPIBuildSystem* system = (CAPIBuildSystem*) system_p;
-  return system->build(core::KeyType((const char*)key->data, key->length));
+  return system->build(llvm::StringRef((const char*)key->data, key->length));
 }
 
 bool llb_buildsystem_build_node(llb_buildsystem_t* system_p, const llb_data_t* key) {
   CAPIBuildSystem* system = (CAPIBuildSystem*) system_p;
-  return system->buildNode(core::KeyType((const char*)key->data, key->length));
+  return system->buildNode(llvm::StringRef((const char*)key->data, key->length));
 }
 
 void llb_buildsystem_cancel(llb_buildsystem_t* system_p) {
