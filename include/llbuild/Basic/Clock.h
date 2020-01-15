@@ -13,6 +13,8 @@
 #ifndef LLBUILD_BASIC_CLOCK_h
 #define LLBUILD_BASIC_CLOCK_h
 
+#include "llbuild/Basic/Compiler.h"
+
 #include <algorithm>
 #include <chrono>
 

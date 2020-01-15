@@ -38,23 +38,21 @@ public struct BuildSystemCommandInterface {
     // This struct wraps a bsci object, which should be global, and a task object, which is different for each command.
     // At this time, it is not required to expose the task to the client, so this wrapper abstracts from the task itself.
     // and each command will get a personalized instance of the command interface.
-    private let _bsci: OpaquePointer
-    private let _task: OpaquePointer
+    private let _taskInterface: OpaquePointer
 
-    fileprivate init(_ bsci: OpaquePointer, _ task: OpaquePointer) {
-        _bsci = bsci
-        _task = task
+    fileprivate init(_ taskInterface: OpaquePointer) {
+        _taskInterface = taskInterface
     }
 
     /// Requests an input from the build system which will be provided to the command when it is available
     /// using the `provideValue` method.
     public func commandNeedsInput(key: BuildKey, inputID: UInt) {
-        llb_buildsystem_command_interface_task_needs_input(_bsci, _task, key.internalBuildKey, inputID)
+        llb_buildsystem_command_interface_task_needs_input(_taskInterface, key.internalBuildKey, inputID)
     }
 
     /// Marks a build key as a runtime found dependency for the command.
     public func commandDiscoveredDependency(key: BuildKey) {
-        llb_buildsystem_command_interface_task_discovered_dependency(_bsci, _task, key.internalBuildKey)
+        llb_buildsystem_command_interface_task_discovered_dependency(_taskInterface, key.internalBuildKey)
     }
 }
 
@@ -114,12 +112,12 @@ private final class ToolWrapper {
         var _delegate = llb_buildsystem_external_command_delegate_t()
         _delegate.context = Unmanaged.passUnretained(wrapper).toOpaque()
         _delegate.get_signature = { return BuildSystem.toCommandWrapper($0!).getSignature($1!, $2!) }
-        _delegate.start = { return BuildSystem.toCommandWrapper($0!).start($1!, $2!, $3!) }
-        _delegate.provide_value = { return BuildSystem.toCommandWrapper($0!).provideValue($1!, $2!, $3!, $4!, $5) }
-        _delegate.execute_command = { return BuildSystem.toCommandWrapper($0!).executeCommand($1!, $2!, $3!, $4!) }
+        _delegate.start = { return BuildSystem.toCommandWrapper($0!).start($1!, $2!) }
+        _delegate.provide_value = { return BuildSystem.toCommandWrapper($0!).provideValue($1!, $2!, $3!, $4) }
+        _delegate.execute_command = { return BuildSystem.toCommandWrapper($0!).executeCommand($1!, $2!, $3!) }
         if let _ = command as? ProducesCustomBuildValue {
             _delegate.execute_command_ex = {
-                var value: BuildValue = BuildSystem.toCommandWrapper($0!).executeCommand($1!, $2!, $3!, $4!)
+                var value: BuildValue = BuildSystem.toCommandWrapper($0!).executeCommand($1!, $2!, $3!)
                 return BuildValue.move(&value)
             }
             _delegate.is_result_valid = {
@@ -225,28 +223,28 @@ private final class CommandWrapper {
         data.pointee = copiedDataFromBytes(command.getSignature(_command))
     }
 
-    func start(_: OpaquePointer, _ bsci: OpaquePointer, _ task: OpaquePointer) {
-        let commandInterface = BuildSystemCommandInterface(bsci, task)
+    func start(_: OpaquePointer, _ taskInterface: OpaquePointer) {
+        let commandInterface = BuildSystemCommandInterface(taskInterface)
         return command.start(_command, commandInterface)
     }
 
-    func provideValue(_: OpaquePointer, _ bsci: OpaquePointer, _ task: OpaquePointer, _ value: OpaquePointer, _ inputID: UInt) {
+    func provideValue(_: OpaquePointer, _ taskInterface: OpaquePointer, _ value: OpaquePointer, _ inputID: UInt) {
 
         guard let buildValue = BuildValue.construct(from: value) else {
             fatalError("Could not decode incoming build value.")
         }
 
-        let commandInterface = BuildSystemCommandInterface(bsci, task)
+        let commandInterface = BuildSystemCommandInterface(taskInterface)
         return command.provideValue(_command, commandInterface, buildValue, inputID)
     }
 
-    func executeCommand(_: OpaquePointer, _ bsci: OpaquePointer, _ task: OpaquePointer, _ jobContext: OpaquePointer) -> Bool {
-        let commandInterface = BuildSystemCommandInterface(bsci, task)
+    func executeCommand(_: OpaquePointer, _ taskInterface: OpaquePointer, _ jobContext: OpaquePointer) -> Bool {
+        let commandInterface = BuildSystemCommandInterface(taskInterface)
         return command.execute(_command, commandInterface)
     }
 
-    func executeCommand(_: OpaquePointer, _ bsci: OpaquePointer, _ task: OpaquePointer, _ jobContext: OpaquePointer) -> BuildValue {
-        let commandInterface = BuildSystemCommandInterface(bsci, task)
+    func executeCommand(_: OpaquePointer, _ taskInterface: OpaquePointer, _ jobContext: OpaquePointer) -> BuildValue {
+        let commandInterface = BuildSystemCommandInterface(taskInterface)
         return (command as! ProducesCustomBuildValue).execute(_command, commandInterface)
     }
 

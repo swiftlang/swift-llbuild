@@ -33,8 +33,8 @@ Build Engine
   make it easier to cleanly generalize the value type because only the engine
   and delegate need to be templated, and neither support subclassing.
 
-* Figure out when taskNeedsInput() should be allowed, and if
-  taskDiscoveredDependency() should be eliminated in favor of loosened rules
+* Figure out when request() should be allowed, and if
+  discoveredDependency() should be eliminated in favor of loosened rules
   about when it can be invoked.
 
 * Figure out if Rule should be subclassed, with virtual methods for action

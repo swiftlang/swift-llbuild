@@ -132,31 +132,31 @@ public:
     }
   }
 
-  virtual void start(BuildEngine& engine) override {
+  virtual void start(TaskInterface& ti) override {
     CAPIBuildEngineDelegate* delegate =
-      static_cast<CAPIBuildEngineDelegate*>(engine.getDelegate());
+      static_cast<CAPIBuildEngineDelegate*>(ti.delegate());
     cAPIDelegate.start(cAPIDelegate.context,
                        delegate->cAPIDelegate.context,
-                       (llb_task_t*)this);
+                       (llb_task_interface_t*)(&ti));
   }
 
-  virtual void provideValue(BuildEngine& engine, uintptr_t inputID,
+  virtual void provideValue(TaskInterface& ti, uintptr_t inputID,
                             const ValueType& value) override {
     CAPIBuildEngineDelegate* delegate =
-      static_cast<CAPIBuildEngineDelegate*>(engine.getDelegate());
+      static_cast<CAPIBuildEngineDelegate*>(ti.delegate());
     llb_data_t valueData{ value.size(), value.data() };
     cAPIDelegate.provide_value(cAPIDelegate.context,
                                delegate->cAPIDelegate.context,
-                               (llb_task_t*)this,
+                               (llb_task_interface_t*)(&ti),
                                inputID, &valueData);
   }
 
-  virtual void inputsAvailable(BuildEngine& engine) override {
+  virtual void inputsAvailable(TaskInterface& ti) override {
     CAPIBuildEngineDelegate* delegate =
-      static_cast<CAPIBuildEngineDelegate*>(engine.getDelegate());
+      static_cast<CAPIBuildEngineDelegate*>(ti.delegate());
     cAPIDelegate.inputs_available(cAPIDelegate.context,
                                   delegate->cAPIDelegate.context,
-                                  (llb_task_t*)this);
+                                  (llb_task_interface_t*)(&ti));
   }
 };
 
@@ -212,41 +212,32 @@ void llb_buildengine_build(llb_buildengine_t* engine_p, const llb_data_t* key,
   *result_out = llb_data_t{ result.size(), result.data() };
 }
 
-void llb_buildengine_task_needs_input(llb_buildengine_t* engine_p,
-                                      llb_task_t* task,
+void llb_buildengine_task_needs_input(llb_task_interface_t* ti_p,
                                       const llb_data_t* key,
                                       uintptr_t input_id) {
-  auto& engine = ((CAPIBuildEngine*) engine_p)->engine;
-  engine->taskNeedsInput((Task*)task,
-                         KeyType((const char*)key->data, key->length),
-                         input_id);
+  auto ti = ((TaskInterface*) ti_p);
+  ti->request(KeyType((const char*)key->data, key->length), input_id);
 }
 
-void llb_buildengine_task_must_follow(llb_buildengine_t* engine_p,
-                                      llb_task_t* task,
+void llb_buildengine_task_must_follow(llb_task_interface_t* ti_p,
                                       const llb_data_t* key) {
-  auto& engine = ((CAPIBuildEngine*) engine_p)->engine;
-  engine->taskMustFollow((Task*)task,
-                         KeyType((const char*)key->data, key->length));
+  auto ti = ((TaskInterface*) ti_p);
+  ti->mustFollow(KeyType((const char*)key->data, key->length));
 }
 
-void llb_buildengine_task_discovered_dependency(llb_buildengine_t* engine_p,
-                                                llb_task_t* task,
+void llb_buildengine_task_discovered_dependency(llb_task_interface_t* ti_p,
                                                 const llb_data_t* key) {
-  auto& engine = ((CAPIBuildEngine*) engine_p)->engine;
-  engine->taskDiscoveredDependency((Task*)task,
-                                   KeyType((const char*)key->data,
-                                           key->length));
+  auto ti = ((TaskInterface*) ti_p);
+  ti->discoveredDependency(KeyType((const char*)key->data, key->length));
 }
 
-void llb_buildengine_task_is_complete(llb_buildengine_t* engine_p,
-                                      llb_task_t* task,
+void llb_buildengine_task_is_complete(llb_task_interface_t* ti_p,
                                       const llb_data_t* value,
                                       bool force_change) {
-  auto& engine = ((CAPIBuildEngine*) engine_p)->engine;
+  auto ti = ((TaskInterface*) ti_p);
   std::vector<uint8_t> result(value->length);
   memcpy(result.data(), value->data, value->length);
-  engine->taskIsComplete((Task*)task, std::move(result));
+  ti->complete(std::move(result));
 }
 
 llb_task_t* llb_task_create(llb_task_delegate_t delegate) {

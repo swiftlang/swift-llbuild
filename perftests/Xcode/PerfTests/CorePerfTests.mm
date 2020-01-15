@@ -68,22 +68,22 @@ public:
     InputValues.resize(Inputs.size());
   }
 
-  virtual void start(BuildEngine& Engine) override {
+  virtual void start(TaskInterface& ti) override {
     // Request all of the inputs.
     for (int i = 0, e = Inputs.size(); i != e; ++i) {
-      Engine.taskNeedsInput(this, Inputs[i], i);
+      ti.request(Inputs[i], i);
     }
   }
 
-  virtual void provideValue(BuildEngine&, uintptr_t InputID,
+  virtual void provideValue(TaskInterface&, uintptr_t InputID,
                             const ValueType& Value) override {
     // Update the input values.
     assert(InputID < InputValues.size());
     InputValues[InputID] = IntFromValue(Value);
   }
 
-  virtual void inputsAvailable(core::BuildEngine& Engine) override {
-      Engine.taskIsComplete(this, IntToValue(Compute(InputValues)));
+  virtual void inputsAvailable(TaskInterface& ti) override {
+      ti.complete(IntToValue(Compute(InputValues)));
   }
 };
 

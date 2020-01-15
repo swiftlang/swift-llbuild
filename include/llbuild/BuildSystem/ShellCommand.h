@@ -92,24 +92,23 @@ class ShellCommand : public ExternalCommand {
   /// The handler state, if used.
   std::unique_ptr<HandlerState> handlerState;
 
-  virtual void start(BuildSystemCommandInterface& bsci,
-                     core::Task* task) override;
+  virtual void start(BuildSystem& system, core::TaskInterface&) override;
   
   virtual basic::CommandSignature getSignature() const override;
 
-  bool processDiscoveredDependencies(BuildSystemCommandInterface& bsci,
-                                     core::Task* task,
+  bool processDiscoveredDependencies(BuildSystem& system,
+                                     core::TaskInterface& ti,
                                      basic::QueueJobContext* context);
   
-  bool processMakefileDiscoveredDependencies(BuildSystemCommandInterface& bsci,
-                                             core::Task* task,
+  bool processMakefileDiscoveredDependencies(BuildSystem& system,
+                                             core::TaskInterface& ti,
                                              basic::QueueJobContext* context,
                                              StringRef depsPath,
                                              llvm::MemoryBuffer* input);
 
   bool
-  processDependencyInfoDiscoveredDependencies(BuildSystemCommandInterface& bsci,
-                                              core::Task* task,
+  processDependencyInfoDiscoveredDependencies(BuildSystem& system,
+                                              core::TaskInterface& ti,
                                               basic::QueueJobContext* context,
                                               StringRef depsPath,
                                               llvm::MemoryBuffer* input);
@@ -152,20 +151,18 @@ public:
 
 
   // Shell command doesn't have any dynamic dependencies, so do nothing.
-  virtual void startExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      core::Task* task) override {};
+  void startExternalCommand(BuildSystem& system, core::TaskInterface&) override {};
 
   // Not expecting any dependencies, so do nothing.
-  virtual void provideValueExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      core::Task* task,
+  void provideValueExternalCommand(
+      BuildSystem& system,
+      core::TaskInterface&,
       uintptr_t inputID,
       const BuildValue& value) override {};
 
   virtual void executeExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      core::Task* task,
+      BuildSystem& system,
+      core::TaskInterface& ti,
       basic::QueueJobContext* context,
       llvm::Optional<basic::ProcessCompletionFn> completionFn) override;
 };

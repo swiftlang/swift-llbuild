@@ -18,7 +18,7 @@
 
 # Second pass we add a rule that may now produce that file. As exposed in
 # rdar://problem/41142590, clients rely on the explicit dependency on the basal
-# node created by 'taskNeedsInput' for this to trigger the production of 'file'
+# node created by 'request()' for this to trigger the production of 'file'
 # before execution of the directory contents dependency.
 #
 # RUN: grep -A1000 "VERSION-BEGIN-[2]" %s | grep -B10000 "VERSION-END-2" | grep -ve '^--$' > %t.build/build-2.llbuild

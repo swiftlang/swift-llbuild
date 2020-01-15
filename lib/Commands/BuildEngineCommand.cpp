@@ -143,26 +143,26 @@ struct AckermannTask : core::Task {
   }
 
   /// Called when the task is started.
-  virtual void start(core::BuildEngine& engine) override {
+  virtual void start(core::TaskInterface& ti) override {
     // Request the first recursive result, if necessary.
     if (m == 0) {
       ;
     } else if (n == 0) {
-      engine.taskNeedsInput(this, AckermannKey(m-1, 1), 0);
+      ti.request(AckermannKey(m-1, 1), 0);
     } else {
-      engine.taskNeedsInput(this, AckermannKey(m, n-1), 0);
+      ti.request(AckermannKey(m, n-1), 0);
     }
   }
 
   /// Called when a task’s requested input is available.
-  virtual void provideValue(core::BuildEngine& engine, uintptr_t inputID,
+  virtual void provideValue(core::TaskInterface& ti, uintptr_t inputID,
                             const core::ValueType& value) override {
     if (inputID == 0) {
       recursiveResultA = value;
 
       // Request the second recursive result, if needed.
       if (m != 0 && n != 0) {
-        engine.taskNeedsInput(this, AckermannKey(m-1, recursiveResultA), 1);
+        ti.request(AckermannKey(m-1, recursiveResultA), 1);
       }
     } else {
       assert(inputID == 1 && "invalid input ID");
@@ -171,20 +171,20 @@ struct AckermannTask : core::Task {
   }
 
   /// Called when all inputs are available.
-  virtual void inputsAvailable(core::BuildEngine& engine) override {
+  virtual void inputsAvailable(core::TaskInterface& ti) override {
     if (m == 0) {
-      engine.taskIsComplete(this, AckermannValue(n + 1));
+      ti.complete(AckermannValue(n + 1));
       return;
     }
 
     assert(recursiveResultA != 0);
     if (n == 0) {
-      engine.taskIsComplete(this, recursiveResultA);
+      ti.complete(recursiveResultA);
       return;
     }
 
     assert(recursiveResultB != 0);
-    engine.taskIsComplete(this, recursiveResultB);
+    ti.complete(recursiveResultB);
   }
 };
 

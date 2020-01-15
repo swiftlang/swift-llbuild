@@ -250,22 +250,26 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "buildsystem"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "build"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--serial"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "--trace"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "foo.trace"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "&quot;ninja&quot; &quot;build&quot; &quot;--jobs&quot; &quot;1&quot; &quot;--chdir&quot; &quot;/Users/dmbryson/Library/Developer/Xcode/DerivedData/llbuild-aqokbmxflmlraugfsihpxyivjxqx/Build/Products/Debug/tests/Ninja/Build/Output/absolute-dependencies.ninja.tmp.build&quot;"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

@@ -40,7 +40,6 @@ class BuildDescription;
 class BuildFileDelegate;
 class BuildKey;
 class BuildSystem;
-class BuildSystemCommandInterface;
 class BuildValue;
 class Command;
 class Node;

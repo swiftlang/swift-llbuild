@@ -15,7 +15,6 @@
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildKey.h"
-#include "llbuild/BuildSystem/BuildSystemCommandInterface.h"
 #include "llbuild/Core/DependencyInfoParser.h"
 #include "llbuild/Core/MakefileDepsParser.h"
 
@@ -28,17 +27,16 @@ using namespace llbuild::basic;
 using namespace llbuild::core;
 using namespace llbuild::buildsystem;
 
-void ShellCommand::start(BuildSystemCommandInterface& bsci,
-                                 core::Task* task) {
+void ShellCommand::start(BuildSystem& system, TaskInterface& ti) {
   // Resolve the plugin state.
-  handler = bsci.resolveShellCommandHandler(this);
+  handler = system.resolveShellCommandHandler(this);
 
   // Delegate to handler, if used.
   if (handler) {
-    handlerState = handler->start(bsci, this);
+    handlerState = handler->start(ti, this);
   }
 
-  this->ExternalCommand::start(bsci, task);
+  this->ExternalCommand::start(system, ti);
 }
 
 CommandSignature ShellCommand::getSignature() const {
@@ -72,23 +70,23 @@ CommandSignature ShellCommand::getSignature() const {
   return signature;
 }
 
-bool ShellCommand::processDiscoveredDependencies(BuildSystemCommandInterface& bsci,
-                                                 Task* task,
+bool ShellCommand::processDiscoveredDependencies(BuildSystem& system,
+                                                 core::TaskInterface& ti,
                                                  QueueJobContext* context) {
   // It is an error if the dependencies style is not specified.
   //
   // FIXME: Diagnose this sooner.
   if (depsStyle == DepsStyle::Unused) {
-    bsci.getDelegate().commandHadError(
+    system.getDelegate().commandHadError(
         this, "missing required 'deps-style' specifier");
     return false;
   }
 
   for (const auto& depsPath: depsPaths) {
     // Read the dependencies file.
-    auto input = bsci.getFileSystem().getFileContents(depsPath);
+    auto input = system.getFileSystem().getFileContents(depsPath);
     if (!input) {
-      bsci.getDelegate().commandHadError(
+      system.getDelegate().commandHadError(
           this, "unable to open dependencies file (" + depsPath + ")");
       return false;
     }
@@ -100,13 +98,13 @@ bool ShellCommand::processDiscoveredDependencies(BuildSystemCommandInterface& bs
 
     case DepsStyle::Makefile:
       if (!processMakefileDiscoveredDependencies(
-              bsci, task, context, depsPath, input.get()))
+              system, ti, context, depsPath, input.get()))
         return false;
       continue;
 
     case DepsStyle::DependencyInfo:
       if (!processDependencyInfoDiscoveredDependencies(
-              bsci, task, context, depsPath, input.get()))
+              system, ti, context, depsPath, input.get()))
         return false;
       continue;
     }
@@ -117,8 +115,8 @@ bool ShellCommand::processDiscoveredDependencies(BuildSystemCommandInterface& bs
   return true;
 }
 
-bool ShellCommand::processMakefileDiscoveredDependencies(BuildSystemCommandInterface& bsci,
-                                                         Task* task,
+bool ShellCommand::processMakefileDiscoveredDependencies(BuildSystem& system,
+                                                         TaskInterface& ti,
                                                          QueueJobContext* context,
                                                          StringRef depsPath,
                                                          llvm::MemoryBuffer* input) {
@@ -127,22 +125,22 @@ bool ShellCommand::processMakefileDiscoveredDependencies(BuildSystemCommandInter
   // We just ignore the rule, and add any dependency that we encounter in the
   // file.
   struct DepsActions : public core::MakefileDepsParser::ParseActions {
-    BuildSystemCommandInterface& bsci;
-    Task* task;
+    BuildSystem& system;
+    TaskInterface ti;
     ShellCommand* command;
     StringRef depsPath;
     unsigned numErrors{0};
 
-    DepsActions(BuildSystemCommandInterface& bsci, Task* task,
+    DepsActions(BuildSystem& system, TaskInterface& ti,
                 ShellCommand* command, StringRef depsPath)
-        : bsci(bsci), task(task), command(command), depsPath(depsPath) {}
+        : system(system), ti(ti), command(command), depsPath(depsPath) {}
 
     virtual void error(const char* message, uint64_t position) override {
       std::string msg;
       raw_string_ostream msgStream(msg);
       msgStream << "error reading dependency file '" << depsPath.str() << "': "
           << message << " at position " << position;
-      bsci.getDelegate().commandHadError(command, msgStream.str());
+      system.getDelegate().commandHadError(command, msgStream.str());
       ++numErrors;
     }
 
@@ -150,7 +148,7 @@ bool ShellCommand::processMakefileDiscoveredDependencies(BuildSystemCommandInter
                                      uint64_t length,
                                      const StringRef unescapedWord) override {
       if (llvm::sys::path::is_absolute(unescapedWord)) {
-        bsci.taskDiscoveredDependency(task, BuildKey::makeNode(unescapedWord));
+        ti.discoveredDependency(BuildKey::makeNode(unescapedWord).toData());
         return;
       }
 
@@ -163,7 +161,7 @@ bool ShellCommand::processMakefileDiscoveredDependencies(BuildSystemCommandInter
       llvm::sys::path::append(absPath, unescapedWord);
       llvm::sys::fs::make_absolute(absPath);
 
-      bsci.taskDiscoveredDependency(task, BuildKey::makeNode(absPath));
+      ti.discoveredDependency(BuildKey::makeNode(absPath).toData());
     }
 
     virtual void actOnRuleStart(const char* name, uint64_t length,
@@ -172,15 +170,15 @@ bool ShellCommand::processMakefileDiscoveredDependencies(BuildSystemCommandInter
     virtual void actOnRuleEnd() override {}
   };
 
-  DepsActions actions(bsci, task, this, depsPath);
+  DepsActions actions(system, ti, this, depsPath);
   core::MakefileDepsParser(input->getBufferStart(), input->getBufferSize(),
                            actions).parse();
   return actions.numErrors == 0;
 }
 
 bool
-ShellCommand::processDependencyInfoDiscoveredDependencies(BuildSystemCommandInterface& bsci,
-                                                          Task* task,
+ShellCommand::processDependencyInfoDiscoveredDependencies(BuildSystem& system,
+                                                          TaskInterface& ti,
                                                           QueueJobContext* context,
                                                           StringRef depsPath,
                                                           llvm::MemoryBuffer* input) {
@@ -189,18 +187,18 @@ ShellCommand::processDependencyInfoDiscoveredDependencies(BuildSystemCommandInte
   // We just ignore the rule, and add any dependency that we encounter in the
   // file.
   struct DepsActions : public core::DependencyInfoParser::ParseActions {
-    BuildSystemCommandInterface& bsci;
-    Task* task;
+    BuildSystem& system;
+    TaskInterface ti;
     ShellCommand* command;
     StringRef depsPath;
     unsigned numErrors{0};
 
-    DepsActions(BuildSystemCommandInterface& bsci, Task* task,
+    DepsActions(BuildSystem& system, TaskInterface& ti,
                 ShellCommand* command, StringRef depsPath)
-        : bsci(bsci), task(task), command(command), depsPath(depsPath) {}
+        : system(system), ti(ti), command(command), depsPath(depsPath) {}
 
     virtual void error(const char* message, uint64_t position) override {
-      bsci.getDelegate().commandHadError(
+      system.getDelegate().commandHadError(
           command, ("error reading dependency file '" + depsPath.str() +
                     "': " + std::string(message)));
       ++numErrors;
@@ -212,11 +210,11 @@ ShellCommand::processDependencyInfoDiscoveredDependencies(BuildSystemCommandInte
     virtual void actOnOutput(StringRef) override { }
 
     virtual void actOnInput(StringRef name) override {
-      bsci.taskDiscoveredDependency(task, BuildKey::makeNode(name));
+      ti.discoveredDependency(BuildKey::makeNode(name).toData());
     }
   };
 
-  DepsActions actions(bsci, task, this, depsPath);
+  DepsActions actions(system, ti, this, depsPath);
   core::DependencyInfoParser(input->getBuffer(), actions).parse();
   return actions.numErrors == 0;
 }
@@ -330,11 +328,11 @@ bool ShellCommand::configureAttribute(
 }
 
 void ShellCommand::executeExternalCommand(
-    BuildSystemCommandInterface& bsci,
-    Task* task,
+    BuildSystem& system,
+    TaskInterface& ti,
     QueueJobContext* context,
     llvm::Optional<ProcessCompletionFn> completionFn) {
-  auto commandCompletionFn = [this, &bsci, task, completionFn](ProcessResult result) {
+  auto commandCompletionFn = [this, &system, ti, completionFn](ProcessResult result) mutable {
     if (result.status != ProcessStatus::Succeeded) {
       // If the command failed, there is no need to gather dependencies.
       if (completionFn.hasValue())
@@ -346,8 +344,8 @@ void ShellCommand::executeExternalCommand(
     if (!depsPaths.empty()) {
       // FIXME: Really want this job to go into a high priority fifo queue
       // so as to not hold up downstream tasks.
-      bsci.addJob({ this, [this, &bsci, task, completionFn, result](QueueJobContext* context) {
-            if (!processDiscoveredDependencies(bsci, task, context)) {
+      ti.spawn(QueueJob{ this, [this, &system, ti, completionFn, result](QueueJobContext* context) mutable {
+            if (!processDiscoveredDependencies(system, const_cast<TaskInterface&>(ti), context)) {
               // If we were unable to process the dependencies output, report a
               // failure.
               if (completionFn.hasValue())
@@ -375,14 +373,14 @@ void ShellCommand::executeExternalCommand(
     // be the case that this should actually be delegating this work to run on
     // the execution queue, and the queue handles the handoff.
     handler->execute(
-        handlerState.get(), this, bsci, task, context, commandCompletionFn);
+        handlerState.get(), this, ti, context, commandCompletionFn);
     return;
   }
 
   bool connectToConsole = false;
 
   // Execute the command.
-  bsci.getExecutionQueue().executeProcess(
+  ti.spawn(
       context, args, env,
       {canSafelyInterrupt, connectToConsole, workingDirectory, inheritEnv, controlEnabled},
       /*completionFn=*/{commandCompletionFn});

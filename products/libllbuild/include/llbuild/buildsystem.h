@@ -570,12 +570,6 @@ llb_buildsystem_tool_create(const llb_data_t* name,
 typedef struct llb_buildsystem_queue_job_context_t_
   llb_buildsystem_queue_job_context_t;
 
-/// Opaque handle to the interfaces for a running command.
-//
-// FIXME: Find a better name for this, it is too long.
-typedef struct llb_buildsystem_command_interface_t_
-  llb_buildsystem_command_interface_t;
-  
 /// Delegate structure for callbacks required by an external build command.
 typedef struct llb_buildsystem_external_command_delegate_t_ {
   /// User context pointer.
@@ -596,8 +590,7 @@ typedef struct llb_buildsystem_external_command_delegate_t_ {
   /// At this point, the command may choose to request more dependencies
   /// through the build system command interface (bsci) reference.
   void (*start)(void* context, llb_buildsystem_command_t* command,
-                llb_buildsystem_command_interface_t* bsci,
-                llb_task_t* task);
+                llb_task_interface_t* ti);
 
   /// Called by the build system when one of the requested dependencies has
   /// become available. The command can identify which key the provided value
@@ -605,8 +598,7 @@ typedef struct llb_buildsystem_external_command_delegate_t_ {
   /// to request additional dependencies based on the contents of the provided
   /// value.
   void (*provide_value)(void* context, llb_buildsystem_command_t* command,
-                        llb_buildsystem_command_interface_t* bsci,
-                        llb_task_t* task,
+                        llb_task_interface_t* ti,
                         const llb_build_value* value,
                         uintptr_t inputID);
 
@@ -625,14 +617,12 @@ typedef struct llb_buildsystem_external_command_delegate_t_ {
   /// The C API takes ownership of the value returned by `execute_command_ex`.
   bool (*execute_command)(void* context,
                           llb_buildsystem_command_t* command,
-                          llb_buildsystem_command_interface_t* bsci,
-                          llb_task_t* task,
+                          llb_task_interface_t* ti,
                           llb_buildsystem_queue_job_context_t* job_context);
 
   llb_build_value* (*execute_command_ex)(void* context,
                                          llb_buildsystem_command_t* command,
-                                         llb_buildsystem_command_interface_t* bsci,
-                                         llb_task_t* task,
+                                         llb_task_interface_t* ti,
                                          llb_buildsystem_queue_job_context_t* job_context);
 
   /// Called by the build system to determine if the current build result
@@ -697,11 +687,11 @@ llb_buildsystem_command_get_verbose_description(
 /// When this value is available, it will be provided through the provide_value
 /// method.
 LLBUILD_EXPORT void
-llb_buildsystem_command_interface_task_needs_input(llb_buildsystem_command_interface_t* bsci, llb_task_t* task, llb_build_key_t* key, uintptr_t inputID);
+llb_buildsystem_command_interface_task_needs_input(llb_task_interface_t* task, llb_build_key_t* key, uintptr_t inputID);
 
 /// Marks a key as a discovered dependency for the task.
 LLBUILD_EXPORT void
-llb_buildsystem_command_interface_task_discovered_dependency(llb_buildsystem_command_interface_t* bsci_p, llb_task_t* task_p, llb_build_key_t* key);
+llb_buildsystem_command_interface_task_discovered_dependency(llb_task_interface_t* ti_p, llb_build_key_t* key);
 
 // MARK: Quality of Service
 
