@@ -57,56 +57,8 @@ struct DirectedEdge: Hashable, Equatable {
 
 }
 
-extension BuildKey.Command: GraphVizNode {
+extension BuildKey: GraphVizNode {
     var graphVizName: String {
-        "Command:\(self.name)"
-    }
-}
-
-extension BuildKey.CustomTask: GraphVizNode {
-    var graphVizName: String {
-        "CustomTask:\(self.name)"
-    }
-}
-
-extension BuildKey.DirectoryContents: GraphVizNode {
-    var graphVizName: String {
-        "DirectoryContents:\(self.path)"
-    }
-}
-
-extension BuildKey.FilteredDirectoryContents: GraphVizNode {
-    var graphVizName: String {
-        "FilteredDirectoryContents:\(self.path)"
-    }
-}
-
-extension BuildKey.DirectoryTreeSignature: GraphVizNode {
-    var graphVizName: String {
-        "DirectoryTreeSignature:\(self.path)"
-    }
-}
-
-extension BuildKey.DirectoryTreeStructureSignature: GraphVizNode {
-    var graphVizName: String {
-        "DirectoryTreeStructureSignature:\(self.path)"
-    }
-}
-
-extension BuildKey.Node: GraphVizNode {
-    var graphVizName: String {
-        "Node:\(self.path)"
-    }
-}
-
-extension BuildKey.Stat: GraphVizNode {
-    var graphVizName: String {
-        "Stat:\(self.path)"
-    }
-}
-
-extension BuildKey.Target: GraphVizNode {
-    var graphVizName: String {
-        "Target:\(self.name)"
+        description
     }
 }
