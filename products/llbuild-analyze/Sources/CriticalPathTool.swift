@@ -141,7 +141,7 @@ public final class CriticalPathTool: Tool<CriticalPathTool.Options> {
         if options.graphvizDisplay == .all {
             for element in path {
                 for dep in element.result.dependencies {
-                    edges.insert(DirectedEdge(a: dep, b: element.key))
+                    edges.insert(DirectedEdge(a: dep, b: element.key, isCritical: false))
                 }
             }
         }
@@ -292,105 +292,6 @@ struct EncodableRuleResult: Encodable {
     }
 }
 
-
-protocol GraphVizNode {
-    var graphVizName: String { get }
-}
-
-extension BuildKey.Command: GraphVizNode {
-    var graphVizName: String {
-        "Command:\(self.name)"
-    }
-}
-
-extension BuildKey.CustomTask: GraphVizNode {
-    var graphVizName: String {
-        "CustomTask:\(self.name)"
-    }
-}
-
-extension BuildKey.DirectoryContents: GraphVizNode {
-    var graphVizName: String {
-        "DirectoryContents:\(self.path)"
-    }
-}
-
-extension BuildKey.FilteredDirectoryContents: GraphVizNode {
-    var graphVizName: String {
-        "FilteredDirectoryContents:\(self.path)"
-    }
-}
-
-extension BuildKey.DirectoryTreeSignature: GraphVizNode {
-    var graphVizName: String {
-        "DirectoryTreeSignature:\(self.path)"
-    }
-}
-
-extension BuildKey.DirectoryTreeStructureSignature: GraphVizNode {
-    var graphVizName: String {
-        "DirectoryTreeStructureSignature:\(self.path)"
-    }
-}
-
-extension BuildKey.Node: GraphVizNode {
-    var graphVizName: String {
-        "Node:\(self.path)"
-    }
-}
-
-extension BuildKey.Stat: GraphVizNode {
-    var graphVizName: String {
-        "Stat:\(self.path)"
-    }
-}
-
-extension BuildKey.Target: GraphVizNode {
-    var graphVizName: String {
-        "Target:\(self.name)"
-    }
-}
-
-/// Struct to represent a directed edge in GraphViz from a -> b.
-/// `hash()` and `==` only take the both edges into account, not
-/// `isCritical`, so the graph can be represented as a `Set<DirectedEdge>`
-/// and gurantee that there is only one edge between two verticies.
-struct DirectedEdge: Hashable, Equatable {
-    /// Source `BuildKey`
-    let a: BuildKey
-
-    /// Destination `BuildKey`
-    let b: BuildKey
-
-    /// Flag if the edge is on critical build path.
-    var isCritical: Bool = false
-
-    static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.a == rhs.a && lhs.b == rhs.b
-    }
-
-    func hash(into hasher: inout Hasher) {
-        a.hash(into: &hasher)
-        b.hash(into: &hasher)
-    }
-
-    /// Style attributes for the edge.
-    private var style: String {
-        if isCritical {
-            return "[style=bold]"
-        }
-        return ""
-    }
-
-    /// GraphViz representation of the Edge.
-    var graphVizString: String {
-        guard let a = a as? GraphVizNode, let b = b as? GraphVizNode else {
-            fatalError("Both edges need to conform to GraphvizNode")
-        }
-        return "\t\"\(a.graphVizName)\" -> \"\(b.graphVizName)\"\(style)\n"
-    }
-
-}
 
 private protocol CommandLineArgumentChoices: CaseIterable, RawRepresentable where RawValue == String {
     static var helpDescription: String { get }
