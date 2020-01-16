@@ -71,8 +71,8 @@ public final class CriticalPathTool: Tool<CriticalPathTool.Options> {
             to: { $0.pretty = $1 })
 
         binder.bind(
-            option: parser.add(option: "--graphvizOutput", usage: "Graphviz display options. Possible values: \(Options.GraphvizDisplay.helpDescription)."),
-            to: { $0.graphvizDisplay = Options.GraphvizDisplay(rawValue: $1) ?? .everything }
+            option: parser.add(option: "--graphvizOutput", usage: "Graphviz display options. Possible values: \(Options.GraphvizDisplay.helpDescription). Default is all"),
+            to: { $0.graphvizDisplay = Options.GraphvizDisplay(rawValue: $1) ?? .all }
         )
         
         binder.bind(
