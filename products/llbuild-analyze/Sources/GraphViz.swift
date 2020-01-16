@@ -49,9 +49,6 @@ struct DirectedEdge: Hashable, Equatable {
 
     /// GraphViz representation of the Edge.
     var graphVizString: String {
-        guard let a = a as? GraphVizNode, let b = b as? GraphVizNode else {
-            fatalError("Both edges need to conform to GraphVizNode to generate a graphVizString for DirectedEdge \(self).")
-        }
         return "\t\"\(a.graphVizName)\" -> \"\(b.graphVizName)\"\(style)\n"
     }
 
