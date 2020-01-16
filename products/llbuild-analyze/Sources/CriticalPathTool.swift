@@ -25,7 +25,7 @@ public final class CriticalPathTool: Tool<CriticalPathTool.Options> {
 
         public enum GraphvizDisplay: String, CaseIterable, CommandLineArgumentChoices {
             case criticalPath
-            case everything
+            case all
         }
         
         var database: AbsolutePath!
@@ -138,7 +138,7 @@ public final class CriticalPathTool: Tool<CriticalPathTool.Options> {
             }
         }
 
-        if options.graphvizDisplay == .everything {
+        if options.graphvizDisplay == .all {
             for element in path {
                 for dep in element.result.dependencies {
                     edges.insert(DirectedEdge(a: dep, b: element.key))
