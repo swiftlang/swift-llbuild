@@ -256,7 +256,9 @@ public:
       ArrayRef<StringRef> commandLine,
       ArrayRef<std::pair<StringRef, StringRef>> environment,
       ProcessAttributes attributes,
-      llvm::Optional<ProcessCompletionFn> completionFn) override {
+      llvm::Optional<ProcessCompletionFn> completionFn,
+      ProcessDelegate* delegate
+  ) override {
 
     SerialContext& context = *reinterpret_cast<SerialContext*>(opaqueContext);
 
@@ -311,7 +313,7 @@ public:
     };
 
     spawnProcess(
-        getDelegate(),
+        delegate ? *delegate : getDelegate(),
         reinterpret_cast<ProcessContext*>(context.job.getDescriptor()),
         spawnedProcesses,
         handle,

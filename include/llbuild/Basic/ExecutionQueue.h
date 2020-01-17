@@ -142,7 +142,8 @@ namespace llbuild {
                      ArrayRef<StringRef> commandLine,
                      ArrayRef<std::pair<StringRef, StringRef>> environment,
                      ProcessAttributes attributes = {true},
-                     llvm::Optional<ProcessCompletionFn> completionFn = {llvm::None}) = 0;
+                     llvm::Optional<ProcessCompletionFn> completionFn = {llvm::None},
+                     ProcessDelegate* delegate = nullptr) = 0;
 
       /// @}
 
