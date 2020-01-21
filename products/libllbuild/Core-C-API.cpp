@@ -13,6 +13,7 @@
 // Include the public API.
 #include <llbuild/llbuild.h>
 
+#include "llbuild/Basic/ExecutionQueue.h"
 #include "llbuild/Basic/Tracing.h"
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/BuildEngine.h"
@@ -27,7 +28,7 @@ using namespace llbuild::core;
 
 namespace {
 
-class CAPIBuildEngineDelegate : public BuildEngineDelegate {
+class CAPIBuildEngineDelegate : public BuildEngineDelegate, public basic::ExecutionQueueDelegate {
   llb_buildengine_delegate_t cAPIDelegate;
 
   friend class CAPITask;
@@ -85,6 +86,17 @@ class CAPIBuildEngineDelegate : public BuildEngineDelegate {
 
   virtual void error(const Twine& message) override {
     cAPIDelegate.error(cAPIDelegate.context, message.str().c_str());
+  }
+
+  void processStarted(basic::ProcessContext*, basic::ProcessHandle) override { }
+  void processHadError(basic::ProcessContext*, basic::ProcessHandle, const Twine&) override { }
+  void processHadOutput(basic::ProcessContext*, basic::ProcessHandle, StringRef) override { }
+  void processFinished(basic::ProcessContext*, basic::ProcessHandle, const basic::ProcessResult&) override { }
+  void queueJobStarted(basic::JobDescriptor*) override { }
+  void queueJobFinished(basic::JobDescriptor*) override { }
+
+  std::unique_ptr<basic::ExecutionQueue> createExecutionQueue() override {
+    return createSerialQueue(*this, nullptr);
   }
 
 public:

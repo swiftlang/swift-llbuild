@@ -12,6 +12,7 @@
 
 #include "llbuild/Core/BuildEngine.h"
 
+#include "llbuild/Basic/ExecutionQueue.h"
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/Core/BuildDB.h"
 #include "llvm/ADT/SmallString.h"
@@ -29,7 +30,7 @@ using namespace llbuild::core;
 
 namespace {
 
-class SimpleBuildEngineDelegate : public core::BuildEngineDelegate {
+class SimpleBuildEngineDelegate : public core::BuildEngineDelegate, public basic::ExecutionQueueDelegate {
   virtual std::unique_ptr<core::Rule> lookupRule(const core::KeyType& key) override {
     // We never expect dynamic rule lookup.
     fprintf(stderr, "error: unexpected rule lookup for \"%s\"\n",
@@ -47,6 +48,17 @@ class SimpleBuildEngineDelegate : public core::BuildEngineDelegate {
   virtual void error(const Twine& message) override {
     fprintf(stderr, "error: %s\n", message.str().c_str());
     abort();
+  }
+
+  void processStarted(basic::ProcessContext*, basic::ProcessHandle) override { }
+  void processHadError(basic::ProcessContext*, basic::ProcessHandle, const Twine&) override { }
+  void processHadOutput(basic::ProcessContext*, basic::ProcessHandle, StringRef) override { }
+  void processFinished(basic::ProcessContext*, basic::ProcessHandle, const basic::ProcessResult&) override { }
+  void queueJobStarted(basic::JobDescriptor*) override { }
+  void queueJobFinished(basic::JobDescriptor*) override { }
+
+  std::unique_ptr<basic::ExecutionQueue> createExecutionQueue() override {
+    return createSerialQueue(*this, nullptr);
   }
 };
 

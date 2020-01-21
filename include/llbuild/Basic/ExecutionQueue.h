@@ -224,6 +224,11 @@ namespace llbuild {
     ExecutionQueue* createLaneBasedExecutionQueue(
         ExecutionQueueDelegate& delegate, int numLanes, SchedulerAlgorithm alg,
         const char* const* environment);
+
+    /// Create an execution queue that executes all tasks serially on a single
+    /// thread.
+    std::unique_ptr<ExecutionQueue> createSerialQueue(
+        ExecutionQueueDelegate& delegate, const char* const* environment);
   }
 }
 

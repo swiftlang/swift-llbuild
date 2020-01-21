@@ -12,6 +12,7 @@
 
 #include "llbuild/Commands/Commands.h"
 
+#include "llbuild/Basic/ExecutionQueue.h"
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/Core/BuildEngine.h"
 
@@ -196,7 +197,7 @@ static int runAckermannBuild(int m, int n, int recomputeCount,
 
   // Define the delegate which will dynamically construct rules of the form
   // "ack(M,N)".
-  class AckermannDelegate : public core::BuildEngineDelegate {
+  class AckermannDelegate : public core::BuildEngineDelegate, public basic::ExecutionQueueDelegate {
     class AckermannRule : public core::Rule {
     public:
       AckermannRule(const core::KeyType& key) : core::Rule(key) { }
@@ -227,6 +228,17 @@ static int runAckermannBuild(int m, int n, int recomputeCount,
     /// Called when a fatal error is encountered by the build engine.
     virtual void error(const Twine &message) override {
       assert(0 && ("error:" + message.str()).c_str());
+    }
+
+    void processStarted(basic::ProcessContext*, basic::ProcessHandle) override { }
+    void processHadError(basic::ProcessContext*, basic::ProcessHandle, const Twine&) override { }
+    void processHadOutput(basic::ProcessContext*, basic::ProcessHandle, StringRef) override { }
+    void processFinished(basic::ProcessContext*, basic::ProcessHandle, const basic::ProcessResult&) override { }
+    void queueJobStarted(basic::JobDescriptor*) override { }
+    void queueJobFinished(basic::JobDescriptor*) override { }
+
+    std::unique_ptr<basic::ExecutionQueue> createExecutionQueue() override {
+      return createSerialQueue(*this, nullptr);
     }
   };
   AckermannDelegate delegate;

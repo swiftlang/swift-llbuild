@@ -153,6 +153,8 @@ class BuildSystemEngineDelegate : public BuildEngineDelegate {
   virtual void cycleDetected(const std::vector<Rule*>& items) override;
   virtual void error(const Twine& message) override;
 
+  std::unique_ptr<basic::ExecutionQueue> createExecutionQueue() override;
+
 public:
   BuildSystemEngineDelegate(BuildSystemImpl& system) : system(system) {}
 
@@ -198,18 +200,8 @@ private:
   /// The build engine.
   BuildEngine buildEngine;
 
-  /// Mutex for access to execution queue.
-  std::mutex executionQueueMutex;
-
-  /// The execution queue reference; this is only valid while a build is
-  /// actually in progress.
-  std::unique_ptr<ExecutionQueue> executionQueue;
-
   /// Flag indicating if the build has been aborted.
   bool buildWasAborted = false;
-
-  /// Flag indicating if the build has been cancelled.
-  std::atomic<bool> isCancelled_{ false };
 
   /// Cache of instantiated shell command handlers.
   llvm::StringMap<std::unique_ptr<ShellCommandHandler>> shellHandlers;
@@ -222,8 +214,7 @@ private:
   }
   
   virtual ExecutionQueue& getExecutionQueue() override {
-    assert(executionQueue.get());
-    return *executionQueue;
+    return buildEngine.getExecutionQueue();
   }
 
   virtual void taskNeedsInput(core::Task* task, const BuildKey& key,
@@ -246,7 +237,7 @@ private:
   }
 
   virtual void addJob(QueueJob&& job) override {
-    executionQueue->addJob(std::move(job));
+    buildEngine.getExecutionQueue().addJob(std::move(job));
   }
 
   virtual ShellCommandHandler*
@@ -281,8 +272,7 @@ public:
                   std::unique_ptr<basic::FileSystem> fileSystem)
       : buildSystem(buildSystem), delegate(delegate),
         fileSystem(std::move(fileSystem)),
-        fileDelegate(*this), engineDelegate(*this), buildEngine(engineDelegate),
-        executionQueue() {}
+        fileDelegate(*this), engineDelegate(*this), buildEngine(engineDelegate) {}
 
   BuildSystem& getBuildSystem() {
     return buildSystem;
@@ -385,34 +375,28 @@ public:
   }
 
   void resetForBuild() {
-    std::lock_guard<std::mutex> guard(executionQueueMutex);
-    isCancelled_ = false;
+    getBuildEngine().resetForBuild();
   }
 
   /// Cancel the running build.
   void cancel() {
-    std::lock_guard<std::mutex> guard(executionQueueMutex);
-
-    isCancelled_ = true;
-    // Cancel jobs if we actually have a queue.
-    if (executionQueue.get() != nullptr) {
-      // Ask the engine to cancel all pending work.
-      getBuildEngine().cancelBuild();
-
-      // Ask the execution queue to cancel currently running jobs.
-      getExecutionQueue().cancelAllJobs();
-    }
+    getBuildEngine().cancelBuild();
   }
 
   /// Check if the build has been cancelled.
   bool isCancelled() {
-    return isCancelled_;
+    return buildEngine.isCancelled();
   }
 
   /// @}
 };
 
 #pragma mark - BuildSystem engine integration
+
+std::unique_ptr<basic::ExecutionQueue> BuildSystemEngineDelegate::createExecutionQueue() {
+  return system.getDelegate().createExecutionQueue();
+}
+
 
 #pragma mark - Task implementations
 
@@ -1904,35 +1888,10 @@ llvm::Optional<BuildValue> BuildSystemImpl::build(BuildKey key) {
     return None;
   }
 
-  // Aquire lock and create execution queue.
-  {
-    std::lock_guard<std::mutex> guard(executionQueueMutex);
-
-    // If we were cancelled, return.
-    if (isCancelled()) {
-      return None;
-    }
-
-    executionQueue = delegate.createExecutionQueue();
-  }
-
   // Build the target.
   buildWasAborted = false;
   auto result = getBuildEngine().build(key.toData());
     
-  // Release the execution queue, impicitly waiting for it to complete. The
-  // asynchronous nature of the engine callbacks means it is possible for the
-  // queue to have notified the engine of the last task completion, but still
-  // have other work to perform (e.g., informing the client of command
-  // completion).
-  //
-  // This must hold the lock to prevent data racing on the executionQueue
-  // pointer (as can happen with cancellation) - rdar://problem/50993380
-  {
-    std::lock_guard<std::mutex> guard(executionQueueMutex);
-    executionQueue.reset();
-  }
-
   // Clear out the shell handlers, as we do not want to hold on to them across
   // multiple builds.
   shellHandlers.clear();

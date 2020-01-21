@@ -12,13 +12,23 @@
 
 #include "llbuild/Basic/SerialQueue.h"
 
-#include "llvm/ADT/STLExtras.h"
+#include "llbuild/Basic/ExecutionQueue.h"
 
+#include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/SmallString.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/Twine.h"
+
+#include <atomic>
 #include <cassert>
 #include <condition_variable>
 #include <deque>
 #include <mutex>
+#include <random>
 #include <thread>
+
+#include <signal.h>
 
 using namespace llbuild;
 using namespace llbuild::basic;
@@ -139,4 +149,194 @@ void SerialQueue::sync(std::function<void(void)> fn) {
 
 void SerialQueue::async(std::function<void(void)> fn) {
   static_cast<SerialQueueImpl*>(impl)->async(fn);
+}
+
+
+/// An execution queue based on a serial operation queue.
+class SerialExecutionQueue : public ExecutionQueue {
+  /// (Random) build identifier
+  uint32_t buildID;
+
+  /// Underlying queue implementation
+  SerialQueueImpl* queue;
+
+  /// The base environment.
+  const char* const* environment;
+
+  struct SerialContext: public basic::QueueJobContext {
+    uint64_t jobID;
+    QueueJob& job;
+
+    SerialContext(uint64_t jobID, QueueJob& job)
+      : jobID(jobID), job(job) { }
+
+    unsigned laneID() const override { return 0; }
+  };
+
+  uint64_t jobCount{0};
+  std::atomic<bool> cancelled { false };
+
+  ProcessGroup spawnedProcesses;
+
+  std::mutex killAfterTimeoutThreadMutex;
+  std::unique_ptr<std::thread> killAfterTimeoutThread = nullptr;
+  std::condition_variable queueCompleteCondition;
+  std::mutex queueCompleteMutex;
+  bool queueComplete { false };
+
+  void killAfterTimeout() {
+    std::unique_lock<std::mutex> lock(queueCompleteMutex);
+
+    if (!queueComplete) {
+      // Shorten timeout if in testing context
+      if (getenv("LLBUILD_TEST") != nullptr) {
+        queueCompleteCondition.wait_for(lock, std::chrono::milliseconds(1000));
+      } else {
+        queueCompleteCondition.wait_for(lock, std::chrono::seconds(10));
+      }
+
+#if _WIN32
+      spawnedProcesses.signalAll(SIGTERM);
+#else
+      spawnedProcesses.signalAll(SIGKILL);
+#endif
+    }
+  }
+
+public:
+  SerialExecutionQueue(ExecutionQueueDelegate& delegate,
+                       const char* const* environment)
+  : ExecutionQueue(delegate), buildID(std::random_device()()), queue(new SerialQueueImpl), environment(environment)
+  {
+  }
+
+  virtual ~SerialExecutionQueue()
+  {
+    delete queue;
+    queue = nullptr;
+
+    std::lock_guard<std::mutex> guard(killAfterTimeoutThreadMutex);
+    if (killAfterTimeoutThread) {
+      {
+        std::unique_lock<std::mutex> lock(queueCompleteMutex);
+        queueComplete = true;
+        queueCompleteCondition.notify_all();
+      }
+      killAfterTimeoutThread->join();
+    }
+  }
+
+
+  virtual void addJob(QueueJob job) override {
+    uint64_t jobID = ++jobCount;
+    queue->async([jobID, job]() mutable {
+      SerialContext ctx(jobID, job);
+      job.execute(&ctx);
+    });
+  }
+
+  virtual void cancelAllJobs() override {
+    {
+      std::lock_guard<std::mutex> guard(spawnedProcesses.mutex);
+      if (cancelled) return;
+      cancelled = true;
+      spawnedProcesses.close();
+    }
+
+    spawnedProcesses.signalAll(SIGINT);
+    {
+      std::lock_guard<std::mutex> guard(killAfterTimeoutThreadMutex);
+      killAfterTimeoutThread = llvm::make_unique<std::thread>(
+          &SerialExecutionQueue::killAfterTimeout, this);
+    }
+  }
+
+  virtual void executeProcess(
+      QueueJobContext* opaqueContext,
+      ArrayRef<StringRef> commandLine,
+      ArrayRef<std::pair<StringRef, StringRef>> environment,
+      ProcessAttributes attributes,
+      llvm::Optional<ProcessCompletionFn> completionFn) override {
+
+    SerialContext& context = *reinterpret_cast<SerialContext*>(opaqueContext);
+
+    // Do not execute new processes anymore after cancellation.
+    if (cancelled) {
+      if (completionFn.hasValue())
+        completionFn.getValue()(ProcessResult::makeCancelled());
+      return;
+    }
+
+    // Form the complete environment.
+    //
+    // NOTE: We construct the environment in order of precedence, so
+    // overridden keys should be defined first.
+    POSIXEnvironment posixEnv;
+
+    // Export lane ID to subprocesses.
+    posixEnv.setIfMissing("LLBUILD_BUILD_ID", Twine(buildID).str());
+    posixEnv.setIfMissing("LLBUILD_LANE_ID", Twine(0).str());
+
+    // Add the requested environment.
+    for (const auto& entry: environment) {
+      posixEnv.setIfMissing(entry.first, entry.second);
+    }
+
+    // Inherit the base environment, if desired.
+    //
+    // FIXME: This involves a lot of redundant allocation, currently. We could
+    // cache this for the common case of a directly inherited environment.
+    if (attributes.inheritEnvironment) {
+      for (const char* const* p = this->environment; *p != nullptr; ++p) {
+        auto pair = StringRef(*p).split('=');
+        posixEnv.setIfMissing(pair.first, pair.second);
+      }
+    }
+
+    // Assign a process handle, which just needs to be unique for as long as we
+    // are communicating with the delegate.
+    ProcessHandle handle;
+    handle.id = context.jobID;
+
+    ProcessReleaseFn releaseFn = [](std::function<void()>&& processWait) {
+      // not allowed to release, call wait directly
+      processWait();
+    };
+
+    ProcessCompletionFn laneCompletionFn{
+      [completionFn](ProcessResult result) mutable {
+        if (completionFn.hasValue())
+          completionFn.getValue()(result);
+      }
+    };
+
+    spawnProcess(
+        getDelegate(),
+        reinterpret_cast<ProcessContext*>(context.job.getDescriptor()),
+        spawnedProcesses,
+        handle,
+        commandLine,
+        posixEnv,
+        attributes,
+        std::move(releaseFn),
+        std::move(laneCompletionFn)
+    );
+  }
+};
+
+
+#if !defined(_WIN32)
+extern "C" {
+  extern char **environ;
+}
+#endif
+
+std::unique_ptr<ExecutionQueue> llbuild::basic::createSerialQueue(
+    ExecutionQueueDelegate& delegate, const char* const* environment
+) {
+  if (!environment) {
+    environment = const_cast<const char* const*>(environ);
+  }
+  return std::make_unique<SerialExecutionQueue>(delegate, environment);
+
 }
