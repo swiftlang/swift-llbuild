@@ -1379,12 +1379,13 @@ public:
   RuleInfo& addRule(KeyID keyID, std::unique_ptr<Rule>&& rule) {
     auto result = ruleInfos.emplace(keyID, RuleInfo(keyID, std::move(rule)));
     if (!result.second) {
-      delegate.error("attempt to register duplicate rule \"" + rule->key + "\"\n");
+      RuleInfo& ruleInfo = result.first->second;
+      delegate.error("attempt to register duplicate rule \"" + ruleInfo.rule->key + "\"\n");
 
       // Set cancelled, but return something 'valid' for use until it is
       // processed.
       buildCancelled = true;
-      return result.first->second;
+      return ruleInfo;
     }
 
     // If we have a database attached, retrieve any stored result.

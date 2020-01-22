@@ -200,6 +200,22 @@ TEST(BuildEngineTest, basic) {
   EXPECT_TRUE(builtKeys.empty());
 }
 
+
+TEST(BuildEngineTest, duplicateRule) {
+  SimpleBuildEngineDelegate delegate;
+  delegate.expectedError = true;
+
+  core::BuildEngine engine(delegate);
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+    "value-A", {}, [&] (const std::vector<int>& inputs) { return 1; })));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+    "value-A", {}, [&] (const std::vector<int>& inputs) { return 2; })));
+
+  EXPECT_EQ(1U, delegate.errors.size());
+  EXPECT_TRUE(delegate.errors[0].find("duplicate") != std::string::npos);
+}
+
+
 TEST(BuildEngineTest, basicWithSharedInput) {
   // Check a build graph with a input key shared by multiple rules.
   //
