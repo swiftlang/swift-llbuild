@@ -102,6 +102,13 @@ llb_build_value *llb_build_value_make(llb_data_t *data) {
   return (llb_build_value *)new CAPIBuildValue(std::move(buildValue));
 }
 
+llb_build_value *llb_build_value_clone(llb_build_value *value) {
+  // Explictly copy constructing a new BuildValue
+  return (llb_build_value *)new CAPIBuildValue(
+    BuildValue(((CAPIBuildValue *)value)->getInternalBuildValue())
+  );
+}
+
 llb_build_value_kind_t llb_build_value_get_kind(llb_build_value *value) {
   return ((CAPIBuildValue *)value)->getKind();
 }

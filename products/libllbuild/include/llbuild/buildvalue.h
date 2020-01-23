@@ -103,6 +103,7 @@ typedef uint64_t llb_build_value_command_signature_t LLBUILD_SWIFT_NAME(BuildVal
 typedef struct llb_build_value_ llb_build_value;
 
 LLBUILD_EXPORT llb_build_value * llb_build_value_make(llb_data_t * data);
+LLBUILD_EXPORT llb_build_value * llb_build_value_clone(llb_build_value * value);
 LLBUILD_EXPORT llb_build_value_kind_t llb_build_value_get_kind(llb_build_value * value);
 LLBUILD_EXPORT void llb_build_value_get_value_data(llb_build_value * value, void *_Nullable context, void (*_Nullable iteration)(void *_Nullable context, uint8_t data));
 LLBUILD_EXPORT void llb_build_value_destroy(llb_build_value * value);

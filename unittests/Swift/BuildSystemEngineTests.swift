@@ -344,4 +344,57 @@ commands:
             XCTAssert(command.isFulfilled(), "\(name) is not fulfilled")
         }
     }
+
+    func testEnhancedCommand() throws {
+        let buildFile = makeTemporaryFile(basicBuildManifest)
+        let databaseFile = makeTemporaryFile()
+
+        // Enhanced command that returns a custom build value
+        class EnhancedCommand: ExternalCommand, ExpectationCommand {
+            private var executed = false
+
+            func getSignature(_ command: Command) -> [UInt8] {
+                return []
+            }
+
+            func start(_ command: Command, _ commandInterface: BuildSystemCommandInterface) {}
+
+            func provideValue(_ command: Command, _ commandInterface: BuildSystemCommandInterface, _ buildValue: BuildValue, _ inputID: UInt) {}
+
+            func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> BuildValue {
+                executed = true
+                let fileInfo = BuildValueFileInfo(device: 1, inode: 2, mode: 3, size: 4, modTime: BuildValueFileTimestamp())
+                return BuildValue.SuccessfulCommand(outputInfos: [fileInfo])
+            }
+
+            func isFulfilled() -> Bool {
+                return executed
+            }
+        }
+
+        let expectedCommands = [
+            "maincommand": EnhancedCommand()
+        ]
+
+        let buildSystem = TestBuildSystem(
+            buildFile: buildFile,
+            databaseFile: databaseFile,
+            expectedCommands: expectedCommands
+        )
+        buildSystem.run(target: "all")
+
+        for (name, command) in expectedCommands {
+            XCTAssert(command.isFulfilled(), "\(name) did not execute")
+        }
+
+        // Validate that the custom build value was collected by checking the
+        // database contents.
+        let db = try BuildDB(path: databaseFile, clientSchemaVersion: 9)
+        guard let maincommandResult = try db.lookupRuleResult(buildKey: BuildKey.Command(name: "maincommand")) else {
+            return XCTFail("Unable to load command value from db")
+        }
+
+        let fileInfo = BuildValueFileInfo(device: 1, inode: 2, mode: 3, size: 4, modTime: BuildValueFileTimestamp())
+        XCTAssertEqual(maincommandResult.value, BuildValue.SuccessfulCommand(outputInfos: [fileInfo]))
+    }
 }

@@ -89,6 +89,7 @@ public class BuildValue: CustomStringConvertible, Equatable, Hashable {
     
     /// The opaque pointer to the internal C++ class
     fileprivate let internalBuildValue: OpaquePointer
+    fileprivate var owned: Bool = true
     
     fileprivate init(_ internalBuildValue: OpaquePointer) {
         self.internalBuildValue = internalBuildValue
@@ -132,9 +133,27 @@ public class BuildValue: CustomStringConvertible, Equatable, Hashable {
     }
     
     deinit {
-        llb_build_value_destroy(internalBuildValue)
+        // As implemented below, ownership of the internal build value may be
+        // moved, thus we should only destroy it if we actually own it.
+        if owned {
+            llb_build_value_destroy(internalBuildValue)
+        }
     }
-    
+
+    /// Moves ownership of the internal build value object
+    /// This attempts to provide move semantics for uniquely owned instances to
+    /// prevent copy overhead. If that cannot be guaranteed, it will clone the
+    /// build value to ensure that the internal object remains valid for other
+    /// references.
+    static func move(_ value: inout BuildValue) -> OpaquePointer {
+        if isKnownUniquelyReferenced(&value) {
+            value.owned = false
+            return value.internalBuildValue
+        }
+
+        return llb_build_value_clone(value.internalBuildValue)
+    }
+
     /// The kind of the build value.
     /// The kind also defines the subclass, so kind == .invalid means the instance should be of type Invalid
     public var kind: Kind {

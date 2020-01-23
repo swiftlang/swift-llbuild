@@ -117,6 +117,10 @@ private final class ToolWrapper {
         _delegate.start = { return BuildSystem.toCommandWrapper($0!).start($1!, $2!, $3!) }
         _delegate.provide_value = { return BuildSystem.toCommandWrapper($0!).provideValue($1!, $2!, $3!, $4!, $5) }
         _delegate.execute_command = { return BuildSystem.toCommandWrapper($0!).executeCommand($1!, $2!, $3!, $4!) }
+        _delegate.execute_command_ex = {
+            var value: BuildValue = BuildSystem.toCommandWrapper($0!).executeCommand($1!, $2!, $3!, $4!)
+            return BuildValue.move(&value)
+        }
 
         // Create the low-level command.
         wrapper._command = Command(handle: llb_buildsystem_external_command_create(name, _delegate))
@@ -161,6 +165,13 @@ public protocol ExternalCommand: class {
     /// - commandInterface: A handle to the build system's command interface.
     /// - returns: True on success.
     func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> Bool
+
+    /// Called to execute the given command that produces a custom build value.
+    ///
+    /// - command: A handle to the executing command.
+    /// - commandInterface: A handle to the build system's command interface.
+    /// - returns: Produced build value.
+    func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> BuildValue
 }
 
 // Extension to provide a default implementation of execute(_ Command, _ commandInterface) to allow clients to
@@ -168,6 +179,10 @@ public protocol ExternalCommand: class {
 public extension ExternalCommand {
     func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> Bool {
         return execute(command)
+    }
+
+    func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> BuildValue {
+        return BuildValue.Invalid()
     }
 
     // If this implementation is invoked, it means that the client implementing ExternalCommand did not
@@ -213,6 +228,11 @@ private final class CommandWrapper {
     }
 
     func executeCommand(_: OpaquePointer, _ bsci: OpaquePointer, _ task: OpaquePointer, _ jobContext: OpaquePointer) -> Bool {
+        let commandInterface = BuildSystemCommandInterface(bsci, task)
+        return command.execute(_command, commandInterface)
+    }
+
+    func executeCommand(_: OpaquePointer, _ bsci: OpaquePointer, _ task: OpaquePointer, _ jobContext: OpaquePointer) -> BuildValue {
         let commandInterface = BuildSystemCommandInterface(bsci, task)
         return command.execute(_command, commandInterface)
     }

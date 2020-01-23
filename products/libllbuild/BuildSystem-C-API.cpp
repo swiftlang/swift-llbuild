@@ -19,11 +19,13 @@
 
 #if !defined(__APPLE__) || !TARGET_OS_IPHONE
 
+#include "llbuild/Basic/Defer.h"
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildKey.h"
 #include "llbuild/BuildSystem/BuildSystemCommandInterface.h"
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
+#include "llbuild/BuildSystem/BuildValue.h"
 #include "llbuild/BuildSystem/ExternalCommand.h"
 #include "llbuild/BuildSystem/Tool.h"
 #include "llbuild/Core/BuildEngine.h"
@@ -716,39 +718,76 @@ class CAPIExternalCommand : public ExternalCommand {
                                inputID);
   }
 
+  // Temporary holder for the current build value. Only expected to be valid
+  // for the duration of a call to the completion function passed to
+  // executeExternalCommand().
+  CAPIBuildValue* currentBuildValue = nullptr;
+
   virtual void executeExternalCommand(BuildSystemCommandInterface& bsci,
                                                core::Task* task,
                                                QueueJobContext* job_context,
                                                llvm::Optional<ProcessCompletionFn> completionFn) override {
-    // FIXME: We should extend this API to allow more generic data to be piped through from the execution
-    // of the external command. The current SUCCESS/FAILURE options are not rich enough to leverage llbuild
-    // value system as a client.
-    auto result = cAPIDelegate.execute_command(
-        cAPIDelegate.context, (llb_buildsystem_command_t*)this,
-        (llb_buildsystem_command_interface_t*)&bsci,
-        (llb_task_t*)task, (llb_buildsystem_queue_job_context_t*)job_context)
-          ? ProcessStatus::Succeeded : ProcessStatus::Failed;
-
-    if (result != ProcessStatus::Succeeded) {
-      // If the command failed, there is no need to gather dependencies.
-      if (completionFn.hasValue())
-        completionFn.getValue()(result);
-      return;
-    }
-    
-    // Otherwise, collect the discovered dependencies, if used.
-    if (!depsPath.empty()) {
-      if (!processDiscoveredDependencies(bsci, task, job_context)) {
-        // If we were unable to process the dependencies output, report a
-        // failure.
+    auto doneFn = [&](ProcessStatus result) {
+      if (result != ProcessStatus::Succeeded) {
+        // If the command failed, there is no need to gather dependencies.
         if (completionFn.hasValue())
           completionFn.getValue()(ProcessStatus::Failed);
         return;
       }
+
+      // Otherwise, collect the discovered dependencies, if used.
+      if (!depsPath.empty()) {
+        if (!processDiscoveredDependencies(bsci, task, job_context)) {
+          // If we were unable to process the dependencies output, report a
+          // failure.
+          if (completionFn.hasValue())
+            completionFn.getValue()(ProcessStatus::Failed);
+          return;
+        }
+      }
+
+      if (completionFn.hasValue())
+        completionFn.getValue()(result);
+    };
+
+    if (cAPIDelegate.execute_command_ex) {
+      llb_build_value* rvalue = cAPIDelegate.execute_command_ex(
+        cAPIDelegate.context,
+        (llb_buildsystem_command_t*)this,
+        (llb_buildsystem_command_interface_t*)&bsci,
+        (llb_task_t*)task,
+        (llb_buildsystem_queue_job_context_t*)job_context);
+
+      currentBuildValue = reinterpret_cast<CAPIBuildValue*>(rvalue);
+      llbuild_defer {
+        delete currentBuildValue;
+        currentBuildValue = nullptr;
+      };
+
+      if (!currentBuildValue->getInternalBuildValue().isInvalid()) {
+        doneFn(ProcessStatus::Succeeded);
+        return;
+      }
+
+      // An invalid value is interpreted as an unsupported method call and falls
+      // through to execute_command below.
     }
 
-    if (completionFn.hasValue())
-      completionFn.getValue()(result);
+    assert(cAPIDelegate.execute_command != nullptr);
+    bool success = cAPIDelegate.execute_command(
+      cAPIDelegate.context,
+      (llb_buildsystem_command_t*)this,
+      (llb_buildsystem_command_interface_t*)&bsci,
+      (llb_task_t*)task,
+      (llb_buildsystem_queue_job_context_t*)job_context);
+    doneFn(success ? ProcessStatus::Succeeded : ProcessStatus::Failed);
+  }
+
+  BuildValue computeCommandResult(BuildSystemCommandInterface& bsci) override {
+    if (currentBuildValue)
+      return BuildValue(currentBuildValue->getInternalBuildValue());
+
+    return ExternalCommand::computeCommandResult(bsci);
   }
   
 public:
