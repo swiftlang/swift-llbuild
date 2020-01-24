@@ -102,19 +102,19 @@ let package = Package(
 
         .target(
             name: "llbuildBasicTests",
-            dependencies: ["llbuildBasic", "gtest"],
+            dependencies: ["llbuildBasic", "gtestlib"],
             path: "unittests/Basic"),
         .target(
             name: "llbuildCoreTests",
-            dependencies: ["llbuildCore", "gtest"],
+            dependencies: ["llbuildCore", "gtestlib"],
             path: "unittests/Core"),
         .target(
             name: "llbuildBuildSystemTests",
-            dependencies: ["llbuildBuildSystem", "gtest"],
+            dependencies: ["llbuildBuildSystem", "gtestlib"],
             path: "unittests/BuildSystem"),
         .target(
             name: "llbuildNinjaTests",
-            dependencies: ["llbuildNinja", "gtest"],
+            dependencies: ["llbuildNinja", "gtestlib"],
             path: "unittests/Ninja"),
         .testTarget(
             name: "llbuildSwiftTests",
@@ -128,7 +128,7 @@ let package = Package(
         // MARK: GoogleTest
 
         .target(
-            name: "gtest",
+            name: "gtestlib",
             path: "utils/unittest/googletest/src",
             exclude: [
                 "gtest-death-test.cc",
