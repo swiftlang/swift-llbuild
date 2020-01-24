@@ -67,7 +67,7 @@ class CAPIBuildEngineDelegate : public BuildEngineDelegate {
   virtual std::unique_ptr<Rule> lookupRule(const KeyType& key) override {
     CAPIRule* capiRule = new CAPIRule(key);
     capiRule->engineContext = cAPIDelegate.context;
-    llb_data_t key_data{ key.length(), (const uint8_t*)key.data() };
+    llb_data_t key_data{ key.size(), (const uint8_t*)key.data() };
     cAPIDelegate.lookup_rule(cAPIDelegate.context, &key_data, &capiRule->rule);
 
     // FIXME: Check that the client created the rule appropriately. We should

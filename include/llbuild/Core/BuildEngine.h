@@ -34,8 +34,26 @@
 namespace llbuild {
 namespace core {
 
-// FIXME: Need to abstract KeyType;
-typedef std::string KeyType;
+class KeyType {
+private:
+  std::string key;
+
+public:
+  KeyType() { }
+  KeyType(const std::string& key) : key(key) { }
+  KeyType(const char* key) : key(key) { }
+  KeyType(llvm::StringRef ref) : key(ref) { }
+  KeyType(const char* data, size_t length) : key(data, length) { }
+
+  bool operator==(const KeyType& rhs) const { return key == rhs.key; }
+  bool operator<(const KeyType& rhs) const { return key < rhs.key; }
+
+  const std::string& str() const { return key; }
+  const char* data() const { return key.data(); }
+  const char* c_str() const { return key.c_str(); }
+  size_t size() const { return key.size(); }
+};
+
 typedef std::vector<uint8_t> ValueType;
 
 class BuildDB;
@@ -429,6 +447,18 @@ public:
 };
 
 }
+}
+
+namespace std
+{
+  template<>
+  struct hash<llbuild::core::KeyType>
+  {
+    size_t operator()(const llbuild::core::KeyType& key) const
+    {
+      return hash<std::string>{}(key.str());
+    }
+  };
 }
 
 #endif

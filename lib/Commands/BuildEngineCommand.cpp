@@ -90,7 +90,7 @@ struct AckermannKey {
 
   /// Create an Ackermann key from the encoded representation.
   AckermannKey(const core::KeyType& key) {
-      auto keyString = StringRef(key);
+      auto keyString = StringRef(key.str());
       assert(keyString.startswith("ack(") && keyString.endswith(")"));
       auto arguments = keyString.split("(").second.split(")").first.split(",");
       m = 0;

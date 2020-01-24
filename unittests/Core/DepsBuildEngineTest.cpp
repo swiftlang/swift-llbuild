@@ -137,7 +137,7 @@ public:
 // previously present (and thus recorded as an input dependency) but which is no
 // longer present.
 TEST(DepsBuildEngineTest, BogusConcurrentDepScan) {
-  std::vector<std::string> builtKeys;
+  std::vector<KeyType> builtKeys;
   SimpleBuildEngineDelegate delegate;
   core::BuildEngine engine(delegate);
   
@@ -217,9 +217,9 @@ TEST(DepsBuildEngineTest, BogusConcurrentDepScan) {
   };
 
   class DynamicRule: public Rule {
-    std::vector<std::string>& builtKeys;
+    std::vector<KeyType>& builtKeys;
   public:
-    DynamicRule(const KeyType& key, std::vector<std::string>& builtKeys)
+    DynamicRule(const KeyType& key, std::vector<KeyType>& builtKeys)
       : Rule(key), builtKeys(builtKeys) { }
     Task* createTask(BuildEngine&) override {
       builtKeys.push_back(key);
@@ -232,11 +232,11 @@ TEST(DepsBuildEngineTest, BogusConcurrentDepScan) {
   // Build the first result.
   EXPECT_EQ(2 * 3 * 5 * 7, intFromValue(engine.build("output")));
   EXPECT_EQ(5U, builtKeys.size());
-  EXPECT_EQ("output", builtKeys[0]);
-  EXPECT_EQ("dir-list-input", builtKeys[1]);
-  EXPECT_EQ("dir-list", builtKeys[2]);
-  EXPECT_EQ("input-2", builtKeys[3]);
-  EXPECT_EQ("input-3", builtKeys[4]);
+  EXPECT_EQ(KeyType("output"), builtKeys[0]);
+  EXPECT_EQ(KeyType("dir-list-input"), builtKeys[1]);
+  EXPECT_EQ(KeyType("dir-list"), builtKeys[2]);
+  EXPECT_EQ(KeyType("input-2"), builtKeys[3]);
+  EXPECT_EQ(KeyType("input-3"), builtKeys[4]);
 
   // Now change the dynamic contents and rebuild.
   builtKeys.clear();
@@ -246,10 +246,10 @@ TEST(DepsBuildEngineTest, BogusConcurrentDepScan) {
 #endif
   EXPECT_EQ(3 * 7, intFromValue(engine.build("output")));
   EXPECT_EQ(4U, builtKeys.size());
-  EXPECT_EQ("dir-list-input", builtKeys[0]);
-  EXPECT_EQ("dir-list", builtKeys[1]);
-  EXPECT_EQ("output", builtKeys[2]);
-  EXPECT_EQ("input-3", builtKeys[3]);
+  EXPECT_EQ(KeyType("dir-list-input"), builtKeys[0]);
+  EXPECT_EQ(KeyType("dir-list"), builtKeys[1]);
+  EXPECT_EQ(KeyType("output"), builtKeys[2]);
+  EXPECT_EQ(KeyType("input-3"), builtKeys[3]);
 }
 
 TEST(DepsBuildEngineTest, KeysWithNull) {

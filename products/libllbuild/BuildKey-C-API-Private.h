@@ -30,11 +30,11 @@ private:
 public:
   
   CAPIBuildKey(const BuildKey &buildKey): hasIdentifier(false), internalBuildKey(buildKey) {
-    hashValue = std::hash<std::string>{}(internalBuildKey.getKeyData());
+    hashValue = std::hash<llbuild::core::KeyType>{}(internalBuildKey.getKeyData());
   }
   
   CAPIBuildKey(const BuildKey &buildKey, llbuild::core::KeyID identifier): identifier(identifier), hasIdentifier(true), internalBuildKey(buildKey) {
-    hashValue = std::hash<std::string>{}(internalBuildKey.getKeyData());
+    hashValue = std::hash<llbuild::core::KeyType>{}(internalBuildKey.getKeyData());
   }
   
   BuildKey &getInternalBuildKey() {

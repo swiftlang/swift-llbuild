@@ -126,7 +126,7 @@ public:
     // The RHS of the mapping is actually ignored, we use the StringMap's ptr
     // identity because it allows us to efficiently map back to the key string
     // in `getRuleInfoForKey`.
-    auto it = keyTable.insert(std::make_pair(key, KeyID::novalue())).first;
+    auto it = keyTable.insert(std::make_pair(key.str(), KeyID::novalue())).first;
     return KeyID(it->getKey().data());
   }
   

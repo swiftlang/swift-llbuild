@@ -72,7 +72,7 @@ class BuildEngineImpl : public BuildDBDelegate {
 
   /// The mutex that protects the key table.
   std::mutex keyTableMutex;
-  
+
   /// The build database, if attached.
   std::unique_ptr<BuildDB> db;
 
@@ -87,7 +87,7 @@ class BuildEngineImpl : public BuildDBDelegate {
 
   /// Whether a build is currently running.
   std::atomic<bool> buildRunning{ false };
-  
+
   /// The queue of input requests to process.
   struct TaskInputRequest {
     /// The task making the request.
@@ -166,7 +166,7 @@ class BuildEngineImpl : public BuildDBDelegate {
 
     /// The rule this information describes.
     std::unique_ptr<Rule> rule;
-    
+
     /// The state dependent record for in-progress information.
     union {
       RuleScanRecord* pendingScanRecord;
@@ -208,7 +208,7 @@ class BuildEngineImpl : public BuildDBDelegate {
       return state == StateKind::Complete &&
         result.builtAt == engine->getCurrentEpoch();
     }
-    
+
     void setComputing(const BuildEngineImpl* engine) {
       assert(isInProgressWaiting());
       state = StateKind::InProgressComputing;
@@ -236,7 +236,7 @@ class BuildEngineImpl : public BuildDBDelegate {
       // longer valid.
       state = StateKind::Incomplete;
     }
-    
+
     RuleScanRecord* getPendingScanRecord() {
       assert(isScanning());
       return inProgressInfo.pendingScanRecord;
@@ -313,7 +313,7 @@ class BuildEngineImpl : public BuildDBDelegate {
                 request.taskInfo->forRuleInfo->rule->key.c_str());
       }
     }
-#endif    
+#endif
   };
 
   /// The tracked information for executing tasks.
@@ -703,14 +703,14 @@ private:
         cancelRemainingTasks();
         return false;
       }
-      
+
       // Process all of the pending rule scan requests.
       //
       // FIXME: We don't want to process all of these requests, this amounts to
       // doing all of the dependency scanning up-front.
       while (!ruleInfosToScan.empty()) {
         TracingEngineQueueItemEvent i(EngineQueueItemKind::RuleToScan, buildKey.c_str());
-        
+
         didWork = true;
 
         auto request = ruleInfosToScan.back();
@@ -722,7 +722,7 @@ private:
       // Process all of the pending input requests.
       while (!inputRequests.empty()) {
         TracingEngineQueueItemEvent i(EngineQueueItemKind::InputRequest, buildKey.c_str());
-        
+
         didWork = true;
 
         auto request = inputRequests.back();
@@ -778,7 +778,7 @@ private:
       // Process all of the finished inputs.
       while (!finishedInputRequests.empty()) {
         TracingEngineQueueItemEvent i(EngineQueueItemKind::FinishedInputRequest, buildKey.c_str());
-        
+
         didWork = true;
 
         auto request = finishedInputRequests.back();
@@ -824,7 +824,7 @@ private:
       // Process all of the ready to run tasks.
       while (!readyTaskInfos.empty()) {
         TracingEngineQueueItemEvent i(EngineQueueItemKind::ReadyTask, buildKey.c_str());
-        
+
         didWork = true;
 
         TaskInfo* taskInfo = readyTaskInfos.back();
@@ -855,7 +855,7 @@ private:
       // Process all of the finished tasks.
       while (true) {
         TracingEngineQueueItemEvent i(EngineQueueItemKind::FinishedTask, buildKey.c_str());
-        
+
         // Try to take a task from the finished queue.
         TaskInfo* taskInfo = nullptr;
         {
@@ -962,7 +962,7 @@ private:
       // correct.
       if (!didWork && numOutstandingUnfinishedTasks != 0) {
         TracingEngineQueueItemEvent i(EngineQueueItemKind::Waiting, buildKey.c_str());
-        
+
         // Wait for our condition variable.
         std::unique_lock<std::mutex> lock(finishedTaskInfosMutex);
 
@@ -1329,7 +1329,7 @@ public:
     // The RHS of the mapping is actually ignored, we use the StringMap's ptr
     // identity because it allows us to efficiently map back to the key string
     // in `getRuleInfoForKey`.
-    auto it = keyTable.insert(std::make_pair(key, KeyID::novalue())).first;
+    auto it = keyTable.insert(std::make_pair(key.str(), KeyID::novalue())).first;
     return KeyID(it->getKey().data());
   }
 
@@ -1342,7 +1342,7 @@ public:
 
   RuleInfo& getRuleInfoForKey(const KeyType& key) {
     auto keyID = getKeyID(key);
-    
+
     // Check if we have already found the rule.
     auto it = ruleInfos.find(keyID);
     if (it != ruleInfos.end())
@@ -1368,19 +1368,19 @@ public:
     auto it = taskInfos.find(task);
     return it == taskInfos.end() ? nullptr : &it->second;
   }
-  
+
   /// @name Rule Definition
   /// @{
 
   RuleInfo& addRule(std::unique_ptr<Rule>&& rule) {
     return addRule(getKeyID(rule->key), std::move(rule));
   }
-  
+
   RuleInfo& addRule(KeyID keyID, std::unique_ptr<Rule>&& rule) {
     auto result = ruleInfos.emplace(keyID, RuleInfo(keyID, std::move(rule)));
     if (!result.second) {
       RuleInfo& ruleInfo = result.first->second;
-      delegate.error("attempt to register duplicate rule \"" + ruleInfo.rule->key + "\"\n");
+      delegate.error("attempt to register duplicate rule \"" + ruleInfo.rule->key.str() + "\"\n");
 
       // Set cancelled, but return something 'valid' for use until it is
       // processed.
@@ -1450,7 +1450,7 @@ public:
     // Run the build engine, to process any necessary tasks.
     buildCancelled = false;
     bool success = executeTasks(key);
-    
+
     // Update the build database, if attached.
     //
     // FIXME: Is it correct to do this here, or earlier?
@@ -1497,7 +1497,7 @@ public:
     // tasks in any case.
     buildCancelled = true;
   }
-  
+
   bool attachDB(std::unique_ptr<BuildDB> database, std::string* error_out) {
     assert(!db && "invalid attachDB() call");
     assert(currentEpoch == 0 && "invalid attachDB() call");
@@ -1572,7 +1572,7 @@ public:
 
     // Lookup the rule for this task.
     RuleInfo* ruleInfo = &getRuleInfoForKey(key);
-    
+
     inputRequests.push_back({ taskInfo, inputID, ruleInfo, orderOnly });
     taskInfo->waitCount++;
   }
@@ -1668,7 +1668,7 @@ public:
 #pragma mark - BuildEngine
 
 BuildEngine::BuildEngine(BuildEngineDelegate& delegate)
-  : impl(new BuildEngineImpl(*this, delegate)) 
+  : impl(new BuildEngineImpl(*this, delegate))
 {
 }
 
