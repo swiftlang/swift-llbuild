@@ -14,6 +14,6 @@
 
 namespace llbuild {
 
-bool TracingEnabled = false;
+std::atomic<bool> TracingEnabled{false};
 
 }
