@@ -272,7 +272,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
         }
         Engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
             Name, [] (const std::vector<int>& Inputs) {
-            return Inputs[0]; }, {})));
+            return Inputs[0]; }, Inputs)));
       } else {
         Engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
             Name,
