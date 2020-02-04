@@ -16,6 +16,8 @@
 #include "llbuild/Basic/CrossPlatformCompatibility.h"
 #include "llvm/ADT/StringRef.h"
 
+#include <atomic>
+
 // os_signpost is included in mac OS 10.14, if that header is not available, we don't trace at all.
 #if __has_include(<os/signpost.h>)
 #include <os/signpost.h>
@@ -69,7 +71,7 @@ if (__builtin_available(macOS 10.12, *)) os_log(getLog(), ##__VA_ARGS__); \
 #endif // __has_include(<os/signpost.h>)
 
 namespace llbuild {
-extern bool TracingEnabled;
+extern std::atomic<bool> TracingEnabled;
   
 struct TracingExecutionQueueJob {
   TracingExecutionQueueJob(int laneNumber, llvm::StringRef commandName) {
