@@ -130,6 +130,7 @@ namespace {
 
   TEST(LaneBasedExecutionQueueTest, exhaustsQueueAfterCancellation) {
     DummyDelegate delegate;
+    std::mutex queueMutex;
     auto queue = std::unique_ptr<ExecutionQueue>(
         createLaneBasedExecutionQueue(delegate, 1,
                                       SchedulerAlgorithm::NamePriority,
@@ -141,9 +142,12 @@ namespace {
     std::atomic<int> executions { 0 };
 
     auto fn = [&buildStarted, &buildStartedCondition, &buildStartedMutex,
-               &executions, &queue](QueueJobContext* context) {
+               &executions, &queueMutex, &queue](QueueJobContext* context) {
       executions++;
-      if (queue) { queue->cancelAllJobs(); }
+      {
+        std::lock_guard<std::mutex> lock(queueMutex);
+        if (queue) { queue->cancelAllJobs(); }
+      }
 
       std::unique_lock<std::mutex> lock(buildStartedMutex);
       buildStarted = true;
@@ -151,9 +155,12 @@ namespace {
     };
 
     DummyCommand dummyCommand1;
-    queue->addJob(QueueJob(&dummyCommand1, fn));
     DummyCommand dummyCommand2;
-    queue->addJob(QueueJob(&dummyCommand2, fn));
+    {
+      std::lock_guard<std::mutex> lock(queueMutex);
+      queue->addJob(QueueJob(&dummyCommand1, fn));
+      queue->addJob(QueueJob(&dummyCommand2, fn));
+    }
 
     {
       std::unique_lock<std::mutex> lock(buildStartedMutex);
@@ -162,7 +169,10 @@ namespace {
       }
     }
 
-    queue.reset();
+    {
+      std::lock_guard<std::mutex> lock(queueMutex);
+      queue.reset();
+    }
 
     // Busy wait until our executions are done, but also have a timeout in case they never finish
     time_t start = ::time(NULL);
