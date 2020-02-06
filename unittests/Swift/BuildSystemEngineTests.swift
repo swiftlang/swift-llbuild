@@ -350,7 +350,7 @@ commands:
         let databaseFile = makeTemporaryFile()
 
         // Enhanced command that returns a custom build value
-        class EnhancedCommand: ExternalCommand, ExpectationCommand {
+        class EnhancedCommand: ExternalCommand, ProducesCustomBuildValue {
             private var executed = false
 
             func getSignature(_ command: Command) -> [UInt8] {
@@ -367,8 +367,20 @@ commands:
                 return BuildValue.SuccessfulCommand(outputInfos: [fileInfo])
             }
 
-            func isFulfilled() -> Bool {
+            func isResultValid(_ command: Command, _ buildValue: BuildValue) -> Bool {
+                guard let value = buildValue as? BuildValue.SuccessfulCommand else {
+                    return false
+                }
+
+                return value.outputInfos.count == 1 && value.outputInfos[0] == BuildValueFileInfo(device: 1, inode: 2, mode: 3, size: 4, modTime: BuildValueFileTimestamp())
+            }
+
+            func wasExecuted() -> Bool {
                 return executed
+            }
+
+            func reset() {
+                executed = false
             }
         }
 
@@ -384,7 +396,20 @@ commands:
         buildSystem.run(target: "all")
 
         for (name, command) in expectedCommands {
-            XCTAssert(command.isFulfilled(), "\(name) did not execute")
+            XCTAssert(command.wasExecuted(), "\(name) did not execute")
+        }
+
+        // reset commands
+        for (_, command) in expectedCommands {
+            command.reset()
+        }
+
+        // run subsequent build
+        buildSystem.run(target: "all")
+
+        // check that the commands weren't executed
+        for (name, command) in expectedCommands {
+            XCTAssert(!command.wasExecuted(), "\(name) executed on incremental build")
         }
 
         // Validate that the custom build value was collected by checking the

@@ -789,6 +789,19 @@ class CAPIExternalCommand : public ExternalCommand {
 
     return ExternalCommand::computeCommandResult(bsci);
   }
+
+  bool isResultValid(BuildSystem& system, const BuildValue& value) override {
+    if (cAPIDelegate.is_result_valid) {
+      auto value_p = (llb_build_value *)new CAPIBuildValue(BuildValue(value));
+      return cAPIDelegate.is_result_valid(
+        cAPIDelegate.context,
+        (llb_buildsystem_command_t*)this,
+        value_p
+      );
+    }
+
+    return ExternalCommand::isResultValid(system, value);
+  }
   
 public:
   CAPIExternalCommand(StringRef name,

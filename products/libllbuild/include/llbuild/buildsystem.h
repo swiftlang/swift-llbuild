@@ -635,6 +635,15 @@ typedef struct llb_buildsystem_external_command_delegate_t_ {
                                          llb_task_t* task,
                                          llb_buildsystem_queue_job_context_t* job_context);
 
+  /// Called by the build system to determine if the current build result
+  /// remains valid.
+  ///
+  /// Clients providing custom build values via execute_command_ex SHOULD supply
+  /// this accompanying method.
+  bool (*is_result_valid)(void* context,
+                          llb_buildsystem_command_t* command,
+                          const llb_build_value* value);
+
 } llb_buildsystem_external_command_delegate_t;
 
 /// Create a new external command instance.

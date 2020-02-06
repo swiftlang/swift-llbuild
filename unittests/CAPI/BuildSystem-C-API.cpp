@@ -146,6 +146,7 @@ depinfo_tester_tool_create_command(void *context, const llb_data_t* name) {
   delegate.provide_value = depinfo_tester_command_provide_value;
   delegate.execute_command = depinfo_tester_command_execute_command;
   delegate.execute_command_ex = NULL;
+  delegate.is_result_valid = NULL;
   return llb_buildsystem_external_command_create(name, delegate);
 }
 
