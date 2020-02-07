@@ -348,6 +348,8 @@ struct NinjaBuildEngineDelegate : public core::BuildEngineDelegate {
 
   virtual void error(const Twine& message) override;
 
+  std::unique_ptr<basic::ExecutionQueue> createExecutionQueue() override;
+
   NinjaBuildEngineDelegate(StringRef workingDirectory)
     : workingDirectory(workingDirectory) { }
 };
@@ -383,6 +385,9 @@ public:
   bool verbose = false;
   /// The number of failed commands to tolerate, or 0 if unlimited
   unsigned numFailedCommandsToTolerate = 1;
+
+  int numJobsInParallel{0};
+  basic::SchedulerAlgorithm schedulerAlgorithm{basic::SchedulerAlgorithm::NamePriority};
 
   /// The build profile output file.
   FILE *profileFP = nullptr;
@@ -427,9 +432,6 @@ public:
   std::unordered_map<uint64_t, SmallString<1024>> outputBuffers;
   std::mutex outputBufferMutex;
 
-  /// The limited queue we use to execute parallel jobs.
-  std::unique_ptr<ExecutionQueue> jobQueue;
-
   std::unique_ptr<std::thread> signalHandlerThread;
 
   /// The previous SIGINT handler.
@@ -458,7 +460,6 @@ public:
   void cancelBuildOnInterrupt() {
 
     emitNote("cancelling build.");
-    jobQueue->cancelAllJobs();
     isCancelled = true;
     wasCancelledBySigint = true;
 
@@ -1215,7 +1216,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
 
       auto addExecuteJob = [&](std::function<void(void)>&& jobFullyExecuted) {
         // Otherwise, enqueue the job to run later.
-        context.jobQueue->addJob({command, [&, done=std::move(jobFullyExecuted)] (QueueJobContext* qctx) {
+        context.engine.getExecutionQueue().addJob({command, [&, done=std::move(jobFullyExecuted)] (QueueJobContext* qctx) {
           // Suppress static analyzer false positive on generalized lambda capture
           // (rdar://problem/22165130).
 #ifndef __clang_analyzer__
@@ -1328,7 +1329,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         command->getCommandString().c_str()
       };
 
-      context.jobQueue->executeProcess(qctx, args, {}, {true, isConsolePool}, {
+      context.engine.getExecutionQueue().executeProcess(qctx, args, {}, {true, isConsolePool}, {
         [&](ProcessResult result) {
           // Actually run the command.
           if (result.status != ProcessStatus::Succeeded) {
@@ -1991,6 +1992,18 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
             getProgramName());
     return 1;
   }
+
+  if (numJobsInParallel == 0) {
+    unsigned numCPUs = std::thread::hardware_concurrency();
+    if (numCPUs == 0) {
+      fprintf(stderr, "%s: error: unable to detect number of CPUs (%s)",
+              getProgramName(), strerror(errno));
+      return 1;
+    }
+
+    numJobsInParallel = numCPUs + 2;
+  }
+
   const std::string workingDirectory = current_dir.str();
 
   // Run up to two iterations, the first one loads the manifest and rebuilds it
@@ -2007,20 +2020,8 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     context.simulate = simulate;
     context.strict = strict;
     context.verbose = verbose;
-
-    // Create the job queue to use.
-    if (numJobsInParallel == 0) {
-      unsigned numCPUs = std::thread::hardware_concurrency();
-      if (numCPUs == 0) {
-        context.emitError("unable to detect number of CPUs (%s)",
-                          strerror(errno));
-        return 1;
-      }
-
-      numJobsInParallel = numCPUs + 2;
-    }
-    context.jobQueue.reset(createLaneBasedExecutionQueue(
-        context, numJobsInParallel, schedulerAlgorithm, nullptr));
+    context.numJobsInParallel = numJobsInParallel;
+    context.schedulerAlgorithm = schedulerAlgorithm;
 
     // Load the manifest.
     BuildManifestActions actions(context);
@@ -2344,4 +2345,10 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
 
   // Return an appropriate exit status.
   return 0;
+}
+
+std::unique_ptr<basic::ExecutionQueue> NinjaBuildEngineDelegate::createExecutionQueue() {
+  return std::unique_ptr<basic::ExecutionQueue>(
+    createLaneBasedExecutionQueue(*context, context->numJobsInParallel, context->schedulerAlgorithm, nullptr)
+  );
 }

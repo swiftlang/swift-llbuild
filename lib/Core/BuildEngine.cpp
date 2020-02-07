@@ -13,6 +13,7 @@
 #include "llbuild/Core/BuildEngine.h"
 
 #include "llbuild/Basic/Defer.h"
+#include "llbuild/Basic/ExecutionQueue.h"
 #include "llbuild/Basic/Tracing.h"
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/KeyID.h"
@@ -36,6 +37,7 @@
 #include <vector>
 
 using namespace llbuild;
+using namespace llbuild::basic;
 using namespace llbuild::core;
 
 Task::~Task() {}
@@ -78,6 +80,13 @@ class BuildEngineImpl : public BuildDBDelegate {
 
   /// The tracing implementation, if enabled.
   std::unique_ptr<BuildEngineTrace> trace;
+
+  /// Mutex for access to execution queue.
+  std::mutex executionQueueMutex;
+
+  /// The execution queue reference; this is only valid while a build is
+  /// actually in progress.
+  std::unique_ptr<ExecutionQueue> executionQueue;
 
   /// The current build iteration, used to sequentially timestamp build results.
   Epoch currentEpoch = 0;
@@ -1317,6 +1326,10 @@ public:
     return &delegate;
   }
 
+  ExecutionQueue& getExecutionQueue() {
+    return *executionQueue;
+  }
+
   Epoch getCurrentEpoch() {
     return currentEpoch;
   }
@@ -1434,6 +1447,29 @@ public:
       }
     }
 
+    // Aquire lock and create execution queue.
+    {
+      std::lock_guard<std::mutex> guard(executionQueueMutex);
+      if (buildCancelled) {
+        static ValueType emptyValue{};
+        return emptyValue;
+      }
+      executionQueue = delegate.createExecutionQueue();
+    }
+
+    llbuild_defer {
+      // Release the execution queue, impicitly waiting for it to complete. The
+      // asynchronous nature of the engine callbacks means it is possible for
+      // the queue to have notified the engine of the last task completion, but
+      // still have other work to perform (e.g., informing the client of command
+      // completion).
+      //
+      // This must hold the lock to prevent data racing on the executionQueue
+      // pointer (as can happen with cancellation) - rdar://problem/50993380
+      std::lock_guard<std::mutex> guard(executionQueueMutex);
+      executionQueue.reset();
+    };
+
     // Increment our running iteration count.
     //
     // At this point, we should conceptually mark each complete rule as
@@ -1448,7 +1484,6 @@ public:
       trace->buildStarted();
 
     // Run the build engine, to process any necessary tasks.
-    buildCancelled = false;
     bool success = executeTasks(key);
 
     // Update the build database, if attached.
@@ -1489,13 +1524,30 @@ public:
     return ruleInfo.result.value;
   }
 
+  void resetForBuild() {
+    std::lock_guard<std::mutex> guard(executionQueueMutex);
+    buildCancelled = false;
+  }
+
   void cancelBuild() {
+    std::lock_guard<std::mutex> guard(executionQueueMutex);
+
     // Set the build cancelled marker.
     //
     // We do not need to handle waking the engine up, if it is waiting, because
     // our current cancellation model requires us to wait for all outstanding
     // tasks in any case.
     buildCancelled = true;
+
+    // Cancel jobs if we actually have a queue.
+    if (executionQueue.get() != nullptr) {
+      // Ask the execution queue to cancel currently running jobs.
+      executionQueue->cancelAllJobs();
+    }
+  }
+
+  bool isCancelled() {
+    return buildCancelled;
   }
 
   bool attachDB(std::unique_ptr<BuildDB> database, std::string* error_out) {
@@ -1692,12 +1744,24 @@ const ValueType& BuildEngine::build(const KeyType& key) {
   return static_cast<BuildEngineImpl*>(impl)->build(key);
 }
 
+void BuildEngine::resetForBuild() {
+  static_cast<BuildEngineImpl*>(impl)->resetForBuild();
+}
+
 void BuildEngine::cancelBuild() {
-  return static_cast<BuildEngineImpl*>(impl)->cancelBuild();
+  static_cast<BuildEngineImpl*>(impl)->cancelBuild();
+}
+
+bool BuildEngine::isCancelled() {
+  return static_cast<BuildEngineImpl*>(impl)->isCancelled();
 }
 
 void BuildEngine::dumpGraphToFile(const std::string& path) {
   static_cast<BuildEngineImpl*>(impl)->dumpGraphToFile(path);
+}
+
+ExecutionQueue& BuildEngine::getExecutionQueue() {
+  return static_cast<BuildEngineImpl*>(impl)->getExecutionQueue();
 }
 
 bool BuildEngine::attachDB(std::unique_ptr<BuildDB> database, std::string* error_out) {

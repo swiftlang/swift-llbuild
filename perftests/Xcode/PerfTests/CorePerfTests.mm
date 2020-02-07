@@ -12,6 +12,7 @@
 
 #import "llbuild/Commands/Commands.h"
 
+#import "llbuild/Basic/ExecutionQueue.h"
 #import "llbuild/Core/BuildEngine.h"
 
 #import <XCTest/XCTest.h>
@@ -156,7 +157,7 @@ public:
   int M = 1000000; // Use a graph of 1 million nodes.
 
   // Set up the build rules.
-  struct LinearDelegate : public BuildEngineDelegate {
+  struct LinearDelegate : public BuildEngineDelegate, public basic::ExecutionQueueDelegate {
     virtual std::unique_ptr<core::Rule> lookupRule(const core::KeyType& Key) override {
       // We never expect dynamic rule lookup.
       fprintf(stderr, "error: unexpected rule lookup for \"%s\"\n",
@@ -173,6 +174,17 @@ public:
     virtual void error(const Twine& message) override {
       fprintf(stderr, "error: %s\n", message.str().c_str());
       abort();
+    }
+
+    void processStarted(basic::ProcessContext*, basic::ProcessHandle) override { }
+    void processHadError(basic::ProcessContext*, basic::ProcessHandle, const Twine&) override { }
+    void processHadOutput(basic::ProcessContext*, basic::ProcessHandle, StringRef) override { }
+    void processFinished(basic::ProcessContext*, basic::ProcessHandle, const basic::ProcessResult&) override { }
+    void queueJobStarted(basic::JobDescriptor*) override { }
+    void queueJobFinished(basic::JobDescriptor*) override { }
+
+    std::unique_ptr<basic::ExecutionQueue> createExecutionQueue() override {
+    return createSerialQueue(*this, nullptr);
     }
   } Delegate;
   core::BuildEngine Engine(Delegate);
@@ -236,7 +248,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
          N, M, NumTotalNodes);
 
   // Set up the build rules.
-  struct NaryTreeDelegate : public BuildEngineDelegate {
+  struct NaryTreeDelegate : public BuildEngineDelegate, public basic::ExecutionQueueDelegate {
     virtual std::unique_ptr<core::Rule> lookupRule(const core::KeyType& Key) override {
       // We never expect dynamic rule lookup.
       fprintf(stderr, "error: unexpected rule lookup for \"%s\"\n",
@@ -253,6 +265,17 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
     virtual void error(const Twine& message) override {
       fprintf(stderr, "error: %s\n", message.str().c_str());
       abort();
+    }
+
+    void processStarted(basic::ProcessContext*, basic::ProcessHandle) override { }
+    void processHadError(basic::ProcessContext*, basic::ProcessHandle, const Twine&) override { }
+    void processHadOutput(basic::ProcessContext*, basic::ProcessHandle, StringRef) override { }
+    void processFinished(basic::ProcessContext*, basic::ProcessHandle, const basic::ProcessResult&) override { }
+    void queueJobStarted(basic::JobDescriptor*) override { }
+    void queueJobFinished(basic::JobDescriptor*) override { }
+
+    std::unique_ptr<basic::ExecutionQueue> createExecutionQueue() override {
+    return createSerialQueue(*this, nullptr);
     }
   } Delegate;
   core::BuildEngine Engine(Delegate);
@@ -319,7 +342,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
   int M = 100, N = 100; // Use a graph of 1 million nodes.
 
   // Set up the build rules.
-  struct MatrixDelegate : public BuildEngineDelegate {
+  struct MatrixDelegate : public BuildEngineDelegate, public basic::ExecutionQueueDelegate {
     virtual std::unique_ptr<core::Rule> lookupRule(const core::KeyType& Key) override {
       // We never expect dynamic rule lookup.
       fprintf(stderr, "error: unexpected rule lookup for \"%s\"\n",
@@ -336,6 +359,17 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
     virtual void error(const Twine& message) override {
       fprintf(stderr, "error: %s\n", message.str().c_str());
       abort();
+    }
+
+    void processStarted(basic::ProcessContext*, basic::ProcessHandle) override { }
+    void processHadError(basic::ProcessContext*, basic::ProcessHandle, const Twine&) override { }
+    void processHadOutput(basic::ProcessContext*, basic::ProcessHandle, StringRef) override { }
+    void processFinished(basic::ProcessContext*, basic::ProcessHandle, const basic::ProcessResult&) override { }
+    void queueJobStarted(basic::JobDescriptor*) override { }
+    void queueJobFinished(basic::JobDescriptor*) override { }
+
+    std::unique_ptr<basic::ExecutionQueue> createExecutionQueue() override {
+    return createSerialQueue(*this, nullptr);
     }
   } Delegate;
   core::BuildEngine Engine(Delegate);

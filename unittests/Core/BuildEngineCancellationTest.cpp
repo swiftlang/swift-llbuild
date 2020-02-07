@@ -12,6 +12,7 @@
 
 #include "llbuild/Core/BuildEngine.h"
 
+#include "llbuild/Basic/ExecutionQueue.h"
 #include "llbuild/Core/BuildDB.h"
 
 #include "llvm/ADT/StringMap.h"
@@ -27,7 +28,7 @@ using namespace llbuild::core;
 
 namespace {
 
-class SimpleBuildEngineDelegate : public core::BuildEngineDelegate {
+class SimpleBuildEngineDelegate : public core::BuildEngineDelegate, public basic::ExecutionQueueDelegate {
 public:
   bool expectError = false;
 private:
@@ -47,6 +48,17 @@ private:
     fprintf(stderr, "error: %s\n", message.str().c_str());
     if (!expectError)
       abort();
+  }
+
+  void processStarted(basic::ProcessContext*, basic::ProcessHandle) override { }
+  void processHadError(basic::ProcessContext*, basic::ProcessHandle, const Twine&) override { }
+  void processHadOutput(basic::ProcessContext*, basic::ProcessHandle, StringRef) override { }
+  void processFinished(basic::ProcessContext*, basic::ProcessHandle, const basic::ProcessResult&) override { }
+  void queueJobStarted(basic::JobDescriptor*) override { }
+  void queueJobFinished(basic::JobDescriptor*) override { }
+
+  std::unique_ptr<basic::ExecutionQueue> createExecutionQueue() override {
+    return createSerialQueue(*this, nullptr);
   }
 };
 
@@ -168,6 +180,7 @@ TEST(BuildEngineCancellationTest, basic) {
   EXPECT_EQ("value-A", builtKeys[0]);
 
   // Build again, without cancelling; both tasks should run.
+  engine.resetForBuild();
   cancelIt = false;
   EXPECT_EQ(2 * 3, intFromValue(engine.build("result")));
   EXPECT_EQ(2U, builtKeys.size());

@@ -32,6 +32,10 @@
 #include <vector>
 
 namespace llbuild {
+namespace basic {
+  class ExecutionQueue;
+}
+
 namespace core {
 
 class KeyType {
@@ -243,6 +247,9 @@ class BuildEngineDelegate {
 public:
   virtual ~BuildEngineDelegate();  
 
+  /// Called by the build engine to get create the object used to dispatch work.
+  virtual std::unique_ptr<basic::ExecutionQueue> createExecutionQueue() = 0;
+
   /// Get the rule to use for the given Key.
   ///
   /// The delegate *must* provide a rule for any possible key that can be
@@ -359,6 +366,9 @@ public:
   // return an explicit object to represent an in-flight build, and then expose
   // cancellation on that.
   void cancelBuild();
+
+  void resetForBuild();
+  bool isCancelled();
   
   /// Attach a database for persisting build state.
   ///
@@ -382,6 +392,9 @@ public:
 
   /// @name Task Management APIs
   /// @{
+
+  basic::ExecutionQueue& getExecutionQueue();
+
 
   /// The maximum allowed input ID.
   static const uintptr_t kMaximumInputID = ~(uintptr_t)0xFF;
