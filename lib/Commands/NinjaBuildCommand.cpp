@@ -675,6 +675,7 @@ public:
   }
   void processHadOutput(ProcessContext* ctx, ProcessHandle handle,
                         StringRef data) override {
+    std::lock_guard<std::mutex> lock(outputBufferMutex);
     auto& outputData = outputBuffers[handle.id];
     outputData.insert(outputData.end(), data.bytes_begin(), data.bytes_end());
   }
