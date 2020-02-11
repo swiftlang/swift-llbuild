@@ -75,9 +75,6 @@ class ExternalCommand : public Command {
   /// Whether a prior result has been found.
   bool hasPriorResult = false;
   
-  /// Compute the output result for the command.
-  BuildValue computeCommandResult(BuildSystemCommandInterface& bsci);
-
   /// Check if it is legal to only update the result (versus rerunning)
   /// because the outputs are newer than all of the inputs.
   bool canUpdateIfNewerWithResult(const BuildValue& result);
@@ -111,6 +108,9 @@ protected:
       basic::QueueJobContext* context,
       llvm::Optional<basic::ProcessCompletionFn> completionFn = {llvm::None}) = 0;
   
+  /// Compute the output result for the command.
+  virtual BuildValue computeCommandResult(BuildSystemCommandInterface& bsci);
+
 public:
   using Command::Command;
 

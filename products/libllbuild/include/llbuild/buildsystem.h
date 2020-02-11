@@ -617,10 +617,33 @@ typedef struct llb_buildsystem_external_command_delegate_t_ {
   /// system using the command interface. It can add additional work onto the
   /// execution queue, so long as it arranges to only notify the system of
   /// completion once all that work is complete.
-  bool (*execute_command)(void* context, llb_buildsystem_command_t* command,
+  ///
+  /// If defined, the build value returning `execute_command_ex` variant is
+  /// called first. If an 'invalid' buile value is returned, the bindings will
+  /// then try calling the legacy `execute_command` variant if it is defined.
+  ///
+  /// The C API takes ownership of the value returned by `execute_command_ex`.
+  bool (*execute_command)(void* context,
+                          llb_buildsystem_command_t* command,
                           llb_buildsystem_command_interface_t* bsci,
                           llb_task_t* task,
                           llb_buildsystem_queue_job_context_t* job_context);
+
+  llb_build_value* (*execute_command_ex)(void* context,
+                                         llb_buildsystem_command_t* command,
+                                         llb_buildsystem_command_interface_t* bsci,
+                                         llb_task_t* task,
+                                         llb_buildsystem_queue_job_context_t* job_context);
+
+  /// Called by the build system to determine if the current build result
+  /// remains valid.
+  ///
+  /// Clients providing custom build values via execute_command_ex SHOULD supply
+  /// this accompanying method.
+  bool (*is_result_valid)(void* context,
+                          llb_buildsystem_command_t* command,
+                          const llb_build_value* value);
+
 } llb_buildsystem_external_command_delegate_t;
 
 /// Create a new external command instance.

@@ -117,6 +117,18 @@ private final class ToolWrapper {
         _delegate.start = { return BuildSystem.toCommandWrapper($0!).start($1!, $2!, $3!) }
         _delegate.provide_value = { return BuildSystem.toCommandWrapper($0!).provideValue($1!, $2!, $3!, $4!, $5) }
         _delegate.execute_command = { return BuildSystem.toCommandWrapper($0!).executeCommand($1!, $2!, $3!, $4!) }
+        if let _ = command as? ProducesCustomBuildValue {
+            _delegate.execute_command_ex = {
+                var value: BuildValue = BuildSystem.toCommandWrapper($0!).executeCommand($1!, $2!, $3!, $4!)
+                return BuildValue.move(&value)
+            }
+            _delegate.is_result_valid = {
+                return BuildSystem.toCommandWrapper($0!).isResultValid($1!, $2!)
+            }
+        } else {
+            _delegate.execute_command_ex = nil
+            _delegate.is_result_valid = nil
+        }
 
         // Create the low-level command.
         wrapper._command = Command(handle: llb_buildsystem_external_command_create(name, _delegate))
@@ -161,6 +173,22 @@ public protocol ExternalCommand: class {
     /// - commandInterface: A handle to the build system's command interface.
     /// - returns: True on success.
     func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> Bool
+
+}
+
+public protocol ProducesCustomBuildValue: class {
+    /// Called to execute the given command that produces a custom build value.
+    ///
+    /// - command: A handle to the executing command.
+    /// - commandInterface: A handle to the build system's command interface.
+    /// - returns: Produced build value.
+    func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> BuildValue
+
+    /// Called to check if the current result for this command remains valid.
+    ///
+    /// - command: A handle to the executing command.
+    /// - buildValue: The most recently computed build value.
+    func isResultValid(_ command: Command, _ buildValue: BuildValue) -> Bool
 }
 
 // Extension to provide a default implementation of execute(_ Command, _ commandInterface) to allow clients to
@@ -215,6 +243,19 @@ private final class CommandWrapper {
     func executeCommand(_: OpaquePointer, _ bsci: OpaquePointer, _ task: OpaquePointer, _ jobContext: OpaquePointer) -> Bool {
         let commandInterface = BuildSystemCommandInterface(bsci, task)
         return command.execute(_command, commandInterface)
+    }
+
+    func executeCommand(_: OpaquePointer, _ bsci: OpaquePointer, _ task: OpaquePointer, _ jobContext: OpaquePointer) -> BuildValue {
+        let commandInterface = BuildSystemCommandInterface(bsci, task)
+        return (command as! ProducesCustomBuildValue).execute(_command, commandInterface)
+    }
+
+    func isResultValid(_: OpaquePointer, _ value: OpaquePointer) -> Bool {
+        guard let buildValue = BuildValue.construct(from: value) else {
+            fatalError("Could not decode incoming build value.")
+        }
+
+        return (command as! ProducesCustomBuildValue).isResultValid(_command, buildValue)
     }
 }
 
