@@ -168,13 +168,14 @@ public:
   /// The internal schema version.
   ///
   /// Version History:
+  /// * 10: Use MD5 hashes in FileInfo
   /// * 9: Added filters to Directory* BuildKeys
   /// * 8: Added DirectoryTreeStructureSignature to BuildValue
   /// * 7: Added StaleFileRemoval to BuildValue
   /// * 6: Added DirectoryContents to BuildKey
   /// * 5: Switch BuildValue to be BinaryCoding based
   /// * 4: Pre-history
-  static const uint32_t internalSchemaVersion = 9;
+  static const uint32_t internalSchemaVersion = 10;
 
 private:
   BuildSystem& buildSystem;
