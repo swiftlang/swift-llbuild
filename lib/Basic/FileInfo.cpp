@@ -13,7 +13,7 @@
 #include "llbuild/Basic/FileInfo.h"
 
 #include "llbuild/Basic/Stat.h"
-
+#include "llvm/Support/FileSystem.h"
 #include <cassert>
 #include <cstring>
 
@@ -63,6 +63,8 @@ FileInfo FileInfo::getInfoForPath(const std::string& path, bool asLink) {
     result.modTime.nanoseconds = 1;
     assert(!result.isMissing());
   }
+
+  result.digest = llvm::sys::fs::md5_contents(Twine(path))->words();
 
   return result;
 }

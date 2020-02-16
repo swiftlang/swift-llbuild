@@ -75,6 +75,8 @@ struct FileInfo {
   uint64_t size;
   /// The modification time of the file.
   FileTimestamp modTime;
+  /// The MD5 hash of the file.
+  std::pair<uint64_t, uint64_t> digest;
 
   /// Check if this is a FileInfo representing a missing file.
   bool isMissing() const {
@@ -88,10 +90,8 @@ struct FileInfo {
   bool isDirectory() const;
   
   bool operator==(const FileInfo& rhs) const {
-    return (device == rhs.device &&
-            inode == rhs.inode &&
-            size == rhs.size &&
-            modTime == rhs.modTime);
+    return (size == rhs.size &&
+            digest == rhs.digest);
   }
   bool operator!=(const FileInfo& rhs) const {
     return !(*this == rhs);
@@ -128,6 +128,8 @@ struct BinaryCodingTraits<FileInfo> {
     coder.write(value.mode);
     coder.write(value.size);
     coder.write(value.modTime);
+    coder.write(value.digest.first);
+    coder.write(value.digest.second);
   }
   static inline void decode(FileInfo& value, BinaryDecoder& coder) {
     coder.read(value.device);
@@ -135,6 +137,8 @@ struct BinaryCodingTraits<FileInfo> {
     coder.read(value.mode);
     coder.read(value.size);
     coder.read(value.modTime);
+    coder.read(value.digest.first);
+    coder.read(value.digest.second);
   }
 };
 
