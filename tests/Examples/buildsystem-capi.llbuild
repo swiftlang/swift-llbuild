@@ -1,6 +1,6 @@
 # Check that the BuildSystem C API example builds and runs correctly.
 #
-# RUN: cc -o %t.exe %{srcroot}/examples/c-api/buildsystem/main.c -I %{srcroot}/products/libllbuild/include -lllbuild -L %{llbuild-lib-dir} -Werror
+# RUN: %clang -o %t.exe %{srcroot}/examples/c-api/buildsystem/main.c -I %{srcroot}/products/libllbuild/include -lllbuild -L %{llbuild-lib-dir} -Werror
 # RUN: env LD_LIBRARY_PATH=%{llbuild-lib-dir} %t.exe %s > %t.out
 # RUN: %{FileCheck} %s --input-file %t.out
 #
