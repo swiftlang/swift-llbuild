@@ -29,6 +29,7 @@
 
 #include <cstdint>
 #include <string>
+#include "llvm/Support/FileSystem.h"
 
 namespace llbuild {
 namespace basic {
@@ -60,6 +61,28 @@ struct FileTimestamp {
   }
 };
 
+struct LazyMD5Digest {
+  std::string path = "";
+  mutable std::pair<uint64_t, uint64_t> digest;
+  mutable bool needsCalculation;
+  
+  bool operator==(const LazyMD5Digest& rhs) const {
+    ensureCalculated();
+    rhs.ensureCalculated();
+    return digest == rhs.digest;
+  }
+  bool operator!=(const LazyMD5Digest& rhs) const {
+    return !(*this == rhs);
+  }
+
+  void ensureCalculated() const {
+    if (needsCalculation && !path.empty()) {
+      digest = llvm::sys::fs::md5_contents(Twine(path))->words();
+      needsCalculation = false;
+    }
+  }
+};
+
 /// File information which is intended to be used as a proxy for when a file has
 /// changed.
 ///
@@ -76,7 +99,7 @@ struct FileInfo {
   /// The modification time of the file.
   FileTimestamp modTime;
   /// The MD5 hash of the file.
-  std::pair<uint64_t, uint64_t> digest;
+  LazyMD5Digest digest;
 
   /// Check if this is a FileInfo representing a missing file.
   bool isMissing() const {
@@ -91,7 +114,7 @@ struct FileInfo {
   
   bool operator==(const FileInfo& rhs) const {
     return (size == rhs.size &&
-            digest == rhs.digest);
+            (modTime == rhs.modTime || digest == rhs.digest));
   }
   bool operator!=(const FileInfo& rhs) const {
     return !(*this == rhs);
@@ -121,6 +144,19 @@ struct BinaryCodingTraits<FileTimestamp> {
 };
 
 template<>
+struct BinaryCodingTraits<LazyMD5Digest> {
+  static inline void encode(const LazyMD5Digest& value, BinaryEncoder& coder) {
+    value.ensureCalculated();
+    coder.write(value.digest.first);
+    coder.write(value.digest.second);
+  }
+  static inline void decode(LazyMD5Digest& value, BinaryDecoder& coder) {
+    coder.read(value.digest.first);
+    coder.read(value.digest.second);
+  }
+};
+
+template<>
 struct BinaryCodingTraits<FileInfo> {
   static inline void encode(const FileInfo& value, BinaryEncoder& coder) {
     coder.write(value.device);
@@ -128,8 +164,7 @@ struct BinaryCodingTraits<FileInfo> {
     coder.write(value.mode);
     coder.write(value.size);
     coder.write(value.modTime);
-    coder.write(value.digest.first);
-    coder.write(value.digest.second);
+    coder.write(value.digest);
   }
   static inline void decode(FileInfo& value, BinaryDecoder& coder) {
     coder.read(value.device);
@@ -137,8 +172,7 @@ struct BinaryCodingTraits<FileInfo> {
     coder.read(value.mode);
     coder.read(value.size);
     coder.read(value.modTime);
-    coder.read(value.digest.first);
-    coder.read(value.digest.second);
+    coder.read(value.digest);
   }
 };
 

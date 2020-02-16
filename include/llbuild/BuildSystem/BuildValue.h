@@ -113,14 +113,8 @@ private:
   /// A hash value (used by some build value types).
   basic::CommandSignature signature;
 
-  union {
-    /// The file info for the rule output, for existing inputs, successful
-    /// commands with a single output, and directory contents.
-    FileInfo asOutputInfo;
-
-    /// The file info for successful commands with multiple outputs.
-    FileInfo* asOutputInfos;
-  } valueData = { {} };
+  /// The file info for successful commands with multiple outputs or a single output.
+  FileInfo* outputInfos;
 
   /// String list storage.
   //
@@ -155,13 +149,9 @@ private:
         signature(signature)
   {
     assert(numOutputInfos >= 1);
-    if (numOutputInfos == 1) {
-      valueData.asOutputInfo = outputInfos[0];
-    } else {
-      valueData.asOutputInfos = new FileInfo[numOutputInfos];
-      for (uint32_t i = 0; i != numOutputInfos; ++i) {
-        valueData.asOutputInfos[i] = outputInfos[i];
-      }
+    this->outputInfos = new FileInfo[numOutputInfos];
+    for (uint32_t i = 0; i != numOutputInfos; ++i) {
+      this->outputInfos[i] = outputInfos[i];
     }
   }
   
@@ -188,12 +178,7 @@ public:
   FileInfo& getNthOutputInfo(unsigned n) {
     assert(kindHasOutputInfo() && "invalid call for value kind");
     assert(n < getNumOutputs());
-    if (hasMultipleOutputs()) {
-      return valueData.asOutputInfos[n];
-    } else {
-      assert(n == 0);
-      return valueData.asOutputInfo;
-    }
+    return outputInfos[n];
   }
 
   // BuildValues preferentially should be moved, not copied.
@@ -201,12 +186,8 @@ public:
     kind = rhs.kind;
     numOutputInfos = rhs.numOutputInfos;
     signature = rhs.signature;
-    if (rhs.hasMultipleOutputs()) {
-      valueData.asOutputInfos = rhs.valueData.asOutputInfos;
-      rhs.valueData.asOutputInfos = nullptr;
-    } else {
-      valueData.asOutputInfo = rhs.valueData.asOutputInfo;
-    }
+    outputInfos = rhs.outputInfos;
+    rhs.outputInfos = nullptr;
     if (rhs.kindHasStringList()) {
       stringValues = std::move(rhs.stringValues);
     }
@@ -214,19 +195,16 @@ public:
   BuildValue& operator=(BuildValue&& rhs) {
     if (this != &rhs) {
       // Release our resources.
-      if (hasMultipleOutputs())
-        delete[] valueData.asOutputInfos;
+      if (kindHasOutputInfo()) {
+        delete[] outputInfos;
+      }
 
       // Move the data.
       kind = rhs.kind;
       numOutputInfos = rhs.numOutputInfos;
       signature = rhs.signature;
-      if (rhs.hasMultipleOutputs()) {
-        valueData.asOutputInfos = rhs.valueData.asOutputInfos;
-        rhs.valueData.asOutputInfos = nullptr;
-      } else {
-        valueData.asOutputInfo = rhs.valueData.asOutputInfo;
-      }
+      outputInfos = rhs.outputInfos;
+      rhs.outputInfos = nullptr;
       if (rhs.kindHasStringList()) {
         stringValues = std::move(rhs.stringValues);
       }
@@ -240,15 +218,14 @@ public:
   // copy.
   explicit BuildValue(const BuildValue& rhs) : numOutputInfos(rhs.numOutputInfos) {
     kind = rhs.kind;
+    numOutputInfos = rhs.numOutputInfos;
     signature = rhs.signature;
-    if (rhs.hasMultipleOutputs()) {
+    if (rhs.kindHasOutputInfo()) {
       auto newOutputInfos = new FileInfo[numOutputInfos];
       for (uint32_t i = 0; i < numOutputInfos; ++i) {
-        newOutputInfos[i] = rhs.valueData.asOutputInfos[i];
+        newOutputInfos[i] = rhs.outputInfos[i];
       }
-      valueData.asOutputInfos = newOutputInfos;
-    } else {
-      valueData.asOutputInfo = rhs.valueData.asOutputInfo;
+      outputInfos = newOutputInfos;
     }
 
     if (rhs.kindHasStringList()) {
@@ -257,8 +234,8 @@ public:
   }
 
   ~BuildValue() {
-    if (hasMultipleOutputs()) {
-      delete[] valueData.asOutputInfos;
+    if (kindHasOutputInfo()) {
+      delete[] outputInfos;
     }
   }
 
@@ -393,20 +370,15 @@ public:
 
   const FileInfo& getOutputInfo() const {
     assert(kindHasOutputInfo() && "invalid call for value kind");
-    assert(!hasMultipleOutputs() &&
+    assert(1 == getNumOutputs() &&
            "invalid call on result with multiple outputs");
-    return valueData.asOutputInfo;
+    return outputInfos[0];
   }
 
   const FileInfo& getNthOutputInfo(unsigned n) const {
     assert(kindHasOutputInfo() && "invalid call for value kind");
     assert(n < getNumOutputs());
-    if (hasMultipleOutputs()) {
-      return valueData.asOutputInfos[n];
-    } else {
-      assert(n == 0);
-      return valueData.asOutputInfo;
-    }
+    return outputInfos[n];
   }
 
   basic::CommandSignature getOutputSignature() const {
@@ -465,9 +437,7 @@ inline buildsystem::BuildValue::BuildValue(basic::BinaryDecoder& coder) {
     coder.read(signature);
   if (kindHasOutputInfo()) {
     coder.read(numOutputInfos);
-    if (numOutputInfos > 1) {
-      valueData.asOutputInfos = new FileInfo[numOutputInfos];
-    }
+    outputInfos = new FileInfo[numOutputInfos];
     for (uint32_t i = 0; i != numOutputInfos; ++i) {
       coder.read(getNthOutputInfo(i));
     }

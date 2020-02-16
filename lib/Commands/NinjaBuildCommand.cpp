@@ -184,14 +184,12 @@ private:
   /// The number of attached output infos.
   const uint32_t numOutputInfos = 0;
 
-  union {
-    /// The file info for the rule output, for existing inputs and successful
-    /// commands with a single output.
-    FileInfo asOutputInfo;
+  /// The file info for the rule output, for existing inputs and successful
+  /// commands with a single output.
+  FileInfo outputInfo;
 
-    /// The file info for successful commands with multiple outputs.
-    FileInfo* asOutputInfos;
-  } valueData;
+  /// The file info for successful commands with multiple outputs.
+  FileInfo* outputInfos;
 
   /// The command hash, for successful commands.
   CommandSignature commandHash;
@@ -206,15 +204,15 @@ private:
              CommandSignature commandHash = CommandSignature())
     : kind(kind), numOutputInfos(1), commandHash(commandHash)
   {
-    valueData.asOutputInfo = outputInfo;
+    this->outputInfo = outputInfo;
   }
   BuildValue(BuildValueKind kind, const FileInfo* outputInfos,
              uint32_t numOutputInfos, CommandSignature commandHash = CommandSignature())
     : kind(kind), numOutputInfos(numOutputInfos), commandHash(commandHash)
   {
-    valueData.asOutputInfos = new FileInfo[numOutputInfos];
+    this->outputInfos = new FileInfo[numOutputInfos];
     for (uint32_t i = 0; i != numOutputInfos; ++i) {
-      valueData.asOutputInfos[i] = outputInfos[i];
+      this->outputInfos[i] = outputInfos[i];
     }
   }
 
@@ -226,7 +224,7 @@ public:
   }
   ~BuildValue() {
     if (hasMultipleOutputs()) {
-      delete[] valueData.asOutputInfos;
+      delete[] outputInfos;
     }
   }
 
@@ -281,7 +279,7 @@ public:
            "invalid call for value kind");
     assert(!hasMultipleOutputs() &&
            "invalid call on result with multiple outputs");
-    return valueData.asOutputInfo;
+    return outputInfo;
   }
 
   const FileInfo& getNthOutputInfo(unsigned n) const {
@@ -289,10 +287,10 @@ public:
            "invalid call for value kind");
     assert(n < getNumOutputs());
     if (hasMultipleOutputs()) {
-      return valueData.asOutputInfos[n];
+      return outputInfos[n];
     } else {
       assert(n == 0);
-      return valueData.asOutputInfo;
+      return outputInfo;
     }
   }
 
@@ -310,8 +308,8 @@ public:
     if (result.numOutputInfos > 1) {
       assert(value.size() == (sizeof(result) +
                               result.numOutputInfos * sizeof(FileInfo)));
-      result.valueData.asOutputInfos = new FileInfo[result.numOutputInfos];
-      memcpy(result.valueData.asOutputInfos,
+      result.outputInfos = new FileInfo[result.numOutputInfos];
+      memcpy(result.outputInfos,
              value.data() + sizeof(result),
              result.numOutputInfos * sizeof(FileInfo));
     } else {
@@ -327,7 +325,7 @@ public:
       std::vector<uint8_t> result(sizeof(*this) +
                                   numOutputInfos * sizeof(FileInfo));
       memcpy(result.data(), this, sizeof(*this));
-      memcpy(result.data() + sizeof(*this), valueData.asOutputInfos,
+      memcpy(result.data() + sizeof(*this), outputInfos,
              numOutputInfos * sizeof(FileInfo));
       return result;
     } else {

@@ -64,7 +64,8 @@ FileInfo FileInfo::getInfoForPath(const std::string& path, bool asLink) {
     assert(!result.isMissing());
   }
 
-  result.digest = llvm::sys::fs::md5_contents(Twine(path))->words();
+  result.digest.path = path;
+  result.digest.needsCalculation = true;
 
   return result;
 }
