@@ -1,7 +1,7 @@
 # Check that we emulate -t clean
 
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.ninja
 # RUN: touch %t.build/input
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build > %t1.out

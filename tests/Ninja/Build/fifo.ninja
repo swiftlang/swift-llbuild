@@ -3,8 +3,8 @@
 # We run the build in a sandbox in the temp directory to ensure we don't
 # interact with the source dirs.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.ninja
 # RUN: %{llbuild} ninja build --jobs 1 --scheduler fifo --no-db --chdir %t.build &> %t.out
 # RUN: %{FileCheck} < %t.out %s

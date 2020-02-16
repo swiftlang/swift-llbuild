@@ -6,8 +6,8 @@
 # First pass we set up the database such that a directory contents node points
 # to a 'missing' file/directory.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: grep -A1000 "VERSION-BEGIN-[1]" %s | grep -B10000 "VERSION-END-1" | grep -ve '^--$' > %t.build/build-1.llbuild
 # RUN: %{llbuild} buildsystem build --serial --trace %t.initial.trace --chdir %t.build -f build-1.llbuild
 # RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file=%t.initial.trace %s

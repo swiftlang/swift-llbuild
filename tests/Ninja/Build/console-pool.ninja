@@ -1,7 +1,7 @@
 # Check that jobs in a console pool always run in a given order.
 
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.ninja
 # RUN: %{llbuild} ninja build --jobs 4 --no-db --chdir %t.build &> %t.out
 # RUN: %{FileCheck} --input-file %t.out %s

@@ -1,7 +1,7 @@
 # Verify that we exit with an appropriate code when there are build failures.
 
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.ninja
 # RUN: %{sh-invoke} -c "%{llbuild} ninja build --jobs 1 --chdir %t.build; echo \"exit code: $?\"" > %t.out
 # RUN: %{FileCheck} < %t.out %s

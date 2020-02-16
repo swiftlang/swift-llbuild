@@ -3,8 +3,8 @@
 # We run the build in a sandbox in the temp directory to ensure we don't
 # interact with the source dirs.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.ninja
 # RUN: echo "input-1" > %t.build/input-1
 # RUN: echo "input-2" > %t.build/input-2

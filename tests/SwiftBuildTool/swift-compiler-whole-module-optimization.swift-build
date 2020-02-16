@@ -2,8 +2,8 @@
 # UNSUPPORTED: platform=Windows
 # Check that we communicate properly with the Swift compiler.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: sed -e "s#SOURCEDIR#%S#g" -e "s#TMPDIR#%t#g" < %s > %t.build/build.swift-build
 # RUN: %{swift-build-tool} --no-db --chdir %t.build > %t.out
 # RUN: %{swift-build-tool} --no-db -v --chdir %t.build > %t-verbose.out

@@ -1,8 +1,8 @@
 # Check that a command with no inputs runs properly on the first invocation,
 # even if the output already exists.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.ninja
 # RUN: touch %t.build/output
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out

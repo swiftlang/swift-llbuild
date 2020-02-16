@@ -2,8 +2,8 @@
 # UNSUPPORTED: platform=Windows
 # Check that we properly rebuild when the Swift compiler changes.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: touch %t.build/input
 # RUN: sed -e "s#SOURCEDIR#%S#g" -e "s#TMPDIR#%t#g" < %s > %t.build/build.swift-build
 # RUN: %{swift-build-tool} -v --chdir %t.build > %t.out

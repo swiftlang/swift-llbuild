@@ -1,7 +1,7 @@
 # Test for handling of removed implicit header dependencies.
 
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: ln -s %s %t.build/build.ninja
 # RUN: echo "header-1" > %t.build/header-1
 # RUN: echo "input-1" > %t.build/input-1

@@ -2,8 +2,7 @@
 #
 # We use 'grep' to slice out two different subfiles from the same file.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
 #
 # RUN: grep -A1000 "VERSION-BEGIN-[1]" %s | grep -B10000 "VERSION-END-1" | grep -ve '^--$' > %t.build/build-1.llbuild
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build -f build-1.llbuild > %t1.out

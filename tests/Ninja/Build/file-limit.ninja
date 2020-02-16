@@ -1,7 +1,7 @@
 # Check operation under max file descriptor constraints
 
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.ninja
 # RUN: cp %S/Inputs/run-releasing-control-fd %t.build
 # RUN: cp %S/Inputs/ulimited %t.build

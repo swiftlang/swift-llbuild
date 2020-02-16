@@ -3,8 +3,8 @@
 # Verify that we perform update-if-newer if the output and the input have the
 # exact same timestamp (using touch -r).
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.ninja
 # RUN: touch -r / %t.build/input %t.build/output
 # RUN: %{llbuild} ninja build --no-db --jobs 1 --chdir %t.build &> %t1.out

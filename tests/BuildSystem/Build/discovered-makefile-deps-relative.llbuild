@@ -4,8 +4,8 @@
 # We test with a simple command that just writes a fake .d file which lists an
 # input dependency on "header-1".
 
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build/wd
+# RUN: %empty-directory(%t.build)
+#
 # RUN: touch %t.build/wd/header-1 %t.build/wd/input-1
 # RUN: cp %s %t.build/build.llbuild
 

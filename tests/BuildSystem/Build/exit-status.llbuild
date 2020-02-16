@@ -1,7 +1,7 @@
 # Check that we report a proper exit status with failing commands.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.llbuild
 # RUN: %{sh-invoke} -c "%{llbuild} buildsystem build --serial --chdir %t.build; echo \"exit code: $?\"" > %t.out
 # RUN: %{FileCheck} < %t.out %s

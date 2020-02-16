@@ -7,8 +7,9 @@
 # upstream Ninja, see SR-9735
 
 # XFAIL: *
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.ninja
 # RUN: touch %t.build/input
 # RUN: %{llbuild} ninja build --jobs 1 --no-db --chdir %t.build &> %t.out

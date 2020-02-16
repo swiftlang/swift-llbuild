@@ -3,8 +3,8 @@
 # We explicitly attach an extra FD to 4 when we run, to ensure the subprocess
 # has an extra FD it needs to clear.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: ln -s %S/Inputs/check-open-fds %t.build
 # RUN: ln -s %s %t.build/build.ninja
 # RUN: %{sh-invoke} -c "%{llbuild} ninja build --jobs 1 --no-db --chdir %t.build 4< /dev/null" &> %t.out

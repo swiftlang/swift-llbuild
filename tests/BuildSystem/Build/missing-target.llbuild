@@ -1,7 +1,7 @@
 # Check we display an error if the given target is not present.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.llbuild
 # RUN: %{llbuild} buildsystem build does-not-exist --chdir %t.build &> %t.out || true
 # RUN: %{FileCheck} --input-file=%t.out %s

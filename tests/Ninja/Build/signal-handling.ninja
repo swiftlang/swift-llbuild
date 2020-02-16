@@ -1,7 +1,7 @@
 # Check that SIGINT handling aborts a build.
 
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.ninja
 # RUN: cp %S/Inputs/wait-for-file %t.build
 # RUN: /bin/bash -c \

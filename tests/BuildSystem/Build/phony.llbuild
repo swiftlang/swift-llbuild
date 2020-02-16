@@ -1,7 +1,7 @@
 # Check basic handling of 'phony' commands.
 
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.llbuild
 # RUN: %{llbuild} buildsystem build --serial --scheduler fifo --chdir %t.build > %t.out
 # RUN: %{FileCheck} --input-file %t.out %s

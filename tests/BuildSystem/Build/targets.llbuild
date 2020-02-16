@@ -2,8 +2,8 @@
 
 # Run an initial build which fails on the command.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.llbuild
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t-A.out
 # RUN: %{FileCheck} --input-file %t-A.out %s --check-prefix=CHECK-A

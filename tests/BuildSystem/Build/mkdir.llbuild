@@ -4,8 +4,9 @@
 # the WSL file system doesn't support permissions: https://github.com/Microsoft/BashOnWindows/issues/1801
 # See https://github.com/Microsoft/BashOnWindows/issues/1801
 # XFAIL: windows_subsystem_linux
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+#
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.llbuild
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.out
 # RUN: %{FileCheck} --input-file=%t.out %s
@@ -83,4 +84,3 @@ commands:
     outputs: ["<TRIGGERED>"]
     args: true
 
-  

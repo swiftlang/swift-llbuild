@@ -2,8 +2,8 @@
 
 # Check that we cancel the build immediately by default.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.ninja
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build --no-db &> %t1.out || true
 # RUN: %{FileCheck} --check-prefix CHECK-DEFAULT --input-file %t1.out %s
@@ -13,8 +13,8 @@
 
 # Check that we honor -k 2.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.ninja
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build --no-db -k 2 &> %t2.out || true
 # RUN: %{FileCheck} --check-prefix CHECK-TWO --input-file %t2.out %s
@@ -25,8 +25,8 @@
 
 # Check that we honor -k 0.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.ninja
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build --no-db -k 0 &> %t3.out || true
 # RUN: %{FileCheck} --check-prefix CHECK-UNLIMITED --input-file %t3.out %s

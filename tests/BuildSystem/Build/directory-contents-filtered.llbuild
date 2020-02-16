@@ -1,8 +1,8 @@
 # Check that directory contents are rebuilt *only* when appropriate.
 # Makes use of exclusion filters
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.llbuild
 # RUN: mkdir -p %t.build/dir
 # RUN: %{llbuild} buildsystem build --serial --trace %t.initial.trace --chdir %t.build

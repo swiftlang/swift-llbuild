@@ -5,8 +5,8 @@
 
 # Check that we always run commands that don't produce output files.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.ninja
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build no-output &> %t.out
 # RUN: %{FileCheck} --check-prefix=CHECK-FIRST < %t.out %s

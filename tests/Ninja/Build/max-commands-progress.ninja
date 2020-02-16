@@ -1,7 +1,7 @@
 # Check the progress reporting.
 
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: touch -r / %t.build/input-1 %t.build/input-2
 # RUN: cp %s %t.build/build.ninja
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out

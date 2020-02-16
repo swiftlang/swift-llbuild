@@ -1,7 +1,7 @@
 # Check command line status output
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: touch %t.build/input
 # RUN: cp %s %t.build/build.llbuild
 # RUN: %{llbuild} buildsystem build --no-db --serial --chdir %t.build > %t.out

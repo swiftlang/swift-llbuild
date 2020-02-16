@@ -2,8 +2,8 @@
 # Makes use of exclusion filters. This tests that this works properly when the
 # directory in question is produced by another rule in the manifest.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.llbuild
 # RUN: %{llbuild} buildsystem build --serial --trace %t.initial.trace --chdir %t.build
 # RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file=%t.initial.trace %s

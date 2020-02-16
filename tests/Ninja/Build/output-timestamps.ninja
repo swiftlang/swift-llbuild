@@ -4,8 +4,8 @@
 # only run once. This happens for the 'LLVMBuild.cmake' part of the LLVM
 # generator step, for example.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.ninja
 # RUN: touch %t.build/input
 # RUN: %{llbuild} ninja build --chdir %t.build &> %t1.out

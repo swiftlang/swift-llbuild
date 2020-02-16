@@ -1,7 +1,7 @@
 # REQUIRES: platform=Windows
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: mkdir -p "%t.build/dir with space"
 # RUN: touch "%t.build/dir with space/file with space"
 # RUN: cp %s %t.build/build.llbuild

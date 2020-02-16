@@ -3,8 +3,8 @@
 # Check that we handle phony rules for actual input files properly, and rebuild
 # targets that depend on them if the input actually exists and it changes.
 
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.ninja
 # RUN: ln -s %S/Inputs %t.build/Inputs
 

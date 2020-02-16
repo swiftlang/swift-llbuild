@@ -3,8 +3,8 @@
 # We use a Shake §6.3 inspired script which separates the input into odd and
 # even numbers, and only updates the output when changed.
 
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %S/Inputs/split-numbers %t.build
 # RUN: cp %s %t.build/build.ninja
 # RUN: touch %t.build/input

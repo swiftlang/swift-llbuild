@@ -1,7 +1,7 @@
 # Check building of Ninja files with no default targets set.
 
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.ninja
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t.out
 # RUN: %{FileCheck} < %t.out %s

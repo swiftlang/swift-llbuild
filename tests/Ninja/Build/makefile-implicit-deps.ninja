@@ -6,8 +6,8 @@
 # We also enforce that the timestamp of input-1 is "old" to ensure that any
 # update-if-newer behavior works correctly.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.ninja
 # RUN: touch -r / %t.build/header-1 %t.build/input-1
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out

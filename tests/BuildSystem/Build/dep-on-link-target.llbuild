@@ -1,8 +1,8 @@
 # Check behavior when a command directly depends on a file seen through a
 # symbolic link.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: echo "input" > %t.build/input
 # RUN: cp %s %t.build/build.llbuild
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.out

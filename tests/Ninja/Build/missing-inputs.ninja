@@ -3,8 +3,8 @@
 # Check that we don't build a command with a missing input, and that we properly
 # report the exit status as a failure.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.ninja
 # RUN: %{sh-invoke} -c "%{llbuild} ninja build --jobs 1 --chdir %t.build --no-db; echo \"exit code: $?\"" &> %t1.out
 # RUN: %{FileCheck} < %t1.out %s

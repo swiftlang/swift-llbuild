@@ -1,7 +1,7 @@
 # Check that working directory attribute is processed properly
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.llbuild
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.out
 # RUN: test -d %t.build/subdir

@@ -1,7 +1,7 @@
 # Check that colored output from the commands is eliminated.
 
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.ninja
 # RUN: touch %t.build/test.in
 #

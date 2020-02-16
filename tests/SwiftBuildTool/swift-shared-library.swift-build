@@ -1,7 +1,7 @@
 # Check the shared libraryu tool.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: sed -e "s#SOURCEDIR#%S#g" -e "s#TMPDIR#%t#g" < %s > %t.build/build.swift-build
 # RUN: echo "" > %t.build/s1.swift
 # RUN: echo "" > %t.build/s2.swift

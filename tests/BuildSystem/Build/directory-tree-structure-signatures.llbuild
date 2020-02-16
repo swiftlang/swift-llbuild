@@ -3,8 +3,8 @@
 # We check the node used against three kinds of directories: missing, a file, an
 # actual directory.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.llbuild
 # RUN: echo "file" > %t.build/file
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.initial.out
@@ -46,10 +46,9 @@
 # Check that type transitions are detected.
 #
 # RUN: rm -rf %t.build/missing-dir
-# RUN: rm -rf %t.build/file
-# RUN: rm -rf %t.build/dir/file2
-# RUN: mkdir -p %t.build/file
-# RUN: mkdir -p %t.build/dir/file2
+# RUN: %empty-directory(%t.build/file)
+# RUN: %empty-directory(%t.build/dir/file2)
+#
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.type-changed.out
 # RUN: %{FileCheck} --check-prefix=CHECK-TYPE-CHANGED --input-file=%t.type-changed.out %s
 #

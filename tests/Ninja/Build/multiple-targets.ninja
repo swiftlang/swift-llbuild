@@ -3,8 +3,8 @@
 # This checks that we build multiple targets concurrently (using the same lock
 # trick as the parallel test), and that we don't build them more than once.
 
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.ninja
 # RUN: cp %S/Inputs/wait-for-file %t.build
 # RUN: %{llbuild} ninja build --chdir %t.build node-A node-B node-A node-B &> %t.out

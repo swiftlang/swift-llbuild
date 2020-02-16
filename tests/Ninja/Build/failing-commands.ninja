@@ -2,8 +2,8 @@
 
 # Check that we don't build a command downstream of a failing one.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.ninja
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build --no-db &> %t1.out || true
 # RUN: %{FileCheck} < %t1.out %s

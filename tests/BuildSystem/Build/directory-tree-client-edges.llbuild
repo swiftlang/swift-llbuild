@@ -6,8 +6,8 @@
 # directory and the directory tree node itself. Currently, clients must supply
 # any missing unmodeled edges explicitly.
 #
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.llbuild
 # RUN: echo "file" > %t.build/file
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.initial.out

@@ -1,7 +1,7 @@
 # Check the handling of commands which have changed.
 
-# RUN: rm -rf %t.build
-# RUN: mkdir -p %t.build
+# RUN: %empty-directory(%t.build)
+#
 # RUN: cp %s %t.build/build.ninja
 # RUN: echo input-1 > %t.build/input-1
 # RUN: echo input-2 > %t.build/input-2
