@@ -414,7 +414,7 @@ commands:
 
         // Validate that the custom build value was collected by checking the
         // database contents.
-        let db = try BuildDB(path: databaseFile, clientSchemaVersion: 9)
+        let db = try BuildDB(path: databaseFile, clientSchemaVersion: 10)
         guard let maincommandResult = try db.lookupRuleResult(buildKey: BuildKey.Command(name: "maincommand")) else {
             return XCTFail("Unable to load command value from db")
         }
