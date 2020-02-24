@@ -115,26 +115,26 @@ public:
   {
   }
 
-  virtual void start(BuildEngine& engine) override {
+  virtual void start(TaskInterface& ti) override {
     // Compute the list of inputs.
     auto inputs = listInputs();
 
     // Request all of the inputs.
     inputValues.resize(inputs.size());
     for (int i = 0, e = inputs.size(); i != e; ++i) {
-      engine.taskNeedsInput(this, inputs[i], i);
+      ti.request(inputs[i], i);
     }
   }
 
-  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface&, uintptr_t inputID,
                             const ValueType& value) override {
     // Update the input values.
     assert(inputID < inputValues.size());
     inputValues[inputID] = intFromValue(value);
   }
 
-  virtual void inputsAvailable(core::BuildEngine& engine) override {
-    engine.taskIsComplete(this, intToValue(compute(inputValues)));
+  virtual void inputsAvailable(TaskInterface& ti) override {
+    ti.complete(intToValue(compute(inputValues)));
   }
 };
 
@@ -600,21 +600,21 @@ TEST(BuildEngineTest, discoveredDependencies) {
   public:
     TaskWithDiscoveredDependency(int& valueB) : valueB(valueB) { }
 
-    virtual void start(BuildEngine& engine) override {
+    virtual void start(TaskInterface& ti) override {
       // Request the known input.
-      engine.taskNeedsInput(this, "value-A", 0);
+      ti.request("value-A", 0);
     }
 
-    virtual void provideValue(BuildEngine&, uintptr_t inputID,
+    virtual void provideValue(TaskInterface&, uintptr_t inputID,
                               const ValueType& value) override {
       assert(inputID == 0);
       computedInputValue = intFromValue(value);
     }
 
-    virtual void inputsAvailable(core::BuildEngine& engine) override {
+    virtual void inputsAvailable(TaskInterface& ti) override {
       // Report the discovered dependency.
-      engine.taskDiscoveredDependency(this, "value-B");
-      engine.taskIsComplete(this, intToValue(computedInputValue * valueB * 5));
+      ti.discoveredDependency("value-B");
+      ti.complete(intToValue(computedInputValue * valueB * 5));
     }
   };
 

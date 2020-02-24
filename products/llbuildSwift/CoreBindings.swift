@@ -226,8 +226,6 @@ private class Wrapper<T> {
 /// This protocol encapsulates the API that a task can use to communicate with
 /// the build engine.
 public protocol TaskBuildEngine {
-    var engine: BuildEngine { get }
-
     /// Specify that the task depends upon the result of computing \arg key.
     ///
     /// The result, when available, will be provided to the task via \see
@@ -293,9 +291,41 @@ extension TaskBuildEngine {
         self.taskIsComplete(result, forceChange: false)
     }
 }
+private class TaskInterfaceWrapper: TaskBuildEngine {
+    var ti: OpaquePointer?
+
+    init(_ taskInterface: OpaquePointer?) {
+        self.ti = taskInterface
+    }
+
+    func taskNeedsInput(_ key: Key, inputID: Int) {
+        key.withInternalDataPtr { keyPtr in
+            llb_buildengine_task_needs_input(self.ti, keyPtr, UInt(inputID))
+        }
+    }
+
+    func taskMustFollow(_ key: Key) {
+        key.withInternalDataPtr { keyPtr in
+            llb_buildengine_task_must_follow(self.ti, keyPtr)
+        }
+    }
+
+    func taskDiscoveredDependency(_ key: Key) {
+        key.withInternalDataPtr { keyPtr in
+            llb_buildengine_task_discovered_dependency(self.ti, keyPtr)
+        }
+
+    }
+
+    func taskIsComplete(_ result: Value, forceChange: Bool = false) {
+        result.withInternalDataPtr { dataPtr in
+            llb_buildengine_task_is_complete(self.ti, dataPtr, forceChange)
+        }
+    }
+}
 
 /// Single concrete implementation of the TaskBuildEngine protocol.
-private class TaskWrapper: CustomStringConvertible, TaskBuildEngine {
+private class TaskWrapper: CustomStringConvertible {
     let engine: BuildEngine
     let task: Task
     var taskInternal: OpaquePointer?
@@ -307,22 +337,6 @@ private class TaskWrapper: CustomStringConvertible, TaskBuildEngine {
     init(_ engine: BuildEngine, _ task: Task) {
         self.engine = engine
         self.task = task
-    }
-
-    func taskNeedsInput(_ key: Key, inputID: Int) {
-        engine.taskNeedsInput(self, key: key, inputID: inputID)
-    }
-
-    func taskMustFollow(_ key: Key) {
-        engine.taskMustFollow(self, key: key)
-    }
-
-    func taskDiscoveredDependency(_ key: Key) {
-        engine.taskDiscoveredDependency(self, key: key)
-    }
-
-    func taskIsComplete(_ result: Value, forceChange: Bool = false) {
-        engine.taskIsComplete(self, result: result, forceChange: forceChange)
     }
 }
 
@@ -420,32 +434,6 @@ public class BuildEngine {
         }
     }
 
-    /// MARK: Internal Task-Only API
-
-    fileprivate func taskNeedsInput(_ taskWrapper: TaskWrapper, key: Key, inputID: Int) {
-        key.withInternalDataPtr { keyPtr in
-            llb_buildengine_task_needs_input(self._engine, taskWrapper.taskInternal, keyPtr, UInt(inputID))
-        }
-    }
-
-    fileprivate func taskMustFollow(_ taskWrapper: TaskWrapper, key: Key) {
-        key.withInternalDataPtr { keyPtr in
-            llb_buildengine_task_must_follow(self._engine, taskWrapper.taskInternal, keyPtr)
-        }
-    }
-
-    fileprivate func taskDiscoveredDependency(_ taskWrapper: TaskWrapper, key: Key) {
-        key.withInternalDataPtr { keyPtr in
-            llb_buildengine_task_discovered_dependency(self._engine, taskWrapper.taskInternal, keyPtr)
-        }
-    }
-
-    fileprivate func taskIsComplete(_ taskWrapper: TaskWrapper, result: Value, forceChange: Bool = false) {
-        result.withInternalDataPtr { dataPtr in
-            llb_buildengine_task_is_complete(self._engine, taskWrapper.taskInternal, dataPtr, forceChange)
-        }
-    }
-
     /// MARK: Internal Delegate Implementation
 
     /// Helper function for getting the engine from the delegate context.
@@ -507,17 +495,20 @@ public class BuildEngine {
         taskDelegate.destroy_context = { (context) in
             Unmanaged<TaskWrapper>.fromOpaque(context!).release()
         }
-        taskDelegate.start = { (context, engineContext, internalTask) in
+        taskDelegate.start = { (context, engineContext, taskInterface) in
             let taskWrapper = BuildEngine.toTaskWrapper(context!)
-            taskWrapper.task.start(taskWrapper)
+            let taskInterfaceWrapper = TaskInterfaceWrapper(taskInterface)
+            taskWrapper.task.start(taskInterfaceWrapper)
         }
-        taskDelegate.provide_value = { (context, engineContext, internalTask, inputID, value) in
+        taskDelegate.provide_value = { (context, engineContext, taskInterface, inputID, value) in
             let taskWrapper = BuildEngine.toTaskWrapper(context!)
-            taskWrapper.task.provideValue(taskWrapper, inputID: Int(inputID), value: Value.fromInternalData(value!.pointee))
+            let taskInterfaceWrapper = TaskInterfaceWrapper(taskInterface)
+            taskWrapper.task.provideValue(taskInterfaceWrapper, inputID: Int(inputID), value: Value.fromInternalData(value!.pointee))
         }
-        taskDelegate.inputs_available = { (context, engineContext, internalTask) in
+        taskDelegate.inputs_available = { (context, engineContext, taskInterface) in
             let taskWrapper = BuildEngine.toTaskWrapper(context!)
-            taskWrapper.task.inputsAvailable(taskWrapper)
+            let taskInterfaceWrapper = TaskInterfaceWrapper(taskInterface)
+            taskWrapper.task.inputsAvailable(taskInterfaceWrapper)
         }
 
         // Create the internal task.

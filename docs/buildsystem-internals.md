@@ -133,7 +133,6 @@ Below is a summary of the existing abstractions above `Core`, and their purpose:
   * BuildSystem :: Command
   * BuildSystem :: ExternalCommand
   * BuildSystem :: ShellCommand
-  * BuildSystem :: BuildSystemCommandInterface
   * BuildSystem C API :: CAPITool
   * BuildSystem C API :: CAPIExternalCommand
   * BuildSystem Swift API :: ExternalCommand

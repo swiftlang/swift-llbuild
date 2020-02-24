@@ -13,10 +13,10 @@
 #ifndef LLBUILD_CORE_BUILDENGINE_H
 #define LLBUILD_CORE_BUILDENGINE_H
 
-#include "llbuild/Basic/Compiler.h"
-#include "llbuild/Basic/Hashing.h"
-
 #include "llbuild/Basic/Clock.h"
+#include "llbuild/Basic/Compiler.h"
+#include "llbuild/Basic/ExecutionQueue.h"
+#include "llbuild/Basic/Hashing.h"
 
 #include "llbuild/Core/AttributedKeyIDs.h"
 #include "llbuild/Core/KeyID.h"
@@ -32,10 +32,6 @@
 #include <vector>
 
 namespace llbuild {
-namespace basic {
-  class ExecutionQueue;
-}
-
 namespace core {
 
 class KeyType {
@@ -62,6 +58,7 @@ typedef std::vector<uint8_t> ValueType;
 
 class BuildDB;
 class BuildEngine;
+class BuildEngineDelegate;
 
 /// A monotonically increasing number identifying which iteration of a build
 /// an event occurred during.
@@ -101,6 +98,101 @@ struct Result {
   basic::Clock::Timestamp end;
 };
 
+
+class TaskInterface {
+private:
+  void* impl;
+  void* ctx;
+
+public:
+  TaskInterface(void* impl, void* ctx) : impl(impl), ctx(ctx) {}
+
+  /// @name Accessors
+  /// @{
+
+  Epoch currentEpoch();
+  bool isCancelled();
+  BuildEngineDelegate* delegate();
+
+  /// @}
+
+
+  /// @name Task Management APIs
+  /// @{
+
+  /// Specify the task depends upon the result of computing \arg Key.
+  ///
+  /// The result, when available, will be provided to the task via \see
+  /// Task::provideValue(), supplying the provided \arg InputID to allow the
+  /// task to identify the particular input.
+  ///
+  /// NOTE: It is an unchecked error for a task to request the same input value
+  /// multiple times.
+  ///
+  /// \param inputID An arbitrary value that may be provided by the client to
+  /// use in efficiently associating this input. The range of this parameter is
+  /// intentionally chosen to allow a pointer to be provided, but note that all
+  /// input IDs greater than \see kMaximumInputID are reserved for internal use
+  /// by the engine.
+  void request(const KeyType& key, uintptr_t inputID);
+
+  /// Specify that the task must be built subsequent to the
+  /// computation of \arg Key.
+  ///
+  /// The value of the computation of \arg Key is not available to the task, and
+  /// the only guarantee the engine provides is that if \arg Key is computed
+  /// during a build, then task will not be computed until after it.
+  void mustFollow(const KeyType& key);
+
+  /// Inform the engine of an input dependency that was discovered by the task
+  /// during its execution, a la compiler generated dependency files.
+  ///
+  /// This call may only be made after a task has received all of its inputs;
+  /// inputs discovered prior to that point should simply be requested as normal
+  /// input dependencies.
+  ///
+  /// Such a dependency is not used to provide additional input to the task,
+  /// rather it is a way for the task to report an additional input which should
+  /// be considered the next time the rule is evaluated. The expected use case
+  /// for a discovered dependency is is when a processing task cannot predict
+  /// all of its inputs prior to being run, but can presume that any unknown
+  /// inputs already exist. In such cases, the task can go ahead and run and can
+  /// report the all of the discovered inputs as it executes. Once the task is
+  /// complete, these inputs will be recorded as being dependencies of the task
+  /// so that it will be recomputed when any of the inputs change.
+  ///
+  /// It is legal to call this method from any thread, but the caller is
+  /// responsible for ensuring that it is never called concurrently for the same
+  /// task.
+  void discoveredDependency(const KeyType& key);
+
+  /// Called by a task to indicate it has completed and to provide its value.
+  ///
+  /// It is legal to call this method from any thread.
+  ///
+  /// \param value The new value for the task's rule.
+  ///
+  /// \param forceChange If true, treat the value as changed and trigger
+  /// dependents to rebuild, even if the value itself is not different from the
+  /// prior result.
+  void complete(ValueType&& value, bool forceChange = false);
+
+  /// Called by a task to run an asynchronous computation
+  void spawn(basic::QueueJob&&);
+
+  /// Called by a task to spawn an external process.
+  void spawn(basic::QueueJobContext* context,
+             ArrayRef<StringRef> commandLine,
+             ArrayRef<std::pair<StringRef, StringRef>> environment,
+             basic::ProcessAttributes attributes = {true},
+             llvm::Optional<basic::ProcessCompletionFn> completionFn = {llvm::None});
+
+  basic::ProcessStatus spawn(basic::QueueJobContext* context,
+                             ArrayRef<StringRef> commandLine);
+  /// @}
+};
+
+
 /// A task object represents an abstract in-progress computation in the build
 /// engine.
 ///
@@ -133,14 +225,14 @@ public:
   virtual ~Task();
 
   /// Executed by the build engine when the task should be started.
-  virtual void start(BuildEngine&) = 0;
+  virtual void start(TaskInterface&) = 0;
 
   /// Invoked by the build engine to provide the prior result for the task's
   /// output, if present.
   ///
   /// This callback will always be invoked immediately after the task is
   /// started, and prior to its receipt of any other callbacks.
-  virtual void providePriorValue(BuildEngine&, const ValueType& value) {};
+  virtual void providePriorValue(TaskInterface&, const ValueType& value) {};
 
   /// Invoked by the build engine to provide an input value as it becomes
   /// available.
@@ -150,7 +242,7 @@ public:
   /// BuildEngine::taskNeedsInput().
   ///
   /// \param value The computed value for the given input.
-  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface&, uintptr_t inputID,
                             const ValueType& value) = 0;
 
   /// Executed by the build engine to indicate that all inputs have been
@@ -161,7 +253,7 @@ public:
   ///
   /// It is an error for any client to request an additional input for a task
   /// after the last requested input has been provided by the build engine.
-  virtual void inputsAvailable(BuildEngine&) = 0;
+  virtual void inputsAvailable(TaskInterface&) = 0;
 };
 
 /// A rule represents an individual element of computation that can be performed
@@ -390,73 +482,8 @@ public:
 
   /// @}
 
-  /// @name Task Management APIs
-  /// @{
-
-  basic::ExecutionQueue& getExecutionQueue();
-
-
   /// The maximum allowed input ID.
   static const uintptr_t kMaximumInputID = ~(uintptr_t)0xFF;
-
-  /// Specify the given \arg Task depends upon the result of computing \arg Key.
-  ///
-  /// The result, when available, will be provided to the task via \see
-  /// Task::provideValue(), supplying the provided \arg InputID to allow the
-  /// task to identify the particular input.
-  ///
-  /// NOTE: It is an unchecked error for a task to request the same input value
-  /// multiple times.
-  ///
-  /// \param inputID An arbitrary value that may be provided by the client to
-  /// use in efficiently associating this input. The range of this parameter is
-  /// intentionally chosen to allow a pointer to be provided, but note that all
-  /// input IDs greater than \see kMaximumInputID are reserved for internal use
-  /// by the engine.
-  void taskNeedsInput(Task* task, const KeyType& key, uintptr_t inputID);
-
-  /// Specify that the given \arg Task must be built subsequent to the
-  /// computation of \arg Key.
-  ///
-  /// The value of the computation of \arg Key is not available to the task, and
-  /// the only guarantee the engine provides is that if \arg Key is computed
-  /// during a build, then \arg Task will not be computed until after it.
-  void taskMustFollow(Task* task, const KeyType& key);
-
-  /// Inform the engine of an input dependency that was discovered by the task
-  /// during its execution, a la compiler generated dependency files.
-  ///
-  /// This call may only be made after a task has received all of its inputs;
-  /// inputs discovered prior to that point should simply be requested as normal
-  /// input dependencies.
-  ///
-  /// Such a dependency is not used to provide additional input to the task,
-  /// rather it is a way for the task to report an additional input which should
-  /// be considered the next time the rule is evaluated. The expected use case
-  /// for a discovered dependency is is when a processing task cannot predict
-  /// all of its inputs prior to being run, but can presume that any unknown
-  /// inputs already exist. In such cases, the task can go ahead and run and can
-  /// report the all of the discovered inputs as it executes. Once the task is
-  /// complete, these inputs will be recorded as being dependencies of the task
-  /// so that it will be recomputed when any of the inputs change.
-  ///
-  /// It is legal to call this method from any thread, but the caller is
-  /// responsible for ensuring that it is never called concurrently for the same
-  /// task.
-  void taskDiscoveredDependency(Task* task, const KeyType& key);
-
-  /// Called by a task to indicate it has completed and to provide its value.
-  ///
-  /// It is legal to call this method from any thread.
-  ///
-  /// \param value The new value for the task's rule.
-  ///
-  /// \param forceChange If true, treat the value as changed and trigger
-  /// dependents to rebuild, even if the value itself is not different from the
-  /// prior result.
-  void taskIsComplete(Task* task, ValueType&& value, bool forceChange = false);
-  
-  /// @}
 };
 
 }

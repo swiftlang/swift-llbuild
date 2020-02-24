@@ -547,7 +547,8 @@ private:
     // Inform the task it should start.
     {
       TracingEngineTaskCallback i(EngineTaskCallbackKind::Start, ruleInfo.keyID);
-      task->start(buildEngine);
+      TaskInterface iface{this, task};
+      task->start(iface);
     }
 
     // Provide the task the prior result, if present.
@@ -559,7 +560,8 @@ private:
     if (ruleInfo.result.builtAt != 0 &&
         ruleInfo.rule->signature == ruleInfo.result.signature) {
       TracingEngineTaskCallback i(EngineTaskCallbackKind::ProvidePriorValue, ruleInfo.keyID);
-      task->providePriorValue(buildEngine, ruleInfo.result.value);
+      TaskInterface iface{this, task};
+      task->providePriorValue(iface, ruleInfo.result.value);
     }
 
     // If this task has no waiters, schedule it immediately for finalization.
@@ -822,8 +824,9 @@ private:
           assert(request.inputID == kMustFollowInputID);
         } else {
           TracingEngineTaskCallback i(EngineTaskCallbackKind::ProvideValue, request.inputRuleInfo->keyID);
+          TaskInterface iface{this, request.taskInfo->task.get()};
           request.taskInfo->task->provideValue(
-              buildEngine, request.inputID, request.inputRuleInfo->result.value);
+              iface, request.inputID, request.inputRuleInfo->result.value);
         }
 
         // Decrement the wait count, and move to finish queue if necessary.
@@ -854,7 +857,8 @@ private:
         // task ever requests additional inputs.
         {
           TracingEngineTaskCallback i(EngineTaskCallbackKind::InputsAvailable, ruleInfo->keyID);
-          taskInfo->task->inputsAvailable(buildEngine);
+          TaskInterface iface{this, taskInfo->task.get()};
+          taskInfo->task->inputsAvailable(iface);
         }
 
         // Increment our count of outstanding tasks.
@@ -910,8 +914,8 @@ private:
         //
         // FIXME: The need to do this makes it questionable that we use this
         // approach for discovered dependencies instead of just providing
-        // support for taskNeedsInput() even after the task has started
-        // computing and from parallel contexts.
+        // support for request() even after the task has started computing and
+        // from parallel contexts.
         for (auto keyIDAndFlag: taskInfo->discoveredDependencies) {
           inputRequests.push_back({ nullptr, 0, &getRuleInfoForKey(keyIDAndFlag.keyID), keyIDAndFlag.flag, false });
         }
@@ -1717,6 +1721,63 @@ public:
 
 }
 
+#pragma mark - TaskInterface
+
+Epoch TaskInterface::currentEpoch() {
+  return static_cast<BuildEngineImpl*>(impl)->getCurrentEpoch();
+}
+
+bool TaskInterface::isCancelled() {
+  return static_cast<BuildEngineImpl*>(impl)->isCancelled();
+}
+
+BuildEngineDelegate* TaskInterface::delegate() {
+  return static_cast<BuildEngineImpl*>(impl)->getDelegate();
+}
+
+void TaskInterface::request(const KeyType& key, uintptr_t inputID) {
+  Task* task = static_cast<Task*>(ctx);
+  static_cast<BuildEngineImpl*>(impl)->taskNeedsInput(task, key, inputID);
+}
+
+void TaskInterface::mustFollow(const KeyType& key) {
+  Task* task = static_cast<Task*>(ctx);
+  static_cast<BuildEngineImpl*>(impl)->taskMustFollow(task, key);
+}
+
+void TaskInterface::discoveredDependency(const KeyType& key) {
+  Task* task = static_cast<Task*>(ctx);
+  static_cast<BuildEngineImpl*>(impl)->taskDiscoveredDependency(task, key);
+}
+
+void TaskInterface::complete(ValueType &&value, bool forceChange) {
+  Task* task = static_cast<Task*>(ctx);
+  static_cast<BuildEngineImpl*>(impl)->taskIsComplete(task, std::move(value),
+                                                      forceChange);
+}
+
+void TaskInterface::spawn(basic::QueueJob&& job) {
+  // FIXME: handle environment
+  static_cast<BuildEngineImpl*>(impl)->getExecutionQueue().addJob(std::move(job));
+}
+
+void TaskInterface::spawn(basic::QueueJobContext *context,
+                          ArrayRef<StringRef> commandLine,
+                          ArrayRef<std::pair<StringRef, StringRef> > environment,
+                          basic::ProcessAttributes attributes,
+                          llvm::Optional<basic::ProcessCompletionFn> completionFn) {
+  // FIXME: handle environment
+  static_cast<BuildEngineImpl*>(impl)->getExecutionQueue().executeProcess(
+    context, commandLine, environment, attributes, completionFn);
+}
+
+basic::ProcessStatus TaskInterface::spawn(basic::QueueJobContext *context,
+                                          ArrayRef<StringRef> commandLine) {
+  // FIXME: handle environment
+  return static_cast<BuildEngineImpl*>(impl)->getExecutionQueue().executeProcess(
+    context, commandLine);
+}
+
 #pragma mark - BuildEngine
 
 BuildEngine::BuildEngine(BuildEngineDelegate& delegate)
@@ -1760,10 +1821,6 @@ void BuildEngine::dumpGraphToFile(const std::string& path) {
   static_cast<BuildEngineImpl*>(impl)->dumpGraphToFile(path);
 }
 
-ExecutionQueue& BuildEngine::getExecutionQueue() {
-  return static_cast<BuildEngineImpl*>(impl)->getExecutionQueue();
-}
-
 bool BuildEngine::attachDB(std::unique_ptr<BuildDB> database, std::string* error_out) {
   return static_cast<BuildEngineImpl*>(impl)->attachDB(std::move(database), error_out);
 }
@@ -1771,23 +1828,4 @@ bool BuildEngine::attachDB(std::unique_ptr<BuildDB> database, std::string* error
 bool BuildEngine::enableTracing(const std::string& path,
                                 std::string* error_out) {
   return static_cast<BuildEngineImpl*>(impl)->enableTracing(path, error_out);
-}
-
-void BuildEngine::taskNeedsInput(Task* task, const KeyType& key,
-                                 uintptr_t inputID) {
-  static_cast<BuildEngineImpl*>(impl)->taskNeedsInput(task, key, inputID);
-}
-
-void BuildEngine::taskDiscoveredDependency(Task* task, const KeyType& key) {
-  static_cast<BuildEngineImpl*>(impl)->taskDiscoveredDependency(task, key);
-}
-
-void BuildEngine::taskMustFollow(Task* task, const KeyType& key) {
-  static_cast<BuildEngineImpl*>(impl)->taskMustFollow(task, key);
-}
-
-void BuildEngine::taskIsComplete(Task* task, ValueType&& value,
-                                 bool forceChange) {
-  static_cast<BuildEngineImpl*>(impl)->taskIsComplete(task, std::move(value),
-                                                      forceChange);
 }

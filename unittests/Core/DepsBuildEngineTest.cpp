@@ -96,22 +96,22 @@ public:
     inputValues.resize(inputs.size());
   }
 
-  virtual void start(BuildEngine& engine) override {
+  virtual void start(TaskInterface& ti) override {
     // Request all of the inputs.
     for (int i = 0, e = inputs.size(); i != e; ++i) {
-      engine.taskNeedsInput(this, inputs[i], i);
+      ti.request(inputs[i], i);
     }
   }
 
-  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface&, uintptr_t inputID,
                             const ValueType& value) override {
     // Update the input values.
     assert(inputID < inputValues.size());
     inputValues[inputID] = intFromValue(value);
   }
 
-  virtual void inputsAvailable(core::BuildEngine& engine) override {
-    engine.taskIsComplete(this, intToValue(compute(inputValues)));
+  virtual void inputsAvailable(TaskInterface& ti) override {
+    ti.complete(intToValue(compute(inputValues)));
   }
 };
 
@@ -198,12 +198,12 @@ TEST(DepsBuildEngineTest, BogusConcurrentDepScan) {
     int result = 1;
 
   public:
-    virtual void start(BuildEngine& engine) override {
+    virtual void start(TaskInterface& ti) override {
       // Request the known input.
-      engine.taskNeedsInput(this, "dir-list", 0);
+      ti.request("dir-list", 0);
     }
 
-    virtual void provideValue(BuildEngine& engine, uintptr_t inputID,
+    virtual void provideValue(TaskInterface& ti, uintptr_t inputID,
                               const ValueType& value) override {
       int N = intFromValue(value);
       result *= N;
@@ -212,19 +212,19 @@ TEST(DepsBuildEngineTest, BogusConcurrentDepScan) {
       // the subsequent inputs.
       if (inputID == 0) {
         if (N == 2) {
-          engine.taskNeedsInput(this, "input-2", 1);
+          ti.request("input-2", 1);
         } else if (N == 3) {
-          engine.taskNeedsInput(this, "input-3", 1);
+          ti.request("input-3", 1);
         } else {
           assert(N == 2 * 3);
-          engine.taskNeedsInput(this, "input-2", 1);
-          engine.taskNeedsInput(this, "input-3", 1);
+          ti.request("input-2", 1);
+          ti.request("input-3", 1);
         }
       }
     }
 
-    virtual void inputsAvailable(BuildEngine& engine) override {
-      engine.taskIsComplete(this, intToValue(result));
+    virtual void inputsAvailable(TaskInterface& ti) override {
+      ti.complete(intToValue(result));
     }
   };
 

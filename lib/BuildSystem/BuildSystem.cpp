@@ -11,7 +11,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "llbuild/BuildSystem/BuildSystem.h"
-#include "llbuild/BuildSystem/BuildSystemCommandInterface.h"
 #include "llbuild/BuildSystem/BuildSystemExtensions.h"
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
 #include "llbuild/BuildSystem/BuildSystemHandlers.h"
@@ -73,8 +72,6 @@ using namespace llbuild::buildsystem;
 static BuildSystemExtensionManager extensionManager{};
 
 BuildSystemDelegate::~BuildSystemDelegate() {}
-
-BuildSystemCommandInterface::~BuildSystemCommandInterface() {}
 
 #pragma mark - BuildSystem implementation
 
@@ -163,7 +160,7 @@ public:
   }
 };
 
-class BuildSystemImpl : public BuildSystemCommandInterface {
+class BuildSystemImpl {
 public:
   /// The internal schema version.
   ///
@@ -205,43 +202,10 @@ private:
 
   /// Cache of instantiated shell command handlers.
   llvm::StringMap<std::unique_ptr<ShellCommandHandler>> shellHandlers;
-  
-  /// @name BuildSystemCommandInterface Implementation
-  /// @{
 
-  virtual BuildEngine& getBuildEngine() override {
-    return buildEngine;
-  }
-  
-  virtual ExecutionQueue& getExecutionQueue() override {
-    return buildEngine.getExecutionQueue();
-  }
-
-  virtual void taskNeedsInput(core::Task* task, const BuildKey& key,
-                              uintptr_t inputID) override {
-    return buildEngine.taskNeedsInput(task, key.toData(), inputID);
-  }
-
-  virtual void taskMustFollow(core::Task* task, const BuildKey& key) override {
-    return buildEngine.taskMustFollow(task, key.toData());
-  }
-
-  virtual void taskDiscoveredDependency(core::Task* task,
-                                        const BuildKey& key) override {
-    return buildEngine.taskDiscoveredDependency(task, key.toData());
-  }
-
-  virtual void taskIsComplete(core::Task* task, const BuildValue& value,
-                              bool forceChange) override {
-    return buildEngine.taskIsComplete(task, value.toData(), forceChange);
-  }
-
-  virtual void addJob(QueueJob&& job) override {
-    buildEngine.getExecutionQueue().addJob(std::move(job));
-  }
-
-  virtual ShellCommandHandler*
-  resolveShellCommandHandler(ShellCommand* command) override {
+public:
+  ShellCommandHandler*
+  resolveShellCommandHandler(ShellCommand* command) {
     // Ignore empty commands.
     if (command->getArgs().empty()) { return nullptr; }
 
@@ -278,11 +242,11 @@ public:
     return buildSystem;
   }
 
-  BuildSystemDelegate& getDelegate() override {
+  BuildSystemDelegate& getDelegate() {
     return delegate;
   }
 
-  basic::FileSystem& getFileSystem() override {
+  basic::FileSystem& getFileSystem() {
     return *fileSystem;
   }
 
@@ -291,10 +255,6 @@ public:
   // though.
   StringRef getMainFilename() {
     return mainFilename;
-  }
-
-  BuildSystemCommandInterface& getCommandInterface() {
-    return *this;
   }
 
   const BuildDescription& getBuildDescription() const {
@@ -375,12 +335,12 @@ public:
   }
 
   void resetForBuild() {
-    getBuildEngine().resetForBuild();
+    buildEngine.resetForBuild();
   }
 
   /// Cancel the running build.
   void cancel() {
-    getBuildEngine().cancelBuild();
+    buildEngine.cancelBuild();
   }
 
   /// Check if the build has been cancelled.
@@ -400,9 +360,12 @@ std::unique_ptr<basic::ExecutionQueue> BuildSystemEngineDelegate::createExecutio
 
 #pragma mark - Task implementations
 
+static BuildSystemImpl& getBuildSystem(TaskInterface& ti) {
+  return static_cast<BuildSystemEngineDelegate*>(ti.delegate())->getBuildSystem();
+}
+
 static BuildSystemImpl& getBuildSystem(BuildEngine& engine) {
-  return static_cast<BuildSystemEngineDelegate*>(
-      engine.getDelegate())->getBuildSystem();
+  return static_cast<BuildSystemEngineDelegate*>(engine.getDelegate())->getBuildSystem();
 }
 
 
@@ -425,21 +388,21 @@ class TargetTask : public Task {
   /// ShouldSkip is true).
   SmallPtrSet<Node*, 1> missingInputNodes;
 
-  virtual void start(BuildEngine& engine) override {
+  virtual void start(TaskInterface& ti) override {
     // Request all of the necessary system tasks.
     unsigned id = 0;
     for (auto it = target.getNodes().begin(),
            ie = target.getNodes().end(); it != ie; ++it, ++id) {
-      engine.taskNeedsInput(this, BuildKey::makeNode(*it).toData(), id);
+      ti.request(BuildKey::makeNode(*it).toData(), id);
     }
   }
 
-  virtual void providePriorValue(BuildEngine&,
+  virtual void providePriorValue(TaskInterface&,
                                  const ValueType& value) override {
     // Do nothing.
   }
 
-  virtual void provideValue(BuildEngine& engine, uintptr_t inputID,
+  virtual void provideValue(TaskInterface&, uintptr_t inputID,
                             const ValueType& valueData) override {
     // Do nothing.
     auto value = BuildValue::fromData(valueData);
@@ -449,10 +412,10 @@ class TargetTask : public Task {
     }
   }
 
-  virtual void inputsAvailable(BuildEngine& engine) override {
+  virtual void inputsAvailable(TaskInterface& ti) override {
     // If the build should cancel, do nothing.
-    if (getBuildSystem(engine).isCancelled()) {
-      engine.taskIsComplete(this, BuildValue::makeSkippedCommand().toData());
+    if (ti.isCancelled()) {
+      ti.complete(BuildValue::makeSkippedCommand().toData());
       return;
     }
 
@@ -468,7 +431,7 @@ class TargetTask : public Task {
       inputsStream.flush();
 
       // FIXME: Design the logging and status output APIs.
-      auto& system = getBuildSystem(engine);
+      auto& system = getBuildSystem(ti);
       system.error(system.getMainFilename(),
                    (Twine("cannot build target '") + target.getName() +
                     "' due to missing inputs: " + inputs));
@@ -478,7 +441,7 @@ class TargetTask : public Task {
     }
     
     // Complete the task immediately.
-    engine.taskIsComplete(this, BuildValue::makeTarget().toData());
+    ti.complete(BuildValue::makeTarget().toData());
   }
 
 public:
@@ -496,19 +459,19 @@ public:
 class FileInputNodeTask : public Task {
   BuildNode& node;
 
-  virtual void start(BuildEngine& engine) override {
+  virtual void start(TaskInterface&) override {
     assert(node.getProducers().empty());
   }
 
-  virtual void providePriorValue(BuildEngine&,
+  virtual void providePriorValue(TaskInterface&,
                                  const ValueType& value) override {
   }
 
-  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface&, uintptr_t inputID,
                             const ValueType& value) override {
   }
 
-  virtual void inputsAvailable(BuildEngine& engine) override {    
+  virtual void inputsAvailable(TaskInterface& ti) override {
     // FIXME: We should do this work in the background.
 
     // Get the information on the file.
@@ -517,14 +480,13 @@ class FileInputNodeTask : public Task {
     // different node types.
     assert(!node.isVirtual());
     auto info = node.getFileInfo(
-        getBuildSystem(engine).getFileSystem());
+        getBuildSystem(ti).getFileSystem());
     if (info.isMissing()) {
-      engine.taskIsComplete(this, BuildValue::makeMissingInput().toData());
+      ti.complete(BuildValue::makeMissingInput().toData());
       return;
     }
 
-    engine.taskIsComplete(
-        this, BuildValue::makeExistingInput(info).toData());
+    ti.complete(BuildValue::makeExistingInput(info).toData());
   }
 
 public:
@@ -562,32 +524,32 @@ public:
 class StatTask : public Task {
   StatNode& statnode;
 
-  virtual void start(BuildEngine& engine) override {
+  virtual void start(TaskInterface& ti) override {
     // Create a weak link on any potential producer nodes so that we get up to
     // date stat information. We always run (see isResultValid) so this should
     // be safe (unlike directory contents where it may not run).
-    engine.taskMustFollow(this, BuildKey::makeNode(statnode.getName()).toData());
+    ti.mustFollow(BuildKey::makeNode(statnode.getName()).toData());
   }
 
-  virtual void providePriorValue(BuildEngine&,
+  virtual void providePriorValue(TaskInterface&,
                                  const ValueType& value) override {
   }
 
-  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface&, uintptr_t inputID,
                             const ValueType& value) override {
   }
 
-  virtual void inputsAvailable(BuildEngine& engine) override {
+  virtual void inputsAvailable(TaskInterface& ti) override {
     // FIXME: We should do this work in the background.
 
     // Get the information on the file.
-    auto info = statnode.getFileInfo(getBuildSystem(engine).getFileSystem());
+    auto info = statnode.getFileInfo(getBuildSystem(ti).getFileSystem());
     if (info.isMissing()) {
-      engine.taskIsComplete(this, BuildValue::makeMissingInput().toData());
+      ti.complete(BuildValue::makeMissingInput().toData());
       return;
     }
 
-    engine.taskIsComplete(this, BuildValue::makeExistingInput(info).toData());
+    ti.complete(BuildValue::makeExistingInput(info).toData());
   }
 
 public:
@@ -610,31 +572,30 @@ class DirectoryInputNodeTask : public Task {
 
   core::ValueType directorySignature;
 
-  virtual void start(BuildEngine& engine) override {
+  virtual void start(TaskInterface& ti) override {
     // Remove any trailing slash from the node name.
     StringRef path =  node.getName();
     if (path.endswith("/") && path != "/") {
       path = path.substr(0, path.size() - 1);
     }
 
-    engine.taskNeedsInput(
-        this, BuildKey::makeDirectoryTreeSignature(path,
-            node.contentExclusionPatterns()).toData(),
-        /*inputID=*/0);
+    ti.request(BuildKey::makeDirectoryTreeSignature(path,
+                 node.contentExclusionPatterns()).toData(),
+               /*inputID=*/0);
   }
 
-  virtual void providePriorValue(BuildEngine&,
+  virtual void providePriorValue(TaskInterface&,
                                  const ValueType& value) override {
   }
 
-  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface&, uintptr_t inputID,
                             const ValueType& value) override {
     directorySignature = value;
   }
 
-  virtual void inputsAvailable(BuildEngine& engine) override {
+  virtual void inputsAvailable(TaskInterface& ti) override {
     // Simply propagate the value.
-    engine.taskIsComplete(this, ValueType(directorySignature));
+    ti.complete(ValueType(directorySignature));
   }
 
 public:
@@ -655,29 +616,28 @@ class DirectoryStructureInputNodeTask : public Task {
 
   core::ValueType directorySignature;
 
-  virtual void start(BuildEngine& engine) override {
+  virtual void start(TaskInterface& ti) override {
     // Remove any trailing slash from the node name.
     StringRef path =  node.getName();
     if (path.endswith("/") && path != "/") {
       path = path.substr(0, path.size() - 1);
     }
-    engine.taskNeedsInput(
-        this, BuildKey::makeDirectoryTreeStructureSignature(path).toData(),
-        /*inputID=*/0);
+    ti.request(BuildKey::makeDirectoryTreeStructureSignature(path).toData(),
+               /*inputID=*/0);
   }
 
-  virtual void providePriorValue(BuildEngine&,
+  virtual void providePriorValue(TaskInterface&,
                                  const ValueType& value) override {
   }
 
-  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface&, uintptr_t inputID,
                             const ValueType& value) override {
     directorySignature = value;
   }
 
-  virtual void inputsAvailable(BuildEngine& engine) override {
+  virtual void inputsAvailable(TaskInterface& ti) override {
     // Simply propagate the value.
-    engine.taskIsComplete(this, ValueType(directorySignature));
+    ti.complete(ValueType(directorySignature));
   }
 
 public:
@@ -690,20 +650,19 @@ public:
 /// This is the task to build a virtual node which isn't connected to any
 /// output.
 class VirtualInputNodeTask : public Task {
-  virtual void start(BuildEngine& engine) override {
+  virtual void start(TaskInterface&) override {
   }
 
-  virtual void providePriorValue(BuildEngine&,
+  virtual void providePriorValue(TaskInterface&,
                                  const ValueType& value) override {
   }
 
-  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface&, uintptr_t inputID,
                             const ValueType& value) override {
   }
 
-  virtual void inputsAvailable(BuildEngine& engine) override {
-    engine.taskIsComplete(
-        this, BuildValue::makeVirtualInput().toData());
+  virtual void inputsAvailable(TaskInterface& ti) override {
+    ti.complete(BuildValue::makeVirtualInput().toData());
   }
 
 public:
@@ -735,27 +694,26 @@ class ProducedNodeTask : public Task {
   // Whether this is a node we are unable to produce.
   bool isInvalid = false;
   
-  virtual void start(BuildEngine& engine) override {
+  virtual void start(TaskInterface& ti) override {
     // Request the producer command.
     if (node.getProducers().size() == 1) {
       producingCommand = node.getProducers()[0];
-      engine.taskNeedsInput(this, BuildKey::makeCommand(
-                                producingCommand->getName()).toData(),
-                            /*InputID=*/0);
+      ti.request(BuildKey::makeCommand(producingCommand->getName()).toData(),
+                 /*InputID=*/0);
       return;
     }
 
     // We currently do not support building nodes which have multiple producers.
-    getBuildSystem(engine).getDelegate().
+    getBuildSystem(ti).getDelegate().
         cannotBuildNodeDueToMultipleProducers(&node, node.getProducers());
     isInvalid = true;
   }
 
-  virtual void providePriorValue(BuildEngine&,
+  virtual void providePriorValue(TaskInterface&,
                                  const ValueType& value) override {
   }
 
-  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface&, uintptr_t inputID,
                             const ValueType& valueData) override {
     auto value = BuildValue::fromData(valueData);
 
@@ -764,17 +722,17 @@ class ProducedNodeTask : public Task {
     nodeResult = producingCommand->getResultForOutput(&node, value);
   }
 
-  virtual void inputsAvailable(BuildEngine& engine) override {
+  virtual void inputsAvailable(TaskInterface& ti) override {
     if (isInvalid) {
-      getBuildSystem(engine).getDelegate().hadCommandFailure();
-      engine.taskIsComplete(this, BuildValue::makeFailedInput().toData());
+      getBuildSystem(ti).getDelegate().hadCommandFailure();
+      ti.complete(BuildValue::makeFailedInput().toData());
       return;
     }
     
     assert(!nodeResult.isInvalid());
     
     // Complete the task immediately.
-    engine.taskIsComplete(this, nodeResult.toData());
+    ti.complete(nodeResult.toData());
   }
 
 public:
@@ -807,7 +765,7 @@ class DirectoryContentsTask : public Task {
   /// The value for the input directory.
   BuildValue directoryValue;
   
-  virtual void start(BuildEngine& engine) override {
+  virtual void start(TaskInterface& ti) override {
     // Request the base directory node -- this task doesn't actually use the
     // value, but this connects the task to its producer if present.
 
@@ -821,7 +779,7 @@ class DirectoryContentsTask : public Task {
     // this and downstream rules until the 'path' node has been set into its
     // final state*.
     //
-    // With the explicit dependency we are establishing with taskNeedsInput, we
+    // With the explicit dependency we are establishing with request(), we
     // will unfortunately mark directory contents as 'needs to be built' under
     // situations where non-releveant stat info has changed. This causes
     // unnecessary rebuilds. See rdar://problem/30640904
@@ -835,15 +793,14 @@ class DirectoryContentsTask : public Task {
     // not the second, in particular if rules are added in subsequent builds.
     // Related rdar://problem/30638921
     //
-    engine.taskNeedsInput(
-        this, BuildKey::makeNode(path).toData(), /*inputID=*/0);
+    ti.request(BuildKey::makeNode(path).toData(), /*inputID=*/0);
   }
 
-  virtual void providePriorValue(BuildEngine&,
+  virtual void providePriorValue(TaskInterface&,
                                  const ValueType& value) override {
   }
 
-  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface&, uintptr_t inputID,
                             const ValueType& value) override {
     if (inputID == 0) {
       directoryValue = BuildValue::fromData(value);
@@ -851,23 +808,23 @@ class DirectoryContentsTask : public Task {
     }
   }
 
-  virtual void inputsAvailable(BuildEngine& engine) override {
+  virtual void inputsAvailable(TaskInterface& ti) override {
     // FIXME: We should do this work in the background.
     
     if (directoryValue.isMissingInput()) {
-      engine.taskIsComplete(this, BuildValue::makeMissingInput().toData());
+      ti.complete(BuildValue::makeMissingInput().toData());
       return;
     }
 
     if (directoryValue.isFailedInput()) {
-      engine.taskIsComplete(this, BuildValue::makeFailedInput().toData());
+      ti.complete(BuildValue::makeFailedInput().toData());
       return;
     }
 
     // The input directory may be a 'mkdir' command, which can be cancelled or
     // skipped by the engine or the delegate. rdar://problem/50380532
     if (directoryValue.isSkippedCommand()) {
-      engine.taskIsComplete(this, BuildValue::makeSkippedCommand().toData());
+      ti.complete(BuildValue::makeSkippedCommand().toData());
       return;
     }
 
@@ -875,9 +832,8 @@ class DirectoryContentsTask : public Task {
     getContents(path, filenames);
 
     // Create the result.
-    engine.taskIsComplete(
-        this, BuildValue::makeDirectoryContents(directoryValue.getOutputInfo(),
-                                                filenames).toData());
+    ti.complete(BuildValue::makeDirectoryContents(directoryValue.getOutputInfo(),
+                                                  filenames).toData());
   }
 
 
@@ -959,7 +915,7 @@ class FilteredDirectoryContentsTask : public Task {
   /// The value for the input directory.
   BuildValue directoryValue;
 
-  virtual void start(BuildEngine& engine) override {
+  virtual void start(TaskInterface& ti) override {
     // FIXME:
     //
     //engine.taskMustFollow(this, BuildKey::makeNode(path).toData());
@@ -985,17 +941,15 @@ class FilteredDirectoryContentsTask : public Task {
     // Having a 'must scan after' would help with the first rule (mkdir), but
     // not the second, in particular if rules are added in subsequent builds.
     // Related rdar://problem/30638921
-    engine.taskNeedsInput(
-        this, BuildKey::makeNode(path).toData(), /*inputID=*/0);
-    engine.taskNeedsInput(
-        this, BuildKey::makeStat(path).toData(), /*inputID=*/1);
+    ti.request(BuildKey::makeNode(path).toData(), /*inputID=*/0);
+    ti.request(BuildKey::makeStat(path).toData(), /*inputID=*/1);
   }
 
-  virtual void providePriorValue(BuildEngine&,
+  virtual void providePriorValue(TaskInterface&,
                                  const ValueType& value) override {
   }
 
-  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface&, uintptr_t inputID,
                             const ValueType& value) override {
     if (inputID == 1) {
       directoryValue = BuildValue::fromData(value);
@@ -1003,14 +957,14 @@ class FilteredDirectoryContentsTask : public Task {
     }
   }
 
-  virtual void inputsAvailable(BuildEngine& engine) override {
+  virtual void inputsAvailable(TaskInterface& ti) override {
     if (directoryValue.isMissingInput()) {
-      engine.taskIsComplete(this, BuildValue::makeMissingInput().toData());
+      ti.complete(BuildValue::makeMissingInput().toData());
       return;
     }
 
     if (!directoryValue.isExistingInput()) {
-      engine.taskIsComplete(this, BuildValue::makeFailedInput().toData());
+      ti.complete(BuildValue::makeFailedInput().toData());
       return;
     }
 
@@ -1018,7 +972,7 @@ class FilteredDirectoryContentsTask : public Task {
 
     // Non-directory things are just plain-ol' inputs
     if (!info.isDirectory()) {
-      engine.taskIsComplete(this, BuildValue::makeExistingInput(info).toData());
+      ti.complete(BuildValue::makeExistingInput(info).toData());
       return;
     }
 
@@ -1027,8 +981,7 @@ class FilteredDirectoryContentsTask : public Task {
     getFilteredContents(path, filters, filenames);
 
     // Create the result.
-    engine.taskIsComplete(
-        this, BuildValue::makeFilteredDirectoryContents(filenames).toData());
+    ti.complete(BuildValue::makeFilteredDirectoryContents(filenames).toData());
   }
 
 
@@ -1118,24 +1071,21 @@ class DirectoryTreeSignatureTask : public Task {
   /// number of children to avoid dynamically resizing it.
   std::vector<SubpathInfo> childResults;
 
-  virtual void start(BuildEngine& engine) override {
+  virtual void start(TaskInterface& ti) override {
     // Ask for the base directory directory contents.
     if (filters.isEmpty()) {
-      engine.taskNeedsInput(
-          this, BuildKey::makeDirectoryContents(path).toData(),
-          /*inputID=*/0);
+      ti.request(BuildKey::makeDirectoryContents(path).toData(), /*inputID=*/0);
     } else {
-      engine.taskNeedsInput(
-          this, BuildKey::makeFilteredDirectoryContents(path, filters).toData(),
-          /*inputID=*/0);
+      ti.request(BuildKey::makeFilteredDirectoryContents(path, filters).toData(),
+                 /*inputID=*/0);
     }
   }
 
-  virtual void providePriorValue(BuildEngine&,
+  virtual void providePriorValue(TaskInterface&,
                                  const ValueType& value) override {
   }
 
-  virtual void provideValue(BuildEngine& engine, uintptr_t inputID,
+  virtual void provideValue(TaskInterface& ti, uintptr_t inputID,
                             const ValueType& valueData) override {
     // The first input is the directory contents.
     if (inputID == 0) {
@@ -1155,8 +1105,7 @@ class DirectoryTreeSignatureTask : public Task {
         SmallString<256> childPath{ path };
         llvm::sys::path::append(childPath, filenames[i]);
         childResults.emplace_back(SubpathInfo{ filenames[i], {}, None });
-        engine.taskNeedsInput(this, BuildKey::makeNode(childPath).toData(),
-                              /*inputID=*/1 + i);
+        ti.request(BuildKey::makeNode(childPath).toData(), /*inputID=*/1 + i);
       }
       return;
     }
@@ -1175,10 +1124,9 @@ class DirectoryTreeSignatureTask : public Task {
           SmallString<256> childPath{ path };
           llvm::sys::path::append(childPath, childResult.filename);
 
-          engine.taskNeedsInput(
-              this, BuildKey::makeDirectoryTreeSignature(childPath,
-                                                         filters).toData(),
-              /*inputID=*/1 + childResults.size() + index);
+          ti.request(BuildKey::makeDirectoryTreeSignature(childPath,
+                                                          filters).toData(),
+                     /*inputID=*/1 + childResults.size() + index);
         }
       }
       return;
@@ -1190,7 +1138,7 @@ class DirectoryTreeSignatureTask : public Task {
     childResults[index].directorySignatureValue = valueData;
   }
 
-  virtual void inputsAvailable(BuildEngine& engine) override {
+  virtual void inputsAvailable(TaskInterface& ti) override {
     // Compute the signature across all of the inputs.
     using llvm::hash_combine;
     llvm::hash_code code = hash_value(path);
@@ -1215,8 +1163,8 @@ class DirectoryTreeSignatureTask : public Task {
     }
 
     // Compute the signature.
-    engine.taskIsComplete(this, BuildValue::makeDirectoryTreeSignature(
-                              CommandSignature(uint64_t(code))).toData());
+    ti.complete(BuildValue::makeDirectoryTreeSignature(
+                  CommandSignature(uint64_t(code))).toData());
   }
 
 public:
@@ -1265,18 +1213,16 @@ class DirectoryTreeStructureSignatureTask : public Task {
   /// number of children to avoid dynamically resizing it.
   std::vector<SubpathInfo> childResults;
   
-  virtual void start(BuildEngine& engine) override {
+  virtual void start(TaskInterface& ti) override {
     // Ask for the base directory directory contents.
-    engine.taskNeedsInput(
-        this, BuildKey::makeDirectoryContents(path).toData(),
-        /*inputID=*/0);
+    ti.request(BuildKey::makeDirectoryContents(path).toData(), /*inputID=*/0);
   }
 
-  virtual void providePriorValue(BuildEngine&,
+  virtual void providePriorValue(TaskInterface&,
                                  const ValueType& value) override {
   }
 
-  virtual void provideValue(BuildEngine& engine, uintptr_t inputID,
+  virtual void provideValue(TaskInterface& ti, uintptr_t inputID,
                             const ValueType& valueData) override {
     // The first input is the directory contents.
     if (inputID == 0) {
@@ -1294,8 +1240,7 @@ class DirectoryTreeStructureSignatureTask : public Task {
         SmallString<256> childPath{ path };
         llvm::sys::path::append(childPath, filenames[i]);
         childResults.emplace_back(SubpathInfo{ filenames[i], {}, None });
-        engine.taskNeedsInput(this, BuildKey::makeNode(childPath).toData(),
-                              /*inputID=*/1 + i);
+        ti.request(BuildKey::makeNode(childPath).toData(), /*inputID=*/1 + i);
       }
       return;
     }
@@ -1314,10 +1259,9 @@ class DirectoryTreeStructureSignatureTask : public Task {
           SmallString<256> childPath{ path };
           llvm::sys::path::append(childPath, childResult.filename);
         
-          engine.taskNeedsInput(
-              this,
-              BuildKey::makeDirectoryTreeStructureSignature(childPath).toData(),
-              /*inputID=*/1 + childResults.size() + index);
+          ti.request(
+            BuildKey::makeDirectoryTreeStructureSignature(childPath).toData(),
+            /*inputID=*/1 + childResults.size() + index);
         }
       }
       return;
@@ -1329,7 +1273,7 @@ class DirectoryTreeStructureSignatureTask : public Task {
     childResults[index].directoryStructureSignatureValue = valueData;
   }
 
-  virtual void inputsAvailable(BuildEngine& engine) override {
+  virtual void inputsAvailable(TaskInterface& ti) override {
     // Compute the signature across all of the inputs.
     using llvm::hash_combine;
     llvm::hash_code code = hash_value(path);
@@ -1374,8 +1318,8 @@ class DirectoryTreeStructureSignatureTask : public Task {
     }
     
     // Compute the signature.
-    engine.taskIsComplete(this, BuildValue::makeDirectoryTreeStructureSignature(
-                              CommandSignature(uint64_t(code))).toData());
+    ti.complete(BuildValue::makeDirectoryTreeStructureSignature(
+                  CommandSignature(uint64_t(code))).toData());
   }
 
 public:
@@ -1387,56 +1331,53 @@ public:
 class CommandTask : public Task {
   Command& command;
 
-  virtual void start(BuildEngine& engine) override {
+  virtual void start(TaskInterface& ti) override {
     // Notify the client the command is preparing to run.
-    getBuildSystem(engine).getDelegate().commandPreparing(&command);
+    getBuildSystem(ti).getDelegate().commandPreparing(&command);
 
-    command.start(getBuildSystem(engine).getCommandInterface(), this);
+    command.start(getBuildSystem(ti).getBuildSystem(), ti);
   }
 
-  virtual void providePriorValue(BuildEngine& engine,
+  virtual void providePriorValue(TaskInterface& ti,
                                  const ValueType& valueData) override {
     BuildValue value = BuildValue::fromData(valueData);
-    command.providePriorValue(
-        getBuildSystem(engine).getCommandInterface(), this, value);
+    command.providePriorValue(getBuildSystem(ti).getBuildSystem(), ti, value);
   }
 
-  virtual void provideValue(BuildEngine& engine, uintptr_t inputID,
+  virtual void provideValue(TaskInterface& ti, uintptr_t inputID,
                             const ValueType& valueData) override {
-    command.provideValue(
-        getBuildSystem(engine).getCommandInterface(), this, inputID,
-        BuildValue::fromData(valueData));
+    command.provideValue(getBuildSystem(ti).getBuildSystem(), ti, inputID,
+                         BuildValue::fromData(valueData));
   }
 
-  virtual void inputsAvailable(BuildEngine& engine) override {
-    auto& bsci = getBuildSystem(engine).getCommandInterface();
-    auto fn = [this, &bsci=bsci](QueueJobContext* context) {
+  virtual void inputsAvailable(TaskInterface& ti) override {
+    auto fn = [this, ti](QueueJobContext* context) mutable {
       // If the build should cancel, do nothing.
-      if (getBuildSystem(bsci.getBuildEngine()).isCancelled()) {
-        bsci.taskIsComplete(this, BuildValue::makeCancelledCommand());
+      if (ti.isCancelled()) {
+        ti.complete(BuildValue::makeCancelledCommand().toData());
         return;
       }
 
       // Check if the command should be skipped.
-      if (!bsci.getDelegate().shouldCommandStart(&command)) {
+      if (!getBuildSystem(ti).getDelegate().shouldCommandStart(&command)) {
         // We need to call commandFinished here because commandPreparing and
         // shouldCommandStart guarantee that they're followed by
         // commandFinished.
-        bsci.getDelegate().commandFinished(&command, ProcessStatus::Skipped);
-        bsci.taskIsComplete(this, BuildValue::makeSkippedCommand());
+        getBuildSystem(ti).getDelegate().commandFinished(&command, ProcessStatus::Skipped);
+        ti.complete(BuildValue::makeSkippedCommand().toData());
         return;
       }
     
       // Execute the command, with notifications to the delegate.
-      command.execute(bsci, this, context, [this, &bsci](BuildValue&& result){
+      command.execute(getBuildSystem(ti).getBuildSystem(), ti, context, [ti](BuildValue&& result) mutable {
         // Inform the engine of the result.
         if (result.isFailedCommand()) {
-          bsci.getDelegate().hadCommandFailure();
+          getBuildSystem(ti).getDelegate().hadCommandFailure();
         }
-        bsci.taskIsComplete(this, std::move(result));
+        ti.complete(result.toData());
       });
     };
-    bsci.addJob({ &command, std::move(fn) });
+    ti.spawn({ &command, std::move(fn) });
   }
 
 public:
@@ -1445,8 +1386,9 @@ public:
   static bool isResultValid(BuildEngine& engine, Command& command,
                             const BuildValue& value) {
     // Delegate to the command for further checking.
-    return command.isResultValid(
-        getBuildSystem(engine).getBuildSystem(), value);
+    auto& buildSystem =
+      static_cast<BuildSystemEngineDelegate*>(engine.getDelegate())->getBuildSystem();
+    return command.isResultValid(buildSystem.getBuildSystem(), value);
   }
 };
 
@@ -1460,19 +1402,19 @@ public:
 /// rebuild.
 class MissingCommandTask : public Task {
 private:
-  virtual void start(BuildEngine& engine) override { }
-  virtual void providePriorValue(BuildEngine& engine,
+  virtual void start(TaskInterface&) override { }
+  virtual void providePriorValue(TaskInterface&,
                                  const ValueType& valueData) override { }
 
-  virtual void provideValue(BuildEngine& engine, uintptr_t inputID,
+  virtual void provideValue(TaskInterface&, uintptr_t inputID,
                             const ValueType& valueData) override { }
 
-  virtual void inputsAvailable(BuildEngine& engine) override {
+  virtual void inputsAvailable(TaskInterface& ti) override {
     // A missing command always builds to an invalid value, and forces
     // downstream clients to be rebuilt (at which point they will presumably see
     // the command is no longer used).
-    return engine.taskIsComplete(this, BuildValue::makeInvalid().toData(),
-                                 /*forceChange=*/true);
+    return ti.complete(BuildValue::makeInvalid().toData(),
+                       /*forceChange=*/true);
   }
 
 public:
@@ -1890,7 +1832,7 @@ llvm::Optional<BuildValue> BuildSystemImpl::build(BuildKey key) {
 
   // Build the target.
   buildWasAborted = false;
-  auto result = getBuildEngine().build(key.toData());
+  auto result = buildEngine.build(key.toData());
     
   // Clear out the shell handlers, as we do not want to hold on to them across
   // multiple builds.
@@ -1940,15 +1882,13 @@ public:
     llvm::raw_svector_ostream(result) << getName();
   }
 
-  virtual void startExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      Task* task) override {
+  virtual void startExternalCommand(BuildSystem&, TaskInterface&) override {
     return;
   }
 
   virtual void provideValueExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      core::Task* task,
+      BuildSystem&,
+      TaskInterface&,
       uintptr_t inputID,
       const BuildValue& value) override {
     // Should never get here, since we're not requesting inputs in start.
@@ -1957,8 +1897,8 @@ public:
   }
 
   virtual void executeExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      Task* task,
+      BuildSystem&,
+      TaskInterface&,
       QueueJobContext* context,
       llvm::Optional<ProcessCompletionFn> completionFn) override {
     // Nothing needs to be done for phony commands.
@@ -2069,13 +2009,12 @@ class ClangShellCommand : public ExternalCommand {
         .combine(args);
   }
 
-  bool processDiscoveredDependencies(BuildSystemCommandInterface& bsci,
-                                     Task* task,
+  bool processDiscoveredDependencies(TaskInterface& ti,
                                      QueueJobContext* context) {
     // Read the dependencies file.
-    auto input = bsci.getFileSystem().getFileContents(depsPath);
+    auto input = getBuildSystem(ti).getFileSystem().getFileContents(depsPath);
     if (!input) {
-      getBuildSystem(bsci.getBuildEngine()).getDelegate().commandHadError(this,
+      getBuildSystem(ti).getDelegate().commandHadError(this,
                      "unable to open dependencies file (" + depsPath + ")");
       return false;
     }
@@ -2085,17 +2024,16 @@ class ClangShellCommand : public ExternalCommand {
     // We just ignore the rule, and add any dependency that we encounter in the
     // file.
     struct DepsActions : public core::MakefileDepsParser::ParseActions {
-      BuildSystemCommandInterface& bsci;
-      Task* task;
+      TaskInterface ti;
       ClangShellCommand* command;
       unsigned numErrors{0};
 
-      DepsActions(BuildSystemCommandInterface& bsci, Task* task,
+      DepsActions(TaskInterface& ti,
                   ClangShellCommand* command)
-          : bsci(bsci), task(task), command(command) {}
+          : ti(ti), command(command) {}
 
       virtual void error(const char* message, uint64_t position) override {
-        getBuildSystem(bsci.getBuildEngine()).getDelegate().commandHadError(command,
+        getBuildSystem(ti).getDelegate().commandHadError(command,
                        "error reading dependency file '" + command->depsPath +
                        "': " + std::string(message));
         ++numErrors;
@@ -2104,7 +2042,7 @@ class ClangShellCommand : public ExternalCommand {
       virtual void actOnRuleDependency(const char* dependency,
                                        uint64_t length,
                                        const StringRef unescapedWord) override {
-        bsci.taskDiscoveredDependency(task, BuildKey::makeNode(unescapedWord));
+        ti.discoveredDependency(BuildKey::makeNode(unescapedWord).toData());
       }
 
       virtual void actOnRuleStart(const char* name, uint64_t length,
@@ -2113,7 +2051,7 @@ class ClangShellCommand : public ExternalCommand {
       virtual void actOnRuleEnd() override {}
     };
 
-    DepsActions actions(bsci, task, this);
+    DepsActions actions(ti, this);
     core::MakefileDepsParser(input->getBufferStart(), input->getBufferSize(),
                              actions).parse();
     return actions.numErrors == 0;
@@ -2173,15 +2111,13 @@ public:
     return ExternalCommand::configureAttribute(ctx, name, values);
   }
 
-  virtual void startExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      Task* task) override {
+  virtual void startExternalCommand(BuildSystem&, TaskInterface&) override {
     return;
   }
 
   virtual void provideValueExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      core::Task* task,
+      BuildSystem&,
+      TaskInterface&,
       uintptr_t inputID,
       const BuildValue& value) override {
     // Should never get here, since we're not requesting inputs in start.
@@ -2189,12 +2125,12 @@ public:
     return;
   }
 
-  virtual void executeExternalCommand(BuildSystemCommandInterface& bsci,
-                                      Task* task,
+  virtual void executeExternalCommand(BuildSystem&,
+                                      TaskInterface& ti,
                                       QueueJobContext* context,
                                       llvm::Optional<ProcessCompletionFn> completionFn) override {
     // Execute the command.
-    bsci.getExecutionQueue().executeProcess(context, args, {}, {true}, {[this, &bsci, task, completionFn](ProcessResult result){
+    ti.spawn(context, args, {}, {true}, {[this, ti, completionFn](ProcessResult result) mutable {
 
       if (result.status != ProcessStatus::Succeeded) {
         // If the command failed, there is no need to gather dependencies.
@@ -2207,8 +2143,8 @@ public:
       if (!depsPath.empty()) {
         // FIXME: Really want this job to go into a high priority fifo queue
         // so as to not hold up downstream tasks.
-        bsci.addJob({ this, [this, &bsci, task, completionFn, result](QueueJobContext* context) {
-          if (!processDiscoveredDependencies(bsci, task, context)) {
+        ti.spawn({ this, [this, ti, completionFn, result](QueueJobContext* context) mutable {
+          if (!processDiscoveredDependencies(ti, context)) {
             // If we were unable to process the dependencies output, report a
             // failure.
             if (completionFn.hasValue())
@@ -2315,16 +2251,16 @@ public:
     return false;
   }
 
-  virtual void start(BuildSystemCommandInterface& bsci,
-                     core::Task* task) override { }
-  virtual void providePriorValue(BuildSystemCommandInterface&, core::Task*,
+  virtual void start(BuildSystem&, TaskInterface& ti) override { }
+  virtual void providePriorValue(BuildSystem&, TaskInterface& ti,
                                  const BuildValue&) override { }
-  virtual void provideValue(BuildSystemCommandInterface& bsci, core::Task*,
+  virtual void provideValue(BuildSystem&,
+                            TaskInterface& ti,
                             uintptr_t inputID,
                             const BuildValue& value) override { }
 
-  virtual void execute(BuildSystemCommandInterface& bsci,
-                       core::Task* task,
+  virtual void execute(BuildSystem&,
+                       TaskInterface& ti,
                        QueueJobContext* context,
                        ResultFn resultFn) override {
     // Construct the command line used to query the swift compiler version.
@@ -2593,7 +2529,7 @@ public:
     return ss.str();
   }
 
-  bool writeOutputFileMap(BuildSystemCommandInterface& bsci,
+  bool writeOutputFileMap(TaskInterface& ti,
                           StringRef outputFileMapPath,
                           std::vector<std::string>& depsFiles_out) const {
     assert(sourcesList.size() == objectsList.size());
@@ -2603,7 +2539,7 @@ public:
     llvm::raw_fd_ostream os(outputFileMapPath, ec,
                             llvm::sys::fs::OpenFlags::F_Text);
     if (ec) {
-      bsci.getDelegate().commandHadError((Command*)this,
+      getBuildSystem(ti).getDelegate().commandHadError((Command*)this,
                       "unable to create output file map: '" + outputFileMapPath.str() + "'");
       return false;
     }
@@ -2659,12 +2595,11 @@ public:
     return true;
   }
 
-  bool processDiscoveredDependencies(BuildSystemCommandInterface& bsci,
-                                     core::Task* task, StringRef depsPath) {
+  bool processDiscoveredDependencies(TaskInterface& ti, StringRef depsPath) {
     // Read the dependencies file.
-    auto input = bsci.getFileSystem().getFileContents(depsPath);
+    auto input = getBuildSystem(ti).getFileSystem().getFileContents(depsPath);
     if (!input) {
-      getBuildSystem(bsci.getBuildEngine()).getDelegate().commandHadError(this,
+      getBuildSystem(ti).getDelegate().commandHadError(this,
                      "unable to open dependencies file (" + depsPath.str() + ")");
       return false;
     }
@@ -2674,19 +2609,18 @@ public:
     // We just ignore the rule, and add any dependency that we encounter in the
     // file.
     struct DepsActions : public core::MakefileDepsParser::ParseActions {
-      BuildSystemCommandInterface& bsci;
-      core::Task* task;
+      TaskInterface ti;
       StringRef depsPath;
       Command* command;
       unsigned numErrors{0};
       unsigned ruleNumber{0};
       
-      DepsActions(BuildSystemCommandInterface& bsci, core::Task* task,
+      DepsActions(TaskInterface& ti,
                   StringRef depsPath, Command* command)
-          : bsci(bsci), task(task), depsPath(depsPath) {}
+          : ti(ti), depsPath(depsPath) {}
 
       virtual void error(const char* message, uint64_t position) override {
-        getBuildSystem(bsci.getBuildEngine()).getDelegate().commandHadError(command,
+        getBuildSystem(ti).getDelegate().commandHadError(command,
                        "error reading dependency file '" + depsPath.str() +
                        "': " + std::string(message));
         ++numErrors;
@@ -2698,8 +2632,7 @@ public:
         // Only process dependencies for the first rule (the output file), the
         // rest are identical.
         if (ruleNumber == 0) {
-          bsci.taskDiscoveredDependency(
-              task, BuildKey::makeNode(unescapedWord));
+          ti.discoveredDependency(BuildKey::makeNode(unescapedWord).toData());
         }
       }
 
@@ -2711,7 +2644,7 @@ public:
       }
     };
 
-    DepsActions actions(bsci, task, depsPath, this);
+    DepsActions actions(ti, depsPath, this);
     core::MakefileDepsParser(input->getBufferStart(), input->getBufferSize(),
                              actions).parse();
     return actions.numErrors == 0;
@@ -2719,9 +2652,8 @@ public:
 
   /// Overridden start to also introduce a dependency on the Swift compiler
   /// version.
-  virtual void start(BuildSystemCommandInterface& bsci,
-                     core::Task* task) override {
-    ExternalCommand::start(bsci, task);
+  virtual void start(BuildSystem& system, TaskInterface& ti) override {
+    ExternalCommand::start(system, ti);
     
     // The Swift compiler version is also an input.
     //
@@ -2732,13 +2664,12 @@ public:
     // cheap.
     auto getVersionKey = BuildKey::makeCustomTask(
         "swift-get-version", executable);
-    bsci.taskNeedsInput(task, getVersionKey,
-                        core::BuildEngine::kMaximumInputID - 1);
+    ti.request(getVersionKey.toData(), core::BuildEngine::kMaximumInputID - 1);
   }
 
   /// Overridden to access the Swift compiler version.
-  virtual void provideValue(BuildSystemCommandInterface& bsci,
-                            core::Task* task,
+  virtual void provideValue(BuildSystem& system,
+                            TaskInterface& ti,
                             uintptr_t inputID,
                             const BuildValue& value) override {
     // We can ignore the 'swift-get-version' input, it is just used to detect
@@ -2747,18 +2678,16 @@ public:
       return;
     }
     
-    ExternalCommand::provideValue(bsci, task, inputID, value);
+    ExternalCommand::provideValue(system, ti, inputID, value);
   }
 
-  virtual void startExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      Task* task) override {
+  virtual void startExternalCommand(BuildSystem&, TaskInterface&) override {
     return;
   }
 
   virtual void provideValueExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      core::Task* task,
+      BuildSystem&,
+      TaskInterface& ti,
       uintptr_t inputID,
       const BuildValue& value) override {
     // Should never get here, since we're not requesting inputs in start.
@@ -2767,38 +2696,38 @@ public:
   }
 
   virtual void executeExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      core::Task* task,
+      BuildSystem& system,
+      TaskInterface& ti,
       QueueJobContext* context,
       llvm::Optional<ProcessCompletionFn> completionFn) override {
     // FIXME: Need to add support for required parameters.
     if (sourcesList.empty()) {
-      bsci.getDelegate().error("", {}, "no configured 'sources'");
+      system.getDelegate().error("", {}, "no configured 'sources'");
       if (completionFn.hasValue())
         completionFn.getValue()(ProcessStatus::Failed);
       return;
     }
     if (objectsList.empty()) {
-      bsci.getDelegate().error("", {}, "no configured 'objects'");
+      system.getDelegate().error("", {}, "no configured 'objects'");
       if (completionFn.hasValue())
         completionFn.getValue()(ProcessStatus::Failed);
       return;
     }
     if (moduleName.empty()) {
-      bsci.getDelegate().error("", {}, "no configured 'module-name'");
+      system.getDelegate().error("", {}, "no configured 'module-name'");
       if (completionFn.hasValue())
         completionFn.getValue()(ProcessStatus::Failed);
       return;
     }
     if (tempsPath.empty()) {
-      bsci.getDelegate().error("", {}, "no configured 'temps-path'");
+      system.getDelegate().error("", {}, "no configured 'temps-path'");
       if (completionFn.hasValue())
         completionFn.getValue()(ProcessStatus::Failed);
       return;
     }
 
     if (sourcesList.size() != objectsList.size()) {
-      bsci.getDelegate().error(
+      system.getDelegate().error(
           "", {}, "'sources' and 'objects' are not the same size");
       if (completionFn.hasValue())
         completionFn.getValue()(ProcessStatus::Failed);
@@ -2811,7 +2740,7 @@ public:
     //
     // FIXME: This should really be done using an additional implicit input, so
     // it only happens once per build.
-    (void) bsci.getFileSystem().createDirectories(tempsPath);
+    (void) system.getFileSystem().createDirectories(tempsPath);
  
     SmallString<64> outputFileMapPath;
     getOutputFileMapPath(outputFileMapPath);
@@ -2822,14 +2751,14 @@ public:
 
     // Write the output file map.
     std::vector<std::string> depsFiles;
-    if (!writeOutputFileMap(bsci, outputFileMapPath, depsFiles)) {
+    if (!writeOutputFileMap(ti, outputFileMapPath, depsFiles)) {
       if (completionFn.hasValue())
         completionFn.getValue()(ProcessStatus::Failed);
       return;
     }
 
     // Execute the command.
-    auto result = bsci.getExecutionQueue().executeProcess(context, commandLine);
+    auto result = ti.spawn(context, commandLine);
 
     if (result != ProcessStatus::Succeeded) {
       // If the command failed, there is no need to gather dependencies.
@@ -2841,9 +2770,9 @@ public:
     // Load all of the discovered dependencies.
     // FIXME: Really want this job to go into a high priority fifo queue
     // so as to not hold up downstream tasks.
-    bsci.addJob({ this, [this, &bsci, task, completionFn, result, depsFiles](QueueJobContext* context) {
+    ti.spawn({ this, [this, ti, completionFn, result, depsFiles](QueueJobContext* context) mutable {
       for (const auto& depsPath: depsFiles) {
-        if (!processDiscoveredDependencies(bsci, task, depsPath)) {
+        if (!processDiscoveredDependencies(ti, depsPath)) {
           if (completionFn.hasValue())
             completionFn.getValue()(ProcessStatus::Failed);
           return;
@@ -2941,15 +2870,13 @@ class MkdirCommand : public ExternalCommand {
     return true;
   }
   
-  virtual void startExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      Task* task) override {
+  virtual void startExternalCommand(BuildSystem&, TaskInterface& ti) override {
     return;
   }
 
   virtual void provideValueExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      core::Task* task,
+      BuildSystem&,
+      TaskInterface& ti,
       uintptr_t inputID,
       const BuildValue& value) override {
     // Should never get here, since we're not requesting inputs in start.
@@ -2958,14 +2885,14 @@ class MkdirCommand : public ExternalCommand {
   }
 
   virtual void executeExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      Task* task,
+      BuildSystem& system,
+      TaskInterface& ti,
       QueueJobContext* context,
       llvm::Optional<ProcessCompletionFn> completionFn) override {
     auto output = getOutputs()[0];
-    if (!bsci.getFileSystem().createDirectories(
+    if (!system.getFileSystem().createDirectories(
             output->getName())) {
-      getBuildSystem(bsci.getBuildEngine()).getDelegate().commandHadError(this,
+      getBuildSystem(ti).getDelegate().commandHadError(this,
                      "unable to create directory '" + output->getName().str() + "'");
       if (completionFn.hasValue())
         completionFn.getValue()(ProcessStatus::Failed);
@@ -3163,31 +3090,30 @@ class SymlinkCommand : public Command {
     return info == value.getOutputInfo();
   }
   
-  virtual void start(BuildSystemCommandInterface& bsci,
-                     core::Task* task) override {
+  virtual void start(BuildSystem&, TaskInterface& ti) override {
     // The command itself takes no inputs, so just treat any declared inputs as
     // "must follow" directives.
     //
     // FIXME: We should make this explicit once we have actual support for must
     // follow inputs.
     for (auto it = inputs.begin(), ie = inputs.end(); it != ie; ++it) {
-      bsci.taskMustFollow(task, BuildKey::makeNode(*it));
+      ti.mustFollow(BuildKey::makeNode(*it).toData());
     }
   }
 
-  virtual void providePriorValue(BuildSystemCommandInterface&, core::Task*,
+  virtual void providePriorValue(BuildSystem&, TaskInterface& ti,
                                  const BuildValue& value) override {
     // Ignored.
   }
 
-  virtual void provideValue(BuildSystemCommandInterface&, core::Task*,
+  virtual void provideValue(BuildSystem&, TaskInterface& ti,
                             uintptr_t inputID,
                             const BuildValue& value) override {
     assert(0 && "unexpected API call");
   }
 
-  virtual void execute(BuildSystemCommandInterface& bsci,
-                       core::Task* task,
+  virtual void execute(BuildSystem& system,
+                       TaskInterface& ti,
                        QueueJobContext* context,
                        ResultFn resultFn) override {
     // It is an error if this command isn't configured properly.
@@ -3197,7 +3123,7 @@ class SymlinkCommand : public Command {
       return;
     }
 
-    auto& fs = bsci.getFileSystem();
+    auto& fs = system.getFileSystem();
 
     // Create the directory containing the symlink, if necessary.
     //
@@ -3211,19 +3137,19 @@ class SymlinkCommand : public Command {
 
     // Create the symbolic link (note that despite the poorly chosen LLVM
     // name, this is a symlink).
-    bsci.getDelegate().commandStarted(this);
+    system.getDelegate().commandStarted(this);
     auto success = true;
     if (!fs.createSymlink(contents, outputPath.str())) {
       // On failure, we attempt to unlink the file and retry.
       fs.remove(outputPath.str());
 
       if (!fs.createSymlink(contents, outputPath.str())) {
-        getBuildSystem(bsci.getBuildEngine()).getDelegate().commandHadError(this,
+        getBuildSystem(ti).getDelegate().commandHadError(this,
                        "unable to create symlink at '" + outputPath.str() + "'");
         success = false;
       }
     }
-    bsci.getDelegate().commandFinished(this, success ? ProcessStatus::Succeeded : ProcessStatus::Failed);
+    system.getDelegate().commandFinished(this, success ? ProcessStatus::Succeeded : ProcessStatus::Failed);
     
     // Process the result.
     if (!success) {
@@ -3278,15 +3204,13 @@ class ArchiveShellCommand : public ExternalCommand {
   std::string archiveName;
   std::vector<std::string> archiveInputs;
 
-  virtual void startExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      Task* task) override {
+  virtual void startExternalCommand(BuildSystem&, TaskInterface& ti) override {
     return;
   }
 
   virtual void provideValueExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      core::Task* task,
+      BuildSystem&,
+      TaskInterface& ti,
       uintptr_t inputID,
       const BuildValue& value) override {
     // Should never get here, since we're not requesting inputs in start.
@@ -3295,8 +3219,8 @@ class ArchiveShellCommand : public ExternalCommand {
   }
 
   virtual void executeExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      Task* task,
+      BuildSystem&,
+      TaskInterface& ti,
       QueueJobContext* context,
       llvm::Optional<ProcessCompletionFn> completionFn) override {
     // First delete the current archive
@@ -3309,10 +3233,10 @@ class ArchiveShellCommand : public ExternalCommand {
 
     // Create archive
     auto args = getArgs();
-    bsci.getExecutionQueue().executeProcess(context,
-                                            std::vector<StringRef>(args.begin(), args.end()),
-                                            {}, {true},
-                                            {[completionFn](ProcessResult result) {
+    ti.spawn(context,
+             std::vector<StringRef>(args.begin(), args.end()),
+             {}, {true},
+             {[completionFn](ProcessResult result) {
       if (completionFn.hasValue())
         completionFn.getValue()(result);
     }});
@@ -3427,15 +3351,13 @@ class SharedLibraryShellCommand : public ExternalCommand {
   /// Additional arguments, as a string.
   std::vector<std::string> otherArgs;
 
-  virtual void startExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      Task* task) override {
+  virtual void startExternalCommand(BuildSystem&, TaskInterface& ti) override {
     return;
   }
 
   virtual void provideValueExternalCommand(
-      BuildSystemCommandInterface& bsci,
-      core::Task* task,
+      BuildSystem&,
+      TaskInterface& ti,
       uintptr_t inputID,
       const BuildValue& value) override {
     // Should never get here, since we're not requesting inputs in start.
@@ -3444,11 +3366,11 @@ class SharedLibraryShellCommand : public ExternalCommand {
   }
 
   virtual void executeExternalCommand(
-      BuildSystemCommandInterface& bsci, Task* task, QueueJobContext* context,
+      BuildSystem&, TaskInterface& ti, QueueJobContext* context,
       llvm::Optional<ProcessCompletionFn> completionFn) override {
 
     auto args = getArgs();
-    bsci.getExecutionQueue().executeProcess(
+    ti.spawn(
         context, std::vector<StringRef>(args.begin(), args.end()), {},
         {true}, {[completionFn](ProcessResult result) {
           if (completionFn.hasValue())
@@ -3709,16 +3631,16 @@ class StaleFileRemovalCommand : public Command {
     return false;
   }
 
-  virtual void start(BuildSystemCommandInterface& bsci,
-                     core::Task* task) override {}
+  virtual void start(BuildSystem&, TaskInterface&) override {}
 
-  virtual void providePriorValue(BuildSystemCommandInterface&, core::Task*,
+  virtual void providePriorValue(BuildSystem&, TaskInterface&,
                                  const BuildValue& value) override {
     hasPriorResult = true;
     priorValue = BuildValue::fromData(value.toData());
   }
 
-  virtual void provideValue(BuildSystemCommandInterface&, core::Task*,
+  virtual void provideValue(BuildSystem&,
+                            TaskInterface&,
                             uintptr_t inputID,
                             const BuildValue& value) override {
     assert(0 && "unexpected API call");
@@ -3740,21 +3662,21 @@ class StaleFileRemovalCommand : public Command {
     computedFilesToDelete = true;
   }
 
-  virtual void execute(BuildSystemCommandInterface& bsci,
-                       core::Task* task,
+  virtual void execute(BuildSystem& system,
+                       TaskInterface& ti,
                        QueueJobContext* context,
                        ResultFn resultFn) override {
     // Nothing to do if we do not have a prior result.
     if (!hasPriorResult || !priorValue.isStaleFileRemoval()) {
-      bsci.getDelegate().commandStarted(this);
-      bsci.getDelegate().commandFinished(this, ProcessStatus::Succeeded);
+      system.getDelegate().commandStarted(this);
+      system.getDelegate().commandFinished(this, ProcessStatus::Succeeded);
       resultFn(BuildValue::makeStaleFileRemoval(expectedOutputs));
       return;
     }
 
     computeFilesToDelete();
 
-    bsci.getDelegate().commandStarted(this);
+    system.getDelegate().commandStarted(this);
 
     for (auto fileToDelete : filesToDelete) {
       // If no root paths are specified, any path is valid.
@@ -3763,7 +3685,7 @@ class StaleFileRemovalCommand : public Command {
       // If root paths are defined, stale file paths should be absolute.
       if (roots.size() > 0 &&
           pathSeparators.find(fileToDelete[0]) == std::string::npos) {
-        bsci.getDelegate().commandHadWarning(this, "Stale file '" + fileToDelete + "' has a relative path. This is invalid in combination with the root path attribute.\n");
+        system.getDelegate().commandHadWarning(this, "Stale file '" + fileToDelete + "' has a relative path. This is invalid in combination with the root path attribute.\n");
         continue;
       }
 
@@ -3775,21 +3697,21 @@ class StaleFileRemovalCommand : public Command {
       }
 
       if (!isLocatedUnderRootPath) {
-        bsci.getDelegate().commandHadWarning(this, "Stale file '" + fileToDelete + "' is located outside of the allowed root paths.\n");
+        system.getDelegate().commandHadWarning(this, "Stale file '" + fileToDelete + "' is located outside of the allowed root paths.\n");
         continue;
       }
 
-      if (getBuildSystem(bsci.getBuildEngine()).getFileSystem().remove(fileToDelete)) {
-        bsci.getDelegate().commandHadNote(this, "Removed stale file '" + fileToDelete + "'\n");
+      if (getBuildSystem(ti).getFileSystem().remove(fileToDelete)) {
+        system.getDelegate().commandHadNote(this, "Removed stale file '" + fileToDelete + "'\n");
       } else {
         // Do not warn if the file has already been deleted.
         if (errno != ENOENT) {
-          bsci.getDelegate().commandHadWarning(this, "cannot remove stale file '" + fileToDelete + "': " + strerror(errno) + "\n");
+          system.getDelegate().commandHadWarning(this, "cannot remove stale file '" + fileToDelete + "': " + strerror(errno) + "\n");
         }
       }
     }
 
-    bsci.getDelegate().commandFinished(this, ProcessStatus::Succeeded);
+    system.getDelegate().commandFinished(this, ProcessStatus::Succeeded);
 
     // Complete with a successful result.
     resultFn(BuildValue::makeStaleFileRemoval(expectedOutputs));
@@ -3986,6 +3908,11 @@ void BuildSystem::resetForBuild() {
 
 uint32_t BuildSystem::getSchemaVersion() {
   return BuildSystemImpl::internalSchemaVersion;
+}
+
+ShellCommandHandler*
+BuildSystem::resolveShellCommandHandler(ShellCommand* command) {
+  return static_cast<BuildSystemImpl*>(impl)->resolveShellCommandHandler(command);
 }
 
 // This function checks if the given path is prefixed by another path.

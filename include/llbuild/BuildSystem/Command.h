@@ -17,7 +17,7 @@ namespace llbuild {
 
 namespace core {
 
-class Task;
+class TaskInterface;
 
 }
 
@@ -27,7 +27,6 @@ namespace buildsystem {
 typedef std::vector<std::pair<std::string, std::string>> property_list_type;
 
 class BuildSystem;
-class BuildSystemCommandInterface;
 class BuildKey;
 class BuildValue;
 class Command;
@@ -139,12 +138,12 @@ public:
 
   virtual bool isResultValid(BuildSystem& system, const BuildValue& value) = 0;
   
-  virtual void start(BuildSystemCommandInterface&, core::Task*) = 0;
+  virtual void start(BuildSystem& system, core::TaskInterface& ti) = 0;
 
-  virtual void providePriorValue(BuildSystemCommandInterface&, core::Task*,
+  virtual void providePriorValue(BuildSystem& system, core::TaskInterface& ti,
                                  const BuildValue& value) = 0;
 
-  virtual void provideValue(BuildSystemCommandInterface&, core::Task*,
+  virtual void provideValue(BuildSystem& system, core::TaskInterface&,
                             uintptr_t inputID, const BuildValue& value) = 0;
 
 
@@ -155,7 +154,7 @@ public:
   /// This method will always be executed on the build execution queue.
   ///
   /// Note that resultFn may be executed asynchronously on a separate thread.
-  virtual void execute(BuildSystemCommandInterface&, core::Task*,
+  virtual void execute(BuildSystem& system, core::TaskInterface& ti,
                        basic::QueueJobContext* context, ResultFn resultFn) = 0;
   
   /// @}

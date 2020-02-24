@@ -984,7 +984,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         canUpdateIfNewer = false;
     }
 
-    virtual void provideValue(core::BuildEngine& engine, uintptr_t inputID,
+    virtual void provideValue(core::TaskInterface&, uintptr_t inputID,
                               const core::ValueType& valueData) override {
       // Process the input value to see if we should skip this command.
       BuildValue value = BuildValue::fromValue(valueData);
@@ -1027,11 +1027,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       return false;
     }
 
-    void completeTask(BuildValue&& result, bool forceChange=false) {
-      context.engine.taskIsComplete(this, result.toValue(), forceChange);
-    }
-
-    virtual void start(core::BuildEngine& engine) override {
+    virtual void start(core::TaskInterface& ti) override {
       // If this is a phony rule, ignore any immediately cyclic dependencies in
       // non-strict mode, which are generated frequently by CMake, but can be
       // ignored by Ninja. See https://github.com/martine/ninja/issues/935.
@@ -1049,14 +1045,14 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         if (!context.strict && isPhony && isImmediatelyCyclicInput(*it))
           continue;
 
-        engine.taskNeedsInput(this, (*it)->getCanonicalPath(), id);
+        ti.request((*it)->getCanonicalPath(), id);
       }
       for (auto it = command->implicitInputs_begin(),
              ie = command->implicitInputs_end(); it != ie; ++it, ++id) {
         if (!context.strict && isPhony && isImmediatelyCyclicInput(*it))
           continue;
 
-        engine.taskNeedsInput(this, (*it)->getCanonicalPath(), id);
+        ti.request((*it)->getCanonicalPath(), id);
       }
 
       // Request all of the order-only inputs.
@@ -1065,11 +1061,11 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         if (!context.strict && isPhony && isImmediatelyCyclicInput(*it))
           continue;
 
-        engine.taskMustFollow(this, (*it)->getCanonicalPath());
+        ti.mustFollow((*it)->getCanonicalPath());
       }
     }
 
-    virtual void providePriorValue(core::BuildEngine& engine,
+    virtual void providePriorValue(core::TaskInterface&,
                                    const core::ValueType& valueData) override {
       BuildValue value = BuildValue::fromValue(valueData);
 
@@ -1137,10 +1133,10 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       return true;
     }
 
-    virtual void inputsAvailable(core::BuildEngine& engine) override {
+    virtual void inputsAvailable(core::TaskInterface& ti) override {
       // If the build is cancelled, skip everything.
       if (context.isCancelled) {
-        return completeTask(BuildValue::makeSkippedCommand());
+        return ti.complete(BuildValue::makeSkippedCommand().toValue());
       }
 
       // Ignore phony commands.
@@ -1162,7 +1158,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
             }
         }
 
-        return completeTask(std::move(result), forceChange);
+        return ti.complete(result.toValue(), forceChange);
       }
 
       // If it is legal to simply update the command, then if the command output
@@ -1183,7 +1179,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
             // updated without being rerun.
             ++context.numCommandsUpdated;
 
-            return completeTask(std::move(result));
+            return ti.complete(result.toValue());
           }
         }
       }
@@ -1197,7 +1193,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       if (context.simulate) {
         if (!context.quiet)
           writeDescription(context, command);
-        return completeTask(BuildValue::makeSkippedCommand());
+        return ti.complete(BuildValue::makeSkippedCommand().toValue());
       }
 
       // If not simulating, but this command should be skipped, then do nothing.
@@ -1211,13 +1207,13 @@ buildCommand(BuildContext& context, ninja::Command* command) {
           context.incrementFailedCommands();
         }
 
-        return completeTask(BuildValue::makeSkippedCommand());
+        return ti.complete(BuildValue::makeSkippedCommand().toValue());
       }
       assert(!hasMissingInput);
 
-      auto addExecuteJob = [&](std::function<void(void)>&& jobFullyExecuted) {
+      auto addExecuteJob = [this, ti](std::function<void(void)>&& jobFullyExecuted) mutable {
         // Otherwise, enqueue the job to run later.
-        context.engine.getExecutionQueue().addJob({command, [&, done=std::move(jobFullyExecuted)] (QueueJobContext* qctx) {
+        ti.spawn({command, [this, ti, done=std::move(jobFullyExecuted)] (QueueJobContext* qctx) mutable {
           // Suppress static analyzer false positive on generalized lambda capture
           // (rdar://problem/22165130).
 #ifndef __clang_analyzer__
@@ -1239,7 +1235,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
               });
           }
 
-          executeCommand(qctx);
+          executeCommand(ti, qctx);
 
           if (localContext.profileFP) {
             localContext.consoleQueue.async(
@@ -1259,7 +1255,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
 
       bool isConsolePool = command->getExecutionPool() == context.manifest->getConsolePool();
       if (isConsolePool) {
-        context.consoleQueue.async([addExecuteJob=std::move(addExecuteJob)] {
+        context.consoleQueue.async([addExecuteJob=std::move(addExecuteJob)] () mutable {
           std::promise<void> p;
           auto result = p.get_future();
           addExecuteJob([&p]{ p.set_value(); });
@@ -1289,10 +1285,10 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       }
     }
 
-    void executeCommand(QueueJobContext* qctx) {
+    void executeCommand(core::TaskInterface& ti, QueueJobContext* qctx) {
       // If the build is cancelled, skip the job.
       if (context.isCancelled) {
-        return completeTask(BuildValue::makeSkippedCommand());
+        return ti.complete(BuildValue::makeSkippedCommand().toValue());
       }
 
       // The console pool is a bit special in the way it flushes its output.
@@ -1330,21 +1326,21 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         command->getCommandString().c_str()
       };
 
-      context.engine.getExecutionQueue().executeProcess(qctx, args, {}, {true, isConsolePool}, {
-        [&](ProcessResult result) {
+      ti.spawn(qctx, args, {}, {true, isConsolePool}, {
+        [this, ti](ProcessResult result) mutable {
           // Actually run the command.
           if (result.status != ProcessStatus::Succeeded) {
             // If the command failed, complete the task with the failed result and
             // always propagate.
-            return completeTask(BuildValue::makeFailedCommand(),
-                                /*ForceChange=*/true);
+            return ti.complete(BuildValue::makeFailedCommand().toValue(),
+                               /*ForceChange=*/true);
           }
 
           // Otherwise, the command succeeded so process the dependencies.
-          if (!processDiscoveredDependencies()) {
+          if (!processDiscoveredDependencies(ti)) {
             context.incrementFailedCommands();
-            return completeTask(BuildValue::makeFailedCommand(),
-                                /*ForceChange=*/true);
+            return ti.complete(BuildValue::makeFailedCommand().toValue(),
+                               /*ForceChange=*/true);
           }
 
           // Complete the task with a successful value.
@@ -1353,14 +1349,14 @@ buildCommand(BuildContext& context, ninja::Command* command) {
           // forcing downstream propagation if it isn't set.
           auto commandHash = CommandSignature(command->getCommandString());
           BuildValue resultValue = computeCommandResult(commandHash);
-          return completeTask(std::move(resultValue),
-                              /*ForceChange=*/!command->hasRestatFlag());
+          return ti.complete(resultValue.toValue(),
+                             /*ForceChange=*/!command->hasRestatFlag());
         }
       });
     }
 
 
-    bool processDiscoveredDependencies() {
+    bool processDiscoveredDependencies(core::TaskInterface& ti) {
       // Process the discovered dependencies, if used.
       switch (command->getDepsStyle()) {
       case ninja::Command::DepsStyleKind::None:
@@ -1393,15 +1389,15 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         // the file.
         struct DepsActions : public core::MakefileDepsParser::ParseActions {
           BuildContext& context;
-          NinjaCommandTask* task;
+          core::TaskInterface ti;
           const StringRef workingDirectory;
           const StringRef path;
           unsigned numErrors{0};
 
-          DepsActions(BuildContext& context, NinjaCommandTask* task,
+          DepsActions(BuildContext& context, core::TaskInterface& ti,
                       const StringRef workingDirectory,
                       const StringRef path)
-            : context(context), task(task), workingDirectory(workingDirectory), path(path) { }
+            : context(context), ti(ti), workingDirectory(workingDirectory), path(path) { }
 
           virtual void error(const char* message, uint64_t position) override {
             context.emitError(
@@ -1420,7 +1416,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
             }
 
             StringRef path = absPathTmp;
-            context.engine.taskDiscoveredDependency(task, path);
+            ti.discoveredDependency(path);
           }
 
           virtual void actOnRuleStart(const char* name, uint64_t length,
@@ -1428,7 +1424,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
           virtual void actOnRuleEnd() override {}
         };
 
-        DepsActions actions(context, this, context.workingDirectory, command->getDepsFile());
+        DepsActions actions(context, ti, context.workingDirectory, command->getDepsFile());
         core::MakefileDepsParser(data.get(), length, actions).parse();
         return actions.numErrors == 0;
       }
@@ -1450,26 +1446,24 @@ static core::Task* buildInput(BuildContext& context, ninja::Node* input) {
     NinjaInputTask(BuildContext& context, ninja::Node* node)
         : context(context), node(node) { }
 
-    virtual void provideValue(core::BuildEngine& engine, uintptr_t inputID,
+    virtual void provideValue(core::TaskInterface&, uintptr_t inputID,
                               const core::ValueType& value) override { }
 
-    virtual void start(core::BuildEngine& engine) override { }
+    virtual void start(core::TaskInterface&) override { }
 
-    virtual void inputsAvailable(core::BuildEngine& engine) override {
+    virtual void inputsAvailable(core::TaskInterface& ti) override {
       if (context.simulate) {
-        engine.taskIsComplete(
-          this, BuildValue::makeExistingInput({}).toValue());
+        ti.complete(BuildValue::makeExistingInput({}).toValue());
         return;
       }
 
       auto outputInfo = FileInfo::getInfoForPath(node->getCanonicalPath());
       if (outputInfo.isMissing()) {
-        engine.taskIsComplete(this, BuildValue::makeMissingInput().toValue());
+        ti.complete(BuildValue::makeMissingInput().toValue());
         return;
       }
 
-      engine.taskIsComplete(
-        this, BuildValue::makeExistingInput(outputInfo).toValue());
+      ti.complete(BuildValue::makeExistingInput(outputInfo).toValue());
     }
   };
 
@@ -1487,7 +1481,7 @@ buildTargets(BuildContext& context,
                 const std::vector<std::string>& targetsToBuild)
         : context(context), targetsToBuild(targetsToBuild) { }
 
-    virtual void provideValue(core::BuildEngine& engine, uintptr_t inputID,
+    virtual void provideValue(core::TaskInterface&, uintptr_t inputID,
                               const core::ValueType& valueData) override {
       BuildValue value = BuildValue::fromValue(valueData);
 
@@ -1497,18 +1491,18 @@ buildTargets(BuildContext& context,
       }
     }
 
-    virtual void start(core::BuildEngine& engine) override {
+    virtual void start(core::TaskInterface& ti) override {
       // Request all of the targets.
       unsigned id = 0;
       for (const auto& target: targetsToBuild) {
-        engine.taskNeedsInput(this, target, id++);
+        ti.request(target, id++);
       }
     }
 
-    virtual void inputsAvailable(core::BuildEngine& engine) override {
+    virtual void inputsAvailable(core::TaskInterface& ti) override {
       // Complete the job.
-      engine.taskIsComplete(
-        this, BuildValue::makeSuccessfulCommand({}, CommandSignature()).toValue());
+      ti.complete(
+        BuildValue::makeSuccessfulCommand({}, CommandSignature()).toValue());
       return;
     }
   };
@@ -1533,24 +1527,24 @@ selectCompositeBuildResult(BuildContext& context, ninja::Command* command,
         : context(context), command(command),
           inputIndex(inputIndex), compositeRuleName(compositeRuleName) { }
 
-    virtual void start(core::BuildEngine& engine) override {
+    virtual void start(core::TaskInterface& ti) override {
       // Request the composite input.
-      engine.taskNeedsInput(this, compositeRuleName, 0);
+      ti.request(compositeRuleName, 0);
     }
 
-    virtual void provideValue(core::BuildEngine& engine, uintptr_t inputID,
+    virtual void provideValue(core::TaskInterface&, uintptr_t inputID,
                               const core::ValueType& valueData) override {
       compositeValueData = &valueData;
     }
 
-    virtual void inputsAvailable(core::BuildEngine& engine) override {
+    virtual void inputsAvailable(core::TaskInterface& ti) override {
       // Construct the appropriate build value from the result.
       assert(compositeValueData);
       BuildValue value(BuildValue::fromValue(*compositeValueData));
 
       // If the input was a failed or skipped command, propagate that result.
       if (value.isFailedCommand() || value.isSkippedCommand()) {
-        engine.taskIsComplete(this, value.toValue(), /*ForceChange=*/true);
+        ti.complete(value.toValue(), /*ForceChange=*/true);
       } else {
         // FIXME: We don't try and set this in response to the restat flag on
         // the incoming command, because it doesn't generally work -- the output
@@ -1566,8 +1560,8 @@ selectCompositeBuildResult(BuildContext& context, ninja::Command* command,
 
         // The result is the InputIndex-th element, and the command hash is
         // propagated.
-        engine.taskIsComplete(
-          this, BuildValue::makeSuccessfulCommand(
+        ti.complete(
+          BuildValue::makeSuccessfulCommand(
             value.getNthOutputInfo(inputIndex),
             value.getCommandHash()).toValue(),
           forceChange);

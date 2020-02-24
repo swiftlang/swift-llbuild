@@ -38,6 +38,8 @@ class BuildKey;
 class BuildValue;
 class Command;
 class Node;
+class ShellCommand;
+class ShellCommandHandler;
 class Tool;
 
 bool pathIsPrefixedByPath(std::string path, std::string prefixPath);
@@ -271,6 +273,8 @@ public:
 
   static uint32_t getSchemaVersion();
   /// @}
+
+  ShellCommandHandler* resolveShellCommandHandler(ShellCommand* command);
 };
 
 }

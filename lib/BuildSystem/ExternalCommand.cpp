@@ -18,7 +18,6 @@
 #include "llbuild/BuildSystem/BuildFile.h"
 #include "llbuild/BuildSystem/BuildKey.h"
 #include "llbuild/BuildSystem/BuildNode.h"
-#include "llbuild/BuildSystem/BuildSystemCommandInterface.h"
 #include "llbuild/BuildSystem/BuildValue.h"
 
 #include "llbuild/Basic/FileInfo.h"
@@ -204,8 +203,8 @@ bool ExternalCommand::isResultValid(BuildSystem& system,
   return true;
 }
 
-void ExternalCommand::start(BuildSystemCommandInterface& bsci,
-                            core::Task* task) {
+void ExternalCommand::start(BuildSystem& system,
+                            core::TaskInterface& ti) {
   // Initialize the build state.
   skipValue = llvm::None;
   missingInputNodes.clear();
@@ -213,29 +212,29 @@ void ExternalCommand::start(BuildSystemCommandInterface& bsci,
   // Request all of the inputs.
   unsigned id = 0;
   for (auto it = inputs.begin(), ie = inputs.end(); it != ie; ++it, ++id) {
-    bsci.taskNeedsInput(task, BuildKey::makeNode(*it), id);
+    ti.request(BuildKey::makeNode(*it).toData(), id);
   }
 
   // Delegate to the subclass in case it needs more custom inputs.
-  startExternalCommand(bsci, task);
+  startExternalCommand(system, ti);
 }
 
-void ExternalCommand::providePriorValue(BuildSystemCommandInterface&,
-                                        core::Task*,
+void ExternalCommand::providePriorValue(BuildSystem& system,
+                                        core::TaskInterface&,
                                         const BuildValue& value) {
   if (value.isSuccessfulCommand()) {
     hasPriorResult = true;
   }
 }
 
-void ExternalCommand::provideValue(BuildSystemCommandInterface& bsci,
-                                   core::Task* task,
+void ExternalCommand::provideValue(BuildSystem& system,
+                                   core::TaskInterface& ti,
                                    uintptr_t inputID,
                                    const BuildValue& value) {
   if (value.isSuccessfulCommand() || value.isFailedCommand() || value.isPropagatedFailureCommand()) {
     // If the value is a successful command, it must probably be a value that was requested for a custom task, so
     // skip the input processing and invoke the subclass instead to process it accordingly.
-    provideValueExternalCommand(bsci, task, inputID, value);
+    provideValueExternalCommand(system, ti, inputID, value);
     return;
   }
 
@@ -322,7 +321,7 @@ bool ExternalCommand::canUpdateIfNewerWithResult(const BuildValue& result) {
 }
 
 BuildValue
-ExternalCommand::computeCommandResult(BuildSystemCommandInterface& bsci) {
+ExternalCommand::computeCommandResult(BuildSystem& system, core::TaskInterface& ti) {
   // Capture the file information for each of the output nodes.
   //
   // FIXME: We need to delegate to the node here.
@@ -333,13 +332,13 @@ ExternalCommand::computeCommandResult(BuildSystemCommandInterface& bsci) {
       // info, but need to refactor the command result to just store the node
       // subvalues instead.
       FileInfo info{};
-      info.size = bsci.getBuildEngine().getCurrentEpoch();
+      info.size = ti.currentEpoch();
       outputInfos.push_back(info);
     } else if (node->isVirtual()) {
       outputInfos.push_back(FileInfo{});
     } else {
       outputInfos.push_back(node->getFileInfo(
-                                bsci.getFileSystem()));
+                                system.getFileSystem()));
     }
   }
 
@@ -350,26 +349,26 @@ ExternalCommand::computeCommandResult(BuildSystemCommandInterface& bsci) {
   // different times.
   if (outputs.size() == 0) {
     FileInfo info{};
-    info.size = bsci.getBuildEngine().getCurrentEpoch();
+    info.size = ti.currentEpoch();
     outputInfos.push_back(info);
   }
 
   return BuildValue::makeSuccessfulCommand(outputInfos);
 }
 
-void ExternalCommand::execute(BuildSystemCommandInterface& bsci,
-                              core::Task* task,
+void ExternalCommand::execute(BuildSystem& system,
+                              core::TaskInterface& ti,
                               QueueJobContext* context,
                               ResultFn resultFn) {
   // If this command should be skipped, do nothing.
   if (skipValue.hasValue()) {
     // If this command had a failed input, treat it as having failed.
     if (!missingInputNodes.empty()) {
-      bsci.getDelegate().commandCannotBuildOutputDueToMissingInputs(this,
+      system.getDelegate().commandCannotBuildOutputDueToMissingInputs(this,
                          outputs[0], missingInputNodes);
 
       // Report the command failure.
-      bsci.getDelegate().hadCommandFailure();
+      system.getDelegate().hadCommandFailure();
     }
 
     resultFn(std::move(skipValue.getValue()));
@@ -379,7 +378,7 @@ void ExternalCommand::execute(BuildSystemCommandInterface& bsci,
 
   // If it is legal to simply update the command, then see if we can do so.
   if (canUpdateIfNewer && hasPriorResult) {
-    BuildValue result = computeCommandResult(bsci);
+    BuildValue result = computeCommandResult(system, ti);
     if (canUpdateIfNewerWithResult(result)) {
       resultFn(std::move(result));
       return;
@@ -398,15 +397,15 @@ void ExternalCommand::execute(BuildSystemCommandInterface& bsci,
       // FIXME: Need to use the filesystem interfaces.
       auto parent = llvm::sys::path::parent_path(node->getName());
       if (!parent.empty()) {
-        (void) bsci.getFileSystem().createDirectories(parent);
+        (void) system.getFileSystem().createDirectories(parent);
       }
     }
   }
     
   // Invoke the external command.
-  bsci.getDelegate().commandStarted(this);
-  executeExternalCommand(bsci, task, context, {[this, &bsci, resultFn](ProcessResult result){
-    bsci.getDelegate().commandFinished(this, result.status);
+  system.getDelegate().commandStarted(this);
+  executeExternalCommand(system, ti, context, {[this, &system, ti, resultFn](ProcessResult result) mutable {
+    system.getDelegate().commandFinished(this, result.status);
 
     // Process the result.
     switch (result.status) {
@@ -417,7 +416,7 @@ void ExternalCommand::execute(BuildSystemCommandInterface& bsci,
       resultFn(BuildValue::makeCancelledCommand());
       return;
     case ProcessStatus::Succeeded:
-      resultFn(computeCommandResult(bsci));
+      resultFn(computeCommandResult(system, ti));
       return;
     case ProcessStatus::Skipped:
       // It is illegal to get skipped result at this point.

@@ -96,26 +96,26 @@ public:
   {
   }
 
-  virtual void start(BuildEngine& engine) override {
+  virtual void start(TaskInterface& ti) override {
     // Compute the list of inputs.
     auto inputs = listInputs();
 
     // Request all of the inputs.
     inputValues.resize(inputs.size());
     for (int i = 0, e = inputs.size(); i != e; ++i) {
-      engine.taskNeedsInput(this, inputs[i], i);
+      ti.request(inputs[i], i);
     }
   }
 
-  virtual void provideValue(BuildEngine&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface&, uintptr_t inputID,
                             const ValueType& value) override {
     // Update the input values.
     assert(inputID < inputValues.size());
     inputValues[inputID] = intFromValue(value);
   }
 
-  virtual void inputsAvailable(core::BuildEngine& engine) override {
-    engine.taskIsComplete(this, intToValue(compute(inputValues)));
+  virtual void inputsAvailable(TaskInterface& ti) override {
+    ti.complete(intToValue(compute(inputValues)));
   }
 };
 
@@ -130,19 +130,13 @@ public:
 private:
   SimpleTask::ComputeFnType compute;
   std::vector<KeyType> inputs;
-  Task** task;
 public:
   SimpleRule(const KeyType& key, const std::vector<KeyType>& inputs,
-             SimpleTask::ComputeFnType compute, Task** task = nullptr)
-    : Rule(key), compute(compute), inputs(inputs), task(task) { }
+             SimpleTask::ComputeFnType compute)
+    : Rule(key), compute(compute), inputs(inputs) { }
 
   Task* createTask(BuildEngine&) override {
-    auto ret = new SimpleTask([this]{ return inputs; }, compute);
-
-    if (task)
-      *task = ret;
-
-    return ret;
+    return new SimpleTask([this]{ return inputs; }, compute);
   }
 
   bool isResultValid(BuildEngine&, const ValueType&) override { return true; }
@@ -186,51 +180,6 @@ TEST(BuildEngineCancellationTest, basic) {
   EXPECT_EQ(2U, builtKeys.size());
   EXPECT_EQ("value-A", builtKeys[0]);
   EXPECT_EQ("result", builtKeys[1]);
-}
-
-TEST(BuildEngineCancellationDueToDuplicateTaskTest, basic) {
-  std::vector<std::string> builtKeys;
-  SimpleBuildEngineDelegate delegate;
-  core::BuildEngine engine(delegate);
-  Task* taskA = nullptr;
-  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
-     "value-A", {"value-B"},
-        [&] (const std::vector<int>& inputs) {
-          builtKeys.push_back("value-A");
-          fprintf(stderr, "building A\n");
-          return 2;
-        },
-        &taskA)
-    ));
-  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
-     "value-B", {}, [&] (const std::vector<int>& inputs) {
-       builtKeys.push_back("value-B");
-       fprintf(stderr, "building B (and reporting A complete early)\n");
-       engine.taskIsComplete(taskA, intToValue(2));
-       return 3; })));
-  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
-      "result", {"value-A", "value-B"},
-                   [&] (const std::vector<int>& inputs) {
-                     EXPECT_EQ(2U, inputs.size());
-                     EXPECT_EQ(2, inputs[0]);
-                     EXPECT_EQ(3, inputs[1]);
-                     builtKeys.push_back("result");
-                     return inputs[0] * 3 + inputs[1];
-                   })));
-
-  // Build the result, expecting error
-  //
-  // This test is triggering the cancellation behavior through what is
-  // clearly broken client behavior (reporting a task complete that should
-  // not have started yet). The engine should cleanly cancel and report the
-  // error, which is what this test is checking. However, the question remains
-  // are there 'legitimate'/non-broken client pathways that could also trigger
-  // that error?
-  delegate.expectError = true;
-  auto result = engine.build("result");
-  EXPECT_EQ(0U, result.size());
-  EXPECT_EQ(1U, builtKeys.size());
-  EXPECT_EQ("value-B", builtKeys[0]);
 }
 
 }

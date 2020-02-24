@@ -1197,7 +1197,6 @@
 		E1ADC23A1A85936400D5387C /* libllbuild.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libllbuild.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1B3B9DA1E4D5A7A00DF1FBC /* MockBuildSystemDelegate.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MockBuildSystemDelegate.cpp; sourceTree = "<group>"; };
 		E1B3B9DB1E4D5A7A00DF1FBC /* MockBuildSystemDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MockBuildSystemDelegate.h; sourceTree = "<group>"; };
-		E1B49EF91B6BD45D0031AFC2 /* BuildSystemCommandInterface.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildSystemCommandInterface.h; sourceTree = "<group>"; };
 		E1B49EFA1B6BD45D0031AFC2 /* BuildSystem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildSystem.h; sourceTree = "<group>"; };
 		E1B838A21B52E7DE00DB876B /* libllvmSupport.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libllvmSupport.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1B838A41B52E85400DB876B /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
@@ -2618,7 +2617,6 @@
 				E11470921B752E7000ED84CF /* BuildKey.h */,
 				54E187B61CD296EA00F7EC89 /* BuildNode.h */,
 				E1B49EFA1B6BD45D0031AFC2 /* BuildSystem.h */,
-				E1B49EF91B6BD45D0031AFC2 /* BuildSystemCommandInterface.h */,
 				E15305932236C8DF0097CDE6 /* BuildSystemExtensions.h */,
 				E1AAD28B1BC60A0F00F54680 /* BuildSystemFrontend.h */,
 				E15305922236C8DF0097CDE6 /* BuildSystemHandlers.h */,
