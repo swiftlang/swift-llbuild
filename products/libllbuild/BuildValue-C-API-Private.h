@@ -35,4 +35,12 @@ public:
 };
 }
 
+namespace llbuild {
+namespace capi {
+
+const llb_build_value_file_info_t convertFileInfo(const llbuild::basic::FileInfo &fileInfo);
+
+}
+}
+
 #endif /* BuildValue_C_API_Private_h */

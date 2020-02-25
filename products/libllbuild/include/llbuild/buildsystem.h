@@ -114,6 +114,9 @@ typedef struct llb_buildsystem_tool_t_ llb_buildsystem_tool_t;
 /// Opaque handle to a build system command's launched process.
 typedef struct llb_buildsystem_process_t_ llb_buildsystem_process_t;
 
+/// Opaque handle to a build system interface.
+typedef struct llb_buildsystem_interface_t_ llb_buildsystem_interface_t;
+
 /// Result of a command execution.
 typedef enum LLBUILD_ENUM_ATTRIBUTES {
   llb_buildsystem_command_result_succeeded = 0,
@@ -590,7 +593,7 @@ typedef struct llb_buildsystem_external_command_delegate_t_ {
   /// At this point, the command may choose to request more dependencies
   /// through the build system command interface (bsci) reference.
   void (*start)(void* context, llb_buildsystem_command_t* command,
-                llb_task_interface_t* ti);
+                llb_buildsystem_interface_t* bi, llb_task_interface_t* ti);
 
   /// Called by the build system when one of the requested dependencies has
   /// become available. The command can identify which key the provided value
@@ -598,6 +601,7 @@ typedef struct llb_buildsystem_external_command_delegate_t_ {
   /// to request additional dependencies based on the contents of the provided
   /// value.
   void (*provide_value)(void* context, llb_buildsystem_command_t* command,
+                        llb_buildsystem_interface_t* bi,
                         llb_task_interface_t* ti,
                         const llb_build_value* value,
                         uintptr_t inputID);
@@ -617,11 +621,13 @@ typedef struct llb_buildsystem_external_command_delegate_t_ {
   /// The C API takes ownership of the value returned by `execute_command_ex`.
   bool (*execute_command)(void* context,
                           llb_buildsystem_command_t* command,
+                          llb_buildsystem_interface_t* bi,
                           llb_task_interface_t* ti,
                           llb_buildsystem_queue_job_context_t* job_context);
 
   llb_build_value* (*execute_command_ex)(void* context,
                                          llb_buildsystem_command_t* command,
+                                         llb_buildsystem_interface_t* bi,
                                          llb_task_interface_t* ti,
                                          llb_buildsystem_queue_job_context_t* job_context);
 
@@ -692,6 +698,11 @@ llb_buildsystem_command_interface_task_needs_input(llb_task_interface_t* task, l
 /// Marks a key as a discovered dependency for the task.
 LLBUILD_EXPORT void
 llb_buildsystem_command_interface_task_discovered_dependency(llb_task_interface_t* ti_p, llb_build_key_t* key);
+
+/// Returns the file info struct for the specified path
+LLBUILD_EXPORT llb_build_value_file_info_t
+llb_buildsystem_command_interface_get_file_info(llb_buildsystem_interface_t* bi_p, const char* path);
+
 
 // MARK: Quality of Service
 
