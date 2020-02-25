@@ -701,6 +701,7 @@ class CAPIExternalCommand : public ExternalCommand {
                                     core::TaskInterface& ti) override {
     cAPIDelegate.start(cAPIDelegate.context,
                        (llb_buildsystem_command_t*)this,
+                       (llb_buildsystem_interface_t*)&system,
                        (llb_task_interface_t*)&ti);
   }
 
@@ -711,6 +712,7 @@ class CAPIExternalCommand : public ExternalCommand {
     auto value_p = (llb_build_value *)new CAPIBuildValue(BuildValue(value));
     cAPIDelegate.provide_value(cAPIDelegate.context,
                                (llb_buildsystem_command_t*)this,
+                               (llb_buildsystem_interface_t*)&system,
                                (llb_task_interface_t*)&ti,
                                value_p,
                                inputID);
@@ -752,6 +754,7 @@ class CAPIExternalCommand : public ExternalCommand {
       llb_build_value* rvalue = cAPIDelegate.execute_command_ex(
         cAPIDelegate.context,
         (llb_buildsystem_command_t*)this,
+        (llb_buildsystem_interface_t*)&system,
         (llb_task_interface_t*)&ti,
         (llb_buildsystem_queue_job_context_t*)job_context);
 
@@ -774,6 +777,7 @@ class CAPIExternalCommand : public ExternalCommand {
     bool success = cAPIDelegate.execute_command(
       cAPIDelegate.context,
       (llb_buildsystem_command_t*)this,
+      (llb_buildsystem_interface_t*)&system,
       (llb_task_interface_t*)&ti,
       (llb_buildsystem_queue_job_context_t*)job_context);
     doneFn(success ? ProcessStatus::Succeeded : ProcessStatus::Failed);
@@ -959,6 +963,12 @@ void llb_buildsystem_command_interface_task_needs_input(llb_task_interface_t* ti
   auto ti = (core::TaskInterface*)ti_p;
   ti->request(((CAPIBuildKey *)key)->getInternalBuildKey().toData(), inputID);
 }
+
+llb_build_value_file_info_t llb_buildsystem_command_interface_get_file_info(llb_buildsystem_interface_t* bi_p, const char* path) {
+  auto bi = (BuildSystem*)bi_p;
+  return llbuild::capi::convertFileInfo(bi->getFileSystem().getFileInfo(path));
+}
+
 
 llb_quality_of_service_t llb_get_quality_of_service() {
   switch (getDefaultQualityOfService()) {

@@ -83,7 +83,7 @@ static const basic::FileInfo convertFileInfo(const llb_build_value_file_info_t &
   };
 }
 
-static const llb_build_value_file_info_t convertFileInfo(const basic::FileInfo &fileInfo) {
+const llb_build_value_file_info_t llbuild::capi::convertFileInfo(const basic::FileInfo &fileInfo) {
   return llb_build_value_file_info_t {
     fileInfo.device,
     fileInfo.inode,
@@ -139,7 +139,7 @@ llb_build_value *llb_build_value_make_existing_input(llb_build_value_file_info_t
 
 llb_build_value_file_info_t llb_build_value_get_output_info(llb_build_value *_Nonnull value) {
   auto fileInfo = ((CAPIBuildValue *)value)->getInternalBuildValue().getOutputInfo();
-  return convertFileInfo(fileInfo);
+  return llbuild::capi::convertFileInfo(fileInfo);
 }
 
 llb_build_value *_Nonnull llb_build_value_make_missing_input() {
@@ -203,7 +203,7 @@ void llb_build_value_get_file_infos(llb_build_value *_Nonnull value, void *_Null
   auto count = internalBuildValue->getNumOutputs();
   for (unsigned index = 0; index < count; index++) {
     auto fileInfo = internalBuildValue->getNthOutputInfo(index);
-    iterator(context, convertFileInfo(fileInfo));
+    iterator(context, llbuild::capi::convertFileInfo(fileInfo));
   }
 }
 

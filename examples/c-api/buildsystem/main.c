@@ -61,20 +61,22 @@ static wchar_t* convertToMultiByte(const char* s) {
 // "Fancy" Command Implementation
 
 static void fancy_command_start(void* context,
-                                         llb_buildsystem_command_t* command,
-                                         llb_task_interface_t* ti) {}
+                                llb_buildsystem_command_t* command,
+                                llb_buildsystem_interface_t* bi,
+                                llb_task_interface_t* ti) {}
 
 static void fancy_command_provide_value(void* context,
-                                                 llb_buildsystem_command_t* command,
-                                                 llb_task_interface_t* ti,
-                                                 const llb_build_value* value,
-                                                 uintptr_t inputID) {}
+                                        llb_buildsystem_command_t* command,
+                                        llb_buildsystem_interface_t* bi,
+                                        llb_task_interface_t* ti,
+                                        const llb_build_value* value,
+                                        uintptr_t inputID) {}
 
 static bool
-fancy_command_execute_command(
-    void *context, llb_buildsystem_command_t* command,
-    llb_task_interface_t* ti,
-    llb_buildsystem_queue_job_context_t* job) {
+fancy_command_execute_command(void *context, llb_buildsystem_command_t* command,
+                              llb_buildsystem_interface_t* bi,
+                              llb_task_interface_t* ti,
+                              llb_buildsystem_queue_job_context_t* job) {
   printf("%s\n", __FUNCTION__);
   fflush(stdout);
   return true;
