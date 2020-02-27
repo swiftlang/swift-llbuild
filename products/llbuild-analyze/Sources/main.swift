@@ -6,13 +6,18 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for Swift project authors
 
-import func Foundation.exit
+import ArgumentParser
 
-do {
-    try run(tools: [
-        CriticalPathTool.self
-    ])
-} catch {
-    print("error: \(error)")
-    exit(-1)
+private func binaryName() -> String {
+    CommandLine.arguments.first?.components(separatedBy: "/").last ?? ""
 }
+
+struct Analyze: ParsableCommand {
+    static var configuration = CommandConfiguration(commandName: binaryName(),
+                                                    shouldDisplay: false,
+                                                    subcommands: [
+                                                        CriticalPathTool.self
+    ])
+}
+
+Analyze.main()
