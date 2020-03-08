@@ -17,7 +17,7 @@
 #
 
 rule SHOW
-     command = echo "<\0033[32m$in\033[0m>"
+     command = echo -e "<\0033[32m$in\033[0m>"
 
 build test.out: SHOW test.in
 
