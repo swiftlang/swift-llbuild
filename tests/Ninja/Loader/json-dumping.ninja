@@ -1,0 +1,36 @@
+# Check build decl loading.
+#
+# RUN: %{llbuild} ninja load-manifest --json %s > %t
+# RUN: %{FileCheck} --input-file %t %s
+
+# CHECK: "filename": "json-dumping.ninja"
+# CHECK: "bindings": {
+
+# CHECK: "top_level_decl": "1"
+top_level_decl = 1
+
+# CHECK: "rules": {
+# CHECK: "SOMERULE": {
+# CHECK: "command": "the command"
+# CHECK: "description": "whatever"
+rule SOMERULE
+     command = the command
+     description = whatever
+
+# JSON dumps this first, before the commands:
+# CHECK: "default_targets": ["output1"],
+
+# CHECK: "commands": [
+# CHECK: {
+# CHECK: "outputs": ["output1", "output2"],
+# CHECK: "rule": "SOMERULE",
+# CHECK: "inputs": [],
+# CHECK: "deps": "gcc",
+# CHECK: "depfile": "deps.d",
+# CHECK: "command": "the command",
+# CHECK: "description": "whatever"
+build output1 output2: SOMERULE
+     deps = gcc
+     depfile = deps.d
+
+default output1

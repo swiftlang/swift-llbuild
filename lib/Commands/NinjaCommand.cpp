@@ -12,6 +12,7 @@
 
 #include "llbuild/Commands/Commands.h"
 
+#include "llbuild/Basic/JSON.h"
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/Basic/PlatformUtility.h"
 #include "llbuild/Ninja/Lexer.h"
@@ -390,9 +391,33 @@ private:
 
 }
 
+static void dumpNinjaManifestText(StringRef file, ninja::Manifest* manifest);
+static void dumpNinjaManifestJSON(StringRef file, ninja::Manifest* manifest);
+
 static int executeLoadManifestCommand(const std::vector<std::string>& args,
                                       bool loadOnly) {
-  if (args.size() != 1) {
+  // Parse options.
+  bool json = false;
+  auto it = args.begin();
+  for (; it != args.end() && StringRef(*it).startswith("-"); ++it) {
+    auto arg = *it;
+
+    if (arg == "--json") {
+      json = true;
+    } else {
+      fprintf(stderr, "error: %s: unknown option: '%s'\n",
+              getProgramName(), arg.c_str());
+      return 1;
+    }
+  }
+  if (it == args.end()) {
+    fprintf(stderr, "error: %s: invalid number of arguments\n",
+            getProgramName());
+    return 1;
+  }
+
+  std::string filename = *it++;
+  if (it != args.end()) {
     fprintf(stderr, "error: %s: invalid number of arguments\n",
             getProgramName());
     return 1;
@@ -402,7 +427,6 @@ static int executeLoadManifestCommand(const std::vector<std::string>& args,
   // can be relative.
   //
   // FIXME: Need llvm::sys::fs.
-  std::string filename = args[0];
   size_t pos = filename.find_last_of('/');
   if (pos != std::string::npos) {
     if (!sys::chdir(filename.substr(0, pos).c_str())) {
@@ -429,8 +453,18 @@ static int executeLoadManifestCommand(const std::vector<std::string>& args,
   if (loadOnly)
     return 0;
 
+  if (json) {
+    dumpNinjaManifestJSON(filename, manifest.get());
+  } else {
+    dumpNinjaManifestText(filename, manifest.get());
+  }
+
+  return 0;
+}
+
+static void dumpNinjaManifestText(StringRef file, ninja::Manifest* manifest) {
   // Dump the manifest.
-  std::cout << "# Loaded Manifest: \"" << args[0] << "\"\n";
+  std::cout << "# Loaded Manifest: \"" << file.str() << "\"\n";
   std::cout << "\n";
 
   // Dump the top-level bindings.
@@ -571,8 +605,179 @@ static int executeLoadManifestCommand(const std::vector<std::string>& args,
     }
     std::cout << "\n\n";
   }
+}
 
-  return 0;
+static void dumpNinjaManifestJSON(StringRef file, ninja::Manifest* manifest) {
+  std::cout << "{\n";
+  std::cout << "  \"filename\": \"" << escapeForJSON(file) << "\",\n";
+
+  // Dump the top-level bindings.
+  assert(manifest->getRootScope().getParent() == nullptr);
+  std::vector<std::pair<std::string, std::string>> bindings;
+  for (const auto& entry: manifest->getRootScope().getBindings()) {
+    bindings.push_back({ entry.getKey(), entry.getValue() });
+  }
+  std::sort(bindings.begin(), bindings.end());
+  std::cout << "  \"bindings\": {\n";
+  for (auto it = bindings.begin(), ie = bindings.end(); it != ie; ++it) {
+    if (it != bindings.begin()) std::cout << ",\n";
+    std::cout << "    \"" << escapeForJSON(it->first) << "\": \""
+              << escapeForJSON(it->second) << "\"";
+  }
+  std::cout << "\n  },\n";
+  
+  // Dump the pools, if present.
+  if (!manifest->getPools().empty()) {
+    std::vector<ninja::Pool*> pools;
+    for (const auto& entry: manifest->getPools()) {
+      pools.push_back(entry.getValue());
+    }
+    std::sort(pools.begin(), pools.end(), [] (ninja::Pool* a, ninja::Pool* b) {
+        return a->getName() < b->getName();
+      });
+    std::cout << "  \"pools\": {\n";
+    for (auto it = pools.begin(), ie = pools.end(); it != ie; ++it) {
+      auto pool = *it;
+      if (it != pools.begin()) std::cout << ",\n";
+      std::cout << "    \"" << escapeForJSON(pool->getName()) << "\": {";
+      if (uint32_t depth = pool->getDepth()) {
+        std::cout << "\n      \"depth\": " << depth;
+      }
+      std::cout << "\n    }";
+    }
+    std::cout << "\n  },\n";
+  }
+
+  // Dump the rules.
+  std::vector<ninja::Rule*> rules;
+  for (const auto& entry: manifest->getRootScope().getRules()) {
+    rules.push_back(entry.getValue());
+  }
+  std::sort(rules.begin(), rules.end(), [] (ninja::Rule* a, ninja::Rule* b) {
+      return a->getName() < b->getName();
+    });
+  std::cout << "  \"rules\": {\n";
+  for (auto it = rules.begin(), ie = rules.end(); it != ie; ++it) {
+    auto rule = *it;
+    if (it != rules.begin()) std::cout << ",\n";
+    std::cout << "    \"" << escapeForJSON(rule->getName()) << "\": {\n";
+
+    std::vector<std::pair<std::string, std::string>> parameters;
+    for (const auto& entry: rule->getParameters()) {
+        parameters.push_back({ entry.getKey(), entry.getValue() });
+    }
+    std::sort(parameters.begin(), parameters.end());
+    for (auto pit = parameters.begin(),
+           pie = parameters.end(); pit != pie; ++pit) {
+      if (pit != parameters.begin()) std::cout << ",\n";
+      std::cout << "      \"" << escapeForJSON(pit->first) << "\": \""
+                << escapeForJSON(pit->second) << "\"";
+    }
+    std::cout << "\n    }";
+  }
+  std::cout << "\n  },\n";
+
+  // Dump the default targets, if specified.
+  if (!manifest->getDefaultTargets().empty()) {
+    std::vector<ninja::Node*> defaultTargets = manifest->getDefaultTargets();
+    std::sort(defaultTargets.begin(), defaultTargets.end(),
+              [] (ninja::Node* a, ninja::Node* b) {
+        return a->getScreenPath() < b->getScreenPath();
+      });
+    std::cout << "  \"default_targets\": [";
+    for (auto it = defaultTargets.begin(),
+           ie = defaultTargets.end(); it != ie; ++it) {
+      if (it != defaultTargets.begin()) std::cout << ", ";
+      std::cout << "\"" << escapeForJSON((*it)->getScreenPath()) << "\"";
+    }
+    std::cout << "],\n";
+  }
+
+  // Dump the commands.
+  std::vector<ninja::Command*> commands(manifest->getCommands());
+  std::sort(commands.begin(), commands.end(),
+            [] (ninja::Command* a, ninja::Command* b) {
+              // Commands can not have duplicate outputs, so comparing based
+              // only on the first still provides a total ordering.
+              return a->getOutputs()[0]->getScreenPath() <
+                b->getOutputs()[0]->getScreenPath();
+            });
+  std::cout << "  \"commands\": [\n";
+  for (auto it = commands.begin(), ie = commands.end(); it != ie; ++it) {
+    auto command = *it;
+    if (it != commands.begin()) std::cout << ",\n";
+    std::cout << "    {\n";
+    std::cout << "      \"outputs\": [";
+    for (auto it = command->getOutputs().begin(),
+           ie = command->getOutputs().end(); it != ie; ++it) {
+      if (it != command->getOutputs().begin()) std::cout << ", ";
+      std::cout << "\"" << escapeForJSON((*it)->getScreenPath()) << "\"";
+    }
+    std::cout << "],\n";
+    std::cout << "      \"rule\": \""
+              << command->getRule()->getName() << "\",\n";
+
+    std::cout << "      \"inputs\": [";
+    for (auto it = command->explicitInputs_begin(),
+           ie = command->explicitInputs_end(); it != ie; ++it) {
+      if (it != command->explicitInputs_begin()) std::cout << ", ";
+      std::cout << "\"" << escapeForJSON((*it)->getScreenPath()) << "\"";
+    }
+    std::cout << "],\n";
+    if (command->getNumImplicitInputs()) {
+      std::cout << "      \"implicit_inputs\": [";
+      for (auto it = command->implicitInputs_begin(),
+             ie = command->implicitInputs_end(); it != ie; ++it) {
+        if (it != command->implicitInputs_begin()) std::cout << ", ";
+        std::cout << "\"" << escapeForJSON((*it)->getScreenPath()) << "\"";
+      }
+      std::cout << "],\n";
+    }
+    if (command->getNumOrderOnlyInputs()) {
+      std::cout << "      \"order_only_inputs\": [";
+      for (auto it = command->orderOnlyInputs_begin(),
+             ie = command->orderOnlyInputs_end(); it != ie; ++it) {
+        if (it != command->orderOnlyInputs_begin()) std::cout << ", ";
+        std::cout << "\"" << escapeForJSON((*it)->getScreenPath()) << "\"";
+      }
+      std::cout << "],\n";
+    }
+
+    // Write out optional things.
+    if (command->hasGeneratorFlag())
+      std::cout << "      \"generator\": true,\n";
+    if (command->hasRestatFlag())
+      std::cout << "      \"restat\": true,\n";
+
+    if (const ninja::Pool* executionPool = command->getExecutionPool()) {
+      std::cout << "      \"pool\": \""
+                << escapeForJSON(executionPool->getName()) << "\",\n";
+    }
+
+    switch (command->getDepsStyle()) {
+    case ninja::Command::DepsStyleKind::None:
+      break;
+    case ninja::Command::DepsStyleKind::GCC:
+      std::cout << "      \"deps\": \"gcc\",\n";
+      std::cout << "      \"depfile\": \""
+                << escapeForJSON(command->getDepsFile()) << "\",\n";
+      break;
+    case ninja::Command::DepsStyleKind::MSVC:
+      std::cout << "      \"deps\": \"msvc\",\n";
+      break;
+    }
+    
+    // Finally, write out the attributes.
+    std::cout << "      \"command\": \""
+              << escapeForJSON(command->getCommandString()) << "\",\n";
+    std::cout << "      \"description\": \""
+              << escapeForJSON(command->getDescription()) << "\"\n";
+    
+    std::cout << "    }";
+  }
+  std::cout << "\n  ]\n";
+
+  std::cout << "}\n";
 }
 
 #pragma mark - Ninja Top-Level Command
