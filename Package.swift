@@ -24,6 +24,11 @@ let package = Package(
         .library(
             name: "llbuildAnalysis",
             targets: ["llbuildAnalysis"]),
+
+        // Swift library for accessing [Ninja](ninjabuild.org) files.
+        .library(
+            name: "Ninja",
+            targets: ["Ninja"])
     ],
     targets: [
         // MARK: Products
@@ -60,6 +65,16 @@ let package = Package(
             path: "products/llbuildSwift",
             exclude: []
         ),
+
+        /// The public Swift Ninja API.
+        .target(
+            name: "Ninja",
+            dependencies: ["llbuild"],
+            path: "products/swift-Ninja"),
+        .testTarget(
+            name: "SwiftNinjaTests",
+            dependencies: ["llbuildTestSupport", "Ninja"],
+            path: "unittests/swift-Ninja"),
 
         // MARK: Components
         
@@ -118,12 +133,16 @@ let package = Package(
             path: "unittests/Ninja"),
         .testTarget(
             name: "llbuildSwiftTests",
-            dependencies: ["llbuildSwift"],
+            dependencies: ["llbuildSwift", "llbuildTestSupport"],
             path: "unittests/Swift"),
         .testTarget(
             name: "AnalysisTests",
             dependencies: ["llbuildAnalysis"],
             path: "unittests/Analysis"),
+
+        .testTarget(
+            name: "llbuildTestSupport",
+            path: "unittests/TestSupport"),
         
         // MARK: GoogleTest
 

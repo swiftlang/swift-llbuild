@@ -161,6 +161,22 @@
 		E10D5CE419FEF3BD00211ED4 /* Python.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E10D5CE319FEF3BD00211ED4 /* Python.framework */; };
 		E10D5CE619FEF40100211ED4 /* LitTests.py in Resources */ = {isa = PBXBuildFile; fileRef = E10D5CE519FEF40100211ED4 /* LitTests.py */; };
 		E10FE0D71B7313D50059D086 /* DepsBuildEngineTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E10FE0D61B7313D50059D086 /* DepsBuildEngineTest.cpp */; };
+		E111C10B241B25470086A92D /* llbuild.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1D191BE1B47232B000C4E95 /* llbuild.framework */; };
+		E111C118241B25970086A92D /* SwiftNinjaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E111C117241B25960086A92D /* SwiftNinjaTests.swift */; };
+		E111C137241B25B70086A92D /* buildvalue.h in Headers */ = {isa = PBXBuildFile; fileRef = B5A308B922F30E0700699B4C /* buildvalue.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E111C138241B25B70086A92D /* db.h in Headers */ = {isa = PBXBuildFile; fileRef = B505BFB5228FCBAB00255BD7 /* db.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E111C139241B25B70086A92D /* llbuild.h in Headers */ = {isa = PBXBuildFile; fileRef = E1ADC2351A8592AA00D5387C /* llbuild.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E111C13A241B25B70086A92D /* buildkey.h in Headers */ = {isa = PBXBuildFile; fileRef = B5BE9BAB22E885D900777A06 /* buildkey.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E111C13B241B25B70086A92D /* core.h in Headers */ = {isa = PBXBuildFile; fileRef = E1BE0AAD1C46F93000AD0883 /* core.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E111C13C241B25B70086A92D /* BuildKey-C-API-Private.h in Headers */ = {isa = PBXBuildFile; fileRef = B5A308D822F3391F00699B4C /* BuildKey-C-API-Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		E111C13D241B25B70086A92D /* BuildValue-C-API-Private.h in Headers */ = {isa = PBXBuildFile; fileRef = 2D0FB84B2395D8690088DAB4 /* BuildValue-C-API-Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		E111C13E241B25B70086A92D /* buildsystem.h in Headers */ = {isa = PBXBuildFile; fileRef = E1192CEC1C49D84500F85890 /* buildsystem.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		E111C153241B269D0086A92D /* llbuild.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1D191BE1B47232B000C4E95 /* llbuild.framework */; };
+		E111C15C241B26D30086A92D /* XCTestCase+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E111C15B241B26D30086A92D /* XCTestCase+Extensions.swift */; };
+		E111C164241B285E0086A92D /* NinjaManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = E111C163241B285E0086A92D /* NinjaManifest.swift */; };
+		E111C165241B28940086A92D /* Ninja.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E111C142241B25B70086A92D /* Ninja.framework */; };
+		E111C166241B29AA0086A92D /* llbuildTestSupport.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E111C158241B269D0086A92D /* llbuildTestSupport.framework */; };
+		E111C167241B29EC0086A92D /* llbuildTestSupport.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E111C158241B269D0086A92D /* llbuildTestSupport.framework */; };
 		E11470941B7555FA00ED84CF /* FileInfo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E11470931B7554F800ED84CF /* FileInfo.cpp */; };
 		E1192CED1C49D84500F85890 /* buildsystem.h in Headers */ = {isa = PBXBuildFile; fileRef = E1192CEC1C49D84500F85890 /* buildsystem.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		E1192CEE1C49DBA600F85890 /* BuildSystem-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1DD22761C472A3F00555A5D /* BuildSystem-C-API.cpp */; };
@@ -394,13 +410,6 @@
 			remoteGlobalIDString = E1D191BD1B47232B000C4E95;
 			remoteInfo = "llbuild-framework";
 		};
-		B546B39A22C65CFB007046C0 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = E1D191BD1B47232B000C4E95;
-			remoteInfo = "llbuild-framework";
-		};
 		E104FAF81B655BB2005C68A0 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
@@ -414,6 +423,48 @@
 			proxyType = 1;
 			remoteGlobalIDString = E1B838981B52E7DE00DB876B;
 			remoteInfo = llvmSupport;
+		};
+		E111C144241B25DF0086A92D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1A224C219F999B80059043E;
+			remoteInfo = "llbuild Tool";
+		};
+		E111C146241B25E20086A92D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E111C119241B25B70086A92D;
+			remoteInfo = Ninja;
+		};
+		E111C148241B25E90086A92D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1D191BD1B47232B000C4E95;
+			remoteInfo = "llbuild-framework";
+		};
+		E111C14C241B269D0086A92D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1D191BD1B47232B000C4E95;
+			remoteInfo = "llbuild-framework";
+		};
+		E111C15D241B26E00086A92D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E111C14A241B269D0086A92D;
+			remoteInfo = llbuildTestSupport;
+		};
+		E111C15F241B26E20086A92D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E111C14A241B269D0086A92D;
+			remoteInfo = llbuildTestSupport;
 		};
 		E1192CF31C49DC6500F85890 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -1050,6 +1101,16 @@
 		E10D5CE319FEF3BD00211ED4 /* Python.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Python.framework; path = System/Library/Frameworks/Python.framework; sourceTree = SDKROOT; };
 		E10D5CE519FEF40100211ED4 /* LitTests.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = LitTests.py; sourceTree = "<group>"; };
 		E10FE0D61B7313D50059D086 /* DepsBuildEngineTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DepsBuildEngineTest.cpp; sourceTree = "<group>"; };
+		E111C110241B25470086A92D /* llbuildswift-NinjaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "llbuildswift-NinjaTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E111C111241B25480086A92D /* llbuildSwiftTests copy-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "llbuildSwiftTests copy-Info.plist"; path = "/Users/ddunbar/public/llbuild/llbuildSwiftTests copy-Info.plist"; sourceTree = "<absolute>"; };
+		E111C117241B25960086A92D /* SwiftNinjaTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SwiftNinjaTests.swift; sourceTree = "<group>"; };
+		E111C142241B25B70086A92D /* Ninja.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Ninja.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		E111C143241B25B70086A92D /* llbuild-framework copy-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "llbuild-framework copy-Info.plist"; path = "/Users/ddunbar/public/llbuild/llbuild-framework copy-Info.plist"; sourceTree = "<absolute>"; };
+		E111C158241B269D0086A92D /* llbuildTestSupport.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = llbuildTestSupport.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		E111C159241B269D0086A92D /* Analysis copy-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Analysis copy-Info.plist"; path = "/Users/ddunbar/public/llbuild/Analysis copy-Info.plist"; sourceTree = "<absolute>"; };
+		E111C15B241B26D30086A92D /* XCTestCase+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "XCTestCase+Extensions.swift"; sourceTree = "<group>"; };
+		E111C162241B285E0086A92D /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		E111C163241B285E0086A92D /* NinjaManifest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NinjaManifest.swift; sourceTree = "<group>"; };
 		E11470901B75160400ED84CF /* FileInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FileInfo.h; sourceTree = "<group>"; };
 		E11470911B7517C800ED84CF /* BuildValue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuildValue.h; sourceTree = "<group>"; };
 		E11470921B752E7000ED84CF /* BuildKey.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildKey.h; sourceTree = "<group>"; };
@@ -1388,6 +1449,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E111C167241B29EC0086A92D /* llbuildTestSupport.framework in Frameworks */,
 				B546B39922C65CFB007046C0 /* llbuild.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1397,6 +1459,31 @@
 			buildActionMask = 2147483647;
 			files = (
 				E10D5CE419FEF3BD00211ED4 /* Python.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E111C10A241B25470086A92D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E111C166241B29AA0086A92D /* llbuildTestSupport.framework in Frameworks */,
+				E111C165241B28940086A92D /* Ninja.framework in Frameworks */,
+				E111C10B241B25470086A92D /* llbuild.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E111C12F241B25B70086A92D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E111C152241B269D0086A92D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E111C153241B269D0086A92D /* llbuild.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1884,6 +1971,31 @@
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
+		E111C116241B25960086A92D /* swift-Ninja */ = {
+			isa = PBXGroup;
+			children = (
+				E111C117241B25960086A92D /* SwiftNinjaTests.swift */,
+			);
+			path = "swift-Ninja";
+			sourceTree = "<group>";
+		};
+		E111C15A241B26D30086A92D /* TestSupport */ = {
+			isa = PBXGroup;
+			children = (
+				E111C15B241B26D30086A92D /* XCTestCase+Extensions.swift */,
+			);
+			path = TestSupport;
+			sourceTree = "<group>";
+		};
+		E111C161241B285E0086A92D /* swift-Ninja */ = {
+			isa = PBXGroup;
+			children = (
+				E111C162241B285E0086A92D /* README.md */,
+				E111C163241B285E0086A92D /* NinjaManifest.swift */,
+			);
+			path = "swift-Ninja";
+			sourceTree = "<group>";
+		};
 		E13B5E411A00395300EA0405 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -1964,6 +2076,9 @@
 				1484D1DB209450A600D3830F /* Vagrantfile */,
 				E1A223F219F98F1C0059043E /* Products */,
 				E13B5E411A00395300EA0405 /* Frameworks */,
+				E111C111241B25480086A92D /* llbuildSwiftTests copy-Info.plist */,
+				E111C143241B25B70086A92D /* llbuild-framework copy-Info.plist */,
+				E111C159241B269D0086A92D /* Analysis copy-Info.plist */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -1995,6 +2110,9 @@
 				8C561BFF23551C4A000D242D /* adjust-times */,
 				B52912BE232BF0AD00FD3389 /* llbuildAnalysis.framework */,
 				B52912C6232BF0AE00FD3389 /* llbuildAnalysisTests.xctest */,
+				E111C110241B25470086A92D /* llbuildswift-NinjaTests.xctest */,
+				E111C142241B25B70086A92D /* Ninja.framework */,
+				E111C158241B269D0086A92D /* llbuildTestSupport.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -2006,6 +2124,7 @@
 				E1ADC22F1A8591F600D5387C /* libllbuild */,
 				E1D191B71B472305000C4E95 /* llbuild-framework */,
 				BC8DEF0420300AAF00E9EF0C /* llbuildSwift */,
+				E111C161241B285E0086A92D /* swift-Ninja */,
 				E1604CB21BB9E032001153A1 /* swift-build-tool */,
 				147018862097909B0079261E /* ui */,
 				E1A2240019F991350059043E /* CMakeLists.txt */,
@@ -2283,12 +2402,14 @@
 		E1A224B219F998D40059043E /* unittests */ = {
 			isa = PBXGroup;
 			children = (
+				E111C15A241B26D30086A92D /* TestSupport */,
 				E147DF171BA81D4E0032D08E /* Basic */,
 				40B3C8FE20D3AE80007C5847 /* CAPI */,
 				E1A224B419F998D40059043E /* Core */,
 				9DB0478A1DF9D39E006CDF52 /* BuildSystem */,
 				E1A224B819F998D40059043E /* Ninja */,
 				B546B39F22C65D2E007046C0 /* Swift */,
+				E111C116241B25960086A92D /* swift-Ninja */,
 				B52912CA232BF0AE00FD3389 /* Analysis */,
 				E1A224B319F998D40059043E /* CMakeLists.txt */,
 			);
@@ -2699,6 +2820,28 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E111C136241B25B70086A92D /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E111C137241B25B70086A92D /* buildvalue.h in Headers */,
+				E111C138241B25B70086A92D /* db.h in Headers */,
+				E111C139241B25B70086A92D /* llbuild.h in Headers */,
+				E111C13A241B25B70086A92D /* buildkey.h in Headers */,
+				E111C13B241B25B70086A92D /* core.h in Headers */,
+				E111C13C241B25B70086A92D /* BuildKey-C-API-Private.h in Headers */,
+				E111C13D241B25B70086A92D /* BuildValue-C-API-Private.h in Headers */,
+				E111C13E241B25B70086A92D /* buildsystem.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E111C14D241B269D0086A92D /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E1A2242319F991B40059043E /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -2898,7 +3041,8 @@
 			buildRules = (
 			);
 			dependencies = (
-				B546B39B22C65CFB007046C0 /* PBXTargetDependency */,
+				E111C149241B25E90086A92D /* PBXTargetDependency */,
+				E111C15E241B26E00086A92D /* PBXTargetDependency */,
 			);
 			name = llbuildSwiftTests;
 			productName = llbuildSwiftTests;
@@ -2930,6 +3074,62 @@
 			productName = "llbuild Tests";
 			productReference = E10D5CDA19FEBF6A00211ED4 /* LitXCTestAdaptor.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		E111C101241B25470086A92D /* llbuildswift-NinjaTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E111C10D241B25470086A92D /* Build configuration list for PBXNativeTarget "llbuildswift-NinjaTests" */;
+			buildPhases = (
+				E111C104241B25470086A92D /* Sources */,
+				E111C10A241B25470086A92D /* Frameworks */,
+				E111C10C241B25470086A92D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E111C147241B25E20086A92D /* PBXTargetDependency */,
+			);
+			name = "llbuildswift-NinjaTests";
+			productName = llbuildSwiftTests;
+			productReference = E111C110241B25470086A92D /* llbuildswift-NinjaTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		E111C119241B25B70086A92D /* swift-Ninja */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E111C13F241B25B70086A92D /* Build configuration list for PBXNativeTarget "swift-Ninja" */;
+			buildPhases = (
+				E111C122241B25B70086A92D /* Sources */,
+				E111C12F241B25B70086A92D /* Frameworks */,
+				E111C136241B25B70086A92D /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E111C145241B25DF0086A92D /* PBXTargetDependency */,
+				E111C160241B26E20086A92D /* PBXTargetDependency */,
+			);
+			name = "swift-Ninja";
+			productName = "llbuild-framework";
+			productReference = E111C142241B25B70086A92D /* Ninja.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		E111C14A241B269D0086A92D /* llbuildTestSupport */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E111C155241B269D0086A92D /* Build configuration list for PBXNativeTarget "llbuildTestSupport" */;
+			buildPhases = (
+				E111C14D241B269D0086A92D /* Headers */,
+				E111C14E241B269D0086A92D /* Sources */,
+				E111C152241B269D0086A92D /* Frameworks */,
+				E111C154241B269D0086A92D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E111C14B241B269D0086A92D /* PBXTargetDependency */,
+			);
+			name = llbuildTestSupport;
+			productName = Analysis;
+			productReference = E111C158241B269D0086A92D /* llbuildTestSupport.framework */;
+			productType = "com.apple.product-type.framework";
 		};
 		E147DEFE1BA81D330032D08E /* BasicTests */ = {
 			isa = PBXNativeTarget;
@@ -3393,8 +3593,11 @@
 				E1C404AB1A0308F3003392BA /* PerfTests */,
 				B546B39322C65CFB007046C0 /* llbuildSwiftTests */,
 				8C561BFE23551C4A000D242D /* adjust-times */,
+				E111C14A241B269D0086A92D /* llbuildTestSupport */,
 				B52912BD232BF0AD00FD3389 /* Analysis */,
 				B52912C5232BF0AE00FD3389 /* AnalysisTests */,
+				E111C119241B25B70086A92D /* swift-Ninja */,
+				E111C101241B25470086A92D /* llbuildswift-NinjaTests */,
 			);
 		};
 /* End PBXProject section */
@@ -3427,6 +3630,20 @@
 			files = (
 				8C561C0823551D57000D242D /* adjust-times in Resources */,
 				E10D5CE619FEF40100211ED4 /* LitTests.py in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E111C10C241B25470086A92D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E111C154241B269D0086A92D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3664,6 +3881,30 @@
 			buildActionMask = 2147483647;
 			files = (
 				E10D5CDF19FEBF6A00211ED4 /* LitTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E111C104241B25470086A92D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E111C118241B25970086A92D /* SwiftNinjaTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E111C122241B25B70086A92D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E111C164241B285E0086A92D /* NinjaManifest.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E111C14E241B269D0086A92D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E111C15C241B26D30086A92D /* XCTestCase+Extensions.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3976,11 +4217,6 @@
 			target = E1D191BD1B47232B000C4E95 /* llbuild-framework */;
 			targetProxy = B52912DC232BF1E000FD3389 /* PBXContainerItemProxy */;
 		};
-		B546B39B22C65CFB007046C0 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = E1D191BD1B47232B000C4E95 /* llbuild-framework */;
-			targetProxy = B546B39A22C65CFB007046C0 /* PBXContainerItemProxy */;
-		};
 		E104FAF91B655BB2005C68A0 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = E1B839481B541BFD00DB876B /* llbuildBuildSystem */;
@@ -3990,6 +4226,36 @@
 			isa = PBXTargetDependency;
 			target = E1B838981B52E7DE00DB876B /* llvmSupport */;
 			targetProxy = E104FAFC1B655C3C005C68A0 /* PBXContainerItemProxy */;
+		};
+		E111C145241B25DF0086A92D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1A224C219F999B80059043E /* llbuild Tool */;
+			targetProxy = E111C144241B25DF0086A92D /* PBXContainerItemProxy */;
+		};
+		E111C147241B25E20086A92D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E111C119241B25B70086A92D /* swift-Ninja */;
+			targetProxy = E111C146241B25E20086A92D /* PBXContainerItemProxy */;
+		};
+		E111C149241B25E90086A92D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1D191BD1B47232B000C4E95 /* llbuild-framework */;
+			targetProxy = E111C148241B25E90086A92D /* PBXContainerItemProxy */;
+		};
+		E111C14B241B269D0086A92D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1D191BD1B47232B000C4E95 /* llbuild-framework */;
+			targetProxy = E111C14C241B269D0086A92D /* PBXContainerItemProxy */;
+		};
+		E111C15E241B26E00086A92D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E111C14A241B269D0086A92D /* llbuildTestSupport */;
+			targetProxy = E111C15D241B26E00086A92D /* PBXContainerItemProxy */;
+		};
+		E111C160241B26E20086A92D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E111C14A241B269D0086A92D /* llbuildTestSupport */;
+			targetProxy = E111C15F241B26E20086A92D /* PBXContainerItemProxy */;
 		};
 		E1192CF41C49DC6500F85890 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -4427,6 +4693,84 @@
 				INFOPLIST_FILE = utils/Xcode/LitXCTestAdaptor/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.apple.$(PRODUCT_NAME:rfc1034identifier)";
+			};
+			name = Release;
+		};
+		E111C10E241B25470086A92D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.apple.llbuildSwiftTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		E111C10F241B25470086A92D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.apple.llbuildSwiftTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		E111C140241B25B70086A92D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = "$(SRCROOT)/unittests/swift-Ninja/Info.plist";
+				PRODUCT_NAME = Ninja;
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(LLBUILD_SWIFT_VERSION_DEFINITIONS) LLBUILD_FRAMEWORK";
+			};
+			name = Debug;
+		};
+		E111C141241B25B70086A92D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = "$(SRCROOT)/unittests/swift-Ninja/Info.plist";
+				PRODUCT_NAME = Ninja;
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(LLBUILD_SWIFT_VERSION_DEFINITIONS) LLBUILD_FRAMEWORK";
+			};
+			name = Release;
+		};
+		E111C156241B269D0086A92D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 9999;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = "$(DEVELOPER_SDK_DIR)/../../Developer/Library/Frameworks/";
+				INFOPLIST_FILE = "$(SRCROOT)/unittests/TestSupport/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = NO;
+			};
+			name = Debug;
+		};
+		E111C157241B269D0086A92D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 9999;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = "$(DEVELOPER_SDK_DIR)/../../Developer/Library/Frameworks/";
+				INFOPLIST_FILE = "$(SRCROOT)/unittests/TestSupport/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = NO;
 			};
 			name = Release;
 		};
@@ -4945,6 +5289,33 @@
 			buildConfigurations = (
 				E10D5CE019FEBF6A00211ED4 /* Debug */,
 				E10D5CE119FEBF6A00211ED4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E111C10D241B25470086A92D /* Build configuration list for PBXNativeTarget "llbuildswift-NinjaTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E111C10E241B25470086A92D /* Debug */,
+				E111C10F241B25470086A92D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E111C13F241B25B70086A92D /* Build configuration list for PBXNativeTarget "swift-Ninja" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E111C140241B25B70086A92D /* Debug */,
+				E111C141241B25B70086A92D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E111C155241B269D0086A92D /* Build configuration list for PBXNativeTarget "llbuildTestSupport" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E111C156241B269D0086A92D /* Debug */,
+				E111C157241B269D0086A92D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

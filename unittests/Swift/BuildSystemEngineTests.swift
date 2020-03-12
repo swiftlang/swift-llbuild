@@ -1,9 +1,10 @@
+// This source file is part of the Swift.org open source project
 //
-//  BuildSystemEngineTests.swift
-//  llbuildSwiftTests
+// Copyright 2019-2020 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
 //
-//  Copyright © 2019 Apple Inc. All rights reserved.
-//
+// See http://swift.org/LICENSE.txt for license information
+// See http://swift.org/CONTRIBUTORS.txt for Swift project authors
 
 import XCTest
 
@@ -14,6 +15,8 @@ import llbuildSwift
 #else
 import llbuild
 #endif
+
+import llbuildTestSupport
 
 // Command that always fails.
 class FailureCommand: ExternalCommand {
@@ -205,35 +208,6 @@ commands:
     outputs: ["<all>"]
 
 """
-
-    /// Create a temporary file with the given contents and returns the path to the file.
-    func makeTemporaryFile(_ contents: String? = nil) -> String {
-        let directory = NSTemporaryDirectory()
-        let filename = UUID().uuidString
-        let fileURL = URL(fileURLWithPath: directory).appendingPathComponent(filename)
-
-        if let contents = contents {
-            do {
-                try contents.write(to: fileURL, atomically: false, encoding: .utf8)
-            } catch {
-                XCTFail("Error while writing to file: \(error)")
-            }
-        }
-
-        addTeardownBlock {
-            do {
-                let fileManager = FileManager.default
-                if fileManager.fileExists(atPath: fileURL.path) {
-                    try fileManager.removeItem(at: fileURL)
-                    XCTAssertFalse(fileManager.fileExists(atPath: fileURL.path))
-                }
-            } catch {
-                XCTFail("Error while deleting temporary file: \(error)")
-            }
-        }
-
-        return fileURL.path
-    }
 
     func testCommand() {
         let buildFile = makeTemporaryFile(basicBuildManifest)
