@@ -13,6 +13,7 @@
 #include "llbuild/Core/BuildDB.h"
 
 #include "llbuild/Basic/BinaryCoding.h"
+#include "llbuild/Basic/Defer.h"
 #include "llbuild/Basic/PlatformUtility.h"
 #include "llbuild/Core/BuildEngine.h"
 
@@ -137,6 +138,8 @@ class SQLiteBuildDB : public BuildDB {
     }
 
     sqlite3_busy_timeout(db, 5000);
+    sqlite3_mutex_enter(sqlite3_db_mutex(db));
+
     // Create the database schema, if necessary.
     char *cError;
     int version;
@@ -150,6 +153,7 @@ class SQLiteBuildDB : public BuildDB {
     } else {
       if (result != SQLITE_OK) {
         *error_out = getCurrentErrorMessage();
+        sqlite3_mutex_leave(sqlite3_db_mutex(db));
         return false;
       }
       result = sqlite3_step(stmt);
@@ -162,6 +166,7 @@ class SQLiteBuildDB : public BuildDB {
       } else {
         *error_out = getCurrentErrorMessage();
         sqlite3_finalize(stmt);
+        sqlite3_mutex_leave(sqlite3_db_mutex(db));
         return false;
       }
       sqlite3_finalize(stmt);
@@ -170,6 +175,7 @@ class SQLiteBuildDB : public BuildDB {
     if (version != currentSchemaVersion ||
         clientVersion != clientSchemaVersion) {
       // Close the database before we try to recreate it.
+      sqlite3_mutex_leave(sqlite3_db_mutex(db));
       sqlite3_close(db);
       db = nullptr;
       
@@ -185,15 +191,15 @@ class SQLiteBuildDB : public BuildDB {
         if (errno != ENOENT) {
           *error_out = std::string("unable to unlink existing database: ") +
             ::strerror(errno);
-          sqlite3_close(db);
-          db = nullptr;
           return false;
         }
       } else {
         // If the remove was successful, reopen the database.
         int result = sqlite3_open(path.c_str(), &db);
+        sqlite3_mutex_enter(sqlite3_db_mutex(db));
         if (result != SQLITE_OK) {
           *error_out = getCurrentErrorMessage();
+          sqlite3_mutex_leave(sqlite3_db_mutex(db));
           return false;
         }
       }
@@ -258,6 +264,7 @@ class SQLiteBuildDB : public BuildDB {
         *error_out = (std::string("unable to initialize database (") + cError
                       + ")");
         sqlite3_free(cError);
+        sqlite3_mutex_leave(sqlite3_db_mutex(db));
         sqlite3_close(db);
         db = nullptr;
         return false;
@@ -305,6 +312,7 @@ class SQLiteBuildDB : public BuildDB {
       -1, &getKeysWithResultStmt, nullptr);
     checkSQLiteResultOKReturnFalse(result);
 
+    sqlite3_mutex_leave(sqlite3_db_mutex(db));
     return true;
   }
 
@@ -360,6 +368,11 @@ public:
       return 0;
     }
 
+    sqlite3_mutex_enter(sqlite3_db_mutex(db));
+    llbuild_defer {
+      sqlite3_mutex_leave(sqlite3_db_mutex(db));
+    };
+
     // Fetch the iteration from the info table.
     sqlite3_stmt* stmt;
     int result;
@@ -395,6 +408,11 @@ public:
     if (!open(error_out)) {
       return false;
     }
+
+    sqlite3_mutex_enter(sqlite3_db_mutex(db));
+    llbuild_defer {
+      sqlite3_mutex_leave(sqlite3_db_mutex(db));
+    };
 
     sqlite3_stmt* stmt;
     int result;
@@ -451,6 +469,11 @@ public:
     if (!open(error_out)) {
       return false;
     }
+
+    sqlite3_mutex_enter(sqlite3_db_mutex(db));
+    llbuild_defer {
+      sqlite3_mutex_leave(sqlite3_db_mutex(db));
+    };
 
     // Fetch the basic rule information.
     int result;
@@ -606,6 +629,11 @@ public:
       return false;
     }
 
+    sqlite3_mutex_enter(sqlite3_db_mutex(db));
+    llbuild_defer {
+      sqlite3_mutex_leave(sqlite3_db_mutex(db));
+    };
+
     auto dbKeyID = getKeyID(keyID, error_out);
     if (!error_out->empty()) {
       return false;
@@ -677,6 +705,11 @@ public:
     if (!open(error_out))
       return false;
 
+      sqlite3_mutex_enter(sqlite3_db_mutex(db));
+      llbuild_defer {
+        sqlite3_mutex_leave(sqlite3_db_mutex(db));
+      };
+
     // Execute the entire build inside a single transaction.
     //
     // FIXME: We should revist this, as we probably wouldn't want a crash in the
@@ -694,6 +727,11 @@ public:
   virtual void buildComplete() override {
     std::lock_guard<std::mutex> guard(dbMutex);
 
+    sqlite3_mutex_enter(sqlite3_db_mutex(db));
+    llbuild_defer {
+      sqlite3_mutex_leave(sqlite3_db_mutex(db));
+    };
+
     // Sync changes to disk.
     int result = sqlite3_exec(db, "END;", nullptr, nullptr, nullptr);
     assert(result == SQLITE_OK);
@@ -709,6 +747,11 @@ public:
 
     if (!open(error_out))
       return false;
+
+    sqlite3_mutex_enter(sqlite3_db_mutex(db));
+    llbuild_defer {
+      sqlite3_mutex_leave(sqlite3_db_mutex(db));
+    };
 
     // Search for the key in the database
     int result;
@@ -739,6 +782,11 @@ public:
     if (!open(error_out))
       return false;
     
+    sqlite3_mutex_enter(sqlite3_db_mutex(db));
+    llbuild_defer {
+      sqlite3_mutex_leave(sqlite3_db_mutex(db));
+    };
+
     auto stmt = getKeysWithResultStmt;
     
     int result = sqlite3_reset(stmt);
@@ -811,6 +859,11 @@ public:
       os << "error: " << getCurrentErrorMessage() << "\n";
       return;
     }
+
+    sqlite3_mutex_enter(sqlite3_db_mutex(db));
+    llbuild_defer {
+      sqlite3_mutex_leave(sqlite3_db_mutex(db));
+    };
 
     // Dump Keys
     int result;

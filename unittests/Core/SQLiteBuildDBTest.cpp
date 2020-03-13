@@ -12,6 +12,8 @@
 
 #include "llbuild/Core/BuildDB.h"
 
+#include "llbuild/Core/BuildEngine.h"
+
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/FileSystem.h"
 
@@ -127,4 +129,82 @@ TEST(SQLiteBuildDBTest, CloseDBConnectionAfterCloseCall) {
   EXPECT_EQ(error, "");
   
   buildDB->buildComplete();
+}
+
+
+TEST(SQLiteBuildDBTest, DoubleEpoch) {
+  // Test setting the current iteration to the same value.
+  // Not necessarily a good thing, but also not explicitly disallowed either.
+  // This was a disproven theory for how we might get unexpected error codes
+  // from SQLite. Given that it works, leaving it in for the coverage it does
+  // provide.  Also, maybe we should change the interface to disallow it in the
+  // future?
+
+  // Create a temporary file.
+  llvm::SmallString<256> dbPath;
+  auto ec = llvm::sys::fs::createTemporaryFile("build", "db", dbPath);
+  EXPECT_EQ(bool(ec), false);
+  const char* path = dbPath.c_str();
+  fprintf(stderr, "using db: %s\n", path);
+
+  std::string error;
+  std::unique_ptr<BuildDB> buildDB = createSQLiteBuildDB(dbPath, 1, /* recreateUnmatchedVersion = */ true, &error);
+  EXPECT_TRUE(buildDB != nullptr);
+  EXPECT_EQ(error, "");
+
+  buildDB->buildStarted(&error);
+  EXPECT_EQ(error, "");
+  buildDB->setCurrentIteration(1, &error);
+  EXPECT_EQ(error, "");
+  buildDB->buildComplete();
+
+  buildDB->buildStarted(&error);
+  EXPECT_EQ(error, "");
+  buildDB->setCurrentIteration(1, &error);
+  EXPECT_EQ(error, "");
+  buildDB->buildComplete();
+}
+
+TEST(SQLiteBuildDBTest, DoubleSetResult) {
+  // Test that setting a rule result to the exact same values works.
+
+  // Create a temporary file.
+  llvm::SmallString<256> dbPath;
+  auto ec = llvm::sys::fs::createTemporaryFile("build", "db", dbPath);
+  EXPECT_EQ(bool(ec), false);
+  const char* path = dbPath.c_str();
+  fprintf(stderr, "using db: %s\n", path);
+
+  std::string error;
+  std::unique_ptr<BuildDB> buildDB = createSQLiteBuildDB(dbPath, 1, /* recreateUnmatchedVersion = */ true, &error);
+  EXPECT_TRUE(buildDB != nullptr);
+  EXPECT_EQ(error, "");
+
+  class TestRule: public Rule, public BuildDBDelegate {
+  public:
+      TestRule(const KeyType& key) : Rule(key) { }
+
+      Task* createTask(BuildEngine&) override { return nullptr; }
+      bool isResultValid(BuildEngine&, const ValueType& value) override {
+          return true;
+      }
+
+    const KeyID getKeyID(const KeyType& key) override { return KeyID(this); }
+    KeyType getKeyForID(const KeyID key) override { return "rule"; }
+  };
+
+
+  TestRule rule("rule");
+  buildDB->attachDelegate(&rule);
+
+  buildDB->buildStarted(&error);
+  EXPECT_EQ(error, "");
+  Result result;
+  result.computedAt = 1;
+  buildDB->setRuleResult(KeyID(&rule), rule, result, &error);
+  EXPECT_EQ(error, "");
+  buildDB->setRuleResult(KeyID(&rule), rule, result, &error);
+  EXPECT_EQ(error, "");
+  buildDB->buildComplete();
+
 }
