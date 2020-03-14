@@ -11,6 +11,10 @@ let package = Package(
         .macOS(.v10_10), .iOS(.v9),
     ],
     products: [
+        .executable(
+            name: "llbuild",
+            targets: ["llbuild"]),
+
         .library(
             name: "libllbuild",
             targets: ["libllbuild"]),
