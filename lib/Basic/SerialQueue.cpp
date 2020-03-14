@@ -337,6 +337,6 @@ std::unique_ptr<ExecutionQueue> llbuild::basic::createSerialQueue(
   if (!environment) {
     environment = const_cast<const char* const*>(environ);
   }
-  return std::make_unique<SerialExecutionQueue>(delegate, environment);
+  return llvm::make_unique<SerialExecutionQueue>(delegate, environment);
 
 }

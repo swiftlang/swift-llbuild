@@ -41,7 +41,10 @@ let package = Package(
         .target(
             name: "llbuild",
             dependencies: ["llbuildCommands"],
-            path: "products/llbuild"
+            path: "products/llbuild",
+            linkerSettings: [
+                .linkedLibrary("dl", .when(platforms: [.linux])),
+                .linkedLibrary("pthread", .when(platforms: [.linux]))]
         ),
 
         /// The custom build tool used by the Swift package manager (SwiftPM).
@@ -52,7 +55,10 @@ let package = Package(
         .target(
             name: "swift-build-tool",
             dependencies: ["llbuildBuildSystem"],
-            path: "products/swift-build-tool"
+            path: "products/swift-build-tool",
+            linkerSettings: [
+                .linkedLibrary("dl", .when(platforms: [.linux])),
+                .linkedLibrary("pthread", .when(platforms: [.linux]))]
         ),
 
         /// The public llbuild C API.
@@ -122,27 +128,45 @@ let package = Package(
         .target(
             name: "llbuildBasicTests",
             dependencies: ["llbuildBasic", "gtestlib"],
-            path: "unittests/Basic"),
+            path: "unittests/Basic",
+            linkerSettings: [
+                .linkedLibrary("dl", .when(platforms: [.linux])),
+                .linkedLibrary("pthread", .when(platforms: [.linux]))]),
         .target(
             name: "llbuildCoreTests",
             dependencies: ["llbuildCore", "gtestlib"],
-            path: "unittests/Core"),
+            path: "unittests/Core",
+            linkerSettings: [
+                .linkedLibrary("dl", .when(platforms: [.linux])),
+                .linkedLibrary("pthread", .when(platforms: [.linux]))]),
         .target(
             name: "llbuildBuildSystemTests",
             dependencies: ["llbuildBuildSystem", "gtestlib"],
-            path: "unittests/BuildSystem"),
+            path: "unittests/BuildSystem",
+            linkerSettings: [
+                .linkedLibrary("dl", .when(platforms: [.linux])),
+                .linkedLibrary("pthread", .when(platforms: [.linux]))]),
         .target(
             name: "llbuildNinjaTests",
             dependencies: ["llbuildNinja", "gtestlib"],
-            path: "unittests/Ninja"),
+            path: "unittests/Ninja",
+            linkerSettings: [
+                .linkedLibrary("dl", .when(platforms: [.linux])),
+                .linkedLibrary("pthread", .when(platforms: [.linux]))]),
         .testTarget(
             name: "llbuildSwiftTests",
             dependencies: ["llbuildSwift", "llbuildTestSupport"],
-            path: "unittests/Swift"),
+            path: "unittests/Swift",
+            linkerSettings: [
+                .linkedLibrary("dl", .when(platforms: [.linux])),
+                .linkedLibrary("pthread", .when(platforms: [.linux]))]),
         .testTarget(
             name: "AnalysisTests",
             dependencies: ["llbuildAnalysis"],
-            path: "unittests/Analysis"),
+            path: "unittests/Analysis",
+            linkerSettings: [
+                .linkedLibrary("dl", .when(platforms: [.linux])),
+                .linkedLibrary("pthread", .when(platforms: [.linux]))]),
 
         .testTarget(
             name: "llbuildTestSupport",
