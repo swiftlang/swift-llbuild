@@ -16,7 +16,10 @@ class SwiftNinjaTests: XCTestCase {
         let manifestFile = makeTemporaryFile("""
             rule CMD
                 command = ls $in $out $thing
-            build output: CMD input
+            build output: CMD input1 input2 | implicit-input || order-only-input
+                generator = true
+                description = xyz
+                restat = true
                 thing = x\n
             """)
         let manifest = try NinjaManifest(path: manifestFile)
@@ -24,10 +27,14 @@ class SwiftNinjaTests: XCTestCase {
         XCTAssertEqual(manifest.commands, [
                 Ninja.Command(
                     rule: "CMD",
-                    inputs: ["input"],
+                    inputs: ["input1", "input2"],
+                    implicitInputs: ["implicit-input"],
+                    orderOnlyInputs: ["order-only-input"],
                     outputs: ["output"],
-                    command: "ls input output x",
-                    description: "")
+                    command: "ls input1 input2 output x",
+                    description: "xyz",
+                    generator: true,
+                    restat: true)
             ])
     }
 }
