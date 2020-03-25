@@ -106,6 +106,7 @@ private:
 
 public:
   TaskInterface(void* impl, void* ctx) : impl(impl), ctx(ctx) {}
+  TaskInterface(const TaskInterface &iface) {impl = iface.impl; ctx = iface.ctx; }
 
   /// @name Accessors
   /// @{

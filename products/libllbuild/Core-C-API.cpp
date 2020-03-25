@@ -17,12 +17,15 @@
 #include "llbuild/Basic/Tracing.h"
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/BuildEngine.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include <cassert>
 #include <cstring>
+#include <thread>
 
 using namespace llbuild;
 using namespace llbuild::core;
+using namespace llbuild::basic;
 
 /* Build Engine API */
 
@@ -30,6 +33,7 @@ namespace {
 
 class CAPIBuildEngineDelegate : public BuildEngineDelegate, public basic::ExecutionQueueDelegate {
   llb_buildengine_delegate_t cAPIDelegate;
+  llb_buildengine_invocation_t invocation;
 
   friend class CAPITask;
 
@@ -96,12 +100,41 @@ class CAPIBuildEngineDelegate : public BuildEngineDelegate, public basic::Execut
   void queueJobFinished(basic::JobDescriptor*) override { }
 
   std::unique_ptr<basic::ExecutionQueue> createExecutionQueue() override {
-    return createSerialQueue(*this, nullptr);
+    if (invocation.useSerialBuild) {
+      return createSerialQueue(*this, nullptr);
+    }
+
+    int numLanes = invocation.schedulerLanes;
+
+    if (numLanes == 0) {
+      unsigned numCPUs = std::thread::hardware_concurrency();
+      if (numCPUs == 0) {
+        numLanes = 1;
+      } else {
+        numLanes = numCPUs;
+      }
+    }
+
+    SchedulerAlgorithm schedulerAlgorithm;
+
+    switch(invocation.schedulerAlgorithm) {
+    case llb_scheduler_algorithm_fifo:
+      schedulerAlgorithm = SchedulerAlgorithm::FIFO;
+      break;
+    case llb_scheduler_algorithm_command_name_priority:
+      schedulerAlgorithm = SchedulerAlgorithm::NamePriority;
+      break;
+    }
+
+    return std::unique_ptr<basic::ExecutionQueue>(
+            createLaneBasedExecutionQueue(*this, numLanes,
+                                          schedulerAlgorithm,
+                                          nullptr));
   }
 
 public:
-  CAPIBuildEngineDelegate(llb_buildengine_delegate_t delegate)
-    : cAPIDelegate(delegate)
+  CAPIBuildEngineDelegate(llb_buildengine_delegate_t delegate, llb_buildengine_invocation_t invocation)
+    : cAPIDelegate(delegate), invocation(invocation)
   {
     
   }
@@ -162,10 +195,10 @@ public:
 
 };
 
-llb_buildengine_t* llb_buildengine_create(llb_buildengine_delegate_t delegate) {
+llb_buildengine_t* llb_buildengine_create(llb_buildengine_delegate_t delegate, llb_buildengine_invocation_t invocation) {
   CAPIBuildEngine* capi_engine = new CAPIBuildEngine;
   capi_engine->delegate = std::unique_ptr<BuildEngineDelegate>(
-    new CAPIBuildEngineDelegate(delegate));
+    new CAPIBuildEngineDelegate(delegate, invocation));
   capi_engine->engine = std::unique_ptr<BuildEngine>(
     new BuildEngine(*capi_engine->delegate));
   return (llb_buildengine_t*) capi_engine;
@@ -238,6 +271,36 @@ void llb_buildengine_task_is_complete(llb_task_interface_t* ti_p,
   std::vector<uint8_t> result(value->length);
   memcpy(result.data(), value->data, value->length);
   ti->complete(std::move(result));
+}
+
+// FIXME: We need to expose customizing the JobDescriptor somehow. Can't be
+// nullptr since those are used as sentinels that the execution queues are
+// finishing.
+class CAPIJobDescriptor : public JobDescriptor {
+public:
+  CAPIJobDescriptor() {}
+
+  virtual StringRef getOrdinalName() const {
+      return StringRef("");
+  }
+
+  virtual void getShortDescription(SmallVectorImpl<char> &result) const {
+      llvm::raw_svector_ostream(result) << getOrdinalName();
+  }
+
+  virtual void getVerboseDescription(SmallVectorImpl<char> &result) const {
+      llvm::raw_svector_ostream(result) << getOrdinalName();
+  }
+};
+
+void llb_buildengine_spawn(llb_task_interface_t* ti_p, void* context, void (*action)(void* context, llb_task_interface_t* ti_p)) {
+    auto ti = ((TaskInterface*) ti_p);
+    auto ti_cp = TaskInterface(*ti);
+    auto fn = [context, ti_cp, action](QueueJobContext* jobContext) mutable {
+        action(context, (llb_task_interface_t*)&ti_cp);
+    };
+    auto jd = new CAPIJobDescriptor();
+    ti->spawn({ std::move(jd), std::move(fn) });
 }
 
 llb_task_t* llb_task_create(llb_task_delegate_t delegate) {

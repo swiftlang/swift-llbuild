@@ -95,6 +95,16 @@ struct llb_rule_t_ {
                           llb_rule_status_kind_t kind);
 };
 
+/// Invocation parameters for a build engine.
+typedef struct llb_buildengine_invocation_t_ {
+  /// Whether to use a serial build.
+  bool useSerialBuild;
+
+  llb_scheduler_algorithm_t schedulerAlgorithm;
+
+  uint32_t schedulerLanes;
+} llb_buildengine_invocation_t;
+
 /// Delegate structure for callbacks required by the build engine.
 typedef struct llb_buildengine_delegate_t_ {
     /// User context pointer.
@@ -123,8 +133,9 @@ typedef struct llb_buildengine_delegate_t_ {
 /// Create a new build engine object.
 ///
 /// \param delegate The delegate to use for build engine operations.
+/// \param invocation The invocation parameters for the build engine.
 LLBUILD_EXPORT llb_buildengine_t*
-llb_buildengine_create(llb_buildengine_delegate_t delegate);
+llb_buildengine_create(llb_buildengine_delegate_t delegate, llb_buildengine_invocation_t invocation);
 
 /// Destroy a build engine.
 LLBUILD_EXPORT void
@@ -221,6 +232,14 @@ llb_buildengine_task_discovered_dependency(llb_task_interface_t* ti,
 LLBUILD_EXPORT void
 llb_buildengine_task_is_complete(llb_task_interface_t* ti,
                                  const llb_data_t* value, bool force_change);
+
+/// Schedule an action to be executed asynchronously using llbuild's
+/// execution queue scheduling.
+///
+/// \param context The user pointer context.
+/// \param action The action to be executed asyncronously.
+LLBUILD_EXPORT void
+llb_buildengine_spawn(llb_task_interface_t* ti_p, void* context, void (*action)(void* context, llb_task_interface_t* ti_p));
 
 /// @}
 

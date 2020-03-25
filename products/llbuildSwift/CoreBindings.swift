@@ -279,6 +279,15 @@ public protocol TaskBuildEngine {
     /// dependents to rebuild, even if the value itself is not different from the
     /// prior result.
     func taskIsComplete(_ result: Value, forceChange: Bool)
+
+    /// Spawns an action using llbuild's execution queues.
+    ///
+    /// The TaskBuildEngine reference received inside the action closure will not
+    /// be the same as the one used to schedule the action, so keeping and reusing
+    /// that reference will result in undefined behavior.
+    ///
+    /// \param spawnAction A closure with the action to execute.
+    func spawn(spawnAction: @escaping (TaskBuildEngine) -> Void)
 }
 
 extension TaskBuildEngine {
@@ -291,6 +300,19 @@ extension TaskBuildEngine {
         self.taskIsComplete(result, forceChange: false)
     }
 }
+
+// Helper wrapper to manage the memory of a spawn action.
+private class SpawnWrapper {
+    fileprivate var spawnAction: (TaskBuildEngine) -> Void
+    init(spawnAction: @escaping ((TaskBuildEngine) -> Void)) {
+        self.spawnAction = spawnAction
+    }
+    
+    static fileprivate func toSpawnWrapper(_ context: UnsafeMutableRawPointer) -> SpawnWrapper {
+        return Unmanaged<SpawnWrapper>.fromOpaque(context).takeUnretainedValue()
+    }
+}
+
 private class TaskInterfaceWrapper: TaskBuildEngine {
     var ti: OpaquePointer?
 
@@ -321,6 +343,30 @@ private class TaskInterfaceWrapper: TaskBuildEngine {
         result.withInternalDataPtr { dataPtr in
             llb_buildengine_task_is_complete(self.ti, dataPtr, forceChange)
         }
+    }
+    
+    func spawn(spawnAction: @escaping (TaskBuildEngine) -> Void) {
+        let spawnWrapper = SpawnWrapper(spawnAction: spawnAction)
+
+        /// We need to ensure that the spawn action outlives the TaskInterfaceWrapper, since
+        /// those get constructed and destructed on each callback invocation. Since there is
+        /// no place to store this reference that outlives TaskInterfaceWrapper, we manually
+        /// manage the memory.
+        let context = unsafeBitCast(Unmanaged.passRetained(spawnWrapper), to: UnsafeMutableRawPointer.self)
+        
+        llb_buildengine_spawn(self.ti, context, {
+            let spawnWrapper = SpawnWrapper.toSpawnWrapper($0!)
+            let interface = TaskInterfaceWrapper($1!)
+            
+            spawnWrapper.spawnAction(interface)
+
+            /// Release the spawn wrapper that was manually retained above.
+            unsafeBitCast($0!, to: Unmanaged<SpawnWrapper>.self).release()
+        })
+    }
+    
+    static fileprivate func toTaskInterfaceWrapper(_ context: UnsafeMutableRawPointer) -> TaskInterfaceWrapper {
+        return Unmanaged<TaskInterfaceWrapper>.fromOpaque(context).takeUnretainedValue()
     }
 }
 
@@ -374,7 +420,7 @@ public class BuildEngine {
     /// The number of rules which have been defined.
     public var numRules: Int = 0
 
-    public init(delegate: BuildEngineDelegate) {
+    public init(delegate: BuildEngineDelegate, serial: Bool = false, schedulerAlgorithm: SchedulerAlgorithm = .commandNamePriority, schedulerLanes: UInt32 = 0) {
         self.delegate = delegate
 
         // Initialize the delegate.
@@ -384,9 +430,14 @@ public class BuildEngine {
         // FIXME: Include cycleDetected callback.
 
         _delegate.error = { BuildEngine.toEngine($0!).delegate.error(String(cString: $1!)) }
-
+        
+        var _invocation = llb_buildengine_invocation_t()
+        _invocation.useSerialBuild = serial
+        _invocation.schedulerAlgorithm = schedulerAlgorithm
+        _invocation.schedulerLanes = schedulerLanes
+        
         // Create the engine.
-        _engine = llb_buildengine_create(_delegate)
+        _engine = llb_buildengine_create(_delegate, _invocation)
     }
 
     deinit {
