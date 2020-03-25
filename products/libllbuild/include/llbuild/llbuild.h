@@ -108,6 +108,9 @@ LLBUILD_EXPORT const char* llb_get_full_version_string(void);
 /// Get the C API version number.
 LLBUILD_EXPORT int llb_get_api_version(void);
 
+// The Basic component.
+#include "llbuild/basic.h"
+
 // The Core component.
 #include "llbuild/core.h"
 

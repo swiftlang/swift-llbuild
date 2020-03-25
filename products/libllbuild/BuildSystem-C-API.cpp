@@ -969,44 +969,4 @@ llb_build_value_file_info_t llb_buildsystem_command_interface_get_file_info(llb_
   return llbuild::capi::convertFileInfo(bi->getFileSystem().getFileInfo(path));
 }
 
-
-llb_quality_of_service_t llb_get_quality_of_service() {
-  switch (getDefaultQualityOfService()) {
-  case QualityOfService::Normal:
-    return llb_quality_of_service_default;
-  case QualityOfService::UserInitiated:
-    return llb_quality_of_service_user_initiated;
-  case QualityOfService::Utility:
-    return llb_quality_of_service_utility;
-  case QualityOfService::Background:
-    return llb_quality_of_service_background;
-  default:
-    assert(0 && "unknown quality service level");
-    return llb_quality_of_service_default;
-  }
-}
-
-void llb_set_quality_of_service(llb_quality_of_service_t level) {
-  switch (level) {
-  case llb_quality_of_service_default:
-    setDefaultQualityOfService(QualityOfService::Normal);
-    break;
-  case llb_quality_of_service_user_initiated:
-    setDefaultQualityOfService(QualityOfService::UserInitiated);
-    break;
-  case llb_quality_of_service_utility:
-    setDefaultQualityOfService(QualityOfService::Utility);
-    break;
-  case llb_quality_of_service_background:
-    setDefaultQualityOfService(QualityOfService::Background);
-    break;
-  default:
-    assert(0 && "unknown quality service level");
-    break;
-  }
-}
-
-void* llb_alloc(size_t size) { return malloc(size); }
-void llb_free(void* ptr) { free(ptr); }
-
 #endif

@@ -51,38 +51,6 @@ typedef pid_t llbuild_pid_t;
 typedef int FD;
 #endif // _MSC_VER
 
-/// @name File System Behaviors
-/// @{
-
-/// A fine-grained timestamp.
-///
-/// Although phrased as a time, this value is uninterpreted by llbuild. The
-/// client may represent time in any fashion intended to preserve uniqueness.
-typedef struct llb_fs_timestamp_t_ {
-    uint64_t seconds;
-    uint64_t nanoseconds;
-} llb_fs_timestamp_t;
-
-/// Information on the status of a file.
-typedef struct llb_fs_file_info_t_ {
-  /// A unique identifier for the device containing the file.
-  uint64_t device;
-
-  /// A unique identifier for the file on the device.
-  uint64_t inode;
-
-  /// The file mode information, as used by stat(2).
-  uint64_t mode;
-
-  /// The size of the file.
-  uint64_t size;
-
-  /// An indication of the last modification time.
-  llb_fs_timestamp_t mod_time;
-} llb_fs_file_info_t;
-
-/// @}
-
 /// @name Diagnostics
 /// @{
 
@@ -162,15 +130,6 @@ typedef enum LLBUILD_ENUM_ATTRIBUTES {
   /// Indicates a rule's prior value will be supplied to a downstream rule.
   llb_cycle_action_supply_prior_value LLBUILD_SWIFT_NAME(supplyPriorValue) = 1,
 } llb_cycle_action_t LLBUILD_SWIFT_NAME(CycleAction);
-
-/// Scheduler algorithms
-typedef enum LLBUILD_ENUM_ATTRIBUTES {
-  /// Command name priority queue based scheduling [default]
-  llb_scheduler_algorithm_command_name_priority LLBUILD_SWIFT_NAME(commandNamePriority) = 0,
-
-  /// First in, first out
-  llb_scheduler_algorithm_fifo = 1
-} llb_scheduler_algorithm_t LLBUILD_SWIFT_NAME(SchedulerAlgorithm);
 
 /// Invocation parameters for a build system.
 typedef struct llb_buildsystem_invocation_t_ llb_buildsystem_invocation_t;
@@ -702,71 +661,6 @@ llb_buildsystem_command_interface_task_discovered_dependency(llb_task_interface_
 /// Returns the file info struct for the specified path
 LLBUILD_EXPORT llb_build_value_file_info_t
 llb_buildsystem_command_interface_get_file_info(llb_buildsystem_interface_t* bi_p, const char* path);
-
-
-// MARK: Quality of Service
-
-/// Quality of service levels.
-typedef enum LLBUILD_ENUM_ATTRIBUTES {
-    /// A default quality of service (i.e. what the system would use without
-    /// other advisement, generally this would be comparable to what would be
-    /// done by `make`, `ninja`, etc.)
-    llb_quality_of_service_default = 0,
-
-    /// User-initiated, high priority work.
-    llb_quality_of_service_user_initiated LLBUILD_SWIFT_NAME(userInitiated) = 1,
-
-    /// Batch work performed on behalf of the user.
-    llb_quality_of_service_utility = 2,
-
-    /// Background work that is not directly visible to the user.
-    llb_quality_of_service_background = 3
-} llb_quality_of_service_t LLBUILD_SWIFT_NAME(QualityOfService);
-
-/// Get the global quality of service level to use for processing.
-LLBUILD_EXPORT llb_quality_of_service_t
-llb_get_quality_of_service();
-
-/// Set the global quality of service level to use for processing.
-LLBUILD_EXPORT void
-llb_set_quality_of_service(llb_quality_of_service_t level);
-
-// MARK: Execution Queue Scheduler Control
-
-/// Get the global scheduler algorithm setting.
-LLBUILD_EXPORT llb_scheduler_algorithm_t
-llb_get_scheduler_algorithm();
-
-/// Set the global scheduler algorthm used for the execution queue. This will
-/// only take effect when constructing a new execution queue (i.e. for a build
-/// operation).
-LLBUILD_EXPORT void
-llb_set_scheduler_algorithm(llb_scheduler_algorithm_t algorithm);
-
-/// Get the global scheduler lane width setting.
-LLBUILD_EXPORT uint32_t
-llb_get_scheduler_lane_width();
-
-/// Set the global scheduler lane width. This will only take effect when
-/// constructing a new execution queue (i.e. for a build operation).
-///
-/// \param width The number of lanes to schedule. A value of 0 [default] will
-/// be automatically translated into the number of cores detected on the host.
-LLBUILD_EXPORT void
-llb_set_scheduler_lane_width(uint32_t width);
-/// @}
-
-/// @name Memory APIs
-// MARK: Allocating and freeing memory
-/// Allocate memory usable by the build system
-/// \param size The number bytes to allocate
-LLBUILD_EXPORT void*
-llb_alloc(size_t size);
-/// Free memory allocated for or by the build system
-/// \param ptr A pointer to the allocated memory to free
-LLBUILD_EXPORT void
-llb_free(void* ptr);
-/// @}
 
 #endif
 
