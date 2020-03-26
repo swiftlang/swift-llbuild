@@ -1450,6 +1450,10 @@ public:
         return emptyValue;
       }
     }
+    llbuild_defer {
+      if (db)
+        db->buildComplete();
+    };
 
     // Aquire lock and create execution queue.
     {
@@ -1487,6 +1491,18 @@ public:
     if (trace)
       trace->buildStarted();
 
+
+    llbuild_defer {
+      // Clear the rule scan free-lists.
+      //
+      // FIXME: Introduce a per-build context object to hold this.
+      for (auto block: ruleScanRecordBlocks)
+        delete[] block;
+      currentBlockPos = currentBlockEnd = nullptr;
+      freeRuleScanRecords.clear();
+      ruleScanRecordBlocks.clear();
+    };
+
     // Run the build engine, to process any necessary tasks.
     bool success = executeTasks(key);
 
@@ -1501,20 +1517,10 @@ public:
         static ValueType emptyValue{};
         return emptyValue;
       }
-      db->buildComplete();
     }
 
     if (trace)
       trace->buildEnded();
-
-    // Clear the rule scan free-lists.
-    //
-    // FIXME: Introduce a per-build context object to hold this.
-    for (auto block: ruleScanRecordBlocks)
-      delete[] block;
-    currentBlockPos = currentBlockEnd = nullptr;
-    freeRuleScanRecords.clear();
-    ruleScanRecordBlocks.clear();
 
     // If the build failed, return the empty result.
     if (!success) {
