@@ -100,7 +100,8 @@ class ParserImpl {
   /// value.
   ///
   /// \returns True on success. On failure, the lexer will be advanced past the
-  /// next newline (see \see skipPastEOL()).
+  /// next newline (see \see skipPastEOL()). In either case, the lexer will be
+  /// taken out of any specific parsing mode.
   bool parseBindingInternal(Token* name_out, Token* value_out);
 
   void parseBindingDecl();
@@ -181,6 +182,7 @@ bool ParserImpl::parseBindingInternal(Token* name_out, Token* value_out) {
   // The leading token should be an identifier.
   if (tok.tokenKind != Token::Kind::Identifier) {
     error("expected variable name");
+    lexer.setMode(Lexer::LexingMode::None);
     skipPastEOL();
     return false;
   }
@@ -190,6 +192,7 @@ bool ParserImpl::parseBindingInternal(Token* name_out, Token* value_out) {
   // Expect the variable name to be followed by '='.
   if (tok.tokenKind != Token::Kind::Equals) {
     error("expected '=' token");
+    lexer.setMode(Lexer::LexingMode::None);
     skipPastEOL();
     return false;
   }

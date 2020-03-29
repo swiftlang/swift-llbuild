@@ -62,6 +62,13 @@ build a.o: cc b.o | c.o || d.o
 # CHECK: basic.ninja:[[@LINE+1]]:14: error: expected newline token
 build a.o: cc :
 
+# Check for handling of malformed statements.
+# CHECK: basic.ninja:[[@LINE+3]]:4: error: expected variable name
+# CHECK: basic.ninja:[[@LINE+3]]:11: error: expected '=' token
+build a.o: cc
+    :
+    token1 token2 token3
+
 # Check "pool" parsing.
 #
 # CHECK: basic.ninja:[[@LINE+1]]:4: error: expected pool name identifier
