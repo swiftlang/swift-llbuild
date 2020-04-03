@@ -177,6 +177,8 @@ private:
   std::string commandString;
   std::string description;
   std::string depsFile;
+  std::string rspFile;
+  std::string rspFileContent;
 
   unsigned depsStyle: 2;
   unsigned isGenerator: 1;
@@ -280,6 +282,23 @@ public:
   }
   void setDepsFile(StringRef value) {
     depsFile = value;
+  }
+
+  /// Get the response file to be used by this command.
+  const std::string& getRspFile() const {
+    return rspFile;
+  }
+  void setRspFile(StringRef value) {
+    rspFile = value;
+  }
+
+  /// Get the response file content, it has to be written to response file
+  /// before this command is executed.
+  const std::string& getRspFileContent() const {
+    return rspFileContent;
+  }
+  void setRspFileContent(StringRef value) {
+    rspFileContent = value;
   }
 
   /// Check whether this command should be treated as a generator command.

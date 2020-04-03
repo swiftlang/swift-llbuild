@@ -395,11 +395,12 @@ public:
       
     // FIXME: Mange recursive lookup? Ninja crashes on it.
       
-    // Support "in" and "out".
-    if (name == "in") {
+    // Support "in", "in_newline" and "out".
+    if (name == "in" || name == "in_newline") {
+      const auto separator = name == "in" ? ' ' : '\n';
       for (unsigned i = 0, ie = decl->getNumExplicitInputs(); i != ie; ++i) {
         if (i != 0)
-          result << " ";
+          result << separator;
         auto& path = decl->getInputs()[i]->getScreenPath();
         result << (context->shellEscapeInAndOut ? basic::shellEscaped(path)
                                                 : path);
@@ -521,7 +522,18 @@ public:
     lookupNamedBuildParameter(decl, startTok, "restat", restat);
     decl->setRestatFlag(!restat.str().empty());
 
-    // FIXME: Handle rspfile attributes.
+    // Handle rspfile attributes.
+    SmallString<256> rspfile;
+    lookupNamedBuildParameter(decl, startTok, "rspfile", rspfile);
+    if (rspfile.str().empty())
+      return;
+    if (!Manifest::normalize_path(workingDirectory, rspfile))
+      return;
+    decl->setRspFile(rspfile);
+
+    SmallString<256> rspfileContent;
+    lookupNamedBuildParameter(decl, startTok, "rspfile_content", rspfileContent);
+    decl->setRspFileContent(rspfileContent);
   }
 
   virtual PoolResult actOnBeginPoolDecl(const Token& nameTok) override {
