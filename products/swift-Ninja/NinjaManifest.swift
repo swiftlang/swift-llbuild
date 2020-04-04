@@ -120,6 +120,12 @@ public class NinjaManifest: Codable {
             throw Error.unableToLocateBinary
         }
 
+    #if !os(Linux)
+        // FIXME: Bundles.allBundles crashes on Linux - rdar://problem/57983916
+        // Currently we just return the executablePath and cross our fingers.
+
+        // For macOS:
+
         // Return the FooBar.xctest name if we're running under xctest.
         if exePath.hasSuffix("xctest") {
             for bundle in Bundle.allBundles {
@@ -128,6 +134,7 @@ public class NinjaManifest: Codable {
                 }
             }
         }
+    #endif
 
         return URL(fileURLWithPath: exePath)
     }
