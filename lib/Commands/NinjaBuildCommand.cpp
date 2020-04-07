@@ -1315,6 +1315,26 @@ buildCommand(BuildContext& context, ninja::Command* command) {
 #endif
       }
 
+      // If response file is used by the command, create the file and
+      // fill it with content before command execution.
+      // The file should be deleted after successful command execution.
+      const auto rspFile = command->getRspFile();
+      if (!rspFile.empty()) {
+        std::error_code ec;
+        llvm::raw_fd_ostream os(rspFile, ec, llvm::sys::fs::F_Text);
+        if (ec) {
+          // Treat the command as having a failed input.
+          context.emitError("unable to create @response file '%s': %s\n",
+                            rspFile.c_str(), ec.message().c_str());
+
+          // Update the count of failed commands.
+          context.incrementFailedCommands();
+          return ti.complete(BuildValue::makeSkippedCommand().toValue());
+        }
+        os << command->getRspFileContent();
+        os.close();
+      }
+
       StringRef args[] = {
 #if defined(_WIN32)
         "C:\\windows\\system32\\cmd.exe",
@@ -1349,6 +1369,12 @@ buildCommand(BuildContext& context, ninja::Command* command) {
           // forcing downstream propagation if it isn't set.
           auto commandHash = CommandSignature(command->getCommandString());
           BuildValue resultValue = computeCommandResult(commandHash);
+
+          // Remove response file.
+          const auto rspFile = command->getRspFile();
+          if (!rspFile.empty())
+            llvm::sys::fs::remove(rspFile);
+
           return ti.complete(resultValue.toValue(),
                              /*ForceChange=*/!command->hasRestatFlag());
         }

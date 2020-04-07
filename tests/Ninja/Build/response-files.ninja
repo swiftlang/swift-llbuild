@@ -1,0 +1,46 @@
+# Test for handling response files and related ${in_newline} variable.
+
+# We run the build in a sandbox in the temp directory to ensure we don't
+# interact with the source dirs.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: %{llbuild} ninja build --no-db --chdir %t.build &> %t.out || true
+
+# Check that response file is present only for failed rule
+#
+# RUN: test ! -f %t.build/response-PRINT.rsp
+# RUN: test -f %t.build/response-FAIL.rsp
+
+# RUN: %{FileCheck} --check-prefix=CHECK-PRINT < %t.build/dummy-B %s
+# RUN: %{FileCheck} --check-prefix=CHECK-FAIL < %t.build/response-FAIL.rsp %s
+
+# Check content of response-PRINT.rsp response file - it is printed into dummy-B.
+#
+# CHECK-PRINT: content
+
+# Check content of response-FAIL.rsp response file 
+#
+# CHECK-FAIL: dummy-A
+# CHECK-FAIL-NEXT: dummy-B
+
+rule TOUCH
+     command = touch ${out}
+     description = "TOUCH"
+rule PRINT
+     command = cat response-PRINT.rsp > ${out}
+     description = "PRINT"
+     rspfile = response-PRINT.rsp
+     rspfile_content = content
+rule FAIL
+     command = exit 1
+     description = "FAIL"
+     rspfile = response-FAIL.rsp
+     rspfile_content = ${in_newline}
+
+build dummy-A: TOUCH
+build dummy-B: PRINT
+build dummy: FAIL dummy-A dummy-B
+
+default dummy
