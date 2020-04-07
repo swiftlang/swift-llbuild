@@ -1,6 +1,7 @@
 add_subdirectory(llvm)
 add_subdirectory(Basic)
 add_subdirectory(Core)
+add_subdirectory(Evo)
 add_subdirectory(BuildSystem)
 add_subdirectory(Ninja)
 add_subdirectory(Commands)

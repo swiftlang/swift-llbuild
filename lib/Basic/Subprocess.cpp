@@ -826,7 +826,7 @@ void llbuild::basic::spawnProcess(
         delegate.processHadError(ctx, handle,
             Twine("unable to open " + whatPipe + " (") + strerror(errorPair.second) + ")");
         delegate.processFinished(ctx, handle, ProcessResult::makeFailed());
-        completionFn(ProcessStatus::Failed);
+        completionFn(ProcessResult(ProcessStatus::Failed));
         return;
       }
 

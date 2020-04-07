@@ -69,12 +69,24 @@
 		2D86C6E0238D932B006E61FB /* Tool.h in Headers */ = {isa = PBXBuildFile; fileRef = 2D86C6DF238D932B006E61FB /* Tool.h */; };
 		2DB7144323A2AF2F00514E98 /* BuildSystemEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DB7144223A2AF2F00514E98 /* BuildSystemEngineTests.swift */; };
 		402614272087B10B005BD956 /* Tracing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 402614262087B10B005BD956 /* Tracing.cpp */; };
+		408649DB23D1238C003063A2 /* libllbuildEvo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 40C9B47023CFD6690098712F /* libllbuildEvo.a */; };
+		408649DC23D90EA0003063A2 /* libllbuildEvo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 40C9B47023CFD6690098712F /* libllbuildEvo.a */; };
+		408649DF23D90EFB003063A2 /* libllbuildEvo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 40C9B47023CFD6690098712F /* libllbuildEvo.a */; };
 		40B3C91020D3AEC9007C5847 /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.tbd */; };
 		40B3C91120D3AEC9007C5847 /* libgtest.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A224DD19F99B0E0059043E /* libgtest.a */; };
 		40B3C91220D3AEC9007C5847 /* libgtest_main.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A224E619F99C580059043E /* libgtest_main.a */; };
 		40B3C91C20D3B075007C5847 /* C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 40B3C91B20D3AF9B007C5847 /* C-API.cpp */; };
 		40B3C92720D3B24D007C5847 /* libllbuild.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = E1ADC23A1A85936400D5387C /* libllbuild.dylib */; };
 		40C71A8222F0FA1D008FDC9C /* Defer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 40C71A8122F0FA1D008FDC9C /* Defer.cpp */; };
+		40C9B47123CFD6870098712F /* EvoEngine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 40C9B45B23CFD4960098712F /* EvoEngine.cpp */; };
+		40C9B48523CFD69E0098712F /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.tbd */; };
+		40C9B48623CFD69E0098712F /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.tbd */; };
+		40C9B48723CFD69E0098712F /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
+		40C9B48823CFD69E0098712F /* libgtest.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A224DD19F99B0E0059043E /* libgtest.a */; };
+		40C9B48923CFD69E0098712F /* libgtest_main.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A224E619F99C580059043E /* libgtest_main.a */; };
+		40C9B48A23CFD69E0098712F /* libllbuildBasic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2242519F991B40059043E /* libllbuildBasic.a */; };
+		40C9B48B23CFD69E0098712F /* libllbuildCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1A2243E19F997150059043E /* libllbuildCore.a */; };
+		40C9B49423CFD6B60098712F /* EvoEngineTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 40C9B46223CFD6510098712F /* EvoEngineTest.cpp */; };
 		40EA264821651D2C00068954 /* ExecutionQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 40EA264721651D2C00068954 /* ExecutionQueue.cpp */; };
 		40EA264A21651D3F00068954 /* Subprocess.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 40EA264921651D3F00068954 /* Subprocess.cpp */; };
 		40EA264C2165221C00068954 /* LaneBasedExecutionQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 40EA264B2165221C00068954 /* LaneBasedExecutionQueue.cpp */; };
@@ -326,6 +338,20 @@
 			remoteGlobalIDString = E1A2243519F9970D0059043E;
 			remoteInfo = llbuildNinja;
 		};
+		408649DD23D90EA0003063A2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 40C9B46323CFD6690098712F;
+			remoteInfo = llbuildEvo;
+		};
+		408649E023D90F01003063A2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 40C9B46323CFD6690098712F;
+			remoteInfo = llbuildEvo;
+		};
 		40B3C90220D3AEC9007C5847 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
@@ -346,6 +372,48 @@
 			proxyType = 1;
 			remoteGlobalIDString = E1ADC2391A85936400D5387C;
 			remoteInfo = libllbuild;
+		};
+		40C9B47423CFD69E0098712F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1A224DC19F99B0E0059043E;
+			remoteInfo = gtest;
+		};
+		40C9B47623CFD69E0098712F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1A224E519F99C580059043E;
+			remoteInfo = gtest_main;
+		};
+		40C9B47823CFD69E0098712F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1B838981B52E7DE00DB876B;
+			remoteInfo = llvmSupport;
+		};
+		40C9B47A23CFD69E0098712F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1A2242419F991B40059043E;
+			remoteInfo = llbuildBasic;
+		};
+		40C9B47C23CFD69E0098712F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1A2243D19F997150059043E;
+			remoteInfo = llbuildCore;
+		};
+		40C9B49223CFD6AF0098712F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 40C9B46323CFD6690098712F;
+			remoteInfo = llbuildEvo;
 		};
 		8CAE6851237B9EFA00C82351 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -835,6 +903,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
+		40C9B48C23CFD69E0098712F /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		8C561BFD23551C4A000D242D /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -963,6 +1040,13 @@
 		40B3C91B20D3AF9B007C5847 /* C-API.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "C-API.cpp"; sourceTree = "<group>"; };
 		40C71A8022F0EBCF008FDC9C /* Defer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Defer.h; sourceTree = "<group>"; };
 		40C71A8122F0FA1D008FDC9C /* Defer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Defer.cpp; sourceTree = "<group>"; };
+		40C9B45623CFD4960098712F /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
+		40C9B45B23CFD4960098712F /* EvoEngine.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = EvoEngine.cpp; sourceTree = "<group>"; };
+		40C9B45F23CFD61C0098712F /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
+		40C9B46223CFD6510098712F /* EvoEngineTest.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = EvoEngineTest.cpp; sourceTree = "<group>"; };
+		40C9B47023CFD6690098712F /* libllbuildEvo.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libllbuildEvo.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		40C9B49123CFD69E0098712F /* EvoTests */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = EvoTests; sourceTree = BUILT_PRODUCTS_DIR; };
+		40C9B49523CFDC730098712F /* EvoEngine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EvoEngine.h; sourceTree = "<group>"; };
 		40D5A32823AD9C5A004B56EA /* Command.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Command.h; sourceTree = "<group>"; };
 		40EA26452164253500068954 /* Subprocess.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Subprocess.h; sourceTree = "<group>"; };
 		40EA26462164289500068954 /* ExecutionQueue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ExecutionQueue.h; sourceTree = "<group>"; };
@@ -1405,6 +1489,28 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		40C9B46B23CFD6690098712F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		40C9B48423CFD69E0098712F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				40C9B48523CFD69E0098712F /* libcurses.tbd in Frameworks */,
+				40C9B48623CFD69E0098712F /* libsqlite3.tbd in Frameworks */,
+				40C9B48723CFD69E0098712F /* libllvmSupport.a in Frameworks */,
+				40C9B48823CFD69E0098712F /* libgtest.a in Frameworks */,
+				40C9B48923CFD69E0098712F /* libgtest_main.a in Frameworks */,
+				40C9B48A23CFD69E0098712F /* libllbuildBasic.a in Frameworks */,
+				40C9B48B23CFD69E0098712F /* libllbuildCore.a in Frameworks */,
+				408649DB23D1238C003063A2 /* libllbuildEvo.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8C561BFC23551C4A000D242D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -1550,6 +1656,7 @@
 				E1A224D519F99A2D0059043E /* libllbuildBasic.a in Frameworks */,
 				E1A224D619F99A300059043E /* libllbuildCommands.a in Frameworks */,
 				E1A224D819F99A340059043E /* libllbuildCore.a in Frameworks */,
+				408649DC23D90EA0003063A2 /* libllbuildEvo.a in Frameworks */,
 				E1B8395F1B541C6400DB876B /* libllbuildBuildSystem.a in Frameworks */,
 				E1A224D719F99A320059043E /* libllbuildNinja.a in Frameworks */,
 			);
@@ -1628,6 +1735,7 @@
 				E104FAFB1B655C33005C68A0 /* libllvmSupport.a in Frameworks */,
 				E1C404B91A030A1D003392BA /* libllbuildBasic.a in Frameworks */,
 				E1C404BB1A030A1D003392BA /* libllbuildCore.a in Frameworks */,
+				408649DF23D90EFB003063A2 /* libllbuildEvo.a in Frameworks */,
 				E1C404BC1A030A1D003392BA /* libllbuildNinja.a in Frameworks */,
 				E104FAFA1B655BBA005C68A0 /* libllbuildBuildSystem.a in Frameworks */,
 				E1C404BA1A030A1D003392BA /* libllbuildCommands.a in Frameworks */,
@@ -1753,6 +1861,34 @@
 				9ADD8B2220D7009A0066BE9A /* BuildSystem-C-API.cpp */,
 			);
 			path = CAPI;
+			sourceTree = "<group>";
+		};
+		40C9B45523CFD4960098712F /* Evo */ = {
+			isa = PBXGroup;
+			children = (
+				40C9B45C23CFD4B50098712F /* Headers */,
+				40C9B45623CFD4960098712F /* CMakeLists.txt */,
+				40C9B45B23CFD4960098712F /* EvoEngine.cpp */,
+			);
+			path = Evo;
+			sourceTree = "<group>";
+		};
+		40C9B45C23CFD4B50098712F /* Headers */ = {
+			isa = PBXGroup;
+			children = (
+				40C9B49523CFDC730098712F /* EvoEngine.h */,
+			);
+			name = Headers;
+			path = include/llbuild/Evo;
+			sourceTree = SOURCE_ROOT;
+		};
+		40C9B45E23CFD61C0098712F /* Evo */ = {
+			isa = PBXGroup;
+			children = (
+				40C9B45F23CFD61C0098712F /* CMakeLists.txt */,
+				40C9B46223CFD6510098712F /* EvoEngineTest.cpp */,
+			);
+			path = Evo;
 			sourceTree = "<group>";
 		};
 		40F638CC2051EDC800A1CFBE /* examples */ = {
@@ -2113,6 +2249,8 @@
 				E111C110241B25470086A92D /* llbuildswift-NinjaTests.xctest */,
 				E111C142241B25B70086A92D /* Ninja.framework */,
 				E111C158241B269D0086A92D /* llbuildTestSupport.framework */,
+				40C9B47023CFD6690098712F /* libllbuildEvo.a */,
+				40C9B49123CFD69E0098712F /* EvoTests */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -2147,6 +2285,7 @@
 				E1B838A31B52E82F00DB876B /* llvm */,
 				E1A2240519F991530059043E /* Basic */,
 				E1A2241119F991530059043E /* Core */,
+				40C9B45523CFD4960098712F /* Evo */,
 				E1B839581B541C1F00DB876B /* BuildSystem */,
 				E1A2241919F991530059043E /* Ninja */,
 				E1A2240919F991530059043E /* Commands */,
@@ -2406,6 +2545,7 @@
 				E147DF171BA81D4E0032D08E /* Basic */,
 				40B3C8FE20D3AE80007C5847 /* CAPI */,
 				E1A224B419F998D40059043E /* Core */,
+				40C9B45E23CFD61C0098712F /* Evo */,
 				9DB0478A1DF9D39E006CDF52 /* BuildSystem */,
 				E1A224B819F998D40059043E /* Ninja */,
 				B546B39F22C65D2E007046C0 /* Swift */,
@@ -2813,6 +2953,13 @@
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
+		40C9B46C23CFD6690098712F /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		B52912B9232BF0AD00FD3389 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -2951,6 +3098,47 @@
 			name = CAPITests;
 			productName = CoreTests;
 			productReference = 40B3C91A20D3AEC9007C5847 /* CAPITests */;
+			productType = "com.apple.product-type.tool";
+		};
+		40C9B46323CFD6690098712F /* llbuildEvo */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 40C9B46D23CFD6690098712F /* Build configuration list for PBXNativeTarget "llbuildEvo" */;
+			buildPhases = (
+				40C9B46423CFD6690098712F /* Sources */,
+				40C9B46B23CFD6690098712F /* Frameworks */,
+				40C9B46C23CFD6690098712F /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = llbuildEvo;
+			productName = llbuildCore;
+			productReference = 40C9B47023CFD6690098712F /* libllbuildEvo.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		40C9B47223CFD69E0098712F /* EvoTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 40C9B48E23CFD69E0098712F /* Build configuration list for PBXNativeTarget "EvoTests" */;
+			buildPhases = (
+				40C9B47D23CFD69E0098712F /* Sources */,
+				40C9B48423CFD69E0098712F /* Frameworks */,
+				40C9B48C23CFD69E0098712F /* CopyFiles */,
+				40C9B48D23CFD69E0098712F /* Create Target Link */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				40C9B47323CFD69E0098712F /* PBXTargetDependency */,
+				40C9B47523CFD69E0098712F /* PBXTargetDependency */,
+				40C9B47723CFD69E0098712F /* PBXTargetDependency */,
+				40C9B47923CFD69E0098712F /* PBXTargetDependency */,
+				40C9B47B23CFD69E0098712F /* PBXTargetDependency */,
+				40C9B49323CFD6AF0098712F /* PBXTargetDependency */,
+			);
+			name = EvoTests;
+			productName = CoreTests;
+			productReference = 40C9B49123CFD69E0098712F /* EvoTests */;
 			productType = "com.apple.product-type.tool";
 		};
 		8C561BFE23551C4A000D242D /* adjust-times */ = {
@@ -3259,6 +3447,7 @@
 				E1A2250E19F99E900059043E /* PBXTargetDependency */,
 				E1B839611B541C6D00DB876B /* PBXTargetDependency */,
 				E1A2251019F99E950059043E /* PBXTargetDependency */,
+				408649DE23D90EA0003063A2 /* PBXTargetDependency */,
 			);
 			name = "llbuild Tool";
 			productName = llbuild;
@@ -3414,6 +3603,7 @@
 				E104FAFD1B655C3C005C68A0 /* PBXTargetDependency */,
 				E17C29E61B5AAF6100C12DA9 /* PBXTargetDependency */,
 				E17C29EA1B5AAF6100C12DA9 /* PBXTargetDependency */,
+				408649E123D90F01003063A2 /* PBXTargetDependency */,
 				E17C29EC1B5AAF6100C12DA9 /* PBXTargetDependency */,
 				E104FAF91B655BB2005C68A0 /* PBXTargetDependency */,
 				E17C29E81B5AAF6100C12DA9 /* PBXTargetDependency */,
@@ -3577,6 +3767,7 @@
 				E1A2242419F991B40059043E /* llbuildBasic */,
 				E1A2242D19F997050059043E /* llbuildCommands */,
 				E1A2243D19F997150059043E /* llbuildCore */,
+				40C9B46323CFD6690098712F /* llbuildEvo */,
 				E1B839481B541BFD00DB876B /* llbuildBuildSystem */,
 				E1A2243519F9970D0059043E /* llbuildNinja */,
 				E1A224DC19F99B0E0059043E /* gtest */,
@@ -3584,6 +3775,7 @@
 				E147DEFE1BA81D330032D08E /* BasicTests */,
 				40B3C90020D3AEC9007C5847 /* CAPITests */,
 				E1A224EE19F99D880059043E /* CoreTests */,
+				40C9B47223CFD69E0098712F /* EvoTests */,
 				9DB047A71DF9D43D006CDF52 /* BuildSystemTests */,
 				E1A224F819F99DFD0059043E /* NinjaTests */,
 				E180432F1A00122900662FE7 /* Lit-Tests-Setup */,
@@ -3658,6 +3850,22 @@
 
 /* Begin PBXShellScriptBuildPhase section */
 		40B3C91620D3AEC9007C5847 /* Create Target Link */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Create Target Link";
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/unittests/$(PRODUCT_NAME)",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/utils/Xcode/create-target-link.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		40C9B48D23CFD69E0098712F /* Create Target Link */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -3823,6 +4031,22 @@
 			files = (
 				9ADD8B2320D7009F0066BE9A /* BuildSystem-C-API.cpp in Sources */,
 				40B3C91C20D3B075007C5847 /* C-API.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		40C9B46423CFD6690098712F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				40C9B47123CFD6870098712F /* EvoEngine.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		40C9B47D23CFD69E0098712F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				40C9B49423CFD6B60098712F /* EvoEngineTest.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4157,6 +4381,16 @@
 			target = E1A2243519F9970D0059043E /* llbuildNinja */;
 			targetProxy = 4035804021C3060F0091FE09 /* PBXContainerItemProxy */;
 		};
+		408649DE23D90EA0003063A2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 40C9B46323CFD6690098712F /* llbuildEvo */;
+			targetProxy = 408649DD23D90EA0003063A2 /* PBXContainerItemProxy */;
+		};
+		408649E123D90F01003063A2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 40C9B46323CFD6690098712F /* llbuildEvo */;
+			targetProxy = 408649E023D90F01003063A2 /* PBXContainerItemProxy */;
+		};
 		40B3C90120D3AEC9007C5847 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = E1A224DC19F99B0E0059043E /* gtest */;
@@ -4171,6 +4405,36 @@
 			isa = PBXTargetDependency;
 			target = E1ADC2391A85936400D5387C /* libllbuild */;
 			targetProxy = 40B3C92520D3B248007C5847 /* PBXContainerItemProxy */;
+		};
+		40C9B47323CFD69E0098712F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1A224DC19F99B0E0059043E /* gtest */;
+			targetProxy = 40C9B47423CFD69E0098712F /* PBXContainerItemProxy */;
+		};
+		40C9B47523CFD69E0098712F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1A224E519F99C580059043E /* gtest_main */;
+			targetProxy = 40C9B47623CFD69E0098712F /* PBXContainerItemProxy */;
+		};
+		40C9B47723CFD69E0098712F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1B838981B52E7DE00DB876B /* llvmSupport */;
+			targetProxy = 40C9B47823CFD69E0098712F /* PBXContainerItemProxy */;
+		};
+		40C9B47923CFD69E0098712F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1A2242419F991B40059043E /* llbuildBasic */;
+			targetProxy = 40C9B47A23CFD69E0098712F /* PBXContainerItemProxy */;
+		};
+		40C9B47B23CFD69E0098712F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1A2243D19F997150059043E /* llbuildCore */;
+			targetProxy = 40C9B47C23CFD69E0098712F /* PBXContainerItemProxy */;
+		};
+		40C9B49323CFD6AF0098712F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 40C9B46323CFD6690098712F /* llbuildEvo */;
+			targetProxy = 40C9B49223CFD6AF0098712F /* PBXContainerItemProxy */;
 		};
 		8CAE6852237B9EFA00C82351 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -4528,6 +4792,36 @@
 			buildSettings = {
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/products/libllbuild/include $(SRCROOT)/utils/unittest/googletest/include";
+			};
+			name = Release;
+		};
+		40C9B46E23CFD6690098712F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		40C9B46F23CFD6690098712F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		40C9B48F23CFD69E0098712F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
+			};
+			name = Debug;
+		};
+		40C9B49023CFD69E0098712F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Release;
 		};
@@ -5235,6 +5529,24 @@
 			buildConfigurations = (
 				40B3C91820D3AEC9007C5847 /* Debug */,
 				40B3C91920D3AEC9007C5847 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		40C9B46D23CFD6690098712F /* Build configuration list for PBXNativeTarget "llbuildEvo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				40C9B46E23CFD6690098712F /* Debug */,
+				40C9B46F23CFD6690098712F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		40C9B48E23CFD69E0098712F /* Build configuration list for PBXNativeTarget "EvoTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				40C9B48F23CFD69E0098712F /* Debug */,
+				40C9B49023CFD69E0098712F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

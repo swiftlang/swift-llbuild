@@ -108,6 +108,7 @@ namespace llbuild {
 
     /// Status of a process execution.
     enum class ProcessStatus {
+      Unknown = -1,
       Succeeded = 0,
       Failed,
       Cancelled,
@@ -135,11 +136,15 @@ namespace llbuild {
       /// Max RSS (in bytes)
       uint64_t maxrss;
 
-      ProcessResult(ProcessStatus status, int exitCode = -1,
-                    llbuild_pid_t pid = (llbuild_pid_t)-1, uint64_t utime = 0,
-                    uint64_t stime = 0, uint64_t maxrss = 0)
-          : status(status), exitCode(exitCode), pid(pid), utime(utime),
-            stime(stime), maxrss(maxrss) {}
+      ProcessResult(
+        ProcessStatus status = ProcessStatus::Unknown,
+        int exitCode = -1,
+        llbuild_pid_t pid = (llbuild_pid_t)-1,
+        uint64_t utime = 0,
+        uint64_t stime = 0,
+        uint64_t maxrss = 0
+      ) : status(status), exitCode(exitCode), pid(pid), utime(utime),
+      stime(stime), maxrss(maxrss) { }
 
       static ProcessResult makeFailed(int exitCode = -1) {
         return ProcessResult(ProcessStatus::Failed, exitCode);
@@ -167,11 +172,6 @@ namespace llbuild {
     /// NOTE: The delegate *MUST* be thread-safe with respect to all calls,
     /// which will arrive concurrently and without any specified thread.
     class ProcessDelegate {
-      // DO NOT COPY
-      ProcessDelegate(const ProcessDelegate&) LLBUILD_DELETED_FUNCTION;
-      void operator=(const ProcessDelegate&) LLBUILD_DELETED_FUNCTION;
-      ProcessDelegate& operator=(ProcessDelegate&& rhs) LLBUILD_DELETED_FUNCTION;
-
     public:
       ProcessDelegate() {}
       virtual ~ProcessDelegate();
