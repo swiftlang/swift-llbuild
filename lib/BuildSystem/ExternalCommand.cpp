@@ -419,6 +419,7 @@ void ExternalCommand::execute(BuildSystem& system,
       resultFn(computeCommandResult(system, ti));
       return;
     case ProcessStatus::Skipped:
+    case ProcessStatus::Unknown:
       // It is illegal to get skipped result at this point.
       break;
     }
