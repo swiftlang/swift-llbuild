@@ -1,5 +1,6 @@
 add_llbuild_library(llbuildCAS STATIC
   CASDatabase.cpp
+  InMemoryCASDatabase.cpp
   )
 
 target_link_libraries(llbuildCAS PRIVATE

@@ -16,3 +16,11 @@ using namespace llbuild;
 using namespace llbuild::CAS;
 
 CASDatabase::~CASDatabase() {}
+
+auto CASDatabase::put(llvm::StringRef data) ->
+  std::future<llvm::ErrorOr<DataID>>
+{
+  auto object = llvm::make_unique<CASObject>();
+  object->data.insert(object->data.begin(), data.begin(), data.end());
+  return put(std::move(object));
+}

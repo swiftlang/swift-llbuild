@@ -17,6 +17,7 @@
 
 #include "llbuild/Basic/Compiler.h"
 
+#include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/ErrorOr.h"
@@ -50,8 +51,18 @@ public:
     std::future<llvm::ErrorOr<std::unique_ptr<CASObject>>> = 0;
 
   /// Write the given object into the database.
-  virtual auto put(std::unique_ptr<CASObject> object) ->
+  virtual auto putObject(std::unique_ptr<CASObject> object) ->
     std::future<llvm::ErrorOr<DataID>> = 0;
+
+  /// Write an object into the database.
+  inline auto put(std::unique_ptr<CASObject> object)
+    -> std::future<llvm::ErrorOr<DataID>>
+  {
+    return putObject(std::move(object));
+  }
+
+  /// Write a data-only object into the database.
+  auto put(llvm::StringRef data) -> std::future<llvm::ErrorOr<DataID>>;
 };
 
 /// An individual object in the CAS.
