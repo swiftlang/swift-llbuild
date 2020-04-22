@@ -6,6 +6,7 @@ function(add_llbuild_unittest test_dirname)
 endfunction()
 
 add_subdirectory(Basic)
+add_subdirectory(CAS)
 add_subdirectory(CAPI)
 add_subdirectory(Core)
 add_subdirectory(Evo)
