@@ -8,7 +8,7 @@ import PackageDescription
 let package = Package(
     name: "llbuild-analyze",
     platforms: [
-        .macOS(.v10_10), .iOS(.v9),
+        .macOS(.v10_10)
     ],
     products: [
         .executable(
