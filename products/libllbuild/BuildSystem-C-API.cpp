@@ -177,7 +177,7 @@ public:
   CAPIBuildSystemFrontendDelegate(llvm::SourceMgr& sourceMgr,
                                   BuildSystemInvocation& invocation,
                                   llb_buildsystem_delegate_t delegate)
-      : BuildSystemFrontendDelegate(sourceMgr, invocation, "basic", 0),
+      : BuildSystemFrontendDelegate(sourceMgr, "basic", 0),
         cAPIDelegate(delegate) { }
 
   virtual std::unique_ptr<Tool> lookupTool(StringRef name) override {
@@ -574,16 +574,10 @@ public:
   }
 
   bool build(llvm::StringRef key) {
-    // Reset mutable build state.
-    frontendDelegate->resetForBuild();
-
-    // FIXME: We probably should return a context to represent the running
-    // build, instead of keeping state (like cancellation) in the delegate.
     return getFrontend().build(key);
   }
 
   bool buildNode(llvm::StringRef key) {
-    frontendDelegate->resetForBuild();
     return getFrontend().buildNode(key);
   }
 

@@ -28,7 +28,6 @@
 #include <cassert>
 #include <cstdio>
 #include <condition_variable>
-#include <iostream>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -1310,6 +1309,11 @@ private:
     }
 
     // Delete all of the tasks.
+    ruleInfosToScan.clear();
+    inputRequests.clear();
+    finishedInputRequests.clear();
+    readyTaskInfos.clear();
+    finishedTaskInfos.clear();
     taskInfos.clear();
   }
 

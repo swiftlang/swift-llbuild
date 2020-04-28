@@ -30,7 +30,7 @@ class BasicBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
 public:
   BasicBuildSystemFrontendDelegate(llvm::SourceMgr& sourceMgr,
                                    const BuildSystemInvocation& invocation)
-    : BuildSystemFrontendDelegate(sourceMgr, invocation,
+    : BuildSystemFrontendDelegate(sourceMgr,
                                   "swift-build", /*version=*/0) {}
 
   virtual void hadCommandFailure() override {
