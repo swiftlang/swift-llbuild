@@ -489,7 +489,7 @@ class BasicBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
 public:
   BasicBuildSystemFrontendDelegate(llvm::SourceMgr& sourceMgr,
                                    const BuildSystemInvocation& invocation)
-      : BuildSystemFrontendDelegate(sourceMgr, invocation,
+      : BuildSystemFrontendDelegate(sourceMgr,
                                     "basic", /*version=*/0),
         fileSystem(basic::createLocalFileSystem()) {
     // Register an interrupt handler.

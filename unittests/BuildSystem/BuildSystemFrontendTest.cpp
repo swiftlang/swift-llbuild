@@ -29,8 +29,10 @@
 
 #include "gtest/gtest.h"
 
-#include <unordered_set>
+#include <condition_variable>
 #include <mutex>
+#include <thread>
+#include <unordered_set>
 
 using namespace llbuild;
 using namespace llbuild::basic;
@@ -59,9 +61,8 @@ class TestBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
   raw_string_ostream traceStream;
 
 public:
-  TestBuildSystemFrontendDelegate(SourceMgr& sourceMgr,
-                                  const BuildSystemInvocation& invocation):
-      BuildSystemFrontendDelegate(sourceMgr, invocation, "client", 0),
+  TestBuildSystemFrontendDelegate(SourceMgr& sourceMgr)
+    : BuildSystemFrontendDelegate(sourceMgr, "client", 0),
       traceStream(traceData)
   {
   }
@@ -258,7 +259,7 @@ commands:
 )END");
 
   {
-    TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
+    TestBuildSystemFrontendDelegate delegate(sourceMgr);
     delegate.commandsToSkip.insert("2");
 
     BuildSystemFrontend frontend(delegate, invocation, createLocalFileSystem());
@@ -291,7 +292,7 @@ commandFinished: 3: 0
   // re-run 3. 1 doesn't have to run at all, so we don't expect to get asked
   // if it should start.
   {
-    TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
+    TestBuildSystemFrontendDelegate delegate(sourceMgr);
 
     BuildSystemFrontend frontend(delegate, invocation, createLocalFileSystem());
     ASSERT_TRUE(frontend.build(""));
@@ -315,6 +316,126 @@ commandFinished: 3: 0
   }
 
 }
+
+
+TEST_F(BuildSystemFrontendTest, missingShellArguments) {
+  writeBuildFile(R"END(
+client:
+    name: basic
+
+commands:
+    C0:
+        tool: shell
+        args: []
+)END");
+
+  TestBuildSystemFrontendDelegate delegate(sourceMgr);
+
+  BuildSystemFrontend frontend(delegate, invocation, createLocalFileSystem());
+  ASSERT_FALSE(frontend.build(""));
+
+  ASSERT_TRUE(delegate.checkTrace(R"END(
+error: unable to configure client
+error: unable to load build file
+)END"));
+}
+
+
+
+class TestCancellationFrontendDelegate : public TestBuildSystemFrontendDelegate {
+  using super = TestBuildSystemFrontendDelegate;
+
+  std::mutex shouldCancelMutex;
+  std::condition_variable shouldCancelCond;
+  std::atomic<bool> shouldCancel{false};
+  std::atomic<bool> done{false};
+
+  std::thread cancelWorker;
+
+public:
+  TestCancellationFrontendDelegate(SourceMgr& sourceMgr)
+  : TestBuildSystemFrontendDelegate(sourceMgr),
+    cancelWorker(&TestCancellationFrontendDelegate::cancelHandler, this)
+  {
+  }
+
+  ~TestCancellationFrontendDelegate() {
+    done = true;
+    shouldCancelCond.notify_all();
+    cancelWorker.join();
+  }
+
+  std::atomic<bool> cancelAtStart{false};
+  std::atomic<bool> cancelAtCommand{false};
+
+  virtual void commandPreparing(Command* command) override {
+    super::commandPreparing(command);
+
+    if (cancelAtStart) {
+      shouldCancel = true;
+      shouldCancelCond.notify_all();
+    }
+  }
+
+  virtual void commandProcessStarted(Command* command, ProcessHandle handle) override {
+    super::commandProcessStarted(command, handle);
+
+    if (cancelAtCommand) {
+      shouldCancel = true;
+      shouldCancelCond.notify_all();
+    }
+  }
+
+private:
+  void cancelHandler() {
+    std::unique_lock<std::mutex> lock(shouldCancelMutex);
+    while (!done) {
+      if (shouldCancel) {
+        cancel();
+        shouldCancel = false;
+      }
+      shouldCancelCond.wait(lock);
+    }
+  }
+};
+
+
+TEST_F(BuildSystemFrontendTest, cancellation) {
+  writeBuildFile(R"END(
+client:
+    name: client
+
+targets:
+    "": ["output"]
+
+commands:
+    C0:
+        tool: shell
+        outputs: ["output"]
+        args: yes >/dev/null
+)END");
+
+  TestCancellationFrontendDelegate delegate(sourceMgr);
+  BuildSystemFrontend frontend(delegate, invocation, createLocalFileSystem());
+
+  // FIXME: This is a good candidate for a 'long running' testing mode. Increase
+  // the number of reps to catch subtle race conditions. For example, some of
+  // the issues fixed when this test was developed sometimes took thousands of
+  // iterations to trigger.
+  for (int i = 0; i < 100; ++i) {
+    delegate.cancelAtStart = true;
+    delegate.cancelAtCommand = false;
+    frontend.build("");
+    delegate.clearTrace();
+
+    delegate.cancelAtStart = false;
+    delegate.cancelAtCommand = true;
+    frontend.build("");
+    delegate.clearTrace();
+  }
+}
+
+
 
 // We have commands { 2 -> 1 }, where two requires 1's output. We'd like to
 // skip 1, we expect 2 to run and fail because 1 did not produce output.
@@ -340,7 +461,7 @@ commands:
 )END");
 
   {
-    TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
+    TestBuildSystemFrontendDelegate delegate(sourceMgr);
     delegate.commandsToSkip.insert("1");
 
     BuildSystemFrontend frontend(delegate, invocation, createLocalFileSystem());
@@ -380,7 +501,7 @@ hadCommandFailure
 
   // If we rebuild incrementally without skipping, we expect to run 1 and 2.
   {
-    TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
+    TestBuildSystemFrontendDelegate delegate(sourceMgr);
 
     BuildSystemFrontend frontend(delegate, invocation, createLocalFileSystem());
     ASSERT_TRUE(frontend.build(""));
@@ -426,7 +547,7 @@ commands:
         outputs: ["2"]
 )END");
 
-  TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
+  TestBuildSystemFrontendDelegate delegate(sourceMgr);
   delegate.commandsToSkip.insert("1");
   
   BuildSystemFrontend frontend(delegate, invocation, createLocalFileSystem());
@@ -477,7 +598,7 @@ commands:
   // We need to delete the symlink ourselves, because llvm's remove()
   // currently refuses to delete symlinks.
 
-  TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
+  TestBuildSystemFrontendDelegate delegate(sourceMgr);
   delegate.commandsToSkip.insert("1");
   
   BuildSystemFrontend frontend(delegate, invocation, createLocalFileSystem());
@@ -506,7 +627,7 @@ client:
   name: client
 )END");
 
-  TestBuildSystemFrontendDelegate delegate(sourceMgr, invocation);
+  TestBuildSystemFrontendDelegate delegate(sourceMgr);
   BuildSystemFrontend frontend(delegate, invocation, createLocalFileSystem());
 
   ASSERT_FALSE(frontend.buildNode("/missing"));

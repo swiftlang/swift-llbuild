@@ -55,32 +55,14 @@ enum class CommandResult;
 ///   o Support for common command line options.
 ///   o Support for parallel, persistent builds.
 ///   o Support for command line diagnostics and status reporting.
-///
-/// NOTE: This class is *NOT* thread safe.
 class BuildSystemFrontend {
-  BuildSystemFrontendDelegate& delegate;
-  const BuildSystemInvocation& invocation;
-  std::unique_ptr<basic::FileSystem> fileSystem;
-  llvm::Optional<BuildSystem> buildSystem;
-
-private:
-
-  bool setupBuild();
+  void* impl;
 
 public:
   BuildSystemFrontend(BuildSystemFrontendDelegate& delegate,
                       const BuildSystemInvocation& invocation,
                       std::unique_ptr<basic::FileSystem> fileSystem);
-
-  /// @name Accessors
-  /// @{
-
-  BuildSystemFrontendDelegate& getDelegate() { return delegate; }
-  const BuildSystemFrontendDelegate& getDelegate() const { return delegate; }
-
-  const BuildSystemInvocation& getInvocation() { return invocation; }
-  
-  /// @}
+  ~BuildSystemFrontend();
 
   /// @name Client API
   /// @{
@@ -109,6 +91,9 @@ public:
 };
 
 /// The frontend-specific delegate, which provides some shared behaviors.
+///
+/// NOTE: This class is thread-safe. Subclasses should be careful to retain that
+/// safety in overriden methods.
 class BuildSystemFrontendDelegate : public BuildSystemDelegate {
   friend class BuildSystemFrontend;
   
@@ -133,7 +118,6 @@ public:
   /// \param name The name of build system client.
   /// \param version The version of the build system client.
   BuildSystemFrontendDelegate(llvm::SourceMgr& sourceMgr,
-                              const BuildSystemInvocation& invocation,
                               StringRef name,
                               uint32_t version);
   virtual ~BuildSystemFrontendDelegate();
@@ -148,9 +132,6 @@ public:
   /// Cancels the current build.
   virtual void cancel();
 
-  /// Reset mutable build state before a new build operation.
-  void resetForBuild();
-  
   /// Provides a default handler.
   ///
   /// Subclass should call this method if overridden.
@@ -323,8 +304,6 @@ public:
   
   /// @name Accessors
   /// @{
-
-  BuildSystemFrontend& getFrontend();
 
   llvm::SourceMgr& getSourceMgr();
 
