@@ -327,7 +327,9 @@ public:
                           BuildSystemFrontendDelegateImpl* delegateImpl,
                           const BuildSystemInvocation& invocation,
                           std::unique_ptr<basic::FileSystem> fileSystem)
-      : delegate(delegate), delegateImpl(delegateImpl), invocation(invocation), fileSystem(std::move(fileSystem)) {}
+      : delegate(delegate), delegateImpl(delegateImpl), invocation(invocation), fileSystem(std::move(fileSystem)) {
+        assert(this->fileSystem);
+      }
 
 
 private:
@@ -372,6 +374,12 @@ public:
         delegate.error(Twine("unable to honor --chdir: ") + strerror(errno));
         return false;
       }
+    }
+
+    if (!fileSystem) {
+      // Catch and report client misuse of a failed build system object
+      delegate.error(Twine("invalid reuse after initialization failure"));
+      return false;
     }
 
     // Create the build system.
