@@ -57,9 +57,9 @@ public:
   ~EvoTask();
 
   // core::Task required methods
-  void start(core::TaskInterface&) override;
-  void provideValue(core::TaskInterface&, uintptr_t inputID, const core::ValueType& value) override;
-  void inputsAvailable(core::TaskInterface&) override;
+  void start(core::TaskInterface) override;
+  void provideValue(core::TaskInterface, uintptr_t inputID, const core::ValueType& value) override;
+  void inputsAvailable(core::TaskInterface) override;
 
   // EvoEngine methods
   EvoInputHandle request(const core::KeyType& key) override;
@@ -184,7 +184,7 @@ EvoTask::~EvoTask() {
 
 // MARK: - EvoTask - core::Task Protocol
 
-void EvoTask::start(core::TaskInterface& ti) {
+void EvoTask::start(core::TaskInterface ti) {
   coreInterface = ti;
   taskThread = std::make_unique<std::thread>(&EvoTask::run, this);
 
@@ -199,7 +199,7 @@ void EvoTask::start(core::TaskInterface& ti) {
   }
 }
 
-void EvoTask::provideValue(core::TaskInterface&, uintptr_t inputID,
+void EvoTask::provideValue(core::TaskInterface, uintptr_t inputID,
                   const core::ValueType& value) {
   std::unique_lock<std::mutex> lock(taskMutex);
   inputs[inputID].first = true;
@@ -221,7 +221,7 @@ void EvoTask::provideValue(core::TaskInterface&, uintptr_t inputID,
   }
 }
 
-void EvoTask::inputsAvailable(core::TaskInterface&) {
+void EvoTask::inputsAvailable(core::TaskInterface) {
   {
     std::lock_guard<std::mutex> lock(taskMutex);
     assert(engineState_pendingInputs == 0);

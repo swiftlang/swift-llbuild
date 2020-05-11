@@ -144,7 +144,7 @@ struct AckermannTask : core::Task {
   }
 
   /// Called when the task is started.
-  virtual void start(core::TaskInterface& ti) override {
+  virtual void start(core::TaskInterface ti) override {
     // Request the first recursive result, if necessary.
     if (m == 0) {
       ;
@@ -156,7 +156,7 @@ struct AckermannTask : core::Task {
   }
 
   /// Called when a task’s requested input is available.
-  virtual void provideValue(core::TaskInterface& ti, uintptr_t inputID,
+  virtual void provideValue(core::TaskInterface ti, uintptr_t inputID,
                             const core::ValueType& value) override {
     if (inputID == 0) {
       recursiveResultA = value;
@@ -172,7 +172,7 @@ struct AckermannTask : core::Task {
   }
 
   /// Called when all inputs are available.
-  virtual void inputsAvailable(core::TaskInterface& ti) override {
+  virtual void inputsAvailable(core::TaskInterface ti) override {
     if (m == 0) {
       ti.complete(AckermannValue(n + 1));
       return;

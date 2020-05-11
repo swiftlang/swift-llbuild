@@ -68,21 +68,21 @@ public:
     InputValues.resize(Inputs.size());
   }
 
-  virtual void start(TaskInterface& ti) override {
+  virtual void start(TaskInterface ti) override {
     // Request all of the inputs.
     for (int i = 0, e = Inputs.size(); i != e; ++i) {
       ti.request(Inputs[i], i);
     }
   }
 
-  virtual void provideValue(TaskInterface&, uintptr_t InputID,
+  virtual void provideValue(TaskInterface, uintptr_t InputID,
                             const ValueType& Value) override {
     // Update the input values.
     assert(InputID < InputValues.size());
     InputValues[InputID] = IntFromValue(Value);
   }
 
-  virtual void inputsAvailable(TaskInterface& ti) override {
+  virtual void inputsAvailable(TaskInterface ti) override {
       ti.complete(IntToValue(Compute(InputValues)));
   }
 };

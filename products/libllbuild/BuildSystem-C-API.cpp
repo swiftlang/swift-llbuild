@@ -637,7 +637,7 @@ class CAPIExternalCommand : public ExternalCommand {
   std::string depsPath;
 
   bool processDiscoveredDependencies(BuildSystem& system,
-                                     core::TaskInterface& ti,
+                                     core::TaskInterface ti,
                                      QueueJobContext* context) {
     // Read the dependencies file.
     auto input = system.getFileSystem().getFileContents(depsPath);
@@ -658,7 +658,7 @@ class CAPIExternalCommand : public ExternalCommand {
       unsigned numErrors{0};
       
       DepsActions(BuildSystem& system,
-                  core::TaskInterface& ti,
+                  core::TaskInterface ti,
                   CAPIExternalCommand* command, StringRef depsPath)
       : system(system), ti(ti), command(command), depsPath(depsPath) {}
       
@@ -692,7 +692,7 @@ class CAPIExternalCommand : public ExternalCommand {
   }
 
   virtual void startExternalCommand(BuildSystem& system,
-                                    core::TaskInterface& ti) override {
+                                    core::TaskInterface ti) override {
     cAPIDelegate.start(cAPIDelegate.context,
                        (llb_buildsystem_command_t*)this,
                        (llb_buildsystem_interface_t*)&system,
@@ -700,7 +700,7 @@ class CAPIExternalCommand : public ExternalCommand {
   }
 
   void provideValueExternalCommand(BuildSystem& system,
-                                   core::TaskInterface& ti,
+                                   core::TaskInterface ti,
                                    uintptr_t inputID,
                                    const BuildValue& value) override {
     auto value_p = (llb_build_value *)new CAPIBuildValue(BuildValue(value));
@@ -718,7 +718,7 @@ class CAPIExternalCommand : public ExternalCommand {
   CAPIBuildValue* currentBuildValue = nullptr;
 
   virtual void executeExternalCommand(BuildSystem& system,
-                                      core::TaskInterface& ti,
+                                      core::TaskInterface ti,
                                       QueueJobContext* job_context,
                                       llvm::Optional<ProcessCompletionFn> completionFn) override {
     auto doneFn = [this, &system, ti, job_context, completionFn](ProcessStatus result) mutable {
@@ -777,7 +777,7 @@ class CAPIExternalCommand : public ExternalCommand {
     doneFn(success ? ProcessStatus::Succeeded : ProcessStatus::Failed);
   }
 
-  BuildValue computeCommandResult(BuildSystem& system, core::TaskInterface& ti) override {
+  BuildValue computeCommandResult(BuildSystem& system, core::TaskInterface ti) override {
     if (currentBuildValue)
       return BuildValue(currentBuildValue->getInternalBuildValue());
 

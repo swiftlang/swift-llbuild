@@ -225,14 +225,14 @@ public:
   virtual ~Task();
 
   /// Executed by the build engine when the task should be started.
-  virtual void start(TaskInterface&) = 0;
+  virtual void start(TaskInterface) = 0;
 
   /// Invoked by the build engine to provide the prior result for the task's
   /// output, if present.
   ///
   /// This callback will always be invoked immediately after the task is
   /// started, and prior to its receipt of any other callbacks.
-  virtual void providePriorValue(TaskInterface&, const ValueType& value) {};
+  virtual void providePriorValue(TaskInterface, const ValueType& value) {};
 
   /// Invoked by the build engine to provide an input value as it becomes
   /// available.
@@ -242,7 +242,7 @@ public:
   /// BuildEngine::taskNeedsInput().
   ///
   /// \param value The computed value for the given input.
-  virtual void provideValue(TaskInterface&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface, uintptr_t inputID,
                             const ValueType& value) = 0;
 
   /// Executed by the build engine to indicate that all inputs have been
@@ -253,7 +253,7 @@ public:
   ///
   /// It is an error for any client to request an additional input for a task
   /// after the last requested input has been provided by the build engine.
-  virtual void inputsAvailable(TaskInterface&) = 0;
+  virtual void inputsAvailable(TaskInterface) = 0;
 };
 
 /// A rule represents an individual element of computation that can be performed

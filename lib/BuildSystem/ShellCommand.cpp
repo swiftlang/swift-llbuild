@@ -27,7 +27,7 @@ using namespace llbuild::basic;
 using namespace llbuild::core;
 using namespace llbuild::buildsystem;
 
-void ShellCommand::start(BuildSystem& system, TaskInterface& ti) {
+void ShellCommand::start(BuildSystem& system, TaskInterface ti) {
   // Resolve the plugin state.
   handler = system.resolveShellCommandHandler(this);
 
@@ -71,7 +71,7 @@ CommandSignature ShellCommand::getSignature() const {
 }
 
 bool ShellCommand::processDiscoveredDependencies(BuildSystem& system,
-                                                 core::TaskInterface& ti,
+                                                 core::TaskInterface ti,
                                                  QueueJobContext* context) {
   // It is an error if the dependencies style is not specified.
   //
@@ -116,7 +116,7 @@ bool ShellCommand::processDiscoveredDependencies(BuildSystem& system,
 }
 
 bool ShellCommand::processMakefileDiscoveredDependencies(BuildSystem& system,
-                                                         TaskInterface& ti,
+                                                         TaskInterface ti,
                                                          QueueJobContext* context,
                                                          StringRef depsPath,
                                                          llvm::MemoryBuffer* input) {
@@ -131,7 +131,7 @@ bool ShellCommand::processMakefileDiscoveredDependencies(BuildSystem& system,
     StringRef depsPath;
     unsigned numErrors{0};
 
-    DepsActions(BuildSystem& system, TaskInterface& ti,
+    DepsActions(BuildSystem& system, TaskInterface ti,
                 ShellCommand* command, StringRef depsPath)
         : system(system), ti(ti), command(command), depsPath(depsPath) {}
 
@@ -178,7 +178,7 @@ bool ShellCommand::processMakefileDiscoveredDependencies(BuildSystem& system,
 
 bool
 ShellCommand::processDependencyInfoDiscoveredDependencies(BuildSystem& system,
-                                                          TaskInterface& ti,
+                                                          TaskInterface ti,
                                                           QueueJobContext* context,
                                                           StringRef depsPath,
                                                           llvm::MemoryBuffer* input) {
@@ -193,7 +193,7 @@ ShellCommand::processDependencyInfoDiscoveredDependencies(BuildSystem& system,
     StringRef depsPath;
     unsigned numErrors{0};
 
-    DepsActions(BuildSystem& system, TaskInterface& ti,
+    DepsActions(BuildSystem& system, TaskInterface ti,
                 ShellCommand* command, StringRef depsPath)
         : system(system), ti(ti), command(command), depsPath(depsPath) {}
 
@@ -329,7 +329,7 @@ bool ShellCommand::configureAttribute(
 
 void ShellCommand::executeExternalCommand(
     BuildSystem& system,
-    TaskInterface& ti,
+    TaskInterface ti,
     QueueJobContext* context,
     llvm::Optional<ProcessCompletionFn> completionFn) {
   auto commandCompletionFn = [this, &system, ti, completionFn](ProcessResult result) mutable {
@@ -345,7 +345,7 @@ void ShellCommand::executeExternalCommand(
       // FIXME: Really want this job to go into a high priority fifo queue
       // so as to not hold up downstream tasks.
       ti.spawn(QueueJob{ this, [this, &system, ti, completionFn, result](QueueJobContext* context) mutable {
-            if (!processDiscoveredDependencies(system, const_cast<TaskInterface&>(ti), context)) {
+            if (!processDiscoveredDependencies(system, ti, context)) {
               // If we were unable to process the dependencies output, report a
               // failure.
               if (completionFn.hasValue())

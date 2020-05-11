@@ -204,7 +204,7 @@ bool ExternalCommand::isResultValid(BuildSystem& system,
 }
 
 void ExternalCommand::start(BuildSystem& system,
-                            core::TaskInterface& ti) {
+                            core::TaskInterface ti) {
   // Initialize the build state.
   skipValue = llvm::None;
   missingInputNodes.clear();
@@ -220,7 +220,7 @@ void ExternalCommand::start(BuildSystem& system,
 }
 
 void ExternalCommand::providePriorValue(BuildSystem& system,
-                                        core::TaskInterface&,
+                                        core::TaskInterface,
                                         const BuildValue& value) {
   if (value.isSuccessfulCommand()) {
     hasPriorResult = true;
@@ -228,7 +228,7 @@ void ExternalCommand::providePriorValue(BuildSystem& system,
 }
 
 void ExternalCommand::provideValue(BuildSystem& system,
-                                   core::TaskInterface& ti,
+                                   core::TaskInterface ti,
                                    uintptr_t inputID,
                                    const BuildValue& value) {
   if (value.isSuccessfulCommand() || value.isFailedCommand() || value.isPropagatedFailureCommand()) {
@@ -321,7 +321,7 @@ bool ExternalCommand::canUpdateIfNewerWithResult(const BuildValue& result) {
 }
 
 BuildValue
-ExternalCommand::computeCommandResult(BuildSystem& system, core::TaskInterface& ti) {
+ExternalCommand::computeCommandResult(BuildSystem& system, core::TaskInterface ti) {
   // Capture the file information for each of the output nodes.
   //
   // FIXME: We need to delegate to the node here.
@@ -357,7 +357,7 @@ ExternalCommand::computeCommandResult(BuildSystem& system, core::TaskInterface& 
 }
 
 void ExternalCommand::execute(BuildSystem& system,
-                              core::TaskInterface& ti,
+                              core::TaskInterface ti,
                               QueueJobContext* context,
                               ResultFn resultFn) {
   // If this command should be skipped, do nothing.

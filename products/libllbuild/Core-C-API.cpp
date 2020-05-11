@@ -132,7 +132,7 @@ public:
     }
   }
 
-  virtual void start(TaskInterface& ti) override {
+  virtual void start(TaskInterface ti) override {
     CAPIBuildEngineDelegate* delegate =
       static_cast<CAPIBuildEngineDelegate*>(ti.delegate());
     cAPIDelegate.start(cAPIDelegate.context,
@@ -140,7 +140,7 @@ public:
                        (llb_task_interface_t*)(&ti));
   }
 
-  virtual void provideValue(TaskInterface& ti, uintptr_t inputID,
+  virtual void provideValue(TaskInterface ti, uintptr_t inputID,
                             const ValueType& value) override {
     CAPIBuildEngineDelegate* delegate =
       static_cast<CAPIBuildEngineDelegate*>(ti.delegate());
@@ -151,7 +151,7 @@ public:
                                inputID, &valueData);
   }
 
-  virtual void inputsAvailable(TaskInterface& ti) override {
+  virtual void inputsAvailable(TaskInterface ti) override {
     CAPIBuildEngineDelegate* delegate =
       static_cast<CAPIBuildEngineDelegate*>(ti.delegate());
     cAPIDelegate.inputs_available(cAPIDelegate.context,

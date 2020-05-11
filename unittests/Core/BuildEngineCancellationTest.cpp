@@ -96,7 +96,7 @@ public:
   {
   }
 
-  virtual void start(TaskInterface& ti) override {
+  virtual void start(TaskInterface ti) override {
     // Compute the list of inputs.
     auto inputs = listInputs();
 
@@ -107,14 +107,14 @@ public:
     }
   }
 
-  virtual void provideValue(TaskInterface&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface, uintptr_t inputID,
                             const ValueType& value) override {
     // Update the input values.
     assert(inputID < inputValues.size());
     inputValues[inputID] = intFromValue(value);
   }
 
-  virtual void inputsAvailable(TaskInterface& ti) override {
+  virtual void inputsAvailable(TaskInterface ti) override {
     ti.complete(intToValue(compute(inputValues)));
   }
 };

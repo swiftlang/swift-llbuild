@@ -138,12 +138,12 @@ public:
 
   virtual bool isResultValid(BuildSystem& system, const BuildValue& value) = 0;
   
-  virtual void start(BuildSystem& system, core::TaskInterface& ti) = 0;
+  virtual void start(BuildSystem& system, core::TaskInterface ti) = 0;
 
-  virtual void providePriorValue(BuildSystem& system, core::TaskInterface& ti,
+  virtual void providePriorValue(BuildSystem& system, core::TaskInterface ti,
                                  const BuildValue& value) = 0;
 
-  virtual void provideValue(BuildSystem& system, core::TaskInterface&,
+  virtual void provideValue(BuildSystem& system, core::TaskInterface,
                             uintptr_t inputID, const BuildValue& value) = 0;
 
 
@@ -154,7 +154,7 @@ public:
   /// This method will always be executed on the build execution queue.
   ///
   /// Note that resultFn may be executed asynchronously on a separate thread.
-  virtual void execute(BuildSystem& system, core::TaskInterface& ti,
+  virtual void execute(BuildSystem& system, core::TaskInterface ti,
                        basic::QueueJobContext* context, ResultFn resultFn) = 0;
   
   /// @}
