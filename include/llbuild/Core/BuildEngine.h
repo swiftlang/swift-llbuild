@@ -246,7 +246,10 @@ public:
                             const ValueType& value) = 0;
 
   /// Executed by the build engine to indicate that all inputs have been
-  /// provided, and the task should begin its computation.
+  /// provided, and the task should begin its computation. If the client will
+  /// perform non-trivial work for this computation, it should be executed
+  /// asynchronously on separate thread/work queue to prevent stalling the core
+  /// engine.
   ///
   /// The task is expected to call \see BuildEngine::taskIsComplete() when it is
   /// done with its computation.
