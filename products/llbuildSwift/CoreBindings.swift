@@ -292,9 +292,9 @@ extension TaskBuildEngine {
     }
 }
 private class TaskInterfaceWrapper: TaskBuildEngine {
-    var ti: OpaquePointer?
+    var ti: llb_task_interface_t
 
-    init(_ taskInterface: OpaquePointer?) {
+    init(_ taskInterface: llb_task_interface_t) {
         self.ti = taskInterface
     }
 

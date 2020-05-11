@@ -593,7 +593,7 @@ typedef struct llb_buildsystem_external_command_delegate_t_ {
   /// At this point, the command may choose to request more dependencies
   /// through the build system command interface (bsci) reference.
   void (*start)(void* context, llb_buildsystem_command_t* command,
-                llb_buildsystem_interface_t* bi, llb_task_interface_t* ti);
+                llb_buildsystem_interface_t* bi, llb_task_interface_t ti);
 
   /// Called by the build system when one of the requested dependencies has
   /// become available. The command can identify which key the provided value
@@ -602,7 +602,7 @@ typedef struct llb_buildsystem_external_command_delegate_t_ {
   /// value.
   void (*provide_value)(void* context, llb_buildsystem_command_t* command,
                         llb_buildsystem_interface_t* bi,
-                        llb_task_interface_t* ti,
+                        llb_task_interface_t ti,
                         const llb_build_value* value,
                         uintptr_t inputID);
 
@@ -622,13 +622,13 @@ typedef struct llb_buildsystem_external_command_delegate_t_ {
   bool (*execute_command)(void* context,
                           llb_buildsystem_command_t* command,
                           llb_buildsystem_interface_t* bi,
-                          llb_task_interface_t* ti,
+                          llb_task_interface_t ti,
                           llb_buildsystem_queue_job_context_t* job_context);
 
   llb_build_value* (*execute_command_ex)(void* context,
                                          llb_buildsystem_command_t* command,
                                          llb_buildsystem_interface_t* bi,
-                                         llb_task_interface_t* ti,
+                                         llb_task_interface_t ti,
                                          llb_buildsystem_queue_job_context_t* job_context);
 
   /// Called by the build system to determine if the current build result
@@ -693,11 +693,11 @@ llb_buildsystem_command_get_verbose_description(
 /// When this value is available, it will be provided through the provide_value
 /// method.
 LLBUILD_EXPORT void
-llb_buildsystem_command_interface_task_needs_input(llb_task_interface_t* task, llb_build_key_t* key, uintptr_t inputID);
+llb_buildsystem_command_interface_task_needs_input(llb_task_interface_t ti, llb_build_key_t* key, uintptr_t inputID);
 
 /// Marks a key as a discovered dependency for the task.
 LLBUILD_EXPORT void
-llb_buildsystem_command_interface_task_discovered_dependency(llb_task_interface_t* ti_p, llb_build_key_t* key);
+llb_buildsystem_command_interface_task_discovered_dependency(llb_task_interface_t ti, llb_build_key_t* key);
 
 /// Returns the file info struct for the specified path
 LLBUILD_EXPORT llb_build_value_file_info_t

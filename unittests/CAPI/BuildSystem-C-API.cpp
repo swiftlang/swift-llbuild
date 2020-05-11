@@ -59,12 +59,12 @@ static void writeFileContents(std::string path, std::string str) {
 static void depinfo_tester_command_start(void* context,
                                          llb_buildsystem_command_t* command,
                                          llb_buildsystem_interface_t* bi,
-                                         llb_task_interface_t* ti) {}
+                                         llb_task_interface_t ti) {}
 
 static void depinfo_tester_command_provide_value(void* context,
                                                  llb_buildsystem_command_t* command,
                                                  llb_buildsystem_interface_t* bi,
-                                                 llb_task_interface_t* ti,
+                                                 llb_task_interface_t ti,
                                                  const llb_build_value* value,
                                                  uintptr_t inputID) {}
   
@@ -72,7 +72,7 @@ static bool
 depinfo_tester_command_execute_command(void *context,
                                        llb_buildsystem_command_t* command,
                                        llb_buildsystem_interface_t* bi,
-                                       llb_task_interface_t* ti,
+                                       llb_task_interface_t ti,
                                        llb_buildsystem_queue_job_context_t* job) {
   // The tester tool is given a direct input file whose only contents are the
   // path of another, indirect input file.  It is also given the paths to which

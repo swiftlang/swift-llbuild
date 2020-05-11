@@ -39,9 +39,9 @@ public struct BuildSystemCommandInterface {
     // At this time, it is not required to expose the task to the client, so this wrapper abstracts from the task itself.
     // and each command will get a personalized instance of the command interface.
     private let _buildsystemInterface: OpaquePointer
-    private let _taskInterface: OpaquePointer
+    private let _taskInterface: llb_task_interface_t
 
-    fileprivate init(_ buildsystemInterface: OpaquePointer, _ taskInterface: OpaquePointer) {
+    fileprivate init(_ buildsystemInterface: OpaquePointer, _ taskInterface: llb_task_interface_t) {
         _buildsystemInterface = buildsystemInterface
         _taskInterface = taskInterface
     }
@@ -118,12 +118,12 @@ private final class ToolWrapper {
         var _delegate = llb_buildsystem_external_command_delegate_t()
         _delegate.context = Unmanaged.passUnretained(wrapper).toOpaque()
         _delegate.get_signature = { return BuildSystem.toCommandWrapper($0!).getSignature($1!, $2!) }
-        _delegate.start = { return BuildSystem.toCommandWrapper($0!).start($1!, $2!, $3!) }
-        _delegate.provide_value = { return BuildSystem.toCommandWrapper($0!).provideValue($1!, $2!, $3!, $4!, $5) }
-        _delegate.execute_command = { return BuildSystem.toCommandWrapper($0!).executeCommand($1!, $2!, $3!, $4!) }
+        _delegate.start = { return BuildSystem.toCommandWrapper($0!).start($1!, $2!, $3) }
+        _delegate.provide_value = { return BuildSystem.toCommandWrapper($0!).provideValue($1!, $2!, $3, $4!, $5) }
+        _delegate.execute_command = { return BuildSystem.toCommandWrapper($0!).executeCommand($1!, $2!, $3, $4!) }
         if let _ = command as? ProducesCustomBuildValue {
             _delegate.execute_command_ex = {
-                var value: BuildValue = BuildSystem.toCommandWrapper($0!).executeCommand($1!, $2!, $3!, $4!)
+                var value: BuildValue = BuildSystem.toCommandWrapper($0!).executeCommand($1!, $2!, $3, $4!)
                 return BuildValue.move(&value)
             }
             _delegate.is_result_valid = {
@@ -229,12 +229,12 @@ private final class CommandWrapper {
         data.pointee = copiedDataFromBytes(command.getSignature(_command))
     }
 
-    func start(_: OpaquePointer, _ buildsystemInterface: OpaquePointer, _ taskInterface: OpaquePointer) {
+    func start(_: OpaquePointer, _ buildsystemInterface: OpaquePointer, _ taskInterface: llb_task_interface_t) {
         let commandInterface = BuildSystemCommandInterface(buildsystemInterface, taskInterface)
         return command.start(_command, commandInterface)
     }
 
-    func provideValue(_: OpaquePointer, _ buildsystemInterface: OpaquePointer, _ taskInterface: OpaquePointer, _ value: OpaquePointer, _ inputID: UInt) {
+    func provideValue(_: OpaquePointer, _ buildsystemInterface: OpaquePointer, _ taskInterface: llb_task_interface_t, _ value: OpaquePointer, _ inputID: UInt) {
 
         guard let buildValue = BuildValue.construct(from: value) else {
             fatalError("Could not decode incoming build value.")
@@ -244,12 +244,12 @@ private final class CommandWrapper {
         return command.provideValue(_command, commandInterface, buildValue, inputID)
     }
 
-    func executeCommand(_: OpaquePointer, _ buildsystemInterface: OpaquePointer, _ taskInterface: OpaquePointer, _ jobContext: OpaquePointer) -> Bool {
+    func executeCommand(_: OpaquePointer, _ buildsystemInterface: OpaquePointer, _ taskInterface: llb_task_interface_t, _ jobContext: OpaquePointer) -> Bool {
         let commandInterface = BuildSystemCommandInterface(buildsystemInterface, taskInterface)
         return command.execute(_command, commandInterface)
     }
 
-    func executeCommand(_: OpaquePointer, _ buildsystemInterface: OpaquePointer, _ taskInterface: OpaquePointer, _ jobContext: OpaquePointer) -> BuildValue {
+    func executeCommand(_: OpaquePointer, _ buildsystemInterface: OpaquePointer, _ taskInterface: llb_task_interface_t, _ jobContext: OpaquePointer) -> BuildValue {
         let commandInterface = BuildSystemCommandInterface(buildsystemInterface, taskInterface)
         return (command as! ProducesCustomBuildValue).execute(_command, commandInterface)
     }
