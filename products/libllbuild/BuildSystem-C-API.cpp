@@ -637,7 +637,7 @@ class CAPIExternalCommand : public ExternalCommand {
   std::string depsPath;
 
   bool processDiscoveredDependencies(BuildSystem& system,
-                                     core::TaskInterface& ti,
+                                     core::TaskInterface ti,
                                      QueueJobContext* context) {
     // Read the dependencies file.
     auto input = system.getFileSystem().getFileContents(depsPath);
@@ -658,7 +658,7 @@ class CAPIExternalCommand : public ExternalCommand {
       unsigned numErrors{0};
       
       DepsActions(BuildSystem& system,
-                  core::TaskInterface& ti,
+                  core::TaskInterface ti,
                   CAPIExternalCommand* command, StringRef depsPath)
       : system(system), ti(ti), command(command), depsPath(depsPath) {}
       
@@ -692,22 +692,22 @@ class CAPIExternalCommand : public ExternalCommand {
   }
 
   virtual void startExternalCommand(BuildSystem& system,
-                                    core::TaskInterface& ti) override {
+                                    core::TaskInterface ti) override {
     cAPIDelegate.start(cAPIDelegate.context,
                        (llb_buildsystem_command_t*)this,
                        (llb_buildsystem_interface_t*)&system,
-                       (llb_task_interface_t*)&ti);
+                       *reinterpret_cast<llb_task_interface_t*>(&ti));
   }
 
   void provideValueExternalCommand(BuildSystem& system,
-                                   core::TaskInterface& ti,
+                                   core::TaskInterface ti,
                                    uintptr_t inputID,
                                    const BuildValue& value) override {
     auto value_p = (llb_build_value *)new CAPIBuildValue(BuildValue(value));
     cAPIDelegate.provide_value(cAPIDelegate.context,
                                (llb_buildsystem_command_t*)this,
                                (llb_buildsystem_interface_t*)&system,
-                               (llb_task_interface_t*)&ti,
+                               *reinterpret_cast<llb_task_interface_t*>(&ti),
                                value_p,
                                inputID);
   }
@@ -718,7 +718,7 @@ class CAPIExternalCommand : public ExternalCommand {
   CAPIBuildValue* currentBuildValue = nullptr;
 
   virtual void executeExternalCommand(BuildSystem& system,
-                                      core::TaskInterface& ti,
+                                      core::TaskInterface ti,
                                       QueueJobContext* job_context,
                                       llvm::Optional<ProcessCompletionFn> completionFn) override {
     auto doneFn = [this, &system, ti, job_context, completionFn](ProcessStatus result) mutable {
@@ -749,7 +749,7 @@ class CAPIExternalCommand : public ExternalCommand {
         cAPIDelegate.context,
         (llb_buildsystem_command_t*)this,
         (llb_buildsystem_interface_t*)&system,
-        (llb_task_interface_t*)&ti,
+        *reinterpret_cast<llb_task_interface_t*>(&ti),
         (llb_buildsystem_queue_job_context_t*)job_context);
 
       currentBuildValue = reinterpret_cast<CAPIBuildValue*>(rvalue);
@@ -772,12 +772,12 @@ class CAPIExternalCommand : public ExternalCommand {
       cAPIDelegate.context,
       (llb_buildsystem_command_t*)this,
       (llb_buildsystem_interface_t*)&system,
-      (llb_task_interface_t*)&ti,
+      *reinterpret_cast<llb_task_interface_t*>(&ti),
       (llb_buildsystem_queue_job_context_t*)job_context);
     doneFn(success ? ProcessStatus::Succeeded : ProcessStatus::Failed);
   }
 
-  BuildValue computeCommandResult(BuildSystem& system, core::TaskInterface& ti) override {
+  BuildValue computeCommandResult(BuildSystem& system, core::TaskInterface ti) override {
     if (currentBuildValue)
       return BuildValue(currentBuildValue->getInternalBuildValue());
 
@@ -948,14 +948,14 @@ char* llb_buildsystem_command_get_verbose_description(
   return strdup(result.c_str());
 }
 
-void llb_buildsystem_command_interface_task_discovered_dependency(llb_task_interface_t* ti_p, llb_build_key_t* key) {
-  auto ti = (core::TaskInterface*)ti_p;
-  ti->discoveredDependency(((CAPIBuildKey *)key)->getInternalBuildKey().toData());
+void llb_buildsystem_command_interface_task_discovered_dependency(llb_task_interface_t ti, llb_build_key_t* key) {
+  auto coreti = reinterpret_cast<core::TaskInterface*>(&ti);
+  coreti->discoveredDependency(((CAPIBuildKey *)key)->getInternalBuildKey().toData());
 }
 
-void llb_buildsystem_command_interface_task_needs_input(llb_task_interface_t* ti_p, llb_build_key_t* key, uintptr_t inputID) {
-  auto ti = (core::TaskInterface*)ti_p;
-  ti->request(((CAPIBuildKey *)key)->getInternalBuildKey().toData(), inputID);
+void llb_buildsystem_command_interface_task_needs_input(llb_task_interface_t ti, llb_build_key_t* key, uintptr_t inputID) {
+  auto coreti = reinterpret_cast<core::TaskInterface*>(&ti);
+  coreti->request(((CAPIBuildKey *)key)->getInternalBuildKey().toData(), inputID);
 }
 
 llb_build_value_file_info_t llb_buildsystem_command_interface_get_file_info(llb_buildsystem_interface_t* bi_p, const char* path) {

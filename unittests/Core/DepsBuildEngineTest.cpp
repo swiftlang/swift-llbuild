@@ -96,21 +96,21 @@ public:
     inputValues.resize(inputs.size());
   }
 
-  virtual void start(TaskInterface& ti) override {
+  virtual void start(TaskInterface ti) override {
     // Request all of the inputs.
     for (int i = 0, e = inputs.size(); i != e; ++i) {
       ti.request(inputs[i], i);
     }
   }
 
-  virtual void provideValue(TaskInterface&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface, uintptr_t inputID,
                             const ValueType& value) override {
     // Update the input values.
     assert(inputID < inputValues.size());
     inputValues[inputID] = intFromValue(value);
   }
 
-  virtual void inputsAvailable(TaskInterface& ti) override {
+  virtual void inputsAvailable(TaskInterface ti) override {
     ti.complete(intToValue(compute(inputValues)));
   }
 };
@@ -198,12 +198,12 @@ TEST(DepsBuildEngineTest, BogusConcurrentDepScan) {
     int result = 1;
 
   public:
-    virtual void start(TaskInterface& ti) override {
+    virtual void start(TaskInterface ti) override {
       // Request the known input.
       ti.request("dir-list", 0);
     }
 
-    virtual void provideValue(TaskInterface& ti, uintptr_t inputID,
+    virtual void provideValue(TaskInterface ti, uintptr_t inputID,
                               const ValueType& value) override {
       int N = intFromValue(value);
       result *= N;
@@ -223,7 +223,7 @@ TEST(DepsBuildEngineTest, BogusConcurrentDepScan) {
       }
     }
 
-    virtual void inputsAvailable(TaskInterface& ti) override {
+    virtual void inputsAvailable(TaskInterface ti) override {
       ti.complete(intToValue(result));
     }
   };

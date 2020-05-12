@@ -33,8 +33,11 @@ typedef struct llb_buildengine_t_ llb_buildengine_t;
 /// Opaque handle to an executing task.
 typedef struct llb_task_t_ llb_task_t;
 
-/// Opaque handle to a task interface.
-typedef struct llb_task_interface_t_ llb_task_interface_t;
+/// Largely opaque task interface representation.
+typedef struct llb_task_interface_t_ {
+  void* impl;
+  void* ctx;
+} llb_task_interface_t;
 
 /// Representation for a blob of bytes.
 ///
@@ -172,7 +175,7 @@ llb_buildengine_build(llb_buildengine_t* engine, const llb_data_t* key,
 /// input IDs greater than \see kMaximumInputID are reserved for internal use by
 /// the engine.
 LLBUILD_EXPORT void
-llb_buildengine_task_needs_input(llb_task_interface_t* ti,
+llb_buildengine_task_needs_input(llb_task_interface_t ti,
                                  const llb_data_t* key, uintptr_t input_id);
 
 /// Specify that the given \arg task must be built subsequent to the
@@ -182,7 +185,7 @@ llb_buildengine_task_needs_input(llb_task_interface_t* ti,
 /// the only guarantee the engine provides is that if \arg key is computed
 /// during a build, then \arg task will not be computed until after it.
 LLBUILD_EXPORT void
-llb_buildengine_task_must_follow(llb_task_interface_t* ti,
+llb_buildengine_task_must_follow(llb_task_interface_t ti,
                                  const llb_data_t* key);
 
 /// Inform the engine of an input dependency that was discovered by the task
@@ -206,7 +209,7 @@ llb_buildengine_task_must_follow(llb_task_interface_t* ti,
 /// responsible for ensuring that it is never called concurrently for the same
 /// task.
 LLBUILD_EXPORT void
-llb_buildengine_task_discovered_dependency(llb_task_interface_t* ti,
+llb_buildengine_task_discovered_dependency(llb_task_interface_t ti,
                                            const llb_data_t* key);
 
 /// Called by a task to indicate it has completed and to provide its value.
@@ -219,7 +222,7 @@ llb_buildengine_task_discovered_dependency(llb_task_interface_t* ti,
 /// dependents to rebuild, even if the value itself is not different from the
 /// prior result.
 LLBUILD_EXPORT void
-llb_buildengine_task_is_complete(llb_task_interface_t* ti,
+llb_buildengine_task_is_complete(llb_task_interface_t ti,
                                  const llb_data_t* value, bool force_change);
 
 /// @}
@@ -240,7 +243,7 @@ typedef struct llb_task_delegate_t_ {
     /// Xparam context The task context pointer.
     /// Xparam engine_context The context pointer for the engine delegate.
     /// Xparam task The task which is being started.
-    void (*start)(void* context, void* engine_context, llb_task_interface_t* ti);
+    void (*start)(void* context, void* engine_context, llb_task_interface_t ti);
 
     /// The callback to provide a requested input value to the task.
     ///
@@ -248,7 +251,7 @@ typedef struct llb_task_delegate_t_ {
     /// Xparam engine_context The context pointer for the engine delegate.
     /// Xparam task The task which is being started.
     void (*provide_value)(void* context, void* engine_context, 
-                          llb_task_interface_t* ti,
+                          llb_task_interface_t ti,
                           uintptr_t input_id, const llb_data_t* value);
 
     /// The callback indicating that all requested inputs have been provided.
@@ -261,7 +264,7 @@ typedef struct llb_task_delegate_t_ {
     /// Xparam engine_context The context pointer for the engine delegate.
     /// Xparam task The task which is being started.
     void (*inputs_available)(void* context, void* engine_context,
-                             llb_task_interface_t* ti);
+                             llb_task_interface_t ti);
 } llb_task_delegate_t;
 
 /// Create a task object.

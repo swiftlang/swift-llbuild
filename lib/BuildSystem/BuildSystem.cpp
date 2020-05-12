@@ -360,7 +360,7 @@ std::unique_ptr<basic::ExecutionQueue> BuildSystemEngineDelegate::createExecutio
 
 #pragma mark - Task implementations
 
-static BuildSystemImpl& getBuildSystem(TaskInterface& ti) {
+static BuildSystemImpl& getBuildSystem(TaskInterface ti) {
   return static_cast<BuildSystemEngineDelegate*>(ti.delegate())->getBuildSystem();
 }
 
@@ -388,7 +388,7 @@ class TargetTask : public Task {
   /// ShouldSkip is true).
   SmallPtrSet<Node*, 1> missingInputNodes;
 
-  virtual void start(TaskInterface& ti) override {
+  virtual void start(TaskInterface ti) override {
     // Request all of the necessary system tasks.
     unsigned id = 0;
     for (auto it = target.getNodes().begin(),
@@ -397,12 +397,12 @@ class TargetTask : public Task {
     }
   }
 
-  virtual void providePriorValue(TaskInterface&,
+  virtual void providePriorValue(TaskInterface,
                                  const ValueType& value) override {
     // Do nothing.
   }
 
-  virtual void provideValue(TaskInterface&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface, uintptr_t inputID,
                             const ValueType& valueData) override {
     // Do nothing.
     auto value = BuildValue::fromData(valueData);
@@ -412,7 +412,7 @@ class TargetTask : public Task {
     }
   }
 
-  virtual void inputsAvailable(TaskInterface& ti) override {
+  virtual void inputsAvailable(TaskInterface ti) override {
     // If the build should cancel, do nothing.
     if (ti.isCancelled()) {
       ti.complete(BuildValue::makeSkippedCommand().toData());
@@ -459,19 +459,19 @@ public:
 class FileInputNodeTask : public Task {
   BuildNode& node;
 
-  virtual void start(TaskInterface&) override {
+  virtual void start(TaskInterface) override {
     assert(node.getProducers().empty());
   }
 
-  virtual void providePriorValue(TaskInterface&,
+  virtual void providePriorValue(TaskInterface,
                                  const ValueType& value) override {
   }
 
-  virtual void provideValue(TaskInterface&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface, uintptr_t inputID,
                             const ValueType& value) override {
   }
 
-  virtual void inputsAvailable(TaskInterface& ti) override {
+  virtual void inputsAvailable(TaskInterface ti) override {
     // FIXME: We should do this work in the background.
 
     // Get the information on the file.
@@ -524,22 +524,22 @@ public:
 class StatTask : public Task {
   StatNode& statnode;
 
-  virtual void start(TaskInterface& ti) override {
+  virtual void start(TaskInterface ti) override {
     // Create a weak link on any potential producer nodes so that we get up to
     // date stat information. We always run (see isResultValid) so this should
     // be safe (unlike directory contents where it may not run).
     ti.mustFollow(BuildKey::makeNode(statnode.getName()).toData());
   }
 
-  virtual void providePriorValue(TaskInterface&,
+  virtual void providePriorValue(TaskInterface,
                                  const ValueType& value) override {
   }
 
-  virtual void provideValue(TaskInterface&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface, uintptr_t inputID,
                             const ValueType& value) override {
   }
 
-  virtual void inputsAvailable(TaskInterface& ti) override {
+  virtual void inputsAvailable(TaskInterface ti) override {
     // FIXME: We should do this work in the background.
 
     // Get the information on the file.
@@ -572,7 +572,7 @@ class DirectoryInputNodeTask : public Task {
 
   core::ValueType directorySignature;
 
-  virtual void start(TaskInterface& ti) override {
+  virtual void start(TaskInterface ti) override {
     // Remove any trailing slash from the node name.
     StringRef path =  node.getName();
     if (path.endswith("/") && path != "/") {
@@ -584,16 +584,16 @@ class DirectoryInputNodeTask : public Task {
                /*inputID=*/0);
   }
 
-  virtual void providePriorValue(TaskInterface&,
+  virtual void providePriorValue(TaskInterface,
                                  const ValueType& value) override {
   }
 
-  virtual void provideValue(TaskInterface&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface, uintptr_t inputID,
                             const ValueType& value) override {
     directorySignature = value;
   }
 
-  virtual void inputsAvailable(TaskInterface& ti) override {
+  virtual void inputsAvailable(TaskInterface ti) override {
     // Simply propagate the value.
     ti.complete(ValueType(directorySignature));
   }
@@ -616,7 +616,7 @@ class DirectoryStructureInputNodeTask : public Task {
 
   core::ValueType directorySignature;
 
-  virtual void start(TaskInterface& ti) override {
+  virtual void start(TaskInterface ti) override {
     // Remove any trailing slash from the node name.
     StringRef path =  node.getName();
     if (path.endswith("/") && path != "/") {
@@ -626,16 +626,16 @@ class DirectoryStructureInputNodeTask : public Task {
                /*inputID=*/0);
   }
 
-  virtual void providePriorValue(TaskInterface&,
+  virtual void providePriorValue(TaskInterface,
                                  const ValueType& value) override {
   }
 
-  virtual void provideValue(TaskInterface&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface, uintptr_t inputID,
                             const ValueType& value) override {
     directorySignature = value;
   }
 
-  virtual void inputsAvailable(TaskInterface& ti) override {
+  virtual void inputsAvailable(TaskInterface ti) override {
     // Simply propagate the value.
     ti.complete(ValueType(directorySignature));
   }
@@ -650,18 +650,18 @@ public:
 /// This is the task to build a virtual node which isn't connected to any
 /// output.
 class VirtualInputNodeTask : public Task {
-  virtual void start(TaskInterface&) override {
+  virtual void start(TaskInterface) override {
   }
 
-  virtual void providePriorValue(TaskInterface&,
+  virtual void providePriorValue(TaskInterface,
                                  const ValueType& value) override {
   }
 
-  virtual void provideValue(TaskInterface&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface, uintptr_t inputID,
                             const ValueType& value) override {
   }
 
-  virtual void inputsAvailable(TaskInterface& ti) override {
+  virtual void inputsAvailable(TaskInterface ti) override {
     ti.complete(BuildValue::makeVirtualInput().toData());
   }
 
@@ -694,7 +694,7 @@ class ProducedNodeTask : public Task {
   // Whether this is a node we are unable to produce.
   bool isInvalid = false;
   
-  virtual void start(TaskInterface& ti) override {
+  virtual void start(TaskInterface ti) override {
     // Request the producer command.
     if (node.getProducers().size() == 1) {
       producingCommand = node.getProducers()[0];
@@ -709,11 +709,11 @@ class ProducedNodeTask : public Task {
     isInvalid = true;
   }
 
-  virtual void providePriorValue(TaskInterface&,
+  virtual void providePriorValue(TaskInterface,
                                  const ValueType& value) override {
   }
 
-  virtual void provideValue(TaskInterface&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface, uintptr_t inputID,
                             const ValueType& valueData) override {
     auto value = BuildValue::fromData(valueData);
 
@@ -722,7 +722,7 @@ class ProducedNodeTask : public Task {
     nodeResult = producingCommand->getResultForOutput(&node, value);
   }
 
-  virtual void inputsAvailable(TaskInterface& ti) override {
+  virtual void inputsAvailable(TaskInterface ti) override {
     if (isInvalid) {
       getBuildSystem(ti).getDelegate().hadCommandFailure();
       ti.complete(BuildValue::makeFailedInput().toData());
@@ -765,7 +765,7 @@ class DirectoryContentsTask : public Task {
   /// The value for the input directory.
   BuildValue directoryValue;
   
-  virtual void start(TaskInterface& ti) override {
+  virtual void start(TaskInterface ti) override {
     // Request the base directory node -- this task doesn't actually use the
     // value, but this connects the task to its producer if present.
 
@@ -796,11 +796,11 @@ class DirectoryContentsTask : public Task {
     ti.request(BuildKey::makeNode(path).toData(), /*inputID=*/0);
   }
 
-  virtual void providePriorValue(TaskInterface&,
+  virtual void providePriorValue(TaskInterface,
                                  const ValueType& value) override {
   }
 
-  virtual void provideValue(TaskInterface&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface, uintptr_t inputID,
                             const ValueType& value) override {
     if (inputID == 0) {
       directoryValue = BuildValue::fromData(value);
@@ -808,7 +808,7 @@ class DirectoryContentsTask : public Task {
     }
   }
 
-  virtual void inputsAvailable(TaskInterface& ti) override {
+  virtual void inputsAvailable(TaskInterface ti) override {
     // FIXME: We should do this work in the background.
     
     if (directoryValue.isMissingInput()) {
@@ -915,7 +915,7 @@ class FilteredDirectoryContentsTask : public Task {
   /// The value for the input directory.
   BuildValue directoryValue;
 
-  virtual void start(TaskInterface& ti) override {
+  virtual void start(TaskInterface ti) override {
     // FIXME:
     //
     //engine.taskMustFollow(this, BuildKey::makeNode(path).toData());
@@ -945,11 +945,11 @@ class FilteredDirectoryContentsTask : public Task {
     ti.request(BuildKey::makeStat(path).toData(), /*inputID=*/1);
   }
 
-  virtual void providePriorValue(TaskInterface&,
+  virtual void providePriorValue(TaskInterface,
                                  const ValueType& value) override {
   }
 
-  virtual void provideValue(TaskInterface&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface, uintptr_t inputID,
                             const ValueType& value) override {
     if (inputID == 1) {
       directoryValue = BuildValue::fromData(value);
@@ -957,7 +957,7 @@ class FilteredDirectoryContentsTask : public Task {
     }
   }
 
-  virtual void inputsAvailable(TaskInterface& ti) override {
+  virtual void inputsAvailable(TaskInterface ti) override {
     if (directoryValue.isMissingInput()) {
       ti.complete(BuildValue::makeMissingInput().toData());
       return;
@@ -1071,7 +1071,7 @@ class DirectoryTreeSignatureTask : public Task {
   /// number of children to avoid dynamically resizing it.
   std::vector<SubpathInfo> childResults;
 
-  virtual void start(TaskInterface& ti) override {
+  virtual void start(TaskInterface ti) override {
     // Ask for the base directory directory contents.
     if (filters.isEmpty()) {
       ti.request(BuildKey::makeDirectoryContents(path).toData(), /*inputID=*/0);
@@ -1081,11 +1081,11 @@ class DirectoryTreeSignatureTask : public Task {
     }
   }
 
-  virtual void providePriorValue(TaskInterface&,
+  virtual void providePriorValue(TaskInterface,
                                  const ValueType& value) override {
   }
 
-  virtual void provideValue(TaskInterface& ti, uintptr_t inputID,
+  virtual void provideValue(TaskInterface ti, uintptr_t inputID,
                             const ValueType& valueData) override {
     // The first input is the directory contents.
     if (inputID == 0) {
@@ -1138,7 +1138,7 @@ class DirectoryTreeSignatureTask : public Task {
     childResults[index].directorySignatureValue = valueData;
   }
 
-  virtual void inputsAvailable(TaskInterface& ti) override {
+  virtual void inputsAvailable(TaskInterface ti) override {
     // Compute the signature across all of the inputs.
     using llvm::hash_combine;
     llvm::hash_code code = hash_value(path);
@@ -1213,16 +1213,16 @@ class DirectoryTreeStructureSignatureTask : public Task {
   /// number of children to avoid dynamically resizing it.
   std::vector<SubpathInfo> childResults;
   
-  virtual void start(TaskInterface& ti) override {
+  virtual void start(TaskInterface ti) override {
     // Ask for the base directory directory contents.
     ti.request(BuildKey::makeDirectoryContents(path).toData(), /*inputID=*/0);
   }
 
-  virtual void providePriorValue(TaskInterface&,
+  virtual void providePriorValue(TaskInterface,
                                  const ValueType& value) override {
   }
 
-  virtual void provideValue(TaskInterface& ti, uintptr_t inputID,
+  virtual void provideValue(TaskInterface ti, uintptr_t inputID,
                             const ValueType& valueData) override {
     // The first input is the directory contents.
     if (inputID == 0) {
@@ -1273,7 +1273,7 @@ class DirectoryTreeStructureSignatureTask : public Task {
     childResults[index].directoryStructureSignatureValue = valueData;
   }
 
-  virtual void inputsAvailable(TaskInterface& ti) override {
+  virtual void inputsAvailable(TaskInterface ti) override {
     // Compute the signature across all of the inputs.
     using llvm::hash_combine;
     llvm::hash_code code = hash_value(path);
@@ -1331,26 +1331,26 @@ public:
 class CommandTask : public Task {
   Command& command;
 
-  virtual void start(TaskInterface& ti) override {
+  virtual void start(TaskInterface ti) override {
     // Notify the client the command is preparing to run.
     getBuildSystem(ti).getDelegate().commandPreparing(&command);
 
     command.start(getBuildSystem(ti).getBuildSystem(), ti);
   }
 
-  virtual void providePriorValue(TaskInterface& ti,
+  virtual void providePriorValue(TaskInterface ti,
                                  const ValueType& valueData) override {
     BuildValue value = BuildValue::fromData(valueData);
     command.providePriorValue(getBuildSystem(ti).getBuildSystem(), ti, value);
   }
 
-  virtual void provideValue(TaskInterface& ti, uintptr_t inputID,
+  virtual void provideValue(TaskInterface ti, uintptr_t inputID,
                             const ValueType& valueData) override {
     command.provideValue(getBuildSystem(ti).getBuildSystem(), ti, inputID,
                          BuildValue::fromData(valueData));
   }
 
-  virtual void inputsAvailable(TaskInterface& ti) override {
+  virtual void inputsAvailable(TaskInterface ti) override {
     auto fn = [this, ti](QueueJobContext* context) mutable {
       // If the build should cancel, do nothing.
       if (ti.isCancelled()) {
@@ -1402,14 +1402,14 @@ public:
 /// rebuild.
 class MissingCommandTask : public Task {
 private:
-  virtual void start(TaskInterface&) override { }
-  virtual void providePriorValue(TaskInterface&,
+  virtual void start(TaskInterface) override { }
+  virtual void providePriorValue(TaskInterface,
                                  const ValueType& valueData) override { }
 
-  virtual void provideValue(TaskInterface&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface, uintptr_t inputID,
                             const ValueType& valueData) override { }
 
-  virtual void inputsAvailable(TaskInterface& ti) override {
+  virtual void inputsAvailable(TaskInterface ti) override {
     // A missing command always builds to an invalid value, and forces
     // downstream clients to be rebuilt (at which point they will presumably see
     // the command is no longer used).
@@ -1882,13 +1882,13 @@ public:
     llvm::raw_svector_ostream(result) << getName();
   }
 
-  virtual void startExternalCommand(BuildSystem&, TaskInterface&) override {
+  virtual void startExternalCommand(BuildSystem&, TaskInterface) override {
     return;
   }
 
   virtual void provideValueExternalCommand(
       BuildSystem&,
-      TaskInterface&,
+      TaskInterface,
       uintptr_t inputID,
       const BuildValue& value) override {
     // Should never get here, since we're not requesting inputs in start.
@@ -1898,7 +1898,7 @@ public:
 
   virtual void executeExternalCommand(
       BuildSystem&,
-      TaskInterface&,
+      TaskInterface,
       QueueJobContext* context,
       llvm::Optional<ProcessCompletionFn> completionFn) override {
     // Nothing needs to be done for phony commands.
@@ -2009,7 +2009,7 @@ class ClangShellCommand : public ExternalCommand {
         .combine(args);
   }
 
-  bool processDiscoveredDependencies(TaskInterface& ti,
+  bool processDiscoveredDependencies(TaskInterface ti,
                                      QueueJobContext* context) {
     // Read the dependencies file.
     auto input = getBuildSystem(ti).getFileSystem().getFileContents(depsPath);
@@ -2028,7 +2028,7 @@ class ClangShellCommand : public ExternalCommand {
       ClangShellCommand* command;
       unsigned numErrors{0};
 
-      DepsActions(TaskInterface& ti,
+      DepsActions(TaskInterface ti,
                   ClangShellCommand* command)
           : ti(ti), command(command) {}
 
@@ -2111,13 +2111,13 @@ public:
     return ExternalCommand::configureAttribute(ctx, name, values);
   }
 
-  virtual void startExternalCommand(BuildSystem&, TaskInterface&) override {
+  virtual void startExternalCommand(BuildSystem&, TaskInterface) override {
     return;
   }
 
   virtual void provideValueExternalCommand(
       BuildSystem&,
-      TaskInterface&,
+      TaskInterface,
       uintptr_t inputID,
       const BuildValue& value) override {
     // Should never get here, since we're not requesting inputs in start.
@@ -2126,7 +2126,7 @@ public:
   }
 
   virtual void executeExternalCommand(BuildSystem&,
-                                      TaskInterface& ti,
+                                      TaskInterface ti,
                                       QueueJobContext* context,
                                       llvm::Optional<ProcessCompletionFn> completionFn) override {
     // Execute the command.
@@ -2251,16 +2251,16 @@ public:
     return false;
   }
 
-  virtual void start(BuildSystem&, TaskInterface& ti) override { }
-  virtual void providePriorValue(BuildSystem&, TaskInterface& ti,
+  virtual void start(BuildSystem&, TaskInterface ti) override { }
+  virtual void providePriorValue(BuildSystem&, TaskInterface ti,
                                  const BuildValue&) override { }
   virtual void provideValue(BuildSystem&,
-                            TaskInterface& ti,
+                            TaskInterface ti,
                             uintptr_t inputID,
                             const BuildValue& value) override { }
 
   virtual void execute(BuildSystem&,
-                       TaskInterface& ti,
+                       TaskInterface ti,
                        QueueJobContext* context,
                        ResultFn resultFn) override {
     // Construct the command line used to query the swift compiler version.
@@ -2505,7 +2505,7 @@ public:
     return ExternalCommand::configureAttribute(ctx, name, values);
   }
 
-  bool writeOutputFileMap(TaskInterface& ti,
+  bool writeOutputFileMap(TaskInterface ti,
                           StringRef outputFileMapPath,
                           std::vector<std::string>& depsFiles_out) const {
     assert(sourcesList.size() == objectsList.size());
@@ -2571,7 +2571,7 @@ public:
     return true;
   }
 
-  bool processDiscoveredDependencies(TaskInterface& ti, StringRef depsPath) {
+  bool processDiscoveredDependencies(TaskInterface ti, StringRef depsPath) {
     // Read the dependencies file.
     auto input = getBuildSystem(ti).getFileSystem().getFileContents(depsPath);
     if (!input) {
@@ -2591,7 +2591,7 @@ public:
       unsigned numErrors{0};
       unsigned ruleNumber{0};
       
-      DepsActions(TaskInterface& ti,
+      DepsActions(TaskInterface ti,
                   StringRef depsPath, Command* command)
           : ti(ti), depsPath(depsPath) {}
 
@@ -2628,7 +2628,7 @@ public:
 
   /// Overridden start to also introduce a dependency on the Swift compiler
   /// version.
-  virtual void start(BuildSystem& system, TaskInterface& ti) override {
+  virtual void start(BuildSystem& system, TaskInterface ti) override {
     ExternalCommand::start(system, ti);
     
     // The Swift compiler version is also an input.
@@ -2645,7 +2645,7 @@ public:
 
   /// Overridden to access the Swift compiler version.
   virtual void provideValue(BuildSystem& system,
-                            TaskInterface& ti,
+                            TaskInterface ti,
                             uintptr_t inputID,
                             const BuildValue& value) override {
     // We can ignore the 'swift-get-version' input, it is just used to detect
@@ -2657,13 +2657,13 @@ public:
     ExternalCommand::provideValue(system, ti, inputID, value);
   }
 
-  virtual void startExternalCommand(BuildSystem&, TaskInterface&) override {
+  virtual void startExternalCommand(BuildSystem&, TaskInterface) override {
     return;
   }
 
   virtual void provideValueExternalCommand(
       BuildSystem&,
-      TaskInterface& ti,
+      TaskInterface ti,
       uintptr_t inputID,
       const BuildValue& value) override {
     // Should never get here, since we're not requesting inputs in start.
@@ -2673,7 +2673,7 @@ public:
 
   virtual void executeExternalCommand(
       BuildSystem& system,
-      TaskInterface& ti,
+      TaskInterface ti,
       QueueJobContext* context,
       llvm::Optional<ProcessCompletionFn> completionFn) override {
     // FIXME: Need to add support for required parameters.
@@ -2846,13 +2846,13 @@ class MkdirCommand : public ExternalCommand {
     return true;
   }
   
-  virtual void startExternalCommand(BuildSystem&, TaskInterface& ti) override {
+  virtual void startExternalCommand(BuildSystem&, TaskInterface ti) override {
     return;
   }
 
   virtual void provideValueExternalCommand(
       BuildSystem&,
-      TaskInterface& ti,
+      TaskInterface ti,
       uintptr_t inputID,
       const BuildValue& value) override {
     // Should never get here, since we're not requesting inputs in start.
@@ -2862,7 +2862,7 @@ class MkdirCommand : public ExternalCommand {
 
   virtual void executeExternalCommand(
       BuildSystem& system,
-      TaskInterface& ti,
+      TaskInterface ti,
       QueueJobContext* context,
       llvm::Optional<ProcessCompletionFn> completionFn) override {
     auto output = getOutputs()[0];
@@ -3066,7 +3066,7 @@ class SymlinkCommand : public Command {
     return info == value.getOutputInfo();
   }
   
-  virtual void start(BuildSystem&, TaskInterface& ti) override {
+  virtual void start(BuildSystem&, TaskInterface ti) override {
     // The command itself takes no inputs, so just treat any declared inputs as
     // "must follow" directives.
     //
@@ -3077,19 +3077,19 @@ class SymlinkCommand : public Command {
     }
   }
 
-  virtual void providePriorValue(BuildSystem&, TaskInterface& ti,
+  virtual void providePriorValue(BuildSystem&, TaskInterface ti,
                                  const BuildValue& value) override {
     // Ignored.
   }
 
-  virtual void provideValue(BuildSystem&, TaskInterface& ti,
+  virtual void provideValue(BuildSystem&, TaskInterface ti,
                             uintptr_t inputID,
                             const BuildValue& value) override {
     assert(0 && "unexpected API call");
   }
 
   virtual void execute(BuildSystem& system,
-                       TaskInterface& ti,
+                       TaskInterface ti,
                        QueueJobContext* context,
                        ResultFn resultFn) override {
     // It is an error if this command isn't configured properly.
@@ -3180,13 +3180,13 @@ class ArchiveShellCommand : public ExternalCommand {
   std::string archiveName;
   std::vector<std::string> archiveInputs;
 
-  virtual void startExternalCommand(BuildSystem&, TaskInterface& ti) override {
+  virtual void startExternalCommand(BuildSystem&, TaskInterface ti) override {
     return;
   }
 
   virtual void provideValueExternalCommand(
       BuildSystem&,
-      TaskInterface& ti,
+      TaskInterface ti,
       uintptr_t inputID,
       const BuildValue& value) override {
     // Should never get here, since we're not requesting inputs in start.
@@ -3196,7 +3196,7 @@ class ArchiveShellCommand : public ExternalCommand {
 
   virtual void executeExternalCommand(
       BuildSystem&,
-      TaskInterface& ti,
+      TaskInterface ti,
       QueueJobContext* context,
       llvm::Optional<ProcessCompletionFn> completionFn) override {
     // First delete the current archive
@@ -3327,13 +3327,13 @@ class SharedLibraryShellCommand : public ExternalCommand {
   /// Additional arguments, as a string.
   std::vector<std::string> otherArgs;
 
-  virtual void startExternalCommand(BuildSystem&, TaskInterface& ti) override {
+  virtual void startExternalCommand(BuildSystem&, TaskInterface ti) override {
     return;
   }
 
   virtual void provideValueExternalCommand(
       BuildSystem&,
-      TaskInterface& ti,
+      TaskInterface ti,
       uintptr_t inputID,
       const BuildValue& value) override {
     // Should never get here, since we're not requesting inputs in start.
@@ -3342,7 +3342,7 @@ class SharedLibraryShellCommand : public ExternalCommand {
   }
 
   virtual void executeExternalCommand(
-      BuildSystem&, TaskInterface& ti, QueueJobContext* context,
+      BuildSystem&, TaskInterface ti, QueueJobContext* context,
       llvm::Optional<ProcessCompletionFn> completionFn) override {
 
     auto args = getArgs();
@@ -3607,16 +3607,16 @@ class StaleFileRemovalCommand : public Command {
     return false;
   }
 
-  virtual void start(BuildSystem&, TaskInterface&) override {}
+  virtual void start(BuildSystem&, TaskInterface) override {}
 
-  virtual void providePriorValue(BuildSystem&, TaskInterface&,
+  virtual void providePriorValue(BuildSystem&, TaskInterface,
                                  const BuildValue& value) override {
     hasPriorResult = true;
     priorValue = BuildValue::fromData(value.toData());
   }
 
   virtual void provideValue(BuildSystem&,
-                            TaskInterface&,
+                            TaskInterface,
                             uintptr_t inputID,
                             const BuildValue& value) override {
     assert(0 && "unexpected API call");
@@ -3639,7 +3639,7 @@ class StaleFileRemovalCommand : public Command {
   }
 
   virtual void execute(BuildSystem& system,
-                       TaskInterface& ti,
+                       TaskInterface ti,
                        QueueJobContext* context,
                        ResultFn resultFn) override {
     // Nothing to do if we do not have a prior result.

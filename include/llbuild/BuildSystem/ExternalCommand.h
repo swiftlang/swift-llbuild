@@ -91,24 +91,24 @@ protected:
   virtual basic::CommandSignature getSignature() const override;
 
   /// Extension point for subclases, to modify the command dependencies if needed.
-  virtual void startExternalCommand(BuildSystem& system, core::TaskInterface&) = 0;
+  virtual void startExternalCommand(BuildSystem& system, core::TaskInterface) = 0;
 
   /// Extension point for subclasses, to retrieve the BuildValue requested. May request new keys from this extension.
   virtual void provideValueExternalCommand(
       BuildSystem& system,
-      core::TaskInterface& ti,
+      core::TaskInterface ti,
       uintptr_t inputID,
       const BuildValue& value) = 0;
 
   /// Extension point for subclasses, to actually execute the command after all dependencies have been calculated.
   virtual void executeExternalCommand(
       BuildSystem& system,
-      core::TaskInterface& ti,
+      core::TaskInterface ti,
       basic::QueueJobContext* context,
       llvm::Optional<basic::ProcessCompletionFn> completionFn = {llvm::None}) = 0;
   
   /// Compute the output result for the command.
-  virtual BuildValue computeCommandResult(BuildSystem& system, core::TaskInterface& ti);
+  virtual BuildValue computeCommandResult(BuildSystem& system, core::TaskInterface ti);
 
 public:
   using Command::Command;
@@ -135,19 +135,19 @@ public:
   
   virtual bool isResultValid(BuildSystem&, const BuildValue& value) override;
 
-  virtual void start(BuildSystem& system, core::TaskInterface& ti) override;
+  virtual void start(BuildSystem& system, core::TaskInterface ti) override;
 
   virtual void providePriorValue(BuildSystem& system,
-                                 core::TaskInterface&,
+                                 core::TaskInterface,
                                  const BuildValue&) override;
 
   virtual void provideValue(BuildSystem& system,
-                            core::TaskInterface& ti,
+                            core::TaskInterface ti,
                             uintptr_t inputID,
                             const BuildValue& value) override;
 
   virtual void execute(BuildSystem& system,
-                       core::TaskInterface&,
+                       core::TaskInterface,
                        basic::QueueJobContext* context,
                        ResultFn resultFn) override;
 };

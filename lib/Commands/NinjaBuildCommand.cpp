@@ -984,7 +984,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         canUpdateIfNewer = false;
     }
 
-    virtual void provideValue(core::TaskInterface&, uintptr_t inputID,
+    virtual void provideValue(core::TaskInterface, uintptr_t inputID,
                               const core::ValueType& valueData) override {
       // Process the input value to see if we should skip this command.
       BuildValue value = BuildValue::fromValue(valueData);
@@ -1027,7 +1027,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       return false;
     }
 
-    virtual void start(core::TaskInterface& ti) override {
+    virtual void start(core::TaskInterface ti) override {
       // If this is a phony rule, ignore any immediately cyclic dependencies in
       // non-strict mode, which are generated frequently by CMake, but can be
       // ignored by Ninja. See https://github.com/martine/ninja/issues/935.
@@ -1065,7 +1065,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       }
     }
 
-    virtual void providePriorValue(core::TaskInterface&,
+    virtual void providePriorValue(core::TaskInterface,
                                    const core::ValueType& valueData) override {
       BuildValue value = BuildValue::fromValue(valueData);
 
@@ -1133,7 +1133,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       return true;
     }
 
-    virtual void inputsAvailable(core::TaskInterface& ti) override {
+    virtual void inputsAvailable(core::TaskInterface ti) override {
       // If the build is cancelled, skip everything.
       if (context.isCancelled) {
         return ti.complete(BuildValue::makeSkippedCommand().toValue());
@@ -1285,7 +1285,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       }
     }
 
-    void executeCommand(core::TaskInterface& ti, QueueJobContext* qctx) {
+    void executeCommand(core::TaskInterface ti, QueueJobContext* qctx) {
       // If the build is cancelled, skip the job.
       if (context.isCancelled) {
         return ti.complete(BuildValue::makeSkippedCommand().toValue());
@@ -1382,7 +1382,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
     }
 
 
-    bool processDiscoveredDependencies(core::TaskInterface& ti) {
+    bool processDiscoveredDependencies(core::TaskInterface ti) {
       // Process the discovered dependencies, if used.
       switch (command->getDepsStyle()) {
       case ninja::Command::DepsStyleKind::None:
@@ -1420,7 +1420,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
           const StringRef path;
           unsigned numErrors{0};
 
-          DepsActions(BuildContext& context, core::TaskInterface& ti,
+          DepsActions(BuildContext& context, core::TaskInterface ti,
                       const StringRef workingDirectory,
                       const StringRef path)
             : context(context), ti(ti), workingDirectory(workingDirectory), path(path) { }
@@ -1472,12 +1472,12 @@ static core::Task* buildInput(BuildContext& context, ninja::Node* input) {
     NinjaInputTask(BuildContext& context, ninja::Node* node)
         : context(context), node(node) { }
 
-    virtual void provideValue(core::TaskInterface&, uintptr_t inputID,
+    virtual void provideValue(core::TaskInterface, uintptr_t inputID,
                               const core::ValueType& value) override { }
 
-    virtual void start(core::TaskInterface&) override { }
+    virtual void start(core::TaskInterface) override { }
 
-    virtual void inputsAvailable(core::TaskInterface& ti) override {
+    virtual void inputsAvailable(core::TaskInterface ti) override {
       if (context.simulate) {
         ti.complete(BuildValue::makeExistingInput({}).toValue());
         return;
@@ -1507,7 +1507,7 @@ buildTargets(BuildContext& context,
                 const std::vector<std::string>& targetsToBuild)
         : context(context), targetsToBuild(targetsToBuild) { }
 
-    virtual void provideValue(core::TaskInterface&, uintptr_t inputID,
+    virtual void provideValue(core::TaskInterface, uintptr_t inputID,
                               const core::ValueType& valueData) override {
       BuildValue value = BuildValue::fromValue(valueData);
 
@@ -1517,7 +1517,7 @@ buildTargets(BuildContext& context,
       }
     }
 
-    virtual void start(core::TaskInterface& ti) override {
+    virtual void start(core::TaskInterface ti) override {
       // Request all of the targets.
       unsigned id = 0;
       for (const auto& target: targetsToBuild) {
@@ -1525,7 +1525,7 @@ buildTargets(BuildContext& context,
       }
     }
 
-    virtual void inputsAvailable(core::TaskInterface& ti) override {
+    virtual void inputsAvailable(core::TaskInterface ti) override {
       // Complete the job.
       ti.complete(
         BuildValue::makeSuccessfulCommand({}, CommandSignature()).toValue());
@@ -1553,17 +1553,17 @@ selectCompositeBuildResult(BuildContext& context, ninja::Command* command,
         : context(context), command(command),
           inputIndex(inputIndex), compositeRuleName(compositeRuleName) { }
 
-    virtual void start(core::TaskInterface& ti) override {
+    virtual void start(core::TaskInterface ti) override {
       // Request the composite input.
       ti.request(compositeRuleName, 0);
     }
 
-    virtual void provideValue(core::TaskInterface&, uintptr_t inputID,
+    virtual void provideValue(core::TaskInterface, uintptr_t inputID,
                               const core::ValueType& valueData) override {
       compositeValueData = &valueData;
     }
 
-    virtual void inputsAvailable(core::TaskInterface& ti) override {
+    virtual void inputsAvailable(core::TaskInterface ti) override {
       // Construct the appropriate build value from the result.
       assert(compositeValueData);
       BuildValue value(BuildValue::fromValue(*compositeValueData));

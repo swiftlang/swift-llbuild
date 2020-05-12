@@ -227,13 +227,13 @@ public:
   virtual bool isResultValid(BuildSystem&, const BuildValue&) override {
     return false;
   }
-  virtual void start(BuildSystem&, TaskInterface&) override {}
-  virtual void providePriorValue(BuildSystem&, TaskInterface&, const BuildValue&) override {}
+  virtual void start(BuildSystem&, TaskInterface) override {}
+  virtual void providePriorValue(BuildSystem&, TaskInterface, const BuildValue&) override {}
   virtual void provideValue(BuildSystem&,
-                            TaskInterface&,
+                            TaskInterface,
                             uintptr_t inputID,
                             const BuildValue&) override {}
-  virtual void execute(BuildSystem& system, TaskInterface&,
+  virtual void execute(BuildSystem& system, TaskInterface,
                        basic::QueueJobContext*, ResultFn resultFn) override {
     resultFn(BuildValue::makeFailedCommand());
   }

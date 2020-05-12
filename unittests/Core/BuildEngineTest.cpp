@@ -115,7 +115,7 @@ public:
   {
   }
 
-  virtual void start(TaskInterface& ti) override {
+  virtual void start(TaskInterface ti) override {
     // Compute the list of inputs.
     auto inputs = listInputs();
 
@@ -126,14 +126,14 @@ public:
     }
   }
 
-  virtual void provideValue(TaskInterface&, uintptr_t inputID,
+  virtual void provideValue(TaskInterface, uintptr_t inputID,
                             const ValueType& value) override {
     // Update the input values.
     assert(inputID < inputValues.size());
     inputValues[inputID] = intFromValue(value);
   }
 
-  virtual void inputsAvailable(TaskInterface& ti) override {
+  virtual void inputsAvailable(TaskInterface ti) override {
     ti.complete(intToValue(compute(inputValues)));
   }
 };
@@ -600,18 +600,18 @@ TEST(BuildEngineTest, discoveredDependencies) {
   public:
     TaskWithDiscoveredDependency(int& valueB) : valueB(valueB) { }
 
-    virtual void start(TaskInterface& ti) override {
+    virtual void start(TaskInterface ti) override {
       // Request the known input.
       ti.request("value-A", 0);
     }
 
-    virtual void provideValue(TaskInterface&, uintptr_t inputID,
+    virtual void provideValue(TaskInterface, uintptr_t inputID,
                               const ValueType& value) override {
       assert(inputID == 0);
       computedInputValue = intFromValue(value);
     }
 
-    virtual void inputsAvailable(TaskInterface& ti) override {
+    virtual void inputsAvailable(TaskInterface ti) override {
       // Report the discovered dependency.
       ti.discoveredDependency("value-B");
       ti.complete(intToValue(computedInputValue * valueB * 5));

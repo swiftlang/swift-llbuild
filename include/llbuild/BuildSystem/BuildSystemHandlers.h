@@ -41,10 +41,10 @@ public:
   virtual ~ShellCommandHandler();
   
   virtual std::unique_ptr<HandlerState>
-  start(core::TaskInterface&, ShellCommand* command) const = 0;
+  start(core::TaskInterface, ShellCommand* command) const = 0;
 
   virtual void
-  execute(HandlerState*, ShellCommand* command, core::TaskInterface& ti,
+  execute(HandlerState*, ShellCommand* command, core::TaskInterface ti,
           basic::QueueJobContext* context, basic::ProcessCompletionFn) const = 0;
 };
 
