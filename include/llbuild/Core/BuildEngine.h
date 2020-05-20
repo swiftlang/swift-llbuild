@@ -121,6 +121,8 @@ public:
   /// @{
 
   /// Specify the task depends upon the result of computing \arg Key.
+  /// The order in which these inputs are requested will be preserved in
+  /// subsequent builds when scanning dependencies.
   ///
   /// The result, when available, will be provided to the task via \see
   /// Task::provideValue(), supplying the provided \arg InputID to allow the
