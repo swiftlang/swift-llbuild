@@ -59,6 +59,8 @@ class TestBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
   std::mutex traceMutex;
   std::string traceData;
   raw_string_ostream traceStream;
+  int currentlyRunningTasks = 0;
+  int maxRunningTasks = 0;
 
 public:
   TestBuildSystemFrontendDelegate(SourceMgr& sourceMgr)
@@ -66,6 +68,8 @@ public:
       traceStream(traceData)
   {
   }
+
+  int maxTaskParallism() { return maxRunningTasks; }
 
   std::unordered_set<std::string> commandsToSkip;
 
@@ -167,6 +171,12 @@ public:
   virtual void commandProcessStarted(Command* command, ProcessHandle handle) override {
     {
       std::lock_guard<std::mutex> lock(traceMutex);
+
+      // Keep track of max build parallelism
+      currentlyRunningTasks++;
+      if (currentlyRunningTasks > maxRunningTasks)
+        maxRunningTasks = currentlyRunningTasks;
+
       traceStream << __func__ << ": " << command->getName() << "\n";
     }
     super::commandProcessStarted(command, handle);
@@ -185,9 +195,10 @@ public:
   virtual void commandProcessFinished(Command* command, ProcessHandle handle,
                                       const ProcessResult& result) override {
     {
-        std::lock_guard<std::mutex> lock(traceMutex);
-        traceStream << __func__ << ": " << command->getName() << ": "
-                    << result.exitCode << "\n";
+      std::lock_guard<std::mutex> lock(traceMutex);
+      currentlyRunningTasks--;
+      traceStream << __func__ << ": " << command->getName() << ": "
+                  << result.exitCode << "\n";
     }
     super::commandProcessFinished(command, handle, result);
   }
@@ -315,6 +326,83 @@ commandFinished: 3: 0
     ASSERT_FALSE(fs->getFileInfo(tempDir.str() + "/2").isMissing());
   }
 
+}
+
+
+// We have a dependency tree such that two branches, left and right, should be
+// able to run in parallel. The tree contains both real dependcies on the the
+// products and virtual/phony dependencies. This tests that we actually achieve
+// that parallism in both a clean build and subsequent incremental builds.
+TEST_F(BuildSystemFrontendTest, dependencyScanOrderBuildParallelism) {
+  writeBuildFile(R"END(
+client:
+    name: client
+
+targets:
+    "<all>": ["top"]
+
+commands:
+    top:
+        tool: shell
+        inputs: ["left", "right", "<left>", "<right>"]
+        outputs: ["top"]
+        args: date && touch top
+
+    gate-left:
+        tool: phony
+        inputs: ["left"]
+        outputs: ["<left>"]
+    left:
+        tool: shell
+        inputs: ["base", "<base>"]
+        outputs: ["left"]
+        args: sleep 1 && touch left
+
+    gate-right:
+        tool: phony
+        inputs: ["right"]
+        outputs: ["<right>"]
+    right:
+        tool: shell
+        inputs: ["base", "<base>"]
+        outputs: ["right"]
+        args: sleep 1 && touch right
+
+    gate-base:
+        tool: phony
+        inputs: ["base"]
+        outputs: ["<base>"]
+    base:
+        tool: shell
+        outputs: ["base"]
+        args: date && touch base
+        always-out-of-date: true
+)END");
+
+  // Test a clean build
+  {
+    TestBuildSystemFrontendDelegate delegate(sourceMgr);
+    BuildSystemFrontend frontend(delegate, invocation, createLocalFileSystem());
+    ASSERT_TRUE(frontend.build("<all>"));
+
+    ASSERT_EQ(delegate.maxTaskParallism(), 2);
+  }
+
+  // Test an 'incremental' build where we have an existing build database
+  {
+    invocation.traceFilePath = "/tmp/build2.trace";
+    TestBuildSystemFrontendDelegate delegate(sourceMgr);
+    BuildSystemFrontend frontend(delegate, invocation, createLocalFileSystem());
+    ASSERT_TRUE(frontend.build("<all>"));
+
+    // FIXME: This build graph triggers degenerate build behavior. Due to the
+    // order in which we process the resulting tasks in engine, the gate tasks
+    // become the first dependencies we scan on incremental builds. We can't
+    // resolve the scan until the phony task is complete, which happens after we
+    // have fully executed the branch of tasks. As such, we end up serializing
+    // the left and right branches.
+    ASSERT_EQ(delegate.maxTaskParallism(), 1);
+  }
 }
 
 
