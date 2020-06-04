@@ -43,7 +43,7 @@ target_link_libraries(XcodePerfTests PRIVATE
 #
 # http://www.cmake.org/Bug/view.php?id=15485
 add_custom_command(
-  COMMAND defaults write ${CMAKE_CURRENT_BINARY_DIR}/XcodePerfTests.xctest/Contents/Info.plist CFBundleExecutable XcodePerfTests && touch ${CMAKE_CURRENT_BINARY_DIR}/fixup-has-run
+  COMMAND plutil -replace CFBundleExecutable -string XcodePerfTests ${CMAKE_CURRENT_BINARY_DIR}/XcodePerfTests.xctest/Contents/Info.plist && touch ${CMAKE_CURRENT_BINARY_DIR}/fixup-has-run
   COMMENT "Fixing up XcodePerfTests.xctest CFBundleExecutable..."
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/XcodePerfTests.xctest/Contents/Info.plist)
 add_custom_target(fixup-XcodePerfTests-bundle
