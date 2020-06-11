@@ -42,11 +42,16 @@ target_link_libraries(XcodePerfTests PRIVATE
 # Run a custom command to fixup CMake's broken bundle CFBundleExecutable.
 #
 # http://www.cmake.org/Bug/view.php?id=15485
+# 
+# It seems this is no longer an issue in Xcode 11.4/CMake 3.16.3, but leaving this
+# workaround in place for good measure
+get_target_property(xcode_perf_tests_output_directory XcodePerfTests LIBRARY_OUTPUT_DIRECTORY)
 add_custom_command(
-  COMMAND defaults write ${CMAKE_CURRENT_BINARY_DIR}/XcodePerfTests.xctest/Contents/Info.plist CFBundleExecutable XcodePerfTests && touch ${CMAKE_CURRENT_BINARY_DIR}/fixup-has-run
+  COMMAND plutil -replace CFBundleExecutable -string XcodePerfTests ${xcode_perf_tests_output_directory}/XcodePerfTests.xctest/Contents/Info.plist && touch ${CMAKE_CURRENT_BINARY_DIR}/fixup-has-run
   COMMENT "Fixing up XcodePerfTests.xctest CFBundleExecutable..."
-  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/XcodePerfTests.xctest/Contents/Info.plist)
+  OUTPUT ${xcode_perf_tests_output_directory}/XcodePerfTests.xctest/Contents/Info.plist)
 add_custom_target(fixup-XcodePerfTests-bundle
   ALL
-  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/XcodePerfTests.xctest/Contents/Info.plist)
-
+  DEPENDS ${xcode_perf_tests_output_directory}/XcodePerfTests.xctest/Contents/Info.plist)
+# Declare this dependency explicitly to avoid plutil failing because Info.plist is missing
+add_dependencies(fixup-XcodePerfTests-bundle XcodePerfTests)
