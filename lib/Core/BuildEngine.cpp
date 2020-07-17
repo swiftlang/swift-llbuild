@@ -28,6 +28,7 @@
 #include <cassert>
 #include <cstdio>
 #include <condition_variable>
+#include <deque>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -109,8 +110,12 @@ class BuildEngineImpl : public BuildDBDelegate {
     /// Force the use of a prior value
     bool forcePriorValue = false;
   };
-  std::vector<TaskInputRequest> inputRequests;
+  std::deque<TaskInputRequest> inputRequests;
   std::vector<TaskInputRequest> finishedInputRequests;
+
+  /// The mutex that protects access to inputRequests
+  std::mutex inputRequestsMutex;
+
 
   /// The queue of rules being scanned.
   struct RuleScanRequest {
@@ -333,7 +338,7 @@ class BuildEngineImpl : public BuildDBDelegate {
   std::mutex taskInfosMutex;
 
   /// The queue of tasks ready to be finalized.
-  std::vector<TaskInfo*> readyTaskInfos;
+  std::deque<TaskInfo*> readyTaskInfos;
 
   /// The number of tasks which have been readied but not yet finished.
   unsigned numOutstandingUnfinishedTasks = 0;
@@ -668,8 +673,11 @@ private:
     }
 
     // Wake up all of the input requests on this rule.
-    for (const auto& request: scanRecord->pausedInputRequests) {
-      inputRequests.push_back(request);
+    {
+      std::lock_guard<std::mutex> guard(inputRequestsMutex);
+      for (const auto& request: scanRecord->pausedInputRequests) {
+        inputRequests.push_back(request);
+      }
     }
 
     // Update the rule state.
@@ -730,13 +738,26 @@ private:
       }
 
       // Process all of the pending input requests.
-      while (!inputRequests.empty()) {
+      while (true) {
         TracingEngineQueueItemEvent i(EngineQueueItemKind::InputRequest, buildKey.c_str());
 
-        didWork = true;
+        TaskInputRequest request;
+        bool found = false;
+        {
+          std::lock_guard<std::mutex> guard(inputRequestsMutex);
+          if (!inputRequests.empty()) {
+            // IMPORTANT: Dependency recording below relies on the assumption
+            // that we will process input requests in FIFO order. DO NOT CHANGE
+            // this without adjusting for this expectation.
+            request = inputRequests.front();
+            inputRequests.pop_front();
+            found = true;
+          }
+        }
+        if (!found)
+          break;
 
-        auto request = inputRequests.back();
-        inputRequests.pop_back();
+        didWork = true;
 
         if (trace) {
           if (request.taskInfo) {
@@ -767,6 +788,36 @@ private:
         // If this is a dummy input request, we are done.
         if (!request.taskInfo)
           continue;
+
+        // Update the recorded dependencies of this task.
+        //
+        // FIXME: This is very performance critical and should be highly
+        // optimized. By itself, this addition added about 25% user time to the
+        // "ack 3 16" experiment.
+        //
+        // There are multiple options for when to record these dependencies:
+        // 1. Record at the time it is requested.
+        // 2. Record at the time it is popped off the input request queue.
+        // 3. Record at the time the input is supplied.
+        //
+        // Here we have chosen option 2 for two reasons. First, we want to avoid
+        // the need to synchronize concurrent access to the rule info data
+        // structure, therefore we want to perform this work on the engine
+        // thread (and as such rules out option 1).
+        //
+        // Second, we explicitly wish to record dependencies in the order in
+        // which they have been requested by the task/client. This ensures that
+        // dependencies will be recorded in a deterministic order that is under
+        // client control. This can be important for performance in subsequent
+        // incremental builds, where scanning order is important for discovering
+        // work.
+        //
+        // NOTE: In order to achieve the latter, we rely processing input
+        // requests in FIFO order.
+        //
+        request.taskInfo->forRuleInfo->result.dependencies.push_back(
+            request.inputRuleInfo->keyID, request.orderOnly);
+
 
         // If the rule is already available, enqueue the finalize request.
         if (isAvailable) {
@@ -800,20 +851,6 @@ private:
 
         // Otherwise, we are processing a regular input dependency.
 
-        // Update the recorded dependencies of this task.
-        //
-        // FIXME: This is very performance critical and should be highly
-        // optimized. By itself, this addition added about 25% user time to the
-        // "ack 3 16" experiment.
-        //
-        // FIXME: Think about where the best place to record this is. Our
-        // options are:
-        // * Record at the time it is requested.
-        // * Record at the time it is popped off the input request queue.
-        // * Record at the time the input is supplied (here).
-        request.taskInfo->forRuleInfo->result.dependencies.push_back(
-            request.inputRuleInfo->keyID, request.orderOnly);
-
         // Provide the requesting task with the input.
         //
         // FIXME: Should we provide the input key here? We have it available
@@ -838,8 +875,10 @@ private:
 
         didWork = true;
 
-        TaskInfo* taskInfo = readyTaskInfos.back();
-        readyTaskInfos.pop_back();
+        // Process ready tasks FIFO to preserve the relative ordering they were
+        // requested by tasks above.
+        TaskInfo* taskInfo = readyTaskInfos.front();
+        readyTaskInfos.pop_front();
 
         RuleInfo* ruleInfo = taskInfo->forRuleInfo;
         assert(taskInfo == ruleInfo->getPendingTaskInfo());
@@ -915,8 +954,11 @@ private:
         // approach for discovered dependencies instead of just providing
         // support for request() even after the task has started computing and
         // from parallel contexts.
-        for (auto keyIDAndFlag: taskInfo->discoveredDependencies) {
-          inputRequests.push_back({ nullptr, 0, &getRuleInfoForKey(keyIDAndFlag.keyID), keyIDAndFlag.flag, false });
+        {
+          std::lock_guard<std::mutex> guard(inputRequestsMutex);
+          for (auto keyIDAndFlag: taskInfo->discoveredDependencies) {
+            inputRequests.push_back({ nullptr, 0, &getRuleInfoForKey(keyIDAndFlag.keyID), keyIDAndFlag.flag, false });
+          }
         }
 
         // Update the database record, if attached.
@@ -1639,6 +1681,7 @@ public:
     // Lookup the rule for this task.
     RuleInfo* ruleInfo = &getRuleInfoForKey(key);
 
+    std::lock_guard<std::mutex> guard(inputRequestsMutex);
     inputRequests.push_back({ taskInfo, inputID, ruleInfo, orderOnly });
     taskInfo->waitCount++;
   }

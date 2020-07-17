@@ -25,7 +25,7 @@
 # CHECK-TRACE: "new-rule", "R1", "Tbasic"
 # CHECK-TRACE: "new-rule", "R2", "Noutput"
 # CHECK-TRACE: "new-rule", "R3", "Ccp-output"
-# CHECK-TRACE: "new-rule", "R4", "N<env-2>"
+# CHECK-TRACE: "new-rule", "R4", "Ninput A"
 # CHECK-TRACE: "build-ended"
 
 # Check that a null build does nothing.

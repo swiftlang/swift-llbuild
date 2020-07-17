@@ -19,7 +19,7 @@
 # CHECK: "{{/.*/}}a.out" -> "{{/.*/}}a.o"
 #
 # CHECK: "{{/.*/}}b.o"
-# CHECK-NEXT: "{{/.*/}}b.o" -> "b.c"
+# CHECK: "{{/.*/}}b.o" -> "b.c"
 #
 # CHECK: "a.c"
 #
