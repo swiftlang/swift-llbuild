@@ -11,7 +11,7 @@ if [ -z "${SPHINX_MODULE_PATH}" ]; then
     mkdir -p "${BUILT_PRODUCTS_DIR}"
     INSTALL_LOG_PATH="${BUILT_PRODUCTS_DIR}/sphinx.install.log"
     echo "note: attempting automatic 'sphinx' install, see log at: '${INSTALL_LOG_PATH}'"
-    if ( ! easy_install --user sphinx recommonmark &> ${INSTALL_LOG_PATH} ); then
+    if ( ! easy_install --user sphinx recommonmark >${INSTALL_LOG_PATH} 2>&1 ); then
         echo "error: unable to automatically install, please consult \
 log or install manually."
           exit 1
