@@ -102,7 +102,7 @@ class PerfTestProcessDelegate : public ProcessDelegate {
 
     [self measureBlock:^{
         PerfTestProcessDelegate delegate;
-        ProcessAttributes attr{true, "/tmp"};
+        ProcessAttributes attr{true, false, "/tmp"};
         ProcessGroup pgrp;
         ProcessHandle handle{0};
         std::vector<StringRef> cmd({"/usr/bin/true"});
