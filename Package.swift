@@ -1,4 +1,4 @@
-// swift-tools-version:5.0
+// swift-tools-version:5.2
 
 // This file defines Swift package manager support for llbuild. See:
 //  https://github.com/apple/swift-package-manager/tree/master/Documentation
@@ -65,7 +65,10 @@ let package = Package(
         .target(
             name: "libllbuild",
             dependencies: ["llbuildCore", "llbuildBuildSystem"],
-            path: "products/libllbuild"
+            path: "products/libllbuild",
+            cxxSettings: [
+              .define("LLVM_ON_WIN32", .when(platforms: [.windows])),
+            ]
         ),
 
         /// The public llbuild Swift API.
@@ -91,7 +94,10 @@ let package = Package(
         .target(
             name: "llbuildBasic",
             dependencies: ["llvmSupport"],
-            path: "lib/Basic"
+            path: "lib/Basic",
+            cxxSettings: [
+              .define("LLVM_ON_WIN32", .when(platforms: [.windows])),
+            ]
         ),
         .target(
             name: "llbuildCore",
@@ -102,7 +108,10 @@ let package = Package(
         .target(
             name: "llbuildBuildSystem",
             dependencies: ["llbuildCore"],
-            path: "lib/BuildSystem"
+            path: "lib/BuildSystem",
+            cxxSettings: [
+              .define("LLVM_ON_WIN32", .when(platforms: [.windows])),
+            ]
         ),
         .target(
             name: "llbuildEvo",
@@ -195,13 +204,19 @@ let package = Package(
         // MARK: Ingested LLVM code.
         .target(
           name: "llvmDemangle",
-          path: "lib/llvm/Demangle"
+          path: "lib/llvm/Demangle",
+          cxxSettings: [
+            .define("LLVM_ON_WIN32", .when(platforms: [.windows])),
+          ]
         ),
 
         .target(
             name: "llvmSupport",
             dependencies: ["llvmDemangle"],
             path: "lib/llvm/Support",
+            cxxSettings: [
+              .define("LLVM_ON_WIN32", .when(platforms: [.windows])),
+            ],
             linkerSettings: [
                 .linkedLibrary("m", .when(platforms: [.linux])),
                 .linkedLibrary("ncurses", .when(platforms: [.linux, .macOS]))]
