@@ -68,6 +68,10 @@ let package = Package(
             path: "products/libllbuild",
             cxxSettings: [
               .define("LLVM_ON_WIN32", .when(platforms: [.windows])),
+              // FIXME: we need to define `libllbuild_EXPORTS` to ensure that the
+              // symbols are exported from the DLL that is being built here until
+              // static linking is supported on Windows.
+              .define("libllbuild_EXPORTS", .when(platforms: [.windows])),
             ]
         ),
 
