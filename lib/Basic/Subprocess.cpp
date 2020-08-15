@@ -106,7 +106,7 @@ namespace {
 
 #if defined(__APPLE__)
   qos_class_t _getDarwinQOSClass(QualityOfService level) {
-    switch (getDefaultQualityOfService()) {
+    switch (level) {
       case QualityOfService::Normal:
         return QOS_CLASS_DEFAULT;
       case QualityOfService::UserInitiated:
@@ -136,7 +136,7 @@ void llbuild::basic::setDefaultQualityOfService(QualityOfService level) {
 void llbuild::basic::setCurrentThreadQualityOfService(QualityOfService level) {
 #if defined(__APPLE__)
   pthread_set_qos_class_self_np(
-      _getDarwinQOSClass(getDefaultQualityOfService()), 0);
+      _getDarwinQOSClass(level), 0);
 #endif
 
 }
@@ -735,10 +735,9 @@ void llbuild::basic::spawnProcess(
   flags |= POSIX_SPAWN_CLOEXEC_DEFAULT;
 #endif
 
-  // On Darwin, set the QOS of launched processes to the global default.
+  // On Darwin, set the QoS of launched processes to one of the current thread.
 #ifdef __APPLE__
-  posix_spawnattr_set_qos_class_np(
-      &attributes, _getDarwinQOSClass(defaultQualityOfService));
+  posix_spawnattr_set_qos_class_np(&attributes, qos_class_self());
 #endif
 
   posix_spawnattr_setflags(&attributes, flags);

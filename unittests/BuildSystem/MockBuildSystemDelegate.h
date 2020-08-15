@@ -93,6 +93,7 @@ public:
     return std::unique_ptr<ExecutionQueue>(
         createLaneBasedExecutionQueue(executionQueueDelegate, /*numLanes=*/1,
                                       SchedulerAlgorithm::NamePriority,
+                                      getDefaultQualityOfService(),
                                       /*environment=*/nullptr));
   }
   

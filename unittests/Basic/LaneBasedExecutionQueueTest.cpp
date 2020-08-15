@@ -63,6 +63,7 @@ namespace {
     auto queue = std::unique_ptr<ExecutionQueue>(
         createLaneBasedExecutionQueue(delegate, 2,
                                       SchedulerAlgorithm::NamePriority,
+                                      getDefaultQualityOfService(),
                                       /*environment=*/nullptr));
 
     auto fn = [&outputFile, &queue](QueueJobContext* context) {
@@ -95,6 +96,7 @@ namespace {
     auto queue = std::unique_ptr<ExecutionQueue>(
         createLaneBasedExecutionQueue(delegate, 2,
                                       SchedulerAlgorithm::NamePriority,
+                                      getDefaultQualityOfService(),
                                       /*environment=*/nullptr));
 
     auto fn = [&tempDir, &queue](QueueJobContext* context) {
@@ -134,6 +136,7 @@ namespace {
     auto queue = std::unique_ptr<ExecutionQueue>(
         createLaneBasedExecutionQueue(delegate, 1,
                                       SchedulerAlgorithm::NamePriority,
+                                      getDefaultQualityOfService(),
                                       /*environment=*/nullptr));
 
     bool buildStarted { false };

@@ -86,6 +86,9 @@ class LaneBasedExecutionQueue : public ExecutionQueue {
   /// A thread for each lane.
   std::vector<std::unique_ptr<std::thread>> lanes;
 
+  /// The Quality of Service class to use for this queue.
+  QualityOfService qos;
+
   /// The ready queue of jobs to execute.
   std::unique_ptr<Scheduler> readyJobs;
   std::mutex readyJobsMutex;
@@ -124,7 +127,7 @@ class LaneBasedExecutionQueue : public ExecutionQueue {
 #endif
 
     // Set the QoS class, if available.
-    setCurrentThreadQualityOfService(getDefaultQualityOfService());
+    setCurrentThreadQualityOfService(qos);
 
     // Lane ID, used in creating reasonably unique task IDs, stores the buildID
     // in the top 32 bits.  The laneID is stored in bits 16:31, and the job
@@ -197,8 +200,8 @@ class LaneBasedExecutionQueue : public ExecutionQueue {
 public:
   LaneBasedExecutionQueue(ExecutionQueueDelegate& delegate,
                           unsigned numLanesSuggestion, SchedulerAlgorithm alg,
-                          const char* const* environment)
-  : ExecutionQueue(delegate), buildID(std::random_device()()),
+                          QualityOfService qos, const char* const* environment)
+  : ExecutionQueue(delegate), buildID(std::random_device()()), qos(qos),
         readyJobs(Scheduler::make(alg)), environment(environment)
   {
 
@@ -479,11 +482,11 @@ extern "C" {
 
 ExecutionQueue* llbuild::basic::createLaneBasedExecutionQueue(
     ExecutionQueueDelegate& delegate, int numLanes, SchedulerAlgorithm alg,
-    const char* const* environment
+    QualityOfService qos, const char* const* environment
 ) {
   if (!environment) {
     environment = const_cast<const char* const*>(environ);
   }
-  return new LaneBasedExecutionQueue(delegate, numLanes, alg, environment);
+  return new LaneBasedExecutionQueue(delegate, numLanes, alg, qos, environment);
 }
 

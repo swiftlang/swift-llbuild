@@ -172,6 +172,26 @@ typedef enum LLBUILD_ENUM_ATTRIBUTES {
   llb_scheduler_algorithm_fifo = 1
 } llb_scheduler_algorithm_t LLBUILD_SWIFT_NAME(SchedulerAlgorithm);
 
+/// Quality of service levels.
+typedef enum LLBUILD_ENUM_ATTRIBUTES {
+    /// A default quality of service (i.e. what the system would use without
+    /// other advisement, generally this would be comparable to what would be
+    /// done by `make`, `ninja`, etc.)
+    llb_quality_of_service_default = 0,
+
+    /// User-initiated, high priority work.
+    llb_quality_of_service_user_initiated LLBUILD_SWIFT_NAME(userInitiated) = 1,
+
+    /// Batch work performed on behalf of the user.
+    llb_quality_of_service_utility = 2,
+
+    /// Background work that is not directly visible to the user.
+    llb_quality_of_service_background = 3,
+
+    /// Not specified for a build invocation; the global default QoS setting will be used.
+    llb_quality_of_service_unspecified = 4
+} llb_quality_of_service_t LLBUILD_SWIFT_NAME(QualityOfService);
+
 /// Invocation parameters for a build system.
 typedef struct llb_buildsystem_invocation_t_ llb_buildsystem_invocation_t;
 struct llb_buildsystem_invocation_t_ {
@@ -206,6 +226,8 @@ struct llb_buildsystem_invocation_t_ {
   llb_scheduler_algorithm_t schedulerAlgorithm;
 
   uint32_t schedulerLanes;
+
+  llb_quality_of_service_t qos;
 };
   
 /// Delegate structure for callbacks required by the build system.
@@ -705,23 +727,6 @@ llb_buildsystem_command_interface_get_file_info(llb_buildsystem_interface_t* bi_
 
 
 // MARK: Quality of Service
-
-/// Quality of service levels.
-typedef enum LLBUILD_ENUM_ATTRIBUTES {
-    /// A default quality of service (i.e. what the system would use without
-    /// other advisement, generally this would be comparable to what would be
-    /// done by `make`, `ninja`, etc.)
-    llb_quality_of_service_default = 0,
-
-    /// User-initiated, high priority work.
-    llb_quality_of_service_user_initiated LLBUILD_SWIFT_NAME(userInitiated) = 1,
-
-    /// Batch work performed on behalf of the user.
-    llb_quality_of_service_utility = 2,
-
-    /// Background work that is not directly visible to the user.
-    llb_quality_of_service_background = 3
-} llb_quality_of_service_t LLBUILD_SWIFT_NAME(QualityOfService);
 
 /// Get the global quality of service level to use for processing.
 LLBUILD_EXPORT llb_quality_of_service_t

@@ -224,7 +224,7 @@ namespace llbuild {
     /// capped limit on the number of concurrent lanes.
     ExecutionQueue* createLaneBasedExecutionQueue(
         ExecutionQueueDelegate& delegate, int numLanes, SchedulerAlgorithm alg,
-        const char* const* environment);
+        QualityOfService qos, const char* const* environment);
 
     /// Create an execution queue that executes all tasks serially on a single
     /// thread.

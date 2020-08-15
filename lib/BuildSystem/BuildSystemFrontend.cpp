@@ -585,11 +585,13 @@ std::unique_ptr<ExecutionQueue>
 BuildSystemFrontendDelegate::createExecutionQueue() {
   auto impl = static_cast<BuildSystemFrontendDelegateImpl*>(this->impl);
   auto invocation = impl->frontend->invocation;
+  QualityOfService qos = invocation.qos.hasValue() ?
+      invocation.qos.getValue() : getDefaultQualityOfService();
   
   if (invocation.useSerialBuild) {
     return std::unique_ptr<ExecutionQueue>(
         createLaneBasedExecutionQueue(impl->executionQueueDelegate, 1,
-                                      invocation.schedulerAlgorithm,
+                                      invocation.schedulerAlgorithm, qos,
                                       invocation.environment));
   }
     
@@ -607,7 +609,7 @@ BuildSystemFrontendDelegate::createExecutionQueue() {
     
   return std::unique_ptr<ExecutionQueue>(
       createLaneBasedExecutionQueue(impl->executionQueueDelegate, numLanes,
-                                    invocation.schedulerAlgorithm,
+                                    invocation.schedulerAlgorithm, qos,
                                     invocation.environment));
 }
 
