@@ -2370,6 +2370,6 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
 
 std::unique_ptr<basic::ExecutionQueue> NinjaBuildEngineDelegate::createExecutionQueue() {
   return std::unique_ptr<basic::ExecutionQueue>(
-    createLaneBasedExecutionQueue(*context, context->numJobsInParallel, context->schedulerAlgorithm, nullptr)
+    createLaneBasedExecutionQueue(*context, context->numJobsInParallel, context->schedulerAlgorithm, getDefaultQualityOfService(), nullptr)
   );
 }

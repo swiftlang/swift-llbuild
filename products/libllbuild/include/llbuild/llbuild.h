@@ -81,6 +81,8 @@
 ///
 /// Version History:
 ///
+/// 11: Added QualityOfService field to llb_buildsystem_invocation_t
+///
 /// 10: Changed to a llb_task_interface_t copies instead of pointers
 ///
 /// 9: Changed the API for build keys to use bridged opaque pointers with access functions
@@ -102,7 +104,7 @@
 /// 1: Added `environment` parameter to llb_buildsystem_invocation_t.
 ///
 /// 0: Pre-history
-#define LLBUILD_C_API_VERSION 10
+#define LLBUILD_C_API_VERSION 11
 
 /// Get the full version of the llbuild library.
 LLBUILD_EXPORT const char* llb_get_full_version_string(void);

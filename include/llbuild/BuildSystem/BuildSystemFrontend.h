@@ -349,6 +349,9 @@ public:
 
   uint32_t schedulerLanes = 0;
 
+  /// The Quality of Service class to use. If not set the global default setting will be used.
+  Optional<basic::QualityOfService> qos;
+
   /// The base environment to use when executing subprocesses.
   ///
   /// The format is expected to match that of `::main()`, i.e. a null-terminated

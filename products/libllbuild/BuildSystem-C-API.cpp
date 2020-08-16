@@ -46,6 +46,8 @@ using namespace llbuild;
 using namespace llbuild::basic;
 using namespace llbuild::buildsystem;
 
+static Optional<QualityOfService> getQoSFromLLBQoS(llb_quality_of_service_t level);
+
 /* Build Engine API */
 
 namespace {
@@ -543,6 +545,7 @@ public:
     invocation.useSerialBuild = cAPIInvocation.useSerialBuild;
     invocation.showVerboseStatus = cAPIInvocation.showVerboseStatus;
     invocation.schedulerLanes = cAPIInvocation.schedulerLanes;
+    invocation.qos = getQoSFromLLBQoS(cAPIInvocation.qos);
 
     // Register a custom diagnostic handler with the source manager.
     sourceMgr.setDiagHandler([](const llvm::SMDiagnostic& diagnostic,
@@ -980,24 +983,29 @@ llb_quality_of_service_t llb_get_quality_of_service() {
   }
 }
 
-void llb_set_quality_of_service(llb_quality_of_service_t level) {
+static Optional<QualityOfService> getQoSFromLLBQoS(llb_quality_of_service_t level) {
   switch (level) {
   case llb_quality_of_service_default:
-    setDefaultQualityOfService(QualityOfService::Normal);
-    break;
+    return QualityOfService::Normal;
   case llb_quality_of_service_user_initiated:
-    setDefaultQualityOfService(QualityOfService::UserInitiated);
-    break;
+    return QualityOfService::UserInitiated;
   case llb_quality_of_service_utility:
-    setDefaultQualityOfService(QualityOfService::Utility);
-    break;
+    return QualityOfService::Utility;
   case llb_quality_of_service_background:
-    setDefaultQualityOfService(QualityOfService::Background);
-    break;
+    return QualityOfService::Background;
+  case llb_quality_of_service_unspecified:
+    return None;
   default:
     assert(0 && "unknown quality service level");
-    break;
+    return None;
   }
+}
+
+void llb_set_quality_of_service(llb_quality_of_service_t level) {
+  assert(level != llb_quality_of_service_unspecified);
+  Optional<QualityOfService> qos = getQoSFromLLBQoS(level);
+  if (qos.hasValue())
+    setDefaultQualityOfService(qos.getValue());
 }
 
 void* llb_alloc(size_t size) { return malloc(size); }

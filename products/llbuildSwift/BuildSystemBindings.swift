@@ -706,6 +706,8 @@ private final class CStyleEnvironment {
 public final class BuildSystem {
     public typealias SchedulerAlgorithm = llbuild.SchedulerAlgorithm
 
+    public typealias QualityOfService = llbuild.QualityOfService
+
     /// The build file that the system is configured with.
     public let buildFile: String
 
@@ -718,7 +720,7 @@ public final class BuildSystem {
     /// The C environment, if used.
     private let _cEnvironment: CStyleEnvironment
 
-    public init(buildFile: String, databaseFile: String, delegate: BuildSystemDelegate, environment: [String: String]? = nil, serial: Bool = false, traceFile: String? = nil, schedulerAlgorithm: SchedulerAlgorithm = .commandNamePriority, schedulerLanes: UInt32 = 0) {
+    public init(buildFile: String, databaseFile: String, delegate: BuildSystemDelegate, environment: [String: String]? = nil, serial: Bool = false, traceFile: String? = nil, schedulerAlgorithm: SchedulerAlgorithm = .commandNamePriority, schedulerLanes: UInt32 = 0, qos: QualityOfService? = nil) {
 
         // Safety check that we have linked against a compatibile llbuild framework version
         if llb_get_api_version() != LLBUILD_C_API_VERSION {
@@ -751,6 +753,7 @@ public final class BuildSystem {
             _invocation.useSerialBuild = serial
             _invocation.schedulerAlgorithm = schedulerAlgorithm
             _invocation.schedulerLanes = schedulerLanes
+            _invocation.qos = qos ?? .unspecified
 
             // Construct the system delegate.
             var _delegate = llb_buildsystem_delegate_t()
