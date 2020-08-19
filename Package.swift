@@ -65,14 +65,7 @@ let package = Package(
         .target(
             name: "libllbuild",
             dependencies: ["llbuildCore", "llbuildBuildSystem"],
-            path: "products/libllbuild",
-            cxxSettings: [
-              .define("LLVM_ON_WIN32", .when(platforms: [.windows])),
-              // FIXME: we need to define `libllbuild_EXPORTS` to ensure that the
-              // symbols are exported from the DLL that is being built here until
-              // static linking is supported on Windows.
-              .define("libllbuild_EXPORTS", .when(platforms: [.windows])),
-            ]
+            path: "products/libllbuild"
         ),
 
         /// The public llbuild Swift API.
@@ -98,10 +91,7 @@ let package = Package(
         .target(
             name: "llbuildBasic",
             dependencies: ["llvmSupport"],
-            path: "lib/Basic",
-            cxxSettings: [
-              .define("LLVM_ON_WIN32", .when(platforms: [.windows])),
-            ]
+            path: "lib/Basic"
         ),
         .target(
             name: "llbuildCore",
@@ -112,10 +102,7 @@ let package = Package(
         .target(
             name: "llbuildBuildSystem",
             dependencies: ["llbuildCore"],
-            path: "lib/BuildSystem",
-            cxxSettings: [
-              .define("LLVM_ON_WIN32", .when(platforms: [.windows])),
-            ]
+            path: "lib/BuildSystem"
         ),
         .target(
             name: "llbuildEvo",
@@ -208,19 +195,13 @@ let package = Package(
         // MARK: Ingested LLVM code.
         .target(
           name: "llvmDemangle",
-          path: "lib/llvm/Demangle",
-          cxxSettings: [
-            .define("LLVM_ON_WIN32", .when(platforms: [.windows])),
-          ]
+          path: "lib/llvm/Demangle"
         ),
 
         .target(
             name: "llvmSupport",
             dependencies: ["llvmDemangle"],
             path: "lib/llvm/Support",
-            cxxSettings: [
-              .define("LLVM_ON_WIN32", .when(platforms: [.windows])),
-            ],
             linkerSettings: [
                 .linkedLibrary("m", .when(platforms: [.linux])),
                 .linkedLibrary("ncurses", .when(platforms: [.linux, .macOS]))]
@@ -228,3 +209,22 @@ let package = Package(
     ],
     cxxLanguageStandard: .cxx14
 )
+
+// FIXME: Conditionalize these flags since SwiftPM 5.3 and earlier will crash for platforms they don't know about.
+#if os(Windows)
+
+["llvmSupport", "llvmDemangle", "llbuildBuildSystem", "llbuildBasic"].forEach {
+    package.targets.first{ $0.name == $0 }?.cxxSettings = [
+        .define("LLVM_ON_WIN32", .when(platforms: [.windows])),
+    ]
+}
+
+package.targets.first{ $0.name == "libllbuild" }?.cxxSettings = [
+    .define("LLVM_ON_WIN32", .when(platforms: [.windows])),
+    // FIXME: we need to define `libllbuild_EXPORTS` to ensure that the
+    // symbols are exported from the DLL that is being built here until
+    // static linking is supported on Windows.
+    .define("libllbuild_EXPORTS", .when(platforms: [.windows])),
+]
+
+#endif
