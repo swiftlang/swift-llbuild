@@ -17,7 +17,7 @@ endif()
 
 # TODO(compnerd) move both of these outside of the CMake into the invocation
 if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
-  add_compile_options(-target ${CMAKE_OSX_ARCHITECTURE}-apple-macosx)
+  add_compile_options(-target ${CMAKE_OSX_ARCHITECTURES}-apple-macosx10.10)
   if(NOT CMAKE_OSX_SYSROOT STREQUAL "")
     add_compile_options(-sdk ${CMAKE_OSX_SYSROOT})
   endif()
