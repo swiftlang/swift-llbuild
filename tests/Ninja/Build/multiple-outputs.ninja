@@ -39,6 +39,10 @@
 # CHECK-UPDATE-ODD-NEXT: [2/{{.*}}] cat odd > odd-copy
 # CHECK-UPDATE-ODD-NOT: [3/{{.*}}]
 
+# Disabled due to transient failures in swift-ci - rdar://67415097
+# REQUIRES: platform=Disabled
+
+
 rule CAT
      command = cat ${in} > ${out}
 rule SPLITNUMBERS
