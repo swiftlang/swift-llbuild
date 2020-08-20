@@ -35,8 +35,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL Windows)
     "SHELL:-Xcc -D_CRT_NONSTDC_NO_DEPRECATE")
 endif()
 target_link_libraries(llbuildSwift PRIVATE
-  libllbuild
-  SQLite::SQLite3)
+    libllbuild)
 if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
   set_target_properties(llbuildSwift PROPERTIES
     # RUNPATH for finding Swift core libraries in the toolchain.
@@ -53,6 +52,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
       INSTALL_NAME_DIR "@rpath")
   endif()
 else()
+  target_link_libraries(llbuildSwift PRIVATE
+    SQLite::SQLite3)
   target_link_libraries(llbuildSwift PRIVATE
     swiftDispatch
     Foundation)
