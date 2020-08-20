@@ -213,8 +213,8 @@ let package = Package(
 // FIXME: Conditionalize these flags since SwiftPM 5.3 and earlier will crash for platforms they don't know about.
 #if os(Windows)
 
-["llvmSupport", "llvmDemangle", "llbuildBuildSystem", "llbuildBasic"].forEach {
-    package.targets.first{ $0.name == $0 }?.cxxSettings = [
+["llvmSupport", "llvmDemangle", "llbuildBuildSystem", "llbuildBasic"].forEach { target in
+    package.targets.first(where: { $0.name == target })?.cxxSettings = [
         .define("LLVM_ON_WIN32", .when(platforms: [.windows])),
     ]
 }
