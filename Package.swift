@@ -204,7 +204,7 @@ let package = Package(
             path: "lib/llvm/Support",
             linkerSettings: [
                 .linkedLibrary("m", .when(platforms: [.linux])),
-                .linkedLibrary("ncurses", .when(platforms: [.linux, .macOS]))]
+                .linkedLibrary("ncurses", .when(platforms: [.linux, .macOS, .android]))]
         ),
     ],
     cxxLanguageStandard: .cxx14
