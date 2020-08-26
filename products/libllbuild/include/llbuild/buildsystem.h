@@ -17,7 +17,7 @@
 #ifndef LLBUILD_PUBLIC_BUILDSYSTEM_H
 #define LLBUILD_PUBLIC_BUILDSYSTEM_H
 
-#ifndef LLBUILD_PUBLIC_LLBUILD_H
+#if !defined(LLBUILD_PUBLIC_LLBUILD_H) && !defined(__clang_tapi__)
 #error Clients must include the "llbuild.h" umbrella header.
 #endif
 
