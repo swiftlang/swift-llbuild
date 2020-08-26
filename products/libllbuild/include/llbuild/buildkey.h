@@ -21,6 +21,7 @@
 #error Clients must include the "llbuild.h" umbrella header.
 #endif
 
+#include "core.h"
 #include <stddef.h>
 
 LLBUILD_ASSUME_NONNULL_BEGIN
