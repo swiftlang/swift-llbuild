@@ -5394,6 +5394,7 @@
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/include";
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/lib";
 				PUBLIC_HEADERS_FOLDER_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/include/llbuild";
+				TAPI_FRAMEWORK_SEARCH_PATHS = "";
 			};
 			name = Debug;
 		};
@@ -5406,6 +5407,7 @@
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/include";
 				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/lib";
 				PUBLIC_HEADERS_FOLDER_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/include/llbuild";
+				TAPI_FRAMEWORK_SEARCH_PATHS = "";
 			};
 			name = Release;
 		};
@@ -5490,6 +5492,7 @@
 				PRODUCT_NAME = llbuild;
 				SKIP_INSTALL = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(LLBUILD_SWIFT_VERSION_DEFINITIONS) LLBUILD_FRAMEWORK";
+				TAPI_HEADER_SEARCH_PATHS = "";
 			};
 			name = Debug;
 		};
@@ -5508,6 +5511,7 @@
 				PRODUCT_NAME = llbuild;
 				SKIP_INSTALL = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(LLBUILD_SWIFT_VERSION_DEFINITIONS) LLBUILD_FRAMEWORK";
+				TAPI_HEADER_SEARCH_PATHS = "";
 			};
 			name = Release;
 		};

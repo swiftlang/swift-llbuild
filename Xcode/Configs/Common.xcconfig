@@ -26,6 +26,10 @@ APPLICATION_EXTENSION_API_ONLY = YES
 // Headermaps are disabled.
 USE_HEADERMAP = NO
 
+// Enable InstallAPI.
+SUPPORTS_TEXT_BASED_API = YES
+TAPI_ENABLE_MODULES = YES
+
 // Manually opt targets into installation.
 SKIP_INSTALL = YES
 
