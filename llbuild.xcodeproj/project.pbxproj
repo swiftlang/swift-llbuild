@@ -64,6 +64,8 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		14600C9724F6D46F006A15FA /* llbuild-defines.h in Headers */ = {isa = PBXBuildFile; fileRef = 14600C9624F6D464006A15FA /* llbuild-defines.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		14600C9824F6D46F006A15FA /* llbuild-defines.h in Headers */ = {isa = PBXBuildFile; fileRef = 14600C9624F6D464006A15FA /* llbuild-defines.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		14A9859424F63AC100FADB67 /* buildsystem.h in Headers */ = {isa = PBXBuildFile; fileRef = E1192CEC1C49D84500F85890 /* buildsystem.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		14A9859524F63AC100FADB67 /* core.h in Headers */ = {isa = PBXBuildFile; fileRef = E1BE0AAD1C46F93000AD0883 /* core.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		14A9859624F63AC100FADB67 /* db.h in Headers */ = {isa = PBXBuildFile; fileRef = B505BFB5228FCBAB00255BD7 /* db.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -970,6 +972,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		14600C9624F6D464006A15FA /* llbuild-defines.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "llbuild-defines.h"; sourceTree = "<group>"; };
 		147018862097909B0079261E /* ui */ = {isa = PBXFileReference; lastKnownFileType = folder; path = ui; sourceTree = "<group>"; };
 		1484D1D620943D2100D3830F /* docs */ = {isa = PBXFileReference; lastKnownFileType = folder; path = docs; sourceTree = "<group>"; };
 		1484D1D720943E6800D3830F /* cmake */ = {isa = PBXFileReference; lastKnownFileType = folder; path = cmake; sourceTree = "<group>"; };
@@ -2622,6 +2625,7 @@
 				E1192CEC1C49D84500F85890 /* buildsystem.h */,
 				E1BE0AAD1C46F93000AD0883 /* core.h */,
 				E1ADC2351A8592AA00D5387C /* llbuild.h */,
+				14600C9624F6D464006A15FA /* llbuild-defines.h */,
 				B505BFB5228FCBAB00255BD7 /* db.h */,
 				B5BE9BAB22E885D900777A06 /* buildkey.h */,
 				B5A308B922F30E0700699B4C /* buildvalue.h */,
@@ -3022,6 +3026,7 @@
 			files = (
 				E1ADC23F1A8593AD00D5387C /* llbuild.h in Headers */,
 				14A9859424F63AC100FADB67 /* buildsystem.h in Headers */,
+				14600C9824F6D46F006A15FA /* llbuild-defines.h in Headers */,
 				14A9859524F63AC100FADB67 /* core.h in Headers */,
 				14A9859624F63AC100FADB67 /* db.h in Headers */,
 				14A9859724F63AC100FADB67 /* buildkey.h in Headers */,
@@ -3053,6 +3058,7 @@
 			files = (
 				B5A308CF22F3164E00699B4C /* buildvalue.h in Headers */,
 				B5A84D0C22943F9200A59064 /* db.h in Headers */,
+				14600C9724F6D46F006A15FA /* llbuild-defines.h in Headers */,
 				E1D191CA1B472440000C4E95 /* llbuild.h in Headers */,
 				B5BE9BAC22E887CD00777A06 /* buildkey.h in Headers */,
 				E1BE0AAE1C46F94000AD0883 /* core.h in Headers */,

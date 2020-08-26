@@ -21,6 +21,7 @@
 #error Clients must include the "llbuild.h" umbrella header.
 #endif
 
+#include "llbuild-defines.h"
 #include <stdbool.h>
 #include <stdint.h>
 

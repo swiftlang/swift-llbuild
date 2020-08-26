@@ -21,6 +21,8 @@
 #error Clients must include the "llbuild.h" umbrella header.
 #endif
 
+#include "core.h"
+
 LLBUILD_ASSUME_NONNULL_BEGIN
 
 typedef enum LLBUILD_ENUM_ATTRIBUTES {
