@@ -64,9 +64,11 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		2D0FB84C2395ED1B0088DAB4 /* BuildValue-C-API-Private.h in Headers */ = {isa = PBXBuildFile; fileRef = 2D0FB84B2395D8690088DAB4 /* BuildValue-C-API-Private.h */; };
-		2D0FB84D2395ED1B0088DAB4 /* BuildValue-C-API-Private.h in Headers */ = {isa = PBXBuildFile; fileRef = 2D0FB84B2395D8690088DAB4 /* BuildValue-C-API-Private.h */; };
-		2D86C6E0238D932B006E61FB /* Tool.h in Headers */ = {isa = PBXBuildFile; fileRef = 2D86C6DF238D932B006E61FB /* Tool.h */; };
+		14A9859424F63AC100FADB67 /* buildsystem.h in Headers */ = {isa = PBXBuildFile; fileRef = E1192CEC1C49D84500F85890 /* buildsystem.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		14A9859524F63AC100FADB67 /* core.h in Headers */ = {isa = PBXBuildFile; fileRef = E1BE0AAD1C46F93000AD0883 /* core.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		14A9859624F63AC100FADB67 /* db.h in Headers */ = {isa = PBXBuildFile; fileRef = B505BFB5228FCBAB00255BD7 /* db.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		14A9859724F63AC100FADB67 /* buildkey.h in Headers */ = {isa = PBXBuildFile; fileRef = B5BE9BAB22E885D900777A06 /* buildkey.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		14A9859824F63AC100FADB67 /* buildvalue.h in Headers */ = {isa = PBXBuildFile; fileRef = B5A308B922F30E0700699B4C /* buildvalue.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		2DB7144323A2AF2F00514E98 /* BuildSystemEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DB7144223A2AF2F00514E98 /* BuildSystemEngineTests.swift */; };
 		402614272087B10B005BD956 /* Tracing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 402614262087B10B005BD956 /* Tracing.cpp */; };
 		408649DB23D1238C003063A2 /* libllbuildEvo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 40C9B47023CFD6690098712F /* libllbuildEvo.a */; };
@@ -148,8 +150,6 @@
 		B5A308D222F3166100699B4C /* BuildValue-C-API.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B5A308B622F30DF000699B4C /* BuildValue-C-API.cpp */; };
 		B5A308D322F3166900699B4C /* Internals.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5A308CD22F315A800699B4C /* Internals.swift */; };
 		B5A308D422F3166C00699B4C /* BuildValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5A308BD22F30EE800699B4C /* BuildValue.swift */; };
-		B5A308D922F3391F00699B4C /* BuildKey-C-API-Private.h in Headers */ = {isa = PBXBuildFile; fileRef = B5A308D822F3391F00699B4C /* BuildKey-C-API-Private.h */; };
-		B5A308DA22F3391F00699B4C /* BuildKey-C-API-Private.h in Headers */ = {isa = PBXBuildFile; fileRef = B5A308D822F3391F00699B4C /* BuildKey-C-API-Private.h */; };
 		B5A84D0C22943F9200A59064 /* db.h in Headers */ = {isa = PBXBuildFile; fileRef = B505BFB5228FCBAB00255BD7 /* db.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		B5BE9BA322E8549F00777A06 /* BuildKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5BE9BA222E8549F00777A06 /* BuildKey.swift */; };
 		B5BE9BA522E854C600777A06 /* BuildKeyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5BE9BA422E854C600777A06 /* BuildKeyTests.swift */; };
@@ -175,14 +175,6 @@
 		E10FE0D71B7313D50059D086 /* DepsBuildEngineTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E10FE0D61B7313D50059D086 /* DepsBuildEngineTest.cpp */; };
 		E111C10B241B25470086A92D /* llbuild.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1D191BE1B47232B000C4E95 /* llbuild.framework */; };
 		E111C118241B25970086A92D /* SwiftNinjaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E111C117241B25960086A92D /* SwiftNinjaTests.swift */; };
-		E111C137241B25B70086A92D /* buildvalue.h in Headers */ = {isa = PBXBuildFile; fileRef = B5A308B922F30E0700699B4C /* buildvalue.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		E111C138241B25B70086A92D /* db.h in Headers */ = {isa = PBXBuildFile; fileRef = B505BFB5228FCBAB00255BD7 /* db.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		E111C139241B25B70086A92D /* llbuild.h in Headers */ = {isa = PBXBuildFile; fileRef = E1ADC2351A8592AA00D5387C /* llbuild.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		E111C13A241B25B70086A92D /* buildkey.h in Headers */ = {isa = PBXBuildFile; fileRef = B5BE9BAB22E885D900777A06 /* buildkey.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		E111C13B241B25B70086A92D /* core.h in Headers */ = {isa = PBXBuildFile; fileRef = E1BE0AAD1C46F93000AD0883 /* core.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		E111C13C241B25B70086A92D /* BuildKey-C-API-Private.h in Headers */ = {isa = PBXBuildFile; fileRef = B5A308D822F3391F00699B4C /* BuildKey-C-API-Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
-		E111C13D241B25B70086A92D /* BuildValue-C-API-Private.h in Headers */ = {isa = PBXBuildFile; fileRef = 2D0FB84B2395D8690088DAB4 /* BuildValue-C-API-Private.h */; settings = {ATTRIBUTES = (Private, ); }; };
-		E111C13E241B25B70086A92D /* buildsystem.h in Headers */ = {isa = PBXBuildFile; fileRef = E1192CEC1C49D84500F85890 /* buildsystem.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		E111C153241B269D0086A92D /* llbuild.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1D191BE1B47232B000C4E95 /* llbuild.framework */; };
 		E111C15C241B26D30086A92D /* XCTestCase+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E111C15B241B26D30086A92D /* XCTestCase+Extensions.swift */; };
 		E111C164241B285E0086A92D /* NinjaManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = E111C163241B285E0086A92D /* NinjaManifest.swift */; };
@@ -2971,14 +2963,6 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E111C137241B25B70086A92D /* buildvalue.h in Headers */,
-				E111C138241B25B70086A92D /* db.h in Headers */,
-				E111C139241B25B70086A92D /* llbuild.h in Headers */,
-				E111C13A241B25B70086A92D /* buildkey.h in Headers */,
-				E111C13B241B25B70086A92D /* core.h in Headers */,
-				E111C13C241B25B70086A92D /* BuildKey-C-API-Private.h in Headers */,
-				E111C13D241B25B70086A92D /* BuildValue-C-API-Private.h in Headers */,
-				E111C13E241B25B70086A92D /* buildsystem.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3037,9 +3021,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				E1ADC23F1A8593AD00D5387C /* llbuild.h in Headers */,
-				2D0FB84D2395ED1B0088DAB4 /* BuildValue-C-API-Private.h in Headers */,
-				B5A308DA22F3391F00699B4C /* BuildKey-C-API-Private.h in Headers */,
-				2D86C6E0238D932B006E61FB /* Tool.h in Headers */,
+				14A9859424F63AC100FADB67 /* buildsystem.h in Headers */,
+				14A9859524F63AC100FADB67 /* core.h in Headers */,
+				14A9859624F63AC100FADB67 /* db.h in Headers */,
+				14A9859724F63AC100FADB67 /* buildkey.h in Headers */,
+				14A9859824F63AC100FADB67 /* buildvalue.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3070,8 +3056,6 @@
 				E1D191CA1B472440000C4E95 /* llbuild.h in Headers */,
 				B5BE9BAC22E887CD00777A06 /* buildkey.h in Headers */,
 				E1BE0AAE1C46F94000AD0883 /* core.h in Headers */,
-				B5A308D922F3391F00699B4C /* BuildKey-C-API-Private.h in Headers */,
-				2D0FB84C2395ED1B0088DAB4 /* BuildValue-C-API-Private.h in Headers */,
 				E1192CED1C49D84500F85890 /* buildsystem.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
