@@ -14,7 +14,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLBUILD_PUBLIC_LLBUILD_H
+#ifndef LLBUILD_PUBLIC_DB_H
+#define LLBUILD_PUBLIC_DB_H
+
+#if !defined(LLBUILD_PUBLIC_LLBUILD_H) && !defined(__clang_tapi__)
 #error Clients must include the "llbuild.h" umbrella header.
 #endif
 
@@ -103,3 +106,5 @@ llb_database_get_keys(llb_database_t *database, llb_database_fetch_result_t *_Nu
 LLBUILD_EXPORT bool llb_database_get_keys_and_results(llb_database_t *database, llb_database_fetch_result_t *_Nullable *_Nonnull keysAndResults_out, llb_data_t *_Nullable error_out);
 
 LLBUILD_ASSUME_NONNULL_END
+
+#endif
