@@ -11,6 +11,7 @@
 			isa = PBXAggregateTarget;
 			buildConfigurationList = E178FCC41A1BF3270039F8B5 /* Build configuration list for PBXAggregateTarget "B&I" */;
 			buildPhases = (
+				BC92770E1E60449A0020E457 /* Install in CommandLineTools */,
 			);
 			dependencies = (
 				E178FCC61A1BF32F0039F8B5 /* PBXTargetDependency */,
@@ -3886,6 +3887,23 @@
 			shellPath = /bin/sh;
 			shellScript = "\"${SRCROOT}/utils/Xcode/create-target-link.sh\"\n";
 		};
+		BC92770E1E60449A0020E457 /* Install in CommandLineTools */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 12;
+			files = (
+			);
+			inputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/llbuild.framework",
+			);
+			name = "Install in CommandLineTools";
+			outputPaths = (
+				"$(DSTROOT)/Library/Developer/CommandLineTools/usr/lib/swift/pm/llbuild/llbuild.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# This script is used to install llbuild.framework in CommandLineTools.\n\nset -e\nmkdir -p \"$(dirname \"$SCRIPT_OUTPUT_FILE_0\")\"\nrsync -a \"$SCRIPT_INPUT_FILE_0/\" \"$SCRIPT_OUTPUT_FILE_0\"\n";
+			showEnvVarsInLog = 0;
+		};
 		E147DF121BA81D330032D08E /* Create Target Link */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -5076,7 +5094,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "$(LLBUILD_CODE_SIGN_IDENTITY)";
-				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/bin";
+				INSTALL_PATH = "$(DT_TOOLCHAIN_INSTALL_DIR:standardizepath)/usr/bin";
 				SKIP_INSTALL = NO;
 			};
 			name = Debug;
@@ -5085,7 +5103,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "$(LLBUILD_CODE_SIGN_IDENTITY)";
-				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/bin";
+				INSTALL_PATH = "$(DT_TOOLCHAIN_INSTALL_DIR:standardizepath)/usr/bin";
 				SKIP_INSTALL = NO;
 			};
 			name = Release;
@@ -5153,6 +5171,8 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DT_SHARED_FRAMEWORKS_INSTALL_DIR = "$(DEVELOPER_INSTALL_DIR)/../SharedFrameworks";
+				DT_TOOLCHAIN_INSTALL_DIR = "$(DEVELOPER_INSTALL_DIR)/Toolchains/XcodeDefault.xctoolchain";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -5211,6 +5231,8 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DT_SHARED_FRAMEWORKS_INSTALL_DIR = "$(DEVELOPER_INSTALL_DIR)/../SharedFrameworks";
+				DT_TOOLCHAIN_INSTALL_DIR = "$(DEVELOPER_INSTALL_DIR)/Toolchains/XcodeDefault.xctoolchain";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
@@ -5301,7 +5323,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "$(LLBUILD_CODE_SIGN_IDENTITY)";
-				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/bin";
+				INSTALL_PATH = "$(DT_TOOLCHAIN_INSTALL_DIR:standardizepath)/usr/local/bin";
 				PRODUCT_NAME = llbuild;
 				SKIP_INSTALL = NO;
 			};
@@ -5311,7 +5333,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "$(LLBUILD_CODE_SIGN_IDENTITY)";
-				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/bin";
+				INSTALL_PATH = "$(DT_TOOLCHAIN_INSTALL_DIR:standardizepath)/usr/local/bin";
 				PRODUCT_NAME = llbuild;
 				SKIP_INSTALL = NO;
 			};
@@ -5392,7 +5414,7 @@
 				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/include";
-				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/lib";
+				INSTALL_PATH = "$(DT_TOOLCHAIN_INSTALL_DIR:standardizepath)/usr/local/lib";
 				PUBLIC_HEADERS_FOLDER_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/include/llbuild";
 				TAPI_FRAMEWORK_SEARCH_PATHS = "";
 			};
@@ -5405,7 +5427,7 @@
 				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/include";
-				INSTALL_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/lib";
+				INSTALL_PATH = "$(DT_TOOLCHAIN_INSTALL_DIR:standardizepath)/usr/local/lib";
 				PUBLIC_HEADERS_FOLDER_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/include/llbuild";
 				TAPI_FRAMEWORK_SEARCH_PATHS = "";
 			};
@@ -5487,6 +5509,7 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/include";
 				INFOPLIST_FILE = "$(SRCROOT)/products/llbuild-framework/Info.plist";
+				INSTALL_PATH = "$(DT_SHARED_FRAMEWORKS_INSTALL_DIR:standardizepath)";
 				MODULEMAP_FILE = "$(SRCROOT)/products/llbuild-framework/llbuild-module.modulemap";
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.dt.llbuild;
 				PRODUCT_NAME = llbuild;
@@ -5506,6 +5529,7 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/include";
 				INFOPLIST_FILE = "$(SRCROOT)/products/llbuild-framework/Info.plist";
+				INSTALL_PATH = "$(DT_SHARED_FRAMEWORKS_INSTALL_DIR:standardizepath)";
 				MODULEMAP_FILE = "$(SRCROOT)/products/llbuild-framework/llbuild-module.modulemap";
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.dt.llbuild;
 				PRODUCT_NAME = llbuild;
