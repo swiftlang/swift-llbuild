@@ -76,7 +76,7 @@ public:
   /// \returns True on success, or false if there were errors. If initialization
   /// fails, the frontend is in an indeterminant state and should not be reused.
   bool initialize();
-  
+
   /// Build the named target using the specified invocation parameters.
   ///
   /// \returns True on success, or false if there were errors.
@@ -96,25 +96,24 @@ public:
 /// safety in overriden methods.
 class BuildSystemFrontendDelegate : public BuildSystemDelegate {
   friend class BuildSystemFrontend;
-  
+
 public:
   /// Handle used to communicate information about a launched process.
   struct ProcessHandle {
     /// Opaque ID.
     uint64_t id;
   };
-  
+
 private:
   void* impl;
 
   /// Default implementation, cannot be overriden by subclasses.
   virtual void setFileContentsBeingParsed(StringRef buffer) override;
-  
+
 public:
   /// Create a frontend delegate.
   ///
   /// \param sourceMgr The source manager to use for reporting diagnostics.
-  /// \param invocation The invocation parameters.
   /// \param name The name of build system client.
   /// \param version The version of the build system client.
   BuildSystemFrontendDelegate(llvm::SourceMgr& sourceMgr,
@@ -147,7 +146,7 @@ public:
   /// provided source manager.
   virtual void error(StringRef filename, const Token& at,
                      const Twine& message) override;
-  
+
   /// @}
 
   /// @name Status Reporting APIs
@@ -262,7 +261,7 @@ public:
   /// \param data - The process output.
   virtual void commandProcessHadOutput(Command*, ProcessHandle handle,
                                        StringRef data);
-  
+
   /// Called when a command's job has finished executing an external process.
   ///
   /// \param handle - The handle used to identify the process. This handle will
@@ -301,7 +300,7 @@ public:
                                   core::Rule* candidateRule,
                                   core::Rule::CycleAction action);
   /// @}
-  
+
   /// @name Accessors
   /// @{
 
@@ -331,7 +330,7 @@ public:
 
   /// Whether to use a serial build.
   bool useSerialBuild = false;
-  
+
   /// The path of the database file to use, if any.
   std::string dbPath = "build.db";
 
@@ -365,11 +364,11 @@ public:
 
   /// Whether there were any parsing errors.
   bool hadErrors = false;
-  
+
 public:
   /// Get the appropriate "usage" text to use for the built in arguments.
   static void getUsage(int optionWidth, raw_ostream& os);
-  
+
   /// Parse the invocation parameters from the given arguments.
   ///
   /// \param sourceMgr The source manager to use for diagnostics.
