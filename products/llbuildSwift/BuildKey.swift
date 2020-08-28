@@ -77,20 +77,28 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
     /// It returns a specific subclass, depending on the kind of the given key.
     /// - Parameter key: The internal representation of the build key.
     public static func construct(key: OpaquePointer) -> BuildKey {
+        return construct(key: key, weakPointer: true)
+    }
+
+    /// Constructs a build key from internal representation.
+    /// It returns a specific subclass, depending on the kind of the given key.
+    /// - Parameter key: The internal representation of the build key.
+    /// - Parameter weakPointer: Returned `BuildKey` will only destroy the provided pointer on deinit if this is `false`.
+    public static func construct(key: OpaquePointer, weakPointer: Bool) -> BuildKey {
         let kind = llb_build_key_get_kind(key)
         switch kind {
-        case .command: return Command(key, weakPointer: true)
-        case .customTask: return CustomTask(key, weakPointer: true)
-        case .directoryContents: return DirectoryContents(key, weakPointer: true)
-        case .filteredDirectoryContents: return FilteredDirectoryContents(key, weakPointer: true)
-        case .directoryTreeSignature: return DirectoryTreeSignature(key, weakPointer: true)
-        case .directoryTreeStructureSignature: return DirectoryTreeStructureSignature(key, weakPointer: true)
-        case .node: return Node(key, weakPointer: true)
-        case .stat: return Stat(key, weakPointer: true)
-        case .target: return Target(key, weakPointer: true)
+        case .command: return Command(key, weakPointer: weakPointer)
+        case .customTask: return CustomTask(key, weakPointer: weakPointer)
+        case .directoryContents: return DirectoryContents(key, weakPointer: weakPointer)
+        case .filteredDirectoryContents: return FilteredDirectoryContents(key, weakPointer: weakPointer)
+        case .directoryTreeSignature: return DirectoryTreeSignature(key, weakPointer: weakPointer)
+        case .directoryTreeStructureSignature: return DirectoryTreeStructureSignature(key, weakPointer: weakPointer)
+        case .node: return Node(key, weakPointer: weakPointer)
+        case .stat: return Stat(key, weakPointer: weakPointer)
+        case .target: return Target(key, weakPointer: weakPointer)
         default:
             assertionFailure("Unknown key kind: \(kind) - couldn't create concrete BuildKey class.")
-            return BuildKey(key, weakPointer: true)
+            return BuildKey(key, weakPointer: weakPointer)
         }
     }
     
@@ -103,7 +111,8 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
     }
     
     public static func construct(data: llb_data_t) -> BuildKey {
-        return construct(key: withUnsafePointer(to: data, llb_build_key_make))
+        // `llb_build_key_make` allocates a new `CAPIBuildKey` object, so we set `weakPointer` to false to deallocate on deinit.
+        return construct(key: withUnsafePointer(to: data, llb_build_key_make), weakPointer: false)
     }
     
     public func hash(into hasher: inout Hasher) {
