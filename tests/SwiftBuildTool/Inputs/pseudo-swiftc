@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import argparse
 import json
 import os
@@ -38,16 +39,16 @@ def main():
 
     # If run in verbose mode, print a fake version.
     if args.verbose or args.version:
-        print "Pseudo Swift version 1.2.3 (%s)" % (
-            os.environ.get("PSEUDO_SWIFT_VERSION", "12.1"),)
+        print("Pseudo Swift version 1.2.3 (%s)" % (
+            os.environ.get("PSEUDO_SWIFT_VERSION", "12.1"),))
         print("Target: bla bla bla")
         if args.version:
             return
     
     # If run in show commands mode, print some dummy output.
     if args.show_commands:
-        print ' '.join(map(pipes.quote, [
-            sys.argv[0], "-frontend", "...blablabla..."]))
+        print(' '.join(map(pipes.quote, [
+            sys.argv[0], "-frontend", "...blablabla..."])))
         return
         
     # Write dummy outputs.
