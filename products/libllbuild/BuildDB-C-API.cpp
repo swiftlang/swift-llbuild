@@ -165,10 +165,9 @@ public:
 };
 
 const llb_data_t mapData(std::vector<uint8_t> input) {
-  const auto data = input.data();
-  const auto size = sizeof(data) * input.size();
+  const auto size = sizeof(input.front()) * input.size();
   const auto newData = (uint8_t *)malloc(size);
-  memcpy(newData, data, size);
+  memcpy(newData, input.data(), size);
   
   return llb_data_t {
     input.size(),
