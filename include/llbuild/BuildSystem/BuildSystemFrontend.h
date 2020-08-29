@@ -84,8 +84,9 @@ public:
 
   /// Build a single node using the specified invocation parameters.
   ///
+  /// \param resultsWalker Optional walker for receiving the rule results of the node and its dependencies.
   /// \returns True on success, or false if there were errors.
-  bool buildNode(StringRef nodeToBuild);
+  bool buildNode(StringRef nodeToBuild, core::RuleResultsWalker* resultsWalker = nullptr);
 
   /// @}
 };

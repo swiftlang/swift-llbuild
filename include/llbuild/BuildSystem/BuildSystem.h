@@ -30,6 +30,9 @@ namespace basic {
   class ExecutionQueue;
   class FileSystem;
 }
+namespace core {
+  class RuleResultsWalker;
+}
 
 namespace buildsystem {
 
@@ -262,8 +265,9 @@ public:
   ///
   /// A build description *must* have been loaded before calling this method.
   ///
+  /// \param resultsWalker Optional walker for receiving the rule results of the node and its dependencies.
   /// \returns The result of computing the value, or nil if the build failed.
-  llvm::Optional<BuildValue> build(BuildKey target);
+  llvm::Optional<BuildValue> build(BuildKey target, core::RuleResultsWalker* resultsWalker = nullptr);
 
   /// Reset mutable build state before a new build operation.
   void resetForBuild();

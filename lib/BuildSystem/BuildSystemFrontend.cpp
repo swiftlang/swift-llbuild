@@ -435,7 +435,7 @@ public:
   }
 
 
-  bool buildNode(StringRef nodeToBuild) {
+  bool buildNode(StringRef nodeToBuild, core::RuleResultsWalker* resultsWalker) {
     llbuild_defer {
       resetAfterBuild();
     };
@@ -444,7 +444,7 @@ public:
       return false;
     }
 
-    auto buildValue = system->build(BuildKey::makeNode(nodeToBuild));
+    auto buildValue = system->build(BuildKey::makeNode(nodeToBuild), resultsWalker);
     if (!buildValue.hasValue()) {
       return false;
     }
@@ -808,6 +808,6 @@ bool BuildSystemFrontend::build(StringRef targetToBuild) {
   return static_cast<BuildSystemFrontendImpl*>(impl)->build(targetToBuild);
 }
 
-bool BuildSystemFrontend::buildNode(StringRef nodeToBuild) {
-  return static_cast<BuildSystemFrontendImpl*>(impl)->buildNode(nodeToBuild);
+bool BuildSystemFrontend::buildNode(StringRef nodeToBuild, core::RuleResultsWalker* resultsWalker) {
+  return static_cast<BuildSystemFrontendImpl*>(impl)->buildNode(nodeToBuild, resultsWalker);
 }

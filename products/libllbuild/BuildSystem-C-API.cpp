@@ -584,6 +584,46 @@ public:
     return getFrontend().buildNode(key);
   }
 
+  bool buildNodeAndWalkResults(llvm::StringRef key, llb_buildsystem_rule_result_walker_t cWalker) {
+    class CAPIRuleResultsWalker : public core::RuleResultsWalker {
+      llb_buildsystem_rule_result_walker_t cAPIWalker;
+
+    public:
+      explicit CAPIRuleResultsWalker(llb_buildsystem_rule_result_walker_t walker) : cAPIWalker(walker) {}
+
+      ActionKind visitResult(const core::KeyType& key, const core::Result& result) override {
+        auto llbKey = llb_data_t {
+          key.size(),
+          (const uint8_t *)key.data()
+        };
+        auto llbValue = llb_data_t {
+          result.value.size(),
+          result.value.data()
+        };
+        auto llbResult = llb_buildsystem_rule_result_t {
+          llbValue,
+          result.signature.value,
+          result.computedAt,
+          result.builtAt,
+          result.start,
+          result.end,
+        };
+        auto llbAction = cAPIWalker.visit_result(cAPIWalker.context, llbKey, llbResult);
+        switch (llbAction) {
+          case llb_buildsystem_rule_result_walk_action_kind_visit_dependencies:
+            return ActionKind::VisitDependencies;
+          case llb_buildsystem_rule_result_walk_action_kind_skip_dependencies:
+            return ActionKind::SkipDependencies;
+          case llb_buildsystem_rule_result_walk_action_kind_stop:
+            return ActionKind::Stop;
+        }
+      }
+    };
+
+    CAPIRuleResultsWalker walker(cWalker);
+    return getFrontend().buildNode(key, &walker);
+  }
+
   void cancel() {
     frontendDelegate->cancel();
   }
@@ -898,6 +938,11 @@ bool llb_buildsystem_build(llb_buildsystem_t* system_p, const llb_data_t* key) {
 bool llb_buildsystem_build_node(llb_buildsystem_t* system_p, const llb_data_t* key) {
   CAPIBuildSystem* system = (CAPIBuildSystem*) system_p;
   return system->buildNode(llvm::StringRef((const char*)key->data, key->length));
+}
+
+bool llb_buildsystem_build_node_and_walk_results(llb_buildsystem_t* system_p, const llb_data_t* key, llb_buildsystem_rule_result_walker_t walker) {
+  CAPIBuildSystem* system = (CAPIBuildSystem*) system_p;
+  return system->buildNodeAndWalkResults(llvm::StringRef((const char*)key->data, key->length), walker);
 }
 
 void llb_buildsystem_cancel(llb_buildsystem_t* system_p) {

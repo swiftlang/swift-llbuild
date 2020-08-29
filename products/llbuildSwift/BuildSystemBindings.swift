@@ -702,6 +702,64 @@ private final class CStyleEnvironment {
     }
 }
 
+/// Defines the result of a task.
+public struct BuildSystemRuleResult {
+    /// The value of the result
+    public let value: BuildValue
+    /// Signature of the node that generated the result
+    public let signature: UInt64
+    /// The build iteration this result was computed at
+    public let computedAt: UInt64
+    /// The build iteration this result was built at
+    public let builtAt: UInt64
+    /// The start of the command as a duration since a reference time
+    public let start: Double
+    /// The duration since a reference time of when the command finished computing
+    public let end: Double
+    /// The duration in seconds the result needed to finish
+    public var duration: Double { return end - start }
+
+    public init(value: BuildValue, signature: UInt64, computedAt: UInt64, builtAt: UInt64, start: Double, end: Double) {
+        self.value = value
+        self.signature = signature
+        self.computedAt = computedAt
+        self.builtAt = builtAt
+        self.start = start
+        self.end = end
+    }
+
+    fileprivate init?(result: llb_buildsystem_rule_result_t) {
+        guard let value = BuildValue.construct(from: Value(ValueType(UnsafeBufferPointer(start: result.value.data, count: Int(result.value.length))))) else {
+            return nil
+        }
+        self.init(value: value, signature: result.signature, computedAt: result.computed_at, builtAt: result.built_at, start: result.start, end: result.end)
+    }
+}
+
+extension BuildSystemRuleResult: Equatable {
+    public static func == (lhs: BuildSystemRuleResult, rhs: BuildSystemRuleResult) -> Bool {
+        return lhs.value == rhs.value && lhs.signature == rhs.signature && lhs.computedAt == rhs.computedAt && lhs.builtAt == rhs.builtAt && lhs.start == rhs.start && lhs.end == rhs.end
+    }
+}
+
+extension BuildSystemRuleResult: CustomStringConvertible {
+    public var description: String {
+        return "<RuleResult value=\(value) signature=\(String(format: "0x%X", signature)) computedAt=\(computedAt) builtAt=\(builtAt) duration=\(duration)sec>"
+    }
+}
+
+/// Specifies how node visitation should proceed.
+public enum RuleResultsWalkActionKind {
+    case visitDependencies
+    case skipDependencies
+    case stop
+}
+
+/// Visitor for the rule results of a node and its dependencies.
+public protocol RuleResultsWalker {
+    func visit(key: BuildKey, result: BuildSystemRuleResult) -> RuleResultsWalkActionKind
+}
+
 /// This class allows building using llbuild's native BuildSystem component.
 public final class BuildSystem {
     public typealias SchedulerAlgorithm = llbuild.SchedulerAlgorithm
@@ -833,6 +891,42 @@ public final class BuildSystem {
             llb_data_destroy(&data)
         }
         return llb_buildsystem_build_node(_system, &data)
+    }
+
+    public func build(node: String, resultsWalker: RuleResultsWalker) -> Bool {
+        var data = copiedDataFromBytes([UInt8](node.utf8))
+        defer {
+            llb_data_destroy(&data)
+        }
+
+        class WalkerWrapper {
+            let walker: RuleResultsWalker
+
+            init(_ walker: RuleResultsWalker) {
+                self.walker = walker
+            }
+
+            func visit(cKey: llb_data_t, cResult: llb_buildsystem_rule_result_t) -> RuleResultWalkActionKind {
+                guard let result = BuildSystemRuleResult(result: cResult) else {
+                    return .visitDependencies
+                }
+                switch walker.visit(key: BuildKey.construct(data: cKey), result: result) {
+                case .visitDependencies: return .visitDependencies
+                case .skipDependencies: return .skipDependencies
+                case .stop: return .stop
+                }
+            }
+
+            static func toWrapper(_ context: UnsafeMutableRawPointer) -> WalkerWrapper {
+                return Unmanaged<WalkerWrapper>.fromOpaque(UnsafeRawPointer(context)).takeUnretainedValue()
+            }
+        }
+
+        let wrapper = WalkerWrapper(resultsWalker)
+        var cWalker = llb_buildsystem_rule_result_walker_t()
+        cWalker.context = Unmanaged.passUnretained(wrapper).toOpaque()
+        cWalker.visit_result = { return WalkerWrapper.toWrapper($0!).visit(cKey: $1, cResult: $2) }
+        return llb_buildsystem_build_node_and_walk_results(_system, &data, cWalker)
     }
 
     /// Build the default target, or optionally a specific target.

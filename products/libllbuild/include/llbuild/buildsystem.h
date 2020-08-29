@@ -544,6 +544,60 @@ llb_buildsystem_build(llb_buildsystem_t* system, const llb_data_t* key);
 LLBUILD_EXPORT bool
 llb_buildsystem_build_node(llb_buildsystem_t* system, const llb_data_t* key);
 
+/// Defines the result of a task.
+typedef struct llb_buildsystem_rule_result_t_ {
+
+   /// The value that resulted from executing the task
+  llb_data_t value;
+
+   /// Signature of the node that generated the result
+  uint64_t signature;
+
+   /// The build iteration this result was computed at
+  uint64_t computed_at;
+
+   /// The build iteration this result was built at
+  uint64_t built_at;
+
+  /// The start of the command as a duration since a reference time
+  double start;
+
+  /// The duration since a reference time of when the command finished computing
+  double end;
+} llb_buildsystem_rule_result_t;
+
+/// Specifies how node visitation should proceed.
+typedef enum LLBUILD_ENUM_ATTRIBUTES {
+  llb_buildsystem_rule_result_walk_action_kind_visit_dependencies LLBUILD_SWIFT_NAME(visitDependencies) = 0,
+  llb_buildsystem_rule_result_walk_action_kind_skip_dependencies LLBUILD_SWIFT_NAME(skipDependencies) = 1,
+  llb_buildsystem_rule_result_walk_action_kind_stop = 2,
+} llb_buildsystem_rule_result_walk_action_kind_t LLBUILD_SWIFT_NAME(RuleResultWalkActionKind);
+
+/// Visitor for the rule results of a node and its dependencies.
+typedef struct llb_buildsystem_rule_result_walker_t_ {
+  /// User context pointer.
+  void* context;
+
+  /// Receives the key and rule result for the currently visited node. The `llb_data_t` objects of `key` and `result.value` point to transient memory that is only valid to access during the duration of this function call.
+  /// Copy the `llb_data_t` data of these objects if you want to refer to the data after this function returns.
+  llb_buildsystem_rule_result_walk_action_kind_t (*visit_result)(void* context, llb_data_t key,
+                                                      llb_buildsystem_rule_result_t result);
+} llb_buildsystem_rule_result_walker_t;
+
+/// Build a single node and walk the rule results of the node and its dependencies if successful. If it returns false, no visitation occurred.
+///
+/// It is an unchecked error for the client to request multiple builds
+/// concurrently.
+///
+/// This will automatically initialize the build system if it has not already
+/// been initialized.
+///
+/// \param walker Receiver for the rule results of the node and its dependencies.
+/// \returns True on success, or false if the build was aborted (for example, if
+/// a cycle was discovered).
+LLBUILD_EXPORT bool
+llb_buildsystem_build_node_and_walk_results(llb_buildsystem_t* system, const llb_data_t* key, llb_buildsystem_rule_result_walker_t walker);
+
 /// Cancel any ongoing build.
 ///
 /// This method may be called from any thread.

@@ -389,6 +389,29 @@ public:
 
 };
 
+/// Abstract class for visiting the rule results of a node and its dependencies.
+class RuleResultsWalker {
+public:
+  /// Specifies how node visitation should proceed.
+  enum class ActionKind {
+    /// Continue visiting the rule results of the current node dependencies.
+    VisitDependencies = 0,
+
+    /// Continue visiting but skip the current node dependencies.
+    SkipDependencies = 1,
+
+    /// Stop visitation.
+    Stop = 2
+  };
+
+  /// Accepts the rule result for a node.
+  ///
+  /// \param key The key for the currenly visited node.
+  /// \param key The rule result for the currenly visited node.
+  /// \returns An action kind to indicate how visitation should proceed.
+  virtual ActionKind visitResult(const KeyType& key, const core::Result& result) = 0;
+};
+
 /// A build engine supports fast, incremental, persistent, and parallel
 /// execution of computational graphs.
 ///
@@ -444,10 +467,11 @@ public:
 
   /// Build the result for a particular key.
   ///
+  /// \param resultsWalker Optional walker for receiving the rule results of the node and its dependencies.
   /// \returns The result of computing the key, or the empty value if the key
   /// could not be computed; the latter case only happens if a cycle was
   /// discovered currently.
-  const ValueType& build(const KeyType& key);
+  const ValueType& build(const KeyType& key, RuleResultsWalker* resultsWalker = nullptr);
 
   /// Cancel the currently running build.
   ///

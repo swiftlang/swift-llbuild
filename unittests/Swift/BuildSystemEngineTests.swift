@@ -95,6 +95,45 @@ class DependentCommand: BasicCommand {
     }
 }
 
+// Enhanced command that returns a custom build value
+class EnhancedCommand: ExternalCommand, ProducesCustomBuildValue {
+    private let fileInfo: BuildValueFileInfo
+    private var executed = false
+
+    init(_ fileInfo: BuildValueFileInfo) {
+        self.fileInfo = fileInfo
+    }
+
+    func getSignature(_ command: Command) -> [UInt8] {
+        return []
+    }
+
+    func start(_ command: Command, _ commandInterface: BuildSystemCommandInterface) {}
+
+    func provideValue(_ command: Command, _ commandInterface: BuildSystemCommandInterface, _ buildValue: BuildValue, _ inputID: UInt) {}
+
+    func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> BuildValue {
+        executed = true
+        return BuildValue.SuccessfulCommand(outputInfos: [fileInfo])
+    }
+
+    func isResultValid(_ command: Command, _ buildValue: BuildValue) -> Bool {
+        guard let value = buildValue as? BuildValue.SuccessfulCommand else {
+            return false
+        }
+
+        return value.outputInfos.count == 1 && value.outputInfos[0] == BuildValueFileInfo(device: 1, inode: 2, mode: 3, size: 4, modTime: BuildValueFileTimestamp())
+    }
+
+    func wasExecuted() -> Bool {
+        return executed
+    }
+
+    func reset() {
+        executed = false
+    }
+}
+
 final class TestTool: Tool {
     let expectedCommands: [String: ExternalCommand]
 
@@ -184,6 +223,10 @@ class TestBuildSystem {
 
     func run(target: String) {
         XCTAssertTrue(buildSystem.build(target: target))
+    }
+
+    func build(node: String, walker: RuleResultsWalker) {
+        XCTAssertTrue(buildSystem.build(node: node, resultsWalker: walker))
     }
 }
 
@@ -323,43 +366,8 @@ commands:
         let buildFile = makeTemporaryFile(basicBuildManifest)
         let databaseFile = makeTemporaryFile()
 
-        // Enhanced command that returns a custom build value
-        class EnhancedCommand: ExternalCommand, ProducesCustomBuildValue {
-            private var executed = false
-
-            func getSignature(_ command: Command) -> [UInt8] {
-                return []
-            }
-
-            func start(_ command: Command, _ commandInterface: BuildSystemCommandInterface) {}
-
-            func provideValue(_ command: Command, _ commandInterface: BuildSystemCommandInterface, _ buildValue: BuildValue, _ inputID: UInt) {}
-
-            func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> BuildValue {
-                executed = true
-                let fileInfo = BuildValueFileInfo(device: 1, inode: 2, mode: 3, size: 4, modTime: BuildValueFileTimestamp())
-                return BuildValue.SuccessfulCommand(outputInfos: [fileInfo])
-            }
-
-            func isResultValid(_ command: Command, _ buildValue: BuildValue) -> Bool {
-                guard let value = buildValue as? BuildValue.SuccessfulCommand else {
-                    return false
-                }
-
-                return value.outputInfos.count == 1 && value.outputInfos[0] == BuildValueFileInfo(device: 1, inode: 2, mode: 3, size: 4, modTime: BuildValueFileTimestamp())
-            }
-
-            func wasExecuted() -> Bool {
-                return executed
-            }
-
-            func reset() {
-                executed = false
-            }
-        }
-
         let expectedCommands = [
-            "maincommand": EnhancedCommand()
+            "maincommand": EnhancedCommand(BuildValueFileInfo(device: 1, inode: 2, mode: 3, size: 4, modTime: BuildValueFileTimestamp()))
         ]
 
         let buildSystem = TestBuildSystem(
@@ -395,5 +403,118 @@ commands:
 
         let fileInfo = BuildValueFileInfo(device: 1, inode: 2, mode: 3, size: 4, modTime: BuildValueFileTimestamp())
         XCTAssertEqual(maincommandResult.value, BuildValue.SuccessfulCommand(outputInfos: [fileInfo]))
+    }
+
+    func testBuildAndWalkNodes() {
+        let buildManifest = """
+client:
+  name: basic
+  version: 0
+  file-system: default
+
+tools:
+  testtool: {}
+
+targets:
+  all: ["<all>"]
+
+commands:
+  cmdAll:
+    tool: testtool
+    inputs: ["a"]
+    outputs: ["<all>"]
+  cmdA:
+    tool: testtool
+    inputs: ["b", "c"]
+    outputs: ["a"]
+  cmdB:
+    tool: testtool
+    inputs: ["d"]
+    outputs: ["b"]
+  cmdC:
+    tool: testtool
+    outputs: ["c"]
+  cmdD:
+    tool: testtool
+    outputs: ["d"]
+
+"""
+        let buildFile = makeTemporaryFile(buildManifest)
+        let databaseFile = makeTemporaryFile()
+
+        let fileInfoA = BuildValueFileInfo(device: 1, inode: 2, mode: 3, size: 4, modTime: BuildValueFileTimestamp(seconds: 1, nanoseconds: 1))
+        let fileInfoB = BuildValueFileInfo(device: 11, inode: 12, mode: 13, size: 14, modTime: BuildValueFileTimestamp(seconds: 11, nanoseconds: 1))
+        let fileInfoC = BuildValueFileInfo(device: 21, inode: 22, mode: 23, size: 24, modTime: BuildValueFileTimestamp(seconds: 21, nanoseconds: 1))
+        let fileInfoD = BuildValueFileInfo(device: 31, inode: 32, mode: 33, size: 34, modTime: BuildValueFileTimestamp(seconds: 31, nanoseconds: 1))
+
+        let expectedCommands: [String: ExternalCommand] = [
+            "cmdAll": BasicCommand(),
+            "cmdA": EnhancedCommand(fileInfoA),
+            "cmdB": EnhancedCommand(fileInfoB),
+            "cmdC": EnhancedCommand(fileInfoC),
+            "cmdD": EnhancedCommand(fileInfoD),
+        ]
+
+        struct NodeResult: Equatable {
+            let key: String
+            let value: BuildValueFileInfo
+
+            init(_ key: String, _ value: BuildValueFileInfo) {
+                self.key = key
+                self.value = value
+            }
+        }
+
+        class TestResultsWalker: RuleResultsWalker {
+            let topNode: String
+            let action: RuleResultsWalkActionKind
+            var results: [NodeResult] = []
+
+            init(topNode: String, action: RuleResultsWalkActionKind) {
+                self.topNode = topNode
+                self.action = action
+            }
+
+            func visit(key: BuildKey, result: BuildSystemRuleResult) -> RuleResultsWalkActionKind {
+                guard key.key != topNode else {
+                    return .visitDependencies
+                }
+                guard let inputVal = result.value as? BuildValue.ExistingInput else {
+                    return .visitDependencies
+                }
+                results.append(NodeResult(key.key, inputVal.fileInfo))
+                return action
+            }
+        }
+
+        func checkResults(_ action: RuleResultsWalkActionKind, block: ([NodeResult])->()) {
+            let buildSystem = TestBuildSystem(
+                buildFile: buildFile,
+                databaseFile: databaseFile,
+                expectedCommands: expectedCommands
+            )
+            let walker = TestResultsWalker(topNode: "a", action: action)
+            buildSystem.build(node: "a", walker: walker)
+            block(walker.results)
+        }
+
+        checkResults(.visitDependencies) { results in
+            XCTAssertEqual(results, [
+                NodeResult("c", fileInfoC),
+                NodeResult("b", fileInfoB),
+                NodeResult("d", fileInfoD),
+            ])
+        }
+        checkResults(.skipDependencies) { results in
+            XCTAssertEqual(results, [
+                NodeResult("b", fileInfoB),
+                NodeResult("c", fileInfoC),
+            ])
+        }
+        checkResults(.stop) { results in
+            XCTAssertEqual(results, [
+                NodeResult("b", fileInfoB),
+            ])
+        }
     }
 }

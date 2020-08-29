@@ -326,7 +326,7 @@ public:
   }
 
   /// Build the given key, and return the result and an indication of success.
-  llvm::Optional<BuildValue> build(BuildKey key);
+  llvm::Optional<BuildValue> build(BuildKey key, RuleResultsWalker* resultsWalker);
   
   bool build(StringRef target);
 
@@ -1823,7 +1823,7 @@ BuildSystemImpl::lookupNode(StringRef name, bool isImplicit) {
   return BuildNode::makePlain(name);
 }
 
-llvm::Optional<BuildValue> BuildSystemImpl::build(BuildKey key) {
+llvm::Optional<BuildValue> BuildSystemImpl::build(BuildKey key, RuleResultsWalker* resultsWalker) {
 
   if (basic::sys::raiseOpenFileLimit() != 0) {
     error(getMainFilename(), "failed to raise open file limit");
@@ -1832,7 +1832,7 @@ llvm::Optional<BuildValue> BuildSystemImpl::build(BuildKey key) {
 
   // Build the target.
   buildWasAborted = false;
-  auto result = buildEngine.build(key.toData());
+  auto result = buildEngine.build(key.toData(), resultsWalker);
     
   // Clear out the shell handlers, as we do not want to hold on to them across
   // multiple builds.
@@ -1863,7 +1863,7 @@ bool BuildSystemImpl::build(StringRef target) {
     return false;
   }
 
-  return build(BuildKey::makeTarget(target)).hasValue();
+  return build(BuildKey::makeTarget(target), nullptr).hasValue();
 }
 
 #pragma mark - PhonyTool implementation
@@ -3864,8 +3864,8 @@ bool BuildSystem::enableTracing(StringRef path,
   return static_cast<BuildSystemImpl*>(impl)->enableTracing(path, error_out);
 }
 
-llvm::Optional<BuildValue> BuildSystem::build(BuildKey key) {
-  return static_cast<BuildSystemImpl*>(impl)->build(key);
+llvm::Optional<BuildValue> BuildSystem::build(BuildKey key, RuleResultsWalker* resultsWalker) {
+  return static_cast<BuildSystemImpl*>(impl)->build(key, resultsWalker);
 }
 
 bool BuildSystem::build(StringRef name) {

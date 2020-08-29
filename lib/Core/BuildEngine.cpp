@@ -18,6 +18,7 @@
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/KeyID.h"
 
+#include "llvm/ADT/SmallSet.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/StringMap.h"
 
@@ -1476,7 +1477,7 @@ public:
   /// @name Client API
   /// @{
 
-  const ValueType& build(const KeyType& key) {
+  const ValueType& build(const KeyType& key, RuleResultsWalker* resultsWalker) {
     // Protect the engine against invalid concurrent use.
     if (buildRunning.exchange(true)) {
       delegate.error("build engine busy");
@@ -1572,6 +1573,35 @@ public:
     if (!success) {
       static ValueType emptyValue{};
       return emptyValue;
+    }
+
+    if (resultsWalker) {
+      // Pass the rule results of the node and its dependencies.
+      SmallVector<KeyID, 8> queue;
+      queue.push_back(getKeyID(key));
+
+      llvm::SmallSet<KeyID, 16> visitedKeys;
+      while (!queue.empty()) {
+        KeyID key = queue.pop_back_val();
+        bool inserted = visitedKeys.insert(key).second;
+        if (!inserted) {
+          continue; // already visited.
+        }
+
+        auto& ruleInfo = getRuleInfoForKey(key);
+        switch (resultsWalker->visitResult(getKeyForID(key), ruleInfo.result)) {
+          case RuleResultsWalker::ActionKind::VisitDependencies:
+            for (AttributedKeyIDs::KeyIDAndFlag keyIDAndFlag : ruleInfo.result.dependencies) {
+              queue.push_back(keyIDAndFlag.keyID);
+            }
+            break;
+          case RuleResultsWalker::ActionKind::SkipDependencies:
+            break;
+          case RuleResultsWalker::ActionKind::Stop:
+            queue.clear();
+            break;
+        }
+      }
     }
 
     // The task queue should be empty and the rule complete.
@@ -1854,8 +1884,8 @@ void BuildEngine::addRule(std::unique_ptr<Rule>&& rule) {
   static_cast<BuildEngineImpl*>(impl)->addRule(std::move(rule));
 }
 
-const ValueType& BuildEngine::build(const KeyType& key) {
-  return static_cast<BuildEngineImpl*>(impl)->build(key);
+const ValueType& BuildEngine::build(const KeyType& key, RuleResultsWalker* resultsWalker) {
+  return static_cast<BuildEngineImpl*>(impl)->build(key, resultsWalker);
 }
 
 void BuildEngine::resetForBuild() {
