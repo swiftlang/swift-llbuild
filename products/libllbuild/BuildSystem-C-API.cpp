@@ -626,6 +626,9 @@ public:
   virtual std::unique_ptr<Command>
   createCustomCommand(const BuildKey& key) override {
     auto key_p = (llb_build_key_t *)new CAPIBuildKey(key);
+    llbuild_defer {
+      llb_build_key_destroy(key_p);
+    };
     return std::unique_ptr<Command>(
         (Command*) cAPIDelegate.create_custom_command(cAPIDelegate.context, key_p));
   }
