@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import errno
 import sys
 
@@ -8,8 +9,8 @@ def write_data_to_path_if_changed(data, path):
     try:
         with open(path) as f:
             if f.read() == data:
-                print >>sys.stderr, "note: %s: file contents unchanged" % (
-                    path,)
+                print("note: %s: file contents unchanged" % (
+                    path,), file=sys.stderr)
                 return
     except IOError as e:
         if e.errno != errno.ENOENT:
@@ -18,7 +19,7 @@ def write_data_to_path_if_changed(data, path):
     # Otherwise, write the data.
     with open(path, 'wb') as f:
         f.write(data)
-    print >>sys.stderr, "note: %s: updated file" % (path,)
+    print("note: %s: updated file" % (path,), file=sys.stderr)
 
 # Split the input into even and odd numbers.
 even = []

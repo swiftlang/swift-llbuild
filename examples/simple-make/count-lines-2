@@ -53,4 +53,4 @@ engine = DataDrivenEngine(globals())
 engine.attach_db(".count-lines.db")
 
 result = engine.build(CountLinesRule.asKey(path))
-print result
+print(result)

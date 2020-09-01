@@ -6,6 +6,7 @@
 # dependency surface area, so if you run this to update the sources, please
 # examine the diffs to remove things that don't make sense.
 
+from __future__ import print_function
 import errno
 import optparse
 import os
@@ -71,7 +72,7 @@ llbuild_srcroot = None
 def note(msg):
     msg = msg.replace(llvm_srcroot, "<LLVM>")
     msg = msg.replace(llbuild_srcroot, "<LLBUILD>")
-    print >>sys.stderr, "note: %s" % (msg,)
+    print("note: %s" % (msg,), file=sys.stderr)
 
 def mkdir_p(path):
     try:
@@ -129,7 +130,7 @@ def main():
             mkdir_p(os.path.dirname(dst))
             copyfile(src, dst)
 
-    print "note: importing from %r to %r" % (llvm_srcroot, llbuild_srcroot)
+    print("note: importing from %r to %r" % (llvm_srcroot, llbuild_srcroot))
 
     for name in ADT_imports:
         import_header('ADT', name+'.h')

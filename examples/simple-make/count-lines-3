@@ -80,4 +80,4 @@ engine = DataDrivenEngine(globals())
 engine.attach_db(".count-source-lines.db")
 
 result = engine.build(CountSourceLinesRule.asKey(path))
-print result
+print(result)

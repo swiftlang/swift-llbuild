@@ -27,7 +27,7 @@ defaultTarget = "16.04"
 
 def call(args):
     """Prints and executes a command."""
-    print " ".join(args)
+    print(" ".join(args))
     return subprocess.call(args)
 
 def build(args):
@@ -60,7 +60,7 @@ def build(args):
 
         # Download latest snapshot (if necessary).
         if len(curImages.split()) == 1:
-            print "Image exists for {} with {}".format(target, snapshot_name)
+            print("Image exists for {} with {}".format(target, snapshot_name))
             exit(0)
         else:
             result = call([
@@ -70,7 +70,7 @@ def build(args):
             ])
 
             if result != 0:
-                print "Unable to clean prior images"
+                print("Unable to clean prior images")
                 exit(1)
 
             result = call([
@@ -81,7 +81,7 @@ def build(args):
             ])
 
             if result != 0:
-                print "Unable to fetch snapshot"
+                print("Unable to fetch snapshot")
                 exit(1)
 
         # Create docker image.

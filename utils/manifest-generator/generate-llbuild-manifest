@@ -40,19 +40,19 @@ class Command:
 
 class LLBuildManifest:
   def __init__(self, manifestPath, expectedLLBuildOutputPath, clientName, clientVersion, density, maxAdditionalInputs=sys.maxsize, minDepth = -1, maxDepth = -1, minWidth = -1, maxWidth = -1, levelWidths = []):
-    print "Writing llbuild manifest to " + manifestPath
+    print("Writing llbuild manifest to " + manifestPath)
 
     try:
       self.manifestFile = open(manifestPath, 'w+')
     except:
-      print "Failed to open manifest file at " + manifestPath
+      print("Failed to open manifest file at " + manifestPath)
       raise Exception
 
-    print "Writing expected llbuild results to " + expectedLLBuildOutputPath
+    print("Writing expected llbuild results to " + expectedLLBuildOutputPath)
     try:
       self.expectedLLBuildOutputFile = open(expectedLLBuildOutputPath, 'w+')
     except:
-      print "Failed to open expected llbuild file at " + expectedLLBuildOutputPath
+      print("Failed to open expected llbuild file at " + expectedLLBuildOutputPath)
       raise Exception
 
     self.nextCommandID = 0
@@ -92,7 +92,7 @@ class LLBuildManifest:
       depth = random.randint(minDepth, maxDepth)
       
       if minDepth < 0 or maxDepth < 0 or minWidth < 0 or maxWidth < 0:
-        print "ERROR: Missing necessary arguments for building the manifest or one of parameters was unexpectedly less than zero. Please provide -minWidth <INT>, -maxWidth <INT>, -minDepth <INT>, -maxDepth <INT> OR -levelWidths <LIST>."
+        print("ERROR: Missing necessary arguments for building the manifest or one of parameters was unexpectedly less than zero. Please provide -minWidth <INT>, -maxWidth <INT>, -minDepth <INT>, -maxDepth <INT> OR -levelWidths <LIST>.")
         raise Exception
 
       for levelIndex in range(depth-1):
@@ -103,13 +103,13 @@ class LLBuildManifest:
       self.levelWidths.append(1)
 
     if self.levelWidths[len(self.levelWidths)-1] != 1:
-      print "ERROR: Last LevelWidths Index must be set to 1 as there can only be one default target."
+      print("ERROR: Last LevelWidths Index must be set to 1 as there can only be one default target.")
       raise Exception
 
-    print "Level widths: %s" % self.levelWidths
+    print("Level widths: %s" % self.levelWidths)
   
   def generateBuildGraph(self):
-    print "Generating Build Graph"
+    print("Generating Build Graph")
     
     self.writeLine("client:", indentLevel=0)
     self.writeLine("name: " + self.clientName, indentLevel=1)
@@ -247,7 +247,7 @@ if float(args.density) > 100:
 try:
   if args.levelWidths != "":
     if args.minDepth != "-1" or args.maxDepth != "-1" or args.minWidth != "-1" or args.maxWidth != "-1":
-      print "WARNING: Level Width will override any width/depth parameters"
+      print("WARNING: Level Width will override any width/depth parameters")
 
     manifest = LLBuildManifest(args.manifestPath, 
       args.expectedLLBuildOutputPath,

@@ -131,4 +131,4 @@ _,path = sys.argv
 engine = DataDrivenEngine(globals())
 engine.attach_db(".build.db")
 result = engine.build(BuildDirectoryRule.asKey(path))
-print result
+print(result)
