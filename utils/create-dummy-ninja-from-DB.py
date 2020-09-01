@@ -77,10 +77,10 @@ def main():
 
     # We create a dummy build file with one target "make-inputs", which creates
     # dummy input files, and all the other rules just cat those files together.
-    print "rule CAT"
-    print "    command = cat ${in} > ${out}"
-    print "    description = ${command}"
-    print
+    print("rule CAT")
+    print("    command = cat ${in} > ${out}")
+    print("    description = ${command}")
+    print()
     node_names = {}
     def get_key_name(key):
         name = node_names.get(key)
@@ -108,27 +108,27 @@ def main():
         if not dep_names:
             seen_inputs.add(name)
         else:
-            print "build %s: CAT %s" % (name, " ".join(dep_names))
+            print("build %s: CAT %s" % (name, " ".join(dep_names)))
         seen_rules.add(name)
         seen_nodes.update(dep_names)
-    print
+    print()
 
     # Write a build statement to create all the inputs, so we can actually
     # execute the build.
-    print "rule make-inputs"
-    print "  command = touch %s" % " ".join(sorted(seen_inputs))
-    print "build make-inputs: make-inputs"
-    print
+    print("rule make-inputs")
+    print("  command = touch %s" % " ".join(sorted(seen_inputs)))
+    print("build make-inputs: make-inputs")
+    print()
 
     # Write out a default target with the roots.
     roots = seen_rules - seen_nodes
-    print "default %s" % (" ".join(roots),)
+    print("default %s" % (" ".join(roots),))
 
     # Write the mappings, if requested.
     if args.show_mapping:
-        print
+        print()
         for key,name in sorted(node_names.items()):
-            print "# %s -> %s" % (key, name)
+            print("# %s -> %s" % (key, name))
 
 if __name__ == '__main__':
     main()
