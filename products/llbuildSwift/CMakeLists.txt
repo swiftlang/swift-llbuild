@@ -15,6 +15,11 @@ if(CMAKE_VERSION VERSION_LESS 3.16)
   endif()
 endif()
 
+# Set x86_64 default if CMAKE_OSX_ARCHITECTURES is not set
+if(NOT DEFINED CMAKE_OSX_ARCHITECTURES)
+  set(CMAKE_OSX_ARCHITECTURES "x86_64")
+endif()
+
 # TODO(compnerd) move both of these outside of the CMake into the invocation
 if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
   add_compile_options(-target ${CMAKE_OSX_ARCHITECTURES}-apple-macosx10.10)
