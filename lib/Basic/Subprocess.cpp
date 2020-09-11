@@ -683,7 +683,7 @@ void llbuild::basic::spawnProcess(
 #endif
 
 #if defined(_WIN32)
-  DWORD creationFlags = NORMAL_PRIORITY_CLASS | CREATE_NEW_PROCESS_GROUP |
+  DWORD creationFlags = NORMAL_PRIORITY_CLASS |
                         CREATE_UNICODE_ENVIRONMENT;
   PROCESS_INFORMATION processInfo = {0};
 
