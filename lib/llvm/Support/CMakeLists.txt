@@ -64,3 +64,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
     execinfo)
 endif()
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "Android|Darwin|Linux")
+  target_link_libraries(llvmSupport PRIVATE curses)
+endif()
