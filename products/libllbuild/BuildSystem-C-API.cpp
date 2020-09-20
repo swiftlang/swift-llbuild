@@ -836,9 +836,7 @@ public:
       sig = sig.combine(StringRef((const char*)data.data, data.length));
 
       // Release the client memory.
-      //
-      // FIXME: This is gross, come up with a general purpose solution.
-      free((char*)data.data);
+      llb_data_destroy(&data);
     }
     return sig;
   }

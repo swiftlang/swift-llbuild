@@ -28,7 +28,8 @@ import llbuild
 /// Create a new `llb_data_t` instance containing an allocated copy of the given `bytes`.
 internal func copiedDataFromBytes(_ bytes: [UInt8]) -> llb_data_t {
     // Create the data.
-    let buf = UnsafeMutableBufferPointer(start: UnsafeMutablePointer<UInt8>.allocate(capacity: bytes.count), count: bytes.count)
+    let allocation: UnsafeMutableRawPointer? = malloc(bytes.count)
+    let buf = UnsafeMutableBufferPointer(start: allocation?.assumingMemoryBound(to: UInt8.self), count: bytes.count)
 
     // Copy the data.
     _ = bytes.withUnsafeBufferPointer { bytesPtr in
