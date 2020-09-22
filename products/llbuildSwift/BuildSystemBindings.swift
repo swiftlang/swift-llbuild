@@ -844,10 +844,6 @@ public final class BuildSystem {
     public func build(target: String? = nil) -> Bool {
         var data = target.map({ copiedDataFromBytes([UInt8]($0.utf8)) }) ?? llb_data_t(length: 0, data: nil)
         defer {
-            if data.data != nil {
-              UnsafeMutablePointer<UInt8>(mutating: data.data).deallocate()
-            }
-            data.data = nil
             llb_data_destroy(&data)
         }
         return llb_buildsystem_build(_system, &data)
