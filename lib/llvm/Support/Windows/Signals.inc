@@ -404,11 +404,19 @@ AvoidMessageBoxHook(int ReportType, char *Message, int *Return) {
 
 #endif
 
-extern "C" void HandleAbort(int Sig) {
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+static void HandleAbort(int Sig) {
   if (Sig == SIGABRT) {
     LLVM_BUILTIN_TRAP;
   }
 }
+
+#if defined(__cplusplus)
+}
+#endif
 
 static void InitializeThreading() {
   if (CriticalSectionInitialized)
