@@ -11,7 +11,7 @@
 #if canImport(Darwin)
 import Darwin.C
 #elseif os(Windows)
-import MSVCRT
+import ucrt
 import WinSDK
 #elseif canImport(Glibc)
 import Glibc
