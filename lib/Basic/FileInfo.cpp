@@ -26,9 +26,6 @@ bool FileInfo::isDirectory() const {
 
 /// Get the information to represent the state of the given node in the file
 /// system.
-///
-/// \param info_out [out] On success, the important path information.
-/// \returns True if information on the path was found.
 FileInfo FileInfo::getInfoForPath(const std::string& path, bool asLink) {
   FileInfo result;
 
