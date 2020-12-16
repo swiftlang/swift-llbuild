@@ -17,7 +17,7 @@ endif()
 
 # Set x86_64 default if CMAKE_OSX_ARCHITECTURES is not set
 if(NOT DEFINED CMAKE_OSX_ARCHITECTURES OR CMAKE_OSX_ARCHITECTURES STREQUAL "")
-  set(CMAKE_OSX_ARCHITECTURES "x86_64")
+  set(CMAKE_OSX_ARCHITECTURES "${CMAKE_HOST_SYSTEM_PROCESSOR}")
 endif()
 
 # TODO(compnerd) move both of these outside of the CMake into the invocation
