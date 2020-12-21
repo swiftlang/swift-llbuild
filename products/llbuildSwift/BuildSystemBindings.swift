@@ -62,7 +62,7 @@ public struct BuildSystemCommandInterface {
     }
 }
 
-public protocol Tool: class {
+public protocol Tool: AnyObject {
     /// Called to create a specific command instance of this tool.
     func createCommand(_ name: String) -> ExternalCommand
 
@@ -141,7 +141,7 @@ private final class ToolWrapper {
     }
 }
 
-public protocol ExternalCommand: class {
+public protocol ExternalCommand: AnyObject {
     /// Get a signature used to identify the internal state of the command.
     ///
     /// This is checked to determine if the command needs to rebuild versus the last time it was run.
@@ -180,7 +180,7 @@ public protocol ExternalCommand: class {
 
 }
 
-public protocol ProducesCustomBuildValue: class {
+public protocol ProducesCustomBuildValue: AnyObject {
     /// Called to execute the given command that produces a custom build value.
     ///
     /// - command: A handle to the executing command.

@@ -29,7 +29,7 @@ class FailureCommand: ExternalCommand {
     }
 }
 
-protocol ExpectationCommand: class {
+protocol ExpectationCommand: AnyObject {
     func isFulfilled() -> Bool
 }
 
