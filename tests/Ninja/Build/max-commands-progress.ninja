@@ -7,8 +7,8 @@
 # RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out
 # RUN: %{FileCheck} --check-prefix=CHECK-INITIAL < %t1.out %s
 #
-# CHECK-INITIAL: [1/{{.*}}] cp input-2 output-2
-# CHECK-INITIAL: [2/{{.*}}] cp input-1 output-1
+# CHECK-INITIAL: [{{1|2}}/{{.*}}] cp input-2 output-2
+# CHECK-INITIAL: [{{1|2}}/{{.*}}] cp input-1 output-1
 # CHECK-INITIAL: [3/3] cat output-1 output-2 > output
 
 # RUN: %{adjust-times} -now-plus-ulp %t.build/input-1
