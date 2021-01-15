@@ -105,6 +105,8 @@ llb_database_get_keys(llb_database_t *database, llb_database_fetch_result_t *_Nu
 
 LLBUILD_EXPORT bool llb_database_get_keys_and_results(llb_database_t *database, llb_database_fetch_result_t *_Nullable *_Nonnull keysAndResults_out, llb_data_t *_Nullable error_out);
 
+LLBUILD_EXPORT uint64_t llb_database_get_epoch(llb_database_t *database, llb_data_t *_Nullable error_out);
+
 LLBUILD_ASSUME_NONNULL_END
 
 #endif
