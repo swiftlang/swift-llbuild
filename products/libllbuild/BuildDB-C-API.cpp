@@ -162,6 +162,10 @@ public:
     buildUpKeyCache(keys_out);
     return success;
   }
+
+  Epoch getCurrentEpoch(bool *success_out, std::string *error_out) {
+    return _db.get()->getCurrentEpoch(success_out, error_out);
+  }
 };
 
 const llb_data_t mapData(std::vector<uint8_t> input) {
@@ -372,3 +376,14 @@ bool llb_database_get_keys_and_results(llb_database_t *database, llb_database_fe
   return success;
 }
 
+uint64_t llb_database_get_epoch(llb_database_t *database, llb_data_t *_Nullable error_out) {
+  auto db = (CAPIBuildDB *)database;
+  bool success;
+  std::string error;
+  auto epoch = db->getCurrentEpoch(&success, &error);
+  if (!success && error_out) {
+    error_out->length = error.size();
+    error_out->data = (const uint8_t *)strdup(error.c_str());
+  }
+  return epoch;
+}

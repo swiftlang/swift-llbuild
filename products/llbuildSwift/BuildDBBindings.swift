@@ -309,4 +309,15 @@ public final class BuildDB {
         llb_database_destroy_result(&result)
         return mappedResult
     }
+
+    public func currentBuildEpoch() throws -> UInt64 {
+        let errorPtr = MutableStringPointer()
+        let epoch = llb_database_get_epoch(_database, &errorPtr.ptr)
+
+        if let error = errorPtr.msg {
+            throw Error.operationDidFail(error: error)
+        }
+
+        return epoch
+    }
 }
