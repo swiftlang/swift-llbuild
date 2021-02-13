@@ -26,6 +26,10 @@ APPLICATION_EXTENSION_API_ONLY = YES
 // Headermaps are disabled.
 USE_HEADERMAP = NO
 
+// llbuild has no @objc APIs, so the generated header is not needed
+SWIFT_OBJC_INTERFACE_HEADER_NAME =
+SWIFT_INSTALL_OBJC_HEADER = NO
+
 // Enable InstallAPI.
 SUPPORTS_TEXT_BASED_API = YES
 TAPI_ENABLE_MODULES = YES
