@@ -14,6 +14,7 @@
 
 #include "StringView.h"
 
+#include <inttypes.h>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
