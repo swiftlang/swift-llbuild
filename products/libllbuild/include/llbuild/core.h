@@ -23,6 +23,9 @@
 
 #include "llbuild-defines.h"
 #include <stdbool.h>
+#if defined(__OpenBSD__)
+#include <inttypes.h>
+#endif
 #include <stdint.h>
 
 /// @name Build Engine

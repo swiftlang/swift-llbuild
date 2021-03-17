@@ -22,6 +22,8 @@
 #define NOMINMAX
 #include <windows.h>
 #else
+#include <inttypes.h>
+#include <sys/cdefs.h>
 #include <sys/resource.h>
 #include <unistd.h>
 #if defined(__linux__) || defined(__GNU__)
