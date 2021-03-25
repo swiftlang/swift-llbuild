@@ -147,45 +147,51 @@ class BuildDBBindingsTests: XCTestCase {
   
   func testGetKeys() throws {
     let db = try exampleDB(path: exampleBuildDBPath)
-    let keys = try db.getKeys()
-    
-    XCTAssertEqual(keys.count, 3)
-    XCTAssertEqual(keys[0], BuildKey.Target(name: "B"))
-    XCTAssertEqual(keys[1], BuildKey.Command(name: "A"))
-    XCTAssertEqual(keys[2], BuildKey.Node(path: "C"))
+    try withExtendedLifetime(db) {
+      let keys = try db.getKeys()
+
+      XCTAssertEqual(keys.count, 3)
+      XCTAssertEqual(keys[0], BuildKey.Target(name: "B"))
+      XCTAssertEqual(keys[1], BuildKey.Command(name: "A"))
+      XCTAssertEqual(keys[2], BuildKey.Node(path: "C"))
+    }
   }
   
   func testGetResults() throws {
     let db = try exampleDB(path: exampleBuildDBPath)
-    
-    guard let result1 = try db.lookupRuleResult(buildKey: BuildKey.Node(path: "C")) else {
-      return XCTFail("Expected to get result for build key C.")
+    try withExtendedLifetime(db) {
+      guard let result1 = try db.lookupRuleResult(buildKey: BuildKey.Node(path: "C")) else {
+        XCTFail("Expected to get result for build key C.")
+        return
+      }
+
+      XCTAssertGreaterThan(result1.start, 0)
+      XCTAssertGreaterThanOrEqual(result1.end, result1.start)
+      XCTAssertEqual(result1.dependencies.count, 2)
+      XCTAssertEqual(result1.dependencies[0], BuildKey.Command(name: "A"))
+      XCTAssertEqual(result1.dependencies[1], BuildKey.Target(name: "B"))
+      XCTAssertEqual(result1.value, BuildValue.SuccessfulCommand(outputInfos: [BuildValue.SuccessfulCommand.FileInfo(), BuildValue.SuccessfulCommand.FileInfo()]))
+
+      guard let result2 = try db.lookupRuleResult(buildKey: BuildKey.Target(name: "B")) else {
+        XCTFail("Expected to get result for build key B.")
+        return
+      }
+
+      XCTAssertGreaterThan(result2.start, 0)
+      XCTAssertGreaterThanOrEqual(result2.end, result2.start)
+      XCTAssertTrue(result2.dependencies.isEmpty)
+      XCTAssertEqual(result2.value, BuildValue.SuccessfulCommand(outputInfos: [BuildValue.SuccessfulCommand.FileInfo()]))
+
+      guard let result3 = try db.lookupRuleResult(buildKey: BuildKey.Command(name: "A")) else {
+        XCTFail("Expected to get result for build key A.")
+        return
+      }
+
+      XCTAssertGreaterThan(result3.start, 0)
+      XCTAssertGreaterThanOrEqual(result3.end, result3.start)
+      XCTAssertTrue(result3.dependencies.isEmpty)
+      XCTAssertEqual(result3.value, BuildValue.SuccessfulCommand(outputInfos: [BuildValue.SuccessfulCommand.FileInfo()]))
     }
-    
-    XCTAssertGreaterThan(result1.start, 0)
-    XCTAssertGreaterThanOrEqual(result1.end, result1.start)
-    XCTAssertEqual(result1.dependencies.count, 2)
-    XCTAssertEqual(result1.dependencies[0], BuildKey.Command(name: "A"))
-    XCTAssertEqual(result1.dependencies[1], BuildKey.Target(name: "B"))
-    XCTAssertEqual(result1.value, BuildValue.SuccessfulCommand(outputInfos: [BuildValue.SuccessfulCommand.FileInfo(), BuildValue.SuccessfulCommand.FileInfo()]))
-    
-    guard let result2 = try db.lookupRuleResult(buildKey: BuildKey.Target(name: "B")) else {
-      return XCTFail("Expected to get result for build key B.")
-    }
-    
-    XCTAssertGreaterThan(result2.start, 0)
-    XCTAssertGreaterThanOrEqual(result2.end, result2.start)
-    XCTAssertTrue(result2.dependencies.isEmpty)
-    XCTAssertEqual(result2.value, BuildValue.SuccessfulCommand(outputInfos: [BuildValue.SuccessfulCommand.FileInfo()]))
-    
-    guard let result3 = try db.lookupRuleResult(buildKey: BuildKey.Command(name: "A")) else {
-      return XCTFail("Expected to get result for build key A.")
-    }
-    
-    XCTAssertGreaterThan(result3.start, 0)
-    XCTAssertGreaterThanOrEqual(result3.end, result3.start)
-    XCTAssertTrue(result3.dependencies.isEmpty)
-    XCTAssertEqual(result3.value, BuildValue.SuccessfulCommand(outputInfos: [BuildValue.SuccessfulCommand.FileInfo()]))
   }
   
   func testRuleResult() throws {
