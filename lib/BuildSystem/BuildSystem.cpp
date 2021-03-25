@@ -2270,6 +2270,7 @@ public:
     llvm::raw_svector_ostream commandOS(command);
     commandOS << basic::shellEscaped(executable);
     commandOS << " " << "--version";
+    commandOS << " " << "2>/dev/null";
 
     // Read the result.
     FILE *fp = basic::sys::popen(commandOS.str().str().c_str(), "r");
