@@ -19,6 +19,8 @@ import Glibc
 #error("Missing libc or equivalent")
 #endif
 
+import struct Foundation.Date
+
 // We don't need this import if we're building
 // this file as part of the llbuild framework.
 #if !LLBUILD_FRAMEWORK
@@ -70,9 +72,23 @@ extension BuildValueFileTimestamp: Equatable {
     }
 }
 
+extension BuildValueFileTimestamp: Comparable {
+    public static func < (lhs: BuildValueFileTimestamp, rhs: BuildValueFileTimestamp) -> Bool {
+        if lhs.seconds != rhs.seconds { return lhs.seconds < rhs.seconds }
+        return lhs.nanoseconds < rhs.nanoseconds
+    }
+}
+
 extension BuildValueFileTimestamp: CustomStringConvertible {
     public var description: String {
         return "<FileTimestamp seconds=\(seconds) nanoseconds=\(nanoseconds)>"
+    }
+}
+
+public extension Date {
+    init(_ ft: BuildValueFileTimestamp) {
+        // Using reference date, instead of 1970, which offers a bit more nanosecond precision since it is a lower absolute number.
+        self.init(timeIntervalSinceReferenceDate: Double(ft.seconds) - Date.timeIntervalBetween1970AndReferenceDate + (1.0e-9 * Double(ft.nanoseconds)))
     }
 }
 

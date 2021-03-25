@@ -292,4 +292,19 @@ class BuildValueTests: XCTestCase {
       XCTAssertEqual($0.signature, signature)
     }
   }
+
+  func testBuildValueFileTimestamp() {
+    let stamp11 = BuildValueFileTimestamp(seconds: 1, nanoseconds: 1)
+    let stamp12 = BuildValueFileTimestamp(seconds: 1, nanoseconds: 2)
+    let stamp21 = BuildValueFileTimestamp(seconds: 2, nanoseconds: 1)
+
+    XCTAssert(stamp11 < stamp12)
+    XCTAssertFalse(stamp12 < stamp11)
+    XCTAssert(stamp12 < stamp21)
+
+    let date21 = Date(stamp21)
+    let expectDate = Date(timeIntervalSinceReferenceDate: 2 - Date.timeIntervalBetween1970AndReferenceDate + (1.0e-9 * 1))
+
+    XCTAssertEqual(date21, expectDate)
+  }
 }
