@@ -732,13 +732,25 @@ public final class BuildSystem {
 
         // Create a stable C string path.
         let pathPtr = strdup(buildFile)
-        defer { free(pathPtr) }
+        defer {
+            if let pathPtr = pathPtr {
+                free(pathPtr)
+            }
+        }
 
         let dbPathPtr = strdup(databaseFile)
-        defer { free(dbPathPtr) }
+        defer {
+            if let dbPathPtr = dbPathPtr {
+                free(dbPathPtr)
+            }
+        }
 
         let tracePathPtr = strdup(traceFile ?? "")
-        defer { free(tracePathPtr) }
+        defer {
+            if let tracePathPtr = tracePathPtr {
+                free(tracePathPtr)
+            }
+        }
 
         // Allocate a C style environment, if necessary.
         _cEnvironment = CStyleEnvironment(environment)
