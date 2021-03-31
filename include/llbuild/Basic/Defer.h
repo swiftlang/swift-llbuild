@@ -31,14 +31,14 @@ public:
 
 template <typename T>
 ScopeDefer<T> makeScopeDefer(T&& work) {
-  return ScopeDefer<typename std::decay<T>::type>(std::move(work));
+  return ScopeDefer<typename std::decay<T>::type>(std::forward<T>(work));
 }
 
 namespace impl {
   struct ScopeDeferTask {};
   template<typename T>
   ScopeDefer<typename std::decay<T>::type> operator+(ScopeDeferTask, T&& work) {
-    return ScopeDefer<typename std::decay<T>::type>(std::move(work));
+    return ScopeDefer<typename std::decay<T>::type>(std::forward<T>(work));
   }
 }
 
