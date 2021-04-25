@@ -2043,6 +2043,8 @@ class ClangShellCommand : public ExternalCommand {
                                        uint64_t length,
                                        const StringRef unescapedWord) override {
         ti.discoveredDependency(BuildKey::makeNode(unescapedWord).toData());
+        getBuildSystem(ti).getDelegate().commandFoundDiscoveredDependency(command, unescapedWord,
+                                                                          DiscoveredDependencyKind::Input);
       }
 
       virtual void actOnRuleStart(const char* name, uint64_t length,
@@ -2610,6 +2612,8 @@ public:
         // rest are identical.
         if (ruleNumber == 0) {
           ti.discoveredDependency(BuildKey::makeNode(unescapedWord).toData());
+          getBuildSystem(ti).getDelegate().commandFoundDiscoveredDependency(command, unescapedWord,
+                                                                            DiscoveredDependencyKind::Input);
         }
       }
 

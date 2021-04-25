@@ -590,6 +590,9 @@ public protocol BuildSystemDelegate {
     /// Called when a command has been finished.
     func commandFinished(_ command: Command, result: CommandResult)
 
+    /// Called to report a discovered dependency.
+    func commandFoundDiscoveredDependency(_ command: Command, path: String, kind: DiscoveredDependencyKind)
+
     /// Called to report an error during the execution of a command.
     func commandHadError(_ command: Command, message: String)
 
@@ -662,6 +665,12 @@ public protocol BuildSystemDelegate {
     /// action may yield unexpected results and thus this should be opted into
     /// with care.
     func shouldResolveCycle(rules: [BuildKey], candidate: BuildKey, action: CycleAction) -> Bool
+}
+
+extension BuildSystemDelegate {
+    public func commandFoundDiscoveredDependency(_ command: Command, path: String, kind: DiscoveredDependencyKind) {
+        // default implementation for ABI compatibility with older clients
+    }
 }
 
 /// Utility class for constructing a C-style environment.
@@ -787,6 +796,7 @@ public final class BuildSystem {
             _delegate.command_started = { BuildSystem.toSystem($0!).commandStarted(Command(handle: $1)) }
             _delegate.should_command_start = { BuildSystem.toSystem($0!).shouldCommandStart(Command(handle: $1)) }
             _delegate.command_finished = { BuildSystem.toSystem($0!).commandFinished(Command(handle: $1), $2) }
+            _delegate.command_found_discovered_dependency = { BuildSystem.toSystem($0!).commandFoundDiscoveredDependency(Command(handle: $1), String(cString: $2!), $3) }
             _delegate.command_had_error = { BuildSystem.toSystem($0!).commandHadError(Command(handle: $1), $2!) }
             _delegate.command_had_note = { BuildSystem.toSystem($0!).commandHadNote(Command(handle: $1), $2!) }
             _delegate.command_had_warning = { BuildSystem.toSystem($0!).commandHadWarning(Command(handle: $1), $2!) }
@@ -990,6 +1000,10 @@ public final class BuildSystem {
 
     private func commandFinished(_ command: Command, _ result: CommandResult) {
         delegate.commandFinished(command, result: result)
+    }
+
+    private func commandFoundDiscoveredDependency(_ command: Command, _ path: String, _ kind: DiscoveredDependencyKind) {
+        delegate.commandFoundDiscoveredDependency(command, path: path, kind: kind)
     }
 
     private func commandHadError(_ command: Command, _ data: UnsafePointer<llb_data_t>) {

@@ -45,6 +45,7 @@ namespace buildsystem {
 class BuildSystemFrontendDelegate;
 class BuildSystemInvocation;
 enum class CommandResult;
+enum class DiscoveredDependencyKind;
 
 /// This provides a standard "frontend" to the build system features, for use in
 /// building bespoke build systems that can still take advantage of desirable
@@ -208,6 +209,12 @@ public:
   ///
   /// \param result - The result of command (e.g. success, failure, etc).
   virtual void commandFinished(Command*, basic::ProcessStatus result) override;
+
+  /// Called by the build system to report a discovered dependency.
+  ///
+  /// \param path - The path of the discovered dependency.
+  /// \param kind - The type of the discovered dependency: input, output, missing.
+  virtual void commandFoundDiscoveredDependency(Command*, StringRef path, DiscoveredDependencyKind kind) override;
 
   /// Called by the build system to report a command could not build due to
   /// missing inputs.

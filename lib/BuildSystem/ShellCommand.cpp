@@ -149,6 +149,7 @@ bool ShellCommand::processMakefileDiscoveredDependencies(BuildSystem& system,
                                      const StringRef unescapedWord) override {
       if (llvm::sys::path::is_absolute(unescapedWord)) {
         ti.discoveredDependency(BuildKey::makeNode(unescapedWord).toData());
+        system.getDelegate().commandFoundDiscoveredDependency(command, unescapedWord, DiscoveredDependencyKind::Input);
         return;
       }
 
@@ -162,6 +163,7 @@ bool ShellCommand::processMakefileDiscoveredDependencies(BuildSystem& system,
       llvm::sys::fs::make_absolute(absPath);
 
       ti.discoveredDependency(BuildKey::makeNode(absPath).toData());
+      system.getDelegate().commandFoundDiscoveredDependency(command, absPath, DiscoveredDependencyKind::Input);
     }
 
     virtual void actOnRuleStart(const char* name, uint64_t length,
@@ -206,11 +208,15 @@ ShellCommand::processDependencyInfoDiscoveredDependencies(BuildSystem& system,
 
     // Ignore everything but actual inputs.
     virtual void actOnVersion(StringRef) override { }
-    virtual void actOnMissing(StringRef) override { }
-    virtual void actOnOutput(StringRef) override { }
-
-    virtual void actOnInput(StringRef name) override {
-      ti.discoveredDependency(BuildKey::makeNode(name).toData());
+    virtual void actOnMissing(StringRef path) override {
+      system.getDelegate().commandFoundDiscoveredDependency(command, path, DiscoveredDependencyKind::Missing);
+    }
+    virtual void actOnOutput(StringRef path) override {
+      system.getDelegate().commandFoundDiscoveredDependency(command, path, DiscoveredDependencyKind::Output);
+    }
+    virtual void actOnInput(StringRef path) override {
+      ti.discoveredDependency(BuildKey::makeNode(path).toData());
+      system.getDelegate().commandFoundDiscoveredDependency(command, path, DiscoveredDependencyKind::Input);
     }
   };
 

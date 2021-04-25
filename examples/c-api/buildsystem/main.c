@@ -201,6 +201,12 @@ static void command_finished(void* context,
   fflush(stdout);
 }
 
+static void command_found_discovered_dependency(void* context,
+                                                llb_buildsystem_command_t* command,
+                                                const char *path,
+                                                llb_buildsystem_discovered_dependency_kind_t kind) {
+}
+
 static void command_process_started(void* context,
                                     llb_buildsystem_command_t* command,
                                     llb_buildsystem_process_t* process) {
@@ -258,6 +264,7 @@ int main(int argc, char **argv) {
   delegate.had_command_failure = had_command_failure;
   delegate.command_started = command_started;
   delegate.command_finished = command_finished;
+  delegate.command_found_discovered_dependency = command_found_discovered_dependency;
   delegate.command_process_started = command_process_started;
   delegate.command_process_had_error = command_process_had_error;
   delegate.command_process_had_output = command_process_had_output;
