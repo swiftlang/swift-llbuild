@@ -268,6 +268,16 @@ public:
     }
   }
 
+  virtual void commandFoundDiscoveredDependency(Command* command, StringRef path, DiscoveredDependencyKind kind) override {
+    if (cAPIDelegate.command_found_discovered_dependency) {
+      cAPIDelegate.command_found_discovered_dependency(
+          cAPIDelegate.context,
+          (llb_buildsystem_command_t*) command,
+          path.str().c_str(),
+          (llb_buildsystem_discovered_dependency_kind_t) kind);
+    }
+  }
+
   virtual void commandHadError(Command* command, StringRef message) override {
     if (cAPIDelegate.command_had_error) {
       llb_data_t cMessage { message.size(), (const uint8_t*) message.data() };
@@ -675,10 +685,15 @@ class CAPIExternalCommand : public ExternalCommand {
       
       // Ignore everything but actual inputs.
       virtual void actOnVersion(StringRef) override { }
-      virtual void actOnMissing(StringRef) override { }
-      virtual void actOnOutput(StringRef) override { }
-      virtual void actOnInput(StringRef name) override {
-        ti.discoveredDependency(BuildKey::makeNode(name).toData());
+      virtual void actOnMissing(StringRef path) override {
+        system.getDelegate().commandFoundDiscoveredDependency(command, path, DiscoveredDependencyKind::Missing);
+      }
+      virtual void actOnOutput(StringRef path) override {
+        system.getDelegate().commandFoundDiscoveredDependency(command, path, DiscoveredDependencyKind::Output);
+      }
+      virtual void actOnInput(StringRef path) override {
+        ti.discoveredDependency(BuildKey::makeNode(path).toData());
+        system.getDelegate().commandFoundDiscoveredDependency(command, path, DiscoveredDependencyKind::Input);
       }
     };
     
@@ -865,6 +880,7 @@ llb_buildsystem_t* llb_buildsystem_create(
   assert(delegate.handle_diagnostic);
   assert(delegate.command_started);
   assert(delegate.command_finished);
+  assert(delegate.command_found_discovered_dependency);
   assert(delegate.command_process_started);
   assert(delegate.command_process_had_error);
   assert(delegate.command_process_had_output);

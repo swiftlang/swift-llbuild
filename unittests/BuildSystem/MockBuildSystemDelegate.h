@@ -154,6 +154,26 @@ public:
     }
   }
 
+  virtual void commandFoundDiscoveredDependency(Command* command, StringRef path, DiscoveredDependencyKind kind) {
+    if (trackAllMessages) {
+      std::string kindString;
+      switch (kind) {
+        case DiscoveredDependencyKind::Input:
+          kindString = "input";
+          break;
+        case DiscoveredDependencyKind::Missing:
+          kindString = "missing";
+          break;
+        case DiscoveredDependencyKind::Output:
+          kindString = "output";
+          break;
+      }
+      std::unique_lock<std::mutex> lock(messagesMutex);
+      messages.push_back(
+          ("commandFoundDiscoveredDependency(" + command->getName() + ": " + kindString + " " + path + ")").str());
+    }
+  }
+
   virtual void commandCannotBuildOutputDueToMissingInputs(Command * command, Node *output,
                                                           SmallPtrSet<Node *, 1> inputs) {
     std::string message = "cannot build '" + output->getName().str() + "' due to missing input: '" +

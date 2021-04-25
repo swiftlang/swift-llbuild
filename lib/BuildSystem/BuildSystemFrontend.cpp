@@ -680,6 +680,9 @@ void BuildSystemFrontendDelegate::commandHadWarning(Command* command, StringRef 
 void BuildSystemFrontendDelegate::commandFinished(Command*, ProcessStatus) {
 }
 
+void BuildSystemFrontendDelegate::commandFoundDiscoveredDependency(Command*, StringRef, DiscoveredDependencyKind) {
+}
+
 void BuildSystemFrontendDelegate::commandCannotBuildOutputDueToMissingInputs(
      Command * command, Node *output, SmallPtrSet<Node *, 1> inputs) {
   std::string message;

@@ -42,6 +42,12 @@ class ShellCommand;
 class ShellCommandHandler;
 class Tool;
 
+enum class DiscoveredDependencyKind {
+  Input = 0,
+  Missing = 1,
+  Output = 2,
+};
+
 bool pathIsPrefixedByPath(std::string path, std::string prefixPath);
   
 class BuildSystemDelegate {
@@ -196,6 +202,12 @@ public:
   ///
   /// \param status - The status of command (e.g. success, failure, etc).
   virtual void commandFinished(Command*, basic::ProcessStatus status) = 0;
+
+  /// Called by the build system to report a discovered dependency.
+  ///
+  /// \param path - The path of the discovered dependency.
+  /// \param kind - The type of the discovered dependency: input, output, missing.
+  virtual void commandFoundDiscoveredDependency(Command*, StringRef path, DiscoveredDependencyKind kind) = 0;
 
   /// Called by the build system to report a command could not build due to
   /// missing inputs.

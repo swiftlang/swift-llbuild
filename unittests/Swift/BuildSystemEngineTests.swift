@@ -147,6 +147,8 @@ final class TestBuildSystemDelegate: BuildSystemDelegate {
 
     func commandFinished(_ command: Command, result: CommandResult) {}
 
+    func commandFoundDiscoveredDependency(_ command: Command, path: String, kind: DiscoveredDependencyKind) {}
+
     func commandHadError(_ command: Command, message: String) {}
 
     func commandHadNote(_ command: Command, message: String) {}

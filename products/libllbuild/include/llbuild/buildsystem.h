@@ -125,6 +125,12 @@ typedef enum LLBUILD_ENUM_ATTRIBUTES {
   llb_buildsystem_command_result_skipped = 3,
 } llb_buildsystem_command_result_t LLBUILD_SWIFT_NAME(CommandResult);
 
+typedef enum LLBUILD_ENUM_ATTRIBUTES {
+  llb_buildsystem_discovered_dependency_kind_input = 0,
+  llb_buildsystem_discovered_dependency_kind_missing = 1,
+  llb_buildsystem_discovered_dependency_kind_output = 2,
+} llb_buildsystem_discovered_dependency_kind_t LLBUILD_SWIFT_NAME(DiscoveredDependencyKind);
+
 /// Extended result of a command execution
 typedef struct llb_buildsystem_command_extended_result_t_ {
   llb_buildsystem_command_result_t result;  /// Result of command execution
@@ -374,6 +380,12 @@ typedef struct llb_buildsystem_delegate_t_ {
   void (*command_finished)(void* context,
                            llb_buildsystem_command_t* command,
                            llb_buildsystem_command_result_t result);
+
+  /// Called when a discovered dependency has been found.
+  void (*command_found_discovered_dependency)(void* context,
+                                              llb_buildsystem_command_t* command,
+                                              const char* path,
+                                              llb_buildsystem_discovered_dependency_kind_t kind);
 
   /// Called to report an error during the execution of a command.
   ///
