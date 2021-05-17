@@ -26,20 +26,20 @@ LLBUILD_EXPORT const char* llb_get_full_version_string(void);
 LLBUILD_EXPORT int llb_get_api_version(void);
 
 // The Core component.
-#include "llbuild/core.h"
+#include "core.h"
 
 #ifdef __APPLE__
 #include "TargetConditionals.h"
 #endif
 #if !defined(__APPLE__) || !TARGET_OS_IPHONE
 // The BuildSystem component.
-#include "llbuild/buildsystem.h"
+#include "buildsystem.h"
 #endif
 
 // The Database component.
-#include "llbuild/db.h"
+#include "db.h"
 
-#include "llbuild/buildkey.h"
-#include "llbuild/buildvalue.h"
+#include "buildkey.h"
+#include "buildvalue.h"
 
 #endif
