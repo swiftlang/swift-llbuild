@@ -81,6 +81,9 @@ class BuildEngineImpl : public BuildDBDelegate {
   /// The tracing implementation, if enabled.
   std::unique_ptr<BuildEngineTrace> trace;
 
+  /// Path of the trace file to write to, if set.
+  std::string traceFile;
+
   /// Mutex for access to execution queue.
   std::mutex executionQueueMutex;
 
@@ -1365,11 +1368,6 @@ public:
     : buildEngine(buildEngine), delegate(delegate) {}
 
   ~BuildEngineImpl() {
-    // If tracing is enabled, close it.
-    if (trace) {
-      std::string error;
-      trace->close(&error);
-    }
   }
 
   BuildEngineDelegate* getDelegate() {
@@ -1534,6 +1532,25 @@ public:
     // and \see RuleInfo::isComplete().
     ++currentEpoch;
 
+    if (!traceFile.empty()) {
+      auto trace = llvm::make_unique<BuildEngineTrace>();
+
+      std::string error;
+      if (!trace->open(traceFile, &error))
+        delegate.error(error);
+
+      this->trace = std::move(trace);
+    }
+
+    llbuild_defer {
+      std::string error;
+      if (trace && trace->isOpen() && !trace->close(&error)) {
+        delegate.error(error);
+      }
+
+      trace = nullptr;
+    };
+
     if (trace)
       trace->buildStarted();
 
@@ -1620,12 +1637,7 @@ public:
   }
 
   bool enableTracing(const std::string& filename, std::string* error_out) {
-    auto trace = llvm::make_unique<BuildEngineTrace>();
-
-    if (!trace->open(filename, error_out))
-      return false;
-
-    this->trace = std::move(trace);
+    traceFile = filename;
     return true;
   }
 
