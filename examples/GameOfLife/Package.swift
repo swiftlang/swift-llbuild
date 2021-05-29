@@ -10,7 +10,7 @@ let package = Package(
             targets: ["game-of-life"])
     ],
     dependencies: [
-        .package(url: "../..", .branch("master")),
+        .package(url: "../..", .branch("main")),
     ],
     targets: [
         .target(
