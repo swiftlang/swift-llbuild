@@ -816,6 +816,12 @@ class DirectoryContentsTask : public Task {
       return;
     }
 
+    if (directoryValue.isMissingOutput()) {
+      // Rewrite a missing output as a missing input build value for this node, both conceptually and as a hedge against violating the downstream expectations of other rules.
+      ti.complete(BuildValue::makeMissingInput().toData());
+      return;
+    }
+
     if (directoryValue.isFailedInput()) {
       ti.complete(BuildValue::makeFailedInput().toData());
       return;
