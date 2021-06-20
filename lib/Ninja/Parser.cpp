@@ -25,9 +25,7 @@ ParseActions::~ParseActions() {
 
 #pragma mark - Parser Implementation
 
-namespace {
-
-class ParserImpl {
+class Parser::ParserImpl {
   Lexer lexer;
   ParseActions &actions;
 
@@ -37,11 +35,11 @@ class ParserImpl {
   /// @name Diagnostics Support
   /// @{
 
-  void error(std::string message, const Token &at) {
+  void error(StringRef message, const Token& at) {
     actions.error(message, at);
   }
 
-  void error(std::string message) {
+  void error(StringRef message) {
     error(message, tok);
   }
 
@@ -114,8 +112,7 @@ class ParserImpl {
   bool parseRuleSpecifier(ParseActions::RuleResult *decl_out);
 
 public:
-  ParserImpl(const char* data, uint64_t length,
-             ParseActions& actions);
+  ParserImpl(StringRef data, ParseActions& actions);
 
   void parse();
 
@@ -123,13 +120,11 @@ public:
   const class Lexer& getLexer() const { return lexer; }
 };
 
-ParserImpl::ParserImpl(const char* data, uint64_t length, ParseActions& actions)
-    : lexer(StringRef(data, length)), actions(actions)
-{
-}
+Parser::ParserImpl::ParserImpl(StringRef data, ParseActions &actions)
+    : lexer(data), actions(actions) {}
 
 /// Parse the file.
-void ParserImpl::parse() {
+void Parser::ParserImpl::parse() {
   // Initialize the Lexer.
   getNextNonCommentToken();
 
@@ -146,7 +141,7 @@ void ParserImpl::parse() {
 /// Parse a declaration.
 ///
 /// decl ::= default-decl | include-decl | binding-decl | parameterized-decl
-void ParserImpl::parseDecl() {
+void Parser::ParserImpl::parseDecl() {
   switch (tok.tokenKind) {
   case Token::Kind::Newline:
     consumeToken();
@@ -178,7 +173,8 @@ void ParserImpl::parseDecl() {
 }
 
 /// binding-decl ::= identifier '=' var-string '\n'
-bool ParserImpl::parseBindingInternal(Token* name_out, Token* value_out) {
+bool Parser::ParserImpl::parseBindingInternal(Token* name_out,
+                                              Token* value_out) {
   // The leading token should be an identifier.
   if (tok.tokenKind != Token::Kind::Identifier) {
     error("expected variable name");
@@ -236,14 +232,14 @@ bool ParserImpl::parseBindingInternal(Token* name_out, Token* value_out) {
 }
 
 /// binding-decl ::= identifier '=' var-string '\n'
-void ParserImpl::parseBindingDecl() {
+void Parser::ParserImpl::parseBindingDecl() {
   Token name, value;
   if (parseBindingInternal(&name, &value))
     actions.actOnBindingDecl(name, value);
 }
 
 /// default-decl ::= "default" path-string-list '\n'
-void ParserImpl::parseDefaultDecl() {
+void Parser::ParserImpl::parseDefaultDecl() {
   // Put the lexer in path string mode.
   lexer.setMode(Lexer::LexingMode::PathString);
   consumeExpectedToken(Token::Kind::KWDefault);
@@ -273,7 +269,7 @@ void ParserImpl::parseDefaultDecl() {
 }
 
 /// include-decl ::= ( "include" | "subninja" ) path-string '\n'
-void ParserImpl::parseIncludeDecl() {
+void Parser::ParserImpl::parseIncludeDecl() {
   // Put the lexer in path string mode for one token.
   lexer.setMode(Lexer::LexingMode::PathString);
   bool isInclude = tok.tokenKind == Token::Kind::KWInclude;
@@ -301,7 +297,7 @@ void ParserImpl::parseIncludeDecl() {
 /// parameterized-decl ::= parameterized-specifier indented-binding*
 /// parameterized-specifier ::= build-spec | pool-spec | rule-spec
 /// indented-binding := indention binding-decl
-void ParserImpl::parseParameterizedDecl() {
+void Parser::ParserImpl::parseParameterizedDecl() {
   // Begin by parsing the specifier.
   union {
     ParseActions::BuildResult asBuild;
@@ -384,7 +380,8 @@ void ParserImpl::parseParameterizedDecl() {
 
 /// build-spec ::= "build" path-string-list ":" path-string path-string-list
 ///                [ "|" path-string-list ] [ "||" path-string-list" ] '\n'
-bool ParserImpl::parseBuildSpecifier(ParseActions::BuildResult *decl_out) {
+bool Parser::ParserImpl::parseBuildSpecifier(
+    ParseActions::BuildResult* decl_out) {
   // Put the lexer in path string mode for the entire specifier parsing.
   lexer.setMode(Lexer::LexingMode::PathString);
   consumeExpectedToken(Token::Kind::KWBuild);
@@ -457,7 +454,8 @@ bool ParserImpl::parseBuildSpecifier(ParseActions::BuildResult *decl_out) {
 }
 
 /// pool-spec ::= "pool" identifier '\n'
-bool ParserImpl::parsePoolSpecifier(ParseActions::PoolResult *decl_out) {
+bool Parser::ParserImpl::parsePoolSpecifier(
+    ParseActions::PoolResult* decl_out) {
   // Put the lexer in identifier specific mode for the name.
   lexer.setMode(Lexer::LexingMode::IdentifierSpecific);
   consumeExpectedToken(Token::Kind::KWPool);
@@ -481,7 +479,8 @@ bool ParserImpl::parsePoolSpecifier(ParseActions::PoolResult *decl_out) {
 }
 
 /// rule-spec ::= "rule" identifier '\n'
-bool ParserImpl::parseRuleSpecifier(ParseActions::RuleResult *decl_out) {
+bool Parser::ParserImpl::parseRuleSpecifier(
+    ParseActions::RuleResult* decl_out) {
   // Put the lexer in identifier specific mode for the name.
   lexer.setMode(Lexer::LexingMode::IdentifierSpecific);
   consumeExpectedToken(Token::Kind::KWRule);
@@ -504,27 +503,19 @@ bool ParserImpl::parseRuleSpecifier(ParseActions::RuleResult *decl_out) {
   return true;
 }
 
-}
-
 #pragma mark - Parser
 
-Parser::Parser(const char* data, uint64_t length,
-               ParseActions& actions)
-  : impl(static_cast<void*>(new ParserImpl(data, length, actions)))
-{
-}
+Parser::Parser(StringRef data, ParseActions& actions)
+  : impl(new ParserImpl(data, actions)) {}
 
-Parser::~Parser() {
-  delete static_cast<ParserImpl*>(impl);
-}
+Parser::~Parser() = default;
 
 void Parser::parse() {
   // Initialize the actions.
-  static_cast<ParserImpl*>(impl)->getActions().initialize(this);
-
-  static_cast<ParserImpl*>(impl)->parse();
+  impl->getActions().initialize(this);
+  impl->parse();
 }
 
 const Lexer& Parser::getLexer() const {
-  return static_cast<ParserImpl*>(impl)->getLexer();
+  return impl->getLexer();
 }

@@ -24,7 +24,7 @@ build b2: testrule input ${input2_var} xx${should_be_empty}xx
 
 # Check that we diagnose broken includes.
 #
-# CHECK-ERR: include.ninja:[[@LINE+1]]:8: error: unable to open input
+# CHECK-ERR: include.ninja:[[@LINE+1]]:8: error: unable to read input
 include Inputs/include-does-not-exist.ninja
 
 

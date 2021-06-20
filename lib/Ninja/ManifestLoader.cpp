@@ -17,8 +17,10 @@
 #include "llbuild/Ninja/Lexer.h"
 #include "llbuild/Ninja/Parser.h"
 
+#include "llvm/Support/MemoryBuffer.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallString.h"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/raw_ostream.h"
 
 #include <cstdlib>
@@ -34,35 +36,28 @@ ManifestLoaderActions::~ManifestLoaderActions() {
 
 #pragma mark - ManifestLoader Implementation
 
-namespace {
-
 /// Manifest loader implementation.
 ///
 /// For simplicity, we just directly implement the parser actions interface.
-class ManifestLoaderImpl: public ParseActions {
+class ManifestLoader::ManifestLoaderImpl: public ParseActions {
   struct IncludeEntry {
-    /// The file that is being processed.
-    std::string filename;
-    /// An owning reference to the data consumed by the parser.
-    std::unique_ptr<char[]> data;
+    /// An owning reference to the buffer consumed by the parser.
+    std::unique_ptr<llvm::MemoryBuffer> data;
     /// The parser for the file.
     std::unique_ptr<Parser> parser;
-    /// The active scope..
+    /// The active scope.
     Scope& scope;
 
-    IncludeEntry(StringRef filename,
-                 std::unique_ptr<char[]> data,
-                 std::unique_ptr<class Parser> parser,
-                 Scope& scope)
-      : filename(filename), data(std::move(data)), parser(std::move(parser)),
-        scope(scope) {}
+    IncludeEntry(std::unique_ptr<llvm::MemoryBuffer> data,
+                 std::unique_ptr<Parser> parser, Scope& scope)
+      : data(std::move(data)), parser(std::move(parser)), scope(scope) {}
   };
 
-  std::string workingDirectory;
-  std::string mainFilename;
+  StringRef workingDirectory;
+  StringRef mainFilename;
   ManifestLoaderActions& actions;
-  std::unique_ptr<Manifest> theManifest;
-  std::vector<IncludeEntry> includeStack;
+  std::unique_ptr<Manifest> manifest;
+  llvm::SmallVector<IncludeEntry, 4> includeStack;
 
   // Cached buffers for temporary expansion of possibly large strings. These are
   // lifted out of the function body to ensure we don't blow up the stack
@@ -71,16 +66,17 @@ class ManifestLoaderImpl: public ParseActions {
   SmallString<10 * 1024> buildDescription;
 
 public:
-  ManifestLoaderImpl(StringRef workingDirectory, StringRef mainFilename, ManifestLoaderActions& actions)
-    : workingDirectory(workingDirectory), mainFilename(mainFilename), actions(actions), theManifest(nullptr)
-  { }
+  ManifestLoaderImpl(StringRef workingDirectory, StringRef mainFilename,
+                     ManifestLoaderActions& actions)
+    : workingDirectory(workingDirectory), mainFilename(mainFilename),
+      actions(actions), manifest(nullptr) {}
 
   std::unique_ptr<Manifest> load() {
     // Create the manifest.
-    theManifest.reset(new Manifest);
+    manifest.reset(new Manifest);
 
     // Enter the main file.
-    if (!enterFile(mainFilename, theManifest->getRootScope()))
+    if (!enterFile(mainFilename, manifest->getRootScope()))
       return nullptr;
 
     // Run the parser.
@@ -88,25 +84,23 @@ public:
     getCurrentParser()->parse();
     assert(includeStack.size() == 0);
 
-    return std::move(theManifest);
+    return std::move(manifest);
   }
 
-  bool enterFile(const std::string& filename, Scope& scope,
+  bool enterFile(StringRef filename, Scope& scope,
                  const Token* forToken = nullptr) {
     // Load the file data.
-    std::unique_ptr<char[]> data;
-    uint64_t length;
-    std::string fromFilename = includeStack.empty() ? filename :
-      getCurrentFilename();
-    if (!actions.readFileContents(fromFilename, filename, forToken, &data,
-                                  &length))
+    StringRef forFilename = includeStack.empty() ? filename :
+        getCurrentFilename();
+    std::unique_ptr<llvm::MemoryBuffer> buffer = actions.readFileContents(
+        filename, forFilename, forToken);
+    if (!buffer)
       return false;
 
     // Push a new entry onto the include stack.
-    auto fileParser = llvm::make_unique<Parser>(data.get(), length, *this);
-    includeStack.push_back(IncludeEntry(filename, std::move(data),
-                                        std::move(fileParser),
-                                        scope));
+    auto parser = llvm::make_unique<Parser>(buffer->getBuffer(), *this);
+    includeStack.emplace_back(std::move(buffer), std::move(parser),
+                              scope);
 
     return true;
   }
@@ -120,9 +114,9 @@ public:
     assert(!includeStack.empty());
     return includeStack.back().parser.get();
   }
-  const std::string& getCurrentFilename() const {
+  StringRef getCurrentFilename() const {
     assert(!includeStack.empty());
-    return includeStack.back().filename;
+    return includeStack.back().data->getBufferIdentifier();
   }
   Scope& getCurrentScope() const {
     assert(!includeStack.empty());
@@ -251,11 +245,11 @@ public:
 
   virtual void initialize(ninja::Parser* parser) override { }
 
-  virtual void error(std::string message, const Token& at) override {
+  virtual void error(StringRef message, const Token& at) override {
     actions.error(getCurrentFilename(), message, at);
   }
 
-  virtual void actOnBeginManifest(std::string name) override { }
+  virtual void actOnBeginManifest(StringRef name) override { }
 
   virtual void actOnEndManifest() override {
     exitCurrentFile();
@@ -277,14 +271,14 @@ public:
     // Resolve all of the inputs and outputs.
     for (const auto& nameTok: nameToks) {
       StringRef name(nameTok.start, nameTok.length);
-      Node* node = theManifest->findNode(workingDirectory, name);
+      Node* node = manifest->findNode(workingDirectory, name);
 
       if (node == nullptr) {
         error("unknown target name", nameTok);
         continue;
       }
 
-      theManifest->getDefaultTargets().push_back(node);
+      manifest->getDefaultTargets().push_back(node);
     }
   }
 
@@ -326,7 +320,7 @@ public:
       error("unknown rule", nameTok);
 
       // Ensure we always have a rule for each command.
-      rule = theManifest->getPhonyRule();
+      rule = manifest->getPhonyRule();
     } else {
       rule = it->second;
     }
@@ -341,7 +335,7 @@ public:
       if (path.empty()) {
         error("empty output path", token);
       }
-      outputs.push_back(theManifest->findOrCreateNode(workingDirectory, path));
+      outputs.push_back(manifest->findOrCreateNode(workingDirectory, path));
     }
     for (const auto& token: inputTokens) {
       // Evaluate the token string.
@@ -350,12 +344,12 @@ public:
       if (path.empty()) {
         error("empty input path", token);
       }
-      inputs.push_back(theManifest->findOrCreateNode(workingDirectory, path));
+      inputs.push_back(manifest->findOrCreateNode(workingDirectory, path));
     }
 
-    Command* decl = new (theManifest->getAllocator())
+    Command* decl = new (manifest->getAllocator())
       Command(rule, outputs, inputs, numExplicitInputs, numImplicitInputs);
-    theManifest->getCommands().push_back(decl);
+    manifest->getCommands().push_back(decl);
 
     return decl;
   }
@@ -506,8 +500,8 @@ public:
     SmallString<256> poolName;
     lookupNamedBuildParameter(decl, startTok, "pool", poolName);
     if (!poolName.empty()) {
-      const auto& it = theManifest->getPools().find(poolName.str());
-      if (it == theManifest->getPools().end()) {
+      const auto& it = manifest->getPools().find(poolName.str());
+      if (it == manifest->getPools().end()) {
         error("unknown pool '" + poolName.str().str() + "'", startTok);
       } else {
         decl->setExecutionPool(it->second);
@@ -540,7 +534,7 @@ public:
     StringRef name(nameTok.start, nameTok.length);
 
     // Find the hash slot.
-    auto& result = theManifest->getPools()[name];
+    auto& result = manifest->getPools()[name];
 
     // Diagnose if the pool already exists (we still create a new one).
     if (result) {
@@ -549,7 +543,7 @@ public:
     }
 
     // Insert the new pool.
-    Pool* decl = new (theManifest->getAllocator()) Pool(name);
+    Pool* decl = new (manifest->getAllocator()) Pool(name);
     result = decl;
     return static_cast<PoolResult>(decl);
   }
@@ -600,7 +594,7 @@ public:
     }
 
     // Insert the new rule.
-    Rule* decl = new (theManifest->getAllocator()) Rule(name);
+    Rule* decl = new (manifest->getAllocator()) Rule(name);
     result = decl;
     return static_cast<RuleResult>(decl);
   }
@@ -632,28 +626,21 @@ public:
   /// @}
 };
 
-}
-
 #pragma mark - ManifestLoader
 
 ManifestLoader::ManifestLoader(StringRef workingDirectory,
                                StringRef filename,
-                               ManifestLoaderActions &actions)
-  : impl(static_cast<void*>(new ManifestLoaderImpl(workingDirectory, filename, actions)))
-{
-}
+                               ManifestLoaderActions& actions)
+  : impl(new ManifestLoaderImpl(workingDirectory, filename, actions)) {}
 
-ManifestLoader::~ManifestLoader() {
-  delete static_cast<ManifestLoaderImpl*>(impl);
-}
+ManifestLoader::~ManifestLoader() = default;
 
 std::unique_ptr<Manifest> ManifestLoader::load() {
   // Initialize the actions.
-  static_cast<ManifestLoaderImpl*>(impl)->getActions().initialize(this);
-
-  return static_cast<ManifestLoaderImpl*>(impl)->load();
+  impl->getActions().initialize(this);
+  return impl->load();
 }
 
 const Parser* ManifestLoader::getCurrentParser() const {
-  return static_cast<const ManifestLoaderImpl*>(impl)->getCurrentParser();
+  return impl->getCurrentParser();
 }

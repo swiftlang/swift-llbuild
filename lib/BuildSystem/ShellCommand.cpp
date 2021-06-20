@@ -135,18 +135,17 @@ bool ShellCommand::processMakefileDiscoveredDependencies(BuildSystem& system,
                 ShellCommand* command, StringRef depsPath)
         : system(system), ti(ti), command(command), depsPath(depsPath) {}
 
-    virtual void error(const char* message, uint64_t position) override {
+    virtual void error(StringRef message, uint64_t position) override {
       std::string msg;
       raw_string_ostream msgStream(msg);
-      msgStream << "error reading dependency file '" << depsPath.str() << "': "
+      msgStream << "error reading dependency file '" << depsPath << "': "
           << message << " at position " << position;
       system.getDelegate().commandHadError(command, msgStream.str());
       ++numErrors;
     }
 
-    virtual void actOnRuleDependency(const char* dependency,
-                                     uint64_t length,
-                                     const StringRef unescapedWord) override {
+    virtual void actOnRuleDependency(StringRef dependency,
+                                     StringRef unescapedWord) override {
       if (llvm::sys::path::is_absolute(unescapedWord)) {
         ti.discoveredDependency(BuildKey::makeNode(unescapedWord).toData());
         system.getDelegate().commandFoundDiscoveredDependency(command, unescapedWord, DiscoveredDependencyKind::Input);
@@ -166,15 +165,14 @@ bool ShellCommand::processMakefileDiscoveredDependencies(BuildSystem& system,
       system.getDelegate().commandFoundDiscoveredDependency(command, absPath, DiscoveredDependencyKind::Input);
     }
 
-    virtual void actOnRuleStart(const char* name, uint64_t length,
+    virtual void actOnRuleStart(StringRef name,
                                 const StringRef unescapedWord) override {}
 
     virtual void actOnRuleEnd() override {}
   };
 
   DepsActions actions(system, ti, this, depsPath);
-  core::MakefileDepsParser(input->getBufferStart(), input->getBufferSize(),
-                           actions).parse();
+  core::MakefileDepsParser(input->getBuffer(), actions).parse();
   return actions.numErrors == 0;
 }
 

@@ -13,13 +13,18 @@
 #ifndef LLBUILD_NINJA_COMMANDUTIL_H
 #define LLBUILD_NINJA_COMMANDUTIL_H
 
-#include "llvm/ADT/StringRef.h"
-
 #include "llbuild/Basic/LLVM.h"
+
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Error.h"
 
 #include <memory>
 #include <string>
 #include <utility>
+
+namespace llvm {
+class MemoryBuffer;
+}
 
 namespace llbuild {
 namespace ninja {
@@ -33,21 +38,19 @@ struct Token;
 namespace commands {
 namespace util {
 
-std::string escapedString(const char* start, unsigned length);
+std::string escapedString(StringRef str);
 
-std::string escapedString(const std::string& string);
-
-void emitError(const std::string& filename, const std::string& message,
+void emitError(StringRef filename, StringRef message,
                const ninja::Token& at, const ninja::Parser* parser);
 
-void emitError(const std::string& filename, const std::string& message,
+void emitError(StringRef filename, StringRef message,
                const char* position, unsigned length,
                StringRef buffer);
 
-bool readFileContents(std::string path,
-                      std::unique_ptr<char[]> *data_out,
-                      uint64_t* size_out,
-                      std::string* error_out);
+/// Load the contents of the given file. Relative files will be resolved using
+/// the current working directory of the process.
+llvm::Expected<std::unique_ptr<llvm::MemoryBuffer>> readFileContents(
+    StringRef filename);
 
 }
 }

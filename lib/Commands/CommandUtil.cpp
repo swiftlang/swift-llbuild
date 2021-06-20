@@ -18,6 +18,9 @@
 #include "llbuild/Ninja/Parser.h"
 
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/Twine.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/raw_ostream.h"
 
 #include <iostream>
@@ -43,11 +46,11 @@ static char hexdigit(unsigned input) {
   return (input < 10) ? '0' + input : 'A' + input - 10;
 }
 
-std::string util::escapedString(const char* start, unsigned length) {
+std::string util::escapedString(StringRef str) {
   std::string result;
   llvm::raw_string_ostream resultStream(result);
-  for (unsigned i = 0; i != length; ++i) {
-    char c = start[i];
+  for (unsigned i = 0; i < str.size(); ++i) {
+    char c = str[i];
     if (c == '"') {
       resultStream << "\\\"";
     } else if (isprint(c)) {
@@ -63,11 +66,8 @@ std::string util::escapedString(const char* start, unsigned length) {
   resultStream.flush();
   return result;
 }
-std::string util::escapedString(const std::string& string) {
-  return escapedString(string.data(), string.size());
-}
 
-static void emitError(const std::string& filename, const std::string& message,
+static void emitError(StringRef filename, StringRef message,
                       const char* position, unsigned length,
                       int line, int column,
                       StringRef buffer) {
@@ -90,9 +90,11 @@ static void emitError(const std::string& filename, const std::string& message,
       }
     }
   }
-  
-  std::cerr << filename << ":" << line << ":" << column
-            << ": error: " << message << "\n";
+
+  std::cerr.write(filename.data(), filename.size());
+  std::cerr << ":" << line << ":" << column << ": error: ";
+  std::cerr.write(message.data(), message.size());
+  std::cerr << "\n";
 
   // Skip carat diagnostics on EOF token.
   if (position == buffer.end())
@@ -126,53 +128,29 @@ static void emitError(const std::string& filename, const std::string& message,
   std::cerr << '\n';
 }
 
-void util::emitError(const std::string& filename, const std::string& message,
+void util::emitError(StringRef filename, StringRef message,
                      const ninja::Token& at, const ninja::Parser* parser) {
   ::emitError(filename, message, at.start, at.length, at.line, at.column,
             parser->getLexer().getBuffer());
 }
 
-void util::emitError(const std::string& filename, const std::string& message,
+void util::emitError(StringRef filename, StringRef message,
                      const char* position, unsigned length,
                      StringRef buffer) {
   ::emitError(filename, message, position, length, -1, -1, buffer);
 }
 
-bool util::readFileContents(std::string path,
-                            std::unique_ptr<char[]> *data_out,
-                            uint64_t* size_out,
-                            std::string* error_out) {
-  // Open the input buffer and compute its size.
-  FILE* fp = ::fopen(path.c_str(), "rb");
-  if (!fp) {
-    int errorNumber = errno;
-    *error_out = std::string("unable to open input: \"") +
-      util::escapedString(path) + "\" (" + ::strerror(errorNumber) + ")";
-    return false;
+llvm::Expected<std::unique_ptr<llvm::MemoryBuffer>> util::readFileContents(
+    StringRef filename) {
+  SmallString<256> path(filename);
+  llvm::sys::fs::make_absolute(path);
+
+  auto bufferOrError = llvm::MemoryBuffer::getFile(path);
+  if (!bufferOrError) {
+    auto ec = bufferOrError.getError();
+    return llvm::make_error<llvm::StringError>(
+        Twine("unable to read input \"") + util::escapedString(path) +
+        "\" (" + ec.message() + ")", ec);
   }
-
-  fseek(fp, 0, SEEK_END);
-  uint64_t size = *size_out = ::ftell(fp);
-  fseek(fp, 0, SEEK_SET);
-
-  // Read the file contents.
-  auto data = llvm::make_unique<char[]>(size);
-  uint64_t pos = 0;
-  while (pos < size) {
-    // Read data into the buffer.
-    size_t result = ::fread(data.get() + pos, 1, size - pos, fp);
-    if (result <= 0) {
-      *error_out = std::string("unable to read input: ") + path;
-      ::fclose(fp);
-      return false;
-    }
-
-    pos += result;
-  }
-
-  // Close the file.
-  ::fclose(fp);
-
-  *data_out = std::move(data);
-  return true;
+  return std::move(*bufferOrError);
 }

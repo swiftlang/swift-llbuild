@@ -29,17 +29,18 @@ TEST(MakefileDepsParserTest, basic) {
     std::vector<RuleRecord> records;
     std::vector<std::pair<std::string, uint64_t>> errors;
 
-    virtual void error(const char* message, uint64_t length) override {
-      errors.push_back({ message, length });
+    virtual void error(StringRef message, uint64_t position) override {
+      errors.emplace_back(message.str(), position);
     }
 
-    virtual void actOnRuleStart(const char* name, uint64_t length,
-                                const StringRef unescapedWord) override {
-      records.push_back({ unescapedWord.str(), {} });
+    virtual void actOnRuleStart(StringRef name,
+                                StringRef unescapedWord) override {
+      records.emplace_back(unescapedWord.str(),
+                           std::vector<std::string>{});
     }
 
-    virtual void actOnRuleDependency(const char* dependency, uint64_t length,
-                                     const StringRef unescapedWord) override {
+    virtual void actOnRuleDependency(StringRef dependency,
+                                     StringRef unescapedWord) override {
       assert(!records.empty());
       records.back().second.push_back(unescapedWord.str());
     }
@@ -51,7 +52,7 @@ TEST(MakefileDepsParserTest, basic) {
 
   // Check a basic valid input with an escape sequence.
   input = "a: b\\$c d\\\ne";
-  MakefileDepsParser(input.data(), input.size(), actions).parse();
+  MakefileDepsParser(StringRef(input), actions).parse();
   EXPECT_EQ(0U, actions.errors.size());
   EXPECT_EQ(1U, actions.records.size());
   EXPECT_EQ(RuleRecord("a", { "b\\$c", "d", "e" }),
@@ -61,7 +62,7 @@ TEST(MakefileDepsParserTest, basic) {
   actions.errors.clear();
   actions.records.clear();
   input = "a: b c d";
-  MakefileDepsParser(input.data(), input.size(), actions).parse();
+  MakefileDepsParser(StringRef(input), actions).parse();
   EXPECT_EQ(0U, actions.errors.size());
   EXPECT_EQ(1U, actions.records.size());
   EXPECT_EQ(RuleRecord("a", { "b", "c", "d" }),
@@ -71,7 +72,7 @@ TEST(MakefileDepsParserTest, basic) {
   actions.errors.clear();
   actions.records.clear();
   input = "a\\ b: a\\ b a$$b a\\b a\\#b a\\\\\\ b";
-  MakefileDepsParser(input.data(), input.size(), actions).parse();
+  MakefileDepsParser(StringRef(input), actions).parse();
   EXPECT_EQ(0U, actions.errors.size());
   EXPECT_EQ(1U, actions.records.size());
   EXPECT_EQ(RuleRecord("a b", {
@@ -82,7 +83,7 @@ TEST(MakefileDepsParserTest, basic) {
   actions.errors.clear();
   actions.records.clear();
   input = "a: b c d\none: two three";
-  MakefileDepsParser(input.data(), input.size(), actions).parse();
+  MakefileDepsParser(StringRef(input), actions).parse();
   EXPECT_EQ(0U, actions.errors.size());
   EXPECT_EQ(2U, actions.records.size());
   EXPECT_EQ(RuleRecord("a", { "b", "c", "d" }),
@@ -94,7 +95,7 @@ TEST(MakefileDepsParserTest, basic) {
   input = "out: \\\n  in1\n";
   actions.errors.clear();
   actions.records.clear();
-  MakefileDepsParser(input.data(), input.size(), actions).parse();
+  MakefileDepsParser(StringRef(input), actions).parse();
   EXPECT_EQ(0U, actions.errors.size());
   EXPECT_EQ(1U, actions.records.size());
   EXPECT_EQ(RuleRecord("out", { "in1" }),
@@ -103,7 +104,7 @@ TEST(MakefileDepsParserTest, basic) {
   input = "out: \\\r\n  in1\n";
   actions.errors.clear();
   actions.records.clear();
-  MakefileDepsParser(input.data(), input.size(), actions).parse();
+  MakefileDepsParser(StringRef(input), actions).parse();
   EXPECT_EQ(0U, actions.errors.size());
   EXPECT_EQ(1U, actions.records.size());
   EXPECT_EQ(RuleRecord("out", { "in1" }),
@@ -113,7 +114,7 @@ TEST(MakefileDepsParserTest, basic) {
   actions.errors.clear();
   actions.records.clear();
   input = "  $ a";
-  MakefileDepsParser(input.data(), input.size(), actions).parse();
+  MakefileDepsParser(StringRef(input), actions).parse();
   EXPECT_EQ(1U, actions.errors.size());
   EXPECT_EQ(actions.errors[0],
             ErrorRecord("unexpected character in file", 2U));
@@ -123,7 +124,7 @@ TEST(MakefileDepsParserTest, basic) {
   actions.errors.clear();
   actions.records.clear();
   input = "a";
-  MakefileDepsParser(input.data(), input.size(), actions).parse();
+  MakefileDepsParser(StringRef(input), actions).parse();
   EXPECT_EQ(1U, actions.errors.size());
   EXPECT_EQ(actions.errors[0],
             ErrorRecord("missing ':' following rule", 1U));
@@ -136,7 +137,7 @@ TEST(MakefileDepsParserTest, basic) {
   actions.errors.clear();
   actions.records.clear();
   input = "a: b$";
-  MakefileDepsParser(input.data(), input.size(), actions).parse();
+  MakefileDepsParser(StringRef(input), actions).parse();
   EXPECT_EQ(1U, actions.errors.size());
   EXPECT_EQ(actions.errors[0],
             ErrorRecord("unexpected character in prerequisites", 4U));
@@ -148,7 +149,7 @@ TEST(MakefileDepsParserTest, basic) {
   actions.errors.clear();
   actions.records.clear();
   input = "/=>\\ ;|%.o : /=>\\ ;|%.swift";
-  MakefileDepsParser(input.data(), input.size(), actions).parse();
+  MakefileDepsParser(StringRef(input), actions).parse();
   EXPECT_EQ(0U, actions.errors.size());
   EXPECT_EQ(1U, actions.records.size());
   EXPECT_EQ(RuleRecord("/=> ;|%.o", { "/=> ;|%.swift" }), actions.records[0]);
@@ -157,7 +158,7 @@ TEST(MakefileDepsParserTest, basic) {
   actions.errors.clear();
   actions.records.clear();
   input = "a: b:c";
-  MakefileDepsParser(input.data(), input.size(), actions).parse();
+  MakefileDepsParser(StringRef(input), actions).parse();
   EXPECT_EQ(0U, actions.errors.size());
   EXPECT_EQ(1U, actions.records.size());
   EXPECT_EQ(RuleRecord("a", { "b:c" }), actions.records[0]);

@@ -2038,30 +2038,28 @@ class ClangShellCommand : public ExternalCommand {
                   ClangShellCommand* command)
           : ti(ti), command(command) {}
 
-      virtual void error(const char* message, uint64_t position) override {
+      virtual void error(StringRef message, uint64_t position) override {
         getBuildSystem(ti).getDelegate().commandHadError(command,
                        "error reading dependency file '" + command->depsPath +
-                       "': " + std::string(message));
+                       "': " + message.str());
         ++numErrors;
       }
 
-      virtual void actOnRuleDependency(const char* dependency,
-                                       uint64_t length,
-                                       const StringRef unescapedWord) override {
+      virtual void actOnRuleDependency(StringRef dependency,
+                                       StringRef unescapedWord) override {
         ti.discoveredDependency(BuildKey::makeNode(unescapedWord).toData());
         getBuildSystem(ti).getDelegate().commandFoundDiscoveredDependency(command, unescapedWord,
                                                                           DiscoveredDependencyKind::Input);
       }
 
-      virtual void actOnRuleStart(const char* name, uint64_t length,
-                                  const StringRef unescapedWord) override {}
+      virtual void actOnRuleStart(StringRef name,
+                                  StringRef unescapedWord) override {}
 
       virtual void actOnRuleEnd() override {}
     };
 
     DepsActions actions(ti, this);
-    core::MakefileDepsParser(input->getBufferStart(), input->getBufferSize(),
-                             actions).parse();
+    core::MakefileDepsParser(input->getBuffer(), actions).parse();
     return actions.numErrors == 0;
   }
 
@@ -2604,16 +2602,15 @@ public:
                   StringRef depsPath, Command* command)
           : ti(ti), depsPath(depsPath) {}
 
-      virtual void error(const char* message, uint64_t position) override {
+      virtual void error(StringRef message, uint64_t position) override {
         getBuildSystem(ti).getDelegate().commandHadError(command,
                        "error reading dependency file '" + depsPath.str() +
-                       "': " + std::string(message));
+                       "': " + message.str());
         ++numErrors;
       }
 
-      virtual void actOnRuleDependency(const char* dependency,
-                                       uint64_t length,
-                                       const StringRef unescapedWord) override {
+      virtual void actOnRuleDependency(StringRef dependency,
+                                       StringRef unescapedWord) override {
         // Only process dependencies for the first rule (the output file), the
         // rest are identical.
         if (ruleNumber == 0) {
@@ -2623,8 +2620,8 @@ public:
         }
       }
 
-      virtual void actOnRuleStart(const char* name, uint64_t length,
-                                  const StringRef unescapedWord) override {}
+      virtual void actOnRuleStart(StringRef name,
+                                  StringRef unescapedWord) override {}
 
       virtual void actOnRuleEnd() override {
         ++ruleNumber;
@@ -2632,8 +2629,7 @@ public:
     };
 
     DepsActions actions(ti, depsPath, this);
-    core::MakefileDepsParser(input->getBufferStart(), input->getBufferSize(),
-                             actions).parse();
+    core::MakefileDepsParser(input->getBuffer(), actions).parse();
     return actions.numErrors == 0;
   }
 
