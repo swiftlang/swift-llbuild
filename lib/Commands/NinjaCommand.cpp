@@ -363,10 +363,10 @@ private:
     util::emitError(filename, message, at, Loader->getCurrentParser());
   }
 
-  virtual std::unique_ptr<llvm::MemoryBuffer> readFileContents(
-      StringRef filename, StringRef forFilename,
+  virtual std::unique_ptr<llvm::MemoryBuffer> readFile(
+      StringRef path, StringRef forFilename,
       const ninja::Token* forToken) override {
-    auto bufferOrError = util::readFileContents(filename);
+    auto bufferOrError = util::readFileContents(path);
     if (bufferOrError)
       return std::move(*bufferOrError);
 

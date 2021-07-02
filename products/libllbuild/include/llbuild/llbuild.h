@@ -42,4 +42,6 @@ LLBUILD_EXPORT int llb_get_api_version(void);
 #include "buildkey.h"
 #include "buildvalue.h"
 
+#include "ninja.h"
+
 #endif

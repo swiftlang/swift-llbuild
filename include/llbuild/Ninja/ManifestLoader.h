@@ -44,7 +44,7 @@ public:
 
   /// Called by the loader to request the contents of a manifest file be loaded.
   ///
-  /// \param filename The name of the file to load.
+  /// \param path Absolute path of the file to load.
   ///
   /// \param forFilename If non-empty, the name of the file triggering the file
   /// load (for use in diagnostics).
@@ -54,8 +54,8 @@ public:
   ///
   /// \returns The loaded file on success, or a nullptr. On failure, the action
   /// is assumed to have produced an appropriate error.
-  virtual std::unique_ptr<llvm::MemoryBuffer> readFileContents(
-      StringRef filename, StringRef forFilename, const Token* forToken) = 0;
+  virtual std::unique_ptr<llvm::MemoryBuffer> readFile(
+      StringRef path, StringRef forFilename, const Token* forToken) = 0;
 };
 
 /// Interface for loading Ninja build manifests.

@@ -4,7 +4,8 @@ set(SOURCES
   Core-C-API.cpp
   BuildDB-C-API.cpp
   BuildKey-C-API.cpp
-  BuildValue-C-API.cpp)
+  BuildValue-C-API.cpp
+  Ninja-C-API.cpp)
 
 add_llbuild_library(libllbuild
   ${SOURCES}
@@ -17,6 +18,7 @@ target_link_libraries(libllbuild PRIVATE
   llbuildBuildSystem
   llbuildCore
   llbuildBasic
+  llbuildNinja
   llvmSupport
   SQLite::SQLite3)
 
@@ -84,6 +86,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     llbuildBuildSystem
     llbuildCore
     llbuildBasic
+    llbuildNinja
     llvmSupport
     SQLite::SQLite3
     curses)

@@ -89,11 +89,14 @@ public:
 
   bool enterFile(StringRef filename, Scope& scope,
                  const Token* forToken = nullptr) {
+    SmallString<256> path(filename);
+    llvm::sys::fs::make_absolute(workingDirectory, path);
+
     // Load the file data.
     StringRef forFilename = includeStack.empty() ? filename :
         getCurrentFilename();
-    std::unique_ptr<llvm::MemoryBuffer> buffer = actions.readFileContents(
-        filename, forFilename, forToken);
+    std::unique_ptr<llvm::MemoryBuffer> buffer = actions.readFile(
+        path, forFilename, forToken);
     if (!buffer)
       return false;
 
@@ -456,7 +459,7 @@ public:
 
     // FIXME: There is no need to store the parameters in the build decl anymore
     // once this is all complete.
-    
+
     // Evaluate the build parameters.
     buildCommand.clear();
     decl->setCommandString(lookupNamedBuildParameter(
