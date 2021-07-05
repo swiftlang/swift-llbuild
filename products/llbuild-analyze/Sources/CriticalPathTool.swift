@@ -33,21 +33,21 @@ struct CriticalPathTool: ParsableCommand {
     @Option(name: .shortAndLong, help: "Path to generate exported output to.", transform: { AbsolutePath($0) })
     var output: AbsolutePath?
     
-    @Option(default: 9)
-    var clientSchemaVersion: Int
+    @Option
+    var clientSchemaVersion: Int = 9
     
-    @Option(name: [.customShort("f"), .customLong("outputFormat")], default: .json, help: "The format of the output file.")
-    var outputFormat: OutputFormat
+    @Option(name: [.customShort("f"), .customLong("outputFormat")], help: "The format of the output file.")
+    var outputFormat: OutputFormat = .json
     
-    @Option(name: .customLong("graphvizOutput"), default: .criticalPath)
-    var graphvizDisplay: GraphvizDisplay
+    @Option(name: .customLong("graphvizOutput"))
+    var graphvizDisplay: GraphvizDisplay = .criticalPath
     
     @Flag(help: "If outputFormat is set to json, it will be pretty formatted.")
-    var pretty: Bool
+    var pretty: Bool = false
     
     @Flag(name: .shortAndLong, help: "Set to hide output to stdout and export only.")
-    var quiet: Bool
-
+    var quiet: Bool = false
+    
     func run() throws {
         let db = try BuildDB(path: database.pathString, clientSchemaVersion: UInt32(clientSchemaVersion))
         let allKeysWithResult = try db.getKeysWithResult()

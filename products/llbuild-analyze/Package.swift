@@ -16,8 +16,8 @@ let package = Package(
             targets: ["llbuildAnalyzeTool"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.0.1"),
-        .package(url: "https://github.com/apple/swift-tools-support-core.git", .branch("master")),
+        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.4.3"),
+        .package(url: "https://github.com/apple/swift-tools-support-core.git", .branch("main")),
         .package(path: "../../"),
     ],
     targets: [
