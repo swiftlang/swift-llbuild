@@ -173,7 +173,7 @@ let package = Package(
                 .linkedLibrary("dl", .when(platforms: [.linux])),
                 .linkedLibrary("pthread", .when(platforms: [.linux]))]),
 
-        .testTarget(
+        .target(
             name: "llbuildTestSupport",
             path: "unittests/TestSupport"),
         
