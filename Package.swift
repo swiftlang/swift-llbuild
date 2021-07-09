@@ -228,3 +228,16 @@ package.targets.first{ $0.name == "libllbuild" }?.cxxSettings = [
 ]
 
 #endif
+
+// FIXME: when the SupportedPlatforms availability directive is updated and
+// the platform port is in sync with this directive, these conditions can
+// be folded up with .when(platforms:_) clauses.
+#if os(OpenBSD)
+if let target = package.targets.first(where: { $0.name == "llbuildCore"}) {
+    target.cSettings = [.unsafeFlags(["-I/usr/local/include"])] 
+    target.linkerSettings = [
+        .linkedLibrary("sqlite3"),
+        .unsafeFlags(["-L/usr/local/lib"])
+    ]
+}
+#endif
