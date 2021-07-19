@@ -31,6 +31,7 @@
 
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/FileSystem.h"
+#include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -912,7 +913,7 @@ private:
     this->loader = loader;
   }
 
-  virtual void error(std::string filename, std::string message,
+  virtual void error(StringRef filename, StringRef message,
                      const ninja::Token& at) override {
     if (numErrors++ >= maxErrors)
       return;
@@ -920,27 +921,24 @@ private:
     util::emitError(filename, message, at, loader->getCurrentParser());
   }
 
-  virtual bool readFileContents(const std::string& fromFilename,
-                                const std::string& filename,
-                                const ninja::Token* forToken,
-                                std::unique_ptr<char[]>* data_out,
-                                uint64_t* length_out) override {
-    // Load the file contents and return if successful.
-    std::string error;
-    if (util::readFileContents(filename, data_out, length_out, &error))
-      return true;
+  virtual std::unique_ptr<llvm::MemoryBuffer> readFile(
+      StringRef path, StringRef forFilename,
+      const ninja::Token* forToken) override {
+    auto bufferOrError = util::readFileContents(path);
+    if (bufferOrError)
+      return std::move(*bufferOrError);
 
-    // Otherwise, emit the error.
+    // TODO: util::emitError doesn't use the console queue?
+    std::string error = llvm::toString(bufferOrError.takeError());
     ++numErrors;
     if (forToken) {
-      util::emitError(fromFilename, error, *forToken,
+      util::emitError(forFilename, error, *forToken,
                       loader->getCurrentParser());
     } else {
       context.emitError(std::move(error));
     }
-
-    return false;
-  };
+    return nullptr;
+  }
 
 public:
   BuildManifestActions(BuildContext& context) : context(context) {}
@@ -1393,19 +1391,17 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       }
       case ninja::Command::DepsStyleKind::GCC: {
         // Read the dependencies file.
-        std::string error;
-        std::unique_ptr<char[]> data;
-        uint64_t length;
-        if (!util::readFileContents(command->getDepsFile(), &data, &length,
-                                    &error)) {
+        auto bufferOrError = util::readFileContents(command->getDepsFile());
+        if (!bufferOrError) {
           // If the file is missing, just ignore it for consistency with Ninja
           // (when using stored deps) in non-strict mode.
           if (!context.strict)
             return true;
 
           // FIXME: Error handling.
-          context.emitError("unable to read dependency file: %s (%s)",
-                  command->getDepsFile().c_str(), error.c_str());
+          std::string error = llvm::toString(bufferOrError.takeError());
+          context.emitError("unable to read dependency file: %s",
+                            error.c_str());
           return false;
         }
 
@@ -1425,16 +1421,15 @@ buildCommand(BuildContext& context, ninja::Command* command) {
                       const StringRef path)
             : context(context), ti(ti), workingDirectory(workingDirectory), path(path) { }
 
-          virtual void error(const char* message, uint64_t position) override {
+          virtual void error(StringRef message, uint64_t position) override {
             context.emitError(
                 "error reading dependency file: %s (%s) at offset %u",
-                path.str().c_str(), message, unsigned(position));
+                path.str().c_str(), message.str().c_str(), unsigned(position));
             ++numErrors;
           }
 
-          virtual void actOnRuleDependency(const char* dependency,
-                                           uint64_t length,
-                                           const StringRef unescapedWord) override {
+          virtual void actOnRuleDependency(StringRef dependency,
+                                           StringRef unescapedWord) override {
 
             SmallString<256> absPathTmp = unescapedWord;
             if (!llbuild::ninja::Manifest::normalize_path(workingDirectory, absPathTmp)) {
@@ -1445,13 +1440,14 @@ buildCommand(BuildContext& context, ninja::Command* command) {
             ti.discoveredDependency(path);
           }
 
-          virtual void actOnRuleStart(const char* name, uint64_t length,
-                                      const StringRef unescapedWord) override {}
+          virtual void actOnRuleStart(StringRef name,
+                                      StringRef unescapedWord) override {}
           virtual void actOnRuleEnd() override {}
         };
 
         DepsActions actions(context, ti, context.workingDirectory, command->getDepsFile());
-        core::MakefileDepsParser(data.get(), length, actions).parse();
+        core::MakefileDepsParser(bufferOrError.get()->getBuffer(),
+                                 actions).parse();
         return actions.numErrors == 0;
       }
       }

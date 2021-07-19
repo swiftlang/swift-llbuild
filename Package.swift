@@ -28,11 +28,6 @@ let package = Package(
         .library(
             name: "llbuildAnalysis",
             targets: ["llbuildAnalysis"]),
-
-        // Swift library for accessing [Ninja](ninjabuild.org) files.
-        .library(
-            name: "Ninja",
-            targets: ["Ninja"])
     ],
     targets: [
         // MARK: Products
@@ -64,7 +59,7 @@ let package = Package(
         /// The public llbuild C API.
         .target(
             name: "libllbuild",
-            dependencies: ["llbuildCore", "llbuildBuildSystem"],
+            dependencies: ["llbuildCore", "llbuildBuildSystem", "llbuildNinja"],
             path: "products/libllbuild"
         ),
 
@@ -75,16 +70,6 @@ let package = Package(
             path: "products/llbuildSwift",
             exclude: []
         ),
-
-        /// The public Swift Ninja API.
-        .target(
-            name: "Ninja",
-            dependencies: ["llbuild"],
-            path: "products/swift-Ninja"),
-        .testTarget(
-            name: "SwiftNinjaTests",
-            dependencies: ["llbuildTestSupport", "Ninja"],
-            path: "unittests/swift-Ninja"),
 
         // MARK: Components
         
@@ -173,7 +158,7 @@ let package = Package(
                 .linkedLibrary("dl", .when(platforms: [.linux])),
                 .linkedLibrary("pthread", .when(platforms: [.linux]))]),
 
-        .testTarget(
+        .target(
             name: "llbuildTestSupport",
             path: "unittests/TestSupport"),
         

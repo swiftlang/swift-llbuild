@@ -19,7 +19,9 @@
 #include "llbuild/Ninja/Manifest.h"
 #include "llbuild/Ninja/ManifestLoader.h"
 #include "llbuild/Ninja/Parser.h"
+
 #include "llvm/Support/FileSystem.h"
+#include "llvm/Support/MemoryBuffer.h"
 
 #include "CommandUtil.h"
 #include "NinjaBuildCommand.h"
@@ -46,6 +48,10 @@ static void usage() {
   exit(1);
 }
 
+static std::string escapedString(const ninja::Token& token) {
+  return util::escapedString(StringRef(token.start, token.length));
+}
+
 #pragma mark - Lex Command
 
 static int executeLexCommand(const std::vector<std::string> &args,
@@ -58,11 +64,10 @@ static int executeLexCommand(const std::vector<std::string> &args,
   }
 
   // Read the input.
-  uint64_t size;
-  std::unique_ptr<char[]> data;
-  std::string error;
-  if (!util::readFileContents(args[0], &data, &size, &error)) {
-    fprintf(stderr, "error: %s: %s\n", getProgramName(), error.c_str());
+  auto bufferOrError = util::readFileContents(args[0]);
+  if (!bufferOrError) {
+    fprintf(stderr, "error: %s: %s\n", getProgramName(),
+            llvm::toString(bufferOrError.takeError()).c_str());
     exit(1);
   }
 
@@ -71,7 +76,7 @@ static int executeLexCommand(const std::vector<std::string> &args,
       fprintf(stderr, "note: %s: reading tokens from %s\n", getProgramName(),
               args[0].c_str());
   }
-  ninja::Lexer lexer(StringRef(data.get(), size));
+  ninja::Lexer lexer(bufferOrError.get()->getBuffer());
   ninja::Token tok;
 
   do {
@@ -80,8 +85,7 @@ static int executeLexCommand(const std::vector<std::string> &args,
 
     if (!lexOnly) {
         std::cerr << "(Token \"" << tok.getKindName() << "\""
-                  << " String:\"" << util::escapedString(tok.start,
-                                                         tok.length) << "\""
+                  << " String:\"" << escapedString(tok) << "\""
                   << " Length:" << tok.length
                   << " Line:" << tok.line
                   << " Column:" << tok.column << ")\n";
@@ -109,7 +113,7 @@ private:
     this->parser = parser;
   }
 
-  virtual void error(std::string message, const ninja::Token& at) override {
+  virtual void error(StringRef message, const ninja::Token& at) override {
     if (numErrors++ >= maxErrors) {
       return;
     }
@@ -117,8 +121,10 @@ private:
     util::emitError(filename, message, at, parser);
   }
 
-  virtual void actOnBeginManifest(std::string name) override {
-    std::cerr << __FUNCTION__ << "(\"" << name << "\")\n";
+  virtual void actOnBeginManifest(StringRef name) override {
+    std::cerr << __FUNCTION__ << "(\"";
+    std::cerr.write(name.data(), name.size());
+    std::cerr << "\")\n";
   }
 
   virtual void actOnEndManifest() override {
@@ -128,9 +134,8 @@ private:
   virtual void actOnBindingDecl(const ninja::Token& name,
                                 const ninja::Token& value) override {
     std::cerr << __FUNCTION__ << "(/*Name=*/"
-              << "\"" << util::escapedString(name.start, name.length) << "\", "
-              << "/*Value=*/\"" << util::escapedString(value.start,
-                                                       value.length) << "\")\n";
+              << "\"" << escapedString(name) << "\", "
+              << "/*Value=*/\"" << escapedString(value) << "\")\n";
   }
 
   virtual void actOnDefaultDecl(ArrayRef<ninja::Token> names) override {
@@ -139,7 +144,7 @@ private:
     for (auto& name: names) {
       if (!first)
         std::cerr << ", ";
-      std::cerr << "\"" << util::escapedString(name.start, name.length) << "\"";
+      std::cerr << "\"" << escapedString(name) << "\"";
       first = false;
     }
     std::cerr << "])\n";
@@ -149,7 +154,7 @@ private:
                                 const ninja::Token& path) override {
     std::cerr << __FUNCTION__ << "(/*IsInclude=*/"
               << (isInclude ? "true" : "false") << ", "
-              << "/*Path=*/\"" << util::escapedString(path.start, path.length)
+              << "/*Path=*/\"" << escapedString(path)
               << "\")\n";
   }
 
@@ -160,13 +165,13 @@ private:
                       unsigned numExplicitInputs,
                       unsigned numImplicitInputs) override {
     std::cerr << __FUNCTION__ << "(/*Name=*/"
-              << "\"" << util::escapedString(name.start, name.length) << "\""
+              << "\"" << escapedString(name) << "\""
               << ", /*Outputs=*/[";
     bool first = true;
     for (auto& name: outputs) {
       if (!first)
         std::cerr << ", ";
-      std::cerr << "\"" << util::escapedString(name.start, name.length) << "\"";
+      std::cerr << "\"" << escapedString(name) << "\"";
       first = false;
     }
     std::cerr << "], /*Inputs=*/[";
@@ -174,7 +179,7 @@ private:
     for (auto& name: inputs) {
       if (!first)
         std::cerr << ", ";
-      std::cerr << "\"" << util::escapedString(name.start, name.length) << "\"";
+      std::cerr << "\"" << escapedString(name) << "\"";
       first = false;
     }
     std::cerr << "], /*NumExplicitInputs=*/" << numExplicitInputs
@@ -186,9 +191,8 @@ private:
                                      const ninja::Token& value) override {
     std::cerr << __FUNCTION__ << "(/*Decl=*/"
               << static_cast<void*>(decl) << ", /*Name=*/"
-              << "\"" << util::escapedString(name.start, name.length) << "\", "
-              << "/*Value=*/\"" << util::escapedString(value.start,
-                                                       value.length) << "\")\n";
+              << "\"" << escapedString(name) << "\", "
+              << "/*Value=*/\"" << escapedString(value) << "\")\n";
   }
 
   virtual void actOnEndBuildDecl(BuildResult decl,
@@ -199,8 +203,7 @@ private:
 
   virtual PoolResult actOnBeginPoolDecl(const ninja::Token& name) override {
     std::cerr << __FUNCTION__ << "(/*Name=*/"
-              << "\"" << util::escapedString(name.start,
-                                             name.length) << "\")\n";
+              << "\"" << escapedString(name) << "\")\n";
     return 0;
   }
 
@@ -208,9 +211,8 @@ private:
                                      const ninja::Token& value) override {
     std::cerr << __FUNCTION__ << "(/*Decl=*/"
               << static_cast<void*>(decl) << ", /*Name=*/"
-              << "\"" << util::escapedString(name.start, name.length) << "\", "
-              << "/*Value=*/\"" << util::escapedString(value.start,
-                                                       value.length) << "\")\n";
+              << "\"" << escapedString(name) << "\", "
+              << "/*Value=*/\"" << escapedString(value) << "\")\n";
   }
 
   virtual void actOnEndPoolDecl(PoolResult decl,
@@ -221,8 +223,7 @@ private:
 
   virtual RuleResult actOnBeginRuleDecl(const ninja::Token& name) override {
     std::cerr << __FUNCTION__ << "(/*Name=*/"
-              << "\"" << util::escapedString(name.start,
-                                             name.length) << "\")\n";
+              << "\"" << escapedString(name) << "\")\n";
     return 0;
   }
 
@@ -230,9 +231,8 @@ private:
                                      const ninja::Token& value) override {
     std::cerr << __FUNCTION__ << "(/*Decl=*/"
               << static_cast<void*>(decl) << ", /*Name=*/"
-              << "\"" << util::escapedString(name.start, name.length) << "\", "
-              << "/*Value=*/\"" << util::escapedString(value.start,
-                                                       value.length) << "\")\n";
+              << "\"" << escapedString(name) << "\", "
+              << "/*Value=*/\"" << escapedString(value) << "\")\n";
   }
 
   virtual void actOnEndRuleDecl(RuleResult decl,
@@ -259,9 +259,9 @@ private:
     this->parser = parser;
   }
 
-  virtual void error(std::string message, const ninja::Token& at) override { }
+  virtual void error(StringRef message, const ninja::Token& at) override { }
 
-  virtual void actOnBeginManifest(std::string name) override { }
+  virtual void actOnBeginManifest(StringRef name) override { }
 
   virtual void actOnEndManifest() override { }
 
@@ -320,22 +320,21 @@ static int executeParseCommand(const std::vector<std::string> &args,
   }
 
   // Read the input.
-  uint64_t size;
-  std::unique_ptr<char[]> data;
-  std::string error;
-  if (!util::readFileContents(args[0], &data, &size, &error)) {
-    fprintf(stderr, "error: %s: %s\n", getProgramName(), error.c_str());
+  auto bufferOrError = util::readFileContents(args[0]);
+  if (!bufferOrError) {
+    fprintf(stderr, "error: %s: %s\n", getProgramName(),
+            llvm::toString(bufferOrError.takeError()).c_str());
     exit(1);
   }
 
   // Run the parser.
   if (parseOnly) {
       ParseOnlyCommandActions actions;
-      ninja::Parser parser(data.get(), size, actions);
+      ninja::Parser parser(bufferOrError.get()->getBuffer(), actions);
       parser.parse();
   } else {
       ParseCommandActions actions(args[0]);
-      ninja::Parser parser(data.get(), size, actions);
+      ninja::Parser parser(bufferOrError.get()->getBuffer(), actions);
       parser.parse();
   }
 
@@ -356,37 +355,34 @@ private:
     this->Loader = Loader;
   }
 
-  virtual void error(std::string Filename, std::string Message,
-                     const ninja::Token &At) override {
+  virtual void error(StringRef filename, StringRef message,
+                     const ninja::Token& at) override {
     if (NumErrors++ >= MaxErrors)
       return;
 
-    util::emitError(Filename, Message, At, Loader->getCurrentParser());
+    util::emitError(filename, message, at, Loader->getCurrentParser());
   }
 
-  virtual bool readFileContents(const std::string& FromFilename,
-                                const std::string& Filename,
-                                const ninja::Token* ForToken,
-                                std::unique_ptr<char[]> *Data_Out,
-                                uint64_t *Length_Out) override {
-    // Load the file contents and return if successful.
-    std::string Error;
-    if (util::readFileContents(Filename, Data_Out, Length_Out, &Error))
-      return true;
+  virtual std::unique_ptr<llvm::MemoryBuffer> readFile(
+      StringRef path, StringRef forFilename,
+      const ninja::Token* forToken) override {
+    auto bufferOrError = util::readFileContents(path);
+    if (bufferOrError)
+      return std::move(*bufferOrError);
 
-    // Otherwise, emit the error.
-    if (ForToken) {
-      util::emitError(FromFilename, Error, *ForToken,
+    std::string error = llvm::toString(bufferOrError.takeError());
+    ++NumErrors;
+    if (forToken) {
+      util::emitError(forFilename, error, *forToken,
                       Loader->getCurrentParser());
     } else {
       // We were unable to open the main file.
-      fprintf(stderr, "error: %s: %s\n", getProgramName(), Error.c_str());
+      fprintf(stderr, "error: %s: %s\n", getProgramName(), error.c_str());
       exit(1);
     }
 
-    return false;
-  };
-
+    return nullptr;
+  }
 };
 
 }

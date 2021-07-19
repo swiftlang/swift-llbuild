@@ -13,10 +13,16 @@
 #ifndef LLBUILD_NINJA_MANIFESTLOADER_H
 #define LLBUILD_NINJA_MANIFESTLOADER_H
 
+#include "llbuild/Basic/LLVM.h"
 #include "llbuild/Ninja/Manifest.h"
 
-#include <string>
-#include <utility>
+#include "llvm/ADT/StringRef.h"
+
+#include <memory>
+
+namespace llvm {
+class MemoryBuffer;
+}
 
 namespace llbuild {
 namespace ninja {
@@ -34,35 +40,32 @@ public:
   /// Called at the beginning of loading, to register the manifest loader.
   virtual void initialize(ManifestLoader* loader) = 0;
 
-  virtual void error(std::string filename, std::string message,
-                     const Token& at) = 0;
+  virtual void error(StringRef filename, StringRef message, const Token& at) = 0;
 
   /// Called by the loader to request the contents of a manifest file be loaded.
   ///
-  /// \param filename The name of the file to load.
+  /// \param path Absolute path of the file to load.
   ///
-  /// \param forToken If non-null, the token triggering the file load, for use
-  /// in diagnostics.
+  /// \param forFilename If non-empty, the name of the file triggering the file
+  /// load (for use in diagnostics).
   ///
-  /// \param data_out On success, the contents of the file.
+  /// \param forToken If non-null, the token triggering the file load (for use
+  /// in diagnostics).
   ///
-  /// \param length_out On success, the length of the data in the file.
-  ///
-  /// \returns True on success. On failure, the action is assumed to have
-  /// produced an appropriate error.
-  virtual bool readFileContents(const std::string& fromFilename,
-                                const std::string& filename,
-                                const Token* forToken,
-                                std::unique_ptr<char[]> *data_out,
-                                uint64_t *length_out) = 0;
+  /// \returns The loaded file on success, or a nullptr. On failure, the action
+  /// is assumed to have produced an appropriate error.
+  virtual std::unique_ptr<llvm::MemoryBuffer> readFile(
+      StringRef path, StringRef forFilename, const Token* forToken) = 0;
 };
 
 /// Interface for loading Ninja build manifests.
 class ManifestLoader {
-  void *impl;
+  class ManifestLoaderImpl;
+  std::unique_ptr<ManifestLoaderImpl> impl;
 
 public:
-  ManifestLoader(StringRef workingDirectory, StringRef mainFilename, ManifestLoaderActions& actions);
+  ManifestLoader(StringRef workingDirectory, StringRef mainFilename,
+                 ManifestLoaderActions& actions);
   ~ManifestLoader();
 
   /// Load the manifest.

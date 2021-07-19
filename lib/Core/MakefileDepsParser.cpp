@@ -148,8 +148,8 @@ static void lexWord(const char*& cur, const char* end,
 }
 
 void MakefileDepsParser::parse() {
-  const char* cur = data;
-  const char* end = data + length;
+  const char* cur = data.data();
+  const char* end = cur + data.size();
   // Storage for currently begin lexed unescaped word.
   SmallString<256> unescapedWord;
 
@@ -167,16 +167,17 @@ void MakefileDepsParser::parse() {
     unescapedWord.clear();
     lexWord(cur, end, unescapedWord);
     if (cur == wordStart) {
-      actions.error("unexpected character in file", cur - data);
+      actions.error("unexpected character in file", cur - data.data());
       skipToEndOfLine(cur, end);
       continue;
     }
-    actions.actOnRuleStart(wordStart, cur - wordStart, unescapedWord.str());
+    actions.actOnRuleStart(StringRef(wordStart, cur - wordStart),
+                           unescapedWord.str());
 
     // The next token should be a colon.
     skipNonNewlineWhitespace(cur, end);
     if (cur == end || *cur != ':') {
-      actions.error("missing ':' following rule", cur - data);
+      actions.error("missing ':' following rule", cur - data.data());
       actions.actOnRuleEnd();
       skipToEndOfLine(cur, end);
       continue;
@@ -197,7 +198,8 @@ void MakefileDepsParser::parse() {
       unescapedWord.clear();
       lexWord(cur, end, unescapedWord);
       if (cur == wordStart) {
-        actions.error("unexpected character in prerequisites", cur - data);
+        actions.error("unexpected character in prerequisites",
+                      cur - data.data());
         skipToEndOfLine(cur, end);
         continue;
       }
@@ -210,7 +212,7 @@ void MakefileDepsParser::parse() {
         ++cur;
         lexWord(cur, end, unescapedWord);
       }
-      actions.actOnRuleDependency(wordStart, cur - wordStart,
+      actions.actOnRuleDependency(StringRef(wordStart, cur - wordStart),
                                   unescapedWord.str());
     }
     actions.actOnRuleEnd();

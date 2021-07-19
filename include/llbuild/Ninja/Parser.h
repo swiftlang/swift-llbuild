@@ -13,12 +13,13 @@
 #ifndef LLBUILD_NINJA_PARSER_H
 #define LLBUILD_NINJA_PARSER_H
 
-#include "llvm/ADT/ArrayRef.h"
-
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/Ninja/Lexer.h"
 
-#include <string>
+#include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/StringRef.h"
+
+#include <memory>
 
 namespace llbuild {
 namespace ninja {
@@ -35,13 +36,13 @@ public:
 
   virtual ~ParseActions();
 
-  virtual void error(std::string message, const Token& at) = 0;
+  virtual void error(StringRef message, const Token& at) = 0;
 
   /// Called at the beginning of parsing, to register the parser.
   virtual void initialize(Parser* parser) = 0;
 
   /// Called at the beginning of parsing a particular manifest.
-  virtual void actOnBeginManifest(std::string name) = 0;
+  virtual void actOnBeginManifest(StringRef name) = 0;
   /// Called at the end of parsing the current manifest.
   virtual void actOnEndManifest() = 0;
 
@@ -164,10 +165,11 @@ public:
 
 /// Interface for parsing a Ninja build manifest.
 class Parser {
-  void *impl;
+  class ParserImpl;
+  std::unique_ptr<ParserImpl> impl;
 
 public:
-  Parser(const char* data, uint64_t length, ParseActions& actions);
+  Parser(StringRef data, ParseActions &actions);
   ~Parser();
 
   void parse();
