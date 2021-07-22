@@ -231,10 +231,12 @@ void ExternalCommand::provideValue(BuildSystem& system,
                                    core::TaskInterface ti,
                                    uintptr_t inputID,
                                    const BuildValue& value) {
+  // Inform subclasses about the value
+  provideValueExternalCommand(system, ti, inputID, value);
+  
   if (value.isSuccessfulCommand() || value.isFailedCommand() || value.isPropagatedFailureCommand()) {
     // If the value is a successful command, it must probably be a value that was requested for a custom task, so
-    // skip the input processing and invoke the subclass instead to process it accordingly.
-    provideValueExternalCommand(system, ti, inputID, value);
+    // skip the input processing
     return;
   }
 

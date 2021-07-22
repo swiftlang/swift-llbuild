@@ -1905,11 +1905,7 @@ public:
       BuildSystem&,
       TaskInterface,
       uintptr_t inputID,
-      const BuildValue& value) override {
-    // Should never get here, since we're not requesting inputs in start.
-    assert(0 && "unexpected API call");
-    return;
-  }
+      const BuildValue& value) override { }
 
   virtual void executeExternalCommand(
       BuildSystem&,
@@ -2134,11 +2130,7 @@ public:
       BuildSystem&,
       TaskInterface,
       uintptr_t inputID,
-      const BuildValue& value) override {
-    // Should never get here, since we're not requesting inputs in start.
-    assert(0 && "unexpected API call");
-    return;
-  }
+      const BuildValue& value) override { }
 
   virtual void executeExternalCommand(BuildSystem&,
                                       TaskInterface ti,
@@ -2681,11 +2673,7 @@ public:
       BuildSystem&,
       TaskInterface ti,
       uintptr_t inputID,
-      const BuildValue& value) override {
-    // Should never get here, since we're not requesting inputs in start.
-    assert(0 && "unexpected API call");
-    return;
-  }
+      const BuildValue& value) override { }
 
   virtual void executeExternalCommand(
       BuildSystem& system,
@@ -2870,11 +2858,7 @@ class MkdirCommand : public ExternalCommand {
       BuildSystem&,
       TaskInterface ti,
       uintptr_t inputID,
-      const BuildValue& value) override {
-    // Should never get here, since we're not requesting inputs in start.
-    assert(0 && "unexpected API call");
-    return;
-  }
+      const BuildValue& value) override { }
 
   virtual void executeExternalCommand(
       BuildSystem& system,
@@ -3204,11 +3188,7 @@ class ArchiveShellCommand : public ExternalCommand {
       BuildSystem&,
       TaskInterface ti,
       uintptr_t inputID,
-      const BuildValue& value) override {
-    // Should never get here, since we're not requesting inputs in start.
-    assert(0 && "unexpected API call");
-    return;
-  }
+      const BuildValue& value) override { }
 
   virtual void executeExternalCommand(
       BuildSystem&,
@@ -3351,11 +3331,7 @@ class SharedLibraryShellCommand : public ExternalCommand {
       BuildSystem&,
       TaskInterface ti,
       uintptr_t inputID,
-      const BuildValue& value) override {
-    // Should never get here, since we're not requesting inputs in start.
-    assert(0 && "unexpected API call");
-    return;
-  }
+      const BuildValue& value) override { }
 
   virtual void executeExternalCommand(
       BuildSystem&, TaskInterface ti, QueueJobContext* context,
