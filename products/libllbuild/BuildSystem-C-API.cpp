@@ -350,6 +350,27 @@ public:
     uint64_t count() { return keys.size(); }
   };
 
+  virtual Command* chooseCommandFromMultipleProducers(Node* outputNode,
+                   std::vector<Command*> commands) override {
+    if (cAPIDelegate.choose_command_from_multiple_producers) {
+      auto str = outputNode->getName().str();
+      auto output = (llb_build_key_t *)new CAPIBuildKey(BuildKey::makeNode(str));
+
+      llb_buildsystem_command_t* command = cAPIDelegate.choose_command_from_multiple_producers(
+        cAPIDelegate.context,
+        &output,
+        (llb_buildsystem_command_t**)commands.data(),
+        commands.size()
+      );
+
+      llb_build_key_destroy(output);
+
+      return (Command*)command;
+    } else {
+      return nullptr;
+    }
+  }
+
   virtual void cannotBuildNodeDueToMultipleProducers(Node* outputNode,
                std::vector<Command*> commands) override {
     if (cAPIDelegate.cannot_build_node_due_to_multiple_producers) {

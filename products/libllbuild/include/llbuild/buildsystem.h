@@ -415,6 +415,15 @@ typedef struct llb_buildsystem_delegate_t_ {
                            llb_build_key_t** inputs,
                            uint64_t input_count);
 
+  /// Called by the build system when a node has multiple commands that are producing it.
+  /// The delegate can return one of the commands for the build system to use or return \p nullptr
+  /// for the build system to treat the node as invalid.
+  /// If \p nullptr is returned \p cannot_build_node_due_to_multiple_producers is going to be called next.
+  llb_buildsystem_command_t* (*choose_command_from_multiple_producers)(void *context,
+                           llb_build_key_t** output,
+                           llb_buildsystem_command_t** commands,
+                           uint64_t command_count);
+
   /// Called by the build system to report a node could not be built
   /// because multiple commands are producing it.
   void (*cannot_build_node_due_to_multiple_producers)(void *context,

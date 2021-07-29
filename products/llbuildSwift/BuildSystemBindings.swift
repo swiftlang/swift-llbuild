@@ -606,6 +606,12 @@ public protocol BuildSystemDelegate {
     /// missing inputs.
     func commandCannotBuildOutputDueToMissingInputs(_ command: Command, output: BuildKey, inputs: [BuildKey])
 
+    /// Called by the build system when a node has multiple commands that are producing it.
+    /// The delegate can return one of the commands for the build system to use or return `nil`
+    /// for the build system to treat the node as invalid.
+    /// If `nil` is returned `cannotBuildNodeDueToMultipleProducers` is going to be called next.
+    func chooseCommandFromMultipleProducers(output: BuildKey, commands: [Command]) -> Command?
+
     /// Called by the build system to report a node could not be built
     /// because multiple commands are producing it.
     func cannotBuildNodeDueToMultipleProducers(output: BuildKey, commands: [Command])
@@ -670,6 +676,11 @@ public protocol BuildSystemDelegate {
 extension BuildSystemDelegate {
     public func commandFoundDiscoveredDependency(_ command: Command, path: String, kind: DiscoveredDependencyKind) {
         // default implementation for ABI compatibility with older clients
+    }
+
+    public func chooseCommandFromMultipleProducers(output: BuildKey, commands: [Command]) -> Command? {
+        // default implementation for ABI compatibility with older clients
+        return nil
     }
 }
 
@@ -804,6 +815,12 @@ public final class BuildSystem {
                 let inputsPtr = $3!
                 let inputs = (0..<Int($4)).map { BuildKey.construct(key: inputsPtr[$0]!) }
                 BuildSystem.toSystem($0!).commandCannotBuildOutputDueToMissingInputs(Command(handle: $1), BuildKey.construct(key: $2!.pointee!), inputs)
+            }
+            _delegate.choose_command_from_multiple_producers = {
+                let commandsPtr = $2!
+                let commands = (0..<Int($3)).map { Command(handle: commandsPtr[$0]) }
+                let chosenCommand = BuildSystem.toSystem($0!).chooseCommandFromMultipleProducers(BuildKey.construct(key: $1!.pointee!), commands)
+                return chosenCommand?.handle
             }
             _delegate.cannot_build_node_due_to_multiple_producers = {
                 let commandsPtr = $2!
@@ -1020,6 +1037,10 @@ public final class BuildSystem {
 
     private func commandCannotBuildOutputDueToMissingInputs(_ command: Command, _ output: BuildKey, _ inputs: [BuildKey]) {
         delegate.commandCannotBuildOutputDueToMissingInputs(command, output: output, inputs: inputs)
+    }
+
+    private func chooseCommandFromMultipleProducers(_ output: BuildKey, _ commands: [Command]) -> Command? {
+        return delegate.chooseCommandFromMultipleProducers(output: output, commands: commands)
     }
 
     private func cannotBuildNodeDueToMultipleProducers(_ output: BuildKey, _ commands: [Command]) {

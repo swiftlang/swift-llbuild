@@ -185,6 +185,11 @@ public:
     }
   }
 
+  virtual Command* chooseCommandFromMultipleProducers(Node *output,
+                                                      std::vector<Command*> commands) {
+    return nullptr;
+  }
+
   virtual void cannotBuildNodeDueToMultipleProducers(Node *output,
                                                      std::vector<Command*> commands) {
     std::string message = "cannot build '" + output->getName().str() + "' node is produced "

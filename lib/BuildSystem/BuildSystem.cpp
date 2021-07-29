@@ -696,14 +696,23 @@ class ProducedNodeTask : public Task {
   
   virtual void start(TaskInterface ti) override {
     // Request the producer command.
-    if (node.getProducers().size() == 1) {
-      producingCommand = node.getProducers()[0];
+    auto getCommand = [&]()->Command* {
+      if (node.getProducers().size() == 1) {
+        return node.getProducers()[0];
+      }
+      // Give the delegate a chance to resolve to a single command.
+      return getBuildSystem(ti).getDelegate().
+          chooseCommandFromMultipleProducers(&node, node.getProducers());
+    };
+
+    if (Command* foundCommand = getCommand()) {
+      producingCommand = foundCommand;
       ti.request(BuildKey::makeCommand(producingCommand->getName()).toData(),
                  /*InputID=*/0);
       return;
     }
 
-    // We currently do not support building nodes which have multiple producers.
+    // Notify that we could not resolve to a single producer.
     getBuildSystem(ti).getDelegate().
         cannotBuildNodeDueToMultipleProducers(&node, node.getProducers());
     isInvalid = true;

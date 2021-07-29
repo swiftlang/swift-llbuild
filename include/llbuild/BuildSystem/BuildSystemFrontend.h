@@ -221,6 +221,13 @@ public:
   virtual void commandCannotBuildOutputDueToMissingInputs(Command*,
                Node* output, SmallPtrSet<Node*, 1> inputs) override;
 
+  /// Called by the build system when a node has multiple commands that are producing it.
+  /// The delegate can return one of the commands for the build system to use or return \p nullptr
+  /// for the build system to treat the node as invalid.
+  /// If \p nullptr is returned \p cannotBuildNodeDueToMultipleProducers is going to be called next.
+  virtual Command* chooseCommandFromMultipleProducers(Node* output,
+                   std::vector<Command*>) override;
+
   /// Called by the build system to report a node could not be built
   /// because multiple commands are producing it.
   virtual void cannotBuildNodeDueToMultipleProducers(Node* output,
