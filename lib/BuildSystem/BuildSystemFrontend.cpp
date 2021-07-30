@@ -704,6 +704,11 @@ void BuildSystemFrontendDelegate::commandCannotBuildOutputDueToMissingInputs(
   fflush(stderr);
 }
 
+Command* BuildSystemFrontendDelegate::chooseCommandFromMultipleProducers(
+     Node *output, std::vector<Command*> commands) {
+  return nullptr;
+}
+
 void BuildSystemFrontendDelegate::cannotBuildNodeDueToMultipleProducers(
      Node *output, std::vector<Command*> commands) {
   std::string message;
