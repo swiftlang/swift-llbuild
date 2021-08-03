@@ -3865,7 +3865,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/utils/Xcode/create-lit-site-cfg.sh\"";
+			shellScript = "\"${SRCROOT}/utils/Xcode/create-lit-site-cfg.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		E18043381A00127600662FE7 /* Install per-user 'lit' module */ = {
@@ -3880,7 +3880,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/utils/Xcode/install-user-lit.sh\"";
+			shellScript = "\"${SRCROOT}/utils/Xcode/install-user-lit.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		E19EC53E1B34A3D800A2F233 /* Create Target Link */ = {
@@ -3927,7 +3927,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "${SRCROOT}/utils/Xcode/execute-lit-tests.sh";
+			shellScript = "${SRCROOT}/utils/Xcode/execute-lit-tests.sh\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -4859,6 +4859,11 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-client_name",
+					pyobjc,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.apple.$(PRODUCT_NAME:rfc1034identifier)";
 			};
 			name = Debug;
@@ -4877,6 +4882,11 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-client_name",
+					pyobjc,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.apple.$(PRODUCT_NAME:rfc1034identifier)";
 			};
 			name = Release;
