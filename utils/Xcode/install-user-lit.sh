@@ -13,8 +13,8 @@ if [ -z "${LIT_MODULE_PATH}" ]; then
     INSTALL_LOG_PATH="${BUILT_PRODUCTS_DIR}/tests/lit.install.log"
     echo "note: attempting automatic 'lit' install, see log at: '${INSTALL_LOG_PATH}'"
     if ( ! easy_install --user lit >${INSTALL_LOG_PATH} 2>&1 ); then
-        echo "error: unable to automatically install, please consult \
+        echo "warning: unable to automatically install, please consult \
 log or install manually."
-          exit 1
+          exit 0
     fi
 fi
