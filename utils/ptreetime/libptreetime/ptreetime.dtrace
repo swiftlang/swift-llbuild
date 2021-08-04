@@ -36,14 +36,14 @@ proc:::create {
   printf("PTREETIME { \"ts\" : %d, \"evt\" : \"%-14s\", ",
          walltimestamp/1000, "proc:::create");
   printf("\"pid\" : %d, \"parent\" : %d }\n",
-         ((struct proc*) arg0)->p_pid, ((struct proc*) arg0)->p_ppid);
+         (xlate <psinfo_t *>(arg0))->pr_pid, (xlate <psinfo_t *>(arg0))->pr_ppid);
 }
 
 proc:::exit {
   printf("PTREETIME { \"ts\" : %d, \"evt\" : \"%-14s\", ",
          walltimestamp/1000, "proc:::exit");
   printf("\"pid\" : %d, \"parent\" : %d, \"name\" : \"%s\" }\n",
-         curproc->p_pid, curproc->p_ppid, curproc->p_comm);
+         curpsinfo->pr_pid, curpsinfo->pr_ppid, curpsinfo->pr_fname);
 }
 
 dtrace:::END {
