@@ -85,6 +85,8 @@
 ///
 /// Version History:
 ///
+/// 12: Invoke provideValue on ExternalCommand for all build values
+///
 /// 11: Added QualityOfService field to llb_buildsystem_invocation_t
 ///
 /// 10: Changed to a llb_task_interface_t copies instead of pointers
@@ -108,6 +110,6 @@
 /// 1: Added `environment` parameter to llb_buildsystem_invocation_t.
 ///
 /// 0: Pre-history
-#define LLBUILD_C_API_VERSION 11
+#define LLBUILD_C_API_VERSION 12
 
 #endif
