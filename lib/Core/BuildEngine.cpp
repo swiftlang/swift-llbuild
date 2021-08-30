@@ -1821,9 +1821,9 @@ void TaskInterface::complete(ValueType &&value, bool forceChange) {
                                                       forceChange);
 }
 
-void TaskInterface::spawn(basic::QueueJob&& job) {
+void TaskInterface::spawn(basic::QueueJob&& job, basic::QueueJobPriority priority) {
   // FIXME: handle environment
-  static_cast<BuildEngineImpl*>(impl)->getExecutionQueue().addJob(std::move(job));
+  static_cast<BuildEngineImpl*>(impl)->getExecutionQueue().addJob(std::move(job), priority);
 }
 
 void TaskInterface::spawn(basic::QueueJobContext *context,

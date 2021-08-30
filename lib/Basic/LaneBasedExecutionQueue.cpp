@@ -73,6 +73,53 @@ public:
   static std::unique_ptr<Scheduler> make(SchedulerAlgorithm alg);
 };
 
+class PriorityQueueScheduler : public Scheduler {
+private:
+  std::priority_queue<QueueJob, std::vector<QueueJob>, QueueJobLess> jobs;
+
+public:
+  void addJob(QueueJob job) override {
+    jobs.push(job);
+  }
+
+  QueueJob getNextJob() override {
+    QueueJob job = jobs.top();
+    jobs.pop();
+    return job;
+  }
+
+  bool empty() const override {
+    return jobs.empty();
+  }
+
+  uint64_t size() const override {
+    return jobs.size();
+  }
+};
+
+class FifoScheduler : public Scheduler {
+private:
+  std::deque<QueueJob> jobs;
+
+public:
+  void addJob(QueueJob job) override {
+    jobs.push_back(job);
+  }
+
+  QueueJob getNextJob() override {
+    QueueJob job = jobs.front();
+    jobs.pop_front();
+    return job;
+  }
+
+  bool empty() const override {
+    return jobs.empty();
+  }
+
+  uint64_t size() const override {
+    return jobs.size();
+  }
+};
 /// Build execution queue.
 //
 // FIXME: Consider trying to share this with the Ninja implementation.
@@ -91,6 +138,7 @@ class LaneBasedExecutionQueue : public ExecutionQueue {
 
   /// The ready queue of jobs to execute.
   std::unique_ptr<Scheduler> readyJobs;
+  FifoScheduler readyPriorityJobs;
   std::mutex readyJobsMutex;
   std::condition_variable readyJobsCondition;
   bool cancelled { false };
@@ -145,14 +193,19 @@ class LaneBasedExecutionQueue : public ExecutionQueue {
         std::unique_lock<std::mutex> lock(readyJobsMutex);
 
         // While the queue is empty, wait for an item.
-        while (!shutdown && readyJobs->empty()) {
+        while (!shutdown && readyJobs->empty() && readyPriorityJobs.empty()) {
           readyJobsCondition.wait(lock);
         }
-        if (shutdown && readyJobs->empty())
+        if (shutdown && readyJobs->empty() && readyPriorityJobs.empty())
           return;
 
-        // Take an item according to the chosen policy.
-        job = readyJobs->getNextJob();
+        // Take an item according to the chosen policy, preferentially running
+        // priority jobs.
+        if (!readyPriorityJobs.empty()) {
+          job = readyPriorityJobs.getNextJob();
+        } else {
+          job = readyJobs->getNextJob();
+        }
         readyJobsCount = readyJobs->size();
       }
 
@@ -288,11 +341,15 @@ public:
     return std::make_pair(numLanes, backgroundTaskMax);
   }
 
-  virtual void addJob(QueueJob job) override {
+  virtual void addJob(QueueJob job, QueueJobPriority priority) override {
     uint64_t readyJobsCount;
     {
       std::lock_guard<std::mutex> guard(readyJobsMutex);
-      readyJobs->addJob(job);
+      if (priority == High) {
+        readyPriorityJobs.addJob(job);
+      } else {
+        readyJobs->addJob(job);
+      }
       readyJobsCondition.notify_one();
       readyJobsCount = readyJobs->size();
     }
@@ -409,54 +466,6 @@ public:
         std::move(releaseFn),
         std::move(laneCompletionFn)
     );
-  }
-};
-
-class PriorityQueueScheduler : public Scheduler {
-private:
-  std::priority_queue<QueueJob, std::vector<QueueJob>, QueueJobLess> jobs;
-
-public:
-  void addJob(QueueJob job) override {
-    jobs.push(job);
-  }
-
-  QueueJob getNextJob() override {
-    QueueJob job = jobs.top();
-    jobs.pop();
-    return job;
-  }
-
-  bool empty() const override {
-    return jobs.empty();
-  }
-
-  uint64_t size() const override {
-    return jobs.size();
-  }
-};
-
-class FifoScheduler : public Scheduler {
-private:
-  std::deque<QueueJob> jobs;
-
-public:
-  void addJob(QueueJob job) override {
-    jobs.push_back(job);
-  }
-
-  QueueJob getNextJob() override {
-    QueueJob job = jobs.front();
-    jobs.pop_front();
-    return job;
-  }
-
-  bool empty() const override {
-    return jobs.empty();
-  }
-
-  uint64_t size() const override {
-    return jobs.size();
   }
 };
 

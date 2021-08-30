@@ -2748,8 +2748,6 @@ public:
     }
 
     // Load all of the discovered dependencies.
-    // FIXME: Really want this job to go into a high priority fifo queue
-    // so as to not hold up downstream tasks.
     ti.spawn({ this, [this, ti, completionFn, result, depsFiles](QueueJobContext* context) mutable {
       for (const auto& depsPath: depsFiles) {
         if (!processDiscoveredDependencies(ti, depsPath)) {
@@ -2760,7 +2758,7 @@ public:
       }
       if (completionFn.hasValue())
         completionFn.getValue()(result);
-    }});
+    }}, basic::High);
   }
 };
 

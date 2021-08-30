@@ -180,7 +180,7 @@ public:
   void complete(ValueType&& value, bool forceChange = false);
 
   /// Called by a task to run an asynchronous computation
-  void spawn(basic::QueueJob&&);
+  void spawn(basic::QueueJob&&, basic::QueueJobPriority priority = basic::Normal);
 
   /// Called by a task to spawn an external process.
   void spawn(basic::QueueJobContext* context,

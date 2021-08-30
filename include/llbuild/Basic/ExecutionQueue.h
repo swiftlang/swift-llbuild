@@ -77,6 +77,11 @@ namespace llbuild {
       void execute(QueueJobContext* context) { work(context); }
     };
 
+    enum QueueJobPriority {
+      Normal,
+      High
+    };
+
     /// This abstact class encapsulates the interface needed for contributing
     /// work which needs to be executed.
     class ExecutionQueue {
@@ -100,7 +105,7 @@ namespace llbuild {
       /// @}
 
       /// Add a job to be executed.
-      virtual void addJob(QueueJob job) = 0;
+      virtual void addJob(QueueJob job, QueueJobPriority priority = Normal) = 0;
 
       /// Cancel all jobs and subprocesses of this queue.
       virtual void cancelAllJobs() = 0;
