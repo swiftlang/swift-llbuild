@@ -227,7 +227,7 @@ public:
   }
 
 
-  virtual void addJob(QueueJob job) override {
+  virtual void addJob(QueueJob job, QueueJobPriority) override {
     uint64_t jobID = ++jobCount;
     queue->async([jobID, job]() mutable {
       SerialContext ctx(jobID, job);
