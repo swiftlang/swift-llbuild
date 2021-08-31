@@ -2758,7 +2758,7 @@ public:
       }
       if (completionFn.hasValue())
         completionFn.getValue()(result);
-    }}, basic::High);
+    }}, basic::QueueJobPriority::High);
   }
 };
 

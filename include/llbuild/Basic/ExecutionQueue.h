@@ -77,7 +77,7 @@ namespace llbuild {
       void execute(QueueJobContext* context) { work(context); }
     };
 
-    enum QueueJobPriority {
+    enum class QueueJobPriority {
       Normal,
       High
     };
@@ -105,7 +105,7 @@ namespace llbuild {
       /// @}
 
       /// Add a job to be executed.
-      virtual void addJob(QueueJob job, QueueJobPriority priority = Normal) = 0;
+      virtual void addJob(QueueJob job, QueueJobPriority priority = QueueJobPriority::Normal) = 0;
 
       /// Cancel all jobs and subprocesses of this queue.
       virtual void cancelAllJobs() = 0;
