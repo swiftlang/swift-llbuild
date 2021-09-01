@@ -345,7 +345,7 @@ public:
     uint64_t readyJobsCount;
     {
       std::lock_guard<std::mutex> guard(readyJobsMutex);
-      if (priority == High) {
+      if (priority == QueueJobPriority::High) {
         readyPriorityJobs.addJob(job);
       } else {
         readyJobs->addJob(job);
