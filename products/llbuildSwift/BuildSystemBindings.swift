@@ -63,14 +63,22 @@ public struct BuildSystemCommandInterface {
 }
 
 public protocol Tool: AnyObject {
-    /// Called to create a specific command instance of this tool.
+    @available(*, deprecated, message: "Use the overload that returns an Optional")
     func createCommand(_ name: String) -> ExternalCommand
+
+    /// Called to create a specific command instance of this tool.
+    func createCommand(_ name: String) -> ExternalCommand?
 
     /// Called to create a custom command, if the tool accepts the requested CustomTask BuildKey.
     func createCustomCommand(_ buildKey: BuildKey.CustomTask) -> ExternalCommand?
 }
 
 public extension Tool {
+    @available(*, deprecated, message: "Use the overload that returns an Optional")
+    func createCommand(_ name: String) -> ExternalCommand? {
+        return createCommand(name) as ExternalCommand
+    }
+
     // Default implementation to allow clients to avoid declaring this method if not required.
     func createCustomCommand(_ buildKey: BuildKey.CustomTask) -> ExternalCommand? {
         return nil
@@ -90,8 +98,8 @@ private final class ToolWrapper {
     private var commandWrappers: [CommandWrapper] = []
 
     func createCommand(_ name: UnsafePointer<llb_data_t>) -> OpaquePointer? {
-        let command = tool.createCommand(stringFromData(name.pointee))
-        return buildCommand(name, command)
+        let command = tool.createCommand(stringFromData(name.pointee)) as ExternalCommand?
+        return command.map { command in buildCommand(name, command) } ?? nil
     }
 
     func createCustomCommand(_ key: OpaquePointer) -> OpaquePointer? {

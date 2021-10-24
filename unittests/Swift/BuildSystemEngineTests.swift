@@ -102,10 +102,15 @@ final class TestTool: Tool {
         self.expectedCommands = expectedCommands
     }
 
+    @available(*, deprecated, message: "Use the overload that returns an Optional")
     func createCommand(_ name: String) -> ExternalCommand {
+        return (createCommand(name) as ExternalCommand?)!
+    }
+
+    func createCommand(_ name: String) -> ExternalCommand? {
         guard let command = expectedCommands[name] else {
             XCTFail("Command \(name) not expected.")
-            return FailureCommand()
+            return nil
         }
         return command
     }
