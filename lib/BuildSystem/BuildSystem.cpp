@@ -1572,6 +1572,11 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
                                const ValueType& value) -> bool {
           return CommandTask::isResultValid(
               engine, *command, BuildValue::fromData(value));
+        },
+        /*UpdateStatus=*/ [command](BuildEngine& engine,
+                                    core::Rule::StatusKind status) {
+          return ::getBuildSystem(engine).getDelegate().commandStatusChanged(
+              command, convertStatusKind(status));
         }
       ));
     }
@@ -2212,6 +2217,8 @@ public:
   // FIXME: Should create a CustomCommand class, to avoid all the boilerplate
   // required implementations.
 
+  bool shouldShowStatus() override { return false; }
+    
   virtual void getShortDescription(SmallVectorImpl<char> &result) const override {
     llvm::raw_svector_ostream(result) << "Checking Swift Compiler Version";
   }
