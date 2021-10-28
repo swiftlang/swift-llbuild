@@ -85,6 +85,8 @@
 ///
 /// Version History:
 ///
+/// 13: Update command status for custom tasks as well
+///
 /// 12: Invoke provideValue on ExternalCommand for all build values
 ///
 /// 11: Added QualityOfService field to llb_buildsystem_invocation_t
@@ -110,6 +112,6 @@
 /// 1: Added `environment` parameter to llb_buildsystem_invocation_t.
 ///
 /// 0: Pre-history
-#define LLBUILD_C_API_VERSION 12
+#define LLBUILD_C_API_VERSION 13
 
 #endif
