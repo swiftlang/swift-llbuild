@@ -24,12 +24,6 @@
 #include "buildkey.h"
 #include "buildvalue.h"
 
-#ifdef __APPLE__
-#include "TargetConditionals.h"
-#endif
-
-#if !defined(__APPLE__) || !TARGET_OS_IPHONE
-
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -769,7 +763,5 @@ llb_alloc(size_t size);
 LLBUILD_EXPORT void
 llb_free(void* ptr);
 /// @}
-
-#endif
 
 #endif

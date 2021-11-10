@@ -34,6 +34,10 @@
 #include <thread>
 #include <unordered_set>
 
+#ifdef __APPLE__
+#include <TargetConditionals.h>
+#endif
+
 using namespace llbuild;
 using namespace llbuild::basic;
 using namespace llbuild::buildsystem;
@@ -115,8 +119,10 @@ public:
         assert(!os.has_error());
       }
 
+#if !TARGET_OS_IPHONE
       errs() << "Diff:\n";
       system(("diff '" + outputActual + "' '"+ outputExpected +"'").c_str());
+#endif
     }
 
     return result;

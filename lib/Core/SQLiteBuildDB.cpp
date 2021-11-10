@@ -548,7 +548,7 @@ public:
 
 
     int numDependencies = numDependencyBytes / sizeof(uint64_t);
-    if (numDependencyBytes != numDependencies * sizeof(uint64_t)) {
+    if (numDependencyBytes != static_cast<int>(numDependencies * sizeof(uint64_t))) {
       *error_out = (llvm::Twine("unexpected contents for database result: ") +
                     llvm::Twine((int)dbKeyID.value)).str();
       return false;
@@ -767,7 +767,7 @@ public:
       
       // map dependencies
       int numDependencies = numDependencyBytes / sizeof(uint64_t);
-      if (numDependencyBytes != numDependencies * sizeof(uint64_t)) {
+      if (numDependencyBytes != static_cast<int>(numDependencies * sizeof(uint64_t))) {
         *error_out = (llvm::Twine("unexpected contents for database result: ") +
                       llvm::Twine((int)dbKeyID.value)).str();
         return false;

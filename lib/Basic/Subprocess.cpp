@@ -19,6 +19,7 @@
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
+#include "llvm/Config/config.h"
 #include "llvm/Support/ConvertUTF.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/Program.h"
@@ -83,7 +84,7 @@ int pthread_fchdir_np(int fd)
 #endif
 #endif
 
-#if !defined(_WIN32)
+#if !defined(_WIN32) && defined(HAVE_POSIX_SPAWN)
 static int posix_spawn_file_actions_addchdir(posix_spawn_file_actions_t * __restrict file_actions,
                                              const char * __restrict path) {
 #if HAVE_POSIX_SPAWN_CHDIR
@@ -378,6 +379,7 @@ public:
   bool shouldRelease() const { return releaseSeen; }
 };
 
+#if !defined(_WIN32) && defined(HAVE_POSIX_SPAWN)
 // Helper function to collect subprocess output.
 // Consumes and closes the outputPipe descriptor.
 static void captureExecutedProcessOutput(ProcessDelegate& delegate,
@@ -406,7 +408,9 @@ static void captureExecutedProcessOutput(ProcessDelegate& delegate,
   // Go ahead and close the pipe (it was going to be closed automatically).
   outputPipe.close();
 }
+#endif
 
+#if defined(_WIN32) || defined(HAVE_POSIX_SPAWN)
 // Helper function for cleaning up after a process has finished in
 // executeProcess
 static void cleanUpExecutedProcess(ProcessDelegate& delegate,
@@ -516,7 +520,9 @@ static void cleanUpExecutedProcess(ProcessDelegate& delegate,
   delegate.processFinished(ctx, handle, processResult);
   completionFn(processResult);
 }
+#endif
 
+#if defined(_WIN32) || defined(HAVE_POSIX_SPAWN)
 #if defined(_WIN32)
   using PlatformSpecificPipesConfig = STARTUPINFOW;
 #else
@@ -631,6 +637,7 @@ static std::pair<CommunicationPipesCreationError, int> createCommunicationPipes(
 
   return std::make_pair(CommunicationPipesCreationError::ERROR_NONE, 0);
 }
+#endif
 
 void llbuild::basic::spawnProcess(
     ProcessDelegate& delegate,
@@ -643,7 +650,13 @@ void llbuild::basic::spawnProcess(
     ProcessReleaseFn&& releaseFn,
     ProcessCompletionFn&& completionFn
 ) {
-
+#if !defined(_WIN32) && !defined(HAVE_POSIX_SPAWN)
+  auto result = ProcessResult::makeFailed();
+  delegate.processHadError(ctx, handle, Twine("process spawning is unavailable"));
+  delegate.processFinished(ctx, handle, result);
+  completionFn(result);
+  return;
+#else
   // Don't use lane release feature for console workloads.
   if (attr.connectToConsole) {
     attr.controlEnabled = false;
@@ -840,7 +853,7 @@ void llbuild::basic::spawnProcess(
 
 #if !defined(_WIN32)
       if (usePosixSpawnChdirFallback) {
-#if defined(__APPLE__) && !TARGET_OS_IPHONE
+#if defined(__APPLE__)
         thread_local std::string threadWorkingDir;
 
         if (workingDir.empty()) {
@@ -862,7 +875,7 @@ void llbuild::basic::spawnProcess(
           workingDirectoryUnsupported = true;
           result = -1;
         }
-#endif // if defined(__APPLE__) && !TARGET_OS_IPHONE
+#endif // if defined(__APPLE__)
       }
 #endif // else !defined(_WIN32)
 
@@ -1087,4 +1100,5 @@ void llbuild::basic::spawnProcess(
   outputPipeParentEnd.close();
   cleanUpExecutedProcess(delegate, pgrp, pid, handle, ctx,
                          std::move(completionFn), controlPipeParentEnd);
+#endif
 }
