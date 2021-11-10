@@ -4976,7 +4976,6 @@
 		E147DF141BA81D330032D08E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				PRODUCT_TYPE = "com.apple.product-type.library.dynamic";
 				USER_HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/include",
 					"$(SRCROOT)/utils/unittest/googletest/include",
@@ -4987,7 +4986,6 @@
 		E147DF151BA81D330032D08E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				PRODUCT_TYPE = "com.apple.product-type.library.dynamic";
 				USER_HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/include",
 					"$(SRCROOT)/utils/unittest/googletest/include",
@@ -4998,6 +4996,7 @@
 		E1604CAF1BB9E01D001153A1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "$(LLBUILD_CODE_SIGN_IDENTITY)";
 				INSTALL_PATH = "$(DT_TOOLCHAIN_INSTALL_DIR:standardizepath)/usr/bin";
 				SKIP_INSTALL = NO;
 			};
@@ -5006,6 +5005,7 @@
 		E1604CB01BB9E01D001153A1 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "$(LLBUILD_CODE_SIGN_IDENTITY)";
 				INSTALL_PATH = "$(DT_TOOLCHAIN_INSTALL_DIR:standardizepath)/usr/bin";
 				SKIP_INSTALL = NO;
 			};
@@ -5223,6 +5223,7 @@
 		E1A224C819F999B80059043E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "$(LLBUILD_CODE_SIGN_IDENTITY)";
 				INSTALL_PATH = "$(DT_TOOLCHAIN_INSTALL_DIR:standardizepath)/usr/local/bin";
 				PRODUCT_NAME = llbuild;
 				SKIP_INSTALL = NO;
@@ -5232,6 +5233,7 @@
 		E1A224C919F999B80059043E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "$(LLBUILD_CODE_SIGN_IDENTITY)";
 				INSTALL_PATH = "$(DT_TOOLCHAIN_INSTALL_DIR:standardizepath)/usr/local/bin";
 				PRODUCT_NAME = llbuild;
 				SKIP_INSTALL = NO;
@@ -5419,6 +5421,7 @@
 		E1D191C41B47232B000C4E95 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "$(LLBUILD_CODE_SIGN_IDENTITY)";
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
@@ -5438,6 +5441,7 @@
 		E1D191C51B47232B000C4E95 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "$(LLBUILD_CODE_SIGN_IDENTITY)";
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
