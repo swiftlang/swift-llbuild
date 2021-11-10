@@ -4,6 +4,10 @@
 /* Exported configuration */
 #include "llvm/Config/llvm-config.h"
 
+#if defined(__APPLE__)
+#include "TargetConditionals.h"
+#endif
+
 /* Bug report URL. */
 #define BUG_REPORT_URL "https://bugs.llvm.org/"
 
@@ -167,7 +171,9 @@
 /* #undef HAVE_POSIX_FALLOCATE */
 
 /* Define to 1 if you have the `posix_spawn' function. */
+#if !(defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
 #define HAVE_POSIX_SPAWN 1
+#endif
 
 /* Define to 1 if you have the `pread' function. */
 #if !defined(LLVM_ON_WIN32)
@@ -261,10 +267,6 @@
 #define HAVE_SYS_TYPES_H 1
 
 /* Define if the setupterm() function is supported this platform. */
-#if defined(__APPLE__)
-#include "TargetConditionals.h"
-#endif
-
 #if defined(__APPLE__) && TARGET_OS_IPHONE
 #undef HAVE_TERMINFO
 #else

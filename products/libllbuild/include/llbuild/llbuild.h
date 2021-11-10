@@ -28,10 +28,6 @@ LLBUILD_EXPORT int llb_get_api_version(void);
 // The Core component.
 #include "core.h"
 
-#ifdef __APPLE__
-#include "TargetConditionals.h"
-#endif
-#if !defined(__APPLE__) || !TARGET_OS_IPHONE
 // The BuildSystem component.
 #include "buildsystem.h"
 #endif
@@ -43,5 +39,3 @@ LLBUILD_EXPORT int llb_get_api_version(void);
 #include "buildvalue.h"
 
 #include "ninja.h"
-
-#endif

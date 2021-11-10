@@ -18,6 +18,7 @@
 + (NSString*) findNinja;
 @end
 
+API_UNAVAILABLE(ios, tvos, watchos)
 static void ExecuteShellCommand(const char *String) {
     NSLog(@"running shell command: %s", String);
     int Result = system(String);
@@ -28,6 +29,7 @@ static void ExecuteShellCommand(const char *String) {
     }
 }
 
+API_UNAVAILABLE(ios, tvos, watchos)
 @implementation NinjaPerfTests
 
 + (NSString*) findNinja {

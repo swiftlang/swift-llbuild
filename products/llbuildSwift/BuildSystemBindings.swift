@@ -27,8 +27,6 @@ import Foundation
 import llbuild
 #endif
 
-#if !os(iOS)
-
 private func bytesFromData(_ data: llb_data_t) -> [UInt8] {
     return Array(UnsafeBufferPointer(start: data.data, count: Int(data.length)))
 }
@@ -1111,5 +1109,3 @@ public final class BuildSystem {
         // OBSOLETE: remove once downstream clients have adopted initializer
     }
 }
-
-#endif

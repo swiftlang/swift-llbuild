@@ -5,10 +5,12 @@
 //  Copyright (c) 2014 Apple Inc. All rights reserved.
 //
 
-#import <Cocoa/Cocoa.h>
 #import <XCTest/XCTest.h>
 
+#import <TargetConditionals.h>
+#if TARGET_OS_OSX
 #import <Python/Python.h>
+#endif
 
 @interface LitTests : XCTestCase
 
@@ -19,7 +21,8 @@
 + (XCTestSuite*)defaultTestSuite {
     // Inject the BUILT_PRODUCTS_DIR we were built with into the environment.
     setenv("BUILT_PRODUCTS_DIR", BUILT_PRODUCTS_DIR, /*overwrite=*/1);
-    
+
+#if TARGET_OS_OSX
     // Initialize Python.
     Py_Initialize();
 
@@ -31,6 +34,7 @@
     
     // Import our custom module, which will inject test methods.
     PyRun_SimpleString("import LitTests");
+#endif
     
     // Invoke super class implementation, which will find all the methods we injected.
     return [super defaultTestSuite];

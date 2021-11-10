@@ -30,6 +30,7 @@ using namespace llbuild::basic;
 
 @end
 
+API_UNAVAILABLE(ios, tvos, watchos)
 static void ExecuteShellCommand(const char *String) {
     NSLog(@"running shell command: %s", String);
     int Result = system(String);
@@ -42,7 +43,7 @@ static void ExecuteShellCommand(const char *String) {
 
 @implementation BuildSystemPerfTests
 
-- (void)testChromiumFakeBuildFileLoading {
+- (void)testChromiumFakeBuildFileLoading API_UNAVAILABLE(ios, tvos, watchos) {
     // Test the build file parsing/loading time for the Chromium fake build file.
     
     // Create a sandbox to run the test in.

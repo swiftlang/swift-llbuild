@@ -144,7 +144,7 @@ getResultForOutput(Node* node, const BuildValue& value) {
   assert(it != outputs.end());
     
   auto idx = it - outputs.begin();
-  assert(idx < value.getNumOutputs());
+  assert(idx < static_cast<ssize_t>(value.getNumOutputs()));
 
   auto& info = value.getNthOutputInfo(idx);
   if (info.isMissing())

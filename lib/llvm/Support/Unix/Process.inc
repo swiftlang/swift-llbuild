@@ -52,6 +52,10 @@
 #  include <termios.h>
 #endif
 
+#if defined(__APPLE__)
+#include <TargetConditionals.h>
+#endif
+
 //===----------------------------------------------------------------------===//
 //=== WARNING: Implementation here must contain only generic UNIX code that
 //===          is guaranteed to work on *all* UNIX variants.
@@ -133,7 +137,7 @@ void Process::PreventCoreFiles() {
   setrlimit(RLIMIT_CORE, &rlim);
 #endif
 
-#if defined(HAVE_MACH_MACH_H) && !defined(__GNU__)
+#if defined(HAVE_MACH_MACH_H) && !defined(__GNU__) && !(defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
   // Disable crash reporting on Mac OS X 10.0-10.4
 
   // get information about the original set of exception ports for the task

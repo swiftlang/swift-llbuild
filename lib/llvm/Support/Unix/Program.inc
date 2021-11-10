@@ -94,6 +94,7 @@ ErrorOr<std::string> sys::findProgramByName(StringRef Name,
   return errc::no_such_file_or_directory;
 }
 
+#if !TARGET_OS_IPHONE
 static bool RedirectIO(Optional<StringRef> Path, int FD, std::string* ErrMsg) {
   if (!Path) // Noop
     return false;
@@ -121,6 +122,7 @@ static bool RedirectIO(Optional<StringRef> Path, int FD, std::string* ErrMsg) {
   close(InFD);      // Close the original FD
   return false;
 }
+#endif
 
 #ifdef HAVE_POSIX_SPAWN
 static bool RedirectIO_PS(const std::string *Path, int FD, std::string *ErrMsg,
@@ -145,6 +147,7 @@ static bool RedirectIO_PS(const std::string *Path, int FD, std::string *ErrMsg,
 static void TimeOutHandler(int Sig) {
 }
 
+#if !TARGET_OS_IPHONE
 static void SetMemoryLimits(unsigned size) {
 #if HAVE_SYS_RESOURCE_H && HAVE_GETRLIMIT && HAVE_SETRLIMIT
   struct rlimit r;
@@ -162,6 +165,7 @@ static void SetMemoryLimits(unsigned size) {
 #endif
 #endif
 }
+#endif
 
 }
 
@@ -266,6 +270,11 @@ static bool Execute(ProcessInfo &PI, StringRef Program,
   }
 #endif
 
+#if TARGET_OS_IPHONE
+  if (ErrMsg)
+    *ErrMsg = std::string("fork is unavailable");
+  return false;
+#else
   // Create a child process.
   int child = fork();
   switch (child) {
@@ -325,6 +334,7 @@ static bool Execute(ProcessInfo &PI, StringRef Program,
   PI.Process = child;
 
   return true;
+#endif
 }
 
 namespace llvm {
