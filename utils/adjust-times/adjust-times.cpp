@@ -35,7 +35,7 @@
 /// or to the current time.
 static int file_time_set_fixed(const char* filename, struct timespec time_to_set) {
 #if defined __APPLE__
-  if (__builtin_available(macOS 10.13, *)) {
+  if (__builtin_available(macOS 10.13, iOS 11.0, watchOS 4.0, tvOS 11.0, *)) {
     struct timespec times[2] = { time_to_set, time_to_set };
     return utimensat(AT_FDCWD, filename, times, 0);
   } else {
