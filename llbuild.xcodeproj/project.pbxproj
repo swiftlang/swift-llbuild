@@ -3789,7 +3789,7 @@
 		};
 		BC92770E1E60449A0020E457 /* Install in CommandLineTools */ = {
 			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 12;
+			buildActionMask = 8;
 			files = (
 			);
 			inputPaths = (
@@ -3797,11 +3797,11 @@
 			);
 			name = "Install in CommandLineTools";
 			outputPaths = (
-				"$(DSTROOT)/Library/Developer/CommandLineTools/usr/lib/swift/pm/llbuild/llbuild.framework",
+				"$(COMMANDLINETOOLS_FRAMEWORK_INSTALL_PATH)",
 			);
-			runOnlyForDeploymentPostprocessing = 0;
+			runOnlyForDeploymentPostprocessing = 1;
 			shellPath = /bin/sh;
-			shellScript = "# This script is used to install llbuild.framework in CommandLineTools.\n\nset -e\nmkdir -p \"$(dirname \"$SCRIPT_OUTPUT_FILE_0\")\"\nrsync -a \"$SCRIPT_INPUT_FILE_0/\" \"$SCRIPT_OUTPUT_FILE_0\"\n";
+			shellScript = "# This script is used to install llbuild.framework in CommandLineTools.\n\nset -e\nif [ \"${SCRIPT_OUTPUT_FILE_0}\" != \"\" ]; then\n    mkdir -p \"$(dirname \"$SCRIPT_OUTPUT_FILE_0\")\"\n    rsync -a \"$SCRIPT_INPUT_FILE_0/\" \"$SCRIPT_OUTPUT_FILE_0\"\nfi\n";
 			showEnvVarsInLog = 0;
 		};
 		E147DF121BA81D330032D08E /* Create Target Link */ = {
