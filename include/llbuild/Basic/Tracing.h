@@ -47,17 +47,17 @@ static os_signpost_id_t signpost_id() {
 
 /// Begin an interval if tracing is enabled.
 #define LLBUILD_TRACE_INTERVAL_BEGIN(name, ...) { \
-if (__builtin_available(macOS 10.14, *)) os_signpost_interval_begin(getLog(), signpost_id(), name, ##__VA_ARGS__); \
+if (__builtin_available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)) os_signpost_interval_begin(getLog(), signpost_id(), name, ##__VA_ARGS__); \
 }
 
 /// End an interval if tracing is enabled.
 #define LLBUILD_TRACE_INTERVAL_END(name, ...) { \
-if (__builtin_available(macOS 10.14, *)) os_signpost_interval_end(getLog(), signpost_id(), name, ##__VA_ARGS__); \
+if (__builtin_available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)) os_signpost_interval_end(getLog(), signpost_id(), name, ##__VA_ARGS__); \
 }
 
 /// Trace an event without duration at a point in time.
 #define LLBUILD_TRACE_POINT(name, ...) { \
-if (__builtin_available(macOS 10.12, *)) os_log(getLog(), ##__VA_ARGS__); \
+if (__builtin_available(macOS 10.12, iOS 10.0, watchOS 3.0, tvOS 10.0, *)) os_log(getLog(), ##__VA_ARGS__); \
 }
 
 #else
