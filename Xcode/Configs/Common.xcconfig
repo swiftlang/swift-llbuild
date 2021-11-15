@@ -59,6 +59,10 @@ CLANG_CXX_LIBRARY = libc++
 COMMON_PREPROCESSOR_DEFINITIONS = $(LLBUILD_VERSION_DEFINITIONS)
 OTHER_CPLUSPLUSFLAGS = $(OTHER_CFLAGS) -Wimplicit-fallthrough -Wsign-compare -Wall
 
+// Destination for installing llbuild.framework so it appears in the CommandLineTools package.
+// Clients can override this to the empty string to avoid installing anything.
+COMMANDLINETOOLS_FRAMEWORK_INSTALL_PATH = $(DSTROOT)/Library/Developer/CommandLineTools/usr/lib/swift/pm/llbuild/llbuild.framework
+
 // MARK: Signing Support
 
 // Enable code signing, if appropriate.
