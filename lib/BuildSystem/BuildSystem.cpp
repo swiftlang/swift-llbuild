@@ -2284,7 +2284,12 @@ public:
     llvm::raw_svector_ostream commandOS(command);
     commandOS << basic::shellEscaped(executable);
     commandOS << " " << "--version";
+#if defined(_WIN32)
+    // FIXME:  cmd.exe uses different syntax for I/O redirection to null.
+    commandOS << " 2>NUL";
+#else
     commandOS << " " << "2>/dev/null";
+#endif
 
     // Read the result.
     FILE *fp = basic::sys::popen(commandOS.str().str().c_str(), "r");
