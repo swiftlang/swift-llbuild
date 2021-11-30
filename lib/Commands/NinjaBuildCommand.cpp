@@ -666,7 +666,7 @@ public:
 
   void queueJobStarted(JobDescriptor*) override {}
   void queueJobFinished(JobDescriptor*) override {}
-  void processStarted(ProcessContext* ctx, ProcessHandle handle) override {
+  void processStarted(ProcessContext* ctx, ProcessHandle handle, llbuild_pid_t pid) override {
     std::lock_guard<std::mutex> lock(outputBufferMutex);
     outputBuffers.emplace(handle.id, SmallString<1024>());
   }

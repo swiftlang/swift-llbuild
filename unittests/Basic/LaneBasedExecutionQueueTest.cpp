@@ -37,7 +37,7 @@ namespace {
 
     virtual void queueJobStarted(JobDescriptor*) override {}
     virtual void queueJobFinished(JobDescriptor*) override {}
-    virtual void processStarted(ProcessContext*, ProcessHandle) override {}
+    virtual void processStarted(ProcessContext*, ProcessHandle, llbuild_pid_t) override {}
     virtual void processHadError(ProcessContext*, ProcessHandle,
                                  const Twine& message) override {}
     virtual void processHadOutput(ProcessContext*, ProcessHandle,

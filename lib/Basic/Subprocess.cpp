@@ -650,8 +650,11 @@ void llbuild::basic::spawnProcess(
     ProcessReleaseFn&& releaseFn,
     ProcessCompletionFn&& completionFn
 ) {
+  llbuild_pid_t pid = (llbuild_pid_t)-1;
+  
 #if !defined(_WIN32) && !defined(HAVE_POSIX_SPAWN)
   auto result = ProcessResult::makeFailed();
+  delegate.processStarted(ctx, handle, pid);
   delegate.processHadError(ctx, handle, Twine("process spawning is unavailable"));
   delegate.processFinished(ctx, handle, result);
   completionFn(result);
@@ -667,10 +670,9 @@ void llbuild::basic::spawnProcess(
   attr.controlEnabled = false;
 #endif
 
-  delegate.processStarted(ctx, handle);
-
   if (commandLine.size() == 0) {
     auto result = ProcessResult::makeFailed();
+    delegate.processStarted(ctx, handle, pid);
     delegate.processHadError(ctx, handle, Twine("no arguments for command"));
     delegate.processFinished(ctx, handle, result);
     completionFn(result);
@@ -811,7 +813,6 @@ void llbuild::basic::spawnProcess(
   }
 
   // Spawn the command.
-  llbuild_pid_t pid = (llbuild_pid_t)-1;
   bool wasCancelled;
   do {
       // We need to hold the spawn processes lock when we spawn, to ensure that
@@ -835,6 +836,7 @@ void llbuild::basic::spawnProcess(
         posix_spawn_file_actions_destroy(&fileActions);
         posix_spawnattr_destroy(&attributes);
 #endif
+        delegate.processStarted(ctx, handle, pid);
         delegate.processHadError(ctx, handle,
             Twine("unable to open " + whatPipe + " (") + strerror(errorPair.second) + ")");
         delegate.processFinished(ctx, handle, ProcessResult::makeFailed());
@@ -899,6 +901,8 @@ void llbuild::basic::spawnProcess(
                         const_cast<char* const*>(environment.getEnvp()));
 #endif
       }
+    
+      delegate.processStarted(ctx, handle, pid);
 
       if (result != 0) {
         auto processResult = ProcessResult::makeFailed();

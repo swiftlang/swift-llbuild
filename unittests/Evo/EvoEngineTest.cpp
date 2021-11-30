@@ -69,7 +69,7 @@ private:
     }
   }
 
-  void processStarted(basic::ProcessContext*, basic::ProcessHandle) override { }
+  void processStarted(basic::ProcessContext*, basic::ProcessHandle, llbuild_pid_t) override { }
   void processHadError(basic::ProcessContext*, basic::ProcessHandle, const Twine&) override { }
   void processHadOutput(basic::ProcessContext*, basic::ProcessHandle, StringRef) override { }
   void processFinished(basic::ProcessContext*, basic::ProcessHandle, const basic::ProcessResult&) override { }

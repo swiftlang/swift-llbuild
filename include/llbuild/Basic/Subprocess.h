@@ -187,7 +187,8 @@ namespace llbuild {
       /// different status calls relating to the same process. It is only
       /// guaranteed to be unique from when it has been provided here to when it
       /// has been provided to the \see processFinished() call.
-      virtual void processStarted(ProcessContext* ctx, ProcessHandle handle) = 0;
+      /// \param pid - The subprocess' identifier, can be -1 for failure reasons.
+      virtual void processStarted(ProcessContext* ctx, ProcessHandle handle, llbuild_pid_t pid) = 0;
 
       /// Called to report an error in the management of a command process.
       ///
