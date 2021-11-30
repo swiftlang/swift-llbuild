@@ -176,7 +176,7 @@ public:
       abort();
     }
 
-    void processStarted(basic::ProcessContext*, basic::ProcessHandle) override { }
+    void processStarted(basic::ProcessContext*, basic::ProcessHandle, llbuild_pid_t) override { }
     void processHadError(basic::ProcessContext*, basic::ProcessHandle, const Twine&) override { }
     void processHadOutput(basic::ProcessContext*, basic::ProcessHandle, StringRef) override { }
     void processFinished(basic::ProcessContext*, basic::ProcessHandle, const basic::ProcessResult&) override { }
@@ -267,7 +267,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
       abort();
     }
 
-    void processStarted(basic::ProcessContext*, basic::ProcessHandle) override { }
+    void processStarted(basic::ProcessContext*, basic::ProcessHandle, llbuild_pid_t) override { }
     void processHadError(basic::ProcessContext*, basic::ProcessHandle, const Twine&) override { }
     void processHadOutput(basic::ProcessContext*, basic::ProcessHandle, StringRef) override { }
     void processFinished(basic::ProcessContext*, basic::ProcessHandle, const basic::ProcessResult&) override { }
@@ -361,7 +361,7 @@ static int64_t i64pow(int64_t Value, int64_t Exponent) {
       abort();
     }
 
-    void processStarted(basic::ProcessContext*, basic::ProcessHandle) override { }
+    void processStarted(basic::ProcessContext*, basic::ProcessHandle, llbuild_pid_t) override { }
     void processHadError(basic::ProcessContext*, basic::ProcessHandle, const Twine&) override { }
     void processHadOutput(basic::ProcessContext*, basic::ProcessHandle, StringRef) override { }
     void processFinished(basic::ProcessContext*, basic::ProcessHandle, const basic::ProcessResult&) override { }

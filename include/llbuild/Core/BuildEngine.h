@@ -187,7 +187,8 @@ public:
              ArrayRef<StringRef> commandLine,
              ArrayRef<std::pair<StringRef, StringRef>> environment,
              basic::ProcessAttributes attributes = {true},
-             llvm::Optional<basic::ProcessCompletionFn> completionFn = {llvm::None});
+             llvm::Optional<basic::ProcessCompletionFn> completionFn = {llvm::None},
+             basic::ProcessDelegate* delegate = nullptr);
 
   basic::ProcessStatus spawn(basic::QueueJobContext* context,
                              ArrayRef<StringRef> commandLine);

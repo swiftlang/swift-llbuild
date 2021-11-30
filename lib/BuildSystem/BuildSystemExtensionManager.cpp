@@ -54,7 +54,8 @@ BuildSystemExtensionManager::lookupByCommandPath(StringRef path) {
     SmallString<1024> output;
     bool success;
     
-    virtual void processStarted(ProcessContext* ctx, ProcessHandle handle) {}
+    virtual void processStarted(ProcessContext* ctx, ProcessHandle handle,
+                                llbuild_pid_t pid) {}
 
     virtual void processHadError(ProcessContext* ctx, ProcessHandle handle,
                                  const Twine& message) {};

@@ -63,4 +63,22 @@ extension Array where Element == String {
 
         return appendPointer(self.startIndex, to: &elements)
     }
+    
+    internal func withCArrayOfOptionalStrings<T>(_ body: @escaping (UnsafePointer<UnsafePointer<CChar>?>) -> T) -> T {
+        func appendPointer(_ index: Array.Index, to target: inout Array<UnsafePointer<CChar>?>) -> T {
+            if index == self.endIndex {
+                return body(&target)
+            } else {
+                return self[index].withCString { cStringPtr in
+                    target.append(cStringPtr)
+                    return appendPointer(self.index(after: index), to: &target)
+                }
+            }
+        }
+
+        var elements = Array<UnsafePointer<CChar>?>()
+        elements.reserveCapacity(self.count)
+
+        return appendPointer(self.startIndex, to: &elements)
+    }
 }

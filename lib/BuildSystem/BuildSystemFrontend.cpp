@@ -251,7 +251,8 @@ public:
   }
 
   virtual void processStarted(ProcessContext* command,
-                              ProcessHandle handle) override {
+                              ProcessHandle handle,
+                              llbuild_pid_t pid) override {
     static_cast<BuildSystemFrontendDelegate*>(&getSystem().getDelegate())->
       commandProcessStarted(
           reinterpret_cast<Command*>(command),
