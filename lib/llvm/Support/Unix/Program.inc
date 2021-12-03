@@ -189,6 +189,7 @@ static bool Execute(ProcessInfo &PI, StringRef Program,
     return false;
   }
 
+#if defined(HAVE_POSIX_SPAWN) || !TARGET_OS_IPHONE
   BumpPtrAllocator Allocator;
   StringSaver Saver(Allocator);
   std::vector<const char *> ArgVector, EnvVector;
@@ -200,6 +201,7 @@ static bool Execute(ProcessInfo &PI, StringRef Program,
     EnvVector = toNullTerminatedCStringArray(*Env, Saver);
     Envp = EnvVector.data();
   }
+#endif
 
   // If this OS has posix_spawn and there is no memory limit being implied, use
   // posix_spawn.  It is more efficient than fork/exec.
