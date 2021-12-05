@@ -43,8 +43,7 @@ private:
 
   virtual void queueJobFinished(JobDescriptor*) override {}
 
-  virtual void processStarted(ProcessContext*, ProcessHandle,
-                              llbuild_pid_t) override {}
+  virtual void processStarted(ProcessContext*, ProcessHandle handle) override {}
 
   virtual void processHadError(ProcessContext*, ProcessHandle handle,
                                const Twine& message) override {}

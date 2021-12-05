@@ -610,25 +610,6 @@ llb_buildsystem_tool_create(const llb_data_t* name,
 typedef struct llb_buildsystem_queue_job_context_t_
   llb_buildsystem_queue_job_context_t;
 
-/// Delegate for process spawning
-typedef struct llb_buildsystem_spawn_delegate_t_ {
-  /// User context pointer.
-  void* context;
-  
-  /// Called when the spawned process started
-  void (*process_started)(void* context, llbuild_pid_t pid);
-  
-  /// Called to report an error in the management of the process
-  void (*process_had_error)(void* context, const llb_data_t* error);
-  
-  /// Called to report command output (stdout and stderr)
-  void (*process_had_output)(void* context, const llb_data_t* data);
-  
-  /// Called when the process finished running
-  void (*process_finished)(void* context, const llb_buildsystem_command_extended_result_t *result);
-  
-} llb_buildsystem_spawn_delegate_t;
-
 /// Delegate structure for callbacks required by an external build command.
 typedef struct llb_buildsystem_external_command_delegate_t_ {
   /// User context pointer.
@@ -759,9 +740,6 @@ llb_buildsystem_command_interface_task_discovered_dependency(llb_task_interface_
 LLBUILD_EXPORT llb_build_value_file_info_t
 llb_buildsystem_command_interface_get_file_info(llb_buildsystem_interface_t* bi_p, const char* path);
 
-/// Spawns a process using the task interface and a job's context
-LLBUILD_EXPORT bool
-llb_buildsystem_command_interface_spawn(llb_task_interface_t ti, llb_buildsystem_queue_job_context_t *job_context, const char * const*args, int32_t arg_count, const char * const *env_keys, const char * const *env_values, int32_t env_count, llb_data_t *working_dir, llb_buildsystem_spawn_delegate_t *delegate);
 
 // MARK: Quality of Service
 

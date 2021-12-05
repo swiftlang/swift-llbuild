@@ -74,7 +74,7 @@ static void ExecuteShellCommand(const char *String) {
 
 
 class PerfTestProcessDelegate : public ProcessDelegate {
-    void processStarted(ProcessContext*, ProcessHandle, llbuild_pid_t) {}
+    void processStarted(ProcessContext*, ProcessHandle) {}
     void processHadError(ProcessContext*, ProcessHandle, const Twine&) {}
     void processHadOutput(ProcessContext*, ProcessHandle, StringRef) {}
     void processFinished(ProcessContext*, ProcessHandle, const ProcessResult&) {}

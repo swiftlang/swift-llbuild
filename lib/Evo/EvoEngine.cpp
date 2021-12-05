@@ -109,8 +109,7 @@ private:
     }
 
     void processStarted(basic::ProcessContext* ctx,
-                        basic::ProcessHandle handle,
-                        llbuild_pid_t pid) override { }
+                        basic::ProcessHandle handle) override { }
 
     void processHadError(basic::ProcessContext* ctx,
                          basic::ProcessHandle handle,

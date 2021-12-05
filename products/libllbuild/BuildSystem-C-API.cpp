@@ -34,7 +34,6 @@
 
 #include <atomic>
 #include <cassert>
-#include <future>
 #include <memory>
 
 using namespace llbuild;
@@ -150,25 +149,25 @@ public:
   }
 };
   
-llb_buildsystem_command_result_t get_command_result(ProcessStatus commandResult) {
-  switch (commandResult) {
-    case ProcessStatus::Succeeded:
-      return llb_buildsystem_command_result_succeeded;
-    case ProcessStatus::Cancelled:
-      return llb_buildsystem_command_result_cancelled;
-    case ProcessStatus::Failed:
-      return llb_buildsystem_command_result_failed;
-    case ProcessStatus::Skipped:
-      return llb_buildsystem_command_result_skipped;
-    default:
-      assert(0 && "unknown command result");
-      break;
-  }
-  return llb_buildsystem_command_result_failed;
-}
-
 class CAPIBuildSystemFrontendDelegate : public BuildSystemFrontendDelegate {
   llb_buildsystem_delegate_t cAPIDelegate;
+
+  llb_buildsystem_command_result_t get_command_result(ProcessStatus commandResult) {
+    switch (commandResult) {
+      case ProcessStatus::Succeeded:
+        return llb_buildsystem_command_result_succeeded;
+      case ProcessStatus::Cancelled:
+        return llb_buildsystem_command_result_cancelled;
+      case ProcessStatus::Failed:
+        return llb_buildsystem_command_result_failed;
+      case ProcessStatus::Skipped:
+        return llb_buildsystem_command_result_skipped;
+      default:
+        assert(0 && "unknown command result");
+        break;
+    }
+    return llb_buildsystem_command_result_failed;
+  }
 
 public:
   CAPIBuildSystemFrontendDelegate(llvm::SourceMgr& sourceMgr,
@@ -999,73 +998,6 @@ llb_build_value_file_info_t llb_buildsystem_command_interface_get_file_info(llb_
   return llbuild::capi::convertFileInfo(bi->getFileSystem().getFileInfo(path));
 }
 
-bool llb_buildsystem_command_interface_spawn(llb_task_interface_t ti, llb_buildsystem_queue_job_context_t *job_context, const char * const*args, int32_t arg_count, const char * const *env_keys, const char * const *env_values, int32_t env_count, llb_data_t *working_dir, llb_buildsystem_spawn_delegate_t *delegate) {
-  auto coreti = reinterpret_cast<core::TaskInterface*>(&ti);
-  auto arguments = std::vector<StringRef>();
-  for (int32_t i = 0; i < arg_count; i++) {
-    arguments.push_back(StringRef(args[i]));
-  }
-  auto environment = std::vector<std::pair<StringRef, StringRef>>();
-  for (int32_t i = 0; i < env_count; i++) {
-    environment.push_back(std::pair<StringRef, StringRef>(StringRef(env_keys[i]), StringRef(env_values[i])));
-  }
-  
-  std::promise<ProcessResult> p;
-  auto result = p.get_future();
-  auto commandCompletionFn = [&p](ProcessResult processResult) mutable {
-    p.set_value(processResult);
-  };
-  
-  class ForwardingProcessDelegate: public basic::ProcessDelegate {
-    llb_buildsystem_spawn_delegate_t *delegate;
-    
-  public:
-    ForwardingProcessDelegate(llb_buildsystem_spawn_delegate_t *delegate): delegate(delegate) {}
-    
-    virtual void processStarted(ProcessContext* ctx, ProcessHandle handle,
-                                llbuild_pid_t pid) {
-      if (delegate != NULL) {
-        delegate->process_started(delegate->context, pid);
-      }
-    }
-
-    virtual void processHadError(ProcessContext* ctx, ProcessHandle handle,
-                                 const Twine& message) {
-      if (delegate != NULL) {
-        auto errStr = message.str();
-        llb_data_t err{ errStr.size(), (const uint8_t*) errStr.data() };
-        delegate->process_had_error(delegate->context, &err);
-      }
-    };
-
-    virtual void processHadOutput(ProcessContext* ctx, ProcessHandle handle,
-                                  StringRef data) {
-      if (delegate != NULL) {
-        llb_data_t message{ data.size(), (const uint8_t*) data.data() };
-        delegate->process_had_output(delegate->context, &message);
-      }
-    };
-
-    virtual void processFinished(ProcessContext* ctx, ProcessHandle handle,
-                                 const ProcessResult& result) {
-      if (delegate != NULL) {
-        llb_buildsystem_command_extended_result_t res;
-        res.result = get_command_result(result.status);
-        res.exit_status = result.exitCode;
-        res.pid = result.pid;
-        res.utime = result.utime;
-        res.stime = result.stime;
-        res.maxrss = result.maxrss;
-        delegate->process_finished(delegate->context, &res);
-      }
-    }
-
-  };
-  
-  coreti->spawn((QueueJobContext*)job_context, ArrayRef<StringRef>(arguments), ArrayRef<std::pair<StringRef, StringRef>>(environment), {true, false, StringRef((const char*)working_dir->data, working_dir->length)}, {commandCompletionFn}, new ForwardingProcessDelegate(delegate));
-  
-  return result.get().status == ProcessStatus::Succeeded;  
-}
 
 llb_quality_of_service_t llb_get_quality_of_service() {
   switch (getDefaultQualityOfService()) {

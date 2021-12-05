@@ -31,46 +31,6 @@ private func bytesFromData(_ data: llb_data_t) -> [UInt8] {
     return Array(UnsafeBufferPointer(start: data.data, count: Int(data.length)))
 }
 
-/// Delegate for spawning processes through `BuildSystemCommandInterface`.
-public protocol ProcessDelegate {
-    /// Called when the external process has started executing.
-    ///
-    /// - pid: The subprocess' identifier, can be -1 for failure reasons.
-    func processStarted(pid: llbuild_pid_t)
-    
-    /// Called to report an error in the management of a command process.
-    ///
-    /// - error: The error message.
-    func processHadError(error: String)
-    
-    /// Called to report a command processes' (merged) standard output and error.
-    ///
-    /// - output: The process output.
-    func processHadOutput(output: String)
-    
-    /// Called when a command's job has finished executing an external process.
-    ///
-    /// - result: Whether the process suceeded, failed or was cancelled.
-    func processFinished(result: CommandExtendedResult)
-}
-
-private class ProcessDelegateWrapper {
-    private let delegate: ProcessDelegate
-    fileprivate var wrappedDelegate: llb_buildsystem_spawn_delegate_t!
-    
-    fileprivate init(delegate: ProcessDelegate) {
-        self.delegate = delegate
-        let wrappedDelegate = llb_buildsystem_spawn_delegate_t(
-            context: Unmanaged.passUnretained(self).toOpaque(),
-            process_started: { BuildSystem.toProcessDelegateWrapper($0!).delegate.processStarted(pid: $1) },
-            process_had_error: { BuildSystem.toProcessDelegateWrapper($0!).delegate.processHadError(error: stringFromData($1!.pointee)) },
-            process_had_output: { BuildSystem.toProcessDelegateWrapper($0!).delegate.processHadOutput(output: stringFromData($1!.pointee)) },
-            process_finished: { BuildSystem.toProcessDelegateWrapper($0!).delegate.processFinished(result: CommandExtendedResult($1!)) }
-        )
-        self.wrappedDelegate = wrappedDelegate
-    }
-}
-
 /// Interface into the build system to modify the dependencies of a command.
 public struct BuildSystemCommandInterface {
     // This struct wraps a bsci object, which should be global, and a task object, which is different for each command.
@@ -97,41 +57,6 @@ public struct BuildSystemCommandInterface {
 
     func getFileInfo(_ path: String) throws -> BuildValueFileInfo {
         return llb_buildsystem_command_interface_get_file_info(_buildsystemInterface, path)
-    }
-    
-    /// Spawns a process in the given context
-    ///
-    /// - commandLine: All command line arguments
-    /// - environment: The environment the process will be executed in
-    /// - workingDirectory: The path to the directory the process will use
-    /// - processDelegate: An instace that handles delegate callbacks about the execution of the process
-    public func spawn(_ jobContext: JobContext, commandLine: [String], environment: [String: String], workingDirectory: String, processDelegate: ProcessDelegate) -> Bool {
-        let keys = Array(environment.keys)
-        let values = Array(environment.values)        
-        let wrappedDelegate = ProcessDelegateWrapper(delegate: processDelegate)
-        
-        var workingDirData = copiedDataFromBytes([UInt8](workingDirectory.utf8))
-        
-        defer {
-            llb_data_destroy(&workingDirData)
-        }
-        
-        return commandLine.withCArrayOfOptionalStrings { commandLinePtr in
-            keys.withCArrayOfOptionalStrings { keysPtr in
-                values.withCArrayOfOptionalStrings { valuesPtr in
-                    llb_buildsystem_command_interface_spawn(_taskInterface, jobContext._context, commandLinePtr, Int32(commandLine.count), keysPtr, valuesPtr, Int32(environment.count), &workingDirData, &wrappedDelegate.wrappedDelegate)
-                }
-            }
-        }
-    }
-}
-
-/// Opaque object for the context of a job's execution
-public struct JobContext {
-    fileprivate let _context: OpaquePointer
-    
-    fileprivate init(_ context: OpaquePointer) {
-        _context = context
     }
 }
 
@@ -258,14 +183,7 @@ public protocol ExternalCommand: AnyObject {
     /// - commandInterface: A handle to the build system's command interface.
     /// - returns: True on success.
     func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> Bool
-    
-    /// Called to execute the given command.
-    ///
-    /// - command: A handle to the executing command.
-    /// - commandInterface: A handle to the build system's command interface.
-    /// - jobContext: A handle to opaque context of the executing job for spawning external processes.
-    /// - returns: True on success.
-    func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface, _ jobContext: JobContext) -> Bool
+
 }
 
 public protocol ProducesCustomBuildValue: AnyObject {
@@ -283,16 +201,11 @@ public protocol ProducesCustomBuildValue: AnyObject {
     func isResultValid(_ command: Command, _ buildValue: BuildValue) -> Bool
 }
 
-// Extension to provide a default implementation of execute(_ Command, _ commandInterface) and
-// execute(_ Command, _ commandInterface, _ jobContext) to allow clients to migrate in a staggered
-// manner.
+// Extension to provide a default implementation of execute(_ Command, _ commandInterface) to allow clients to
+// migrate in a staggered manner.
 public extension ExternalCommand {
     func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> Bool {
         return execute(command)
-    }
-    
-    func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface, _ jobContext: JobContext) -> Bool {
-        return execute(command, commandInterface)
     }
 
     // If this implementation is invoked, it means that the client implementing ExternalCommand did not
@@ -339,7 +252,7 @@ private final class CommandWrapper {
 
     func executeCommand(_: OpaquePointer, _ buildsystemInterface: OpaquePointer, _ taskInterface: llb_task_interface_t, _ jobContext: OpaquePointer) -> Bool {
         let commandInterface = BuildSystemCommandInterface(buildsystemInterface, taskInterface)
-        return command.execute(_command, commandInterface, JobContext(jobContext))
+        return command.execute(_command, commandInterface)
     }
 
     func executeCommand(_: OpaquePointer, _ buildsystemInterface: OpaquePointer, _ taskInterface: llb_task_interface_t, _ jobContext: OpaquePointer) -> BuildValue {
@@ -1001,11 +914,6 @@ public final class BuildSystem {
     /// Helper function for getting the command wrapper from the delegate context.
     static fileprivate func toCommandWrapper(_ context: UnsafeMutableRawPointer) -> CommandWrapper {
         return Unmanaged<CommandWrapper>.fromOpaque(UnsafeRawPointer(context)).takeUnretainedValue()
-    }
-    
-    /// Helper function for getting the process delegate wrapper from the delegate context.
-    static fileprivate func toProcessDelegateWrapper(_ context: UnsafeMutableRawPointer) -> ProcessDelegateWrapper {
-        return Unmanaged<ProcessDelegateWrapper>.fromOpaque(UnsafeRawPointer(context)).takeUnretainedValue()
     }
 
     private func fsGetFileContents(_ path: String, _ data: UnsafeMutablePointer<llb_data_t>) -> Bool {

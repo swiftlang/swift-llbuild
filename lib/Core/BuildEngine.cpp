@@ -1830,10 +1830,10 @@ void TaskInterface::spawn(basic::QueueJobContext *context,
                           ArrayRef<StringRef> commandLine,
                           ArrayRef<std::pair<StringRef, StringRef> > environment,
                           basic::ProcessAttributes attributes,
-                          llvm::Optional<basic::ProcessCompletionFn> completionFn,
-                          basic::ProcessDelegate* delegate) {
+                          llvm::Optional<basic::ProcessCompletionFn> completionFn) {
+  // FIXME: handle environment
   static_cast<BuildEngineImpl*>(impl)->getExecutionQueue().executeProcess(
-    context, commandLine, environment, attributes, completionFn, delegate);
+    context, commandLine, environment, attributes, completionFn);
 }
 
 basic::ProcessStatus TaskInterface::spawn(basic::QueueJobContext *context,
