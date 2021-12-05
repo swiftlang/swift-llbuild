@@ -36,7 +36,7 @@ public protocol ProcessDelegate {
     /// Called when the external process has started executing.
     ///
     /// - pid: The subprocess' identifier, can be -1 for failure reasons.
-    func processStarted(pid: llbuild_pid_t)
+    func processStarted(pid: llbuild_pid_t?)
     
     /// Called to report an error in the management of a command process.
     ///
