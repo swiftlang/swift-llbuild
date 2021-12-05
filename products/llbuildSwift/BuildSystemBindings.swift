@@ -104,7 +104,7 @@ public struct BuildSystemCommandInterface {
     /// - commandLine: All command line arguments
     /// - environment: The environment the process will be executed in
     /// - workingDirectory: The path to the directory the process will use
-    /// - processDelegate: An instace that handles delegate callbacks about the execution of the process
+    /// - processDelegate: An instance that handles delegate callbacks about the execution of the process
     public func spawn(_ jobContext: JobContext, commandLine: [String], environment: [String: String], workingDirectory: String, processDelegate: ProcessDelegate) -> Bool {
         let keys = Array(environment.keys)
         let values = Array(environment.values)        
