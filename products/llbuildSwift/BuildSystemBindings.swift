@@ -246,13 +246,15 @@ public protocol ExternalCommand: AnyObject {
 
     /// Called to execute the given command.
     ///
-    /// This method is deprecated in favor of the execute(Command, BuildSystemCommandInterface) method.
+    /// This method is deprecated in favor of the execute(Command, BuildSystemCommandInterface, JobContext) method.
     ///
     /// - command: A handle to the executing command.
     /// - returns: True on success.
     func execute(_ command: Command) -> Bool
 
     /// Called to execute the given command.
+    ///
+    /// This method is deprecated in favor of the execute(Command, BuildSystemCommandInterface, JobContext) method.
     ///
     /// - command: A handle to the executing command.
     /// - commandInterface: A handle to the build system's command interface.
@@ -271,10 +273,19 @@ public protocol ExternalCommand: AnyObject {
 public protocol ProducesCustomBuildValue: AnyObject {
     /// Called to execute the given command that produces a custom build value.
     ///
+    /// This method is deprecated in favor of the execute(Command, BuildSystemCommandInterface, JobContext) method.
+    ///
     /// - command: A handle to the executing command.
     /// - commandInterface: A handle to the build system's command interface.
     /// - returns: Produced build value.
     func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> BuildValue
+    
+    /// Called to execute the given command that produces a custom build value.
+    ///
+    /// - command: A handle to the executing command.
+    /// - commandInterface: A handle to the build system's command interface.
+    /// - returns: Produced build value.
+    func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface, _ jobContext: JobContext) -> BuildValue
 
     /// Called to check if the current result for this command remains valid.
     ///
@@ -306,6 +317,20 @@ public extension ExternalCommand {
 public extension ExternalCommand {
     func start(_ command: Command, _ commandInterface: BuildSystemCommandInterface) {}
     func provideValue(_ command: Command, _ commandInterface: BuildSystemCommandInterface, _ buildValue: BuildValue, _ inputID: UInt) {}
+}
+
+// Extension to provide a default implementation of execute(_ Command, _ commandInterface, _ jobContext)
+// to allow clients to migrate in a staggered manner.
+public extension ProducesCustomBuildValue {
+    // If this implementation is invoked, it means that the client implementing ProducesCustomBuildValue
+    // did not implement either of the execute methods, which is a programmer error.
+    func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> BuildValue {
+        fatalError("This should never be called.")
+    }
+    
+    func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface, _ jobContext: JobContext) -> BuildValue {
+        execute(command, commandInterface)
+    }
 }
 
 // FIXME: The terminology is really confusing here, we have ExternalCommand which is divorced from the actual internal command implementation of the same name.
@@ -344,7 +369,7 @@ private final class CommandWrapper {
 
     func executeCommand(_: OpaquePointer, _ buildsystemInterface: OpaquePointer, _ taskInterface: llb_task_interface_t, _ jobContext: OpaquePointer) -> BuildValue {
         let commandInterface = BuildSystemCommandInterface(buildsystemInterface, taskInterface)
-        return (command as! ProducesCustomBuildValue).execute(_command, commandInterface)
+        return (command as! ProducesCustomBuildValue).execute(_command, commandInterface, JobContext(jobContext))
     }
 
     func isResultValid(_: OpaquePointer, _ value: OpaquePointer) -> Bool {
