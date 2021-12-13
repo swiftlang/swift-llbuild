@@ -342,7 +342,7 @@ commands:
 
             func provideValue(_ command: Command, _ commandInterface: BuildSystemCommandInterface, _ buildValue: BuildValue, _ inputID: UInt) {}
 
-            func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> BuildValue {
+            func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface, _ jobContext: JobContext) -> BuildValue {
                 executed = true
                 let fileInfo = BuildValueFileInfo(device: 1, inode: 2, mode: 3, size: 4, modTime: BuildValueFileTimestamp())
                 return BuildValue.SuccessfulCommand(outputInfos: [fileInfo])
