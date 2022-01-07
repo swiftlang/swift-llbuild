@@ -2318,6 +2318,8 @@ class SwiftCompilerShellCommand : public ExternalCommand {
   /// The name of the module.
   std::string moduleName;
   
+  std::vector<std::string> moduleAliases;
+  
   /// The path of the output module.
   std::string moduleOutputPath;
 
@@ -2351,6 +2353,7 @@ class SwiftCompilerShellCommand : public ExternalCommand {
     return ExternalCommand::getSignature()
         .combine(executable)
         .combine(moduleName)
+        .combine(moduleAliases)
         .combine(moduleOutputPath)
         .combine(sourcesList)
         .combine(objectsList)
@@ -2371,6 +2374,17 @@ class SwiftCompilerShellCommand : public ExternalCommand {
     result.push_back(executable);
     result.push_back("-module-name");
     result.push_back(moduleName);
+
+    for (auto alias_pair: moduleAliases) {
+      result.push_back("-module-alias");
+      result.push_back(alias_pair);
+    }
+    
+    if (moduleName == "SwiftLogging") {
+      result.push_back("-module-alias");
+      result.push_back("Logging=SwiftLogging");
+    }
+
     result.push_back("-incremental");
     result.push_back("-emit-dependencies");
     if (!moduleOutputPath.empty()) {
@@ -2437,6 +2451,8 @@ public:
       executable = value;
     } else if (name == "module-name") {
       moduleName = value;
+    } else if (name == "module-alias") {
+      moduleAliases.push_back(value);
     } else if (name == "module-output-path") {
       moduleOutputPath = value;
     } else if (name == "sources") {
