@@ -263,11 +263,21 @@ public protocol ExternalCommand: AnyObject {
     
     /// Called to execute the given command.
     ///
+    /// This method is deprecated in favor of the execute(Command, BuildSystemCommandInterface, JobContext) -> CommandResult method.
+    ///
     /// - command: A handle to the executing command.
     /// - commandInterface: A handle to the build system's command interface.
     /// - jobContext: A handle to opaque context of the executing job for spawning external processes.
     /// - returns: True on success.
     func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface, _ jobContext: JobContext) -> Bool
+    
+    /// Called to execute the given command.
+    ///
+    /// - command: A handle to the executing command.
+    /// - commandInterface: A handle to the build system's command interface.
+    /// - jobContext: A handle to opaque context of the executing job for spawning external processes.
+    /// - returns: command execution result.
+    func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface, _ jobContext: JobContext) -> CommandResult
 }
 
 public protocol ProducesCustomBuildValue: AnyObject {
@@ -304,6 +314,10 @@ public extension ExternalCommand {
     
     func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface, _ jobContext: JobContext) -> Bool {
         return execute(command, commandInterface)
+    }
+    
+    func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface, _ jobContext: JobContext) -> CommandResult {
+        return execute(command, commandInterface, jobContext) ? .succeeded : .failed
     }
 
     // If this implementation is invoked, it means that the client implementing ExternalCommand did not
@@ -362,7 +376,7 @@ private final class CommandWrapper {
         return command.provideValue(_command, commandInterface, buildValue, inputID)
     }
 
-    func executeCommand(_: OpaquePointer, _ buildsystemInterface: OpaquePointer, _ taskInterface: llb_task_interface_t, _ jobContext: OpaquePointer) -> Bool {
+    func executeCommand(_: OpaquePointer, _ buildsystemInterface: OpaquePointer, _ taskInterface: llb_task_interface_t, _ jobContext: OpaquePointer) -> CommandResult {
         let commandInterface = BuildSystemCommandInterface(buildsystemInterface, taskInterface)
         return command.execute(_command, commandInterface, JobContext(jobContext))
     }

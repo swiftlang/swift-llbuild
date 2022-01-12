@@ -68,7 +68,7 @@ static void depinfo_tester_command_provide_value(void* context,
                                                  const llb_build_value* value,
                                                  uintptr_t inputID) {}
   
-static bool
+static llb_buildsystem_command_result_t
 depinfo_tester_command_execute_command(void *context,
                                        llb_buildsystem_command_t* command,
                                        llb_buildsystem_interface_t* bi,
@@ -103,13 +103,13 @@ depinfo_tester_command_execute_command(void *context,
   // Read the absolute path of the indirect input from the direct input.
   std::string indirectInputPath = readFileContents(directInputPath);
   if (indirectInputPath.empty()) {
-    return false;
+    return llb_buildsystem_command_result_failed;
   }
   
   // Read the contents of the indirect input.
   std::string indirectContents = readFileContents(indirectInputPath);
   if (indirectContents.empty()) {
-    return false;
+    return llb_buildsystem_command_result_failed;
   }
   
   // Write the contents of the indirect input to the output.
@@ -134,7 +134,7 @@ depinfo_tester_command_execute_command(void *context,
 
   // Clean up.
   llb_free(desc);
-  return true;
+  return llb_buildsystem_command_result_succeeded;
 }
 
 static llb_buildsystem_command_t*

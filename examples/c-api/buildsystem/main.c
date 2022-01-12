@@ -72,14 +72,14 @@ static void fancy_command_provide_value(void* context,
                                         const llb_build_value* value,
                                         uintptr_t inputID) {}
 
-static bool
+static llb_buildsystem_command_result_t
 fancy_command_execute_command(void *context, llb_buildsystem_command_t* command,
                               llb_buildsystem_interface_t* bi,
                               llb_task_interface_t ti,
                               llb_buildsystem_queue_job_context_t* job) {
   printf("%s\n", __FUNCTION__);
   fflush(stdout);
-  return true;
+  return llb_buildsystem_command_result_succeeded;
 }
 
 // "Fancy" Tool Implementation

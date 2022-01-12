@@ -675,7 +675,7 @@ typedef struct llb_buildsystem_external_command_delegate_t_ {
   /// then try calling the legacy `execute_command` variant if it is defined.
   ///
   /// The C API takes ownership of the value returned by `execute_command_ex`.
-  bool (*execute_command)(void* context,
+  llb_buildsystem_command_result_t (*execute_command)(void* context,
                           llb_buildsystem_command_t* command,
                           llb_buildsystem_interface_t* bi,
                           llb_task_interface_t ti,

@@ -760,9 +760,9 @@ class CAPIExternalCommand : public ExternalCommand {
                                       llvm::Optional<ProcessCompletionFn> completionFn) override {
     auto doneFn = [this, &system, ti, job_context, completionFn](ProcessStatus result) mutable {
       if (result != ProcessStatus::Succeeded) {
-        // If the command failed, there is no need to gather dependencies.
+        // If the command did not succeed, there is no need to gather dependencies.
         if (completionFn.hasValue())
-          completionFn.getValue()(ProcessStatus::Failed);
+          completionFn.getValue()(result);
         return;
       }
 
@@ -805,13 +805,28 @@ class CAPIExternalCommand : public ExternalCommand {
     }
 
     assert(cAPIDelegate.execute_command != nullptr);
-    bool success = cAPIDelegate.execute_command(
+    llb_buildsystem_command_result_t result = cAPIDelegate.execute_command(
       cAPIDelegate.context,
       (llb_buildsystem_command_t*)this,
       (llb_buildsystem_interface_t*)&system,
       *reinterpret_cast<llb_task_interface_t*>(&ti),
       (llb_buildsystem_queue_job_context_t*)job_context);
-    doneFn(success ? ProcessStatus::Succeeded : ProcessStatus::Failed);
+    ProcessStatus status;
+    switch (result) {
+      case llb_buildsystem_command_result_succeeded:
+        status = ProcessStatus::Succeeded;
+        break;
+      case llb_buildsystem_command_result_failed:
+        status = ProcessStatus::Failed;
+        break;
+      case llb_buildsystem_command_result_cancelled:
+        status = ProcessStatus::Cancelled;
+        break;
+      case llb_buildsystem_command_result_skipped:
+        status = ProcessStatus::Skipped;
+        break;
+    }
+    doneFn(status);
   }
 
   BuildValue computeCommandResult(BuildSystem& system, core::TaskInterface ti) override {
