@@ -142,6 +142,7 @@ depinfo_tester_tool_create_command(void *context, const llb_data_t* name) {
   llb_buildsystem_external_command_delegate_t delegate;
   delegate.context = NULL;
   delegate.get_signature = NULL;
+  delegate.configure = NULL;
   delegate.start = depinfo_tester_command_start;
   delegate.provide_value = depinfo_tester_command_provide_value;
   delegate.execute_command = depinfo_tester_command_execute_command;

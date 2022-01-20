@@ -198,6 +198,7 @@ private final class ToolWrapper {
         self.commandWrappers.append(wrapper)
         var _delegate = llb_buildsystem_external_command_delegate_t()
         _delegate.context = Unmanaged.passUnretained(wrapper).toOpaque()
+        _delegate.configure = { BuildSystem.toCommandWrapper($0!).configure($1!, $2!, $3!, $4!) }
         _delegate.get_signature = { return BuildSystem.toCommandWrapper($0!).getSignature($1!, $2!) }
         _delegate.start = { return BuildSystem.toCommandWrapper($0!).start($1!, $2!, $3) }
         _delegate.provide_value = { return BuildSystem.toCommandWrapper($0!).provideValue($1!, $2!, $3, $4!, $5) }
@@ -227,6 +228,12 @@ public protocol ExternalCommand: AnyObject {
     ///
     /// This is checked to determine if the command needs to rebuild versus the last time it was run.
     func getSignature(_ command: Command) -> [UInt8]
+    
+    /// Paths to files that contain discovered dependencies after command executed successfully for subsequent builds.
+    var dependencyPaths: [String] { get }
+    
+    /// Format of the dependency files listed in `dependencyPaths`.
+    var depedencyDataFormat: DependencyDataFormat { get }
 
     /// Called when the command is starting. Commands can request dynamic dependencies using the
     /// commandInterface object.
@@ -329,6 +336,8 @@ public extension ExternalCommand {
 
 // Default implementations for these hooks since they're optional to the client.
 public extension ExternalCommand {
+    var depedencyDataFormat: DependencyDataFormat { .unused }
+    var dependencyPaths: [String] { [] }
     func start(_ command: Command, _ commandInterface: BuildSystemCommandInterface) {}
     func provideValue(_ command: Command, _ commandInterface: BuildSystemCommandInterface, _ buildValue: BuildValue, _ inputID: UInt) {}
 }
@@ -355,6 +364,43 @@ private final class CommandWrapper {
     init(command: ExternalCommand) {
         self.command = command
         self._command = Command(handle: nil)
+    }
+    
+    func configure(_ context: OpaquePointer, _ single: @convention(c) (OpaquePointer?, llb_data_t, llb_data_t) -> Void, _ collection: @convention(c) (OpaquePointer?, llb_data_t, UnsafeMutablePointer<llb_data_t>?, size_t) -> Void, _ map: @convention(c) (OpaquePointer?, llb_data_t, UnsafeMutablePointer<llb_data_t>?, UnsafeMutablePointer<llb_data_t>?, size_t) -> Void) {
+        if !command.dependencyPaths.isEmpty {
+            var formatKey = copiedDataFromBytes(Array("deps-style".utf8))
+            var value: llb_data_t
+            switch command.depedencyDataFormat {
+            case .makefile:
+                value = copiedDataFromBytes(Array("makefile".utf8))
+            case .dependencyinfo:
+                value = copiedDataFromBytes(Array("dependency-info".utf8))
+            default:
+                value = copiedDataFromBytes(Array("unusued".utf8))
+            }
+            defer {
+                llb_data_destroy(&formatKey)
+                llb_data_destroy(&value)
+            }
+            single(context, formatKey, value)
+            
+            var paths: [llb_data_t] = []
+            for path in command.dependencyPaths {
+                paths.append(copiedDataFromBytes(Array(path.utf8)))
+            }
+            var depsKey = copiedDataFromBytes(Array("deps".utf8))
+            defer {
+                llb_data_destroy(&depsKey)
+                for index in paths.indices {
+                    llb_data_destroy(&paths[index])
+                }
+            }
+            if paths.count == 1 {
+                single(context, depsKey, paths[0])
+            } else {            
+                collection(context, depsKey, &paths, paths.count)
+            }
+        }
     }
 
     func getSignature(_: OpaquePointer, _ data: UnsafeMutablePointer<llb_data_t>) {
