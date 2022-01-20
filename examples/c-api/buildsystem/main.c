@@ -89,6 +89,7 @@ fancy_tool_create_command(void *context, const llb_data_t* name) {
   llb_buildsystem_external_command_delegate_t delegate;
   delegate.context = NULL;
   delegate.get_signature = NULL;
+  delegate.configure = NULL;
   delegate.start = fancy_command_start;
   delegate.provide_value = fancy_command_provide_value;
   delegate.execute_command = fancy_command_execute_command;

@@ -23,6 +23,7 @@
 #include "llbuild/BuildSystem/Tool.h"
 #include "llbuild/Core/BuildEngine.h"
 #include "llbuild/Core/DependencyInfoParser.h"
+#include "llbuild/Core/MakefileDepsParser.h"
 
 #include "BuildKey-C-API-Private.h"
 #include "BuildValue-C-API-Private.h"
@@ -31,11 +32,13 @@
 #include "llvm/ADT/SmallString.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/Path.h"
 
 #include <atomic>
 #include <cassert>
 #include <future>
 #include <memory>
+#include <utility>
 
 using namespace llbuild;
 using namespace llbuild::basic;
@@ -665,12 +668,18 @@ class CAPIExternalCommand : public ExternalCommand {
   // that the delegates are const and we just carry the context pointer around.
   llb_buildsystem_external_command_delegate_t cAPIDelegate;
   
-  /// The path to the dependency output file, if used.
-  std::string depsPath;
+  /// The paths to the dependency output files, if used.
+  SmallVector<std::string, 1> depsPaths{};
+  
+  /// Format of the dependencies in `depsPaths`.
+  /// We default to `dependencyinfo` for legacy behavior since not all tasks specify the format.
+  llb_buildsystem_dependency_data_format_t depsFormat =
+          llb_buildsystem_dependency_data_format_dependencyinfo;
 
-  bool processDiscoveredDependencies(BuildSystem& system,
-                                     core::TaskInterface ti,
-                                     QueueJobContext* context) {
+  bool processDependencyInfoDiscoveredDependencies(BuildSystem& system,
+                                                   core::TaskInterface ti,
+                                                   QueueJobContext* context,
+                                                   std::string depsPath) {
     // Read the dependencies file.
     auto input = system.getFileSystem().getFileContents(depsPath);
     if (!input) {
@@ -717,17 +726,124 @@ class CAPIExternalCommand : public ExternalCommand {
     core::DependencyInfoParser(input->getBuffer(), actions).parse();
     return actions.numErrors == 0;
   }
+  
+  bool processMakefileDiscoveredDependencies(BuildSystem& system,
+                                             core::TaskInterface ti,
+                                             QueueJobContext* context,
+                                             std::string depsPath) {
+    // Read the dependencies file.
+    auto input = system.getFileSystem().getFileContents(depsPath);
+    if (!input) {
+      system.getDelegate().commandHadError(this, "unable to open dependencies file (" + depsPath + ")");
+      return false;
+    }
+    
+    // Parse the output.
+    //
+    // We just ignore the rule, and add any dependency that we encounter in the
+    // file.
+    struct DepsActions : public core::MakefileDepsParser::ParseActions {
+      BuildSystem& system;
+      core::TaskInterface ti;
+      CAPIExternalCommand* command;
+      StringRef depsPath;
+      unsigned numErrors{0};
+      
+      DepsActions(BuildSystem& system,
+                  core::TaskInterface ti,
+                  CAPIExternalCommand* command, StringRef depsPath)
+      : system(system), ti(ti), command(command), depsPath(depsPath) {}
+      
+      virtual void error(StringRef message, uint64_t position) override {
+        system.getDelegate().commandHadError(command, "error reading dependency file '" + depsPath.str() + "': " + std::string(message));
+        ++numErrors;
+      }
+      
+      virtual void actOnRuleDependency(StringRef dependency,
+                                       StringRef unescapedWord) override {
+        if (llvm::sys::path::is_absolute(unescapedWord)) {
+          ti.discoveredDependency(BuildKey::makeNode(unescapedWord).toData());
+          system.getDelegate().commandFoundDiscoveredDependency(command, unescapedWord, DiscoveredDependencyKind::Input);
+          return;
+        } else {
+          system.getDelegate().commandHadError(command, "Dependency for" + std::string(command->getName()) + "is not absolute (" + std::string(unescapedWord) + ").");
+          return;
+        }
+      }
 
-  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
-                                  StringRef value) override {
+      virtual void actOnRuleStart(StringRef name,
+                                  const StringRef unescapedWord) override {}
+
+      virtual void actOnRuleEnd() override {}
+    };
+    
+    DepsActions actions(system, ti, this, depsPath);
+    core::MakefileDepsParser(input->getBuffer(), actions).parse();
+    return actions.numErrors == 0;
+  }
+  
+  bool configureAttributeNoContext(StringRef name, StringRef value) {
     if (name == "deps") {
-      depsPath = value;
+      depsPaths.clear();
+      depsPaths.emplace_back(value);
+    } else if (name == "deps-style") {
+      if (value == "unused") {
+        depsFormat = llb_buildsystem_dependency_data_format_unused;
+      } else if (value == "makefile") {
+        depsFormat = llb_buildsystem_dependency_data_format_makefile;
+      } else if (value == "dependency-info") {
+        depsFormat = llb_buildsystem_dependency_data_format_dependencyinfo;
+      } else {
+        return false;
+      }
     } else {
-      return ExternalCommand::configureAttribute(ctx, name, value);
+      return false;
     }
     return true;
   }
+  
+  bool configureAttributeNoContext(StringRef name,
+                                  ArrayRef<StringRef> values) {
+    if (name == "deps") {
+      depsPaths.clear();
+      depsPaths.insert(depsPaths.begin(), values.begin(), values.end());
+    } else {
+      return false;
+    }
+    return true;
+  }
+  bool configureAttributeNoContext(StringRef name,
+      ArrayRef<std::pair<StringRef, StringRef>> values) {
+    return false;
+  }
 
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  StringRef value) override {
+    if (configureAttributeNoContext(name, value)) {
+      return true;
+    } else {
+      return ExternalCommand::configureAttribute(ctx, name, value);
+    }
+  }
+  
+  virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
+                                  ArrayRef<StringRef> values) override {
+    if (configureAttributeNoContext(name, values)) {
+      return true;
+    } else {
+      return ExternalCommand::configureAttribute(ctx, name, values);
+    }
+  }
+  virtual bool configureAttribute(
+      const ConfigureContext& ctx, StringRef name,
+      ArrayRef<std::pair<StringRef, StringRef>> values) override {
+        if (configureAttributeNoContext(name, values)) {
+          return true;
+        } else {
+          return ExternalCommand::configureAttribute(ctx, name, values);
+        }
+  }
+  
   virtual void startExternalCommand(BuildSystem& system,
                                     core::TaskInterface ti) override {
     cAPIDelegate.start(cAPIDelegate.context,
@@ -767,13 +883,29 @@ class CAPIExternalCommand : public ExternalCommand {
       }
 
       // Otherwise, collect the discovered dependencies, if used.
-      if (!depsPath.empty()) {
-        if (!processDiscoveredDependencies(system, ti, job_context)) {
-          // If we were unable to process the dependencies output, report a
-          // failure.
-          if (completionFn.hasValue())
-            completionFn.getValue()(ProcessStatus::Failed);
-          return;
+      bool dependencyParsingResult = false;
+      if (!depsPaths.empty()) {
+        for (const auto& depsPath: depsPaths) {
+          switch (depsFormat) {
+            case llb_buildsystem_dependency_data_format_unused:
+              ti.delegate()->error("No dependency format specified for discovered dependency files.");
+              dependencyParsingResult = false;
+              break;
+            case llb_buildsystem_dependency_data_format_makefile:
+              dependencyParsingResult = processMakefileDiscoveredDependencies(system, ti, job_context, depsPath);
+              break;
+            case llb_buildsystem_dependency_data_format_dependencyinfo:
+              dependencyParsingResult = processDependencyInfoDiscoveredDependencies(system, ti, job_context, depsPath);
+              break;
+          }
+          
+          if (!dependencyParsingResult) {
+            // If we were unable to process the dependencies output, report a
+            // failure.
+            if (completionFn.hasValue())
+              completionFn.getValue()(ProcessStatus::Failed);
+            return;
+          }
         }
       }
 
@@ -852,7 +984,29 @@ class CAPIExternalCommand : public ExternalCommand {
 public:
   CAPIExternalCommand(StringRef name,
                       llb_buildsystem_external_command_delegate_t delegate)
-      : ExternalCommand(name), cAPIDelegate(delegate) {}
+      : ExternalCommand(name), cAPIDelegate(delegate) {
+        if (cAPIDelegate.configure) {
+          auto single = [](llb_buildsystem_command_t* ctx, llb_data_t name, llb_data_t data) {
+            ((CAPIExternalCommand *)ctx)->configureAttributeNoContext(StringRef((const char*)name.data, name.length), StringRef((const char*)data.data, data.length));
+          };
+          auto collection = [](llb_buildsystem_command_t* ctx, llb_data_t name, llb_data_t* datas, size_t size) {
+            std::vector<StringRef> values;
+            for (size_t i = 0; i < size; i++) {
+              values.push_back(StringRef((const char*)datas[i].data, datas[i].length));
+            }
+            ((CAPIExternalCommand *)ctx)->configureAttributeNoContext(StringRef((const char*)name.data, name.length), ArrayRef<StringRef>(values));
+          };
+          auto map = [](llb_buildsystem_command_t* ctx, llb_data_t name, llb_data_t* keys, llb_data_t* values, size_t size) {
+            std::vector<std::pair<StringRef, StringRef>> attributeValues;
+            for (size_t i = 0; i < size; i++) {
+              attributeValues.push_back(std::pair<StringRef, StringRef>(StringRef((const char*)keys[i].data, keys[i].length), StringRef((const char*)values[i].data, values[i].length)));
+            }
+            ((CAPIExternalCommand *)ctx)->configureAttributeNoContext(StringRef((const char*)name.data, name.length), ArrayRef<std::pair<StringRef, StringRef>>(attributeValues));
+          };
+          
+          cAPIDelegate.configure(cAPIDelegate.context, (llb_buildsystem_command_t*)this, single, collection, map);
+        }
+      }
 
 
   virtual void getShortDescription(SmallVectorImpl<char> &result) const override {
