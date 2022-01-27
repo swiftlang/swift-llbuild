@@ -234,7 +234,7 @@ void ExternalCommand::provideValue(BuildSystem& system,
   // Inform subclasses about the value
   provideValueExternalCommand(system, ti, inputID, value);
   
-  if (value.isSuccessfulCommand() || value.isFailedCommand() || value.isPropagatedFailureCommand()) {
+  if (value.isSuccessfulCommand() || value.isFailedCommand() || value.isPropagatedFailureCommand() || value.isCancelledCommand()) {
     // If the value is a successful command, it must probably be a value that was requested for a custom task, so
     // skip the input processing
     return;
