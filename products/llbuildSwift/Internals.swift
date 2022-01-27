@@ -46,39 +46,46 @@ internal func stringFromData(_ data: llb_data_t) -> String {
 }
 
 extension Array where Element == String {
-    internal func withCArrayOfStrings<T>(_ body: @escaping (UnsafePointer<UnsafePointer<CChar>>) -> T) -> T {
-        func appendPointer(_ index: Array.Index, to target: inout Array<UnsafePointer<CChar>>) -> T {
-            if index == self.endIndex {
-                return body(&target)
-            } else {
-                return self[index].withCString { cStringPtr in
-                    target.append(cStringPtr)
-                    return appendPointer(self.index(after: index), to: &target)
-                }
-            }
+    private func withTemporaryBuffer<T>(_ body: @escaping (UnsafePointer<UnsafePointer<CChar>>) -> T) -> T {
+        // The buffer is in the form "a1\0a2\0a3\0…"
+        let totalLength = reduce(0) { $0 + $1.utf8.count + 1 }
+        let pointer = UnsafeMutablePointer<CChar>.allocate(capacity: totalLength)
+        let buffer = UnsafeMutableBufferPointer(start: pointer, count: totalLength)
+        let elementPointers = UnsafeMutablePointer<UnsafePointer<CChar>>.allocate(capacity: count)
+        
+        defer {
+            pointer.deallocate()
+            elementPointers.deallocate()
         }
-
-        var elements = Array<UnsafePointer<CChar>>()
-        elements.reserveCapacity(self.count)
-
-        return appendPointer(self.startIndex, to: &elements)
+        
+        var bufferCursor = buffer.startIndex
+        for (index, element) in enumerated() {
+            let elementPtr = element.withCString { ptr -> UnsafePointer<CChar> in
+                let wordLength = element.utf8.count
+                let result = pointer.advanced(by: bufferCursor)
+                
+                memcpy(result, ptr, wordLength)
+                bufferCursor += wordLength
+                buffer[bufferCursor] = 0
+                bufferCursor += 1
+                return UnsafePointer(result)
+            }
+            elementPointers[index] = elementPtr
+        }
+        return body(UnsafePointer(elementPointers))
+    }
+    
+    internal func withCArrayOfStrings<T>(_ body: @escaping (UnsafePointer<UnsafePointer<CChar>>) -> T) -> T {
+        withTemporaryBuffer {
+            body($0)
+        }
     }
     
     internal func withCArrayOfOptionalStrings<T>(_ body: @escaping (UnsafePointer<UnsafePointer<CChar>?>) -> T) -> T {
-        func appendPointer(_ index: Array.Index, to target: inout Array<UnsafePointer<CChar>?>) -> T {
-            if index == self.endIndex {
-                return body(&target)
-            } else {
-                return self[index].withCString { cStringPtr in
-                    target.append(cStringPtr)
-                    return appendPointer(self.index(after: index), to: &target)
-                }
+        withTemporaryBuffer {
+            $0.withMemoryRebound(to: UnsafePointer<CChar>?.self, capacity: count) { ptr in
+                body(ptr)
             }
         }
-
-        var elements = Array<UnsafePointer<CChar>?>()
-        elements.reserveCapacity(self.count)
-
-        return appendPointer(self.startIndex, to: &elements)
     }
 }
