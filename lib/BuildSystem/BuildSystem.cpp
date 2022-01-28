@@ -2323,6 +2323,12 @@ class SwiftCompilerShellCommand : public ExternalCommand {
   /// The name of the module.
   std::string moduleName;
   
+  /// Module aliases used to build this module. For example, if
+  /// `-module-alias Foo=Bar` was passed, and source files in
+  /// this module references `Foo`, e.g.  `import Foo`, the `Bar`
+  /// module will loaded and used to compile this module.
+  std::vector<std::string> moduleAliases;
+
   /// The path of the output module.
   std::string moduleOutputPath;
 
@@ -2356,6 +2362,7 @@ class SwiftCompilerShellCommand : public ExternalCommand {
     return ExternalCommand::getSignature()
         .combine(executable)
         .combine(moduleName)
+        .combine(moduleAliases)
         .combine(moduleOutputPath)
         .combine(sourcesList)
         .combine(objectsList)
@@ -2376,6 +2383,13 @@ class SwiftCompilerShellCommand : public ExternalCommand {
     result.push_back(executable);
     result.push_back("-module-name");
     result.push_back(moduleName);
+
+    for (const auto& nameAndAlias: moduleAliases) {
+      // E.g. `-module-alias Foo=Bar`
+      result.push_back("-module-alias");
+      result.push_back(nameAndAlias);
+    }
+    
     result.push_back("-incremental");
     result.push_back("-emit-dependencies");
     if (!moduleOutputPath.empty()) {
@@ -2522,7 +2536,17 @@ public:
   virtual bool configureAttribute(
       const ConfigureContext& ctx, StringRef name,
       ArrayRef<std::pair<StringRef, StringRef>> values) override {
-    return ExternalCommand::configureAttribute(ctx, name, values);
+        if (name == "module-alias") {
+          // Format the values for the module alias attribute to
+          // be passed to the driver, e.g. `-module-alias Foo=Bar`
+          for (auto pair: values) {
+            auto formatted = pair.first + "=" + pair.second;
+            moduleAliases.push_back(formatted.str());
+          }
+          return !moduleAliases.empty();
+        } else {
+          return ExternalCommand::configureAttribute(ctx, name, values);
+        }
   }
 
   bool writeOutputFileMap(TaskInterface ti,
