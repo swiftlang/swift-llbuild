@@ -733,6 +733,11 @@ exact version of the Swift compiler in use (as reported by ``swiftc
      - A string indicating the path at which to output the built
        ``.swiftmodule``.
 
+   * - module-alias
+     - A string indicating the name of a module (referenced in this module) and its 
+       alias; ``-module-alias Foo=Bar`` will treat ``Foo`` as ``Bar`` under the hood, 
+       i.e. ``Bar.swiftmodule`` will be loaded and used to compile this module.
+   
    * - sources
      - A string or string list indicating the paths of Swift source files to be
        compiled.
