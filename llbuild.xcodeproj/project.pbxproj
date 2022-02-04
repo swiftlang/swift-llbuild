@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 55;
+	objectVersion = 46;
 	objects = {
 
 /* Begin PBXAggregateTarget section */
@@ -182,7 +182,6 @@
 		E104FB001B6568E0005C68A0 /* BuildSystem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E104FAFF1B6568E0005C68A0 /* BuildSystem.cpp */; };
 		E1075ED71E4EA417007D52C6 /* BuildSystemTaskTests.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1075ED61E4EA417007D52C6 /* BuildSystemTaskTests.cpp */; };
 		E10D5CDF19FEBF6A00211ED4 /* LitTests.m in Sources */ = {isa = PBXBuildFile; fileRef = E10D5CDE19FEBF6A00211ED4 /* LitTests.m */; };
-		E10D5CE419FEF3BD00211ED4 /* Python.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E10D5CE319FEF3BD00211ED4 /* Python.framework */; platformFilters = (macos, ); };
 		E10D5CE619FEF40100211ED4 /* LitTests.py in Resources */ = {isa = PBXBuildFile; fileRef = E10D5CE519FEF40100211ED4 /* LitTests.py */; };
 		E10FE0D71B7313D50059D086 /* DepsBuildEngineTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E10FE0D61B7313D50059D086 /* DepsBuildEngineTest.cpp */; };
 		E111C153241B269D0086A92D /* llbuild.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E1D191BE1B47232B000C4E95 /* llbuild.framework */; };
@@ -1548,7 +1547,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E10D5CE419FEF3BD00211ED4 /* Python.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4674,11 +4672,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				USER_HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/include",
-					"$(SRCROOT)/products/libllbuild/include",
-					"$(SRCROOT)/utils/unittest/googletest/include",
-				);
+				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/products/libllbuild/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Debug;
 		};
@@ -4686,11 +4680,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				USER_HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/include",
-					"$(SRCROOT)/products/libllbuild/include",
-					"$(SRCROOT)/utils/unittest/googletest/include",
-				);
+				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/products/libllbuild/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Release;
 		};
@@ -4712,10 +4702,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				USER_HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/include",
-					"$(SRCROOT)/utils/unittest/googletest/include",
-				);
+				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Debug;
 		};
@@ -4723,10 +4710,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				USER_HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/include",
-					"$(SRCROOT)/utils/unittest/googletest/include",
-				);
+				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Release;
 		};
@@ -4774,20 +4758,14 @@
 		9DB047AD1DF9D43D006CDF52 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				USER_HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/include",
-					"$(SRCROOT)/utils/unittest/googletest/include",
-				);
+				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Debug;
 		};
 		9DB047AE1DF9D43D006CDF52 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				USER_HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/include",
-					"$(SRCROOT)/utils/unittest/googletest/include",
-				);
+				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Release;
 		};
@@ -4800,11 +4778,7 @@
 				DYLIB_CURRENT_VERSION = 9999;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				GENERATE_INFOPLIST_FILE = YES;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.dt.Analysis;
 				PRODUCT_NAME = "llbuild$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = NO;
@@ -4822,11 +4796,7 @@
 				DYLIB_CURRENT_VERSION = 9999;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				GENERATE_INFOPLIST_FILE = YES;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.dt.Analysis;
 				PRODUCT_NAME = "llbuild$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = NO;
@@ -4839,11 +4809,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/../Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.dt.AnalysisTests;
 				PRODUCT_NAME = "llbuild$(TARGET_NAME)";
 			};
@@ -4854,11 +4820,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/../Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.dt.AnalysisTests;
 				PRODUCT_NAME = "llbuild$(TARGET_NAME)";
 			};
@@ -4885,25 +4847,26 @@
 		E10D5CE019FEBF6A00211ED4 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(DEVELOPER_FRAMEWORKS_DIR)",
+				"FRAMEWORK_SEARCH_PATHS[sdk=macosx*]" = (
 					"$(inherited)",
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"\"BUILT_PRODUCTS_DIR=\\\"$(BUILT_PRODUCTS_DIR)\\\"\"",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
-				LD_RUNPATH_SEARCH_PATHS = (
+				"HEADER_SEARCH_PATHS[sdk=macosx*]" = (
 					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/../Frameworks",
+					"$(DEVELOPER_FRAMEWORKS_DIR)/Python3.framework/Headers",
 				);
-				OTHER_LDFLAGS = (
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "$(inherited) $(DEVELOPER_FRAMEWORKS_DIR)";
+				"OTHER_LDFLAGS[sdk=macosx*]" = (
 					"$(inherited)",
-					"-client_name",
-					pyobjc,
+					"$(OTHER_LDFLAGS_MACCATALYST_$(IS_MACCATALYST))",
 				);
+				OTHER_LDFLAGS_MACCATALYST_NO = "-framework Python3";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.apple.$(PRODUCT_NAME:rfc1034identifier)";
 			};
 			name = Debug;
@@ -4912,25 +4875,26 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(DEVELOPER_FRAMEWORKS_DIR)",
+				"FRAMEWORK_SEARCH_PATHS[sdk=macosx*]" = (
 					"$(inherited)",
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
 				);
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"\"BUILT_PRODUCTS_DIR=\\\"$(BUILT_PRODUCTS_DIR)\\\"\"",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
-				LD_RUNPATH_SEARCH_PATHS = (
+				"HEADER_SEARCH_PATHS[sdk=macosx*]" = (
 					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/../Frameworks",
+					"$(DEVELOPER_FRAMEWORKS_DIR)/Python3.framework/Headers",
 				);
-				OTHER_LDFLAGS = (
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "$(inherited) $(DEVELOPER_FRAMEWORKS_DIR)";
+				"OTHER_LDFLAGS[sdk=macosx*]" = (
 					"$(inherited)",
-					"-client_name",
-					pyobjc,
+					"$(OTHER_LDFLAGS_MACCATALYST_$(IS_MACCATALYST))",
 				);
+				OTHER_LDFLAGS_MACCATALYST_NO = "-framework Python3";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.apple.$(PRODUCT_NAME:rfc1034identifier)";
 			};
 			name = Release;
@@ -4944,11 +4908,7 @@
 				DYLIB_CURRENT_VERSION = 9999;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				GENERATE_INFOPLIST_FILE = YES;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = NO;
 			};
@@ -4963,11 +4923,7 @@
 				DYLIB_CURRENT_VERSION = 9999;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				GENERATE_INFOPLIST_FILE = YES;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = NO;
 			};
@@ -4976,20 +4932,14 @@
 		E147DF141BA81D330032D08E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				USER_HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/include",
-					"$(SRCROOT)/utils/unittest/googletest/include",
-				);
+				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Debug;
 		};
 		E147DF151BA81D330032D08E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				USER_HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/include",
-					"$(SRCROOT)/utils/unittest/googletest/include",
-				);
+				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Release;
 		};
@@ -5243,20 +5193,14 @@
 		E1A224DF19F99B0E0059043E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				USER_HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/utils/unittest/googletest/include",
-					"$(SRCROOT)/utils/unittest/googletest",
-				);
+				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/utils/unittest/googletest/include $(SRCROOT)/utils/unittest/googletest";
 			};
 			name = Debug;
 		};
 		E1A224E019F99B0E0059043E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				USER_HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/utils/unittest/googletest/include",
-					"$(SRCROOT)/utils/unittest/googletest",
-				);
+				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/utils/unittest/googletest/include $(SRCROOT)/utils/unittest/googletest";
 			};
 			name = Release;
 		};
@@ -5277,40 +5221,28 @@
 		E1A224F419F99D880059043E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				USER_HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/include",
-					"$(SRCROOT)/utils/unittest/googletest/include",
-				);
+				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Debug;
 		};
 		E1A224F519F99D880059043E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				USER_HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/include",
-					"$(SRCROOT)/utils/unittest/googletest/include",
-				);
+				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Release;
 		};
 		E1A224FF19F99DFD0059043E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				USER_HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/include",
-					"$(SRCROOT)/utils/unittest/googletest/include",
-				);
+				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Debug;
 		};
 		E1A2250019F99DFD0059043E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				USER_HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/include",
-					"$(SRCROOT)/utils/unittest/googletest/include",
-				);
+				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include $(SRCROOT)/utils/unittest/googletest/include";
 			};
 			name = Release;
 		};
@@ -5336,6 +5268,7 @@
 				INSTALL_PATH = "$(DT_TOOLCHAIN_INSTALL_DIR:standardizepath)/usr/local/lib";
 				PUBLIC_HEADERS_FOLDER_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/include/llbuild";
 				TAPI_FRAMEWORK_SEARCH_PATHS = "";
+				TAPI_HEADER_SEARCH_PATHS = "$(TARGET_BUILD_DIR)/$(PUBLIC_HEADERS_FOLDER_PATH)/..";
 			};
 			name = Debug;
 		};
@@ -5349,6 +5282,7 @@
 				INSTALL_PATH = "$(DT_TOOLCHAIN_INSTALL_DIR:standardizepath)/usr/local/lib";
 				PUBLIC_HEADERS_FOLDER_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/include/llbuild";
 				TAPI_FRAMEWORK_SEARCH_PATHS = "";
+				TAPI_HEADER_SEARCH_PATHS = "$(TARGET_BUILD_DIR)/$(PUBLIC_HEADERS_FOLDER_PATH)/..";
 			};
 			name = Release;
 		};
