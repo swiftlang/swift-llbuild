@@ -9,7 +9,7 @@
 
 #import <TargetConditionals.h>
 #if TARGET_OS_OSX
-#import <Python/Python.h>
+#import <Python3/Python.h>
 #endif
 
 @interface LitTests : XCTestCase
@@ -29,7 +29,7 @@
     // Extend the sys path to include the current directory.
     NSString *sourceDir = [@(__FILE__) stringByDeletingLastPathComponent];
     PyObject* sysPath = PySys_GetObject("path");
-    PyObject* pySourceDir = PyString_FromString([sourceDir UTF8String]);
+    PyObject* pySourceDir = PyUnicode_FromString([sourceDir UTF8String]);
     PyList_Append(sysPath, pySourceDir);
     
     // Import our custom module, which will inject test methods.
