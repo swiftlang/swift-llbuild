@@ -1,0 +1,71 @@
+{
+  "configurations" : [
+    {
+      "id" : "C87E45FB-6EBB-44BD-9877-1FF31AAC88A3",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "commandLineArgumentEntries" : [
+      {
+        "argument" : "buildsystem",
+        "enabled" : false
+      },
+      {
+        "argument" : "build",
+        "enabled" : false
+      },
+      {
+        "argument" : "--serial",
+        "enabled" : false
+      },
+      {
+        "argument" : "--trace",
+        "enabled" : false
+      },
+      {
+        "argument" : "foo.trace",
+        "enabled" : false
+      }
+    ],
+    "environmentVariableEntries" : [
+      {
+        "key" : "DYLD_FALLBACK_FRAMEWORK_PATH",
+        "value" : "$(DEVELOPER_FRAMEWORKS_DIR)"
+      }
+    ],
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:llbuild.xcodeproj",
+      "identifier" : "E1A224C219F999B80059043E",
+      "name" : "llbuild Tool"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:llbuild.xcodeproj",
+        "identifier" : "E10D5CD919FEBF6A00211ED4",
+        "name" : "LitXCTestAdaptor"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:llbuild.xcodeproj",
+        "identifier" : "B546B39322C65CFB007046C0",
+        "name" : "llbuildSwiftTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:llbuild.xcodeproj",
+        "identifier" : "B52912C5232BF0AE00FD3389",
+        "name" : "AnalysisTests"
+      }
+    }
+  ],
+  "version" : 1
+}

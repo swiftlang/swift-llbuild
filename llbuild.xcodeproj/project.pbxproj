@@ -970,6 +970,7 @@
 
 /* Begin PBXFileReference section */
 		1420ADE3258C2BE100324AF0 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
+		144AE2D727B9C5CE003BA576 /* llbuild.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = llbuild.xctestplan; sourceTree = "<group>"; };
 		14600C9624F6D464006A15FA /* llbuild-defines.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "llbuild-defines.h"; sourceTree = "<group>"; };
 		147018862097909B0079261E /* ui */ = {isa = PBXFileReference; lastKnownFileType = folder; path = ui; sourceTree = "<group>"; };
 		1484D1D620943D2100D3830F /* docs */ = {isa = PBXFileReference; lastKnownFileType = folder; path = docs; sourceTree = "<group>"; };
@@ -2096,6 +2097,7 @@
 		E14144901EBDA4A10046F282 /* Xcode */ = {
 			isa = PBXGroup;
 			children = (
+				144AE2D727B9C5CE003BA576 /* llbuild.xctestplan */,
 				E14144911EBDA4A10046F282 /* Configs */,
 			);
 			indentWidth = 4;
@@ -4851,6 +4853,7 @@
 					"$(inherited)",
 					"$(DEVELOPER_FRAMEWORKS_DIR)",
 				);
+				GCC_ENABLE_CPP_EXCEPTIONS = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"\"BUILT_PRODUCTS_DIR=\\\"$(BUILT_PRODUCTS_DIR)\\\"\"",
@@ -4861,7 +4864,6 @@
 					"$(DEVELOPER_FRAMEWORKS_DIR)/Python3.framework/Headers",
 				);
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "$(inherited) $(DEVELOPER_FRAMEWORKS_DIR)";
 				"OTHER_LDFLAGS[sdk=macosx*]" = (
 					"$(inherited)",
 					"$(OTHER_LDFLAGS_MACCATALYST_$(IS_MACCATALYST))",
@@ -4879,6 +4881,7 @@
 					"$(inherited)",
 					"$(DEVELOPER_FRAMEWORKS_DIR)",
 				);
+				GCC_ENABLE_CPP_EXCEPTIONS = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"\"BUILT_PRODUCTS_DIR=\\\"$(BUILT_PRODUCTS_DIR)\\\"\"",
@@ -4889,7 +4892,6 @@
 					"$(DEVELOPER_FRAMEWORKS_DIR)/Python3.framework/Headers",
 				);
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
-				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "$(inherited) $(DEVELOPER_FRAMEWORKS_DIR)";
 				"OTHER_LDFLAGS[sdk=macosx*]" = (
 					"$(inherited)",
 					"$(OTHER_LDFLAGS_MACCATALYST_$(IS_MACCATALYST))",
@@ -5325,6 +5327,7 @@
 					"$(DEVELOPER_FRAMEWORKS_DIR)",
 					"$(inherited)",
 				);
+				GCC_ENABLE_CPP_EXCEPTIONS = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"\"SRCROOT=\\\"$(SRCROOT)\\\"\"",
@@ -5342,6 +5345,7 @@
 					"$(DEVELOPER_FRAMEWORKS_DIR)",
 					"$(inherited)",
 				);
+				GCC_ENABLE_CPP_EXCEPTIONS = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"\"SRCROOT=\\\"$(SRCROOT)\\\"\"",
