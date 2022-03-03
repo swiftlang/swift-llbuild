@@ -199,18 +199,38 @@ let package = Package(
 #if os(Windows)
 
 do {
-    let llvmTargets : Set<String> = ["llvmSupport", "llvmDemangle", "llbuildBuildSystem", "llbuildBasic", "llbuildNinja"]
+    let llvmTargets: Set<String> = [
+        "llvmDemangle",
+        "llvmSupport",
+
+        "llbuild",
+        "llbuildBasic",
+        "llbuildBuildSystem",
+        "llbuildCommands",
+        "llbuildNinja",
+
+        "llbuildBasicTests",
+        "llbuildBuildSystemTests",
+        "llbuildCoreTests",
+
+        "swift-build-tool",
+    ]
+
     package.targets.filter({ llvmTargets.contains($0.name) }).forEach { target in
         target.cxxSettings = [ .define("LLVM_ON_WIN32", .when(platforms: [.windows])) ]
     }
 }
 
-package.targets.first{ $0.name == "libllbuild" }?.cxxSettings = [
+package.targets.first { $0.name == "libllbuild" }?.cxxSettings = [
     .define("LLVM_ON_WIN32", .when(platforms: [.windows])),
     // FIXME: we need to define `libllbuild_EXPORTS` to ensure that the
     // symbols are exported from the DLL that is being built here until
     // static linking is supported on Windows.
     .define("libllbuild_EXPORTS", .when(platforms: [.windows])),
+]
+
+package.targets.first { $0.name == "llbuildBasic" }?.linkerSettings = [
+    .linkedLibrary("ShLwApi", .when(platforms: [.windows]))
 ]
 
 #endif
