@@ -77,7 +77,7 @@ const char* BuildEngineTrace::getTaskName(const Task* task) {
 
   // Otherwise, create a name.
   char name[64];
-  sprintf(name, "T%d", ++numNamedTasks);
+  snprintf(name, sizeof(name), "T%d", ++numNamedTasks);
   auto result = taskNames.emplace(task, name);
 
   // Report the newly seen rule.
@@ -96,7 +96,7 @@ const char* BuildEngineTrace::getRuleName(const Rule* rule) {
 
   // Otherwise, create a name.
   char name[64];
-  sprintf(name, "R%d", ++numNamedRules);
+  snprintf(name, sizeof(name), "R%d", ++numNamedRules);
   auto result = ruleNames.emplace(rule, name);
 
   // Report the newly seen rule.
