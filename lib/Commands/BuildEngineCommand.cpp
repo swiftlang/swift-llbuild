@@ -106,7 +106,7 @@ struct AckermannKey {
   /// Convert an Ackermann key to its encoded representation.
   operator core::KeyType() const {
     char inputKey[32];
-    sprintf(inputKey, "ack(%d,%d)", m, n);
+    snprintf(inputKey, sizeof(inputKey), "ack(%d,%d)", m, n);
     return inputKey;
   }
 };
