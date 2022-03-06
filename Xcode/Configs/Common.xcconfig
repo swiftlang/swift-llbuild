@@ -10,9 +10,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-DEVELOPER_INSTALL_DIR = /Applications/Xcode.app/Contents/Developer
-DT_SHARED_FRAMEWORKS_INSTALL_DIR = $(DEVELOPER_INSTALL_DIR)/../SharedFrameworks
-DT_TOOLCHAIN_INSTALL_DIR = $(DEVELOPER_INSTALL_DIR)/Toolchains/XcodeDefault.xctoolchain
+INSTALL_BASE_PATH = $(DEVELOPER_INSTALL_DIR:default=$(LOCAL_APPS_DIR)/Xcode.app/Contents/Developer)
+DT_SHARED_FRAMEWORKS_INSTALL_DIR = $(INSTALL_BASE_PATH)/../SharedFrameworks
+DT_TOOLCHAIN_INSTALL_DIR = $(INSTALL_BASE_PATH)/Toolchains/XcodeDefault.xctoolchain
 
 // Set the default product name.
 PRODUCT_NAME = $(TARGET_NAME)
