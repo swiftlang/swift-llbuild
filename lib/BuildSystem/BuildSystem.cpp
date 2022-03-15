@@ -2386,6 +2386,7 @@ class SwiftCompilerShellCommand : public ExternalCommand {
 
     for (const auto& nameAndAlias: moduleAliases) {
       // E.g. `-module-alias Foo=Bar`
+      printf("ESQQ llbuild::BuildSystem::constructCommandLineArgs - MODULE ALIAS ARG: %s\n", nameAndAlias.data());
       result.push_back("-module-alias");
       result.push_back(nameAndAlias);
     }
@@ -2542,6 +2543,7 @@ public:
           for (auto pair: values) {
             auto formatted = pair.first + "=" + pair.second;
             moduleAliases.push_back(formatted.str());
+            printf("ESQQ llbuild::BuildSystem::configureAttribute - MODULE ALIAS ARG FORMATTED: %s\n", formatted.str().data());
           }
           return !moduleAliases.empty();
         } else {

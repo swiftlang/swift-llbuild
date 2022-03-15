@@ -681,6 +681,14 @@ void llbuild::basic::spawnProcess(
 
   // Form the complete C string command line.
   std::vector<std::string> argsStorage(commandLine.begin(), commandLine.end());
+
+    std::string cmdstr = "";
+    for (auto line: commandLine) {
+        auto el = line + StringRef(" ");
+        cmdstr += el.str();
+    }
+    printf("\nESQQ llbuild::basic::spawnProcess - CMD:\n %s\n", cmdstr.data());
+
 #if defined(_WIN32)
   std::string args = llbuild::basic::formatWindowsCommandString(argsStorage);
 
