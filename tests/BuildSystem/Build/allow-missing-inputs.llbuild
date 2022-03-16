@@ -7,7 +7,7 @@
 # RUN: %{FileCheck} %s --input-file %t.out
 #
 # CHECK: TEST INPUT EXISTENCE
-# CHECK-NEXT: INPUT DOES NOT EXIST
+# CHECK: INPUT DOES NOT EXIST
 
 # Verify that we get a null build, despite the input missing (its state has not changed).
 #
