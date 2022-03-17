@@ -682,14 +682,14 @@ void llbuild::basic::spawnProcess(
   // Form the complete C string command line.
   std::vector<std::string> argsStorage(commandLine.begin(), commandLine.end());
 
-    auto hasAlias = std::find(commandLine.begin(), commandLine.end(), "-module-alias");
-    if (hasAlias) {
+    auto found = std::find(commandLine.begin(), commandLine.end(), "-module-alias");
+    if (found != std::end(commandLine)) {
         std::string cmdstr = "";
         for (auto line: commandLine) {
             auto el = line + StringRef(" ");
             cmdstr += el.str();
         }
-        shellEscaped("\nESQQ llbuild::basic::spawnProcess - CMD:\n" + cmdstr);
+        printf("\nESQQ llbuild::basic::spawnProcess - CMD:\n%s", cmdstr.data());
     }
     
 #if defined(_WIN32)
