@@ -2526,27 +2526,13 @@ public:
       importPaths = std::vector<std::string>(values.begin(), values.end());
     } else if (name == "other-args") {
       otherArgs = std::vector<std::string>(values.begin(), values.end());
+    } else if (name == "module-aliases") {
+      moduleAliases = std::vector<std::string>(values.begin(), values.end());
     } else {
       return ExternalCommand::configureAttribute(ctx, name, values);
     }
     
     return true;
-  }
-
-  virtual bool configureAttribute(
-      const ConfigureContext& ctx, StringRef name,
-      ArrayRef<std::pair<StringRef, StringRef>> values) override {
-        if (name == "module-alias") {
-          // Format the values for the module alias attribute to
-          // be passed to the driver, e.g. `-module-alias Foo=Bar`
-          for (auto pair: values) {
-            auto formatted = pair.first + "=" + pair.second;
-            moduleAliases.push_back(formatted.str());
-          }
-          return !moduleAliases.empty();
-        } else {
-          return ExternalCommand::configureAttribute(ctx, name, values);
-        }
   }
 
   bool writeOutputFileMap(TaskInterface ti,
