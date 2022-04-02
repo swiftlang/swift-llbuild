@@ -105,7 +105,7 @@ Motivation
 
 The design of llbuild is a continuation of the LLVM philosophy of applying
 library-based design to traditional developer tools.
-[Clang](http://clang.llvm.org) has followed this approach to deliver a high
+[Clang](https://clang.llvm.org) has followed this approach to deliver a high
 performance compiler and assembler while also enabling new tools like
 clang-format or the libclang interfaces for code completion and
 indexing. However, the rigid command line interface between traditional build
@@ -250,7 +250,7 @@ Acknowledgements
 ----------------
 
 llbuild is heavily influenced by modern build systems like
-[Shake](http://shakebuild.com), [Buck](https://buckbuild.com), and
+[Shake](https://shakebuild.com), [Buck](https://buckbuild.com), and
 [Ninja](https://ninja-build.org). We would particularly like to thank Neil
 Mitchell for his work describing the Shake algorithm which provided the
 inspiration for the mechanism llbuild uses to allow additional work to be
@@ -266,6 +266,6 @@ License
 Copyright (c) 2014 - 2020 Apple Inc. and the Swift project authors.
 Licensed under Apache License v2.0 with Runtime Library Exception.
 
-See http://swift.org/LICENSE.txt for license information.
+See https://swift.org/LICENSE.txt for license information.
 
-See http://swift.org/CONTRIBUTORS.txt for Swift project authors.
+See https://swift.org/CONTRIBUTORS.txt for Swift project authors.
