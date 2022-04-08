@@ -1,4 +1,4 @@
-//===- AttributedKeyIDs.h ---------------------------------------*- C++ -*-===//
+//===- DependencyKeyIDs.h ---------------------------------------*- C++ -*-===//
 //
 // This source file is part of the Swift.org open source project
 //
@@ -26,19 +26,48 @@ namespace core {
 /// compact form.
 // FIXME: At some point, figure out the optimal representation for this
 // data structure, which is likely to be a lot of the resident memory size.
-class AttributedKeyIDs {
+class DependencyKeyIDs {
   // Dependencies to be kept track of.
   std::vector<KeyID> keys;
 
-  /// Flags associated with the keys.
-  std::vector<bool> flags;
-
+  /// Flags about the dependency relation, by bit.
+  ///
+  /// value & 1: Flag indicating if the dependency invalidates the downstream task
+  /// (value >> 1) & 1: Flag indicating if the dependency is valid for only the current build and discarded for incremental builds
+  std::vector<uint8_t> flags;
+  
+private:
+  bool singleUse(int index) const {
+    return (flags[index] >> 1) & 1;
+  }
+  
+  bool orderOnly(int index) const {
+    return flags[index] & 1;
+  }
+  
 public:
 
   /// Clear the contents of the set.
   void clear() {
     keys.clear();
     flags.clear();
+  }
+  
+  /// Removes entries that are flagged as `singleUse`.
+  void cleanSingleUseDependencies() {
+    bool shouldClean = size() > 0;
+    if (!shouldClean) {
+      return;
+    }
+    
+    // Go in reverse order to make
+    for (int i = (int)size(); i > 0; i--) {
+      int index = i - 1;
+      if (singleUse(index) == true) {
+        keys.erase(keys.begin() + index);
+        flags.erase(flags.begin() + index);
+      }
+    }
   }
 
   /// Check whether the set is empty.
@@ -58,29 +87,30 @@ public:
   }
 
   /// A return value for the subscript operator[].
-  struct KeyIDAndFlag {
+  struct KeyIDAndFlags {
     KeyID keyID;
-    bool flag;
+    bool orderOnly;
+    bool singleUse;
   };
 
-  KeyIDAndFlag operator[](size_t n) const {
-    return {keys[n], flags[n]};
+  KeyIDAndFlags operator[](size_t n) const {
+    return {keys[n], orderOnly(n), singleUse(n)};
   }
 
   /// Store a new tuple under a known index.
-  void set(size_t n, KeyID id, bool flag) {
+  void set(size_t n, KeyID id, bool orderOnlyFlag, bool singleUseFlag) {
     keys[n] = id;
-    flags[n] = flag;
+    flags[n] = (singleUseFlag << 1) | orderOnlyFlag;
   }
 
   /// Add a given tuple at the end of the set.
-  void push_back(KeyID id, bool flag) {
-      keys.push_back(id);
-      flags.push_back(flag);
+  void push_back(KeyID id, bool orderOnlyFlag, bool singleUseFlag) {
+    keys.push_back(id);
+    flags.push_back((singleUseFlag << 1) | orderOnlyFlag);
   }
 
   /// Append the contents of the given set into the current set.
-  void append(const AttributedKeyIDs &rhs) {
+  void append(const DependencyKeyIDs &rhs) {
     keys.insert(keys.end(), rhs.keys.begin(), rhs.keys.end());
     flags.insert(flags.end(), rhs.flags.begin(), rhs.flags.end());
   }
@@ -89,16 +119,16 @@ public:
 
   struct const_iterator {
   protected:
-    const AttributedKeyIDs &object;
+    const DependencyKeyIDs &object;
     size_t index;
 
-    const_iterator(const AttributedKeyIDs &object, size_t n)
+    const_iterator(const DependencyKeyIDs &object, size_t n)
       : object(object), index(n) { }
   public:
-    friend AttributedKeyIDs;
+    friend DependencyKeyIDs;
 
     void operator++() { index++; }
-    KeyIDAndFlag operator*() const {
+    KeyIDAndFlags operator*() const {
       return object[index];
     }
 

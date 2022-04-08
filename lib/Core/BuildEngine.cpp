@@ -112,6 +112,8 @@ class BuildEngineImpl : public BuildDBDelegate {
     bool orderOnly = false;
     /// Force the use of a prior value
     bool forcePriorValue = false;
+    /// Whether this rule should be removed as a dependency after execution
+    bool singleUse = false;
   };
   std::deque<TaskInputRequest> inputRequests;
   std::vector<TaskInputRequest> finishedInputRequests;
@@ -133,6 +135,8 @@ class BuildEngineImpl : public BuildDBDelegate {
     RuleInfo* inputRuleInfo;
     /// Whether the rule is executed in order-only way.
     bool orderOnly;
+    /// Whether the rule is cleaned from dependencies after execution.
+    bool singleUse = false;
   };
   std::vector<RuleScanRequest> ruleInfosToScan;
 
@@ -315,7 +319,7 @@ class BuildEngineImpl : public BuildDBDelegate {
     /// provided.
     unsigned waitCount = 0;
     /// The list of discovered dependencies found during execution of the task.
-    AttributedKeyIDs discoveredDependencies;
+    DependencyKeyIDs discoveredDependencies;
 
 #ifndef NDEBUG
     void dump() const {
@@ -437,6 +441,9 @@ private:
     // If the rule is being scanned, we don't need to do anything.
     if (ruleInfo.isScanning())
       return false;
+    
+    /// Cleans up single use dependencies that should not be considered for incremental builds.
+    ruleInfo.result.dependencies.cleanSingleUseDependencies();
 
     // Otherwise, start scanning the rule.
     if (trace)
@@ -598,7 +605,8 @@ private:
       if (!request.inputRuleInfo) {
         const auto& keyAndFlag = ruleInfo.result.dependencies[request.inputIndex];
         request.inputRuleInfo = &getRuleInfoForKey(keyAndFlag.keyID);
-        request.orderOnly = keyAndFlag.flag;
+        request.orderOnly = keyAndFlag.orderOnly;
+        request.singleUse = keyAndFlag.singleUse;
       }
 
       auto& inputRuleInfo = *request.inputRuleInfo;
@@ -657,6 +665,7 @@ private:
       ++request.inputIndex;
       request.inputRuleInfo = nullptr;
       request.orderOnly = false;
+      request.singleUse = false;
     } while (request.inputIndex != ruleInfo.result.dependencies.size());
 
     // If we reached the end of the inputs, the rule does not need to run.
@@ -712,7 +721,7 @@ private:
     finishedInputRequests.clear();
 
     // Push a dummy input request for the rule to build.
-    inputRequests.push_back({ nullptr, 0, &getRuleInfoForKey(buildKey), false, false });
+    inputRequests.push_back({ nullptr, 0, &getRuleInfoForKey(buildKey), false, false, false });
 
     // Process requests as long as we have work to do.
     while (true) {
@@ -819,7 +828,7 @@ private:
         // requests in FIFO order.
         //
         request.taskInfo->forRuleInfo->result.dependencies.push_back(
-            request.inputRuleInfo->keyID, request.orderOnly);
+            request.inputRuleInfo->keyID, request.orderOnly, request.singleUse);
 
 
         // If the rule is already available, enqueue the finalize request.
@@ -959,8 +968,8 @@ private:
         // from parallel contexts.
         {
           std::lock_guard<std::mutex> guard(inputRequestsMutex);
-          for (auto keyIDAndFlag: taskInfo->discoveredDependencies) {
-            inputRequests.push_back({ nullptr, 0, &getRuleInfoForKey(keyIDAndFlag.keyID), keyIDAndFlag.flag, false });
+          for (auto dependency: taskInfo->discoveredDependencies) {
+            inputRequests.push_back({ nullptr, 0, &getRuleInfoForKey(dependency.keyID), dependency.orderOnly, false , dependency.singleUse});
           }
         }
 
@@ -1681,7 +1690,7 @@ public:
     fclose(fp);
   }
 
-  void addTaskInputRequest(Task* task, const KeyType& key, uintptr_t inputID, bool orderOnly) {
+  void addTaskInputRequest(Task* task, const KeyType& key, uintptr_t inputID, bool orderOnly, bool singleUse) {
     auto taskInfo = getTaskInfo(task);
 
     // Validate that the task is in a valid state to request inputs.
@@ -1694,7 +1703,7 @@ public:
     RuleInfo* ruleInfo = &getRuleInfoForKey(key);
 
     std::lock_guard<std::mutex> guard(inputRequestsMutex);
-    inputRequests.push_back({ taskInfo, inputID, ruleInfo, orderOnly });
+    inputRequests.push_back({ taskInfo, inputID, ruleInfo, orderOnly, false, singleUse });
     taskInfo->waitCount++;
   }
 
@@ -1711,13 +1720,24 @@ public:
       return;
     }
 
-    addTaskInputRequest(task, key, inputID, false);
+    addTaskInputRequest(task, key, inputID, false, false);
+  }
+  
+  void taskNeedsSingleUseInput(Task* task, const KeyType& key, uintptr_t inputID) {
+    // Validate the InputID.
+    if (inputID > BuildEngine::kMaximumInputID) {
+      delegate.error("attempt to use reserved input ID");
+      buildCancelled = true;
+      return;
+    }
+
+    addTaskInputRequest(task, key, inputID, false, true);
   }
 
   void taskMustFollow(Task* task, const KeyType& key) {
     // The inputID is not used when taskMustFollow is used.
     // (The user-supplied provideValue() is not called).
-    addTaskInputRequest(task, key, kMustFollowInputID, true);
+    addTaskInputRequest(task, key, kMustFollowInputID, true, false);
   }
 
   void taskDiscoveredDependency(Task* task, const KeyType& key) {
@@ -1732,7 +1752,7 @@ public:
     }
 
     auto dependencyID = getKeyID(key);
-    taskInfo->discoveredDependencies.push_back(dependencyID, false);
+    taskInfo->discoveredDependencies.push_back(dependencyID, false, false);
   }
 
   void taskIsComplete(Task* task, ValueType&& value, bool forceChange) {
@@ -1803,6 +1823,11 @@ BuildEngineDelegate* TaskInterface::delegate() {
 void TaskInterface::request(const KeyType& key, uintptr_t inputID) {
   Task* task = static_cast<Task*>(ctx);
   static_cast<BuildEngineImpl*>(impl)->taskNeedsInput(task, key, inputID);
+}
+
+void TaskInterface::requestSingleUse(const KeyType &key, uintptr_t inputID) {
+  Task* task = static_cast<Task*>(ctx);
+  static_cast<BuildEngineImpl*>(impl)->taskNeedsSingleUseInput(task, key, inputID);
 }
 
 void TaskInterface::mustFollow(const KeyType& key) {

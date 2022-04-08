@@ -66,6 +66,7 @@ namespace {
 
 class SQLiteBuildDB : public BuildDB {
   /// Version History:
+  /// * 13: Tagging dependencies with single-use flag.
   /// * 12: Tagging dependencies with order-only flag.
   /// * 11: Add result timestamps
   /// * 10: Add result signature
@@ -75,7 +76,7 @@ class SQLiteBuildDB : public BuildDB {
   /// * 6: Added `ordinal` field for dependencies.
   /// * 5: Switched to using `WITHOUT ROWID` for dependencies.
   /// * 4: Pre-history
-  static const int currentSchemaVersion = 12;
+  static const int currentSchemaVersion = 13;
 
   std::string path;
   uint32_t clientSchemaVersion;
@@ -559,8 +560,9 @@ public:
     for (auto i = 0; i != numDependencies; ++i) {
       uint64_t raw;
       decoder.read(raw);
-      bool flag = raw & 1;
-      DBKeyID dbKeyID(raw >> 1);
+      bool orderOnly = raw & 1;
+      bool singleUse = (raw >> 1) & 1;
+      DBKeyID dbKeyID(raw >> 2);
 
       // Map the database key ID into an engine key ID (note that we already
       // hold the dbMutex at this point as required by getKeyIDforID())
@@ -568,7 +570,7 @@ public:
       if (!error_out->empty()) {
         return false;
       }
-      result_out->dependencies.set(i, keyID, flag);
+      result_out->dependencies.set(i, keyID, orderOnly, singleUse);
     }
 
     return true;
@@ -614,17 +616,17 @@ public:
     // FIXME: We could save some reallocation by having a templated SmallVector
     // size here.
     basic::BinaryEncoder encoder{};
-    for (auto keyIDAndFlag: ruleResult.dependencies) {
+    for (auto dependency: ruleResult.dependencies) {
       // Map the enging keyID to a database key ID
       //
       // FIXME: This is naively mapping all keys with no caching at this point,
       // thus likely to perform poorly.  Should refactor this into a bulk
       // query or a DB layer cache.
-      auto dbKeyID = getKeyID(keyIDAndFlag.keyID, error_out);
+      auto dbKeyID = getKeyID(dependency.keyID, error_out);
       if (!error_out->empty()) {
         return false;
       }
-      encoder.write((dbKeyID.value << 1) + keyIDAndFlag.flag);
+      encoder.write((dbKeyID.value << 2) + (dependency.singleUse << 1) + dependency.orderOnly);
     }
 
     // Insert the actual rule result.
@@ -779,8 +781,9 @@ public:
       for (auto i = 0; i != numDependencies; ++i) {
         uint64_t raw;
         decoder.read(raw);
-        bool flag = raw & 1;
-        DBKeyID dbKeyID(raw >> 1);
+        bool orderOnly = raw & 1;
+        bool singleUse = (raw >> 1) & 1;
+        DBKeyID dbKeyID(raw >> 2);
         
         // Map the database key ID into an engine key ID (note that we already
         // hold the dbMutex at this point as required by getKeyIDforID())
@@ -788,7 +791,7 @@ public:
         if (!error_out->empty()) {
           return false;
         }
-        result.dependencies.set(i, keyID, flag);
+        result.dependencies.set(i, keyID, orderOnly, singleUse);
       }
       
       result.signature = basic::CommandSignature(sqlite3_column_int64(stmt, 8));

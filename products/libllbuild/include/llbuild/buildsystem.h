@@ -781,6 +781,15 @@ llb_buildsystem_command_get_verbose_description(
 LLBUILD_EXPORT void
 llb_buildsystem_command_interface_task_needs_input(llb_task_interface_t ti, llb_build_key_t* key, uintptr_t inputID);
 
+/// Request a task as a dependency just for the current build iteration.
+/// Once the requesting task finishes, the dependency will be removed so
+/// that incremental builds won't consider it for invalidating the task.
+///
+/// NOTE: This method behaves like `llb_buildsystem_command_interface_task_needs_input`
+/// for the current build.
+LLBUILD_EXPORT void
+llb_buildsystem_command_interface_task_needs_single_use_input(llb_task_interface_t ti, llb_build_key_t* key, uintptr_t inputID);
+
 /// Marks a key as a discovered dependency for the task.
 LLBUILD_EXPORT void
 llb_buildsystem_command_interface_task_discovered_dependency(llb_task_interface_t ti, llb_build_key_t* key);

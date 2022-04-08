@@ -1163,6 +1163,11 @@ void llb_buildsystem_command_interface_task_needs_input(llb_task_interface_t ti,
   coreti->request(((CAPIBuildKey *)key)->getInternalBuildKey().toData(), inputID);
 }
 
+void llb_buildsystem_command_interface_task_needs_single_use_input(llb_task_interface_t ti, llb_build_key_t* key, uintptr_t inputID) {
+  auto coreti = reinterpret_cast<core::TaskInterface*>(&ti);
+  coreti->requestSingleUse(((CAPIBuildKey *)key)->getInternalBuildKey().toData(), inputID);
+}
+
 llb_build_value_file_info_t llb_buildsystem_command_interface_get_file_info(llb_buildsystem_interface_t* bi_p, const char* path) {
   auto bi = (BuildSystem*)bi_p;
   return llbuild::capi::convertFileInfo(bi->getFileSystem().getFileInfo(path));

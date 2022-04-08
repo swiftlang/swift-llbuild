@@ -18,7 +18,7 @@
 #include "llbuild/Basic/ExecutionQueue.h"
 #include "llbuild/Basic/Hashing.h"
 
-#include "llbuild/Core/AttributedKeyIDs.h"
+#include "llbuild/Core/DependencyKeyIDs.h"
 #include "llbuild/Core/KeyID.h"
 
 #include "llvm/ADT/StringRef.h"
@@ -89,7 +89,7 @@ struct Result {
   Epoch builtAt = 0;
 
   /// The explicit dependencies required by the generation.
-  AttributedKeyIDs dependencies;
+  DependencyKeyIDs dependencies;
   
   /// The start of the command as a timestamp since a reference time
   basic::Clock::Timestamp start;
@@ -138,6 +138,13 @@ public:
   /// by the engine.
   void request(const KeyType& key, uintptr_t inputID);
 
+  /// Request a task as a dependency just for the current build iteration. Once
+  /// the requesting task finishes, the dependency will be removed so that
+  /// incremental builds won't consider it for invalidating the task.
+  ///
+  /// NOTE: This method behaves like `request` for the current build.
+  void requestSingleUse(const KeyType& key, uintptr_t inputID);
+  
   /// Specify that the task must be built subsequent to the
   /// computation of \arg Key.
   ///
