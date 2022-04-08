@@ -89,6 +89,15 @@ public struct BuildSystemCommandInterface {
     public func commandNeedsInput(key: BuildKey, inputID: UInt) {
         llb_buildsystem_command_interface_task_needs_input(_taskInterface, key.internalBuildKey, inputID)
     }
+    
+    /// Request an input as a dependency just for the current build iteration.
+    /// Once the requesting command finishes, the dependency will be removed so that
+    /// incremental builds won't consider it for invalidation.
+    ///
+    /// NOTE: This method behaves like `request` for the current build.
+    public func commandsNeedsSingleUseInput(key: BuildKey, inputID: UInt) {
+        llb_buildsystem_command_interface_task_needs_single_use_input(_taskInterface, key.internalBuildKey, inputID)
+    }
 
     /// Marks a build key as a runtime found dependency for the command.
     public func commandDiscoveredDependency(key: BuildKey) {
