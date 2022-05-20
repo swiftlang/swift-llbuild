@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Close the control channel and run a given command.
 # Example usage:
@@ -8,7 +8,7 @@
 # The `exec` prefix is necessary to prevent the file descriptor being held
 # by the outer shell while running the `run-relesing-control-fd`.
 
-from __future__ import print_function
+
 import subprocess
 import sys
 import os

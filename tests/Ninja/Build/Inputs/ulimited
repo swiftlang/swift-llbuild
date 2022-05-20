@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Example usage:
 #   > ./ulimited -n 50 echo foo
@@ -8,7 +8,7 @@
 #   >
 
 
-from __future__ import print_function
+
 import errno
 import subprocess
 import resource
