@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import errno
 import resource
@@ -6,6 +6,8 @@ import sys
 import os
 
 controlfd = int(os.environ.get("LLBUILD_CONTROL_FD"))
+
+print(("control FD: %s" % (controlfd,)))
 
 # Check if the given FD is valid).
 def is_fd(fd):
@@ -24,4 +26,4 @@ def is_fd(fd):
 
 max_fd_soft,max_fd_hard = resource.getrlimit(resource.RLIMIT_NOFILE)
 num_valid_fds = [i for i in range(max_fd_soft) if is_fd(i)]
-print("open FDs: %s" % (num_valid_fds,))
+print(("open FDs: %s" % (num_valid_fds,)))
