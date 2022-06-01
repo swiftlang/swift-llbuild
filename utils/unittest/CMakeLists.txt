@@ -11,32 +11,46 @@
 #
 # Project-wide settings
 
-# Where gtest's .h files can be found.
-include_directories(
-  googletest/include
-  googletest
-  )
-
 if(WIN32)
   add_definitions(-DGTEST_OS_WINDOWS=1)
 endif()
 
-if(SUPPORTS_NO_VARIADIC_MACROS_FLAG)
+# Google Test requires headers which need _ALL_SOURCE to build on AIX
+if (UNIX AND ${CMAKE_SYSTEM_NAME} MATCHES "AIX")
+  remove_definitions("-D_XOPEN_SOURCE=700")
+  add_definitions("-D_ALL_SOURCE")
+endif()
+
+if(SUPPORTS_VARIADIC_MACROS_FLAG)
   add_definitions("-Wno-variadic-macros")
 endif()
-
-if (NOT LLVM_ENABLE_THREADS)
-  add_definitions( -DGTEST_HAS_PTHREAD=0 )
+if(SUPPORTS_GNU_ZERO_VARIADIC_MACRO_ARGUMENTS_FLAG)
+  add_definitions("-Wno-gnu-zero-variadic-macro-arguments")
 endif()
-
-# Visual Studio 2012 only supports up to 8 template parameters in
-# std::tr1::tuple by default, but gtest requires 10
-if(MSVC AND MSVC_VERSION EQUAL 1700)
-  add_definitions(-D_VARIADIC_MAX=10)
-endif ()
+if(CXX_SUPPORTS_COVERED_SWITCH_DEFAULT_FLAG)
+  add_definitions("-Wno-covered-switch-default")
+endif()
 
 add_llbuild_library(gtest STATIC
   googletest/src/gtest-all.cc
+  googlemock/src/gmock-all.cc
+)
+
+# The googletest and googlemock sources don't presently use the 'override'
+# keyword, which leads to lots of warnings from -Wsuggest-override. Disable
+# that warning here for any targets that link to gtest.
+if(CXX_SUPPORTS_SUGGEST_OVERRIDE_FLAG)
+  add_definitions("-Wno-suggest-override")
+  set_target_properties(gtest PROPERTIES INTERFACE_COMPILE_OPTIONS "-Wno-suggest-override")
+endif()
+
+if (NOT LLVM_ENABLE_THREADS)
+  target_compile_definitions(gtest PUBLIC GTEST_HAS_PTHREAD=0)
+endif ()
+
+target_include_directories(gtest
+  PUBLIC googletest/include googlemock/include
+  PRIVATE googletest googlemock
   )
 
 add_subdirectory(UnitTestMain)
