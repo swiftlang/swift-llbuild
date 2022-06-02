@@ -1235,9 +1235,12 @@ bool llb_buildsystem_command_interface_spawn(llb_task_interface_t ti, llb_builds
     }
 
   };
-  
-  coreti->spawn((QueueJobContext*)job_context, ArrayRef<StringRef>(arguments), ArrayRef<std::pair<StringRef, StringRef>>(environment), {true, false, StringRef((const char*)working_dir->data, working_dir->length)}, {commandCompletionFn}, new ForwardingProcessDelegate(delegate));
-  
+
+  auto forwardingDelegate = new ForwardingProcessDelegate(delegate);
+  coreti->spawn((QueueJobContext*)job_context, ArrayRef<StringRef>(arguments), ArrayRef<std::pair<StringRef, StringRef>>(environment), {true, false, StringRef((const char*)working_dir->data, working_dir->length)}, {commandCompletionFn}, forwardingDelegate);
+
+  delete forwardingDelegate;
+
   return result.get().status == ProcessStatus::Succeeded;  
 }
 
