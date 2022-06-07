@@ -99,6 +99,7 @@ class BuildEngineImpl : public BuildDBDelegate {
 
   /// Whether a build is currently running.
   std::atomic<bool> buildRunning{ false };
+  std::mutex buildEngineMutex;
 
   /// The queue of input requests to process.
   struct TaskInputRequest {
@@ -1377,6 +1378,9 @@ public:
     : buildEngine(buildEngine), delegate(delegate) {}
 
   ~BuildEngineImpl() {
+    // Make sure that there aren't any currently running builds before
+    // tearing down.
+    std::lock_guard<std::mutex> lock(buildEngineMutex);
   }
 
   BuildEngineDelegate* getDelegate() {
@@ -1484,7 +1488,7 @@ public:
   /// @{
 
   const ValueType& build(const KeyType& key) {
-    // Protect the engine against invalid concurrent use.
+    // Soft protect the engine against invalid concurrent use.
     if (buildRunning.exchange(true)) {
       delegate.error("build engine busy");
       static ValueType emptyValue{};
@@ -1493,6 +1497,9 @@ public:
     llbuild_defer {
       buildRunning = false;
     };
+
+    // Hard protection against concurrent use and tear down
+    std::lock_guard<std::mutex> lock(buildEngineMutex);
 
     if (db) {
       std::string error;
