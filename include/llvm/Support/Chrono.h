@@ -15,6 +15,7 @@
 
 #include <chrono>
 #include <ctime>
+#include <ratio>
 
 namespace llvm {
 
