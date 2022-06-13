@@ -144,6 +144,7 @@ class BuildSystemEngineDelegate : public BuildEngineDelegate {
   const BuildDescription& getBuildDescription() const;
 
   virtual std::unique_ptr<Rule> lookupRule(const KeyType& keyData) override;
+  virtual void determinedRuleNeedsToRun(Rule* ruleNeedingToRun, Rule::RunReason reason, Rule* inputRule) override;
   virtual bool shouldResolveCycle(const std::vector<Rule*>& items,
                                   Rule* candidateRule,
                                   Rule::CycleAction action) override;
@@ -1821,6 +1822,10 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
 
   assert(0 && "invalid key type");
   abort();
+}
+
+void BuildSystemEngineDelegate::determinedRuleNeedsToRun(Rule* ruleNeedingToRun, Rule::RunReason reason, Rule* inputRule) {
+  return getBuildSystem().getDelegate().determinedRuleNeedsToRun(ruleNeedingToRun, reason, inputRule);
 }
 
 bool BuildSystemEngineDelegate::shouldResolveCycle(const std::vector<Rule*>& cycle,
