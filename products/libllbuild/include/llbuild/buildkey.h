@@ -101,8 +101,9 @@ LLBUILD_EXPORT void llb_build_key_get_directory_tree_signature_path(llb_build_ke
 LLBUILD_EXPORT void llb_build_key_get_directory_tree_signature_filters(llb_build_key_t *key, void *_Nullable context, IteratorFunction  iterator);
 
 // Directory Tree Structure Signature
-LLBUILD_EXPORT llb_build_key_t *llb_build_key_make_directory_tree_structure_signature(const char *path);
+LLBUILD_EXPORT llb_build_key_t *llb_build_key_make_directory_tree_structure_signature(const char *path, const char *_Nonnull const *_Nonnull filters, int32_t count_filters);
 LLBUILD_EXPORT void llb_build_key_get_directory_tree_structure_signature_path(llb_build_key_t *key, llb_data_t *out_path);
+LLBUILD_EXPORT void llb_build_key_get_directory_tree_structure_signature_filters(llb_build_key_t *key, void *_Nullable context, IteratorFunction  iterator);
 
 // Node
 LLBUILD_EXPORT llb_build_key_t *llb_build_key_make_node(const char *path);

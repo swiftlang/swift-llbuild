@@ -1170,7 +1170,11 @@ TEST(BuildSystemTaskTests, directoryContentsWithSkippedCommand) {
   ASSERT_TRUE(result.hasValue());
   ASSERT_FALSE(result.getValue().isSkippedCommand());
 
-  result = system.build(BuildKey::makeDirectoryTreeStructureSignature("inputDir"));
+  result = system.build(BuildKey::makeDirectoryTreeStructureSignature("inputDir", {}));
+  ASSERT_TRUE(result.hasValue());
+  ASSERT_FALSE(result.getValue().isSkippedCommand());
+
+  result = system.build(BuildKey::makeDirectoryTreeStructureSignature("inputDir", filters));
   ASSERT_TRUE(result.hasValue());
   ASSERT_FALSE(result.getValue().isSkippedCommand());
 }

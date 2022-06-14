@@ -209,12 +209,23 @@ void llb_build_key_get_directory_tree_signature_filters(llb_build_key_t *key, vo
   llb_build_key_get_filtered_directory_filters(key, context, iterator);
 }
 
-llb_build_key_t *llb_build_key_make_directory_tree_structure_signature(const char *path) {
-  return (llb_build_key_t *)new CAPIBuildKey(BuildKey::makeDirectoryTreeStructureSignature(StringRef(path)));
+llb_build_key_t *llb_build_key_make_directory_tree_structure_signature(const char *path, const char* const* filters, int32_t count_filters) {
+  auto filtersToPass = std::vector<StringRef>();
+  for (int i = 0; i < count_filters; i++) {
+    filtersToPass.push_back(StringRef(filters[i]));
+  }
+
+  return (llb_build_key_t *)new CAPIBuildKey(BuildKey::makeDirectoryTreeStructureSignature(StringRef(path),basic::StringList(ArrayRef<StringRef>(filtersToPass))));
 }
 
+void llb_build_key_get_directory_tree_structure_signature_filters(llb_build_key_t *key, void *context, IteratorFunction iterator) {
+  llb_build_key_get_filtered_directory_filters(key, context, iterator);
+}
+
+
+
 void llb_build_key_get_directory_tree_structure_signature_path(llb_build_key_t *key, llb_data_t *out_path) {
-  auto path = ((CAPIBuildKey *)key)->getInternalBuildKey().getDirectoryPath();
+  auto path = ((CAPIBuildKey *)key)->getInternalBuildKey().getFilteredDirectoryPath();
   out_path->length = path.size();
   out_path->data = (const uint8_t*)strdup(path.str().c_str());
 }
