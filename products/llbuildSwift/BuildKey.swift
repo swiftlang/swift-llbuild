@@ -253,8 +253,12 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
 
     /// A key used to identify the signature of a complete directory tree.
     public final class DirectoryTreeStructureSignature: BuildKey {
-        public convenience init(path: String) {
-            self.init(llb_build_key_make_directory_tree_structure_signature(path))
+        public convenience init(path: String, filters: [String] = []) {
+            let ptr = filters.withCArrayOfStrings { ptr in
+                llb_build_key_make_directory_tree_structure_signature(path, ptr, Int32(filters.count))
+            }
+
+            self.init(ptr)
         }
         
         /// The path of the directory
@@ -263,9 +267,21 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
                 llb_build_key_get_directory_tree_structure_signature_path(internalBuildKey, &$0)
             }
         }
-        
+
+        /// The filters to apply to the content
+        public var filters: [String] {
+            var result = [String]()
+            withUnsafeMutablePointer(to: &result) { ptr in
+                llb_build_key_get_directory_tree_structure_signature_filters(internalBuildKey, ptr) { ctx, data in
+                    ctx!.assumingMemoryBound(to: [String].self).pointee.append(stringFromData(data))
+                }
+            }
+
+            return result
+        }
+
         public override var description: String {
-            return "<BuildKey.\(type(of: self)) path=\(path)>"
+            return "<BuildKey.\(type(of: self)) path=\(path) filters=[\(filters.joined(separator: ", "))]>"
         }
     }
 

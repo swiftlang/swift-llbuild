@@ -752,7 +752,7 @@ TEST(BuildSystemInvocationTest, formatCycle) {
   NullRule dircontents{BuildKey::makeDirectoryContents("/").getKeyData()};
   NullRule filtdircontents{BuildKey::makeFilteredDirectoryContents("/", {}).getKeyData()};
   NullRule dirtree{BuildKey::makeDirectoryTreeSignature("/", {}).getKeyData()};
-  NullRule dirtreestruct{BuildKey::makeDirectoryTreeStructureSignature("/").getKeyData()};
+  NullRule dirtreestruct{BuildKey::makeDirectoryTreeStructureSignature("/", {}).getKeyData()};
   NullRule node{BuildKey::makeNode("n").getKeyData()};
   NullRule stat{BuildKey::makeStat("f").getKeyData()};
   NullRule target{BuildKey::makeTarget("t").getKeyData()};

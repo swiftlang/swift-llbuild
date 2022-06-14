@@ -51,11 +51,11 @@ void BuildKey::dump(raw_ostream& os) const {
     break;
   }
   case Kind::DirectoryContents:
-  case Kind::DirectoryTreeSignature:
-  case Kind::DirectoryTreeStructureSignature: {
+  case Kind::DirectoryTreeSignature: {
     os << ", path='" << getDirectoryPath() << "'";
     break;
   }
+  case Kind::DirectoryTreeStructureSignature:
   case Kind::FilteredDirectoryContents: {
     os << ", path='" << getFilteredDirectoryPath() << "'";
     // FIXME: should probably dump filters here too

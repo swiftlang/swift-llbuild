@@ -1,0 +1,146 @@
+# Check the handling of directory tree structure signatures.
+#
+# We check the node used against three kinds of directories: missing, a file, an
+# actual directory.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.llbuild
+# RUN: echo "file" > %t.build/file
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.initial.out
+# RUN: %{FileCheck} --check-prefix=CHECK-INITIAL --input-file=%t.initial.out %s
+#
+# CHECK-INITIAL: DTS-MISSING-CHANGED
+# CHECK-INITIAL: DTS-FILE-CHANGED
+# CHECK-INITIAL: DIR-CREATOR
+# CHECK-INITIAL: DTS-DIR-CHANGED
+
+
+# Check that a null build does nothing.
+#
+# RUN: echo "START." > %t.rebuild.out
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build >> %t.rebuild.out
+# RUN: echo "EOF" >> %t.rebuild.out
+# RUN: %{FileCheck} --check-prefix=CHECK-REBUILD --input-file=%t.rebuild.out %s
+#
+# CHECK-REBUILD: START
+# CHECK-REBUILD-NOT: DTS-
+# CHECK-REBUILD-NEXT: EOF
+
+
+# Check that modifications are detected.
+#
+# RUN: mkdir -p %t.build/missing-dir
+# RUN: mkdir -p %t.build/dir/subdir
+# RUN: echo "created" > %t.build/dir/subdir/file
+# RUN: echo "created" > %t.build/dir/file2
+# RUN: echo "modified" > %t.build/file
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.modified.out
+# RUN: %{FileCheck} --check-prefix=CHECK-MODIFIED --input-file=%t.modified.out %s
+#
+# CHECK-MODIFIED: DTS-MISSING-CHANGED
+# CHECK-MODIFIED-NOT: DTS-FILE-CHANGED
+# CHECK-MODIFIED: DTS-DIR-CHANGED
+
+
+# Check that type transitions are detected.
+#
+# RUN: rm -rf %t.build/missing-dir
+# RUN: rm -rf %t.build/file
+# RUN: rm -rf %t.build/dir/file2
+# RUN: mkdir -p %t.build/file
+# RUN: mkdir -p %t.build/dir/file2
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.type-changed.out
+# RUN: %{FileCheck} --check-prefix=CHECK-TYPE-CHANGED --input-file=%t.type-changed.out %s
+#
+# CHECK-TYPE-CHANGED: DTS-MISSING-CHANGED
+# CHECK-TYPE-CHANGED: DTS-FILE-CHANGED
+# CHECK-TYPE-CHANGED: DTS-DIR-CHANGED
+
+
+# Check that a mutation of a file is ignored.
+#
+# RUN: echo "mutated" >> %t.build/dir/subdir/file
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.mutated.out
+# RUN: echo EOF. >> %t.mutated.out
+# RUN: %{FileCheck} --check-prefix=CHECK-MUTATED --input-file=%t.mutated.out %s
+#
+# CHECK-MUTATED-NOT: DTS-MISSING-CHANGED
+# CHECK-MUTATED-NOT: DTS-FILE-CHANGED
+# CHECK-MUTATED-NOT: DTS-DIR-CHANGED
+# CHECK-MUTATED: EOF.
+
+# Check that addition of an excluded file is ignored
+#
+# RUN: touch %t.build/dir/excludedfile
+# RUN: echo "mutated" >> %t.build/dir/subdir/file
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.mutated.out
+# RUN: echo EOF. >> %t.mutated.out
+# RUN: %{FileCheck} --check-prefix=CHECK-MUTATED --input-file=%t.mutated.out %s
+#
+# CHECK-MUTATED2-NOT: DTS-MISSING-CHANGED
+# CHECK-MUTATED2-NOT: DTS-FILE-CHANGED
+# CHECK-MUTATED2-NOT: DTS-DIR-CHANGED
+# CHECK-MUTATED2: EOF.
+
+
+# Check that replacing the file with an equivalent one is ignored.
+#
+# RUN: rm -f %t.build/dir/subdir/file
+# RUN: echo "created" > %t.build/dir/subdir/file
+# RUN: echo "mutated" >> %t.build/dir/subdir/file
+# RUN: touch -r /dev/null %t.build/dir/subdir
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t.mutated.out
+# RUN: echo EOF. >> %t.mutated.out
+# RUN: %{FileCheck} --check-prefix=CHECK-REPLACEMENT --input-file=%t.mutated.out %s
+#
+# CHECK-REPLACEMENT-NOT: DTS-MISSING-CHANGED
+# CHECK-REPLACEMENT-NOT: DTS-FILE-CHANGED
+# CHECK-REPLACEMENT-NOT: DTS-DIR-CHANGED
+# CHECK-REPLACEMENT: EOF.
+
+client:
+  name: basic
+
+targets:
+  "": ["<all>"]
+
+nodes:
+  "missing-dir/":
+    is-directory-structure: true
+  "file/":
+    is-directory-structure: true
+  "dir/":
+    is-directory-structure: true
+    content-exclusion-patterns: ["excludedfile"]
+    
+commands:
+  C.all:
+    tool: phony
+    inputs: ["<D-missing>", "<D-file>", "<D-dir>"]
+    outputs: ["<all>"]
+  C.D-missing:
+    tool: shell
+    description: DTS-MISSING-CHANGED
+    inputs: ["missing-dir/"]
+    outputs: ["<D-missing>"]
+    args: true
+  C.D-file:
+    tool: shell
+    description: DTS-FILE-CHANGED
+    inputs: ["file/", "<D-missing>"]
+    outputs: ["<D-file>"]
+    args: true
+
+  C.dir-creator:
+    tool: shell
+    description: DIR-CREATOR
+    inputs: ["<D-file>"]
+    outputs: ["dir"]
+    args: mkdir -p dir
+  C.D-dir:
+    tool: shell
+    description: DTS-DIR-CHANGED
+    inputs: ["dir/", "<D-file>"]
+    outputs: ["<D-dir>"]
+    args: true

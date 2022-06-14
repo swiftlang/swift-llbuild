@@ -137,8 +137,9 @@ public:
   }
 
   /// Create a key for computing the structure of a directory.
-  static BuildKey makeDirectoryTreeStructureSignature(StringRef path) {
-    return BuildKey(identifierForKind(Kind::DirectoryTreeStructureSignature), path);
+  static BuildKey makeDirectoryTreeStructureSignature(StringRef path,
+                                                      const basic::StringList& filters) {
+    return BuildKey(identifierForKind(Kind::DirectoryTreeStructureSignature), path, filters);
   }
 
   /// Create a key for computing a node result.
@@ -241,7 +242,7 @@ public:
   }
 
   StringRef getDirectoryPath() const {
-    assert(isDirectoryContents() || isDirectoryTreeStructureSignature());
+    assert(isDirectoryContents());
     return StringRef(key.data()+1, key.size()-1);
   }
 
@@ -253,14 +254,14 @@ public:
   }
 
   StringRef getFilteredDirectoryPath() const {
-    assert(isFilteredDirectoryContents());
+    assert(isFilteredDirectoryContents() || isDirectoryTreeStructureSignature());
     uint32_t nameSize;
     memcpy(&nameSize, &key.data()[1], sizeof(uint32_t));
     return StringRef(&key.data()[1 + sizeof(uint32_t)], nameSize);
   }
 
   StringRef getContentExclusionPatterns() const {
-    assert(isDirectoryTreeSignature() || isFilteredDirectoryContents());
+    assert(isDirectoryTreeSignature() || isDirectoryTreeStructureSignature() || isFilteredDirectoryContents());
     uint32_t nameSize;
     memcpy(&nameSize, &key.data()[1], sizeof(uint32_t));
     uint32_t dataSize = key.size() - 1 - sizeof(uint32_t) - nameSize;
