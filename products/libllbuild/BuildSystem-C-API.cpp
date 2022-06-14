@@ -766,7 +766,7 @@ class CAPIExternalCommand : public ExternalCommand {
           system.getDelegate().commandFoundDiscoveredDependency(command, unescapedWord, DiscoveredDependencyKind::Input);
           return;
         } else {
-          system.getDelegate().commandHadError(command, "Dependency for" + std::string(command->getName()) + "is not absolute (" + std::string(unescapedWord) + ").");
+          system.getDelegate().commandHadError(command, "Dependency for " + std::string(command->getName()) + " is not absolute (" + std::string(unescapedWord) + ").");
           return;
         }
       }
