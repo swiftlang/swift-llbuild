@@ -837,6 +837,15 @@ public protocol BuildSystemDelegate {
     /// - parameter exitStatus: The raw exit status of the process.
     func commandProcessFinished(_ command: Command, process: ProcessHandle, result: CommandExtendedResult)
 
+    /// Called when it's been determined that a rule needs to run.
+    ///
+    ///  - parameter ruleNeedingToRun: The rule that needs to run.
+    ///
+    ///  - parameter reason: Describes why the rule needs to run. For example, because it has never run or because an input was rebuilt.
+    ///
+    ///  - parameter inputRule: If `reason` is `InputRebuilt`, the rule for the rebuilt input, else  `nil`.
+    func determinedRuleNeedsToRun(_ rule: BuildKey, reason: RuleRunReason, inputRule: BuildKey?)
+
     /// Called when a cycle is detected by the build engine and it cannot make
     /// forward progress.
     func cycleDetected(rules: [BuildKey])
@@ -868,6 +877,10 @@ extension BuildSystemDelegate {
     public func chooseCommandFromMultipleProducers(output: BuildKey, commands: [Command]) -> Command? {
         // default implementation for ABI compatibility with older clients
         return nil
+    }
+
+    public func determinedRuleNeedsToRun(_ rule: BuildKey, reason: RuleRunReason, inputRule: BuildKey?) {
+        // default implementation for compatibility with older clients
     }
 }
 
@@ -1018,6 +1031,9 @@ public final class BuildSystem {
             _delegate.command_process_had_error = { BuildSystem.toSystem($0!).commandProcessHadError(Command(handle: $1), ProcessHandle($2!), $3!) }
             _delegate.command_process_had_output = { BuildSystem.toSystem($0!).commandProcessHadOutput(Command(handle: $1), ProcessHandle($2!), $3!) }
             _delegate.command_process_finished = { BuildSystem.toSystem($0!).commandProcessFinished(Command(handle: $1), ProcessHandle($2!), CommandExtendedResult($3!)) }
+            _delegate.determined_rule_needs_to_run = {
+                BuildSystem.toSystem($0!).determinedRuleNeedsToRun(BuildKey.construct(key: $1!), reason: $2, inputRule: $3.map { BuildKey.construct(key: $0) })
+            }
             _delegate.cycle_detected = {
                 var rules = [BuildKey]()
                 UnsafeBufferPointer(start: $1, count: Int($2)).forEach {
@@ -1253,6 +1269,10 @@ public final class BuildSystem {
 
     private func commandProcessFinished(_ command: Command, _ process: ProcessHandle, _ result: CommandExtendedResult) {
         delegate.commandProcessFinished(command, process: process, result: result)
+    }
+
+    private func determinedRuleNeedsToRun(_ rule: BuildKey, reason: RuleRunReason, inputRule: BuildKey?) {
+        delegate.determinedRuleNeedsToRun(rule, reason: reason, inputRule: inputRule)
     }
 
     private func cycleDetected(_ rules: [BuildKey]) {

@@ -201,6 +201,8 @@ public:
       messages.push_back(message);
     }
   }
+  
+  virtual void determinedRuleNeedsToRun(core::Rule* ruleNeedingToRun, core::Rule::RunReason reason, core::Rule* inputRule) { }
 };
 
 }

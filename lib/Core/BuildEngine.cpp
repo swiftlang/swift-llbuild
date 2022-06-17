@@ -47,6 +47,8 @@ void Rule::updateStatus(BuildEngine&, StatusKind) {}
 
 BuildEngineDelegate::~BuildEngineDelegate() {}
 
+void BuildEngineDelegate::determinedRuleNeedsToRun(Rule* ruleNeedingToRun, Rule::RunReason, Rule* inputRule) {}
+
 bool BuildEngineDelegate::shouldResolveCycle(const std::vector<Rule*>& items,
                                              Rule* candidateRule,
                                              Rule::CycleAction action) {
@@ -460,6 +462,7 @@ private:
       if (trace)
         trace->ruleNeedsToRunBecauseNeverBuilt(ruleInfo.rule.get());
       ruleInfo.state = RuleInfo::StateKind::NeedsToRun;
+      delegate.determinedRuleNeedsToRun(ruleInfo.rule.get(), Rule::RunReason::NeverBuilt, nullptr);
       return true;
     }
 
@@ -467,6 +470,7 @@ private:
       if (trace)
         trace->ruleNeedsToRunBecauseSignatureChanged(ruleInfo.rule.get());
       ruleInfo.state = RuleInfo::StateKind::NeedsToRun;
+      delegate.determinedRuleNeedsToRun(ruleInfo.rule.get(), Rule::RunReason::SignatureChanged, nullptr);
       return true;
     }
 
@@ -479,6 +483,7 @@ private:
       if (trace)
         trace->ruleNeedsToRunBecauseInvalidValue(ruleInfo.rule.get());
       ruleInfo.state = RuleInfo::StateKind::NeedsToRun;
+      delegate.determinedRuleNeedsToRun(ruleInfo.rule.get(), Rule::RunReason::InvalidValue, nullptr);
       return true;
     }
 
@@ -658,6 +663,7 @@ private:
             trace->ruleNeedsToRunBecauseInputRebuilt(
               ruleInfo.rule.get(), inputRuleInfo.rule.get());
           finishScanRequest(ruleInfo, RuleInfo::StateKind::NeedsToRun);
+          delegate.determinedRuleNeedsToRun(ruleInfo.rule.get(), Rule::RunReason::InputRebuilt, inputRuleInfo.rule.get());
           return;
         }
       }
@@ -1242,6 +1248,7 @@ private:
 
         // mark this rule as needs to run (forced)
         finishScanRequest(ruleInfo, RuleInfo::StateKind::NeedsToRun);
+        delegate.determinedRuleNeedsToRun(ruleInfo.rule.get(), Rule::RunReason::Forced, nullptr);
         ruleInfo.wasForced = true;
 
         return true;

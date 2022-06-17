@@ -315,6 +315,23 @@ public:
     SupplyPriorValue = 1
   };
 
+  enum class RunReason {
+    /// The rule has not built before.
+    NeverBuilt = 0,
+  
+    /// The rule's signature changed.
+    SignatureChanged = 1,
+  
+    /// The rule has an invalid value.
+    InvalidValue = 2,
+  
+    /// An input of the rule was rebuilt.
+    InputRebuilt = 3,
+  
+    /// The rule was forced, e.g. during cycle breaking.
+    Forced = 4
+  };
+
 public:
   /// The key computed by the rule.
   const KeyType key;
@@ -363,6 +380,15 @@ public:
   /// requested Key cannot be supplied, the delegate should provide a dummy rule
   /// that the client can translate into an error.
   virtual std::unique_ptr<Rule> lookupRule(const KeyType& key) = 0;
+
+  /// Called when it's been determined that a rule needs to run.
+  ///
+  ///  \param ruleNeedingToRun - The rule that needs to run.
+  ///
+  ///  \param reason - Describes why the rule needs to run. For example, because it has never run or because an input was rebuilt.
+  ///
+  ///  \param inputRule - If `reason` is `InputRebuilt`, the rule for the rebuilt input, else  `nullptr`.
+  virtual void determinedRuleNeedsToRun(Rule* ruleNeedingToRun, Rule::RunReason reason, Rule* inputRule);
 
   /// Called when a cycle is detected by the build engine to check if it should
   /// attempt to resolve the cycle and continue

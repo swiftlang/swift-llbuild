@@ -288,6 +288,15 @@ public:
   virtual void commandProcessFinished(Command*, ProcessHandle handle,
                                       const basic::ProcessResult& result);
 
+  /// Called when it's been determined that a rule needs to run.
+  ///
+  ///  \param ruleNeedingToRun - The rule that needs to run.
+  ///
+  ///  \param reason - Describes why the rule needs to run. For example, because it has never run or because an input was rebuilt.
+  ///
+  ///  \param inputRule - If `reason` is `InputRebuilt`, the rule for the rebuilt input, else  `nullptr`.
+  virtual void determinedRuleNeedsToRun(core::Rule* ruleNeedingToRun, core::Rule::RunReason reason, core::Rule* inputRule) override;
+
   /// Called when a cycle is detected by the build engine and it cannot make
   /// forward progress.
   ///

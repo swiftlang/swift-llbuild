@@ -471,6 +471,39 @@ public:
     uint64_t count() { return rules.size(); }
   };
 
+  static llb_rule_run_reason_t
+  convertRunReason(core::Rule::RunReason reason) {
+    switch (reason) {
+      case core::Rule::RunReason::NeverBuilt:
+        return llb_rule_run_reason_never_built;
+      case core::Rule::RunReason::SignatureChanged:
+        return llb_rule_run_reason_signature_changed;
+      case core::Rule::RunReason::InvalidValue:
+        return llb_rule_run_reason_invalid_value;
+      case core::Rule::RunReason::InputRebuilt:
+        return llb_rule_run_reason_input_rebuilt;
+      case core::Rule::RunReason::Forced:
+        return llb_rule_run_reason_forced;
+    }
+    assert(0 && "unknown reason");
+    return llb_rule_run_reason_invalid_value;
+  }
+
+  virtual void determinedRuleNeedsToRun(core::Rule* ruleNeedingToRun, core::Rule::RunReason reason, core::Rule* inputRule) override {
+    if (cAPIDelegate.determined_rule_needs_to_run) {
+      auto key = BuildKey::fromData(ruleNeedingToRun->key);
+      auto needsToRun = (llb_build_key_t *)new CAPIBuildKey(key);
+      llb_build_key_t * input;
+      if (inputRule) {
+        auto inputKey = BuildKey::fromData(inputRule->key);
+        input = (llb_build_key_t *)new CAPIBuildKey(inputKey);
+      } else {
+        input = nullptr;
+      }
+      cAPIDelegate.determined_rule_needs_to_run(cAPIDelegate.context, needsToRun, convertRunReason(reason), input);
+      llb_build_key_destroy(needsToRun);
+    }
+  }
 
   virtual void cycleDetected(const std::vector<core::Rule*>& items) override {
     CAPIRulesVector rules(items);

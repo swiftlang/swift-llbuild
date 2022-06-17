@@ -741,6 +741,8 @@ void BuildSystemFrontendDelegate::commandProcessStarted(Command*,
                                                         ProcessHandle) {
 }
 
+void BuildSystemFrontendDelegate::determinedRuleNeedsToRun(core::Rule* ruleNeedingToRun, core::Rule::RunReason reason, core::Rule* inputRule) {}
+
 bool BuildSystemFrontendDelegate::
 shouldResolveCycle(const std::vector<core::Rule*>& items,
                    core::Rule* candidateRule,

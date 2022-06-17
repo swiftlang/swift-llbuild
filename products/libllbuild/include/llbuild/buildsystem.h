@@ -203,6 +203,24 @@ typedef enum LLBUILD_ENUM_ATTRIBUTES {
     llb_quality_of_service_unspecified = 4
 } llb_quality_of_service_t LLBUILD_SWIFT_NAME(QualityOfService);
 
+/// Rule run reasons.
+typedef enum LLBUILD_ENUM_ATTRIBUTES {
+    /// The rule has never been built.
+    llb_rule_run_reason_never_built LLBUILD_SWIFT_NAME(neverBuilt) = 0,
+
+    /// The rule's signature has changed.
+    llb_rule_run_reason_signature_changed LLBUILD_SWIFT_NAME(signatureChanged) = 1,
+
+    /// The rule has an invalid value.
+    llb_rule_run_reason_invalid_value LLBUILD_SWIFT_NAME(invalidValue) = 2,
+
+    /// An input of the rule has been rebuilt.
+    llb_rule_run_reason_input_rebuilt LLBUILD_SWIFT_NAME(inputRebuilt) = 3,
+
+    /// The rule has never been built.
+    llb_rule_run_reason_forced LLBUILD_SWIFT_NAME(forced) = 4,
+} llb_rule_run_reason_t LLBUILD_SWIFT_NAME(RuleRunReason);
+
 /// Invocation parameters for a build system.
 typedef struct llb_buildsystem_invocation_t_ llb_buildsystem_invocation_t;
 struct llb_buildsystem_invocation_t_ {
@@ -479,6 +497,15 @@ typedef struct llb_buildsystem_delegate_t_ {
                                    llb_buildsystem_command_t* command,
                                    llb_buildsystem_process_t* process,
                                    const llb_buildsystem_command_extended_result_t* result);
+
+  /// Called when it's been determined that a rule needs to run.
+  ///
+  ///  Xparam rule_needing_to_run The rule that needs to run.
+  ///
+  ///  Xparam reason Describes why the rule needs to run. For example, because it has never run or because an input was rebuilt.
+  ///
+  ///  Xparam input_rule If `reason` is `InputRebuilt`, the rule for the rebuilt input, else  `nullptr`.
+  void (*determined_rule_needs_to_run)(void* context, llb_build_key_t* rule_needing_to_run, llb_rule_run_reason_t reason, llb_build_key_t* input_rule);
 
   /// Called when a cycle is detected by the build engine and it cannot make
   /// forward progress.
