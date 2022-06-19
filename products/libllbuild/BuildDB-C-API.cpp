@@ -179,12 +179,13 @@ const llb_data_t mapData(std::vector<uint8_t> input) {
   };
 }
 
-const llb_database_result_t mapResult(CAPIBuildDB &db, Result result) {
-  auto count = result.dependencies.size();
-  auto size = sizeof(llb_build_key_t*) * count;
+const llb_database_result_t mapResult(CAPIBuildDB &db, const Result &result) {
+  auto size = sizeof(llb_build_key_t*) * result.dependencies.size();
   llb_build_key_t **deps = (llb_build_key_t **)malloc(size);
   int index = 0;
   for (auto keyIDAndFlag: result.dependencies) {
+    if (keyIDAndFlag.isBarrier())
+      continue;
     std::string error;
     auto buildKey = db.buildKeyForIdentifier(keyIDAndFlag.keyID, &error);
     if (!error.empty() || buildKey == nullptr) {
@@ -203,7 +204,7 @@ const llb_database_result_t mapResult(CAPIBuildDB &db, Result result) {
     result.start,
     result.end,
     deps,
-    static_cast<uint32_t>(count)
+    static_cast<uint32_t>(index)
   };
 }
 
