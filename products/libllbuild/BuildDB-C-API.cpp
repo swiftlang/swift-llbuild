@@ -244,9 +244,9 @@ public:
 
 }
 
-void llb_database_destroy_result(llb_database_result_t *result) {\
+void llb_database_destroy_result(llb_database_result_t *result) {
   llb_data_destroy(&result->value);
-  delete result->dependencies;
+  free(result->dependencies);
 }
 
 const llb_database_t* llb_database_open(
