@@ -67,6 +67,10 @@ public:
   /// Representation that doesn't denote a user-supplied value.
   static constexpr KeyID novalue() { return KeyID(); }
 
+  constexpr bool isNoValue() const {
+    return _value == 0;
+  }
+
   /// Representation that denotes an explicitly invalid value.
   static constexpr KeyID invalid() {
     KeyID k;

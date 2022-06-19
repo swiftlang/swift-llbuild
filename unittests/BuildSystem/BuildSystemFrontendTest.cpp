@@ -410,10 +410,7 @@ commands:
     BuildSystemFrontend frontend(delegate, invocation, createLocalFileSystem());
     ASSERT_TRUE(frontend.build("<all>"));
 
-    // FIXME: This build graph triggers degenerate build behavior. Due to the
-    // way we scan tasks, we end up waiting for the first task to resolve before
-    // we unlock the other two branches to run in parallel.
-    ASSERT_EQ(delegate.maxTaskParallism(), 2);
+    ASSERT_EQ(delegate.maxTaskParallism(), 3);
   }
 }
 
