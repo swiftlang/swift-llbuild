@@ -69,11 +69,11 @@ class BuildKeyTests: XCTestCase {
   }
 
   func testDirectoryTreeStructureSignature() {
-    let directoryTreeStructureSignature = BuildKey.DirectoryTreeStructureSignature(path: "/foo/bar")
+    let directoryTreeStructureSignature = BuildKey.DirectoryTreeStructureSignature(path: "/foo/bar", filters: [".build"])
     XCTAssertEqual(directoryTreeStructureSignature.kind, .directoryTreeStructureSignature)
     XCTAssertEqual(directoryTreeStructureSignature.path, "/foo/bar")
+    XCTAssertEqual(directoryTreeStructureSignature.filters, [".build"])
     XCTAssertFalse(directoryTreeStructureSignature.keyData.isEmpty)
-    XCTAssertEqual(directoryTreeStructureSignature.key, "/foo/bar")
     XCTAssertEqual(directoryTreeStructureSignature, directoryTreeStructureSignature)
     XCTAssertNotEqual(directoryTreeStructureSignature, BuildKey.DirectoryTreeStructureSignature(path: "/foo/bar2"))
   }
