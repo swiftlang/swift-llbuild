@@ -2169,8 +2169,6 @@ public:
 
       // Otherwise, collect the discovered dependencies, if used.
       if (!depsPath.empty()) {
-        // FIXME: Really want this job to go into a high priority fifo queue
-        // so as to not hold up downstream tasks.
         ti.spawn({ this, [this, ti, completionFn, result](QueueJobContext* context) mutable {
           if (!processDiscoveredDependencies(ti, context)) {
             // If we were unable to process the dependencies output, report a
@@ -2181,7 +2179,7 @@ public:
           }
           if (completionFn.hasValue())
             completionFn.getValue()(result);
-        }});
+        }}, QueueJobPriority::High);
         return;
       }
 
