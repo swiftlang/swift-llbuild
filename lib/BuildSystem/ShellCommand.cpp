@@ -346,8 +346,6 @@ void ShellCommand::executeExternalCommand(
 
     // Collect the discovered dependencies, if used.
     if (!depsPaths.empty()) {
-      // FIXME: Really want this job to go into a high priority fifo queue
-      // so as to not hold up downstream tasks.
       ti.spawn(QueueJob{ this, [this, &system, ti, completionFn, result](QueueJobContext* context) mutable {
             if (!processDiscoveredDependencies(system, ti, context)) {
               // If we were unable to process the dependencies output, report a
@@ -358,7 +356,7 @@ void ShellCommand::executeExternalCommand(
             }
             if (completionFn.hasValue())
               completionFn.getValue()(result);
-          }});
+          }}, QueueJobPriority::High);
       return;
     }
 
