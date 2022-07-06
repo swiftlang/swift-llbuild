@@ -126,6 +126,7 @@ class BuildEngineImpl : public BuildDBDelegate {
   /// The mutex that protects access to inputRequests
   std::mutex inputRequestsMutex;
 
+  struct RuleScanRecord;
 
   /// The queue of rules being scanned.
   struct RuleScanRequest {
@@ -143,6 +144,8 @@ class BuildEngineImpl : public BuildDBDelegate {
 
     /// The inputs that we are waiting for to finish for the current barrier
     std::vector<unsigned> pendingInputs;
+    /// Scan requests we are have registered for requeue on
+    std::unordered_set<RuleScanRecord*> waitingInputRequests;
 
     /// Whether the cached rule is executed in order-only way.
     bool orderOnly = false;
@@ -624,6 +627,8 @@ private:
 
     std::vector<unsigned> newPendingInputs;
 
+    request.waitingInputRequests.clear();
+
     auto processInput = [&](unsigned inputIndex) -> bool {
       // Look up the input rule info, if not yet cached.
       if (!request.inputRuleInfo || request.cachedInputIndex != inputIndex) {
@@ -645,8 +650,10 @@ private:
         if (trace)
           trace->ruleScanningDeferredOnInput(ruleInfo.rule.get(),
                                              inputRuleInfo.rule.get());
-        inputRuleInfo.getPendingScanRecord()
-          ->deferredScanRequests.insert(requestPtr);
+
+        auto* pendingScanRecord = inputRuleInfo.getPendingScanRecord();
+        pendingScanRecord->deferredScanRequests.insert(requestPtr);
+        request.waitingInputRequests.insert(pendingScanRecord);
 
         newPendingInputs.push_back(inputIndex);
         return false;
@@ -661,12 +668,12 @@ private:
       // If the input isn't already available, enqueue this scan request on the
       // input.
       if (!isAvailable) {
+        auto* pendingTaskInfo = inputRuleInfo.getPendingTaskInfo();
         if (trace)
           trace->ruleScanningDeferredOnTask(
-            ruleInfo.rule.get(), inputRuleInfo.getPendingTaskInfo()->task.get());
+            ruleInfo.rule.get(), pendingTaskInfo->task.get());
         assert(inputRuleInfo.isInProgress());
-        inputRuleInfo.getPendingTaskInfo()->
-            deferredScanRequests.insert(requestPtr);
+        pendingTaskInfo->deferredScanRequests.insert(requestPtr);
 
         newPendingInputs.push_back(inputIndex);
         return false;
@@ -749,11 +756,16 @@ private:
     // Wake up all of the pending scan requests.
     for (auto& requestPointer: scanRecord->deferredScanRequests) {
       auto& request = *requestPointer;
+      if (!request.waitingInputRequests.erase(scanRecord))
+        continue; // Already processed
+
       if (request.isInScanQueue || !request.ruleInfo->isScanning())
         continue;
 
-      request.isInScanQueue = true;
-      ruleInfosToScan.push_back(std::move(requestPointer));
+      if (request.waitingInputRequests.empty() || newState == RuleInfo::StateKind::NeedsToRun) {
+        request.isInScanQueue = true;
+        ruleInfosToScan.push_back(std::move(requestPointer));
+      }
     }
 
     // Wake up all of the input requests on this rule.
