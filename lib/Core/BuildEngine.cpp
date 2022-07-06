@@ -159,7 +159,7 @@ class BuildEngineImpl : public BuildDBDelegate {
     std::vector<TaskInputRequest> pausedInputRequests;
     /// The vector of deferred scan requests, for rules which are waiting on
     /// this one to be scanned.
-    std::vector<std::shared_ptr<RuleScanRequest>> deferredScanRequests;
+    std::unordered_set<std::shared_ptr<RuleScanRequest>> deferredScanRequests;
   };
 
   /// Wrapper for information specific to a single rule.
@@ -325,7 +325,7 @@ class BuildEngineImpl : public BuildDBDelegate {
     /// this one to be scanned.
     //
     // FIXME: As above, this structure has redundancy in it.
-    std::vector<std::shared_ptr<RuleScanRequest>> deferredScanRequests;
+    std::unordered_set<std::shared_ptr<RuleScanRequest>> deferredScanRequests;
     /// The rule that this task is computing.
     RuleInfo* forRuleInfo = nullptr;
     /// Used to sequence batches of inputs that can be scanned in parallel
@@ -646,7 +646,7 @@ private:
           trace->ruleScanningDeferredOnInput(ruleInfo.rule.get(),
                                              inputRuleInfo.rule.get());
         inputRuleInfo.getPendingScanRecord()
-          ->deferredScanRequests.push_back(requestPtr);
+          ->deferredScanRequests.insert(requestPtr);
 
         newPendingInputs.push_back(inputIndex);
         return false;
@@ -666,7 +666,7 @@ private:
             ruleInfo.rule.get(), inputRuleInfo.getPendingTaskInfo()->task.get());
         assert(inputRuleInfo.isInProgress());
         inputRuleInfo.getPendingTaskInfo()->
-            deferredScanRequests.push_back(requestPtr);
+            deferredScanRequests.insert(requestPtr);
 
         newPendingInputs.push_back(inputIndex);
         return false;
@@ -749,12 +749,11 @@ private:
     // Wake up all of the pending scan requests.
     for (auto& requestPointer: scanRecord->deferredScanRequests) {
       auto& request = *requestPointer;
-      if (!request.isInScanQueue && request.ruleInfo->isScanning()) {
-        request.isInScanQueue = true;
-        ruleInfosToScan.push_back(std::move(requestPointer));
-      } else {
-        requestPointer.reset();
-      }
+      if (request.isInScanQueue || !request.ruleInfo->isScanning())
+        continue;
+
+      request.isInScanQueue = true;
+      ruleInfosToScan.push_back(std::move(requestPointer));
     }
 
     // Wake up all of the input requests on this rule.
@@ -1088,12 +1087,11 @@ private:
         // Wake up all of the pending scan requests.
         for (auto& requestPointer: taskInfo->deferredScanRequests) {
           auto& request = *requestPointer;
-          if (!request.isInScanQueue && request.ruleInfo->isScanning()) {
-            request.isInScanQueue = true;
-            ruleInfosToScan.push_back(std::move(requestPointer));
-          } else {
-            requestPointer.reset();
-          }
+          if (request.isInScanQueue || !request.ruleInfo->isScanning())
+            continue;
+
+          request.isInScanQueue = true;
+          ruleInfosToScan.push_back(std::move(requestPointer));
         }
 
         // Push all pending input requests onto the work queue.
