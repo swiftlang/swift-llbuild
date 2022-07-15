@@ -46,7 +46,7 @@ public protocol ProcessDelegate {
     /// Called to report a command processes' (merged) standard output and error.
     ///
     /// - output: The process output.
-    func processHadOutput(output: String)
+    func processHadOutput(output: [UInt8])
     
     /// Called when a command's job has finished executing an external process.
     ///
@@ -64,7 +64,7 @@ private class ProcessDelegateWrapper {
             context: Unmanaged.passUnretained(self).toOpaque(),
             process_started: { BuildSystem.toProcessDelegateWrapper($0!).delegate.processStarted(pid: $1) },
             process_had_error: { BuildSystem.toProcessDelegateWrapper($0!).delegate.processHadError(error: stringFromData($1!.pointee)) },
-            process_had_output: { BuildSystem.toProcessDelegateWrapper($0!).delegate.processHadOutput(output: stringFromData($1!.pointee)) },
+            process_had_output: { BuildSystem.toProcessDelegateWrapper($0!).delegate.processHadOutput(output: bytesFromData($1!.pointee)) },
             process_finished: { BuildSystem.toProcessDelegateWrapper($0!).delegate.processFinished(result: CommandExtendedResult($1!)) }
         )
         self.wrappedDelegate = wrappedDelegate
