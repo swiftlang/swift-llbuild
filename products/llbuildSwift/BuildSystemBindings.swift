@@ -145,9 +145,6 @@ public struct JobContext {
 }
 
 public protocol Tool: AnyObject {
-    @available(*, deprecated, message: "Use the overload that returns an Optional")
-    func createCommand(_ name: String) -> ExternalCommand
-
     /// Called to create a specific command instance of this tool.
     func createCommand(_ name: String) -> ExternalCommand?
 
@@ -156,11 +153,6 @@ public protocol Tool: AnyObject {
 }
 
 public extension Tool {
-    @available(*, deprecated, message: "Use the overload that returns an Optional")
-    func createCommand(_ name: String) -> ExternalCommand? {
-        return createCommand(name) as ExternalCommand
-    }
-
     // Default implementation to allow clients to avoid declaring this method if not required.
     func createCustomCommand(_ buildKey: BuildKey.CustomTask) -> ExternalCommand? {
         return nil
