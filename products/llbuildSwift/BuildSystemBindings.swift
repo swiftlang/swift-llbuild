@@ -244,6 +244,9 @@ public protocol ExternalCommand: AnyObject {
     /// Format of the dependency files listed in `dependencyPaths`.
     var depedencyDataFormat: DependencyDataFormat { get }
 
+    /// Optional. The command's working directory. Used to resolve relative paths in dependency files.
+    var workingDirectory: String? { get }
+
     /// Called when the command is starting. Commands can request dynamic dependencies using the
     /// commandInterface object.
     ///
@@ -347,6 +350,7 @@ public extension ExternalCommand {
 public extension ExternalCommand {
     var depedencyDataFormat: DependencyDataFormat { .unused }
     var dependencyPaths: [String] { [] }
+    var workingDirectory: String? { nil }
     func start(_ command: Command, _ commandInterface: BuildSystemCommandInterface) {}
     func provideValue(_ command: Command, _ commandInterface: BuildSystemCommandInterface, _ buildValue: BuildValue, _ inputID: UInt) {}
 }
@@ -409,6 +413,15 @@ private final class CommandWrapper {
             } else {            
                 collection(context, depsKey, &paths, paths.count)
             }
+        }
+        if let workingDirectory = command.workingDirectory {
+            var workingDirectoryKey = copiedDataFromBytes(Array("working-directory".utf8))
+            var workingDirectoryValue = copiedDataFromBytes(Array(workingDirectory.utf8))
+            defer {
+                llb_data_destroy(&workingDirectoryKey)
+                llb_data_destroy(&workingDirectoryValue)
+            }
+            single(context, workingDirectoryKey, workingDirectoryValue)
         }
     }
 

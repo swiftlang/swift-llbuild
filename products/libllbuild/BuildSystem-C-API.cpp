@@ -703,6 +703,9 @@ class CAPIExternalCommand : public ExternalCommand {
   
   /// The paths to the dependency output files, if used.
   SmallVector<std::string, 1> depsPaths{};
+
+  /// The working directory used to resolve relative paths in dependency files.
+  std::string workingDirectory;
   
   /// Format of the dependencies in `depsPaths`.
   /// We default to `dependencyinfo` for legacy behavior since not all tasks specify the format.
@@ -798,10 +801,19 @@ class CAPIExternalCommand : public ExternalCommand {
           ti.discoveredDependency(BuildKey::makeNode(unescapedWord).toData());
           system.getDelegate().commandFoundDiscoveredDependency(command, unescapedWord, DiscoveredDependencyKind::Input);
           return;
-        } else {
-          system.getDelegate().commandHadError(command, "Dependency for " + std::string(command->getName()) + " is not absolute (" + std::string(unescapedWord) + ").");
-          return;
         }
+
+        // Generate absolute path
+        //
+        // NOTE: This is making the assumption that relative paths coming in a
+        // dependency file are in relation to the explictly set working
+        // directory, or the current working directory when it has not been set.
+        SmallString<PATH_MAX> absPath = StringRef(command->workingDirectory);
+        llvm::sys::path::append(absPath, unescapedWord);
+        llvm::sys::fs::make_absolute(absPath);
+
+        ti.discoveredDependency(BuildKey::makeNode(absPath).toData());
+        system.getDelegate().commandFoundDiscoveredDependency(command, absPath, DiscoveredDependencyKind::Input);
       }
 
       virtual void actOnRuleStart(StringRef name,
@@ -829,6 +841,13 @@ class CAPIExternalCommand : public ExternalCommand {
       } else {
         return false;
       }
+    } else if (name == "working-directory") {
+      // Ensure the working directory is absolute. This will make sure any
+      // relative directories are interpreted as relative to the CWD at the time
+      // the rule is defined.
+      SmallString<PATH_MAX> wd = value;
+      llvm::sys::fs::make_absolute(wd);
+      workingDirectory = StringRef(wd);
     } else {
       return false;
     }
