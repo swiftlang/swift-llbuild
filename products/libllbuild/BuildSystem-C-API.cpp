@@ -101,6 +101,10 @@ public:
     return cAPIDelegate.fs_remove(cAPIDelegate.context, path.c_str());
   }
 
+  virtual basic::FileChecksum getFileChecksum(const std::string& path) override {
+    return localFileSystem->getFileChecksum(path);
+  }
+
   virtual basic::FileInfo getFileInfo(const std::string& path) override {
     if (!cAPIDelegate.fs_get_file_info) {
       return localFileSystem->getFileInfo(path);

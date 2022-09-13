@@ -188,7 +188,7 @@ private:
   union {
     /// The file info for the rule output, for existing inputs and successful
     /// commands with a single output.
-    FileInfo asOutputInfo;
+    FileInfo asOutputInfo { };
 
     /// The file info for successful commands with multiple outputs.
     FileInfo* asOutputInfos;

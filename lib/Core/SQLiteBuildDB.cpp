@@ -66,6 +66,7 @@ namespace {
 
 class SQLiteBuildDB : public BuildDB {
   /// Version History:
+  /// * 16: Add checksum field to FileInfo.
   /// * 15: Add barriers in dependency list.
   /// * 14: Filtered directory tree structure nodes, related build key changes
   /// * 13: Tagging dependencies with single-use flag.
@@ -78,7 +79,7 @@ class SQLiteBuildDB : public BuildDB {
   /// * 6: Added `ordinal` field for dependencies.
   /// * 5: Switched to using `WITHOUT ROWID` for dependencies.
   /// * 4: Pre-history
-  static const int currentSchemaVersion = 15;
+  static const int currentSchemaVersion = 16;
 
   std::string path;
   uint32_t clientSchemaVersion;

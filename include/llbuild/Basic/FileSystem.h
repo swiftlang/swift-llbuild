@@ -20,6 +20,9 @@
 #include "llvm/Support/ErrorOr.h"
 
 #include <memory>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 
 namespace llvm {
 
@@ -66,14 +69,20 @@ public:
   ///
   /// \returns True if the item was removed, false otherwise.
   virtual bool remove(const std::string& path) = 0;
-  
+
+  /// Get checksum of the given path in the file system.
+  ///
+  /// \returns The FileChecksum for the given path, which will be missing if the
+  /// path does not exist (or any error was encountered).
+  virtual FileChecksum getFileChecksum(const std::string& path) = 0;
+
   /// Get the information to represent the state of the given path in the file
   /// system.
   ///
   /// \returns The FileInfo for the given path, which will be missing if the
   /// path does not exist (or any error was encountered).
   virtual FileInfo getFileInfo(const std::string& path) = 0;
-  
+
   /// Get the information to represent the state of the given path in the file
   /// system, without looking through symbolic links.
   ///
@@ -126,6 +135,10 @@ public:
     return impl->remove(path);
   }
 
+  virtual FileChecksum getFileChecksum(const std::string& path) override {
+    return impl->getFileChecksum(path);
+  }
+
   virtual FileInfo getFileInfo(const std::string& path) override {
     auto info = impl->getFileInfo(path);
 
@@ -145,6 +158,88 @@ public:
     info.device = 0;
     info.inode = 0;
 
+    return info;
+  }
+
+  virtual bool createSymlink(const std::string& src, const std::string& target) override {
+    return impl->createSymlink(src, target);
+  }
+};
+
+/// Checksum-only filesystem wrapper
+class ChecksumOnlyFileSystem : public FileSystem {
+private:
+  std::unique_ptr<FileSystem> impl;
+
+public:
+  explicit ChecksumOnlyFileSystem(std::unique_ptr<FileSystem> fs)
+    : impl(std::move(fs))
+  {
+  }
+
+  ChecksumOnlyFileSystem(const FileSystem&) LLBUILD_DELETED_FUNCTION;
+  void operator=(const ChecksumOnlyFileSystem&) LLBUILD_DELETED_FUNCTION;
+  ChecksumOnlyFileSystem &operator=(ChecksumOnlyFileSystem&& rhs) LLBUILD_DELETED_FUNCTION;
+
+  static std::unique_ptr<FileSystem> from(std::unique_ptr<FileSystem> fs);
+
+
+  virtual bool
+  createDirectory(const std::string& path) override {
+    return impl->createDirectory(path);
+  }
+
+  virtual bool
+  createDirectories(const std::string& path) override {
+    return impl->createDirectories(path);
+  }
+
+  virtual std::unique_ptr<llvm::MemoryBuffer>
+  getFileContents(const std::string& path) override;
+
+  virtual bool remove(const std::string& path) override {
+    return impl->remove(path);
+  }
+
+  virtual FileChecksum getFileChecksum(const std::string& path) override {
+    return impl->getFileChecksum(path);
+  }
+
+  virtual FileInfo getFileInfo(const std::string& path) override {
+    auto info = impl->getFileInfo(path);
+
+    info.device = 0;
+    info.inode = 0;
+    info.modTime = FileTimestamp();
+    info.modTime.seconds = 0;
+    info.modTime.nanoseconds = 0;
+
+    info.checksum = impl->getFileChecksum(path);
+
+    return info;
+  }
+
+  virtual FileInfo getLinkInfo(const std::string& path) override {
+    auto info = impl->getLinkInfo(path);
+
+    info.device = 0;
+    info.inode = 0;
+    info.modTime = FileTimestamp();
+    info.modTime.seconds = 0;
+    info.modTime.nanoseconds = 0;
+
+#ifndef _WIN32
+    char buff[PATH_MAX];
+    ssize_t len = ::readlink(path.c_str(), buff, sizeof(buff)-1);
+    if (len != -1) {
+      buff[len] = '\0';
+      PlatformSpecificHasher(std::string(buff)).readPathStringAndDigest(info.checksum);
+    } else {
+      info.checksum = {0};
+    }
+#else
+    info.checksum = impl->getFileChecksum(path);
+#endif
     return info;
   }
 

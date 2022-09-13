@@ -1,0 +1,91 @@
+# Check basic building functionality with the checksum-only file system.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: echo magic string > "%t.build/raw.txt"
+# RUN: cat %s > "%t.build/build.llbuild"
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build --trace %t.trace > %t.out
+# RUN: %{FileCheck} --input-file=%t.out %s
+#
+# CHECK: Create magic.txt from raw.txt
+# CHECK: Extract first word
+# CHECK: Capitalize first word
+# CHECK: MAGIC
+
+# Check the engine trace.
+#
+# RUN: %{FileCheck} --input-file=%t.trace %s --check-prefix CHECK-TRACE
+#
+# CHECK-TRACE: "build-started"
+# CHECK-TRACE: "new-rule", "R1", "Tbasic"
+# CHECK-TRACE: "new-rule", "R2", "Nfinal.txt"
+# CHECK-TRACE: "new-rule", "R3", "Ccapitalize-first-word"
+# CHECK-TRACE: "new-rule", "R4", "Nfirst-word.txt"
+# CHECK-TRACE: "new-rule", "R5", "Cextract-first-word"
+# CHECK-TRACE: "new-rule", "R6", "Nmagic.txt"
+# CHECK-TRACE: "new-rule", "R7", "Cread-magic-file"
+# CHECK-TRACE: "new-rule", "R8", "Nraw.txt"
+# CHECK-TRACE: "build-ended"
+
+# Check that a null build does nothing.
+#
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build --trace %t.trace > %t2.out
+# RUN: echo "PREVENT-EMPTY-FILE" >> %t2.out
+# RUN: %{FileCheck} --input-file=%t2.out %s --check-prefix=CHECK-REBUILD
+#
+# CHECK-REBUILD-NOT: Create magic.txt from raw.txt
+# CHECK-REBUILD-NOT: Extract first word
+# CHECK-REBUILD-NOT: Capitalize first word
+
+# Check that "Capitalize first word" is not executed when string is modified but the first word is unchanged.
+#
+# RUN: echo magic updated string > "%t.build/raw.txt"
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t3.out
+# RUN: %{FileCheck} --input-file=%t3.out %s --check-prefix=CHECK-REBUILD-MODIFIED
+#
+# CHECK-REBUILD-MODIFIED: Create magic.txt from raw.txt
+# CHECK-REBUILD-MODIFIED: Extract first word
+# CHECK-REBUILD-MODIFIED-NOT: Capitalize first word
+
+# Check that "Capitalize first word" is executed when the first word is changed.
+#
+# RUN: echo supermagic string > "%t.build/raw.txt"
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build > %t4.out
+# RUN: %{FileCheck} --input-file=%t4.out %s --check-prefix=CHECK-REBUILD-MODIFIED-MODIFIED
+#
+# CHECK-REBUILD-MODIFIED-MODIFIED: Create magic.txt from raw.txt
+# CHECK-REBUILD-MODIFIED-MODIFIED: Extract first word
+# CHECK-REBUILD-MODIFIED-MODIFIED: Capitalize first word
+# CHECK-REBUILD-MODIFIED-MODIFIED: SUPERMAGIC
+
+client:
+  name: basic
+  file-system: checksum-only
+
+targets:
+  basic: ["final.txt"]
+
+# define the default target to execute when this manifest is loaded.
+default: basic
+
+commands:
+  read-magic-file:
+    tool: shell
+    inputs: ["raw.txt"]
+    outputs: ["magic.txt"]
+    description: "Create magic.txt from raw.txt"
+    args: "cat raw.txt > magic.txt"
+
+  extract-first-word:
+    tool: shell
+    inputs: ["magic.txt"]
+    outputs: ["first-word.txt"]
+    description: "Extract first word"
+    args: "cat magic.txt | awk '{print $1;}' > first-word.txt"
+
+  capitalize-first-word:
+    tool: shell
+    inputs: ["first-word.txt"]
+    outputs: ["final.txt"]
+    description: "Capitalize first word"
+    args: "cat first-word.txt | tr a-z A-Z > final.txt; cat final.txt"

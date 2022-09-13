@@ -137,6 +137,11 @@ std::unique_ptr<llvm::MemoryBuffer>
 DeviceAgnosticFileSystem::getFileContents(const std::string& path) {
   return impl->getFileContents(path);
 }
+
+std::unique_ptr<llvm::MemoryBuffer>
+ChecksumOnlyFileSystem::getFileContents(const std::string& path) {
+  return impl->getFileContents(path);
+}
 namespace {
 
 class LocalFileSystem : public FileSystem {
@@ -210,7 +215,11 @@ public:
 
     return false;
   }
-  
+
+  virtual FileChecksum getFileChecksum(const std::string& path) override {
+    return FileChecksum::getChecksumForPath(path);
+  }
+
   virtual FileInfo getFileInfo(const std::string& path) override {
     return FileInfo::getInfoForPath(path);
   }
@@ -234,4 +243,9 @@ std::unique_ptr<FileSystem> basic::createLocalFileSystem() {
 std::unique_ptr<FileSystem>
 basic::DeviceAgnosticFileSystem::from(std::unique_ptr<FileSystem> fs) {
   return llvm::make_unique<DeviceAgnosticFileSystem>(std::move(fs));
+}
+
+std::unique_ptr<FileSystem>
+basic::ChecksumOnlyFileSystem::from(std::unique_ptr<FileSystem> fs) {
+  return llvm::make_unique<ChecksumOnlyFileSystem>(std::move(fs));
 }
