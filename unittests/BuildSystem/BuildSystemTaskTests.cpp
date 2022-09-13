@@ -87,6 +87,16 @@ public:
     return realFS->getLinkInfo(path);
   }
 
+  virtual FileChecksum getFileChecksum(const std::string& path) override {
+    FileInfo info = realFS->getFileInfo(path);
+    if (info.isMissing()) {
+      std::unique_lock<std::mutex> lock(missingPathsMutex);
+      missingPaths.push_back(path);
+    }
+    FileChecksum checksum = realFS->getFileChecksum(path);
+    return checksum;
+  }
+
   virtual bool createSymlink(const std::string& src, const std::string& target) override {
     return realFS->createSymlink(src, target);
   }
@@ -111,6 +121,10 @@ public:
 
   virtual bool remove(const std::string& path) override {
     return realFS.remove(path);
+  }
+
+  virtual FileChecksum getFileChecksum(const std::string& path) override {
+    return realFS.getFileChecksum(path);
   }
 
   virtual FileInfo getFileInfo(const std::string& path) override {

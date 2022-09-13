@@ -16,6 +16,9 @@
 
 #include <cassert>
 #include <cstring>
+#include <fstream>
+#include <cstdio>
+#include <cerrno>
 
 using namespace llbuild;
 using namespace llbuild::basic;
@@ -59,6 +62,26 @@ FileInfo FileInfo::getInfoForPath(const std::string& path, bool asLink) {
   if (result.isMissing()) {
     result.modTime.nanoseconds = 1;
     assert(!result.isMissing());
+  }
+
+  return result;
+}
+
+FileChecksum FileChecksum::getChecksumForPath(const std::string& path) {
+  FileChecksum result;
+
+  FileInfo fileInfo = FileInfo::getInfoForPath(path);
+  if (fileInfo.isMissing()) {
+    memset(result.bytes, 0, sizeof(result.bytes));
+  } else if (fileInfo.isDirectory()) {
+    result.bytes[0] = 1;
+  } else {
+    PlatformSpecificHasher hasher(path);
+    if (hasher.readAndDigest()) {
+      hasher.copy(result.bytes);
+    } else {
+      memset(result.bytes, 0, sizeof(result.bytes));
+    }
   }
 
   return result;
