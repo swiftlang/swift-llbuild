@@ -18,6 +18,7 @@
 #include "llbuild/Core/DependencyInfoParser.h"
 #include "llbuild/Core/MakefileDepsParser.h"
 
+#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/Path.h"
 
@@ -239,7 +240,7 @@ bool ShellCommand::configureAttribute(const ConfigureContext& ctx, StringRef nam
 #endif
     args.push_back(ctx.getDelegate().getInternedString(value));
   } else if (name == "signature") {
-    signatureData = value;
+    signatureData = value.str();
   } else if (name == "deps") {
     depsPaths.clear();
     depsPaths.emplace_back(value);
@@ -273,7 +274,7 @@ bool ShellCommand::configureAttribute(const ConfigureContext& ctx, StringRef nam
     // the rule is defined.
     SmallString<PATH_MAX> wd = value;
     llvm::sys::fs::make_absolute(wd);
-    workingDirectory = StringRef(wd);
+    workingDirectory = wd.str().str();
   } else if (name == "control-enabled") {
     if (value != "true" && value != "false") {
       ctx.error("invalid value: '" + value + "' for attribute '" +
@@ -304,7 +305,8 @@ bool ShellCommand::configureAttribute(const ConfigureContext& ctx, StringRef nam
     }
   } else if (name == "deps") {
     depsPaths.clear();
-    depsPaths.insert(depsPaths.begin(), values.begin(), values.end());
+    auto copiedPaths = std::vector<std::string>(values.begin(), values.end());
+    depsPaths.insert(depsPaths.begin(), copiedPaths.begin(), copiedPaths.end());
   } else {
     return ExternalCommand::configureAttribute(ctx, name, values);
   }

@@ -1,9 +1,8 @@
 //===- llvm/ADT/AllocatorList.h - Custom allocator list ---------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -111,21 +110,14 @@ private:
 
     template <class OtherValueT, class OtherIteratorBase>
     IteratorImpl(const IteratorImpl<OtherValueT, OtherIteratorBase> &X,
-                 typename std::enable_if<std::is_convertible<
-                     OtherIteratorBase, IteratorBase>::value>::type * = nullptr)
+                 std::enable_if_t<std::is_convertible<
+                     OtherIteratorBase, IteratorBase>::value> * = nullptr)
         : base_type(X.wrapped()) {}
 
     ~IteratorImpl() = default;
 
     reference operator*() const { return base_type::wrapped()->V; }
     pointer operator->() const { return &operator*(); }
-
-    friend bool operator==(const IteratorImpl &L, const IteratorImpl &R) {
-      return L.wrapped() == R.wrapped();
-    }
-    friend bool operator!=(const IteratorImpl &L, const IteratorImpl &R) {
-      return !(L == R);
-    }
   };
 
 public:

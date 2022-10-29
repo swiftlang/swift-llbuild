@@ -1,9 +1,8 @@
 //===--- Allocator.cpp - Simple memory allocation abstraction -------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -27,7 +26,7 @@ void printBumpPtrAllocatorStats(unsigned NumSlabs, size_t BytesAllocated,
          << " (includes alignment, etc)\n";
 }
 
-} // End namespace detail.
+} // namespace detail
 
 void PrintRecyclerStats(size_t Size,
                         size_t Align,
@@ -37,4 +36,4 @@ void PrintRecyclerStats(size_t Size,
          << "Number of elements free for recycling: " << FreeListSize << '\n';
 }
 
-}
+} // namespace llvm

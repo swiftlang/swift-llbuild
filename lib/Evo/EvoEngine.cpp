@@ -15,6 +15,8 @@
 #include "llbuild/Basic/ExecutionQueue.h"
 #include "llbuild/Basic/ShellUtility.h"
 
+#include "llvm/ADT/ArrayRef.h"
+
 #include "llvm/Support/raw_ostream.h"
 
 #include <cassert>

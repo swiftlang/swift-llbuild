@@ -30,6 +30,7 @@
 
 #include "llvm/ADT/Hashing.h"
 #include "llvm/ADT/SmallString.h"
+#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/Path.h"
@@ -847,7 +848,7 @@ class CAPIExternalCommand : public ExternalCommand {
       // the rule is defined.
       SmallString<PATH_MAX> wd = value;
       llvm::sys::fs::make_absolute(wd);
-      workingDirectory = StringRef(wd);
+      workingDirectory = wd.str().str();
     } else {
       return false;
     }
@@ -858,7 +859,8 @@ class CAPIExternalCommand : public ExternalCommand {
                                   ArrayRef<StringRef> values) {
     if (name == "deps") {
       depsPaths.clear();
-      depsPaths.insert(depsPaths.begin(), values.begin(), values.end());
+      auto copiedPaths = std::vector<std::string>(values.begin(), values.end());
+      depsPaths.insert(depsPaths.begin(), copiedPaths.begin(), copiedPaths.end());
     } else {
       return false;
     }

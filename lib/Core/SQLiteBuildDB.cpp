@@ -993,7 +993,7 @@ std::unique_ptr<BuildDB> core::createSQLiteBuildDB(StringRef path,
                                                    uint32_t clientSchemaVersion,
                                                    bool recreateUnmatchedVersion,
                                                    std::string *error_out) {
-  return llvm::make_unique<SQLiteBuildDB>(path, clientSchemaVersion, recreateUnmatchedVersion);
+  return std::make_unique<SQLiteBuildDB>(path, clientSchemaVersion, recreateUnmatchedVersion);
 }
 
 #undef checkSQLiteResultOKReturnFalse

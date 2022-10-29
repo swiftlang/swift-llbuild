@@ -1,9 +1,8 @@
 //===-- Debug.cpp - An easy way to add debug output to your code ----------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -30,6 +29,8 @@
 #include "llvm/Support/Signals.h"
 #include "llvm/Support/circular_raw_ostream.h"
 #include "llvm/Support/raw_ostream.h"
+
+#include "DebugOptions.h"
 
 #undef isCurrentDebugType
 #undef setCurrentDebugType
@@ -78,26 +79,34 @@ void setCurrentDebugTypes(const char **Types, unsigned Count) {
 } // namespace llvm
 
 // All Debug.h functionality is a no-op in NDEBUG mode.
-//
-// LLBUILD-ONLY: Debug.h macros are disabled for llbuild (they inject static
-// constructors into library code).
-#if !defined(NDEBUG) && defined(LLVM_CODE_DISABLED_FOR_LLBUILD)
+#ifndef NDEBUG
 
-// -debug - Command line option to enable the DEBUG statements in the passes.
-// This flag may only be enabled in debug builds.
-static cl::opt<bool, true>
-Debug("debug", cl::desc("Enable debug output"), cl::Hidden,
-      cl::location(DebugFlag));
+namespace {
+struct CreateDebug {
+  static void *call() {
+    return new cl::opt<bool, true>("debug", cl::desc("Enable debug output"),
+                                   cl::Hidden, cl::location(DebugFlag));
+  }
+};
 
 // -debug-buffer-size - Buffer the last N characters of debug output
 //until program termination.
-static cl::opt<unsigned>
-DebugBufferSize("debug-buffer-size",
-                cl::desc("Buffer the last N characters of debug output "
-                         "until program termination. "
-                         "[default 0 -- immediate print-out]"),
-                cl::Hidden,
-                cl::init(0));
+struct CreateDebugBufferSize {
+  static void *call() {
+    return new cl::opt<unsigned>(
+        "debug-buffer-size",
+        cl::desc("Buffer the last N characters of debug output "
+                 "until program termination. "
+                 "[default 0 -- immediate print-out]"),
+        cl::Hidden, cl::init(0));
+  }
+};
+} // namespace
+
+// -debug - Command line option to enable the DEBUG statements in the passes.
+// This flag may only be enabled in debug builds.
+static ManagedStatic<cl::opt<bool, true>, CreateDebug> Debug;
+static ManagedStatic<cl::opt<unsigned>, CreateDebugBufferSize> DebugBufferSize;
 
 namespace {
 
@@ -109,18 +118,36 @@ struct DebugOnlyOpt {
     SmallVector<StringRef,8> dbgTypes;
     StringRef(Val).split(dbgTypes, ',', -1, false);
     for (auto dbgType : dbgTypes)
-      CurrentDebugType->push_back(dbgType);
+      CurrentDebugType->push_back(std::string(dbgType));
   }
 };
-
-}
+} // namespace
 
 static DebugOnlyOpt DebugOnlyOptLoc;
 
-static cl::opt<DebugOnlyOpt, true, cl::parser<std::string> >
-DebugOnly("debug-only", cl::desc("Enable a specific type of debug output (comma separated list of types)"),
-          cl::Hidden, cl::ZeroOrMore, cl::value_desc("debug string"),
-          cl::location(DebugOnlyOptLoc), cl::ValueRequired);
+namespace {
+struct CreateDebugOnly {
+  static void *call() {
+    return new cl::opt<DebugOnlyOpt, true, cl::parser<std::string>>(
+        "debug-only",
+        cl::desc("Enable a specific type of debug output (comma separated list "
+                 "of types)"),
+        cl::Hidden, cl::ZeroOrMore, cl::value_desc("debug string"),
+        cl::location(DebugOnlyOptLoc), cl::ValueRequired);
+  }
+};
+} // namespace
+
+static ManagedStatic<cl::opt<DebugOnlyOpt, true, cl::parser<std::string>>,
+                     CreateDebugOnly>
+    DebugOnly;
+
+void llvm::initDebugOptions() {
+  *Debug;
+  *DebugBufferSize;
+  *DebugOnly;
+}
+
 // Signal handlers - dump debug output on termination.
 static void debug_user_sig_handler(void *Cookie) {
   // This is a bit sneaky.  Since this is under #ifndef NDEBUG, we
@@ -138,10 +165,10 @@ raw_ostream &llvm::dbgs() {
   static struct dbgstream {
     circular_raw_ostream strm;
 
-    dbgstream() :
-        strm(errs(), "*** Debug Log Output ***\n",
-             (!EnableDebugBuffering || !DebugFlag) ? 0 : DebugBufferSize) {
-      if (EnableDebugBuffering && DebugFlag && DebugBufferSize != 0)
+    dbgstream()
+        : strm(errs(), "*** Debug Log Output ***\n",
+               (!EnableDebugBuffering || !DebugFlag) ? 0 : *DebugBufferSize) {
+      if (EnableDebugBuffering && DebugFlag && *DebugBufferSize != 0)
         // TODO: Add a handler for SIGUSER1-type signals so the user can
         // force a debug dump.
         sys::AddSignalHandler(&debug_user_sig_handler, nullptr);
@@ -161,7 +188,7 @@ namespace llvm {
     return errs();
   }
 }
-
+void llvm::initDebugOptions() {}
 #endif
 
 /// EnableDebugBuffering - Turn on signal handler installation.

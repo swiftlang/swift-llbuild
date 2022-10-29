@@ -49,7 +49,7 @@ CommandSignature ExternalCommand::getSignature() const {
 
 void ExternalCommand::configureDescription(const ConfigureContext&,
                                            StringRef value) {
-  description = value;
+  description = value.str();
 }
 
 void ExternalCommand::
@@ -399,7 +399,7 @@ void ExternalCommand::execute(BuildSystem& system,
       // FIXME: Need to use the filesystem interfaces.
       auto parent = llvm::sys::path::parent_path(node->getName());
       if (!parent.empty()) {
-        (void) system.getFileSystem().createDirectories(parent);
+        (void) system.getFileSystem().createDirectories(parent.str());
       }
     }
   }

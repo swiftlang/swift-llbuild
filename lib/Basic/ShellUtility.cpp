@@ -125,7 +125,7 @@ std::string shellEscaped(StringRef string) {
   SmallString<16> out;
   llvm::raw_svector_ostream os(out);
   appendShellEscapedString(os, string);
-  return out.str();
+  return out.str().str();
 }
 
 }

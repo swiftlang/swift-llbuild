@@ -58,6 +58,13 @@
 #define LLVM_ON_UNIX 1
 #endif
 
+/* Define to 1 if you have the <sysexits.h> header file. */
+#if __has_include(<sysexits.h>)
+#define HAVE_SYSEXITS_H 1
+#else
+/* #undef HAVE_SYSEXITS_H */
+#endif
+
 /* Define if we have the Intel JIT API runtime support library */
 #define LLVM_USE_INTEL_JITEVENTS 0
 
@@ -68,7 +75,7 @@
 #define LLVM_USE_PERF 0
 
 /* Major version of the LLVM API */
-#define LLVM_VERSION_MAJOR 7
+#define LLVM_VERSION_MAJOR 16
 
 /* Minor version of the LLVM API */
 #define LLVM_VERSION_MINOR 0
@@ -77,7 +84,7 @@
 #define LLVM_VERSION_PATCH 0
 
 /* LLVM version string */
-#define LLVM_VERSION_STRING "7.0.0svn"
+#define LLVM_VERSION_STRING "16.0.0git"
 
 /* Whether LLVM records statistics for use with GetStatistics(),
  * PrintStatistics() or PrintStatisticsJSON()

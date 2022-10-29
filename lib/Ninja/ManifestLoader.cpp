@@ -22,6 +22,7 @@
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/FileSystem.h"
 
 #include <cstdlib>
 #include <vector>
@@ -101,7 +102,7 @@ public:
       return false;
 
     // Push a new entry onto the include stack.
-    auto parser = llvm::make_unique<Parser>(buffer->getBuffer(), *this);
+    auto parser = std::make_unique<Parser>(buffer->getBuffer(), *this);
     includeStack.emplace_back(std::move(buffer), std::move(parser),
                               scope);
 
@@ -372,7 +373,7 @@ public:
     SmallString<256> value;
     evalString(valueTok, getCurrentScope(), value);
     
-    decl->getParameters()[name] = value.str();
+    decl->getParameters()[name] = value.str().str();
   }
 
   struct LookupContext {
@@ -611,7 +612,7 @@ public:
     // FIXME: It probably should be an error to assign to the same parameter
     // multiple times, but Ninja doesn't diagnose this.
     if (Rule::isValidParameterName(name)) {
-      decl->getParameters()[name] = StringRef(valueTok.start, valueTok.length);
+      decl->getParameters()[name] = StringRef(valueTok.start, valueTok.length).str();
     } else {
       error("unexpected variable", nameTok);
     }

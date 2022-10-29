@@ -88,7 +88,7 @@ class SerialQueueImpl {
 public:
   SerialQueueImpl() {
     // Ensure the queue is fully initialized before creating the worker thread.
-    operationsThread = llvm::make_unique<std::thread>(
+    operationsThread = std::make_unique<std::thread>(
         &SerialQueueImpl::run, this);
   }
 
@@ -246,7 +246,7 @@ public:
     spawnedProcesses.signalAll(SIGINT);
     {
       std::lock_guard<std::mutex> guard(killAfterTimeoutThreadMutex);
-      killAfterTimeoutThread = llvm::make_unique<std::thread>(
+      killAfterTimeoutThread = std::make_unique<std::thread>(
           &SerialExecutionQueue::killAfterTimeout, this);
     }
   }
@@ -339,6 +339,6 @@ std::unique_ptr<ExecutionQueue> llbuild::basic::createSerialQueue(
   if (!environment) {
     environment = const_cast<const char* const*>(environ);
   }
-  return llvm::make_unique<SerialExecutionQueue>(delegate, environment);
+  return std::make_unique<SerialExecutionQueue>(delegate, environment);
 
 }

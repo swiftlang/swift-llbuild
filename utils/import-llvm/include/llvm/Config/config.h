@@ -17,6 +17,12 @@
 /* Define to 1 to enable crash overrides, and to 0 otherwise. */
 #define ENABLE_CRASH_OVERRIDES 1
 
+/* Define to 1 to emit core dumps by default. */
+#define LLVM_ENABLE_CRASH_DUMPS 0
+
+/* Define to 1 to prefer forward slashes in paths on Windows */
+#define LLVM_WINDOWS_PREFER_FORWARD_SLASH 1
+
 /* Define to 1 if you have the `backtrace' function. */
 #define HAVE_BACKTRACE TRUE
 
@@ -154,6 +160,13 @@
 #define HAVE_MALLOC_MALLOC_H
 #else
 /* #undef HAVE_MALLOC_MALLOC_H */
+#endif
+
+/* Define to 1 if you have the <sysexits.h> header file. */
+#if __has_include(<sysexits.h>)
+#define HAVE_SYSEXITS_H 1
+#else
+/* #undef HAVE_SYSEXITS_H */
 #endif
 
 /* Define to 1 if you have the `malloc_zone_statistics' function. */
@@ -370,10 +383,10 @@
 #define PACKAGE_NAME "LLVM"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "LLVM 7.0.0svn"
+#define PACKAGE_STRING "LLVM 16.0.0git"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "7.0.0svn"
+#define PACKAGE_VERSION "16.0.0git"
 
 /* Define to the vendor of this package. */
 /* #undef PACKAGE_VENDOR */

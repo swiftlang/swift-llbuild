@@ -50,9 +50,7 @@ bool Manifest::normalize_path(StringRef workingDirectory, SmallVectorImpl<char>&
   assert(separatorRef.size() == 1);
   char slash = *separatorRef.data();
 
-  if (llvm::sys::fs::make_absolute(workingDirectory, tmp) != std::error_code()) {
-    return false;
-  }
+    llvm::sys::fs::make_absolute(workingDirectory, tmp);
   if (tmp.size() == 0 || !llvm::sys::path::is_absolute(tmp)) {
       return false;
   }

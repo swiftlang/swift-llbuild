@@ -369,7 +369,7 @@ public:
     spawnedProcesses.signalAll(SIGINT);
     {
       std::lock_guard<std::mutex> guard(killAfterTimeoutThreadMutex);
-      killAfterTimeoutThread = llvm::make_unique<std::thread>(
+      killAfterTimeoutThread = std::make_unique<std::thread>(
           &LaneBasedExecutionQueue::killAfterTimeout, this);
     }
   }

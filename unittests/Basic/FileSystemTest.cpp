@@ -38,7 +38,7 @@ TEST(FileSystemTest, basic) {
   llvm::sys::fs::createTemporaryFile("FileSystemTests", "txt", tempPath);
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(tempPath.str(), ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(tempPath.str(), ec, llvm::sys::fs::OF_Text);
     EXPECT_FALSE(ec);
     os << "Hello, world!";
     os.close();
@@ -47,13 +47,13 @@ TEST(FileSystemTest, basic) {
   auto missingFileInfo = fs->getFileInfo("/does/not/exists");
   EXPECT_TRUE(missingFileInfo.isMissing());
   
-  auto ourFileInfo = fs->getFileInfo(tempPath.str());
+  auto ourFileInfo = fs->getFileInfo(tempPath.str().str());
   EXPECT_FALSE(ourFileInfo.isMissing());
 
   auto missingFileContents = fs->getFileContents("/does/not/exist");
   EXPECT_EQ(missingFileContents.get(), nullptr);
 
-  auto ourFileContents = fs->getFileContents(tempPath.str());
+  auto ourFileContents = fs->getFileContents(tempPath.str().str());
   EXPECT_EQ(ourFileContents->getBuffer().str(), "Hello, world!");
 
   // Remote the temporary file.
@@ -72,7 +72,7 @@ TEST(FileSystemTest, testRecursiveRemoval) {
   llvm::sys::path::append(file, "test.txt");
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(file.str(), ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(file.str(), ec, llvm::sys::fs::OF_Text);
     EXPECT_FALSE(ec);
     os << "Hello, world!";
     os.close();
@@ -85,7 +85,7 @@ TEST(FileSystemTest, testRecursiveRemoval) {
   llvm::sys::path::append(dir, "file_in_subdir.txt");
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(dir.str(), ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(dir.str(), ec, llvm::sys::fs::OF_Text);
     EXPECT_FALSE(ec);
     os << "Hello, world!";
     os.close();
@@ -107,7 +107,7 @@ TEST(FileSystemTest, testRecursiveRemovalDoesNotFollowSymlinks) {
   llvm::sys::path::append(file, "test.txt");
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(file.str(), ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(file.str(), ec, llvm::sys::fs::OF_Text);
     EXPECT_FALSE(ec);
     os << "Hello, world!";
     os.close();
@@ -121,7 +121,7 @@ TEST(FileSystemTest, testRecursiveRemovalDoesNotFollowSymlinks) {
   llvm::sys::path::append(otherFile, "test.txt");
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(otherFile.str(), ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(otherFile.str(), ec, llvm::sys::fs::OF_Text);
     EXPECT_FALSE(ec);
     os << "Hello, world!";
     os.close();
@@ -163,7 +163,7 @@ TEST(DeviceAgnosticFileSystemTest, basic) {
   llvm::sys::fs::createTemporaryFile("FileSystemTests", "txt", tempPath);
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(tempPath.str(), ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(tempPath.str(), ec, llvm::sys::fs::OF_Text);
     EXPECT_FALSE(ec);
     os << "Hello, world!";
     os.close();
@@ -172,7 +172,7 @@ TEST(DeviceAgnosticFileSystemTest, basic) {
   auto missingFileInfo = fs->getFileInfo("/does/not/exists");
   EXPECT_TRUE(missingFileInfo.isMissing());
 
-  auto ourFileInfo = fs->getFileInfo(tempPath.str());
+  auto ourFileInfo = fs->getFileInfo(tempPath.str().str());
   EXPECT_FALSE(ourFileInfo.isMissing());
 
   EXPECT_EQ(ourFileInfo.device, 0ull);
@@ -181,7 +181,7 @@ TEST(DeviceAgnosticFileSystemTest, basic) {
   auto missingFileContents = fs->getFileContents("/does/not/exist");
   EXPECT_EQ(missingFileContents.get(), nullptr);
 
-  auto ourFileContents = fs->getFileContents(tempPath.str());
+  auto ourFileContents = fs->getFileContents(tempPath.str().str());
   EXPECT_EQ(ourFileContents->getBuffer().str(), "Hello, world!");
   // Remote the temporary file.
   auto ec = llvm::sys::fs::remove(tempPath.str());

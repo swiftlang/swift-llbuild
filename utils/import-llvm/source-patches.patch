@@ -1,0 +1,70 @@
+diff --git a/lib/llvm/Support/AArch64TargetParser.cpp b/lib/llvm/Support/AArch64TargetParser.cpp
+index 16a9d14f..b5ec0932 100644
+--- a/lib/llvm/Support/AArch64TargetParser.cpp
++++ b/lib/llvm/Support/AArch64TargetParser.cpp
+@@ -31,7 +31,7 @@ unsigned AArch64::getDefaultFPU(StringRef CPU, AArch64::ArchKind AK) {
+   return StringSwitch<unsigned>(CPU)
+ #define AARCH64_CPU_NAME(NAME, ID, DEFAULT_FPU, IS_DEFAULT, DEFAULT_EXT)       \
+   .Case(NAME, ARM::DEFAULT_FPU)
+-#include "llvm/Support/AArch64TargetParser.def"
++#include "../../include/llvm/Support/AArch64TargetParser.def"
+   .Default(ARM::FK_INVALID);
+ }
+ 
+@@ -44,7 +44,7 @@ uint64_t AArch64::getDefaultExtensions(StringRef CPU, AArch64::ArchKind AK) {
+   .Case(NAME, AArch64ARCHNames[static_cast<unsigned>(ArchKind::ID)]            \
+                       .ArchBaseExtensions |                                    \
+                   DEFAULT_EXT)
+-#include "llvm/Support/AArch64TargetParser.def"
++#include "../../include/llvm/Support/AArch64TargetParser.def"
+   .Default(AArch64::AEK_INVALID);
+ }
+ 
+@@ -55,7 +55,7 @@ AArch64::ArchKind AArch64::getCPUArchKind(StringRef CPU) {
+   return StringSwitch<AArch64::ArchKind>(CPU)
+ #define AARCH64_CPU_NAME(NAME, ID, DEFAULT_FPU, IS_DEFAULT, DEFAULT_EXT)       \
+   .Case(NAME, ArchKind::ID)
+-#include "llvm/Support/AArch64TargetParser.def"
++#include "../../include/llvm/Support/AArch64TargetParser.def"
+   .Default(ArchKind::INVALID);
+ }
+ 
+diff --git a/lib/llvm/Support/CommandLine.cpp b/lib/llvm/Support/CommandLine.cpp
+index 7adcf122..e64934aa 100644
+--- a/lib/llvm/Support/CommandLine.cpp
++++ b/lib/llvm/Support/CommandLine.cpp
+@@ -2541,9 +2541,15 @@ static ManagedStatic<CommandLineCommonOptions> CommonOptions;
+ 
+ static void initCommonOptions() {
+   *CommonOptions;
++  initDebugCounterOptions();
++  initGraphWriterOptions();
+   initSignalsOptions();
++  initStatisticOptions();
++  initTimerOptions();
++  initTypeSizeOptions();
+   initWithColorOptions();
+   initDebugOptions();
++  initRandomSeedOptions();
+ }
+ 
+ OptionCategory &cl::getGeneralCategory() {
+diff --git a/lib/llvm/Support/DebugOptions.h b/lib/llvm/Support/DebugOptions.h
+index d1861f02..75e557d7 100644
+--- a/lib/llvm/Support/DebugOptions.h
++++ b/lib/llvm/Support/DebugOptions.h
+@@ -16,8 +16,14 @@ namespace llvm {
+ // These are invoked internally before parsing command line options.
+ // This enables lazy-initialization of all the globals in libSupport, instead
+ // of eagerly loading everything on program startup.
++void initDebugCounterOptions();
++void initGraphWriterOptions();
+ void initSignalsOptions();
++void initStatisticOptions();
++void initTimerOptions();
++void initTypeSizeOptions();
+ void initWithColorOptions();
+ void initDebugOptions();
++void initRandomSeedOptions();
+ 
+ } // namespace llvm

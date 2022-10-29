@@ -18,6 +18,7 @@
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/KeyID.h"
 
+#include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/StringMap.h"
 
@@ -1556,7 +1557,7 @@ public:
     ++currentEpoch;
 
     if (!traceFile.empty()) {
-      auto trace = llvm::make_unique<BuildEngineTrace>();
+      auto trace = std::make_unique<BuildEngineTrace>();
 
       std::string error;
       if (!trace->open(traceFile, &error))

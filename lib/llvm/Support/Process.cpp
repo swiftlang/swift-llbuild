@@ -1,9 +1,8 @@
 //===-- Process.cpp - Implement OS Process Concept --------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -14,10 +13,14 @@
 #include "llvm/Support/Process.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/StringExtras.h"
+#include "llvm/Config/config.h"
 #include "llvm/Config/llvm-config.h"
+#include "llvm/Support/CrashRecoveryContext.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/Program.h"
+
+#include <stdlib.h> // for _Exit
 
 using namespace llvm;
 using namespace sys;
@@ -27,21 +30,22 @@ using namespace sys;
 //===          independent code.
 //===----------------------------------------------------------------------===//
 
-Optional<std::string> Process::FindInEnvPath(StringRef EnvName,
-                                             StringRef FileName) {
-  return FindInEnvPath(EnvName, FileName, {});
+Optional<std::string>
+Process::FindInEnvPath(StringRef EnvName, StringRef FileName, char Separator) {
+  return FindInEnvPath(EnvName, FileName, {}, Separator);
 }
 
 Optional<std::string> Process::FindInEnvPath(StringRef EnvName,
                                              StringRef FileName,
-                                             ArrayRef<std::string> IgnoreList) {
+                                             ArrayRef<std::string> IgnoreList,
+                                             char Separator) {
   assert(!path::is_absolute(FileName));
   Optional<std::string> FoundPath;
   Optional<std::string> OptPath = Process::GetEnv(EnvName);
   if (!OptPath.hasValue())
     return FoundPath;
 
-  const char EnvPathSeparatorStr[] = {EnvPathSeparator, '\0'};
+  const char EnvPathSeparatorStr[] = {Separator, '\0'};
   SmallVector<StringRef, 8> Dirs;
   SplitString(OptPath.getValue(), Dirs, EnvPathSeparatorStr);
 
@@ -55,7 +59,7 @@ Optional<std::string> Process::FindInEnvPath(StringRef EnvName,
     SmallString<128> FilePath(Dir);
     path::append(FilePath, FileName);
     if (fs::exists(Twine(FilePath))) {
-      FoundPath = FilePath.str();
+      FoundPath = std::string(FilePath.str());
       break;
     }
   }
@@ -82,11 +86,20 @@ static const char colorcodes[2][2][8][10] = {
  { ALLCOLORS("4",""), ALLCOLORS("4","1;") }
 };
 
-// This is set to true when Process::PreventCoreFiles() is called.
-static bool coreFilesPrevented = false;
+// A CMake option controls wheter we emit core dumps by default. An application
+// may disable core dumps by calling Process::PreventCoreFiles().
+static bool coreFilesPrevented = !LLVM_ENABLE_CRASH_DUMPS;
 
-bool Process::AreCoreFilesPrevented() {
-  return coreFilesPrevented;
+bool Process::AreCoreFilesPrevented() { return coreFilesPrevented; }
+
+[[noreturn]] void Process::Exit(int RetCode, bool NoCleanup) {
+  if (CrashRecoveryContext *CRC = CrashRecoveryContext::GetCurrent())
+    CRC->HandleExit(RetCode);
+
+  if (NoCleanup)
+    ExitNoCleanup(RetCode);
+  else
+    ::exit(RetCode);
 }
 
 // Include the platform-specific parts of this class.

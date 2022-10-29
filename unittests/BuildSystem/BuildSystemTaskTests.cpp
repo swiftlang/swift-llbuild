@@ -136,13 +136,13 @@ TEST(BuildSystemTaskTests, basics) {
   auto testString = StringRef("Hello, world!\n");
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(path, ec, llvm::sys::fs::F_None);
+    llvm::raw_fd_ostream os(path, ec, llvm::sys::fs::OF_None);
     assert(!ec);
     os << testString;
   }
 
   // Create the build system.
-  auto description = llvm::make_unique<BuildDescription>();
+  auto description = std::make_unique<BuildDescription>();
   MockBuildSystemDelegate delegate;
   BuildSystem system(delegate, createLocalFileSystem());
   system.loadDescription(std::move(description));
@@ -163,7 +163,7 @@ TEST(BuildSystemTaskTests, missingInput) {
   sys::path::append(path, "a.txt");
 
   // Create the build system.
-  auto description = llvm::make_unique<BuildDescription>();
+  auto description = std::make_unique<BuildDescription>();
   MockBuildSystemDelegate delegate;
   BuildSystem system(delegate, createLocalFileSystem());
   system.loadDescription(std::move(description));
@@ -186,19 +186,19 @@ TEST(BuildSystemTaskTests, directoryContents) {
   sys::path::append(fileB, "fileB");
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(fileA, ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(fileA, ec, llvm::sys::fs::OF_Text);
     assert(!ec);
     os << "fileA";
   }
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(fileB, ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(fileB, ec, llvm::sys::fs::OF_Text);
     assert(!ec);
     os << "fileB";
   }
   
   // Create the build system.
-  auto description = llvm::make_unique<BuildDescription>();
+  auto description = std::make_unique<BuildDescription>();
   MockBuildSystemDelegate delegate;
   BuildSystem system(delegate, createLocalFileSystem());
   system.loadDescription(std::move(description));
@@ -243,7 +243,7 @@ TEST(BuildSystemTaskTests, producedNode) {
   sys::path::append(manifest, "manifest.llbuild");
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::OF_Text);
     assert(!ec);
 
     os <<
@@ -277,7 +277,7 @@ TEST(BuildSystemTaskTests, producedNode) {
   ASSERT_TRUE(loadingResult);
 
   // Check that the file does not exist
-  auto beforeFileInfo = localFS->getFileInfo(outputFile.str());
+  auto beforeFileInfo = localFS->getFileInfo(outputFile.str().str());
   ASSERT_TRUE(beforeFileInfo.isMissing());
 
   // Build a specific key.
@@ -285,7 +285,7 @@ TEST(BuildSystemTaskTests, producedNode) {
   ASSERT_TRUE(result.hasValue());
 
   // Check that the file does exist
-  auto afterFileInfo = localFS->getFileInfo(outputFile.str());
+  auto afterFileInfo = localFS->getFileInfo(outputFile.str().str());
   ASSERT_TRUE(!afterFileInfo.isMissing());
 }
 
@@ -302,13 +302,13 @@ TEST(BuildSystemTaskTests, directorySignature) {
   sys::path::append(fileB, "fileB");
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(fileA, ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(fileA, ec, llvm::sys::fs::OF_Text);
     assert(!ec);
     os << "fileA";
   }
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(fileB, ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(fileB, ec, llvm::sys::fs::OF_Text);
     assert(!ec);
     os << "fileB";
   } 
@@ -319,14 +319,14 @@ TEST(BuildSystemTaskTests, directorySignature) {
   sys::path::append(subdirFileA, "subdirFileA");
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(subdirFileA, ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(subdirFileA, ec, llvm::sys::fs::OF_Text);
     assert(!ec);
     os << "subdirFileA";
   }
   
   // Create the build system.
   auto keyToBuild = BuildKey::makeDirectoryTreeSignature(tempDir.str(), StringList());
-  auto description = llvm::make_unique<BuildDescription>();
+  auto description = std::make_unique<BuildDescription>();
   MockBuildSystemDelegate delegate;
   BuildSystem system(delegate, createLocalFileSystem());
   system.loadDescription(std::move(description));
@@ -346,7 +346,7 @@ TEST(BuildSystemTaskTests, directorySignature) {
   do {
     std::error_code ec;
     llvm::sys::fs::remove(fileC.str());
-    llvm::raw_fd_ostream os(fileC, ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(fileC, ec, llvm::sys::fs::OF_Text);
     assert(!ec);
     os << "fileC";
   } while (dirFileInfo == localFS->getFileInfo(tempDir.str()));
@@ -362,14 +362,14 @@ TEST(BuildSystemTaskTests, directorySignature) {
   // We must write the file in a loop until the directory actually changes (we
   // currently assume we can trust the directory file info to detect changes,
   // which is not always strictly true).
-  dirFileInfo = localFS->getFileInfo(subdirA.str());
+  dirFileInfo = localFS->getFileInfo(subdirA.str().str());
   do {
     std::error_code ec;
     llvm::sys::fs::remove(subdirFileD.str());
-    llvm::raw_fd_ostream os(subdirFileD, ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(subdirFileD, ec, llvm::sys::fs::OF_Text);
     assert(!ec);
     os << "fileD";
-  } while (dirFileInfo == localFS->getFileInfo(subdirA.str()));
+  } while (dirFileInfo == localFS->getFileInfo(subdirA.str().str()));
   
   auto resultC = system.build(keyToBuild);
   ASSERT_TRUE(resultC.hasValue() && resultC->isDirectoryTreeSignature());
@@ -390,7 +390,7 @@ TEST(BuildSystemTaskTests, doesNotProcessDependenciesAfterCancellation) {
   sys::path::append(manifest, "manifest.llbuild");
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::OF_Text);
     assert(!ec);
 
     os << "client:\n"
@@ -516,7 +516,7 @@ TEST(BuildSystemTaskTests, staleFileRemoval) {
   sys::path::append(manifest, "manifest.llbuild");
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::OF_Text);
     assert(!ec);
 
     os << R"END(
@@ -560,7 +560,7 @@ commands:
 
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::OF_Text);
     assert(!ec);
 
     os << R"END(
@@ -606,7 +606,7 @@ TEST(BuildSystemTaskTests, staleFileRemovalWithRoots) {
   sys::path::append(manifest, "manifest.llbuild");
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::OF_Text);
     assert(!ec);
 
     os << R"END(
@@ -652,7 +652,7 @@ commands:
 
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::OF_Text);
     assert(!ec);
 
     os << R"END(
@@ -704,7 +704,7 @@ TEST(BuildSystemTaskTests, staleFileRemovalWithRootsEnforcesAbsolutePaths) {
   sys::path::append(manifest, "manifest.llbuild");
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::OF_Text);
     assert(!ec);
 
     os << R"END(
@@ -748,7 +748,7 @@ commands:
 
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::OF_Text);
     assert(!ec);
 
     os << R"END(
@@ -791,7 +791,7 @@ TEST(BuildSystemTaskTests, staleFileRemovalWithRootsIsAgnosticToTrailingPathSepa
   sys::path::append(manifest, "manifest.llbuild");
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::OF_Text);
     assert(!ec);
 
     os << R"END(
@@ -835,7 +835,7 @@ commands:
 
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::OF_Text);
     assert(!ec);
 
     os << R"END(
@@ -886,7 +886,7 @@ TEST(BuildSystemTaskTests, staleFileRemovalWithManyFiles) {
   sys::path::append(manifest, "manifest.llbuild");
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::OF_Text);
     assert(!ec);
 
     os << R"END(
@@ -941,7 +941,7 @@ commands:
 
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::OF_Text);
     assert(!ec);
 
     os << R"END(
@@ -1016,7 +1016,7 @@ TEST(BuildSystemTaskTests, producedNodeAfterPreviouslyMissing) {
   // Try to build the missing output file
   {
     // Create the build system.
-    auto description = llvm::make_unique<BuildDescription>();
+    auto description = std::make_unique<BuildDescription>();
     MockBuildSystemDelegate delegate;
     BuildSystem system(delegate, createLocalFileSystem());
     system.attachDB(builddb.c_str(), nullptr);
@@ -1034,7 +1034,7 @@ TEST(BuildSystemTaskTests, producedNodeAfterPreviouslyMissing) {
     sys::path::append(manifest, "manifest.llbuild");
     {
       std::error_code ec;
-      llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+      llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::OF_Text);
       assert(!ec);
 
       os <<
@@ -1069,7 +1069,7 @@ TEST(BuildSystemTaskTests, producedNodeAfterPreviouslyMissing) {
     ASSERT_TRUE(loadingResult);
 
     // Check that the file does not exist
-    auto beforeFileInfo = localFS->getFileInfo(outputFile.str());
+    auto beforeFileInfo = localFS->getFileInfo(outputFile.str().str());
     ASSERT_TRUE(beforeFileInfo.isMissing());
 
     // Build a specific key.
@@ -1082,7 +1082,7 @@ TEST(BuildSystemTaskTests, producedNodeAfterPreviouslyMissing) {
     }
 
     // Check that the file does exist
-    auto afterFileInfo = localFS->getFileInfo(outputFile.str());
+    auto afterFileInfo = localFS->getFileInfo(outputFile.str().str());
     ASSERT_TRUE(!afterFileInfo.isMissing());
   }
 }
@@ -1102,7 +1102,7 @@ TEST(BuildSystemTaskTests, directoryContentsWithSkippedCommand) {
 
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::OF_Text);
     assert(!ec);
 
     os <<
@@ -1203,7 +1203,7 @@ TEST(BuildSystemTaskTests, mkdirShouldFailWithTypeDifference) {
   // Write `output` as a file
   {
     std::error_code ec;
-    llvm::raw_fd_ostream os(outputDir, ec, llvm::sys::fs::F_Text);
+    llvm::raw_fd_ostream os(outputDir, ec, llvm::sys::fs::OF_Text);
     assert(!ec);
     os << "output";
   }
@@ -1214,7 +1214,7 @@ TEST(BuildSystemTaskTests, mkdirShouldFailWithTypeDifference) {
     sys::path::append(manifest, "manifest.llbuild");
     {
       std::error_code ec;
-      llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+      llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::OF_Text);
       assert(!ec);
 
       os <<
@@ -1290,7 +1290,7 @@ TEST(BuildSystemTaskTests, dirContentsHandleUpstreamFailure) {
   }
 
   // Write `output` as a symlink to something that doesn't exist
-  ASSERT_TRUE(localFS->createSymlink(fakeDir.str(), outputDir.str()));
+  ASSERT_TRUE(localFS->createSymlink(fakeDir.str().str(), outputDir.str().str()));
 
   // Build with a mkdir rule
   {
@@ -1298,7 +1298,7 @@ TEST(BuildSystemTaskTests, dirContentsHandleUpstreamFailure) {
     sys::path::append(manifest, "manifest.llbuild");
     {
       std::error_code ec;
-      llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::F_Text);
+      llvm::raw_fd_ostream os(manifest, ec, llvm::sys::fs::OF_Text);
       assert(!ec);
 
       os <<

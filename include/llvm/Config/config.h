@@ -17,10 +17,14 @@
 /* Define to 1 to enable crash overrides, and to 0 otherwise. */
 #define ENABLE_CRASH_OVERRIDES 1
 
+/* Define to 1 to emit core dumps by default. */
+#define LLVM_ENABLE_CRASH_DUMPS 0
+
+/* Define to 1 to prefer forward slashes in paths on Windows */
+#define LLVM_WINDOWS_PREFER_FORWARD_SLASH 1
+
 /* Define to 1 if you have the `backtrace' function. */
-#if !defined(__ANDROID__) && !defined(__OpenBSD__)
 #define HAVE_BACKTRACE TRUE
-#endif
 
 #define BACKTRACE_HEADER <execinfo.h>
 
@@ -80,11 +84,7 @@
 /* #undef HAVE_FFI_H */
 
 /* Define to 1 if you have the `futimens' function. */
-#if defined(__ANDROID__)
-#define HAVE_FUTIMENS 1
-#else
 /* #undef HAVE_FUTIMENS */
-#endif
 
 /* Define to 1 if you have the `futimes' function. */
 #define HAVE_FUTIMES 1
@@ -114,9 +114,7 @@
 #define HAVE_LIBPTHREAD 1
 
 /* Define to 1 if you have the `pthread_getname_np' function. */
-#if !defined(__ANDROID__)
 #define HAVE_PTHREAD_GETNAME_NP 1
-#endif
 
 /* Define to 1 if you have the `pthread_setname_np' function. */
 #define HAVE_PTHREAD_SETNAME_NP 1
@@ -157,11 +155,18 @@
 /* #undef HAVE_MALLOC_H */
 #endif
 
-/* Define to 1 if you have the <malloc/malloc.h> header file. */
+/* Define to 1 if you have the <malloc.h> header file. */
 #if __has_include(<malloc/malloc.h>)
 #define HAVE_MALLOC_MALLOC_H
 #else
 /* #undef HAVE_MALLOC_MALLOC_H */
+#endif
+
+/* Define to 1 if you have the <sysexits.h> header file. */
+#if __has_include(<sysexits.h>)
+#define HAVE_SYSEXITS_H 1
+#else
+/* #undef HAVE_SYSEXITS_H */
 #endif
 
 /* Define to 1 if you have the `malloc_zone_statistics' function. */
@@ -267,11 +272,7 @@
 #define HAVE_SYS_TYPES_H 1
 
 /* Define if the setupterm() function is supported this platform. */
-#if defined(__APPLE__) && TARGET_OS_IPHONE
-#undef HAVE_TERMINFO
-#else
 #define HAVE_TERMINFO 1
-#endif
 
 /* Define if the xar_open() function is supported this platform. */
 #define HAVE_LIBXAR 1
@@ -382,10 +383,10 @@
 #define PACKAGE_NAME "LLVM"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "LLVM 7.0.0svn"
+#define PACKAGE_STRING "LLVM 16.0.0git"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "7.0.0svn"
+#define PACKAGE_VERSION "16.0.0git"
 
 /* Define to the vendor of this package. */
 /* #undef PACKAGE_VENDOR */

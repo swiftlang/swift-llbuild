@@ -102,7 +102,7 @@ public:
       std::string outputActual = tmpDir.str() + "/actual.log";
       {
         std::error_code ec;
-        llvm::raw_fd_ostream os(outputActual, ec, llvm::sys::fs::F_Text);
+        llvm::raw_fd_ostream os(outputActual, ec, llvm::sys::fs::OF_Text);
         assert(!ec);
         os << getTrace();
         os.close();
@@ -112,7 +112,7 @@ public:
       std::string outputExpected = tmpDir.str() + "/expected.log";
       {
         std::error_code ec;
-        llvm::raw_fd_ostream os(outputExpected, ec, llvm::sys::fs::F_Text);
+        llvm::raw_fd_ostream os(outputExpected, ec, llvm::sys::fs::OF_Text);
         assert(!ec);
         os << expected;
         os.close();
@@ -150,7 +150,7 @@ public:
       traceStream << __func__ << ": " << command->getName() << "\n";
     }
 
-    if (commandsToSkip.find(command->getName()) != commandsToSkip.end()) {
+    if (commandsToSkip.find(command->getName().str()) != commandsToSkip.end()) {
       return false;
     }
 
@@ -238,7 +238,7 @@ protected:
   void writeBuildFile(StringRef s) {
     std::error_code ec;
     raw_fd_ostream os(std::string(tempDir.str()) + "/build.llbuild", ec,
-                      llvm::sys::fs::F_Text);
+                      llvm::sys::fs::OF_Text);
     ASSERT_NO_ERROR(ec);
 
     os << s;

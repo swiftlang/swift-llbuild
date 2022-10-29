@@ -930,7 +930,7 @@ TEST(BuildEngineTest, basicIncrementalSignatureChange) {
 
   // Build the first result.
   builtKeys.clear();
-  engine = llvm::make_unique<core::BuildEngine>(delegate);
+  engine = std::make_unique<core::BuildEngine>(delegate);
   setupEngine(*engine);
   EXPECT_EQ(valueA * valueB * 5, intFromValue(engine->build("value-R")));
   EXPECT_EQ(3U, builtKeys.size());
@@ -941,7 +941,7 @@ TEST(BuildEngineTest, basicIncrementalSignatureChange) {
 
   // Mark value-A as having a different signature, then rebuild and sanity check.
   builtKeys.clear();
-  engine = llvm::make_unique<core::BuildEngine>(delegate);
+  engine = std::make_unique<core::BuildEngine>(delegate);
   sigA = 2;
   setupEngine(*engine);
   EXPECT_EQ(valueA * valueB * 5, intFromValue(engine->build("value-R")));
@@ -950,7 +950,7 @@ TEST(BuildEngineTest, basicIncrementalSignatureChange) {
 
   // Check that a subsequent build is null.
   builtKeys.clear();
-  engine = llvm::make_unique<core::BuildEngine>(delegate);
+  engine = std::make_unique<core::BuildEngine>(delegate);
   setupEngine(*engine);
   EXPECT_EQ(valueA * valueB * 5, intFromValue(engine->build("value-R")));
   EXPECT_EQ(0U, builtKeys.size());

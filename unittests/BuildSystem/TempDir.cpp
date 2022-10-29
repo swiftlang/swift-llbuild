@@ -57,4 +57,4 @@ llbuild::TmpDir::~TmpDir() {
 }
 
 const char *llbuild::TmpDir::c_str() { return tempDir.c_str(); }
-std::string llbuild::TmpDir::str() const { return tempDir.str(); }
+std::string llbuild::TmpDir::str() const { return tempDir.str().str(); }

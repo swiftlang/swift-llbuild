@@ -295,7 +295,7 @@ public:
   /// @{
 
   bool loadDescription(StringRef filename) {
-    this->mainFilename = filename;
+    this->mainFilename = filename.str();
 
     auto description = BuildFile(filename, fileDelegate).load();
     if (!description) {
@@ -323,7 +323,7 @@ public:
   }
 
   bool enableTracing(StringRef filename, std::string* error_out) {
-    return buildEngine.enableTracing(filename, error_out);
+    return buildEngine.enableTracing(filename.str(), error_out);
   }
 
   /// Build the given key, and return the result and an indication of success.
@@ -863,7 +863,7 @@ class DirectoryContentsTask : public Task {
     for (auto it = llvm::sys::fs::directory_iterator(path, ec),
          end = llvm::sys::fs::directory_iterator(); it != end;
          it = it.increment(ec)) {
-      filenames.push_back(llvm::sys::path::filename(it->path()));
+      filenames.push_back(llvm::sys::path::filename(it->path()).str());
     }
 
     // Order the filenames.
@@ -883,7 +883,7 @@ public:
     // The result is valid if the existence matches the existing value type, and
     // the file information remains the same.
     auto info = getBuildSystem(engine).getFileSystem().getFileInfo(
-        path);
+        path.str());
     if (info.isMissing()) {
       return value.isMissingInput();
     } else {
@@ -1014,7 +1014,7 @@ class FilteredDirectoryContentsTask : public Task {
     for (auto it = llvm::sys::fs::directory_iterator(path, ec),
          end = llvm::sys::fs::directory_iterator(); it != end;
          it = it.increment(ec)) {
-      std::string filename = llvm::sys::path::filename(it->path());
+      std::string filename = llvm::sys::path::filename(it->path()).str();
       bool excluded = false;
       for (auto pattern : filterStrings) {
         if (llbuild::basic::sys::filenameMatch(pattern.data(),
@@ -1121,7 +1121,7 @@ class DirectoryTreeSignatureTask : public Task {
       for (size_t i = 0; i != filenames.size(); ++i) {
         SmallString<256> childPath{ path };
         llvm::sys::path::append(childPath, filenames[i]);
-        childResults.emplace_back(SubpathInfo{ filenames[i], {}, None });
+        childResults.emplace_back(SubpathInfo{ filenames[i].str(), {}, None });
         ti.request(BuildKey::makeNode(childPath).toData(), /*inputID=*/1 + i);
       }
       return;
@@ -1264,7 +1264,7 @@ class DirectoryTreeStructureSignatureTask : public Task {
       for (size_t i = 0; i != filenames.size(); ++i) {
         SmallString<256> childPath{ path };
         llvm::sys::path::append(childPath, filenames[i]);
-        childResults.emplace_back(SubpathInfo{ filenames[i], {}, None });
+        childResults.emplace_back(SubpathInfo{ filenames[i].str(), {}, None });
         ti.request(BuildKey::makeNode(childPath).toData(), /*inputID=*/1 + i);
       }
       return;
@@ -1607,7 +1607,7 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
   }
 
   case BuildKey::Kind::DirectoryContents: {
-    std::string path = key.getDirectoryPath();
+    std::string path = key.getDirectoryPath().str();
     return std::unique_ptr<Rule>(new BuildSystemRule(
       keyData,
       /*signature=*/{},
@@ -1623,8 +1623,8 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
   }
 
   case BuildKey::Kind::FilteredDirectoryContents: {
-    std::string path = key.getFilteredDirectoryPath();
-    std::string patterns = key.getContentExclusionPatterns();
+    std::string path = key.getFilteredDirectoryPath().str();
+    std::string patterns = key.getContentExclusionPatterns().str();
     return std::unique_ptr<Rule>(new BuildSystemRule(
       keyData,
       /*signature=*/{},
@@ -1637,8 +1637,8 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
   }
 
   case BuildKey::Kind::DirectoryTreeSignature: {
-    std::string path = key.getDirectoryTreeSignaturePath();
-    std::string filters = key.getContentExclusionPatterns();
+    std::string path = key.getDirectoryTreeSignaturePath().str();
+    std::string filters = key.getContentExclusionPatterns().str();
     return std::unique_ptr<Rule>(new BuildSystemRule(
       keyData,
       /*signature=*/{},
@@ -1654,8 +1654,8 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
   }
 
   case BuildKey::Kind::DirectoryTreeStructureSignature: {
-    std::string path = key.getFilteredDirectoryPath();
-    std::string filters = key.getContentExclusionPatterns();
+    std::string path = key.getFilteredDirectoryPath().str();
+    std::string filters = key.getContentExclusionPatterns().str();
     return std::unique_ptr<Rule>(new BuildSystemRule(
       keyData,
       /*signature=*/{},
@@ -1677,7 +1677,7 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
     if (it != getBuildDescription().getNodes().end()) {
       node = static_cast<BuildNode*>(it->second.get());
     } else {
-      auto it = dynamicNodes.find(key.getNodeName());
+      auto it = dynamicNodes.find(key.getNodeName().str());
       if (it != dynamicNodes.end()) {
         node = it->second.get();
       } else {
@@ -1685,7 +1685,7 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
         auto nodeOwner = system.lookupNode(
             key.getNodeName(), /*isImplicit=*/true);
         node = nodeOwner.get();
-        dynamicNodes[key.getNodeName()] = std::move(nodeOwner);
+        dynamicNodes[key.getNodeName().str()] = std::move(nodeOwner);
       }
     }
 
@@ -1770,14 +1770,14 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
 
   case BuildKey::Kind::Stat: {
     StatNode* statnode;
-    auto it = dynamicStatNodes.find(key.getStatName());
+    auto it = dynamicStatNodes.find(key.getStatName().str());
     if (it != dynamicStatNodes.end()) {
       statnode = it->second.get();
     } else {
       // Create nodes on the fly for any unknown ones.
-      auto statOwner = llvm::make_unique<StatNode>(key.getStatName());
+      auto statOwner = std::make_unique<StatNode>(key.getStatName());
       statnode = statOwner.get();
-      dynamicStatNodes[key.getStatName()] = std::move(statOwner);
+      dynamicStatNodes[key.getStatName().str()] = std::move(statOwner);
     }
 
     // Create the rule to construct this target.
@@ -1980,7 +1980,7 @@ public:
   }
 
   virtual std::unique_ptr<Command> createCommand(StringRef name) override {
-    return llvm::make_unique<PhonyCommand>(name);
+    return std::make_unique<PhonyCommand>(name);
   }
 };
 
@@ -2023,7 +2023,7 @@ public:
   }
 
   virtual std::unique_ptr<Command> createCommand(StringRef name) override {
-    return llvm::make_unique<ShellCommand>(name, controlEnabled);
+    return std::make_unique<ShellCommand>(name, controlEnabled);
   }
 };
 
@@ -2116,7 +2116,7 @@ public:
       args.push_back(ctx.getDelegate().getInternedString("-c"));
       args.push_back(ctx.getDelegate().getInternedString(value));
     } else if (name == "deps") {
-      depsPath = value;
+      depsPath = value.str();
     } else {
       return ExternalCommand::configureAttribute(ctx, name, value);
     }
@@ -2214,7 +2214,7 @@ public:
   }
 
   virtual std::unique_ptr<Command> createCommand(StringRef name) override {
-    return llvm::make_unique<ClangShellCommand>(name);
+    return std::make_unique<ClangShellCommand>(name);
   }
 };
 
@@ -2467,11 +2467,11 @@ public:
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
     if (name == "executable") {
-      executable = value;
+      executable = value.str();
     } else if (name == "module-name") {
-      moduleName = value;
+      moduleName = value.str();
     } else if (name == "module-output-path") {
-      moduleOutputPath = value;
+      moduleOutputPath = value.str();
     } else if (name == "sources") {
       SmallVector<StringRef, 32> sources;
       StringRef(value).split(sources, " ", /*MaxSplit=*/-1,
@@ -2488,7 +2488,7 @@ public:
                              /*KeepEmpty=*/false);
       importPaths = std::vector<std::string>(imports.begin(), imports.end());
     } else if (name == "temps-path") {
-      tempsPath = value;
+      tempsPath = value.str();
     } else if (name == "is-library") {
       if (!configureBool(ctx, isLibrary, name, value))
         return false;
@@ -2505,7 +2505,7 @@ public:
         ctx.error("'" + name + "' should be greater than or equal to zero.");
         return false;
       }
-      numThreads = value;
+      numThreads = value.str();
     } else if (name == "other-args") {
       SmallVector<StringRef, 32> args;
       StringRef(value).split(args, " ", /*MaxSplit=*/-1,
@@ -2557,7 +2557,7 @@ public:
     SmallString<16> data;
     std::error_code ec;
     llvm::raw_fd_ostream os(outputFileMapPath, ec,
-                            llvm::sys::fs::OpenFlags::F_Text);
+                            llvm::sys::fs::OpenFlags::OF_Text);
     if (ec) {
       getBuildSystem(ti).getDelegate().commandHadError((Command*)this,
                       "unable to create output file map: '" + outputFileMapPath.str() + "'");
@@ -2573,7 +2573,7 @@ public:
     if (enableWholeModuleOptimization) {
       SmallString<16> depsPath;
       llvm::sys::path::append(depsPath, tempsPath, moduleName + ".d");
-      depsFiles_out.push_back(depsPath.str());
+      depsFiles_out.push_back(depsPath.str().str());
       SmallString<16> object;
       llvm::sys::path::append(object, tempsPath, moduleName + ".o");
       os << "    \"dependencies\": \"" << escapeForJSON(depsPath) << "\",\n";
@@ -2600,7 +2600,7 @@ public:
         SmallString<16> depsPath;
         llvm::sys::path::append(depsPath, objectDir, sourceStem + ".d");
         os << "    \"dependencies\": \"" << escapeForJSON(depsPath) << "\",\n";
-        depsFiles_out.push_back(depsPath.str());
+        depsFiles_out.push_back(depsPath.str().str());
       }
       os << "    \"object\": \"" << escapeForJSON(object) << "\",\n";
       os << "    \"swiftmodule\": \"" << escapeForJSON(partialModulePath) << "\",\n";
@@ -2617,7 +2617,7 @@ public:
 
   bool processDiscoveredDependencies(TaskInterface ti, StringRef depsPath) {
     // Read the dependencies file.
-    auto input = getBuildSystem(ti).getFileSystem().getFileContents(depsPath);
+    auto input = getBuildSystem(ti).getFileSystem().getFileContents(depsPath.str());
     if (!input) {
       getBuildSystem(ti).getDelegate().commandHadError(this,
                      "unable to open dependencies file (" + depsPath.str() + ")");
@@ -2826,13 +2826,13 @@ public:
   }
 
   virtual std::unique_ptr<Command> createCommand(StringRef name) override {
-    return llvm::make_unique<SwiftCompilerShellCommand>(name);
+    return std::make_unique<SwiftCompilerShellCommand>(name);
   }
 
   virtual std::unique_ptr<Command> createCustomCommand(
       const BuildKey& key) override {
     if (key.getCustomTaskName() == "swift-get-version" ) {
-      return llvm::make_unique<SwiftGetVersionCommand>(key);
+      return std::make_unique<SwiftGetVersionCommand>(key);
     }
 
     return nullptr;
@@ -2901,7 +2901,7 @@ class MkdirCommand : public ExternalCommand {
       llvm::Optional<ProcessCompletionFn> completionFn) override {
     auto output = getOutputs()[0];
     if (!system.getFileSystem().createDirectories(
-            output->getName())) {
+            output->getName().str())) {
       getBuildSystem(ti).getDelegate().commandHadError(this,
                      "unable to create directory '" + output->getName().str() + "'");
       if (completionFn.hasValue())
@@ -2941,7 +2941,7 @@ public:
   }
 
   virtual std::unique_ptr<Command> createCommand(StringRef name) override {
-    return llvm::make_unique<MkdirCommand>(name);
+    return std::make_unique<MkdirCommand>(name);
   }
 };
 
@@ -2981,7 +2981,7 @@ class SymlinkCommand : public Command {
 
   virtual void configureDescription(const ConfigureContext&,
                                     StringRef value) override {
-    description = value;
+    description = value.str();
   }
 
   virtual void getShortDescription(SmallVectorImpl<char> &result) const override {
@@ -3033,10 +3033,10 @@ class SymlinkCommand : public Command {
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
     if (name == "contents") {
-      contents = value;
+      contents = value.str();
       return true;
     } else if (name == "link-output-path") {
-      linkOutputPath = value;
+      linkOutputPath = value.str();
       return true;
     } else {
       ctx.error("unexpected attribute: '" + name + "'");
@@ -3093,7 +3093,7 @@ class SymlinkCommand : public Command {
 
     // Otherwise, assume the result is valid if its link status matches the
     // previous one.
-    auto info = system.getFileSystem().getLinkInfo(outputPath);
+    auto info = system.getFileSystem().getLinkInfo(outputPath.str());
     if (info.isMissing())
       return false;
 
@@ -3141,7 +3141,7 @@ class SymlinkCommand : public Command {
     {
       auto parent = llvm::sys::path::parent_path(outputPath);
       if (!parent.empty()) {
-        (void) fs.createDirectories(parent);
+        (void) fs.createDirectories(parent.str());
       }
     }
 
@@ -3168,7 +3168,7 @@ class SymlinkCommand : public Command {
     }
 
     // Capture the *link* information of the output.
-    FileInfo outputInfo = fs.getLinkInfo(outputPath);
+    FileInfo outputInfo = fs.getLinkInfo(outputPath.str());
       
     // Complete with a successful result.
     resultFn(BuildValue::makeSuccessfulCommand(outputInfo));
@@ -3203,7 +3203,7 @@ public:
   }
 
   virtual std::unique_ptr<Command> createCommand(StringRef name) override {
-    return llvm::make_unique<SymlinkCommand>(name);
+    return std::make_unique<SymlinkCommand>(name);
   }
 };
 
@@ -3274,7 +3274,7 @@ class ArchiveShellCommand : public ExternalCommand {
 
     for (const auto& input: getInputs()) {
       if (!input->isVirtual()) {
-        archiveInputs.push_back(input->getName());
+        archiveInputs.push_back(input->getName().str());
       }
     }
     if (archiveInputs.empty()) {
@@ -3289,7 +3289,7 @@ class ArchiveShellCommand : public ExternalCommand {
     for (const auto& output: getOutputs()) {
       if (!output->isVirtual()) {
         if (archiveName.empty()) {
-          archiveName = output->getName();
+          archiveName = output->getName().str();
         } else {
           ctx.error("unexpected explicit output: " + output->getName());
         }
@@ -3341,7 +3341,7 @@ public:
   }
 
   virtual std::unique_ptr<Command> createCommand(StringRef name) override {
-    return llvm::make_unique<ArchiveShellCommand>(name);
+    return std::make_unique<ArchiveShellCommand>(name);
   }
 };
 
@@ -3410,7 +3410,7 @@ class SharedLibraryShellCommand : public ExternalCommand {
 
     for (const auto& input : getInputs()) {
       if (!input->isVirtual()) {
-        sharedLibInputs.push_back(input->getName());
+        sharedLibInputs.push_back(input->getName().str());
       }
     }
     if (sharedLibInputs.empty()) {
@@ -3425,7 +3425,7 @@ class SharedLibraryShellCommand : public ExternalCommand {
     for (const auto& output : getOutputs()) {
       if (!output->isVirtual()) {
         if (sharedLibName.empty()) {
-          sharedLibName = output->getName();
+          sharedLibName = output->getName().str();
         } else {
           ctx.error("unexpected explicit output: " + output->getName());
         }
@@ -3440,7 +3440,7 @@ class SharedLibraryShellCommand : public ExternalCommand {
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
     if (name == "executable") {
-      executable = value;
+      executable = value.str();
     } else if (name == "other-args") {
       SmallVector<StringRef, 32> args;
       StringRef(value).split(args, " ", /*MaxSplit=*/-1,
@@ -3452,7 +3452,7 @@ class SharedLibraryShellCommand : public ExternalCommand {
                   "' for shared libraries'.  Supported styles are cl, clang, "
                   "and swiftc");
       }
-      compilerStyle = value;
+      compilerStyle = value.str();
     }
     return true;
   }
@@ -3528,7 +3528,7 @@ public:
   }
 
   virtual std::unique_ptr<Command> createCommand(StringRef name) override {
-    return llvm::make_unique<SharedLibraryShellCommand>(name);
+    return std::make_unique<SharedLibraryShellCommand>(name);
   }
 };
 
@@ -3548,7 +3548,7 @@ class StaleFileRemovalCommand : public Command {
   std::string pathSeparators = llbuild::basic::sys::getPathSeparators();
 
   virtual void configureDescription(const ConfigureContext&, StringRef value) override {
-    description = value;
+    description = value.str();
   }
 
   virtual void getShortDescription(SmallVectorImpl<char> &result) const override {
@@ -3749,7 +3749,7 @@ public:
   }
 
   virtual std::unique_ptr<Command> createCommand(StringRef name) override {
-    return llvm::make_unique<StaleFileRemovalCommand>(name);
+    return std::make_unique<StaleFileRemovalCommand>(name);
   }
 };
 
@@ -3810,23 +3810,23 @@ BuildSystemFileDelegate::lookupTool(StringRef name) {
 
   // Otherwise, look for one of the builtin tool definitions.
   if (name == "shell") {
-    return llvm::make_unique<ShellTool>(name);
+    return std::make_unique<ShellTool>(name);
   } else if (name == "phony") {
-    return llvm::make_unique<PhonyTool>(name);
+    return std::make_unique<PhonyTool>(name);
   } else if (name == "clang") {
-    return llvm::make_unique<ClangTool>(name);
+    return std::make_unique<ClangTool>(name);
   } else if (name == "mkdir") {
-    return llvm::make_unique<MkdirTool>(name);
+    return std::make_unique<MkdirTool>(name);
   } else if (name == "symlink") {
-    return llvm::make_unique<SymlinkTool>(name);
+    return std::make_unique<SymlinkTool>(name);
   } else if (name == "archive") {
-    return llvm::make_unique<ArchiveTool>(name);
+    return std::make_unique<ArchiveTool>(name);
   } else if (name == "shared-library") {
-    return llvm::make_unique<SharedLibraryTool>(name);
+    return std::make_unique<SharedLibraryTool>(name);
   } else if (name == "stale-file-removal") {
-    return llvm::make_unique<StaleFileRemovalTool>(name);
+    return std::make_unique<StaleFileRemovalTool>(name);
   } else if (name == "swift-compiler") {
-    return llvm::make_unique<SwiftCompilerTool>(name);
+    return std::make_unique<SwiftCompilerTool>(name);
   }
 
   return nullptr;

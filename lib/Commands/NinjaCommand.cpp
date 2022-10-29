@@ -439,7 +439,7 @@ static int executeLoadManifestCommand(const std::vector<std::string>& args,
             getProgramName());
     return 1;
   }
-  const std::string workingDirectory = current_dir.str();
+  const std::string workingDirectory = current_dir.str().str();
 
   LoadManifestActions actions;
   ninja::ManifestLoader loader(workingDirectory, filename, actions);
@@ -468,7 +468,7 @@ static void dumpNinjaManifestText(StringRef file, ninja::Manifest* manifest) {
   assert(manifest->getRootScope().getParent() == nullptr);
   std::vector<std::pair<std::string, std::string>> bindings;
   for (const auto& entry: manifest->getRootScope().getBindings()) {
-    bindings.push_back({ entry.getKey(), entry.getValue() });
+    bindings.push_back({ entry.getKey().str(), entry.getValue() });
   }
   std::sort(bindings.begin(), bindings.end());
   for (const auto& entry: bindings) {
@@ -513,7 +513,7 @@ static void dumpNinjaManifestText(StringRef file, ninja::Manifest* manifest) {
     // Write the parameters.
     std::vector<std::pair<std::string, std::string>> parameters;
     for (const auto& entry: rule->getParameters()) {
-        parameters.push_back({ entry.getKey(), entry.getValue() });
+        parameters.push_back({ entry.getKey().str(), entry.getValue() });
     }
     std::sort(parameters.begin(), parameters.end());
     for (const auto& entry: parameters) {
@@ -611,7 +611,7 @@ static void dumpNinjaManifestJSON(StringRef file, ninja::Manifest* manifest) {
   assert(manifest->getRootScope().getParent() == nullptr);
   std::vector<std::pair<std::string, std::string>> bindings;
   for (const auto& entry: manifest->getRootScope().getBindings()) {
-    bindings.push_back({ entry.getKey(), entry.getValue() });
+    bindings.push_back({ entry.getKey().str(), entry.getValue() });
   }
   std::sort(bindings.begin(), bindings.end());
   std::cout << "  \"bindings\": {\n";
@@ -660,7 +660,7 @@ static void dumpNinjaManifestJSON(StringRef file, ninja::Manifest* manifest) {
 
     std::vector<std::pair<std::string, std::string>> parameters;
     for (const auto& entry: rule->getParameters()) {
-        parameters.push_back({ entry.getKey(), entry.getValue() });
+        parameters.push_back({ entry.getKey().str(), entry.getValue() });
     }
     std::sort(parameters.begin(), parameters.end());
     for (auto pit = parameters.begin(),

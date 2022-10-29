@@ -1,9 +1,8 @@
 //===-- Twine.cpp - Fast Temporary String Concatenation -------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -69,11 +68,8 @@ void Twine::printOneChild(raw_ostream &OS, Child Ptr,
   case Twine::StdStringKind:
     OS << *Ptr.stdString;
     break;
-  case Twine::StringRefKind:
-    OS << *Ptr.stringRef;
-    break;
-  case Twine::SmallStringKind:
-    OS << *Ptr.smallString;
+  case Twine::PtrAndLengthKind:
+    OS << StringRef(Ptr.ptrAndLength.ptr, Ptr.ptrAndLength.length);
     break;
   case Twine::FormatvObjectKind:
     OS << *Ptr.formatvObject;
@@ -124,12 +120,9 @@ void Twine::printOneChildRepr(raw_ostream &OS, Child Ptr,
     OS << "std::string:\""
        << Ptr.stdString << "\"";
     break;
-  case Twine::StringRefKind:
-    OS << "stringref:\""
-       << Ptr.stringRef << "\"";
-    break;
-  case Twine::SmallStringKind:
-    OS << "smallstring:\"" << *Ptr.smallString << "\"";
+  case Twine::PtrAndLengthKind:
+    OS << "ptrAndLength:\""
+       << StringRef(Ptr.ptrAndLength.ptr, Ptr.ptrAndLength.length) << "\"";
     break;
   case Twine::FormatvObjectKind:
     OS << "formatv:\"" << *Ptr.formatvObject << "\"";

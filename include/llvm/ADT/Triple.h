@@ -1,9 +1,8 @@
 //===-- llvm/ADT/Triple.h - Target triple helper class ----------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -19,6 +18,8 @@
 #undef sparc
 
 namespace llvm {
+
+class VersionTuple;
 
 /// Triple - Helper class for working with autoconf configuration names. For
 /// historical reasons, we also call these 'triples' (they used to contain
@@ -50,18 +51,21 @@ public:
     armeb,          // ARM (big endian): armeb
     aarch64,        // AArch64 (little endian): aarch64
     aarch64_be,     // AArch64 (big endian): aarch64_be
+    aarch64_32,     // AArch64 (little endian) ILP32: aarch64_32
     arc,            // ARC: Synopsys ARC
     avr,            // AVR: Atmel AVR microcontroller
     bpfel,          // eBPF or extended BPF or 64-bit BPF (little endian)
     bpfeb,          // eBPF or extended BPF or 64-bit BPF (big endian)
+    csky,           // CSKY: csky
     hexagon,        // Hexagon: hexagon
-    mips,           // MIPS: mips, mipsallegrex
-    mipsel,         // MIPSEL: mipsel, mipsallegrexel
-    mips64,         // MIPS64: mips64
-    mips64el,       // MIPS64EL: mips64el
+    m68k,           // M68k: Motorola 680x0 family
+    mips,           // MIPS: mips, mipsallegrex, mipsr6
+    mipsel,         // MIPSEL: mipsel, mipsallegrexe, mipsr6el
+    mips64,         // MIPS64: mips64, mips64r6, mipsn32, mipsn32r6
+    mips64el,       // MIPS64EL: mips64el, mips64r6el, mipsn32el, mipsn32r6el
     msp430,         // MSP430: msp430
-    nios2,          // NIOSII: nios2
     ppc,            // PPC: powerpc
+    ppcle,          // PPCLE: powerpc (little endian)
     ppc64,          // PPC64: powerpc64, ppu
     ppc64le,        // PPC64LE: powerpc64le
     r600,           // R600: AMD GPUs HD2XXX - HD6XXX
@@ -96,11 +100,18 @@ public:
     wasm64,         // WebAssembly with 64-bit pointers
     renderscript32, // 32-bit RenderScript
     renderscript64, // 64-bit RenderScript
-    LastArchType = renderscript64
+    ve,             // NEC SX-Aurora Vector Engine
+    LastArchType = ve
   };
   enum SubArchType {
     NoSubArch,
 
+    ARMSubArch_v9_2a,
+    ARMSubArch_v9_1a,
+    ARMSubArch_v9,
+    ARMSubArch_v8_7a,
+    ARMSubArch_v8_6a,
+    ARMSubArch_v8_5a,
     ARMSubArch_v8_4a,
     ARMSubArch_v8_3a,
     ARMSubArch_v8_2a,
@@ -109,6 +120,7 @@ public:
     ARMSubArch_v8r,
     ARMSubArch_v8m_baseline,
     ARMSubArch_v8m_mainline,
+    ARMSubArch_v8_1m_mainline,
     ARMSubArch_v7,
     ARMSubArch_v7em,
     ARMSubArch_v7m,
@@ -123,9 +135,15 @@ public:
     ARMSubArch_v5te,
     ARMSubArch_v4t,
 
+    AArch64SubArch_arm64e,
+
     KalimbaSubArch_v3,
     KalimbaSubArch_v4,
-    KalimbaSubArch_v5
+    KalimbaSubArch_v5,
+
+    MipsSubArch_r6,
+
+    PPCSubArch_spe
   };
   enum VendorType {
     UnknownVendor,
@@ -133,8 +151,6 @@ public:
     Apple,
     PC,
     SCEI,
-    BGP,
-    BGQ,
     Freescale,
     IBM,
     ImaginationTechnologies,
@@ -166,11 +182,11 @@ public:
     OpenBSD,
     Solaris,
     Win32,
+    ZOS,
     Haiku,
     Minix,
     RTEMS,
     NaCl,       // Native Client
-    CNK,        // BG/P Compute-Node Kernel
     AIX,
     CUDA,       // NVIDIA CUDA
     NVCL,       // NVIDIA OpenCL
@@ -182,7 +198,11 @@ public:
     Mesa3D,
     Contiki,
     AMDPAL,     // AMD PAL Runtime
-    LastOSType = AMDPAL
+    HermitCore, // HermitCore Unikernel/Multikernel
+    Hurd,       // GNU/Hurd
+    WASI,       // Experimental WebAssembly OS
+    Emscripten,
+    LastOSType = Emscripten
   };
   enum EnvironmentType {
     UnknownEnvironment,
@@ -193,6 +213,7 @@ public:
     GNUEABI,
     GNUEABIHF,
     GNUX32,
+    GNUILP32,
     CODE16,
     EABI,
     EABIHF,
@@ -200,21 +221,25 @@ public:
     Musl,
     MuslEABI,
     MuslEABIHF,
+    MuslX32,
 
     MSVC,
     Itanium,
     Cygnus,
     CoreCLR,
-    Simulator,  // Simulator variants of other systems, e.g., Apple's iOS
-    LastEnvironmentType = Simulator
+    Simulator, // Simulator variants of other systems, e.g., Apple's iOS
+    MacABI, // Mac Catalyst variant of Apple's iOS deployment target.
+    LastEnvironmentType = MacABI
   };
   enum ObjectFormatType {
     UnknownObjectFormat,
 
     COFF,
     ELF,
+    GOFF,
     MachO,
     Wasm,
+    XCOFF,
   };
 
 private:
@@ -268,10 +293,10 @@ public:
   /// @name Normalization
   /// @{
 
-  /// normalize - Turn an arbitrary machine specification into the canonical
-  /// triple form (or something sensible that the Triple class understands if
-  /// nothing better can reasonably be done).  In particular, it handles the
-  /// common case in which otherwise valid components are in the wrong order.
+  /// Turn an arbitrary machine specification into the canonical triple form (or
+  /// something sensible that the Triple class understands if nothing better can
+  /// reasonably be done).  In particular, it handles the common case in which
+  /// otherwise valid components are in the wrong order.
   static std::string normalize(StringRef Str);
 
   /// Return the normalized form of this triple's string.
@@ -281,25 +306,24 @@ public:
   /// @name Typed Component Access
   /// @{
 
-  /// getArch - Get the parsed architecture type of this triple.
+  /// Get the parsed architecture type of this triple.
   ArchType getArch() const { return Arch; }
 
-  /// getSubArch - get the parsed subarchitecture type for this triple.
+  /// get the parsed subarchitecture type for this triple.
   SubArchType getSubArch() const { return SubArch; }
 
-  /// getVendor - Get the parsed vendor type of this triple.
+  /// Get the parsed vendor type of this triple.
   VendorType getVendor() const { return Vendor; }
 
-  /// getOS - Get the parsed operating system type of this triple.
+  /// Get the parsed operating system type of this triple.
   OSType getOS() const { return OS; }
 
-  /// hasEnvironment - Does this triple have the optional environment
-  /// (fourth) component?
+  /// Does this triple have the optional environment (fourth) component?
   bool hasEnvironment() const {
     return getEnvironmentName() != "";
   }
 
-  /// getEnvironment - Get the parsed environment type of this triple.
+  /// Get the parsed environment type of this triple.
   EnvironmentType getEnvironment() const { return Environment; }
 
   /// Parse the version number from the OS name component of the
@@ -311,39 +335,39 @@ public:
   void getEnvironmentVersion(unsigned &Major, unsigned &Minor,
                              unsigned &Micro) const;
 
-  /// getFormat - Get the object format for this triple.
+  /// Get the object format for this triple.
   ObjectFormatType getObjectFormat() const { return ObjectFormat; }
 
-  /// getOSVersion - Parse the version number from the OS name component of the
-  /// triple, if present.
+  /// Parse the version number from the OS name component of the triple, if
+  /// present.
   ///
   /// For example, "fooos1.2.3" would return (1, 2, 3).
   ///
   /// If an entry is not defined, it will be returned as 0.
   void getOSVersion(unsigned &Major, unsigned &Minor, unsigned &Micro) const;
 
-  /// getOSMajorVersion - Return just the major version number, this is
-  /// specialized because it is a common query.
+  /// Return just the major version number, this is specialized because it is a
+  /// common query.
   unsigned getOSMajorVersion() const {
     unsigned Maj, Min, Micro;
     getOSVersion(Maj, Min, Micro);
     return Maj;
   }
 
-  /// getMacOSXVersion - Parse the version number as with getOSVersion and then
-  /// translate generic "darwin" versions to the corresponding OS X versions.
-  /// This may also be called with IOS triples but the OS X version number is
-  /// just set to a constant 10.4.0 in that case.  Returns true if successful.
+  /// Parse the version number as with getOSVersion and then translate generic
+  /// "darwin" versions to the corresponding OS X versions.  This may also be
+  /// called with IOS triples but the OS X version number is just set to a
+  /// constant 10.4.0 in that case.  Returns true if successful.
   bool getMacOSXVersion(unsigned &Major, unsigned &Minor,
                         unsigned &Micro) const;
 
-  /// getiOSVersion - Parse the version number as with getOSVersion.  This should
-  /// only be called with IOS or generic triples.
+  /// Parse the version number as with getOSVersion.  This should only be called
+  /// with IOS or generic triples.
   void getiOSVersion(unsigned &Major, unsigned &Minor,
                      unsigned &Micro) const;
 
-  /// getWatchOSVersion - Parse the version number as with getOSVersion.  This
-  /// should only be called with WatchOS or generic triples.
+  /// Parse the version number as with getOSVersion.  This should only be called
+  /// with WatchOS or generic triples.
   void getWatchOSVersion(unsigned &Major, unsigned &Minor,
                          unsigned &Micro) const;
 
@@ -355,24 +379,24 @@ public:
 
   const std::string &getTriple() const { return Data; }
 
-  /// getArchName - Get the architecture (first) component of the
-  /// triple.
+  /// Get the architecture (first) component of the triple.
   StringRef getArchName() const;
 
-  /// getVendorName - Get the vendor (second) component of the triple.
+  /// Get the architecture name based on Kind and SubArch.
+  StringRef getArchName(ArchType Kind, SubArchType SubArch = NoSubArch) const;
+
+  /// Get the vendor (second) component of the triple.
   StringRef getVendorName() const;
 
-  /// getOSName - Get the operating system (third) component of the
-  /// triple.
+  /// Get the operating system (third) component of the triple.
   StringRef getOSName() const;
 
-  /// getEnvironmentName - Get the optional environment (fourth)
-  /// component of the triple, or "" if empty.
+  /// Get the optional environment (fourth) component of the triple, or "" if
+  /// empty.
   StringRef getEnvironmentName() const;
 
-  /// getOSAndEnvironmentName - Get the operating system and optional
-  /// environment components as a single string (separated by a '-'
-  /// if the environment component is present).
+  /// Get the operating system and optional environment components as a single
+  /// string (separated by a '-' if the environment component is present).
   StringRef getOSAndEnvironmentName() const;
 
   /// @}
@@ -398,8 +422,8 @@ public:
   /// Note that this tests for 16-bit pointer width, and nothing else.
   bool isArch16Bit() const;
 
-  /// isOSVersionLT - Helper function for doing comparisons against version
-  /// numbers included in the target triple.
+  /// Helper function for doing comparisons against version numbers included in
+  /// the target triple.
   bool isOSVersionLT(unsigned Major, unsigned Minor = 0,
                      unsigned Micro = 0) const {
     unsigned LHS[3];
@@ -421,24 +445,13 @@ public:
     return isOSVersionLT(RHS[0], RHS[1], RHS[2]);
   }
 
-  /// isMacOSXVersionLT - Comparison function for checking OS X version
-  /// compatibility, which handles supporting skewed version numbering schemes
-  /// used by the "darwin" triples.
+  /// Comparison function for checking OS X version compatibility, which handles
+  /// supporting skewed version numbering schemes used by the "darwin" triples.
   bool isMacOSXVersionLT(unsigned Major, unsigned Minor = 0,
-                         unsigned Micro = 0) const {
-    assert(isMacOSX() && "Not an OS X triple!");
+                         unsigned Micro = 0) const;
 
-    // If this is OS X, expect a sane version number.
-    if (getOS() == Triple::MacOSX)
-      return isOSVersionLT(Major, Minor, Micro);
-
-    // Otherwise, compare to the "Darwin" number.
-    assert(Major == 10 && "Unexpected major version");
-    return isOSVersionLT(Minor + 4, Micro, 0);
-  }
-
-  /// isMacOSX - Is this a Mac OS X triple. For legacy reasons, we support both
-  /// "darwin" and "osx" as OS X triples.
+  /// Is this a Mac OS X triple. For legacy reasons, we support both "darwin"
+  /// and "osx" as OS X triples.
   bool isMacOSX() const {
     return getOS() == Triple::Darwin || getOS() == Triple::MacOSX;
   }
@@ -466,13 +479,25 @@ public:
     return getSubArch() == Triple::ARMSubArch_v7k;
   }
 
-  /// isOSDarwin - Is this a "Darwin" OS (OS X, iOS, or watchOS).
+  bool isOSzOS() const { return getOS() == Triple::ZOS; }
+
+  /// Is this a "Darwin" OS (macOS, iOS, tvOS or watchOS).
   bool isOSDarwin() const {
     return isMacOSX() || isiOS() || isWatchOS();
   }
 
   bool isSimulatorEnvironment() const {
     return getEnvironment() == Triple::Simulator;
+  }
+
+  bool isMacCatalystEnvironment() const {
+    return getEnvironment() == Triple::MacABI;
+  }
+
+  /// Returns true for targets that run on a macOS machine.
+  bool isTargetMachineMac() const {
+    return isMacOSX() || (isOSDarwin() && (isSimulatorEnvironment() ||
+                                           isMacCatalystEnvironment()));
   }
 
   bool isOSNetBSD() const {
@@ -519,32 +544,36 @@ public:
     return getOS() == Triple::Haiku;
   }
 
-  /// Checks if the environment could be MSVC.
-  bool isWindowsMSVCEnvironment() const {
-    return getOS() == Triple::Win32 &&
-           (getEnvironment() == Triple::UnknownEnvironment ||
-            getEnvironment() == Triple::MSVC);
+  /// Tests whether the OS is Windows.
+  bool isOSWindows() const {
+    return getOS() == Triple::Win32;
   }
 
   /// Checks if the environment is MSVC.
   bool isKnownWindowsMSVCEnvironment() const {
-    return getOS() == Triple::Win32 && getEnvironment() == Triple::MSVC;
+    return isOSWindows() && getEnvironment() == Triple::MSVC;
+  }
+
+  /// Checks if the environment could be MSVC.
+  bool isWindowsMSVCEnvironment() const {
+    return isKnownWindowsMSVCEnvironment() ||
+           (isOSWindows() && getEnvironment() == Triple::UnknownEnvironment);
   }
 
   bool isWindowsCoreCLREnvironment() const {
-    return getOS() == Triple::Win32 && getEnvironment() == Triple::CoreCLR;
+    return isOSWindows() && getEnvironment() == Triple::CoreCLR;
   }
 
   bool isWindowsItaniumEnvironment() const {
-    return getOS() == Triple::Win32 && getEnvironment() == Triple::Itanium;
+    return isOSWindows() && getEnvironment() == Triple::Itanium;
   }
 
   bool isWindowsCygwinEnvironment() const {
-    return getOS() == Triple::Win32 && getEnvironment() == Triple::Cygnus;
+    return isOSWindows() && getEnvironment() == Triple::Cygnus;
   }
 
   bool isWindowsGNUEnvironment() const {
-    return getOS() == Triple::Win32 && getEnvironment() == Triple::GNU;
+    return isOSWindows() && getEnvironment() == Triple::GNU;
   }
 
   /// Tests for either Cygwin or MinGW OS
@@ -556,11 +585,6 @@ public:
   bool isOSMSVCRT() const {
     return isWindowsMSVCEnvironment() || isWindowsGNUEnvironment() ||
            isWindowsItaniumEnvironment();
-  }
-
-  /// Tests whether the OS is Windows.
-  bool isOSWindows() const {
-    return getOS() == Triple::Win32;
   }
 
   /// Tests whether the OS is NaCl (Native Client)
@@ -578,10 +602,31 @@ public:
     return getOS() == Triple::KFreeBSD;
   }
 
+  /// Tests whether the OS is Hurd.
+  bool isOSHurd() const {
+    return getOS() == Triple::Hurd;
+  }
+
+  /// Tests whether the OS is WASI.
+  bool isOSWASI() const {
+    return getOS() == Triple::WASI;
+  }
+
+  /// Tests whether the OS is Emscripten.
+  bool isOSEmscripten() const {
+    return getOS() == Triple::Emscripten;
+  }
+
   /// Tests whether the OS uses glibc.
   bool isOSGlibc() const {
-    return (getOS() == Triple::Linux || getOS() == Triple::KFreeBSD) &&
+    return (getOS() == Triple::Linux || getOS() == Triple::KFreeBSD ||
+            getOS() == Triple::Hurd) &&
            !isAndroid();
+  }
+
+  /// Tests whether the OS is AIX.
+  bool isOSAIX() const {
+    return getOS() == Triple::AIX;
   }
 
   /// Tests whether the OS uses the ELF binary format.
@@ -594,6 +639,9 @@ public:
     return getObjectFormat() == Triple::COFF;
   }
 
+  /// Tests whether the OS uses the GOFF binary format.
+  bool isOSBinFormatGOFF() const { return getObjectFormat() == Triple::GOFF; }
+
   /// Tests whether the environment is MachO.
   bool isOSBinFormatMachO() const {
     return getObjectFormat() == Triple::MachO;
@@ -602,6 +650,11 @@ public:
   /// Tests whether the OS uses the Wasm binary format.
   bool isOSBinFormatWasm() const {
     return getObjectFormat() == Triple::Wasm;
+  }
+
+  /// Tests whether the OS uses the XCOFF binary format.
+  bool isOSBinFormatXCOFF() const {
+    return getObjectFormat() == Triple::XCOFF;
   }
 
   /// Tests whether the target is the PS4 CPU
@@ -637,12 +690,25 @@ public:
   bool isMusl() const {
     return getEnvironment() == Triple::Musl ||
            getEnvironment() == Triple::MuslEABI ||
-           getEnvironment() == Triple::MuslEABIHF;
+           getEnvironment() == Triple::MuslEABIHF ||
+           getEnvironment() == Triple::MuslX32;
+  }
+
+  /// Tests whether the target is SPIR (32- or 64-bit).
+  bool isSPIR() const {
+    return getArch() == Triple::spir || getArch() == Triple::spir64;
   }
 
   /// Tests whether the target is NVPTX (32- or 64-bit).
   bool isNVPTX() const {
     return getArch() == Triple::nvptx || getArch() == Triple::nvptx64;
+  }
+
+  /// Tests whether the target is AMDGCN
+  bool isAMDGCN() const { return getArch() == Triple::amdgcn; }
+
+  bool isAMDGPU() const {
+    return getArch() == Triple::r600 || getArch() == Triple::amdgcn;
   }
 
   /// Tests whether the target is Thumb (little and big endian).
@@ -657,7 +723,20 @@ public:
 
   /// Tests whether the target is AArch64 (little and big endian).
   bool isAArch64() const {
-    return getArch() == Triple::aarch64 || getArch() == Triple::aarch64_be;
+    return getArch() == Triple::aarch64 || getArch() == Triple::aarch64_be ||
+           getArch() == Triple::aarch64_32;
+  }
+
+  /// Tests whether the target is AArch64 and pointers are the size specified by
+  /// \p PointerWidth.
+  bool isAArch64(int PointerWidth) const {
+    assert(PointerWidth == 64 || PointerWidth == 32);
+    if (!isAArch64())
+      return false;
+    return getArch() == Triple::aarch64_32 ||
+                   getEnvironment() == Triple::GNUILP32
+               ? PointerWidth == 32
+               : PointerWidth == 64;
   }
 
   /// Tests whether the target is MIPS 32-bit (little and big endian).
@@ -675,9 +754,67 @@ public:
     return isMIPS32() || isMIPS64();
   }
 
+  /// Tests whether the target is PowerPC (32- or 64-bit LE or BE).
+  bool isPPC() const {
+    return getArch() == Triple::ppc || getArch() == Triple::ppc64 ||
+           getArch() == Triple::ppcle || getArch() == Triple::ppc64le;
+  }
+
+  /// Tests whether the target is 32-bit PowerPC (little and big endian).
+  bool isPPC32() const {
+    return getArch() == Triple::ppc || getArch() == Triple::ppcle;
+  }
+
+  /// Tests whether the target is 64-bit PowerPC (little and big endian).
+  bool isPPC64() const {
+    return getArch() == Triple::ppc64 || getArch() == Triple::ppc64le;
+  }
+
+  /// Tests whether the target is RISC-V (32- and 64-bit).
+  bool isRISCV() const {
+    return getArch() == Triple::riscv32 || getArch() == Triple::riscv64;
+  }
+
+  /// Tests whether the target is SystemZ.
+  bool isSystemZ() const {
+    return getArch() == Triple::systemz;
+  }
+
+  /// Tests whether the target is x86 (32- or 64-bit).
+  bool isX86() const {
+    return getArch() == Triple::x86 || getArch() == Triple::x86_64;
+  }
+
+  /// Tests whether the target is VE
+  bool isVE() const {
+    return getArch() == Triple::ve;
+  }
+
+  /// Tests whether the target is wasm (32- and 64-bit).
+  bool isWasm() const {
+    return getArch() == Triple::wasm32 || getArch() == Triple::wasm64;
+  }
+
+  // Tests whether the target is CSKY
+  bool isCSKY() const {
+    return getArch() == Triple::csky;
+  }
+
+  /// Tests whether the target is the Apple "arm64e" AArch64 subarch.
+  bool isArm64e() const {
+    return getArch() == Triple::aarch64 &&
+           getSubArch() == Triple::AArch64SubArch_arm64e;
+  }
+
+  /// Tests whether the target is X32.
+  bool isX32() const {
+    EnvironmentType Env = getEnvironment();
+    return Env == Triple::GNUX32 || Env == Triple::MuslX32;
+  }
+
   /// Tests whether the target supports comdat
   bool supportsCOMDAT() const {
-    return !isOSBinFormatMachO();
+    return !(isOSBinFormatMachO() || isOSBinFormatXCOFF());
   }
 
   /// Tests whether the target uses emulated TLS as default.
@@ -685,50 +822,50 @@ public:
     return isAndroid() || isOSOpenBSD() || isWindowsCygwinEnvironment();
   }
 
+  /// Tests whether the target uses -data-sections as default.
+  bool hasDefaultDataSections() const {
+    return isOSBinFormatXCOFF() || isWasm();
+  }
+
+  /// Tests if the environment supports dllimport/export annotations.
+  bool hasDLLImportExport() const { return isOSWindows() || isPS4CPU(); }
+
   /// @}
   /// @name Mutators
   /// @{
 
-  /// setArch - Set the architecture (first) component of the triple
-  /// to a known type.
-  void setArch(ArchType Kind);
+  /// Set the architecture (first) component of the triple to a known type.
+  void setArch(ArchType Kind, SubArchType SubArch = NoSubArch);
 
-  /// setVendor - Set the vendor (second) component of the triple to a
-  /// known type.
+  /// Set the vendor (second) component of the triple to a known type.
   void setVendor(VendorType Kind);
 
-  /// setOS - Set the operating system (third) component of the triple
-  /// to a known type.
+  /// Set the operating system (third) component of the triple to a known type.
   void setOS(OSType Kind);
 
-  /// setEnvironment - Set the environment (fourth) component of the triple
-  /// to a known type.
+  /// Set the environment (fourth) component of the triple to a known type.
   void setEnvironment(EnvironmentType Kind);
 
-  /// setObjectFormat - Set the object file format
+  /// Set the object file format.
   void setObjectFormat(ObjectFormatType Kind);
 
-  /// setTriple - Set all components to the new triple \p Str.
+  /// Set all components to the new triple \p Str.
   void setTriple(const Twine &Str);
 
-  /// setArchName - Set the architecture (first) component of the
-  /// triple by name.
+  /// Set the architecture (first) component of the triple by name.
   void setArchName(StringRef Str);
 
-  /// setVendorName - Set the vendor (second) component of the triple
-  /// by name.
+  /// Set the vendor (second) component of the triple by name.
   void setVendorName(StringRef Str);
 
-  /// setOSName - Set the operating system (third) component of the
-  /// triple by name.
+  /// Set the operating system (third) component of the triple by name.
   void setOSName(StringRef Str);
 
-  /// setEnvironmentName - Set the optional environment (fourth)
-  /// component of the triple by name.
+  /// Set the optional environment (fourth) component of the triple by name.
   void setEnvironmentName(StringRef Str);
 
-  /// setOSAndEnvironmentName - Set the operating system and optional
-  /// environment components with a single string.
+  /// Set the operating system and optional environment components with a single
+  /// string.
   void setOSAndEnvironmentName(StringRef Str);
 
   /// @}
@@ -784,40 +921,47 @@ public:
   /// Merge target triples.
   std::string merge(const Triple &Other) const;
 
+  /// Some platforms have different minimum supported OS versions that
+  /// varies by the architecture specified in the triple. This function
+  /// returns the minimum supported OS version for this triple if one an exists,
+  /// or an invalid version tuple if this triple doesn't have one.
+  VersionTuple getMinimumSupportedOSVersion() const;
+
   /// @}
   /// @name Static helpers for IDs.
   /// @{
 
-  /// getArchTypeName - Get the canonical name for the \p Kind architecture.
+  /// Get the canonical name for the \p Kind architecture.
   static StringRef getArchTypeName(ArchType Kind);
 
-  /// getArchTypePrefix - Get the "prefix" canonical name for the \p Kind
-  /// architecture. This is the prefix used by the architecture specific
-  /// builtins, and is suitable for passing to \see
-  /// Intrinsic::getIntrinsicForGCCBuiltin().
+  /// Get the "prefix" canonical name for the \p Kind architecture. This is the
+  /// prefix used by the architecture specific builtins, and is suitable for
+  /// passing to \see Intrinsic::getIntrinsicForGCCBuiltin().
   ///
   /// \return - The architecture prefix, or 0 if none is defined.
   static StringRef getArchTypePrefix(ArchType Kind);
 
-  /// getVendorTypeName - Get the canonical name for the \p Kind vendor.
+  /// Get the canonical name for the \p Kind vendor.
   static StringRef getVendorTypeName(VendorType Kind);
 
-  /// getOSTypeName - Get the canonical name for the \p Kind operating system.
+  /// Get the canonical name for the \p Kind operating system.
   static StringRef getOSTypeName(OSType Kind);
 
-  /// getEnvironmentTypeName - Get the canonical name for the \p Kind
-  /// environment.
+  /// Get the canonical name for the \p Kind environment.
   static StringRef getEnvironmentTypeName(EnvironmentType Kind);
 
   /// @}
   /// @name Static helpers for converting alternate architecture names.
   /// @{
 
-  /// getArchTypeForLLVMName - The canonical type for the given LLVM
-  /// architecture name (e.g., "x86").
+  /// The canonical type for the given LLVM architecture name (e.g., "x86").
   static ArchType getArchTypeForLLVMName(StringRef Str);
 
   /// @}
+
+  /// Returns a canonicalized OS version number for the specified OS.
+  static VersionTuple getCanonicalVersionForOS(OSType OSKind,
+                                               const VersionTuple &Version);
 };
 
 } // End llvm namespace

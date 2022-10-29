@@ -133,12 +133,12 @@ bool BuildNode::configureAttribute(
 
 FileInfo BuildNode::getFileInfo(basic::FileSystem& fileSystem) const {
   assert(!isVirtual());
-  return fileSystem.getFileInfo(getName());
+  return fileSystem.getFileInfo(getName().str());
 }
 
 FileInfo BuildNode::getLinkInfo(basic::FileSystem& fileSystem) const {
   assert(!isVirtual());
-  return fileSystem.getLinkInfo(getName());
+  return fileSystem.getLinkInfo(getName().str());
 }
 
 basic::CommandSignature BuildNode::getSignature() const {

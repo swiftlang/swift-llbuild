@@ -1,0 +1,23 @@
+set(LLVM_BLAKE3_FILES
+  blake3.c
+  blake3_dispatch.c
+  blake3_portable.c
+)
+
+if (MSVC)
+  check_symbol_exists(_M_ARM64 "" IS_ARM64)
+else()
+  check_symbol_exists(__aarch64__ "" IS_ARM64)
+endif()
+
+add_definitions(-DBLAKE3_NO_AVX512 -DBLAKE3_NO_AVX2 -DBLAKE3_NO_SSE41 -DBLAKE3_NO_SSE2)
+
+if (IS_ARM64)
+  list(APPEND LLVM_BLAKE3_FILES
+    blake3_neon.c
+  )
+else()
+  add_definitions(-DBLAKE3_USE_NEON=0)
+endif()
+
+add_library(LLVMSupportBlake3 OBJECT EXCLUDE_FROM_ALL ${LLVM_BLAKE3_FILES})

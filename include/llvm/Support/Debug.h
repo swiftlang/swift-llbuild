@@ -1,9 +1,8 @@
 //===- llvm/Support/Debug.h - Easy way to add debug output ------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 //
@@ -78,23 +77,6 @@ void setCurrentDebugTypes(const char **Types, unsigned Count);
 /// the DEBUG macro below.
 ///
 extern bool DebugFlag;
-
-/// \name Verification flags.
-///
-/// These flags turns on/off that are expensive and are turned off by default,
-/// unless macro EXPENSIVE_CHECKS is defined. The flags allow selectively
-/// turning the checks on without need to recompile.
-/// \{
-
-/// Enables verification of dominator trees.
-///
-extern bool VerifyDomInfo;
-
-/// Enables verification of loop info.
-///
-extern bool VerifyLoopInfo;
-
-///\}
 
 /// EnableDebugBuffering - This defaults to false.  If true, the debug
 /// stream will install signal handlers to dump any buffered debug

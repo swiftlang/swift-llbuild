@@ -75,7 +75,7 @@ public:
   
   /// Insert a binding into the set.
   void insertBinding(StringRef name, StringRef value) {
-    entries[name] = value;
+    entries[name] = value.str();
   }
 
   /// Look up the given variable name in the binding set, returning its value or
@@ -255,7 +255,7 @@ public:
     return commandString;
   }
   void setCommandString(StringRef value) {
-    commandString = value;
+    commandString = value.str();
   }
 
   /// Get the description to use when running this command.
@@ -263,7 +263,7 @@ public:
     return description;
   }
   void setDescription(StringRef value) {
-    description = value;
+    description = value.str();
   }
 
   /// Get the style of implicit dependencies used by this command.
@@ -281,7 +281,7 @@ public:
     return depsFile;
   }
   void setDepsFile(StringRef value) {
-    depsFile = value;
+    depsFile = value.str();
   }
 
   /// Get the response file to be used by this command.
@@ -289,7 +289,7 @@ public:
     return rspFile;
   }
   void setRspFile(StringRef value) {
-    rspFile = value;
+    rspFile = value.str();
   }
 
   /// Get the response file content, it has to be written to response file
@@ -298,7 +298,7 @@ public:
     return rspFileContent;
   }
   void setRspFileContent(StringRef value) {
-    rspFileContent = value;
+    rspFileContent = value.str();
   }
 
   /// Check whether this command should be treated as a generator command.

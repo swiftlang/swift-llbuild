@@ -129,7 +129,7 @@ bool FileSystem::createDirectories(const std::string& path) {
   StringRef parent = llvm::sys::path::parent_path(path);
   if (parent.empty())
     return false;
-  return createDirectories(parent) && createDirectory(path);
+  return createDirectories(parent.str()) && createDirectory(path);
 }
 
 
@@ -228,10 +228,10 @@ public:
 }
 
 std::unique_ptr<FileSystem> basic::createLocalFileSystem() {
-  return llvm::make_unique<LocalFileSystem>();
+  return std::make_unique<LocalFileSystem>();
 }
 
 std::unique_ptr<FileSystem>
 basic::DeviceAgnosticFileSystem::from(std::unique_ptr<FileSystem> fs) {
-  return llvm::make_unique<DeviceAgnosticFileSystem>(std::move(fs));
+  return std::make_unique<DeviceAgnosticFileSystem>(std::move(fs));
 }

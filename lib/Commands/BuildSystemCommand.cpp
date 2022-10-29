@@ -287,7 +287,7 @@ public:
       printf("  -- 'tool': '%s')\n", getName().str().c_str());
     }
 
-    return llvm::make_unique<ParseDummyCommand>(delegate, name);
+    return std::make_unique<ParseDummyCommand>(delegate, name);
   }
 };
 
@@ -330,7 +330,7 @@ ParseBuildFileDelegate::lookupTool(StringRef name) {
     printf("tool('%s')\n", name.str().c_str());
   }
 
-  return llvm::make_unique<ParseDummyTool>(*this, name);
+  return std::make_unique<ParseDummyTool>(*this, name);
 }
 
 void ParseBuildFileDelegate::loadedTarget(StringRef name,
@@ -364,7 +364,7 @@ ParseBuildFileDelegate::lookupNode(StringRef name,
     }
   }
 
-  return llvm::make_unique<ParseDummyNode>(*this, name);
+  return std::make_unique<ParseDummyNode>(*this, name);
 }
 
 void ParseBuildFileDelegate::loadedCommand(StringRef name,

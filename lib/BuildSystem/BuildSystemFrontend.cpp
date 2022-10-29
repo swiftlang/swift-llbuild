@@ -394,7 +394,7 @@ public:
 
     // Enable tracing, if requested.
     if (!invocation.traceFilePath.empty()) {
-      const auto dir = llvm::sys::path::parent_path(invocation.traceFilePath);
+      const auto dir = llvm::sys::path::parent_path(invocation.traceFilePath).str();
       if (!system->getFileSystem().createDirectories(dir) &&
           !system->getFileSystem().getFileInfo(dir).isDirectory()) {
         delegate.error(Twine("unable to create tracing directory: " + dir));
@@ -561,7 +561,7 @@ BuildSystemFrontendDelegate::error(StringRef filename,
   if (!filename.empty() && at.start) {
     // FIXME: We ignore errors here, for now, this will be resolved when we move
     // to SourceMgr completely.
-    auto buffer = impl->frontend->system->getFileSystem().getFileContents(filename);
+    auto buffer = impl->frontend->system->getFileSystem().getFileContents(filename.str());
     if (buffer) {
       unsigned offset = at.start - impl->bufferBeingParsed.data();
       if (offset + at.length < buffer->getBufferSize()) {

@@ -32,7 +32,7 @@ static std::string programName;
 
 void commands::setProgramName(StringRef name) {
   assert(programName.empty());
-  programName = name;
+  programName = name.str();
 }
 
 const char* commands::getProgramName() {

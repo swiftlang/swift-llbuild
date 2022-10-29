@@ -1319,7 +1319,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       const auto rspFile = command->getRspFile();
       if (!rspFile.empty()) {
         std::error_code ec;
-        llvm::raw_fd_ostream os(rspFile, ec, llvm::sys::fs::F_Text);
+        llvm::raw_fd_ostream os(rspFile, ec, llvm::sys::fs::OF_Text);
         if (ec) {
           // Treat the command as having a failed input.
           context.emitError("unable to create @response file '%s': %s\n",
@@ -2021,7 +2021,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
     numJobsInParallel = numCPUs + 2;
   }
 
-  const std::string workingDirectory = current_dir.str();
+  const std::string workingDirectory = current_dir.str().str();
 
   // Run up to two iterations, the first one loads the manifest and rebuilds it
   // if necessary, the second only runs if the manifest needs to be reloaded.

@@ -12,20 +12,24 @@ import optparse
 import os
 import shutil
 import sys
+import subprocess
 
 # ADT types.
 ADT_imports = ['iterator', 'iterator_range', 'APFloat', 'APInt', 'APSInt',
                'AllocatorList', 'EpochTracker', 'Hashing', 'None', 'Optional',
-               'StringExtras', 'STLExtras']
+               'StringExtras', 'STLExtras', 'STLForwardCompat', 'ScopeExit',
+               'FunctionExtras', 'FloatingPointMode', 'bit']
 
 # ADT basic data structures.
 ADT_imports += ['ArrayRef', 'PointerIntPair', 'PointerUnion', 'StringRef',
                 'StringSwitch', 'Triple', 'Twine', 'IntrusiveRefCntPtr',
                 'ilist', 'ilist_base', 'ilist_node', 'ilist_node_base',
-                'ilist_node_options', 'simple_ilist', 'ilist_iterator']
+                'ilist_node_options', 'simple_ilist', 'ilist_iterator',
+                'BitVector', 'StringSet']
 
 # ADT Mapping structures.
-ADT_imports += ['DenseSet', 'DenseMap', 'DenseMapInfo', 'FoldingSet', 'StringMap']
+ADT_imports += ['DenseSet', 'DenseMap', 'DenseMapInfo', 'FoldingSet', 'StringMap',
+                'StringMapEntry']
 
 # ADT "Small" structures.
 ADT_imports += ['SmallPtrSet', 'SmallSet', 'SmallString', 'SmallVector',]
@@ -34,7 +38,9 @@ ADT_imports += ['SmallPtrSet', 'SmallSet', 'SmallString', 'SmallVector',]
 ADT_imports += ['edit_distance']
 
 
-Demangle_imports = ['Demangle']
+Demangle_imports = ['Demangle', 'RustDemangle', 'ItaniumDemangle', 'StringView',
+                    'DemangleConfig', 'Utility', 'MicrosoftDemangle',
+                    'MicrosoftDemangleNodes']
 
 # Support types and infrastructure.
 Support_imports = [ 'AlignOf', 'Allocator', 'Atomic', 'CBindingWrapping',
@@ -47,18 +53,27 @@ Support_imports = [ 'AlignOf', 'Allocator', 'Atomic', 'CBindingWrapping',
                     'SmallVectorMemoryBuffer', 'StringSaver', 'SwapByteOrder',
                     'TimeValue', 'Threading', 'Unicode', 'UniqueLock', 'Unix',
                     'WindowsError', 'WindowsSupport', 'Valgrind',
-                    'circular_raw_ostream', 'raw_ostream', 'type_traits']
+                    'circular_raw_ostream', 'raw_ostream', 'type_traits',
+                    'AllocatorBase', 'Alignment', 'ExitCodes',
+                    'ABIBreak', 'BLAKE3', 'blake3', 'BLAKE3/blake3',
+                    'BLAKE3/blake3_impl', 'BLAKE3/blake3_dispatch',
+                    'BLAKE3/blake3_portable', 'BLAKE3/blake3_neon']
 
 # Stuff we don't want, but have to pull in.
-Support_imports += [ 'APFloat', 'ARMTargetParser', 'ARMBuildAttributes',
-                     'AArch64TargetParser', 'Chrono', 'DataTypes', 'Debug',
+Support_imports += [ 'APFloat', 'AArch64TargetParser', 'ARMTargetParser', 'ARMBuildAttributes',
+                     'Chrono', 'DataTypes', 'Debug',
                      'FileSystem', 'FileUtilities', 'FormatCommon',
                      'FormatProviders',
                      'FormatVariadic','FormatVariadicDetails', 'Host',
                      'Locale', 'MemAlloc', 'NativeFormatting', 'Options',
                      'Path', 'Process', 'Program', 'SMLoc', 'SourceMgr',
                      'Signals', 'Support', 'TargetParser', 'Types', 'Unicode',
-                     'UnicodeCaseFold', 'UnicodeCharRanges', 'X86TargetParser']
+                     'UnicodeCaseFold', 'UnicodeCharRanges', 'X86TargetParser',
+                     'BCD', 'FileSystem/UniqueID', 'DebugOptions', 'MemoryBufferRef',
+                     'FormatAdapters', 'ELFAttributes', 'VirtualFileSystem',
+                     'RISCVTargetParser', 'VersionTuple', 'HashBuilder', 'thread',
+                     'WithColor', 'SaveAndRestore', 'CrashRecoveryContext',
+                     'AutoConvert', 'ThreadLocal']
 
 # Support data structures.
 Support_imports += ['YAMLParser']
@@ -143,18 +158,16 @@ def main():
         if name not in Support_source_excludes:
             import_source('Support', name+'.c')
             import_source('Support', name+'.cpp')
+            import_source('Support', name+'.h')
             import_source('Support', os.path.join('Unix', name+'.h'))
             import_source('Support', os.path.join('Unix', name+'.inc'))
             import_source('Support', os.path.join('Windows', name+'.h'))
             import_source('Support', os.path.join('Windows', name+'.inc'))
+    import_source('Support/BLAKE3', 'LICENSE')
     for name in Demangle_imports:
         import_header('Demangle', name+'.h')
+        import_header('Demangle', name+'.def')
         import_source('Demangle', name+'.cpp')
-
-    # Copy over all of demangle
-    demangle_src = os.path.join(llvm_srcroot, 'lib', 'Demangle')
-    demangle_dest = os.path.join(llbuild_srcroot, 'lib', 'llvm', 'Demangle')
-    shutil.copytree(demangle_src, demangle_dest)
 
     # Add in the CMakeLists
     llbuild_cmake_root = os.path.join(llbuild_srcroot, 'utils', 'import-llvm', 'cmake')
@@ -164,6 +177,10 @@ def main():
                 os.path.join(llbuild_llvm_lib, 'Demangle', 'CMakeLists.txt'))
     shutil.copy(os.path.join(llbuild_cmake_root, 'supportCMakeLists.txt'),
                 os.path.join(llbuild_llvm_lib, 'Support', 'CMakeLists.txt'))
+
+    # Patch imported sources
+    subprocess.run(['git', 'apply', '-R', os.path.join(llbuild_srcroot, 'utils',
+                    'import-llvm', 'source-patches.patch')])
 
     # Create Symlinks for SwiftPM include directory resolution
     os.makedirs(os.path.join(llbuild_llvm_lib, 'Support', 'include', 'llvm'))

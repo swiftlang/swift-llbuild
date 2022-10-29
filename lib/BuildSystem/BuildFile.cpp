@@ -463,7 +463,7 @@ class BuildFileImpl {
           entry.getValue());
 
       // Create the target.
-      auto target = llvm::make_unique<Target>(name);
+      auto target = std::make_unique<Target>(name);
 
       // Add all of the nodes.
       for (auto& node: *nodes) {
@@ -877,7 +877,7 @@ public:
     //
     // FIXME: This is historical, We should tidy up this class to reflect that
     // it is now just a builder.
-    auto description = llvm::make_unique<BuildDescription>();
+    auto description = std::make_unique<BuildDescription>();
     std::swap(description->getNodes(), nodes);
     std::swap(description->getTargets(), targets);
     std::swap(description->getDefaultTarget(), defaultTarget);

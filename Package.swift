@@ -15,9 +15,9 @@ let package = Package(
             name: "llbuild",
             targets: ["llbuild"]),
 
-        .library(
-            name: "libllbuild",
-            targets: ["libllbuild"]),
+            .library(
+                name: "libllbuild",
+                targets: ["libllbuild"]),
         .library(
             name: "llbuildSwift",
             targets: ["llbuildSwift"]),
@@ -47,14 +47,14 @@ let package = Package(
         /// SwiftPM has now switched to using llbuild's Swift bindings API to
         /// build, but this tool is still used for SwiftPM's bootstrapping. Once
         /// that step has been eliminated, this tool can be removed.
-        .target(
-            name: "swift-build-tool",
-            dependencies: ["llbuildBuildSystem"],
-            path: "products/swift-build-tool",
-            linkerSettings: [
-                .linkedLibrary("dl", .when(platforms: [.linux])),
-                .linkedLibrary("pthread", .when(platforms: [.linux]))]
-        ),
+            .target(
+                name: "swift-build-tool",
+                dependencies: ["llbuildBuildSystem"],
+                path: "products/swift-build-tool",
+                linkerSettings: [
+                    .linkedLibrary("dl", .when(platforms: [.linux])),
+                    .linkedLibrary("pthread", .when(platforms: [.linux]))]
+            ),
 
         /// The public llbuild C API.
         .target(
@@ -72,12 +72,12 @@ let package = Package(
         ),
 
         // MARK: Components
-        
-        .target(
-            name: "llbuildBasic",
-            dependencies: ["llvmSupport"],
-            path: "lib/Basic"
-        ),
+
+            .target(
+                name: "llbuildBasic",
+                dependencies: ["llvmSupport"],
+                path: "lib/Basic"
+            ),
         .target(
             name: "llbuildCore",
             dependencies: ["llbuildBasic"],
@@ -106,22 +106,22 @@ let package = Package(
         ),
 
         // MARK: Analysis Components
-        
-        .target(
-            name: "llbuildAnalysis",
-            dependencies: ["llbuildSwift"],
-            path: "lib/Analysis"
-        ),
-        
+
+            .target(
+                name: "llbuildAnalysis",
+                dependencies: ["llbuildSwift"],
+                path: "lib/Analysis"
+            ),
+
         // MARK: Test Targets
 
-        .target(
-            name: "llbuildBasicTests",
-            dependencies: ["llbuildBasic", "gtestlib"],
-            path: "unittests/Basic",
-            linkerSettings: [
-                .linkedLibrary("dl", .when(platforms: [.linux])),
-                .linkedLibrary("pthread", .when(platforms: [.linux]))]),
+            .target(
+                name: "llbuildBasicTests",
+                dependencies: ["llbuildBasic", "gtestlib"],
+                path: "unittests/Basic",
+                linkerSettings: [
+                    .linkedLibrary("dl", .when(platforms: [.linux])),
+                    .linkedLibrary("pthread", .when(platforms: [.linux]))]),
         .target(
             name: "llbuildCoreTests",
             dependencies: ["llbuildCore", "gtestlib"],
@@ -158,42 +158,48 @@ let package = Package(
                 .linkedLibrary("dl", .when(platforms: [.linux])),
                 .linkedLibrary("pthread", .when(platforms: [.linux]))]),
 
-        .target(
-            name: "llbuildTestSupport",
-            path: "unittests/TestSupport"),
-        
+            .target(
+                name: "llbuildTestSupport",
+                path: "unittests/TestSupport"),
+
         // MARK: GoogleTest
 
-        .target(
-            name: "gtestlib",
-            path: "utils/unittest/googletest/src",
-            exclude: [
-                "gtest-death-test.cc",
-                "gtest-filepath.cc",
-                "gtest-port.cc",
-                "gtest-printers.cc",
-                "gtest-test-part.cc",
-                "gtest-typed-test.cc",
-                "gtest.cc",
-            ]),
-        
+            .target(
+                name: "gtestlib",
+                path: "utils/unittest/googletest/src",
+                exclude: [
+                    "gtest-death-test.cc",
+                    "gtest-filepath.cc",
+                    "gtest-port.cc",
+                    "gtest-printers.cc",
+                    "gtest-test-part.cc",
+                    "gtest-typed-test.cc",
+                    "gtest.cc",
+                ]),
+
         // MARK: Ingested LLVM code.
         .target(
-          name: "llvmDemangle",
-          path: "lib/llvm/Demangle"
+            name: "llvmDemangle",
+            path: "lib/llvm/Demangle"
         ),
 
-        .target(
-            name: "llvmSupport",
-            dependencies: ["llvmDemangle"],
-            path: "lib/llvm/Support",
-            linkerSettings: [
-                .linkedLibrary("m", .when(platforms: [.linux])),
-                .linkedLibrary("ncurses", .when(platforms: [.linux, .macOS, .android]))]
-        ),
-    ],
-    cxxLanguageStandard: .cxx14
-)
+            .target(
+                name: "llvmSupport",
+                dependencies: ["llvmDemangle"],
+                path: "lib/llvm/Support",
+                exclude: ["BLAKE3/blake3_neon.c"],
+                cSettings: [
+                    .headerSearchPath("lib/llvm/Support"),
+                    .define("BLAKE3_USE_NEON", to: "0"),
+                    .define("BLAKE3_NO_AVX512", to: "1"),
+                    .define("BLAKE3_NO_AVX2", to: "1"),
+                    .define("BLAKE3_NO_SSE41", to: "1"),
+                    .define("BLAKE3_NO_SSE2", to: "1")
+                ], linkerSettings: [
+                    .linkedLibrary("m", .when(platforms: [.linux])),
+                    .linkedLibrary("ncurses", .when(platforms: [.linux, .macOS, .android]))]
+            ),
+    ], cxxLanguageStandard: .cxx14)
 
 // FIXME: Conditionalize these flags since SwiftPM 5.3 and earlier will crash for platforms they don't know about.
 #if os(Windows)

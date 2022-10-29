@@ -1,18 +1,24 @@
 # Disable implicit-fallthrough, if used.
 append_if(CXX_SUPPORTS_IMPLICIT_FALLTHROUGH_FLAG "-Wno-implicit-fallthrough" CMAKE_CXX_FLAGS)
 
-add_llbuild_library(llvmSupport STATIC
+add_llbuild_library(llvmSupport
+ABIBreak.cpp
+Allocator.cpp
 APFloat.cpp
 APInt.cpp
 APSInt.cpp
-Allocator.cpp
+ARMTargetParser.cpp
 Atomic.cpp
+AutoConvert.cpp
 Chrono.cpp
+circular_raw_ostream.cpp
 CommandLine.cpp
 ConvertUTF.cpp
 ConvertUTFWrapper.cpp
-DJB.cpp
+CrashRecoveryContext.cpp
 Debug.cpp
+DJB.cpp
+ELFAttributes.cpp
 Errno.cpp
 Error.cpp
 ErrorHandling.cpp
@@ -22,17 +28,19 @@ FormatVariadic.cpp
 Hashing.cpp
 Host.cpp
 Locale.cpp
-MD5.cpp
 ManagedStatic.cpp
 MathExtras.cpp
+MD5.cpp
+MemAlloc.cpp
 Memory.cpp
 MemoryBuffer.cpp
-Mutex.cpp
+MemoryBufferRef.cpp
 NativeFormatting.cpp
-Options.cpp
+Optional.cpp
 Path.cpp
 Process.cpp
 Program.cpp
+raw_ostream.cpp
 Signals.cpp
 SmallPtrSet.cpp
 SmallVector.cpp
@@ -43,14 +51,17 @@ StringRef.cpp
 StringSaver.cpp
 TargetParser.cpp
 Threading.cpp
+ThreadLocal.cpp
 Triple.cpp
 Twine.cpp
 Unicode.cpp
 UnicodeCaseFold.cpp
 Valgrind.cpp
+VersionTuple.cpp
+VirtualFileSystem.cpp
+WithColor.cpp
+X86TargetParser.cpp
 YAMLParser.cpp
-circular_raw_ostream.cpp
-raw_ostream.cpp
   )
 
 
@@ -59,11 +70,3 @@ target_link_libraries(llvmSupport PRIVATE
   Threads::Threads
   ${CMAKE_DL_LIBS})
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
-  target_link_libraries(llvmSupport PRIVATE
-    execinfo)
-endif()
-
-if(${CMAKE_SYSTEM_NAME} MATCHES "Android|Darwin|Linux")
-  target_link_libraries(llvmSupport PRIVATE curses)
-endif()
