@@ -13,6 +13,7 @@
 #ifndef LLBUILD_BUILDSYSTEM_BUILDFILE_H
 #define LLBUILD_BUILDSYSTEM_BUILDFILE_H
 
+#include "llbuild/BuildSystem/BuildSystem.h"
 #include "llbuild/Basic/Compiler.h"
 #include "llbuild/Basic/LLVM.h"
 
@@ -95,7 +96,12 @@ public:
   virtual void error(StringRef filename,
                      const BuildFileToken& at,
                      const Twine& message) = 0;
-  
+
+  /// Called by the build file loader when ownership analysis determines
+  /// multiple producers exist for node.
+  virtual void cannotLoadDueToMultipleProducers(Node *output,
+                                                std::vector<Command*> commands) = 0;
+
   /// Called by the build file loader after the 'client' file section has been
   /// loaded.
   ///
@@ -150,7 +156,7 @@ public:
                      BuildFileDelegate& delegate);
   ~BuildFile();
 
-  /// Return the delegate the engine was configured with.
+  /// Return the file delegate the engine was configured with.
   BuildFileDelegate* getDelegate();
 
   /// Load the build file from the provided filename.
