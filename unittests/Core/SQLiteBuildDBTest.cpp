@@ -22,10 +22,20 @@
 using namespace llbuild;
 using namespace llbuild::core;
 
+std::error_code createRealTemporaryFile(const Twine &prefix, StringRef suffix,
+                                    SmallVectorImpl<char> &resultPath) {
+    llvm::SmallString<256> rawPath;
+    auto ec = llvm::sys::fs::createTemporaryFile(prefix, suffix, rawPath);
+    if (ec)
+      return ec;
+
+    return llvm::sys::fs::real_path(rawPath, resultPath);
+}
+
 TEST(SQLiteBuildDBTest, ErrorHandling) {
     // Create a temporary file.
     llvm::SmallString<256> dbPath;
-    auto ec = llvm::sys::fs::createTemporaryFile("build", "db", dbPath);
+    auto ec = createRealTemporaryFile("build", "db", dbPath);
     EXPECT_EQ(bool(ec), false);
     const char* path = dbPath.c_str();
     fprintf(stderr, "using db: %s\n", path);
@@ -64,7 +74,7 @@ TEST(SQLiteBuildDBTest, ErrorHandling) {
 TEST(SQLiteBuildDBTest, LockedWhileBuilding) {
   // Create a temporary file.
   llvm::SmallString<256> dbPath;
-  auto ec = llvm::sys::fs::createTemporaryFile("build", "db", dbPath);
+  auto ec = createRealTemporaryFile("build", "db", dbPath);
   EXPECT_EQ(bool(ec), false);
   const char* path = dbPath.c_str();
   fprintf(stderr, "using db: %s\n", path);
@@ -113,7 +123,7 @@ TEST(SQLiteBuildDBTest, LockedWhileBuilding) {
 TEST(SQLiteBuildDBTest, CloseDBConnectionAfterCloseCall) {
   // Create a temporary file.
   llvm::SmallString<256> dbPath;
-  auto ec = llvm::sys::fs::createTemporaryFile("build", "db", dbPath);
+  auto ec = createRealTemporaryFile("build", "db", dbPath);
   EXPECT_EQ(bool(ec), false);
   const char* path = dbPath.c_str();
   fprintf(stderr, "using db: %s\n", path);
