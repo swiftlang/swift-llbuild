@@ -165,8 +165,7 @@ Technical documentation is available at
 Bug Reports
 -----------
 
-Bug reports should be filed in the [Swift OSS Jira](https://bugs.swift.org) in
-the `llbuild` component.
+Bug reports should be filed in [the issue tracker](https://github.com/apple/swift-llbuild/issues) of `swift-llbuild` repository on GitHub.
 
 
 Open Projects
@@ -263,7 +262,7 @@ and [Salsa](https://github.com/salsa-rs/salsa).
 License
 -------
 
-Copyright (c) 2014 - 2020 Apple Inc. and the Swift project authors.
+Copyright (c) 2014 - 2022 Apple Inc. and the Swift project authors.
 Licensed under Apache License v2.0 with Runtime Library Exception.
 
 See https://swift.org/LICENSE.txt for license information.
