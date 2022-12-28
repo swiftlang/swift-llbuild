@@ -31,7 +31,7 @@
 #define LLBUILD_EXPORT LLBUILD_EXTERN __attribute__((__visibility__("default")))
 #else
 // asume PE/COFF
-#if defined(_DLL)
+#if defined(_WINDLL)
 #if defined(libllbuild_EXPORTS)
 #define LLBUILD_EXPORT LLBUILD_EXTERN __declspec(dllexport)
 #else
