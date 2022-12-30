@@ -51,7 +51,7 @@ else()
   endif()
 endif()
 
-set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+set(THREADS_PREFER_PTHREAD_FLAG FALSE)
 find_package(Threads REQUIRED)
 
 find_package(SQLite3 REQUIRED)

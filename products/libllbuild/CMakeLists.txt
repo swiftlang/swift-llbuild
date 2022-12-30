@@ -9,10 +9,8 @@ set(SOURCES
 
 add_llbuild_library(libllbuild
   ${SOURCES}
-  SHARED
+  STATIC
   OUTPUT_NAME llbuild)
-target_compile_definitions(libllbuild PRIVATE
-  _WINDLL)
 
 set_property(TARGET libllbuild PROPERTY MACOSX_RPATH ON)
 
@@ -23,8 +21,6 @@ target_link_libraries(libllbuild PRIVATE
   llbuildNinja
   llvmSupport
   SQLite::SQLite3)
-
-set_property(GLOBAL APPEND PROPERTY LLBuild_EXPORTS libllbuild)
 
 if(CMAKE_SYSTEM_NAME STREQUAL Windows)
     set_target_properties(libllbuild PROPERTIES LINK_FLAGS "/INCREMENTAL:NO")
