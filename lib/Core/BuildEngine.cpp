@@ -726,6 +726,15 @@ private:
     if (!request.pendingInputs.empty())
       return;
 
+    // We need to check if result is valid again in case a depenency invalidated the result
+    if (!ruleInfo.rule->isResultValid(buildEngine, ruleInfo.result.value)) {
+      if (trace)
+        trace->ruleNeedsToRunBecauseInvalidValue(ruleInfo.rule.get());
+      finishScanRequest(ruleInfo, RuleInfo::StateKind::NeedsToRun);
+      delegate.determinedRuleNeedsToRun(ruleInfo.rule.get(), Rule::RunReason::InvalidValue, nullptr);
+      return;
+    }
+
     // If we reached the end of the inputs, the rule does not need to run.
     if (trace)
       trace->ruleDoesNotNeedToRun(ruleInfo.rule.get());
