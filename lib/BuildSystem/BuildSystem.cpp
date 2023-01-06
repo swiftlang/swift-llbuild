@@ -846,7 +846,11 @@ class DirectoryContentsTask : public Task {
     }
 
     std::vector<std::string> filenames;
-    getContents(path, filenames);
+    std::error_code ec = getContents(path, filenames);
+
+    // Currently, tests and presumably clients expect that errors are silently
+    // ignored when reading directory contents listings.
+    (void)ec;
 
     // Create the result.
     ti.complete(BuildValue::makeDirectoryContents(directoryValue.getOutputInfo(),
@@ -854,14 +858,17 @@ class DirectoryContentsTask : public Task {
   }
 
 
-  static void getContents(StringRef path, std::vector<std::string>& filenames) {
+  static std::error_code getContents(StringRef path, std::vector<std::string>& filenames) {
     // Get the list of files in the directory.
     // FIXME: This is not going through the filesystem object. Indeed the fs
     // object does not currently support directory listing/iteration, but
     // probably should so that clients may override it.
+    //
+    // Exit the loop if we encounter any errors, to prevent infinitely looping
+    // over an invalid directory in some circumstances. rdar://101717159
     std::error_code ec;
     for (auto it = llvm::sys::fs::directory_iterator(path, ec),
-         end = llvm::sys::fs::directory_iterator(); it != end;
+         end = llvm::sys::fs::directory_iterator(); it != end && !ec;
          it = it.increment(ec)) {
       filenames.push_back(llvm::sys::path::filename(it->path()));
     }
@@ -871,6 +878,8 @@ class DirectoryContentsTask : public Task {
               [](const std::string& a, const std::string& b) {
                 return a < b;
               });
+
+    return ec;
   }
 
 
@@ -901,7 +910,12 @@ public:
       // With filters, we list the current filtered contents and then compare
       // the lists.
       std::vector<std::string> cur;
-      getContents(path, cur);
+      std::error_code ec = getContents(path, cur);
+
+      // Currently, tests and presumably clients expect that errors are silently
+      // ignored when reading directory contents listings.
+      (void)ec;
+
       auto prev = value.getDirectoryContents();
 
       if (cur.size() != prev.size())
@@ -1002,7 +1016,7 @@ class FilteredDirectoryContentsTask : public Task {
   }
 
 
-  static void getFilteredContents(StringRef path, const StringList& filters,
+  static std::error_code getFilteredContents(StringRef path, const StringList& filters,
                                   std::vector<std::string>& filenames) {
     auto filterStrings = filters.getValues();
 
@@ -1010,9 +1024,12 @@ class FilteredDirectoryContentsTask : public Task {
     // FIXME: This is not going through the filesystem object. Indeed the fs
     // object does not currently support directory listing/iteration, but
     // probably should so that clients may override it.
+    //
+    // Exit the loop if we encounter any errors, to prevent infinitely looping
+    // over an invalid directory in some circumstances. rdar://101717159
     std::error_code ec;
     for (auto it = llvm::sys::fs::directory_iterator(path, ec),
-         end = llvm::sys::fs::directory_iterator(); it != end;
+         end = llvm::sys::fs::directory_iterator(); it != end && !ec;
          it = it.increment(ec)) {
       std::string filename = llvm::sys::path::filename(it->path());
       bool excluded = false;
@@ -1033,6 +1050,8 @@ class FilteredDirectoryContentsTask : public Task {
               [](const std::string& a, const std::string& b) {
                 return a < b;
               });
+
+    return ec;
   }
 
 
