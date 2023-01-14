@@ -844,6 +844,16 @@ class CAPIExternalCommand : public ExternalCommand {
       } else {
         return false;
       }
+    } else if (name == "exclude-from-ownership-analysis") {
+      if (value == "true") {
+        excludeFromOwnershipAnalysis = true;
+        return true;
+      } else if (value == "false") {
+        excludeFromOwnershipAnalysis = false;
+        return true;
+      } else {
+        return false;
+      }
     } else if (name == "working-directory") {
       // Ensure the working directory is absolute. This will make sure any
       // relative directories are interpreted as relative to the CWD at the time

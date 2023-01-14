@@ -38,6 +38,7 @@
 client:
   name: basic
   file-system: default
+  perform-ownership-analysis: yes
 
 targets:
   basic: ["final.txt"]

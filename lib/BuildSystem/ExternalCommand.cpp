@@ -69,11 +69,6 @@ configureOutputs(const ConfigureContext&, const std::vector<Node*>& value) {
   }
 }
 
-void ExternalCommand::addOutput(BuildNode* node) {
-  outputs.emplace_back(node);
-  node->getProducers().push_back(this);
-}
-
 bool ExternalCommand::
 configureAttribute(const ConfigureContext& ctx, StringRef name,
                    StringRef value) {
@@ -101,6 +96,18 @@ configureAttribute(const ConfigureContext& ctx, StringRef name,
     }
     alwaysOutOfDate = value == "true";
     return true;
+    
+  } else if (name == "exclude-from-ownership-analysis") {
+    if (value == "true") {
+      excludeFromOwnershipAnalysis = true;
+      return true;
+    } else if (value == "false") {
+      excludeFromOwnershipAnalysis = false;
+      return true;
+    } else {
+      ctx.error("invalid value for attribute: '" + name + "'");
+      return false;
+    }
   } else {
     ctx.error("unexpected attribute: '" + name + "'");
     return false;

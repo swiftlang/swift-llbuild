@@ -3090,15 +3090,30 @@ public:
 };
 
 class MkdirTool : public Tool {
+  bool excludeFromOwnershipAnalysis = false;
+
 public:
   using Tool::Tool;
 
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
-    // No supported attributes.
-    ctx.error("unexpected attribute: '" + name + "'");
-    return false;
+    if (name == "exclude-from-ownership-analysis") {
+      if (value == "true") {
+        excludeFromOwnershipAnalysis = true;
+        return true;
+      } else if (value == "false") {
+        excludeFromOwnershipAnalysis = false;
+        return true;
+      } else {
+        ctx.error("invalid value for attribute: '" + name + "'");
+        return false;
+      }
+    } else {
+      ctx.error("unexpected attribute: '" + name + "'");
+      return false;
+    }
   }
+
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   ArrayRef<StringRef> values) override {
     // No supported attributes.
@@ -3114,16 +3129,15 @@ public:
   }
 
   virtual std::unique_ptr<Command> createCommand(StringRef name) override {
-    return llvm::make_unique<MkdirCommand>(name);
+    auto res = llvm::make_unique<MkdirCommand>(name);
+    res->excludeFromOwnershipAnalysis = excludeFromOwnershipAnalysis;
+    return res;
   }
 };
 
 #pragma mark - SymlinkTool implementation
 
 class SymlinkCommand : public Command {
-  /// The declared output node.
-  BuildNode* output = nullptr;
-
   /// The path of the actual symbolic link to create, if different from the
   /// output node.
   std::string linkOutputPath;
@@ -3131,20 +3145,17 @@ class SymlinkCommand : public Command {
   /// The command description.
   std::string description;
 
-  /// Declared command inputs, used only for ordering purposes.
-  std::vector<BuildNode*> inputs;
-
   /// The contents to write at the output path.
   std::string contents;
 
   /// Get the destination path.
   StringRef getActualOutputPath() const {
-    return linkOutputPath.empty() ? output->getName() :
+    return linkOutputPath.empty() ? outputs[0]->getName() :
       StringRef(linkOutputPath);
   }
   
   virtual CommandSignature getSignature() const override {
-    CommandSignature code(output->getName());
+    CommandSignature code(outputs[0]->getName());
     code = code.combine(contents);
     for (const auto* input: inputs) {
       code = code.combine(input->getName());
@@ -3165,7 +3176,7 @@ class SymlinkCommand : public Command {
     llvm::raw_svector_ostream os(result);
     os << "ln -sfh ";
     StringRef outputPath = getActualOutputPath();
-    if (!output || !outputPath.empty()) {
+    if (outputs.empty() || !outputPath.empty()) {
       // FIXME: This isn't correct, we need utilities for doing shell quoting.
       if (outputPath.find(' ') != StringRef::npos) {
         os << '"' << outputPath << '"';
@@ -3195,7 +3206,7 @@ class SymlinkCommand : public Command {
   virtual void configureOutputs(const ConfigureContext& ctx,
                                 const std::vector<Node*>& value) override {
     if (value.size() == 1) {
-      output = static_cast<BuildNode*>(value[0]);
+      outputs.push_back(static_cast<BuildNode*>(value[0]));
     } else if (value.empty()) {
       ctx.error("missing declared output");
     } else {
@@ -3211,6 +3222,17 @@ class SymlinkCommand : public Command {
     } else if (name == "link-output-path") {
       linkOutputPath = value;
       return true;
+    } else if (name == "exclude-from-ownership-analysis") {
+      if (value == "true") {
+        excludeFromOwnershipAnalysis = true;
+        return true;
+      } else if (value == "false") {
+        excludeFromOwnershipAnalysis = false;
+        return true;
+      } else {
+        ctx.error("invalid value for attribute: '" + name + "'");
+        return false;
+      }
     } else {
       ctx.error("unexpected attribute: '" + name + "'");
       return false;
@@ -3253,7 +3275,7 @@ class SymlinkCommand : public Command {
                              const BuildValue& value) override {
     // It is an error if this command isn't configured properly.
     StringRef outputPath = getActualOutputPath();
-    if (!output || outputPath.empty())
+    if (outputs.empty() || outputPath.empty())
       return false;
 
     // If the prior value wasn't for a successful command, recompute.
@@ -3301,7 +3323,7 @@ class SymlinkCommand : public Command {
                        ResultFn resultFn) override {
     // It is an error if this command isn't configured properly.
     StringRef outputPath = getActualOutputPath();
-    if (!output || outputPath.empty()) {
+    if (outputs.empty() || outputPath.empty()) {
       resultFn(BuildValue::makeFailedCommand());
       return;
     }
@@ -3352,15 +3374,29 @@ public:
 };
 
 class SymlinkTool : public Tool {
+  bool excludeFromOwnershipAnalysis = false;
 public:
   using Tool::Tool;
 
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
-    // No supported attributes.
-    ctx.error("unexpected attribute: '" + name + "'");
-    return false;
+    if (name == "exclude-from-ownership-analysis") {
+      if (value == "true") {
+        excludeFromOwnershipAnalysis = true;
+        return true;
+      } else if(value == "false") {
+        excludeFromOwnershipAnalysis = false;
+        return true;
+      } else {
+        ctx.error("invalid value for attribute: '" + name + "'");
+        return false;
+      }
+    } else {
+      ctx.error("unexpected attribute: '" + name + "'");
+      return false;
+    }
   }
+
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   ArrayRef<StringRef> values) override {
     // No supported attributes.
@@ -3376,7 +3412,9 @@ public:
   }
 
   virtual std::unique_ptr<Command> createCommand(StringRef name) override {
-    return llvm::make_unique<SymlinkCommand>(name);
+    auto res = llvm::make_unique<SymlinkCommand>(name);
+    res->excludeFromOwnershipAnalysis = excludeFromOwnershipAnalysis;
+    return res;
   }
 };
 
