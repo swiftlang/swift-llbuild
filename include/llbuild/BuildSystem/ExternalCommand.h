@@ -44,8 +44,6 @@ class ExternalCommandHandler;
 /// build system and interact using files. It defines common base behaviors
 /// which make sense for all such tools.
 class ExternalCommand : public Command {
-  std::vector<BuildNode*> inputs;
-  std::vector<BuildNode*> outputs;
   std::string description;
 
   /// Whether to allow missing inputs.
@@ -111,10 +109,6 @@ public:
 
   bool isExternalCommand() const override { return true; }
 
-  const std::vector<BuildNode*>& getInputs() const { return inputs; }
-  
-  const std::vector<BuildNode*>& getOutputs() const { return outputs; }
-
   virtual void configureDescription(const ConfigureContext&,
                                     StringRef value) override;
   
@@ -123,8 +117,6 @@ public:
 
   virtual void configureOutputs(const ConfigureContext&,
                                 const std::vector<Node*>& value) override;
-
-  virtual void addOutput(BuildNode* output);
 
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override;
