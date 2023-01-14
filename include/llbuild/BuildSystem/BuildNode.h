@@ -84,6 +84,12 @@ public:
     return exclusionPatterns;
   }
 
+  std::vector<StringRef> mustScanAfterPaths;
+
+  const std::vector<StringRef>& getMustScanAfterPaths() const {
+    return mustScanAfterPaths;
+  }
+
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override;
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,

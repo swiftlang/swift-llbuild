@@ -78,6 +78,9 @@ public:
                      const BuildFileToken& at,
                      const Twine& message) override;
 
+  virtual void cannotLoadDueToMultipleProducers(Node *output,
+                                                std::vector<Command*> commands) override;
+
   virtual bool configureClient(const ConfigureContext&, StringRef name,
                                uint32_t version,
                                const property_list_type& properties) override;
@@ -305,6 +308,14 @@ void ParseBuildFileDelegate::error(StringRef filename,
     fprintf(stderr, "%s: error: %s\n", filename.str().c_str(),
             message.str().c_str());
   }
+}
+
+void
+ParseBuildFileDelegate::cannotLoadDueToMultipleProducers(Node *output,
+                                                         std::vector<Command*> commands) {
+  std::string message = "cannot build '" + output->getName().str() + "' node is produced "
+  "by multiple commands; e.g. '" + (*commands.begin())->getName().str() + "'";
+  error("", {}, message);
 }
 
 bool
