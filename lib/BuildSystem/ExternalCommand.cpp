@@ -69,6 +69,11 @@ configureOutputs(const ConfigureContext&, const std::vector<Node*>& value) {
   }
 }
 
+void ExternalCommand::addOutput(BuildNode* node) {
+  outputs.emplace_back(node);
+  node->getProducers().push_back(this);
+}
+
 bool ExternalCommand::
 configureAttribute(const ConfigureContext& ctx, StringRef name,
                    StringRef value) {
@@ -402,6 +407,9 @@ void ExternalCommand::execute(BuildSystem& system,
       //
       // FIXME: Need to use the filesystem interfaces.
       auto parent = llvm::sys::path::parent_path(node->getName());
+      if (node->getName().endswith("/")) {
+        parent = llvm::sys::path::parent_path(parent);
+      }
       if (!parent.empty()) {
         (void) system.getFileSystem().createDirectories(parent);
       }

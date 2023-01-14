@@ -1,0 +1,137 @@
+# Some files are written to /tmp/raw/
+# TaskA reads /tmp/raw/ and produces /tmp/headers/
+# TaskB reads /tmp/headers/ and produces /tmp/headers-copy/
+# TaskC reads /tmp/headers-copy/libX.fake-h and produces /tmp/libX-from-TaskC.fake-h
+#
+# This test check many things at once and is intended for overall sanity check of all pieces.
+#
+# raw/
+#  |   libX.fake-h <-- written on disk (initial state)
+#  |   libX.fake-h <-- written on disk (initial state)
+#  |   libY.fake-h <-- written on disk (initial state)
+#  v
+# [TaskA] (verbatim copy; mixed case)
+#  |
+#  v
+# headers/
+#  |   libX.fake-h
+#  |   libY.fake-h
+#  |   libZ.fake-h
+#  v
+# [TaskB] (modified copy; ALL CAPS)
+#  |
+#  v
+# headers-copy/
+#      libX.fake-h
+#  ,-- libY.fake-h (will be automatically amended to outputs of TaskB)
+#  |   libZ.fake-h
+#  v
+# [TaskC] (modified copy; all lower case)
+#  |
+#  v
+# libY-from-TaskC.fake-h
+#
+# RUN: rm -rf "%t.build"
+# RUN: mkdir -p "%t.build/raw"
+# RUN: echo "Contents of libX.fake-h" > "%t.build/raw/libX.fake-h"
+# RUN: echo "Contents of libY.fake-h" > "%t.build/raw/libY.fake-h"
+# RUN: echo "Contents of libZ.fake-h" > "%t.build/raw/libZ.fake-h"
+# RUN: cat %s > "%t.build/build.llbuild"
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build --trace %t.trace > %t.out
+# RUN: %{FileCheck} --input-file=%t.out %s
+#
+# CHECK: TaskA
+# CHECK: Contents of libX.fake-h
+# CHECK: Contents of libY.fake-h
+# CHECK: Contents of libZ.fake-h
+# CHECK: TaskB
+# CHECK: CONTENTS OF LIBX.FAKE-H
+# CHECK: CONTENTS OF LIBY.FAKE-H
+# CHECK: CONTENTS OF LIBZ.FAKE-H
+# CHECK: TaskC
+# CHECK: contents of liby.fake-h
+#
+# Check that a null build does nothing.
+#
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build --trace %t.trace > %t2.out
+# RUN: echo "PREVENT-EMPTY-FILE" >> %t2.out
+# RUN: %{FileCheck} --input-file=%t2.out %s --check-prefix=CHECK-NULL
+# CHECK-NULL-NOT: TaskA
+# CHECK-NULL-NOT: TaskB
+# CHECK-NULL-NOT: TaskC
+#
+# Check modifying libY.fake-h rebuilds TaskC
+#
+# RUN: echo "Updated contents of libY.fake-h" > "%t.build/raw/libY.fake-h"
+# RUN: %{llbuild} buildsystem build --serial --chdir %t.build --trace %t.trace > %t3.out
+# RUN: %{FileCheck} --input-file=%t3.out %s --check-prefix=CHECK-UPDATE-Y
+# CHECK-UPDATE-Y: TaskA
+# CHECK-UPDATE-Y: Updated contents of libY.fake-h
+# CHECK-UPDATE-Y: TaskB
+# CHECK-UPDATE-Y: UPDATED CONTENTS OF LIBY.FAKE-H
+# CHECK-UPDATE-Y: TaskC
+# CHECK-UPDATE-Y: updated contents of liby.fake-h
+
+client:
+  name: basic
+  file-system: default
+
+targets:
+  basic: ["libY-from-TaskC.fake-h/"]
+
+# define the default target to execute when this manifest is loaded.
+default: basic
+
+commands:
+  taskC:
+    tool: shell
+    inputs: ["headers-processed/libY.fake-h/"]
+    outputs: ["libY-from-TaskC.fake-h/"]
+    description: "TaskC"
+    args: '
+      set -o errexit
+      set -o nounset
+
+      [ -f "headers-processed/libY.fake-h" ]
+      cat "headers-processed/libY.fake-h" | tr A-Z a-z > libY-from-TaskC.fake-h
+      cat libY-from-TaskC.fake-h
+      '
+
+  taskB:
+    tool: shell
+    inputs: ["headers/"]
+    outputs: ["headers-processed/"]
+    description: "TaskB"
+    args: '
+      set -o errexit
+      set -o nounset
+
+      mkdir -p "headers-processed/"
+      for headerFile in headers/*.fake-h
+      do
+          outputFile=headers-processed/$(basename "$headerFile")
+          cat "$headerFile" | tr a-z A-Z > "$outputFile"
+          cat $outputFile
+      done
+      '
+
+  taskA:
+    tool: shell
+    inputs: ["raw/"]
+    outputs: ["headers/"]
+    description: "TaskA"
+    args: '
+      set -o errexit
+      set -o nounset
+
+      mkdir -p headers/
+      cd headers/
+
+      for headerFile in ../raw/*.fake-h
+      do
+          cp "$headerFile" .
+      done
+
+      ls .
+      cat *
+      '
