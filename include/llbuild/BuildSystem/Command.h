@@ -147,8 +147,6 @@ public:
                             uintptr_t inputID, const BuildValue& value) = 0;
 
 
-  virtual bool isExternalCommand() const { return false; }
-
   typedef std::function<void (BuildValue&&)> ResultFn;
 
   /// Execute the command, and return the value.

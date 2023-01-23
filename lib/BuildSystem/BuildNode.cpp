@@ -104,9 +104,6 @@ bool BuildNode::configureAttribute(const ConfigureContext& ctx, StringRef name,
   } else if (name == "content-exclusion-patterns") {
     exclusionPatterns = basic::StringList(value);
     return true;
-  } else if (name == "must-scan-after-paths") {
-    mustScanAfterPaths = basic::StringList(value).getValues();
-    return true;
   }
     
   // We don't support any other custom attributes.
@@ -118,9 +115,6 @@ bool BuildNode::configureAttribute(const ConfigureContext& ctx, StringRef name,
                                    ArrayRef<StringRef> values) {
   if (name == "content-exclusion-patterns") {
     exclusionPatterns = basic::StringList(values);
-    return true;
-  } else if (name == "must-scan-after-paths") {
-    mustScanAfterPaths = basic::StringList(values).getValues();
     return true;
   }
 
@@ -139,15 +133,7 @@ bool BuildNode::configureAttribute(
 
 FileInfo BuildNode::getFileInfo(basic::FileSystem& fileSystem) const {
   assert(!isVirtual());
-
-  // Drop the trailing slash
-  // otherwise non-directory paths that end with "/" will be reported as missing
-  StringRef path = getName();
-  if (path.endswith("/") && path != "/") {
-    path = path.substr(0, path.size() - 1);
-  }
-
-  return fileSystem.getFileInfo(path);
+  return fileSystem.getFileInfo(getName());
 }
 
 FileInfo BuildNode::getLinkInfo(basic::FileSystem& fileSystem) const {
