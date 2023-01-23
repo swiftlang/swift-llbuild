@@ -81,6 +81,10 @@ class ExternalCommand : public Command {
   bool canUpdateIfNewerWithResult(const BuildValue& result);
 
 protected:
+  const std::vector<BuildNode*>& getInputs() const { return inputs; }
+  
+  const std::vector<BuildNode*>& getOutputs() const { return outputs; }
+  
   StringRef getDescription() const { return description; }
 
   /// This function must be overriden by subclasses for any additional keys.
@@ -109,12 +113,6 @@ protected:
 public:
   using Command::Command;
 
-  bool isExternalCommand() const override { return true; }
-
-  const std::vector<BuildNode*>& getInputs() const { return inputs; }
-  
-  const std::vector<BuildNode*>& getOutputs() const { return outputs; }
-
   virtual void configureDescription(const ConfigureContext&,
                                     StringRef value) override;
   
@@ -123,8 +121,6 @@ public:
 
   virtual void configureOutputs(const ConfigureContext&,
                                 const std::vector<Node*>& value) override;
-
-  virtual void addOutput(BuildNode* output);
 
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override;

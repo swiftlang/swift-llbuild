@@ -108,9 +108,6 @@ public:
                      const BuildFileToken& at,
                      const Twine& message) override;
 
-  virtual void cannotLoadDueToMultipleProducers(Node *output,
-                                                std::vector<Command*> commands) override;
-
   virtual bool configureClient(const ConfigureContext&, StringRef name,
                                uint32_t version,
                                const property_list_type& properties) override;
@@ -576,10 +573,7 @@ class DirectoryInputNodeTask : public Task {
 
   core::ValueType directorySignature;
 
-  int totalBlockingDeps = 0;
-  int finishedBlockingDeps = 0;
-
-  void performUnblockedRequest(TaskInterface ti) {
+  virtual void start(TaskInterface ti) override {
     // Remove any trailing slash from the node name.
     StringRef path =  node.getName();
     if (path.endswith("/") && path != "/") {
@@ -591,38 +585,13 @@ class DirectoryInputNodeTask : public Task {
                /*inputID=*/0);
   }
 
-  virtual void start(TaskInterface ti) override {
-    // We reserve inputID=0 for the blocked DirectoryTreeSignature request.
-    // inputID=1, 2, ... are used for mustScanAfterPaths
-    for (auto mustScanAfterPath: node.getMustScanAfterPaths()) {
-      ++totalBlockingDeps;
-      ti.request(BuildKey::makeNode(mustScanAfterPath).toData(), totalBlockingDeps);
-    }
-
-    // If mustScanAfterPaths is empty, simply request DirectoryTreeSignature in start
-    if (totalBlockingDeps == 0) {
-      performUnblockedRequest(ti);
-    }
-  }
-
   virtual void providePriorValue(TaskInterface,
                                  const ValueType& value) override {
   }
 
-  virtual void provideValue(TaskInterface ti, uintptr_t inputID,
-                            const ValueType& valueData) override {
-    if (inputID == 0) {
-      directorySignature = valueData;
-    } else {
-      auto value = BuildValue::fromData(valueData);
-
-      ++finishedBlockingDeps;
-      if (finishedBlockingDeps == totalBlockingDeps) {
-        // All paths within mustScanAfterPaths are scanned..
-        // DirectoryTreeSignature is unblocked
-        performUnblockedRequest(ti);
-      }
-    }
+  virtual void provideValue(TaskInterface, uintptr_t inputID,
+                            const ValueType& value) override {
+    directorySignature = value;
   }
 
   virtual void inputsAvailable(TaskInterface ti) override {
@@ -795,110 +764,6 @@ public:
       return false;
 
     // The produced node result itself doesn't need any synchronization.
-    return true;
-  }
-};
-
-class ProducedDirectoryNodeTask : public Task {
-  Node& node;
-
-  BuildValue nodeResult;
-  core::ValueType directorySignature;
-
-  Command* producingCommand = nullptr;
-
-  // Whether this is a node we are unable to produce.
-  bool isInvalid = false;
-
-  virtual void start(TaskInterface ti) override {
-    // Request the producer command.
-    auto getCommand = [&]()->Command* {
-      if (node.getProducers().size() == 1) {
-        return node.getProducers()[0];
-      }
-      // Give the delegate a chance to resolve to a single command.
-      return getBuildSystem(ti).getDelegate().
-          chooseCommandFromMultipleProducers(&node, node.getProducers());
-    };
-
-    if (Command* foundCommand = getCommand()) {
-      producingCommand = foundCommand;
-      ti.request(BuildKey::makeCommand(producingCommand->getName()).toData(),
-                 /*InputID=*/0);
-      return;
-    }
-
-    // Notify that we could not resolve to a single producer.
-    getBuildSystem(ti).getDelegate().
-        cannotBuildNodeDueToMultipleProducers(&node, node.getProducers());
-    isInvalid = true;
-  }
-
-  virtual void providePriorValue(TaskInterface,
-                                 const ValueType& value) override {
-  }
-
-  virtual void provideValue(TaskInterface ti, uintptr_t inputID,
-                            const ValueType& valueData) override {
-    if (inputID == 0) {
-      auto value = BuildValue::fromData(valueData);
-
-      // Extract the node result from the command.
-      assert(producingCommand);
-
-      // NOTE: nodeResult only contains stat info of the directory, not its signature.
-      nodeResult = producingCommand->getResultForOutput(&node, value);
-
-      if (nodeResult.isExistingInput()) {
-        // The external command must have produced the directory node.
-        // Request for its signature and store it
-
-        StringRef path =  node.getName();
-        if (path.endswith("/") && path != "/") {
-          path = path.substr(0, path.size() - 1);
-        }
-        ti.request(BuildKey::makeDirectoryTreeSignature(path,basic::StringList()).toData(), /*inputID=*/1);
-      } else {
-        // ExternalCommand failed..
-        isInvalid = true;
-      }
-    } else if (inputID == 1) {
-      directorySignature = valueData;
-    }
-  }
-
-  virtual void inputsAvailable(TaskInterface ti) override {
-    if (isInvalid) {
-      getBuildSystem(ti).getDelegate().hadCommandFailure();
-      ti.complete(BuildValue::makeFailedInput().toData());
-      return;
-    }
-
-    assert(!nodeResult.isInvalid());
-
-    // Complete the task immediately.
-    ti.complete(ValueType(directorySignature));
-  }
-
-public:
-  ProducedDirectoryNodeTask(Node& node)
-      : node(node), nodeResult(BuildValue::makeInvalid()) {}
-
-  static bool isResultValid(BuildEngine& engine, Node& node,
-                            const BuildValue& value) {
-    // If the result was failure, we always need to rebuild (it may produce an
-    // error).
-    if (value.isFailedInput())
-      return false;
-
-    // If the result was previously a missing input, it may have been because
-    // we did not previously know how to produce this node. We do now, so
-    // attempt to build it now.
-    if (value.isMissingInput())
-      return false;
-
-    // The produced node result itself doesn't need any synchronization.
-    // If the directory signature is changed, it will be reflected in value of this node.
     return true;
   }
 };
@@ -1867,7 +1732,6 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
         ));
       }
 
-      // DirectoryInputNodeTask
       if (node->isDirectory()) {
         return std::unique_ptr<Rule>(new BuildSystemRule(
           keyData,
@@ -1894,7 +1758,6 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
         ));
       }
       
-      // FileInputNodeTask
       return std::unique_ptr<Rule>(new BuildSystemRule(
         keyData,
         node->getSignature(),
@@ -1910,23 +1773,6 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
     }
 
     // Otherwise, create a task for a produced node.
-    // ProducedDirectoryNodeTask
-    if (node->isDirectory()) {
-      return std::unique_ptr<Rule>(new BuildSystemRule(
-        keyData,
-        node->getSignature(),
-        /*Action=*/ [node](BuildEngine& engine) -> Task* {
-          return new ProducedDirectoryNodeTask(*node);
-        },
-        /*IsValid=*/ [node](BuildEngine& engine, const Rule& rule,
-                            const ValueType& value) -> bool {
-          return ProducedDirectoryNodeTask::isResultValid(
-              engine, *node, BuildValue::fromData(value));
-        }
-      ));
-    }
-
-    // ProducedNodeTask
     return std::unique_ptr<Rule>(new BuildSystemRule(
       keyData,
       node->getSignature(),
@@ -3942,12 +3788,6 @@ void BuildSystemFileDelegate::error(StringRef filename,
   // Delegate to the system delegate.
   auto atSystemToken = BuildSystemDelegate::Token{at.start, at.length};
   system.error(filename, atSystemToken, message);
-}
-
-void
-BuildSystemFileDelegate::cannotLoadDueToMultipleProducers(Node *output,
-                                                          std::vector<Command*> commands) {
-  getSystemDelegate().cannotBuildNodeDueToMultipleProducers(output, commands);
 }
 
 bool
