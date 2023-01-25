@@ -1056,11 +1056,16 @@ void llbuild::basic::spawnProcess(
     assert(readfds[0].fd == outputPipeParentEnd.unsafeDescriptor());
     assert(readfds[1].fd == controlPipeParentEnd.unsafeDescriptor());
 
-    if (poll(readfds, nfds, -1) == -1) {
-      int err = errno;
-      delegate.processHadError(ctx, handle,
-          Twine("failed to poll (") + strerror(err) + ")");
-      break;
+    while (poll(readfds, nfds, -1) == -1) {
+        int err = errno;
+
+        if (err == EAGAIN || err == EINTR) {
+          continue;
+        } else {
+          delegate.processHadError(ctx, handle,
+            Twine("failed to poll (") + strerror(err) + ")"); 
+          return;
+        }
     }
 
     for (int i = 0; i < nfds; i++) {
