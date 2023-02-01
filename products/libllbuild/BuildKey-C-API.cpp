@@ -179,14 +179,12 @@ void llb_build_key_get_filtered_directory_path(llb_build_key_t *key, llb_data_t 
 
 void llb_build_key_get_filtered_directory_filters(llb_build_key_t *key, void *context, IteratorFunction iterator) {
   auto filters = ((CAPIBuildKey *)key)->getInternalBuildKey().getContentExclusionPatternsAsStringList();
-  int32_t index = 0;
   for (auto filter: filters.getValues()) {
     llb_data_t data;
     data.length = filter.size();
     data.data = (const uint8_t*)strdup(filter.str().c_str());
     iterator(context, data);
     llb_data_destroy(&data);
-    index++;
   }
 }
 
