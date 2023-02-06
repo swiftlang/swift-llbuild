@@ -35,15 +35,15 @@ namespace sys {
 #endif
 
 #if !defined(S_ISREG)
-#define S_ISREG(mode) ((mode) & _S_IFMT) == S_IFREG
+#define S_ISREG(mode) (((mode) & _S_IFMT) == S_IFREG)
 #endif
 
 #if !defined(S_ISDIR)
-#define S_ISDIR(mode) ((mode) & _S_IFMT) == S_IFDIR
+#define S_ISDIR(mode) (((mode) & _S_IFMT) == S_IFDIR)
 #endif
 
 #if !defined(S_ISBLK)
-#define S_ISBLK(mode) ((mode) & _S_IFMT) == S_IFBLK
+#define S_ISBLK(mode) (((mode) & _S_IFMT) == S_IFBLK)
 #endif
 
 #if !defined(S_ISCHR)
