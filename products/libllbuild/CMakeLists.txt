@@ -11,6 +11,8 @@ add_llbuild_library(libllbuild
   ${SOURCES}
   SHARED
   OUTPUT_NAME llbuild)
+target_compile_definitions(libllbuild PRIVATE
+  _WINDLL)
 
 set_property(TARGET libllbuild PROPERTY MACOSX_RPATH ON)
 
