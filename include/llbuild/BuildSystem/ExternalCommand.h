@@ -70,6 +70,9 @@ class ExternalCommand : public Command {
   /// (this implies ShouldSkip is true).
   SmallPtrSet<Node*, 1> missingInputNodes;
 
+  /// If true, the command had missing dynamic inputs.
+  bool hasMissingDynamicInputs = false;
+
   /// If true, the command can legally be updated if the output state allows it.
   bool canUpdateIfNewer = true;
 

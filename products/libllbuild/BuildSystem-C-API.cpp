@@ -309,8 +309,11 @@ public:
   virtual void commandCannotBuildOutputDueToMissingInputs(Command* command,
                Node* outputNode, SmallPtrSet<Node*, 1> inputNodes) override {
     if (cAPIDelegate.command_cannot_build_output_due_to_missing_inputs) {
-      auto str = outputNode->getName().str();
-      auto output = new CAPIBuildKey(BuildKey::makeNode(str));
+      CAPIBuildKey *output = nullptr;
+      if (outputNode) {
+        auto str = outputNode->getName().str();
+        output = new CAPIBuildKey(BuildKey::makeNode(str));
+      }
 
       CAPINodesVector inputs(inputNodes);
 
