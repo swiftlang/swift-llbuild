@@ -798,6 +798,10 @@ public protocol BuildSystemDelegate {
     /// missing inputs.
     func commandCannotBuildOutputDueToMissingInputs(_ command: Command, output: BuildKey, inputs: [BuildKey])
 
+    /// Called by the build system to report a command could not build due to
+    /// missing inputs.
+    func commandCannotBuildOutputDueToMissingInputs(_ command: Command, output: BuildKey?, inputs: [BuildKey])
+
     /// Called by the build system when a node has multiple commands that are producing it.
     /// The delegate can return one of the commands for the build system to use or return `nil`
     /// for the build system to treat the node as invalid.
@@ -886,6 +890,12 @@ extension BuildSystemDelegate {
 
     public func determinedRuleNeedsToRun(_ rule: BuildKey, reason: RuleRunReason, inputRule: BuildKey?) {
         // default implementation for compatibility with older clients
+    }
+
+    public func commandCannotBuildOutputDueToMissingInputs(_ command: Command, output: BuildKey?, inputs: [BuildKey]) {
+        if let output = output {
+            commandCannotBuildOutputDueToMissingInputs(command, output: output, inputs: inputs)
+        }
     }
 }
 
@@ -1017,9 +1027,10 @@ public final class BuildSystem {
             _delegate.command_had_note = { BuildSystem.toSystem($0!).commandHadNote(Command(handle: $1), $2!) }
             _delegate.command_had_warning = { BuildSystem.toSystem($0!).commandHadWarning(Command(handle: $1), $2!) }
             _delegate.command_cannot_build_output_due_to_missing_inputs = {
-                let inputsPtr = $3!
-                let inputs = (0..<Int($4)).map { BuildKey.construct(key: inputsPtr[$0]!) }
-                BuildSystem.toSystem($0!).commandCannotBuildOutputDueToMissingInputs(Command(handle: $1), BuildKey.construct(key: $2!.pointee!), inputs)
+                let inputsPtr = $3
+                let inputs = (0..<Int($4)).map { BuildKey.construct(key: inputsPtr![$0]!) }
+                let output = $2?.pointee.map { BuildKey.construct(key: $0) }
+                BuildSystem.toSystem($0!).commandCannotBuildOutputDueToMissingInputs(Command(handle: $1), output, inputs)
             }
             _delegate.choose_command_from_multiple_producers = {
                 let commandsPtr = $2!
@@ -1248,7 +1259,7 @@ public final class BuildSystem {
         delegate.commandHadWarning(command, message: stringFromData(data.pointee))
     }
 
-    private func commandCannotBuildOutputDueToMissingInputs(_ command: Command, _ output: BuildKey, _ inputs: [BuildKey]) {
+    private func commandCannotBuildOutputDueToMissingInputs(_ command: Command, _ output: BuildKey?, _ inputs: [BuildKey]) {
         delegate.commandCannotBuildOutputDueToMissingInputs(command, output: output, inputs: inputs)
     }
 
