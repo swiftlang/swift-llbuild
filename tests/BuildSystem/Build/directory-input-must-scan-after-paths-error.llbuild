@@ -32,6 +32,7 @@ commands:
     outputs: ["out/a.txt"]
     description: "TaskA"
     args: "cat raw.txt > out/a.txt; cat out/a.txt; false"
+    repair-via-ownership-analysis: true
 
   taskB:
     tool: shell
@@ -39,6 +40,7 @@ commands:
     outputs: ["out/b.txt"]
     description: "TaskB"
     args: "echo 'Output from TaskB for b.txt' > out/b.txt; cat out/b.txt"
+    repair-via-ownership-analysis: true
 
   taskC:
     tool: shell
@@ -46,3 +48,4 @@ commands:
     outputs: ["final.txt"]
     description: "TaskC"
     args: "cat out/* | tr a-z A-Z > final.txt; cat final.txt"
+    repair-via-ownership-analysis: true

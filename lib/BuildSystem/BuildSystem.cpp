@@ -3097,28 +3097,14 @@ public:
 };
 
 class MkdirTool : public Tool {
-  bool excludeFromOwnershipAnalysis = false;
 
 public:
   using Tool::Tool;
 
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
-    if (name == "exclude-from-ownership-analysis") {
-      if (value == "true") {
-        excludeFromOwnershipAnalysis = true;
-        return true;
-      } else if (value == "false") {
-        excludeFromOwnershipAnalysis = false;
-        return true;
-      } else {
-        ctx.error("invalid value for attribute: '" + name + "'");
-        return false;
-      }
-    } else {
-      ctx.error("unexpected attribute: '" + name + "'");
-      return false;
-    }
+    ctx.error("unexpected attribute: '" + name + "'");
+    return false;
   }
 
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
@@ -3137,7 +3123,6 @@ public:
 
   virtual std::unique_ptr<Command> createCommand(StringRef name) override {
     auto res = llvm::make_unique<MkdirCommand>(name);
-    res->excludeFromOwnershipAnalysis = excludeFromOwnershipAnalysis;
     return res;
   }
 };
@@ -3229,12 +3214,12 @@ class SymlinkCommand : public Command {
     } else if (name == "link-output-path") {
       linkOutputPath = value;
       return true;
-    } else if (name == "exclude-from-ownership-analysis") {
+    } else if (name == "repair-via-ownership-analysis") {
       if (value == "true") {
-        excludeFromOwnershipAnalysis = true;
+        repairViaOwnershipAnalysis = true;
         return true;
       } else if (value == "false") {
-        excludeFromOwnershipAnalysis = false;
+        repairViaOwnershipAnalysis = false;
         return true;
       } else {
         ctx.error("invalid value for attribute: '" + name + "'");
@@ -3381,18 +3366,18 @@ public:
 };
 
 class SymlinkTool : public Tool {
-  bool excludeFromOwnershipAnalysis = false;
+  bool repairViaOwnershipAnalysis = false;
 public:
   using Tool::Tool;
 
   virtual bool configureAttribute(const ConfigureContext& ctx, StringRef name,
                                   StringRef value) override {
-    if (name == "exclude-from-ownership-analysis") {
+    if (name == "repair-via-ownership-analysis") {
       if (value == "true") {
-        excludeFromOwnershipAnalysis = true;
+        repairViaOwnershipAnalysis = true;
         return true;
       } else if(value == "false") {
-        excludeFromOwnershipAnalysis = false;
+        repairViaOwnershipAnalysis = false;
         return true;
       } else {
         ctx.error("invalid value for attribute: '" + name + "'");
@@ -3420,7 +3405,7 @@ public:
 
   virtual std::unique_ptr<Command> createCommand(StringRef name) override {
     auto res = llvm::make_unique<SymlinkCommand>(name);
-    res->excludeFromOwnershipAnalysis = excludeFromOwnershipAnalysis;
+    res->repairViaOwnershipAnalysis = repairViaOwnershipAnalysis;
     return res;
   }
 };

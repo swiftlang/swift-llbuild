@@ -7,8 +7,8 @@
 #
 # raw/
 #  |   libX.fake-h <-- written on disk (initial state)
-#  |   libX.fake-h <-- written on disk (initial state)
 #  |   libY.fake-h <-- written on disk (initial state)
+#  |   libZ.fake-h <-- written on disk (initial state)
 #  v
 # [TaskA] (verbatim copy; mixed case)
 #  |
@@ -115,6 +115,7 @@ commands:
           cat $outputFile
       done
       '
+    repair-via-ownership-analysis: true
 
   taskA:
     tool: shell
@@ -136,3 +137,4 @@ commands:
       ls .
       cat *
       '
+    repair-via-ownership-analysis: true

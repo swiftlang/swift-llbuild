@@ -104,9 +104,6 @@ bool BuildNode::configureAttribute(const ConfigureContext& ctx, StringRef name,
   } else if (name == "content-exclusion-patterns") {
     exclusionPatterns = basic::StringList(value);
     return true;
-  } else if (name == "must-scan-after-paths") {
-    mustScanAfterPaths = basic::StringList(value).getValues();
-    return true;
   }
     
   // We don't support any other custom attributes.
