@@ -848,12 +848,12 @@ class CAPIExternalCommand : public ExternalCommand {
       } else {
         return false;
       }
-    } else if (name == "exclude-from-ownership-analysis") {
+    } else if (name == "repair-via-ownership-analysis") {
       if (value == "true") {
-        excludeFromOwnershipAnalysis = true;
+        repairViaOwnershipAnalysis = true;
         return true;
       } else if (value == "false") {
-        excludeFromOwnershipAnalysis = false;
+        repairViaOwnershipAnalysis = false;
         return true;
       } else {
         return false;

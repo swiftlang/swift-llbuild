@@ -55,7 +55,7 @@ public:
 
   std::vector<BuildNode*> inputs;
   std::vector<BuildNode*> outputs;
-  bool excludeFromOwnershipAnalysis = false;
+  bool repairViaOwnershipAnalysis = false;
 
   StringRef getName() const { return name; }
 
