@@ -135,7 +135,7 @@ class BuildEngineImpl : public BuildDBDelegate {
     /// The input index being considered.
     unsigned inputIndex = 0;
     /// The input index that the below cache fields are valid for
-    unsigned cachedInputIndex = -1;
+    unsigned cachedInputIndex = static_cast<unsigned>(-1);
     /// The input being considered, if already looked up.
     ///
     /// This is used when a scan request is deferred waiting on its input to be
