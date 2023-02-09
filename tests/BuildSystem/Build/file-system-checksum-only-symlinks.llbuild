@@ -2,6 +2,7 @@
 # Note: result of scanning a checksum node will still be valid even
 # if the content of the path that it links to changes.
 #
+# REQUIRES: rdar105175919
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: echo magic1 string > "%t.build/raw1.txt"
