@@ -1,5 +1,5 @@
 # Check basic building functionality with the checksum-only file system.
-#
+# REQUIRES: rdar105175919
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: echo magic string > "%t.build/raw.txt"
