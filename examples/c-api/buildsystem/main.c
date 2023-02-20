@@ -32,10 +32,12 @@ static void usage() {
   exit(0);
 }
 
+#if !defined(__linux__)
 static const char* basename(const char* path) {
   const char* result = strrchr(path, '/');
   return result ? result : path;
 }
+#endif
 
 #if defined(_WIN32)
 static wchar_t* convertToMultiByte(const char* s) {

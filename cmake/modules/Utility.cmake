@@ -10,7 +10,7 @@ endfunction()
 
 macro(add_llbuild_library name)
   cmake_parse_arguments(ARG
-    "SHARED" "OUTPUT_NAME" ""
+    "SHARED;STATIC" "OUTPUT_NAME" ""
     ${ARGN})
   set(ALL_FILES ${ARG_UNPARSED_ARGUMENTS})
 
@@ -42,8 +42,10 @@ macro(add_llbuild_library name)
     endif()
   endif(MSVC_IDE OR XCODE)
 
-  if (ARG_SHARED)
+  if(ARG_SHARED)
     add_library(${name} SHARED ${ALL_FILES})
+  elseif(ARG_STATIC)
+    add_library(${name} STATIC ${ALL_FILES})
   else()
     add_library(${name} ${ALL_FILES})
   endif()
