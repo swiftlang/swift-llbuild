@@ -719,10 +719,7 @@ static int executeDBCommand(std::vector<std::string> args) {
       printf("\nkey: %s\ncomputed: %" PRIu64 "\nbuilt: %" PRIu64 "\ndependencies:\n",
              key.c_str(), result.computedAt, result.builtAt);
       for (auto keyIDAndFlag : result.dependencies) {
-        if (keyIDAndFlag.isBarrier())
-          printf("  BARRIER\n");
-        else
-          printf("  %s\n", keymap.getKeyForID(keyIDAndFlag.keyID).c_str());
+        printf("  %s\n", keymap.getKeyForID(keyIDAndFlag.keyID).c_str());
       }
 
       // TODO - print build value

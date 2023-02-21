@@ -141,7 +141,7 @@ class BuildDBBindingsTests: XCTestCase {
     
     expectCouldNotOpenError(path: exampleBuildDBPath,
                             clientSchemaVersion: 8,
-                            expectedError: "Version mismatch. (database-schema: 16 requested schema: 16. database-client: \(exampleBuildDBClientSchemaVersion) requested client: 8)")
+                            expectedError: "Version mismatch. (database-schema: 17 requested schema: 17. database-client: \(exampleBuildDBClientSchemaVersion) requested client: 8)")
     XCTAssertNoThrow(try BuildDB(path: exampleBuildDBPath, clientSchemaVersion: exampleBuildDBClientSchemaVersion))
   }
   

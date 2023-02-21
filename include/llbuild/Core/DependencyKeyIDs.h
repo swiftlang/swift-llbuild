@@ -91,10 +91,6 @@ public:
     KeyID keyID;
     bool orderOnly;
     bool singleUse;
-
-    constexpr bool isBarrier() const {
-      return keyID.isNoValue();
-    }
   };
 
   KeyIDAndFlags operator[](size_t n) const {
@@ -117,14 +113,6 @@ public:
   void append(const DependencyKeyIDs &rhs) {
     keys.insert(keys.end(), rhs.keys.begin(), rhs.keys.end());
     flags.insert(flags.end(), rhs.flags.begin(), rhs.flags.end());
-  }
-
-  void addBarrier() {
-    if (keys.empty() || keys.back() == 0)
-      return;
-
-    keys.push_back(KeyID::novalue());
-    flags.push_back(0);
   }
 
 public:
