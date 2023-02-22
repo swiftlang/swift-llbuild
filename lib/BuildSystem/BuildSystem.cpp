@@ -813,6 +813,7 @@ class ProducedDirectoryNodeTask : public Task {
 
   // Whether this is a node we are unable to produce.
   bool isInvalid = false;
+  bool returnDirectorySignature = false;
 
   virtual void start(TaskInterface ti) override {
     // Request the producer command.
@@ -862,9 +863,7 @@ class ProducedDirectoryNodeTask : public Task {
           path = path.substr(0, path.size() - 1);
         }
         ti.request(BuildKey::makeDirectoryTreeSignature(path,basic::StringList()).toData(), /*inputID=*/1);
-      } else {
-        // ExternalCommand failed..
-        isInvalid = true;
+        returnDirectorySignature = true;
       }
     } else if (inputID == 1) {
       directorySignature = valueData;
@@ -872,16 +871,20 @@ class ProducedDirectoryNodeTask : public Task {
   }
 
   virtual void inputsAvailable(TaskInterface ti) override {
-    if (isInvalid) {
-      getBuildSystem(ti).getDelegate().hadCommandFailure();
-      ti.complete(BuildValue::makeFailedInput().toData());
+    if (returnDirectorySignature) {
+      ti.complete(ValueType(directorySignature));
       return;
+    } else {
+      if (isInvalid) {
+        getBuildSystem(ti).getDelegate().hadCommandFailure();
+        ti.complete(BuildValue::makeFailedInput().toData());
+        return;
+      }
+      assert(!nodeResult.isInvalid());
+      
+      // Complete the task immediately.
+      ti.complete(nodeResult.toData());
     }
-
-    assert(!nodeResult.isInvalid());
-
-    // Complete the task immediately.
-    ti.complete(ValueType(directorySignature));
   }
 
 public:
