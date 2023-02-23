@@ -1,3 +1,37 @@
+# Returns the current architecture name in a variable
+#
+# Usage:
+#   get_swift_host_arch(result_var_name)
+#
+# If the current architecture is supported by Swift, sets ${result_var_name}
+# with the sanitized host architecture name derived from CMAKE_SYSTEM_PROCESSOR.
+function(get_swift_host_arch result_var_name)
+  if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "amd64|x86_64|s390x|wasm32")
+    set("${result_var_name}" "${CMAKE_SYSTEM_PROCESSOR}" PARENT_SCOPE)
+  elseif ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "AArch64|aarch64|arm64")
+    if(CMAKE_SYSTEM_NAME MATCHES Darwin)
+      set("${result_var_name}" "arm64" PARENT_SCOPE)
+    else()
+      set("${result_var_name}" "aarch64" PARENT_SCOPE)
+    endif()
+  elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "ppc64")
+    set("${result_var_name}" "powerpc64" PARENT_SCOPE)
+  elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "ppc64le")
+    set("${result_var_name}" "powerpc64le" PARENT_SCOPE)
+  elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv6l")
+    set("${result_var_name}" "armv6" PARENT_SCOPE)
+  elseif("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "armv7-a|armv7l")
+    set("${result_var_name}" "armv7" PARENT_SCOPE)
+  elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "AMD64")
+    set("${result_var_name}" "x86_64" PARENT_SCOPE)
+  elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "IA64")
+    set("${result_var_name}" "itanium" PARENT_SCOPE)
+  elseif("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86|i686")
+    set("${result_var_name}" "i686" PARENT_SCOPE)
+  else()
+    message(FATAL_ERROR "Unrecognized architecture on host system: ${CMAKE_SYSTEM_PROCESSOR}")
+  endif()
+endfunction()
 
 if(CMAKE_VERSION VERSION_LESS 3.16)
   if(NOT CMAKE_SYSTEM_NAME STREQUAL Windows AND NOT CMAKE_SYSTEM_NAME STREQUAL Darwin)
@@ -64,8 +98,9 @@ else()
     Foundation)
   if(NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
     target_link_options(llbuildSwift PRIVATE "SHELL:-no-toolchain-stdlib-rpath")
+    get_swift_host_arch(swift_arch)
     set_target_properties(llbuildSwift PROPERTIES
-      INSTALL_RPATH "$ORIGIN/../../$<LOWER_CASE:${CMAKE_SYSTEM_NAME}>")
+      INSTALL_RPATH "$ORIGIN/../../$<LOWER_CASE:${CMAKE_SYSTEM_NAME}>/${swift_arch}")
   endif()
 endif()
 set_target_properties(llbuildSwift PROPERTIES
