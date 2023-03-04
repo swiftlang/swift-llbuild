@@ -51,6 +51,9 @@ else()
   endif()
 endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL Android)
+  set(CMAKE_HAVE_LIBC_PTHREAD TRUE)
+endif()
 set(THREADS_PREFER_PTHREAD_FLAG FALSE)
 find_package(Threads REQUIRED)
 

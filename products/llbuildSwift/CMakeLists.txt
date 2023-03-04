@@ -65,7 +65,7 @@ else()
   if(NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
     target_link_options(llbuildSwift PRIVATE "SHELL:-no-toolchain-stdlib-rpath")
     set_target_properties(llbuildSwift PROPERTIES
-      INSTALL_RPATH "$ORIGIN:$ORIGIN/../../$<LOWER_CASE:${CMAKE_SYSTEM_NAME}>")
+      INSTALL_RPATH "$ORIGIN/../../$<LOWER_CASE:${CMAKE_SYSTEM_NAME}>")
   endif()
 endif()
 set_target_properties(llbuildSwift PROPERTIES
