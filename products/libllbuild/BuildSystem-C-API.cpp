@@ -351,7 +351,7 @@ public:
       }
     }
 
-    llb_build_key_t** data() { return (llb_build_key_t **)&keys[0]; }
+    llb_build_key_t** data() { return (llb_build_key_t **)keys.data(); }
     uint64_t count() { return keys.size(); }
   };
 
