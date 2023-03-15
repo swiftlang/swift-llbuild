@@ -509,6 +509,9 @@ public:
       }
       cAPIDelegate.determined_rule_needs_to_run(cAPIDelegate.context, needsToRun, convertRunReason(reason), input);
       llb_build_key_destroy(needsToRun);
+      if (input) {
+        llb_build_key_destroy(input);
+      }
     }
   }
 
