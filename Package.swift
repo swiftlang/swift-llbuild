@@ -181,7 +181,24 @@ let package = Package(
                 .headerSearchPath(".."),
                 .headerSearchPath("../include"),
             ]),
-        
+
+        .target(
+            name: "gmocklib",
+            dependencies: ["gtestlib"],
+            path: "utils/unittest/googlemock/src",
+            exclude: [
+                "gmock-cardinalities.cc",
+                "gmock-internal-utils.cc",
+                "gmock-matchers.cc",
+                "gmock-spec-builders.cc",
+                "gmock.cc",
+            ],
+            cxxSettings: [
+                .headerSearchPath(".."),
+                .headerSearchPath("../include"),
+                .headerSearchPath("../../googletest/include"),
+            ]),
+
         // MARK: Ingested LLVM code.
         .target(
           name: "llvmDemangle",
