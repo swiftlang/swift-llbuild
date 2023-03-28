@@ -117,29 +117,45 @@ let package = Package(
 
         .target(
             name: "llbuildBasicTests",
-            dependencies: ["llbuildBasic", "gtestlib"],
+            dependencies: ["llbuildBasic", "gmocklib"],
             path: "unittests/Basic",
+            cxxSettings: [
+                .headerSearchPath("../../utils/unittest/googlemock/include"),
+                .headerSearchPath("../../utils/unittest/googletest/include"),
+            ],
             linkerSettings: [
                 .linkedLibrary("dl", .when(platforms: [.linux])),
                 .linkedLibrary("pthread", .when(platforms: [.linux]))]),
         .target(
             name: "llbuildCoreTests",
-            dependencies: ["llbuildCore", "gtestlib"],
+            dependencies: ["llbuildCore", "gmocklib"],
             path: "unittests/Core",
+            cxxSettings: [
+                .headerSearchPath("../../utils/unittest/googlemock/include"),
+                .headerSearchPath("../../utils/unittest/googletest/include"),
+            ],
             linkerSettings: [
                 .linkedLibrary("dl", .when(platforms: [.linux])),
                 .linkedLibrary("pthread", .when(platforms: [.linux]))]),
         .target(
             name: "llbuildBuildSystemTests",
-            dependencies: ["llbuildBuildSystem", "gtestlib"],
+            dependencies: ["llbuildBuildSystem", "gmocklib"],
             path: "unittests/BuildSystem",
+            cxxSettings: [
+                .headerSearchPath("../../utils/unittest/googlemock/include"),
+                .headerSearchPath("../../utils/unittest/googletest/include"),
+            ],
             linkerSettings: [
                 .linkedLibrary("dl", .when(platforms: [.linux])),
                 .linkedLibrary("pthread", .when(platforms: [.linux]))]),
         .target(
             name: "llbuildNinjaTests",
-            dependencies: ["llbuildNinja", "gtestlib"],
+            dependencies: ["llbuildNinja", "gmocklib"],
             path: "unittests/Ninja",
+            cxxSettings: [
+                .headerSearchPath("../../utils/unittest/googlemock/include"),
+                .headerSearchPath("../../utils/unittest/googletest/include"),
+            ],
             linkerSettings: [
                 .linkedLibrary("dl", .when(platforms: [.linux])),
                 .linkedLibrary("pthread", .when(platforms: [.linux]))]),
