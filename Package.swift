@@ -176,6 +176,10 @@ let package = Package(
                 "gtest-test-part.cc",
                 "gtest-typed-test.cc",
                 "gtest.cc",
+            ],
+            cxxSettings: [
+                .headerSearchPath(".."),
+                .headerSearchPath("../include"),
             ]),
         
         // MARK: Ingested LLVM code.
