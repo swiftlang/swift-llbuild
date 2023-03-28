@@ -221,7 +221,11 @@ do {
     ]
 
     package.targets.filter({ llvmTargets.contains($0.name) }).forEach { target in
-        target.cxxSettings = [ .define("LLVM_ON_WIN32", .when(platforms: [.windows])) ]
+        target.cxxSettings = [
+            .define("LLVM_ON_WIN32", .when(platforms: [.windows])),
+            .define("_CRT_SECURE_NO_WARNINGS", .when(platforms: [.windows])),
+            .define("_CRT_NONSTDC_NO_WARNINGS", .when(platforms: [.windows])),
+        ]
     }
 }
 
