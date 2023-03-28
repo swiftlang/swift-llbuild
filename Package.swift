@@ -201,6 +201,7 @@ let package = Package(
 do {
     let llvmTargets: Set<String> = [
         "libllbuild",
+        "llbuildCore",
 
         "llvmDemangle",
         "llvmSupport",
@@ -214,6 +215,7 @@ do {
         "llbuildBasicTests",
         "llbuildBuildSystemTests",
         "llbuildCoreTests",
+        "llbuildNinjaTests",
 
         "swift-build-tool",
     ]
