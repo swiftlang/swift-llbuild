@@ -117,29 +117,45 @@ let package = Package(
 
         .target(
             name: "llbuildBasicTests",
-            dependencies: ["llbuildBasic", "gtestlib"],
+            dependencies: ["llbuildBasic", "gmocklib"],
             path: "unittests/Basic",
+            cxxSettings: [
+                .headerSearchPath("../../utils/unittest/googlemock/include"),
+                .headerSearchPath("../../utils/unittest/googletest/include"),
+            ],
             linkerSettings: [
                 .linkedLibrary("dl", .when(platforms: [.linux])),
                 .linkedLibrary("pthread", .when(platforms: [.linux]))]),
         .target(
             name: "llbuildCoreTests",
-            dependencies: ["llbuildCore", "gtestlib"],
+            dependencies: ["llbuildCore", "gmocklib"],
             path: "unittests/Core",
+            cxxSettings: [
+                .headerSearchPath("../../utils/unittest/googlemock/include"),
+                .headerSearchPath("../../utils/unittest/googletest/include"),
+            ],
             linkerSettings: [
                 .linkedLibrary("dl", .when(platforms: [.linux])),
                 .linkedLibrary("pthread", .when(platforms: [.linux]))]),
         .target(
             name: "llbuildBuildSystemTests",
-            dependencies: ["llbuildBuildSystem", "gtestlib"],
+            dependencies: ["llbuildBuildSystem", "gmocklib"],
             path: "unittests/BuildSystem",
+            cxxSettings: [
+                .headerSearchPath("../../utils/unittest/googlemock/include"),
+                .headerSearchPath("../../utils/unittest/googletest/include"),
+            ],
             linkerSettings: [
                 .linkedLibrary("dl", .when(platforms: [.linux])),
                 .linkedLibrary("pthread", .when(platforms: [.linux]))]),
         .target(
             name: "llbuildNinjaTests",
-            dependencies: ["llbuildNinja", "gtestlib"],
+            dependencies: ["llbuildNinja", "gmocklib"],
             path: "unittests/Ninja",
+            cxxSettings: [
+                .headerSearchPath("../../utils/unittest/googlemock/include"),
+                .headerSearchPath("../../utils/unittest/googletest/include"),
+            ],
             linkerSettings: [
                 .linkedLibrary("dl", .when(platforms: [.linux])),
                 .linkedLibrary("pthread", .when(platforms: [.linux]))]),
@@ -170,13 +186,35 @@ let package = Package(
             exclude: [
                 "gtest-death-test.cc",
                 "gtest-filepath.cc",
+                "gtest-matchers.cc",
                 "gtest-port.cc",
                 "gtest-printers.cc",
                 "gtest-test-part.cc",
                 "gtest-typed-test.cc",
                 "gtest.cc",
+            ],
+            cxxSettings: [
+                .headerSearchPath(".."),
+                .headerSearchPath("../include"),
             ]),
-        
+
+        .target(
+            name: "gmocklib",
+            dependencies: ["gtestlib"],
+            path: "utils/unittest/googlemock/src",
+            exclude: [
+                "gmock-cardinalities.cc",
+                "gmock-internal-utils.cc",
+                "gmock-matchers.cc",
+                "gmock-spec-builders.cc",
+                "gmock.cc",
+            ],
+            cxxSettings: [
+                .headerSearchPath(".."),
+                .headerSearchPath("../include"),
+                .headerSearchPath("../../googletest/include"),
+            ]),
+
         // MARK: Ingested LLVM code.
         .target(
           name: "llvmDemangle",
