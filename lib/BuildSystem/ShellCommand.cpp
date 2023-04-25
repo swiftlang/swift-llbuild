@@ -84,7 +84,15 @@ bool ShellCommand::processDiscoveredDependencies(BuildSystem& system,
 
   for (const auto& depsPath: depsPaths) {
     // Read the dependencies file.
-    auto input = system.getFileSystem().getFileContents(depsPath);
+    std::unique_ptr<llvm::MemoryBuffer> input;
+    if (llvm::sys::path::is_absolute(depsPath)) {
+      input = system.getFileSystem().getFileContents(depsPath);
+    } else {
+      SmallString<PATH_MAX> absPath = StringRef(workingDirectory);
+      llvm::sys::path::append(absPath, depsPath);
+      llvm::sys::fs::make_absolute(absPath);
+      input = system.getFileSystem().getFileContents(StringRef(absPath));
+    }
     if (!input) {
       system.getDelegate().commandHadError(
           this, "unable to open dependencies file (" + depsPath + ")");

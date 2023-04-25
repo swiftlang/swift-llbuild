@@ -21,7 +21,7 @@
 
 # Check a build that modifies the header.
 #
-# RUN: echo "mod" >> %t.build/header-1
+# RUN: echo "mod" >> %t.build/wd/header-1
 # RUN: %{llbuild} buildsystem build --serial --chdir %t.build &> %t2.out
 # RUN: %{FileCheck} --check-prefix=CHECK-AFTER-MOD --input-file=%t2.out %s
 #
