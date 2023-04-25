@@ -77,6 +77,7 @@ int pthread_fchdir_np(int fd)
 
 #ifndef HAVE_POSIX_SPAWN_CHDIR
 #if defined(__sun) || \
+  (defined(__MAC_OS_X_VERSION_MIN_REQUIRED) && __MAC_OS_X_VERSION_MIN_REQUIRED >= 101500) || \
   __GLIBC_PREREQ(2, 29)
 #define HAVE_POSIX_SPAWN_CHDIR 1
 #else
@@ -90,6 +91,12 @@ static int posix_spawn_file_actions_addchdir(posix_spawn_file_actions_t * __rest
 #if HAVE_POSIX_SPAWN_CHDIR
   return ::posix_spawn_file_actions_addchdir_np(file_actions, path);
 #else
+#ifdef __APPLE__
+  if (__builtin_available(macOS 10.15, *)) {
+    return ::posix_spawn_file_actions_addchdir_np(file_actions, path);
+  }
+#endif
+
   // Any other POSIX platform returns ENOSYS (Function not implemented),
   // to simplify the fallback logic around the call site.
   return ENOSYS;
