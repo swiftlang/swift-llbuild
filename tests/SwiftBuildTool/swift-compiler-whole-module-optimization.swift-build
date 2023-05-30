@@ -12,7 +12,7 @@
 #
 # CHECK: Compiling Swift Module 'Foo'
 # CHECK-VERBOSE: swiftc -module-name Bar -incremental -emit-dependencies -emit-module -emit-module-path Bar.swiftmodule -output-file-map bar.build/output-file-map.json -parse-as-library -whole-module-optimization -num-threads 1 -c s1.swift -I importB
-# CHECK-VERBOSE-NEXT: swiftc -module-name Foo -incremental -emit-dependencies -emit-module -emit-module-path Foo.swiftmodule -output-file-map foo.build/output-file-map.json -parse-as-library -whole-module-optimization -num-threads 0 -c s1.swift s2.swift -I importA -I importB -Onone -I somePath
+# CHECK-VERBOSE: swiftc -module-name Foo -incremental -emit-dependencies -emit-module -emit-module-path Foo.swiftmodule -output-file-map foo.build/output-file-map.json -parse-as-library -whole-module-optimization -num-threads 0 -c s1.swift s2.swift -I importA -I importB -Onone -I somePath
 
 # # Sanity check the output file map.
 #
