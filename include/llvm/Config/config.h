@@ -18,7 +18,7 @@
 #define ENABLE_CRASH_OVERRIDES 1
 
 /* Define to 1 if you have the `backtrace' function. */
-#if !defined(__ANDROID__) && !defined(__OpenBSD__)
+#if !defined(__ANDROID__) && !defined(__OpenBSD__) && defined(__GLIBC_PREREQ)
 #define HAVE_BACKTRACE TRUE
 #endif
 

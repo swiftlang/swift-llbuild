@@ -23,7 +23,9 @@
 #include <windows.h>
 #else
 #include <inttypes.h>
+#if __has_include(<sys/cdefs.h>)
 #include <sys/cdefs.h>
+#endif
 #include <sys/resource.h>
 #include <unistd.h>
 #if defined(__linux__) || defined(__GNU__)
