@@ -161,7 +161,7 @@ private:
 };
 
 // Engine Queue Processing
-enum class EngineQueueItemKind {
+enum class EngineQueueItemKind : int {
   RuleToScan = 0,
   InputRequest,
   FinishedInputRequest,
@@ -171,12 +171,14 @@ enum class EngineQueueItemKind {
   FindingCycle,
   BreakingCycle,
 };
+typedef std::underlying_type<EngineQueueItemKind>::type EngineQueueItemKindTy;
 
 struct TracingEngineQueueItemEvent {
   TracingEngineQueueItemEvent(EngineQueueItemKind kind, char const *key)
       : key(key) {
     if (!TracingEnabled) return;
-    LLBUILD_TRACE_INTERVAL_BEGIN("engine_queue_item_event", "key:%s;kind:%d", key, kind);
+    LLBUILD_TRACE_INTERVAL_BEGIN("engine_queue_item_event", "key:%s;kind:%d",
+                                 key, static_cast<EngineQueueItemKindTy>(kind));
   }
   
   ~TracingEngineQueueItemEvent() {
