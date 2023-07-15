@@ -356,6 +356,14 @@ public:
     return buildEngine.isCancelled();
   }
 
+  void addCancellationDelegate(CancellationDelegate* del) {
+    buildEngine.addCancellationDelegate(del);
+  }
+
+  void removeCancellationDelegate(CancellationDelegate* del) {
+    buildEngine.removeCancellationDelegate(del);
+  }
+
   /// @}
 };
 
@@ -1563,7 +1571,15 @@ class CommandTask : public Task {
         ti.complete(result.toData());
       });
     };
-    ti.spawn({ &command, std::move(fn) });
+    if (command.isDetached()) {
+      struct DetachedContext: public QueueJobContext {
+        unsigned laneID() const override { return -1; }
+      };
+      DetachedContext ctx;
+      fn(&ctx);
+    } else {
+      ti.spawn({ &command, std::move(fn) });
+    }
   }
 
 public:
@@ -4112,6 +4128,18 @@ bool BuildSystem::build(StringRef name) {
 void BuildSystem::cancel() {
   if (impl) {
     static_cast<BuildSystemImpl*>(impl)->cancel();
+  }
+}
+
+void BuildSystem::addCancellationDelegate(CancellationDelegate* del) {
+  if (impl) {
+    static_cast<BuildSystemImpl*>(impl)->addCancellationDelegate(del);
+  }
+}
+
+void BuildSystem::removeCancellationDelegate(CancellationDelegate* del) {
+  if (impl) {
+    static_cast<BuildSystemImpl*>(impl)->removeCancellationDelegate(del);
   }
 }
 

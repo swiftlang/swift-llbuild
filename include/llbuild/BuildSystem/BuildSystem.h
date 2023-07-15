@@ -300,6 +300,14 @@ public:
   /// Cancel the current build.
   void cancel();
 
+  /// Add cancellation delegate. If the same delegate object was added before
+  /// then the call is a noop.
+  void addCancellationDelegate(core::CancellationDelegate* del);
+
+  /// Remove cancellation delegate. If the delegate was not added or was
+  /// previously removed the call is a noop.
+  void removeCancellationDelegate(core::CancellationDelegate* del);
+
   static uint32_t getSchemaVersion();
   /// @}
 

@@ -727,9 +727,10 @@ typedef struct llb_buildsystem_external_command_delegate_t_ {
   /// execution queue, so long as it arranges to only notify the system of
   /// completion once all that work is complete.
   ///
-  /// If defined, the build value returning `execute_command_ex` variant is
-  /// called first. If an 'invalid' buile value is returned, the bindings will
-  /// then try calling the legacy `execute_command` variant if it is defined.
+  /// If defined, the `execute_command_detached` variant is called first.
+  /// The build value returning `execute_command_ex` variant has priority next.
+  /// If an 'invalid' buile value is returned, the bindings will then try
+  /// calling the legacy `execute_command` variant if it is defined.
   ///
   /// The C API takes ownership of the value returned by `execute_command_ex`.
   llb_buildsystem_command_result_t (*execute_command)(void* context,
@@ -743,6 +744,21 @@ typedef struct llb_buildsystem_external_command_delegate_t_ {
                                          llb_buildsystem_interface_t* bi,
                                          llb_task_interface_t ti,
                                          llb_buildsystem_queue_job_context_t* job_context);
+
+  /// Called for the external command to do its work without blocking an
+  /// execution lane. When done the external command should call `result_fn`
+  /// passing a result and optionally a `llb_build_value`.
+  void (*execute_command_detached)(void* context,
+                                llb_buildsystem_command_t* command,
+                                llb_buildsystem_interface_t* bi,
+                                llb_task_interface_t ti,
+                                llb_buildsystem_queue_job_context_t* job_context,
+                                void* result_ctx,
+                                void (*result_fn)(void* result_ctx, llb_buildsystem_command_result_t, llb_build_value*));
+
+  /// If non-NULL and command is 'detached', the build system will call it to
+  /// request the command to cancel when the build is cancelled.
+  void (*cancel_detached_command)(void* context, llb_buildsystem_command_t* command);
 
   /// Called by the build system to determine if the current build result
   /// remains valid.

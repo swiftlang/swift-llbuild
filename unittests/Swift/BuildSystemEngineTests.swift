@@ -36,6 +36,7 @@ protocol ExpectationCommand: AnyObject {
 // Command that expects to be executed.
 class BasicCommand: ExternalCommand, ExpectationCommand {
     private var executed = false
+    var completedTime: DispatchTime?
 
     func getSignature(_ command: Command) -> [UInt8] {
         return []
@@ -47,6 +48,7 @@ class BasicCommand: ExternalCommand, ExpectationCommand {
 
     func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> Bool {
         executed = true
+        completedTime = DispatchTime.now()
         return true
     }
 
@@ -95,8 +97,61 @@ class DependentCommand: BasicCommand {
     }
 }
 
+/// Command that is executed without blocking the execution lanes.
+class DetachedCommand: BasicCommand, ExternalDetachedCommand {
+    var shouldExecuteDetached: Bool { true }
+
+    var startedTime: DispatchTime?
+    var isCancelled = false
+
+    private let sema = DispatchSemaphore(value: 0)
+
+    func cancelDetached(_ command: Command) {
+        isCancelled = true
+        sema.signal()
+    }
+
+    func executeDetached(
+        _ command: Command,
+        _ commandInterface: BuildSystemCommandInterface,
+        _ jobContext: JobContext,
+        _ resultFn: @escaping (CommandResult, BuildValue?) -> ()
+    ) {
+        startedTime = DispatchTime.now()
+        DispatchQueue(label: "detached").async {
+            _ = self.sema.wait(timeout: .now() + 1)
+            let result = super.execute(command, commandInterface) ? CommandResult.succeeded : CommandResult.failed
+            resultFn(result, nil)
+        }
+    }
+}
+
+/// Command that blocks execution for 1 second.
+class DelayedCommand: BasicCommand {
+    override func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> Bool {
+        sleep(1)
+        return super.execute(command, commandInterface)
+    }
+}
+
+/// Invokes a block when executed.
+class CustomBlockCommand: BasicCommand {
+    let block: () -> ()
+
+    init(_ block: @escaping () -> ()) {
+        self.block = block
+    }
+
+    override func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> Bool {
+        defer {
+            block()
+        }
+        return super.execute(command, commandInterface)
+    }
+}
+
 final class TestTool: Tool {
-    let expectedCommands: [String: ExternalCommand]
+    var expectedCommands: [String: ExternalCommand]
 
     init(expectedCommands: [String: ExternalCommand]) {
         self.expectedCommands = expectedCommands
@@ -178,14 +233,36 @@ class TestBuildSystem {
     let delegate: BuildSystemDelegate
     let buildSystem: BuildSystem
 
-    init(buildFile: String, databaseFile: String, expectedCommands: [String: ExternalCommand]) {
-        let tool = TestTool(expectedCommands: expectedCommands)
+    convenience init(
+        buildFile: String,
+        databaseFile: String,
+        expectedCommands: [String: ExternalCommand],
+        schedulerLanes: UInt32 = 0
+    ) {
+        self.init(
+            buildFile: buildFile,
+            databaseFile: databaseFile,
+            tool: TestTool(expectedCommands: expectedCommands),
+            schedulerLanes: schedulerLanes
+        )
+    }
+
+    init(
+        buildFile: String,
+        databaseFile: String,
+        tool: Tool,
+        schedulerLanes: UInt32 = 0
+    ) {
         delegate = TestBuildSystemDelegate(tool: tool)
-        buildSystem = BuildSystem(buildFile: buildFile, databaseFile: databaseFile, delegate: delegate)
+        buildSystem = BuildSystem(buildFile: buildFile, databaseFile: databaseFile, delegate: delegate, schedulerLanes: schedulerLanes)
     }
 
     func run(target: String) {
         XCTAssertTrue(buildSystem.build(target: target))
+    }
+
+    func runNotSuccessful(target: String) {
+        XCTAssertFalse(buildSystem.build(target: target))
     }
 }
 
@@ -397,5 +474,82 @@ commands:
 
         let fileInfo = BuildValueFileInfo(device: 1, inode: 2, mode: 3, size: 4, modTime: BuildValueFileTimestamp())
         XCTAssertEqual(maincommandResult.value, BuildValue.SuccessfulCommand(outputInfos: [fileInfo]))
+    }
+
+    func testDetachedCommand() {
+        let buildFile = makeTemporaryFile(basicBuildManifest)
+        let databaseFile = makeTemporaryFile()
+
+        let delayedCmd = DelayedCommand()
+        let detachedCmd1 = DetachedCommand()
+        let detachedCmd2 = DetachedCommand()
+        let detachedCmd3 = DetachedCommand()
+        let basicCmd = BasicCommand()
+        // The commands will get scheduled in reverse command-name order.
+        let expectedCommands = [
+            "maincommand": DependentCommand(dependencyNames: [
+                "5-delayed",
+                "4-detached", "3-detached", "2-detached",
+                "1-basic",
+            ]),
+            "5-delayed": delayedCmd,
+            "4-detached": detachedCmd1,
+            "3-detached": detachedCmd2,
+            "2-detached": detachedCmd3,
+            "1-basic": basicCmd,
+        ]
+
+        // Using only one execution lane.
+        let buildSystem = TestBuildSystem(
+            buildFile: buildFile,
+            databaseFile: databaseFile,
+            expectedCommands: expectedCommands,
+            schedulerLanes: 1
+        )
+        buildSystem.run(target: "all")
+
+        for (name, command) in expectedCommands {
+            XCTAssert(command.isFulfilled(), "\(name) did not execute")
+        }
+        // Verify that the detached commands were not blocked waiting for the execution lane to open.
+        XCTAssert(detachedCmd1.startedTime! < delayedCmd.completedTime!)
+        XCTAssert(detachedCmd2.startedTime! < delayedCmd.completedTime!)
+        XCTAssert(detachedCmd3.startedTime! < delayedCmd.completedTime!)
+        // Verify that the detached commands did not block the execution lane.
+        XCTAssert(Double(basicCmd.completedTime!.uptimeNanoseconds - delayedCmd.completedTime!.uptimeNanoseconds) / Double(NSEC_PER_SEC) < 0.5)
+    }
+
+    func testCancelDetachedCommand() throws {
+        let buildFile = makeTemporaryFile(basicBuildManifest)
+        let databaseFile = makeTemporaryFile()
+
+        let detachedCmd1 = DetachedCommand()
+        let detachedCmd2 = DetachedCommand()
+        let tool = TestTool(expectedCommands: [
+            "maincommand": DependentCommand(dependencyNames: ["1-detached", "2-detached", "3-block"]),
+            "1-detached": detachedCmd1,
+            "2-detached": detachedCmd2,
+        ])
+
+        // Using only one execution lane.
+        let buildSystem = TestBuildSystem(
+            buildFile: buildFile,
+            databaseFile: databaseFile,
+            tool: tool,
+            schedulerLanes: 1
+        )
+
+        let blockCmd = CustomBlockCommand({
+            buildSystem.buildSystem.cancel()
+        })
+        tool.expectedCommands["3-block"] = blockCmd
+
+        buildSystem.runNotSuccessful(target: "all")
+
+        XCTAssert(detachedCmd1.isCancelled)
+        XCTAssert(detachedCmd2.isCancelled)
+        // Verify that the detached commands cancelled and finished early.
+        XCTAssert(Double(detachedCmd1.completedTime!.uptimeNanoseconds - blockCmd.completedTime!.uptimeNanoseconds) / Double(NSEC_PER_SEC) < 0.5)
+        XCTAssert(Double(detachedCmd2.completedTime!.uptimeNanoseconds - blockCmd.completedTime!.uptimeNanoseconds) / Double(NSEC_PER_SEC) < 0.5)
     }
 }

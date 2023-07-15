@@ -958,6 +958,26 @@ class CAPIExternalCommand : public ExternalCommand {
   // executeExternalCommand().
   CAPIBuildValue* currentBuildValue = nullptr;
 
+  std::atomic<bool> detachedCommandFinished{false};
+  std::unique_ptr<core::CancellationDelegate> cancellationDelegate = nullptr;
+
+  bool isDetached() const override {
+    return cAPIDelegate.execute_command_detached != nullptr;
+  }
+
+  static ProcessStatus getProcessStatusFromLLBResult(llb_buildsystem_command_result_t result) {
+    switch (result) {
+      case llb_buildsystem_command_result_succeeded:
+        return ProcessStatus::Succeeded;
+      case llb_buildsystem_command_result_failed:
+        return ProcessStatus::Failed;
+      case llb_buildsystem_command_result_cancelled:
+        return ProcessStatus::Cancelled;
+      case llb_buildsystem_command_result_skipped:
+        return ProcessStatus::Skipped;
+    }
+  }
+
   virtual void executeExternalCommand(BuildSystem& system,
                                       core::TaskInterface ti,
                                       QueueJobContext* job_context,
@@ -1001,6 +1021,65 @@ class CAPIExternalCommand : public ExternalCommand {
         completionFn.getValue()(result);
     };
 
+    if (cAPIDelegate.execute_command_detached) {
+      struct ResultCallbackContext {
+        CAPIExternalCommand *thisCommand;
+        BuildSystem *buildSystem;
+        std::function<void(ProcessStatus result)> doneFn;
+
+        static void callback(void* result_ctx,
+                             llb_buildsystem_command_result_t result,
+                             llb_build_value* rvalue) {
+          ResultCallbackContext *ctx = static_cast<ResultCallbackContext*>(result_ctx);
+          auto thisCommand = ctx->thisCommand;
+          BuildSystem &system = *ctx->buildSystem;
+          auto doneFn = std::move(ctx->doneFn);
+          delete ctx;
+
+          thisCommand->detachedCommandFinished = true;
+          if (auto cancellationDelegate = thisCommand->cancellationDelegate.get()) {
+            system.removeCancellationDelegate(cancellationDelegate);
+            thisCommand->cancellationDelegate = nullptr;
+          }
+
+          thisCommand->currentBuildValue = reinterpret_cast<CAPIBuildValue*>(rvalue);
+          llbuild_defer {
+            delete thisCommand->currentBuildValue;
+            thisCommand->currentBuildValue = nullptr;
+          };
+          doneFn(getProcessStatusFromLLBResult(result));
+        }
+      };
+      auto *callbackCtx = new ResultCallbackContext{this, &system, std::move(doneFn)};
+      cAPIDelegate.execute_command_detached(
+        cAPIDelegate.context,
+        (llb_buildsystem_command_t*)this,
+        (llb_buildsystem_interface_t*)&system,
+        *reinterpret_cast<llb_task_interface_t*>(&ti),
+        (llb_buildsystem_queue_job_context_t*)job_context,
+        callbackCtx, ResultCallbackContext::callback);
+
+      if (cAPIDelegate.cancel_detached_command) {
+        class CAPICancellationDelegate: public core::CancellationDelegate {
+          CAPIExternalCommand *thisCommand;
+
+        public:
+          CAPICancellationDelegate(CAPIExternalCommand *thisCommand) : thisCommand(thisCommand) {}
+
+          void buildCancelled() override {
+            if (thisCommand->detachedCommandFinished)
+              return;
+            thisCommand->cAPIDelegate.cancel_detached_command(
+              thisCommand->cAPIDelegate.context,
+              (llb_buildsystem_command_t*)this);
+          }
+        };
+        this->cancellationDelegate = std::make_unique<CAPICancellationDelegate>(this);
+        system.addCancellationDelegate(this->cancellationDelegate.get());
+      }
+      return;
+    }
+
     if (cAPIDelegate.execute_command_ex) {
       llb_build_value* rvalue = cAPIDelegate.execute_command_ex(
         cAPIDelegate.context,
@@ -1031,22 +1110,7 @@ class CAPIExternalCommand : public ExternalCommand {
       (llb_buildsystem_interface_t*)&system,
       *reinterpret_cast<llb_task_interface_t*>(&ti),
       (llb_buildsystem_queue_job_context_t*)job_context);
-    ProcessStatus status;
-    switch (result) {
-      case llb_buildsystem_command_result_succeeded:
-        status = ProcessStatus::Succeeded;
-        break;
-      case llb_buildsystem_command_result_failed:
-        status = ProcessStatus::Failed;
-        break;
-      case llb_buildsystem_command_result_cancelled:
-        status = ProcessStatus::Cancelled;
-        break;
-      case llb_buildsystem_command_result_skipped:
-        status = ProcessStatus::Skipped;
-        break;
-    }
-    doneFn(status);
+    doneFn(getProcessStatusFromLLBResult(result));
   }
 
   BuildValue computeCommandResult(BuildSystem& system, core::TaskInterface ti) override {
@@ -1202,7 +1266,7 @@ llb_buildsystem_external_command_create(
   // Check that all required methods are provided.
   assert(delegate.start);
   assert(delegate.provide_value);
-  assert(delegate.execute_command);
+  assert(delegate.execute_command || delegate.execute_command_detached);
   
   return (llb_buildsystem_command_t*) new CAPIExternalCommand(
       StringRef((const char*)name->data, name->length), delegate);
