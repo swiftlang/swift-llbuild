@@ -2599,8 +2599,7 @@ class SwiftCompilerShellCommand : public ExternalCommand {
       result.push_back("-module-alias");
       result.push_back(nameAndAlias);
     }
-    
-    result.push_back("-incremental");
+
     result.push_back("-emit-dependencies");
     if (!moduleOutputPath.empty()) {
       result.push_back("-emit-module");
@@ -2616,6 +2615,8 @@ class SwiftCompilerShellCommand : public ExternalCommand {
       result.push_back("-whole-module-optimization");
       result.push_back("-num-threads");
       result.push_back(numThreads);
+    } else {
+      result.push_back("-incremental");
     }
     result.push_back("-c");
     for (const auto& source: sourcesList) {
