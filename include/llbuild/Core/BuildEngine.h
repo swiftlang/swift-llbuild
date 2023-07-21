@@ -423,6 +423,14 @@ public:
 
 };
 
+/// Delegate interface for build cancellation notifications.
+class CancellationDelegate {
+public:
+  virtual ~CancellationDelegate();
+
+  virtual void buildCancelled() = 0;
+};
+
 /// A build engine supports fast, incremental, persistent, and parallel
 /// execution of computational graphs.
 ///
@@ -500,7 +508,10 @@ public:
 
   void resetForBuild();
   bool isCancelled();
-  
+
+  void addCancellationDelegate(CancellationDelegate* del);
+  void removeCancellationDelegate(CancellationDelegate* del);
+
   /// Attach a database for persisting build state.
   ///
   /// A database should only be attached immediately after creating the engine,

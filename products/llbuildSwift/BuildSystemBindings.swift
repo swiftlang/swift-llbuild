@@ -205,18 +205,28 @@ private final class ToolWrapper {
         _delegate.get_signature = { return BuildSystem.toCommandWrapper($0!).getSignature($1!, $2!) }
         _delegate.start = { return BuildSystem.toCommandWrapper($0!).start($1!, $2!, $3) }
         _delegate.provide_value = { return BuildSystem.toCommandWrapper($0!).provideValue($1!, $2!, $3, $4!, $5) }
-        _delegate.execute_command = { return BuildSystem.toCommandWrapper($0!).executeCommand($1!, $2!, $3, $4!) }
-        if let _ = command as? ProducesCustomBuildValue {
-            _delegate.execute_command_ex = {
-                var value: BuildValue = BuildSystem.toCommandWrapper($0!).executeCommand($1!, $2!, $3, $4!)
-                return BuildValue.move(&value)
+        let shouldExecuteDetached = (command as? ExternalDetachedCommand)?.shouldExecuteDetached == true
+        if shouldExecuteDetached {
+            _delegate.execute_command_detached = {
+              return BuildSystem.toCommandWrapper($0!).executeDetachedCommand($1!, $2!, $3, $4!, $5, $6!)
             }
-            _delegate.is_result_valid = {
-                return BuildSystem.toCommandWrapper($0!).isResultValid($1!, $2!)
-            }
+          _delegate.cancel_detached_command = {
+            return BuildSystem.toCommandWrapper($0!).cancelDetachedCommand($1!)
+          }
         } else {
-            _delegate.execute_command_ex = nil
-            _delegate.is_result_valid = nil
+            _delegate.execute_command = { return BuildSystem.toCommandWrapper($0!).executeCommand($1!, $2!, $3, $4!) }
+            if let _ = command as? ProducesCustomBuildValue {
+                _delegate.execute_command_ex = {
+                    var value: BuildValue = BuildSystem.toCommandWrapper($0!).executeCommand($1!, $2!, $3, $4!)
+                    return BuildValue.move(&value)
+                }
+                _delegate.is_result_valid = {
+                    return BuildSystem.toCommandWrapper($0!).isResultValid($1!, $2!)
+                }
+            } else {
+                _delegate.execute_command_ex = nil
+                _delegate.is_result_valid = nil
+            }
         }
 
         // Create the low-level command.
@@ -291,6 +301,37 @@ public protocol ExternalCommand: AnyObject {
     /// - jobContext: A handle to opaque context of the executing job for spawning external processes.
     /// - returns: command execution result.
     func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface, _ jobContext: JobContext) -> CommandResult
+}
+
+public protocol ExternalDetachedCommand: AnyObject {
+    /// Whether the command should run outside the execution lanes.
+    /// If true the build system will call `executeDetached` and `cancelDetached`.
+    var shouldExecuteDetached: Bool { get }
+
+    /// Called to execute the command, without blocking the execution lanes.
+    /// The implementation should do the work asynchronously while returning as
+    /// soon as possible.
+    ///
+    /// - command: A handle to the executing command.
+    /// - commandInterface: A handle to the build system's command interface.
+    /// - jobContext: A handle to opaque context of the executing job for spawning external processes.
+    /// - resultFn: Callback for passing a result and optionally a `BuildValue`.
+    func executeDetached(
+        _ command: Command,
+        _ commandInterface: BuildSystemCommandInterface,
+        _ jobContext: JobContext,
+        _ resultFn: @escaping (CommandResult, BuildValue?) -> ()
+    )
+
+    /// Called to request the command to cancel.
+    /// The implementation should aim to return as soon as possible.
+    ///
+    /// - command: A handle to the executing command.
+    func cancelDetached(_ command: Command)
+}
+
+public extension ExternalDetachedCommand {
+    func cancelDetached(_ command: Command) {}
 }
 
 public protocol ProducesCustomBuildValue: AnyObject {
@@ -441,6 +482,29 @@ private final class CommandWrapper {
     func executeCommand(_: OpaquePointer, _ buildsystemInterface: OpaquePointer, _ taskInterface: llb_task_interface_t, _ jobContext: OpaquePointer) -> CommandResult {
         let commandInterface = BuildSystemCommandInterface(buildsystemInterface, taskInterface)
         return command.execute(_command, commandInterface, JobContext(jobContext))
+    }
+
+    func executeDetachedCommand(
+        _: OpaquePointer,
+        _ buildsystemInterface: OpaquePointer,
+        _ taskInterface: llb_task_interface_t,
+        _ jobContext: OpaquePointer,
+        _ resultContext: UnsafeMutableRawPointer?,
+        _ resultFn: @escaping (_ resultContext: UnsafeMutableRawPointer?, CommandResult, OpaquePointer?) -> ()
+    ) {
+        let commandInterface = BuildSystemCommandInterface(buildsystemInterface, taskInterface)
+        func resultReceiver(_ result: CommandResult, value: BuildValue?) {
+            if var value {
+                resultFn(resultContext, result, BuildValue.move(&value))
+            } else {
+                resultFn(resultContext, result, nil)
+            }
+        }
+        return (command as! ExternalDetachedCommand).executeDetached(_command, commandInterface, JobContext(jobContext), resultReceiver)
+    }
+
+    func cancelDetachedCommand(_: OpaquePointer) {
+        return (command as! ExternalDetachedCommand).cancelDetached(_command)
     }
 
     func executeCommand(_: OpaquePointer, _ buildsystemInterface: OpaquePointer, _ taskInterface: llb_task_interface_t, _ jobContext: OpaquePointer) -> BuildValue {

@@ -18,6 +18,7 @@
 #include "llbuild/Core/BuildDB.h"
 #include "llbuild/Core/KeyID.h"
 
+#include "llvm/ADT/DenseSet.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/StringMap.h"
 
@@ -54,6 +55,8 @@ bool BuildEngineDelegate::shouldResolveCycle(const std::vector<Rule*>& items,
                                              Rule::CycleAction action) {
   return false;
 }
+
+CancellationDelegate::~CancellationDelegate() = default;
 
 #pragma mark - BuildEngine implementation
 
@@ -102,6 +105,8 @@ class BuildEngineImpl : public BuildDBDelegate {
   /// Whether a build is currently running.
   std::atomic<bool> buildRunning{ false };
   std::mutex buildEngineMutex;
+
+  llvm::DenseSet<core::CancellationDelegate *> cancellationDelegates;
 
   /// The queue of input requests to process.
   struct TaskInputRequest {
@@ -1628,6 +1633,12 @@ public:
   void cancelBuild() {
     std::lock_guard<std::mutex> guard(executionQueueMutex);
 
+    if (!buildCancelled) {
+      for (const auto &del : cancellationDelegates) {
+        del->buildCancelled();
+      }
+    }
+
     // Set the build cancelled marker.
     //
     // We do not need to handle waking the engine up, if it is waiting, because
@@ -1644,6 +1655,20 @@ public:
 
   bool isCancelled() {
     return buildCancelled;
+  }
+
+  void addCancellationDelegate(CancellationDelegate* del) {
+    std::lock_guard<std::mutex> guard(executionQueueMutex);
+    if (buildCancelled) {
+      del->buildCancelled();
+      return;
+    }
+    cancellationDelegates.insert(del);
+  }
+
+  void removeCancellationDelegate(CancellationDelegate* del) {
+    std::lock_guard<std::mutex> guard(executionQueueMutex);
+    cancellationDelegates.erase(del);
   }
 
   bool attachDB(std::unique_ptr<BuildDB> database, std::string* error_out) {
@@ -1919,6 +1944,14 @@ void BuildEngine::cancelBuild() {
 
 bool BuildEngine::isCancelled() {
   return static_cast<BuildEngineImpl*>(impl)->isCancelled();
+}
+
+void BuildEngine::addCancellationDelegate(CancellationDelegate* del) {
+  static_cast<BuildEngineImpl*>(impl)->addCancellationDelegate(std::move(del));
+}
+
+void BuildEngine::removeCancellationDelegate(CancellationDelegate* del) {
+  static_cast<BuildEngineImpl*>(impl)->removeCancellationDelegate(del);
 }
 
 void BuildEngine::dumpGraphToFile(const std::string& path) {

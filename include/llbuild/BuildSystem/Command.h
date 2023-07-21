@@ -154,6 +154,9 @@ public:
 
   virtual bool isExternalCommand() const { return false; }
 
+  /// The command should execute outside the execution lanes.
+  virtual bool isDetached() const { return false; }
+
   virtual void addOutput(BuildNode* node) final {
     outputs.push_back(node);
     node->getProducers().push_back(this);
