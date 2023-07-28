@@ -81,8 +81,11 @@ LLBUILD_EXPORT void llb_build_key_get_command_name(llb_build_key_t *key, llb_dat
 
 // Custom Task
 LLBUILD_EXPORT llb_build_key_t *llb_build_key_make_custom_task(const char *name, const char *taskData);
+LLBUILD_EXPORT llb_build_key_t *llb_build_key_make_custom_task_with_data(const char *name, llb_data_t data);
 LLBUILD_EXPORT void llb_build_key_get_custom_task_name(llb_build_key_t *key, llb_data_t *out_name);
 LLBUILD_EXPORT void llb_build_key_get_custom_task_data(llb_build_key_t *key, llb_data_t *out_task_data);
+LLBUILD_EXPORT void llb_build_key_get_custom_task_data_no_copy(llb_build_key_t *key, llb_data_t *out_task_data);
+
 
 // Directory Contents
 LLBUILD_EXPORT llb_build_key_t *llb_build_key_make_directory_contents(const char *path);

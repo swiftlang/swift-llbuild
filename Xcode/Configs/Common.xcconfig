@@ -34,6 +34,9 @@ USE_HEADERMAP = NO
 SWIFT_OBJC_INTERFACE_HEADER_NAME =
 SWIFT_INSTALL_OBJC_HEADER = NO
 
+// The major component of the user module version should be the date it was last changed (YYMMDD.N, where N is usually 0 but can be used if multiple API changes are made on the same day).
+SWIFT_USER_MODULE_VERSION = 230727.0
+
 // Enable InstallAPI.
 SUPPORTS_TEXT_BASED_API = YES
 TAPI_ENABLE_MODULES = YES
