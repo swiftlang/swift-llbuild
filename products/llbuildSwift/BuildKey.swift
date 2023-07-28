@@ -148,6 +148,12 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
             self.init(llb_build_key_make_custom_task(name, taskData))
         }
         
+        public convenience init(name: String, taskDataBytes: [UInt8]) {
+            self.init(taskDataBytes.withUnsafeBufferPointer { buf in
+                llb_build_key_make_custom_task_with_data(name, llb_data_t(length: UInt64(buf.count), data: buf.baseAddress))
+            })
+        }
+        
         /// The name of the task
         public var name: String {
             return formString {
@@ -160,6 +166,12 @@ public class BuildKey: CustomStringConvertible, Equatable, Hashable {
             return formString {
                 llb_build_key_get_custom_task_data(internalBuildKey, &$0)
             }
+        }
+        
+        public var taskDataBytes: [UInt8] {
+            var data = llb_data_t()
+            llb_build_key_get_custom_task_data_no_copy(internalBuildKey, &data)
+            return Array(UnsafeBufferPointer(start: data.data, count: Int(data.length)))
         }
         
         public override var description: String {

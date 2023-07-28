@@ -140,6 +140,11 @@ llb_build_key_t *llb_build_key_make_custom_task(const char *name, const char *ta
   return (llb_build_key_t *)new CAPIBuildKey(BuildKey::makeCustomTask(StringRef(name), StringRef(taskData)));
 }
 
+llb_build_key_t *llb_build_key_make_custom_task_with_data(const char *name, llb_data_t data) {
+  return (llb_build_key_t *)new CAPIBuildKey(BuildKey::makeCustomTask(StringRef(name), StringRef((const char *)data.data, data.length)));
+}
+
+
 void llb_build_key_get_custom_task_name(llb_build_key_t *key, llb_data_t *out_name) {
   auto name = ((CAPIBuildKey *)key)->getInternalBuildKey().getCustomTaskName();
   out_name->length = name.size();
@@ -150,6 +155,12 @@ void llb_build_key_get_custom_task_data(llb_build_key_t *key, llb_data_t *out_ta
   auto data = ((CAPIBuildKey *)key)->getInternalBuildKey().getCustomTaskData();
   out_task_data->length = data.size();
   out_task_data->data = (const uint8_t*)strdup(data.str().c_str());
+}
+
+void llb_build_key_get_custom_task_data_no_copy(llb_build_key_t *key, llb_data_t *out_task_data) {
+  auto data = ((CAPIBuildKey *)key)->getInternalBuildKey().getCustomTaskData();
+  out_task_data->length = data.size();
+  out_task_data->data = (const uint8_t *)data.data();
 }
 
 llb_build_key_t *llb_build_key_make_directory_contents(const char *path) {

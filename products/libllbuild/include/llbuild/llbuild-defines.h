@@ -85,6 +85,8 @@
 ///
 /// Version History:
 ///
+/// 16: Added more efficient C API for working with custom tasks
+///
 /// 15: Added `determined_rule_needs_to_run` delegate method
 ///
 /// 14: Added configure API to CAPIExternalCommand
@@ -116,6 +118,6 @@
 /// 1: Added `environment` parameter to llb_buildsystem_invocation_t.
 ///
 /// 0: Pre-history
-#define LLBUILD_C_API_VERSION 15
+#define LLBUILD_C_API_VERSION 16
 
 #endif
