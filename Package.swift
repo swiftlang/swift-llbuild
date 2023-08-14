@@ -66,7 +66,7 @@ let package = Package(
         /// The public llbuild Swift API.
         .target(
             name: "llbuildSwift",
-            dependencies: ["libllbuild"],
+            dependencies: ["libllbuild", "llbuild"],
             path: "products/llbuildSwift",
             exclude: []
         ),
@@ -109,7 +109,7 @@ let package = Package(
         
         .target(
             name: "llbuildAnalysis",
-            dependencies: ["llbuildSwift"],
+            dependencies: ["llbuildSwift", "llbuild"],
             path: "lib/Analysis"
         ),
         
