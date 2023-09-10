@@ -3694,6 +3694,7 @@
 		E1A223E919F98F1C0059043E /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				BuildIndependentTargetsInParallel = YES;
 				DefaultBuildSystemTypeForWorkspace = Latest;
 				LastSwiftUpdateCheck = 1120;
 				LastUpgradeCheck = 1400;
