@@ -5192,7 +5192,7 @@
 				DEVELOPMENT_TEAM = "";
 				INSTALL_PATH = "$(DT_TOOLCHAIN_INSTALL_DIR:standardizepath)/usr/bin";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				SKIP_INSTALL = NO;
+				SKIP_INSTALL = "$(SKIP_INSTALL_CLI_TOOLS)";
 			};
 			name = Debug;
 		};
@@ -5203,7 +5203,7 @@
 				DEVELOPMENT_TEAM = "";
 				INSTALL_PATH = "$(DT_TOOLCHAIN_INSTALL_DIR:standardizepath)/usr/bin";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				SKIP_INSTALL = NO;
+				SKIP_INSTALL = "$(SKIP_INSTALL_CLI_TOOLS)";
 			};
 			name = Release;
 		};
@@ -5424,7 +5424,7 @@
 				INSTALL_PATH = "$(DT_TOOLCHAIN_INSTALL_DIR:standardizepath)/usr/local/bin";
 				PRODUCT_NAME = llbuild;
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				SKIP_INSTALL = NO;
+				SKIP_INSTALL = "$(SKIP_INSTALL_CLI_TOOLS)";
 			};
 			name = Debug;
 		};
@@ -5436,7 +5436,7 @@
 				INSTALL_PATH = "$(DT_TOOLCHAIN_INSTALL_DIR:standardizepath)/usr/local/bin";
 				PRODUCT_NAME = llbuild;
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				SKIP_INSTALL = NO;
+				SKIP_INSTALL = "$(SKIP_INSTALL_CLI_TOOLS)";
 			};
 			name = Release;
 		};
