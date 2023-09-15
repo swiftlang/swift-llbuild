@@ -66,6 +66,9 @@ OTHER_CPLUSPLUSFLAGS = $(OTHER_CFLAGS) -Wimplicit-fallthrough -Wsign-compare -Wa
 // Clients can override this to the empty string to avoid installing anything.
 COMMANDLINETOOLS_FRAMEWORK_INSTALL_PATH = $(DSTROOT)/Library/Developer/CommandLineTools/usr/lib/swift/pm/llbuild/llbuild.framework
 
+// Flag to easily enable SKIP_INSTALL for llbuild's CLI tools
+SKIP_INSTALL_CLI_TOOLS = NO
+
 // MARK: Signing Support
 
 // Enable code signing, if appropriate.
