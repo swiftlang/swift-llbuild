@@ -401,7 +401,7 @@ commands:
     BuildSystemFrontend frontend(delegate, invocation, createLocalFileSystem());
     ASSERT_TRUE(frontend.build("<all>"));
 
-    ASSERT_EQ(delegate.maxTaskParallism(), 3);
+    ASSERT_EQ(delegate.maxTaskParallism(), std::min(3, (int)std::thread::hardware_concurrency()));
   }
 
   // Test an 'incremental' build where we have an existing build database
@@ -413,7 +413,7 @@ commands:
     // FIXME: This build graph triggers degenerate build behavior. Due to the
     // way we scan tasks, we end up waiting for the first task to resolve before
     // we unlock the other two branches to run in parallel.
-    ASSERT_EQ(delegate.maxTaskParallism(), 2);
+    ASSERT_EQ(delegate.maxTaskParallism(), std::min(2, (int)std::thread::hardware_concurrency()));
   }
 }
 
