@@ -106,13 +106,19 @@ bool ShellCommand::processDiscoveredDependencies(BuildSystem& system,
 
     case DepsStyle::Makefile:
       if (!processMakefileDiscoveredDependencies(
-              system, ti, context, depsPath, input.get()))
+              system, ti, context, depsPath, input.get(), false))
         return false;
       continue;
 
     case DepsStyle::DependencyInfo:
       if (!processDependencyInfoDiscoveredDependencies(
               system, ti, context, depsPath, input.get()))
+        return false;
+      continue;
+
+    case DepsStyle::MakefileIgnoringSubsequentOutputs:
+      if (!processMakefileDiscoveredDependencies(
+              system, ti, context, depsPath, input.get(), true))
         return false;
       continue;
     }
@@ -127,7 +133,8 @@ bool ShellCommand::processMakefileDiscoveredDependencies(BuildSystem& system,
                                                          TaskInterface ti,
                                                          QueueJobContext* context,
                                                          StringRef depsPath,
-                                                         llvm::MemoryBuffer* input) {
+                                                         llvm::MemoryBuffer* input,
+                                                         bool ignoreSubsequentOutputs) {
   // Parse the output.
   //
   // We just ignore the rule, and add any dependency that we encounter in the
@@ -180,7 +187,7 @@ bool ShellCommand::processMakefileDiscoveredDependencies(BuildSystem& system,
   };
 
   DepsActions actions(system, ti, this, depsPath);
-  core::MakefileDepsParser(input->getBuffer(), actions).parse();
+  core::MakefileDepsParser(input->getBuffer(), actions, ignoreSubsequentOutputs).parse();
   return actions.numErrors == 0;
 }
 
@@ -256,6 +263,8 @@ bool ShellCommand::configureAttribute(const ConfigureContext& ctx, StringRef nam
       depsStyle = DepsStyle::Makefile;
     } else if (value == "dependency-info") {
       depsStyle = DepsStyle::DependencyInfo;
+    } else if (value == "makefile-ignoring-subsequent-outputs") {
+      depsStyle = DepsStyle::MakefileIgnoringSubsequentOutputs;
     } else {
       ctx.error("unknown 'deps-style': '" + value + "'");
       return false;

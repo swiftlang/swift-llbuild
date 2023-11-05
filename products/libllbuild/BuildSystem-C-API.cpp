@@ -784,7 +784,8 @@ class CAPIExternalCommand : public ExternalCommand {
   bool processMakefileDiscoveredDependencies(BuildSystem& system,
                                              core::TaskInterface ti,
                                              QueueJobContext* context,
-                                             std::string depsPath) {
+                                             std::string depsPath,
+                                             bool ignoreSubsequentOutputs) {
     // Read the dependencies file.
     std::unique_ptr<llvm::MemoryBuffer> input;
     if (llvm::sys::path::is_absolute(depsPath)) {
@@ -849,7 +850,7 @@ class CAPIExternalCommand : public ExternalCommand {
     };
     
     DepsActions actions(system, ti, this, depsPath);
-    core::MakefileDepsParser(input->getBuffer(), actions).parse();
+    core::MakefileDepsParser(input->getBuffer(), actions, ignoreSubsequentOutputs).parse();
     return actions.numErrors == 0;
   }
   
@@ -864,6 +865,8 @@ class CAPIExternalCommand : public ExternalCommand {
         depsFormat = llb_buildsystem_dependency_data_format_makefile;
       } else if (value == "dependency-info") {
         depsFormat = llb_buildsystem_dependency_data_format_dependencyinfo;
+      } else if (value == "makefile-ignoring-subsequent-outputs") {
+        depsFormat = llb_buildsystem_dependency_data_format_makefile_ignoring_subsequent_outputs;
       } else {
         return false;
       }
@@ -1000,10 +1003,13 @@ class CAPIExternalCommand : public ExternalCommand {
               dependencyParsingResult = false;
               break;
             case llb_buildsystem_dependency_data_format_makefile:
-              dependencyParsingResult = processMakefileDiscoveredDependencies(system, ti, job_context, depsPath);
+              dependencyParsingResult = processMakefileDiscoveredDependencies(system, ti, job_context, depsPath, false);
               break;
             case llb_buildsystem_dependency_data_format_dependencyinfo:
               dependencyParsingResult = processDependencyInfoDiscoveredDependencies(system, ti, job_context, depsPath);
+              break;
+            case llb_buildsystem_dependency_data_format_makefile_ignoring_subsequent_outputs:
+              dependencyParsingResult = processMakefileDiscoveredDependencies(system, ti, job_context, depsPath, true);
               break;
           }
           

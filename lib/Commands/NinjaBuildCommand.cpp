@@ -1447,7 +1447,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
 
         DepsActions actions(context, ti, context.workingDirectory, command->getDepsFile());
         core::MakefileDepsParser(bufferOrError.get()->getBuffer(),
-                                 actions).parse();
+                                 actions, false).parse();
         return actions.numErrors == 0;
       }
       }

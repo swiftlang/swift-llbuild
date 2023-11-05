@@ -2281,7 +2281,7 @@ class ClangShellCommand : public ExternalCommand {
     };
 
     DepsActions actions(ti, this);
-    core::MakefileDepsParser(input->getBuffer(), actions).parse();
+    core::MakefileDepsParser(input->getBuffer(), actions, false).parse();
     return actions.numErrors == 0;
   }
 
@@ -2863,7 +2863,7 @@ public:
     };
 
     DepsActions actions(ti, depsPath, this);
-    core::MakefileDepsParser(input->getBuffer(), actions).parse();
+    core::MakefileDepsParser(input->getBuffer(), actions, false).parse();
     return actions.numErrors == 0;
   }
 
