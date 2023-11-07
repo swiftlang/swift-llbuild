@@ -216,5 +216,8 @@ void MakefileDepsParser::parse() {
                                   unescapedWord.str());
     }
     actions.actOnRuleEnd();
+
+    // Stop parsing if we only care about the first output's dependencies.
+    if (ignoreSubsequentOutputs) break;
   }
 }

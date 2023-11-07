@@ -62,10 +62,11 @@ public:
 
   StringRef data;
   ParseActions& actions;
-  
+  bool ignoreSubsequentOutputs;
+
 public:
-  MakefileDepsParser(StringRef data, ParseActions& actions)
-    : data(data), actions(actions) {}
+  MakefileDepsParser(StringRef data, ParseActions& actions, bool ignoreSubsequentOutputs)
+    : data(data), actions(actions), ignoreSubsequentOutputs(ignoreSubsequentOutputs) {}
 
   void parse();
 };

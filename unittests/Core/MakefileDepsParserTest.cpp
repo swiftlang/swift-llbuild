@@ -52,7 +52,7 @@ TEST(MakefileDepsParserTest, basic) {
 
   // Check a basic valid input with an escape sequence.
   input = "a: b\\$c d\\\ne";
-  MakefileDepsParser(StringRef(input), actions).parse();
+  MakefileDepsParser(StringRef(input), actions, false).parse();
   EXPECT_EQ(0U, actions.errors.size());
   EXPECT_EQ(1U, actions.records.size());
   EXPECT_EQ(RuleRecord("a", { "b\\$c", "d", "e" }),
@@ -62,7 +62,7 @@ TEST(MakefileDepsParserTest, basic) {
   actions.errors.clear();
   actions.records.clear();
   input = "a: b c d";
-  MakefileDepsParser(StringRef(input), actions).parse();
+  MakefileDepsParser(StringRef(input), actions, false).parse();
   EXPECT_EQ(0U, actions.errors.size());
   EXPECT_EQ(1U, actions.records.size());
   EXPECT_EQ(RuleRecord("a", { "b", "c", "d" }),
@@ -72,7 +72,7 @@ TEST(MakefileDepsParserTest, basic) {
   actions.errors.clear();
   actions.records.clear();
   input = "a\\ b: a\\ b a$$b a\\b a\\#b a\\\\\\ b";
-  MakefileDepsParser(StringRef(input), actions).parse();
+  MakefileDepsParser(StringRef(input), actions, false).parse();
   EXPECT_EQ(0U, actions.errors.size());
   EXPECT_EQ(1U, actions.records.size());
   EXPECT_EQ(RuleRecord("a b", {
@@ -83,7 +83,7 @@ TEST(MakefileDepsParserTest, basic) {
   actions.errors.clear();
   actions.records.clear();
   input = "a: b c d\none: two three";
-  MakefileDepsParser(StringRef(input), actions).parse();
+  MakefileDepsParser(StringRef(input), actions, false).parse();
   EXPECT_EQ(0U, actions.errors.size());
   EXPECT_EQ(2U, actions.records.size());
   EXPECT_EQ(RuleRecord("a", { "b", "c", "d" }),
@@ -91,11 +91,21 @@ TEST(MakefileDepsParserTest, basic) {
   EXPECT_EQ(RuleRecord("one", { "two", "three" }),
             actions.records[1]);
 
+  // Check a basic valid input with two rules when ignoring subsequent outputs.
+  actions.errors.clear();
+  actions.records.clear();
+  input = "a: b c d\none: two three";
+  MakefileDepsParser(StringRef(input), actions, true).parse();
+  EXPECT_EQ(0U, actions.errors.size());
+  EXPECT_EQ(1U, actions.records.size());
+  EXPECT_EQ(RuleRecord("a", { "b", "c", "d" }),
+            actions.records[0]);
+
   // Check a valid input with a trailing newline.
   input = "out: \\\n  in1\n";
   actions.errors.clear();
   actions.records.clear();
-  MakefileDepsParser(StringRef(input), actions).parse();
+  MakefileDepsParser(StringRef(input), actions, false).parse();
   EXPECT_EQ(0U, actions.errors.size());
   EXPECT_EQ(1U, actions.records.size());
   EXPECT_EQ(RuleRecord("out", { "in1" }),
@@ -104,7 +114,7 @@ TEST(MakefileDepsParserTest, basic) {
   input = "out: \\\r\n  in1\n";
   actions.errors.clear();
   actions.records.clear();
-  MakefileDepsParser(StringRef(input), actions).parse();
+  MakefileDepsParser(StringRef(input), actions, false).parse();
   EXPECT_EQ(0U, actions.errors.size());
   EXPECT_EQ(1U, actions.records.size());
   EXPECT_EQ(RuleRecord("out", { "in1" }),
@@ -114,7 +124,7 @@ TEST(MakefileDepsParserTest, basic) {
   actions.errors.clear();
   actions.records.clear();
   input = "  $ a";
-  MakefileDepsParser(StringRef(input), actions).parse();
+  MakefileDepsParser(StringRef(input), actions, false).parse();
   EXPECT_EQ(1U, actions.errors.size());
   EXPECT_EQ(actions.errors[0],
             ErrorRecord("unexpected character in file", 2U));
@@ -124,7 +134,7 @@ TEST(MakefileDepsParserTest, basic) {
   actions.errors.clear();
   actions.records.clear();
   input = "a";
-  MakefileDepsParser(StringRef(input), actions).parse();
+  MakefileDepsParser(StringRef(input), actions, false).parse();
   EXPECT_EQ(1U, actions.errors.size());
   EXPECT_EQ(actions.errors[0],
             ErrorRecord("missing ':' following rule", 1U));
@@ -137,7 +147,7 @@ TEST(MakefileDepsParserTest, basic) {
   actions.errors.clear();
   actions.records.clear();
   input = "a: b$";
-  MakefileDepsParser(StringRef(input), actions).parse();
+  MakefileDepsParser(StringRef(input), actions, false).parse();
   EXPECT_EQ(1U, actions.errors.size());
   EXPECT_EQ(actions.errors[0],
             ErrorRecord("unexpected character in prerequisites", 4U));
@@ -149,7 +159,7 @@ TEST(MakefileDepsParserTest, basic) {
   actions.errors.clear();
   actions.records.clear();
   input = "/=>\\ ;|%.o : /=>\\ ;|%.swift";
-  MakefileDepsParser(StringRef(input), actions).parse();
+  MakefileDepsParser(StringRef(input), actions, false).parse();
   EXPECT_EQ(0U, actions.errors.size());
   EXPECT_EQ(1U, actions.records.size());
   EXPECT_EQ(RuleRecord("/=> ;|%.o", { "/=> ;|%.swift" }), actions.records[0]);
@@ -158,7 +168,7 @@ TEST(MakefileDepsParserTest, basic) {
   actions.errors.clear();
   actions.records.clear();
   input = "a: b:c";
-  MakefileDepsParser(StringRef(input), actions).parse();
+  MakefileDepsParser(StringRef(input), actions, false).parse();
   EXPECT_EQ(0U, actions.errors.size());
   EXPECT_EQ(1U, actions.records.size());
   EXPECT_EQ(RuleRecord("a", { "b:c" }), actions.records[0]);

@@ -423,6 +423,8 @@ private final class CommandWrapper {
                 value = copiedDataFromBytes(Array("makefile".utf8))
             case .dependencyinfo:
                 value = copiedDataFromBytes(Array("dependency-info".utf8))
+            case .makefileIgnoringSubsequentOutputs:
+                value = copiedDataFromBytes(Array("makefile-ignoring-subsequent-outputs".utf8))
             default:
                 value = copiedDataFromBytes(Array("unusued".utf8))
             }
