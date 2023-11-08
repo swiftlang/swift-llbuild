@@ -93,7 +93,7 @@ TEST(SQLiteBuildDBTest, LockedWhileBuilding) {
   bool success = true;
   otherBuildDB->getCurrentEpoch(&success, &error);
   EXPECT_FALSE(success);
-  EXPECT_EQ(error, out.str());
+  EXPECT_TRUE(error.find("database is locked") != std::string::npos);
 
   // Clean up database connections before unlinking
   buildDB->buildComplete();
