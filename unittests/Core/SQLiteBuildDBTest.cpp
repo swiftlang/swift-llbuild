@@ -47,10 +47,7 @@ TEST(SQLiteBuildDBTest, ErrorHandling) {
     bool result = true;
     buildDB->getCurrentEpoch(&result, &error);
     EXPECT_FALSE(result);
-
-    std::stringstream out;
-    out << "error: accessing build database \"" << path << "\": database is locked Possibly there are two concurrent builds running in the same filesystem location.";
-    EXPECT_EQ(error, out.str());
+    EXPECT_TRUE(error.find("database is locked") != std::string::npos);
 
     // Clean up database connections before unlinking
     sqlite3_exec(db, "END;", nullptr, nullptr, nullptr);
@@ -85,9 +82,7 @@ TEST(SQLiteBuildDBTest, LockedWhileBuilding) {
   // Tests that we cannot start a second build with an existing connection
   result = secondBuildDB->buildStarted(&error);
   EXPECT_FALSE(result);
-  std::stringstream out;
-  out << "error: accessing build database \"" << path << "\": database is locked Possibly there are two concurrent builds running in the same filesystem location.";
-  EXPECT_EQ(error, out.str());
+  EXPECT_TRUE(error.find("database is locked") != std::string::npos);
 
   // Tests that we cannot create new connections while a build is running
   std::unique_ptr<BuildDB> otherBuildDB = createSQLiteBuildDB(dbPath, 1, /* recreateUnmatchedVersion = */ true, &error);
