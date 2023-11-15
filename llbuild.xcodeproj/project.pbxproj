@@ -5297,7 +5297,7 @@
 				PROJECT_SOURCE_VERSION_ = "$(RC_ProjectSourceVersion)";
 				PROJECT_SOURCE_VERSION_empty = 9999.99;
 				SDKROOT = macosx;
-				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include";
+				USER_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/include";
 			};
 			name = Debug;
 		};
@@ -5354,7 +5354,7 @@
 				PROJECT_SOURCE_VERSION_empty = 9999.99;
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
-				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/include";
+				USER_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/include";
 			};
 			name = Release;
 		};
@@ -5639,9 +5639,9 @@
 				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				GENERATE_INFOPLIST_FILE = YES;
-				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/include";
+				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/products/libllbuild/include";
 				INSTALL_PATH = "$(DT_SHARED_FRAMEWORKS_INSTALL_DIR:standardizepath)";
-				MODULEMAP_FILE = "$(SRCROOT)/products/llbuild-framework/llbuild-module.modulemap";
+				MODULEMAP_FILE = "$(PROJECT_DIR)/products/llbuild-framework/llbuild-module.modulemap";
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.dt.llbuild;
 				PRODUCT_NAME = llbuild;
 				SKIP_INSTALL = NO;
@@ -5659,9 +5659,9 @@
 				DYLIB_CURRENT_VERSION = "$(PROJECT_SOURCE_VERSION)";
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				GENERATE_INFOPLIST_FILE = YES;
-				HEADER_SEARCH_PATHS = "$(SRCROOT)/products/libllbuild/include";
+				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/products/libllbuild/include";
 				INSTALL_PATH = "$(DT_SHARED_FRAMEWORKS_INSTALL_DIR:standardizepath)";
-				MODULEMAP_FILE = "$(SRCROOT)/products/llbuild-framework/llbuild-module.modulemap";
+				MODULEMAP_FILE = "$(PROJECT_DIR)/products/llbuild-framework/llbuild-module.modulemap";
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.dt.llbuild;
 				PRODUCT_NAME = llbuild;
 				SKIP_INSTALL = NO;
