@@ -101,7 +101,7 @@ find_package(PythonInterp)
 
 # Find includes in the source directory.
 include_directories(BEFORE
-  ${CMAKE_SOURCE_DIR}/include)
+  ${PROJECT_SOURCE_DIR}/include)
 
 # Xcode: Use libc++ and c++14 using proper build settings.
 if (XCODE)
