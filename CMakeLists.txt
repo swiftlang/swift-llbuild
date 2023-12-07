@@ -15,6 +15,7 @@ endif()
 project(llbuild LANGUAGES CXX)
 
 option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
+option(BUILD_TESTING "Build tests" ON)
 option(LLBUILD_ENABLE_ASSERTIONS "enable assertions in release mode" NO)
 
 # Configure the default set of bindings to build.
@@ -92,9 +93,11 @@ set(LLBUILD_LIBDIR_SUFFIX "${LIB_SUFFIX}" CACHE STRING "Set default library fold
 ###
 # Support Tools
 
-find_package(Lit)
-find_package(FileCheck)
-find_package(PythonInterp)
+if(BUILD_TESTING)
+  find_package(Lit)
+  find_package(FileCheck)
+  find_package(PythonInterp)
+endif()
 
 ###
 # Setup compiler and project build settings
@@ -212,10 +215,12 @@ endif()
 
 # Process CMakeLists files for our subdirectories.
 add_subdirectory(lib)
-add_subdirectory(perftests)
 add_subdirectory(products)
-add_subdirectory(tests)
-add_subdirectory(unittests)
-add_subdirectory(utils/unittest)
-add_subdirectory(utils/adjust-times)
+if(BUILD_TESTING)
+  add_subdirectory(tests)
+  add_subdirectory(perftests)
+  add_subdirectory(unittests)
+  add_subdirectory(utils/unittest)
+  add_subdirectory(utils/adjust-times)
+endif()
 add_subdirectory(cmake/modules)
