@@ -33,11 +33,6 @@ API_UNAVAILABLE(ios, tvos, watchos)
 @implementation NinjaPerfTests
 
 + (NSString*) findNinja {
-    NSString* overrideNinjaPath = [@(SRCROOT)
-                                   stringByAppendingPathComponent:@"llbuild-test-tools/utils/Xcode/ninja"];
-    if ([[NSFileManager defaultManager] isExecutableFileAtPath:overrideNinjaPath]) {
-        return overrideNinjaPath;
-    }
     return @"xcrun ninja";
 }
 

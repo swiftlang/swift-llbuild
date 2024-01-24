@@ -10,13 +10,8 @@ fi
 # Default location on Ubuntu
 PATH="$PATH:/usr/lib/llvm-3.7/bin"
 
-# If we have an included copy of FileCheck, use that.
-FILECHECK="${SRCROOT}/llbuild-test-tools/utils/Xcode/FileCheck"
-
-# If not locally, look for FileCheck in the path.
-if [ ! -f "${FILECHECK}" ]; then
-    FILECHECK="$(which FileCheck || true)"
-fi
+# look for FileCheck in the path.
+FILECHECK="$(which FileCheck || true)"
 
 # If not in the path, search for it in the Jenkins ${WORKSPACE}
 if [ ! -f "${FILECHECK}" ]; then

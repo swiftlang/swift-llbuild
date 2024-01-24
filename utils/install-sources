@@ -35,5 +35,4 @@ rsync -arv "${SRCROOT}/" "${DST}/" \
     --exclude build \
     --exclude docs/_build \
     --exclude experiments \
-    --exclude utils/Xcode/FileCheck \
     --exclude perftests/Inputs
