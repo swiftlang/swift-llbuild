@@ -5544,7 +5544,7 @@
 				INSTALL_PATH = "$(DT_TOOLCHAIN_INSTALL_DIR:standardizepath)/usr/local/lib";
 				PUBLIC_HEADERS_FOLDER_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/include/llbuild";
 				TAPI_FRAMEWORK_SEARCH_PATHS = "";
-				TAPI_HEADER_SEARCH_PATHS = "$(TARGET_BUILD_DIR)/$(PUBLIC_HEADERS_FOLDER_PATH)/..";
+				TAPI_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/products/libllbuild/include/llbuild";
 			};
 			name = Debug;
 		};
@@ -5558,7 +5558,7 @@
 				INSTALL_PATH = "$(DT_TOOLCHAIN_INSTALL_DIR:standardizepath)/usr/local/lib";
 				PUBLIC_HEADERS_FOLDER_PATH = "$(DT_TOOLCHAIN_DIR)/usr/local/include/llbuild";
 				TAPI_FRAMEWORK_SEARCH_PATHS = "";
-				TAPI_HEADER_SEARCH_PATHS = "$(TARGET_BUILD_DIR)/$(PUBLIC_HEADERS_FOLDER_PATH)/..";
+				TAPI_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/products/libllbuild/include/llbuild";
 			};
 			name = Release;
 		};

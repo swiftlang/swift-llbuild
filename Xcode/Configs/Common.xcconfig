@@ -18,7 +18,7 @@ DT_TOOLCHAIN_INSTALL_DIR = $(INSTALL_BASE_PATH)/Toolchains/XcodeDefault.xctoolch
 PRODUCT_NAME = $(TARGET_NAME)
 
 // Set the versioning system to "Apple Generic" for all targets.
-VERSIONING_SYSTEM = apple-generic
+VERSIONING_SYSTEM = apple-generic-hidden
 CURRENT_PROJECT_VERSION = 1
 
 // Do not always search user paths.
@@ -40,6 +40,7 @@ SWIFT_USER_MODULE_VERSION = 230727.0
 // Enable InstallAPI.
 SUPPORTS_TEXT_BASED_API = YES
 TAPI_ENABLE_MODULES = YES
+TAPI_VERIFY_MODE = ErrorsOnly
 
 // Manually opt targets into installation.
 SKIP_INSTALL = YES
