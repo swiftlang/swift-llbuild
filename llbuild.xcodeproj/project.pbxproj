@@ -11,7 +11,6 @@
 			isa = PBXAggregateTarget;
 			buildConfigurationList = E178FCC41A1BF3270039F8B5 /* Build configuration list for PBXAggregateTarget "B&I" */;
 			buildPhases = (
-				BC92770E1E60449A0020E457 /* Install in CommandLineTools */,
 			);
 			dependencies = (
 				E178FCC61A1BF32F0039F8B5 /* PBXTargetDependency */,
@@ -3938,23 +3937,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${SRCROOT}/utils/Xcode/create-target-link.sh\"\n";
-		};
-		BC92770E1E60449A0020E457 /* Install in CommandLineTools */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 8;
-			files = (
-			);
-			inputPaths = (
-				"$(BUILT_PRODUCTS_DIR)/llbuild.framework",
-			);
-			name = "Install in CommandLineTools";
-			outputPaths = (
-				"$(COMMANDLINETOOLS_FRAMEWORK_INSTALL_PATH)",
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-			shellPath = /bin/sh;
-			shellScript = "# This script is used to install llbuild.framework in CommandLineTools.\n\nset -e\nif [ \"${SCRIPT_OUTPUT_FILE_0}\" != \"\" ]; then\n    mkdir -p \"$(dirname \"$SCRIPT_OUTPUT_FILE_0\")\"\n    rsync -a \"$SCRIPT_INPUT_FILE_0/\" \"$SCRIPT_OUTPUT_FILE_0\"\nfi\n";
-			showEnvVarsInLog = 0;
 		};
 		E147DF121BA81D330032D08E /* Create Target Link */ = {
 			isa = PBXShellScriptBuildPhase;
