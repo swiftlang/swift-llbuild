@@ -52,7 +52,7 @@ public protocol ProcessDelegate {
     
     /// Called when a command's job has finished executing an external process.
     ///
-    /// - result: Whether the process suceeded, failed or was cancelled.
+    /// - result: Whether the process succeeded, failed or was cancelled.
     func processFinished(result: CommandExtendedResult)
 }
 
@@ -910,7 +910,7 @@ public protocol BuildSystemDelegate {
     /// handle will become invalid as soon as the client returns from this API
     /// call.
     ///
-    /// - parameter result: Whether the process suceeded, failed or was cancelled.
+    /// - parameter result: Whether the process succeeded, failed or was cancelled.
     /// - parameter exitStatus: The raw exit status of the process.
     func commandProcessFinished(_ command: Command, process: ProcessHandle, result: CommandExtendedResult)
 
