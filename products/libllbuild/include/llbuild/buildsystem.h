@@ -494,7 +494,7 @@ typedef struct llb_buildsystem_delegate_t_ {
   /// Xparam process The handle used to identify the process. This handle
   /// will become invalid as soon as the client returns from this API call.
   ///
-  /// Xparam result Whether the process suceeded, failed or was cancelled.
+  /// Xparam result Whether the process succeeded, failed or was cancelled.
   /// Xparam exitStatus The raw exit status of the process.
   void (*command_process_finished)(void* context,
                                    llb_buildsystem_command_t* command,
