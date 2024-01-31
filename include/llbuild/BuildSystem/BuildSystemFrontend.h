@@ -281,7 +281,7 @@ public:
   /// \param handle - The handle used to identify the process. This handle will
   /// become invalid as soon as the client returns from this API call.
   ///
-  /// \param result - Whether the process suceeded, failed or was cancelled.
+  /// \param result - Whether the process succeeded, failed or was cancelled.
   //
   // FIXME: Need to include additional information on the status here, e.g., the
   // signal status, and the process output (if buffering).
