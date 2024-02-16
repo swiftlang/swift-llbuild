@@ -785,7 +785,8 @@ class CAPIExternalCommand : public ExternalCommand {
                                              core::TaskInterface ti,
                                              QueueJobContext* context,
                                              std::string depsPath,
-                                             bool ignoreSubsequentOutputs) {
+                                             bool ignoreSubsequentOutputs,
+                                             bool ignoreParseErrors) {
     // Read the dependencies file.
     std::unique_ptr<llvm::MemoryBuffer> input;
     if (llvm::sys::path::is_absolute(depsPath)) {
@@ -810,16 +811,21 @@ class CAPIExternalCommand : public ExternalCommand {
       core::TaskInterface ti;
       CAPIExternalCommand* command;
       StringRef depsPath;
+      bool ignoreParseErrors;
       unsigned numErrors{0};
-      
+
       DepsActions(BuildSystem& system,
                   core::TaskInterface ti,
-                  CAPIExternalCommand* command, StringRef depsPath)
-      : system(system), ti(ti), command(command), depsPath(depsPath) {}
-      
+                  CAPIExternalCommand* command,
+                  StringRef depsPath,
+                  bool ignoreParseErrors)
+      : system(system), ti(ti), command(command), depsPath(depsPath), ignoreParseErrors(ignoreParseErrors) {}
+
       virtual void error(StringRef message, uint64_t position) override {
-        system.getDelegate().commandHadError(command, "error reading dependency file '" + depsPath.str() + "': " + std::string(message));
-        ++numErrors;
+        if (!ignoreParseErrors) {
+          system.getDelegate().commandHadError(command, "error reading dependency file '" + depsPath.str() + "': " + std::string(message));
+          ++numErrors;
+        }
       }
       
       virtual void actOnRuleDependency(StringRef dependency,
@@ -849,7 +855,7 @@ class CAPIExternalCommand : public ExternalCommand {
       virtual void actOnRuleEnd() override {}
     };
     
-    DepsActions actions(system, ti, this, depsPath);
+    DepsActions actions(system, ti, this, depsPath, ignoreParseErrors);
     core::MakefileDepsParser(input->getBuffer(), actions, ignoreSubsequentOutputs).parse();
     return actions.numErrors == 0;
   }
@@ -867,6 +873,8 @@ class CAPIExternalCommand : public ExternalCommand {
         depsFormat = llb_buildsystem_dependency_data_format_dependencyinfo;
       } else if (value == "makefile-ignoring-subsequent-outputs") {
         depsFormat = llb_buildsystem_dependency_data_format_makefile_ignoring_subsequent_outputs;
+      } else if (value == "makefile-ignoring-parse-errors") {
+        depsFormat = llb_buildsystem_dependency_data_format_makefile_ignoring_parse_errors;
       } else {
         return false;
       }
@@ -1003,13 +1011,16 @@ class CAPIExternalCommand : public ExternalCommand {
               dependencyParsingResult = false;
               break;
             case llb_buildsystem_dependency_data_format_makefile:
-              dependencyParsingResult = processMakefileDiscoveredDependencies(system, ti, job_context, depsPath, false);
+              dependencyParsingResult = processMakefileDiscoveredDependencies(system, ti, job_context, depsPath, false, false);
               break;
             case llb_buildsystem_dependency_data_format_dependencyinfo:
               dependencyParsingResult = processDependencyInfoDiscoveredDependencies(system, ti, job_context, depsPath);
               break;
             case llb_buildsystem_dependency_data_format_makefile_ignoring_subsequent_outputs:
-              dependencyParsingResult = processMakefileDiscoveredDependencies(system, ti, job_context, depsPath, true);
+              dependencyParsingResult = processMakefileDiscoveredDependencies(system, ti, job_context, depsPath, true, false);
+              break;
+            case llb_buildsystem_dependency_data_format_makefile_ignoring_parse_errors:
+              dependencyParsingResult = processMakefileDiscoveredDependencies(system, ti, job_context, depsPath, true, true);
               break;
           }
           

@@ -85,6 +85,8 @@
 ///
 /// Version History:
 ///
+/// 18: Added `llb_buildsystem_dependency_data_format_makefile_ignoring_parse_errors`
+///
 /// 17: Added `llb_buildsystem_dependency_data_format_makefile_ignoring_subsequent_outputs`
 ///
 /// 16: Added more efficient C API for working with custom tasks
@@ -120,6 +122,6 @@
 /// 1: Added `environment` parameter to llb_buildsystem_invocation_t.
 ///
 /// 0: Pre-history
-#define LLBUILD_C_API_VERSION 17
+#define LLBUILD_C_API_VERSION 18
 
 #endif
