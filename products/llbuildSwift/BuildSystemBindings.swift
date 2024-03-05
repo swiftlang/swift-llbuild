@@ -168,11 +168,6 @@ private final class ToolWrapper {
         self.tool = tool
     }
 
-    /// The owning list of all created commands.
-    //
-    // FIXME: This is unfortunate, we should be able to destroy these naturally.
-    private var commandWrappers: [CommandWrapper] = []
-
     func createCommand(_ name: UnsafePointer<llb_data_t>) -> OpaquePointer? {
         let command = tool.createCommand(stringFromData(name.pointee)) as ExternalCommand?
         return command.map { command in buildCommand(name, command) } ?? nil
@@ -198,9 +193,9 @@ private final class ToolWrapper {
 
     private func buildCommand(_ name: UnsafePointer<llb_data_t>, _ command: ExternalCommand) -> OpaquePointer? {
         let wrapper = CommandWrapper(command: command)
-        self.commandWrappers.append(wrapper)
         var _delegate = llb_buildsystem_external_command_delegate_t()
-        _delegate.context = Unmanaged.passUnretained(wrapper).toOpaque()
+        _delegate.context = Unmanaged.passRetained(wrapper).toOpaque()
+        _delegate.destroy_context = { Unmanaged<CommandWrapper>.fromOpaque(UnsafeRawPointer($0!)).release() }
         _delegate.configure = { BuildSystem.toCommandWrapper($0!).configure($1!, $2!, $3!, $4!) }
         _delegate.get_signature = { return BuildSystem.toCommandWrapper($0!).getSignature($1!, $2!) }
         _delegate.start = { return BuildSystem.toCommandWrapper($0!).start($1!, $2!, $3) }
@@ -1253,10 +1248,6 @@ public final class BuildSystem {
         return fsGetFileInfo(path, info)
     }
 
-    /// The owning list of all created tools.
-    //
-    // FIXME: This is unfortunate, we should be able to destroy these naturally.
-    private var toolWrappers: [ToolWrapper] = []
     private func lookupTool(_ name: UnsafePointer<llb_data_t>) -> OpaquePointer? {
         // Look up the named tool.
         guard let tool = delegate.lookupTool(stringFromData(name.pointee)) else {
@@ -1265,9 +1256,9 @@ public final class BuildSystem {
 
         // If we got a tool, save it and create an appropriate low-level instance.
         let wrapper = ToolWrapper(tool: tool)
-        self.toolWrappers.append(wrapper)
         var _delegate = llb_buildsystem_tool_delegate_t()
-        _delegate.context = Unmanaged.passUnretained(wrapper).toOpaque()
+        _delegate.context = Unmanaged.passRetained(wrapper).toOpaque()
+        _delegate.destroy_context = { Unmanaged<CommandWrapper>.fromOpaque(UnsafeRawPointer($0!)).release() }
         _delegate.create_command = { return BuildSystem.toToolWrapper($0!).createCommand($1!) }
         _delegate.create_custom_command = { return BuildSystem.toToolWrapper($0!).createCustomCommand($1!) }
 
