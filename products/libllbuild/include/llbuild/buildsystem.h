@@ -630,6 +630,10 @@ typedef struct llb_buildsystem_tool_delegate_t_ {
 
   llb_buildsystem_command_t* (*create_custom_command)(void* context,
                                                       const llb_build_key_t* key);
+  
+  /// Callback a client may use to tear down data structures associated with the context
+  /// pointer.
+  void (*destroy_context)(void* context);
 
   // FIXME: Support dynamic tool commands.
 } llb_buildsystem_tool_delegate_t;
@@ -771,6 +775,10 @@ typedef struct llb_buildsystem_external_command_delegate_t_ {
   bool (*is_result_valid)(void* context,
                           llb_buildsystem_command_t* command,
                           const llb_build_value* value);
+  
+  /// Callback a client may use to tear down data structures associated with the context
+  /// pointer.
+  void (*destroy_context)(void* context);
 
 } llb_buildsystem_external_command_delegate_t;
 

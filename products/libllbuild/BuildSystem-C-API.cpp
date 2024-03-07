@@ -704,6 +704,12 @@ public:
     return std::unique_ptr<Command>(
         (Command*) cAPIDelegate.create_custom_command(cAPIDelegate.context, key_p));
   }
+  
+  ~CAPITool() {
+    if (cAPIDelegate.destroy_context) {
+      cAPIDelegate.destroy_context(cAPIDelegate.context);
+    }
+  }
 };
 
 class CAPIExternalCommand : public ExternalCommand {
@@ -1197,6 +1203,12 @@ public:
       llb_data_destroy(&data);
     }
     return sig;
+  }
+  
+  ~CAPIExternalCommand() {
+    if (cAPIDelegate.destroy_context) {
+      cAPIDelegate.destroy_context(cAPIDelegate.context);
+    }
   }
 };
 
