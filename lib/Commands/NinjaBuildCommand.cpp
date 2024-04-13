@@ -983,7 +983,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
     }
 
     virtual void provideValue(core::TaskInterface, uintptr_t inputID,
-                              const core::ValueType& valueData) override {
+                              const core::KeyType& key, const core::ValueType& valueData) override {
       // Process the input value to see if we should skip this command.
       BuildValue value = BuildValue::fromValue(valueData);
 
@@ -1469,7 +1469,7 @@ static core::Task* buildInput(BuildContext& context, ninja::Node* input) {
         : context(context), node(node) { }
 
     virtual void provideValue(core::TaskInterface, uintptr_t inputID,
-                              const core::ValueType& value) override { }
+                              const core::KeyType& key, const core::ValueType& value) override { }
 
     virtual void start(core::TaskInterface) override { }
 
@@ -1504,7 +1504,7 @@ buildTargets(BuildContext& context,
         : context(context), targetsToBuild(targetsToBuild) { }
 
     virtual void provideValue(core::TaskInterface, uintptr_t inputID,
-                              const core::ValueType& valueData) override {
+                              const core::KeyType& key, const core::ValueType& valueData) override {
       BuildValue value = BuildValue::fromValue(valueData);
 
       if (value.isMissingInput()) {
@@ -1555,7 +1555,7 @@ selectCompositeBuildResult(BuildContext& context, ninja::Command* command,
     }
 
     virtual void provideValue(core::TaskInterface, uintptr_t inputID,
-                              const core::ValueType& valueData) override {
+                              const core::KeyType& key, const core::ValueType& valueData) override {
       compositeValueData = &valueData;
     }
 

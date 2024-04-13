@@ -219,8 +219,7 @@ void ExternalCommand::start(BuildSystem& system,
                             core::TaskInterface ti) {
   // Initialize the build state.
   skipValue = llvm::None;
-  missingInputNodes.clear();
-  hasMissingDynamicInputs = false;
+  missingInputKeys.clear();
 
   // Request all of the inputs.
   unsigned id = 0;
@@ -243,6 +242,7 @@ void ExternalCommand::providePriorValue(BuildSystem& system,
 void ExternalCommand::provideValue(BuildSystem& system,
                                    core::TaskInterface ti,
                                    uintptr_t inputID,
+                                   const core::KeyType& key,
                                    const BuildValue& value) {
   // Inform subclasses about the value
   provideValueExternalCommand(system, ti, inputID, value);
@@ -306,10 +306,9 @@ void ExternalCommand::provideValue(BuildSystem& system,
     skipValue = std::move(skipValueForInput);
     if (value.isMissingInput()) {
       if (inputs.size() > inputID) {
-        missingInputNodes.insert(inputs[inputID]);
+        missingInputKeys.push_back(BuildKey::makeNode(inputs[inputID]));
       } else {
-        // FIXME: This should better track which dynamic input was missing. Right now, the higher level build system needs to reconstruct that information.
-        hasMissingDynamicInputs = true;
+        missingInputKeys.push_back(BuildKey::fromData(key));
       }
     }
   } else {
@@ -380,9 +379,9 @@ void ExternalCommand::execute(BuildSystem& system,
   // If this command should be skipped, do nothing.
   if (skipValue.hasValue()) {
     // If this command had a failed input, treat it as having failed.
-    if (!missingInputNodes.empty() || hasMissingDynamicInputs) {
+    if (!missingInputKeys.empty()) {
       system.getDelegate().commandCannotBuildOutputDueToMissingInputs(this,
-                         outputs.empty() ? nullptr : outputs[0], missingInputNodes);
+                         outputs.empty() ? nullptr : outputs[0], missingInputKeys);
 
       // Report the command failure.
       system.getDelegate().hadCommandFailure();
@@ -391,8 +390,7 @@ void ExternalCommand::execute(BuildSystem& system,
     resultFn(std::move(skipValue.getValue()));
     return;
   }
-  assert(missingInputNodes.empty());
-  assert(!hasMissingDynamicInputs);
+  assert(missingInputKeys.empty());
 
   // If it is legal to simply update the command, then see if we can do so.
   if (canUpdateIfNewer && hasPriorResult) {

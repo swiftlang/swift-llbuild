@@ -311,7 +311,7 @@ public:
   }
 
   virtual void commandCannotBuildOutputDueToMissingInputs(Command* command,
-               Node* outputNode, SmallPtrSet<Node*, 1> inputNodes) override {
+               Node* outputNode, ArrayRef<BuildKey> inputKeys) override {
     if (cAPIDelegate.command_cannot_build_output_due_to_missing_inputs) {
       CAPIBuildKey *output = nullptr;
       if (outputNode) {
@@ -319,7 +319,7 @@ public:
         output = new CAPIBuildKey(BuildKey::makeNode(str));
       }
 
-      CAPINodesVector inputs(inputNodes);
+      CAPIBuildKeysVector inputs(inputKeys);
 
       cAPIDelegate.command_cannot_build_output_due_to_missing_inputs(
         cAPIDelegate.context,
@@ -333,19 +333,19 @@ public:
     }
   }
 
-  class CAPINodesVector {
+  class CAPIBuildKeysVector {
   private:
     std::vector<CAPIBuildKey *> keys;
 
   public:
-    CAPINodesVector(const SmallPtrSet<Node*, 1> inputNodes) : keys(inputNodes.size()) {
+    CAPIBuildKeysVector(const ArrayRef<BuildKey> inputKeys) : keys(inputKeys.size()) {
       int idx = 0;
-      for (auto inputNode : inputNodes) {
-        keys[idx++] = new CAPIBuildKey(BuildKey::makeNode(inputNode->getName()));
+      for (auto inputKey : inputKeys) {
+        keys[idx++] = new CAPIBuildKey(inputKey);
       }
     }
 
-    ~CAPINodesVector() {
+    ~CAPIBuildKeysVector() {
       for (auto key : keys) {
         llb_build_key_destroy((llb_build_key_t *)key);
       }

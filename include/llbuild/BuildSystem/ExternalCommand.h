@@ -15,6 +15,7 @@
 
 #include "llbuild/BuildSystem/BuildDescription.h"
 #include "llbuild/BuildSystem/BuildSystem.h"
+#include "llbuild/BuildSystem/BuildKey.h"
 #include "llbuild/BuildSystem/BuildValue.h"
 #include "llbuild/BuildSystem/Command.h"
 
@@ -66,10 +67,7 @@ class ExternalCommand : public Command {
 
   /// If there are any elements, the command had missing input nodes
   /// (this implies ShouldSkip is true).
-  SmallPtrSet<Node*, 1> missingInputNodes;
-
-  /// If true, the command had missing dynamic inputs.
-  bool hasMissingDynamicInputs = false;
+  SmallVector<BuildKey, 1> missingInputKeys;
 
   /// If true, the command can legally be updated if the output state allows it.
   bool canUpdateIfNewer = true;
@@ -143,6 +141,7 @@ public:
   virtual void provideValue(BuildSystem& system,
                             core::TaskInterface ti,
                             uintptr_t inputID,
+                            const core::KeyType& key,
                             const BuildValue& value) override;
 
   virtual void execute(BuildSystem& system,

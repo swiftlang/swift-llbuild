@@ -58,7 +58,7 @@ public:
 
   // core::Task required methods
   void start(core::TaskInterface) override;
-  void provideValue(core::TaskInterface, uintptr_t inputID, const core::ValueType& value) override;
+  void provideValue(core::TaskInterface, uintptr_t inputID, const core::KeyType& key, const core::ValueType& value) override;
   void inputsAvailable(core::TaskInterface) override;
 
   // EvoEngine methods
@@ -201,7 +201,7 @@ void EvoTask::start(core::TaskInterface ti) {
 }
 
 void EvoTask::provideValue(core::TaskInterface, uintptr_t inputID,
-                  const core::ValueType& value) {
+                  const core::KeyType& key, const core::ValueType& value) {
   std::unique_lock<std::mutex> lock(taskMutex);
   inputs[inputID].first = true;
   inputs[inputID].second = value; // FIXME: avoid copying value ?
