@@ -519,7 +519,7 @@ private final class CommandWrapper {
 }
 
 /// Encapsulates a diagnostic as reported by the build system.
-public struct Diagnostic {
+public struct Diagnostic: Sendable {
     public typealias Kind = DiagnosticKind
 
     /// The kind of diagnostic.
@@ -726,7 +726,7 @@ public struct ProcessHandle: Hashable {
     }
 }
 
-public struct CommandMetrics {
+public struct CommandMetrics: Hashable, Sendable {
     public let utime: UInt64         /// User time (in us)
     public let stime: UInt64         /// Sys time (in us)
     public let maxRSS: UInt64        /// Max RSS (in bytes)
@@ -739,7 +739,7 @@ public struct CommandMetrics {
 }
 
 /// Result of a command execution.
-public struct CommandExtendedResult {
+public struct CommandExtendedResult: Sendable {
     public let result: CommandResult    /// The result of a command execution
     public let exitStatus: Int32        /// The exit code
     public let pid: llbuild_pid_t?      /// The process identifier (nil if failed to create a process)

@@ -31,7 +31,7 @@ private func stringFromUInt8Array(_ data: [UInt8]) -> String {
 }
 
 /// Key objects are used to identify rules that can be built.
-public struct Key: CustomStringConvertible, Equatable, Hashable {
+public struct Key: CustomStringConvertible, Equatable, Hashable, Sendable {
     public let data: [UInt8]
 
     // MARK: CustomStringConvertible Conformance
@@ -66,7 +66,7 @@ public struct Key: CustomStringConvertible, Equatable, Hashable {
 }
 
 /// Value objects are the result of building rules.
-public struct Value: CustomStringConvertible, Equatable, Hashable {
+public struct Value: CustomStringConvertible, Equatable, Hashable, Sendable {
     public let data: [UInt8]
 
     public var description: String {
