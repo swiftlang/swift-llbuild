@@ -18,7 +18,7 @@ public enum NinjaError: Error {
   case invalidManifest(errors: String)
 }
 
-public struct NinjaRule: Codable, Equatable {
+public struct NinjaRule: Codable, Equatable, Sendable {
   public let name: String
   public let variables: [String: String]
 
@@ -28,7 +28,7 @@ public struct NinjaRule: Codable, Equatable {
   }
 }
 
-public struct NinjaBuildStatement: Codable, Equatable {
+public struct NinjaBuildStatement: Codable, Equatable, Sendable {
   public let rule: NinjaRule
   public let command: String
   public let description: String
@@ -61,7 +61,7 @@ public struct NinjaBuildStatement: Codable, Equatable {
   }
 }
 
-public struct NinjaManifest: Codable, Equatable {
+public struct NinjaManifest: Codable, Equatable, Sendable {
   public let rules: [String: NinjaRule]
   public let statements: [NinjaBuildStatement]
   public let defaultTargets: [String]
