@@ -419,7 +419,7 @@ class TargetTask : public Task {
   }
 
   virtual void provideValue(TaskInterface, uintptr_t inputID,
-                            const ValueType& valueData) override {
+                            const KeyType& key, const ValueType& valueData) override {
     // Do nothing.
     auto value = BuildValue::fromData(valueData);
 
@@ -484,7 +484,7 @@ class FileInputNodeTask : public Task {
   }
 
   virtual void provideValue(TaskInterface, uintptr_t inputID,
-                            const ValueType& value) override {
+                            const KeyType& key, const ValueType& value) override {
   }
 
   virtual void inputsAvailable(TaskInterface ti) override {
@@ -552,7 +552,7 @@ class StatTask : public Task {
   }
 
   virtual void provideValue(TaskInterface, uintptr_t inputID,
-                            const ValueType& value) override {
+                            const KeyType& key, const ValueType& value) override {
   }
 
   virtual void inputsAvailable(TaskInterface ti) override {
@@ -622,7 +622,7 @@ class DirectoryInputNodeTask : public Task {
   }
 
   virtual void provideValue(TaskInterface ti, uintptr_t inputID,
-                            const ValueType& valueData) override {
+                            const KeyType& key, const ValueType& valueData) override {
     if (inputID == 0) {
       directorySignature = valueData;
     } else {
@@ -676,7 +676,7 @@ class DirectoryStructureInputNodeTask : public Task {
   }
 
   virtual void provideValue(TaskInterface, uintptr_t inputID,
-                            const ValueType& value) override {
+                            const KeyType& key, const ValueType& value) override {
     directorySignature = value;
   }
 
@@ -703,7 +703,7 @@ class VirtualInputNodeTask : public Task {
   }
 
   virtual void provideValue(TaskInterface, uintptr_t inputID,
-                            const ValueType& value) override {
+                            const KeyType& key, const ValueType& value) override {
   }
 
   virtual void inputsAvailable(TaskInterface ti) override {
@@ -768,7 +768,7 @@ class ProducedNodeTask : public Task {
   }
 
   virtual void provideValue(TaskInterface, uintptr_t inputID,
-                            const ValueType& valueData) override {
+                            const KeyType& key, const ValueType& valueData) override {
     auto value = BuildValue::fromData(valueData);
 
     // Extract the node result from the command.
@@ -852,7 +852,7 @@ class ProducedDirectoryNodeTask : public Task {
   }
 
   virtual void provideValue(TaskInterface ti, uintptr_t inputID,
-                            const ValueType& valueData) override {
+                            const KeyType& key, const ValueType& valueData) override {
     if (inputID == 0) {
       auto value = BuildValue::fromData(valueData);
 
@@ -962,7 +962,7 @@ class DirectoryContentsTask : public Task {
   }
 
   virtual void provideValue(TaskInterface, uintptr_t inputID,
-                            const ValueType& value) override {
+                            const KeyType& key, const ValueType& value) override {
     if (inputID == 0) {
       directoryValue = BuildValue::fromData(value);
       return;
@@ -1131,7 +1131,7 @@ class FilteredDirectoryContentsTask : public Task {
   }
 
   virtual void provideValue(TaskInterface, uintptr_t inputID,
-                            const ValueType& value) override {
+                            const KeyType& key, const ValueType& value) override {
     if (inputID == 1) {
       directoryValue = BuildValue::fromData(value);
       return;
@@ -1272,7 +1272,7 @@ class DirectoryTreeSignatureTask : public Task {
   }
 
   virtual void provideValue(TaskInterface ti, uintptr_t inputID,
-                            const ValueType& valueData) override {
+                            const KeyType& key, const ValueType& valueData) override {
     // The first input is the directory contents.
     if (inputID == 0) {
       // Record the value for the directory.
@@ -1417,7 +1417,7 @@ class DirectoryTreeStructureSignatureTask : public Task {
   }
 
   virtual void provideValue(TaskInterface ti, uintptr_t inputID,
-                            const ValueType& valueData) override {
+                            const KeyType& key, const ValueType& valueData) override {
     // The first input is the directory contents.
     if (inputID == 0) {
       // Record the value for the directory.
@@ -1539,9 +1539,9 @@ class CommandTask : public Task {
   }
 
   virtual void provideValue(TaskInterface ti, uintptr_t inputID,
-                            const ValueType& valueData) override {
+                            const KeyType& key, const ValueType& valueData) override {
     command.provideValue(getBuildSystem(ti).getBuildSystem(), ti, inputID,
-                         BuildValue::fromData(valueData));
+                         key, BuildValue::fromData(valueData));
   }
 
   virtual void inputsAvailable(TaskInterface ti) override {
@@ -1609,7 +1609,7 @@ private:
                                  const ValueType& valueData) override { }
 
   virtual void provideValue(TaskInterface, uintptr_t inputID,
-                            const ValueType& valueData) override { }
+                            const KeyType& key, const ValueType& valueData) override { }
 
   virtual void inputsAvailable(TaskInterface ti) override {
     // A missing command always builds to an invalid value, and forces
@@ -2481,6 +2481,7 @@ public:
   virtual void provideValue(BuildSystem&,
                             TaskInterface ti,
                             uintptr_t inputID,
+                            const KeyType& key,
                             const BuildValue& value) override { }
 
   virtual void execute(BuildSystem&,
@@ -2888,6 +2889,7 @@ public:
   virtual void provideValue(BuildSystem& system,
                             TaskInterface ti,
                             uintptr_t inputID,
+                            const KeyType& key,
                             const BuildValue& value) override {
     // We can ignore the 'swift-get-version' input, it is just used to detect
     // that we need to rebuild.
@@ -2895,7 +2897,7 @@ public:
       return;
     }
     
-    ExternalCommand::provideValue(system, ti, inputID, value);
+    ExternalCommand::provideValue(system, ti, inputID, key, value);
   }
 
   virtual void startExternalCommand(BuildSystem&, TaskInterface) override {
@@ -3322,7 +3324,7 @@ class SymlinkCommand : public Command {
 
   virtual void provideValue(BuildSystem&, TaskInterface ti,
                             uintptr_t inputID,
-                            const BuildValue& value) override {
+                            const KeyType& key, const BuildValue& value) override {
     assert(0 && "unexpected API call");
   }
 
@@ -3864,6 +3866,7 @@ class StaleFileRemovalCommand : public Command {
   virtual void provideValue(BuildSystem&,
                             TaskInterface,
                             uintptr_t inputID,
+                            const KeyType& key,
                             const BuildValue& value) override {
     assert(0 && "unexpected API call");
   }

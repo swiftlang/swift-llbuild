@@ -886,7 +886,7 @@ private:
           TracingEngineTaskCallback i(EngineTaskCallbackKind::ProvideValue, request.inputRuleInfo->keyID);
           TaskInterface iface{this, request.taskInfo->task.get()};
           request.taskInfo->task->provideValue(
-              iface, request.inputID, request.inputRuleInfo->result.value);
+              iface, request.inputID, request.inputRuleInfo->rule->key, request.inputRuleInfo->result.value);
         }
 
         // Decrement the wait count, and move to finish queue if necessary.

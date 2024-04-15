@@ -253,7 +253,7 @@ public:
   ///
   /// \param value The computed value for the given input.
   virtual void provideValue(TaskInterface, uintptr_t inputID,
-                            const ValueType& value) = 0;
+                            const KeyType& key, const ValueType& value) = 0;
 
   /// Executed by the build engine to indicate that all inputs have been
   /// provided, and the task should begin its computation. If the client will

@@ -108,7 +108,7 @@ public:
   }
 
   virtual void provideValue(TaskInterface, uintptr_t inputID,
-                            const ValueType& value) override {
+                            const KeyType& key, const ValueType& value) override {
     // Update the input values.
     assert(inputID < inputValues.size());
     inputValues[inputID] = intFromValue(value);

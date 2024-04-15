@@ -685,7 +685,7 @@ void BuildSystemFrontendDelegate::commandFoundDiscoveredDependency(Command*, Str
 }
 
 void BuildSystemFrontendDelegate::commandCannotBuildOutputDueToMissingInputs(
-     Command * command, Node *output, SmallPtrSet<Node *, 1> inputs) {
+     Command * command, Node *output, ArrayRef<BuildKey> inputs) {
   std::string message;
   llvm::raw_string_ostream messageStream(message);
 
@@ -693,11 +693,11 @@ void BuildSystemFrontendDelegate::commandCannotBuildOutputDueToMissingInputs(
   messageStream << output->getName().str();
   messageStream << "' due to missing inputs: ";
 
-  for (Node* input : inputs) {
-    if (input != *inputs.begin()) {
+  for (size_t i = 0; i < inputs.size(); ++i) {
+    if (i > 0) {
       messageStream << ", ";
     }
-    messageStream << "'" << input->getName() << "'";
+    messageStream << "'" << (inputs[i].isNode() ? inputs[i].getNodeName().str() : inputs[i].getKeyData().str()) << "'";
   }
 
   messageStream.flush();

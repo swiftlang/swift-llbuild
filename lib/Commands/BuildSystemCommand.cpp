@@ -235,6 +235,7 @@ public:
   virtual void provideValue(BuildSystem&,
                             TaskInterface,
                             uintptr_t inputID,
+                            const KeyType& key,
                             const BuildValue&) override {}
   virtual void execute(BuildSystem& system, TaskInterface,
                        basic::QueueJobContext*, ResultFn resultFn) override {

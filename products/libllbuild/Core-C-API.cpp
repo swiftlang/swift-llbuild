@@ -147,7 +147,7 @@ public:
   }
 
   virtual void provideValue(TaskInterface ti, uintptr_t inputID,
-                            const ValueType& value) override {
+                            const KeyType& key, const ValueType& value) override {
     CAPIBuildEngineDelegate* delegate =
       static_cast<CAPIBuildEngineDelegate*>(ti.delegate());
     llb_data_t valueData{ value.size(), value.data() };

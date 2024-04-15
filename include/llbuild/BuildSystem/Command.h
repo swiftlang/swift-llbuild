@@ -149,7 +149,7 @@ public:
                                  const BuildValue& value) = 0;
 
   virtual void provideValue(BuildSystem& system, core::TaskInterface,
-                            uintptr_t inputID, const BuildValue& value) = 0;
+                            uintptr_t inputID, const core::KeyType& key, const BuildValue& value) = 0;
 
 
   virtual bool isExternalCommand() const { return false; }

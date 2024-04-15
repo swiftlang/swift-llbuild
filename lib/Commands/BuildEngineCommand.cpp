@@ -157,7 +157,7 @@ struct AckermannTask : core::Task {
 
   /// Called when a task’s requested input is available.
   virtual void provideValue(core::TaskInterface ti, uintptr_t inputID,
-                            const core::ValueType& value) override {
+                            const core::KeyType& key, const core::ValueType& value) override {
     if (inputID == 0) {
       recursiveResultA = value;
 

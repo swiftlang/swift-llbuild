@@ -12,6 +12,7 @@
 
 #include "llbuild/BuildSystem/BuildDescription.h"
 #include "llbuild/BuildSystem/BuildSystem.h"
+#include "llbuild/BuildSystem/BuildKey.h"
 #include "llbuild/BuildSystem/Command.h"
 #include "llbuild/BuildSystem/Tool.h"
 
@@ -176,9 +177,10 @@ public:
   }
 
   virtual void commandCannotBuildOutputDueToMissingInputs(Command * command, Node *output,
-                                                          SmallPtrSet<Node *, 1> inputs) {
+                                                          ArrayRef<BuildKey> inputs) {
+    auto key = inputs.begin();
     std::string message = "cannot build '" + output->getName().str() + "' due to missing input: '" +
-      (*inputs.begin())->getName().str() + "'";
+    (key->isNode() ? key->getNodeName().str() : key->getKeyData().str()) + "'";
     llvm::errs() << "error: " << command->getName() << ": " << message << "\n";
     {
       std::unique_lock<std::mutex> lock(messagesMutex);
