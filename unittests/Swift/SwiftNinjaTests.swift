@@ -16,6 +16,7 @@ import llbuildSwift
 import llbuild
 #endif
 
+@available(macOS 10.15, *)
 class SwiftNinjaTests: XCTestCase {
   func testBasics() throws {
     let ruleFile = makeTemporaryFile("""

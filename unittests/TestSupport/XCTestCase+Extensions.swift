@@ -8,6 +8,7 @@
 
 import XCTest
 
+@available(macOS 10.15, *)
 public extension XCTestCase {
     /// Create a temporary file with the given contents and returns the path to the file.
     //

@@ -266,6 +266,7 @@ class TestBuildSystem {
     }
 }
 
+@available(macOS 10.15, *)
 class BuildSystemEngineTests: XCTestCase {
 
     let basicBuildManifest = """
