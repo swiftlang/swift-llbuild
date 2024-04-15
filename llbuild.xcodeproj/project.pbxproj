@@ -3956,6 +3956,7 @@
 		};
 		E17C29F11B5AC13C00C12DA9 /* Install per-user 'sphinx' tools */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -3975,9 +3976,11 @@
 			files = (
 			);
 			inputPaths = (
+				"${SRCROOT}/docs",
 			);
 			name = "Build Sphinx Docs";
 			outputPaths = (
+				"${BUILT_PRODUCTS_DIR}/docs/html",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -4004,6 +4007,7 @@
 		};
 		E18043381A00127600662FE7 /* Install per-user 'lit' module */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -4051,6 +4055,7 @@
 		};
 		E1A2254C19F9A2280059043E /* Execute 'lit' tests */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -5204,12 +5209,14 @@
 		E17C29EE1B5AC12B00C12DA9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				USE_RECURSIVE_SCRIPT_INPUTS_IN_SCRIPT_PHASES = YES;
 			};
 			name = Debug;
 		};
 		E17C29EF1B5AC12B00C12DA9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				USE_RECURSIVE_SCRIPT_INPUTS_IN_SCRIPT_PHASES = YES;
 			};
 			name = Release;
 		};
