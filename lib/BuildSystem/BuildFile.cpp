@@ -352,7 +352,7 @@ class BuildFileImpl {
     // Otherwise, ask the delegate to create the tool.
     auto tool = delegate.lookupTool(name);
     if (!tool) {
-      error(forNode, "invalid tool type in 'tools' map");
+      error(forNode, "invalid tool (" + name.str() +") type in 'tools' map");
       return nullptr;
     }
     auto result = tool.get();
