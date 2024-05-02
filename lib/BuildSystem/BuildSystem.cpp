@@ -1017,9 +1017,18 @@ class DirectoryContentsTask : public Task {
     // Exit the loop if we encounter any errors, to prevent infinitely looping
     // over an invalid directory in some circumstances. rdar://101717159
     std::error_code ec;
-    for (auto it = llvm::sys::fs::directory_iterator(path, ec),
+    for (auto it = llvm::sys::fs::directory_iterator(path, ec, /*follow_symlinks */false),
          end = llvm::sys::fs::directory_iterator(); it != end && !ec;
          it = it.increment(ec)) {
+      // If this is a symlink to a parent directory, exclude it from results so we don't get stuck in a loop.
+      if (llvm::sys::fs::is_symlink_file(*it->status())) {
+        SmallString<256> resolvedPath;
+        if (!llvm::sys::fs::real_path(it->path(), resolvedPath)) {
+          if (path.startswith(resolvedPath)) {
+            continue;
+          }
+        }
+      }
       filenames.push_back(llvm::sys::path::filename(it->path()));
     }
 
