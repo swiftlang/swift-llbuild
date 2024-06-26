@@ -1,7 +1,7 @@
 // swift-tools-version:5.2
 
 // This file defines Swift package manager support for llbuild. See:
-//  https://github.com/apple/swift-package-manager/tree/master/Documentation
+//  https://github.com/swiftlang/swift-package-manager/tree/master/Documentation
 
 import PackageDescription
 
