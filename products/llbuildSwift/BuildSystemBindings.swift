@@ -17,6 +17,8 @@ import WinSDK
 import Glibc
 #elseif canImport(Musl)
 import Musl
+#elseif canImport(Android)
+import Android
 #else
 #error("Missing libc or equivalent")
 #endif
@@ -1235,7 +1237,7 @@ public final class BuildSystem {
         #elseif os(Windows)
         info.pointee.mod_time.seconds = UInt64(s.st_mtime)
         info.pointee.mod_time.nanoseconds = 0
-        #elseif canImport(Glibc) || canImport(Musl)
+        #elseif canImport(Glibc) || canImport(Musl) || canImport(Android)
         info.pointee.mod_time.seconds = UInt64(s.st_mtim.tv_sec)
         info.pointee.mod_time.nanoseconds = UInt64(s.st_mtim.tv_nsec)
         #else
