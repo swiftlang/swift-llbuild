@@ -17,8 +17,8 @@ import WinSDK
 import Glibc
 #elseif canImport(Musl)
 import Musl
-#elseif canImport(Android)
-import Android
+#elseif canImport(Bionic)
+import Bionic
 #else
 #error("Missing libc or equivalent")
 #endif
