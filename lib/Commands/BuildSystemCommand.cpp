@@ -92,7 +92,7 @@ public:
 
   virtual void loadedDefaultTarget(StringRef target) override;
 
-  virtual std::unique_ptr<Node> lookupNode(StringRef name,
+  virtual std::unique_ptr<Node> createNode(StringRef name,
                                            bool isImplicit) override;
 
   virtual void loadedCommand(StringRef name,
@@ -368,7 +368,7 @@ void ParseBuildFileDelegate::loadedDefaultTarget(StringRef target) {
 }
 
 std::unique_ptr<Node>
-ParseBuildFileDelegate::lookupNode(StringRef name,
+ParseBuildFileDelegate::createNode(StringRef name,
                                    bool isImplicit) {
   if (!isImplicit) {
     if (showOutput) {

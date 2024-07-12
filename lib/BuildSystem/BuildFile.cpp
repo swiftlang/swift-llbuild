@@ -368,7 +368,7 @@ class BuildFileImpl {
       return it->second.get();
     
     // Otherwise, ask the delegate to create the node.
-    auto node = delegate.lookupNode(name, isImplicit);
+    auto node = delegate.createNode(name, isImplicit);
     assert(node);
     auto result = node.get();
     nodes[name] = std::move(node);

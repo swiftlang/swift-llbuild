@@ -36,6 +36,7 @@ namespace buildsystem {
 
 class BuildDescription;
 class BuildKey;
+class BuildNode;
 class BuildValue;
 class Command;
 class Node;
@@ -312,6 +313,8 @@ public:
   /// @}
 
   ShellCommandHandler* resolveShellCommandHandler(ShellCommand* command);
+  
+  BuildNode *lookupNode(StringRef name);
 };
 
 }
