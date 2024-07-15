@@ -239,6 +239,9 @@ public protocol ExternalCommand: AnyObject {
     /// This is checked to determine if the command needs to rebuild versus the last time it was run.
     func getSignature(_ command: Command) -> [UInt8]
     
+    /// Outputs nodes of the command.
+    var outputs: [String] { get }
+    
     /// Paths to files that contain discovered dependencies after command executed successfully for subsequent builds.
     var dependencyPaths: [String] { get }
     
@@ -298,6 +301,12 @@ public protocol ExternalCommand: AnyObject {
     /// - jobContext: A handle to opaque context of the executing job for spawning external processes.
     /// - returns: command execution result.
     func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface, _ jobContext: JobContext) -> CommandResult
+}
+
+public extension ExternalCommand {
+    var outputs: [String] {
+        []
+    }
 }
 
 public protocol ExternalDetachedCommand: AnyObject {
@@ -456,6 +465,24 @@ private final class CommandWrapper {
                 llb_data_destroy(&workingDirectoryValue)
             }
             single(context, workingDirectoryKey, workingDirectoryValue)
+        }
+        if !command.outputs.isEmpty {
+            var outputs: [llb_data_t] = []
+            for output in command.outputs {
+                outputs.append(copiedDataFromBytes(Array(output.utf8)))
+            }
+            var key = copiedDataFromBytes(Array("outputs".utf8))
+            defer {
+                llb_data_destroy(&key)
+                for index in outputs.indices {
+                    llb_data_destroy(&outputs[index])
+                }
+            }
+            if outputs.count == 1 {
+                single(context, key, outputs[0])
+            } else {
+                collection(context, key, &outputs, outputs.count)
+            }
         }
     }
 

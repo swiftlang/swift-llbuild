@@ -719,6 +719,9 @@ class CAPIExternalCommand : public ExternalCommand {
   
   /// The paths to the dependency output files, if used.
   SmallVector<std::string, 1> depsPaths{};
+  
+  /// Names of output nodes of this command.
+  SmallVector<std::string, 1> outputNodeNames{};
 
   /// The working directory used to resolve relative paths in dependency files.
   std::string workingDirectory;
@@ -893,6 +896,9 @@ class CAPIExternalCommand : public ExternalCommand {
       SmallString<PATH_MAX> wd = value;
       llvm::sys::fs::make_absolute(wd);
       workingDirectory = StringRef(wd);
+    } else if (name == "outputs") {
+      outputNodeNames.clear();
+      outputNodeNames.emplace_back(value);
     } else {
       return false;
     }
@@ -904,6 +910,9 @@ class CAPIExternalCommand : public ExternalCommand {
     if (name == "deps") {
       depsPaths.clear();
       depsPaths.insert(depsPaths.begin(), values.begin(), values.end());
+    } else if (name == "outputs") {
+      outputNodeNames.clear();
+      outputNodeNames.insert(outputNodeNames.begin(), values.begin(), values.end());
     } else {
       return false;
     }
@@ -943,6 +952,10 @@ class CAPIExternalCommand : public ExternalCommand {
   
   virtual void startExternalCommand(BuildSystem& system,
                                     core::TaskInterface ti) override {
+    outputs.reserve(outputNodeNames.size());
+    for (auto name: outputNodeNames) {
+      outputs.push_back(system.lookupNode(name));
+    }
     cAPIDelegate.start(cAPIDelegate.context,
                        (llb_buildsystem_command_t*)this,
                        (llb_buildsystem_interface_t*)&system,

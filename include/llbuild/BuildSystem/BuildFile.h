@@ -138,7 +138,7 @@ public:
   ///
   /// \param isImplicit Whether the node is an implicit one (created as a side
   /// effect of being declared by a command).
-  virtual std::unique_ptr<Node> lookupNode(StringRef name,
+  virtual std::unique_ptr<Node> createNode(StringRef name,
                                            bool isImplicit=false) = 0;
 };
 

@@ -125,7 +125,7 @@ public:
   virtual void loadedCommand(StringRef name,
                              const Command& target) override;
 
-  virtual std::unique_ptr<Node> lookupNode(StringRef name,
+  virtual std::unique_ptr<Node> createNode(StringRef name,
                                            bool isImplicit=false) override;
 
   /// @}
@@ -162,6 +162,8 @@ public:
   BuildSystemImpl& getBuildSystem() {
     return system;
   }
+  
+  BuildNode *lookupNode(StringRef name);
 };
 
 class BuildSystemImpl {
@@ -274,8 +276,10 @@ public:
              const Twine& message) {
     getDelegate().error(filename, at, message);
   }
+  
+  BuildNode* lookupNode(StringRef name);
 
-  std::unique_ptr<BuildNode> lookupNode(StringRef name,
+  std::unique_ptr<BuildNode> createNode(StringRef name,
                                         bool isImplicit);
 
   uint32_t getMergedSchemaVersion() {
@@ -1695,7 +1699,26 @@ public:
 
 
 
-
+BuildNode *BuildSystemEngineDelegate::lookupNode(StringRef name) {
+  // Find the node.
+  auto it = getBuildDescription().getNodes().find(name);
+  BuildNode* node;
+  if (it != getBuildDescription().getNodes().end()) {
+    node = static_cast<BuildNode*>(it->second.get());
+  } else {
+    auto it = dynamicNodes.find(name);
+    if (it != dynamicNodes.end()) {
+      node = it->second.get();
+    } else {
+      // Create nodes on the fly for any unknown ones.
+      auto nodeOwner = system.createNode(
+                                         name, /*isImplicit=*/true);
+      node = nodeOwner.get();
+      dynamicNodes[name] = std::move(nodeOwner);
+    }
+  }
+  return node;
+}
 
 std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyData) {
   // Decode the key.
@@ -1858,22 +1881,7 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
     
   case BuildKey::Kind::Node: {
     // Find the node.
-    auto it = getBuildDescription().getNodes().find(key.getNodeName());
-    BuildNode* node;
-    if (it != getBuildDescription().getNodes().end()) {
-      node = static_cast<BuildNode*>(it->second.get());
-    } else {
-      auto it = dynamicNodes.find(key.getNodeName());
-      if (it != dynamicNodes.end()) {
-        node = it->second.get();
-      } else {
-        // Create nodes on the fly for any unknown ones.
-        auto nodeOwner = system.lookupNode(
-            key.getNodeName(), /*isImplicit=*/true);
-        node = nodeOwner.get();
-        dynamicNodes[key.getNodeName()] = std::move(nodeOwner);
-      }
-    }
+    BuildNode* node = lookupNode(key.getNodeName());
 
     // Create the rule used to construct this node.
     //
@@ -2051,8 +2059,12 @@ void BuildSystemEngineDelegate::error(const Twine& message) {
 
 #pragma mark - BuildSystemImpl implementation
 
+BuildNode *BuildSystemImpl::lookupNode(StringRef name) {
+  return engineDelegate.lookupNode(name);
+}
+
 std::unique_ptr<BuildNode>
-BuildSystemImpl::lookupNode(StringRef name, bool isImplicit) {
+BuildSystemImpl::createNode(StringRef name, bool isImplicit) {
   if (name.endswith("/")) {
     return BuildNode::makeDirectory(name);
   }
@@ -4084,9 +4096,9 @@ void BuildSystemFileDelegate::loadedCommand(StringRef name,
 }
 
 std::unique_ptr<Node>
-BuildSystemFileDelegate::lookupNode(StringRef name,
+BuildSystemFileDelegate::createNode(StringRef name,
                                     bool isImplicit) {
-  return system.lookupNode(name, isImplicit);
+  return system.createNode(name, isImplicit);
 }
 
 }
@@ -4167,6 +4179,10 @@ uint32_t BuildSystem::getSchemaVersion() {
 ShellCommandHandler*
 BuildSystem::resolveShellCommandHandler(ShellCommand* command) {
   return static_cast<BuildSystemImpl*>(impl)->resolveShellCommandHandler(command);
+}
+
+BuildNode* BuildSystem::lookupNode(StringRef name) {
+  return static_cast<BuildSystemImpl*>(impl)->lookupNode(name);
 }
 
 // This function checks if the given path is prefixed by another path.
