@@ -2289,8 +2289,8 @@
 				1484D1DA2094509E00D3830F /* LICENSE.txt */,
 				E1A223FC19F990E60059043E /* README.md */,
 				1484D1DB209450A600D3830F /* Vagrantfile */,
-				E1A223F219F98F1C0059043E /* Products */,
 				E13B5E411A00395300EA0405 /* Frameworks */,
+				E1A223F219F98F1C0059043E /* Products */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";

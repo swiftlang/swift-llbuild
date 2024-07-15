@@ -1240,12 +1240,6 @@ public final class BuildSystem {
     }
 
     private func fsGetFileInfo(_ path: String, _ info: UnsafeMutablePointer<llb_fs_file_info_t>) {
-        // Ignore invalid paths.
-        guard path.first == "/" else {
-            info.pointee = llb_fs_file_info_t()
-            return
-        }
-
         // If the path doesn't exist, it is missing.
         let fs = delegate.fs!
         guard let s = try? fs.getFileInfo(path).statBuf else {
