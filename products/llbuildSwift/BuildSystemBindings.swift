@@ -220,6 +220,9 @@ private final class ToolWrapper {
                 _delegate.is_result_valid = {
                     return BuildSystem.toCommandWrapper($0!).isResultValid($1!, $2!)
                 }
+                _delegate.is_result_valid_with_fallback = {
+                    return BuildSystem.toCommandWrapper($0!).isResultValid($1!, $2!, $3!, $4!)
+                }
             } else {
                 _delegate.execute_command_ex = nil
                 _delegate.is_result_valid = nil
@@ -362,6 +365,20 @@ public protocol ProducesCustomBuildValue: AnyObject {
     /// - command: A handle to the executing command.
     /// - buildValue: The most recently computed build value.
     func isResultValid(_ command: Command, _ buildValue: BuildValue) -> Bool
+    
+    /// Called to check if the current result for this command remains valid.
+    ///
+    /// - command: A handle to the executing command.
+    /// - buildValue: The most recently computed build value.
+    /// - fallback: The default implementation: llbuild::buildsystem::ExternalCommand::isResultValid().
+    func isResultValid(_ command: Command, _ buildValue: BuildValue, _ fallback: @escaping (Command, BuildValue) -> Bool) -> Bool
+}
+
+public extension ProducesCustomBuildValue {
+    func isResultValid(_ command: Command, _ buildValue: BuildValue, _ fallback: @escaping (Command, BuildValue) -> Bool) -> Bool {
+        // This should default to the fallback, but instead we defer to ProducesCustomBuildValue.isResultValid(_:_:) for backward compatibility.
+        return isResultValid(command, buildValue)
+    }
 }
 
 // Extension to provide a default implementation of execute(_ Command, _ commandInterface) and
@@ -544,6 +561,23 @@ private final class CommandWrapper {
         }
 
         return (command as! ProducesCustomBuildValue).isResultValid(_command, buildValue)
+    }
+    
+    func isResultValid(
+        _: OpaquePointer,
+        _ value: OpaquePointer,
+        _ fallbackCtx: UnsafeMutableRawPointer?,
+        _ fallback: @escaping (UnsafeMutableRawPointer?, OpaquePointer?, OpaquePointer?) -> Bool
+    ) -> Bool {
+        guard let buildValue = BuildValue.construct(from: value) else {
+            fatalError("Could not decode incoming build value.")
+        }
+        
+        func fallbackWrapper(_ command: Command, value: BuildValue) -> Bool {
+            return fallback(fallbackCtx, command.handle, BuildValue.clone(value))
+        }
+        
+        return (command as! ProducesCustomBuildValue).isResultValid(_command, buildValue, fallbackWrapper)
     }
 }
 
