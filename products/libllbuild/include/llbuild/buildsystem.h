@@ -776,12 +776,6 @@ typedef struct llb_buildsystem_external_command_delegate_t_ {
                           llb_buildsystem_command_t* command,
                           const llb_build_value* value);
   
-  bool (*is_result_valid_with_fallback)(void* context,
-                                        llb_buildsystem_command_t* command,
-                                        const llb_build_value* value,
-                                        void* fallback_ctx,
-                                        bool (*fallback)(void* fallback_ctx, llb_buildsystem_command_t*, llb_build_value*));
-  
   /// Callback a client may use to tear down data structures associated with the context
   /// pointer.
   void (*destroy_context)(void* context);
