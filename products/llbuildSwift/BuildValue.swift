@@ -173,10 +173,6 @@ public class BuildValue: CustomStringConvertible, Equatable, Hashable {
 
         return llb_build_value_clone(value.internalBuildValue)
     }
-    
-    static func clone(_ value: BuildValue) -> OpaquePointer {
-        return llb_build_value_clone(value.internalBuildValue)
-    }
 
     /// The kind of the build value.
     /// The kind also defines the subclass, so kind == .invalid means the instance should be of type Invalid

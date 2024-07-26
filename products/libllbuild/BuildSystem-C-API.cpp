@@ -1146,34 +1146,6 @@ class CAPIExternalCommand : public ExternalCommand {
   }
 
   bool isResultValid(BuildSystem& system, const BuildValue& value) override {
-    if (cAPIDelegate.is_result_valid_with_fallback) {
-      struct FallbackContext {
-        BuildSystem *buildSystem;
-        
-        static bool handle(void* c_ctx,
-                           llb_buildsystem_command_t* c_command,
-                           llb_build_value* c_value) {
-          auto* command = (CAPIExternalCommand*)c_command;
-          auto* value = (CAPIBuildValue*)c_value;
-          
-          auto* ctx = static_cast<FallbackContext*>(c_ctx);
-          BuildSystem& system = *ctx->buildSystem;
-          delete ctx;
-          
-          return command->ExternalCommand::isResultValid(system, value->getInternalBuildValue());
-        }
-      };
-      
-      auto value_p = (llb_build_value *)new CAPIBuildValue(BuildValue(value));
-      return cAPIDelegate.is_result_valid_with_fallback(
-        cAPIDelegate.context,
-        (llb_buildsystem_command_t*)this,
-        value_p,
-        new FallbackContext{&system},
-        FallbackContext::handle
-      );
-    }
-    
     if (cAPIDelegate.is_result_valid) {
       auto value_p = (llb_build_value *)new CAPIBuildValue(BuildValue(value));
       return cAPIDelegate.is_result_valid(
