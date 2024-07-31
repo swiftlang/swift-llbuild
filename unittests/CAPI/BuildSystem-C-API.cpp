@@ -151,6 +151,7 @@ depinfo_tester_tool_create_command(void *context, const llb_data_t* name) {
   delegate.execute_command_detached = NULL;
   delegate.cancel_detached_command = NULL;
   delegate.is_result_valid = NULL;
+  delegate.is_result_valid_with_fallback = NULL;
   return llb_buildsystem_external_command_create(name, delegate);
 }
 
