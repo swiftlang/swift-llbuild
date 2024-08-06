@@ -18,6 +18,11 @@ import llbuild
 
 import llbuildTestSupport
 
+#if os(Windows)
+import WinSDK
+fileprivate let NSEC_PER_SEC = 1000000000
+#endif
+
 // Command that always fails.
 class FailureCommand: ExternalCommand {
     func getSignature(_ command: Command) -> [UInt8] {
@@ -129,7 +134,11 @@ class DetachedCommand: BasicCommand, ExternalDetachedCommand {
 /// Command that blocks execution for 1 second.
 class DelayedCommand: BasicCommand {
     override func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> Bool {
+        #if os(Windows)
+        Sleep(1)
+        #else
         sleep(1)
+        #endif
         return super.execute(command, commandInterface)
     }
 }

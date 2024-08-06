@@ -1,9 +1,10 @@
-// swift-tools-version:5.2
+// swift-tools-version:5.3
 
 // This file defines Swift package manager support for llbuild. See:
 //  https://github.com/swiftlang/swift-package-manager/tree/master/Documentation
 
 import PackageDescription
+import class Foundation.ProcessInfo
 
 let package = Package(
     name: "llbuild",
@@ -68,7 +69,7 @@ let package = Package(
             name: "llbuildSwift",
             dependencies: ["libllbuild"],
             path: "products/llbuildSwift",
-            exclude: []
+            exclude: ["CMakeLists.txt"]
         ),
 
         // MARK: Components
@@ -80,9 +81,14 @@ let package = Package(
         ),
         .target(
             name: "llbuildCore",
-            dependencies: ["llbuildBasic"],
+            dependencies: [
+                "llbuildBasic",
+                .product(name: "CSQLite", package: "swift-toolchain-sqlite", condition: .when(platforms: [.windows])),
+            ],
             path: "lib/Core",
-            linkerSettings: [.linkedLibrary("sqlite3")]
+            linkerSettings: [
+                .linkedLibrary("sqlite3", .when(platforms: [.macOS, .iOS, .tvOS, .watchOS, .visionOS, .macCatalyst, .linux]))
+            ]
         ),
         .target(
             name: "llbuildBuildSystem",
@@ -213,6 +219,9 @@ let package = Package(
                 .headerSearchPath(".."),
                 .headerSearchPath("../include"),
                 .headerSearchPath("../../googletest/include"),
+            ],
+            linkerSettings: [
+                .linkedLibrary("swiftCore", .when(platforms: [.windows])), // for swift_addNewDSOImage
             ]),
 
         // MARK: Ingested LLVM code.
@@ -232,6 +241,16 @@ let package = Package(
     ],
     cxxLanguageStandard: .cxx14
 )
+
+if ProcessInfo.processInfo.environment["SWIFTCI_USE_LOCAL_DEPS"] == nil {
+    package.dependencies += [
+        .package(url: "https://github.com/swiftlang/swift-toolchain-sqlite", from: "0.1.0"),
+    ]
+} else {
+    package.dependencies += [
+        .package(path: "../swift-toolchain-sqlite"),
+    ]
+}
 
 // FIXME: Conditionalize these flags since SwiftPM 5.3 and earlier will crash for platforms they don't know about.
 #if os(Windows)

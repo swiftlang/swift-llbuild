@@ -15,6 +15,10 @@ import llbuildSwift
 import llbuild
 #endif
 
+#if os(Windows)
+import WinSDK
+#endif
+
 extension Command {
   func with(name: String? = nil, shouldShowStatus: Bool? = nil, description: String? = nil, verboseDescription: String? = nil) -> Command {
     return Command(name: name ?? self.name, shouldShowStatus: shouldShowStatus ?? self.shouldShowStatus, description: description ?? self.description, verboseDescription: verboseDescription ?? self.verboseDescription)
@@ -52,11 +56,17 @@ class BuildSystemBindingsTests: XCTestCase {
   
   func testCommandExtendedResult() {
     let metrics = CommandMetrics(utime: 1, stime: 2, maxRSS: 3)
-    
-    let result = CommandExtendedResult(result: .succeeded, exitStatus: 0, pid: 123, metrics: metrics)
+
+    let pid: llbuild_pid_t?
+    #if os(Windows)
+    pid = INVALID_HANDLE_VALUE
+    #else
+    pid = 123
+    #endif
+    let result = CommandExtendedResult(result: .succeeded, exitStatus: 0, pid: pid, metrics: metrics)
     XCTAssertEqual(result.result, .succeeded)
     XCTAssertEqual(result.exitStatus, 0)
-    XCTAssertEqual(result.pid, 123)
+    XCTAssertEqual(result.pid, pid)
     XCTAssertEqual(result.metrics?.utime, 1)
     XCTAssertEqual(result.metrics?.stime, 2)
     XCTAssertEqual(result.metrics?.maxRSS, 3)
