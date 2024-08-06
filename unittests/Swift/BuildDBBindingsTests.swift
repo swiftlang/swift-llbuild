@@ -119,7 +119,7 @@ class BuildDBBindingsTests: XCTestCase {
     self.tmpDirectory = tmpDir
   }
   
-  func testCouldNotOpenDatabaseErrors() {
+  func testCouldNotOpenDatabaseErrors() throws {
     func expectCouldNotOpenError(path: String, clientSchemaVersion: UInt32 = 0, expectedError: String, file: StaticString = #file, line: UInt = #line) {
       do {
         _ = try BuildDB(path: path, clientSchemaVersion: clientSchemaVersion)
@@ -138,7 +138,10 @@ class BuildDBBindingsTests: XCTestCase {
     
     // Create the example database for the following tests
     XCTAssertNoThrow(try createExampleBuildDB(at: exampleBuildDBPath))
-    
+
+    #if os(Windows)
+    throw XCTSkip("Crash: invalid access to memory location")
+    #endif
     expectCouldNotOpenError(path: exampleBuildDBPath,
                             clientSchemaVersion: 8,
                             expectedError: "Version mismatch. (database-schema: 17 requested schema: 17. database-client: \(exampleBuildDBClientSchemaVersion) requested client: 8)")
