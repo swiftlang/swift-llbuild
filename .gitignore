@@ -20,6 +20,7 @@
 /build
 .build
 /Packages
+/utils/tools
 
 # Ignore Sphinx build products.
 docs/_build

@@ -1,0 +1,9 @@
+[submodule "thirdparty/protobuf"]
+	path = thirdparty/protobuf
+	url = https://github.com/protocolbuffers/protobuf.git
+[submodule "thirdparty/benchmark"]
+	path = thirdparty/benchmark
+	url = https://github.com/google/benchmark.git
+[submodule "thirdparty/swift-protobuf"]
+	path = thirdparty/swift-protobuf
+	url = git@github.com:apple/swift-protobuf.git

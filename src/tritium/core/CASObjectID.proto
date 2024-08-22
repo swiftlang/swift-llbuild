@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package tritium.core;
+
+/// CASObjectID represents the digest of arbitrary data, and its purpose is to
+/// be a handler for interfacing with CAS systems. CASObjectID does not require
+/// the encoding of any particular hash function. Instead, it is expected that
+/// the CAS system itself that provides the digest.
+message CASObjectID {
+    /// The bytes containing the digest of the contents stored in the CAS.
+    bytes bytes = 1;
+}

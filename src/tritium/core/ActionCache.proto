@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package tritium.core;
+
+// Enum representing the supported action cache key types
+enum KeyType {
+    RULE = 0;
+    TASK = 1;
+    ACTION = 2;
+}

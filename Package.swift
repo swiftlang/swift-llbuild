@@ -30,6 +30,9 @@ let package = Package(
             name: "llbuildAnalysis",
             targets: ["llbuildAnalysis"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.17.0"),
+    ],
     targets: [
         // MARK: Products
 
