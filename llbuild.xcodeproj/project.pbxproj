@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 55;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXAggregateTarget section */
@@ -74,6 +74,32 @@
 		14A9859824F63AC100FADB67 /* buildvalue.h in Headers */ = {isa = PBXBuildFile; fileRef = B5A308B922F30E0700699B4C /* buildvalue.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		2DB7144323A2AF2F00514E98 /* BuildSystemEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DB7144223A2AF2F00514E98 /* BuildSystemEngineTests.swift */; };
 		402614272087B10B005BD956 /* Tracing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 402614262087B10B005BD956 /* Tracing.cpp */; };
+		403552C62C52062C00D415BA /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = 403552C52C52062C00D415BA /* SwiftProtobuf */; };
+		403552E52C52069300D415BA /* Label.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4CB2C51995100B68221 /* Label.pb.swift */; };
+		403552EF2C522BAF00D415BA /* Visibility.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 403552EE2C522BA700D415BA /* Visibility.hpp */; settings = {ATTRIBUTES = (Public, ); }; };
+		403552F12C522F9E00D415BA /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = 403552F02C522F9E00D415BA /* SwiftProtobuf */; };
+		403DC5882C52031D00A9AE24 /* libTritiumThirdParty.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4072B4E02C51B3A000B68221 /* libTritiumThirdParty.a */; };
+		4072B5DF2C51BE5100B68221 /* Tritium.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4072B5D72C51BE5100B68221 /* Tritium.framework */; };
+		4072B5E52C51BE5100B68221 /* Tritium.h in Headers */ = {isa = PBXBuildFile; fileRef = 4072B5D92C51BE5100B68221 /* Tritium.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		4072B5ED2C51BF1700B68221 /* Engine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4C52C51995100B68221 /* Engine.cpp */; };
+		4072B5EE2C51BF1700B68221 /* CASObjectID.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4C32C51995100B68221 /* CASObjectID.pb.swift */; };
+		4072B5EF2C51BF1700B68221 /* Label.pb.cc in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4CA2C51995100B68221 /* Label.pb.cc */; };
+		4072B5F02C51BF1700B68221 /* Artifact.pb.cc in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4BE2C51995100B68221 /* Artifact.pb.cc */; };
+		4072B5F12C51BF1700B68221 /* Error.pb.cc in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4D72C51995100B68221 /* Error.pb.cc */; };
+		4072B5F22C51BF1700B68221 /* Artifact.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4BF2C51995100B68221 /* Artifact.pb.swift */; };
+		4072B5F32C51BF1700B68221 /* ActionCache.pb.cc in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4BA2C51995100B68221 /* ActionCache.pb.cc */; };
+		4072B5F42C51BF1700B68221 /* Support.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4D32C51995100B68221 /* Support.cpp */; };
+		4072B5F52C51BF1700B68221 /* ActionCache.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4B72C51995100B68221 /* ActionCache.cpp */; };
+		4072B5F62C51BF1700B68221 /* Error.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4D82C51995100B68221 /* Error.pb.swift */; };
+		4072B5F72C51BF1700B68221 /* ActionCache.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4BB2C51995100B68221 /* ActionCache.pb.swift */; };
+		4072B5F82C51BF1700B68221 /* Label.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4C72C51995100B68221 /* Label.cpp */; };
+		4072B5F92C51BF1700B68221 /* Rule.pb.cc in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4CE2C51995100B68221 /* Rule.pb.cc */; };
+		4072B5FA2C51BF1700B68221 /* CASObjectID.pb.cc in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4C22C51995100B68221 /* CASObjectID.pb.cc */; };
+		4072B5FB2C51BF1700B68221 /* Rule.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4CF2C51995100B68221 /* Rule.pb.swift */; };
+		4072B5FC2C51BF1700B68221 /* SwiftAdaptors.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4D02C51995100B68221 /* SwiftAdaptors.cpp */; };
+		407F9F0F2C51D06800FED36C /* Errors.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 4072B4AE2C51993F00B68221 /* Errors.hpp */; settings = {ATTRIBUTES = (Public, ); }; };
+		407F9F102C51D06800FED36C /* Result.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 4072B4B22C51993F00B68221 /* Result.hpp */; settings = {ATTRIBUTES = (Public, ); }; };
+		407F9F112C51D06800FED36C /* SwiftAdaptors.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 4072B4AF2C51993F00B68221 /* SwiftAdaptors.hpp */; settings = {ATTRIBUTES = (Public, ); }; };
 		408649DB23D1238C003063A2 /* libllbuildEvo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 40C9B47023CFD6690098712F /* libllbuildEvo.a */; };
 		408649DC23D90EA0003063A2 /* libllbuildEvo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 40C9B47023CFD6690098712F /* libllbuildEvo.a */; };
 		408649DF23D90EFB003063A2 /* libllbuildEvo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 40C9B47023CFD6690098712F /* libllbuildEvo.a */; };
@@ -96,12 +122,15 @@
 		40D86705284FF2FC0043271A /* libgmock.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 40D86702284FF2C30043271A /* libgmock.a */; };
 		40D86706284FF3430043271A /* libgmock.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 40D86702284FF2C30043271A /* libgmock.a */; };
 		40D86707284FF34D0043271A /* libgmock.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 40D86702284FF2C30043271A /* libgmock.a */; };
-		40D86708284FF3CB0043271A /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.tbd */; platformFilters = (bridgeos, ios, maccatalyst, macos, tvos, watchos, ); };
+		40D86708284FF3CB0043271A /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.tbd */; platformFilters = (bridgeos, ios, maccatalyst, macos, tvos, watchos, xros, ); };
 		40D86709284FF3DF0043271A /* libgmock.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 40D86702284FF2C30043271A /* libgmock.a */; };
 		40D8670A284FF3EC0043271A /* libgmock.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 40D86702284FF2C30043271A /* libgmock.a */; };
 		40D8670B284FF3F70043271A /* libgmock.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 40D86702284FF2C30043271A /* libgmock.a */; };
 		40D8670D284FF4A40043271A /* gmock-all.cc in Frameworks */ = {isa = PBXBuildFile; fileRef = 40D8670C284FF4A40043271A /* gmock-all.cc */; };
 		40D8672E284FF4D20043271A /* gmock-all.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40D8672B284FF4CB0043271A /* gmock-all.cc */; };
+		40E7C53A2C61CB0800FC0383 /* CoreTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E7C51B2C61CAEF00FC0383 /* CoreTypes.swift */; };
+		40E7C53C2C61CD8100FC0383 /* Types.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E7C53B2C61CD7D00FC0383 /* Types.swift */; };
+		40E7C53E2C61CF6800FC0383 /* Engine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E7C53D2C61CF6300FC0383 /* Engine.swift */; };
 		40EA264821651D2C00068954 /* ExecutionQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 40EA264721651D2C00068954 /* ExecutionQueue.cpp */; };
 		40EA264A21651D3F00068954 /* Subprocess.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 40EA264921651D3F00068954 /* Subprocess.cpp */; };
 		40EA264C2165221C00068954 /* LaneBasedExecutionQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 40EA264B2165221C00068954 /* LaneBasedExecutionQueue.cpp */; };
@@ -338,12 +367,334 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		403552CB2C52062C00D415BA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 403541D52C5205EF00D415BA /* ProtocolBuffers_iOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 7461B52E0F94FAF800A0C422;
+			remoteInfo = ProtocolBuffers;
+		};
+		403552CD2C52062C00D415BA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 403541D52C5205EF00D415BA /* ProtocolBuffers_iOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 8BBEA4A6147C727100C4ADB7;
+			remoteInfo = UnitTests;
+		};
+		403552CF2C52062C00D415BA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 403541D52C5205EF00D415BA /* ProtocolBuffers_iOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F4487C6E1A9F8F8100531423;
+			remoteInfo = TestSingleSourceBuild;
+		};
+		403552D52C52062C00D415BA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 403541D62C5205EF00D415BA /* ProtocolBuffers_OSX.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 7461B52E0F94FAF800A0C422;
+			remoteInfo = ProtocolBuffers;
+		};
+		403552D72C52062C00D415BA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 403541D62C5205EF00D415BA /* ProtocolBuffers_OSX.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 8BBEA4A6147C727100C4ADB7;
+			remoteInfo = UnitTests;
+		};
+		403552D92C52062C00D415BA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 403541D62C5205EF00D415BA /* ProtocolBuffers_OSX.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F4487C511A9F8E0200531423;
+			remoteInfo = TestSingleSourceBuild;
+		};
+		403552DF2C52062C00D415BA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 403541D72C5205EF00D415BA /* ProtocolBuffers_tvOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 7461B52E0F94FAF800A0C422;
+			remoteInfo = ProtocolBuffers;
+		};
+		403552E12C52062C00D415BA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 403541D72C5205EF00D415BA /* ProtocolBuffers_tvOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 8BBEA4A6147C727100C4ADB7;
+			remoteInfo = UnitTests;
+		};
+		403552E32C52062C00D415BA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 403541D72C5205EF00D415BA /* ProtocolBuffers_tvOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F4487C6E1A9F8F8100531423;
+			remoteInfo = TestSingleSourceBuild;
+		};
 		4035804021C3060F0091FE09 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = E1A2243519F9970D0059043E;
 			remoteInfo = llbuildNinja;
+		};
+		403DC52F2C51D08600A9AE24 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 403DB4402C51D07C00A9AE24 /* ProtocolBuffers_iOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 7461B52E0F94FAF800A0C422;
+			remoteInfo = ProtocolBuffers;
+		};
+		403DC5312C51D08600A9AE24 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 403DB4402C51D07C00A9AE24 /* ProtocolBuffers_iOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 8BBEA4A6147C727100C4ADB7;
+			remoteInfo = UnitTests;
+		};
+		403DC5332C51D08600A9AE24 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 403DB4402C51D07C00A9AE24 /* ProtocolBuffers_iOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F4487C6E1A9F8F8100531423;
+			remoteInfo = TestSingleSourceBuild;
+		};
+		403DC5392C51D08600A9AE24 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 403DB4412C51D07C00A9AE24 /* ProtocolBuffers_OSX.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 7461B52E0F94FAF800A0C422;
+			remoteInfo = ProtocolBuffers;
+		};
+		403DC53B2C51D08600A9AE24 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 403DB4412C51D07C00A9AE24 /* ProtocolBuffers_OSX.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 8BBEA4A6147C727100C4ADB7;
+			remoteInfo = UnitTests;
+		};
+		403DC53D2C51D08600A9AE24 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 403DB4412C51D07C00A9AE24 /* ProtocolBuffers_OSX.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F4487C511A9F8E0200531423;
+			remoteInfo = TestSingleSourceBuild;
+		};
+		403DC5432C51D08600A9AE24 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 403DB4422C51D07C00A9AE24 /* ProtocolBuffers_tvOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 7461B52E0F94FAF800A0C422;
+			remoteInfo = ProtocolBuffers;
+		};
+		403DC5452C51D08600A9AE24 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 403DB4422C51D07C00A9AE24 /* ProtocolBuffers_tvOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 8BBEA4A6147C727100C4ADB7;
+			remoteInfo = UnitTests;
+		};
+		403DC5472C51D08600A9AE24 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 403DB4422C51D07C00A9AE24 /* ProtocolBuffers_tvOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F4487C6E1A9F8F8100531423;
+			remoteInfo = TestSingleSourceBuild;
+		};
+		406383D92C76FB5100017979 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 406372D02C6D0BD400017979 /* ProtocolBuffers_iOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 7461B52E0F94FAF800A0C422;
+			remoteInfo = ProtocolBuffers;
+		};
+		406383DB2C76FB5100017979 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 406372D02C6D0BD400017979 /* ProtocolBuffers_iOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 8BBEA4A6147C727100C4ADB7;
+			remoteInfo = UnitTests;
+		};
+		406383DD2C76FB5100017979 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 406372D02C6D0BD400017979 /* ProtocolBuffers_iOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F4487C6E1A9F8F8100531423;
+			remoteInfo = TestSingleSourceBuild;
+		};
+		406383E32C76FB5100017979 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 406372D12C6D0BD400017979 /* ProtocolBuffers_OSX.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 7461B52E0F94FAF800A0C422;
+			remoteInfo = ProtocolBuffers;
+		};
+		406383E52C76FB5100017979 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 406372D12C6D0BD400017979 /* ProtocolBuffers_OSX.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 8BBEA4A6147C727100C4ADB7;
+			remoteInfo = UnitTests;
+		};
+		406383E72C76FB5100017979 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 406372D12C6D0BD400017979 /* ProtocolBuffers_OSX.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F4487C511A9F8E0200531423;
+			remoteInfo = TestSingleSourceBuild;
+		};
+		406383ED2C76FB5100017979 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 406372D22C6D0BD400017979 /* ProtocolBuffers_tvOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 7461B52E0F94FAF800A0C422;
+			remoteInfo = ProtocolBuffers;
+		};
+		406383EF2C76FB5100017979 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 406372D22C6D0BD400017979 /* ProtocolBuffers_tvOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 8BBEA4A6147C727100C4ADB7;
+			remoteInfo = UnitTests;
+		};
+		406383F12C76FB5100017979 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 406372D22C6D0BD400017979 /* ProtocolBuffers_tvOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F4487C6E1A9F8F8100531423;
+			remoteInfo = TestSingleSourceBuild;
+		};
+		4072AACE2C51977000B68221 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4072A3172C51977000B68221 /* ProtocolBuffers_iOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 7461B52E0F94FAF800A0C422;
+			remoteInfo = ProtocolBuffers;
+		};
+		4072AAD02C51977000B68221 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4072A3172C51977000B68221 /* ProtocolBuffers_iOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 8BBEA4A6147C727100C4ADB7;
+			remoteInfo = UnitTests;
+		};
+		4072AAD22C51977000B68221 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4072A3172C51977000B68221 /* ProtocolBuffers_iOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F4487C6E1A9F8F8100531423;
+			remoteInfo = TestSingleSourceBuild;
+		};
+		4072AAD82C51977000B68221 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4072A3182C51977000B68221 /* ProtocolBuffers_OSX.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 7461B52E0F94FAF800A0C422;
+			remoteInfo = ProtocolBuffers;
+		};
+		4072AADA2C51977000B68221 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4072A3182C51977000B68221 /* ProtocolBuffers_OSX.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 8BBEA4A6147C727100C4ADB7;
+			remoteInfo = UnitTests;
+		};
+		4072AADC2C51977000B68221 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4072A3182C51977000B68221 /* ProtocolBuffers_OSX.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F4487C511A9F8E0200531423;
+			remoteInfo = TestSingleSourceBuild;
+		};
+		4072AAE22C51977000B68221 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4072A3192C51977000B68221 /* ProtocolBuffers_tvOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 7461B52E0F94FAF800A0C422;
+			remoteInfo = ProtocolBuffers;
+		};
+		4072AAE42C51977000B68221 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4072A3192C51977000B68221 /* ProtocolBuffers_tvOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 8BBEA4A6147C727100C4ADB7;
+			remoteInfo = UnitTests;
+		};
+		4072AAE62C51977000B68221 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4072A3192C51977000B68221 /* ProtocolBuffers_tvOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F4487C6E1A9F8F8100531423;
+			remoteInfo = TestSingleSourceBuild;
+		};
+		4072B5E02C51BE5100B68221 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E1A223E919F98F1C0059043E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4072B5D62C51BE5100B68221;
+			remoteInfo = Tritium;
+		};
+		407F9EF52C51C86A00FED36C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 407F8E062C51C85A00FED36C /* ProtocolBuffers_iOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 7461B52E0F94FAF800A0C422;
+			remoteInfo = ProtocolBuffers;
+		};
+		407F9EF72C51C86A00FED36C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 407F8E062C51C85A00FED36C /* ProtocolBuffers_iOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 8BBEA4A6147C727100C4ADB7;
+			remoteInfo = UnitTests;
+		};
+		407F9EF92C51C86A00FED36C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 407F8E062C51C85A00FED36C /* ProtocolBuffers_iOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F4487C6E1A9F8F8100531423;
+			remoteInfo = TestSingleSourceBuild;
+		};
+		407F9EFF2C51C86A00FED36C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 407F8E072C51C85A00FED36C /* ProtocolBuffers_OSX.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 7461B52E0F94FAF800A0C422;
+			remoteInfo = ProtocolBuffers;
+		};
+		407F9F012C51C86A00FED36C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 407F8E072C51C85A00FED36C /* ProtocolBuffers_OSX.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 8BBEA4A6147C727100C4ADB7;
+			remoteInfo = UnitTests;
+		};
+		407F9F032C51C86A00FED36C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 407F8E072C51C85A00FED36C /* ProtocolBuffers_OSX.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F4487C511A9F8E0200531423;
+			remoteInfo = TestSingleSourceBuild;
+		};
+		407F9F092C51C86A00FED36C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 407F8E082C51C85A00FED36C /* ProtocolBuffers_tvOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 7461B52E0F94FAF800A0C422;
+			remoteInfo = ProtocolBuffers;
+		};
+		407F9F0B2C51C86A00FED36C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 407F8E082C51C85A00FED36C /* ProtocolBuffers_tvOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 8BBEA4A6147C727100C4ADB7;
+			remoteInfo = UnitTests;
+		};
+		407F9F0D2C51C86A00FED36C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 407F8E082C51C85A00FED36C /* ProtocolBuffers_tvOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F4487C6E1A9F8F8100531423;
+			remoteInfo = TestSingleSourceBuild;
 		};
 		408649DD23D90EA0003063A2 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -421,6 +772,69 @@
 			proxyType = 1;
 			remoteGlobalIDString = 40C9B46323CFD6690098712F;
 			remoteInfo = llbuildEvo;
+		};
+		40E7C5202C61CAEF00FC0383 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 40E7B4252C61CA1F00FC0383 /* ProtocolBuffers_iOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 7461B52E0F94FAF800A0C422;
+			remoteInfo = ProtocolBuffers;
+		};
+		40E7C5222C61CAEF00FC0383 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 40E7B4252C61CA1F00FC0383 /* ProtocolBuffers_iOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 8BBEA4A6147C727100C4ADB7;
+			remoteInfo = UnitTests;
+		};
+		40E7C5242C61CAEF00FC0383 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 40E7B4252C61CA1F00FC0383 /* ProtocolBuffers_iOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F4487C6E1A9F8F8100531423;
+			remoteInfo = TestSingleSourceBuild;
+		};
+		40E7C52A2C61CAEF00FC0383 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 40E7B4262C61CA1F00FC0383 /* ProtocolBuffers_OSX.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 7461B52E0F94FAF800A0C422;
+			remoteInfo = ProtocolBuffers;
+		};
+		40E7C52C2C61CAEF00FC0383 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 40E7B4262C61CA1F00FC0383 /* ProtocolBuffers_OSX.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 8BBEA4A6147C727100C4ADB7;
+			remoteInfo = UnitTests;
+		};
+		40E7C52E2C61CAEF00FC0383 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 40E7B4262C61CA1F00FC0383 /* ProtocolBuffers_OSX.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F4487C511A9F8E0200531423;
+			remoteInfo = TestSingleSourceBuild;
+		};
+		40E7C5342C61CAEF00FC0383 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 40E7B4272C61CA1F00FC0383 /* ProtocolBuffers_tvOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 7461B52E0F94FAF800A0C422;
+			remoteInfo = ProtocolBuffers;
+		};
+		40E7C5362C61CAEF00FC0383 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 40E7B4272C61CA1F00FC0383 /* ProtocolBuffers_tvOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 8BBEA4A6147C727100C4ADB7;
+			remoteInfo = UnitTests;
+		};
+		40E7C5382C61CAEF00FC0383 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 40E7B4272C61CA1F00FC0383 /* ProtocolBuffers_tvOS.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F4487C6E1A9F8F8100531423;
+			remoteInfo = TestSingleSourceBuild;
 		};
 		8CAE6851237B9EFA00C82351 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -985,7 +1399,6 @@
 		1484D1D620943D2100D3830F /* docs */ = {isa = PBXFileReference; lastKnownFileType = folder; path = docs; sourceTree = "<group>"; };
 		1484D1D720943E6800D3830F /* cmake */ = {isa = PBXFileReference; lastKnownFileType = folder; path = cmake; sourceTree = "<group>"; };
 		1484D1D82094508A00D3830F /* CODEOWNERS */ = {isa = PBXFileReference; lastKnownFileType = text; path = CODEOWNERS; sourceTree = "<group>"; };
-		1484D1D92094509400D3830F /* CONTRIBUTING.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CONTRIBUTING.md; sourceTree = "<group>"; };
 		1484D1DA2094509E00D3830F /* LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
 		1484D1DB209450A600D3830F /* Vagrantfile */ = {isa = PBXFileReference; lastKnownFileType = text; path = Vagrantfile; sourceTree = "<group>"; };
 		1484D1F42094534700D3830F /* module.modulemap */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.module-map"; path = module.modulemap; sourceTree = "<group>"; };
@@ -995,7 +1408,7 @@
 		1484D1FA2094566F00D3830F /* llbuild.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = llbuild.py; sourceTree = "<group>"; };
 		1484D1FB2094582C00D3830F /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		1484D1FC2094586800D3830F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		1484D1FD2094589700D3830F /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = CMakeLists.txt; path = perftests/CMakeLists.txt; sourceTree = "<group>"; };
+		1484D1FD2094589700D3830F /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		1484D1FE2094E7C700D3830F /* gtest-llbuild-config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-llbuild-config.h"; sourceTree = "<group>"; };
 		1484D2002094E7D600D3830F /* gtest-port.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "gtest-port.h"; sourceTree = "<group>"; };
 		1484D2012094E7D600D3830F /* gtest.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = gtest.h; sourceTree = "<group>"; };
@@ -1026,9 +1439,22 @@
 		2D86C6DF238D932B006E61FB /* Tool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Tool.h; sourceTree = "<group>"; };
 		2DB7144223A2AF2F00514E98 /* BuildSystemEngineTests.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = BuildSystemEngineTests.swift; sourceTree = "<group>"; tabWidth = 4; };
 		402614262087B10B005BD956 /* Tracing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Tracing.cpp; sourceTree = "<group>"; };
+		403541D52C5205EF00D415BA /* ProtocolBuffers_iOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_iOS.xcodeproj; sourceTree = "<group>"; };
+		403541D62C5205EF00D415BA /* ProtocolBuffers_OSX.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_OSX.xcodeproj; sourceTree = "<group>"; };
+		403541D72C5205EF00D415BA /* ProtocolBuffers_tvOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_tvOS.xcodeproj; sourceTree = "<group>"; };
+		403552EE2C522BA700D415BA /* Visibility.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Visibility.hpp; sourceTree = "<group>"; };
 		40377C7C2061D24200C0FD4D /* Package.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; tabWidth = 4; };
+		403DB4402C51D07C00A9AE24 /* ProtocolBuffers_iOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_iOS.xcodeproj; sourceTree = "<group>"; };
+		403DB4412C51D07C00A9AE24 /* ProtocolBuffers_OSX.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_OSX.xcodeproj; sourceTree = "<group>"; };
+		403DB4422C51D07C00A9AE24 /* ProtocolBuffers_tvOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_tvOS.xcodeproj; sourceTree = "<group>"; };
+		403DC5492C51D40600A9AE24 /* build_proto_toolchain.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = build_proto_toolchain.sh; sourceTree = "<group>"; };
 		404C888E20924BF8000C201A /* DenseMapInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DenseMapInfo.h; sourceTree = "<group>"; };
 		4062058120C7263C00B28281 /* StringList.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = StringList.h; sourceTree = "<group>"; };
+		406372D02C6D0BD400017979 /* ProtocolBuffers_iOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_iOS.xcodeproj; sourceTree = "<group>"; };
+		406372D12C6D0BD400017979 /* ProtocolBuffers_OSX.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_OSX.xcodeproj; sourceTree = "<group>"; };
+		406372D22C6D0BD400017979 /* ProtocolBuffers_tvOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_tvOS.xcodeproj; sourceTree = "<group>"; };
+		406383D42C76FB5100017979 /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
+		406383F32C76FD5300017979 /* Tritium.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = Tritium.xctestplan; sourceTree = "<group>"; };
 		406A04FD21627FD900EBA895 /* requirements.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = requirements.txt; sourceTree = "<group>"; };
 		406A04FE21627FD900EBA895 /* Dockerfile-16.04 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "Dockerfile-16.04"; sourceTree = "<group>"; };
 		406A04FF21627FD900EBA895 /* docker-utils */ = {isa = PBXFileReference; explicitFileType = text.script.python; fileEncoding = 4; path = "docker-utils"; sourceTree = "<group>"; };
@@ -1036,6 +1462,210 @@
 		406A05012162815000EBA895 /* Dockerfile-18.04 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "Dockerfile-18.04"; sourceTree = "<group>"; };
 		406A05022162A20800EBA895 /* check-all */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "check-all"; sourceTree = "<group>"; };
 		406A05032162A5A200EBA895 /* build-and-test */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "build-and-test"; sourceTree = "<group>"; };
+		4072A3172C51977000B68221 /* ProtocolBuffers_iOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_iOS.xcodeproj; sourceTree = "<group>"; };
+		4072A3182C51977000B68221 /* ProtocolBuffers_OSX.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_OSX.xcodeproj; sourceTree = "<group>"; };
+		4072A3192C51977000B68221 /* ProtocolBuffers_tvOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_tvOS.xcodeproj; sourceTree = "<group>"; };
+		4072B4042C51993F00B68221 /* BinaryCoding.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BinaryCoding.h; sourceTree = "<group>"; };
+		4072B4052C51993F00B68221 /* Clock.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Clock.h; sourceTree = "<group>"; };
+		4072B4062C51993F00B68221 /* Compiler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Compiler.h; sourceTree = "<group>"; };
+		4072B4072C51993F00B68221 /* CrossPlatformCompatibility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CrossPlatformCompatibility.h; sourceTree = "<group>"; };
+		4072B4082C51993F00B68221 /* Defer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Defer.h; sourceTree = "<group>"; };
+		4072B4092C51993F00B68221 /* ExecutionQueue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ExecutionQueue.h; sourceTree = "<group>"; };
+		4072B40A2C51993F00B68221 /* FileInfo.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FileInfo.h; sourceTree = "<group>"; };
+		4072B40B2C51993F00B68221 /* FileSystem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FileSystem.h; sourceTree = "<group>"; };
+		4072B40C2C51993F00B68221 /* Hashing.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Hashing.h; sourceTree = "<group>"; };
+		4072B40D2C51993F00B68221 /* JSON.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JSON.h; sourceTree = "<group>"; };
+		4072B40E2C51993F00B68221 /* LLVM.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LLVM.h; sourceTree = "<group>"; };
+		4072B40F2C51993F00B68221 /* PlatformUtility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PlatformUtility.h; sourceTree = "<group>"; };
+		4072B4102C51993F00B68221 /* POSIXEnvironment.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = POSIXEnvironment.h; sourceTree = "<group>"; };
+		4072B4112C51993F00B68221 /* SerialQueue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SerialQueue.h; sourceTree = "<group>"; };
+		4072B4122C51993F00B68221 /* ShellUtility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShellUtility.h; sourceTree = "<group>"; };
+		4072B4132C51993F00B68221 /* Stat.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Stat.h; sourceTree = "<group>"; };
+		4072B4142C51993F00B68221 /* StringList.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = StringList.h; sourceTree = "<group>"; };
+		4072B4152C51993F00B68221 /* Subprocess.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Subprocess.h; sourceTree = "<group>"; };
+		4072B4162C51993F00B68221 /* Tracing.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Tracing.h; sourceTree = "<group>"; };
+		4072B4172C51993F00B68221 /* Version.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Version.h; sourceTree = "<group>"; };
+		4072B4192C51993F00B68221 /* BuildDescription.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildDescription.h; sourceTree = "<group>"; };
+		4072B41A2C51993F00B68221 /* BuildFile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildFile.h; sourceTree = "<group>"; };
+		4072B41B2C51993F00B68221 /* BuildKey.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildKey.h; sourceTree = "<group>"; };
+		4072B41C2C51993F00B68221 /* BuildNode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildNode.h; sourceTree = "<group>"; };
+		4072B41D2C51993F00B68221 /* BuildSystem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildSystem.h; sourceTree = "<group>"; };
+		4072B41E2C51993F00B68221 /* BuildSystemExtensions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildSystemExtensions.h; sourceTree = "<group>"; };
+		4072B41F2C51993F00B68221 /* BuildSystemFrontend.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildSystemFrontend.h; sourceTree = "<group>"; };
+		4072B4202C51993F00B68221 /* BuildSystemHandlers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildSystemHandlers.h; sourceTree = "<group>"; };
+		4072B4212C51993F00B68221 /* BuildValue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildValue.h; sourceTree = "<group>"; };
+		4072B4222C51993F00B68221 /* Command.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Command.h; sourceTree = "<group>"; };
+		4072B4232C51993F00B68221 /* ExternalCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ExternalCommand.h; sourceTree = "<group>"; };
+		4072B4242C51993F00B68221 /* ShellCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShellCommand.h; sourceTree = "<group>"; };
+		4072B4252C51993F00B68221 /* Tool.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Tool.h; sourceTree = "<group>"; };
+		4072B4272C51993F00B68221 /* CASDatabase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CASDatabase.h; sourceTree = "<group>"; };
+		4072B4282C51993F00B68221 /* DataID.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DataID.h; sourceTree = "<group>"; };
+		4072B42A2C51993F00B68221 /* Commands.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Commands.h; sourceTree = "<group>"; };
+		4072B42C2C51993F00B68221 /* BuildDB.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildDB.h; sourceTree = "<group>"; };
+		4072B42D2C51993F00B68221 /* BuildEngine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildEngine.h; sourceTree = "<group>"; };
+		4072B42E2C51993F00B68221 /* DependencyInfoParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DependencyInfoParser.h; sourceTree = "<group>"; };
+		4072B42F2C51993F00B68221 /* DependencyKeyIDs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DependencyKeyIDs.h; sourceTree = "<group>"; };
+		4072B4302C51993F00B68221 /* KeyID.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = KeyID.h; sourceTree = "<group>"; };
+		4072B4312C51993F00B68221 /* MakefileDepsParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MakefileDepsParser.h; sourceTree = "<group>"; };
+		4072B4332C51993F00B68221 /* EvoEngine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EvoEngine.h; sourceTree = "<group>"; };
+		4072B4352C51993F00B68221 /* Lexer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Lexer.h; sourceTree = "<group>"; };
+		4072B4362C51993F00B68221 /* Manifest.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Manifest.h; sourceTree = "<group>"; };
+		4072B4372C51993F00B68221 /* ManifestLoader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ManifestLoader.h; sourceTree = "<group>"; };
+		4072B4382C51993F00B68221 /* Parser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Parser.h; sourceTree = "<group>"; };
+		4072B43B2C51993F00B68221 /* AllocatorList.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AllocatorList.h; sourceTree = "<group>"; };
+		4072B43C2C51993F00B68221 /* APFloat.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = APFloat.h; sourceTree = "<group>"; };
+		4072B43D2C51993F00B68221 /* APInt.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = APInt.h; sourceTree = "<group>"; };
+		4072B43E2C51993F00B68221 /* APSInt.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = APSInt.h; sourceTree = "<group>"; };
+		4072B43F2C51993F00B68221 /* ArrayRef.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ArrayRef.h; sourceTree = "<group>"; };
+		4072B4402C51993F00B68221 /* DenseMap.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DenseMap.h; sourceTree = "<group>"; };
+		4072B4412C51993F00B68221 /* DenseMapInfo.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DenseMapInfo.h; sourceTree = "<group>"; };
+		4072B4422C51993F00B68221 /* DenseSet.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DenseSet.h; sourceTree = "<group>"; };
+		4072B4432C51993F00B68221 /* edit_distance.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = edit_distance.h; sourceTree = "<group>"; };
+		4072B4442C51993F00B68221 /* EpochTracker.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EpochTracker.h; sourceTree = "<group>"; };
+		4072B4452C51993F00B68221 /* FoldingSet.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FoldingSet.h; sourceTree = "<group>"; };
+		4072B4462C51993F00B68221 /* Hashing.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Hashing.h; sourceTree = "<group>"; };
+		4072B4472C51993F00B68221 /* ilist.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ilist.h; sourceTree = "<group>"; };
+		4072B4482C51993F00B68221 /* ilist_base.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ilist_base.h; sourceTree = "<group>"; };
+		4072B4492C51993F00B68221 /* ilist_iterator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ilist_iterator.h; sourceTree = "<group>"; };
+		4072B44A2C51993F00B68221 /* ilist_node.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ilist_node.h; sourceTree = "<group>"; };
+		4072B44B2C51993F00B68221 /* ilist_node_base.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ilist_node_base.h; sourceTree = "<group>"; };
+		4072B44C2C51993F00B68221 /* ilist_node_options.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ilist_node_options.h; sourceTree = "<group>"; };
+		4072B44D2C51993F00B68221 /* IntrusiveRefCntPtr.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IntrusiveRefCntPtr.h; sourceTree = "<group>"; };
+		4072B44E2C51993F00B68221 /* iterator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = iterator.h; sourceTree = "<group>"; };
+		4072B44F2C51993F00B68221 /* iterator_range.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = iterator_range.h; sourceTree = "<group>"; };
+		4072B4502C51993F00B68221 /* None.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = None.h; sourceTree = "<group>"; };
+		4072B4512C51993F00B68221 /* Optional.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Optional.h; sourceTree = "<group>"; };
+		4072B4522C51993F00B68221 /* PointerIntPair.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PointerIntPair.h; sourceTree = "<group>"; };
+		4072B4532C51993F00B68221 /* PointerUnion.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PointerUnion.h; sourceTree = "<group>"; };
+		4072B4542C51993F00B68221 /* simple_ilist.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = simple_ilist.h; sourceTree = "<group>"; };
+		4072B4552C51993F00B68221 /* SmallPtrSet.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SmallPtrSet.h; sourceTree = "<group>"; };
+		4072B4562C51993F00B68221 /* SmallSet.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SmallSet.h; sourceTree = "<group>"; };
+		4072B4572C51993F00B68221 /* SmallString.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SmallString.h; sourceTree = "<group>"; };
+		4072B4582C51993F00B68221 /* SmallVector.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SmallVector.h; sourceTree = "<group>"; };
+		4072B4592C51993F00B68221 /* STLExtras.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = STLExtras.h; sourceTree = "<group>"; };
+		4072B45A2C51993F00B68221 /* StringExtras.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = StringExtras.h; sourceTree = "<group>"; };
+		4072B45B2C51993F00B68221 /* StringMap.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = StringMap.h; sourceTree = "<group>"; };
+		4072B45C2C51993F00B68221 /* StringRef.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = StringRef.h; sourceTree = "<group>"; };
+		4072B45D2C51993F00B68221 /* StringSwitch.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = StringSwitch.h; sourceTree = "<group>"; };
+		4072B45E2C51993F00B68221 /* Triple.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Triple.h; sourceTree = "<group>"; };
+		4072B45F2C51993F00B68221 /* Twine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Twine.h; sourceTree = "<group>"; };
+		4072B4612C51993F00B68221 /* abi-breaking.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "abi-breaking.h"; sourceTree = "<group>"; };
+		4072B4622C51993F00B68221 /* config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
+		4072B4632C51993F00B68221 /* llvm-config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "llvm-config.h"; sourceTree = "<group>"; };
+		4072B4652C51993F00B68221 /* Demangle.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Demangle.h; sourceTree = "<group>"; };
+		4072B4672C51993F00B68221 /* AArch64TargetParser.def */ = {isa = PBXFileReference; lastKnownFileType = text; path = AArch64TargetParser.def; sourceTree = "<group>"; };
+		4072B4682C51993F00B68221 /* AlignOf.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AlignOf.h; sourceTree = "<group>"; };
+		4072B4692C51993F00B68221 /* Allocator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Allocator.h; sourceTree = "<group>"; };
+		4072B46A2C51993F00B68221 /* ARMBuildAttributes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ARMBuildAttributes.h; sourceTree = "<group>"; };
+		4072B46B2C51993F00B68221 /* ARMTargetParser.def */ = {isa = PBXFileReference; lastKnownFileType = text; path = ARMTargetParser.def; sourceTree = "<group>"; };
+		4072B46C2C51993F00B68221 /* Atomic.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Atomic.h; sourceTree = "<group>"; };
+		4072B46D2C51993F00B68221 /* Casting.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Casting.h; sourceTree = "<group>"; };
+		4072B46E2C51993F00B68221 /* CBindingWrapping.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CBindingWrapping.h; sourceTree = "<group>"; };
+		4072B46F2C51993F00B68221 /* Chrono.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Chrono.h; sourceTree = "<group>"; };
+		4072B4702C51993F00B68221 /* circular_raw_ostream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = circular_raw_ostream.h; sourceTree = "<group>"; };
+		4072B4712C51993F00B68221 /* CommandLine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CommandLine.h; sourceTree = "<group>"; };
+		4072B4722C51993F00B68221 /* Compiler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Compiler.h; sourceTree = "<group>"; };
+		4072B4732C51993F00B68221 /* ConvertUTF.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ConvertUTF.h; sourceTree = "<group>"; };
+		4072B4742C51993F00B68221 /* DataTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DataTypes.h; sourceTree = "<group>"; };
+		4072B4752C51993F00B68221 /* Debug.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Debug.h; sourceTree = "<group>"; };
+		4072B4762C51993F00B68221 /* DJB.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DJB.h; sourceTree = "<group>"; };
+		4072B4772C51993F00B68221 /* Endian.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Endian.h; sourceTree = "<group>"; };
+		4072B4782C51993F00B68221 /* Errc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Errc.h; sourceTree = "<group>"; };
+		4072B4792C51993F00B68221 /* Errno.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Errno.h; sourceTree = "<group>"; };
+		4072B47A2C51993F00B68221 /* Error.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Error.h; sourceTree = "<group>"; };
+		4072B47B2C51993F00B68221 /* ErrorHandling.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ErrorHandling.h; sourceTree = "<group>"; };
+		4072B47C2C51993F00B68221 /* ErrorOr.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ErrorOr.h; sourceTree = "<group>"; };
+		4072B47D2C51993F00B68221 /* FileSystem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FileSystem.h; sourceTree = "<group>"; };
+		4072B47E2C51993F00B68221 /* FileUtilities.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FileUtilities.h; sourceTree = "<group>"; };
+		4072B47F2C51993F00B68221 /* Format.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Format.h; sourceTree = "<group>"; };
+		4072B4802C51993F00B68221 /* FormatCommon.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FormatCommon.h; sourceTree = "<group>"; };
+		4072B4812C51993F00B68221 /* FormatProviders.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FormatProviders.h; sourceTree = "<group>"; };
+		4072B4822C51993F00B68221 /* FormatVariadic.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FormatVariadic.h; sourceTree = "<group>"; };
+		4072B4832C51993F00B68221 /* FormatVariadicDetails.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FormatVariadicDetails.h; sourceTree = "<group>"; };
+		4072B4842C51993F00B68221 /* Host.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Host.h; sourceTree = "<group>"; };
+		4072B4852C51993F00B68221 /* Locale.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Locale.h; sourceTree = "<group>"; };
+		4072B4862C51993F00B68221 /* ManagedStatic.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ManagedStatic.h; sourceTree = "<group>"; };
+		4072B4872C51993F00B68221 /* MathExtras.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MathExtras.h; sourceTree = "<group>"; };
+		4072B4882C51993F00B68221 /* MD5.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MD5.h; sourceTree = "<group>"; };
+		4072B4892C51993F00B68221 /* MemAlloc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MemAlloc.h; sourceTree = "<group>"; };
+		4072B48A2C51993F00B68221 /* Memory.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Memory.h; sourceTree = "<group>"; };
+		4072B48B2C51993F00B68221 /* MemoryBuffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MemoryBuffer.h; sourceTree = "<group>"; };
+		4072B48C2C51993F00B68221 /* Mutex.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Mutex.h; sourceTree = "<group>"; };
+		4072B48D2C51993F00B68221 /* MutexGuard.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MutexGuard.h; sourceTree = "<group>"; };
+		4072B48E2C51993F00B68221 /* NativeFormatting.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NativeFormatting.h; sourceTree = "<group>"; };
+		4072B48F2C51993F00B68221 /* Options.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Options.h; sourceTree = "<group>"; };
+		4072B4902C51993F00B68221 /* Path.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Path.h; sourceTree = "<group>"; };
+		4072B4912C51993F00B68221 /* PointerLikeTypeTraits.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PointerLikeTypeTraits.h; sourceTree = "<group>"; };
+		4072B4922C51993F00B68221 /* Process.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Process.h; sourceTree = "<group>"; };
+		4072B4932C51993F00B68221 /* Program.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Program.h; sourceTree = "<group>"; };
+		4072B4942C51993F00B68221 /* raw_ostream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = raw_ostream.h; sourceTree = "<group>"; };
+		4072B4952C51993F00B68221 /* Recycler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Recycler.h; sourceTree = "<group>"; };
+		4072B4962C51993F00B68221 /* ReverseIteration.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ReverseIteration.h; sourceTree = "<group>"; };
+		4072B4972C51993F00B68221 /* Signals.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Signals.h; sourceTree = "<group>"; };
+		4072B4982C51993F00B68221 /* SmallVectorMemoryBuffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SmallVectorMemoryBuffer.h; sourceTree = "<group>"; };
+		4072B4992C51993F00B68221 /* SMLoc.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SMLoc.h; sourceTree = "<group>"; };
+		4072B49A2C51993F00B68221 /* SourceMgr.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SourceMgr.h; sourceTree = "<group>"; };
+		4072B49B2C51993F00B68221 /* StringSaver.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = StringSaver.h; sourceTree = "<group>"; };
+		4072B49C2C51993F00B68221 /* SwapByteOrder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SwapByteOrder.h; sourceTree = "<group>"; };
+		4072B49D2C51993F00B68221 /* TargetParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TargetParser.h; sourceTree = "<group>"; };
+		4072B49E2C51993F00B68221 /* Threading.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Threading.h; sourceTree = "<group>"; };
+		4072B49F2C51993F00B68221 /* type_traits.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = type_traits.h; sourceTree = "<group>"; };
+		4072B4A02C51993F00B68221 /* Unicode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Unicode.h; sourceTree = "<group>"; };
+		4072B4A12C51993F00B68221 /* UnicodeCharRanges.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UnicodeCharRanges.h; sourceTree = "<group>"; };
+		4072B4A22C51993F00B68221 /* UniqueLock.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UniqueLock.h; sourceTree = "<group>"; };
+		4072B4A32C51993F00B68221 /* Valgrind.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Valgrind.h; sourceTree = "<group>"; };
+		4072B4A42C51993F00B68221 /* WindowsError.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WindowsError.h; sourceTree = "<group>"; };
+		4072B4A52C51993F00B68221 /* X86TargetParser.def */ = {isa = PBXFileReference; lastKnownFileType = text; path = X86TargetParser.def; sourceTree = "<group>"; };
+		4072B4A62C51993F00B68221 /* YAMLParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YAMLParser.h; sourceTree = "<group>"; };
+		4072B4A92C51993F00B68221 /* DataTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DataTypes.h; sourceTree = "<group>"; };
+		4072B4AA2C51993F00B68221 /* ErrorHandling.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ErrorHandling.h; sourceTree = "<group>"; };
+		4072B4AB2C51993F00B68221 /* Support.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Support.h; sourceTree = "<group>"; };
+		4072B4AC2C51993F00B68221 /* Types.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Types.h; sourceTree = "<group>"; };
+		4072B4AE2C51993F00B68221 /* Errors.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Errors.hpp; sourceTree = "<group>"; };
+		4072B4AF2C51993F00B68221 /* SwiftAdaptors.hpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.h; path = SwiftAdaptors.hpp; sourceTree = "<group>"; };
+		4072B4B22C51993F00B68221 /* Result.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Result.hpp; sourceTree = "<group>"; };
+		4072B4B42C51993F00B68221 /* libstdc++14-workaround.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "libstdc++14-workaround.h"; sourceTree = "<group>"; };
+		4072B4B62C51995100B68221 /* ActionCache.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ActionCache.h; sourceTree = "<group>"; };
+		4072B4B72C51995100B68221 /* ActionCache.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ActionCache.cpp; sourceTree = "<group>"; };
+		4072B4B82C51995100B68221 /* ActionCache.proto */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.protobuf; path = ActionCache.proto; sourceTree = "<group>"; };
+		4072B4B92C51995100B68221 /* ActionCache.pb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ActionCache.pb.h; sourceTree = "<group>"; };
+		4072B4BA2C51995100B68221 /* ActionCache.pb.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ActionCache.pb.cc; sourceTree = "<group>"; };
+		4072B4BB2C51995100B68221 /* ActionCache.pb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionCache.pb.swift; sourceTree = "<group>"; };
+		4072B4BC2C51995100B68221 /* Artifact.proto */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.protobuf; path = Artifact.proto; sourceTree = "<group>"; };
+		4072B4BD2C51995100B68221 /* Artifact.pb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Artifact.pb.h; sourceTree = "<group>"; };
+		4072B4BE2C51995100B68221 /* Artifact.pb.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Artifact.pb.cc; sourceTree = "<group>"; };
+		4072B4BF2C51995100B68221 /* Artifact.pb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Artifact.pb.swift; sourceTree = "<group>"; };
+		4072B4C02C51995100B68221 /* CASObjectID.proto */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.protobuf; path = CASObjectID.proto; sourceTree = "<group>"; };
+		4072B4C12C51995100B68221 /* CASObjectID.pb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CASObjectID.pb.h; sourceTree = "<group>"; };
+		4072B4C22C51995100B68221 /* CASObjectID.pb.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CASObjectID.pb.cc; sourceTree = "<group>"; };
+		4072B4C32C51995100B68221 /* CASObjectID.pb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CASObjectID.pb.swift; sourceTree = "<group>"; };
+		4072B4C42C51995100B68221 /* Engine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Engine.h; sourceTree = "<group>"; };
+		4072B4C52C51995100B68221 /* Engine.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Engine.cpp; sourceTree = "<group>"; };
+		4072B4C62C51995100B68221 /* Label.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Label.h; sourceTree = "<group>"; };
+		4072B4C72C51995100B68221 /* Label.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Label.cpp; sourceTree = "<group>"; };
+		4072B4C82C51995100B68221 /* Label.proto */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.protobuf; path = Label.proto; sourceTree = "<group>"; };
+		4072B4C92C51995100B68221 /* Label.pb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Label.pb.h; sourceTree = "<group>"; };
+		4072B4CA2C51995100B68221 /* Label.pb.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Label.pb.cc; sourceTree = "<group>"; };
+		4072B4CB2C51995100B68221 /* Label.pb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Label.pb.swift; sourceTree = "<group>"; };
+		4072B4CC2C51995100B68221 /* Rule.proto */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.protobuf; path = Rule.proto; sourceTree = "<group>"; };
+		4072B4CD2C51995100B68221 /* Rule.pb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Rule.pb.h; sourceTree = "<group>"; };
+		4072B4CE2C51995100B68221 /* Rule.pb.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Rule.pb.cc; sourceTree = "<group>"; };
+		4072B4CF2C51995100B68221 /* Rule.pb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Rule.pb.swift; sourceTree = "<group>"; };
+		4072B4D02C51995100B68221 /* SwiftAdaptors.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = SwiftAdaptors.cpp; sourceTree = "<group>"; };
+		4072B4D22C51995100B68221 /* Defer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Defer.h; sourceTree = "<group>"; };
+		4072B4D32C51995100B68221 /* Support.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Support.cpp; sourceTree = "<group>"; };
+		4072B4D52C51995100B68221 /* Error.proto */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.protobuf; path = Error.proto; sourceTree = "<group>"; };
+		4072B4D62C51995100B68221 /* Error.pb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Error.pb.h; sourceTree = "<group>"; };
+		4072B4D72C51995100B68221 /* Error.pb.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Error.pb.cc; sourceTree = "<group>"; };
+		4072B4D82C51995100B68221 /* Error.pb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Error.pb.swift; sourceTree = "<group>"; };
+		4072B4DA2C51995100B68221 /* module_map.asciipb */ = {isa = PBXFileReference; lastKnownFileType = text; path = module_map.asciipb; sourceTree = "<group>"; };
+		4072B4E02C51B3A000B68221 /* libTritiumThirdParty.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libTritiumThirdParty.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		4072B5D72C51BE5100B68221 /* Tritium.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Tritium.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		4072B5D92C51BE5100B68221 /* Tritium.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Tritium.h; sourceTree = "<group>"; };
+		4072B5DE2C51BE5100B68221 /* TritiumTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TritiumTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		407F8E062C51C85A00FED36C /* ProtocolBuffers_iOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_iOS.xcodeproj; sourceTree = "<group>"; };
+		407F8E072C51C85A00FED36C /* ProtocolBuffers_OSX.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_OSX.xcodeproj; sourceTree = "<group>"; };
+		407F8E082C51C85A00FED36C /* ProtocolBuffers_tvOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_tvOS.xcodeproj; sourceTree = "<group>"; };
 		40942C05237F6A8900A9B341 /* KeyID.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = KeyID.h; sourceTree = "<group>"; };
 		40942C06237F6A8900A9B341 /* DependencyKeyIDs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DependencyKeyIDs.h; sourceTree = "<group>"; };
 		40B3C8FF20D3AEBC007C5847 /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
@@ -1079,6 +1709,12 @@
 		40D8672B284FF4CB0043271A /* gmock-all.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "gmock-all.cc"; sourceTree = "<group>"; };
 		40D8672C284FF4CB0043271A /* gmock-spec-builders.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "gmock-spec-builders.cc"; sourceTree = "<group>"; };
 		40D8672D284FF4CB0043271A /* gmock.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = gmock.cc; sourceTree = "<group>"; };
+		40E7B4252C61CA1F00FC0383 /* ProtocolBuffers_iOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_iOS.xcodeproj; sourceTree = "<group>"; };
+		40E7B4262C61CA1F00FC0383 /* ProtocolBuffers_OSX.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_OSX.xcodeproj; sourceTree = "<group>"; };
+		40E7B4272C61CA1F00FC0383 /* ProtocolBuffers_tvOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_tvOS.xcodeproj; sourceTree = "<group>"; };
+		40E7C51B2C61CAEF00FC0383 /* CoreTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreTypes.swift; sourceTree = "<group>"; };
+		40E7C53B2C61CD7D00FC0383 /* Types.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Types.swift; sourceTree = "<group>"; };
+		40E7C53D2C61CF6300FC0383 /* Engine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Engine.swift; sourceTree = "<group>"; };
 		40EA26452164253500068954 /* Subprocess.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Subprocess.h; sourceTree = "<group>"; };
 		40EA26462164289500068954 /* ExecutionQueue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ExecutionQueue.h; sourceTree = "<group>"; };
 		40EA264721651D2C00068954 /* ExecutionQueue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ExecutionQueue.cpp; sourceTree = "<group>"; };
@@ -1496,7 +2132,285 @@
 		E1FE53401AB1343B00041B8E /* Hashing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Hashing.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		4072B4E92C51B45700B68221 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				protobuf/src/google/protobuf/any_lite.cc,
+				protobuf/src/google/protobuf/any.cc,
+				protobuf/src/google/protobuf/any.pb.cc,
+				protobuf/src/google/protobuf/api.pb.cc,
+				protobuf/src/google/protobuf/arena_align.cc,
+				protobuf/src/google/protobuf/arena.cc,
+				protobuf/src/google/protobuf/arenastring.cc,
+				protobuf/src/google/protobuf/arenaz_sampler.cc,
+				protobuf/src/google/protobuf/cpp_features.pb.cc,
+				protobuf/src/google/protobuf/descriptor_database.cc,
+				protobuf/src/google/protobuf/descriptor.cc,
+				protobuf/src/google/protobuf/descriptor.pb.cc,
+				protobuf/src/google/protobuf/dynamic_message.cc,
+				protobuf/src/google/protobuf/empty.pb.cc,
+				protobuf/src/google/protobuf/extension_set_heavy.cc,
+				protobuf/src/google/protobuf/extension_set.cc,
+				protobuf/src/google/protobuf/feature_resolver.cc,
+				protobuf/src/google/protobuf/field_mask.pb.cc,
+				protobuf/src/google/protobuf/generated_enum_util.cc,
+				protobuf/src/google/protobuf/generated_message_bases.cc,
+				protobuf/src/google/protobuf/generated_message_reflection.cc,
+				protobuf/src/google/protobuf/generated_message_tctable_full.cc,
+				protobuf/src/google/protobuf/generated_message_tctable_gen.cc,
+				protobuf/src/google/protobuf/generated_message_tctable_lite.cc,
+				protobuf/src/google/protobuf/generated_message_util.cc,
+				protobuf/src/google/protobuf/implicit_weak_message.cc,
+				protobuf/src/google/protobuf/inlined_string_field.cc,
+				protobuf/src/google/protobuf/io/coded_stream.cc,
+				protobuf/src/google/protobuf/io/gzip_stream.cc,
+				protobuf/src/google/protobuf/io/io_win32.cc,
+				protobuf/src/google/protobuf/io/printer.cc,
+				protobuf/src/google/protobuf/io/strtod.cc,
+				protobuf/src/google/protobuf/io/tokenizer.cc,
+				protobuf/src/google/protobuf/io/zero_copy_sink.cc,
+				protobuf/src/google/protobuf/io/zero_copy_stream_impl_lite.cc,
+				protobuf/src/google/protobuf/io/zero_copy_stream_impl.cc,
+				protobuf/src/google/protobuf/io/zero_copy_stream.cc,
+				protobuf/src/google/protobuf/map_field.cc,
+				protobuf/src/google/protobuf/map.cc,
+				protobuf/src/google/protobuf/message_lite.cc,
+				protobuf/src/google/protobuf/message.cc,
+				protobuf/src/google/protobuf/parse_context.cc,
+				protobuf/src/google/protobuf/port.cc,
+				protobuf/src/google/protobuf/raw_ptr.cc,
+				protobuf/src/google/protobuf/reflection_mode.cc,
+				protobuf/src/google/protobuf/reflection_ops.cc,
+				protobuf/src/google/protobuf/repeated_field.cc,
+				protobuf/src/google/protobuf/repeated_ptr_field.cc,
+				protobuf/src/google/protobuf/service.cc,
+				protobuf/src/google/protobuf/source_context.pb.cc,
+				protobuf/src/google/protobuf/struct.pb.cc,
+				protobuf/src/google/protobuf/stubs/common.cc,
+				protobuf/src/google/protobuf/text_format.cc,
+				protobuf/src/google/protobuf/timestamp.pb.cc,
+				protobuf/src/google/protobuf/type.pb.cc,
+				protobuf/src/google/protobuf/unknown_field_set.cc,
+				protobuf/src/google/protobuf/util/delimited_message_util.cc,
+				protobuf/src/google/protobuf/util/field_comparator.cc,
+				protobuf/src/google/protobuf/util/field_mask_util.cc,
+				protobuf/src/google/protobuf/util/message_differencer.cc,
+				protobuf/src/google/protobuf/util/time_util.cc,
+				protobuf/src/google/protobuf/util/type_resolver_util.cc,
+				protobuf/src/google/protobuf/wire_format_lite.cc,
+				protobuf/src/google/protobuf/wire_format.cc,
+				protobuf/src/google/protobuf/wrappers.pb.cc,
+				"protobuf/third_party/abseil-cpp/absl/base/internal/cycleclock.cc",
+				"protobuf/third_party/abseil-cpp/absl/base/internal/low_level_alloc.cc",
+				"protobuf/third_party/abseil-cpp/absl/base/internal/raw_logging.cc",
+				"protobuf/third_party/abseil-cpp/absl/base/internal/scoped_set_env.cc",
+				"protobuf/third_party/abseil-cpp/absl/base/internal/spinlock_wait.cc",
+				"protobuf/third_party/abseil-cpp/absl/base/internal/spinlock.cc",
+				"protobuf/third_party/abseil-cpp/absl/base/internal/strerror.cc",
+				"protobuf/third_party/abseil-cpp/absl/base/internal/sysinfo.cc",
+				"protobuf/third_party/abseil-cpp/absl/base/internal/thread_identity.cc",
+				"protobuf/third_party/abseil-cpp/absl/base/internal/throw_delegate.cc",
+				"protobuf/third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.cc",
+				"protobuf/third_party/abseil-cpp/absl/base/log_severity.cc",
+				"protobuf/third_party/abseil-cpp/absl/container/internal/hashtablez_sampler_force_weak_definition.cc",
+				"protobuf/third_party/abseil-cpp/absl/container/internal/hashtablez_sampler.cc",
+				"protobuf/third_party/abseil-cpp/absl/container/internal/raw_hash_set.cc",
+				"protobuf/third_party/abseil-cpp/absl/container/internal/test_instance_tracker.cc",
+				"protobuf/third_party/abseil-cpp/absl/crc/crc32c.cc",
+				"protobuf/third_party/abseil-cpp/absl/crc/internal/cpu_detect.cc",
+				"protobuf/third_party/abseil-cpp/absl/crc/internal/crc_cord_state.cc",
+				"protobuf/third_party/abseil-cpp/absl/crc/internal/crc_memcpy_fallback.cc",
+				"protobuf/third_party/abseil-cpp/absl/crc/internal/crc_memcpy_x86_arm_combined.cc",
+				"protobuf/third_party/abseil-cpp/absl/crc/internal/crc_non_temporal_memcpy.cc",
+				"protobuf/third_party/abseil-cpp/absl/crc/internal/crc_x86_arm_combined.cc",
+				"protobuf/third_party/abseil-cpp/absl/crc/internal/crc.cc",
+				"protobuf/third_party/abseil-cpp/absl/debugging/failure_signal_handler.cc",
+				"protobuf/third_party/abseil-cpp/absl/debugging/internal/address_is_readable.cc",
+				"protobuf/third_party/abseil-cpp/absl/debugging/internal/demangle.cc",
+				"protobuf/third_party/abseil-cpp/absl/debugging/internal/elf_mem_image.cc",
+				"protobuf/third_party/abseil-cpp/absl/debugging/internal/examine_stack.cc",
+				"protobuf/third_party/abseil-cpp/absl/debugging/internal/stack_consumption.cc",
+				"protobuf/third_party/abseil-cpp/absl/debugging/internal/vdso_support.cc",
+				"protobuf/third_party/abseil-cpp/absl/debugging/leak_check.cc",
+				"protobuf/third_party/abseil-cpp/absl/debugging/stacktrace.cc",
+				"protobuf/third_party/abseil-cpp/absl/debugging/symbolize.cc",
+				"protobuf/third_party/abseil-cpp/absl/flags/commandlineflag.cc",
+				"protobuf/third_party/abseil-cpp/absl/flags/internal/commandlineflag.cc",
+				"protobuf/third_party/abseil-cpp/absl/flags/internal/flag.cc",
+				"protobuf/third_party/abseil-cpp/absl/flags/internal/private_handle_accessor.cc",
+				"protobuf/third_party/abseil-cpp/absl/flags/internal/program_name.cc",
+				"protobuf/third_party/abseil-cpp/absl/flags/internal/usage.cc",
+				"protobuf/third_party/abseil-cpp/absl/flags/marshalling.cc",
+				"protobuf/third_party/abseil-cpp/absl/flags/parse.cc",
+				"protobuf/third_party/abseil-cpp/absl/flags/reflection.cc",
+				"protobuf/third_party/abseil-cpp/absl/flags/usage_config.cc",
+				"protobuf/third_party/abseil-cpp/absl/flags/usage.cc",
+				"protobuf/third_party/abseil-cpp/absl/hash/internal/city.cc",
+				"protobuf/third_party/abseil-cpp/absl/hash/internal/hash.cc",
+				"protobuf/third_party/abseil-cpp/absl/hash/internal/low_level_hash.cc",
+				"protobuf/third_party/abseil-cpp/absl/hash/internal/print_hash_of.cc",
+				"protobuf/third_party/abseil-cpp/absl/log/die_if_null.cc",
+				"protobuf/third_party/abseil-cpp/absl/log/flags.cc",
+				"protobuf/third_party/abseil-cpp/absl/log/globals.cc",
+				"protobuf/third_party/abseil-cpp/absl/log/initialize.cc",
+				"protobuf/third_party/abseil-cpp/absl/log/internal/check_op.cc",
+				"protobuf/third_party/abseil-cpp/absl/log/internal/conditions.cc",
+				"protobuf/third_party/abseil-cpp/absl/log/internal/fnmatch.cc",
+				"protobuf/third_party/abseil-cpp/absl/log/internal/globals.cc",
+				"protobuf/third_party/abseil-cpp/absl/log/internal/log_format.cc",
+				"protobuf/third_party/abseil-cpp/absl/log/internal/log_message.cc",
+				"protobuf/third_party/abseil-cpp/absl/log/internal/log_sink_set.cc",
+				"protobuf/third_party/abseil-cpp/absl/log/internal/nullguard.cc",
+				"protobuf/third_party/abseil-cpp/absl/log/internal/proto.cc",
+				"protobuf/third_party/abseil-cpp/absl/log/internal/vlog_config.cc",
+				"protobuf/third_party/abseil-cpp/absl/log/log_entry.cc",
+				"protobuf/third_party/abseil-cpp/absl/log/log_sink.cc",
+				"protobuf/third_party/abseil-cpp/absl/numeric/int128.cc",
+				"protobuf/third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc",
+				"protobuf/third_party/abseil-cpp/absl/profiling/internal/periodic_sampler.cc",
+				"protobuf/third_party/abseil-cpp/absl/random/discrete_distribution.cc",
+				"protobuf/third_party/abseil-cpp/absl/random/gaussian_distribution.cc",
+				"protobuf/third_party/abseil-cpp/absl/random/internal/chi_square.cc",
+				"protobuf/third_party/abseil-cpp/absl/random/internal/distribution_test_util.cc",
+				"protobuf/third_party/abseil-cpp/absl/random/internal/nanobenchmark.cc",
+				"protobuf/third_party/abseil-cpp/absl/random/internal/pool_urbg.cc",
+				"protobuf/third_party/abseil-cpp/absl/random/internal/randen_detect.cc",
+				"protobuf/third_party/abseil-cpp/absl/random/internal/randen_hwaes.cc",
+				"protobuf/third_party/abseil-cpp/absl/random/internal/randen_round_keys.cc",
+				"protobuf/third_party/abseil-cpp/absl/random/internal/randen_slow.cc",
+				"protobuf/third_party/abseil-cpp/absl/random/internal/randen.cc",
+				"protobuf/third_party/abseil-cpp/absl/random/internal/seed_material.cc",
+				"protobuf/third_party/abseil-cpp/absl/random/seed_gen_exception.cc",
+				"protobuf/third_party/abseil-cpp/absl/random/seed_sequences.cc",
+				"protobuf/third_party/abseil-cpp/absl/status/internal/status_internal.cc",
+				"protobuf/third_party/abseil-cpp/absl/status/status_payload_printer.cc",
+				"protobuf/third_party/abseil-cpp/absl/status/status.cc",
+				"protobuf/third_party/abseil-cpp/absl/status/statusor.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/ascii.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/charconv.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/cord_analysis.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/cord_buffer.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/cord.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/escaping.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/cord_internal.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/cord_rep_btree_navigator.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/cord_rep_btree_reader.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/cord_rep_btree.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/cord_rep_consume.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/cord_rep_crc.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/cordz_functions.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/cordz_handle.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/cordz_info.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/cordz_sample_token.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/damerau_levenshtein_distance.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/escaping.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/memutil.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/ostringstream.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/pow10_helper.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/str_format/arg.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/str_format/bind.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/str_format/extension.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/str_format/float_conversion.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/str_format/output.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/str_format/parser.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/stringify_sink.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/internal/utf8.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/match.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/numbers.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/str_cat.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/str_replace.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/str_split.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/string_view.cc",
+				"protobuf/third_party/abseil-cpp/absl/strings/substitute.cc",
+				"protobuf/third_party/abseil-cpp/absl/synchronization/barrier.cc",
+				"protobuf/third_party/abseil-cpp/absl/synchronization/blocking_counter.cc",
+				"protobuf/third_party/abseil-cpp/absl/synchronization/internal/create_thread_identity.cc",
+				"protobuf/third_party/abseil-cpp/absl/synchronization/internal/futex_waiter.cc",
+				"protobuf/third_party/abseil-cpp/absl/synchronization/internal/graphcycles.cc",
+				"protobuf/third_party/abseil-cpp/absl/synchronization/internal/kernel_timeout.cc",
+				"protobuf/third_party/abseil-cpp/absl/synchronization/internal/per_thread_sem.cc",
+				"protobuf/third_party/abseil-cpp/absl/synchronization/internal/pthread_waiter.cc",
+				"protobuf/third_party/abseil-cpp/absl/synchronization/internal/sem_waiter.cc",
+				"protobuf/third_party/abseil-cpp/absl/synchronization/internal/stdcpp_waiter.cc",
+				"protobuf/third_party/abseil-cpp/absl/synchronization/internal/waiter_base.cc",
+				"protobuf/third_party/abseil-cpp/absl/synchronization/internal/win32_waiter.cc",
+				"protobuf/third_party/abseil-cpp/absl/synchronization/mutex.cc",
+				"protobuf/third_party/abseil-cpp/absl/synchronization/notification.cc",
+				"protobuf/third_party/abseil-cpp/absl/time/civil_time.cc",
+				"protobuf/third_party/abseil-cpp/absl/time/clock.cc",
+				"protobuf/third_party/abseil-cpp/absl/time/duration.cc",
+				"protobuf/third_party/abseil-cpp/absl/time/format.cc",
+				"protobuf/third_party/abseil-cpp/absl/time/internal/cctz/src/civil_time_detail.cc",
+				"protobuf/third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_fixed.cc",
+				"protobuf/third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_format.cc",
+				"protobuf/third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_if.cc",
+				"protobuf/third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_impl.cc",
+				"protobuf/third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_info.cc",
+				"protobuf/third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_libc.cc",
+				"protobuf/third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_lookup.cc",
+				"protobuf/third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc",
+				"protobuf/third_party/abseil-cpp/absl/time/internal/cctz/src/zone_info_source.cc",
+				"protobuf/third_party/abseil-cpp/absl/time/time.cc",
+				"protobuf/third_party/abseil-cpp/absl/types/bad_any_cast.cc",
+				"protobuf/third_party/abseil-cpp/absl/types/bad_optional_access.cc",
+				"protobuf/third_party/abseil-cpp/absl/types/bad_variant_access.cc",
+				"protobuf/third_party/googletest/googlemock/src/gmock-cardinalities.cc",
+				"protobuf/third_party/googletest/googlemock/src/gmock-internal-utils.cc",
+				"protobuf/third_party/googletest/googlemock/src/gmock-matchers.cc",
+				"protobuf/third_party/googletest/googlemock/src/gmock-spec-builders.cc",
+				protobuf/third_party/googletest/googlemock/src/gmock.cc,
+				"protobuf/third_party/googletest/googletest/src/gtest-assertion-result.cc",
+				"protobuf/third_party/googletest/googletest/src/gtest-filepath.cc",
+				"protobuf/third_party/googletest/googletest/src/gtest-matchers.cc",
+				"protobuf/third_party/googletest/googletest/src/gtest-port.cc",
+				"protobuf/third_party/googletest/googletest/src/gtest-printers.cc",
+				"protobuf/third_party/googletest/googletest/src/gtest-test-part.cc",
+				"protobuf/third_party/googletest/googletest/src/gtest-typed-test.cc",
+				protobuf/third_party/googletest/googletest/src/gtest.cc,
+				protobuf/third_party/utf8_range/naive.c,
+				"protobuf/third_party/utf8_range/range-neon.c",
+				"protobuf/third_party/utf8_range/range-sse.c",
+				protobuf/third_party/utf8_range/utf8_range.c,
+				protobuf/third_party/utf8_range/utf8_validity.cc,
+			);
+			target = 4072B4DF2C51B3A000B68221 /* TritiumThirdParty */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		403552E82C5209AC00D415BA /* TritiumCoreTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = TritiumCoreTests; sourceTree = "<group>"; };
+		4072AAC32C51977000B68221 /* thirdparty */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (4072B4E92C51B45700B68221 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = thirdparty; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
+		4072B4DE2C51B3A000B68221 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4072B5D42C51BE5100B68221 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				403DC5882C52031D00A9AE24 /* libTritiumThirdParty.a in Frameworks */,
+				403552C62C52062C00D415BA /* SwiftProtobuf in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4072B5DB2C51BE5100B68221 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4072B5DF2C51BE5100B68221 /* Tritium.framework in Frameworks */,
+				403552F12C522F9E00D415BA /* SwiftProtobuf in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		40B3C90F20D3AEC9007C5847 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -1863,6 +2777,96 @@
 			path = Windows;
 			sourceTree = "<group>";
 		};
+		403551D42C5205EF00D415BA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				403552D62C52062C00D415BA /* libProtocolBuffers.a */,
+				403552D82C52062C00D415BA /* UnitTests.xctest */,
+				403552DA2C52062C00D415BA /* libTestSingleSourceBuild.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		403551D62C5205EF00D415BA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				403552CC2C52062C00D415BA /* libProtocolBuffers.a */,
+				403552CE2C52062C00D415BA /* UnitTests.xctest */,
+				403552D02C52062C00D415BA /* libTestSingleSourceBuild.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		403551D82C5205EF00D415BA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				403552E02C52062C00D415BA /* libProtocolBuffers.a */,
+				403552E22C52062C00D415BA /* UnitTests.xctest */,
+				403552E42C52062C00D415BA /* libTestSingleSourceBuild.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		403DC43A2C51D07C00A9AE24 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				403DC5302C51D08600A9AE24 /* libProtocolBuffers.a */,
+				403DC5322C51D08600A9AE24 /* UnitTests.xctest */,
+				403DC5342C51D08600A9AE24 /* libTestSingleSourceBuild.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		403DC43C2C51D07C00A9AE24 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				403DC53A2C51D08600A9AE24 /* libProtocolBuffers.a */,
+				403DC53C2C51D08600A9AE24 /* UnitTests.xctest */,
+				403DC53E2C51D08600A9AE24 /* libTestSingleSourceBuild.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		403DC43E2C51D07C00A9AE24 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				403DC5442C51D08600A9AE24 /* libProtocolBuffers.a */,
+				403DC5462C51D08600A9AE24 /* UnitTests.xctest */,
+				403DC5482C51D08600A9AE24 /* libTestSingleSourceBuild.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		406382CF2C6D0BD400017979 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				406383E42C76FB5100017979 /* libProtocolBuffers.a */,
+				406383E62C76FB5100017979 /* UnitTests.xctest */,
+				406383E82C76FB5100017979 /* libTestSingleSourceBuild.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		406382D12C6D0BD400017979 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				406383DA2C76FB5100017979 /* libProtocolBuffers.a */,
+				406383DC2C76FB5100017979 /* UnitTests.xctest */,
+				406383DE2C76FB5100017979 /* libTestSingleSourceBuild.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		406382D32C6D0BD400017979 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				406383EE2C76FB5100017979 /* libProtocolBuffers.a */,
+				406383F02C76FB5100017979 /* UnitTests.xctest */,
+				406383F22C76FB5100017979 /* libTestSingleSourceBuild.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		406A04FC21627FD900EBA895 /* docker */ = {
 			isa = PBXGroup;
 			children = (
@@ -1873,6 +2877,423 @@
 				406A04FF21627FD900EBA895 /* docker-utils */,
 			);
 			path = docker;
+			sourceTree = "<group>";
+		};
+		4072AAC42C51977000B68221 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				4072AAD92C51977000B68221 /* libProtocolBuffers.a */,
+				4072AADB2C51977000B68221 /* UnitTests.xctest */,
+				4072AADD2C51977000B68221 /* libTestSingleSourceBuild.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4072AAC62C51977000B68221 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				4072AAE32C51977000B68221 /* libProtocolBuffers.a */,
+				4072AAE52C51977000B68221 /* UnitTests.xctest */,
+				4072AAE72C51977000B68221 /* libTestSingleSourceBuild.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4072AAC82C51977000B68221 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				4072AACF2C51977000B68221 /* libProtocolBuffers.a */,
+				4072AAD12C51977000B68221 /* UnitTests.xctest */,
+				4072AAD32C51977000B68221 /* libTestSingleSourceBuild.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4072B4182C51993F00B68221 /* Basic */ = {
+			isa = PBXGroup;
+			children = (
+				4072B4042C51993F00B68221 /* BinaryCoding.h */,
+				4072B4052C51993F00B68221 /* Clock.h */,
+				4072B4062C51993F00B68221 /* Compiler.h */,
+				4072B4072C51993F00B68221 /* CrossPlatformCompatibility.h */,
+				4072B4082C51993F00B68221 /* Defer.h */,
+				4072B4092C51993F00B68221 /* ExecutionQueue.h */,
+				4072B40A2C51993F00B68221 /* FileInfo.h */,
+				4072B40B2C51993F00B68221 /* FileSystem.h */,
+				4072B40C2C51993F00B68221 /* Hashing.h */,
+				4072B40D2C51993F00B68221 /* JSON.h */,
+				4072B40E2C51993F00B68221 /* LLVM.h */,
+				4072B40F2C51993F00B68221 /* PlatformUtility.h */,
+				4072B4102C51993F00B68221 /* POSIXEnvironment.h */,
+				4072B4112C51993F00B68221 /* SerialQueue.h */,
+				4072B4122C51993F00B68221 /* ShellUtility.h */,
+				4072B4132C51993F00B68221 /* Stat.h */,
+				4072B4142C51993F00B68221 /* StringList.h */,
+				4072B4152C51993F00B68221 /* Subprocess.h */,
+				4072B4162C51993F00B68221 /* Tracing.h */,
+				4072B4172C51993F00B68221 /* Version.h */,
+			);
+			path = Basic;
+			sourceTree = "<group>";
+		};
+		4072B4262C51993F00B68221 /* BuildSystem */ = {
+			isa = PBXGroup;
+			children = (
+				4072B4192C51993F00B68221 /* BuildDescription.h */,
+				4072B41A2C51993F00B68221 /* BuildFile.h */,
+				4072B41B2C51993F00B68221 /* BuildKey.h */,
+				4072B41C2C51993F00B68221 /* BuildNode.h */,
+				4072B41D2C51993F00B68221 /* BuildSystem.h */,
+				4072B41E2C51993F00B68221 /* BuildSystemExtensions.h */,
+				4072B41F2C51993F00B68221 /* BuildSystemFrontend.h */,
+				4072B4202C51993F00B68221 /* BuildSystemHandlers.h */,
+				4072B4212C51993F00B68221 /* BuildValue.h */,
+				4072B4222C51993F00B68221 /* Command.h */,
+				4072B4232C51993F00B68221 /* ExternalCommand.h */,
+				4072B4242C51993F00B68221 /* ShellCommand.h */,
+				4072B4252C51993F00B68221 /* Tool.h */,
+			);
+			path = BuildSystem;
+			sourceTree = "<group>";
+		};
+		4072B4292C51993F00B68221 /* CAS */ = {
+			isa = PBXGroup;
+			children = (
+				4072B4272C51993F00B68221 /* CASDatabase.h */,
+				4072B4282C51993F00B68221 /* DataID.h */,
+			);
+			path = CAS;
+			sourceTree = "<group>";
+		};
+		4072B42B2C51993F00B68221 /* Commands */ = {
+			isa = PBXGroup;
+			children = (
+				4072B42A2C51993F00B68221 /* Commands.h */,
+			);
+			path = Commands;
+			sourceTree = "<group>";
+		};
+		4072B4322C51993F00B68221 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				4072B42C2C51993F00B68221 /* BuildDB.h */,
+				4072B42D2C51993F00B68221 /* BuildEngine.h */,
+				4072B42E2C51993F00B68221 /* DependencyInfoParser.h */,
+				4072B42F2C51993F00B68221 /* DependencyKeyIDs.h */,
+				4072B4302C51993F00B68221 /* KeyID.h */,
+				4072B4312C51993F00B68221 /* MakefileDepsParser.h */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		4072B4342C51993F00B68221 /* Evo */ = {
+			isa = PBXGroup;
+			children = (
+				4072B4332C51993F00B68221 /* EvoEngine.h */,
+			);
+			path = Evo;
+			sourceTree = "<group>";
+		};
+		4072B4392C51993F00B68221 /* Ninja */ = {
+			isa = PBXGroup;
+			children = (
+				4072B4352C51993F00B68221 /* Lexer.h */,
+				4072B4362C51993F00B68221 /* Manifest.h */,
+				4072B4372C51993F00B68221 /* ManifestLoader.h */,
+				4072B4382C51993F00B68221 /* Parser.h */,
+			);
+			path = Ninja;
+			sourceTree = "<group>";
+		};
+		4072B43A2C51993F00B68221 /* llbuild */ = {
+			isa = PBXGroup;
+			children = (
+				4072B4182C51993F00B68221 /* Basic */,
+				4072B4262C51993F00B68221 /* BuildSystem */,
+				4072B4292C51993F00B68221 /* CAS */,
+				4072B42B2C51993F00B68221 /* Commands */,
+				4072B4322C51993F00B68221 /* Core */,
+				4072B4342C51993F00B68221 /* Evo */,
+				4072B4392C51993F00B68221 /* Ninja */,
+			);
+			path = llbuild;
+			sourceTree = "<group>";
+		};
+		4072B4602C51993F00B68221 /* ADT */ = {
+			isa = PBXGroup;
+			children = (
+				4072B43B2C51993F00B68221 /* AllocatorList.h */,
+				4072B43C2C51993F00B68221 /* APFloat.h */,
+				4072B43D2C51993F00B68221 /* APInt.h */,
+				4072B43E2C51993F00B68221 /* APSInt.h */,
+				4072B43F2C51993F00B68221 /* ArrayRef.h */,
+				4072B4402C51993F00B68221 /* DenseMap.h */,
+				4072B4412C51993F00B68221 /* DenseMapInfo.h */,
+				4072B4422C51993F00B68221 /* DenseSet.h */,
+				4072B4432C51993F00B68221 /* edit_distance.h */,
+				4072B4442C51993F00B68221 /* EpochTracker.h */,
+				4072B4452C51993F00B68221 /* FoldingSet.h */,
+				4072B4462C51993F00B68221 /* Hashing.h */,
+				4072B4472C51993F00B68221 /* ilist.h */,
+				4072B4482C51993F00B68221 /* ilist_base.h */,
+				4072B4492C51993F00B68221 /* ilist_iterator.h */,
+				4072B44A2C51993F00B68221 /* ilist_node.h */,
+				4072B44B2C51993F00B68221 /* ilist_node_base.h */,
+				4072B44C2C51993F00B68221 /* ilist_node_options.h */,
+				4072B44D2C51993F00B68221 /* IntrusiveRefCntPtr.h */,
+				4072B44E2C51993F00B68221 /* iterator.h */,
+				4072B44F2C51993F00B68221 /* iterator_range.h */,
+				4072B4502C51993F00B68221 /* None.h */,
+				4072B4512C51993F00B68221 /* Optional.h */,
+				4072B4522C51993F00B68221 /* PointerIntPair.h */,
+				4072B4532C51993F00B68221 /* PointerUnion.h */,
+				4072B4542C51993F00B68221 /* simple_ilist.h */,
+				4072B4552C51993F00B68221 /* SmallPtrSet.h */,
+				4072B4562C51993F00B68221 /* SmallSet.h */,
+				4072B4572C51993F00B68221 /* SmallString.h */,
+				4072B4582C51993F00B68221 /* SmallVector.h */,
+				4072B4592C51993F00B68221 /* STLExtras.h */,
+				4072B45A2C51993F00B68221 /* StringExtras.h */,
+				4072B45B2C51993F00B68221 /* StringMap.h */,
+				4072B45C2C51993F00B68221 /* StringRef.h */,
+				4072B45D2C51993F00B68221 /* StringSwitch.h */,
+				4072B45E2C51993F00B68221 /* Triple.h */,
+				4072B45F2C51993F00B68221 /* Twine.h */,
+			);
+			path = ADT;
+			sourceTree = "<group>";
+		};
+		4072B4642C51993F00B68221 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				4072B4612C51993F00B68221 /* abi-breaking.h */,
+				4072B4622C51993F00B68221 /* config.h */,
+				4072B4632C51993F00B68221 /* llvm-config.h */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		4072B4662C51993F00B68221 /* Demangle */ = {
+			isa = PBXGroup;
+			children = (
+				4072B4652C51993F00B68221 /* Demangle.h */,
+			);
+			path = Demangle;
+			sourceTree = "<group>";
+		};
+		4072B4A72C51993F00B68221 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				4072B4672C51993F00B68221 /* AArch64TargetParser.def */,
+				4072B4682C51993F00B68221 /* AlignOf.h */,
+				4072B4692C51993F00B68221 /* Allocator.h */,
+				4072B46A2C51993F00B68221 /* ARMBuildAttributes.h */,
+				4072B46B2C51993F00B68221 /* ARMTargetParser.def */,
+				4072B46C2C51993F00B68221 /* Atomic.h */,
+				4072B46D2C51993F00B68221 /* Casting.h */,
+				4072B46E2C51993F00B68221 /* CBindingWrapping.h */,
+				4072B46F2C51993F00B68221 /* Chrono.h */,
+				4072B4702C51993F00B68221 /* circular_raw_ostream.h */,
+				4072B4712C51993F00B68221 /* CommandLine.h */,
+				4072B4722C51993F00B68221 /* Compiler.h */,
+				4072B4732C51993F00B68221 /* ConvertUTF.h */,
+				4072B4742C51993F00B68221 /* DataTypes.h */,
+				4072B4752C51993F00B68221 /* Debug.h */,
+				4072B4762C51993F00B68221 /* DJB.h */,
+				4072B4772C51993F00B68221 /* Endian.h */,
+				4072B4782C51993F00B68221 /* Errc.h */,
+				4072B4792C51993F00B68221 /* Errno.h */,
+				4072B47A2C51993F00B68221 /* Error.h */,
+				4072B47B2C51993F00B68221 /* ErrorHandling.h */,
+				4072B47C2C51993F00B68221 /* ErrorOr.h */,
+				4072B47D2C51993F00B68221 /* FileSystem.h */,
+				4072B47E2C51993F00B68221 /* FileUtilities.h */,
+				4072B47F2C51993F00B68221 /* Format.h */,
+				4072B4802C51993F00B68221 /* FormatCommon.h */,
+				4072B4812C51993F00B68221 /* FormatProviders.h */,
+				4072B4822C51993F00B68221 /* FormatVariadic.h */,
+				4072B4832C51993F00B68221 /* FormatVariadicDetails.h */,
+				4072B4842C51993F00B68221 /* Host.h */,
+				4072B4852C51993F00B68221 /* Locale.h */,
+				4072B4862C51993F00B68221 /* ManagedStatic.h */,
+				4072B4872C51993F00B68221 /* MathExtras.h */,
+				4072B4882C51993F00B68221 /* MD5.h */,
+				4072B4892C51993F00B68221 /* MemAlloc.h */,
+				4072B48A2C51993F00B68221 /* Memory.h */,
+				4072B48B2C51993F00B68221 /* MemoryBuffer.h */,
+				4072B48C2C51993F00B68221 /* Mutex.h */,
+				4072B48D2C51993F00B68221 /* MutexGuard.h */,
+				4072B48E2C51993F00B68221 /* NativeFormatting.h */,
+				4072B48F2C51993F00B68221 /* Options.h */,
+				4072B4902C51993F00B68221 /* Path.h */,
+				4072B4912C51993F00B68221 /* PointerLikeTypeTraits.h */,
+				4072B4922C51993F00B68221 /* Process.h */,
+				4072B4932C51993F00B68221 /* Program.h */,
+				4072B4942C51993F00B68221 /* raw_ostream.h */,
+				4072B4952C51993F00B68221 /* Recycler.h */,
+				4072B4962C51993F00B68221 /* ReverseIteration.h */,
+				4072B4972C51993F00B68221 /* Signals.h */,
+				4072B4982C51993F00B68221 /* SmallVectorMemoryBuffer.h */,
+				4072B4992C51993F00B68221 /* SMLoc.h */,
+				4072B49A2C51993F00B68221 /* SourceMgr.h */,
+				4072B49B2C51993F00B68221 /* StringSaver.h */,
+				4072B49C2C51993F00B68221 /* SwapByteOrder.h */,
+				4072B49D2C51993F00B68221 /* TargetParser.h */,
+				4072B49E2C51993F00B68221 /* Threading.h */,
+				4072B49F2C51993F00B68221 /* type_traits.h */,
+				4072B4A02C51993F00B68221 /* Unicode.h */,
+				4072B4A12C51993F00B68221 /* UnicodeCharRanges.h */,
+				4072B4A22C51993F00B68221 /* UniqueLock.h */,
+				4072B4A32C51993F00B68221 /* Valgrind.h */,
+				4072B4A42C51993F00B68221 /* WindowsError.h */,
+				4072B4A52C51993F00B68221 /* X86TargetParser.def */,
+				4072B4A62C51993F00B68221 /* YAMLParser.h */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
+		4072B4A82C51993F00B68221 /* llvm */ = {
+			isa = PBXGroup;
+			children = (
+				4072B4602C51993F00B68221 /* ADT */,
+				4072B4642C51993F00B68221 /* Config */,
+				4072B4662C51993F00B68221 /* Demangle */,
+				4072B4A72C51993F00B68221 /* Support */,
+			);
+			path = llvm;
+			sourceTree = "<group>";
+		};
+		4072B4AD2C51993F00B68221 /* llvm-c */ = {
+			isa = PBXGroup;
+			children = (
+				4072B4A92C51993F00B68221 /* DataTypes.h */,
+				4072B4AA2C51993F00B68221 /* ErrorHandling.h */,
+				4072B4AB2C51993F00B68221 /* Support.h */,
+				4072B4AC2C51993F00B68221 /* Types.h */,
+			);
+			path = "llvm-c";
+			sourceTree = "<group>";
+		};
+		4072B4B32C51993F00B68221 /* Tritium */ = {
+			isa = PBXGroup;
+			children = (
+				403552EE2C522BA700D415BA /* Visibility.hpp */,
+				4072B4AE2C51993F00B68221 /* Errors.hpp */,
+				4072B4B22C51993F00B68221 /* Result.hpp */,
+				4072B4AF2C51993F00B68221 /* SwiftAdaptors.hpp */,
+				4072B5D92C51BE5100B68221 /* Tritium.h */,
+			);
+			path = Tritium;
+			sourceTree = "<group>";
+		};
+		4072B4B52C51993F00B68221 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				4072B43A2C51993F00B68221 /* llbuild */,
+				4072B4A82C51993F00B68221 /* llvm */,
+				4072B4AD2C51993F00B68221 /* llvm-c */,
+				4072B4B32C51993F00B68221 /* Tritium */,
+				4072B4B42C51993F00B68221 /* libstdc++14-workaround.h */,
+			);
+			path = include;
+			sourceTree = "<group>";
+		};
+		4072B4D12C51995100B68221 /* core */ = {
+			isa = PBXGroup;
+			children = (
+				4072B4B62C51995100B68221 /* ActionCache.h */,
+				4072B4B72C51995100B68221 /* ActionCache.cpp */,
+				4072B4B82C51995100B68221 /* ActionCache.proto */,
+				4072B4B92C51995100B68221 /* ActionCache.pb.h */,
+				4072B4BA2C51995100B68221 /* ActionCache.pb.cc */,
+				4072B4BB2C51995100B68221 /* ActionCache.pb.swift */,
+				4072B4BC2C51995100B68221 /* Artifact.proto */,
+				4072B4BD2C51995100B68221 /* Artifact.pb.h */,
+				4072B4BE2C51995100B68221 /* Artifact.pb.cc */,
+				4072B4BF2C51995100B68221 /* Artifact.pb.swift */,
+				4072B4C02C51995100B68221 /* CASObjectID.proto */,
+				4072B4C12C51995100B68221 /* CASObjectID.pb.h */,
+				4072B4C22C51995100B68221 /* CASObjectID.pb.cc */,
+				4072B4C32C51995100B68221 /* CASObjectID.pb.swift */,
+				40E7C51B2C61CAEF00FC0383 /* CoreTypes.swift */,
+				4072B4C42C51995100B68221 /* Engine.h */,
+				4072B4C52C51995100B68221 /* Engine.cpp */,
+				40E7C53D2C61CF6300FC0383 /* Engine.swift */,
+				4072B4C62C51995100B68221 /* Label.h */,
+				4072B4C72C51995100B68221 /* Label.cpp */,
+				4072B4C82C51995100B68221 /* Label.proto */,
+				4072B4C92C51995100B68221 /* Label.pb.h */,
+				4072B4CA2C51995100B68221 /* Label.pb.cc */,
+				4072B4CB2C51995100B68221 /* Label.pb.swift */,
+				4072B4CC2C51995100B68221 /* Rule.proto */,
+				4072B4CD2C51995100B68221 /* Rule.pb.h */,
+				4072B4CE2C51995100B68221 /* Rule.pb.cc */,
+				4072B4CF2C51995100B68221 /* Rule.pb.swift */,
+				4072B4D02C51995100B68221 /* SwiftAdaptors.cpp */,
+			);
+			path = core;
+			sourceTree = "<group>";
+		};
+		4072B4D42C51995100B68221 /* support */ = {
+			isa = PBXGroup;
+			children = (
+				4072B4D22C51995100B68221 /* Defer.h */,
+				4072B4D32C51995100B68221 /* Support.cpp */,
+			);
+			path = support;
+			sourceTree = "<group>";
+		};
+		4072B4D92C51995100B68221 /* tritium */ = {
+			isa = PBXGroup;
+			children = (
+				4072B4D12C51995100B68221 /* core */,
+				4072B4D42C51995100B68221 /* support */,
+				4072B4D52C51995100B68221 /* Error.proto */,
+				4072B4D62C51995100B68221 /* Error.pb.h */,
+				4072B4D72C51995100B68221 /* Error.pb.cc */,
+				4072B4D82C51995100B68221 /* Error.pb.swift */,
+				40E7C53B2C61CD7D00FC0383 /* Types.swift */,
+			);
+			path = tritium;
+			sourceTree = "<group>";
+		};
+		4072B4DB2C51995100B68221 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				4072B4D92C51995100B68221 /* tritium */,
+				4072B4DA2C51995100B68221 /* module_map.asciipb */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		407F9E002C51C85A00FED36C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				407F9F002C51C86A00FED36C /* libProtocolBuffers.a */,
+				407F9F022C51C86A00FED36C /* UnitTests.xctest */,
+				407F9F042C51C86A00FED36C /* libTestSingleSourceBuild.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		407F9E022C51C85A00FED36C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				407F9EF62C51C86A00FED36C /* libProtocolBuffers.a */,
+				407F9EF82C51C86A00FED36C /* UnitTests.xctest */,
+				407F9EFA2C51C86A00FED36C /* libTestSingleSourceBuild.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		407F9E042C51C85A00FED36C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				407F9F0A2C51C86A00FED36C /* libProtocolBuffers.a */,
+				407F9F0C2C51C86A00FED36C /* UnitTests.xctest */,
+				407F9F0E2C51C86A00FED36C /* libTestSingleSourceBuild.a */,
+			);
+			name = Products;
 			sourceTree = "<group>";
 		};
 		40B3C8FE20D3AE80007C5847 /* CAPI */ = {
@@ -1984,6 +3405,36 @@
 				40D8672D284FF4CB0043271A /* gmock.cc */,
 			);
 			path = src;
+			sourceTree = "<group>";
+		};
+		40E7C4242C61CA1F00FC0383 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				40E7C52B2C61CAEF00FC0383 /* libProtocolBuffers.a */,
+				40E7C52D2C61CAEF00FC0383 /* UnitTests.xctest */,
+				40E7C52F2C61CAEF00FC0383 /* libTestSingleSourceBuild.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		40E7C4262C61CA2000FC0383 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				40E7C5352C61CAEF00FC0383 /* libProtocolBuffers.a */,
+				40E7C5372C61CAEF00FC0383 /* UnitTests.xctest */,
+				40E7C5392C61CAEF00FC0383 /* libTestSingleSourceBuild.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		40E7C4282C61CA2000FC0383 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				40E7C5212C61CAEF00FC0383 /* libProtocolBuffers.a */,
+				40E7C5232C61CAEF00FC0383 /* UnitTests.xctest */,
+				40E7C5252C61CAEF00FC0383 /* libTestSingleSourceBuild.a */,
+			);
+			name = Products;
 			sourceTree = "<group>";
 		};
 		40F638CC2051EDC800A1CFBE /* examples */ = {
@@ -2224,6 +3675,7 @@
 		E14144901EBDA4A10046F282 /* Xcode */ = {
 			isa = PBXGroup;
 			children = (
+				406383F32C76FD5300017979 /* Tritium.xctestplan */,
 				144AE2D727B9C5CE003BA576 /* llbuild.xctestplan */,
 				E14144911EBDA4A10046F282 /* Configs */,
 			);
@@ -2271,26 +3723,28 @@
 			isa = PBXGroup;
 			children = (
 				40377C7C2061D24200C0FD4D /* Package.swift */,
-				1484D1FD2094589700D3830F /* CMakeLists.txt */,
-				E14144901EBDA4A10046F282 /* Xcode */,
-				E1A223FD19F990F10059043E /* products */,
-				E1A2240419F991530059043E /* lib */,
 				1484D1F82094566F00D3830F /* bindings */,
+				1484D1D720943E6800D3830F /* cmake */,
 				1484D1D620943D2100D3830F /* docs */,
 				40F638CC2051EDC800A1CFBE /* examples */,
-				E19C3FD51B98C1A70035E1AA /* tests */,
+				E13B5E411A00395300EA0405 /* Frameworks */,
+				4072B4B52C51993F00B68221 /* include */,
+				E1A2240419F991530059043E /* lib */,
 				E1C404B51A03090D003392BA /* perftests */,
+				E1A223FD19F990F10059043E /* products */,
+				E1A223F219F98F1C0059043E /* Products */,
+				4072B4DB2C51995100B68221 /* src */,
+				E19C3FD51B98C1A70035E1AA /* tests */,
+				4072AAC32C51977000B68221 /* thirdparty */,
 				E1A224B219F998D40059043E /* unittests */,
 				E1A2246A19F998C30059043E /* utils */,
-				1484D1D720943E6800D3830F /* cmake */,
+				E14144901EBDA4A10046F282 /* Xcode */,
 				E1A223FB19F990E60059043E /* CMakeLists.txt */,
 				1484D1D82094508A00D3830F /* CODEOWNERS */,
-				1484D1D92094509400D3830F /* CONTRIBUTING.md */,
 				1484D1DA2094509E00D3830F /* LICENSE.txt */,
+				406383D42C76FB5100017979 /* Makefile */,
 				E1A223FC19F990E60059043E /* README.md */,
 				1484D1DB209450A600D3830F /* Vagrantfile */,
-				E13B5E411A00395300EA0405 /* Frameworks */,
-				E1A223F219F98F1C0059043E /* Products */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -2326,6 +3780,9 @@
 				40C9B47023CFD6690098712F /* libllbuildEvo.a */,
 				40C9B49123CFD69E0098712F /* EvoTests */,
 				40D86702284FF2C30043271A /* libgmock.a */,
+				4072B4E02C51B3A000B68221 /* libTritiumThirdParty.a */,
+				4072B5D72C51BE5100B68221 /* Tritium.framework */,
+				4072B5DE2C51BE5100B68221 /* TritiumTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -2505,17 +3962,18 @@
 			isa = PBXGroup;
 			children = (
 				8C561C0023551C4A000D242D /* adjust-times */,
+				403DC5492C51D40600A9AE24 /* build_proto_toolchain.sh */,
+				406A05032162A5A200EBA895 /* build-and-test */,
+				406A05022162A20800EBA895 /* check-all */,
+				1484D2042094E8B100D3830F /* check-coverage */,
+				1484D2052094E8C300D3830F /* create-dummy-ninja-from-DB.py */,
 				406A04FC21627FD900EBA895 /* docker */,
 				1484D2112094E90600D3830F /* emacs */,
+				1484D2062094E8CE00D3830F /* install-sources */,
 				1484D2072094E8DE00D3830F /* manifest-generator */,
 				1484D2092094E8E700D3830F /* ptreetime */,
-				E1A2254E19F9A74B0059043E /* Xcode */,
 				E1A2246B19F998C30059043E /* unittest */,
-				1484D2042094E8B100D3830F /* check-coverage */,
-				406A05022162A20800EBA895 /* check-all */,
-				406A05032162A5A200EBA895 /* build-and-test */,
-				1484D2052094E8C300D3830F /* create-dummy-ninja-from-DB.py */,
-				1484D2062094E8CE00D3830F /* install-sources */,
+				E1A2254E19F9A74B0059043E /* Xcode */,
 			);
 			path = utils;
 			sourceTree = "<group>";
@@ -2616,6 +4074,7 @@
 		E1A224B219F998D40059043E /* unittests */ = {
 			isa = PBXGroup;
 			children = (
+				403552E82C5209AC00D415BA /* TritiumCoreTests */,
 				E111C15A241B26D30086A92D /* TestSupport */,
 				E147DF171BA81D4E0032D08E /* Basic */,
 				40B3C8FE20D3AE80007C5847 /* CAPI */,
@@ -2993,6 +4452,7 @@
 		E1C404B51A03090D003392BA /* perftests */ = {
 			isa = PBXGroup;
 			children = (
+				1484D1FD2094589700D3830F /* CMakeLists.txt */,
 				E1C404B61A03090D003392BA /* Inputs */,
 				E1C404B81A03090D003392BA /* Xcode */,
 			);
@@ -3028,6 +4488,25 @@
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
+		4072B4DC2C51B3A000B68221 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4072B5D22C51BE5100B68221 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4072B5E52C51BE5100B68221 /* Tritium.h in Headers */,
+				407F9F0F2C51D06800FED36C /* Errors.hpp in Headers */,
+				403552EF2C522BAF00D415BA /* Visibility.hpp in Headers */,
+				407F9F102C51D06800FED36C /* Result.hpp in Headers */,
+				407F9F112C51D06800FED36C /* SwiftAdaptors.hpp in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		40C9B46C23CFD6690098712F /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -3150,6 +4629,70 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
+		4072B4DF2C51B3A000B68221 /* TritiumThirdParty */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4072B4E12C51B3A100B68221 /* Build configuration list for PBXNativeTarget "TritiumThirdParty" */;
+			buildPhases = (
+				4072B4DC2C51B3A000B68221 /* Headers */,
+				4072B4DD2C51B3A000B68221 /* Sources */,
+				4072B4DE2C51B3A000B68221 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TritiumThirdParty;
+			packageProductDependencies = (
+			);
+			productName = TritiumThirdParty;
+			productReference = 4072B4E02C51B3A000B68221 /* libTritiumThirdParty.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		4072B5D62C51BE5100B68221 /* Tritium */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4072B5E72C51BE5100B68221 /* Build configuration list for PBXNativeTarget "Tritium" */;
+			buildPhases = (
+				4072B5D22C51BE5100B68221 /* Headers */,
+				4072B5D32C51BE5100B68221 /* Sources */,
+				4072B5D42C51BE5100B68221 /* Frameworks */,
+				4072B5D52C51BE5100B68221 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Tritium;
+			packageProductDependencies = (
+				403552C52C52062C00D415BA /* SwiftProtobuf */,
+			);
+			productName = Tritium;
+			productReference = 4072B5D72C51BE5100B68221 /* Tritium.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		4072B5DD2C51BE5100B68221 /* TritiumTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4072B5EA2C51BE5100B68221 /* Build configuration list for PBXNativeTarget "TritiumTests" */;
+			buildPhases = (
+				4072B5DA2C51BE5100B68221 /* Sources */,
+				4072B5DB2C51BE5100B68221 /* Frameworks */,
+				4072B5DC2C51BE5100B68221 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4072B5E12C51BE5100B68221 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				403552E82C5209AC00D415BA /* TritiumCoreTests */,
+			);
+			name = TritiumTests;
+			packageProductDependencies = (
+				403552F02C522F9E00D415BA /* SwiftProtobuf */,
+			);
+			productName = TritiumTests;
+			productReference = 4072B5DE2C51BE5100B68221 /* TritiumTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		40B3C90020D3AEC9007C5847 /* CAPITests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 40B3C91720D3AEC9007C5847 /* Build configuration list for PBXNativeTarget "CAPITests" */;
@@ -3695,10 +5238,19 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				DefaultBuildSystemTypeForWorkspace = Latest;
-				LastSwiftUpdateCheck = 1120;
-				LastUpgradeCheck = 1400;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
 				ORGANIZATIONNAME = "Apple Inc.";
 				TargetAttributes = {
+					4072B4DF2C51B3A000B68221 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					4072B5D62C51BE5100B68221 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					4072B5DD2C51BE5100B68221 = {
+						CreatedOnToolsVersion = 16.0;
+					};
 					8C561BFE23551C4A000D242D = {
 						CreatedOnToolsVersion = 11.0;
 						ProvisioningStyle = Automatic;
@@ -3806,6 +5358,80 @@
 			mainGroup = E1A223E819F98F1C0059043E;
 			productRefGroup = E1A223F219F98F1C0059043E /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 406382D12C6D0BD400017979 /* Products */;
+					ProjectRef = 406372D02C6D0BD400017979 /* ProtocolBuffers_iOS.xcodeproj */;
+				},
+				{
+					ProductGroup = 4072AAC82C51977000B68221 /* Products */;
+					ProjectRef = 4072A3172C51977000B68221 /* ProtocolBuffers_iOS.xcodeproj */;
+				},
+				{
+					ProductGroup = 403551D62C5205EF00D415BA /* Products */;
+					ProjectRef = 403541D52C5205EF00D415BA /* ProtocolBuffers_iOS.xcodeproj */;
+				},
+				{
+					ProductGroup = 403DC43A2C51D07C00A9AE24 /* Products */;
+					ProjectRef = 403DB4402C51D07C00A9AE24 /* ProtocolBuffers_iOS.xcodeproj */;
+				},
+				{
+					ProductGroup = 40E7C4282C61CA2000FC0383 /* Products */;
+					ProjectRef = 40E7B4252C61CA1F00FC0383 /* ProtocolBuffers_iOS.xcodeproj */;
+				},
+				{
+					ProductGroup = 407F9E022C51C85A00FED36C /* Products */;
+					ProjectRef = 407F8E062C51C85A00FED36C /* ProtocolBuffers_iOS.xcodeproj */;
+				},
+				{
+					ProductGroup = 403DC43C2C51D07C00A9AE24 /* Products */;
+					ProjectRef = 403DB4412C51D07C00A9AE24 /* ProtocolBuffers_OSX.xcodeproj */;
+				},
+				{
+					ProductGroup = 40E7C4242C61CA1F00FC0383 /* Products */;
+					ProjectRef = 40E7B4262C61CA1F00FC0383 /* ProtocolBuffers_OSX.xcodeproj */;
+				},
+				{
+					ProductGroup = 4072AAC42C51977000B68221 /* Products */;
+					ProjectRef = 4072A3182C51977000B68221 /* ProtocolBuffers_OSX.xcodeproj */;
+				},
+				{
+					ProductGroup = 406382CF2C6D0BD400017979 /* Products */;
+					ProjectRef = 406372D12C6D0BD400017979 /* ProtocolBuffers_OSX.xcodeproj */;
+				},
+				{
+					ProductGroup = 403551D42C5205EF00D415BA /* Products */;
+					ProjectRef = 403541D62C5205EF00D415BA /* ProtocolBuffers_OSX.xcodeproj */;
+				},
+				{
+					ProductGroup = 407F9E002C51C85A00FED36C /* Products */;
+					ProjectRef = 407F8E072C51C85A00FED36C /* ProtocolBuffers_OSX.xcodeproj */;
+				},
+				{
+					ProductGroup = 403DC43E2C51D07C00A9AE24 /* Products */;
+					ProjectRef = 403DB4422C51D07C00A9AE24 /* ProtocolBuffers_tvOS.xcodeproj */;
+				},
+				{
+					ProductGroup = 407F9E042C51C85A00FED36C /* Products */;
+					ProjectRef = 407F8E082C51C85A00FED36C /* ProtocolBuffers_tvOS.xcodeproj */;
+				},
+				{
+					ProductGroup = 4072AAC62C51977000B68221 /* Products */;
+					ProjectRef = 4072A3192C51977000B68221 /* ProtocolBuffers_tvOS.xcodeproj */;
+				},
+				{
+					ProductGroup = 40E7C4262C61CA2000FC0383 /* Products */;
+					ProjectRef = 40E7B4272C61CA1F00FC0383 /* ProtocolBuffers_tvOS.xcodeproj */;
+				},
+				{
+					ProductGroup = 406382D32C6D0BD400017979 /* Products */;
+					ProjectRef = 406372D22C6D0BD400017979 /* ProtocolBuffers_tvOS.xcodeproj */;
+				},
+				{
+					ProductGroup = 403551D82C5205EF00D415BA /* Products */;
+					ProjectRef = 403541D72C5205EF00D415BA /* ProtocolBuffers_tvOS.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				E178FCC11A1BF3270039F8B5 /* B&I */,
@@ -3839,11 +5465,409 @@
 				B52912BD232BF0AD00FD3389 /* Analysis */,
 				B52912C5232BF0AE00FD3389 /* AnalysisTests */,
 				40D866FA284FF2C30043271A /* gmock */,
+				4072B4DF2C51B3A000B68221 /* TritiumThirdParty */,
+				4072B5D62C51BE5100B68221 /* Tritium */,
+				4072B5DD2C51BE5100B68221 /* TritiumTests */,
 			);
 		};
 /* End PBXProject section */
 
+/* Begin PBXReferenceProxy section */
+		403552CC2C52062C00D415BA /* libProtocolBuffers.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libProtocolBuffers.a;
+			remoteRef = 403552CB2C52062C00D415BA /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		403552CE2C52062C00D415BA /* UnitTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = UnitTests.xctest;
+			remoteRef = 403552CD2C52062C00D415BA /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		403552D02C52062C00D415BA /* libTestSingleSourceBuild.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libTestSingleSourceBuild.a;
+			remoteRef = 403552CF2C52062C00D415BA /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		403552D62C52062C00D415BA /* libProtocolBuffers.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libProtocolBuffers.a;
+			remoteRef = 403552D52C52062C00D415BA /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		403552D82C52062C00D415BA /* UnitTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = UnitTests.xctest;
+			remoteRef = 403552D72C52062C00D415BA /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		403552DA2C52062C00D415BA /* libTestSingleSourceBuild.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libTestSingleSourceBuild.a;
+			remoteRef = 403552D92C52062C00D415BA /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		403552E02C52062C00D415BA /* libProtocolBuffers.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libProtocolBuffers.a;
+			remoteRef = 403552DF2C52062C00D415BA /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		403552E22C52062C00D415BA /* UnitTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = UnitTests.xctest;
+			remoteRef = 403552E12C52062C00D415BA /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		403552E42C52062C00D415BA /* libTestSingleSourceBuild.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libTestSingleSourceBuild.a;
+			remoteRef = 403552E32C52062C00D415BA /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		403DC5302C51D08600A9AE24 /* libProtocolBuffers.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libProtocolBuffers.a;
+			remoteRef = 403DC52F2C51D08600A9AE24 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		403DC5322C51D08600A9AE24 /* UnitTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = UnitTests.xctest;
+			remoteRef = 403DC5312C51D08600A9AE24 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		403DC5342C51D08600A9AE24 /* libTestSingleSourceBuild.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libTestSingleSourceBuild.a;
+			remoteRef = 403DC5332C51D08600A9AE24 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		403DC53A2C51D08600A9AE24 /* libProtocolBuffers.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libProtocolBuffers.a;
+			remoteRef = 403DC5392C51D08600A9AE24 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		403DC53C2C51D08600A9AE24 /* UnitTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = UnitTests.xctest;
+			remoteRef = 403DC53B2C51D08600A9AE24 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		403DC53E2C51D08600A9AE24 /* libTestSingleSourceBuild.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libTestSingleSourceBuild.a;
+			remoteRef = 403DC53D2C51D08600A9AE24 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		403DC5442C51D08600A9AE24 /* libProtocolBuffers.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libProtocolBuffers.a;
+			remoteRef = 403DC5432C51D08600A9AE24 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		403DC5462C51D08600A9AE24 /* UnitTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = UnitTests.xctest;
+			remoteRef = 403DC5452C51D08600A9AE24 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		403DC5482C51D08600A9AE24 /* libTestSingleSourceBuild.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libTestSingleSourceBuild.a;
+			remoteRef = 403DC5472C51D08600A9AE24 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		406383DA2C76FB5100017979 /* libProtocolBuffers.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libProtocolBuffers.a;
+			remoteRef = 406383D92C76FB5100017979 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		406383DC2C76FB5100017979 /* UnitTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = UnitTests.xctest;
+			remoteRef = 406383DB2C76FB5100017979 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		406383DE2C76FB5100017979 /* libTestSingleSourceBuild.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libTestSingleSourceBuild.a;
+			remoteRef = 406383DD2C76FB5100017979 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		406383E42C76FB5100017979 /* libProtocolBuffers.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libProtocolBuffers.a;
+			remoteRef = 406383E32C76FB5100017979 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		406383E62C76FB5100017979 /* UnitTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = UnitTests.xctest;
+			remoteRef = 406383E52C76FB5100017979 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		406383E82C76FB5100017979 /* libTestSingleSourceBuild.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libTestSingleSourceBuild.a;
+			remoteRef = 406383E72C76FB5100017979 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		406383EE2C76FB5100017979 /* libProtocolBuffers.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libProtocolBuffers.a;
+			remoteRef = 406383ED2C76FB5100017979 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		406383F02C76FB5100017979 /* UnitTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = UnitTests.xctest;
+			remoteRef = 406383EF2C76FB5100017979 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		406383F22C76FB5100017979 /* libTestSingleSourceBuild.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libTestSingleSourceBuild.a;
+			remoteRef = 406383F12C76FB5100017979 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		4072AACF2C51977000B68221 /* libProtocolBuffers.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libProtocolBuffers.a;
+			remoteRef = 4072AACE2C51977000B68221 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		4072AAD12C51977000B68221 /* UnitTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = UnitTests.xctest;
+			remoteRef = 4072AAD02C51977000B68221 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		4072AAD32C51977000B68221 /* libTestSingleSourceBuild.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libTestSingleSourceBuild.a;
+			remoteRef = 4072AAD22C51977000B68221 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		4072AAD92C51977000B68221 /* libProtocolBuffers.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libProtocolBuffers.a;
+			remoteRef = 4072AAD82C51977000B68221 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		4072AADB2C51977000B68221 /* UnitTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = UnitTests.xctest;
+			remoteRef = 4072AADA2C51977000B68221 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		4072AADD2C51977000B68221 /* libTestSingleSourceBuild.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libTestSingleSourceBuild.a;
+			remoteRef = 4072AADC2C51977000B68221 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		4072AAE32C51977000B68221 /* libProtocolBuffers.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libProtocolBuffers.a;
+			remoteRef = 4072AAE22C51977000B68221 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		4072AAE52C51977000B68221 /* UnitTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = UnitTests.xctest;
+			remoteRef = 4072AAE42C51977000B68221 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		4072AAE72C51977000B68221 /* libTestSingleSourceBuild.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libTestSingleSourceBuild.a;
+			remoteRef = 4072AAE62C51977000B68221 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		407F9EF62C51C86A00FED36C /* libProtocolBuffers.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libProtocolBuffers.a;
+			remoteRef = 407F9EF52C51C86A00FED36C /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		407F9EF82C51C86A00FED36C /* UnitTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = UnitTests.xctest;
+			remoteRef = 407F9EF72C51C86A00FED36C /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		407F9EFA2C51C86A00FED36C /* libTestSingleSourceBuild.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libTestSingleSourceBuild.a;
+			remoteRef = 407F9EF92C51C86A00FED36C /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		407F9F002C51C86A00FED36C /* libProtocolBuffers.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libProtocolBuffers.a;
+			remoteRef = 407F9EFF2C51C86A00FED36C /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		407F9F022C51C86A00FED36C /* UnitTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = UnitTests.xctest;
+			remoteRef = 407F9F012C51C86A00FED36C /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		407F9F042C51C86A00FED36C /* libTestSingleSourceBuild.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libTestSingleSourceBuild.a;
+			remoteRef = 407F9F032C51C86A00FED36C /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		407F9F0A2C51C86A00FED36C /* libProtocolBuffers.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libProtocolBuffers.a;
+			remoteRef = 407F9F092C51C86A00FED36C /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		407F9F0C2C51C86A00FED36C /* UnitTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = UnitTests.xctest;
+			remoteRef = 407F9F0B2C51C86A00FED36C /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		407F9F0E2C51C86A00FED36C /* libTestSingleSourceBuild.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libTestSingleSourceBuild.a;
+			remoteRef = 407F9F0D2C51C86A00FED36C /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		40E7C5212C61CAEF00FC0383 /* libProtocolBuffers.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libProtocolBuffers.a;
+			remoteRef = 40E7C5202C61CAEF00FC0383 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		40E7C5232C61CAEF00FC0383 /* UnitTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = UnitTests.xctest;
+			remoteRef = 40E7C5222C61CAEF00FC0383 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		40E7C5252C61CAEF00FC0383 /* libTestSingleSourceBuild.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libTestSingleSourceBuild.a;
+			remoteRef = 40E7C5242C61CAEF00FC0383 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		40E7C52B2C61CAEF00FC0383 /* libProtocolBuffers.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libProtocolBuffers.a;
+			remoteRef = 40E7C52A2C61CAEF00FC0383 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		40E7C52D2C61CAEF00FC0383 /* UnitTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = UnitTests.xctest;
+			remoteRef = 40E7C52C2C61CAEF00FC0383 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		40E7C52F2C61CAEF00FC0383 /* libTestSingleSourceBuild.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libTestSingleSourceBuild.a;
+			remoteRef = 40E7C52E2C61CAEF00FC0383 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		40E7C5352C61CAEF00FC0383 /* libProtocolBuffers.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libProtocolBuffers.a;
+			remoteRef = 40E7C5342C61CAEF00FC0383 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		40E7C5372C61CAEF00FC0383 /* UnitTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = UnitTests.xctest;
+			remoteRef = 40E7C5362C61CAEF00FC0383 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		40E7C5392C61CAEF00FC0383 /* libTestSingleSourceBuild.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libTestSingleSourceBuild.a;
+			remoteRef = 40E7C5382C61CAEF00FC0383 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
+
 /* Begin PBXResourcesBuildPhase section */
+		4072B5D52C51BE5100B68221 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4072B5DC2C51BE5100B68221 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		B52912BC232BF0AD00FD3389 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -4072,6 +6096,47 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		4072B4DD2C51B3A000B68221 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4072B5D32C51BE5100B68221 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				403552E52C52069300D415BA /* Label.pb.swift in Sources */,
+				4072B5ED2C51BF1700B68221 /* Engine.cpp in Sources */,
+				4072B5EE2C51BF1700B68221 /* CASObjectID.pb.swift in Sources */,
+				4072B5EF2C51BF1700B68221 /* Label.pb.cc in Sources */,
+				40E7C53C2C61CD8100FC0383 /* Types.swift in Sources */,
+				4072B5F02C51BF1700B68221 /* Artifact.pb.cc in Sources */,
+				4072B5F12C51BF1700B68221 /* Error.pb.cc in Sources */,
+				40E7C53A2C61CB0800FC0383 /* CoreTypes.swift in Sources */,
+				4072B5F22C51BF1700B68221 /* Artifact.pb.swift in Sources */,
+				40E7C53E2C61CF6800FC0383 /* Engine.swift in Sources */,
+				4072B5F32C51BF1700B68221 /* ActionCache.pb.cc in Sources */,
+				4072B5F42C51BF1700B68221 /* Support.cpp in Sources */,
+				4072B5F52C51BF1700B68221 /* ActionCache.cpp in Sources */,
+				4072B5F62C51BF1700B68221 /* Error.pb.swift in Sources */,
+				4072B5F72C51BF1700B68221 /* ActionCache.pb.swift in Sources */,
+				4072B5F82C51BF1700B68221 /* Label.cpp in Sources */,
+				4072B5F92C51BF1700B68221 /* Rule.pb.cc in Sources */,
+				4072B5FA2C51BF1700B68221 /* CASObjectID.pb.cc in Sources */,
+				4072B5FB2C51BF1700B68221 /* Rule.pb.swift in Sources */,
+				4072B5FC2C51BF1700B68221 /* SwiftAdaptors.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4072B5DA2C51BE5100B68221 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		40B3C90920D3AEC9007C5847 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -4423,6 +6488,11 @@
 			isa = PBXTargetDependency;
 			target = E1A2243519F9970D0059043E /* llbuildNinja */;
 			targetProxy = 4035804021C3060F0091FE09 /* PBXContainerItemProxy */;
+		};
+		4072B5E12C51BE5100B68221 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4072B5D62C51BE5100B68221 /* Tritium */;
+			targetProxy = 4072B5E02C51BE5100B68221 /* PBXContainerItemProxy */;
 		};
 		408649DE23D90EA0003063A2 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -4817,6 +6887,281 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		4072B4E22C51B3A100B68221 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_COMMA = NO;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				EXECUTABLE_PREFIX = lib;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				OTHER_CPLUSPLUSFLAGS = (
+					"$(OTHER_CFLAGS)",
+					"-Wimplicit-fallthrough",
+					"-Wno-deprecated-this-capture",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				USER_HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/include",
+					"$(PROJECT_DIR)/thirdparty/protobuf/third_party/abseil-cpp/",
+					"$(PROJECT_DIR)/thirdparty/protobuf/src",
+					"$(PROJECT_DIR)/thirdparty/protobuf/third_party/googletest/googlemock/include",
+					"$(PROJECT_DIR)/thirdparty/protobuf/third_party/googletest/googletest/include",
+					"$(PROJECT_DIR)/thirdparty/protobuf/third_party/googletest/googletest",
+					"$(PROJECT_DIR)/thirdparty/protobuf/third_party/utf8_range",
+				);
+			};
+			name = Debug;
+		};
+		4072B4E32C51B3A100B68221 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_COMMA = NO;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = NO;
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				EXECUTABLE_PREFIX = lib;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				OTHER_CPLUSPLUSFLAGS = (
+					"$(OTHER_CFLAGS)",
+					"-Wimplicit-fallthrough",
+					"-Wno-deprecated-this-capture",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				USER_HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/include",
+					"$(PROJECT_DIR)/thirdparty/protobuf/third_party/abseil-cpp/",
+					"$(PROJECT_DIR)/thirdparty/protobuf/src",
+					"$(PROJECT_DIR)/thirdparty/protobuf/third_party/googletest/googlemock/include",
+					"$(PROJECT_DIR)/thirdparty/protobuf/third_party/googletest/googletest/include",
+					"$(PROJECT_DIR)/thirdparty/protobuf/third_party/googletest/googletest",
+					"$(PROJECT_DIR)/thirdparty/protobuf/third_party/utf8_range",
+				);
+			};
+			name = Release;
+		};
+		4072B5E82C51BE5100B68221 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = c17;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024 Apple Inc. All rights reserved.";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c++";
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "c17 c++20";
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.apple.sdp.llbuild.Tritium;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Tritium-Swift.h";
+				SWIFT_OBJC_INTEROP_MODE = objcxx;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TAPI_LANGUAGE = "objective-c++";
+				USER_HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/include",
+					"$(PROJECT_DIR)/src",
+					"$(PROJECT_DIR)/thirdparty/protobuf/src",
+					"$(PROJECT_DIR)/thirdparty/protobuf/third_party/abseil-cpp/",
+				);
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		4072B5E92C51BE5100B68221 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_MODULE_VERIFIER = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = c17;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024 Apple Inc. All rights reserved.";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c++";
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "c17 c++20";
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.apple.sdp.llbuild.Tritium;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Tritium-Swift.h";
+				SWIFT_OBJC_INTEROP_MODE = objcxx;
+				SWIFT_VERSION = 5.0;
+				TAPI_LANGUAGE = "objective-c++";
+				USER_HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/include",
+					"$(PROJECT_DIR)/src",
+					"$(PROJECT_DIR)/thirdparty/protobuf/src",
+					"$(PROJECT_DIR)/thirdparty/protobuf/third_party/abseil-cpp/",
+				);
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+		4072B5EB2C51BE5100B68221 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.apple.sdp.llbuild.TritiumTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_OBJC_INTEROP_MODE = objcxx;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		4072B5EC2C51BE5100B68221 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.apple.sdp.llbuild.TritiumTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_OBJC_INTEROP_MODE = objcxx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		40B3C91820D3AEC9007C5847 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -4880,6 +7225,7 @@
 		40D86700284FF2C30043271A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/utils/unittest/googlemock/include",
@@ -4892,6 +7238,7 @@
 		40D86701284FF2C30043271A /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/utils/unittest/googlemock/include",
@@ -5261,7 +7608,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_TESTABILITY = YES;
+				ENABLE_TESTABILITY = NO;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = NO;
@@ -5662,6 +8009,33 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		4072B4E12C51B3A100B68221 /* Build configuration list for PBXNativeTarget "TritiumThirdParty" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4072B4E22C51B3A100B68221 /* Debug */,
+				4072B4E32C51B3A100B68221 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4072B5E72C51BE5100B68221 /* Build configuration list for PBXNativeTarget "Tritium" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4072B5E82C51BE5100B68221 /* Debug */,
+				4072B5E92C51BE5100B68221 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4072B5EA2C51BE5100B68221 /* Build configuration list for PBXNativeTarget "TritiumTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4072B5EB2C51BE5100B68221 /* Debug */,
+				4072B5EC2C51BE5100B68221 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		40B3C91720D3AEC9007C5847 /* Build configuration list for PBXNativeTarget "CAPITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -5951,6 +8325,17 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		403552C52C52062C00D415BA /* SwiftProtobuf */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SwiftProtobuf;
+		};
+		403552F02C522F9E00D415BA /* SwiftProtobuf */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SwiftProtobuf;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = E1A223E919F98F1C0059043E /* Project object */;
 }

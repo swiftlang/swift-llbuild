@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package tritium.core;
+
+import "tritium/core/CASObjectID.proto";
+import "tritium/core/Label.proto";
+
+// Enum representing the supported artifact types
+enum ArtifactType {
+    // Regular file.
+    FILE = 0;
+
+    // Directory containing files and/or other directories.
+    DIRECTORY = 1;
+
+    // Arbitrary data blob with no file system representation
+    BLOB = 2;
+
+    // Key-Value Mapping of Strings
+    DICT = 3;
+
+    // List of Strings
+    LIST = 4;
+
+    // Build Graph
+    BUILD_GRAPH = 5;
+}
+
+
+message DictObject {
+    map<string, string> contents = 3;
+}
+
+message ListObject {
+    repeated string entry = 3;
+}
+
+message Artifact {
+    Label label = 1;
+
+    ArtifactType type = 2;
+
+    oneof value {
+        CASObjectID casObject = 3;
+
+        bytes blob = 4;
+
+        DictObject dict = 5;
+
+        ListObject list = 6;
+    }
+}
