@@ -248,10 +248,12 @@ let package = Package(
 if ProcessInfo.processInfo.environment["SWIFTCI_USE_LOCAL_DEPS"] == nil {
     package.dependencies += [
         .package(url: "https://github.com/swiftlang/swift-toolchain-sqlite", from: "1.0.0"),
+        .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.17.0"),
     ]
 } else {
     package.dependencies += [
         .package(path: "../swift-toolchain-sqlite"),
+        .package(name: "swift-protobuf", path: "../swift-protobuf"),
     ]
 }
 
