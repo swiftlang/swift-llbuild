@@ -6,4 +6,4 @@
 	url = https://github.com/google/benchmark.git
 [submodule "thirdparty/swift-protobuf"]
 	path = thirdparty/swift-protobuf
-	url = git@github.com:apple/swift-protobuf.git
+	url = https://github.com/apple/swift-protobuf.git
