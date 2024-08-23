@@ -46,6 +46,7 @@ public extension SwiftProtobuf.Message {
 public extension std.string {
   init(fromData data: Data) {
     self.init()
+    self.reserve(data.count)
     for char in data {
       self.push_back(value_type(bitPattern: char))
     }
@@ -55,6 +56,7 @@ public extension std.string {
 extension std.string: ContiguousBytes, SwiftProtobufContiguousBytes {
   public init(repeating char: UInt8, count: Int) {
     self.init()
+    self.reserve(count)
     for _ in 1...count {
       self.push_back(value_type(bitPattern: char))
     }
