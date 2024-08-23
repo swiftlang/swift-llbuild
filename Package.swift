@@ -83,7 +83,7 @@ let package = Package(
             name: "llbuildCore",
             dependencies: [
                 "llbuildBasic",
-                .product(name: "CSQLite", package: "swift-toolchain-sqlite", condition: .when(platforms: [.windows])),
+                .product(name: "SwiftToolchainCSQLite", package: "swift-toolchain-sqlite", condition: .when(platforms: [.windows])),
             ],
             path: "lib/Core",
             linkerSettings: [
@@ -244,7 +244,7 @@ let package = Package(
 
 if ProcessInfo.processInfo.environment["SWIFTCI_USE_LOCAL_DEPS"] == nil {
     package.dependencies += [
-        .package(url: "https://github.com/swiftlang/swift-toolchain-sqlite", from: "0.1.0"),
+        .package(url: "https://github.com/swiftlang/swift-toolchain-sqlite", from: "1.0.0"),
     ]
 } else {
     package.dependencies += [
