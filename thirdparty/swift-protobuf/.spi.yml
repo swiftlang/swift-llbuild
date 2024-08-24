@@ -1,0 +1,10 @@
+version: 1
+builder:
+  configs:
+  - platform: ios
+    documentation_targets: [SwiftProtobuf]
+    scheme: SwiftProtobuf
+  - platform: tvos
+    scheme: SwiftProtobuf
+  - platform: watchos
+    scheme: SwiftProtobuf

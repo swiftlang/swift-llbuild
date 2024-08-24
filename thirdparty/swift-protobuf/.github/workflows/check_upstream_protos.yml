@@ -1,0 +1,25 @@
+name: Check Upstream Proto Files
+
+on:
+  schedule:
+    # Every Sunday at 4am.
+    - cron: '0 4 * * 0'
+  # Also allow manual triggering from the github UX to revalidate things.
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        path: main
+    - name: Checkout protobufbuffers/protobuf
+      uses: actions/checkout@v4
+      with:
+        repository: protocolbuffers/protobuf
+        path: protobuf
+    - name: Check Upstream Proto Files
+      working-directory: main
+      run: make check-proto-files

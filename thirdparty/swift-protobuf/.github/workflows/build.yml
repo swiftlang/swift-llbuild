@@ -1,0 +1,175 @@
+name: Build and Test
+
+# NOTE: If making changes to most of the steps, please also look to update
+# regular_conformance.yml also.
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Looking at https://hub.docker.com/_/swift, the version only tags (i.e.
+        # - 5.9.2) can use different Ubuntu releases. But just to be safe we use
+        # the specific OS release.
+        #
+        # We could use less specific tags (i.e. - 5.9), so they "float" as
+        # new point release come, but to help make history/logs more clear,
+        # being explicit (at the cost of having to update with point releases)
+        # seems better. This should also ensure protobuf caching changes with
+        # each new image incase system in the Swift image are changed/updated.
+        swift:
+        - version: 5.10.1-noble
+          # No "hook", see https://github.com/apple/swift-protobuf/issues/1560 for the
+          # current issue with using -warnings-as-errors on linux.
+        - version: 5.9.2-focal
+          hook: "SWIFT_BUILD_TEST_HOOK=\"-Xswiftc -warnings-as-errors\""
+        - version: 5.8.1-focal
+          hook: "SWIFT_BUILD_TEST_HOOK=\"-Xswiftc -warnings-as-errors\""
+        # protobuf_git can reference a commit, tag, or branch
+        # commit: "commits/6935eae45c99926a000ecbef0be20dfd3d159e71"
+        # tag: "ref/tags/v3.11.4"
+        # branch: "ref/heads/main"
+        protobuf_git: ["ref/heads/main"]
+    container:
+      image: swift:${{ matrix.swift.version }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        path: main
+    - name: Update and install dependencies
+      # dependencies from https://github.com/protocolbuffers/protobuf/blob/main/src/README.md
+      # this step is run before get-sha because we need curl and jq for get-sha
+      run: apt-get update && apt-get install -y curl make g++ cmake jq
+    - name: Get Protobuf Commit SHA
+      id: get-sha
+      run: |
+        set -eu
+        url="https://api.github.com/repos/protocolbuffers/protobuf/git/${{ matrix.protobuf_git }}"
+        case ${{ matrix.protobuf_git }} in
+        ref/*)
+          echo "sha=$( curl -s -u "u:${{ github.token }}" "${url}" | jq -r .object.sha )" >> $GITHUB_OUTPUT
+          ;;
+        commits/*)
+          echo "sha=$( curl -s -u "u:${{ github.token }}" "${url}" | jq -r .sha )" >> $GITHUB_OUTPUT
+          ;;
+        esac
+    - name: Build
+      working-directory: main
+      run: make build ${{ matrix.swift.hook }}
+    - name: Test runtime
+      working-directory: main
+      run: make test-runtime ${{ matrix.swift.hook }}
+    - name: Cache protobuf
+      id: cache-protobuf
+      uses: actions/cache@v4
+      with:
+        path: protobuf
+        # NOTE: for refs that can float like 'main' the cache might be out of date!
+        key: ${{ runner.os }}-${{ matrix.swift.version}}-protobuf-${{ steps.get-sha.outputs.sha }}
+    - name: Checkout protobuf repo
+      if: steps.cache-protobuf.outputs.cache-hit != 'true'
+      uses: actions/checkout@v4
+      with:
+        repository: protocolbuffers/protobuf
+        ref: ${{ steps.get-sha.outputs.sha }}
+        submodules: true
+        path: protobuf
+    - name: Build protobuf
+      if: steps.cache-protobuf.outputs.cache-hit != 'true'
+      working-directory: protobuf
+      run: |
+        mkdir cmake_build
+        cd cmake_build
+        cmake \
+          -DCMAKE_BUILD_TYPE=Release \
+          -Dprotobuf_BUILD_TESTS=OFF \
+          -Dprotobuf_INSTALL=OFF \
+          -Dprotobuf_BUILD_CONFORMANCE=ON \
+          -S ..
+        NUM_CPUS=$(getconf _NPROCESSORS_ONLN)
+        make -j "${NUM_CPUS}" protoc conformance_test_runner
+    - name: Test plugin
+      working-directory: main
+      run: make test-plugin PROTOC=../protobuf/cmake_build/protoc
+    - name: Test conformance
+      working-directory: main
+      run: make test-conformance CONFORMANCE_TEST_RUNNER=../protobuf/cmake_build/conformance_test_runner
+    - name: Test SPM plugin
+      working-directory: main
+      run: make test-spm-plugin PROTOC=../protobuf/cmake_build/protoc
+    - name: Compilation Tests
+      working-directory: main
+      run: make compile-tests PROTOC=../protobuf/cmake_build/protoc
+
+  api-breakage:
+    name: Api Breakage Compared to main branch
+    # Only on pull requests
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    container:
+      # Test on the latest Swift release. This could run on all the support
+      # Swift versions, but that doesn't seem worth it until there are Swift
+      # version specific conditionals to justify it.
+      image: swift:latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Mark the workspace as safe
+      # https://github.com/actions/checkout/issues/766
+      run: git config --global --add safe.directory ${GITHUB_WORKSPACE}
+    - name: Check for API breaking changes
+      run: swift package diagnose-api-breaking-changes origin/main
+
+  sanitizer_testing:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer: ["address", "thread"]
+        swiftpm_config: ["debug", "release"]
+    container:
+      # Test on the latest Swift release.
+      image: swift:latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Test
+      run: |
+        set -eu
+        # Trim out the generate files that are just compile tests, they take a while to compile and
+        # are covered in core instead.
+        rm Tests/SwiftProtobufTests/generated_swift_names*
+        # On linux, the tests seem to always see leaks that don't show up on macOS. Disable the
+        # leak detection and just assume it is a Linux Swift issue. This still gets validation
+        # for other memory errors. Maybe https://bugs.swift.org/browse/SR-6848.
+        if [ "${{ matrix.sanitizer }}" = "address" ] ; then
+          export ASAN_OPTIONS=detect_leaks=0
+        fi
+        # 'release' doesn't support @testable, force it on.
+        if [ "${{ matrix.swiftpm_config }}" = "release" ] ; then
+          EXTRAS="-Xswiftc -enable-testing"
+        fi
+        swift test -c ${{ matrix.swiftpm_config }} --sanitize=${{ matrix.sanitizer }} ${EXTRAS:-}
+
+  fuzzing_regressions:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        swiftpm_config: ["debug", "release"]
+    container:
+      # Test on the latest Swift release.
+      image: swift:latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      run: FuzzTesting/do_build.sh --${{ matrix.swiftpm_config }}-only --run-regressions
