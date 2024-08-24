@@ -30,9 +30,6 @@ let package = Package(
             name: "llbuildAnalysis",
             targets: ["llbuildAnalysis"]),
     ],
-    dependencies: [
-        .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.17.0"),
-    ],
     targets: [
         // MARK: Products
 
@@ -86,7 +83,7 @@ let package = Package(
             name: "llbuildCore",
             dependencies: [
                 "llbuildBasic",
-                .product(name: "SwiftToolchainCSQLite", package: "swift-toolchain-sqlite", condition: .when(platforms: [.windows])),
+                .product(name: "CSQLite", package: "swift-toolchain-sqlite", condition: .when(platforms: [.windows])),
             ],
             path: "lib/Core",
             linkerSettings: [
@@ -247,13 +244,11 @@ let package = Package(
 
 if ProcessInfo.processInfo.environment["SWIFTCI_USE_LOCAL_DEPS"] == nil {
     package.dependencies += [
-        .package(url: "https://github.com/swiftlang/swift-toolchain-sqlite", from: "1.0.0"),
-        .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.17.0"),
+        .package(url: "https://github.com/swiftlang/swift-toolchain-sqlite", from: "0.1.0"),
     ]
 } else {
     package.dependencies += [
         .package(path: "../swift-toolchain-sqlite"),
-        .package(name: "swift-protobuf", path: "../swift-protobuf"),
     ]
 }
 
