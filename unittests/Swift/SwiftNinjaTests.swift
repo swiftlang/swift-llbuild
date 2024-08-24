@@ -35,7 +35,7 @@ class SwiftNinjaTests: XCTestCase {
     let manifest = try NinjaManifest(
       path: manifestFile,
       workingDirectory: URL(fileURLWithPath: manifestFile)
-        .deletingLastPathComponent().path)
+        .deletingLastPathComponent().withUnsafeFileSystemRepresentation { try XCTUnwrap($0.map(String.init(cString:))) })
 
     let expectedRule = NinjaRule(
       name: "CMD", variables: ["command": "ls $in $out $statementvar",
@@ -60,7 +60,7 @@ class SwiftNinjaTests: XCTestCase {
     ])
   }
 
-  func testMissingRule() {
+  func testMissingRule() throws {
     let manifestFile = makeTemporaryFile("""
             build output: CMD input\n
             """)
@@ -79,7 +79,7 @@ class SwiftNinjaTests: XCTestCase {
     XCTAssertThrowsError(try NinjaManifest(
       path: manifestFile,
       workingDirectory: URL(fileURLWithPath: manifestFile)
-        .deletingLastPathComponent().path)) { error in
+        .deletingLastPathComponent().withUnsafeFileSystemRepresentation { try XCTUnwrap($0.map(String.init(cString:))) })) { error in
       guard case NinjaError.invalidManifest(let errors) = error else {
         XCTFail("Load error was not a NinjaError.invalidManifest")
         return
@@ -87,10 +87,10 @@ class SwiftNinjaTests: XCTestCase {
       assertExpectedError(errors)
     }
 
-    let (manifest, errors) = NinjaManifest.createNonThrowing(
+    let (manifest, errors) = try NinjaManifest.createNonThrowing(
       path: manifestFile,
       workingDirectory: URL(fileURLWithPath: manifestFile)
-        .deletingLastPathComponent().path)
+        .deletingLastPathComponent().withUnsafeFileSystemRepresentation { try XCTUnwrap($0.map(String.init(cString:))) })
 
     XCTAssertNil(manifest.rules["CMD"])
     XCTAssertEqual(manifest.statements, [

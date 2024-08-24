@@ -14,7 +14,13 @@ public extension XCTestCase {
     //
     // FIXME: Move to a shared location.
     func makeTemporaryFile(_ contents: String? = nil) -> String {
-        let directory = NSTemporaryDirectory()
+        var directory = NSTemporaryDirectory()
+        #if os(Windows)
+        // Workaround: https://github.com/apple/swift-corelibs-foundation/issues/5066
+        if directory.hasPrefix("/") {
+            directory.removeFirst()
+        }
+        #endif
         let filename = UUID().uuidString
         let fileURL = URL(fileURLWithPath: directory).appendingPathComponent(filename)
 
@@ -26,18 +32,27 @@ public extension XCTestCase {
             }
         }
 
+        let filePath = fileURL.withUnsafeFileSystemRepresentation {
+            if let path = $0.map(String.init(cString:)) {
+                return path
+            } else {
+                XCTFail("Could not convert file URL to path")
+                return String()
+            }
+        }
+
         addTeardownBlock {
             do {
                 let fileManager = FileManager.default
-                if fileManager.fileExists(atPath: fileURL.path) {
+                if fileManager.fileExists(atPath: filePath) {
                     try fileManager.removeItem(at: fileURL)
-                    XCTAssertFalse(fileManager.fileExists(atPath: fileURL.path))
+                    XCTAssertFalse(fileManager.fileExists(atPath: filePath))
                 }
             } catch {
                 XCTFail("Error while deleting temporary file: \(error)")
             }
         }
 
-        return fileURL.path
+        return filePath
     }
 }
