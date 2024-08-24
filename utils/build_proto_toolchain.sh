@@ -23,6 +23,6 @@ fi
 
 # Use swift build instead of cloning the repo to make sure that the generated code matches the SwiftProtobuf library
 # being used as a dependency in the build. This might be a bit slower, but it's correct.
-swift build -c release --product protoc-gen-swift --package-path "$UTILITIES_DIR/.."
+swift build -c release --product protoc-gen-swift --package-path "$UTILITIES_DIR/../thirdparty/swift-protobuf"
 
 cp "$UTILITIES_DIR"/../.build/release/protoc-gen-swift "$TOOLS_DIR/bin"
