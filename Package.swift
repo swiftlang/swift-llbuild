@@ -96,18 +96,13 @@ let package = Package(
             path: "lib/BuildSystem"
         ),
         .target(
-            name: "llbuildEvo",
-            dependencies: ["llbuildCore"],
-            path: "lib/Evo"
-        ),
-        .target(
             name: "llbuildNinja",
             dependencies: ["llbuildBasic"],
             path: "lib/Ninja"
         ),
         .target(
             name: "llbuildCommands",
-            dependencies: ["llbuildCore", "llbuildBuildSystem", "llbuildEvo", "llbuildNinja"],
+            dependencies: ["llbuildCore", "llbuildBuildSystem", "llbuildNinja"],
             path: "lib/Commands"
         ),
 

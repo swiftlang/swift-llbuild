@@ -15,7 +15,6 @@
 #include "llbuild/Basic/ExecutionQueue.h"
 #include "llbuild/Basic/LLVM.h"
 #include "llbuild/Core/BuildEngine.h"
-#include "llbuild/Evo/EvoEngine.h"
 
 #include "llvm/Support/raw_ostream.h"
 
@@ -281,112 +280,6 @@ static int runAckermannBuild(int m, int n, int recomputeCount,
 }
 
 
-static int runEvoAckermann(int m, int n, int recomputeCount,
-                           const std::string& traceFilename,
-                           const std::string& dumpGraphPath) {
-  // Compute the value of ackermann(M, N) using the evo build system.
-  assert(m >= 0 && m < 4);
-  assert(n >= 0);
-
-  // Define the delegate which will dynamically construct rules of the form
-  // "ack(M,N)".
-  class AckermannDelegate : public core::BuildEngineDelegate, public basic::ExecutionQueueDelegate {
-    class AckermannRule : public evo::EvoRule {
-    public:
-      AckermannRule(const core::KeyType& key) : EvoRule(key) { }
-      bool isResultValid(core::BuildEngine&, const core::ValueType&) override {
-        return true;
-      }
-
-      core::ValueType run(evo::EvoEngine& engine) override {
-        auto k = AckermannKey(key);
-        auto m = k.m;
-        auto n = k.n;
-
-        if (m == 0) {
-          return AckermannValue(n + 1);
-        }
-
-        if (n == 0) {
-          return engine.wait(engine.request(AckermannKey(m - 1, 1)));
-        }
-
-        AckermannValue v = engine.wait(engine.request(AckermannKey(m, n - 1)));
-        return engine.wait(engine.request(AckermannKey(m - 1, v)));
-      }
-    };
-
-  public:
-    int numRules = 0;
-
-    /// Get the rule to use for the given Key.
-    virtual std::unique_ptr<core::Rule> lookupRule(const core::KeyType& keyData) override {
-      ++numRules;
-      return std::unique_ptr<core::Rule>(new AckermannRule(keyData));
-    }
-
-    /// Called when a cycle is detected by the build engine and it cannot make
-    /// forward progress.
-    virtual void cycleDetected(const std::vector<core::Rule*>& items) override {
-      assert(0 && "unexpected cycle!");
-    }
-
-    /// Called when a fatal error is encountered by the build engine.
-    virtual void error(const Twine &message) override {
-      assert(0 && ("error:" + message.str()).c_str());
-    }
-
-    void processStarted(basic::ProcessContext*, basic::ProcessHandle, llbuild_pid_t) override { }
-    void processHadError(basic::ProcessContext*, basic::ProcessHandle, const Twine&) override { }
-    void processHadOutput(basic::ProcessContext*, basic::ProcessHandle, StringRef) override { }
-    void processFinished(basic::ProcessContext*, basic::ProcessHandle, const basic::ProcessResult&) override { }
-    void queueJobStarted(basic::JobDescriptor*) override { }
-    void queueJobFinished(basic::JobDescriptor*) override { }
-
-    std::unique_ptr<basic::ExecutionQueue> createExecutionQueue() override {
-      return createSerialQueue(*this, nullptr);
-    }
-  };
-  AckermannDelegate delegate;
-  core::BuildEngine engine(delegate);
-
-  // Enable tracing, if requested.
-  if (!traceFilename.empty()) {
-    std::string error;
-    if (!engine.enableTracing(traceFilename, &error)) {
-      fprintf(stderr, "error: %s: unable to enable tracing: %s\n",
-              getProgramName(), error.c_str());
-      return 1;
-    }
-  }
-
-  auto key = AckermannKey(m, n);
-  auto result = AckermannValue(engine.build(key));
-  llvm::outs() << "ack(" << m << ", " << n << ") = " << result << "\n";
-  if (n < 10) {
-#ifndef NDEBUG
-    int expected = ack(m, n);
-    assert(result == expected);
-#endif
-  }
-  llvm::outs() << "... computed using " << delegate.numRules << " rules\n";
-
-  if (!dumpGraphPath.empty()) {
-    engine.dumpGraphToFile(dumpGraphPath);
-  }
-
-  // Recompute the result as many times as requested.
-  for (int i = 0; i != recomputeCount; ++i) {
-    auto recomputedResult = AckermannValue(engine.build(key));
-    if (recomputedResult != result)
-      abort();
-  }
-
-  return 0;
-}
-
-
-
 static void ackermannUsage(std::string cmd) {
   int optionWidth = 20;
   fprintf(stderr, "Usage: %s buildengine %s [options] <M> <N>\n",
@@ -484,10 +377,6 @@ static int executeAckermannCommand(std::string cmd, std::vector<std::string> arg
     return 1;
   }
 
-  if (cmd == "evo") {
-    return runEvoAckermann(m, n, recomputeCount, traceFilename, dumpGraphPath);
-  }
-
   return runAckermannBuild(m, n, recomputeCount, traceFilename, dumpGraphPath);
 }
 
@@ -503,7 +392,6 @@ static void usage() {
   fprintf(stderr, "\n");
   fprintf(stderr, "Available commands:\n");
   fprintf(stderr, "  ack           -- Compute Ackermann\n");
-  fprintf(stderr, "  evo           -- Compute Ackermann - Evo Engine\n");
   fprintf(stderr, "\n");
   exit(1);
 }
@@ -513,7 +401,7 @@ int commands::executeBuildEngineCommand(const std::vector<std::string> &args) {
   if (args.empty() || args[0] == "--help")
     usage();
 
-  if (args[0] == "ack" || args[0] == "evo") {
+  if (args[0] == "ack") {
     return executeAckermannCommand(args[0], {args.begin()+1, args.end()});
   } else {
     fprintf(stderr, "error: %s: unknown command '%s'\n", getProgramName(),

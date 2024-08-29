@@ -10,5 +10,4 @@ add_llbuild_library(llbuildCommands STATIC
 target_link_libraries(llbuildCommands PRIVATE
   llbuildBuildSystem
   llbuildCore
-  llbuildEvo
   llbuildNinja)
