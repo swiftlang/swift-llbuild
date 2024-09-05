@@ -220,8 +220,7 @@ int sys::write(int fileHandle, void *destinationBuffer,
 // Get the current process' open file limit. Returns -1 on failure.
 llbuild_rlim_t sys::getOpenFileLimit() {
 #if defined(_WIN32)
-  int value = _getmaxstdio();
-  return std::min(0, value);
+  return _getmaxstdio();
 #else
   struct rlimit rl;
   int ret = getrlimit(RLIMIT_NOFILE, &rl);
