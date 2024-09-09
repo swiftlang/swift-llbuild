@@ -1622,6 +1622,7 @@
 		406A05012162815000EBA895 /* Dockerfile-18.04 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "Dockerfile-18.04"; sourceTree = "<group>"; };
 		406A05022162A20800EBA895 /* check-all */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "check-all"; sourceTree = "<group>"; };
 		406A05032162A5A200EBA895 /* build-and-test */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "build-and-test"; sourceTree = "<group>"; };
+		406CE2742C8FA9B30008A97B /* README.tritium.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.tritium.md; sourceTree = "<group>"; };
 		4072A3172C51977000B68221 /* ProtocolBuffers_iOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_iOS.xcodeproj; sourceTree = "<group>"; };
 		4072A3182C51977000B68221 /* ProtocolBuffers_OSX.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_OSX.xcodeproj; sourceTree = "<group>"; };
 		4072A3192C51977000B68221 /* ProtocolBuffers_tvOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_tvOS.xcodeproj; sourceTree = "<group>"; };
@@ -8959,6 +8960,7 @@
 				1484D1DA2094509E00D3830F /* LICENSE.txt */,
 				406383D42C76FB5100017979 /* Makefile */,
 				E1A223FC19F990E60059043E /* README.md */,
+				406CE2742C8FA9B30008A97B /* README.tritium.md */,
 				1484D1DB209450A600D3830F /* Vagrantfile */,
 				E1A223F219F98F1C0059043E /* Products */,
 			);
