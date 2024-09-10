@@ -53,7 +53,7 @@ Tritium will incorporate concepts from llbuild1, llbuild2, and llbuild2fx.  The 
 * Build
     * Outstanding, in-progress request to produce a specific artifact from the overall build namespace
 
-[Image: docs/tritium.jpg]
+![Tritium Classes](./docs/tritium.jpg)
 
 ### Engine Components
 
@@ -83,7 +83,7 @@ Expected Strategies
 * Resume-able Actions
     * Defined API for reconnecting/de-duplicating in-flight action computations within the executor
 
-## Build Graph Unification
+## Build System Layer Unification/Fusing
 
 The existing ecosystem of llbuild clients have well-tested, reliable implementations of build rules that cover low-level project definitions and higher level multi-project OS relationships.  As much as practical, the goal is to provide an incremental path for these existing clients.  Although the major benefits in expressivity come from adoption of the new API constructs, providing adapters should enable a smoother on-ramp for existing services and offer the potential for earlier interoperability.
 
