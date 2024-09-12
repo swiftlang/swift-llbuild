@@ -87,7 +87,7 @@ let package = Package(
             ],
             path: "lib/Core",
             linkerSettings: [
-                .linkedLibrary("sqlite3", .when(platforms: [.macOS, .iOS, .tvOS, .watchOS, .visionOS, .macCatalyst, .linux]))
+                .linkedLibrary("sqlite3", .when(platforms: [.macOS, .iOS, .tvOS, .watchOS, .visionOS, .macCatalyst, .linux, .android]))
             ]
         ),
         .target(
