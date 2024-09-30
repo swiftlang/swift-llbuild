@@ -1,3 +1,0 @@
-[submodule "thirdparty/swift-protobuf"]
-	path = thirdparty/swift-protobuf
-	url = https://github.com/apple/swift-protobuf.git
