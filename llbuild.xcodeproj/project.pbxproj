@@ -74,6 +74,11 @@
 		14A9859824F63AC100FADB67 /* buildvalue.h in Headers */ = {isa = PBXBuildFile; fileRef = B5A308B922F30E0700699B4C /* buildvalue.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		2DB7144323A2AF2F00514E98 /* BuildSystemEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DB7144223A2AF2F00514E98 /* BuildSystemEngineTests.swift */; };
 		402614272087B10B005BD956 /* Tracing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 402614262087B10B005BD956 /* Tracing.cpp */; };
+		403332D92CADE54B00440C8C /* zero_copy_stream_impl_lite.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F4DB2C79076200757481 /* zero_copy_stream_impl_lite.cc */; };
+		403332DA2CADE54B00440C8C /* any_lite.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F5392C79076200757481 /* any_lite.cc */; };
+		403332DB2CADE54B00440C8C /* generated_message_tctable_lite.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F58C2C79076200757481 /* generated_message_tctable_lite.cc */; };
+		403332DC2CADE54B00440C8C /* message_lite.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F5B42C79076200757481 /* message_lite.cc */; };
+		403332DE2CADE54B00440C8C /* wire_format_lite.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F6372C79076200757481 /* wire_format_lite.cc */; };
 		403552C62C52062C00D415BA /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = 403552C52C52062C00D415BA /* SwiftProtobuf */; };
 		403552E52C52069300D415BA /* Label.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4CB2C51995100B68221 /* Label.pb.swift */; };
 		403552EF2C522BAF00D415BA /* Visibility.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 403552EE2C522BA700D415BA /* Visibility.hpp */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -115,7 +120,6 @@
 		40C10B912C790CC400757481 /* zero_copy_sink.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F4D42C79076200757481 /* zero_copy_sink.cc */; };
 		40C10B922C790CC400757481 /* zero_copy_stream.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F4D72C79076200757481 /* zero_copy_stream.cc */; };
 		40C10B932C790CC400757481 /* zero_copy_stream_impl.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F4D92C79076200757481 /* zero_copy_stream_impl.cc */; };
-		40C10B942C790CC400757481 /* zero_copy_stream_impl_lite.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F4DB2C79076200757481 /* zero_copy_stream_impl_lite.cc */; };
 		40C10B952C790CC400757481 /* lexer.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F4E02C79076200757481 /* lexer.cc */; };
 		40C10B962C790CC400757481 /* message_path.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F4E32C79076200757481 /* message_path.cc */; };
 		40C10B972C790CC400757481 /* parser.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F4E52C79076200757481 /* parser.cc */; };
@@ -132,7 +136,6 @@
 		40C10BA22C790CC400757481 /* time_util.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F52F2C79076200757481 /* time_util.cc */; };
 		40C10BA32C790CC400757481 /* type_resolver_util.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F5332C79076200757481 /* type_resolver_util.cc */; };
 		40C10BA42C790CC400757481 /* any.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F5372C79076200757481 /* any.cc */; };
-		40C10BA52C790CC400757481 /* any_lite.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F5392C79076200757481 /* any_lite.cc */; };
 		40C10BA62C790CC400757481 /* any.pb.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F53D2C79076200757481 /* any.pb.cc */; };
 		40C10BA72C790CC400757481 /* api.pb.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F5402C79076200757481 /* api.pb.cc */; };
 		40C10BA82C790CC400757481 /* arena.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F5422C79076200757481 /* arena.cc */; };
@@ -141,7 +144,6 @@
 		40C10BAB2C790CC400757481 /* arenaz_sampler.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F54F2C79076200757481 /* arenaz_sampler.cc */; };
 		40C10BAC2C790CC400757481 /* descriptor.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F5572C79076200757481 /* descriptor.cc */; };
 		40C10BAD2C790CC400757481 /* descriptor_database.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F55A2C79076200757481 /* descriptor_database.cc */; };
-		40C10BAE2C790CC400757481 /* descriptor_lite.h in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F55D2C79076200757481 /* descriptor_lite.h */; };
 		40C10BAF2C790CC400757481 /* descriptor.pb.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F5622C79076200757481 /* descriptor.pb.cc */; };
 		40C10BB02C790CC400757481 /* duration.pb.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F5662C79076200757481 /* duration.pb.cc */; };
 		40C10BB12C790CC400757481 /* dynamic_message.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F5682C79076200757481 /* dynamic_message.cc */; };
@@ -156,14 +158,12 @@
 		40C10BBB2C790CC400757481 /* generated_message_reflection.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F5852C79076200757481 /* generated_message_reflection.cc */; };
 		40C10BBC2C790CC400757481 /* generated_message_tctable_full.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F5882C79076200757481 /* generated_message_tctable_full.cc */; };
 		40C10BBD2C790CC400757481 /* generated_message_tctable_gen.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F58A2C79076200757481 /* generated_message_tctable_gen.cc */; };
-		40C10BBE2C790CC400757481 /* generated_message_tctable_lite.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F58C2C79076200757481 /* generated_message_tctable_lite.cc */; };
 		40C10BBF2C790CC400757481 /* generated_message_util.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F58F2C79076200757481 /* generated_message_util.cc */; };
 		40C10BC02C790CC400757481 /* implicit_weak_message.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F5932C79076200757481 /* implicit_weak_message.cc */; };
 		40C10BC12C790CC400757481 /* inlined_string_field.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F5952C79076200757481 /* inlined_string_field.cc */; };
 		40C10BC22C790CC400757481 /* map.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F59D2C79076200757481 /* map.cc */; };
 		40C10BC32C790CC400757481 /* map_field.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F5A02C79076200757481 /* map_field.cc */; };
 		40C10BC42C790CC400757481 /* message.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F5B22C79076200757481 /* message.cc */; };
-		40C10BC52C790CC400757481 /* message_lite.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F5B42C79076200757481 /* message_lite.cc */; };
 		40C10BC62C790CC400757481 /* parse_context.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F5BD2C79076200757481 /* parse_context.cc */; };
 		40C10BC72C790CC400757481 /* port.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F5BF2C79076200757481 /* port.cc */; };
 		40C10BC82C790CC400757481 /* raw_ptr.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F5C92C79076200757481 /* raw_ptr.cc */; };
@@ -177,7 +177,6 @@
 		40C10BD02C790CC400757481 /* timestamp.pb.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F5FF2C79076200757481 /* timestamp.pb.cc */; };
 		40C10BD12C790CC400757481 /* type.pb.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F6022C79076200757481 /* type.pb.cc */; };
 		40C10BD22C790CC400757481 /* wire_format.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F6352C79076200757481 /* wire_format.cc */; };
-		40C10BD32C790CC400757481 /* wire_format_lite.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F6372C79076200757481 /* wire_format_lite.cc */; };
 		40C10BD42C790CC400757481 /* wrappers.pb.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F63C2C79076200757481 /* wrappers.pb.cc */; };
 		40C10BD52C790CC400757481 /* cycleclock.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F65A2C79076200757481 /* cycleclock.cc */; };
 		40C10BD62C790CC400757481 /* low_level_alloc.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F66D2C79076200757481 /* low_level_alloc.cc */; };
@@ -326,7 +325,6 @@
 		40C10C652C790CC400757481 /* bad_any_cast.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1FC312C79076200757481 /* bad_any_cast.cc */; };
 		40C10C662C790CC400757481 /* bad_optional_access.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1FC332C79076200757481 /* bad_optional_access.cc */; };
 		40C10C672C790CC400757481 /* bad_variant_access.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1FC352C79076200757481 /* bad_variant_access.cc */; };
-		40C10C682C790CC400757481 /* ascii.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 40C1FEAE2C79076200757481 /* ascii.cpp */; };
 		40C10C6A2C790CC400757481 /* lemire-avx2.c in Sources */ = {isa = PBXBuildFile; fileRef = 40C1FEB22C79076200757481 /* lemire-avx2.c */; };
 		40C10C6B2C790CC400757481 /* lemire-neon.c in Sources */ = {isa = PBXBuildFile; fileRef = 40C1FEB32C79076200757481 /* lemire-neon.c */; };
 		40C10C6C2C790CC400757481 /* lemire-sse.c in Sources */ = {isa = PBXBuildFile; fileRef = 40C1FEB42C79076200757481 /* lemire-sse.c */; };
@@ -1598,6 +1596,9 @@
 		2D86C6DF238D932B006E61FB /* Tool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Tool.h; sourceTree = "<group>"; };
 		2DB7144223A2AF2F00514E98 /* BuildSystemEngineTests.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = BuildSystemEngineTests.swift; sourceTree = "<group>"; tabWidth = 4; };
 		402614262087B10B005BD956 /* Tracing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Tracing.cpp; sourceTree = "<group>"; };
+		403332B52CADC83700440C8C /* TritiumCommon.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = TritiumCommon.xcconfig; sourceTree = "<group>"; };
+		403332B62CADC86300440C8C /* TritiumDebug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = TritiumDebug.xcconfig; sourceTree = "<group>"; };
+		403332B72CADC87100440C8C /* TritiumRelease.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = TritiumRelease.xcconfig; sourceTree = "<group>"; };
 		403541D52C5205EF00D415BA /* ProtocolBuffers_iOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_iOS.xcodeproj; sourceTree = "<group>"; };
 		403541D62C5205EF00D415BA /* ProtocolBuffers_OSX.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_OSX.xcodeproj; sourceTree = "<group>"; };
 		403541D72C5205EF00D415BA /* ProtocolBuffers_tvOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_tvOS.xcodeproj; sourceTree = "<group>"; };
@@ -8907,6 +8908,9 @@
 				E14144921EBDA4A10046F282 /* Common.xcconfig */,
 				E14144931EBDA4A10046F282 /* Debug.xcconfig */,
 				E14144941EBDA4A10046F282 /* Release.xcconfig */,
+				403332B52CADC83700440C8C /* TritiumCommon.xcconfig */,
+				403332B62CADC86300440C8C /* TritiumDebug.xcconfig */,
+				403332B72CADC87100440C8C /* TritiumRelease.xcconfig */,
 				40F638EC2053043D00A1CFBE /* Version.xcconfig */,
 			);
 			path = Configs;
@@ -11247,6 +11251,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				403332D92CADE54B00440C8C /* zero_copy_stream_impl_lite.cc in Sources */,
+				403332DA2CADE54B00440C8C /* any_lite.cc in Sources */,
+				403332DB2CADE54B00440C8C /* generated_message_tctable_lite.cc in Sources */,
+				403332DC2CADE54B00440C8C /* message_lite.cc in Sources */,
+				403332DE2CADE54B00440C8C /* wire_format_lite.cc in Sources */,
 				40C10C792C7910B700757481 /* status_payload_printer.cc in Sources */,
 				40C10C782C79108400757481 /* cpu_detect.cc in Sources */,
 				40C10C772C79104500757481 /* cpp_features.pb.cc in Sources */,
@@ -11260,7 +11269,6 @@
 				40C10B912C790CC400757481 /* zero_copy_sink.cc in Sources */,
 				40C10B922C790CC400757481 /* zero_copy_stream.cc in Sources */,
 				40C10B932C790CC400757481 /* zero_copy_stream_impl.cc in Sources */,
-				40C10B942C790CC400757481 /* zero_copy_stream_impl_lite.cc in Sources */,
 				40C10B952C790CC400757481 /* lexer.cc in Sources */,
 				40C10B962C790CC400757481 /* message_path.cc in Sources */,
 				40C10B972C790CC400757481 /* parser.cc in Sources */,
@@ -11277,7 +11285,6 @@
 				40C10BA22C790CC400757481 /* time_util.cc in Sources */,
 				40C10BA32C790CC400757481 /* type_resolver_util.cc in Sources */,
 				40C10BA42C790CC400757481 /* any.cc in Sources */,
-				40C10BA52C790CC400757481 /* any_lite.cc in Sources */,
 				40C10BA62C790CC400757481 /* any.pb.cc in Sources */,
 				40C10BA72C790CC400757481 /* api.pb.cc in Sources */,
 				40C10BA82C790CC400757481 /* arena.cc in Sources */,
@@ -11286,7 +11293,6 @@
 				40C10BAB2C790CC400757481 /* arenaz_sampler.cc in Sources */,
 				40C10BAC2C790CC400757481 /* descriptor.cc in Sources */,
 				40C10BAD2C790CC400757481 /* descriptor_database.cc in Sources */,
-				40C10BAE2C790CC400757481 /* descriptor_lite.h in Sources */,
 				40C10BAF2C790CC400757481 /* descriptor.pb.cc in Sources */,
 				40C10BB02C790CC400757481 /* duration.pb.cc in Sources */,
 				40C10BB12C790CC400757481 /* dynamic_message.cc in Sources */,
@@ -11301,14 +11307,12 @@
 				40C10BBB2C790CC400757481 /* generated_message_reflection.cc in Sources */,
 				40C10BBC2C790CC400757481 /* generated_message_tctable_full.cc in Sources */,
 				40C10BBD2C790CC400757481 /* generated_message_tctable_gen.cc in Sources */,
-				40C10BBE2C790CC400757481 /* generated_message_tctable_lite.cc in Sources */,
 				40C10BBF2C790CC400757481 /* generated_message_util.cc in Sources */,
 				40C10BC02C790CC400757481 /* implicit_weak_message.cc in Sources */,
 				40C10BC12C790CC400757481 /* inlined_string_field.cc in Sources */,
 				40C10BC22C790CC400757481 /* map.cc in Sources */,
 				40C10BC32C790CC400757481 /* map_field.cc in Sources */,
 				40C10BC42C790CC400757481 /* message.cc in Sources */,
-				40C10BC52C790CC400757481 /* message_lite.cc in Sources */,
 				40C10BC62C790CC400757481 /* parse_context.cc in Sources */,
 				40C10BC72C790CC400757481 /* port.cc in Sources */,
 				40C10BC82C790CC400757481 /* raw_ptr.cc in Sources */,
@@ -11322,7 +11326,6 @@
 				40C10BD02C790CC400757481 /* timestamp.pb.cc in Sources */,
 				40C10BD12C790CC400757481 /* type.pb.cc in Sources */,
 				40C10BD22C790CC400757481 /* wire_format.cc in Sources */,
-				40C10BD32C790CC400757481 /* wire_format_lite.cc in Sources */,
 				40C10BD42C790CC400757481 /* wrappers.pb.cc in Sources */,
 				40C10BD52C790CC400757481 /* cycleclock.cc in Sources */,
 				40C10BD62C790CC400757481 /* low_level_alloc.cc in Sources */,
@@ -11471,7 +11474,6 @@
 				40C10C652C790CC400757481 /* bad_any_cast.cc in Sources */,
 				40C10C662C790CC400757481 /* bad_optional_access.cc in Sources */,
 				40C10C672C790CC400757481 /* bad_variant_access.cc in Sources */,
-				40C10C682C790CC400757481 /* ascii.cpp in Sources */,
 				40C10C6A2C790CC400757481 /* lemire-avx2.c in Sources */,
 				40C10C6B2C790CC400757481 /* lemire-neon.c in Sources */,
 				40C10C6C2C790CC400757481 /* lemire-sse.c in Sources */,
@@ -12218,38 +12220,20 @@
 /* Begin XCBuildConfiguration section */
 		4072B4E22C51B3A100B68221 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 403332B62CADC86300440C8C /* TritiumDebug.xcconfig */;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_COMMA = NO;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = NO;
-				CODE_SIGN_STYLE = Automatic;
-				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				EXECUTABLE_PREFIX = lib;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-Wimplicit-fallthrough",
 					"-Wno-deprecated-this-capture",
 				);
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
 				USER_HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/include",
 					"$(PROJECT_DIR)/thirdparty/protobuf/third_party/abseil-cpp/",
@@ -12261,33 +12245,20 @@
 		};
 		4072B4E32C51B3A100B68221 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 403332B72CADC87100440C8C /* TritiumRelease.xcconfig */;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_COMMA = NO;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = NO;
-				CODE_SIGN_STYLE = Automatic;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				EXECUTABLE_PREFIX = lib;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				MTL_ENABLE_DEBUG_INFO = NO;
-				MTL_FAST_MATH = YES;
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-Wimplicit-fallthrough",
 					"-Wno-deprecated-this-capture",
 				);
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
 				USER_HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/include",
 					"$(PROJECT_DIR)/thirdparty/protobuf/third_party/abseil-cpp/",
@@ -12299,56 +12270,26 @@
 		};
 		4072B5E82C51BE5100B68221 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 403332B62CADC86300440C8C /* TritiumDebug.xcconfig */;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEBUG_INFORMATION_FORMAT = dwarf;
+				CODE_SIGN_IDENTITY = "$(LLBUILD_CODE_SIGN_IDENTITY)";
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				ENABLE_MODULE_VERIFIER = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = c17;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024 Apple Inc. All rights reserved.";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/Frameworks",
-				);
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				MARKETING_VERSION = 1.0;
+				INSTALL_PATH = "$(TRITIUM_FRAMEWORKS_INSTALL_DIR)";
 				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c++";
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "c17 c++20";
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.sdp.llbuild.Tritium;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
-				SKIP_INSTALL = YES;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SKIP_INSTALL = NO;
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Tritium-Swift.h";
 				SWIFT_OBJC_INTEROP_MODE = objcxx;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 5.0;
 				TAPI_LANGUAGE = "objective-c++";
 				USER_HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/include",
@@ -12356,56 +12297,31 @@
 					"$(PROJECT_DIR)/thirdparty/protobuf/src",
 					"$(PROJECT_DIR)/thirdparty/protobuf/third_party/abseil-cpp/",
 				);
-				VERSIONING_SYSTEM = "apple-generic";
-				VERSION_INFO_PREFIX = "";
 			};
 			name = Debug;
 		};
 		4072B5E92C51BE5100B68221 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 403332B72CADC87100440C8C /* TritiumRelease.xcconfig */;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CODE_SIGN_IDENTITY = "$(LLBUILD_CODE_SIGN_IDENTITY)";
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				ENABLE_MODULE_VERIFIER = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = c17;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2024 Apple Inc. All rights reserved.";
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-					"@loader_path/Frameworks",
-				);
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				MARKETING_VERSION = 1.0;
+				INSTALL_PATH = "$(TRITIUM_FRAMEWORKS_INSTALL_DIR)";
 				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c++";
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "c17 c++20";
-				MTL_ENABLE_DEBUG_INFO = NO;
-				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.sdp.llbuild.Tritium;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
-				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_INSTALL_OBJC_HEADER = NO;
+				SKIP_INSTALL = NO;
 				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Tritium-Swift.h";
 				SWIFT_OBJC_INTEROP_MODE = objcxx;
-				SWIFT_VERSION = 5.0;
 				TAPI_LANGUAGE = "objective-c++";
 				USER_HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/include",
@@ -12413,75 +12329,28 @@
 					"$(PROJECT_DIR)/thirdparty/protobuf/src",
 					"$(PROJECT_DIR)/thirdparty/protobuf/third_party/abseil-cpp/",
 				);
-				VERSIONING_SYSTEM = "apple-generic";
-				VERSION_INFO_PREFIX = "";
 			};
 			name = Release;
 		};
 		4072B5EB2C51BE5100B68221 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 403332B62CADC86300440C8C /* TritiumDebug.xcconfig */;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEBUG_INFORMATION_FORMAT = dwarf;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				MARKETING_VERSION = 1.0;
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.sdp.llbuild.TritiumTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_OBJC_INTEROP_MODE = objcxx;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
 		4072B5EC2C51BE5100B68221 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 403332B72CADC87100440C8C /* TritiumRelease.xcconfig */;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
-				MARKETING_VERSION = 1.0;
-				MTL_ENABLE_DEBUG_INFO = NO;
-				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.sdp.llbuild.TritiumTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_OBJC_INTEROP_MODE = objcxx;
-				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
