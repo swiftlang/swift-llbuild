@@ -1,0 +1,72 @@
+//===-- Common.xcconfig ---------------------------------------------------===//
+//
+// This source file is part of the Swift.org open source project
+//
+// Copyright (c) 2024 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
+//
+// See http://swift.org/LICENSE.txt for license information
+// See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+//
+//===----------------------------------------------------------------------===//
+
+LLBUILD3_INSTALL_BASE_PATH = $(LLBUILD3_INSTALL_DIR:default=$(LOCAL_LIBRARY_DIR))
+LLBUILD3_FRAMEWORKS_INSTALL_DIR = $(LLBUILD3_INSTALL_BASE_PATH)/Frameworks
+
+// Set the default product name.
+PRODUCT_NAME = $(TARGET_NAME)
+
+// Set the versioning system to "Apple Generic" for all targets.
+VERSIONING_SYSTEM = apple-generic-hidden
+CURRENT_PROJECT_VERSION = 1
+
+// Do not always search user paths.
+ALWAYS_SEARCH_USER_PATHS = NO
+
+// Only use API safe for use in app extensions.
+APPLICATION_EXTENSION_API_ONLY = YES
+
+// Headermaps are disabled.
+USE_HEADERMAP = NO
+
+// llbuild has no @objc APIs, so the generated header is not needed
+SWIFT_OBJC_INTERFACE_HEADER_NAME =
+SWIFT_INSTALL_OBJC_HEADER = NO
+
+// Enable InstallAPI.
+SUPPORTS_TEXT_BASED_API = YES
+TAPI_ENABLE_MODULES = YES
+TAPI_VERIFY_MODE = ErrorsOnly
+
+// Manually opt targets into installation.
+SKIP_INSTALL = YES
+
+ALLOW_TARGET_PLATFORM_SPECIALIZATION = YES
+SUPPORTED_PLATFORMS = $(AVAILABLE_PLATFORMS)
+SUPPORTS_MACCATALYST = YES
+
+MACOSX_DEPLOYMENT_TARGET = 10.15
+
+GCC_C_LANGUAGE_STANDARD = c17
+CLANG_CXX_LANGUAGE_STANDARD = c++20
+CLANG_CXX_LIBRARY = libc++
+
+#include "Version.xcconfig"
+
+COMMON_PREPROCESSOR_DEFINITIONS = $(LLBUILD_VERSION_DEFINITIONS)
+
+// MARK: Signing Support
+
+// Enable code signing, if appropriate.
+LLBUILD_ENABLE_SIGNING = NO
+
+LLBUILD_CODE_SIGN_IDENTITY = $(LLBUILD_CODE_SIGN_IDENTITY__$(LLBUILD_ENABLE_SIGNING))
+LLBUILD_CODE_SIGN_IDENTITY__NO =
+LLBUILD_CODE_SIGN_IDENTITY__YES = -
+
+// The entitlements to use for binaries.
+CODE_SIGN_ENTITLEMENTS = $(LLBUILD_CODE_SIGN_ENTITLEMENTS__producttype_eq_$(PRODUCT_TYPE:identifier))
+LLBUILD_CODE_SIGN_ENTITLEMENTS__producttype_eq_com_apple_product_type_tool = $(LLBUILD_TOOL_CODE_SIGN_ENTITLEMENTS)
+LLBUILD_TOOL_CODE_SIGN_ENTITLEMENTS =
+
+#include? "llbuild3Overrides.xcconfig"

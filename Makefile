@@ -1,4 +1,4 @@
-# Helper makefile for generating Tritium protobuf files
+# Helper makefile for generating llbuild3 protobuf files
 
 .PHONY: generate
 generate: generate-protos
@@ -15,7 +15,7 @@ generate-protos: proto-toolchain
 		--swift_out=src \
 		--swift_opt=Visibility=Public \
 		--swift_opt=ProtoPathModuleMappings=src/module_map.asciipb \
-		$$(find src -name \*.proto)
+		$$(find src -name \*.proto -not -name \*Internal\*)
 
 .PHONY: proto-toolchain
 proto-toolchain:
