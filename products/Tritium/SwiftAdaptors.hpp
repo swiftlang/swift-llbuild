@@ -16,6 +16,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include <Tritium/Visibility.hpp>
 #include <Tritium/Result.hpp>
