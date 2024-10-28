@@ -6,6 +6,7 @@
 // See http://swift.org/LICENSE.txt for license information
 // See http://swift.org/CONTRIBUTORS.txt for Swift project authors
 
+#if canImport(XCTest)
 import XCTest
 
 @available(macOS 10.15, *)
@@ -56,3 +57,4 @@ public extension XCTestCase {
         return filePath
     }
 }
+#endif
