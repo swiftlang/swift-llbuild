@@ -6,6 +6,31 @@
 import PackageDescription
 import class Foundation.ProcessInfo
 
+let isStaticBuild = ProcessInfo.processInfo.environment["LLBUILD_STATIC_LINK"] != nil
+let useEmbeddedSqlite = isStaticBuild || ProcessInfo.processInfo.environment["LLBUILD_USE_EMBEDDED_SQLITE"] != nil
+let useTerminfo = !isStaticBuild && ProcessInfo.processInfo.environment["LLBUILD_NO_TERMINFO"] == nil
+
+let embeddedSqliteCondition: TargetDependencyCondition? = {
+    if useEmbeddedSqlite {
+        return nil
+    }
+    return .when(platforms: [.windows])
+}()
+
+let externalSqliteLibraries: [LinkerSetting] = {
+    if useEmbeddedSqlite {
+        return []
+    }
+    return [.linkedLibrary("sqlite3", .when(platforms: [.macOS, .iOS, .tvOS, .watchOS, .visionOS, .macCatalyst, .linux, .android]))] 
+}()
+
+let terminfoLibraries: [LinkerSetting] = {
+    if !useTerminfo {
+        return []
+    }
+    return [.linkedLibrary("ncurses", .when(platforms: [.linux, .macOS, .android]))]
+}()
+
 let package = Package(
     name: "llbuild",
     platforms: [
@@ -21,10 +46,6 @@ let package = Package(
             targets: ["libllbuild"]),
         .library(
             name: "llbuildSwift",
-            targets: ["llbuildSwift"]),
-        .library(
-            name: "llbuildSwiftDynamic",
-            type: .dynamic,
             targets: ["llbuildSwift"]),
         .library(
             name: "llbuildAnalysis",
@@ -83,12 +104,10 @@ let package = Package(
             name: "llbuildCore",
             dependencies: [
                 "llbuildBasic",
-                .product(name: "SwiftToolchainCSQLite", package: "swift-toolchain-sqlite", condition: .when(platforms: [.windows])),
+                .product(name: "SwiftToolchainCSQLite", package: "swift-toolchain-sqlite", condition: embeddedSqliteCondition),
             ],
             path: "lib/Core",
-            linkerSettings: [
-                .linkedLibrary("sqlite3", .when(platforms: [.macOS, .iOS, .tvOS, .watchOS, .visionOS, .macCatalyst, .linux, .android]))
-            ]
+            linkerSettings: externalSqliteLibraries
         ),
         .target(
             name: "llbuildBuildSystem",
@@ -129,7 +148,11 @@ let package = Package(
                 .linkedLibrary("pthread", .when(platforms: [.linux]))]),
         .target(
             name: "llbuildCoreTests",
-            dependencies: ["llbuildCore", "gmocklib"],
+            dependencies: [
+                "llbuildCore",
+                "gmocklib",
+                .product(name: "SwiftToolchainCSQLite", package: "swift-toolchain-sqlite", condition: embeddedSqliteCondition),
+            ],
             path: "unittests/Core",
             cxxSettings: [
                 .headerSearchPath("../../utils/unittest/googlemock/include"),
@@ -137,7 +160,8 @@ let package = Package(
             ],
             linkerSettings: [
                 .linkedLibrary("dl", .when(platforms: [.linux])),
-                .linkedLibrary("pthread", .when(platforms: [.linux]))]),
+                .linkedLibrary("pthread", .when(platforms: [.linux])),
+            ] + externalSqliteLibraries),
         .target(
             name: "llbuildBuildSystemTests",
             dependencies: ["llbuildBuildSystem", "gmocklib"],
@@ -231,11 +255,20 @@ let package = Package(
             path: "lib/llvm/Support",
             linkerSettings: [
                 .linkedLibrary("m", .when(platforms: [.linux])),
-                .linkedLibrary("ncurses", .when(platforms: [.linux, .macOS, .android]))]
+            ] + terminfoLibraries
         ),
     ],
     cxxLanguageStandard: .cxx14
 )
+
+if !isStaticBuild {
+    package.products += [
+        .library(
+            name: "llbuildSwiftDynamic",
+            type: .dynamic,
+            targets: ["llbuildSwift"]),
+    ]
+}
 
 if ProcessInfo.processInfo.environment["SWIFTCI_USE_LOCAL_DEPS"] == nil {
     package.dependencies += [
@@ -247,38 +280,43 @@ if ProcessInfo.processInfo.environment["SWIFTCI_USE_LOCAL_DEPS"] == nil {
     ]
 }
 
-// FIXME: Conditionalize these flags since SwiftPM 5.3 and earlier will crash for platforms they don't know about.
-#if os(Windows)
+let llvmTargets: Set<String> = [
+    "libllbuild",
+    "llbuildCore",
 
-do {
-    let llvmTargets: Set<String> = [
-        "libllbuild",
-        "llbuildCore",
+    "llvmDemangle",
+    "llvmSupport",
 
-        "llvmDemangle",
-        "llvmSupport",
+    "llbuild",
+    "llbuildBasic",
+    "llbuildBuildSystem",
+    "llbuildCommands",
+    "llbuildNinja",
 
-        "llbuild",
-        "llbuildBasic",
-        "llbuildBuildSystem",
-        "llbuildCommands",
-        "llbuildNinja",
+    "llbuildBasicTests",
+    "llbuildBuildSystemTests",
+    "llbuildCoreTests",
+    "llbuildNinjaTests",
 
-        "llbuildBasicTests",
-        "llbuildBuildSystemTests",
-        "llbuildCoreTests",
-        "llbuildNinjaTests",
+    "swift-build-tool",
+]
 
-        "swift-build-tool",
-    ]
-
+if !useTerminfo {
     package.targets.filter({ llvmTargets.contains($0.name) }).forEach { target in
         target.cxxSettings = (target.cxxSettings ?? []) + [
-            .define("LLVM_ON_WIN32", .when(platforms: [.windows])),
-            .define("_CRT_SECURE_NO_WARNINGS", .when(platforms: [.windows])),
-            .define("_CRT_NONSTDC_NO_WARNINGS", .when(platforms: [.windows])),
+            .define("LLBUILD_NO_TERMINFO"),
         ]
     }
+}
+
+// FIXME: Conditionalize these flags since SwiftPM 5.3 and earlier will crash for platforms they don't know about.
+#if os(Windows)
+package.targets.filter({ llvmTargets.contains($0.name) }).forEach { target in
+    target.cxxSettings = (target.cxxSettings ?? []) + [
+        .define("LLVM_ON_WIN32", .when(platforms: [.windows])),
+        .define("_CRT_SECURE_NO_WARNINGS", .when(platforms: [.windows])),
+        .define("_CRT_NONSTDC_NO_WARNINGS", .when(platforms: [.windows])),
+    ]
 }
 
 package.targets.first { $0.name == "llbuildBasic" }?.linkerSettings = [
