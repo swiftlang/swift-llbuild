@@ -66,7 +66,7 @@ let package = Package(
         /// The public llbuild Swift API.
         .target(
             name: "llbuildSwift",
-            dependencies: ["libllbuild"],
+            dependencies: ["llbuild", "libllbuild"],
             path: "products/llbuildSwift",
             exclude: []
         ),
@@ -109,7 +109,7 @@ let package = Package(
         
         .target(
             name: "llbuildAnalysis",
-            dependencies: ["llbuildSwift"],
+            dependencies: ["llbuild", "llbuildSwift"],
             path: "lib/Analysis"
         ),
         
@@ -161,7 +161,7 @@ let package = Package(
                 .linkedLibrary("pthread", .when(platforms: [.linux]))]),
         .testTarget(
             name: "llbuildSwiftTests",
-            dependencies: ["llbuildSwift", "llbuildTestSupport"],
+            dependencies: ["llbuild", "llbuildSwift", "llbuildTestSupport"],
             path: "unittests/Swift",
             linkerSettings: [
                 .linkedLibrary("dl", .when(platforms: [.linux])),
