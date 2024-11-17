@@ -14,21 +14,21 @@ let embeddedSqliteCondition: TargetDependencyCondition? = {
     if useEmbeddedSqlite {
         return nil
     }
-    return .when(platforms: [.windows])
+    return .when(platforms: [.windows, .android])
 }()
 
 let externalSqliteLibraries: [LinkerSetting] = {
     if useEmbeddedSqlite {
         return []
     }
-    return [.linkedLibrary("sqlite3", .when(platforms: [.macOS, .iOS, .tvOS, .watchOS, .visionOS, .macCatalyst, .linux, .android]))] 
+    return [.linkedLibrary("sqlite3", .when(platforms: [.macOS, .iOS, .tvOS, .watchOS, .visionOS, .macCatalyst, .linux]))] 
 }()
 
 let terminfoLibraries: [LinkerSetting] = {
     if !useTerminfo {
         return []
     }
-    return [.linkedLibrary("ncurses", .when(platforms: [.linux, .macOS, .android]))]
+    return [.linkedLibrary("ncurses", .when(platforms: [.linux, .macOS]))]
 }()
 
 let package = Package(
@@ -98,7 +98,10 @@ let package = Package(
         .target(
             name: "llbuildBasic",
             dependencies: ["llvmSupport"],
-            path: "lib/Basic"
+            path: "lib/Basic",
+            linkerSettings: [
+                .linkedLibrary("android-spawn", .when(platforms: [.android]))
+            ]
         ),
         .target(
             name: "llbuildCore",
