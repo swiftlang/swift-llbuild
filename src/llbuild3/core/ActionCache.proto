@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package llbuild3.core;
+
+import "llbuild3/core/CAS.proto";
+import "llbuild3/core/Label.proto";
+
+// Enum representing the supported action cache key types
+enum CacheKeyType {
+    TASK = 0;
+    ACTION = 1;
+}
+
+message CacheKey {
+    Label label = 1;
+
+    CacheKeyType type = 2;
+
+    CASObjectID content = 3;
+}
+
+message CacheValue {
+    CASObjectID data = 1;
+
+    repeated ActionStat stats = 2;
+}
+
+message ActionStat {
+    string name = 1;
+    oneof value {
+        int64 intValue = 2;
+        string stringValue = 3;
+        bool boolValue = 4;
+        double doubleValue = 5;
+        CASObjectID casObject = 6;
+    }
+}

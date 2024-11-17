@@ -1,9 +1,9 @@
 mapping {
-    module_name: "Tritium"
-    proto_file_path: "tritium/core/ActionCache.proto"
-    proto_file_path: "tritium/core/Artifact.proto"
-    proto_file_path: "tritium/core/CASObjectID.proto"
-    proto_file_path: "tritium/core/Label.proto"
-    proto_file_path: "tritium/core/Rule.proto"
-    proto_file_path: "tritium/Error.proto"
+    module_name: "llbuild3"
+    proto_file_path: "llbuild3/core/ActionCache.proto"
+    proto_file_path: "llbuild3/core/Artifact.proto"
+    proto_file_path: "llbuild3/core/CAS.proto"
+    proto_file_path: "llbuild3/core/Label.proto"
+    proto_file_path: "llbuild3/core/Rule.proto"
+    proto_file_path: "llbuild3/Error.proto"
 }

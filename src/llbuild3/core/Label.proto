@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package llbuild3.core;
+
+/// A Label represents a handle for finding an element within a workspace. It is
+/// made up of 2 components: the logical path to the element's container (i.e. a
+/// package or project, depends on the context) and the name of the element
+/// within that container. Build systems can choose to interpret the components
+/// of a label as needed, but they must all resolve into a unique element.
+/// Labels have a String representation in the form of:
+///   `//logical/container/path:name`
+message Label {
+    /// The logical path components that represent a grouping. It is the
+    /// path-like components between `//` and `:` in the canonical form.
+    /// Components cannot have spaces or `/` characters in them.
+    repeated string components = 1;
+
+    /// The name of the element within the container.
+    string name = 2;
+}
