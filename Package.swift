@@ -94,7 +94,7 @@ let package = Package(
         ),
 
         // MARK: Components
-        
+
         .target(
             name: "llbuildBasic",
             dependencies: ["llvmSupport"],
@@ -129,13 +129,13 @@ let package = Package(
         ),
 
         // MARK: Analysis Components
-        
+
         .target(
             name: "llbuildAnalysis",
             dependencies: ["llbuildSwift"],
             path: "lib/Analysis"
         ),
-        
+
         // MARK: Test Targets
 
         .target(
@@ -205,7 +205,7 @@ let package = Package(
         .target(
             name: "llbuildTestSupport",
             path: "unittests/TestSupport"),
-        
+
         // MARK: GoogleTest
 
         .target(
@@ -333,7 +333,7 @@ package.targets.first { $0.name == "llbuildBasic" }?.linkerSettings = [
 // be folded up with .when(platforms:_) clauses.
 #if os(OpenBSD)
 if let target = package.targets.first(where: { $0.name == "llbuildCore"}) {
-    target.cSettings = [.unsafeFlags(["-I/usr/local/include"])] 
+    target.cSettings = [.unsafeFlags(["-I/usr/local/include"])]
     target.linkerSettings = [
         .linkedLibrary("sqlite3"),
         .unsafeFlags(["-L/usr/local/lib"])
