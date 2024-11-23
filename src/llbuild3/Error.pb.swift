@@ -24,8 +24,9 @@ public enum Llbuild3_ErrorType: SwiftProtobuf.Enum, Swift.CaseIterable {
   public typealias RawValue = Int
   case engine // = 0
   case cache // = 1
-  case executor // = 2
-  case client // = 3
+  case cas // = 2
+  case executor // = 3
+  case client // = 4
   case UNRECOGNIZED(Int)
 
   public init() {
@@ -36,8 +37,9 @@ public enum Llbuild3_ErrorType: SwiftProtobuf.Enum, Swift.CaseIterable {
     switch rawValue {
     case 0: self = .engine
     case 1: self = .cache
-    case 2: self = .executor
-    case 3: self = .client
+    case 2: self = .cas
+    case 3: self = .executor
+    case 4: self = .client
     default: self = .UNRECOGNIZED(rawValue)
     }
   }
@@ -46,8 +48,9 @@ public enum Llbuild3_ErrorType: SwiftProtobuf.Enum, Swift.CaseIterable {
     switch self {
     case .engine: return 0
     case .cache: return 1
-    case .executor: return 2
-    case .client: return 3
+    case .cas: return 2
+    case .executor: return 3
+    case .client: return 4
     case .UNRECOGNIZED(let i): return i
     }
   }
@@ -56,6 +59,7 @@ public enum Llbuild3_ErrorType: SwiftProtobuf.Enum, Swift.CaseIterable {
   public static let allCases: [Llbuild3_ErrorType] = [
     .engine,
     .cache,
+    .cas,
     .executor,
     .client,
   ]
@@ -105,8 +109,9 @@ extension Llbuild3_ErrorType: SwiftProtobuf._ProtoNameProviding {
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     0: .same(proto: "ENGINE"),
     1: .same(proto: "CACHE"),
-    2: .same(proto: "EXECUTOR"),
-    3: .same(proto: "CLIENT"),
+    2: .same(proto: "CAS"),
+    3: .same(proto: "EXECUTOR"),
+    4: .same(proto: "CLIENT"),
   ]
 }
 

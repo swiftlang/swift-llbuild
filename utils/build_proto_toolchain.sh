@@ -25,4 +25,4 @@ fi
 # being used as a dependency in the build. This might be a bit slower, but it's correct.
 swift build -c release --product protoc-gen-swift --package-path "$UTILITIES_DIR/../thirdparty/swift-protobuf"
 
-cp "$UTILITIES_DIR"/../.build/release/protoc-gen-swift "$TOOLS_DIR/bin"
+cp "$UTILITIES_DIR"/../thirdparty/swift-protobuf/.build/release/protoc-gen-swift "$TOOLS_DIR/bin"

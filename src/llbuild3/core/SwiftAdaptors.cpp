@@ -266,6 +266,80 @@ result<uint64_t, ErrorPB> ExtTaskInterface::requestAction() {
 }
 
 
+class ExtCASDatabaseAdaptor: public CASDatabase {
+private:
+  ExtCASDatabase extCASDB;
+
+public:
+  ExtCASDatabaseAdaptor(ExtCASDatabase extCASDB) : extCASDB(extCASDB) { }
+
+  void contains(const CASObjectID& casid, std::function<void(result<bool, Error>)> resultHandler) {
+    extCASDB.containsFn(extCASDB.ctx, casid.bytes(), std::function([resultHandler](bool found, ErrorPB error) {
+      if (error.size() > 0) {
+        Error err;
+        err.ParseFromString(error);
+        resultHandler(fail(err));
+        return;
+      }
+
+      resultHandler(found);
+    }));
+  }
+
+  void get(const CASObjectID& casid, std::function<void(result<CASObject, Error>)> resultHandler) {
+    extCASDB.getFn(extCASDB.ctx, casid.bytes(), std::function([resultHandler](CASObjectPB object, ErrorPB error) {
+      if (error.size() > 0) {
+        Error err;
+        err.ParseFromString(error);
+        resultHandler(fail(err));
+      } else {
+        CASObject obj;
+        obj.ParseFromString(object);
+        resultHandler(obj);
+      }
+    }));
+  }
+
+  void put(const CASObject& object, std::function<void(result<CASObjectID, Error>)> resultHandler) {
+    CASObjectPB opb;
+    if (!object.SerializeToString(&opb)) {
+      Error err;
+      err.set_type(ErrorType::ENGINE);
+      err.set_code(InternalProtobufSerialization);
+      resultHandler(fail(err));
+      return;
+    }
+
+    extCASDB.putFn(extCASDB.ctx, opb, std::function([resultHandler](CASIDBytes casid, ErrorPB error) {
+      if (error.size() > 0) {
+        Error err;
+        err.ParseFromString(error);
+        resultHandler(fail(err));
+      } else {
+        CASObjectID objid;
+        *objid.mutable_bytes() = casid;
+        resultHandler(objid);
+      }
+    }));
+  }
+
+  CASObjectID identify(const CASObject& object) {
+    CASObjectPB opb;
+    if (!object.SerializeToString(&opb)) {
+      // FIXME: propagate error?
+      return CASObjectID();
+    }
+
+    CASObjectID objid;
+    *objid.mutable_bytes() = extCASDB.identifyFn(extCASDB.ctx, opb);
+    return objid;
+  }
+};
+
+CASDatabaseRef makeExtCASDatabase(ExtCASDatabase extCASDB) {
+  return CASDatabaseRef(new ExtCASDatabaseAdaptor(extCASDB));
+}
+
 CASDatabaseRef makeInMemoryCASDatabase() {
   return CASDatabaseRef(new InMemoryCASDatabase());
 }
@@ -285,6 +359,7 @@ public:
       err.set_type(ErrorType::ENGINE);
       err.set_code(InternalProtobufSerialization);
       resultHandler(fail(err));
+      return;
     }
 
     extCache.getFn(extCache.ctx, kpb, std::function([resultHandler](CacheValuePB value, ErrorPB error) {

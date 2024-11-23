@@ -23,6 +23,10 @@ public typealias TDictObject = Llbuild3_Core_DictObject
 public typealias TListObject = Llbuild3_Core_ListObject
 public typealias TArtifact = Llbuild3_Core_Artifact
 
+// CAS.proto
+public typealias TCASObject = Llbuild3_Core_CASObject
+public typealias TCASObjectID = Llbuild3_Core_CASObjectID
+
 // Label.proto
 public typealias TLabel = Llbuild3_Core_Label
 

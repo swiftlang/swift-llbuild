@@ -33,6 +33,8 @@ struct EngineConfig;
 typedef std::string ArtifactPB;
 typedef std::string CacheKeyPB;
 typedef std::string CacheValuePB;
+typedef std::string CASIDBytes;
+typedef std::string CASObjectPB;
 typedef std::string ErrorPB;
 typedef std::string LabelPB;
 typedef std::string SignaturePB;
@@ -111,6 +113,17 @@ public:
 
   LLBUILD3_EXPORT void cancel();
   LLBUILD3_EXPORT void addCompletionHandler(void* ctx, void (*handler)(void*, result<ArtifactPB, ErrorPB>*));
+};
+
+struct ExtCASDatabase {
+  void* ctx;
+
+  // FIXME: cleanup context
+
+  void (*containsFn)(void* ctx, CASIDBytes id, std::function<void (bool, ErrorPB)>);
+  void (*getFn)(void* ctx, CASIDBytes id, std::function<void (CASObjectPB, ErrorPB)>);
+  void (*putFn)(void* ctx, CASObjectPB obj, std::function<void (CASIDBytes, ErrorPB)>);
+  CASIDBytes (*identifyFn)(void* ctx, CASObjectPB obj);
 };
 
 class CASDatabase;

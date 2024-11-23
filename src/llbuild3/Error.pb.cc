@@ -87,9 +87,9 @@ const char descriptor_table_protodef_llbuild3_2fError_2eproto[] ABSL_ATTRIBUTE_S
     "\001(\0162\023.llbuild3.ErrorType\022\021\n\004code\030\002 \001(\004H\000"
     "\210\001\001\022\030\n\013description\030\003 \001(\tH\001\210\001\001\022%\n\007context"
     "\030\004 \003(\0132\024.google.protobuf.AnyB\007\n\005_codeB\016\n"
-    "\014_description*<\n\tErrorType\022\n\n\006ENGINE\020\000\022\t"
-    "\n\005CACHE\020\001\022\014\n\010EXECUTOR\020\002\022\n\n\006CLIENT\020\003b\006pro"
-    "to3"
+    "\014_description*E\n\tErrorType\022\n\n\006ENGINE\020\000\022\t"
+    "\n\005CACHE\020\001\022\007\n\003CAS\020\002\022\014\n\010EXECUTOR\020\003\022\n\n\006CLIE"
+    "NT\020\004b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_llbuild3_2fError_2eproto_deps[1] =
     {
@@ -99,7 +99,7 @@ static ::absl::once_flag descriptor_table_llbuild3_2fError_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_llbuild3_2fError_2eproto = {
     false,
     false,
-    283,
+    292,
     descriptor_table_protodef_llbuild3_2fError_2eproto,
     "llbuild3/Error.proto",
     &descriptor_table_llbuild3_2fError_2eproto_once,
@@ -118,9 +118,9 @@ const ::google::protobuf::EnumDescriptor* ErrorType_descriptor() {
   return file_level_enum_descriptors_llbuild3_2fError_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t ErrorType_internal_data_[] = {
-    262144u, 0u, };
+    327680u, 0u, };
 bool ErrorType_IsValid(int value) {
-  return 0 <= value && value <= 3;
+  return 0 <= value && value <= 4;
 }
 // ===================================================================
 
