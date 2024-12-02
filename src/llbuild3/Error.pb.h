@@ -65,8 +65,9 @@ namespace llbuild3 {
 enum ErrorType : int {
   ENGINE = 0,
   CACHE = 1,
-  EXECUTOR = 2,
-  CLIENT = 3,
+  CAS = 2,
+  EXECUTOR = 3,
+  CLIENT = 4,
   ErrorType_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   ErrorType_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -76,8 +77,8 @@ enum ErrorType : int {
 bool ErrorType_IsValid(int value);
 extern const uint32_t ErrorType_internal_data_[];
 constexpr ErrorType ErrorType_MIN = static_cast<ErrorType>(0);
-constexpr ErrorType ErrorType_MAX = static_cast<ErrorType>(3);
-constexpr int ErrorType_ARRAYSIZE = 3 + 1;
+constexpr ErrorType ErrorType_MAX = static_cast<ErrorType>(4);
+constexpr int ErrorType_ARRAYSIZE = 4 + 1;
 const ::google::protobuf::EnumDescriptor*
 ErrorType_descriptor();
 template <typename T>
@@ -90,7 +91,7 @@ const std::string& ErrorType_Name(T value) {
 template <>
 inline const std::string& ErrorType_Name(ErrorType value) {
   return ::google::protobuf::internal::NameOfDenseEnum<ErrorType_descriptor,
-                                                 0, 3>(
+                                                 0, 4>(
       static_cast<int>(value));
 }
 inline bool ErrorType_Parse(absl::string_view name, ErrorType* value) {

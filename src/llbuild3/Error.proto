@@ -7,12 +7,10 @@ import "google/protobuf/any.proto";
 
 enum ErrorType {
     ENGINE = 0;
-
     CACHE = 1;
-
-    EXECUTOR = 2;
-
-    CLIENT = 3;
+    CAS = 2;
+    EXECUTOR = 3;
+    CLIENT = 4;
 }
 
 message Error {

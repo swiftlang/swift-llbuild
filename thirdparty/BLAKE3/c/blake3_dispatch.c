@@ -80,7 +80,7 @@ static /* Allow the variable to be controlled manually for testing */
 static
 #endif
     enum cpu_feature
-    get_cpu_features() {
+    get_cpu_features(void) {
 
   if (g_cpu_features != UNDEFINED) {
     return g_cpu_features;

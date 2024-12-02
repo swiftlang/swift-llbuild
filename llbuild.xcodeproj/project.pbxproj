@@ -83,9 +83,9 @@
 		403552E52C52069300D415BA /* Label.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4CB2C51995100B68221 /* Label.pb.swift */; };
 		403552EF2C522BAF00D415BA /* Visibility.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 403552EE2C522BA700D415BA /* Visibility.hpp */; settings = {ATTRIBUTES = (Public, ); }; };
 		403552F12C522F9E00D415BA /* SwiftProtobuf in Frameworks */ = {isa = PBXBuildFile; productRef = 403552F02C522F9E00D415BA /* SwiftProtobuf */; };
-		4035F55A2CDEABA100337926 /* EngineInternal.proto in Sources */ = {isa = PBXBuildFile; fileRef = 4035F5592CDEAB8100337926 /* EngineInternal.proto */; };
 		4035F55D2CDEB2F500337926 /* EngineInternal.pb.cc in Sources */ = {isa = PBXBuildFile; fileRef = 4035F55C2CDEB2F500337926 /* EngineInternal.pb.cc */; };
 		4035F55E2CDEB2F500337926 /* EngineInternal.pb.h in Headers */ = {isa = PBXBuildFile; fileRef = 4035F55B2CDEB2F500337926 /* EngineInternal.pb.h */; };
+		4035F64B2CF140B000337926 /* CAS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4035F64A2CF140A900337926 /* CAS.swift */; };
 		403B81602C79047D00CD4F1E /* EngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 403B815E2C79047D00CD4F1E /* EngineTests.swift */; };
 		403DC5882C52031D00A9AE24 /* libllbuild3ThirdParty.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4072B4E02C51B3A000B68221 /* libllbuild3ThirdParty.a */; };
 		4072B5DF2C51BE5100B68221 /* llbuild3.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4072B5D72C51BE5100B68221 /* llbuild3.framework */; };
@@ -1618,6 +1618,7 @@
 		4035F55B2CDEB2F500337926 /* EngineInternal.pb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EngineInternal.pb.h; sourceTree = "<group>"; };
 		4035F55C2CDEB2F500337926 /* EngineInternal.pb.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = EngineInternal.pb.cc; sourceTree = "<group>"; };
 		4035F5CB2CE72F2A00337926 /* README.llbuild3.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.llbuild3.md; sourceTree = "<group>"; };
+		4035F64A2CF140A900337926 /* CAS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CAS.swift; sourceTree = "<group>"; };
 		40377C7C2061D24200C0FD4D /* Package.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; tabWidth = 4; };
 		403B815E2C79047D00CD4F1E /* EngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineTests.swift; sourceTree = "<group>"; };
 		403DB4402C51D07C00A9AE24 /* ProtocolBuffers_iOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_iOS.xcodeproj; sourceTree = "<group>"; };
@@ -5005,6 +5006,7 @@
 				40E837E32CCC5FFB0022B026 /* CAS.pb.h */,
 				40E837E42CCC5FFB0022B026 /* CAS.pb.cc */,
 				40E837E52CCC5FFB0022B026 /* CAS.pb.swift */,
+				4035F64A2CF140A900337926 /* CAS.swift */,
 				40E7C51B2C61CAEF00FC0383 /* CoreTypes.swift */,
 				4072B4C42C51995100B68221 /* Engine.h */,
 				4072B4C52C51995100B68221 /* Engine.cpp */,
@@ -10764,7 +10766,6 @@
 				4072B5F12C51BF1700B68221 /* Error.pb.cc in Sources */,
 				40E7C53A2C61CB0800FC0383 /* CoreTypes.swift in Sources */,
 				4072B5F22C51BF1700B68221 /* Artifact.pb.swift in Sources */,
-				4035F55A2CDEABA100337926 /* EngineInternal.proto in Sources */,
 				40E836B12CBDC6FA0022B026 /* ActionCache.swift in Sources */,
 				40E7C53E2C61CF6800FC0383 /* Engine.swift in Sources */,
 				4072B5F32C51BF1700B68221 /* ActionCache.pb.cc in Sources */,
@@ -10773,6 +10774,7 @@
 				40E837E72CCC5FFB0022B026 /* CAS.pb.swift in Sources */,
 				4072B5F52C51BF1700B68221 /* ActionCache.cpp in Sources */,
 				40E837EA2CCC64430022B026 /* CAS.cpp in Sources */,
+				4035F64B2CF140B000337926 /* CAS.swift in Sources */,
 				4072B5F62C51BF1700B68221 /* Error.pb.swift in Sources */,
 				4072B5F72C51BF1700B68221 /* ActionCache.pb.swift in Sources */,
 				4072B5F82C51BF1700B68221 /* Label.cpp in Sources */,

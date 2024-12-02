@@ -46,6 +46,13 @@ enum EngineError: uint64_t {
   Unknown = 0
 };
 
+enum CASError: uint64_t {
+  ObjectNotFound = 100,
+
+  // Unknown
+  UnknownCASError = 0
+};
+
 }
 }
 
