@@ -391,9 +391,13 @@ extension TEngineConfig {
 public class TEngine {
   private var eng: llbuild3.core.EngineRef
 
-  convenience public init (config: TEngineConfig = TEngineConfig(), actionCache: TActionCache? = nil, baseRuleProvider: TRuleProvider) throws {
-    // FIXME: move cas outside
-    let tcas = llbuild3.core.makeInMemoryCASDatabase()
+  convenience public init (config: TEngineConfig = TEngineConfig(), casDB: TCASDatabase? = nil, actionCache: TActionCache? = nil, baseRuleProvider: TRuleProvider) throws {
+    let tcas: llbuild3.core.CASDatabaseRef
+    if let casDB {
+      tcas = llbuild3.core.makeExtCASDatabase(casDB.extCASDatabase())
+    } else {
+      tcas = llbuild3.core.CASDatabaseRef()
+    }
 
     let tcache: llbuild3.core.ActionCacheRef
     if let cache = actionCache {
