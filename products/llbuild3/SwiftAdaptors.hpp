@@ -128,6 +128,7 @@ struct ExtCASDatabase {
 
 class CASDatabase;
 typedef std::shared_ptr<CASDatabase> CASDatabaseRef;
+LLBUILD3_EXPORT CASDatabaseRef makeExtCASDatabase(ExtCASDatabase extCASDB);
 LLBUILD3_EXPORT CASDatabaseRef makeInMemoryCASDatabase();
 
 struct ExtActionCache {
