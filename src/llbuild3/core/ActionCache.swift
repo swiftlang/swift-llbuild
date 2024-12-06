@@ -44,6 +44,9 @@ extension TActionCache {
             let bytes = try value.serializedData()
             handler(std.string(fromData: bytes), std.string())
             return
+          } else {
+            handler(std.string(), std.string())
+            return
           }
         } catch {
           let err: TError
