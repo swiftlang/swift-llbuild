@@ -28,7 +28,11 @@ let terminfoLibraries: [LinkerSetting] = {
     if !useTerminfo {
         return []
     }
+#if os(FreeBSD)
+    return [.linkedLibrary("ncurses")]
+#else
     return [.linkedLibrary("ncurses", .when(platforms: [.linux, .macOS]))]
+#endif
 }()
 
 let package = Package(
@@ -338,5 +342,20 @@ if let target = package.targets.first(where: { $0.name == "llbuildCore"}) {
         .linkedLibrary("sqlite3"),
         .unsafeFlags(["-L/usr/local/lib"])
     ]
+}
+#elseif os(FreeBSD)
+if let target = package.targets.first(where: { $0.name == "llvmSupport" }) {
+    target.linkerSettings = ["execinfo", "m", "pthread", "ncurses"].map { .linkedLibrary($0) }
+}
+package.targets.filter({ $0.name == "llbuildCore" || $0.name == "llbuildCoreTests" }).forEach {
+    $0.cSettings = [.unsafeFlags(["-I/usr/local/include"])]
+    $0.linkerSettings = [
+        .linkedLibrary("sqlite3"),
+        .unsafeFlags(["-L/usr/local/lib"])
+    ]
+
+}
+package.targets.filter({ $0.name == "llbuild" || $0.name == "swift-build-tool" }).forEach {
+    $0.linkerSettings = [.linkedLibrary("dl"), .linkedLibrary("pthread")]
 }
 #endif
