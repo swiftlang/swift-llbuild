@@ -20,3 +20,5 @@ if(CMAKE_SYSTEM_NAME STREQUAL Windows)
   target_link_libraries(llbuildBasic PUBLIC
     ShLwApi.lib)
 endif()
+
+set_property(GLOBAL APPEND PROPERTY LLBuild_EXPORTS llbuildBasic)

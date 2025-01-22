@@ -67,3 +67,5 @@ endif()
 if(${CMAKE_SYSTEM_NAME} MATCHES "Android|Darwin|Linux|FreeBSD")
   target_link_libraries(llvmSupport PRIVATE curses)
 endif()
+
+set_property(GLOBAL APPEND PROPERTY LLBuild_EXPORTS llvmSupport)
