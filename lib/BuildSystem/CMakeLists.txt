@@ -15,5 +15,3 @@ target_link_libraries(llbuildBuildSystem PRIVATE
   llbuildCore
   llbuildBasic
   llvmSupport)
-
-set_property(GLOBAL APPEND PROPERTY LLBuild_EXPORTS llbuildBuildSystem)
