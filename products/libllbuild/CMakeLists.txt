@@ -56,6 +56,7 @@ install(TARGETS libllbuild
   LIBRARY DESTINATION lib${LLBUILD_LIBDIR_SUFFIX}
   RUNTIME DESTINATION bin
   COMPONENT libllbuild)
+set_property(GLOBAL APPEND PROPERTY LLBuild_EXPORTS libllbuild)
 
 add_custom_target(install-libllbuild
                   DEPENDS libllbuild
