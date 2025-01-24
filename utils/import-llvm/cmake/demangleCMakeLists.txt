@@ -1,4 +1,4 @@
-add_llbuild_library(LLVMDemangle
+add_llbuild_library(llvmDemangle
     ItaniumDemangle.cpp
     MicrosoftDemangle.cpp
 )

@@ -55,7 +55,7 @@ raw_ostream.cpp
 
 
 target_link_libraries(llvmSupport PRIVATE
-  LLVMDemangle
+  llvmDemangle
   Threads::Threads
   ${CMAKE_DL_LIBS})
 
