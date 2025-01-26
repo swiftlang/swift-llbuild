@@ -75,31 +75,39 @@ int pthread_fchdir_np(int fd)
 #define __GLIBC_PREREQ(maj, min) 0
 #endif
 
-#ifndef HAVE_POSIX_SPAWN_CHDIR
-#if defined(__sun) || \
-  (defined(__MAC_OS_X_VERSION_MIN_REQUIRED) && __MAC_OS_X_VERSION_MIN_REQUIRED >= 101500) || \
-  __GLIBC_PREREQ(2, 29)
-#define HAVE_POSIX_SPAWN_CHDIR 1
-#else
-#define HAVE_POSIX_SPAWN_CHDIR 0
-#endif
-#endif
-
 #if !defined(_WIN32) && defined(HAVE_POSIX_SPAWN)
+// Implementation mostly copied from _CFPosixSpawnFileActionsChdir in swift-corelibs-foundation
 static int posix_spawn_file_actions_addchdir(posix_spawn_file_actions_t * __restrict file_actions,
                                              const char * __restrict path) {
-#if HAVE_POSIX_SPAWN_CHDIR
-  return ::posix_spawn_file_actions_addchdir_np(file_actions, path);
-#else
-#if defined(__APPLE__) && __MAC_OS_X_VERSION_MAX_ALLOWED >= 101500
-  if (__builtin_available(macOS 10.15, *)) {
-    return ::posix_spawn_file_actions_addchdir_np(file_actions, path);
-  }
-#endif
-
-  // Any other POSIX platform returns ENOSYS (Function not implemented),
-  // to simplify the fallback logic around the call site.
+#if defined(__GLIBC__) && !__GLIBC_PREREQ(2, 29)
+  // Glibc versions prior to 2.29 don't support posix_spawn_file_actions_addchdir_np, impacting:
+  //  - Amazon Linux 2 (EoL mid-2025)
   return ENOSYS;
+#elif defined(__APPLE__) && defined(__MAC_OS_X_VERSION_MIN_REQUIRED) && __MAC_OS_X_VERSION_MIN_REQUIRED < 101500
+  // Conditionally available on macOS if building with a deployment target older than 10.15
+  if (__builtin_available(macOS 10.15, *)) {
+    return posix_spawn_file_actions_addchdir_np(file_actions, path);
+  }
+  return ENOSYS;
+#elif defined(__OpenBSD__)
+  // Currently missing as of:
+  //  - OpenBSD 7.5 (April 2024)
+  return ENOSYS;
+#elif defined(__GLIBC__) || defined(__APPLE__) || defined(__FreeBSD__) || (defined(__ANDROID__) && __ANDROID_API__ >= 34) || defined(__musl__)
+  // Pre-standard posix_spawn_file_actions_addchdir_np version available in:
+  //  - Solaris 11.3 (October 2015)
+  //  - Glibc 2.29 (February 2019)
+  //  - macOS 10.15 (October 2019)
+  //  - musl 1.1.24 (October 2019)
+  //  - FreeBSD 13.1 (May 2022)
+  //  - Android 14 (October 2023)
+  return posix_spawn_file_actions_addchdir_np((posix_spawn_file_actions_t *)file_actions, path);
+#else
+  // Standardized posix_spawn_file_actions_addchdir version (POSIX.1-2024, June 2024) available in:
+  //  - Solaris 11.4 (August 2018)
+  //  - NetBSD 10.0 (March 2024)
+  //  - QNX 8 (December 2023)
+  return posix_spawn_file_actions_addchdir((posix_spawn_file_actions_t *)file_actions, path);
 #endif
 }
 #endif
