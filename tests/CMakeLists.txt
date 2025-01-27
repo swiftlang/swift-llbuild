@@ -18,8 +18,7 @@ configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/Unit/lit.site.cfg.in
   ${CMAKE_CURRENT_BINARY_DIR}/Unit/lit.site.cfg)
 
-include(FindPython)
-if(Python_Interpreter_FOUND AND LIT_FOUND AND FILECHECK_FOUND)
+if(Python3_Interpreter_FOUND AND LIT_FOUND AND FILECHECK_FOUND)
   set(LIT_ARGS "${LLBUILD_LIT_ARGS}")
   separate_arguments(LIT_ARGS)
   
@@ -29,7 +28,7 @@ if(Python_Interpreter_FOUND AND LIT_FOUND AND FILECHECK_FOUND)
   endif()
 
   set(lit_command
-    ${Python_EXECUTABLE}
+    ${Python3_EXECUTABLE}
     ${LIT_EXECUTABLE}
     ${LIT_ARGS}
     --param build_mode=${build_mode})
