@@ -45,9 +45,6 @@ if(Python3_Interpreter_FOUND AND LIT_FOUND AND FILECHECK_FOUND)
   add_dependencies(test-llbuild ${test_target_dependencies})
 
   # Add a target for running all tests.
-  if(POLICY CMP0037)
-    cmake_policy(SET CMP0037 OLD)
-  endif(POLICY CMP0037)
   add_custom_target(test)
   add_dependencies(test test-llbuild)
   set_target_properties(test PROPERTIES FOLDER "Tests")
