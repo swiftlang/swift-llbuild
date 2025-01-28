@@ -10,15 +10,15 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLBUILD3_CORE_ERRORS_H
-#define LLBUILD3_CORE_ERRORS_H
+#ifndef LLBUILD3_ERRORS_H
+#define LLBUILD3_ERRORS_H
 
 #include <cstdint>
+#include <type_traits>
 
 namespace llbuild3 {
-namespace core {
 
-enum EngineError: uint64_t {
+enum class EngineError: uint64_t {
   // 100 - Graph Errors
   NoArtifactProducer = 100,
   NoProviderForRule = 101,
@@ -46,14 +46,43 @@ enum EngineError: uint64_t {
   Unknown = 0
 };
 
-enum CASError: uint64_t {
+enum class CASError: uint64_t {
   ObjectNotFound = 100,
 
   // Unknown
-  UnknownCASError = 0
+  Unknown = 0
 };
 
+enum class ExecutorError: uint64_t {
+
+  // 200 - Client Implementation Errors
+  BadRequest = 200,
+
+  // 1000 - Executor Internal Errors
+  Unimplemented = 1000,
+  InternalInconsistency = 1001,
+
+  Unknown = 0
+};
+
+
+namespace internal
+{
+    template <typename E>
+    using UnderlyingType = typename std::underlying_type<E>::type;
+
+    template <typename E>
+    using EnumTypesOnly = typename std::enable_if<std::is_enum<E>::value, E>::type;
+
+}   // namespace internal
+
+
+template <typename E, typename = internal::EnumTypesOnly<E>>
+constexpr internal::UnderlyingType<E> rawCode(E e) {
+    return static_cast<internal::UnderlyingType<E>>(e);
 }
+
+
 }
 
 #endif /* Header_h */

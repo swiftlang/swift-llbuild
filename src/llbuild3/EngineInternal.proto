@@ -1,0 +1,45 @@
+// This source file is part of the Swift.org open source project
+//
+// Copyright (c) 2024-2025 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
+//
+// See http://swift.org/LICENSE.txt for license information
+// See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+
+syntax = "proto3";
+
+package llbuild3;
+
+import "llbuild3/Engine.proto";
+import "llbuild3/Label.proto";
+
+
+message TaskArtifactRequest {
+  Label label = 1;
+}
+message TaskRuleRequest {
+  Label label = 1;
+}
+message TaskActionRequest {
+
+}
+
+message TaskRequest {
+  uint64 id = 1;
+  oneof details {
+    TaskArtifactRequest artifact = 2;
+    TaskRuleRequest rule = 3;
+    TaskActionRequest action = 4;
+  }
+}
+
+message TaskTransitionKey {
+  TaskContext ctx = 1;
+  Signature signature = 2;
+  TaskInputs inputs = 3;
+}
+
+message TaskTransitionValue {
+  TaskNextState state = 1;
+  repeated TaskRequest requests = 2;
+}

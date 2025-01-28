@@ -1,9 +1,11 @@
 mapping {
     module_name: "llbuild3"
-    proto_file_path: "llbuild3/core/ActionCache.proto"
-    proto_file_path: "llbuild3/core/Artifact.proto"
-    proto_file_path: "llbuild3/core/CAS.proto"
-    proto_file_path: "llbuild3/core/Label.proto"
-    proto_file_path: "llbuild3/core/Rule.proto"
+    proto_file_path: "llbuild3/Action.proto"
+    proto_file_path: "llbuild3/ActionCache.proto"
+    proto_file_path: "llbuild3/Artifact.proto"
+    proto_file_path: "llbuild3/CAS.proto"
+    proto_file_path: "llbuild3/CASTree.proto"
+    proto_file_path: "llbuild3/Engine.proto"
     proto_file_path: "llbuild3/Error.proto"
+    proto_file_path: "llbuild3/Label.proto"
 }

@@ -86,6 +86,23 @@
 		4035F55D2CDEB2F500337926 /* EngineInternal.pb.cc in Sources */ = {isa = PBXBuildFile; fileRef = 4035F55C2CDEB2F500337926 /* EngineInternal.pb.cc */; };
 		4035F55E2CDEB2F500337926 /* EngineInternal.pb.h in Headers */ = {isa = PBXBuildFile; fileRef = 4035F55B2CDEB2F500337926 /* EngineInternal.pb.h */; };
 		4035F64B2CF140B000337926 /* CAS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4035F64A2CF140A900337926 /* CAS.swift */; };
+		4035F6B32D28761000337926 /* Action.pb.h in Headers */ = {isa = PBXBuildFile; fileRef = 4035F6AD2D28761000337926 /* Action.pb.h */; };
+		4035F6B42D28761000337926 /* CASTree.pb.h in Headers */ = {isa = PBXBuildFile; fileRef = 4035F6B02D28761000337926 /* CASTree.pb.h */; };
+		4035F6B52D28761000337926 /* CASTree.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4035F6B22D28761000337926 /* CASTree.pb.swift */; };
+		4035F6B62D28761000337926 /* CASTree.pb.cc in Sources */ = {isa = PBXBuildFile; fileRef = 4035F6B12D28761000337926 /* CASTree.pb.cc */; };
+		4035F6B72D28761000337926 /* Action.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4035F6AF2D28761000337926 /* Action.pb.swift */; };
+		4035F6B82D28761000337926 /* Action.pb.cc in Sources */ = {isa = PBXBuildFile; fileRef = 4035F6AE2D28761000337926 /* Action.pb.cc */; };
+		4035F6BA2D28CC5400337926 /* LocalExecutor.h in Headers */ = {isa = PBXBuildFile; fileRef = 4035F6B92D28CC4C00337926 /* LocalExecutor.h */; };
+		4035F6BC2D28CC6600337926 /* LocalExecutor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4035F6BB2D28CC5D00337926 /* LocalExecutor.cpp */; };
+		4035F6BE2D28CC7500337926 /* RemoteExecutor.h in Headers */ = {isa = PBXBuildFile; fileRef = 4035F6BD2D28CC6E00337926 /* RemoteExecutor.h */; };
+		4035F6C02D28CC8300337926 /* RemoteExecutor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4035F6BF2D28CC7C00337926 /* RemoteExecutor.cpp */; };
+		4035F6C72D2D870600337926 /* ActionExecutor.h in Headers */ = {isa = PBXBuildFile; fileRef = 4035F6C62D2D86FC00337926 /* ActionExecutor.h */; };
+		4035F6C92D2D871500337926 /* ActionExecutor.cc in Sources */ = {isa = PBXBuildFile; fileRef = 4035F6C82D2D870F00337926 /* ActionExecutor.cc */; };
+		4035F6CB2D2E36FF00337926 /* LabelTrie.h in Headers */ = {isa = PBXBuildFile; fileRef = 4035F6CA2D2E36F700337926 /* LabelTrie.h */; };
+		4035F6CD2D46FAD800337926 /* Subtask.h in Headers */ = {isa = PBXBuildFile; fileRef = 4035F6CC2D46FAD100337926 /* Subtask.h */; };
+		4035F6E32D47F54700337926 /* Engine.pb.cc in Sources */ = {isa = PBXBuildFile; fileRef = 4035F6E12D47F54700337926 /* Engine.pb.cc */; };
+		4035F6E42D47F54700337926 /* Engine.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4035F6E22D47F54700337926 /* Engine.pb.swift */; };
+		4035F6E52D47F54700337926 /* Engine.pb.h in Headers */ = {isa = PBXBuildFile; fileRef = 4035F6E02D47F54700337926 /* Engine.pb.h */; };
 		403B81602C79047D00CD4F1E /* EngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 403B815E2C79047D00CD4F1E /* EngineTests.swift */; };
 		403DC5882C52031D00A9AE24 /* libllbuild3ThirdParty.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4072B4E02C51B3A000B68221 /* libllbuild3ThirdParty.a */; };
 		4072B5DF2C51BE5100B68221 /* llbuild3.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4072B5D72C51BE5100B68221 /* llbuild3.framework */; };
@@ -101,8 +118,6 @@
 		4072B5F62C51BF1700B68221 /* Error.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4D82C51995100B68221 /* Error.pb.swift */; };
 		4072B5F72C51BF1700B68221 /* ActionCache.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4BB2C51995100B68221 /* ActionCache.pb.swift */; };
 		4072B5F82C51BF1700B68221 /* Label.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4C72C51995100B68221 /* Label.cpp */; };
-		4072B5F92C51BF1700B68221 /* Rule.pb.cc in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4CE2C51995100B68221 /* Rule.pb.cc */; };
-		4072B5FB2C51BF1700B68221 /* Rule.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4CF2C51995100B68221 /* Rule.pb.swift */; };
 		4072B5FC2C51BF1700B68221 /* SwiftAdaptors.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4072B4D02C51995100B68221 /* SwiftAdaptors.cpp */; };
 		407F9F0F2C51D06800FED36C /* Errors.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 4072B4AE2C51993F00B68221 /* Errors.hpp */; settings = {ATTRIBUTES = (Public, ); }; };
 		407F9F102C51D06800FED36C /* Result.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 4072B4B22C51993F00B68221 /* Result.hpp */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -351,7 +366,6 @@
 		40D8670A284FF3EC0043271A /* libgmock.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 40D86702284FF2C30043271A /* libgmock.a */; };
 		40D8670B284FF3F70043271A /* libgmock.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 40D86702284FF2C30043271A /* libgmock.a */; };
 		40D8672E284FF4D20043271A /* gmock-all.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40D8672B284FF4CB0043271A /* gmock-all.cc */; };
-		40E7C53A2C61CB0800FC0383 /* CoreTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E7C51B2C61CAEF00FC0383 /* CoreTypes.swift */; };
 		40E7C53C2C61CD8100FC0383 /* Types.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E7C53B2C61CD7D00FC0383 /* Types.swift */; };
 		40E7C53E2C61CF6800FC0383 /* Engine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E7C53D2C61CF6300FC0383 /* Engine.swift */; };
 		40E836B12CBDC6FA0022B026 /* ActionCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E836B02CBDC6F00022B026 /* ActionCache.swift */; };
@@ -1619,6 +1633,28 @@
 		4035F55C2CDEB2F500337926 /* EngineInternal.pb.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = EngineInternal.pb.cc; sourceTree = "<group>"; };
 		4035F5CB2CE72F2A00337926 /* README.llbuild3.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.llbuild3.md; sourceTree = "<group>"; };
 		4035F64A2CF140A900337926 /* CAS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CAS.swift; sourceTree = "<group>"; };
+		4035F6AB2D28733A00337926 /* Action.proto */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.protobuf; path = Action.proto; sourceTree = "<group>"; };
+		4035F6AC2D28733A00337926 /* CASTree.proto */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.protobuf; path = CASTree.proto; sourceTree = "<group>"; };
+		4035F6AD2D28761000337926 /* Action.pb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Action.pb.h; sourceTree = "<group>"; };
+		4035F6AE2D28761000337926 /* Action.pb.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Action.pb.cc; sourceTree = "<group>"; };
+		4035F6AF2D28761000337926 /* Action.pb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Action.pb.swift; sourceTree = "<group>"; };
+		4035F6B02D28761000337926 /* CASTree.pb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CASTree.pb.h; sourceTree = "<group>"; };
+		4035F6B12D28761000337926 /* CASTree.pb.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CASTree.pb.cc; sourceTree = "<group>"; };
+		4035F6B22D28761000337926 /* CASTree.pb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CASTree.pb.swift; sourceTree = "<group>"; };
+		4035F6B92D28CC4C00337926 /* LocalExecutor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LocalExecutor.h; sourceTree = "<group>"; };
+		4035F6BB2D28CC5D00337926 /* LocalExecutor.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = LocalExecutor.cpp; sourceTree = "<group>"; };
+		4035F6BD2D28CC6E00337926 /* RemoteExecutor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RemoteExecutor.h; sourceTree = "<group>"; };
+		4035F6BF2D28CC7C00337926 /* RemoteExecutor.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RemoteExecutor.cpp; sourceTree = "<group>"; };
+		4035F6C12D2CBCEC00337926 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		4035F6C22D2CBCEC00337926 /* uuid.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = uuid.h; sourceTree = "<group>"; };
+		4035F6C42D2CBCEC00337926 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		4035F6C62D2D86FC00337926 /* ActionExecutor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ActionExecutor.h; sourceTree = "<group>"; };
+		4035F6C82D2D870F00337926 /* ActionExecutor.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ActionExecutor.cc; sourceTree = "<group>"; };
+		4035F6CA2D2E36F700337926 /* LabelTrie.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LabelTrie.h; sourceTree = "<group>"; };
+		4035F6CC2D46FAD100337926 /* Subtask.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.h; path = Subtask.h; sourceTree = "<group>"; };
+		4035F6E02D47F54700337926 /* Engine.pb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Engine.pb.h; sourceTree = "<group>"; };
+		4035F6E12D47F54700337926 /* Engine.pb.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Engine.pb.cc; sourceTree = "<group>"; };
+		4035F6E22D47F54700337926 /* Engine.pb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Engine.pb.swift; sourceTree = "<group>"; };
 		40377C7C2061D24200C0FD4D /* Package.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; tabWidth = 4; };
 		403B815E2C79047D00CD4F1E /* EngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineTests.swift; sourceTree = "<group>"; };
 		403DB4402C51D07C00A9AE24 /* ProtocolBuffers_iOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_iOS.xcodeproj; sourceTree = "<group>"; };
@@ -1818,10 +1854,7 @@
 		4072B4C92C51995100B68221 /* Label.pb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Label.pb.h; sourceTree = "<group>"; };
 		4072B4CA2C51995100B68221 /* Label.pb.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Label.pb.cc; sourceTree = "<group>"; };
 		4072B4CB2C51995100B68221 /* Label.pb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Label.pb.swift; sourceTree = "<group>"; };
-		4072B4CC2C51995100B68221 /* Rule.proto */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.protobuf; path = Rule.proto; sourceTree = "<group>"; };
-		4072B4CD2C51995100B68221 /* Rule.pb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Rule.pb.h; sourceTree = "<group>"; };
-		4072B4CE2C51995100B68221 /* Rule.pb.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Rule.pb.cc; sourceTree = "<group>"; };
-		4072B4CF2C51995100B68221 /* Rule.pb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Rule.pb.swift; sourceTree = "<group>"; };
+		4072B4CC2C51995100B68221 /* Engine.proto */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.protobuf; path = Engine.proto; sourceTree = "<group>"; };
 		4072B4D02C51995100B68221 /* SwiftAdaptors.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = SwiftAdaptors.cpp; sourceTree = "<group>"; };
 		4072B4D32C51995100B68221 /* Support.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Support.cpp; sourceTree = "<group>"; };
 		4072B4D52C51995100B68221 /* Error.proto */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.protobuf; path = Error.proto; sourceTree = "<group>"; };
@@ -3779,7 +3812,6 @@
 		40E7B4252C61CA1F00FC0383 /* ProtocolBuffers_iOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_iOS.xcodeproj; sourceTree = "<group>"; };
 		40E7B4262C61CA1F00FC0383 /* ProtocolBuffers_OSX.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_OSX.xcodeproj; sourceTree = "<group>"; };
 		40E7B4272C61CA1F00FC0383 /* ProtocolBuffers_tvOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_tvOS.xcodeproj; sourceTree = "<group>"; };
-		40E7C51B2C61CAEF00FC0383 /* CoreTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreTypes.swift; sourceTree = "<group>"; };
 		40E7C53B2C61CD7D00FC0383 /* Types.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Types.swift; sourceTree = "<group>"; };
 		40E7C53D2C61CF6300FC0383 /* Engine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Engine.swift; sourceTree = "<group>"; };
 		40E836B02CBDC6F00022B026 /* ActionCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionCache.swift; sourceTree = "<group>"; };
@@ -4607,6 +4639,24 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		4035F6C32D2CBCEC00337926 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				4035F6C22D2CBCEC00337926 /* uuid.h */,
+			);
+			path = include;
+			sourceTree = "<group>";
+		};
+		4035F6C52D2CBCEC00337926 /* stduuid */ = {
+			isa = PBXGroup;
+			children = (
+				4035F6C32D2CBCEC00337926 /* include */,
+				4035F6C42D2CBCEC00337926 /* LICENSE */,
+				4035F6C12D2CBCEC00337926 /* README.md */,
+			);
+			path = stduuid;
+			sourceTree = "<group>";
+		};
 		403B815F2C79047D00CD4F1E /* llbuild3CoreTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -4986,53 +5036,10 @@
 			path = include;
 			sourceTree = "<group>";
 		};
-		4072B4D12C51995100B68221 /* core */ = {
-			isa = PBXGroup;
-			children = (
-				4072B4B62C51995100B68221 /* ActionCache.h */,
-				4072B4B72C51995100B68221 /* ActionCache.cpp */,
-				4072B4B82C51995100B68221 /* ActionCache.proto */,
-				4072B4B92C51995100B68221 /* ActionCache.pb.h */,
-				4072B4BA2C51995100B68221 /* ActionCache.pb.cc */,
-				4072B4BB2C51995100B68221 /* ActionCache.pb.swift */,
-				40E836B02CBDC6F00022B026 /* ActionCache.swift */,
-				4072B4BC2C51995100B68221 /* Artifact.proto */,
-				4072B4BD2C51995100B68221 /* Artifact.pb.h */,
-				4072B4BE2C51995100B68221 /* Artifact.pb.cc */,
-				4072B4BF2C51995100B68221 /* Artifact.pb.swift */,
-				40E837E12CCC5D440022B026 /* CAS.h */,
-				40E837E92CCC643D0022B026 /* CAS.cpp */,
-				4072B4C02C51995100B68221 /* CAS.proto */,
-				40E837E32CCC5FFB0022B026 /* CAS.pb.h */,
-				40E837E42CCC5FFB0022B026 /* CAS.pb.cc */,
-				40E837E52CCC5FFB0022B026 /* CAS.pb.swift */,
-				4035F64A2CF140A900337926 /* CAS.swift */,
-				40E7C51B2C61CAEF00FC0383 /* CoreTypes.swift */,
-				4072B4C42C51995100B68221 /* Engine.h */,
-				4072B4C52C51995100B68221 /* Engine.cpp */,
-				40E7C53D2C61CF6300FC0383 /* Engine.swift */,
-				4035F55B2CDEB2F500337926 /* EngineInternal.pb.h */,
-				4035F55C2CDEB2F500337926 /* EngineInternal.pb.cc */,
-				4035F5592CDEAB8100337926 /* EngineInternal.proto */,
-				4072B4C62C51995100B68221 /* Label.h */,
-				4072B4C72C51995100B68221 /* Label.cpp */,
-				4072B4C82C51995100B68221 /* Label.proto */,
-				4072B4C92C51995100B68221 /* Label.pb.h */,
-				4072B4CA2C51995100B68221 /* Label.pb.cc */,
-				4072B4CB2C51995100B68221 /* Label.pb.swift */,
-				40E837DF2CCC56270022B026 /* Label.swift */,
-				4072B4CC2C51995100B68221 /* Rule.proto */,
-				4072B4CD2C51995100B68221 /* Rule.pb.h */,
-				4072B4CE2C51995100B68221 /* Rule.pb.cc */,
-				4072B4CF2C51995100B68221 /* Rule.pb.swift */,
-				4072B4D02C51995100B68221 /* SwiftAdaptors.cpp */,
-			);
-			path = core;
-			sourceTree = "<group>";
-		};
 		4072B4D42C51995100B68221 /* support */ = {
 			isa = PBXGroup;
 			children = (
+				4035F6CA2D2E36F700337926 /* LabelTrie.h */,
 				4072B4D32C51995100B68221 /* Support.cpp */,
 			);
 			path = support;
@@ -5041,12 +5048,62 @@
 		4072B4D92C51995100B68221 /* llbuild3 */ = {
 			isa = PBXGroup;
 			children = (
-				4072B4D12C51995100B68221 /* core */,
-				4072B4D42C51995100B68221 /* support */,
+				4035F6AB2D28733A00337926 /* Action.proto */,
+				4035F6AD2D28761000337926 /* Action.pb.h */,
+				4035F6AE2D28761000337926 /* Action.pb.cc */,
+				4035F6AF2D28761000337926 /* Action.pb.swift */,
+				4072B4B62C51995100B68221 /* ActionCache.h */,
+				4072B4B72C51995100B68221 /* ActionCache.cpp */,
+				4072B4B82C51995100B68221 /* ActionCache.proto */,
+				40E836B02CBDC6F00022B026 /* ActionCache.swift */,
+				4072B4B92C51995100B68221 /* ActionCache.pb.h */,
+				4072B4BA2C51995100B68221 /* ActionCache.pb.cc */,
+				4072B4BB2C51995100B68221 /* ActionCache.pb.swift */,
+				4035F6C62D2D86FC00337926 /* ActionExecutor.h */,
+				4035F6C82D2D870F00337926 /* ActionExecutor.cc */,
+				4072B4BC2C51995100B68221 /* Artifact.proto */,
+				4072B4BD2C51995100B68221 /* Artifact.pb.h */,
+				4072B4BE2C51995100B68221 /* Artifact.pb.cc */,
+				4072B4BF2C51995100B68221 /* Artifact.pb.swift */,
+				40E837E12CCC5D440022B026 /* CAS.h */,
+				40E837E92CCC643D0022B026 /* CAS.cpp */,
+				4072B4C02C51995100B68221 /* CAS.proto */,
+				4035F64A2CF140A900337926 /* CAS.swift */,
+				40E837E32CCC5FFB0022B026 /* CAS.pb.h */,
+				40E837E42CCC5FFB0022B026 /* CAS.pb.cc */,
+				40E837E52CCC5FFB0022B026 /* CAS.pb.swift */,
+				4035F6AC2D28733A00337926 /* CASTree.proto */,
+				4035F6B02D28761000337926 /* CASTree.pb.h */,
+				4035F6B12D28761000337926 /* CASTree.pb.cc */,
+				4035F6B22D28761000337926 /* CASTree.pb.swift */,
+				4072B4C42C51995100B68221 /* Engine.h */,
+				4072B4C52C51995100B68221 /* Engine.cpp */,
+				4072B4CC2C51995100B68221 /* Engine.proto */,
+				40E7C53D2C61CF6300FC0383 /* Engine.swift */,
+				4035F6E02D47F54700337926 /* Engine.pb.h */,
+				4035F6E12D47F54700337926 /* Engine.pb.cc */,
+				4035F6E22D47F54700337926 /* Engine.pb.swift */,
+				4035F5592CDEAB8100337926 /* EngineInternal.proto */,
+				4035F55B2CDEB2F500337926 /* EngineInternal.pb.h */,
+				4035F55C2CDEB2F500337926 /* EngineInternal.pb.cc */,
 				4072B4D52C51995100B68221 /* Error.proto */,
 				4072B4D62C51995100B68221 /* Error.pb.h */,
 				4072B4D72C51995100B68221 /* Error.pb.cc */,
 				4072B4D82C51995100B68221 /* Error.pb.swift */,
+				4072B4C62C51995100B68221 /* Label.h */,
+				4072B4C72C51995100B68221 /* Label.cpp */,
+				4072B4C82C51995100B68221 /* Label.proto */,
+				40E837DF2CCC56270022B026 /* Label.swift */,
+				4072B4C92C51995100B68221 /* Label.pb.h */,
+				4072B4CA2C51995100B68221 /* Label.pb.cc */,
+				4072B4CB2C51995100B68221 /* Label.pb.swift */,
+				4035F6B92D28CC4C00337926 /* LocalExecutor.h */,
+				4035F6BB2D28CC5D00337926 /* LocalExecutor.cpp */,
+				4035F6BD2D28CC6E00337926 /* RemoteExecutor.h */,
+				4035F6BF2D28CC7C00337926 /* RemoteExecutor.cpp */,
+				4035F6CC2D46FAD100337926 /* Subtask.h */,
+				4072B4D42C51995100B68221 /* support */,
+				4072B4D02C51995100B68221 /* SwiftAdaptors.cpp */,
 				40E7C53B2C61CD7D00FC0383 /* Types.swift */,
 			);
 			path = llbuild3;
@@ -5115,6 +5172,7 @@
 			children = (
 				40E8384B2CCC66ED0022B026 /* BLAKE3 */,
 				40C100552C79076200757481 /* protobuf */,
+				4035F6C52D2CBCEC00337926 /* stduuid */,
 				40C100562C79076200757481 /* swift-protobuf */,
 			);
 			path = thirdparty;
@@ -8976,8 +9034,16 @@
 			buildActionMask = 2147483647;
 			files = (
 				4072B5E52C51BE5100B68221 /* llbuild3.h in Headers */,
+				4035F6BE2D28CC7500337926 /* RemoteExecutor.h in Headers */,
+				4035F6CD2D46FAD800337926 /* Subtask.h in Headers */,
 				407F9F0F2C51D06800FED36C /* Errors.hpp in Headers */,
 				403552EF2C522BAF00D415BA /* Visibility.hpp in Headers */,
+				4035F6C72D2D870600337926 /* ActionExecutor.h in Headers */,
+				4035F6CB2D2E36FF00337926 /* LabelTrie.h in Headers */,
+				4035F6E52D47F54700337926 /* Engine.pb.h in Headers */,
+				4035F6B32D28761000337926 /* Action.pb.h in Headers */,
+				4035F6BA2D28CC5400337926 /* LocalExecutor.h in Headers */,
+				4035F6B42D28761000337926 /* CASTree.pb.h in Headers */,
 				407F9F102C51D06800FED36C /* Result.hpp in Headers */,
 				4035F55E2CDEB2F500337926 /* EngineInternal.pb.h in Headers */,
 				407F9F112C51D06800FED36C /* SwiftAdaptors.hpp in Headers */,
@@ -10756,15 +10822,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4035F6E32D47F54700337926 /* Engine.pb.cc in Sources */,
+				4035F6E42D47F54700337926 /* Engine.pb.swift in Sources */,
 				403552E52C52069300D415BA /* Label.pb.swift in Sources */,
 				4072B5ED2C51BF1700B68221 /* Engine.cpp in Sources */,
 				4072B5EF2C51BF1700B68221 /* Label.pb.cc in Sources */,
 				40E837E02CCC562B0022B026 /* Label.swift in Sources */,
+				4035F6C02D28CC8300337926 /* RemoteExecutor.cpp in Sources */,
 				40E7C53C2C61CD8100FC0383 /* Types.swift in Sources */,
 				4035F55D2CDEB2F500337926 /* EngineInternal.pb.cc in Sources */,
 				4072B5F02C51BF1700B68221 /* Artifact.pb.cc in Sources */,
 				4072B5F12C51BF1700B68221 /* Error.pb.cc in Sources */,
-				40E7C53A2C61CB0800FC0383 /* CoreTypes.swift in Sources */,
 				4072B5F22C51BF1700B68221 /* Artifact.pb.swift in Sources */,
 				40E836B12CBDC6FA0022B026 /* ActionCache.swift in Sources */,
 				40E7C53E2C61CF6800FC0383 /* Engine.swift in Sources */,
@@ -10773,13 +10841,17 @@
 				40E837E62CCC5FFB0022B026 /* CAS.pb.cc in Sources */,
 				40E837E72CCC5FFB0022B026 /* CAS.pb.swift in Sources */,
 				4072B5F52C51BF1700B68221 /* ActionCache.cpp in Sources */,
+				4035F6C92D2D871500337926 /* ActionExecutor.cc in Sources */,
 				40E837EA2CCC64430022B026 /* CAS.cpp in Sources */,
 				4035F64B2CF140B000337926 /* CAS.swift in Sources */,
 				4072B5F62C51BF1700B68221 /* Error.pb.swift in Sources */,
 				4072B5F72C51BF1700B68221 /* ActionCache.pb.swift in Sources */,
 				4072B5F82C51BF1700B68221 /* Label.cpp in Sources */,
-				4072B5F92C51BF1700B68221 /* Rule.pb.cc in Sources */,
-				4072B5FB2C51BF1700B68221 /* Rule.pb.swift in Sources */,
+				4035F6B52D28761000337926 /* CASTree.pb.swift in Sources */,
+				4035F6B62D28761000337926 /* CASTree.pb.cc in Sources */,
+				4035F6B72D28761000337926 /* Action.pb.swift in Sources */,
+				4035F6B82D28761000337926 /* Action.pb.cc in Sources */,
+				4035F6BC2D28CC6600337926 /* LocalExecutor.cpp in Sources */,
 				4072B5FC2C51BF1700B68221 /* SwiftAdaptors.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -11496,6 +11568,7 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = NO;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_ENABLE_CPP_RTTI = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
@@ -11524,6 +11597,7 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = NO;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_ENABLE_CPP_RTTI = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
@@ -11554,6 +11628,7 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				ENABLE_MODULE_VERIFIER = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_ENABLE_CPP_RTTI = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INSTALL_PATH = "$(LLBUILD3_FRAMEWORKS_INSTALL_DIR)";
@@ -11571,6 +11646,7 @@
 					"$(PROJECT_DIR)/thirdparty/protobuf/src",
 					"$(PROJECT_DIR)/thirdparty/protobuf/third_party/abseil-cpp/",
 					"$(PROJECT_DIR)/thirdparty/BLAKE3/c",
+					"$(PROJECT_DIR)/thirdparty/stduuid/include",
 				);
 			};
 			name = Debug;
@@ -11587,6 +11663,7 @@
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				ENABLE_MODULE_VERIFIER = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_ENABLE_CPP_RTTI = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INSTALL_PATH = "$(LLBUILD3_FRAMEWORKS_INSTALL_DIR)";
@@ -11604,6 +11681,7 @@
 					"$(PROJECT_DIR)/thirdparty/protobuf/src",
 					"$(PROJECT_DIR)/thirdparty/protobuf/third_party/abseil-cpp/",
 					"$(PROJECT_DIR)/thirdparty/BLAKE3/c",
+					"$(PROJECT_DIR)/thirdparty/stduuid/include",
 				);
 			};
 			name = Release;
@@ -11612,6 +11690,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 403332B62CADC86300440C8C /* llbuild3Debug.xcconfig */;
 			buildSettings = {
+				GCC_ENABLE_CPP_RTTI = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.sdp.llbuild.TritiumTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -11623,6 +11702,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 403332B72CADC87100440C8C /* llbuild3Release.xcconfig */;
 			buildSettings = {
+				GCC_ENABLE_CPP_RTTI = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.apple.sdp.llbuild.TritiumTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
