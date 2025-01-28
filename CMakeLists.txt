@@ -88,7 +88,7 @@ set(LLBUILD_LIBDIR_SUFFIX "${LIB_SUFFIX}" CACHE STRING "Set default library fold
 if(BUILD_TESTING)
   find_package(Lit)
   find_package(FileCheck)
-  find_package(PythonInterp)
+  find_package(Python3 3.7 COMPONENTS Interpreter)
 endif()
 
 ###

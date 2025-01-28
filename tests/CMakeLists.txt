@@ -18,8 +18,7 @@ configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/Unit/lit.site.cfg.in
   ${CMAKE_CURRENT_BINARY_DIR}/Unit/lit.site.cfg)
 
-include(FindPython)
-if(Python_Interpreter_FOUND AND LIT_FOUND AND FILECHECK_FOUND)
+if(Python3_Interpreter_FOUND AND LIT_FOUND AND FILECHECK_FOUND)
   set(LIT_ARGS "${LLBUILD_LIT_ARGS}")
   separate_arguments(LIT_ARGS)
   
@@ -29,7 +28,7 @@ if(Python_Interpreter_FOUND AND LIT_FOUND AND FILECHECK_FOUND)
   endif()
 
   set(lit_command
-    ${Python_EXECUTABLE}
+    ${Python3_EXECUTABLE}
     ${LIT_EXECUTABLE}
     ${LIT_ARGS}
     --param build_mode=${build_mode})
@@ -46,9 +45,6 @@ if(Python_Interpreter_FOUND AND LIT_FOUND AND FILECHECK_FOUND)
   add_dependencies(test-llbuild ${test_target_dependencies})
 
   # Add a target for running all tests.
-  if(POLICY CMP0037)
-    cmake_policy(SET CMP0037 OLD)
-  endif(POLICY CMP0037)
   add_custom_target(test)
   add_dependencies(test test-llbuild)
   set_target_properties(test PROPERTIES FOLDER "Tests")
