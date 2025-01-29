@@ -1,0 +1,112 @@
+// This source file is part of the Swift.org open source project
+//
+// Copyright (c) 2020-2025 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
+//
+// See http://swift.org/LICENSE.txt for license information
+// See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+
+syntax = "proto3";
+
+package llbuild3;
+
+// NOTE: These messages are expected to be/intentionally wire-compatible with
+// swift-tools-support-async LLBCASFileTree objects. These definitions should be
+// kept in sync.
+
+enum FileType {
+  /// A plain file.
+  FILETYPE_PLAIN_FILE = 0x0;
+
+  /// An executable file.
+  FILETYPE_EXECUTABLE = 0x1;
+
+  /// A directory.
+  FILETYPE_DIRECTORY = 0x2;
+
+  /// A symbolic link.
+  FILETYPE_SYMLINK = 0x3;
+}
+
+message PosixFileDetails {
+  /// The POSIX permissions (&0o7777). Masking is useful when storing entries
+  /// with very restricted permissions (such as (perm & 0o0007) == 0).
+  uint32 mode = 1;
+  
+  /// Owner user identifier.
+  /// Semantically, absent owner == 0x0 ~= current uid.
+  uint32 owner = 2;
+  
+  /// Owner group identifier.
+  /// Semantically, absent owner == 0x0 ~= current gid.
+  uint32 group = 3;
+}
+
+message NamedDirectoryEntry {
+  /// The name of the directory entry.
+  string name = 1;
+  
+  /// The type of the directory entry.
+  FileType type = 2;
+  
+  /// The (aggregate) size of the directory entry.
+  uint64 size = 3;
+  
+  /// Mode and permissions. _Can_ optionally be present in the
+  /// directory entry because the file can be just a direct blob reference.
+  PosixFileDetails posixDetails = 4;
+}
+
+/// The list of file names and associated information, of a directory.
+///  * The children are sorted by name.
+///  * FIXME: collation rules or UTF-8 normalization guarantees?
+message NamedDirectoryEntries {
+  repeated NamedDirectoryEntry entries = 1;
+}
+
+enum FileDataCompressionMethod {
+  /// No compression is applied.
+  FILEDATACOMPRESSIONMETHOD_NONE = 0x0;
+
+  reserved 0x1, 0x2;
+  reserved "FILEDATACOMPRESSIONMETHOD_ZSTD", "FILEDATACOMPRESSIONMETHOD_ZSTD_WITH_DICTIONARY";
+}
+
+message FileInformation {
+  /// The type of the CASTree entry.
+  FileType type = 1;
+  
+  /// The file data size or the aggregate directory data size (recursive).
+  /// Whether directory data includes the size of the directory catalogs
+  /// is unspecified.
+  uint64 size = 2;
+  
+  // OBSOLETE. Use posixDetails.
+  reserved "posixPermissions";
+  reserved 3;
+  
+  /// Whether and what compression is applied to file data.
+  ///  * Compression ought not to be applied to symlinks.
+  ///  * Compression is applied after chunking, to retain seekability.
+  FileDataCompressionMethod compression = 4;
+  
+  /// Permission info useful for POSIX filesystems.
+  PosixFileDetails posixDetails = 5;
+  
+  oneof payload {
+    /// Files and symlinks:
+    ///  * The file payload is contained in one or more
+    ///    fixed size references to [compressed] data.
+    ///  * The `fixedChunkSize` value helps to do O(1) seeking.
+    uint64 fixedChunkSize = 11;
+    
+    /// Directories:
+    ///  * Directory entries are represented inline.
+    NamedDirectoryEntries inlineChildren = 12;
+    
+    /// Directories:
+    ///  * Directory entries are represented as a reference to a B-tree.
+    ///  * The `compression` does have effect on the B-tree data.
+    uint32 referencedChildrenTree = 13;
+  }
+}

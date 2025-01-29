@@ -25,7 +25,7 @@ class BasicTestRuleProvider: TBasicRuleProvider {
 }
 
 class NullTask: TBasicTask {
-  override func compute(_ ti: TTaskInterface, ctx: TTaskContext, inputs: TTaskInputs) throws -> TTaskNextState {
+  override func compute(_ ti: TTaskInterface, ctx: TTaskContext, inputs: TTaskInputs, subtaskResults: TSubtaskResults) throws -> TTaskNextState {
     return TTaskNextState.with {
       $0.result = TTaskResult.with {
         $0.artifacts = produces().map { lbl in
@@ -55,7 +55,7 @@ final class EngineTests: XCTestCase {
   func testRuleProviderRegistration() async throws {
 
     class WorkingInitTask: TBasicTask {
-      override func compute(_ ti: TTaskInterface, ctx: TTaskContext, inputs: TTaskInputs) throws -> TTaskNextState {
+      override func compute(_ ti: TTaskInterface, ctx: TTaskContext, inputs: TTaskInputs, subtaskResults: TSubtaskResults) throws -> TTaskNextState {
 
         return TTaskNextState.with {
           $0.result = TTaskResult()
@@ -70,7 +70,7 @@ final class EngineTests: XCTestCase {
     }
 
     class FailingInitTask: TBasicTask {
-      override func compute(_ ti: TTaskInterface, ctx: TTaskContext, inputs: TTaskInputs) throws -> TTaskNextState {
+      override func compute(_ ti: TTaskInterface, ctx: TTaskContext, inputs: TTaskInputs, subtaskResults: TSubtaskResults) throws -> TTaskNextState {
 
         try ti.registerRuleProvider(TestRuleProvider())
 
@@ -138,7 +138,7 @@ final class EngineTests: XCTestCase {
       guard let terr = error as? TError else {
         throw error
       }
-      XCTAssertEqual(llbuild3.core.EngineError(terr.code), llbuild3.core.DuplicateRuleProvider)
+      XCTAssertEqual(llbuild3.EngineError(rawValue: terr.code), llbuild3.EngineError.DuplicateRuleProvider)
     }
   }
 
@@ -209,7 +209,7 @@ final class EngineTests: XCTestCase {
       guard let terr = error as? TError else {
         throw error
       }
-      XCTAssertEqual(llbuild3.core.EngineError(terr.code), llbuild3.core.NoArtifactProducer)
+      XCTAssertEqual(llbuild3.EngineError(rawValue: terr.code), llbuild3.EngineError.NoArtifactProducer)
     }
   }
 
@@ -268,7 +268,7 @@ final class EngineTests: XCTestCase {
         super.init(taskName, arts: [lbl])
       }
 
-      override func compute(_ ti: TTaskInterface, ctx: TTaskContext, inputs: TTaskInputs) throws -> TTaskNextState {
+      override func compute(_ ti: TTaskInterface, ctx: TTaskContext, inputs: TTaskInputs, subtaskResults: TSubtaskResults) throws -> TTaskNextState {
 
         guard ctx.taskState != nil else {
           let v1 = try ti.requestArtifact(TLabel.with {
@@ -323,7 +323,7 @@ final class EngineTests: XCTestCase {
         }
         super.init(taskName, arts: [lbl])
       }
-      override func compute(_ ti: TTaskInterface, ctx: TTaskContext, inputs: TTaskInputs) throws -> TTaskNextState {
+      override func compute(_ ti: TTaskInterface, ctx: TTaskContext, inputs: TTaskInputs, subtaskResults: TSubtaskResults) throws -> TTaskNextState {
         guard let val = Int(name().components[1]) else {
           throw TaskError.notANumber
         }
@@ -475,7 +475,7 @@ final class EngineTests: XCTestCase {
         super.init(lbl, arts: arts)
       }
 
-      override func compute(_ ti: TTaskInterface, ctx: TTaskContext, inputs: TTaskInputs) throws -> TTaskNextState {
+      override func compute(_ ti: TTaskInterface, ctx: TTaskContext, inputs: TTaskInputs, subtaskResults: TSubtaskResults) throws -> TTaskNextState {
         guard ctx.taskState != nil else {
           let v1 = try ti.requestArtifact(TLabel.with {
             $0.components = ["input"]
@@ -523,11 +523,12 @@ final class EngineTests: XCTestCase {
       }
     }
 
-    let casDB = llbuild3.core.makeInMemoryCASDatabase()
-    let actionCache = llbuild3.core.makeInMemoryActionCache()
+    let casDB = llbuild3.makeInMemoryCASDatabase()
+    let actionCache = llbuild3.makeInMemoryActionCache()
+    let executor = llbuild3.makeActionExecutor()
     let rp = try TestRuleProvider(counter: counter)
 
-    let engine = try TEngine(casDB: casDB, actionCache: actionCache, baseRuleProvider: rp)
+    let engine = try TEngine(casDB: casDB, actionCache: actionCache, executor: executor, baseRuleProvider: rp)
 
     let art = try TLabel("//test:result")
     do {
@@ -543,7 +544,7 @@ final class EngineTests: XCTestCase {
     }
 
     // Construct new engine with the same CAS and action cache
-    let engine2 = try TEngine(casDB: casDB, actionCache: actionCache, baseRuleProvider: rp)
+    let engine2 = try TEngine(casDB: casDB, actionCache: actionCache, executor: executor, baseRuleProvider: rp)
     do {
       let result2 = try await engine2.build(art)
       if case .blob(let data) = result2.value {
@@ -557,6 +558,97 @@ final class EngineTests: XCTestCase {
       XCTFail("second build failed: \(error)")
     }
   }
+
+  func testBuild_Subtask() async throws {
+    class TestRuleProvider: TBasicRuleProvider {
+      init() throws {
+        super.init(
+          rules: [],
+          artifacts: [
+            try TLabel("//test"),
+          ]
+        )
+      }
+
+      override func ruleForArtifact(_ lbl: TLabel) -> TRule? {
+        if lbl.components.count != 1 {
+          return nil
+        }
+
+        if lbl.components[0] == "test" {
+          return SubtaskRule(lbl, arts: [lbl])
+        }
+
+        return nil
+      }
+    }
+
+    class SubtaskRule: TBasicRule {
+      override func configure() throws -> TTask {
+        return SubtaskTask(name(), arts: produces())
+      }
+    }
+
+
+    class SubtaskTask: TBasicTask {
+      enum TaskError: Error {
+        case unexpectedState
+      }
+
+      func doSomethingAsync(_ si: TSubtaskInterface) async throws -> String {
+        return "a string"
+      }
+
+      override func compute(_ ti: TTaskInterface, ctx: TTaskContext, inputs: TTaskInputs, subtaskResults: TSubtaskResults) throws -> TTaskNextState {
+        guard ctx.taskState != nil else {
+          let v1 = try ti.spawnSubtask(doSomethingAsync)
+          return TTaskNextState.with {
+            $0.wait = TTaskWait.with {
+              $0.ids = [v1]
+              $0.context = TTaskContext.with {
+                $0.intState = 1
+              }
+            }
+          }
+        }
+
+        guard subtaskResults.count == 1 else {
+          throw TaskError.unexpectedState
+        }
+
+        guard let val = subtaskResults.first?.value as? String else {
+          throw TaskError.unexpectedState
+        }
+        guard let artName = produces().first else {
+          throw TaskError.unexpectedState
+        }
+        return TTaskNextState.with {
+          $0.result = TTaskResult.with {
+            $0.artifacts = [TArtifact.with {
+              $0.label = artName
+              $0.type = .blob
+              $0.blob = Data(val.utf8)
+            }]
+          }
+        }
+      }
+    }
+
+    let engine = try TEngine(baseRuleProvider: TestRuleProvider())
+
+    let art = try TLabel("//test")
+    do {
+      let result = try await engine.build(art)
+      if case .blob(let data) = result.value {
+        XCTAssertEqual(data, Data("a string".utf8))
+      } else {
+        XCTFail("invalid artifact type found \(result.value.debugDescription)")
+      }
+    } catch {
+      XCTFail("build failed: \(error)")
+    }
+  }
+
 
 }
 

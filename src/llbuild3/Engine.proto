@@ -1,0 +1,68 @@
+// This source file is part of the Swift.org open source project
+//
+// Copyright (c) 2024-2025 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
+//
+// See http://swift.org/LICENSE.txt for license information
+// See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+
+syntax = "proto3";
+
+package llbuild3;
+
+import "google/protobuf/any.proto";
+import "llbuild3/Action.proto";
+import "llbuild3/Artifact.proto";
+import "llbuild3/CAS.proto";
+import "llbuild3/Error.proto";
+
+/// Signature represents the version of an object and is used in all cache keys
+/// computed for that object. Signature does not require the encoding of any
+/// particular hash function. Instead, it is expected that the provider chooses
+/// a function that guarantees cache consistency.
+message Signature {
+  bytes bytes = 1;
+}
+
+/// This object contains the result of executing a task
+message TaskResult {
+  repeated Artifact artifacts = 2;
+}
+
+
+message TaskInput {
+  uint64 id = 1;
+
+  oneof InputObject {
+    Error error = 2;
+    Artifact artifact = 3;
+    TaskResult result = 4;
+    ActionResult action = 5;
+  }
+}
+
+message TaskInputs {
+  repeated TaskInput inputs = 1;
+}
+
+message TaskContext {
+  oneof TaskState {
+    CASObjectID casState = 1;
+    google.protobuf.Any protoState = 2;
+    int64 intState = 3;
+  }
+}
+
+
+message TaskWait {
+  repeated uint64 ids = 1;
+  TaskContext context = 2;
+}
+
+message TaskNextState {
+  oneof StateValue {
+    TaskWait wait = 1;
+    TaskResult result = 2;
+    Error error = 3;
+  }
+}

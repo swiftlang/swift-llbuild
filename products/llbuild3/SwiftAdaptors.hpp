@@ -10,12 +10,14 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLBUILD3_CORE_SWIFTADAPTORS_H
-#define LLBUILD3_CORE_SWIFTADAPTORS_H
+#ifndef LLBUILD3_SWIFTADAPTORS_H
+#define LLBUILD3_SWIFTADAPTORS_H
 
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include <llbuild3/Visibility.hpp>
@@ -23,13 +25,13 @@
 
 
 namespace llbuild3 {
-namespace core {
 
 class Build;
 class Engine;
 struct EngineConfig;
 
 // Serialized Protobuf Objects
+typedef std::string ActionPB;
 typedef std::string ArtifactPB;
 typedef std::string CacheKeyPB;
 typedef std::string CacheValuePB;
@@ -45,8 +47,32 @@ typedef std::string TaskNextStatePB;
 
 // Swift helper typedefs
 typedef std::vector<LabelPB> LabelVector;
+typedef std::vector<std::pair<uint64_t, result<void*, ErrorPB>>> SubtaskResultMap;
 
 // External Adaptor Objects
+
+class CASDatabase;
+typedef std::shared_ptr<CASDatabase> CASDatabaseRef;
+
+struct ExtCASDatabase {
+  void* ctx;
+
+  // FIXME: cleanup context
+
+  void (*containsFn)(void* ctx, CASIDBytes id, std::function<void (bool, ErrorPB)>);
+  void (*getFn)(void* ctx, CASIDBytes id, std::function<void (CASObjectPB, ErrorPB)>);
+  void (*putFn)(void* ctx, CASObjectPB obj, std::function<void (CASIDBytes, ErrorPB)>);
+  CASIDBytes (*identifyFn)(void* ctx, CASObjectPB obj);
+};
+
+LLBUILD3_EXPORT CASDatabaseRef makeExtCASDatabase(ExtCASDatabase extCASDB);
+LLBUILD3_EXPORT CASDatabaseRef makeInMemoryCASDatabase();
+
+LLBUILD3_EXPORT void* getRawCASDatabaseContext(CASDatabaseRef casDB);
+LLBUILD3_EXPORT void adaptedCASDatabaseContains(CASDatabaseRef casDB, CASIDBytes, void* ctx, void (*handler)(void*, result<bool, ErrorPB>*));
+LLBUILD3_EXPORT void adaptedCASDatabaseGet(CASDatabaseRef casDB, CASIDBytes, void* ctx, void (*handler)(void*, result<CASObjectPB, ErrorPB>*));
+LLBUILD3_EXPORT void adaptedCASDatabasePut(CASDatabaseRef casDB, CASObjectPB, void* ctx, void (*handler)(void*, result<CASIDBytes, ErrorPB>*));
+LLBUILD3_EXPORT CASIDBytes adaptedCASDatabaseIdentify(CASDatabaseRef casDB, CASObjectPB);
 
 struct ExtRule;
 
@@ -62,6 +88,23 @@ struct ExtRuleProvider {
   bool (*ruleForArtifactFn)(void*, const LabelPB*, ExtRule*);
 };
 
+class ExtSubtaskInterface {
+private:
+  void* impl;
+  uint64_t ctx;
+
+public:
+  ExtSubtaskInterface(void* impl, uint64_t ctx) : impl(impl), ctx(ctx) { }
+
+  LLBUILD3_EXPORT CASDatabaseRef cas();
+};
+
+struct ExtSubtask {
+  void* ctx;
+
+  void (*perform)(void*, ExtSubtaskInterface, std::function<void (void*, ErrorPB)>);
+};
+
 class ExtTaskInterface {
 private:
   void* impl;
@@ -74,7 +117,8 @@ public:
 
   LLBUILD3_EXPORT result<uint64_t, ErrorPB> requestArtifact(const LabelPB label);
   LLBUILD3_EXPORT result<uint64_t, ErrorPB> requestRule(const LabelPB label);
-  LLBUILD3_EXPORT result<uint64_t, ErrorPB> requestAction();
+  LLBUILD3_EXPORT result<uint64_t, ErrorPB> requestAction(const ActionPB action);
+  LLBUILD3_EXPORT result<uint64_t, ErrorPB> spawnSubtask(const ExtSubtask subtask);
 };
 
 struct ExtTask {
@@ -88,7 +132,7 @@ struct ExtTask {
   // FIXME: some method for cleaning up context
 
   void (*producesFn)(void*, std::vector<LabelPB>*);
-  bool (*computeFn)(void*, ExtTaskInterface, const TaskContextPB*, const TaskInputsPB*, TaskNextStatePB*);
+  bool (*computeFn)(void*, ExtTaskInterface, const TaskContextPB*, const TaskInputsPB*, SubtaskResultMap*, TaskNextStatePB*);
 };
 
 struct ExtRule {
@@ -115,22 +159,6 @@ public:
   LLBUILD3_EXPORT void addCompletionHandler(void* ctx, void (*handler)(void*, result<ArtifactPB, ErrorPB>*));
 };
 
-struct ExtCASDatabase {
-  void* ctx;
-
-  // FIXME: cleanup context
-
-  void (*containsFn)(void* ctx, CASIDBytes id, std::function<void (bool, ErrorPB)>);
-  void (*getFn)(void* ctx, CASIDBytes id, std::function<void (CASObjectPB, ErrorPB)>);
-  void (*putFn)(void* ctx, CASObjectPB obj, std::function<void (CASIDBytes, ErrorPB)>);
-  CASIDBytes (*identifyFn)(void* ctx, CASObjectPB obj);
-};
-
-class CASDatabase;
-typedef std::shared_ptr<CASDatabase> CASDatabaseRef;
-LLBUILD3_EXPORT CASDatabaseRef makeExtCASDatabase(ExtCASDatabase extCASDB);
-LLBUILD3_EXPORT CASDatabaseRef makeInMemoryCASDatabase();
-
 struct ExtActionCache {
   void* ctx;
 
@@ -145,6 +173,9 @@ typedef std::shared_ptr<ActionCache> ActionCacheRef;
 LLBUILD3_EXPORT ActionCacheRef makeExtActionCache(ExtActionCache extCache);
 LLBUILD3_EXPORT ActionCacheRef makeInMemoryActionCache();
 
+class ActionExecutor;
+typedef std::shared_ptr<ActionExecutor> ActionExecutorRef;
+LLBUILD3_EXPORT ActionExecutorRef makeActionExecutor();
 
 struct ExtEngineConfig {
   std::optional<LabelPB> initRule;
@@ -160,9 +191,12 @@ public:
   LLBUILD3_EXPORT BuildRef build(const LabelPB artifact);
 };
 
-LLBUILD3_EXPORT EngineRef makeEngine(ExtEngineConfig config, CASDatabaseRef casdb, ActionCacheRef cache, const ExtRuleProvider provider);
+LLBUILD3_EXPORT EngineRef makeEngine(ExtEngineConfig config,
+                                     CASDatabaseRef casdb,
+                                     ActionCacheRef cache,
+                                     ActionExecutorRef executor,
+                                     const ExtRuleProvider provider);
 
-}
 }
 
 #endif /* Header_h */

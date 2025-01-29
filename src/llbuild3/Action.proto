@@ -1,0 +1,137 @@
+// This source file is part of the Swift.org open source project
+//
+// Copyright (c) 2025 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
+//
+// See http://swift.org/LICENSE.txt for license information
+// See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+
+syntax = "proto3";
+
+package llbuild3;
+
+import "llbuild3/CAS.proto";
+import "llbuild3/CASTree.proto";
+import "llbuild3/Label.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+
+message Subprocess {
+  message EnvironmentVariable {
+    // The variable name.
+    string name = 1;
+
+    // The variable value.
+    string value = 2;
+  }
+
+  message Input {
+      // The path where the input should be expected to be placed. This path
+      // must be relative.
+      string path = 1;
+
+      FileType type = 2;
+
+      // ID of the CASTree FileInformation encoded object.
+      CASObjectID object = 3;
+  }
+
+  // The command line arguments to execute on the remote machine.
+  repeated string arguments = 1;
+
+  // The environment variables to set while executing the arguments.
+  repeated EnvironmentVariable environment = 2;
+
+  string workingDirectory = 3;
+
+  repeated Input inputs = 4;
+
+  repeated string outputPaths = 5;
+}
+
+message SubprocessResult {
+  message Output {
+    // The path where this output was collected from
+    string path = 1;
+
+    FileType type = 2;
+
+    // ID of the CASTree FileInformation encoded object
+    CASObjectID object = 3;
+  }
+
+  repeated Output outputs = 1;
+
+  int32 exitCode = 2;
+
+  CASObjectID stdout = 3;
+}
+
+
+message Action {
+  CASObjectID operation = 1;
+
+  // The label of the function used to execute the operation.
+  Label function = 2;
+
+  // If true, this action cannot be cached or de-duped.
+  bool volatile = 3;
+
+  Platform platform = 4;
+}
+
+message Platform {
+  message Property {
+    string name = 1;
+    string value = 2;
+  }
+
+  repeated Property properties = 1;
+}
+
+message ActionResult {
+  oneof ActionResultValue {
+    CASObjectID casObject = 1;
+    google.protobuf.Any protoObject = 2;
+  }
+
+  ActionExecutionMetadata metadata = 3;
+}
+
+message ActionExecutionMetadata {
+  string worker = 1;
+
+  // When was the action added to the queue.
+  google.protobuf.Timestamp queued = 2;
+
+  // When was the action dispatched.
+  google.protobuf.Timestamp dispatched = 3;
+
+  // When the worker received the action.
+  google.protobuf.Timestamp workerStart = 4;
+
+  // When the worker completed the action, including all stages.
+  google.protobuf.Timestamp workerCompleted = 5;
+
+  // When the worker started executing the action command.
+  google.protobuf.Timestamp executionStart = 6;
+
+  // When the worker completed executing the action command.
+  google.protobuf.Timestamp executionCompleted = 7;
+
+  // The amount of time the worker spent executing the action.
+  google.protobuf.Duration executionDuration = 8;
+
+  // When the worker started uploading action outputs.
+  google.protobuf.Timestamp outputUploadStart = 9;
+
+  // When the worker finished uploading action outputs.
+  google.protobuf.Timestamp outputUploadCompleted = 10;
+
+  // When the worker finished uploading action outputs.
+  google.protobuf.Timestamp completed = 11;
+
+  repeated google.protobuf.Any additionalData = 12;
+}
