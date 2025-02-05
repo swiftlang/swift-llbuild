@@ -59,7 +59,7 @@ target_link_libraries(llvmSupport PRIVATE
   Threads::Threads
   ${CMAKE_DL_LIBS})
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD|OpenBSD")
   target_link_libraries(llvmSupport PRIVATE
     execinfo)
 endif()
