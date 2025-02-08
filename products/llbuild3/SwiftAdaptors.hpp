@@ -13,6 +13,7 @@
 #ifndef LLBUILD3_SWIFTADAPTORS_H
 #define LLBUILD3_SWIFTADAPTORS_H
 
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -38,6 +39,7 @@ typedef std::string CacheValuePB;
 typedef std::string CASIDBytes;
 typedef std::string CASObjectPB;
 typedef std::string ErrorPB;
+typedef std::string FileObjectPB;
 typedef std::string LabelPB;
 typedef std::string SignaturePB;
 typedef std::string TaskContextPB;
@@ -57,7 +59,7 @@ typedef std::shared_ptr<CASDatabase> CASDatabaseRef;
 struct ExtCASDatabase {
   void* ctx;
 
-  // FIXME: cleanup context
+  void (*releaseFn)(void* ctx);
 
   void (*containsFn)(void* ctx, CASIDBytes id, std::function<void (bool, ErrorPB)>);
   void (*getFn)(void* ctx, CASIDBytes id, std::function<void (CASObjectPB, ErrorPB)>);
@@ -173,9 +175,38 @@ typedef std::shared_ptr<ActionCache> ActionCacheRef;
 LLBUILD3_EXPORT ActionCacheRef makeExtActionCache(ExtActionCache extCache);
 LLBUILD3_EXPORT ActionCacheRef makeInMemoryActionCache();
 
+
+struct ExtLocalSandbox {
+  void* ctx;
+
+  void (*releaseFn)(void* ctx);
+
+  void (*dirFn)(void* ctx, std::string*);
+  void (*prepareInputFn)(void* ctx, std::string* path, int type, CASIDBytes* id, ErrorPB*);
+  void (*collectOutputsFn)(void*, std::vector<std::string>, std::vector<FileObjectPB>*, ErrorPB*);
+  void (*releaseSandboxFn)(void* ctx);
+};
+
+struct ExtLocalSandboxProvider {
+  void* ctx;
+
+  void (*releaseFn)(void* ctx);
+
+  ExtLocalSandbox (*createFn)(void* ctx, uint64_t handle, ErrorPB*);
+};
+
 class ActionExecutor;
+class LocalExecutor;
+class LocalSandboxProvider;
+class RemoteExecutor;
 typedef std::shared_ptr<ActionExecutor> ActionExecutorRef;
-LLBUILD3_EXPORT ActionExecutorRef makeActionExecutor();
+typedef std::shared_ptr<LocalExecutor> LocalExecutorRef;
+typedef std::shared_ptr<LocalSandboxProvider> LocalSandboxProviderRef;
+typedef std::shared_ptr<RemoteExecutor> RemoteExecutorRef;
+LLBUILD3_EXPORT ActionExecutorRef makeActionExecutor(CASDatabaseRef, ActionCacheRef, LocalExecutorRef, RemoteExecutorRef);
+LLBUILD3_EXPORT LocalSandboxProviderRef makeExtLocalSandboxProvider(ExtLocalSandboxProvider);
+LLBUILD3_EXPORT LocalExecutorRef makeLocalExecutor(LocalSandboxProviderRef);
+LLBUILD3_EXPORT RemoteExecutorRef makeRemoteExecutor();
 
 struct ExtEngineConfig {
   std::optional<LabelPB> initRule;
@@ -187,6 +218,8 @@ class EngineRef {
   std::shared_ptr<Engine> engine;
 public:
   EngineRef(std::shared_ptr<Engine> engine) : engine(engine) { }
+
+  LLBUILD3_EXPORT CASDatabaseRef cas();
 
   LLBUILD3_EXPORT BuildRef build(const LabelPB artifact);
 };

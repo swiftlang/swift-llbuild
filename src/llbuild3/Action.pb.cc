@@ -73,52 +73,6 @@ struct Platform_PropertyDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 Platform_PropertyDefaultTypeInternal _Platform_Property_default_instance_;
 
-inline constexpr SubprocessResult_Output::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        path_(
-            &::google::protobuf::internal::fixed_address_empty_string,
-            ::_pbi::ConstantInitialized()),
-        object_{nullptr},
-        type_{static_cast< ::llbuild3::FileType >(0)} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR SubprocessResult_Output::SubprocessResult_Output(::_pbi::ConstantInitialized)
-    : _impl_(::_pbi::ConstantInitialized()) {}
-struct SubprocessResult_OutputDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR SubprocessResult_OutputDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~SubprocessResult_OutputDefaultTypeInternal() {}
-  union {
-    SubprocessResult_Output _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SubprocessResult_OutputDefaultTypeInternal _SubprocessResult_Output_default_instance_;
-
-inline constexpr Subprocess_Input::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : _cached_size_{0},
-        path_(
-            &::google::protobuf::internal::fixed_address_empty_string,
-            ::_pbi::ConstantInitialized()),
-        object_{nullptr},
-        type_{static_cast< ::llbuild3::FileType >(0)} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR Subprocess_Input::Subprocess_Input(::_pbi::ConstantInitialized)
-    : _impl_(::_pbi::ConstantInitialized()) {}
-struct Subprocess_InputDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR Subprocess_InputDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~Subprocess_InputDefaultTypeInternal() {}
-  union {
-    Subprocess_Input _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 Subprocess_InputDefaultTypeInternal _Subprocess_Input_default_instance_;
-
 inline constexpr Platform::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : properties_{},
@@ -137,6 +91,29 @@ struct PlatformDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PlatformDefaultTypeInternal _Platform_default_instance_;
+
+inline constexpr FileObject::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        path_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        object_{nullptr},
+        type_{static_cast< ::llbuild3::FileType >(0)} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR FileObject::FileObject(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct FileObjectDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR FileObjectDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~FileObjectDefaultTypeInternal() {}
+  union {
+    FileObject _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 FileObjectDefaultTypeInternal _FileObject_default_instance_;
 
 inline constexpr ActionExecutionMetadata::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -240,10 +217,11 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr Action::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        operation_{nullptr},
         function_{nullptr},
         platform_{nullptr},
-        volatile__{false} {}
+        volatile__{false},
+        Operation_{},
+        _oneof_case_{} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR Action::Action(::_pbi::ConstantInitialized)
@@ -266,6 +244,20 @@ static constexpr const ::_pb::ServiceDescriptor**
 const ::uint32_t
     TableStruct_llbuild3_2fAction_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
+        PROTOBUF_FIELD_OFFSET(::llbuild3::FileObject, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::llbuild3::FileObject, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::llbuild3::FileObject, _impl_.path_),
+        PROTOBUF_FIELD_OFFSET(::llbuild3::FileObject, _impl_.type_),
+        PROTOBUF_FIELD_OFFSET(::llbuild3::FileObject, _impl_.object_),
+        ~0u,
+        ~0u,
+        0,
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::llbuild3::Subprocess_EnvironmentVariable, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -276,20 +268,6 @@ const ::uint32_t
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::llbuild3::Subprocess_EnvironmentVariable, _impl_.name_),
         PROTOBUF_FIELD_OFFSET(::llbuild3::Subprocess_EnvironmentVariable, _impl_.value_),
-        PROTOBUF_FIELD_OFFSET(::llbuild3::Subprocess_Input, _impl_._has_bits_),
-        PROTOBUF_FIELD_OFFSET(::llbuild3::Subprocess_Input, _internal_metadata_),
-        ~0u,  // no _extensions_
-        ~0u,  // no _oneof_case_
-        ~0u,  // no _weak_field_map_
-        ~0u,  // no _inlined_string_donated_
-        ~0u,  // no _split_
-        ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::llbuild3::Subprocess_Input, _impl_.path_),
-        PROTOBUF_FIELD_OFFSET(::llbuild3::Subprocess_Input, _impl_.type_),
-        PROTOBUF_FIELD_OFFSET(::llbuild3::Subprocess_Input, _impl_.object_),
-        ~0u,
-        ~0u,
-        0,
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::llbuild3::Subprocess, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -303,20 +281,6 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::llbuild3::Subprocess, _impl_.workingdirectory_),
         PROTOBUF_FIELD_OFFSET(::llbuild3::Subprocess, _impl_.inputs_),
         PROTOBUF_FIELD_OFFSET(::llbuild3::Subprocess, _impl_.outputpaths_),
-        PROTOBUF_FIELD_OFFSET(::llbuild3::SubprocessResult_Output, _impl_._has_bits_),
-        PROTOBUF_FIELD_OFFSET(::llbuild3::SubprocessResult_Output, _internal_metadata_),
-        ~0u,  // no _extensions_
-        ~0u,  // no _oneof_case_
-        ~0u,  // no _weak_field_map_
-        ~0u,  // no _inlined_string_donated_
-        ~0u,  // no _split_
-        ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::llbuild3::SubprocessResult_Output, _impl_.path_),
-        PROTOBUF_FIELD_OFFSET(::llbuild3::SubprocessResult_Output, _impl_.type_),
-        PROTOBUF_FIELD_OFFSET(::llbuild3::SubprocessResult_Output, _impl_.object_),
-        ~0u,
-        ~0u,
-        0,
         PROTOBUF_FIELD_OFFSET(::llbuild3::SubprocessResult, _impl_._has_bits_),
         PROTOBUF_FIELD_OFFSET(::llbuild3::SubprocessResult, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -334,19 +298,22 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::llbuild3::Action, _impl_._has_bits_),
         PROTOBUF_FIELD_OFFSET(::llbuild3::Action, _internal_metadata_),
         ~0u,  // no _extensions_
-        ~0u,  // no _oneof_case_
+        PROTOBUF_FIELD_OFFSET(::llbuild3::Action, _impl_._oneof_case_[0]),
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::llbuild3::Action, _impl_.operation_),
+        ::_pbi::kInvalidFieldOffsetTag,
+        ::_pbi::kInvalidFieldOffsetTag,
         PROTOBUF_FIELD_OFFSET(::llbuild3::Action, _impl_.function_),
         PROTOBUF_FIELD_OFFSET(::llbuild3::Action, _impl_.volatile__),
         PROTOBUF_FIELD_OFFSET(::llbuild3::Action, _impl_.platform_),
-        0,
-        1,
+        PROTOBUF_FIELD_OFFSET(::llbuild3::Action, _impl_.Operation_),
         ~0u,
-        2,
+        ~0u,
+        0,
+        ~0u,
+        1,
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::llbuild3::Platform_Property, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -417,22 +384,20 @@ const ::uint32_t
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, -1, -1, sizeof(::llbuild3::Subprocess_EnvironmentVariable)},
-        {10, 21, -1, sizeof(::llbuild3::Subprocess_Input)},
+        {0, 11, -1, sizeof(::llbuild3::FileObject)},
+        {14, -1, -1, sizeof(::llbuild3::Subprocess_EnvironmentVariable)},
         {24, -1, -1, sizeof(::llbuild3::Subprocess)},
-        {37, 48, -1, sizeof(::llbuild3::SubprocessResult_Output)},
-        {51, 62, -1, sizeof(::llbuild3::SubprocessResult)},
-        {65, 77, -1, sizeof(::llbuild3::Action)},
-        {81, -1, -1, sizeof(::llbuild3::Platform_Property)},
-        {91, -1, -1, sizeof(::llbuild3::Platform)},
-        {100, 112, -1, sizeof(::llbuild3::ActionResult)},
-        {115, 135, -1, sizeof(::llbuild3::ActionExecutionMetadata)},
+        {37, 48, -1, sizeof(::llbuild3::SubprocessResult)},
+        {51, 65, -1, sizeof(::llbuild3::Action)},
+        {70, -1, -1, sizeof(::llbuild3::Platform_Property)},
+        {80, -1, -1, sizeof(::llbuild3::Platform)},
+        {89, 101, -1, sizeof(::llbuild3::ActionResult)},
+        {104, 124, -1, sizeof(::llbuild3::ActionExecutionMetadata)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
+    &::llbuild3::_FileObject_default_instance_._instance,
     &::llbuild3::_Subprocess_EnvironmentVariable_default_instance_._instance,
-    &::llbuild3::_Subprocess_Input_default_instance_._instance,
     &::llbuild3::_Subprocess_default_instance_._instance,
-    &::llbuild3::_SubprocessResult_Output_default_instance_._instance,
     &::llbuild3::_SubprocessResult_default_instance_._instance,
     &::llbuild3::_Action_default_instance_._instance,
     &::llbuild3::_Platform_Property_default_instance_._instance,
@@ -446,47 +411,46 @@ const char descriptor_table_protodef_llbuild3_2fAction_2eproto[] ABSL_ATTRIBUTE_
     "ld3/CAS.proto\032\026llbuild3/CASTree.proto\032\024l"
     "lbuild3/Label.proto\032\031google/protobuf/any"
     ".proto\032\036google/protobuf/duration.proto\032\037"
-    "google/protobuf/timestamp.proto\"\315\002\n\nSubp"
-    "rocess\022\021\n\targuments\030\001 \003(\t\022=\n\013environment"
-    "\030\002 \003(\0132(.llbuild3.Subprocess.Environment"
-    "Variable\022\030\n\020workingDirectory\030\003 \001(\t\022*\n\006in"
-    "puts\030\004 \003(\0132\032.llbuild3.Subprocess.Input\022\023"
-    "\n\013outputPaths\030\005 \003(\t\0322\n\023EnvironmentVariab"
-    "le\022\014\n\004name\030\001 \001(\t\022\r\n\005value\030\002 \001(\t\032^\n\005Input"
-    "\022\014\n\004path\030\001 \001(\t\022 \n\004type\030\002 \001(\0162\022.llbuild3."
-    "FileType\022%\n\006object\030\003 \001(\0132\025.llbuild3.CASO"
-    "bjectID\"\340\001\n\020SubprocessResult\0222\n\007outputs\030"
-    "\001 \003(\0132!.llbuild3.SubprocessResult.Output"
-    "\022\020\n\010exitCode\030\002 \001(\005\022%\n\006stdout\030\003 \001(\0132\025.llb"
-    "uild3.CASObjectID\032_\n\006Output\022\014\n\004path\030\001 \001("
-    "\t\022 \n\004type\030\002 \001(\0162\022.llbuild3.FileType\022%\n\006o"
-    "bject\030\003 \001(\0132\025.llbuild3.CASObjectID\"\215\001\n\006A"
-    "ction\022(\n\toperation\030\001 \001(\0132\025.llbuild3.CASO"
-    "bjectID\022!\n\010function\030\002 \001(\0132\017.llbuild3.Lab"
-    "el\022\020\n\010volatile\030\003 \001(\010\022$\n\010platform\030\004 \001(\0132\022"
-    ".llbuild3.Platform\"d\n\010Platform\022/\n\nproper"
-    "ties\030\001 \003(\0132\033.llbuild3.Platform.Property\032"
-    "\'\n\010Property\022\014\n\004name\030\001 \001(\t\022\r\n\005value\030\002 \001(\t"
-    "\"\261\001\n\014ActionResult\022*\n\tcasObject\030\001 \001(\0132\025.l"
-    "lbuild3.CASObjectIDH\000\022+\n\013protoObject\030\002 \001"
-    "(\0132\024.google.protobuf.AnyH\000\0223\n\010metadata\030\003"
-    " \001(\0132!.llbuild3.ActionExecutionMetadataB"
-    "\023\n\021ActionResultValue\"\334\004\n\027ActionExecution"
-    "Metadata\022\016\n\006worker\030\001 \001(\t\022*\n\006queued\030\002 \001(\013"
-    "2\032.google.protobuf.Timestamp\022.\n\ndispatch"
-    "ed\030\003 \001(\0132\032.google.protobuf.Timestamp\022/\n\013"
-    "workerStart\030\004 \001(\0132\032.google.protobuf.Time"
-    "stamp\0223\n\017workerCompleted\030\005 \001(\0132\032.google."
-    "protobuf.Timestamp\0222\n\016executionStart\030\006 \001"
-    "(\0132\032.google.protobuf.Timestamp\0226\n\022execut"
-    "ionCompleted\030\007 \001(\0132\032.google.protobuf.Tim"
-    "estamp\0224\n\021executionDuration\030\010 \001(\0132\031.goog"
-    "le.protobuf.Duration\0225\n\021outputUploadStar"
-    "t\030\t \001(\0132\032.google.protobuf.Timestamp\0229\n\025o"
-    "utputUploadCompleted\030\n \001(\0132\032.google.prot"
-    "obuf.Timestamp\022-\n\tcompleted\030\013 \001(\0132\032.goog"
-    "le.protobuf.Timestamp\022,\n\016additionalData\030"
-    "\014 \003(\0132\024.google.protobuf.Anyb\006proto3"
+    "google/protobuf/timestamp.proto\"c\n\nFileO"
+    "bject\022\014\n\004path\030\001 \001(\t\022 \n\004type\030\002 \001(\0162\022.llbu"
+    "ild3.FileType\022%\n\006object\030\003 \001(\0132\025.llbuild3"
+    ".CASObjectID\"\347\001\n\nSubprocess\022\021\n\targuments"
+    "\030\001 \003(\t\022=\n\013environment\030\002 \003(\0132(.llbuild3.S"
+    "ubprocess.EnvironmentVariable\022\030\n\020working"
+    "Directory\030\003 \001(\t\022$\n\006inputs\030\004 \003(\0132\024.llbuil"
+    "d3.FileObject\022\023\n\013outputPaths\030\005 \003(\t\0322\n\023En"
+    "vironmentVariable\022\014\n\004name\030\001 \001(\t\022\r\n\005value"
+    "\030\002 \001(\t\"r\n\020SubprocessResult\022%\n\007outputs\030\001 "
+    "\003(\0132\024.llbuild3.FileObject\022\020\n\010exitCode\030\002 "
+    "\001(\005\022%\n\006stdout\030\003 \001(\0132\025.llbuild3.CASObject"
+    "ID\"\310\001\n\006Action\022*\n\tcasObject\030\001 \001(\0132\025.llbui"
+    "ld3.CASObjectIDH\000\022*\n\nsubprocess\030\002 \001(\0132\024."
+    "llbuild3.SubprocessH\000\022!\n\010function\030\003 \001(\0132"
+    "\017.llbuild3.Label\022\020\n\010volatile\030\004 \001(\010\022$\n\010pl"
+    "atform\030\005 \001(\0132\022.llbuild3.PlatformB\013\n\tOper"
+    "ation\"d\n\010Platform\022/\n\nproperties\030\001 \003(\0132\033."
+    "llbuild3.Platform.Property\032\'\n\010Property\022\014"
+    "\n\004name\030\001 \001(\t\022\r\n\005value\030\002 \001(\t\"\266\001\n\014ActionRe"
+    "sult\022*\n\tcasObject\030\001 \001(\0132\025.llbuild3.CASOb"
+    "jectIDH\000\0220\n\nsubprocess\030\002 \001(\0132\032.llbuild3."
+    "SubprocessResultH\000\0223\n\010metadata\030\003 \001(\0132!.l"
+    "lbuild3.ActionExecutionMetadataB\023\n\021Actio"
+    "nResultValue\"\334\004\n\027ActionExecutionMetadata"
+    "\022\016\n\006worker\030\001 \001(\t\022*\n\006queued\030\002 \001(\0132\032.googl"
+    "e.protobuf.Timestamp\022.\n\ndispatched\030\003 \001(\013"
+    "2\032.google.protobuf.Timestamp\022/\n\013workerSt"
+    "art\030\004 \001(\0132\032.google.protobuf.Timestamp\0223\n"
+    "\017workerCompleted\030\005 \001(\0132\032.google.protobuf"
+    ".Timestamp\0222\n\016executionStart\030\006 \001(\0132\032.goo"
+    "gle.protobuf.Timestamp\0226\n\022executionCompl"
+    "eted\030\007 \001(\0132\032.google.protobuf.Timestamp\0224"
+    "\n\021executionDuration\030\010 \001(\0132\031.google.proto"
+    "buf.Duration\0225\n\021outputUploadStart\030\t \001(\0132"
+    "\032.google.protobuf.Timestamp\0229\n\025outputUpl"
+    "oadCompleted\030\n \001(\0132\032.google.protobuf.Tim"
+    "estamp\022-\n\tcompleted\030\013 \001(\0132\032.google.proto"
+    "buf.Timestamp\022,\n\016additionalData\030\014 \003(\0132\024."
+    "google.protobuf.Anyb\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_llbuild3_2fAction_2eproto_deps[6] =
     {
@@ -501,13 +465,13 @@ static ::absl::once_flag descriptor_table_llbuild3_2fAction_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_llbuild3_2fAction_2eproto = {
     false,
     false,
-    1795,
+    1747,
     descriptor_table_protodef_llbuild3_2fAction_2eproto,
     "llbuild3/Action.proto",
     &descriptor_table_llbuild3_2fAction_2eproto_once,
     descriptor_table_llbuild3_2fAction_2eproto_deps,
     6,
-    10,
+    9,
     schemas,
     file_default_instances,
     TableStruct_llbuild3_2fAction_2eproto::offsets,
@@ -515,6 +479,290 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_llbuild3_2fAct
     file_level_service_descriptors_llbuild3_2fAction_2eproto,
 };
 namespace llbuild3 {
+// ===================================================================
+
+class FileObject::_Internal {
+ public:
+  using HasBits =
+      decltype(std::declval<FileObject>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(FileObject, _impl_._has_bits_);
+};
+
+void FileObject::clear_object() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.object_ != nullptr) _impl_.object_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+FileObject::FileObject(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:llbuild3.FileObject)
+}
+inline PROTOBUF_NDEBUG_INLINE FileObject::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from, const ::llbuild3::FileObject& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        path_(arena, from.path_) {}
+
+FileObject::FileObject(
+    ::google::protobuf::Arena* arena,
+    const FileObject& from)
+    : ::google::protobuf::Message(arena) {
+  FileObject* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.object_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(
+                              arena, *from._impl_.object_)
+                        : nullptr;
+  _impl_.type_ = from._impl_.type_;
+
+  // @@protoc_insertion_point(copy_constructor:llbuild3.FileObject)
+}
+inline PROTOBUF_NDEBUG_INLINE FileObject::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0},
+        path_(arena) {}
+
+inline void FileObject::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, object_),
+           0,
+           offsetof(Impl_, type_) -
+               offsetof(Impl_, object_) +
+               sizeof(Impl_::type_));
+}
+FileObject::~FileObject() {
+  // @@protoc_insertion_point(destructor:llbuild3.FileObject)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void FileObject::SharedDtor() {
+  ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.path_.Destroy();
+  delete _impl_.object_;
+  _impl_.~Impl_();
+}
+
+const ::google::protobuf::MessageLite::ClassData*
+FileObject::GetClassData() const {
+  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
+      ClassDataFull _data_ = {
+          {
+              &_table_.header,
+              nullptr,  // OnDemandRegisterArenaDtor
+              nullptr,  // IsInitialized
+              PROTOBUF_FIELD_OFFSET(FileObject, _impl_._cached_size_),
+              false,
+          },
+          &FileObject::MergeImpl,
+          &FileObject::kDescriptorMethods,
+          &descriptor_table_llbuild3_2fAction_2eproto,
+          nullptr,  // tracker
+      };
+  ::google::protobuf::internal::PrefetchToLocalCache(&_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_data_.tc_table);
+  return _data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 1, 32, 2> FileObject::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(FileObject, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    &_FileObject_default_instance_._instance,
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::llbuild3::FileObject>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // string path = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(FileObject, _impl_.path_)}},
+    // .llbuild3.FileType type = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(FileObject, _impl_.type_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(FileObject, _impl_.type_)}},
+    // .llbuild3.CASObjectID object = 3;
+    {::_pbi::TcParser::FastMtS1,
+     {26, 0, 0, PROTOBUF_FIELD_OFFSET(FileObject, _impl_.object_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string path = 1;
+    {PROTOBUF_FIELD_OFFSET(FileObject, _impl_.path_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // .llbuild3.FileType type = 2;
+    {PROTOBUF_FIELD_OFFSET(FileObject, _impl_.type_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kOpenEnum)},
+    // .llbuild3.CASObjectID object = 3;
+    {PROTOBUF_FIELD_OFFSET(FileObject, _impl_.object_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+  }}, {{
+    {::_pbi::TcParser::GetTable<::llbuild3::CASObjectID>()},
+  }}, {{
+    "\23\4\0\0\0\0\0\0"
+    "llbuild3.FileObject"
+    "path"
+  }},
+};
+
+PROTOBUF_NOINLINE void FileObject::Clear() {
+// @@protoc_insertion_point(message_clear_start:llbuild3.FileObject)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.path_.ClearToEmpty();
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(_impl_.object_ != nullptr);
+    _impl_.object_->Clear();
+  }
+  _impl_.type_ = 0;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+::uint8_t* FileObject::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:llbuild3.FileObject)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // string path = 1;
+  if (!this->_internal_path().empty()) {
+    const std::string& _s = this->_internal_path();
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "llbuild3.FileObject.path");
+    target = stream->WriteStringMaybeAliased(1, _s, target);
+  }
+
+  // .llbuild3.FileType type = 2;
+  if (this->_internal_type() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteEnumToArray(
+        2, this->_internal_type(), target);
+  }
+
+  cached_has_bits = _impl_._has_bits_[0];
+  // .llbuild3.CASObjectID object = 3;
+  if (cached_has_bits & 0x00000001u) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        3, *_impl_.object_, _impl_.object_->GetCachedSize(), target, stream);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:llbuild3.FileObject)
+  return target;
+}
+
+::size_t FileObject::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:llbuild3.FileObject)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(reinterpret_cast<const void*>(this));
+  // string path = 1;
+  if (!this->_internal_path().empty()) {
+    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                    this->_internal_path());
+  }
+
+  // .llbuild3.CASObjectID object = 3;
+  cached_has_bits = _impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    total_size +=
+        1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.object_);
+  }
+
+  // .llbuild3.FileType type = 2;
+  if (this->_internal_type() != 0) {
+    total_size += 1 +
+                  ::_pbi::WireFormatLite::EnumSize(this->_internal_type());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+
+void FileObject::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<FileObject*>(&to_msg);
+  auto& from = static_cast<const FileObject&>(from_msg);
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:llbuild3.FileObject)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (!from._internal_path().empty()) {
+    _this->_internal_set_path(from._internal_path());
+  }
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (cached_has_bits & 0x00000001u) {
+    ABSL_DCHECK(from._impl_.object_ != nullptr);
+    if (_this->_impl_.object_ == nullptr) {
+      _this->_impl_.object_ =
+          ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(arena, *from._impl_.object_);
+    } else {
+      _this->_impl_.object_->MergeFrom(*from._impl_.object_);
+    }
+  }
+  if (from._internal_type() != 0) {
+    _this->_impl_.type_ = from._impl_.type_;
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void FileObject::CopyFrom(const FileObject& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:llbuild3.FileObject)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void FileObject::InternalSwap(FileObject* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.path_, &other->_impl_.path_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(FileObject, _impl_.type_)
+      + sizeof(FileObject::_impl_.type_)
+      - PROTOBUF_FIELD_OFFSET(FileObject, _impl_.object_)>(
+          reinterpret_cast<char*>(&_impl_.object_),
+          reinterpret_cast<char*>(&other->_impl_.object_));
+}
+
+::google::protobuf::Metadata FileObject::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
 // ===================================================================
 
 class Subprocess_EnvironmentVariable::_Internal {
@@ -739,290 +987,6 @@ void Subprocess_EnvironmentVariable::InternalSwap(Subprocess_EnvironmentVariable
 }
 // ===================================================================
 
-class Subprocess_Input::_Internal {
- public:
-  using HasBits =
-      decltype(std::declval<Subprocess_Input>()._impl_._has_bits_);
-  static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(Subprocess_Input, _impl_._has_bits_);
-};
-
-void Subprocess_Input::clear_object() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.object_ != nullptr) _impl_.object_->Clear();
-  _impl_._has_bits_[0] &= ~0x00000001u;
-}
-Subprocess_Input::Subprocess_Input(::google::protobuf::Arena* arena)
-    : ::google::protobuf::Message(arena) {
-  SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:llbuild3.Subprocess.Input)
-}
-inline PROTOBUF_NDEBUG_INLINE Subprocess_Input::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
-    const Impl_& from, const ::llbuild3::Subprocess_Input& from_msg)
-      : _has_bits_{from._has_bits_},
-        _cached_size_{0},
-        path_(arena, from.path_) {}
-
-Subprocess_Input::Subprocess_Input(
-    ::google::protobuf::Arena* arena,
-    const Subprocess_Input& from)
-    : ::google::protobuf::Message(arena) {
-  Subprocess_Input* const _this = this;
-  (void)_this;
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
-  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.object_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(
-                              arena, *from._impl_.object_)
-                        : nullptr;
-  _impl_.type_ = from._impl_.type_;
-
-  // @@protoc_insertion_point(copy_constructor:llbuild3.Subprocess.Input)
-}
-inline PROTOBUF_NDEBUG_INLINE Subprocess_Input::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility,
-    ::google::protobuf::Arena* arena)
-      : _cached_size_{0},
-        path_(arena) {}
-
-inline void Subprocess_Input::SharedCtor(::_pb::Arena* arena) {
-  new (&_impl_) Impl_(internal_visibility(), arena);
-  ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, object_),
-           0,
-           offsetof(Impl_, type_) -
-               offsetof(Impl_, object_) +
-               sizeof(Impl_::type_));
-}
-Subprocess_Input::~Subprocess_Input() {
-  // @@protoc_insertion_point(destructor:llbuild3.Subprocess.Input)
-  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
-  SharedDtor();
-}
-inline void Subprocess_Input::SharedDtor() {
-  ABSL_DCHECK(GetArena() == nullptr);
-  _impl_.path_.Destroy();
-  delete _impl_.object_;
-  _impl_.~Impl_();
-}
-
-const ::google::protobuf::MessageLite::ClassData*
-Subprocess_Input::GetClassData() const {
-  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
-      ClassDataFull _data_ = {
-          {
-              &_table_.header,
-              nullptr,  // OnDemandRegisterArenaDtor
-              nullptr,  // IsInitialized
-              PROTOBUF_FIELD_OFFSET(Subprocess_Input, _impl_._cached_size_),
-              false,
-          },
-          &Subprocess_Input::MergeImpl,
-          &Subprocess_Input::kDescriptorMethods,
-          &descriptor_table_llbuild3_2fAction_2eproto,
-          nullptr,  // tracker
-      };
-  ::google::protobuf::internal::PrefetchToLocalCache(&_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(_data_.tc_table);
-  return _data_.base();
-}
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 3, 1, 38, 2> Subprocess_Input::_table_ = {
-  {
-    PROTOBUF_FIELD_OFFSET(Subprocess_Input, _impl_._has_bits_),
-    0, // no _extensions_
-    3, 24,  // max_field_number, fast_idx_mask
-    offsetof(decltype(_table_), field_lookup_table),
-    4294967288,  // skipmap
-    offsetof(decltype(_table_), field_entries),
-    3,  // num_field_entries
-    1,  // num_aux_entries
-    offsetof(decltype(_table_), aux_entries),
-    &_Subprocess_Input_default_instance_._instance,
-    nullptr,  // post_loop_handler
-    ::_pbi::TcParser::GenericFallback,  // fallback
-    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::llbuild3::Subprocess_Input>(),  // to_prefetch
-    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-  }, {{
-    {::_pbi::TcParser::MiniParse, {}},
-    // string path = 1;
-    {::_pbi::TcParser::FastUS1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(Subprocess_Input, _impl_.path_)}},
-    // .llbuild3.FileType type = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(Subprocess_Input, _impl_.type_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(Subprocess_Input, _impl_.type_)}},
-    // .llbuild3.CASObjectID object = 3;
-    {::_pbi::TcParser::FastMtS1,
-     {26, 0, 0, PROTOBUF_FIELD_OFFSET(Subprocess_Input, _impl_.object_)}},
-  }}, {{
-    65535, 65535
-  }}, {{
-    // string path = 1;
-    {PROTOBUF_FIELD_OFFSET(Subprocess_Input, _impl_.path_), -1, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
-    // .llbuild3.FileType type = 2;
-    {PROTOBUF_FIELD_OFFSET(Subprocess_Input, _impl_.type_), -1, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kOpenEnum)},
-    // .llbuild3.CASObjectID object = 3;
-    {PROTOBUF_FIELD_OFFSET(Subprocess_Input, _impl_.object_), _Internal::kHasBitsOffset + 0, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-  }}, {{
-    {::_pbi::TcParser::GetTable<::llbuild3::CASObjectID>()},
-  }}, {{
-    "\31\4\0\0\0\0\0\0"
-    "llbuild3.Subprocess.Input"
-    "path"
-  }},
-};
-
-PROTOBUF_NOINLINE void Subprocess_Input::Clear() {
-// @@protoc_insertion_point(message_clear_start:llbuild3.Subprocess.Input)
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  _impl_.path_.ClearToEmpty();
-  cached_has_bits = _impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000001u) {
-    ABSL_DCHECK(_impl_.object_ != nullptr);
-    _impl_.object_->Clear();
-  }
-  _impl_.type_ = 0;
-  _impl_._has_bits_.Clear();
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
-}
-
-::uint8_t* Subprocess_Input::_InternalSerialize(
-    ::uint8_t* target,
-    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:llbuild3.Subprocess.Input)
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  // string path = 1;
-  if (!this->_internal_path().empty()) {
-    const std::string& _s = this->_internal_path();
-    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "llbuild3.Subprocess.Input.path");
-    target = stream->WriteStringMaybeAliased(1, _s, target);
-  }
-
-  // .llbuild3.FileType type = 2;
-  if (this->_internal_type() != 0) {
-    target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteEnumToArray(
-        2, this->_internal_type(), target);
-  }
-
-  cached_has_bits = _impl_._has_bits_[0];
-  // .llbuild3.CASObjectID object = 3;
-  if (cached_has_bits & 0x00000001u) {
-    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        3, *_impl_.object_, _impl_.object_->GetCachedSize(), target, stream);
-  }
-
-  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target =
-        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
-  }
-  // @@protoc_insertion_point(serialize_to_array_end:llbuild3.Subprocess.Input)
-  return target;
-}
-
-::size_t Subprocess_Input::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:llbuild3.Subprocess.Input)
-  ::size_t total_size = 0;
-
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  ::_pbi::Prefetch5LinesFrom7Lines(reinterpret_cast<const void*>(this));
-  // string path = 1;
-  if (!this->_internal_path().empty()) {
-    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
-                                    this->_internal_path());
-  }
-
-  // .llbuild3.CASObjectID object = 3;
-  cached_has_bits = _impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000001u) {
-    total_size +=
-        1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.object_);
-  }
-
-  // .llbuild3.FileType type = 2;
-  if (this->_internal_type() != 0) {
-    total_size += 1 +
-                  ::_pbi::WireFormatLite::EnumSize(this->_internal_type());
-  }
-
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
-}
-
-
-void Subprocess_Input::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<Subprocess_Input*>(&to_msg);
-  auto& from = static_cast<const Subprocess_Input&>(from_msg);
-  ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:llbuild3.Subprocess.Input)
-  ABSL_DCHECK_NE(&from, _this);
-  ::uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
-
-  if (!from._internal_path().empty()) {
-    _this->_internal_set_path(from._internal_path());
-  }
-  cached_has_bits = from._impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000001u) {
-    ABSL_DCHECK(from._impl_.object_ != nullptr);
-    if (_this->_impl_.object_ == nullptr) {
-      _this->_impl_.object_ =
-          ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(arena, *from._impl_.object_);
-    } else {
-      _this->_impl_.object_->MergeFrom(*from._impl_.object_);
-    }
-  }
-  if (from._internal_type() != 0) {
-    _this->_impl_.type_ = from._impl_.type_;
-  }
-  _this->_impl_._has_bits_[0] |= cached_has_bits;
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
-}
-
-void Subprocess_Input::CopyFrom(const Subprocess_Input& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:llbuild3.Subprocess.Input)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-
-void Subprocess_Input::InternalSwap(Subprocess_Input* PROTOBUF_RESTRICT other) {
-  using std::swap;
-  auto* arena = GetArena();
-  ABSL_DCHECK_EQ(arena, other->GetArena());
-  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.path_, &other->_impl_.path_, arena);
-  ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(Subprocess_Input, _impl_.type_)
-      + sizeof(Subprocess_Input::_impl_.type_)
-      - PROTOBUF_FIELD_OFFSET(Subprocess_Input, _impl_.object_)>(
-          reinterpret_cast<char*>(&_impl_.object_),
-          reinterpret_cast<char*>(&other->_impl_.object_));
-}
-
-::google::protobuf::Metadata Subprocess_Input::GetMetadata() const {
-  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
-}
-// ===================================================================
-
 class Subprocess::_Internal {
  public:
 };
@@ -1127,7 +1091,7 @@ const ::_pbi::TcParseTable<3, 5, 2, 64, 2> Subprocess::_table_ = {
     // string workingDirectory = 3;
     {::_pbi::TcParser::FastUS1,
      {26, 63, 0, PROTOBUF_FIELD_OFFSET(Subprocess, _impl_.workingdirectory_)}},
-    // repeated .llbuild3.Subprocess.Input inputs = 4;
+    // repeated .llbuild3.FileObject inputs = 4;
     {::_pbi::TcParser::FastMtR1,
      {34, 63, 1, PROTOBUF_FIELD_OFFSET(Subprocess, _impl_.inputs_)}},
     // repeated string outputPaths = 5;
@@ -1147,7 +1111,7 @@ const ::_pbi::TcParseTable<3, 5, 2, 64, 2> Subprocess::_table_ = {
     // string workingDirectory = 3;
     {PROTOBUF_FIELD_OFFSET(Subprocess, _impl_.workingdirectory_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
-    // repeated .llbuild3.Subprocess.Input inputs = 4;
+    // repeated .llbuild3.FileObject inputs = 4;
     {PROTOBUF_FIELD_OFFSET(Subprocess, _impl_.inputs_), 0, 1,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
     // repeated string outputPaths = 5;
@@ -1155,7 +1119,7 @@ const ::_pbi::TcParseTable<3, 5, 2, 64, 2> Subprocess::_table_ = {
     (0 | ::_fl::kFcRepeated | ::_fl::kUtf8String | ::_fl::kRepSString)},
   }}, {{
     {::_pbi::TcParser::GetTable<::llbuild3::Subprocess_EnvironmentVariable>()},
-    {::_pbi::TcParser::GetTable<::llbuild3::Subprocess_Input>()},
+    {::_pbi::TcParser::GetTable<::llbuild3::FileObject>()},
   }}, {{
     "\23\11\0\20\0\13\0\0"
     "llbuild3.Subprocess"
@@ -1214,7 +1178,7 @@ PROTOBUF_NOINLINE void Subprocess::Clear() {
     target = stream->WriteStringMaybeAliased(3, _s, target);
   }
 
-  // repeated .llbuild3.Subprocess.Input inputs = 4;
+  // repeated .llbuild3.FileObject inputs = 4;
   for (unsigned i = 0, n = static_cast<unsigned>(
                            this->_internal_inputs_size());
        i < n; i++) {
@@ -1262,7 +1226,7 @@ PROTOBUF_NOINLINE void Subprocess::Clear() {
   for (const auto& msg : this->_internal_environment()) {
     total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
   }
-  // repeated .llbuild3.Subprocess.Input inputs = 4;
+  // repeated .llbuild3.FileObject inputs = 4;
   total_size += 1UL * this->_internal_inputs_size();
   for (const auto& msg : this->_internal_inputs()) {
     total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
@@ -1324,290 +1288,6 @@ void Subprocess::InternalSwap(Subprocess* PROTOBUF_RESTRICT other) {
 }
 
 ::google::protobuf::Metadata Subprocess::GetMetadata() const {
-  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
-}
-// ===================================================================
-
-class SubprocessResult_Output::_Internal {
- public:
-  using HasBits =
-      decltype(std::declval<SubprocessResult_Output>()._impl_._has_bits_);
-  static constexpr ::int32_t kHasBitsOffset =
-      8 * PROTOBUF_FIELD_OFFSET(SubprocessResult_Output, _impl_._has_bits_);
-};
-
-void SubprocessResult_Output::clear_object() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.object_ != nullptr) _impl_.object_->Clear();
-  _impl_._has_bits_[0] &= ~0x00000001u;
-}
-SubprocessResult_Output::SubprocessResult_Output(::google::protobuf::Arena* arena)
-    : ::google::protobuf::Message(arena) {
-  SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:llbuild3.SubprocessResult.Output)
-}
-inline PROTOBUF_NDEBUG_INLINE SubprocessResult_Output::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
-    const Impl_& from, const ::llbuild3::SubprocessResult_Output& from_msg)
-      : _has_bits_{from._has_bits_},
-        _cached_size_{0},
-        path_(arena, from.path_) {}
-
-SubprocessResult_Output::SubprocessResult_Output(
-    ::google::protobuf::Arena* arena,
-    const SubprocessResult_Output& from)
-    : ::google::protobuf::Message(arena) {
-  SubprocessResult_Output* const _this = this;
-  (void)_this;
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
-  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.object_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(
-                              arena, *from._impl_.object_)
-                        : nullptr;
-  _impl_.type_ = from._impl_.type_;
-
-  // @@protoc_insertion_point(copy_constructor:llbuild3.SubprocessResult.Output)
-}
-inline PROTOBUF_NDEBUG_INLINE SubprocessResult_Output::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility,
-    ::google::protobuf::Arena* arena)
-      : _cached_size_{0},
-        path_(arena) {}
-
-inline void SubprocessResult_Output::SharedCtor(::_pb::Arena* arena) {
-  new (&_impl_) Impl_(internal_visibility(), arena);
-  ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, object_),
-           0,
-           offsetof(Impl_, type_) -
-               offsetof(Impl_, object_) +
-               sizeof(Impl_::type_));
-}
-SubprocessResult_Output::~SubprocessResult_Output() {
-  // @@protoc_insertion_point(destructor:llbuild3.SubprocessResult.Output)
-  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
-  SharedDtor();
-}
-inline void SubprocessResult_Output::SharedDtor() {
-  ABSL_DCHECK(GetArena() == nullptr);
-  _impl_.path_.Destroy();
-  delete _impl_.object_;
-  _impl_.~Impl_();
-}
-
-const ::google::protobuf::MessageLite::ClassData*
-SubprocessResult_Output::GetClassData() const {
-  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
-      ClassDataFull _data_ = {
-          {
-              &_table_.header,
-              nullptr,  // OnDemandRegisterArenaDtor
-              nullptr,  // IsInitialized
-              PROTOBUF_FIELD_OFFSET(SubprocessResult_Output, _impl_._cached_size_),
-              false,
-          },
-          &SubprocessResult_Output::MergeImpl,
-          &SubprocessResult_Output::kDescriptorMethods,
-          &descriptor_table_llbuild3_2fAction_2eproto,
-          nullptr,  // tracker
-      };
-  ::google::protobuf::internal::PrefetchToLocalCache(&_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(_data_.tc_table);
-  return _data_.base();
-}
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 3, 1, 45, 2> SubprocessResult_Output::_table_ = {
-  {
-    PROTOBUF_FIELD_OFFSET(SubprocessResult_Output, _impl_._has_bits_),
-    0, // no _extensions_
-    3, 24,  // max_field_number, fast_idx_mask
-    offsetof(decltype(_table_), field_lookup_table),
-    4294967288,  // skipmap
-    offsetof(decltype(_table_), field_entries),
-    3,  // num_field_entries
-    1,  // num_aux_entries
-    offsetof(decltype(_table_), aux_entries),
-    &_SubprocessResult_Output_default_instance_._instance,
-    nullptr,  // post_loop_handler
-    ::_pbi::TcParser::GenericFallback,  // fallback
-    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::llbuild3::SubprocessResult_Output>(),  // to_prefetch
-    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-  }, {{
-    {::_pbi::TcParser::MiniParse, {}},
-    // string path = 1;
-    {::_pbi::TcParser::FastUS1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(SubprocessResult_Output, _impl_.path_)}},
-    // .llbuild3.FileType type = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SubprocessResult_Output, _impl_.type_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(SubprocessResult_Output, _impl_.type_)}},
-    // .llbuild3.CASObjectID object = 3;
-    {::_pbi::TcParser::FastMtS1,
-     {26, 0, 0, PROTOBUF_FIELD_OFFSET(SubprocessResult_Output, _impl_.object_)}},
-  }}, {{
-    65535, 65535
-  }}, {{
-    // string path = 1;
-    {PROTOBUF_FIELD_OFFSET(SubprocessResult_Output, _impl_.path_), -1, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
-    // .llbuild3.FileType type = 2;
-    {PROTOBUF_FIELD_OFFSET(SubprocessResult_Output, _impl_.type_), -1, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kOpenEnum)},
-    // .llbuild3.CASObjectID object = 3;
-    {PROTOBUF_FIELD_OFFSET(SubprocessResult_Output, _impl_.object_), _Internal::kHasBitsOffset + 0, 0,
-    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-  }}, {{
-    {::_pbi::TcParser::GetTable<::llbuild3::CASObjectID>()},
-  }}, {{
-    "\40\4\0\0\0\0\0\0"
-    "llbuild3.SubprocessResult.Output"
-    "path"
-  }},
-};
-
-PROTOBUF_NOINLINE void SubprocessResult_Output::Clear() {
-// @@protoc_insertion_point(message_clear_start:llbuild3.SubprocessResult.Output)
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  _impl_.path_.ClearToEmpty();
-  cached_has_bits = _impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000001u) {
-    ABSL_DCHECK(_impl_.object_ != nullptr);
-    _impl_.object_->Clear();
-  }
-  _impl_.type_ = 0;
-  _impl_._has_bits_.Clear();
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
-}
-
-::uint8_t* SubprocessResult_Output::_InternalSerialize(
-    ::uint8_t* target,
-    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:llbuild3.SubprocessResult.Output)
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  // string path = 1;
-  if (!this->_internal_path().empty()) {
-    const std::string& _s = this->_internal_path();
-    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "llbuild3.SubprocessResult.Output.path");
-    target = stream->WriteStringMaybeAliased(1, _s, target);
-  }
-
-  // .llbuild3.FileType type = 2;
-  if (this->_internal_type() != 0) {
-    target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteEnumToArray(
-        2, this->_internal_type(), target);
-  }
-
-  cached_has_bits = _impl_._has_bits_[0];
-  // .llbuild3.CASObjectID object = 3;
-  if (cached_has_bits & 0x00000001u) {
-    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        3, *_impl_.object_, _impl_.object_->GetCachedSize(), target, stream);
-  }
-
-  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target =
-        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
-  }
-  // @@protoc_insertion_point(serialize_to_array_end:llbuild3.SubprocessResult.Output)
-  return target;
-}
-
-::size_t SubprocessResult_Output::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:llbuild3.SubprocessResult.Output)
-  ::size_t total_size = 0;
-
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  ::_pbi::Prefetch5LinesFrom7Lines(reinterpret_cast<const void*>(this));
-  // string path = 1;
-  if (!this->_internal_path().empty()) {
-    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
-                                    this->_internal_path());
-  }
-
-  // .llbuild3.CASObjectID object = 3;
-  cached_has_bits = _impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000001u) {
-    total_size +=
-        1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.object_);
-  }
-
-  // .llbuild3.FileType type = 2;
-  if (this->_internal_type() != 0) {
-    total_size += 1 +
-                  ::_pbi::WireFormatLite::EnumSize(this->_internal_type());
-  }
-
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
-}
-
-
-void SubprocessResult_Output::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<SubprocessResult_Output*>(&to_msg);
-  auto& from = static_cast<const SubprocessResult_Output&>(from_msg);
-  ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:llbuild3.SubprocessResult.Output)
-  ABSL_DCHECK_NE(&from, _this);
-  ::uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
-
-  if (!from._internal_path().empty()) {
-    _this->_internal_set_path(from._internal_path());
-  }
-  cached_has_bits = from._impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000001u) {
-    ABSL_DCHECK(from._impl_.object_ != nullptr);
-    if (_this->_impl_.object_ == nullptr) {
-      _this->_impl_.object_ =
-          ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(arena, *from._impl_.object_);
-    } else {
-      _this->_impl_.object_->MergeFrom(*from._impl_.object_);
-    }
-  }
-  if (from._internal_type() != 0) {
-    _this->_impl_.type_ = from._impl_.type_;
-  }
-  _this->_impl_._has_bits_[0] |= cached_has_bits;
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
-}
-
-void SubprocessResult_Output::CopyFrom(const SubprocessResult_Output& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:llbuild3.SubprocessResult.Output)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-
-void SubprocessResult_Output::InternalSwap(SubprocessResult_Output* PROTOBUF_RESTRICT other) {
-  using std::swap;
-  auto* arena = GetArena();
-  ABSL_DCHECK_EQ(arena, other->GetArena());
-  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.path_, &other->_impl_.path_, arena);
-  ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(SubprocessResult_Output, _impl_.type_)
-      + sizeof(SubprocessResult_Output::_impl_.type_)
-      - PROTOBUF_FIELD_OFFSET(SubprocessResult_Output, _impl_.object_)>(
-          reinterpret_cast<char*>(&_impl_.object_),
-          reinterpret_cast<char*>(&other->_impl_.object_));
-}
-
-::google::protobuf::Metadata SubprocessResult_Output::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
@@ -1720,7 +1400,7 @@ const ::_pbi::TcParseTable<2, 3, 2, 0, 2> SubprocessResult::_table_ = {
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
-    // repeated .llbuild3.SubprocessResult.Output outputs = 1;
+    // repeated .llbuild3.FileObject outputs = 1;
     {::_pbi::TcParser::FastMtR1,
      {10, 63, 0, PROTOBUF_FIELD_OFFSET(SubprocessResult, _impl_.outputs_)}},
     // int32 exitCode = 2;
@@ -1732,7 +1412,7 @@ const ::_pbi::TcParseTable<2, 3, 2, 0, 2> SubprocessResult::_table_ = {
   }}, {{
     65535, 65535
   }}, {{
-    // repeated .llbuild3.SubprocessResult.Output outputs = 1;
+    // repeated .llbuild3.FileObject outputs = 1;
     {PROTOBUF_FIELD_OFFSET(SubprocessResult, _impl_.outputs_), -1, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
     // int32 exitCode = 2;
@@ -1742,7 +1422,7 @@ const ::_pbi::TcParseTable<2, 3, 2, 0, 2> SubprocessResult::_table_ = {
     {PROTOBUF_FIELD_OFFSET(SubprocessResult, _impl_.stdout_), _Internal::kHasBitsOffset + 0, 1,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::llbuild3::SubprocessResult_Output>()},
+    {::_pbi::TcParser::GetTable<::llbuild3::FileObject>()},
     {::_pbi::TcParser::GetTable<::llbuild3::CASObjectID>()},
   }}, {{
   }},
@@ -1773,7 +1453,7 @@ PROTOBUF_NOINLINE void SubprocessResult::Clear() {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // repeated .llbuild3.SubprocessResult.Output outputs = 1;
+  // repeated .llbuild3.FileObject outputs = 1;
   for (unsigned i = 0, n = static_cast<unsigned>(
                            this->_internal_outputs_size());
        i < n; i++) {
@@ -1816,7 +1496,7 @@ PROTOBUF_NOINLINE void SubprocessResult::Clear() {
   (void) cached_has_bits;
 
   ::_pbi::Prefetch5LinesFrom7Lines(reinterpret_cast<const void*>(this));
-  // repeated .llbuild3.SubprocessResult.Output outputs = 1;
+  // repeated .llbuild3.FileObject outputs = 1;
   total_size += 1UL * this->_internal_outputs_size();
   for (const auto& msg : this->_internal_outputs()) {
     total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
@@ -1898,17 +1578,51 @@ class Action::_Internal {
       decltype(std::declval<Action>()._impl_._has_bits_);
   static constexpr ::int32_t kHasBitsOffset =
       8 * PROTOBUF_FIELD_OFFSET(Action, _impl_._has_bits_);
+  static constexpr ::int32_t kOneofCaseOffset =
+      PROTOBUF_FIELD_OFFSET(::llbuild3::Action, _impl_._oneof_case_);
 };
 
-void Action::clear_operation() {
+void Action::set_allocated_casobject(::llbuild3::CASObjectID* casobject) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  clear_Operation();
+  if (casobject) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(casobject)->GetArena();
+    if (message_arena != submessage_arena) {
+      casobject = ::google::protobuf::internal::GetOwnedMessage(message_arena, casobject, submessage_arena);
+    }
+    set_has_casobject();
+    _impl_.Operation_.casobject_ = casobject;
+  }
+  // @@protoc_insertion_point(field_set_allocated:llbuild3.Action.casObject)
+}
+void Action::clear_casobject() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.operation_ != nullptr) _impl_.operation_->Clear();
-  _impl_._has_bits_[0] &= ~0x00000001u;
+  if (Operation_case() == kCasObject) {
+    if (GetArena() == nullptr) {
+      delete _impl_.Operation_.casobject_;
+    } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
+      ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.Operation_.casobject_);
+    }
+    clear_has_Operation();
+  }
+}
+void Action::set_allocated_subprocess(::llbuild3::Subprocess* subprocess) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  clear_Operation();
+  if (subprocess) {
+    ::google::protobuf::Arena* submessage_arena = subprocess->GetArena();
+    if (message_arena != submessage_arena) {
+      subprocess = ::google::protobuf::internal::GetOwnedMessage(message_arena, subprocess, submessage_arena);
+    }
+    set_has_subprocess();
+    _impl_.Operation_.subprocess_ = subprocess;
+  }
+  // @@protoc_insertion_point(field_set_allocated:llbuild3.Action.subprocess)
 }
 void Action::clear_function() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.function_ != nullptr) _impl_.function_->Clear();
-  _impl_._has_bits_[0] &= ~0x00000002u;
+  _impl_._has_bits_[0] &= ~0x00000001u;
 }
 Action::Action(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
@@ -1919,7 +1633,9 @@ inline PROTOBUF_NDEBUG_INLINE Action::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
     const Impl_& from, const ::llbuild3::Action& from_msg)
       : _has_bits_{from._has_bits_},
-        _cached_size_{0} {}
+        _cached_size_{0},
+        Operation_{},
+        _oneof_case_{from._oneof_case_[0]} {}
 
 Action::Action(
     ::google::protobuf::Arena* arena,
@@ -1931,31 +1647,40 @@ Action::Action(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.operation_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(
-                              arena, *from._impl_.operation_)
-                        : nullptr;
-  _impl_.function_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::llbuild3::Label>(
+  _impl_.function_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::llbuild3::Label>(
                               arena, *from._impl_.function_)
                         : nullptr;
-  _impl_.platform_ = (cached_has_bits & 0x00000004u) ? ::google::protobuf::Message::CopyConstruct<::llbuild3::Platform>(
+  _impl_.platform_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::llbuild3::Platform>(
                               arena, *from._impl_.platform_)
                         : nullptr;
   _impl_.volatile__ = from._impl_.volatile__;
+  switch (Operation_case()) {
+    case OPERATION_NOT_SET:
+      break;
+      case kCasObject:
+        _impl_.Operation_.casobject_ = ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(arena, *from._impl_.Operation_.casobject_);
+        break;
+      case kSubprocess:
+        _impl_.Operation_.subprocess_ = ::google::protobuf::Message::CopyConstruct<::llbuild3::Subprocess>(arena, *from._impl_.Operation_.subprocess_);
+        break;
+  }
 
   // @@protoc_insertion_point(copy_constructor:llbuild3.Action)
 }
 inline PROTOBUF_NDEBUG_INLINE Action::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
-      : _cached_size_{0} {}
+      : _cached_size_{0},
+        Operation_{},
+        _oneof_case_{} {}
 
 inline void Action::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char *>(&_impl_) +
-               offsetof(Impl_, operation_),
+               offsetof(Impl_, function_),
            0,
            offsetof(Impl_, volatile__) -
-               offsetof(Impl_, operation_) +
+               offsetof(Impl_, function_) +
                sizeof(Impl_::volatile__));
 }
 Action::~Action() {
@@ -1965,11 +1690,41 @@ Action::~Action() {
 }
 inline void Action::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
-  delete _impl_.operation_;
   delete _impl_.function_;
   delete _impl_.platform_;
+  if (has_Operation()) {
+    clear_Operation();
+  }
   _impl_.~Impl_();
 }
+
+void Action::clear_Operation() {
+// @@protoc_insertion_point(one_of_clear_start:llbuild3.Action)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  switch (Operation_case()) {
+    case kCasObject: {
+      if (GetArena() == nullptr) {
+        delete _impl_.Operation_.casobject_;
+      } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
+        ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.Operation_.casobject_);
+      }
+      break;
+    }
+    case kSubprocess: {
+      if (GetArena() == nullptr) {
+        delete _impl_.Operation_.subprocess_;
+      } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
+        ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.Operation_.subprocess_);
+      }
+      break;
+    }
+    case OPERATION_NOT_SET: {
+      break;
+    }
+  }
+  _impl_._oneof_case_[0] = OPERATION_NOT_SET;
+}
+
 
 const ::google::protobuf::MessageLite::ClassData*
 Action::GetClassData() const {
@@ -1992,16 +1747,16 @@ Action::GetClassData() const {
   return _data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 4, 3, 0, 2> Action::_table_ = {
+const ::_pbi::TcParseTable<2, 5, 4, 0, 2> Action::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(Action, _impl_._has_bits_),
     0, // no _extensions_
-    4, 24,  // max_field_number, fast_idx_mask
+    5, 24,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967280,  // skipmap
+    4294967264,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    4,  // num_field_entries
-    3,  // num_aux_entries
+    5,  // num_field_entries
+    4,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     &_Action_default_instance_._instance,
     nullptr,  // post_loop_handler
@@ -2010,35 +1765,37 @@ const ::_pbi::TcParseTable<2, 4, 3, 0, 2> Action::_table_ = {
     ::_pbi::TcParser::GetTable<::llbuild3::Action>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // .llbuild3.Platform platform = 4;
-    {::_pbi::TcParser::FastMtS1,
-     {34, 2, 2, PROTOBUF_FIELD_OFFSET(Action, _impl_.platform_)}},
-    // .llbuild3.CASObjectID operation = 1;
-    {::_pbi::TcParser::FastMtS1,
-     {10, 0, 0, PROTOBUF_FIELD_OFFSET(Action, _impl_.operation_)}},
-    // .llbuild3.Label function = 2;
-    {::_pbi::TcParser::FastMtS1,
-     {18, 1, 1, PROTOBUF_FIELD_OFFSET(Action, _impl_.function_)}},
-    // bool volatile = 3;
+    // bool volatile = 4;
     {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(Action, _impl_.volatile__), 63>(),
-     {24, 63, 0, PROTOBUF_FIELD_OFFSET(Action, _impl_.volatile__)}},
+     {32, 63, 0, PROTOBUF_FIELD_OFFSET(Action, _impl_.volatile__)}},
+    // .llbuild3.Platform platform = 5;
+    {::_pbi::TcParser::FastMtS1,
+     {42, 1, 3, PROTOBUF_FIELD_OFFSET(Action, _impl_.platform_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    // .llbuild3.Label function = 3;
+    {::_pbi::TcParser::FastMtS1,
+     {26, 0, 2, PROTOBUF_FIELD_OFFSET(Action, _impl_.function_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .llbuild3.CASObjectID operation = 1;
-    {PROTOBUF_FIELD_OFFSET(Action, _impl_.operation_), _Internal::kHasBitsOffset + 0, 0,
+    // .llbuild3.CASObjectID casObject = 1;
+    {PROTOBUF_FIELD_OFFSET(Action, _impl_.Operation_.casobject_), _Internal::kOneofCaseOffset + 0, 0,
+    (0 | ::_fl::kFcOneof | ::_fl::kMessage | ::_fl::kTvTable)},
+    // .llbuild3.Subprocess subprocess = 2;
+    {PROTOBUF_FIELD_OFFSET(Action, _impl_.Operation_.subprocess_), _Internal::kOneofCaseOffset + 0, 1,
+    (0 | ::_fl::kFcOneof | ::_fl::kMessage | ::_fl::kTvTable)},
+    // .llbuild3.Label function = 3;
+    {PROTOBUF_FIELD_OFFSET(Action, _impl_.function_), _Internal::kHasBitsOffset + 0, 2,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .llbuild3.Label function = 2;
-    {PROTOBUF_FIELD_OFFSET(Action, _impl_.function_), _Internal::kHasBitsOffset + 1, 1,
-    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // bool volatile = 3;
+    // bool volatile = 4;
     {PROTOBUF_FIELD_OFFSET(Action, _impl_.volatile__), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kBool)},
-    // .llbuild3.Platform platform = 4;
-    {PROTOBUF_FIELD_OFFSET(Action, _impl_.platform_), _Internal::kHasBitsOffset + 2, 2,
+    // .llbuild3.Platform platform = 5;
+    {PROTOBUF_FIELD_OFFSET(Action, _impl_.platform_), _Internal::kHasBitsOffset + 1, 3,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
     {::_pbi::TcParser::GetTable<::llbuild3::CASObjectID>()},
+    {::_pbi::TcParser::GetTable<::llbuild3::Subprocess>()},
     {::_pbi::TcParser::GetTable<::llbuild3::Label>()},
     {::_pbi::TcParser::GetTable<::llbuild3::Platform>()},
   }}, {{
@@ -2053,21 +1810,18 @@ PROTOBUF_NOINLINE void Action::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000007u) {
+  if (cached_has_bits & 0x00000003u) {
     if (cached_has_bits & 0x00000001u) {
-      ABSL_DCHECK(_impl_.operation_ != nullptr);
-      _impl_.operation_->Clear();
-    }
-    if (cached_has_bits & 0x00000002u) {
       ABSL_DCHECK(_impl_.function_ != nullptr);
       _impl_.function_->Clear();
     }
-    if (cached_has_bits & 0x00000004u) {
+    if (cached_has_bits & 0x00000002u) {
       ABSL_DCHECK(_impl_.platform_ != nullptr);
       _impl_.platform_->Clear();
     }
   }
   _impl_.volatile__ = false;
+  clear_Operation();
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -2079,30 +1833,38 @@ PROTOBUF_NOINLINE void Action::Clear() {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
+  switch (Operation_case()) {
+    case kCasObject: {
+      target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+          1, *_impl_.Operation_.casobject_, _impl_.Operation_.casobject_->GetCachedSize(), target, stream);
+      break;
+    }
+    case kSubprocess: {
+      target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+          2, *_impl_.Operation_.subprocess_, _impl_.Operation_.subprocess_->GetCachedSize(), target, stream);
+      break;
+    }
+    default:
+      break;
+  }
   cached_has_bits = _impl_._has_bits_[0];
-  // .llbuild3.CASObjectID operation = 1;
+  // .llbuild3.Label function = 3;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        1, *_impl_.operation_, _impl_.operation_->GetCachedSize(), target, stream);
+        3, *_impl_.function_, _impl_.function_->GetCachedSize(), target, stream);
   }
 
-  // .llbuild3.Label function = 2;
-  if (cached_has_bits & 0x00000002u) {
-    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        2, *_impl_.function_, _impl_.function_->GetCachedSize(), target, stream);
-  }
-
-  // bool volatile = 3;
+  // bool volatile = 4;
   if (this->_internal_volatile_() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteBoolToArray(
-        3, this->_internal_volatile_(), target);
+        4, this->_internal_volatile_(), target);
   }
 
-  // .llbuild3.Platform platform = 4;
-  if (cached_has_bits & 0x00000004u) {
+  // .llbuild3.Platform platform = 5;
+  if (cached_has_bits & 0x00000002u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        4, *_impl_.platform_, _impl_.platform_->GetCachedSize(), target, stream);
+        5, *_impl_.platform_, _impl_.platform_->GetCachedSize(), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -2124,31 +1886,42 @@ PROTOBUF_NOINLINE void Action::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(reinterpret_cast<const void*>(this));
   cached_has_bits = _impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000007u) {
-    // .llbuild3.CASObjectID operation = 1;
+  if (cached_has_bits & 0x00000003u) {
+    // .llbuild3.Label function = 3;
     if (cached_has_bits & 0x00000001u) {
-      total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.operation_);
-    }
-
-    // .llbuild3.Label function = 2;
-    if (cached_has_bits & 0x00000002u) {
       total_size +=
           1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.function_);
     }
 
-    // .llbuild3.Platform platform = 4;
-    if (cached_has_bits & 0x00000004u) {
+    // .llbuild3.Platform platform = 5;
+    if (cached_has_bits & 0x00000002u) {
       total_size +=
           1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.platform_);
     }
 
   }
-  // bool volatile = 3;
+  // bool volatile = 4;
   if (this->_internal_volatile_() != 0) {
     total_size += 2;
   }
 
+  switch (Operation_case()) {
+    // .llbuild3.CASObjectID casObject = 1;
+    case kCasObject: {
+      total_size +=
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.Operation_.casobject_);
+      break;
+    }
+    // .llbuild3.Subprocess subprocess = 2;
+    case kSubprocess: {
+      total_size +=
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.Operation_.subprocess_);
+      break;
+    }
+    case OPERATION_NOT_SET: {
+      break;
+    }
+  }
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
@@ -2163,17 +1936,8 @@ void Action::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::
   (void) cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000007u) {
+  if (cached_has_bits & 0x00000003u) {
     if (cached_has_bits & 0x00000001u) {
-      ABSL_DCHECK(from._impl_.operation_ != nullptr);
-      if (_this->_impl_.operation_ == nullptr) {
-        _this->_impl_.operation_ =
-            ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(arena, *from._impl_.operation_);
-      } else {
-        _this->_impl_.operation_->MergeFrom(*from._impl_.operation_);
-      }
-    }
-    if (cached_has_bits & 0x00000002u) {
       ABSL_DCHECK(from._impl_.function_ != nullptr);
       if (_this->_impl_.function_ == nullptr) {
         _this->_impl_.function_ =
@@ -2182,7 +1946,7 @@ void Action::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::
         _this->_impl_.function_->MergeFrom(*from._impl_.function_);
       }
     }
-    if (cached_has_bits & 0x00000004u) {
+    if (cached_has_bits & 0x00000002u) {
       ABSL_DCHECK(from._impl_.platform_ != nullptr);
       if (_this->_impl_.platform_ == nullptr) {
         _this->_impl_.platform_ =
@@ -2196,6 +1960,39 @@ void Action::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::
     _this->_impl_.volatile__ = from._impl_.volatile__;
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
+  if (const uint32_t oneof_from_case = from._impl_._oneof_case_[0]) {
+    const uint32_t oneof_to_case = _this->_impl_._oneof_case_[0];
+    const bool oneof_needs_init = oneof_to_case != oneof_from_case;
+    if (oneof_needs_init) {
+      if (oneof_to_case != 0) {
+        _this->clear_Operation();
+      }
+      _this->_impl_._oneof_case_[0] = oneof_from_case;
+    }
+
+    switch (oneof_from_case) {
+      case kCasObject: {
+        if (oneof_needs_init) {
+          _this->_impl_.Operation_.casobject_ =
+              ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(arena, *from._impl_.Operation_.casobject_);
+        } else {
+          _this->_impl_.Operation_.casobject_->MergeFrom(from._internal_casobject());
+        }
+        break;
+      }
+      case kSubprocess: {
+        if (oneof_needs_init) {
+          _this->_impl_.Operation_.subprocess_ =
+              ::google::protobuf::Message::CopyConstruct<::llbuild3::Subprocess>(arena, *from._impl_.Operation_.subprocess_);
+        } else {
+          _this->_impl_.Operation_.subprocess_->MergeFrom(from._internal_subprocess());
+        }
+        break;
+      }
+      case OPERATION_NOT_SET:
+        break;
+    }
+  }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
@@ -2214,9 +2011,11 @@ void Action::InternalSwap(Action* PROTOBUF_RESTRICT other) {
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(Action, _impl_.volatile__)
       + sizeof(Action::_impl_.volatile__)
-      - PROTOBUF_FIELD_OFFSET(Action, _impl_.operation_)>(
-          reinterpret_cast<char*>(&_impl_.operation_),
-          reinterpret_cast<char*>(&other->_impl_.operation_));
+      - PROTOBUF_FIELD_OFFSET(Action, _impl_.function_)>(
+          reinterpret_cast<char*>(&_impl_.function_),
+          reinterpret_cast<char*>(&other->_impl_.function_));
+  swap(_impl_.Operation_, other->_impl_.Operation_);
+  swap(_impl_._oneof_case_[0], other->_impl_._oneof_case_[0]);
 }
 
 ::google::protobuf::Metadata Action::GetMetadata() const {
@@ -2668,29 +2467,18 @@ void ActionResult::clear_casobject() {
     clear_has_ActionResultValue();
   }
 }
-void ActionResult::set_allocated_protoobject(::google::protobuf::Any* protoobject) {
+void ActionResult::set_allocated_subprocess(::llbuild3::SubprocessResult* subprocess) {
   ::google::protobuf::Arena* message_arena = GetArena();
   clear_ActionResultValue();
-  if (protoobject) {
-    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(protoobject)->GetArena();
+  if (subprocess) {
+    ::google::protobuf::Arena* submessage_arena = subprocess->GetArena();
     if (message_arena != submessage_arena) {
-      protoobject = ::google::protobuf::internal::GetOwnedMessage(message_arena, protoobject, submessage_arena);
+      subprocess = ::google::protobuf::internal::GetOwnedMessage(message_arena, subprocess, submessage_arena);
     }
-    set_has_protoobject();
-    _impl_.ActionResultValue_.protoobject_ = protoobject;
+    set_has_subprocess();
+    _impl_.ActionResultValue_.subprocess_ = subprocess;
   }
-  // @@protoc_insertion_point(field_set_allocated:llbuild3.ActionResult.protoObject)
-}
-void ActionResult::clear_protoobject() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (ActionResultValue_case() == kProtoObject) {
-    if (GetArena() == nullptr) {
-      delete _impl_.ActionResultValue_.protoobject_;
-    } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
-      ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.ActionResultValue_.protoobject_);
-    }
-    clear_has_ActionResultValue();
-  }
+  // @@protoc_insertion_point(field_set_allocated:llbuild3.ActionResult.subprocess)
 }
 ActionResult::ActionResult(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
@@ -2724,8 +2512,8 @@ ActionResult::ActionResult(
       case kCasObject:
         _impl_.ActionResultValue_.casobject_ = ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(arena, *from._impl_.ActionResultValue_.casobject_);
         break;
-      case kProtoObject:
-        _impl_.ActionResultValue_.protoobject_ = ::google::protobuf::Message::CopyConstruct<::google::protobuf::Any>(arena, *from._impl_.ActionResultValue_.protoobject_);
+      case kSubprocess:
+        _impl_.ActionResultValue_.subprocess_ = ::google::protobuf::Message::CopyConstruct<::llbuild3::SubprocessResult>(arena, *from._impl_.ActionResultValue_.subprocess_);
         break;
   }
 
@@ -2768,11 +2556,11 @@ void ActionResult::clear_ActionResultValue() {
       }
       break;
     }
-    case kProtoObject: {
+    case kSubprocess: {
       if (GetArena() == nullptr) {
-        delete _impl_.ActionResultValue_.protoobject_;
+        delete _impl_.ActionResultValue_.subprocess_;
       } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
-        ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.ActionResultValue_.protoobject_);
+        ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.ActionResultValue_.subprocess_);
       }
       break;
     }
@@ -2832,15 +2620,15 @@ const ::_pbi::TcParseTable<0, 3, 3, 0, 2> ActionResult::_table_ = {
     // .llbuild3.CASObjectID casObject = 1;
     {PROTOBUF_FIELD_OFFSET(ActionResult, _impl_.ActionResultValue_.casobject_), _Internal::kOneofCaseOffset + 0, 0,
     (0 | ::_fl::kFcOneof | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .google.protobuf.Any protoObject = 2;
-    {PROTOBUF_FIELD_OFFSET(ActionResult, _impl_.ActionResultValue_.protoobject_), _Internal::kOneofCaseOffset + 0, 1,
+    // .llbuild3.SubprocessResult subprocess = 2;
+    {PROTOBUF_FIELD_OFFSET(ActionResult, _impl_.ActionResultValue_.subprocess_), _Internal::kOneofCaseOffset + 0, 1,
     (0 | ::_fl::kFcOneof | ::_fl::kMessage | ::_fl::kTvTable)},
     // .llbuild3.ActionExecutionMetadata metadata = 3;
     {PROTOBUF_FIELD_OFFSET(ActionResult, _impl_.metadata_), _Internal::kHasBitsOffset + 0, 2,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
     {::_pbi::TcParser::GetTable<::llbuild3::CASObjectID>()},
-    {::_pbi::TcParser::GetTable<::google::protobuf::Any>()},
+    {::_pbi::TcParser::GetTable<::llbuild3::SubprocessResult>()},
     {::_pbi::TcParser::GetTable<::llbuild3::ActionExecutionMetadata>()},
   }}, {{
   }},
@@ -2876,9 +2664,9 @@ PROTOBUF_NOINLINE void ActionResult::Clear() {
           1, *_impl_.ActionResultValue_.casobject_, _impl_.ActionResultValue_.casobject_->GetCachedSize(), target, stream);
       break;
     }
-    case kProtoObject: {
+    case kSubprocess: {
       target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-          2, *_impl_.ActionResultValue_.protoobject_, _impl_.ActionResultValue_.protoobject_->GetCachedSize(), target, stream);
+          2, *_impl_.ActionResultValue_.subprocess_, _impl_.ActionResultValue_.subprocess_->GetCachedSize(), target, stream);
       break;
     }
     default:
@@ -2922,10 +2710,10 @@ PROTOBUF_NOINLINE void ActionResult::Clear() {
           1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.ActionResultValue_.casobject_);
       break;
     }
-    // .google.protobuf.Any protoObject = 2;
-    case kProtoObject: {
+    // .llbuild3.SubprocessResult subprocess = 2;
+    case kSubprocess: {
       total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.ActionResultValue_.protoobject_);
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.ActionResultValue_.subprocess_);
       break;
     }
     case ACTIONRESULTVALUE_NOT_SET: {
@@ -2976,12 +2764,12 @@ void ActionResult::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::go
         }
         break;
       }
-      case kProtoObject: {
+      case kSubprocess: {
         if (oneof_needs_init) {
-          _this->_impl_.ActionResultValue_.protoobject_ =
-              ::google::protobuf::Message::CopyConstruct<::google::protobuf::Any>(arena, *from._impl_.ActionResultValue_.protoobject_);
+          _this->_impl_.ActionResultValue_.subprocess_ =
+              ::google::protobuf::Message::CopyConstruct<::llbuild3::SubprocessResult>(arena, *from._impl_.ActionResultValue_.subprocess_);
         } else {
-          _this->_impl_.ActionResultValue_.protoobject_->MergeFrom(from._internal_protoobject());
+          _this->_impl_.ActionResultValue_.subprocess_->MergeFrom(from._internal_subprocess());
         }
         break;
       }

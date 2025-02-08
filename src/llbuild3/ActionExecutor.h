@@ -19,18 +19,16 @@
 
 #include <llbuild3/Result.hpp>
 
-#include "llbuild3/Error.pb.h"
 #include "llbuild3/Action.pb.h"
+#include "llbuild3/CAS.h"
+#include "llbuild3/Common.h"
+#include "llbuild3/Error.pb.h"
 #include "llbuild3/Label.pb.h"
 #include "llbuild3/Subtask.h"
 
-#define UUID_SYSTEM_GENERATOR 1
-#include "uuid.h"
-
 namespace llbuild3 {
 
-struct ActionOwner {
-  uuids::uuid engineID = {};
+struct ClientActionID {
   uint64_t buildID = 0;
   uint64_t workID = 0;
 };
@@ -42,7 +40,8 @@ enum class ActionPriority: int64_t {
 };
 
 struct ActionRequest {
-  ActionOwner owner;
+  EngineID owner;
+  ClientActionID id;
   ActionPriority priority;
   Action action;
 };
@@ -57,7 +56,8 @@ struct ActionID {
 };
 
 struct SubtaskRequest {
-  ActionOwner owner;
+  EngineID owner;
+  ClientActionID id;
   ActionPriority priority;
   Subtask subtask;
   std::optional<SubtaskInterface> si;
@@ -68,13 +68,18 @@ public:
   ActionExecutorListener() { }
   virtual ~ActionExecutorListener();
 
-  virtual void notifyActionStart(ActionID) = 0;
-  virtual void notifyActionComplete(ActionID, result<ActionResult, Error>) = 0;
+  virtual void notifyActionStart(ClientActionID, ActionID) = 0;
+  virtual void notifyActionComplete(ClientActionID, result<ActionResult, Error>) = 0;
 
-  virtual void notifySubtaskStart(uint64_t) = 0;
-  virtual void notifySubtaskComplete(uint64_t, SubtaskResult) = 0;
+  virtual void notifySubtaskStart(ClientActionID) = 0;
+  virtual void notifySubtaskComplete(ClientActionID, SubtaskResult) = 0;
 };
 
+class PlatformPropertyKey {
+public:
+  static inline std::string const Architecture = "__arch__";
+  static inline std::string const Platform = "__platform__";
+};
 
 struct ActionDescriptor {
   Label name;
@@ -88,10 +93,12 @@ public:
   virtual std::vector<Label> prefixes() = 0;
 
   /// Resolve the action method for the given label
-  virtual std::unique_ptr<ActionDescriptor> resolve(const Label& name) = 0;
+  virtual result<Label, Error> resolve(const Label& name) = 0;
+
+  virtual result<ActionDescriptor, Error> actionDescriptor(const Label& function) = 0;
 };
 
-
+class ActionCache;
 class LocalExecutor;
 class RemoteExecutor;
 
@@ -104,21 +111,23 @@ private:
   void operator=(const ActionExecutor&) = delete;
 
 public:
-  ActionExecutor(std::shared_ptr<LocalExecutor> localExecutor,
+  ActionExecutor(std::shared_ptr<CASDatabase> db,
+                 std::shared_ptr<ActionCache> actionCache,
+                 std::shared_ptr<LocalExecutor> localExecutor,
                  std::shared_ptr<RemoteExecutor> remoteExecutor,
                  unsigned maxLocalConcurrency = 0,
                  unsigned maxAsyncConcurrency = 0);
   ~ActionExecutor();
 
-  void registerProvider(std::unique_ptr<ActionProvider>&& provider);
+  std::optional<Error> registerProvider(std::unique_ptr<ActionProvider>&& provider);
 
-  void attachListener(ActionExecutorListener* listener);
-  void detachListener(ActionExecutorListener* listener);
+  void attachListener(EngineID engineID, ActionExecutorListener* listener);
+  void detachListener(EngineID engineID);
 
   result<Label, Error> resolveFunction(const Label& name);
   result<ActionID, Error> submit(ActionRequest request);
   result<uint64_t, Error> submit(SubtaskRequest request);
-  std::optional<Error> cancel(ActionID aid, ActionOwner owner);
+  std::optional<Error> cancel(EngineID owner, ClientActionID aid);
 };
 
 

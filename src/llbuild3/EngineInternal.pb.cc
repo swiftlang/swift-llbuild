@@ -24,18 +24,6 @@ namespace _pb = ::google::protobuf;
 namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 namespace llbuild3 {
-      template <typename>
-PROTOBUF_CONSTEXPR TaskActionRequest::TaskActionRequest(::_pbi::ConstantInitialized) {}
-struct TaskActionRequestDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR TaskActionRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~TaskActionRequestDefaultTypeInternal() {}
-  union {
-    TaskActionRequest _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 TaskActionRequestDefaultTypeInternal _TaskActionRequest_default_instance_;
 
 inline constexpr TaskRuleRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -165,14 +153,6 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::llbuild3::TaskRuleRequest, _impl_.label_),
         0,
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::llbuild3::TaskActionRequest, _internal_metadata_),
-        ~0u,  // no _extensions_
-        ~0u,  // no _oneof_case_
-        ~0u,  // no _weak_field_map_
-        ~0u,  // no _inlined_string_donated_
-        ~0u,  // no _split_
-        ~0u,  // no sizeof(Split)
-        ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::llbuild3::TaskRequest, _internal_metadata_),
         ~0u,  // no _extensions_
         PROTOBUF_FIELD_OFFSET(::llbuild3::TaskRequest, _impl_._oneof_case_[0]),
@@ -217,15 +197,13 @@ static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, 9, -1, sizeof(::llbuild3::TaskArtifactRequest)},
         {10, 19, -1, sizeof(::llbuild3::TaskRuleRequest)},
-        {20, -1, -1, sizeof(::llbuild3::TaskActionRequest)},
-        {28, -1, -1, sizeof(::llbuild3::TaskRequest)},
-        {41, 52, -1, sizeof(::llbuild3::TaskTransitionKey)},
-        {55, 65, -1, sizeof(::llbuild3::TaskTransitionValue)},
+        {20, -1, -1, sizeof(::llbuild3::TaskRequest)},
+        {33, 44, -1, sizeof(::llbuild3::TaskTransitionKey)},
+        {47, 57, -1, sizeof(::llbuild3::TaskTransitionValue)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::llbuild3::_TaskArtifactRequest_default_instance_._instance,
     &::llbuild3::_TaskRuleRequest_default_instance_._instance,
-    &::llbuild3::_TaskActionRequest_default_instance_._instance,
     &::llbuild3::_TaskRequest_default_instance_._instance,
     &::llbuild3::_TaskTransitionKey_default_instance_._instance,
     &::llbuild3::_TaskTransitionValue_default_instance_._instance,
@@ -233,25 +211,25 @@ static const ::_pb::Message* const file_default_instances[] = {
 const char descriptor_table_protodef_llbuild3_2fEngineInternal_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\035llbuild3/EngineInternal.proto\022\010llbuild"
-    "3\032\025llbuild3/Engine.proto\032\024llbuild3/Label"
-    ".proto\"5\n\023TaskArtifactRequest\022\036\n\005label\030\001"
-    " \001(\0132\017.llbuild3.Label\"1\n\017TaskRuleRequest"
-    "\022\036\n\005label\030\001 \001(\0132\017.llbuild3.Label\"\023\n\021Task"
-    "ActionRequest\"\261\001\n\013TaskRequest\022\n\n\002id\030\001 \001("
-    "\004\0221\n\010artifact\030\002 \001(\0132\035.llbuild3.TaskArtif"
-    "actRequestH\000\022)\n\004rule\030\003 \001(\0132\031.llbuild3.Ta"
-    "skRuleRequestH\000\022-\n\006action\030\004 \001(\0132\033.llbuil"
-    "d3.TaskActionRequestH\000B\t\n\007details\"\205\001\n\021Ta"
-    "skTransitionKey\022\"\n\003ctx\030\001 \001(\0132\025.llbuild3."
-    "TaskContext\022&\n\tsignature\030\002 \001(\0132\023.llbuild"
-    "3.Signature\022$\n\006inputs\030\003 \001(\0132\024.llbuild3.T"
-    "askInputs\"f\n\023TaskTransitionValue\022&\n\005stat"
-    "e\030\001 \001(\0132\027.llbuild3.TaskNextState\022\'\n\010requ"
-    "ests\030\002 \003(\0132\025.llbuild3.TaskRequestb\006proto"
-    "3"
+    "3\032\025llbuild3/Action.proto\032\025llbuild3/Engin"
+    "e.proto\032\024llbuild3/Label.proto\"5\n\023TaskArt"
+    "ifactRequest\022\036\n\005label\030\001 \001(\0132\017.llbuild3.L"
+    "abel\"1\n\017TaskRuleRequest\022\036\n\005label\030\001 \001(\0132\017"
+    ".llbuild3.Label\"\246\001\n\013TaskRequest\022\n\n\002id\030\001 "
+    "\001(\004\0221\n\010artifact\030\002 \001(\0132\035.llbuild3.TaskArt"
+    "ifactRequestH\000\022)\n\004rule\030\003 \001(\0132\031.llbuild3."
+    "TaskRuleRequestH\000\022\"\n\006action\030\004 \001(\0132\020.llbu"
+    "ild3.ActionH\000B\t\n\007details\"\205\001\n\021TaskTransit"
+    "ionKey\022\"\n\003ctx\030\001 \001(\0132\025.llbuild3.TaskConte"
+    "xt\022&\n\tsignature\030\002 \001(\0132\023.llbuild3.Signatu"
+    "re\022$\n\006inputs\030\003 \001(\0132\024.llbuild3.TaskInputs"
+    "\"f\n\023TaskTransitionValue\022&\n\005state\030\001 \001(\0132\027"
+    ".llbuild3.TaskNextState\022\'\n\010requests\030\002 \003("
+    "\0132\025.llbuild3.TaskRequestb\006proto3"
 };
-static const ::_pbi::DescriptorTable* const descriptor_table_llbuild3_2fEngineInternal_2eproto_deps[2] =
+static const ::_pbi::DescriptorTable* const descriptor_table_llbuild3_2fEngineInternal_2eproto_deps[3] =
     {
+        &::descriptor_table_llbuild3_2fAction_2eproto,
         &::descriptor_table_llbuild3_2fEngine_2eproto,
         &::descriptor_table_llbuild3_2fLabel_2eproto,
 };
@@ -259,13 +237,13 @@ static ::absl::once_flag descriptor_table_llbuild3_2fEngineInternal_2eproto_once
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_llbuild3_2fEngineInternal_2eproto = {
     false,
     false,
-    641,
+    632,
     descriptor_table_protodef_llbuild3_2fEngineInternal_2eproto,
     "llbuild3/EngineInternal.proto",
     &descriptor_table_llbuild3_2fEngineInternal_2eproto_once,
     descriptor_table_llbuild3_2fEngineInternal_2eproto_deps,
-    2,
-    6,
+    3,
+    5,
     schemas,
     file_default_instances,
     TableStruct_llbuild3_2fEngineInternal_2eproto::offsets,
@@ -705,87 +683,6 @@ void TaskRuleRequest::InternalSwap(TaskRuleRequest* PROTOBUF_RESTRICT other) {
 }
 // ===================================================================
 
-class TaskActionRequest::_Internal {
- public:
-};
-
-TaskActionRequest::TaskActionRequest(::google::protobuf::Arena* arena)
-    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
-  // @@protoc_insertion_point(arena_constructor:llbuild3.TaskActionRequest)
-}
-TaskActionRequest::TaskActionRequest(
-    ::google::protobuf::Arena* arena,
-    const TaskActionRequest& from)
-    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
-  TaskActionRequest* const _this = this;
-  (void)_this;
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-
-  // @@protoc_insertion_point(copy_constructor:llbuild3.TaskActionRequest)
-}
-
-const ::google::protobuf::MessageLite::ClassData*
-TaskActionRequest::GetClassData() const {
-  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
-      ClassDataFull _data_ = {
-          {
-              &_table_.header,
-              nullptr,  // OnDemandRegisterArenaDtor
-              nullptr,  // IsInitialized
-              PROTOBUF_FIELD_OFFSET(TaskActionRequest, _impl_._cached_size_),
-              false,
-          },
-          &TaskActionRequest::MergeImpl,
-          &TaskActionRequest::kDescriptorMethods,
-          &descriptor_table_llbuild3_2fEngineInternal_2eproto,
-          nullptr,  // tracker
-      };
-  ::google::protobuf::internal::PrefetchToLocalCache(&_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(_data_.tc_table);
-  return _data_.base();
-}
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 0, 0, 0, 2> TaskActionRequest::_table_ = {
-  {
-    0,  // no _has_bits_
-    0, // no _extensions_
-    0, 0,  // max_field_number, fast_idx_mask
-    offsetof(decltype(_table_), field_lookup_table),
-    4294967295,  // skipmap
-    offsetof(decltype(_table_), field_names),  // no field_entries
-    0,  // num_field_entries
-    0,  // num_aux_entries
-    offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_TaskActionRequest_default_instance_._instance,
-    nullptr,  // post_loop_handler
-    ::_pbi::TcParser::GenericFallback,  // fallback
-    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::llbuild3::TaskActionRequest>(),  // to_prefetch
-    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-  }, {{
-    {::_pbi::TcParser::MiniParse, {}},
-  }}, {{
-    65535, 65535
-  }},
-  // no field_entries, or aux_entries
-  {{
-  }},
-};
-
-
-
-
-
-
-
-
-
-::google::protobuf::Metadata TaskActionRequest::GetMetadata() const {
-  return ::google::protobuf::internal::ZeroFieldsBase::GetMetadataImpl(GetClassData()->full());
-}
-// ===================================================================
-
 class TaskRequest::_Internal {
  public:
   static constexpr ::int32_t kOneofCaseOffset =
@@ -818,11 +715,11 @@ void TaskRequest::set_allocated_rule(::llbuild3::TaskRuleRequest* rule) {
   }
   // @@protoc_insertion_point(field_set_allocated:llbuild3.TaskRequest.rule)
 }
-void TaskRequest::set_allocated_action(::llbuild3::TaskActionRequest* action) {
+void TaskRequest::set_allocated_action(::llbuild3::Action* action) {
   ::google::protobuf::Arena* message_arena = GetArena();
   clear_details();
   if (action) {
-    ::google::protobuf::Arena* submessage_arena = action->GetArena();
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(action)->GetArena();
     if (message_arena != submessage_arena) {
       action = ::google::protobuf::internal::GetOwnedMessage(message_arena, action, submessage_arena);
     }
@@ -830,6 +727,17 @@ void TaskRequest::set_allocated_action(::llbuild3::TaskActionRequest* action) {
     _impl_.details_.action_ = action;
   }
   // @@protoc_insertion_point(field_set_allocated:llbuild3.TaskRequest.action)
+}
+void TaskRequest::clear_action() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (details_case() == kAction) {
+    if (GetArena() == nullptr) {
+      delete _impl_.details_.action_;
+    } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
+      ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.details_.action_);
+    }
+    clear_has_details();
+  }
 }
 TaskRequest::TaskRequest(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
@@ -863,7 +771,7 @@ TaskRequest::TaskRequest(
         _impl_.details_.rule_ = ::google::protobuf::Message::CopyConstruct<::llbuild3::TaskRuleRequest>(arena, *from._impl_.details_.rule_);
         break;
       case kAction:
-        _impl_.details_.action_ = ::google::protobuf::Message::CopyConstruct<::llbuild3::TaskActionRequest>(arena, *from._impl_.details_.action_);
+        _impl_.details_.action_ = ::google::protobuf::Message::CopyConstruct<::llbuild3::Action>(arena, *from._impl_.details_.action_);
         break;
   }
 
@@ -983,13 +891,13 @@ const ::_pbi::TcParseTable<0, 4, 3, 0, 2> TaskRequest::_table_ = {
     // .llbuild3.TaskRuleRequest rule = 3;
     {PROTOBUF_FIELD_OFFSET(TaskRequest, _impl_.details_.rule_), _Internal::kOneofCaseOffset + 0, 1,
     (0 | ::_fl::kFcOneof | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .llbuild3.TaskActionRequest action = 4;
+    // .llbuild3.Action action = 4;
     {PROTOBUF_FIELD_OFFSET(TaskRequest, _impl_.details_.action_), _Internal::kOneofCaseOffset + 0, 2,
     (0 | ::_fl::kFcOneof | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
     {::_pbi::TcParser::GetTable<::llbuild3::TaskArtifactRequest>()},
     {::_pbi::TcParser::GetTable<::llbuild3::TaskRuleRequest>()},
-    {::_pbi::TcParser::GetTable<::llbuild3::TaskActionRequest>()},
+    {::_pbi::TcParser::GetTable<::llbuild3::Action>()},
   }}, {{
   }},
 };
@@ -1075,7 +983,7 @@ PROTOBUF_NOINLINE void TaskRequest::Clear() {
           1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.details_.rule_);
       break;
     }
-    // .llbuild3.TaskActionRequest action = 4;
+    // .llbuild3.Action action = 4;
     case kAction: {
       total_size +=
           1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.details_.action_);
@@ -1133,7 +1041,7 @@ void TaskRequest::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goo
       case kAction: {
         if (oneof_needs_init) {
           _this->_impl_.details_.action_ =
-              ::google::protobuf::Message::CopyConstruct<::llbuild3::TaskActionRequest>(arena, *from._impl_.details_.action_);
+              ::google::protobuf::Message::CopyConstruct<::llbuild3::Action>(arena, *from._impl_.details_.action_);
         } else {
           _this->_impl_.details_.action_->MergeFrom(from._internal_action());
         }

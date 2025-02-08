@@ -25,6 +25,28 @@ namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 namespace llbuild3 {
 
+inline constexpr TaskStateMachineContext::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : data_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        next_{::int64_t{0}},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR TaskStateMachineContext::TaskStateMachineContext(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct TaskStateMachineContextDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR TaskStateMachineContextDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~TaskStateMachineContextDefaultTypeInternal() {}
+  union {
+    TaskStateMachineContext _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 TaskStateMachineContextDefaultTypeInternal _TaskStateMachineContext_default_instance_;
+
 inline constexpr Signature::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : bytes_(
@@ -250,6 +272,16 @@ const ::uint32_t
         ::_pbi::kInvalidFieldOffsetTag,
         ::_pbi::kInvalidFieldOffsetTag,
         PROTOBUF_FIELD_OFFSET(::llbuild3::TaskNextState, _impl_.StateValue_),
+        ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::llbuild3::TaskStateMachineContext, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::llbuild3::TaskStateMachineContext, _impl_.next_),
+        PROTOBUF_FIELD_OFFSET(::llbuild3::TaskStateMachineContext, _impl_.data_),
 };
 
 static const ::_pbi::MigrationSchema
@@ -261,6 +293,7 @@ static const ::_pbi::MigrationSchema
         {41, -1, -1, sizeof(::llbuild3::TaskContext)},
         {53, 63, -1, sizeof(::llbuild3::TaskWait)},
         {65, -1, -1, sizeof(::llbuild3::TaskNextState)},
+        {77, -1, -1, sizeof(::llbuild3::TaskStateMachineContext)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::llbuild3::_Signature_default_instance_._instance,
@@ -270,6 +303,7 @@ static const ::_pb::Message* const file_default_instances[] = {
     &::llbuild3::_TaskContext_default_instance_._instance,
     &::llbuild3::_TaskWait_default_instance_._instance,
     &::llbuild3::_TaskNextState_default_instance_._instance,
+    &::llbuild3::_TaskStateMachineContext_default_instance_._instance,
 };
 const char descriptor_table_protodef_llbuild3_2fEngine_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -293,7 +327,9 @@ const char descriptor_table_protodef_llbuild3_2fEngine_2eproto[] ABSL_ATTRIBUTE_
     "\"\213\001\n\rTaskNextState\022\"\n\004wait\030\001 \001(\0132\022.llbui"
     "ld3.TaskWaitH\000\022&\n\006result\030\002 \001(\0132\024.llbuild"
     "3.TaskResultH\000\022 \n\005error\030\003 \001(\0132\017.llbuild3"
-    ".ErrorH\000B\014\n\nStateValueb\006proto3"
+    ".ErrorH\000B\014\n\nStateValue\"5\n\027TaskStateMachi"
+    "neContext\022\014\n\004next\030\001 \001(\003\022\014\n\004data\030\002 \001(\014b\006p"
+    "roto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_llbuild3_2fEngine_2eproto_deps[5] =
     {
@@ -307,13 +343,13 @@ static ::absl::once_flag descriptor_table_llbuild3_2fEngine_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_llbuild3_2fEngine_2eproto = {
     false,
     false,
-    830,
+    885,
     descriptor_table_protodef_llbuild3_2fEngine_2eproto,
     "llbuild3/Engine.proto",
     &descriptor_table_llbuild3_2fEngine_2eproto_once,
     descriptor_table_llbuild3_2fEngine_2eproto_deps,
     5,
-    7,
+    8,
     schemas,
     file_default_instances,
     TableStruct_llbuild3_2fEngine_2eproto::offsets,
@@ -2317,6 +2353,220 @@ void TaskNextState::InternalSwap(TaskNextState* PROTOBUF_RESTRICT other) {
 }
 
 ::google::protobuf::Metadata TaskNextState::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class TaskStateMachineContext::_Internal {
+ public:
+};
+
+TaskStateMachineContext::TaskStateMachineContext(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:llbuild3.TaskStateMachineContext)
+}
+inline PROTOBUF_NDEBUG_INLINE TaskStateMachineContext::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from, const ::llbuild3::TaskStateMachineContext& from_msg)
+      : data_(arena, from.data_),
+        _cached_size_{0} {}
+
+TaskStateMachineContext::TaskStateMachineContext(
+    ::google::protobuf::Arena* arena,
+    const TaskStateMachineContext& from)
+    : ::google::protobuf::Message(arena) {
+  TaskStateMachineContext* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.next_ = from._impl_.next_;
+
+  // @@protoc_insertion_point(copy_constructor:llbuild3.TaskStateMachineContext)
+}
+inline PROTOBUF_NDEBUG_INLINE TaskStateMachineContext::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : data_(arena),
+        _cached_size_{0} {}
+
+inline void TaskStateMachineContext::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.next_ = {};
+}
+TaskStateMachineContext::~TaskStateMachineContext() {
+  // @@protoc_insertion_point(destructor:llbuild3.TaskStateMachineContext)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void TaskStateMachineContext::SharedDtor() {
+  ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.data_.Destroy();
+  _impl_.~Impl_();
+}
+
+const ::google::protobuf::MessageLite::ClassData*
+TaskStateMachineContext::GetClassData() const {
+  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
+      ClassDataFull _data_ = {
+          {
+              &_table_.header,
+              nullptr,  // OnDemandRegisterArenaDtor
+              nullptr,  // IsInitialized
+              PROTOBUF_FIELD_OFFSET(TaskStateMachineContext, _impl_._cached_size_),
+              false,
+          },
+          &TaskStateMachineContext::MergeImpl,
+          &TaskStateMachineContext::kDescriptorMethods,
+          &descriptor_table_llbuild3_2fEngine_2eproto,
+          nullptr,  // tracker
+      };
+  ::google::protobuf::internal::PrefetchToLocalCache(&_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_data_.tc_table);
+  return _data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2> TaskStateMachineContext::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_TaskStateMachineContext_default_instance_._instance,
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::llbuild3::TaskStateMachineContext>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // bytes data = 2;
+    {::_pbi::TcParser::FastBS1,
+     {18, 63, 0, PROTOBUF_FIELD_OFFSET(TaskStateMachineContext, _impl_.data_)}},
+    // int64 next = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(TaskStateMachineContext, _impl_.next_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(TaskStateMachineContext, _impl_.next_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // int64 next = 1;
+    {PROTOBUF_FIELD_OFFSET(TaskStateMachineContext, _impl_.next_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+    // bytes data = 2;
+    {PROTOBUF_FIELD_OFFSET(TaskStateMachineContext, _impl_.data_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kBytes | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+
+PROTOBUF_NOINLINE void TaskStateMachineContext::Clear() {
+// @@protoc_insertion_point(message_clear_start:llbuild3.TaskStateMachineContext)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.data_.ClearToEmpty();
+  _impl_.next_ = ::int64_t{0};
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+::uint8_t* TaskStateMachineContext::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:llbuild3.TaskStateMachineContext)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // int64 next = 1;
+  if (this->_internal_next() != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::
+        WriteInt64ToArrayWithField<1>(
+            stream, this->_internal_next(), target);
+  }
+
+  // bytes data = 2;
+  if (!this->_internal_data().empty()) {
+    const std::string& _s = this->_internal_data();
+    target = stream->WriteBytesMaybeAliased(2, _s, target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:llbuild3.TaskStateMachineContext)
+  return target;
+}
+
+::size_t TaskStateMachineContext::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:llbuild3.TaskStateMachineContext)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(reinterpret_cast<const void*>(this));
+  // bytes data = 2;
+  if (!this->_internal_data().empty()) {
+    total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
+                                    this->_internal_data());
+  }
+
+  // int64 next = 1;
+  if (this->_internal_next() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+        this->_internal_next());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+
+void TaskStateMachineContext::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<TaskStateMachineContext*>(&to_msg);
+  auto& from = static_cast<const TaskStateMachineContext&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:llbuild3.TaskStateMachineContext)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (!from._internal_data().empty()) {
+    _this->_internal_set_data(from._internal_data());
+  }
+  if (from._internal_next() != 0) {
+    _this->_impl_.next_ = from._impl_.next_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void TaskStateMachineContext::CopyFrom(const TaskStateMachineContext& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:llbuild3.TaskStateMachineContext)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void TaskStateMachineContext::InternalSwap(TaskStateMachineContext* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.data_, &other->_impl_.data_, arena);
+        swap(_impl_.next_, other->_impl_.next_);
+}
+
+::google::protobuf::Metadata TaskStateMachineContext::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

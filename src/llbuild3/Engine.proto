@@ -66,3 +66,9 @@ message TaskNextState {
     Error error = 3;
   }
 }
+
+// Context for TTaskStateMachine tasks
+message TaskStateMachineContext {
+  int64 next = 1;
+  bytes data = 2;
+}

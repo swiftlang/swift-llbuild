@@ -15,9 +15,13 @@ import SwiftProtobuf
 
 // Action.proto
 public typealias TActionResult = Llbuild3_ActionResult
+public typealias TFileObject = Llbuild3_FileObject
 
 // ActionCache.proto
 public typealias TAction = Llbuild3_Action
+public typealias TPlatform = Llbuild3_Platform
+public typealias TSubprocess = Llbuild3_Subprocess
+public typealias TSubprocessResult = Llbuild3_SubprocessResult
 
 // ActionCache.proto
 public typealias TCacheKey = Llbuild3_CacheKey
@@ -32,6 +36,9 @@ public typealias TArtifact = Llbuild3_Artifact
 // CAS.proto
 public typealias TCASObject = Llbuild3_CASObject
 public typealias TCASObjectID = Llbuild3_CASObjectID
+
+// CASTree.proto
+public typealias TFileType = Llbuild3_FileType
 
 // Engine.proto
 public typealias TSignature = Llbuild3_Signature
@@ -94,5 +101,11 @@ extension std.string: ContiguousBytes, SwiftProtobufContiguousBytes {
 
   borrowing public func withUnsafeBytes<R>(_ body: (UnsafeRawBufferPointer) throws -> R) rethrows -> R {
     try body(UnsafeRawBufferPointer(start:self.__dataUnsafe(), count: self.size()))
+  }
+
+  public var utf8String: String {
+    return withUnsafeBytes {
+      return String(decoding: Data(buffer: $0.bindMemory(to: CChar.self)), as: UTF8.self)
+    }
   }
 }

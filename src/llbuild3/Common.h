@@ -1,0 +1,27 @@
+//===- Common.h -------------------------------------------------*- C++ -*-===//
+//
+// This source file is part of the Swift.org open source project
+//
+// Copyright (c) 2025 Apple Inc. and the Swift project authors
+// Licensed under Apache License v2.0 with Runtime Library Exception
+//
+// See http://swift.org/LICENSE.txt for license information
+// See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+//
+//===----------------------------------------------------------------------===//
+
+#ifndef LLBUILD3_COMMON_H
+#define LLBUILD3_COMMON_H
+
+#define UUID_SYSTEM_GENERATOR 1
+#include "uuid.h"
+
+namespace llbuild3 {
+
+typedef uuids::uuid EngineID;
+
+inline EngineID generateEngineID() { return uuids::uuid_system_generator()(); }
+
+}
+
+#endif

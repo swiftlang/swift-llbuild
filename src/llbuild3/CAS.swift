@@ -174,8 +174,8 @@ class AdaptedCASDatabase: TCASDatabase {
   }
 }
 
-extension TCASDatabase {
-  func extCASDatabase() -> llbuild3.ExtCASDatabase {
+public extension TCASDatabase {
+  var extCASDatabase: llbuild3.ExtCASDatabase {
     var extCASDB = llbuild3.ExtCASDatabase()
     extCASDB.ctx = Unmanaged.passRetained(self as AnyObject).toOpaque()
 
@@ -329,5 +329,16 @@ extension TCASDatabase {
     }
 
     return extCASDB;
+  }
+}
+
+public extension llbuild3.CASDatabaseRef {
+  var asTCASDatabase: TCASDatabase {
+    if let ctx = llbuild3.getRawCASDatabaseContext(self),
+       let sp = Unmanaged<AnyObject>.fromOpaque(ctx).takeRetainedValue() as? TCASDatabase {
+      return sp
+    }
+
+    return AdaptedCASDatabase(db: self)
   }
 }

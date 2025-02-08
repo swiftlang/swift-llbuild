@@ -10,6 +10,7 @@ syntax = "proto3";
 
 package llbuild3;
 
+import "llbuild3/Action.proto";
 import "llbuild3/Engine.proto";
 import "llbuild3/Label.proto";
 
@@ -20,16 +21,13 @@ message TaskArtifactRequest {
 message TaskRuleRequest {
   Label label = 1;
 }
-message TaskActionRequest {
-
-}
 
 message TaskRequest {
   uint64 id = 1;
   oneof details {
     TaskArtifactRequest artifact = 2;
     TaskRuleRequest rule = 3;
-    TaskActionRequest action = 4;
+    Action action = 4;
   }
 }
 

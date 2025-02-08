@@ -20,7 +20,6 @@
 #include "google/protobuf/io/coded_stream.h"
 #include "google/protobuf/arena.h"
 #include "google/protobuf/arenastring.h"
-#include "google/protobuf/generated_message_bases.h"
 #include "google/protobuf/generated_message_tctable_decl.h"
 #include "google/protobuf/generated_message_util.h"
 #include "google/protobuf/metadata_lite.h"
@@ -29,6 +28,7 @@
 #include "google/protobuf/repeated_field.h"  // IWYU pragma: export
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
 #include "google/protobuf/unknown_field_set.h"
+#include "llbuild3/Action.pb.h"
 #include "llbuild3/Engine.pb.h"
 #include "llbuild3/Label.pb.h"
 // @@protoc_insertion_point(includes)
@@ -53,9 +53,6 @@ struct TableStruct_llbuild3_2fEngineInternal_2eproto {
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_llbuild3_2fEngineInternal_2eproto;
 namespace llbuild3 {
-class TaskActionRequest;
-struct TaskActionRequestDefaultTypeInternal;
-extern TaskActionRequestDefaultTypeInternal _TaskActionRequest_default_instance_;
 class TaskArtifactRequest;
 struct TaskArtifactRequestDefaultTypeInternal;
 extern TaskArtifactRequestDefaultTypeInternal _TaskArtifactRequest_default_instance_;
@@ -82,148 +79,6 @@ namespace llbuild3 {
 // ===================================================================
 
 
-// -------------------------------------------------------------------
-
-class TaskActionRequest final : public ::google::protobuf::internal::ZeroFieldsBase
-/* @@protoc_insertion_point(class_definition:llbuild3.TaskActionRequest) */ {
- public:
-  inline TaskActionRequest() : TaskActionRequest(nullptr) {}
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR TaskActionRequest(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline TaskActionRequest(const TaskActionRequest& from) : TaskActionRequest(nullptr, from) {}
-  inline TaskActionRequest(TaskActionRequest&& from) noexcept
-      : TaskActionRequest(nullptr, std::move(from)) {}
-  inline TaskActionRequest& operator=(const TaskActionRequest& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline TaskActionRequest& operator=(TaskActionRequest&& from) noexcept {
-    if (this == &from) return *this;
-    if (GetArena() == from.GetArena()
-#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
-        && GetArena() != nullptr
-#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
-    ) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const TaskActionRequest& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const TaskActionRequest* internal_default_instance() {
-    return reinterpret_cast<const TaskActionRequest*>(
-        &_TaskActionRequest_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 2;
-  friend void swap(TaskActionRequest& a, TaskActionRequest& b) { a.Swap(&b); }
-  inline void Swap(TaskActionRequest* other) {
-    if (other == this) return;
-#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
-#else   // PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() == other->GetArena()) {
-#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(TaskActionRequest* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  TaskActionRequest* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::internal::ZeroFieldsBase::DefaultConstruct<TaskActionRequest>(arena);
-  }
-  using ::google::protobuf::internal::ZeroFieldsBase::CopyFrom;
-  inline void CopyFrom(const TaskActionRequest& from) {
-    ::google::protobuf::internal::ZeroFieldsBase::CopyImpl(*this, from);
-  }
-  using ::google::protobuf::internal::ZeroFieldsBase::MergeFrom;
-  void MergeFrom(const TaskActionRequest& from) {
-    ::google::protobuf::internal::ZeroFieldsBase::MergeImpl(*this, from);
-  }
-
-  public:
-  bool IsInitialized() const {
-    return true;
-  }
- private:
-  friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "llbuild3.TaskActionRequest"; }
-
- protected:
-  explicit TaskActionRequest(::google::protobuf::Arena* arena);
-  TaskActionRequest(::google::protobuf::Arena* arena, const TaskActionRequest& from);
-  TaskActionRequest(::google::protobuf::Arena* arena, TaskActionRequest&& from) noexcept
-      : TaskActionRequest(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ZeroFieldsBase::ClassData* GetClassData() const final;
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  // @@protoc_insertion_point(class_scope:llbuild3.TaskActionRequest)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<
-      0, 0, 0,
-      0, 2>
-      _table_;
-
-  static constexpr const void* _raw_default_instance_ =
-      &_TaskActionRequest_default_instance_;
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from,
-                          const TaskActionRequest& from_msg);
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  friend struct ::TableStruct_llbuild3_2fEngineInternal_2eproto;
-};
 // -------------------------------------------------------------------
 
 class TaskRuleRequest final : public ::google::protobuf::Message
@@ -641,7 +496,7 @@ class TaskRequest final : public ::google::protobuf::Message
     return reinterpret_cast<const TaskRequest*>(
         &_TaskRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 3;
+  static constexpr int kIndexInFileMessages = 2;
   friend void swap(TaskRequest& a, TaskRequest& b) { a.Swap(&b); }
   inline void Swap(TaskRequest* other) {
     if (other == this) return;
@@ -763,23 +618,23 @@ class TaskRequest final : public ::google::protobuf::Message
   ::llbuild3::TaskRuleRequest* _internal_mutable_rule();
 
   public:
-  // .llbuild3.TaskActionRequest action = 4;
+  // .llbuild3.Action action = 4;
   bool has_action() const;
   private:
   bool _internal_has_action() const;
 
   public:
   void clear_action() ;
-  const ::llbuild3::TaskActionRequest& action() const;
-  PROTOBUF_NODISCARD ::llbuild3::TaskActionRequest* release_action();
-  ::llbuild3::TaskActionRequest* mutable_action();
-  void set_allocated_action(::llbuild3::TaskActionRequest* value);
-  void unsafe_arena_set_allocated_action(::llbuild3::TaskActionRequest* value);
-  ::llbuild3::TaskActionRequest* unsafe_arena_release_action();
+  const ::llbuild3::Action& action() const;
+  PROTOBUF_NODISCARD ::llbuild3::Action* release_action();
+  ::llbuild3::Action* mutable_action();
+  void set_allocated_action(::llbuild3::Action* value);
+  void unsafe_arena_set_allocated_action(::llbuild3::Action* value);
+  ::llbuild3::Action* unsafe_arena_release_action();
 
   private:
-  const ::llbuild3::TaskActionRequest& _internal_action() const;
-  ::llbuild3::TaskActionRequest* _internal_mutable_action();
+  const ::llbuild3::Action& _internal_action() const;
+  ::llbuild3::Action* _internal_mutable_action();
 
   public:
   void clear_details();
@@ -821,7 +676,7 @@ class TaskRequest final : public ::google::protobuf::Message
       ::google::protobuf::internal::ConstantInitialized _constinit_;
       ::llbuild3::TaskArtifactRequest* artifact_;
       ::llbuild3::TaskRuleRequest* rule_;
-      ::llbuild3::TaskActionRequest* action_;
+      ::llbuild3::Action* action_;
     } details_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint32_t _oneof_case_[1];
@@ -887,7 +742,7 @@ class TaskTransitionValue final : public ::google::protobuf::Message
     return reinterpret_cast<const TaskTransitionValue*>(
         &_TaskTransitionValue_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 5;
+  static constexpr int kIndexInFileMessages = 4;
   friend void swap(TaskTransitionValue& a, TaskTransitionValue& b) { a.Swap(&b); }
   inline void Swap(TaskTransitionValue* other) {
     if (other == this) return;
@@ -1083,7 +938,7 @@ class TaskTransitionKey final : public ::google::protobuf::Message
     return reinterpret_cast<const TaskTransitionKey*>(
         &_TaskTransitionKey_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 4;
+  static constexpr int kIndexInFileMessages = 3;
   friend void swap(TaskTransitionKey& a, TaskTransitionKey& b) { a.Swap(&b); }
   inline void Swap(TaskTransitionKey* other) {
     if (other == this) return;
@@ -1442,10 +1297,6 @@ inline void TaskRuleRequest::set_allocated_label(::llbuild3::Label* value) {
 
 // -------------------------------------------------------------------
 
-// TaskActionRequest
-
-// -------------------------------------------------------------------
-
 // TaskRequest
 
 // uint64 id = 1;
@@ -1628,7 +1479,7 @@ inline ::llbuild3::TaskRuleRequest* TaskRequest::mutable_rule() ABSL_ATTRIBUTE_L
   return _msg;
 }
 
-// .llbuild3.TaskActionRequest action = 4;
+// .llbuild3.Action action = 4;
 inline bool TaskRequest::has_action() const {
   return details_case() == kAction;
 }
@@ -1638,18 +1489,7 @@ inline bool TaskRequest::_internal_has_action() const {
 inline void TaskRequest::set_has_action() {
   _impl_._oneof_case_[0] = kAction;
 }
-inline void TaskRequest::clear_action() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (details_case() == kAction) {
-    if (GetArena() == nullptr) {
-      delete _impl_.details_.action_;
-    } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
-      ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.details_.action_);
-    }
-    clear_has_details();
-  }
-}
-inline ::llbuild3::TaskActionRequest* TaskRequest::release_action() {
+inline ::llbuild3::Action* TaskRequest::release_action() {
   // @@protoc_insertion_point(field_release:llbuild3.TaskRequest.action)
   if (details_case() == kAction) {
     clear_has_details();
@@ -1663,14 +1503,14 @@ inline ::llbuild3::TaskActionRequest* TaskRequest::release_action() {
     return nullptr;
   }
 }
-inline const ::llbuild3::TaskActionRequest& TaskRequest::_internal_action() const {
-  return details_case() == kAction ? *_impl_.details_.action_ : reinterpret_cast<::llbuild3::TaskActionRequest&>(::llbuild3::_TaskActionRequest_default_instance_);
+inline const ::llbuild3::Action& TaskRequest::_internal_action() const {
+  return details_case() == kAction ? *_impl_.details_.action_ : reinterpret_cast<::llbuild3::Action&>(::llbuild3::_Action_default_instance_);
 }
-inline const ::llbuild3::TaskActionRequest& TaskRequest::action() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::llbuild3::Action& TaskRequest::action() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:llbuild3.TaskRequest.action)
   return _internal_action();
 }
-inline ::llbuild3::TaskActionRequest* TaskRequest::unsafe_arena_release_action() {
+inline ::llbuild3::Action* TaskRequest::unsafe_arena_release_action() {
   // @@protoc_insertion_point(field_unsafe_arena_release:llbuild3.TaskRequest.action)
   if (details_case() == kAction) {
     clear_has_details();
@@ -1681,7 +1521,7 @@ inline ::llbuild3::TaskActionRequest* TaskRequest::unsafe_arena_release_action()
     return nullptr;
   }
 }
-inline void TaskRequest::unsafe_arena_set_allocated_action(::llbuild3::TaskActionRequest* value) {
+inline void TaskRequest::unsafe_arena_set_allocated_action(::llbuild3::Action* value) {
   // We rely on the oneof clear method to free the earlier contents
   // of this oneof. We can directly use the pointer we're given to
   // set the new value.
@@ -1692,17 +1532,17 @@ inline void TaskRequest::unsafe_arena_set_allocated_action(::llbuild3::TaskActio
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:llbuild3.TaskRequest.action)
 }
-inline ::llbuild3::TaskActionRequest* TaskRequest::_internal_mutable_action() {
+inline ::llbuild3::Action* TaskRequest::_internal_mutable_action() {
   if (details_case() != kAction) {
     clear_details();
     set_has_action();
     _impl_.details_.action_ =
-        ::google::protobuf::Message::DefaultConstruct<::llbuild3::TaskActionRequest>(GetArena());
+        ::google::protobuf::Message::DefaultConstruct<::llbuild3::Action>(GetArena());
   }
   return _impl_.details_.action_;
 }
-inline ::llbuild3::TaskActionRequest* TaskRequest::mutable_action() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  ::llbuild3::TaskActionRequest* _msg = _internal_mutable_action();
+inline ::llbuild3::Action* TaskRequest::mutable_action() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::llbuild3::Action* _msg = _internal_mutable_action();
   // @@protoc_insertion_point(field_mutable:llbuild3.TaskRequest.action)
   return _msg;
 }

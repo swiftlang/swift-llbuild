@@ -18,6 +18,18 @@ import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
 
+message FileObject {
+    // The path of the input/output. This path must be relative.
+    string path = 1;
+
+    FileType type = 2;
+
+    // ID of the CASTree FileInformation encoded object.
+    CASObjectID object = 3;
+}
+
+
+
 message Subprocess {
   message EnvironmentVariable {
     // The variable name.
@@ -25,17 +37,6 @@ message Subprocess {
 
     // The variable value.
     string value = 2;
-  }
-
-  message Input {
-      // The path where the input should be expected to be placed. This path
-      // must be relative.
-      string path = 1;
-
-      FileType type = 2;
-
-      // ID of the CASTree FileInformation encoded object.
-      CASObjectID object = 3;
   }
 
   // The command line arguments to execute on the remote machine.
@@ -46,23 +47,13 @@ message Subprocess {
 
   string workingDirectory = 3;
 
-  repeated Input inputs = 4;
+  repeated FileObject inputs = 4;
 
   repeated string outputPaths = 5;
 }
 
 message SubprocessResult {
-  message Output {
-    // The path where this output was collected from
-    string path = 1;
-
-    FileType type = 2;
-
-    // ID of the CASTree FileInformation encoded object
-    CASObjectID object = 3;
-  }
-
-  repeated Output outputs = 1;
+  repeated FileObject outputs = 1;
 
   int32 exitCode = 2;
 
@@ -71,15 +62,18 @@ message SubprocessResult {
 
 
 message Action {
-  CASObjectID operation = 1;
+  oneof Operation {
+    CASObjectID casObject = 1;
+    Subprocess subprocess = 2;
+  }
 
   // The label of the function used to execute the operation.
-  Label function = 2;
+  Label function = 3;
 
   // If true, this action cannot be cached or de-duped.
-  bool volatile = 3;
+  bool volatile = 4;
 
-  Platform platform = 4;
+  Platform platform = 5;
 }
 
 message Platform {
@@ -94,7 +88,7 @@ message Platform {
 message ActionResult {
   oneof ActionResultValue {
     CASObjectID casObject = 1;
-    google.protobuf.Any protoObject = 2;
+    SubprocessResult subprocess = 2;
   }
 
   ActionExecutionMetadata metadata = 3;
