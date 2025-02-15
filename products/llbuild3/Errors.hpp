@@ -48,6 +48,8 @@ enum class EngineError: uint64_t {
 
 enum class CASError: uint64_t {
   ObjectNotFound = 100,
+  IOError = 101,
+  StreamStall = 102,
 
   // Unknown
   Unknown = 0
@@ -55,8 +57,19 @@ enum class CASError: uint64_t {
 
 enum class ExecutorError: uint64_t {
 
+  // 100 - Process Errors
+  FileNotFound = 100,
+  IOError = 101,
+  ProcessSpawnFailed = 102,
+  WaitFailed = 103,
+  ControlProtocolError = 104,
+  ProcessStatsError = 105,
+
   // 200 - Client Implementation Errors
   BadRequest = 200,
+  DuplicateProvider = 201,
+  BadProviderPrefix = 202,
+  NoProvider = 203,
 
   // 1000 - Executor Internal Errors
   Unimplemented = 1000,

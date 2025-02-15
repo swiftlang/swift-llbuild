@@ -180,6 +180,8 @@ public:
   /// Get the configuration
   const EngineConfig& config();
 
+  std::shared_ptr<CASDatabase> cas();
+
   /// Build the requested artifact.
   Build build(const Label& artifact);
 

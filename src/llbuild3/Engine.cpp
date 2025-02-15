@@ -17,12 +17,10 @@
 #include "llbuild3/ActionCache.h"
 #include "llbuild3/ActionExecutor.h"
 #include "llbuild3/CAS.h"
+#include "llbuild3/Common.h"
 #include "llbuild3/EngineInternal.pb.h"
 #include "llbuild3/Label.h"
 #include "llbuild3/support/LabelTrie.h"
-
-#define UUID_SYSTEM_GENERATOR 1
-#include "uuid.h"
 
 #include <algorithm>
 #include <atomic>
@@ -88,7 +86,7 @@ class EngineImpl: public ActionExecutorListener {
   struct TaskInfo;
   class RootTask;
 
-  const uuids::uuid engineID{uuids::uuid_system_generator()()};
+  const EngineID engineID{generateEngineID()};
 
   const EngineConfig cfg;
 
@@ -125,6 +123,11 @@ class EngineImpl: public ActionExecutorListener {
     Label label;
   };
 
+  struct PendingAction {
+    ActionID execID;
+    std::optional<result<ActionResult, Error>> result;
+  };
+
   /// Information tracked for executing tasks.
   struct TaskInfo {
     TaskInfo(uint64_t id, std::unique_ptr<Task>&& task)
@@ -139,22 +142,19 @@ class EngineImpl: public ActionExecutorListener {
     std::unordered_set<uint64_t> requestedBy;
 
     std::unordered_map<uint64_t, std::optional<SubtaskResult>> pendingSubtasks;
+    std::unordered_map<uint64_t, PendingAction> pendingActions;
 
     std::unordered_set<uint64_t> waitingOn;
 
     TaskNextState nextState;
   };
 
-  struct SubtaskInfo {
-    uint64_t taskID;
-    uint64_t workID;
-  };
-
   /// The tracked information for executing tasks.
   std::mutex taskInfosMutex;
   uint64_t nextTaskID = 0;
   std::unordered_map<uint64_t, TaskInfo> taskInfos;
-  std::unordered_map<uint64_t, SubtaskInfo> subtaskInfos;
+  std::unordered_map<uint64_t, uint64_t> actionTaskMap;
+  std::unordered_map<uint64_t, uint64_t> subtaskTaskMap;
   LabelTrie<uint64_t> taskNameMap;
   LabelTrie<uint64_t> taskArtifactMap;
 
@@ -198,7 +198,7 @@ public:
              std::shared_ptr<ActionExecutor> executor)
     : cfg(config), casDB(casDB), actionCache(cache), actionExecutor(executor)
   {
-    actionExecutor->attachListener(this);
+    actionExecutor->attachListener(engineID, this);
 
     for (unsigned i = 0; i != numLanes; ++i) {
       lanes.push_back(std::unique_ptr<std::thread>(
@@ -218,7 +218,7 @@ public:
       lanes[i]->join();
     }
 
-    actionExecutor->detachListener(this);
+    actionExecutor->detachListener(engineID);
   }
 
   const EngineConfig& config() { return cfg; }
@@ -494,7 +494,37 @@ public:
   }
 
   result<uint64_t, Error> taskRequestAction(uint64_t taskID, const Action& action) {
-    return fail(makeEngineError(EngineError::Unimplemented));
+    uint64_t buildID = 0;
+    uint64_t workID = 0;
+
+    // check if an active task exists
+    {
+      std::lock_guard<std::mutex> lock(taskInfosMutex);
+      assert(taskInfos.contains(taskID));
+      auto& rTaskInfo = taskInfos.at(taskID);
+      buildID = rTaskInfo.minBuild;
+      workID = nextTaskID++;
+      actionTaskMap.insert({workID, taskID});
+    }
+
+    // submit the subtask for execution
+    ClientActionID cid{buildID, workID};
+    ActionRequest req{engineID, cid, ActionPriority::Default, action};
+    auto res = actionExecutor->submit(req);
+
+    // check that the subtask was accepted
+    if (res.has_error()) {
+      std::lock_guard<std::mutex> lock(taskInfosMutex);
+      actionTaskMap.erase(workID);
+      return fail(res.error());
+    }
+
+    // record the subtask as pending
+    std::lock_guard<std::mutex> lock(taskInfosMutex);
+    auto& rTaskInfo = taskInfos.at(taskID);
+    rTaskInfo.pendingActions.insert({workID, {*res, {}}});
+
+    return workID;
   }
 
   result<uint64_t, Error> taskSpawnSubtask(uint64_t taskID, const Subtask& subtask) {
@@ -508,21 +538,23 @@ public:
       auto& rTaskInfo = taskInfos.at(taskID);
       buildID = rTaskInfo.minBuild;
       workID = nextTaskID++;
+      subtaskTaskMap.insert({workID, taskID});
     }
 
     // submit the subtask for execution
-    ActionOwner owner{engineID, buildID, workID};
-    SubtaskRequest req{owner, ActionPriority::Default, subtask, SubtaskInterface(this, taskID)};
+    ClientActionID cid{buildID, workID};
+    SubtaskRequest req{engineID, cid, ActionPriority::Default, subtask, SubtaskInterface(this, taskID)};
     auto res = actionExecutor->submit(req);
 
     // check that the subtask was accepted
     if (res.has_error()) {
+      std::lock_guard<std::mutex> lock(taskInfosMutex);
+      subtaskTaskMap.erase(workID);
       return fail(res.error());
     }
 
     // record the subtask as pending
     std::lock_guard<std::mutex> lock(taskInfosMutex);
-    subtaskInfos.insert({*res, {taskID, workID}});
     auto& rTaskInfo = taskInfos.at(taskID);
     rTaskInfo.pendingSubtasks.insert({workID, {}});
 
@@ -534,31 +566,53 @@ public:
   /// @name Task Management Client APIs
   /// @{
 
-  void notifyActionStart(ActionID) {
-    // no op
-  }
-
-  void notifyActionComplete(ActionID, result<ActionResult, Error>) {
-    // FIXME: implement
-  }
-
-  void notifySubtaskStart(uint64_t) {
-    // no op
-  }
-
-  void notifySubtaskComplete(uint64_t subtaskID, SubtaskResult result) {
+  void notifyActionStart(ClientActionID cid, ActionID aid) override {
     std::lock_guard<std::mutex> lock(taskInfosMutex);
-    auto entry = subtaskInfos.find(subtaskID);
-    if (entry == subtaskInfos.end()) {
+    auto entry = actionTaskMap.find(cid.workID);
+    if (entry == actionTaskMap.end()) {
       return;
     }
 
-    auto si = entry->second;
+    auto taskID = entry->second;
+    auto& rtask = taskInfos.at(taskID);
+    rtask.pendingActions.at(cid.workID).execID = aid;
+  }
 
-    auto& rtask = taskInfos.at(si.taskID);
-    rtask.pendingSubtasks.at(si.workID) = std::move(result);
+  void notifyActionComplete(ClientActionID cid, result<ActionResult, Error> result) override {
+    std::lock_guard<std::mutex> lock(taskInfosMutex);
+    auto entry = actionTaskMap.find(cid.workID);
+    if (entry == actionTaskMap.end()) {
+      return;
+    }
+
+    auto taskID = entry->second;
+    auto& rtask = taskInfos.at(taskID);
+    rtask.pendingActions.at(cid.workID).result = {std::move(result)};
     bool wasBlocked = !rtask.waitingOn.empty();
-    rtask.waitingOn.erase(si.workID);
+    rtask.waitingOn.erase(cid.workID);
+
+    if (wasBlocked && rtask.waitingOn.empty()) {
+      // finished last blocked input, unblock task
+      unblockTask(rtask);
+    }
+  }
+
+  void notifySubtaskStart(ClientActionID) override {
+    // no op
+  }
+
+  void notifySubtaskComplete(ClientActionID cid, SubtaskResult result) override {
+    std::lock_guard<std::mutex> lock(taskInfosMutex);
+    auto entry = subtaskTaskMap.find(cid.workID);
+    if (entry == subtaskTaskMap.end()) {
+      return;
+    }
+
+    auto taskID = entry->second;
+    auto& rtask = taskInfos.at(taskID);
+    rtask.pendingSubtasks.at(cid.workID) = std::move(result);
+    bool wasBlocked = !rtask.waitingOn.empty();
+    rtask.waitingOn.erase(cid.workID);
 
     if (wasBlocked && rtask.waitingOn.empty()) {
       // finished last blocked input, unblock task
@@ -696,9 +750,7 @@ private:
       cacheKey.set_type(CACHE_KEY_TYPE_TASK);
       *cacheKey.mutable_content() = keyID;
 
-      std::string foo = labelAsCanonicalString(cacheKey.label());
-
-      actionCache->get(cacheKey, [this, ctx, inputs, sres, &taskInfo, foo](result<CacheValue, Error> res) {
+      actionCache->get(cacheKey, [this, ctx, inputs, sres, &taskInfo](result<CacheValue, Error> res) {
         if (res.has_error()) {
           // FIXME: log error
           enqueueReadyTask(taskInfo, ctx, inputs, sres);
@@ -814,6 +866,10 @@ private:
             unresolvedInputs.insert(id);
             inputTask.requestedBy.insert(taskInfo.id);
           }
+        } else if (taskInfo.pendingActions.contains(id)) {
+          if (!taskInfo.pendingActions.at(id).result.has_value()) {
+            unresolvedInputs.insert(id);
+          }
         } else if (taskInfo.pendingSubtasks.contains(id)) {
           if (!taskInfo.pendingSubtasks.at(id).has_value()) {
             unresolvedInputs.insert(id);
@@ -898,6 +954,11 @@ private:
           auto input = inputs.add_inputs();
           auto& req = taskInfo.requestedTaskInputs.at(id);
           prepareInput(input, inputTask, req);
+        } else if (auto it = taskInfo.pendingActions.find(id);
+                   it != taskInfo.pendingActions.end()) {
+          auto& inputAction = it->second;
+          auto input = inputs.add_inputs();
+          prepareActionResult(input, id, *inputAction.result);
         } else if (auto it = taskInfo.pendingSubtasks.find(id);
                    it != taskInfo.pendingSubtasks.end()) {
           assert(it->second.has_value());
@@ -947,6 +1008,16 @@ private:
       }
     } else {
       *input->mutable_error() = taskInfo.nextState.error();
+    }
+  }
+
+  void prepareActionResult(TaskInput* input, uint64_t id,
+                           const result<ActionResult, Error>& res) const {
+    input->set_id(id);
+    if (res.has_value()) {
+      *input->mutable_action() = *res;
+    } else {
+      *input->mutable_error() = res.error();
     }
   }
 
@@ -1288,6 +1359,10 @@ Engine::~Engine() { delete static_cast<EngineImpl*>(impl); }
 
 const EngineConfig& Engine::config() {
   return static_cast<EngineImpl*>(impl)->config();
+}
+
+std::shared_ptr<CASDatabase> Engine::cas() {
+  return static_cast<EngineImpl*>(impl)->cas();
 }
 
 Build Engine::build(const Label& artifact) {

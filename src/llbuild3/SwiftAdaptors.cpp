@@ -15,6 +15,7 @@
 
 #include "llbuild3/ActionCache.h"
 #include "llbuild3/ActionExecutor.h"
+#include "llbuild3/LocalExecutor.h"
 #include "llbuild3/CAS.h"
 #include "llbuild3/Engine.h"
 
@@ -317,6 +318,9 @@ private:
 
 public:
   ExtCASDatabaseAdaptor(ExtCASDatabase extCASDB) : extCASDB(extCASDB) { }
+  ~ExtCASDatabaseAdaptor() {
+    extCASDB.releaseFn(extCASDB.ctx);
+  }
 
   void contains(const CASObjectID& casid, std::function<void(result<bool, Error>)> resultHandler) {
     extCASDB.containsFn(extCASDB.ctx, casid.bytes(), std::function([resultHandler](bool found, ErrorPB error) {
@@ -516,9 +520,107 @@ ActionCacheRef makeInMemoryActionCache() {
   return ActionCacheRef(new InMemoryActionCache());
 }
 
-ActionExecutorRef makeActionExecutor() {
-  // FIXME: allocate actual local/remote executors
-  return ActionExecutorRef(new ActionExecutor({nullptr}, {nullptr}));
+
+class ExtLocalSandboxAdaptor: public LocalSandbox {
+private:
+  ExtLocalSandbox ext;
+
+public:
+  ExtLocalSandboxAdaptor(ExtLocalSandbox ext) : ext(ext) { }
+  ~ExtLocalSandboxAdaptor() {
+    ext.releaseFn(ext.ctx);
+  }
+
+  std::filesystem::path workingDir() override {
+    std::string path;
+    ext.dirFn(ext.ctx, &path);
+    return path;
+  }
+
+  std::optional<Error> prepareInput(std::string path, FileType type,
+                                    CASObjectID objID) override {
+    std::string error;
+    std::string idbytes = objID.bytes();
+    // FIXME: passing all the strings here as pointers because something in
+    // FIXME: the swift-interop layer corrupts string ownership with this
+    // FIXME: particular construct
+    ext.prepareInputFn(ext.ctx, &path, type, &idbytes, &error);
+    if (error.size() > 0) {
+      Error err;
+      err.ParseFromString(error);
+      return {err};
+    }
+    return {};
+  }
+
+  result<std::vector<FileObject>, Error>
+  collectOutputs(std::vector<std::string> paths) override {
+    std::vector<std::string> outputPBs;
+    std::string error;
+    ext.collectOutputsFn(ext.ctx, paths, &outputPBs, &error);
+
+    if (error.size() > 0) {
+      Error err;
+      err.ParseFromString(error);
+      return fail(err);
+    }
+
+    std::vector<FileObject> outputs;
+    for (auto fopb: outputPBs) {
+      FileObject fo;
+      fo.ParseFromString(fopb);
+      outputs.emplace_back(std::move(fo));
+    }
+    return outputs;
+  }
+
+  void release() override {
+    ext.releaseSandboxFn(ext.ctx);
+  }
+};
+
+class ExtLocalSandboxProviderAdaptor: public LocalSandboxProvider {
+private:
+  ExtLocalSandboxProvider ext;
+
+public:
+  ExtLocalSandboxProviderAdaptor(ExtLocalSandboxProvider ext) : ext(ext) { }
+  ~ExtLocalSandboxProviderAdaptor() {
+    ext.releaseFn(ext.ctx);
+  }
+
+  result<std::shared_ptr<LocalSandbox>, Error>
+  create(ProcessHandle hndl) override {
+    std::string errstr;
+    auto extLS = ext.createFn(ext.ctx, hndl.id, &errstr);
+    if (errstr.size() > 0) {
+      Error error;
+      error.ParseFromString(errstr);
+      return fail(error);
+    }
+    return std::make_shared<ExtLocalSandboxAdaptor>(extLS);
+  }
+};
+
+LocalSandboxProviderRef makeExtLocalSandboxProvider(ExtLocalSandboxProvider ext) {
+  return std::make_shared<ExtLocalSandboxProviderAdaptor>(ext);
+}
+
+ActionExecutorRef makeActionExecutor(
+  CASDatabaseRef db,
+  ActionCacheRef actionCache,
+  LocalExecutorRef local,
+  RemoteExecutorRef remote
+) {
+  return ActionExecutorRef(new ActionExecutor(db, actionCache, local, remote));
+}
+
+LocalExecutorRef makeLocalExecutor(LocalSandboxProviderRef sandboxProvider) {
+  return std::shared_ptr<LocalExecutor>(new LocalExecutor(sandboxProvider));
+}
+
+RemoteExecutorRef makeRemoteExecutor() {
+  return {nullptr};
 }
 
 
@@ -547,6 +649,10 @@ void BuildRef::addCompletionHandler(
     result<ArtifactPB, ErrorPB> r = art;
     handler(ctx, &r);
   });
+}
+
+CASDatabaseRef EngineRef::cas() {
+  return engine->cas();
 }
 
 BuildRef EngineRef::build(const LabelPB artifact) {

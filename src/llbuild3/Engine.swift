@@ -10,8 +10,16 @@
 //
 //===----------------------------------------------------------------------===//
 
+import Foundation
+import SwiftProtobuf
+
 public enum TClientError: Error {
+  case indexOutOfBounds
+  case badInputType
+  case badActionResult
+  case badSubtaskResult
   case unimplemented
+  case unclassified(String)
 }
 
 public class TTaskInterface {
@@ -124,17 +132,21 @@ public class TSubtaskInterface {
   }
 
   public var cas: TCASDatabase {
-    let db = si.cas()
-    if let ctx = llbuild3.getRawCASDatabaseContext(db),
-       let sp = Unmanaged<AnyObject>.fromOpaque(ctx).takeUnretainedValue() as? TCASDatabase {
-      return sp
-    }
-
-    return AdaptedCASDatabase(db: db)
+    return si.cas().asTCASDatabase
   }
 }
 
 public typealias TSubtaskResults = [UInt64: Any]
+
+public extension TSubtaskResults {
+  subscript<T>(id id: UInt64) -> T? {
+    guard let value = self[id] else {
+      return nil
+    }
+    return value as? T
+  }
+}
+
 
 public protocol TTask {
   func name() -> TLabel
@@ -177,9 +189,105 @@ open class TBasicTask: TTask {
   }
 }
 
+public enum TSMTransition<StateType> {
+  case wait(StateType, [UInt64])
+  case result(TTaskResult)
+  case fail(TError)
+}
+
+public protocol TStateMachine: Codable {
+  associatedtype StateType: RawRepresentable<Int>
+
+  init()
+  mutating func initialize(_ ti: TTaskInterface, task: TTask) throws -> TSMTransition<StateType>
+  mutating func compute(state: StateType, _ ti: TTaskInterface, task: TTask, inputs: TTaskInputs,
+                        subtaskResults: TSubtaskResults) throws -> TSMTransition<StateType>
+}
+
+public enum TStateMachineTaskError: Error {
+  case badContext
+  case badState
+}
+
+public class TStateMachineTask<T: TStateMachine>: TBasicTask {
+  public override func compute(_ ti: TTaskInterface, ctx: TTaskContext, inputs: TTaskInputs, subtaskResults: TSubtaskResults) throws -> TTaskNextState {
+    guard ctx.taskState != nil else {
+      var sm = T()
+      let transition = try sm.initialize(ti, task: self)
+      return try makeNext(sm, transition: transition)
+    }
+
+    // unwrap context
+    guard ctx.protoState.isA(Llbuild3_TaskStateMachineContext.self) else {
+      throw TStateMachineTaskError.badContext
+    }
+    let tctx = try Llbuild3_TaskStateMachineContext(unpackingAny: ctx.protoState)
+    guard let s = T.StateType(rawValue: Int(tctx.next)) else {
+      throw TStateMachineTaskError.badState
+    }
+
+    var sm = try JSONDecoder().decode(T.self, from: tctx.data)
+    let transition = try sm.compute(state: s, ti, task: self, inputs: inputs, subtaskResults: subtaskResults)
+    return try makeNext(sm, transition: transition)
+  }
+
+  private func makeNext(_ sm: T, transition: TSMTransition<T.StateType>) throws -> TTaskNextState {
+    switch transition {
+    case .wait(let next, let ids):
+
+      let encoder = JSONEncoder()
+      encoder.outputFormatting = [.sortedKeys]
+      let encodedsm = try encoder.encode(sm)
+
+      let tctx = Llbuild3_TaskStateMachineContext.with {
+        $0.next = Int64(next.rawValue)
+        $0.data = encodedsm
+      }
+
+      return try TTaskNextState.with {
+        $0.wait = try TTaskWait.with {
+          $0.ids = ids
+          $0.context.protoState = try Google_Protobuf_Any(message: tctx)
+        }
+      }
+    case .result(let tres):
+      return TTaskNextState.with {
+        $0.result = tres
+      }
+
+    case .fail(let err):
+      return TTaskNextState.with {
+        $0.error = err
+      }
+    }
+  }
+}
+
 public extension TTask {
   var isInit: Bool {
     return false
+  }
+}
+
+public extension TTaskInputs {
+  func getSubprocessResult(_ idx: Int) throws -> TSubprocessResult {
+    guard idx >= 0, inputs.count > idx else {
+      throw TClientError.indexOutOfBounds
+    }
+
+    if case .error(let err) = inputs[idx].inputObject {
+      throw err
+    }
+
+    guard case .action(let res) = inputs[idx].inputObject else {
+      throw TClientError.badInputType
+    }
+
+    guard case .subprocess(let sres) = res.actionResultValue else {
+      throw TClientError.badActionResult
+    }
+
+    return sres
   }
 }
 
@@ -293,6 +401,18 @@ open class TBasicRule: TRule {
   }
 }
 
+public class TSimpleRule: TBasicRule {
+  let method: (TLabel, [TLabel]) throws -> TTask
+  public init(_ lbl: TLabel, arts: [TLabel], _ method: @escaping (TLabel, [TLabel]) throws -> TTask) {
+    self.method = method
+    super.init(lbl, arts: arts)
+  }
+
+  public override func configure() throws -> TTask {
+    return try method(name(), produces())
+  }
+}
+
 extension TRule {
   func extRule() throws -> llbuild3.ExtRule {
     var rule = llbuild3.ExtRule()
@@ -347,7 +467,7 @@ open class TBasicRuleProvider: TRuleProvider {
   let ruleLbls: [TLabel]
   let artLbls: [TLabel]
 
-  public init(rules: [TLabel], artifacts: [TLabel]) {
+  public init(rules: [TLabel] = [], artifacts: [TLabel] = []) {
     self.ruleLbls = rules
     self.artLbls = artifacts
   }
@@ -364,6 +484,69 @@ open class TBasicRuleProvider: TRuleProvider {
   }
   open func ruleForArtifact(_ lbl: TLabel) -> TRule? {
     return nil
+  }
+}
+
+public class TMappedRuleProvider: TBasicRuleProvider {
+  public struct MappedRule {
+    let name: TLabel
+    let arts: [TLabel]
+    let method: (TLabel, [TLabel]) -> TRule
+
+    public init(_ name: String, arts: [String] = [],  _ method: @escaping (TLabel, [TLabel]) -> TRule) throws {
+      self.name = try TLabel(name)
+      if arts.count == 0 {
+        self.arts = [self.name]
+      } else {
+        self.arts = try arts.map { try TLabel($0) }
+      }
+      self.method = method
+    }
+
+    public init(_ name: TLabel, arts: [TLabel] = [], _ method: @escaping (TLabel, [TLabel]) -> TRule) {
+      self.name = name
+      if arts.count == 0 {
+        self.arts = [self.name]
+      } else {
+        self.arts = arts
+      }
+      self.method = method
+    }
+  }
+  let rules: [MappedRule]
+  let artMap: [TLabel: MappedRule]
+
+
+  public init(_ rules: [MappedRule] = []) {
+    self.rules = rules
+    let ruleNames = rules.map { $0.name }
+
+    var artNames: [TLabel] = []
+    var artMap: [TLabel: MappedRule] = [:]
+    for rule in rules {
+      artNames.append(contentsOf: rule.arts)
+      for art in rule.arts {
+        artMap[art] = rule
+      }
+    }
+    self.artMap = artMap
+    super.init(rules: ruleNames, artifacts: artNames)
+  }
+
+  public override func ruleByName(_ lbl: TLabel) -> TRule? {
+    for rule in rules {
+      if lbl == rule.name {
+        return rule.method(lbl, rule.arts)
+      }
+    }
+    return nil
+  }
+
+  public override func ruleForArtifact(_ lbl: TLabel) -> TRule? {
+    guard let rule = artMap[lbl] else {
+      return nil
+    }
+    return rule.method(rule.name, rule.arts)
   }
 }
 
@@ -467,16 +650,12 @@ extension TEngineConfig {
   }
 }
 
-public class TEngine {
-  private var eng: llbuild3.EngineRef
+public class TExecutor {
+  let executor: llbuild3.ActionExecutorRef
 
-  convenience public init (config: TEngineConfig = TEngineConfig(), casDB: TCASDatabase? = nil, actionCache: TActionCache? = nil, baseRuleProvider: TRuleProvider) throws {
-    let tcas: llbuild3.CASDatabaseRef
-    if let casDB {
-      tcas = llbuild3.makeExtCASDatabase(casDB.extCASDatabase())
-    } else {
-      tcas = llbuild3.CASDatabaseRef()
-    }
+  convenience public init(casDB: TCASDatabase, actionCache: TActionCache? = nil, sandboxProvider: TLocalSandboxProvider) {
+    let tcas = llbuild3.makeExtCASDatabase(casDB.extCASDatabase)
+    let lsp = llbuild3.makeExtLocalSandboxProvider(sandboxProvider.extLocalSandboxProvider)
 
     let tcache: llbuild3.ActionCacheRef
     if let cache = actionCache {
@@ -485,14 +664,58 @@ public class TEngine {
       tcache = llbuild3.ActionCacheRef()
     }
 
-    let texecutor = llbuild3.makeActionExecutor()
-
-    try self.init(config: config, casDB: tcas, actionCache: tcache, executor: texecutor, baseRuleProvider: baseRuleProvider)
+    self.init(casDB: tcas, actionCache: tcache, sandboxProvider: lsp)
   }
 
-  public init (config: TEngineConfig = TEngineConfig(), casDB: llbuild3.CASDatabaseRef, actionCache: llbuild3.ActionCacheRef, executor: llbuild3.ActionExecutorRef, baseRuleProvider: TRuleProvider) throws {
+  convenience public init(casDB: llbuild3.CASDatabaseRef, actionCache: llbuild3.ActionCacheRef? = nil, sandboxProvider: TLocalSandboxProvider) {
+    let lsp = llbuild3.makeExtLocalSandboxProvider(sandboxProvider.extLocalSandboxProvider)
+
+    let tcache = actionCache ?? llbuild3.ActionCacheRef()
+    self.init(casDB: casDB, actionCache: tcache, sandboxProvider: lsp)
+  }
+
+  public init(casDB: llbuild3.CASDatabaseRef, actionCache: llbuild3.ActionCacheRef, sandboxProvider: llbuild3.LocalSandboxProviderRef) {
+    let execlocal = llbuild3.makeLocalExecutor(sandboxProvider)
+    let execremote = llbuild3.makeRemoteExecutor()
+
+    executor = llbuild3.makeActionExecutor(casDB, actionCache, execlocal, execremote)
+  }
+}
+
+public class TEngine {
+  private var eng: llbuild3.EngineRef
+
+  convenience public init (config: TEngineConfig = TEngineConfig(), casDB: TCASDatabase, actionCache: TActionCache? = nil, executor: TExecutor, baseRuleProvider: TRuleProvider) throws {
+    let tcas = llbuild3.makeExtCASDatabase(casDB.extCASDatabase)
+
+    let tcache: llbuild3.ActionCacheRef
+    if let cache = actionCache {
+      tcache = llbuild3.makeExtActionCache(cache.extActionCache())
+    } else {
+      tcache = llbuild3.ActionCacheRef()
+    }
+
+    try self.init(config: config, casDB: tcas, actionCache: tcache, executor: executor.executor, baseRuleProvider: baseRuleProvider)
+  }
+
+  convenience public init (config: TEngineConfig = TEngineConfig(), casDB: llbuild3.CASDatabaseRef, actionCache: llbuild3.ActionCacheRef = llbuild3.ActionCacheRef(), executor: TExecutor, baseRuleProvider: TRuleProvider) throws {
+    try self.init(config: config, casDB: casDB, actionCache: actionCache, executor: executor.executor, baseRuleProvider: baseRuleProvider)
+  }
+
+  init (config: TEngineConfig = TEngineConfig(), casDB: llbuild3.CASDatabaseRef, actionCache: llbuild3.ActionCacheRef, executor: llbuild3.ActionExecutorRef, baseRuleProvider: TRuleProvider) throws {
 
     eng = llbuild3.makeEngine(try config.extEngineConfig(), casDB, actionCache, executor, baseRuleProvider.extRuleProvider)
+  }
+
+
+  public var cas: TCASDatabase {
+    let db = eng.cas()
+    if let ctx = llbuild3.getRawCASDatabaseContext(db),
+       let sp = Unmanaged<AnyObject>.fromOpaque(ctx).takeUnretainedValue() as? TCASDatabase {
+      return sp
+    }
+
+    return AdaptedCASDatabase(db: db)
   }
 
   public func build(_ lbl: TLabel) async throws -> TArtifact {

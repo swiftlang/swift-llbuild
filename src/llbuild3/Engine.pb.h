@@ -73,6 +73,9 @@ extern TaskNextStateDefaultTypeInternal _TaskNextState_default_instance_;
 class TaskResult;
 struct TaskResultDefaultTypeInternal;
 extern TaskResultDefaultTypeInternal _TaskResult_default_instance_;
+class TaskStateMachineContext;
+struct TaskStateMachineContextDefaultTypeInternal;
+extern TaskStateMachineContextDefaultTypeInternal _TaskStateMachineContext_default_instance_;
 class TaskWait;
 struct TaskWaitDefaultTypeInternal;
 extern TaskWaitDefaultTypeInternal _TaskWait_default_instance_;
@@ -87,6 +90,195 @@ namespace llbuild3 {
 // ===================================================================
 
 
+// -------------------------------------------------------------------
+
+class TaskStateMachineContext final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:llbuild3.TaskStateMachineContext) */ {
+ public:
+  inline TaskStateMachineContext() : TaskStateMachineContext(nullptr) {}
+  ~TaskStateMachineContext() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR TaskStateMachineContext(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline TaskStateMachineContext(const TaskStateMachineContext& from) : TaskStateMachineContext(nullptr, from) {}
+  inline TaskStateMachineContext(TaskStateMachineContext&& from) noexcept
+      : TaskStateMachineContext(nullptr, std::move(from)) {}
+  inline TaskStateMachineContext& operator=(const TaskStateMachineContext& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline TaskStateMachineContext& operator=(TaskStateMachineContext&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const TaskStateMachineContext& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const TaskStateMachineContext* internal_default_instance() {
+    return reinterpret_cast<const TaskStateMachineContext*>(
+        &_TaskStateMachineContext_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 7;
+  friend void swap(TaskStateMachineContext& a, TaskStateMachineContext& b) { a.Swap(&b); }
+  inline void Swap(TaskStateMachineContext* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(TaskStateMachineContext* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  TaskStateMachineContext* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<TaskStateMachineContext>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const TaskStateMachineContext& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const TaskStateMachineContext& from) { TaskStateMachineContext::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(TaskStateMachineContext* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "llbuild3.TaskStateMachineContext"; }
+
+ protected:
+  explicit TaskStateMachineContext(::google::protobuf::Arena* arena);
+  TaskStateMachineContext(::google::protobuf::Arena* arena, const TaskStateMachineContext& from);
+  TaskStateMachineContext(::google::protobuf::Arena* arena, TaskStateMachineContext&& from) noexcept
+      : TaskStateMachineContext(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::Message::ClassData* GetClassData() const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kDataFieldNumber = 2,
+    kNextFieldNumber = 1,
+  };
+  // bytes data = 2;
+  void clear_data() ;
+  const std::string& data() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_data(Arg_&& arg, Args_... args);
+  std::string* mutable_data();
+  PROTOBUF_NODISCARD std::string* release_data();
+  void set_allocated_data(std::string* value);
+
+  private:
+  const std::string& _internal_data() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_data(
+      const std::string& value);
+  std::string* _internal_mutable_data();
+
+  public:
+  // int64 next = 1;
+  void clear_next() ;
+  ::int64_t next() const;
+  void set_next(::int64_t value);
+
+  private:
+  ::int64_t _internal_next() const;
+  void _internal_set_next(::int64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:llbuild3.TaskStateMachineContext)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      1, 2, 0,
+      0, 2>
+      _table_;
+
+  static constexpr const void* _raw_default_instance_ =
+      &_TaskStateMachineContext_default_instance_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from,
+                          const TaskStateMachineContext& from_msg);
+    ::google::protobuf::internal::ArenaStringPtr data_;
+    ::int64_t next_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_llbuild3_2fEngine_2eproto;
+};
 // -------------------------------------------------------------------
 
 class Signature final : public ::google::protobuf::Message
@@ -2618,6 +2810,82 @@ inline void TaskNextState::clear_has_StateValue() {
 inline TaskNextState::StateValueCase TaskNextState::StateValue_case() const {
   return TaskNextState::StateValueCase(_impl_._oneof_case_[0]);
 }
+// -------------------------------------------------------------------
+
+// TaskStateMachineContext
+
+// int64 next = 1;
+inline void TaskStateMachineContext::clear_next() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.next_ = ::int64_t{0};
+}
+inline ::int64_t TaskStateMachineContext::next() const {
+  // @@protoc_insertion_point(field_get:llbuild3.TaskStateMachineContext.next)
+  return _internal_next();
+}
+inline void TaskStateMachineContext::set_next(::int64_t value) {
+  _internal_set_next(value);
+  // @@protoc_insertion_point(field_set:llbuild3.TaskStateMachineContext.next)
+}
+inline ::int64_t TaskStateMachineContext::_internal_next() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.next_;
+}
+inline void TaskStateMachineContext::_internal_set_next(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.next_ = value;
+}
+
+// bytes data = 2;
+inline void TaskStateMachineContext::clear_data() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.data_.ClearToEmpty();
+}
+inline const std::string& TaskStateMachineContext::data() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:llbuild3.TaskStateMachineContext.data)
+  return _internal_data();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void TaskStateMachineContext::set_data(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.data_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:llbuild3.TaskStateMachineContext.data)
+}
+inline std::string* TaskStateMachineContext::mutable_data() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_data();
+  // @@protoc_insertion_point(field_mutable:llbuild3.TaskStateMachineContext.data)
+  return _s;
+}
+inline const std::string& TaskStateMachineContext::_internal_data() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.data_.Get();
+}
+inline void TaskStateMachineContext::_internal_set_data(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.data_.Set(value, GetArena());
+}
+inline std::string* TaskStateMachineContext::_internal_mutable_data() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.data_.Mutable( GetArena());
+}
+inline std::string* TaskStateMachineContext::release_data() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:llbuild3.TaskStateMachineContext.data)
+  return _impl_.data_.Release();
+}
+inline void TaskStateMachineContext::set_allocated_data(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.data_.SetAllocated(value, GetArena());
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+        if (_impl_.data_.IsDefault()) {
+          _impl_.data_.Set("", GetArena());
+        }
+  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:llbuild3.TaskStateMachineContext.data)
+}
+
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif  // __GNUC__

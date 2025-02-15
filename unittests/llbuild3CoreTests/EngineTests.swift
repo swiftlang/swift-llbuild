@@ -18,12 +18,6 @@ enum TestErrors: Error {
   case unimplemented
 }
 
-class BasicTestRuleProvider: TBasicRuleProvider {
-  override init(rules: [TLabel] = [], artifacts: [TLabel] = []) {
-    super.init(rules: rules, artifacts: artifacts)
-  }
-}
-
 class NullTask: TBasicTask {
   override func compute(_ ti: TTaskInterface, ctx: TTaskContext, inputs: TTaskInputs, subtaskResults: TSubtaskResults) throws -> TTaskNextState {
     return TTaskNextState.with {
@@ -49,7 +43,10 @@ class NullRule: TBasicRule {
 final class EngineTests: XCTestCase {
 
   func testInitialization() {
-    XCTAssertNoThrow(try TEngine(baseRuleProvider: BasicTestRuleProvider()), "initial registration succeeds");
+    let db = llbuild3.makeInMemoryCASDatabase()
+    let sp = TTempDirSandboxProvider(basedir: "testInitialization", casDB: db.asTCASDatabase)
+    let exe = TExecutor(casDB: db, sandboxProvider: sp)
+    XCTAssertNoThrow(try TEngine(casDB: db, executor: exe, baseRuleProvider: TBasicRuleProvider()), "initial registration succeeds");
   }
 
   func testRuleProviderRegistration() async throws {
@@ -124,13 +121,17 @@ final class EngineTests: XCTestCase {
       }
     }
 
+    let db = llbuild3.makeInMemoryCASDatabase()
+    let sp = TTempDirSandboxProvider(basedir: "testRuleProviderRegistration", casDB: db.asTCASDatabase)
+    let exe = TExecutor(casDB: db, sandboxProvider: sp)
+
     var cfg = TEngineConfig()
     cfg.initRule = TLabel.with { $0.components = ["init", "working"] }
-    let engine = try TEngine(config: cfg, baseRuleProvider: TestRuleProvider())
+    let engine = try TEngine(config: cfg, casDB: db, executor: exe, baseRuleProvider: TestRuleProvider())
     _ = try await engine.build(TLabel.with { $0.components = ["null"] })
 
     cfg.initRule = TLabel.with { $0.components = ["init", "failing"] }
-    let engine2 = try TEngine(config: cfg, baseRuleProvider: TestRuleProvider())
+    let engine2 = try TEngine(config: cfg, casDB: db, executor: exe, baseRuleProvider: TestRuleProvider())
     do {
       _ = try await engine2.build(TLabel.with { $0.components = ["null"] })
       XCTFail("duplicate registration succeeded")
@@ -182,7 +183,10 @@ final class EngineTests: XCTestCase {
       }
     }
 
-    let engine = try TEngine(baseRuleProvider: TestRuleProvider())
+    let db = llbuild3.makeInMemoryCASDatabase()
+    let sp = TTempDirSandboxProvider(basedir: "testNamedRegistration", casDB: db.asTCASDatabase)
+    let exe = TExecutor(casDB: db, sandboxProvider: sp)
+    let engine = try TEngine(casDB: db, executor: exe, baseRuleProvider: TestRuleProvider())
     for val in ["one", "two"] {
       let result = try await engine.build(TLabel.with {
         $0.components = ["value"]
@@ -199,7 +203,10 @@ final class EngineTests: XCTestCase {
 
 
   func testBuild_NoProviders() async throws {
-    let engine = try TEngine(baseRuleProvider: BasicTestRuleProvider())
+    let db = llbuild3.makeInMemoryCASDatabase()
+    let sp = TTempDirSandboxProvider(basedir: "testBuild_NoProviders", casDB: db.asTCASDatabase)
+    let exe = TExecutor(casDB: db, sandboxProvider: sp)
+    let engine = try TEngine(casDB: db, executor: exe, baseRuleProvider: TBasicRuleProvider())
 
     let art = try TLabel("//test")
     do {
@@ -230,7 +237,10 @@ final class EngineTests: XCTestCase {
       }
     }
 
-    let engine = try TEngine(baseRuleProvider: TestRuleProvider())
+    let db = llbuild3.makeInMemoryCASDatabase()
+    let sp = TTempDirSandboxProvider(basedir: "testBuild_BasicRule", casDB: db.asTCASDatabase)
+    let exe = TExecutor(casDB: db, sandboxProvider: sp)
+    let engine = try TEngine(casDB: db, executor: exe, baseRuleProvider: TestRuleProvider())
 
     let art = try TLabel("//test:result")
     do {
@@ -402,7 +412,10 @@ final class EngineTests: XCTestCase {
       }
     }
 
-    let engine = try TEngine(baseRuleProvider: TestRuleProvider())
+    let db = llbuild3.makeInMemoryCASDatabase()
+    let sp = TTempDirSandboxProvider(basedir: "testBuild_3NodeGraph", casDB: db.asTCASDatabase)
+    let exe = TExecutor(casDB: db, sandboxProvider: sp)
+    let engine = try TEngine(casDB: db, executor: exe, baseRuleProvider: TestRuleProvider())
 
     let art = TLabel.with {
       $0.components = ["mult", "4", "5"]
@@ -523,12 +536,13 @@ final class EngineTests: XCTestCase {
       }
     }
 
-    let casDB = llbuild3.makeInMemoryCASDatabase()
+    let db = llbuild3.makeInMemoryCASDatabase()
     let actionCache = llbuild3.makeInMemoryActionCache()
-    let executor = llbuild3.makeActionExecutor()
+    let sp = TTempDirSandboxProvider(basedir: "testBuild_SingleCachedRule", casDB: db.asTCASDatabase)
+    let exe = TExecutor(casDB: db, sandboxProvider: sp)
     let rp = try TestRuleProvider(counter: counter)
 
-    let engine = try TEngine(casDB: casDB, actionCache: actionCache, executor: executor, baseRuleProvider: rp)
+    let engine = try TEngine(casDB: db, actionCache: actionCache, executor: exe, baseRuleProvider: rp)
 
     let art = try TLabel("//test:result")
     do {
@@ -544,7 +558,7 @@ final class EngineTests: XCTestCase {
     }
 
     // Construct new engine with the same CAS and action cache
-    let engine2 = try TEngine(casDB: casDB, actionCache: actionCache, executor: executor, baseRuleProvider: rp)
+    let engine2 = try TEngine(casDB: db, actionCache: actionCache, executor: exe, baseRuleProvider: rp)
     do {
       let result2 = try await engine2.build(art)
       if case .blob(let data) = result2.value {
@@ -559,41 +573,183 @@ final class EngineTests: XCTestCase {
     }
   }
 
+  func testBuild_Action() async throws {
+    let rp = TMappedRuleProvider([
+      try .init("//test") {
+        TSimpleRule($0, arts: $1) {
+          TStateMachineTask<EchoAction>($0, arts: $1)
+        }
+      }
+    ])
+
+    struct EchoAction: TStateMachine {
+      enum State: Int {
+        case actionComplete = 1
+      }
+
+      mutating func initialize(_ ti: TTaskInterface, task: TTask) throws -> TSMTransition<State> {
+        let action = try TAction.with {
+          $0.subprocess = TSubprocess.with {
+            $0.arguments = ["/bin/echo", "a", "string"]
+          }
+          $0.function = try TLabel("//builtin/subprocess")
+        }
+
+        let taskID = try ti.requestAction(action)
+        return .wait(.actionComplete, [taskID])
+      }
+
+      mutating func compute(state: StateType, _ ti: TTaskInterface, task: TTask, inputs: TTaskInputs, subtaskResults: TSubtaskResults) throws -> TSMTransition<State> {
+        let sres = try inputs.getSubprocessResult(0)
+
+        guard let artName = task.produces().first else {
+          throw TClientError.unclassified("no product label")
+        }
+        return .result(TTaskResult.with {
+          $0.artifacts = [TArtifact.with {
+            $0.label = artName
+            $0.type = .blob
+            $0.casObject = sres.stdout
+          }]
+        })
+      }
+    }
+
+    let db = llbuild3.makeInMemoryCASDatabase()
+    let sp = TTempDirSandboxProvider(basedir: "testBuild_Action", casDB: db.asTCASDatabase)
+    let exe = TExecutor(casDB: db, sandboxProvider: sp)
+    let engine = try TEngine(casDB: db, executor: exe, baseRuleProvider: rp)
+
+    let art = try TLabel("//test")
+    do {
+      let result = try await engine.build(art)
+      if case .casObject(let id) = result.value {
+        let db = engine.cas
+        guard let obj = try await db.get(id) else {
+          XCTFail("object not found")
+          return
+        }
+
+        XCTAssertEqual(obj.refs.count, 1)
+
+        guard let chunk = try await db.get(obj.refs[0]) else {
+          XCTFail("file chunk not found")
+          return
+        }
+
+        XCTAssertEqual(chunk.data, Data("a string\n".utf8))
+      } else {
+        XCTFail("invalid artifact type found \(result.value.debugDescription)")
+      }
+    } catch {
+      XCTFail("build failed: \(error)")
+    }
+  }
+
+  func testBuild_ActionWithInput() async throws {
+    let rp = TMappedRuleProvider([
+      try .init("//test") {
+        TSimpleRule($0, arts: $1) {
+          TStateMachineTask<CatAction>($0, arts: $1)
+        }
+      }
+    ])
+
+    struct CatAction: TStateMachine {
+      enum State: Int {
+        case inputUploaded = 1
+        case actionComplete
+      }
+
+      var subtaskID: UInt64 = 0
+
+      mutating func initialize(_ ti: TTaskInterface, task: TTask) throws -> TSMTransition<State> {
+        subtaskID = try ti.spawnSubtask() { si in
+          let obj = TCASObject.with { $0.data = Data("a string".utf8) }
+          return try await si.cas.put(obj)
+        }
+        return .wait(.inputUploaded, [subtaskID])
+      }
+
+      mutating func compute(state: StateType, _ ti: TTaskInterface, task: TTask, inputs: TTaskInputs, subtaskResults: TSubtaskResults) throws -> TSMTransition<State> {
+        switch state {
+        case .inputUploaded:
+          guard let inputID: TCASObjectID = subtaskResults[id: subtaskID] else {
+            throw TClientError.badSubtaskResult
+          }
+          let action = try TAction.with {
+            $0.subprocess = TSubprocess.with {
+              $0.arguments = ["/bin/cat", "input-1"]
+              $0.inputs = [
+                TFileObject.with {
+                  $0.path = "input-1"
+                  $0.type = .plainFile
+                  $0.object = inputID
+                }
+              ]
+            }
+            $0.function = try TLabel("//builtin/subprocess")
+          }
+
+          let taskID = try ti.requestAction(action)
+          return .wait(.actionComplete, [taskID])
+
+        case .actionComplete:
+          let sres = try inputs.getSubprocessResult(0)
+
+          guard let artName = task.produces().first else {
+            throw TClientError.unclassified("no product label")
+          }
+          return .result(TTaskResult.with {
+            $0.artifacts = [TArtifact.with {
+              $0.label = artName
+              $0.type = .blob
+              $0.casObject = sres.stdout
+            }]
+          })
+        }
+      }
+    }
+
+    let db = llbuild3.makeInMemoryCASDatabase()
+    let sp = TTempDirSandboxProvider(basedir: "testBuild_Action", casDB: db.asTCASDatabase)
+    let exe = TExecutor(casDB: db, sandboxProvider: sp)
+    let engine = try TEngine(casDB: db, executor: exe, baseRuleProvider: rp)
+
+    let art = try TLabel("//test")
+    do {
+      let result = try await engine.build(art)
+      if case .casObject(let id) = result.value {
+        let db = engine.cas
+        guard let obj = try await db.get(id) else {
+          XCTFail("object not found")
+          return
+        }
+
+        XCTAssertEqual(obj.refs.count, 1)
+
+        guard let chunk = try await db.get(obj.refs[0]) else {
+          XCTFail("file chunk not found")
+          return
+        }
+
+        XCTAssertEqual(chunk.data, Data("a string".utf8))
+      } else {
+        XCTFail("invalid artifact type found \(result.value.debugDescription)")
+      }
+    } catch {
+      XCTFail("build failed: \(error)")
+    }
+  }
+
+
   func testBuild_Subtask() async throws {
-    class TestRuleProvider: TBasicRuleProvider {
-      init() throws {
-        super.init(
-          rules: [],
-          artifacts: [
-            try TLabel("//test"),
-          ]
-        )
-      }
-
-      override func ruleForArtifact(_ lbl: TLabel) -> TRule? {
-        if lbl.components.count != 1 {
-          return nil
-        }
-
-        if lbl.components[0] == "test" {
-          return SubtaskRule(lbl, arts: [lbl])
-        }
-
-        return nil
-      }
-    }
-
-    class SubtaskRule: TBasicRule {
-      override func configure() throws -> TTask {
-        return SubtaskTask(name(), arts: produces())
-      }
-    }
-
+    let rp = TMappedRuleProvider([
+      try .init("//test") { TSimpleRule($0, arts: $1) { SubtaskTask($0, arts: $1) } }
+    ])
 
     class SubtaskTask: TBasicTask {
-      enum TaskError: Error {
-        case unexpectedState
-      }
+      var v1: UInt64 = 0
 
       func doSomethingAsync(_ si: TSubtaskInterface) async throws -> String {
         return "a string"
@@ -601,7 +757,7 @@ final class EngineTests: XCTestCase {
 
       override func compute(_ ti: TTaskInterface, ctx: TTaskContext, inputs: TTaskInputs, subtaskResults: TSubtaskResults) throws -> TTaskNextState {
         guard ctx.taskState != nil else {
-          let v1 = try ti.spawnSubtask(doSomethingAsync)
+          v1 = try ti.spawnSubtask(doSomethingAsync)
           return TTaskNextState.with {
             $0.wait = TTaskWait.with {
               $0.ids = [v1]
@@ -612,15 +768,12 @@ final class EngineTests: XCTestCase {
           }
         }
 
-        guard subtaskResults.count == 1 else {
-          throw TaskError.unexpectedState
+        guard let val: String = subtaskResults[id: v1] else {
+          throw TClientError.badSubtaskResult
         }
 
-        guard let val = subtaskResults.first?.value as? String else {
-          throw TaskError.unexpectedState
-        }
         guard let artName = produces().first else {
-          throw TaskError.unexpectedState
+          throw TClientError.unclassified("no product label")
         }
         return TTaskNextState.with {
           $0.result = TTaskResult.with {
@@ -634,7 +787,10 @@ final class EngineTests: XCTestCase {
       }
     }
 
-    let engine = try TEngine(baseRuleProvider: TestRuleProvider())
+    let db = llbuild3.makeInMemoryCASDatabase()
+    let sp = TTempDirSandboxProvider(basedir: "testBuild_Subtask", casDB: db.asTCASDatabase)
+    let exe = TExecutor(casDB: db, sandboxProvider: sp)
+    let engine = try TEngine(casDB: db, executor: exe, baseRuleProvider: rp)
 
     let art = try TLabel("//test")
     do {

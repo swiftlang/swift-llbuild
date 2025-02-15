@@ -65,6 +65,9 @@ extern ActionExecutionMetadataDefaultTypeInternal _ActionExecutionMetadata_defau
 class ActionResult;
 struct ActionResultDefaultTypeInternal;
 extern ActionResultDefaultTypeInternal _ActionResult_default_instance_;
+class FileObject;
+struct FileObjectDefaultTypeInternal;
+extern FileObjectDefaultTypeInternal _FileObject_default_instance_;
 class Platform;
 struct PlatformDefaultTypeInternal;
 extern PlatformDefaultTypeInternal _Platform_default_instance_;
@@ -77,15 +80,9 @@ extern SubprocessDefaultTypeInternal _Subprocess_default_instance_;
 class SubprocessResult;
 struct SubprocessResultDefaultTypeInternal;
 extern SubprocessResultDefaultTypeInternal _SubprocessResult_default_instance_;
-class SubprocessResult_Output;
-struct SubprocessResult_OutputDefaultTypeInternal;
-extern SubprocessResult_OutputDefaultTypeInternal _SubprocessResult_Output_default_instance_;
 class Subprocess_EnvironmentVariable;
 struct Subprocess_EnvironmentVariableDefaultTypeInternal;
 extern Subprocess_EnvironmentVariableDefaultTypeInternal _Subprocess_EnvironmentVariable_default_instance_;
-class Subprocess_Input;
-struct Subprocess_InputDefaultTypeInternal;
-extern Subprocess_InputDefaultTypeInternal _Subprocess_Input_default_instance_;
 }  // namespace llbuild3
 namespace google {
 namespace protobuf {
@@ -154,7 +151,7 @@ class Subprocess_EnvironmentVariable final : public ::google::protobuf::Message
     return reinterpret_cast<const Subprocess_EnvironmentVariable*>(
         &_Subprocess_EnvironmentVariable_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 0;
+  static constexpr int kIndexInFileMessages = 1;
   friend void swap(Subprocess_EnvironmentVariable& a, Subprocess_EnvironmentVariable& b) { a.Swap(&b); }
   inline void Swap(Subprocess_EnvironmentVariable* other) {
     if (other == this) return;
@@ -349,7 +346,7 @@ class Platform_Property final : public ::google::protobuf::Message
     return reinterpret_cast<const Platform_Property*>(
         &_Platform_Property_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 6;
+  static constexpr int kIndexInFileMessages = 5;
   friend void swap(Platform_Property& a, Platform_Property& b) { a.Swap(&b); }
   inline void Swap(Platform_Property* other) {
     if (other == this) return;
@@ -489,420 +486,6 @@ class Platform_Property final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
-class SubprocessResult_Output final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:llbuild3.SubprocessResult.Output) */ {
- public:
-  inline SubprocessResult_Output() : SubprocessResult_Output(nullptr) {}
-  ~SubprocessResult_Output() override;
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR SubprocessResult_Output(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline SubprocessResult_Output(const SubprocessResult_Output& from) : SubprocessResult_Output(nullptr, from) {}
-  inline SubprocessResult_Output(SubprocessResult_Output&& from) noexcept
-      : SubprocessResult_Output(nullptr, std::move(from)) {}
-  inline SubprocessResult_Output& operator=(const SubprocessResult_Output& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline SubprocessResult_Output& operator=(SubprocessResult_Output&& from) noexcept {
-    if (this == &from) return *this;
-    if (GetArena() == from.GetArena()
-#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
-        && GetArena() != nullptr
-#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
-    ) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const SubprocessResult_Output& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const SubprocessResult_Output* internal_default_instance() {
-    return reinterpret_cast<const SubprocessResult_Output*>(
-        &_SubprocessResult_Output_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 3;
-  friend void swap(SubprocessResult_Output& a, SubprocessResult_Output& b) { a.Swap(&b); }
-  inline void Swap(SubprocessResult_Output* other) {
-    if (other == this) return;
-#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
-#else   // PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() == other->GetArena()) {
-#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(SubprocessResult_Output* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  SubprocessResult_Output* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<SubprocessResult_Output>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const SubprocessResult_Output& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const SubprocessResult_Output& from) { SubprocessResult_Output::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(
-      ::google::protobuf::MessageLite& to_msg,
-      const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
-  ::size_t ByteSizeLong() const final;
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* arena);
-  void SharedDtor();
-  void InternalSwap(SubprocessResult_Output* other);
- private:
-  friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "llbuild3.SubprocessResult.Output"; }
-
- protected:
-  explicit SubprocessResult_Output(::google::protobuf::Arena* arena);
-  SubprocessResult_Output(::google::protobuf::Arena* arena, const SubprocessResult_Output& from);
-  SubprocessResult_Output(::google::protobuf::Arena* arena, SubprocessResult_Output&& from) noexcept
-      : SubprocessResult_Output(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::Message::ClassData* GetClassData() const final;
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kPathFieldNumber = 1,
-    kObjectFieldNumber = 3,
-    kTypeFieldNumber = 2,
-  };
-  // string path = 1;
-  void clear_path() ;
-  const std::string& path() const;
-  template <typename Arg_ = const std::string&, typename... Args_>
-  void set_path(Arg_&& arg, Args_... args);
-  std::string* mutable_path();
-  PROTOBUF_NODISCARD std::string* release_path();
-  void set_allocated_path(std::string* value);
-
-  private:
-  const std::string& _internal_path() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_path(
-      const std::string& value);
-  std::string* _internal_mutable_path();
-
-  public:
-  // .llbuild3.CASObjectID object = 3;
-  bool has_object() const;
-  void clear_object() ;
-  const ::llbuild3::CASObjectID& object() const;
-  PROTOBUF_NODISCARD ::llbuild3::CASObjectID* release_object();
-  ::llbuild3::CASObjectID* mutable_object();
-  void set_allocated_object(::llbuild3::CASObjectID* value);
-  void unsafe_arena_set_allocated_object(::llbuild3::CASObjectID* value);
-  ::llbuild3::CASObjectID* unsafe_arena_release_object();
-
-  private:
-  const ::llbuild3::CASObjectID& _internal_object() const;
-  ::llbuild3::CASObjectID* _internal_mutable_object();
-
-  public:
-  // .llbuild3.FileType type = 2;
-  void clear_type() ;
-  ::llbuild3::FileType type() const;
-  void set_type(::llbuild3::FileType value);
-
-  private:
-  ::llbuild3::FileType _internal_type() const;
-  void _internal_set_type(::llbuild3::FileType value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:llbuild3.SubprocessResult.Output)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<
-      2, 3, 1,
-      45, 2>
-      _table_;
-
-  static constexpr const void* _raw_default_instance_ =
-      &_SubprocessResult_Output_default_instance_;
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from,
-                          const SubprocessResult_Output& from_msg);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::internal::ArenaStringPtr path_;
-    ::llbuild3::CASObjectID* object_;
-    int type_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_llbuild3_2fAction_2eproto;
-};
-// -------------------------------------------------------------------
-
-class Subprocess_Input final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:llbuild3.Subprocess.Input) */ {
- public:
-  inline Subprocess_Input() : Subprocess_Input(nullptr) {}
-  ~Subprocess_Input() override;
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR Subprocess_Input(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline Subprocess_Input(const Subprocess_Input& from) : Subprocess_Input(nullptr, from) {}
-  inline Subprocess_Input(Subprocess_Input&& from) noexcept
-      : Subprocess_Input(nullptr, std::move(from)) {}
-  inline Subprocess_Input& operator=(const Subprocess_Input& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline Subprocess_Input& operator=(Subprocess_Input&& from) noexcept {
-    if (this == &from) return *this;
-    if (GetArena() == from.GetArena()
-#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
-        && GetArena() != nullptr
-#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
-    ) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const Subprocess_Input& default_instance() {
-    return *internal_default_instance();
-  }
-  static inline const Subprocess_Input* internal_default_instance() {
-    return reinterpret_cast<const Subprocess_Input*>(
-        &_Subprocess_Input_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 1;
-  friend void swap(Subprocess_Input& a, Subprocess_Input& b) { a.Swap(&b); }
-  inline void Swap(Subprocess_Input* other) {
-    if (other == this) return;
-#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
-#else   // PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() == other->GetArena()) {
-#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(Subprocess_Input* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  Subprocess_Input* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<Subprocess_Input>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const Subprocess_Input& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const Subprocess_Input& from) { Subprocess_Input::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(
-      ::google::protobuf::MessageLite& to_msg,
-      const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
-  ::size_t ByteSizeLong() const final;
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* arena);
-  void SharedDtor();
-  void InternalSwap(Subprocess_Input* other);
- private:
-  friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "llbuild3.Subprocess.Input"; }
-
- protected:
-  explicit Subprocess_Input(::google::protobuf::Arena* arena);
-  Subprocess_Input(::google::protobuf::Arena* arena, const Subprocess_Input& from);
-  Subprocess_Input(::google::protobuf::Arena* arena, Subprocess_Input&& from) noexcept
-      : Subprocess_Input(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::Message::ClassData* GetClassData() const final;
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kPathFieldNumber = 1,
-    kObjectFieldNumber = 3,
-    kTypeFieldNumber = 2,
-  };
-  // string path = 1;
-  void clear_path() ;
-  const std::string& path() const;
-  template <typename Arg_ = const std::string&, typename... Args_>
-  void set_path(Arg_&& arg, Args_... args);
-  std::string* mutable_path();
-  PROTOBUF_NODISCARD std::string* release_path();
-  void set_allocated_path(std::string* value);
-
-  private:
-  const std::string& _internal_path() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_path(
-      const std::string& value);
-  std::string* _internal_mutable_path();
-
-  public:
-  // .llbuild3.CASObjectID object = 3;
-  bool has_object() const;
-  void clear_object() ;
-  const ::llbuild3::CASObjectID& object() const;
-  PROTOBUF_NODISCARD ::llbuild3::CASObjectID* release_object();
-  ::llbuild3::CASObjectID* mutable_object();
-  void set_allocated_object(::llbuild3::CASObjectID* value);
-  void unsafe_arena_set_allocated_object(::llbuild3::CASObjectID* value);
-  ::llbuild3::CASObjectID* unsafe_arena_release_object();
-
-  private:
-  const ::llbuild3::CASObjectID& _internal_object() const;
-  ::llbuild3::CASObjectID* _internal_mutable_object();
-
-  public:
-  // .llbuild3.FileType type = 2;
-  void clear_type() ;
-  ::llbuild3::FileType type() const;
-  void set_type(::llbuild3::FileType value);
-
-  private:
-  ::llbuild3::FileType _internal_type() const;
-  void _internal_set_type(::llbuild3::FileType value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:llbuild3.Subprocess.Input)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<
-      2, 3, 1,
-      38, 2>
-      _table_;
-
-  static constexpr const void* _raw_default_instance_ =
-      &_Subprocess_Input_default_instance_;
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from,
-                          const Subprocess_Input& from_msg);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::internal::ArenaStringPtr path_;
-    ::llbuild3::CASObjectID* object_;
-    int type_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_llbuild3_2fAction_2eproto;
-};
-// -------------------------------------------------------------------
-
 class Platform final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:llbuild3.Platform) */ {
  public:
@@ -958,7 +541,7 @@ class Platform final : public ::google::protobuf::Message
     return reinterpret_cast<const Platform*>(
         &_Platform_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 7;
+  static constexpr int kIndexInFileMessages = 6;
   friend void swap(Platform& a, Platform& b) { a.Swap(&b); }
   inline void Swap(Platform* other) {
     if (other == this) return;
@@ -1082,6 +665,213 @@ class Platform final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
+class FileObject final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:llbuild3.FileObject) */ {
+ public:
+  inline FileObject() : FileObject(nullptr) {}
+  ~FileObject() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR FileObject(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline FileObject(const FileObject& from) : FileObject(nullptr, from) {}
+  inline FileObject(FileObject&& from) noexcept
+      : FileObject(nullptr, std::move(from)) {}
+  inline FileObject& operator=(const FileObject& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline FileObject& operator=(FileObject&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const FileObject& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const FileObject* internal_default_instance() {
+    return reinterpret_cast<const FileObject*>(
+        &_FileObject_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 0;
+  friend void swap(FileObject& a, FileObject& b) { a.Swap(&b); }
+  inline void Swap(FileObject* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(FileObject* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  FileObject* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<FileObject>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const FileObject& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const FileObject& from) { FileObject::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(FileObject* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "llbuild3.FileObject"; }
+
+ protected:
+  explicit FileObject(::google::protobuf::Arena* arena);
+  FileObject(::google::protobuf::Arena* arena, const FileObject& from);
+  FileObject(::google::protobuf::Arena* arena, FileObject&& from) noexcept
+      : FileObject(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::Message::ClassData* GetClassData() const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kPathFieldNumber = 1,
+    kObjectFieldNumber = 3,
+    kTypeFieldNumber = 2,
+  };
+  // string path = 1;
+  void clear_path() ;
+  const std::string& path() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_path(Arg_&& arg, Args_... args);
+  std::string* mutable_path();
+  PROTOBUF_NODISCARD std::string* release_path();
+  void set_allocated_path(std::string* value);
+
+  private:
+  const std::string& _internal_path() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_path(
+      const std::string& value);
+  std::string* _internal_mutable_path();
+
+  public:
+  // .llbuild3.CASObjectID object = 3;
+  bool has_object() const;
+  void clear_object() ;
+  const ::llbuild3::CASObjectID& object() const;
+  PROTOBUF_NODISCARD ::llbuild3::CASObjectID* release_object();
+  ::llbuild3::CASObjectID* mutable_object();
+  void set_allocated_object(::llbuild3::CASObjectID* value);
+  void unsafe_arena_set_allocated_object(::llbuild3::CASObjectID* value);
+  ::llbuild3::CASObjectID* unsafe_arena_release_object();
+
+  private:
+  const ::llbuild3::CASObjectID& _internal_object() const;
+  ::llbuild3::CASObjectID* _internal_mutable_object();
+
+  public:
+  // .llbuild3.FileType type = 2;
+  void clear_type() ;
+  ::llbuild3::FileType type() const;
+  void set_type(::llbuild3::FileType value);
+
+  private:
+  ::llbuild3::FileType _internal_type() const;
+  void _internal_set_type(::llbuild3::FileType value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:llbuild3.FileObject)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      2, 3, 1,
+      32, 2>
+      _table_;
+
+  static constexpr const void* _raw_default_instance_ =
+      &_FileObject_default_instance_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from,
+                          const FileObject& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr path_;
+    ::llbuild3::CASObjectID* object_;
+    int type_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_llbuild3_2fAction_2eproto;
+};
+// -------------------------------------------------------------------
+
 class ActionExecutionMetadata final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:llbuild3.ActionExecutionMetadata) */ {
  public:
@@ -1137,7 +927,7 @@ class ActionExecutionMetadata final : public ::google::protobuf::Message
     return reinterpret_cast<const ActionExecutionMetadata*>(
         &_ActionExecutionMetadata_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 9;
+  static constexpr int kIndexInFileMessages = 8;
   friend void swap(ActionExecutionMetadata& a, ActionExecutionMetadata& b) { a.Swap(&b); }
   inline void Swap(ActionExecutionMetadata* other) {
     if (other == this) return;
@@ -1504,7 +1294,7 @@ class SubprocessResult final : public ::google::protobuf::Message
     return reinterpret_cast<const SubprocessResult*>(
         &_SubprocessResult_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 4;
+  static constexpr int kIndexInFileMessages = 3;
   friend void swap(SubprocessResult& a, SubprocessResult& b) { a.Swap(&b); }
   inline void Swap(SubprocessResult* other) {
     if (other == this) return;
@@ -1570,7 +1360,6 @@ class SubprocessResult final : public ::google::protobuf::Message
  public:
   ::google::protobuf::Metadata GetMetadata() const;
   // nested types ----------------------------------------------------
-  using Output = SubprocessResult_Output;
 
   // accessors -------------------------------------------------------
   enum : int {
@@ -1578,23 +1367,23 @@ class SubprocessResult final : public ::google::protobuf::Message
     kStdoutFieldNumber = 3,
     kExitCodeFieldNumber = 2,
   };
-  // repeated .llbuild3.SubprocessResult.Output outputs = 1;
+  // repeated .llbuild3.FileObject outputs = 1;
   int outputs_size() const;
   private:
   int _internal_outputs_size() const;
 
   public:
   void clear_outputs() ;
-  ::llbuild3::SubprocessResult_Output* mutable_outputs(int index);
-  ::google::protobuf::RepeatedPtrField<::llbuild3::SubprocessResult_Output>* mutable_outputs();
+  ::llbuild3::FileObject* mutable_outputs(int index);
+  ::google::protobuf::RepeatedPtrField<::llbuild3::FileObject>* mutable_outputs();
 
   private:
-  const ::google::protobuf::RepeatedPtrField<::llbuild3::SubprocessResult_Output>& _internal_outputs() const;
-  ::google::protobuf::RepeatedPtrField<::llbuild3::SubprocessResult_Output>* _internal_mutable_outputs();
+  const ::google::protobuf::RepeatedPtrField<::llbuild3::FileObject>& _internal_outputs() const;
+  ::google::protobuf::RepeatedPtrField<::llbuild3::FileObject>* _internal_mutable_outputs();
   public:
-  const ::llbuild3::SubprocessResult_Output& outputs(int index) const;
-  ::llbuild3::SubprocessResult_Output* add_outputs();
-  const ::google::protobuf::RepeatedPtrField<::llbuild3::SubprocessResult_Output>& outputs() const;
+  const ::llbuild3::FileObject& outputs(int index) const;
+  ::llbuild3::FileObject* add_outputs();
+  const ::google::protobuf::RepeatedPtrField<::llbuild3::FileObject>& outputs() const;
   // .llbuild3.CASObjectID stdout = 3;
   bool has_stdout() const;
   void clear_stdout() ;
@@ -1648,7 +1437,7 @@ class SubprocessResult final : public ::google::protobuf::Message
                           const SubprocessResult& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::RepeatedPtrField< ::llbuild3::SubprocessResult_Output > outputs_;
+    ::google::protobuf::RepeatedPtrField< ::llbuild3::FileObject > outputs_;
     ::llbuild3::CASObjectID* stdout_;
     ::int32_t exitcode_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -1780,7 +1569,6 @@ class Subprocess final : public ::google::protobuf::Message
   ::google::protobuf::Metadata GetMetadata() const;
   // nested types ----------------------------------------------------
   using EnvironmentVariable = Subprocess_EnvironmentVariable;
-  using Input = Subprocess_Input;
 
   // accessors -------------------------------------------------------
   enum : int {
@@ -1835,23 +1623,23 @@ class Subprocess final : public ::google::protobuf::Message
   const ::llbuild3::Subprocess_EnvironmentVariable& environment(int index) const;
   ::llbuild3::Subprocess_EnvironmentVariable* add_environment();
   const ::google::protobuf::RepeatedPtrField<::llbuild3::Subprocess_EnvironmentVariable>& environment() const;
-  // repeated .llbuild3.Subprocess.Input inputs = 4;
+  // repeated .llbuild3.FileObject inputs = 4;
   int inputs_size() const;
   private:
   int _internal_inputs_size() const;
 
   public:
   void clear_inputs() ;
-  ::llbuild3::Subprocess_Input* mutable_inputs(int index);
-  ::google::protobuf::RepeatedPtrField<::llbuild3::Subprocess_Input>* mutable_inputs();
+  ::llbuild3::FileObject* mutable_inputs(int index);
+  ::google::protobuf::RepeatedPtrField<::llbuild3::FileObject>* mutable_inputs();
 
   private:
-  const ::google::protobuf::RepeatedPtrField<::llbuild3::Subprocess_Input>& _internal_inputs() const;
-  ::google::protobuf::RepeatedPtrField<::llbuild3::Subprocess_Input>* _internal_mutable_inputs();
+  const ::google::protobuf::RepeatedPtrField<::llbuild3::FileObject>& _internal_inputs() const;
+  ::google::protobuf::RepeatedPtrField<::llbuild3::FileObject>* _internal_mutable_inputs();
   public:
-  const ::llbuild3::Subprocess_Input& inputs(int index) const;
-  ::llbuild3::Subprocess_Input* add_inputs();
-  const ::google::protobuf::RepeatedPtrField<::llbuild3::Subprocess_Input>& inputs() const;
+  const ::llbuild3::FileObject& inputs(int index) const;
+  ::llbuild3::FileObject* add_inputs();
+  const ::google::protobuf::RepeatedPtrField<::llbuild3::FileObject>& inputs() const;
   // repeated string outputPaths = 5;
   int outputpaths_size() const;
   private:
@@ -1924,7 +1712,7 @@ class Subprocess final : public ::google::protobuf::Message
                           const Subprocess& from_msg);
     ::google::protobuf::RepeatedPtrField<std::string> arguments_;
     ::google::protobuf::RepeatedPtrField< ::llbuild3::Subprocess_EnvironmentVariable > environment_;
-    ::google::protobuf::RepeatedPtrField< ::llbuild3::Subprocess_Input > inputs_;
+    ::google::protobuf::RepeatedPtrField< ::llbuild3::FileObject > inputs_;
     ::google::protobuf::RepeatedPtrField<std::string> outputpaths_;
     ::google::protobuf::internal::ArenaStringPtr workingdirectory_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
@@ -1988,14 +1776,14 @@ class ActionResult final : public ::google::protobuf::Message
   }
   enum ActionResultValueCase {
     kCasObject = 1,
-    kProtoObject = 2,
+    kSubprocess = 2,
     ACTIONRESULTVALUE_NOT_SET = 0,
   };
   static inline const ActionResult* internal_default_instance() {
     return reinterpret_cast<const ActionResult*>(
         &_ActionResult_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 8;
+  static constexpr int kIndexInFileMessages = 7;
   friend void swap(ActionResult& a, ActionResult& b) { a.Swap(&b); }
   inline void Swap(ActionResult* other) {
     if (other == this) return;
@@ -2066,7 +1854,7 @@ class ActionResult final : public ::google::protobuf::Message
   enum : int {
     kMetadataFieldNumber = 3,
     kCasObjectFieldNumber = 1,
-    kProtoObjectFieldNumber = 2,
+    kSubprocessFieldNumber = 2,
   };
   // .llbuild3.ActionExecutionMetadata metadata = 3;
   bool has_metadata() const;
@@ -2102,23 +1890,23 @@ class ActionResult final : public ::google::protobuf::Message
   ::llbuild3::CASObjectID* _internal_mutable_casobject();
 
   public:
-  // .google.protobuf.Any protoObject = 2;
-  bool has_protoobject() const;
+  // .llbuild3.SubprocessResult subprocess = 2;
+  bool has_subprocess() const;
   private:
-  bool _internal_has_protoobject() const;
+  bool _internal_has_subprocess() const;
 
   public:
-  void clear_protoobject() ;
-  const ::google::protobuf::Any& protoobject() const;
-  PROTOBUF_NODISCARD ::google::protobuf::Any* release_protoobject();
-  ::google::protobuf::Any* mutable_protoobject();
-  void set_allocated_protoobject(::google::protobuf::Any* value);
-  void unsafe_arena_set_allocated_protoobject(::google::protobuf::Any* value);
-  ::google::protobuf::Any* unsafe_arena_release_protoobject();
+  void clear_subprocess() ;
+  const ::llbuild3::SubprocessResult& subprocess() const;
+  PROTOBUF_NODISCARD ::llbuild3::SubprocessResult* release_subprocess();
+  ::llbuild3::SubprocessResult* mutable_subprocess();
+  void set_allocated_subprocess(::llbuild3::SubprocessResult* value);
+  void unsafe_arena_set_allocated_subprocess(::llbuild3::SubprocessResult* value);
+  ::llbuild3::SubprocessResult* unsafe_arena_release_subprocess();
 
   private:
-  const ::google::protobuf::Any& _internal_protoobject() const;
-  ::google::protobuf::Any* _internal_mutable_protoobject();
+  const ::llbuild3::SubprocessResult& _internal_subprocess() const;
+  ::llbuild3::SubprocessResult* _internal_mutable_subprocess();
 
   public:
   void clear_ActionResultValue();
@@ -2127,7 +1915,7 @@ class ActionResult final : public ::google::protobuf::Message
  private:
   class _Internal;
   void set_has_casobject();
-  void set_has_protoobject();
+  void set_has_subprocess();
   inline bool has_ActionResultValue() const;
   inline void clear_has_ActionResultValue();
   friend class ::google::protobuf::internal::TcParser;
@@ -2160,7 +1948,7 @@ class ActionResult final : public ::google::protobuf::Message
       constexpr ActionResultValueUnion() : _constinit_{} {}
       ::google::protobuf::internal::ConstantInitialized _constinit_;
       ::llbuild3::CASObjectID* casobject_;
-      ::google::protobuf::Any* protoobject_;
+      ::llbuild3::SubprocessResult* subprocess_;
     } ActionResultValue_;
     ::uint32_t _oneof_case_[1];
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -2221,11 +2009,16 @@ class Action final : public ::google::protobuf::Message
   static const Action& default_instance() {
     return *internal_default_instance();
   }
+  enum OperationCase {
+    kCasObject = 1,
+    kSubprocess = 2,
+    OPERATION_NOT_SET = 0,
+  };
   static inline const Action* internal_default_instance() {
     return reinterpret_cast<const Action*>(
         &_Action_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 5;
+  static constexpr int kIndexInFileMessages = 4;
   friend void swap(Action& a, Action& b) { a.Swap(&b); }
   inline void Swap(Action* other) {
     if (other == this) return;
@@ -2294,27 +2087,13 @@ class Action final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
-    kOperationFieldNumber = 1,
-    kFunctionFieldNumber = 2,
-    kPlatformFieldNumber = 4,
-    kVolatileFieldNumber = 3,
+    kFunctionFieldNumber = 3,
+    kPlatformFieldNumber = 5,
+    kVolatileFieldNumber = 4,
+    kCasObjectFieldNumber = 1,
+    kSubprocessFieldNumber = 2,
   };
-  // .llbuild3.CASObjectID operation = 1;
-  bool has_operation() const;
-  void clear_operation() ;
-  const ::llbuild3::CASObjectID& operation() const;
-  PROTOBUF_NODISCARD ::llbuild3::CASObjectID* release_operation();
-  ::llbuild3::CASObjectID* mutable_operation();
-  void set_allocated_operation(::llbuild3::CASObjectID* value);
-  void unsafe_arena_set_allocated_operation(::llbuild3::CASObjectID* value);
-  ::llbuild3::CASObjectID* unsafe_arena_release_operation();
-
-  private:
-  const ::llbuild3::CASObjectID& _internal_operation() const;
-  ::llbuild3::CASObjectID* _internal_mutable_operation();
-
-  public:
-  // .llbuild3.Label function = 2;
+  // .llbuild3.Label function = 3;
   bool has_function() const;
   void clear_function() ;
   const ::llbuild3::Label& function() const;
@@ -2329,7 +2108,7 @@ class Action final : public ::google::protobuf::Message
   ::llbuild3::Label* _internal_mutable_function();
 
   public:
-  // .llbuild3.Platform platform = 4;
+  // .llbuild3.Platform platform = 5;
   bool has_platform() const;
   void clear_platform() ;
   const ::llbuild3::Platform& platform() const;
@@ -2344,7 +2123,7 @@ class Action final : public ::google::protobuf::Message
   ::llbuild3::Platform* _internal_mutable_platform();
 
   public:
-  // bool volatile = 3;
+  // bool volatile = 4;
   void clear_volatile_() ;
   bool volatile_() const;
   void set_volatile_(bool value);
@@ -2354,12 +2133,56 @@ class Action final : public ::google::protobuf::Message
   void _internal_set_volatile_(bool value);
 
   public:
+  // .llbuild3.CASObjectID casObject = 1;
+  bool has_casobject() const;
+  private:
+  bool _internal_has_casobject() const;
+
+  public:
+  void clear_casobject() ;
+  const ::llbuild3::CASObjectID& casobject() const;
+  PROTOBUF_NODISCARD ::llbuild3::CASObjectID* release_casobject();
+  ::llbuild3::CASObjectID* mutable_casobject();
+  void set_allocated_casobject(::llbuild3::CASObjectID* value);
+  void unsafe_arena_set_allocated_casobject(::llbuild3::CASObjectID* value);
+  ::llbuild3::CASObjectID* unsafe_arena_release_casobject();
+
+  private:
+  const ::llbuild3::CASObjectID& _internal_casobject() const;
+  ::llbuild3::CASObjectID* _internal_mutable_casobject();
+
+  public:
+  // .llbuild3.Subprocess subprocess = 2;
+  bool has_subprocess() const;
+  private:
+  bool _internal_has_subprocess() const;
+
+  public:
+  void clear_subprocess() ;
+  const ::llbuild3::Subprocess& subprocess() const;
+  PROTOBUF_NODISCARD ::llbuild3::Subprocess* release_subprocess();
+  ::llbuild3::Subprocess* mutable_subprocess();
+  void set_allocated_subprocess(::llbuild3::Subprocess* value);
+  void unsafe_arena_set_allocated_subprocess(::llbuild3::Subprocess* value);
+  ::llbuild3::Subprocess* unsafe_arena_release_subprocess();
+
+  private:
+  const ::llbuild3::Subprocess& _internal_subprocess() const;
+  ::llbuild3::Subprocess* _internal_mutable_subprocess();
+
+  public:
+  void clear_Operation();
+  OperationCase Operation_case() const;
   // @@protoc_insertion_point(class_scope:llbuild3.Action)
  private:
   class _Internal;
+  void set_has_casobject();
+  void set_has_subprocess();
+  inline bool has_Operation() const;
+  inline void clear_has_Operation();
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      2, 4, 3,
+      2, 5, 4,
       0, 2>
       _table_;
 
@@ -2382,10 +2205,16 @@ class Action final : public ::google::protobuf::Message
                           const Action& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    ::llbuild3::CASObjectID* operation_;
     ::llbuild3::Label* function_;
     ::llbuild3::Platform* platform_;
     bool volatile__;
+    union OperationUnion {
+      constexpr OperationUnion() : _constinit_{} {}
+      ::google::protobuf::internal::ConstantInitialized _constinit_;
+      ::llbuild3::CASObjectID* casobject_;
+      ::llbuild3::Subprocess* subprocess_;
+    } Operation_;
+    ::uint32_t _oneof_case_[1];
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2404,6 +2233,173 @@ class Action final : public ::google::protobuf::Message
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
+// FileObject
+
+// string path = 1;
+inline void FileObject::clear_path() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.path_.ClearToEmpty();
+}
+inline const std::string& FileObject::path() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:llbuild3.FileObject.path)
+  return _internal_path();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void FileObject::set_path(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.path_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:llbuild3.FileObject.path)
+}
+inline std::string* FileObject::mutable_path() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_path();
+  // @@protoc_insertion_point(field_mutable:llbuild3.FileObject.path)
+  return _s;
+}
+inline const std::string& FileObject::_internal_path() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.path_.Get();
+}
+inline void FileObject::_internal_set_path(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.path_.Set(value, GetArena());
+}
+inline std::string* FileObject::_internal_mutable_path() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.path_.Mutable( GetArena());
+}
+inline std::string* FileObject::release_path() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:llbuild3.FileObject.path)
+  return _impl_.path_.Release();
+}
+inline void FileObject::set_allocated_path(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.path_.SetAllocated(value, GetArena());
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+        if (_impl_.path_.IsDefault()) {
+          _impl_.path_.Set("", GetArena());
+        }
+  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:llbuild3.FileObject.path)
+}
+
+// .llbuild3.FileType type = 2;
+inline void FileObject::clear_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.type_ = 0;
+}
+inline ::llbuild3::FileType FileObject::type() const {
+  // @@protoc_insertion_point(field_get:llbuild3.FileObject.type)
+  return _internal_type();
+}
+inline void FileObject::set_type(::llbuild3::FileType value) {
+  _internal_set_type(value);
+  // @@protoc_insertion_point(field_set:llbuild3.FileObject.type)
+}
+inline ::llbuild3::FileType FileObject::_internal_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::llbuild3::FileType>(_impl_.type_);
+}
+inline void FileObject::_internal_set_type(::llbuild3::FileType value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.type_ = value;
+}
+
+// .llbuild3.CASObjectID object = 3;
+inline bool FileObject::has_object() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.object_ != nullptr);
+  return value;
+}
+inline const ::llbuild3::CASObjectID& FileObject::_internal_object() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::llbuild3::CASObjectID* p = _impl_.object_;
+  return p != nullptr ? *p : reinterpret_cast<const ::llbuild3::CASObjectID&>(::llbuild3::_CASObjectID_default_instance_);
+}
+inline const ::llbuild3::CASObjectID& FileObject::object() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:llbuild3.FileObject.object)
+  return _internal_object();
+}
+inline void FileObject::unsafe_arena_set_allocated_object(::llbuild3::CASObjectID* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.object_);
+  }
+  _impl_.object_ = reinterpret_cast<::llbuild3::CASObjectID*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:llbuild3.FileObject.object)
+}
+inline ::llbuild3::CASObjectID* FileObject::release_object() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::llbuild3::CASObjectID* released = _impl_.object_;
+  _impl_.object_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+  released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  if (GetArena() == nullptr) {
+    delete old;
+  }
+#else   // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArena() != nullptr) {
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return released;
+}
+inline ::llbuild3::CASObjectID* FileObject::unsafe_arena_release_object() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:llbuild3.FileObject.object)
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::llbuild3::CASObjectID* temp = _impl_.object_;
+  _impl_.object_ = nullptr;
+  return temp;
+}
+inline ::llbuild3::CASObjectID* FileObject::_internal_mutable_object() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.object_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::llbuild3::CASObjectID>(GetArena());
+    _impl_.object_ = reinterpret_cast<::llbuild3::CASObjectID*>(p);
+  }
+  return _impl_.object_;
+}
+inline ::llbuild3::CASObjectID* FileObject::mutable_object() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  ::llbuild3::CASObjectID* _msg = _internal_mutable_object();
+  // @@protoc_insertion_point(field_mutable:llbuild3.FileObject.object)
+  return _msg;
+}
+inline void FileObject::set_allocated_object(::llbuild3::CASObjectID* value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.object_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+
+  _impl_.object_ = reinterpret_cast<::llbuild3::CASObjectID*>(value);
+  // @@protoc_insertion_point(field_set_allocated:llbuild3.FileObject.object)
+}
+
 // -------------------------------------------------------------------
 
 // Subprocess_EnvironmentVariable
@@ -2506,173 +2502,6 @@ inline void Subprocess_EnvironmentVariable::set_allocated_value(std::string* val
         }
   #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
   // @@protoc_insertion_point(field_set_allocated:llbuild3.Subprocess.EnvironmentVariable.value)
-}
-
-// -------------------------------------------------------------------
-
-// Subprocess_Input
-
-// string path = 1;
-inline void Subprocess_Input::clear_path() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.path_.ClearToEmpty();
-}
-inline const std::string& Subprocess_Input::path() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:llbuild3.Subprocess.Input.path)
-  return _internal_path();
-}
-template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void Subprocess_Input::set_path(Arg_&& arg,
-                                                     Args_... args) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.path_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:llbuild3.Subprocess.Input.path)
-}
-inline std::string* Subprocess_Input::mutable_path() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  std::string* _s = _internal_mutable_path();
-  // @@protoc_insertion_point(field_mutable:llbuild3.Subprocess.Input.path)
-  return _s;
-}
-inline const std::string& Subprocess_Input::_internal_path() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.path_.Get();
-}
-inline void Subprocess_Input::_internal_set_path(const std::string& value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.path_.Set(value, GetArena());
-}
-inline std::string* Subprocess_Input::_internal_mutable_path() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _impl_.path_.Mutable( GetArena());
-}
-inline std::string* Subprocess_Input::release_path() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:llbuild3.Subprocess.Input.path)
-  return _impl_.path_.Release();
-}
-inline void Subprocess_Input::set_allocated_path(std::string* value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.path_.SetAllocated(value, GetArena());
-  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-        if (_impl_.path_.IsDefault()) {
-          _impl_.path_.Set("", GetArena());
-        }
-  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:llbuild3.Subprocess.Input.path)
-}
-
-// .llbuild3.FileType type = 2;
-inline void Subprocess_Input::clear_type() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.type_ = 0;
-}
-inline ::llbuild3::FileType Subprocess_Input::type() const {
-  // @@protoc_insertion_point(field_get:llbuild3.Subprocess.Input.type)
-  return _internal_type();
-}
-inline void Subprocess_Input::set_type(::llbuild3::FileType value) {
-  _internal_set_type(value);
-  // @@protoc_insertion_point(field_set:llbuild3.Subprocess.Input.type)
-}
-inline ::llbuild3::FileType Subprocess_Input::_internal_type() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return static_cast<::llbuild3::FileType>(_impl_.type_);
-}
-inline void Subprocess_Input::_internal_set_type(::llbuild3::FileType value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.type_ = value;
-}
-
-// .llbuild3.CASObjectID object = 3;
-inline bool Subprocess_Input::has_object() const {
-  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
-  PROTOBUF_ASSUME(!value || _impl_.object_ != nullptr);
-  return value;
-}
-inline const ::llbuild3::CASObjectID& Subprocess_Input::_internal_object() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  const ::llbuild3::CASObjectID* p = _impl_.object_;
-  return p != nullptr ? *p : reinterpret_cast<const ::llbuild3::CASObjectID&>(::llbuild3::_CASObjectID_default_instance_);
-}
-inline const ::llbuild3::CASObjectID& Subprocess_Input::object() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:llbuild3.Subprocess.Input.object)
-  return _internal_object();
-}
-inline void Subprocess_Input::unsafe_arena_set_allocated_object(::llbuild3::CASObjectID* value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (GetArena() == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.object_);
-  }
-  _impl_.object_ = reinterpret_cast<::llbuild3::CASObjectID*>(value);
-  if (value != nullptr) {
-    _impl_._has_bits_[0] |= 0x00000001u;
-  } else {
-    _impl_._has_bits_[0] &= ~0x00000001u;
-  }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:llbuild3.Subprocess.Input.object)
-}
-inline ::llbuild3::CASObjectID* Subprocess_Input::release_object() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-
-  _impl_._has_bits_[0] &= ~0x00000001u;
-  ::llbuild3::CASObjectID* released = _impl_.object_;
-  _impl_.object_ = nullptr;
-#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
-  auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
-  released = ::google::protobuf::internal::DuplicateIfNonNull(released);
-  if (GetArena() == nullptr) {
-    delete old;
-  }
-#else   // PROTOBUF_FORCE_COPY_IN_RELEASE
-  if (GetArena() != nullptr) {
-    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
-  }
-#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
-  return released;
-}
-inline ::llbuild3::CASObjectID* Subprocess_Input::unsafe_arena_release_object() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:llbuild3.Subprocess.Input.object)
-
-  _impl_._has_bits_[0] &= ~0x00000001u;
-  ::llbuild3::CASObjectID* temp = _impl_.object_;
-  _impl_.object_ = nullptr;
-  return temp;
-}
-inline ::llbuild3::CASObjectID* Subprocess_Input::_internal_mutable_object() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.object_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::llbuild3::CASObjectID>(GetArena());
-    _impl_.object_ = reinterpret_cast<::llbuild3::CASObjectID*>(p);
-  }
-  return _impl_.object_;
-}
-inline ::llbuild3::CASObjectID* Subprocess_Input::mutable_object() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  _impl_._has_bits_[0] |= 0x00000001u;
-  ::llbuild3::CASObjectID* _msg = _internal_mutable_object();
-  // @@protoc_insertion_point(field_mutable:llbuild3.Subprocess.Input.object)
-  return _msg;
-}
-inline void Subprocess_Input::set_allocated_object(::llbuild3::CASObjectID* value) {
-  ::google::protobuf::Arena* message_arena = GetArena();
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (message_arena == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.object_);
-  }
-
-  if (value != nullptr) {
-    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(value)->GetArena();
-    if (message_arena != submessage_arena) {
-      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
-    }
-    _impl_._has_bits_[0] |= 0x00000001u;
-  } else {
-    _impl_._has_bits_[0] &= ~0x00000001u;
-  }
-
-  _impl_.object_ = reinterpret_cast<::llbuild3::CASObjectID*>(value);
-  // @@protoc_insertion_point(field_set_allocated:llbuild3.Subprocess.Input.object)
 }
 
 // -------------------------------------------------------------------
@@ -2880,7 +2709,7 @@ inline void Subprocess::set_allocated_workingdirectory(std::string* value) {
   // @@protoc_insertion_point(field_set_allocated:llbuild3.Subprocess.workingDirectory)
 }
 
-// repeated .llbuild3.Subprocess.Input inputs = 4;
+// repeated .llbuild3.FileObject inputs = 4;
 inline int Subprocess::_internal_inputs_size() const {
   return _internal_inputs().size();
 }
@@ -2891,39 +2720,39 @@ inline void Subprocess::clear_inputs() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.inputs_.Clear();
 }
-inline ::llbuild3::Subprocess_Input* Subprocess::mutable_inputs(int index)
+inline ::llbuild3::FileObject* Subprocess::mutable_inputs(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable:llbuild3.Subprocess.inputs)
   return _internal_mutable_inputs()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::llbuild3::Subprocess_Input>* Subprocess::mutable_inputs()
+inline ::google::protobuf::RepeatedPtrField<::llbuild3::FileObject>* Subprocess::mutable_inputs()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable_list:llbuild3.Subprocess.inputs)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_inputs();
 }
-inline const ::llbuild3::Subprocess_Input& Subprocess::inputs(int index) const
+inline const ::llbuild3::FileObject& Subprocess::inputs(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:llbuild3.Subprocess.inputs)
   return _internal_inputs().Get(index);
 }
-inline ::llbuild3::Subprocess_Input* Subprocess::add_inputs() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::llbuild3::FileObject* Subprocess::add_inputs() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::llbuild3::Subprocess_Input* _add = _internal_mutable_inputs()->Add();
+  ::llbuild3::FileObject* _add = _internal_mutable_inputs()->Add();
   // @@protoc_insertion_point(field_add:llbuild3.Subprocess.inputs)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::llbuild3::Subprocess_Input>& Subprocess::inputs() const
+inline const ::google::protobuf::RepeatedPtrField<::llbuild3::FileObject>& Subprocess::inputs() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_list:llbuild3.Subprocess.inputs)
   return _internal_inputs();
 }
-inline const ::google::protobuf::RepeatedPtrField<::llbuild3::Subprocess_Input>&
+inline const ::google::protobuf::RepeatedPtrField<::llbuild3::FileObject>&
 Subprocess::_internal_inputs() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.inputs_;
 }
-inline ::google::protobuf::RepeatedPtrField<::llbuild3::Subprocess_Input>*
+inline ::google::protobuf::RepeatedPtrField<::llbuild3::FileObject>*
 Subprocess::_internal_mutable_inputs() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.inputs_;
@@ -3033,176 +2862,9 @@ Subprocess::_internal_mutable_outputpaths() {
 
 // -------------------------------------------------------------------
 
-// SubprocessResult_Output
-
-// string path = 1;
-inline void SubprocessResult_Output::clear_path() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.path_.ClearToEmpty();
-}
-inline const std::string& SubprocessResult_Output::path() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:llbuild3.SubprocessResult.Output.path)
-  return _internal_path();
-}
-template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void SubprocessResult_Output::set_path(Arg_&& arg,
-                                                     Args_... args) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.path_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:llbuild3.SubprocessResult.Output.path)
-}
-inline std::string* SubprocessResult_Output::mutable_path() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  std::string* _s = _internal_mutable_path();
-  // @@protoc_insertion_point(field_mutable:llbuild3.SubprocessResult.Output.path)
-  return _s;
-}
-inline const std::string& SubprocessResult_Output::_internal_path() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.path_.Get();
-}
-inline void SubprocessResult_Output::_internal_set_path(const std::string& value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.path_.Set(value, GetArena());
-}
-inline std::string* SubprocessResult_Output::_internal_mutable_path() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _impl_.path_.Mutable( GetArena());
-}
-inline std::string* SubprocessResult_Output::release_path() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:llbuild3.SubprocessResult.Output.path)
-  return _impl_.path_.Release();
-}
-inline void SubprocessResult_Output::set_allocated_path(std::string* value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.path_.SetAllocated(value, GetArena());
-  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-        if (_impl_.path_.IsDefault()) {
-          _impl_.path_.Set("", GetArena());
-        }
-  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:llbuild3.SubprocessResult.Output.path)
-}
-
-// .llbuild3.FileType type = 2;
-inline void SubprocessResult_Output::clear_type() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.type_ = 0;
-}
-inline ::llbuild3::FileType SubprocessResult_Output::type() const {
-  // @@protoc_insertion_point(field_get:llbuild3.SubprocessResult.Output.type)
-  return _internal_type();
-}
-inline void SubprocessResult_Output::set_type(::llbuild3::FileType value) {
-  _internal_set_type(value);
-  // @@protoc_insertion_point(field_set:llbuild3.SubprocessResult.Output.type)
-}
-inline ::llbuild3::FileType SubprocessResult_Output::_internal_type() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return static_cast<::llbuild3::FileType>(_impl_.type_);
-}
-inline void SubprocessResult_Output::_internal_set_type(::llbuild3::FileType value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.type_ = value;
-}
-
-// .llbuild3.CASObjectID object = 3;
-inline bool SubprocessResult_Output::has_object() const {
-  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
-  PROTOBUF_ASSUME(!value || _impl_.object_ != nullptr);
-  return value;
-}
-inline const ::llbuild3::CASObjectID& SubprocessResult_Output::_internal_object() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  const ::llbuild3::CASObjectID* p = _impl_.object_;
-  return p != nullptr ? *p : reinterpret_cast<const ::llbuild3::CASObjectID&>(::llbuild3::_CASObjectID_default_instance_);
-}
-inline const ::llbuild3::CASObjectID& SubprocessResult_Output::object() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:llbuild3.SubprocessResult.Output.object)
-  return _internal_object();
-}
-inline void SubprocessResult_Output::unsafe_arena_set_allocated_object(::llbuild3::CASObjectID* value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (GetArena() == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.object_);
-  }
-  _impl_.object_ = reinterpret_cast<::llbuild3::CASObjectID*>(value);
-  if (value != nullptr) {
-    _impl_._has_bits_[0] |= 0x00000001u;
-  } else {
-    _impl_._has_bits_[0] &= ~0x00000001u;
-  }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:llbuild3.SubprocessResult.Output.object)
-}
-inline ::llbuild3::CASObjectID* SubprocessResult_Output::release_object() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-
-  _impl_._has_bits_[0] &= ~0x00000001u;
-  ::llbuild3::CASObjectID* released = _impl_.object_;
-  _impl_.object_ = nullptr;
-#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
-  auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
-  released = ::google::protobuf::internal::DuplicateIfNonNull(released);
-  if (GetArena() == nullptr) {
-    delete old;
-  }
-#else   // PROTOBUF_FORCE_COPY_IN_RELEASE
-  if (GetArena() != nullptr) {
-    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
-  }
-#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
-  return released;
-}
-inline ::llbuild3::CASObjectID* SubprocessResult_Output::unsafe_arena_release_object() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:llbuild3.SubprocessResult.Output.object)
-
-  _impl_._has_bits_[0] &= ~0x00000001u;
-  ::llbuild3::CASObjectID* temp = _impl_.object_;
-  _impl_.object_ = nullptr;
-  return temp;
-}
-inline ::llbuild3::CASObjectID* SubprocessResult_Output::_internal_mutable_object() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.object_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::llbuild3::CASObjectID>(GetArena());
-    _impl_.object_ = reinterpret_cast<::llbuild3::CASObjectID*>(p);
-  }
-  return _impl_.object_;
-}
-inline ::llbuild3::CASObjectID* SubprocessResult_Output::mutable_object() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  _impl_._has_bits_[0] |= 0x00000001u;
-  ::llbuild3::CASObjectID* _msg = _internal_mutable_object();
-  // @@protoc_insertion_point(field_mutable:llbuild3.SubprocessResult.Output.object)
-  return _msg;
-}
-inline void SubprocessResult_Output::set_allocated_object(::llbuild3::CASObjectID* value) {
-  ::google::protobuf::Arena* message_arena = GetArena();
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (message_arena == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.object_);
-  }
-
-  if (value != nullptr) {
-    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(value)->GetArena();
-    if (message_arena != submessage_arena) {
-      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
-    }
-    _impl_._has_bits_[0] |= 0x00000001u;
-  } else {
-    _impl_._has_bits_[0] &= ~0x00000001u;
-  }
-
-  _impl_.object_ = reinterpret_cast<::llbuild3::CASObjectID*>(value);
-  // @@protoc_insertion_point(field_set_allocated:llbuild3.SubprocessResult.Output.object)
-}
-
-// -------------------------------------------------------------------
-
 // SubprocessResult
 
-// repeated .llbuild3.SubprocessResult.Output outputs = 1;
+// repeated .llbuild3.FileObject outputs = 1;
 inline int SubprocessResult::_internal_outputs_size() const {
   return _internal_outputs().size();
 }
@@ -3213,39 +2875,39 @@ inline void SubprocessResult::clear_outputs() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.outputs_.Clear();
 }
-inline ::llbuild3::SubprocessResult_Output* SubprocessResult::mutable_outputs(int index)
+inline ::llbuild3::FileObject* SubprocessResult::mutable_outputs(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable:llbuild3.SubprocessResult.outputs)
   return _internal_mutable_outputs()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::llbuild3::SubprocessResult_Output>* SubprocessResult::mutable_outputs()
+inline ::google::protobuf::RepeatedPtrField<::llbuild3::FileObject>* SubprocessResult::mutable_outputs()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable_list:llbuild3.SubprocessResult.outputs)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_outputs();
 }
-inline const ::llbuild3::SubprocessResult_Output& SubprocessResult::outputs(int index) const
+inline const ::llbuild3::FileObject& SubprocessResult::outputs(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:llbuild3.SubprocessResult.outputs)
   return _internal_outputs().Get(index);
 }
-inline ::llbuild3::SubprocessResult_Output* SubprocessResult::add_outputs() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::llbuild3::FileObject* SubprocessResult::add_outputs() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::llbuild3::SubprocessResult_Output* _add = _internal_mutable_outputs()->Add();
+  ::llbuild3::FileObject* _add = _internal_mutable_outputs()->Add();
   // @@protoc_insertion_point(field_add:llbuild3.SubprocessResult.outputs)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::llbuild3::SubprocessResult_Output>& SubprocessResult::outputs() const
+inline const ::google::protobuf::RepeatedPtrField<::llbuild3::FileObject>& SubprocessResult::outputs() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_list:llbuild3.SubprocessResult.outputs)
   return _internal_outputs();
 }
-inline const ::google::protobuf::RepeatedPtrField<::llbuild3::SubprocessResult_Output>&
+inline const ::google::protobuf::RepeatedPtrField<::llbuild3::FileObject>&
 SubprocessResult::_internal_outputs() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.outputs_;
 }
-inline ::google::protobuf::RepeatedPtrField<::llbuild3::SubprocessResult_Output>*
+inline ::google::protobuf::RepeatedPtrField<::llbuild3::FileObject>*
 SubprocessResult::_internal_mutable_outputs() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.outputs_;
@@ -3368,100 +3030,156 @@ inline void SubprocessResult::set_allocated_stdout(::llbuild3::CASObjectID* valu
 
 // Action
 
-// .llbuild3.CASObjectID operation = 1;
-inline bool Action::has_operation() const {
-  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
-  PROTOBUF_ASSUME(!value || _impl_.operation_ != nullptr);
-  return value;
+// .llbuild3.CASObjectID casObject = 1;
+inline bool Action::has_casobject() const {
+  return Operation_case() == kCasObject;
 }
-inline const ::llbuild3::CASObjectID& Action::_internal_operation() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  const ::llbuild3::CASObjectID* p = _impl_.operation_;
-  return p != nullptr ? *p : reinterpret_cast<const ::llbuild3::CASObjectID&>(::llbuild3::_CASObjectID_default_instance_);
+inline bool Action::_internal_has_casobject() const {
+  return Operation_case() == kCasObject;
 }
-inline const ::llbuild3::CASObjectID& Action::operation() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:llbuild3.Action.operation)
-  return _internal_operation();
+inline void Action::set_has_casobject() {
+  _impl_._oneof_case_[0] = kCasObject;
 }
-inline void Action::unsafe_arena_set_allocated_operation(::llbuild3::CASObjectID* value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (GetArena() == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.operation_);
-  }
-  _impl_.operation_ = reinterpret_cast<::llbuild3::CASObjectID*>(value);
-  if (value != nullptr) {
-    _impl_._has_bits_[0] |= 0x00000001u;
+inline ::llbuild3::CASObjectID* Action::release_casobject() {
+  // @@protoc_insertion_point(field_release:llbuild3.Action.casObject)
+  if (Operation_case() == kCasObject) {
+    clear_has_Operation();
+    auto* temp = _impl_.Operation_.casobject_;
+    if (GetArena() != nullptr) {
+      temp = ::google::protobuf::internal::DuplicateIfNonNull(temp);
+    }
+    _impl_.Operation_.casobject_ = nullptr;
+    return temp;
   } else {
-    _impl_._has_bits_[0] &= ~0x00000001u;
+    return nullptr;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:llbuild3.Action.operation)
 }
-inline ::llbuild3::CASObjectID* Action::release_operation() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-
-  _impl_._has_bits_[0] &= ~0x00000001u;
-  ::llbuild3::CASObjectID* released = _impl_.operation_;
-  _impl_.operation_ = nullptr;
-#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
-  auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
-  released = ::google::protobuf::internal::DuplicateIfNonNull(released);
-  if (GetArena() == nullptr) {
-    delete old;
+inline const ::llbuild3::CASObjectID& Action::_internal_casobject() const {
+  return Operation_case() == kCasObject ? *_impl_.Operation_.casobject_ : reinterpret_cast<::llbuild3::CASObjectID&>(::llbuild3::_CASObjectID_default_instance_);
+}
+inline const ::llbuild3::CASObjectID& Action::casobject() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:llbuild3.Action.casObject)
+  return _internal_casobject();
+}
+inline ::llbuild3::CASObjectID* Action::unsafe_arena_release_casobject() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:llbuild3.Action.casObject)
+  if (Operation_case() == kCasObject) {
+    clear_has_Operation();
+    auto* temp = _impl_.Operation_.casobject_;
+    _impl_.Operation_.casobject_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
   }
-#else   // PROTOBUF_FORCE_COPY_IN_RELEASE
-  if (GetArena() != nullptr) {
-    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+}
+inline void Action::unsafe_arena_set_allocated_casobject(::llbuild3::CASObjectID* value) {
+  // We rely on the oneof clear method to free the earlier contents
+  // of this oneof. We can directly use the pointer we're given to
+  // set the new value.
+  clear_Operation();
+  if (value) {
+    set_has_casobject();
+    _impl_.Operation_.casobject_ = value;
   }
-#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
-  return released;
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:llbuild3.Action.casObject)
 }
-inline ::llbuild3::CASObjectID* Action::unsafe_arena_release_operation() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:llbuild3.Action.operation)
-
-  _impl_._has_bits_[0] &= ~0x00000001u;
-  ::llbuild3::CASObjectID* temp = _impl_.operation_;
-  _impl_.operation_ = nullptr;
-  return temp;
-}
-inline ::llbuild3::CASObjectID* Action::_internal_mutable_operation() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.operation_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::llbuild3::CASObjectID>(GetArena());
-    _impl_.operation_ = reinterpret_cast<::llbuild3::CASObjectID*>(p);
+inline ::llbuild3::CASObjectID* Action::_internal_mutable_casobject() {
+  if (Operation_case() != kCasObject) {
+    clear_Operation();
+    set_has_casobject();
+    _impl_.Operation_.casobject_ =
+        ::google::protobuf::Message::DefaultConstruct<::llbuild3::CASObjectID>(GetArena());
   }
-  return _impl_.operation_;
+  return _impl_.Operation_.casobject_;
 }
-inline ::llbuild3::CASObjectID* Action::mutable_operation() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  _impl_._has_bits_[0] |= 0x00000001u;
-  ::llbuild3::CASObjectID* _msg = _internal_mutable_operation();
-  // @@protoc_insertion_point(field_mutable:llbuild3.Action.operation)
+inline ::llbuild3::CASObjectID* Action::mutable_casobject() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::llbuild3::CASObjectID* _msg = _internal_mutable_casobject();
+  // @@protoc_insertion_point(field_mutable:llbuild3.Action.casObject)
   return _msg;
 }
-inline void Action::set_allocated_operation(::llbuild3::CASObjectID* value) {
-  ::google::protobuf::Arena* message_arena = GetArena();
+
+// .llbuild3.Subprocess subprocess = 2;
+inline bool Action::has_subprocess() const {
+  return Operation_case() == kSubprocess;
+}
+inline bool Action::_internal_has_subprocess() const {
+  return Operation_case() == kSubprocess;
+}
+inline void Action::set_has_subprocess() {
+  _impl_._oneof_case_[0] = kSubprocess;
+}
+inline void Action::clear_subprocess() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (message_arena == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.operation_);
-  }
-
-  if (value != nullptr) {
-    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(value)->GetArena();
-    if (message_arena != submessage_arena) {
-      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+  if (Operation_case() == kSubprocess) {
+    if (GetArena() == nullptr) {
+      delete _impl_.Operation_.subprocess_;
+    } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
+      ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.Operation_.subprocess_);
     }
-    _impl_._has_bits_[0] |= 0x00000001u;
-  } else {
-    _impl_._has_bits_[0] &= ~0x00000001u;
+    clear_has_Operation();
   }
-
-  _impl_.operation_ = reinterpret_cast<::llbuild3::CASObjectID*>(value);
-  // @@protoc_insertion_point(field_set_allocated:llbuild3.Action.operation)
+}
+inline ::llbuild3::Subprocess* Action::release_subprocess() {
+  // @@protoc_insertion_point(field_release:llbuild3.Action.subprocess)
+  if (Operation_case() == kSubprocess) {
+    clear_has_Operation();
+    auto* temp = _impl_.Operation_.subprocess_;
+    if (GetArena() != nullptr) {
+      temp = ::google::protobuf::internal::DuplicateIfNonNull(temp);
+    }
+    _impl_.Operation_.subprocess_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::llbuild3::Subprocess& Action::_internal_subprocess() const {
+  return Operation_case() == kSubprocess ? *_impl_.Operation_.subprocess_ : reinterpret_cast<::llbuild3::Subprocess&>(::llbuild3::_Subprocess_default_instance_);
+}
+inline const ::llbuild3::Subprocess& Action::subprocess() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:llbuild3.Action.subprocess)
+  return _internal_subprocess();
+}
+inline ::llbuild3::Subprocess* Action::unsafe_arena_release_subprocess() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:llbuild3.Action.subprocess)
+  if (Operation_case() == kSubprocess) {
+    clear_has_Operation();
+    auto* temp = _impl_.Operation_.subprocess_;
+    _impl_.Operation_.subprocess_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void Action::unsafe_arena_set_allocated_subprocess(::llbuild3::Subprocess* value) {
+  // We rely on the oneof clear method to free the earlier contents
+  // of this oneof. We can directly use the pointer we're given to
+  // set the new value.
+  clear_Operation();
+  if (value) {
+    set_has_subprocess();
+    _impl_.Operation_.subprocess_ = value;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:llbuild3.Action.subprocess)
+}
+inline ::llbuild3::Subprocess* Action::_internal_mutable_subprocess() {
+  if (Operation_case() != kSubprocess) {
+    clear_Operation();
+    set_has_subprocess();
+    _impl_.Operation_.subprocess_ =
+        ::google::protobuf::Message::DefaultConstruct<::llbuild3::Subprocess>(GetArena());
+  }
+  return _impl_.Operation_.subprocess_;
+}
+inline ::llbuild3::Subprocess* Action::mutable_subprocess() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::llbuild3::Subprocess* _msg = _internal_mutable_subprocess();
+  // @@protoc_insertion_point(field_mutable:llbuild3.Action.subprocess)
+  return _msg;
 }
 
-// .llbuild3.Label function = 2;
+// .llbuild3.Label function = 3;
 inline bool Action::has_function() const {
-  bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.function_ != nullptr);
   return value;
 }
@@ -3481,16 +3199,16 @@ inline void Action::unsafe_arena_set_allocated_function(::llbuild3::Label* value
   }
   _impl_.function_ = reinterpret_cast<::llbuild3::Label*>(value);
   if (value != nullptr) {
-    _impl_._has_bits_[0] |= 0x00000002u;
+    _impl_._has_bits_[0] |= 0x00000001u;
   } else {
-    _impl_._has_bits_[0] &= ~0x00000002u;
+    _impl_._has_bits_[0] &= ~0x00000001u;
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:llbuild3.Action.function)
 }
 inline ::llbuild3::Label* Action::release_function() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
-  _impl_._has_bits_[0] &= ~0x00000002u;
+  _impl_._has_bits_[0] &= ~0x00000001u;
   ::llbuild3::Label* released = _impl_.function_;
   _impl_.function_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
@@ -3510,7 +3228,7 @@ inline ::llbuild3::Label* Action::unsafe_arena_release_function() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:llbuild3.Action.function)
 
-  _impl_._has_bits_[0] &= ~0x00000002u;
+  _impl_._has_bits_[0] &= ~0x00000001u;
   ::llbuild3::Label* temp = _impl_.function_;
   _impl_.function_ = nullptr;
   return temp;
@@ -3524,7 +3242,7 @@ inline ::llbuild3::Label* Action::_internal_mutable_function() {
   return _impl_.function_;
 }
 inline ::llbuild3::Label* Action::mutable_function() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  _impl_._has_bits_[0] |= 0x00000002u;
+  _impl_._has_bits_[0] |= 0x00000001u;
   ::llbuild3::Label* _msg = _internal_mutable_function();
   // @@protoc_insertion_point(field_mutable:llbuild3.Action.function)
   return _msg;
@@ -3541,16 +3259,16 @@ inline void Action::set_allocated_function(::llbuild3::Label* value) {
     if (message_arena != submessage_arena) {
       value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
     }
-    _impl_._has_bits_[0] |= 0x00000002u;
+    _impl_._has_bits_[0] |= 0x00000001u;
   } else {
-    _impl_._has_bits_[0] &= ~0x00000002u;
+    _impl_._has_bits_[0] &= ~0x00000001u;
   }
 
   _impl_.function_ = reinterpret_cast<::llbuild3::Label*>(value);
   // @@protoc_insertion_point(field_set_allocated:llbuild3.Action.function)
 }
 
-// bool volatile = 3;
+// bool volatile = 4;
 inline void Action::clear_volatile_() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.volatile__ = false;
@@ -3572,16 +3290,16 @@ inline void Action::_internal_set_volatile_(bool value) {
   _impl_.volatile__ = value;
 }
 
-// .llbuild3.Platform platform = 4;
+// .llbuild3.Platform platform = 5;
 inline bool Action::has_platform() const {
-  bool value = (_impl_._has_bits_[0] & 0x00000004u) != 0;
+  bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.platform_ != nullptr);
   return value;
 }
 inline void Action::clear_platform() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.platform_ != nullptr) _impl_.platform_->Clear();
-  _impl_._has_bits_[0] &= ~0x00000004u;
+  _impl_._has_bits_[0] &= ~0x00000002u;
 }
 inline const ::llbuild3::Platform& Action::_internal_platform() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -3599,16 +3317,16 @@ inline void Action::unsafe_arena_set_allocated_platform(::llbuild3::Platform* va
   }
   _impl_.platform_ = reinterpret_cast<::llbuild3::Platform*>(value);
   if (value != nullptr) {
-    _impl_._has_bits_[0] |= 0x00000004u;
+    _impl_._has_bits_[0] |= 0x00000002u;
   } else {
-    _impl_._has_bits_[0] &= ~0x00000004u;
+    _impl_._has_bits_[0] &= ~0x00000002u;
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:llbuild3.Action.platform)
 }
 inline ::llbuild3::Platform* Action::release_platform() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
-  _impl_._has_bits_[0] &= ~0x00000004u;
+  _impl_._has_bits_[0] &= ~0x00000002u;
   ::llbuild3::Platform* released = _impl_.platform_;
   _impl_.platform_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
@@ -3628,7 +3346,7 @@ inline ::llbuild3::Platform* Action::unsafe_arena_release_platform() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:llbuild3.Action.platform)
 
-  _impl_._has_bits_[0] &= ~0x00000004u;
+  _impl_._has_bits_[0] &= ~0x00000002u;
   ::llbuild3::Platform* temp = _impl_.platform_;
   _impl_.platform_ = nullptr;
   return temp;
@@ -3642,7 +3360,7 @@ inline ::llbuild3::Platform* Action::_internal_mutable_platform() {
   return _impl_.platform_;
 }
 inline ::llbuild3::Platform* Action::mutable_platform() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  _impl_._has_bits_[0] |= 0x00000004u;
+  _impl_._has_bits_[0] |= 0x00000002u;
   ::llbuild3::Platform* _msg = _internal_mutable_platform();
   // @@protoc_insertion_point(field_mutable:llbuild3.Action.platform)
   return _msg;
@@ -3659,15 +3377,24 @@ inline void Action::set_allocated_platform(::llbuild3::Platform* value) {
     if (message_arena != submessage_arena) {
       value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
     }
-    _impl_._has_bits_[0] |= 0x00000004u;
+    _impl_._has_bits_[0] |= 0x00000002u;
   } else {
-    _impl_._has_bits_[0] &= ~0x00000004u;
+    _impl_._has_bits_[0] &= ~0x00000002u;
   }
 
   _impl_.platform_ = reinterpret_cast<::llbuild3::Platform*>(value);
   // @@protoc_insertion_point(field_set_allocated:llbuild3.Action.platform)
 }
 
+inline bool Action::has_Operation() const {
+  return Operation_case() != OPERATION_NOT_SET;
+}
+inline void Action::clear_has_Operation() {
+  _impl_._oneof_case_[0] = OPERATION_NOT_SET;
+}
+inline Action::OperationCase Action::Operation_case() const {
+  return Action::OperationCase(_impl_._oneof_case_[0]);
+}
 // -------------------------------------------------------------------
 
 // Platform_Property
@@ -3897,71 +3624,82 @@ inline ::llbuild3::CASObjectID* ActionResult::mutable_casobject() ABSL_ATTRIBUTE
   return _msg;
 }
 
-// .google.protobuf.Any protoObject = 2;
-inline bool ActionResult::has_protoobject() const {
-  return ActionResultValue_case() == kProtoObject;
+// .llbuild3.SubprocessResult subprocess = 2;
+inline bool ActionResult::has_subprocess() const {
+  return ActionResultValue_case() == kSubprocess;
 }
-inline bool ActionResult::_internal_has_protoobject() const {
-  return ActionResultValue_case() == kProtoObject;
+inline bool ActionResult::_internal_has_subprocess() const {
+  return ActionResultValue_case() == kSubprocess;
 }
-inline void ActionResult::set_has_protoobject() {
-  _impl_._oneof_case_[0] = kProtoObject;
+inline void ActionResult::set_has_subprocess() {
+  _impl_._oneof_case_[0] = kSubprocess;
 }
-inline ::google::protobuf::Any* ActionResult::release_protoobject() {
-  // @@protoc_insertion_point(field_release:llbuild3.ActionResult.protoObject)
-  if (ActionResultValue_case() == kProtoObject) {
+inline void ActionResult::clear_subprocess() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (ActionResultValue_case() == kSubprocess) {
+    if (GetArena() == nullptr) {
+      delete _impl_.ActionResultValue_.subprocess_;
+    } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
+      ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.ActionResultValue_.subprocess_);
+    }
     clear_has_ActionResultValue();
-    auto* temp = _impl_.ActionResultValue_.protoobject_;
+  }
+}
+inline ::llbuild3::SubprocessResult* ActionResult::release_subprocess() {
+  // @@protoc_insertion_point(field_release:llbuild3.ActionResult.subprocess)
+  if (ActionResultValue_case() == kSubprocess) {
+    clear_has_ActionResultValue();
+    auto* temp = _impl_.ActionResultValue_.subprocess_;
     if (GetArena() != nullptr) {
       temp = ::google::protobuf::internal::DuplicateIfNonNull(temp);
     }
-    _impl_.ActionResultValue_.protoobject_ = nullptr;
+    _impl_.ActionResultValue_.subprocess_ = nullptr;
     return temp;
   } else {
     return nullptr;
   }
 }
-inline const ::google::protobuf::Any& ActionResult::_internal_protoobject() const {
-  return ActionResultValue_case() == kProtoObject ? *_impl_.ActionResultValue_.protoobject_ : reinterpret_cast<::google::protobuf::Any&>(::google::protobuf::_Any_default_instance_);
+inline const ::llbuild3::SubprocessResult& ActionResult::_internal_subprocess() const {
+  return ActionResultValue_case() == kSubprocess ? *_impl_.ActionResultValue_.subprocess_ : reinterpret_cast<::llbuild3::SubprocessResult&>(::llbuild3::_SubprocessResult_default_instance_);
 }
-inline const ::google::protobuf::Any& ActionResult::protoobject() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:llbuild3.ActionResult.protoObject)
-  return _internal_protoobject();
+inline const ::llbuild3::SubprocessResult& ActionResult::subprocess() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:llbuild3.ActionResult.subprocess)
+  return _internal_subprocess();
 }
-inline ::google::protobuf::Any* ActionResult::unsafe_arena_release_protoobject() {
-  // @@protoc_insertion_point(field_unsafe_arena_release:llbuild3.ActionResult.protoObject)
-  if (ActionResultValue_case() == kProtoObject) {
+inline ::llbuild3::SubprocessResult* ActionResult::unsafe_arena_release_subprocess() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:llbuild3.ActionResult.subprocess)
+  if (ActionResultValue_case() == kSubprocess) {
     clear_has_ActionResultValue();
-    auto* temp = _impl_.ActionResultValue_.protoobject_;
-    _impl_.ActionResultValue_.protoobject_ = nullptr;
+    auto* temp = _impl_.ActionResultValue_.subprocess_;
+    _impl_.ActionResultValue_.subprocess_ = nullptr;
     return temp;
   } else {
     return nullptr;
   }
 }
-inline void ActionResult::unsafe_arena_set_allocated_protoobject(::google::protobuf::Any* value) {
+inline void ActionResult::unsafe_arena_set_allocated_subprocess(::llbuild3::SubprocessResult* value) {
   // We rely on the oneof clear method to free the earlier contents
   // of this oneof. We can directly use the pointer we're given to
   // set the new value.
   clear_ActionResultValue();
   if (value) {
-    set_has_protoobject();
-    _impl_.ActionResultValue_.protoobject_ = value;
+    set_has_subprocess();
+    _impl_.ActionResultValue_.subprocess_ = value;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:llbuild3.ActionResult.protoObject)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:llbuild3.ActionResult.subprocess)
 }
-inline ::google::protobuf::Any* ActionResult::_internal_mutable_protoobject() {
-  if (ActionResultValue_case() != kProtoObject) {
+inline ::llbuild3::SubprocessResult* ActionResult::_internal_mutable_subprocess() {
+  if (ActionResultValue_case() != kSubprocess) {
     clear_ActionResultValue();
-    set_has_protoobject();
-    _impl_.ActionResultValue_.protoobject_ =
-        ::google::protobuf::Message::DefaultConstruct<::google::protobuf::Any>(GetArena());
+    set_has_subprocess();
+    _impl_.ActionResultValue_.subprocess_ =
+        ::google::protobuf::Message::DefaultConstruct<::llbuild3::SubprocessResult>(GetArena());
   }
-  return _impl_.ActionResultValue_.protoobject_;
+  return _impl_.ActionResultValue_.subprocess_;
 }
-inline ::google::protobuf::Any* ActionResult::mutable_protoobject() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  ::google::protobuf::Any* _msg = _internal_mutable_protoobject();
-  // @@protoc_insertion_point(field_mutable:llbuild3.ActionResult.protoObject)
+inline ::llbuild3::SubprocessResult* ActionResult::mutable_subprocess() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::llbuild3::SubprocessResult* _msg = _internal_mutable_subprocess();
+  // @@protoc_insertion_point(field_mutable:llbuild3.ActionResult.subprocess)
   return _msg;
 }
 

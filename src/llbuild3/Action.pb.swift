@@ -28,6 +28,33 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
+public struct Llbuild3_FileObject: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// The path of the input/output. This path must be relative.
+  public var path: String = String()
+
+  public var type: Llbuild3_FileType = .plainFile
+
+  /// ID of the CASTree FileInformation encoded object.
+  public var object: Llbuild3_CASObjectID {
+    get {return _object ?? Llbuild3_CASObjectID()}
+    set {_object = newValue}
+  }
+  /// Returns true if `object` has been explicitly set.
+  public var hasObject: Bool {return self._object != nil}
+  /// Clears the value of `object`. Subsequent reads from it will return its default value.
+  public mutating func clearObject() {self._object = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _object: Llbuild3_CASObjectID? = nil
+}
+
 public struct Llbuild3_Subprocess: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -41,7 +68,7 @@ public struct Llbuild3_Subprocess: Sendable {
 
   public var workingDirectory: String = String()
 
-  public var inputs: [Llbuild3_Subprocess.Input] = []
+  public var inputs: [Llbuild3_FileObject] = []
 
   public var outputPaths: [String] = []
 
@@ -63,34 +90,6 @@ public struct Llbuild3_Subprocess: Sendable {
     public init() {}
   }
 
-  public struct Input: Sendable {
-    // SwiftProtobuf.Message conformance is added in an extension below. See the
-    // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
-    // methods supported on all messages.
-
-    /// The path where the input should be expected to be placed. This path
-    /// must be relative.
-    public var path: String = String()
-
-    public var type: Llbuild3_FileType = .plainFile
-
-    /// ID of the CASTree FileInformation encoded object.
-    public var object: Llbuild3_CASObjectID {
-      get {return _object ?? Llbuild3_CASObjectID()}
-      set {_object = newValue}
-    }
-    /// Returns true if `object` has been explicitly set.
-    public var hasObject: Bool {return self._object != nil}
-    /// Clears the value of `object`. Subsequent reads from it will return its default value.
-    public mutating func clearObject() {self._object = nil}
-
-    public var unknownFields = SwiftProtobuf.UnknownStorage()
-
-    public init() {}
-
-    fileprivate var _object: Llbuild3_CASObjectID? = nil
-  }
-
   public init() {}
 }
 
@@ -99,7 +98,7 @@ public struct Llbuild3_SubprocessResult: Sendable {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var outputs: [Llbuild3_SubprocessResult.Output] = []
+  public var outputs: [Llbuild3_FileObject] = []
 
   public var exitCode: Int32 = 0
 
@@ -114,33 +113,6 @@ public struct Llbuild3_SubprocessResult: Sendable {
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public struct Output: Sendable {
-    // SwiftProtobuf.Message conformance is added in an extension below. See the
-    // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
-    // methods supported on all messages.
-
-    /// The path where this output was collected from
-    public var path: String = String()
-
-    public var type: Llbuild3_FileType = .plainFile
-
-    /// ID of the CASTree FileInformation encoded object
-    public var object: Llbuild3_CASObjectID {
-      get {return _object ?? Llbuild3_CASObjectID()}
-      set {_object = newValue}
-    }
-    /// Returns true if `object` has been explicitly set.
-    public var hasObject: Bool {return self._object != nil}
-    /// Clears the value of `object`. Subsequent reads from it will return its default value.
-    public mutating func clearObject() {self._object = nil}
-
-    public var unknownFields = SwiftProtobuf.UnknownStorage()
-
-    public init() {}
-
-    fileprivate var _object: Llbuild3_CASObjectID? = nil
-  }
-
   public init() {}
 
   fileprivate var _stdout: Llbuild3_CASObjectID? = nil
@@ -151,14 +123,23 @@ public struct Llbuild3_Action: Sendable {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var operation: Llbuild3_CASObjectID {
-    get {return _operation ?? Llbuild3_CASObjectID()}
-    set {_operation = newValue}
+  public var operation: Llbuild3_Action.OneOf_Operation? = nil
+
+  public var casObject: Llbuild3_CASObjectID {
+    get {
+      if case .casObject(let v)? = operation {return v}
+      return Llbuild3_CASObjectID()
+    }
+    set {operation = .casObject(newValue)}
   }
-  /// Returns true if `operation` has been explicitly set.
-  public var hasOperation: Bool {return self._operation != nil}
-  /// Clears the value of `operation`. Subsequent reads from it will return its default value.
-  public mutating func clearOperation() {self._operation = nil}
+
+  public var subprocess: Llbuild3_Subprocess {
+    get {
+      if case .subprocess(let v)? = operation {return v}
+      return Llbuild3_Subprocess()
+    }
+    set {operation = .subprocess(newValue)}
+  }
 
   /// The label of the function used to execute the operation.
   public var function: Llbuild3_Label {
@@ -184,9 +165,14 @@ public struct Llbuild3_Action: Sendable {
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
+  public enum OneOf_Operation: Equatable, Sendable {
+    case casObject(Llbuild3_CASObjectID)
+    case subprocess(Llbuild3_Subprocess)
+
+  }
+
   public init() {}
 
-  fileprivate var _operation: Llbuild3_CASObjectID? = nil
   fileprivate var _function: Llbuild3_Label? = nil
   fileprivate var _platform: Llbuild3_Platform? = nil
 }
@@ -232,12 +218,12 @@ public struct Llbuild3_ActionResult: Sendable {
     set {actionResultValue = .casObject(newValue)}
   }
 
-  public var protoObject: SwiftProtobuf.Google_Protobuf_Any {
+  public var subprocess: Llbuild3_SubprocessResult {
     get {
-      if case .protoObject(let v)? = actionResultValue {return v}
-      return SwiftProtobuf.Google_Protobuf_Any()
+      if case .subprocess(let v)? = actionResultValue {return v}
+      return Llbuild3_SubprocessResult()
     }
-    set {actionResultValue = .protoObject(newValue)}
+    set {actionResultValue = .subprocess(newValue)}
   }
 
   public var metadata: Llbuild3_ActionExecutionMetadata {
@@ -253,7 +239,7 @@ public struct Llbuild3_ActionResult: Sendable {
 
   public enum OneOf_ActionResultValue: Equatable, Sendable {
     case casObject(Llbuild3_CASObjectID)
-    case protoObject(SwiftProtobuf.Google_Protobuf_Any)
+    case subprocess(Llbuild3_SubprocessResult)
 
   }
 
@@ -388,6 +374,54 @@ public struct Llbuild3_ActionExecutionMetadata: @unchecked Sendable {
 
 fileprivate let _protobuf_package = "llbuild3"
 
+extension Llbuild3_FileObject: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".FileObject"
+  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
+    1: .same(proto: "path"),
+    2: .same(proto: "type"),
+    3: .same(proto: "object"),
+  ]
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.path) }()
+      case 2: try { try decoder.decodeSingularEnumField(value: &self.type) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._object) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if !self.path.isEmpty {
+      try visitor.visitSingularStringField(value: self.path, fieldNumber: 1)
+    }
+    if self.type != .plainFile {
+      try visitor.visitSingularEnumField(value: self.type, fieldNumber: 2)
+    }
+    try { if let v = self._object {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Llbuild3_FileObject, rhs: Llbuild3_FileObject) -> Bool {
+    if lhs.path != rhs.path {return false}
+    if lhs.type != rhs.type {return false}
+    if lhs._object != rhs._object {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
 extension Llbuild3_Subprocess: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Subprocess"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
@@ -482,54 +516,6 @@ extension Llbuild3_Subprocess.EnvironmentVariable: SwiftProtobuf.Message, SwiftP
   }
 }
 
-extension Llbuild3_Subprocess.Input: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = Llbuild3_Subprocess.protoMessageName + ".Input"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "path"),
-    2: .same(proto: "type"),
-    3: .same(proto: "object"),
-  ]
-
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every case branch when no optimizations are
-      // enabled. https://github.com/apple/swift-protobuf/issues/1034
-      switch fieldNumber {
-      case 1: try { try decoder.decodeSingularStringField(value: &self.path) }()
-      case 2: try { try decoder.decodeSingularEnumField(value: &self.type) }()
-      case 3: try { try decoder.decodeSingularMessageField(value: &self._object) }()
-      default: break
-      }
-    }
-  }
-
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    // The use of inline closures is to circumvent an issue where the compiler
-    // allocates stack space for every if/case branch local when no optimizations
-    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
-    // https://github.com/apple/swift-protobuf/issues/1182
-    if !self.path.isEmpty {
-      try visitor.visitSingularStringField(value: self.path, fieldNumber: 1)
-    }
-    if self.type != .plainFile {
-      try visitor.visitSingularEnumField(value: self.type, fieldNumber: 2)
-    }
-    try { if let v = self._object {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
-    } }()
-    try unknownFields.traverse(visitor: &visitor)
-  }
-
-  public static func ==(lhs: Llbuild3_Subprocess.Input, rhs: Llbuild3_Subprocess.Input) -> Bool {
-    if lhs.path != rhs.path {return false}
-    if lhs.type != rhs.type {return false}
-    if lhs._object != rhs._object {return false}
-    if lhs.unknownFields != rhs.unknownFields {return false}
-    return true
-  }
-}
-
 extension Llbuild3_SubprocessResult: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".SubprocessResult"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
@@ -578,61 +564,14 @@ extension Llbuild3_SubprocessResult: SwiftProtobuf.Message, SwiftProtobuf._Messa
   }
 }
 
-extension Llbuild3_SubprocessResult.Output: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = Llbuild3_SubprocessResult.protoMessageName + ".Output"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "path"),
-    2: .same(proto: "type"),
-    3: .same(proto: "object"),
-  ]
-
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every case branch when no optimizations are
-      // enabled. https://github.com/apple/swift-protobuf/issues/1034
-      switch fieldNumber {
-      case 1: try { try decoder.decodeSingularStringField(value: &self.path) }()
-      case 2: try { try decoder.decodeSingularEnumField(value: &self.type) }()
-      case 3: try { try decoder.decodeSingularMessageField(value: &self._object) }()
-      default: break
-      }
-    }
-  }
-
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    // The use of inline closures is to circumvent an issue where the compiler
-    // allocates stack space for every if/case branch local when no optimizations
-    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
-    // https://github.com/apple/swift-protobuf/issues/1182
-    if !self.path.isEmpty {
-      try visitor.visitSingularStringField(value: self.path, fieldNumber: 1)
-    }
-    if self.type != .plainFile {
-      try visitor.visitSingularEnumField(value: self.type, fieldNumber: 2)
-    }
-    try { if let v = self._object {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
-    } }()
-    try unknownFields.traverse(visitor: &visitor)
-  }
-
-  public static func ==(lhs: Llbuild3_SubprocessResult.Output, rhs: Llbuild3_SubprocessResult.Output) -> Bool {
-    if lhs.path != rhs.path {return false}
-    if lhs.type != rhs.type {return false}
-    if lhs._object != rhs._object {return false}
-    if lhs.unknownFields != rhs.unknownFields {return false}
-    return true
-  }
-}
-
 extension Llbuild3_Action: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Action"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "operation"),
-    2: .same(proto: "function"),
-    3: .same(proto: "volatile"),
-    4: .same(proto: "platform"),
+    1: .same(proto: "casObject"),
+    2: .same(proto: "subprocess"),
+    3: .same(proto: "function"),
+    4: .same(proto: "volatile"),
+    5: .same(proto: "platform"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -641,10 +580,35 @@ extension Llbuild3_Action: SwiftProtobuf.Message, SwiftProtobuf._MessageImplemen
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularMessageField(value: &self._operation) }()
-      case 2: try { try decoder.decodeSingularMessageField(value: &self._function) }()
-      case 3: try { try decoder.decodeSingularBoolField(value: &self.volatile) }()
-      case 4: try { try decoder.decodeSingularMessageField(value: &self._platform) }()
+      case 1: try {
+        var v: Llbuild3_CASObjectID?
+        var hadOneofValue = false
+        if let current = self.operation {
+          hadOneofValue = true
+          if case .casObject(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.operation = .casObject(v)
+        }
+      }()
+      case 2: try {
+        var v: Llbuild3_Subprocess?
+        var hadOneofValue = false
+        if let current = self.operation {
+          hadOneofValue = true
+          if case .subprocess(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.operation = .subprocess(v)
+        }
+      }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._function) }()
+      case 4: try { try decoder.decodeSingularBoolField(value: &self.volatile) }()
+      case 5: try { try decoder.decodeSingularMessageField(value: &self._platform) }()
       default: break
       }
     }
@@ -655,23 +619,31 @@ extension Llbuild3_Action: SwiftProtobuf.Message, SwiftProtobuf._MessageImplemen
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
     // https://github.com/apple/swift-protobuf/issues/1182
-    try { if let v = self._operation {
+    switch self.operation {
+    case .casObject?: try {
+      guard case .casObject(let v)? = self.operation else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
-    } }()
-    try { if let v = self._function {
+    }()
+    case .subprocess?: try {
+      guard case .subprocess(let v)? = self.operation else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    }()
+    case nil: break
+    }
+    try { if let v = self._function {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
     } }()
     if self.volatile != false {
-      try visitor.visitSingularBoolField(value: self.volatile, fieldNumber: 3)
+      try visitor.visitSingularBoolField(value: self.volatile, fieldNumber: 4)
     }
     try { if let v = self._platform {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
     } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Llbuild3_Action, rhs: Llbuild3_Action) -> Bool {
-    if lhs._operation != rhs._operation {return false}
+    if lhs.operation != rhs.operation {return false}
     if lhs._function != rhs._function {return false}
     if lhs.volatile != rhs.volatile {return false}
     if lhs._platform != rhs._platform {return false}
@@ -754,7 +726,7 @@ extension Llbuild3_ActionResult: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
   public static let protoMessageName: String = _protobuf_package + ".ActionResult"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "casObject"),
-    2: .same(proto: "protoObject"),
+    2: .same(proto: "subprocess"),
     3: .same(proto: "metadata"),
   ]
 
@@ -778,16 +750,16 @@ extension Llbuild3_ActionResult: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
         }
       }()
       case 2: try {
-        var v: SwiftProtobuf.Google_Protobuf_Any?
+        var v: Llbuild3_SubprocessResult?
         var hadOneofValue = false
         if let current = self.actionResultValue {
           hadOneofValue = true
-          if case .protoObject(let m) = current {v = m}
+          if case .subprocess(let m) = current {v = m}
         }
         try decoder.decodeSingularMessageField(value: &v)
         if let v = v {
           if hadOneofValue {try decoder.handleConflictingOneOf()}
-          self.actionResultValue = .protoObject(v)
+          self.actionResultValue = .subprocess(v)
         }
       }()
       case 3: try { try decoder.decodeSingularMessageField(value: &self._metadata) }()
@@ -806,8 +778,8 @@ extension Llbuild3_ActionResult: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
       guard case .casObject(let v)? = self.actionResultValue else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
     }()
-    case .protoObject?: try {
-      guard case .protoObject(let v)? = self.actionResultValue else { preconditionFailure() }
+    case .subprocess?: try {
+      guard case .subprocess(let v)? = self.actionResultValue else { preconditionFailure() }
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
     }()
     case nil: break
