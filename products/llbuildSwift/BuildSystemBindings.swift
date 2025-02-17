@@ -250,7 +250,7 @@ public protocol ExternalCommand: AnyObject {
     var dependencyPaths: [String] { get }
     
     /// Format of the dependency files listed in `dependencyPaths`.
-    var depedencyDataFormat: DependencyDataFormat { get }
+    var dependencyDataFormat: DependencyDataFormat { get }
 
     /// Optional. The command's working directory. Used to resolve relative paths in dependency files.
     var workingDirectory: String? { get }
@@ -407,7 +407,7 @@ public extension ExternalCommand {
 
 // Default implementations for these hooks since they're optional to the client.
 public extension ExternalCommand {
-    var depedencyDataFormat: DependencyDataFormat { .unused }
+    var dependencyDataFormat: DependencyDataFormat { .unused }
     var dependencyPaths: [String] { [] }
     var workingDirectory: String? { nil }
     func start(_ command: Command, _ commandInterface: BuildSystemCommandInterface) {}
@@ -442,7 +442,7 @@ private final class CommandWrapper {
         if !command.dependencyPaths.isEmpty {
             var formatKey = copiedDataFromBytes(Array("deps-style".utf8))
             var value: llb_data_t
-            switch command.depedencyDataFormat {
+            switch command.dependencyDataFormat {
             case .makefile:
                 value = copiedDataFromBytes(Array("makefile".utf8))
             case .dependencyinfo:
