@@ -15,7 +15,7 @@
 #endif
 
 #if defined(IS_X86)
-static uint64_t xgetbv() {
+static uint64_t xgetbv(void) {
 #if defined(_MSC_VER)
   return _xgetbv(0);
 #else

@@ -11595,14 +11595,17 @@
 				GCC_ENABLE_CPP_RTTI = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_FUNCTION = NO;
+				GCC_WARN_UNUSED_VARIABLE = NO;
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
+				OTHER_CFLAGS = (
+					"-DBLAKE3_NO_AVX512",
+					"-DBLAKE3_NO_SSE41",
+					"-DBLAKE3_NO_AVX2",
+				);
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-Wimplicit-fallthrough",
 					"-Wno-deprecated-this-capture",
-					"-DBLAKE3_NO_AVX2",
-					"-DBLAKE3_NO_AVX512",
-					"-DBLAKE3_NO_SSE41",
 				);
 				USER_HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/include",
@@ -11626,14 +11629,17 @@
 				GCC_ENABLE_CPP_RTTI = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_FUNCTION = NO;
+				GCC_WARN_UNUSED_VARIABLE = NO;
 				MACOSX_DEPLOYMENT_TARGET = 14.6;
+				OTHER_CFLAGS = (
+					"-DBLAKE3_NO_AVX512",
+					"-DBLAKE3_NO_SSE41",
+					"-DBLAKE3_NO_AVX2",
+				);
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-Wimplicit-fallthrough",
 					"-Wno-deprecated-this-capture",
-					"-DBLAKE3_NO_AVX2",
-					"-DBLAKE3_NO_AVX512",
-					"-DBLAKE3_NO_SSE41",
 				);
 				USER_HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/include",
