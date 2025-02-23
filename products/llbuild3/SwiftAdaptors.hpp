@@ -81,7 +81,7 @@ struct ExtRule;
 struct ExtRuleProvider {
   void* ctx;
 
-  // FIXME: some method for cleaning up context
+  void (*releaseFn)(void* ctx);
 
   void (*rulePrefixesFn)(void*, std::vector<LabelPB>*);
   void (*artifactPrefixesFn)(void*, std::vector<LabelPB>*);
@@ -131,7 +131,7 @@ struct ExtTask {
 
   bool isInit = false;
 
-  // FIXME: some method for cleaning up context
+  void (*releaseFn)(void* ctx);
 
   void (*producesFn)(void*, std::vector<LabelPB>*);
   bool (*computeFn)(void*, ExtTaskInterface, const TaskContextPB*, const TaskInputsPB*, SubtaskResultMap*, TaskNextStatePB*);
@@ -143,7 +143,7 @@ struct ExtRule {
   LabelPB name;
   SignaturePB signature;
 
-  // FIXME: some method for cleaning up context
+  void (*releaseFn)(void* ctx);
 
   void (*producesFn)(void*, std::vector<LabelPB>*);
 
@@ -164,7 +164,7 @@ public:
 struct ExtActionCache {
   void* ctx;
 
-  // FIXME: cleanup context
+  void (*releaseFn)(void* ctx);
 
   void (*getFn)(void* ctx, CacheKeyPB key, std::function<void (CacheValuePB, ErrorPB)>);
   void (*updateFn)(void*, CacheKeyPB key, CacheValuePB value);

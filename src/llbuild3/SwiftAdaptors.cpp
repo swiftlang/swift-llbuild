@@ -50,6 +50,9 @@ public:
 
     (void)success;
   }
+  ~ExtTaskAdaptor() {
+    task.releaseFn(task.ctx);
+  }
 
   const Label& name() const { return taskName; }
   const Signature& signature() const { return taskSignature; }
@@ -160,6 +163,9 @@ private:
 public:
   ExtRuleProviderAdaptor(ExtRuleProvider ruleProvider)
       : ruleProvider(ruleProvider) {}
+  ~ExtRuleProviderAdaptor() {
+    ruleProvider.releaseFn(ruleProvider.ctx);
+  }
 
   std::vector<Label> rulePrefixes() {
     std::vector<LabelPB> prefixes;
@@ -474,6 +480,7 @@ private:
 
 public:
   ExtActionCacheAdaptor(ExtActionCache extCache) : extCache(extCache) { }
+  ~ExtActionCacheAdaptor() { extCache.releaseFn(extCache.ctx); }
 
   void get(const CacheKey& key, std::function<void(result<CacheValue, Error>)> resultHandler) {
     CacheKeyPB kpb;

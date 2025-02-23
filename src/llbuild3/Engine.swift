@@ -304,6 +304,10 @@ extension TTask {
 
     task.ctx = Unmanaged.passRetained(self as AnyObject).toOpaque()
 
+    task.releaseFn = { ctx in
+      let _ = Unmanaged<AnyObject>.fromOpaque(ctx!).takeRetainedValue()
+    }
+
     task.producesFn = { ctx, lblp in
       let sp = Unmanaged<AnyObject>.fromOpaque(ctx!).takeUnretainedValue() as! TTask
       var lblvector = lblp.pointee
@@ -423,6 +427,10 @@ extension TRule {
     rule.signature = std.string(fromData: sigbytes)
 
     rule.ctx = Unmanaged.passRetained(self as AnyObject).toOpaque()
+
+    rule.releaseFn = { ctx in
+      let _ = Unmanaged<AnyObject>.fromOpaque(ctx!).takeRetainedValue()
+    }
 
     rule.producesFn = { ctx, lblp in
       let sp = Unmanaged<AnyObject>.fromOpaque(ctx!).takeUnretainedValue() as! TRule
@@ -554,6 +562,10 @@ extension TRuleProvider {
   var extRuleProvider: llbuild3.ExtRuleProvider {
     var rp = llbuild3.ExtRuleProvider()
     rp.ctx = Unmanaged.passRetained(self as AnyObject).toOpaque()
+
+    rp.releaseFn = { ctx in
+      let _ = Unmanaged<AnyObject>.fromOpaque(ctx!).takeRetainedValue()
+    }
 
     rp.rulePrefixesFn = { ctx, lblp in
       let sp = Unmanaged<AnyObject>.fromOpaque(ctx!).takeUnretainedValue() as! TRuleProvider
