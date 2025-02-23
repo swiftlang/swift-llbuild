@@ -22,11 +22,14 @@
 #include "llbuild3/Label.h"
 #include "llbuild3/support/LabelTrie.h"
 
+#include "blake3.h"
+
 #include <algorithm>
 #include <atomic>
 #include <cassert>
 #include <condition_variable>
 #include <cstdio>
+#include <cstring>
 #include <deque>
 #include <memory>
 #include <mutex>
@@ -121,10 +124,13 @@ class EngineImpl: public ActionExecutorListener {
   struct TaskInputRequest {
     bool isRule;
     Label label;
+    uint64_t sid;
   };
 
   struct PendingAction {
     ActionID execID;
+    Action action;
+    uint64_t sid;
     std::optional<result<ActionResult, Error>> result;
   };
 
@@ -137,6 +143,8 @@ class EngineImpl: public ActionExecutorListener {
     uint64_t minBuild;
 
     std::unique_ptr<Task> task;
+
+    std::unordered_map<uint64_t, uint64_t> stableIDMap;
 
     std::unordered_map<uint64_t, TaskInputRequest> requestedTaskInputs;
     std::unordered_set<uint64_t> requestedBy;
@@ -324,9 +332,11 @@ public:
       if (entry.has_value()) {
         // task is already in flight, just return the id
         assert(taskInfos.contains(taskID));
-        taskInfos.at(taskID).requestedTaskInputs.insert(
-            {*entry, TaskInputRequest{false, label}});
-        return *entry;
+        auto& ti = taskInfos.at(taskID);
+        auto sid = stableHashTaskRequest(false, label);
+        ti.requestedTaskInputs.insert({*entry, TaskInputRequest{false, label, sid}});
+        ti.stableIDMap.insert({sid, *entry});
+        return sid;
       }
 
       assert(taskInfos.contains(taskID));
@@ -348,8 +358,11 @@ public:
       if (res.has_value()) {
         std::lock_guard<std::mutex> lock(taskInfosMutex);
         assert(taskInfos.contains(taskID));
-        taskInfos.at(taskID).requestedTaskInputs.insert(
-            {*res, TaskInputRequest{false, label}});
+        auto& ti = taskInfos.at(taskID);
+        auto sid = stableHashTaskRequest(false, label);
+        ti.requestedTaskInputs.insert({*res, TaskInputRequest{false, label, sid}});
+        ti.stableIDMap.insert({sid, *res});
+        return sid;
       }
       return res;
     }
@@ -394,8 +407,11 @@ public:
       if (res.has_value()) {
         std::lock_guard<std::mutex> lock(taskInfosMutex);
         assert(taskInfos.contains(taskID));
-        taskInfos.at(taskID).requestedTaskInputs.insert(
-            {*res, TaskInputRequest{false, label}});
+        auto& ti = taskInfos.at(taskID);
+        auto sid = stableHashTaskRequest(false, label);
+        ti.requestedTaskInputs.insert({*res, TaskInputRequest{false, label, sid}});
+        ti.stableIDMap.insert({sid, *res});
+        return sid;
       }
       return res;
     }
@@ -437,8 +453,11 @@ public:
       if (res.has_value()) {
         std::lock_guard<std::mutex> lock(taskInfosMutex);
         assert(taskInfos.contains(taskID));
-        taskInfos.at(taskID).requestedTaskInputs.insert(
-            {*res, TaskInputRequest{true, label}});
+        auto& ti = taskInfos.at(taskID);
+        auto sid = stableHashTaskRequest(true, label);
+        ti.requestedTaskInputs.insert({*res, TaskInputRequest{true, label, sid}});
+        ti.stableIDMap.insert({sid, *res});
+        return sid;
       }
       return res;
     }
@@ -483,8 +502,11 @@ public:
       if (res.has_value()) {
         std::lock_guard<std::mutex> lock(taskInfosMutex);
         assert(taskInfos.contains(taskID));
-        taskInfos.at(taskID).requestedTaskInputs.insert(
-            {*res, TaskInputRequest{true, label}});
+        auto& ti = taskInfos.at(taskID);
+        auto sid = stableHashTaskRequest(true, label);
+        ti.requestedTaskInputs.insert({*res, TaskInputRequest{true, label, sid}});
+        ti.stableIDMap.insert({sid, *res});
+        return sid;
       }
       return res;
     }
@@ -522,14 +544,17 @@ public:
     // record the subtask as pending
     std::lock_guard<std::mutex> lock(taskInfosMutex);
     auto& rTaskInfo = taskInfos.at(taskID);
-    rTaskInfo.pendingActions.insert({workID, {*res, {}}});
+    auto sid = stableHashActionRequest(action);
+    rTaskInfo.pendingActions.insert({workID, {*res, action, sid, {}}});
+    rTaskInfo.stableIDMap.insert({sid, workID});
 
-    return workID;
+    return sid;
   }
 
   result<uint64_t, Error> taskSpawnSubtask(uint64_t taskID, const Subtask& subtask) {
     uint64_t buildID = 0;
     uint64_t workID = 0;
+    uint64_t sid = 0;
 
     // check if an active task exists
     {
@@ -538,6 +563,7 @@ public:
       auto& rTaskInfo = taskInfos.at(taskID);
       buildID = rTaskInfo.minBuild;
       workID = nextTaskID++;
+      sid = stableHashSubtaskRequest(workID);
       subtaskTaskMap.insert({workID, taskID});
     }
 
@@ -557,8 +583,9 @@ public:
     std::lock_guard<std::mutex> lock(taskInfosMutex);
     auto& rTaskInfo = taskInfos.at(taskID);
     rTaskInfo.pendingSubtasks.insert({workID, {}});
+    rTaskInfo.stableIDMap.insert({sid, workID});
 
-    return workID;
+    return sid;
   }
 
   /// @}
@@ -623,6 +650,62 @@ public:
   /// @}
 
 private:
+  static uint64_t stableHashTaskRequest(bool isRule, const Label& label) {
+    blake3_hasher hasher;
+
+    blake3_hasher_init(&hasher);
+
+    if (isRule) {
+      blake3_hasher_update(&hasher, "tr", 2);
+    } else {
+      blake3_hasher_update(&hasher, "ta", 2);
+    }
+
+    std::string lblstr;
+    label.SerializeToString(&lblstr);
+    blake3_hasher_update(&hasher, lblstr.data(), lblstr.size());
+
+    std::array<uint8_t, sizeof(uint64_t)> buffer;
+    blake3_hasher_finalize(&hasher, buffer.data(), buffer.size());
+
+    uint64_t rval;
+    std::memcpy(&rval, buffer.data(), sizeof(uint64_t));
+    return rval;
+  }
+
+  static uint64_t stableHashActionRequest(const Action& action) {
+    blake3_hasher hasher;
+
+    blake3_hasher_init(&hasher);
+    blake3_hasher_update(&hasher, "a", 1);
+
+    std::string actstr;
+    action.SerializeToString(&actstr);
+    blake3_hasher_update(&hasher, actstr.data(), actstr.size());
+
+    std::array<uint8_t, sizeof(uint64_t)> buffer;
+    blake3_hasher_finalize(&hasher, buffer.data(), buffer.size());
+
+    uint64_t rval;
+    std::memcpy(&rval, buffer.data(), sizeof(uint64_t));
+    return rval;
+  }
+
+  static uint64_t stableHashSubtaskRequest(const uint64_t subtaskID) {
+    blake3_hasher hasher;
+
+    blake3_hasher_init(&hasher);
+    blake3_hasher_update(&hasher, "s", 1);
+    blake3_hasher_update(&hasher, &subtaskID, sizeof(subtaskID));
+
+    std::array<uint8_t, sizeof(uint64_t)> buffer;
+    blake3_hasher_finalize(&hasher, buffer.data(), buffer.size());
+
+    uint64_t rval;
+    std::memcpy(&rval, buffer.data(), sizeof(uint64_t));
+    return rval;
+  }
+
   result<uint64_t, Error> constructTask(uint64_t buildID, Rule* rule,
                                         const Label& label) {
     std::lock_guard<std::mutex> lock(taskInfosMutex);
@@ -727,7 +810,8 @@ private:
   void checkTaskCacheForReadyTask(TaskInfo& taskInfo, const TaskContext& ctx,
                                   const TaskInputs& inputs,
                                   const SubtaskResults& sres) {
-    if (!actionCache) {
+    // If no action cache, or if there are any pending subtasks, skip the check
+    if (!actionCache || taskInfo.pendingSubtasks.size() > 0) {
       enqueueReadyTask(taskInfo, ctx, inputs, sres);
       return;
     }
@@ -778,7 +862,42 @@ private:
             return;
           }
 
-          // FIXME: handle initiated async requests
+          std::vector<const TaskRequest*> newreqs;
+          {
+            std::lock_guard<std::mutex> lock(taskInfosMutex);
+            for (int i = 0; i < value.requests_size(); i++) {
+              auto sid = value.requests(i).id();
+              if (taskInfo.stableIDMap.find(sid) == taskInfo.stableIDMap.end()) {
+                // not found, need to initiate the request
+                newreqs.push_back(&value.requests(i));
+              }
+            }
+          }
+
+          for (auto req : newreqs) {
+            result<uint64_t, Error> res;
+            switch (req->details_case()) {
+              case TaskRequest::kArtifact:
+                res = taskRequestArtifact(taskInfo.id, req->artifact().label());
+                break;
+              case TaskRequest::kRule:
+                res = taskRequestRule(taskInfo.id, req->rule().label());
+                break;
+              case TaskRequest::kAction:
+                res = taskRequestAction(taskInfo.id, req->action());
+                break;
+              default:
+                res = fail(makeEngineError(EngineError::InternalProtobufSerialization,
+                                           "unsupported task request type in cached value"));
+                break;
+            }
+
+            if (res.has_error()) {
+              // FIXME: log error
+              enqueueReadyTask(taskInfo, ctx, inputs, sres);
+              return;
+            }
+          }
 
           processTaskNextState(taskInfo, value.state());
         });
@@ -797,54 +916,73 @@ private:
     if (!taskInfo.task->props.cacheable)
       return;
 
-    auto work = [this, ctx, inputs, &taskInfo, next](const JobContext&) {
-      // Set up transition key
-      TaskTransitionKey key;
-      *key.mutable_ctx() = ctx;
-      *key.mutable_signature() = taskInfo.task->signature();
-      *key.mutable_inputs() = inputs;
+    // Skip if this task has outstanding subtasks
+    if (taskInfo.pendingSubtasks.size() > 0)
+      return;
 
-      CASObject keyObj;
-      key.SerializeToString(keyObj.mutable_data());
+    // Set up transition key
+    TaskTransitionKey key;
+    *key.mutable_ctx() = ctx;
+    *key.mutable_signature() = taskInfo.task->signature();
+    *key.mutable_inputs() = inputs;
 
-      // Set up transition value
-      TaskTransitionValue value;
-      *value.mutable_state() = next;
-      // FIXME: handle newly initiated requests
+    CASObject keyObj;
+    key.SerializeToString(keyObj.mutable_data());
 
-      CASObject valueObj;
-      value.SerializeToString(valueObj.mutable_data());
+    // Set up transition value
+    TaskTransitionValue value;
+    *value.mutable_state() = next;
+    {
+      std::lock_guard<std::mutex> lock(taskInfosMutex);
 
-      // Store both in CAS
-      casDB->put(keyObj, [this, &taskInfo, valueObj](result<CASObjectID, Error> res) {
+      for (auto& req : taskInfo.requestedTaskInputs) {
+        auto& tr = *value.add_requests();
+        tr.set_id(req.second.sid);
+        if (req.second.isRule) {
+          *tr.mutable_rule()->mutable_label() = req.second.label;
+        } else {
+          *tr.mutable_artifact()->mutable_label() = req.second.label;
+        }
+      }
+
+      for (auto& act : taskInfo.pendingActions) {
+        auto& tr = *value.add_requests();
+        tr.set_id(act.second.sid);
+        *tr.mutable_action() = act.second.action;
+      }
+    }
+
+    CASObject valueObj;
+    value.SerializeToString(valueObj.mutable_data());
+
+    // Store both in CAS
+    casDB->put(keyObj, [this, name=taskInfo.task->name(), valueObj](result<CASObjectID, Error> res) {
+      if (res.has_error()) {
+        // caching is best effort, on failure just continue
+        // FIXME: report error
+        return;
+      }
+
+      auto keyID = *res;
+      casDB->put(valueObj, [this, name, keyID](result<CASObjectID, Error> res) {
         if (res.has_error()) {
           // caching is best effort, on failure just continue
           // FIXME: report error
           return;
         }
+        CacheKey cacheKey;
+        *cacheKey.mutable_label() = name;
+        cacheKey.set_type(CACHE_KEY_TYPE_TASK);
+        *cacheKey.mutable_content() = keyID;
 
-        auto keyID = *res;
-        casDB->put(valueObj, [this, &taskInfo, keyID](result<CASObjectID, Error> res) {
-          if (res.has_error()) {
-            // caching is best effort, on failure just continue
-            // FIXME: report error
-            return;
-          }
-          CacheKey cacheKey;
-          *cacheKey.mutable_label() = taskInfo.task->name();
-          cacheKey.set_type(CACHE_KEY_TYPE_TASK);
-          *cacheKey.mutable_content() = keyID;
+        CacheValue cacheValue;
+        *cacheValue.mutable_data() = *res;
 
-          CacheValue cacheValue;
-          *cacheValue.mutable_data() = *res;
+        // FIXME: record action stats
 
-          // FIXME: record action stats
-
-          actionCache->update(cacheKey, cacheValue);
-        });
+        actionCache->update(cacheKey, cacheValue);
       });
-    };
-    addJob(Job({taskInfo.minBuild, taskInfo.id}, work));
+    });
   }
 
   void processTaskNextState(TaskInfo& taskInfo, const TaskNextState& next) {
@@ -857,7 +995,14 @@ private:
       bool badInput = false;
       uint64_t badID = 0;
       std::unordered_set<uint64_t> unresolvedInputs;
-      for (auto id : batchState.ids()) {
+      for (auto sid : batchState.ids()) {
+        auto idp = taskInfo.stableIDMap.find(sid);
+        if (idp == taskInfo.stableIDMap.end()) {
+          badInput = true;
+          badID = sid;
+          break;
+        }
+        auto id = idp->second;
         if (taskInfo.requestedTaskInputs.contains(id)) {
           auto& inputTask = taskInfos.at(id);
 
@@ -876,7 +1021,7 @@ private:
           }
         } else {
           badInput = true;
-          badID = id;
+          badID = sid;
           break;
         }
       }
@@ -948,21 +1093,37 @@ private:
       TaskInputs inputs;
       SubtaskResults sres;
 
-      for (auto id : batchState.ids()) {
+      for (auto sid : batchState.ids()) {
+        auto idp = taskInfo.stableIDMap.find(sid);
+        if (idp == taskInfo.stableIDMap.end()) {
+          // bad stable ID?
+          auto err = taskInfo.nextState.mutable_error();
+          err->set_type(ErrorType::ENGINE);
+          err->set_code(rawCode(EngineError::InternalInconsistency));
+          err->set_description("stable ID not found " + std::to_string(sid));
+
+          processFinishedTask(taskInfo);
+          return;
+        }
+        auto id = idp->second;
+        taskInfo.stableIDMap.erase(idp);
         if (auto it = taskInfos.find(id); it != taskInfos.end()) {
           auto& inputTask = it->second;
           auto input = inputs.add_inputs();
           auto& req = taskInfo.requestedTaskInputs.at(id);
           prepareInput(input, inputTask, req);
+          taskInfo.requestedTaskInputs.erase(id);
         } else if (auto it = taskInfo.pendingActions.find(id);
                    it != taskInfo.pendingActions.end()) {
           auto& inputAction = it->second;
           auto input = inputs.add_inputs();
-          prepareActionResult(input, id, *inputAction.result);
+          prepareActionResult(input, inputAction.sid, *inputAction.result);
+          taskInfo.pendingActions.erase(it);
         } else if (auto it = taskInfo.pendingSubtasks.find(id);
                    it != taskInfo.pendingSubtasks.end()) {
           assert(it->second.has_value());
-          sres.insert({id, it->second.value()});
+          sres.insert({sid, it->second.value()});
+          taskInfo.pendingSubtasks.erase(it);
         } else {
           // bad input
           auto err = taskInfo.nextState.mutable_error();
@@ -987,7 +1148,7 @@ private:
 
   void prepareInput(TaskInput* input, const TaskInfo& taskInfo,
                     const TaskInputRequest& req) const {
-    input->set_id(taskInfo.id);
+    input->set_id(req.sid);
     if (taskInfo.nextState.has_result()) {
       if (req.isRule) {
         *input->mutable_result() = taskInfo.nextState.result();
@@ -1011,9 +1172,9 @@ private:
     }
   }
 
-  void prepareActionResult(TaskInput* input, uint64_t id,
+  void prepareActionResult(TaskInput* input, uint64_t sid,
                            const result<ActionResult, Error>& res) const {
-    input->set_id(id);
+    input->set_id(sid);
     if (res.has_value()) {
       *input->mutable_action() = *res;
     } else {
@@ -1140,14 +1301,16 @@ private:
       auto taskID = IntTaskInterface(ti).taskID();
       std::lock_guard<std::mutex> lock(engine.engineStateMutex);
       if (!engine.initialized) {
-        uint64_t initTaskID;
         Label initlbl;
         initlbl.add_components("__init__");
+        auto sid = stableHashTaskRequest(true, initlbl);
+
         if (engine.initTask.has_value()) {
-          initTaskID = *engine.initTask;
+          auto initTaskID = *engine.initTask;
           std::lock_guard<std::mutex> lock(engine.taskInfosMutex);
-          engine.taskInfos.at(taskID).requestedTaskInputs.insert(
-              {initTaskID, TaskInputRequest{true, initlbl}});
+          auto& ti = engine.taskInfos.at(taskID);
+          ti.requestedTaskInputs.insert({initTaskID, TaskInputRequest{true, initlbl, sid}});
+          ti.stableIDMap.insert({sid, initTaskID});
         } else {
           std::unique_ptr<Task> task(new InitTask(engine));
           result<uint64_t, Error> res;
@@ -1155,8 +1318,10 @@ private:
             std::lock_guard<std::mutex> lock(engine.taskInfosMutex);
             res = engine.insertTask(1, std::move(task));
             if (res) {
-              engine.taskInfos.at(taskID).requestedTaskInputs.insert(
-                  {*res, TaskInputRequest{true, initlbl}});
+              auto& ti = engine.taskInfos.at(taskID);
+              ti.requestedTaskInputs.insert({*res, TaskInputRequest{true, initlbl, sid}});
+              ti.stableIDMap.insert({sid, *res});
+              engine.initTask = *res;
             }
           }
 
@@ -1167,11 +1332,10 @@ private:
             next.mutable_result();
             return next;
           }
-          initTaskID = *res;
         }
 
         TaskNextState next;
-        next.mutable_wait()->add_ids(initTaskID);
+        next.mutable_wait()->add_ids(sid);
         next.mutable_wait()->mutable_context()->set_intstate(raw(State::Initialization));
         return next;
 

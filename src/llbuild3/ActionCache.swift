@@ -20,6 +20,10 @@ extension TActionCache {
     var extcache = llbuild3.ExtActionCache()
     extcache.ctx = Unmanaged.passRetained(self as AnyObject).toOpaque()
 
+    extcache.releaseFn = { ctx in
+      let _ = Unmanaged<AnyObject>.fromOpaque(ctx!).takeRetainedValue()
+    }
+
     extcache.getFn = { ctx, kpb, handler in
       let key: TCacheKey
       do {
