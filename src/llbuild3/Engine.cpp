@@ -103,6 +103,10 @@ class EngineImpl: public ActionExecutorListener {
   /// The action executor
   std::shared_ptr<ActionExecutor> actionExecutor;
 
+  /// The logger
+  std::shared_ptr<Logger> logger;
+  LoggingContext logctx;
+
   std::mutex ruleProvidersMutex;
   std::vector<std::unique_ptr<RuleProvider>> ruleProviders;
   typedef std::vector<std::unique_ptr<RuleProvider>>::size_type ProviderID;
@@ -203,9 +207,19 @@ class EngineImpl: public ActionExecutorListener {
 public:
   EngineImpl(EngineConfig config, std::shared_ptr<CASDatabase> casDB,
              std::shared_ptr<ActionCache> cache,
-             std::shared_ptr<ActionExecutor> executor)
+             std::shared_ptr<ActionExecutor> executor,
+             std::shared_ptr<Logger> logger,
+             std::shared_ptr<ClientContext> clientContext)
     : cfg(config), casDB(casDB), actionCache(cache), actionExecutor(executor)
+    , logger(logger)
   {
+    // Ensure we always have a valid logger
+    if (!this->logger) {
+      this->logger = std::make_shared<NullLogger>();
+    }
+    logctx.engine = engineID;
+    logctx.clientContext = clientContext;
+
     actionExecutor->attachListener(engineID, this);
 
     for (unsigned i = 0; i != numLanes; ++i) {
@@ -294,6 +308,10 @@ public:
       std::lock_guard<std::mutex> lock(engineStateMutex);
       buildID = ++buildRequestCount;
     }
+    logger->event(logctx, {
+      makeStat("log.message", "build_started"),
+      makeStat("build_id", buildID)
+    });
     std::unique_ptr<Task> task(new RootTask(*this, buildID, artifact, context));
 
     result<uint64_t, Error> res;
@@ -303,6 +321,11 @@ public:
     }
 
     if (res.has_error()) {
+      logger->event(logctx, {
+        makeStat("log.message", "build_completed"),
+        makeStat("build_id", buildID),
+        makeStat("status", res.error())
+      });
       std::lock_guard<std::mutex> lock(context->buildMutex);
       context->buildResult = fail(res.error());
     }
@@ -832,11 +855,11 @@ private:
       CacheKey cacheKey;
       *cacheKey.mutable_label() = taskInfo.task->name();
       cacheKey.set_type(CACHE_KEY_TYPE_TASK);
-      *cacheKey.mutable_content() = keyID;
+      *cacheKey.mutable_data() = keyID;
 
       actionCache->get(cacheKey, [this, ctx, inputs, sres, &taskInfo](result<CacheValue, Error> res) {
         if (res.has_error()) {
-          // FIXME: log error
+          logger->error(logctx, res.error());
           enqueueReadyTask(taskInfo, ctx, inputs, sres);
           return;
         }
@@ -850,14 +873,17 @@ private:
         // load entry
         casDB->get(res->data(), [this, ctx, inputs, sres, &taskInfo](result<CASObject, Error> res) {
           if (res.has_error()) {
-            // FIXME: log error
+            logger->error(logctx, res.error());
             enqueueReadyTask(taskInfo, ctx, inputs, sres);
             return;
           }
 
           TaskTransitionValue value;
           if (!value.ParseFromString(res->data())) {
-            // FIXME: log error
+            logger->error(logctx,
+              makeEngineError(EngineError::InternalProtobufSerialization,
+                              "failed to parse cached task transition")
+            );
             enqueueReadyTask(taskInfo, ctx, inputs, sres);
             return;
           }
@@ -893,7 +919,7 @@ private:
             }
 
             if (res.has_error()) {
-              // FIXME: log error
+              logger->error(logctx, res.error());
               enqueueReadyTask(taskInfo, ctx, inputs, sres);
               return;
             }
@@ -956,24 +982,24 @@ private:
     value.SerializeToString(valueObj.mutable_data());
 
     // Store both in CAS
-    casDB->put(keyObj, [this, name=taskInfo.task->name(), valueObj](result<CASObjectID, Error> res) {
+    casDB->put(keyObj, [this, name=taskInfo.task->name(), valueObj](result<CASID, Error> res) {
       if (res.has_error()) {
         // caching is best effort, on failure just continue
-        // FIXME: report error
+        logger->error(logctx, res.error());
         return;
       }
 
       auto keyID = *res;
-      casDB->put(valueObj, [this, name, keyID](result<CASObjectID, Error> res) {
+      casDB->put(valueObj, [this, name, keyID](result<CASID, Error> res) {
         if (res.has_error()) {
           // caching is best effort, on failure just continue
-          // FIXME: report error
+          logger->error(logctx, res.error());
           return;
         }
         CacheKey cacheKey;
         *cacheKey.mutable_label() = name;
         cacheKey.set_type(CACHE_KEY_TYPE_TASK);
-        *cacheKey.mutable_content() = keyID;
+        *cacheKey.mutable_data() = keyID;
 
         CacheValue cacheValue;
         *cacheValue.mutable_data() = *res;
@@ -1203,7 +1229,7 @@ private:
 
     TaskNextState compute(TaskInterface ti, const TaskContext& ctx,
                           const TaskInputs& inputs, const SubtaskResults&) {
-      if (ctx.has_intstate()) {
+      if (ctx.has_int_state()) {
         std::lock_guard<std::mutex> lock(engine.engineStateMutex);
         engine.initialized = true;
 
@@ -1234,7 +1260,7 @@ private:
 
       TaskNextState next;
       next.mutable_wait()->add_ids(*ares);
-      next.mutable_wait()->mutable_context()->set_intstate(1);
+      next.mutable_wait()->mutable_context()->set_int_state(1);
       return next;
     }
   };
@@ -1246,6 +1272,7 @@ private:
 
   class RootTask : public Task {
     EngineImpl& engine;
+    uint64_t buildID;
     Label requestName;
     Label artifact;
     Signature taskSignature;
@@ -1263,7 +1290,7 @@ private:
   public:
     RootTask(EngineImpl& engine, uint64_t requestID, const Label& artifact,
              std::shared_ptr<BuildContext> buildContext)
-        : Task(Task::Properties(false, false)), engine(engine), artifact(artifact), buildContext(buildContext) {
+        : Task(Task::Properties(false, false)), engine(engine), buildID(requestID), artifact(artifact), buildContext(buildContext) {
       requestName.add_components("__build__");
       requestName.add_components(std::to_string(requestID));
     }
@@ -1276,8 +1303,8 @@ private:
     TaskNextState compute(TaskInterface ti, const TaskContext& ctx,
                           const TaskInputs& inputs, const SubtaskResults&) {
       State state = State::Start;
-      if (ctx.has_intstate()) {
-        state = static_cast<State>(ctx.intstate());
+      if (ctx.has_int_state()) {
+        state = static_cast<State>(ctx.int_state());
       }
 
       switch (state) {
@@ -1336,7 +1363,7 @@ private:
 
         TaskNextState next;
         next.mutable_wait()->add_ids(sid);
-        next.mutable_wait()->mutable_context()->set_intstate(raw(State::Initialization));
+        next.mutable_wait()->mutable_context()->set_int_state(raw(State::Initialization));
         return next;
 
       } else {
@@ -1376,7 +1403,7 @@ private:
 
       TaskNextState next;
       next.mutable_wait()->add_ids(*ares);
-      next.mutable_wait()->mutable_context()->set_intstate(raw(State::Artifact));
+      next.mutable_wait()->mutable_context()->set_int_state(raw(State::Artifact));
       return next;
     }
 
@@ -1401,6 +1428,12 @@ private:
 
 
     void sendResult(const result<Artifact, Error>& buildResult) {
+      engine.logger->event(engine.logctx, {
+        makeStat("log.message", "build_completed"),
+        makeStat("build_id", buildID),
+        buildResult.has_error() ? makeStat("status", buildResult.error()) : makeStat("status", "success")
+
+      });
       std::lock_guard<std::mutex> lock(buildContext->buildMutex);
 
       buildContext->buildResult = buildResult;
@@ -1514,8 +1547,10 @@ void Build::addCompletionHandler(
 Engine::Engine(EngineConfig config, std::shared_ptr<CASDatabase> casDB,
                std::shared_ptr<ActionCache> cache,
                std::shared_ptr<ActionExecutor> executor,
+               std::shared_ptr<Logger> logger,
+               std::shared_ptr<ClientContext> clientContext,
                std::unique_ptr<RuleProvider>&& init)
-    : impl(new EngineImpl(config, casDB, cache, executor)) {
+    : impl(new EngineImpl(config, casDB, cache, executor, logger, clientContext)) {
   static_cast<EngineImpl*>(impl)->internalRegisterRuleProvider(std::move(init));
 }
 

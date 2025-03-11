@@ -5,6 +5,7 @@ mapping {
     proto_file_path: "llbuild3/Artifact.proto"
     proto_file_path: "llbuild3/CAS.proto"
     proto_file_path: "llbuild3/CASTree.proto"
+    proto_file_path: "llbuild3/Common.proto"
     proto_file_path: "llbuild3/Engine.proto"
     proto_file_path: "llbuild3/Error.proto"
     proto_file_path: "llbuild3/Label.proto"

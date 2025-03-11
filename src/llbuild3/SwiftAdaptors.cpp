@@ -15,8 +15,10 @@
 
 #include "llbuild3/ActionCache.h"
 #include "llbuild3/ActionExecutor.h"
-#include "llbuild3/LocalExecutor.h"
 #include "llbuild3/CAS.h"
+#include "llbuild3/LocalExecutor.h"
+#include "llbuild3/Logging.h"
+#include "llbuild3/RemoteExecutor.h"
 #include "llbuild3/Engine.h"
 
 #include <cassert>
@@ -33,6 +35,60 @@ inline Error makeProtoError() {
 } // namespace
 
 namespace llbuild3 {
+
+ClientContextRef makeExtClientContext(void* ctx, void (*releaseFn)(void* ctx)) {
+  return std::make_shared<ClientContext>(ctx, releaseFn);
+}
+
+class ExtLoggerAdaptor : public Logger {
+private:
+  ExtLogger ext;
+
+public:
+  ExtLoggerAdaptor(ExtLogger ext) : ext(ext) { }
+  ~ExtLoggerAdaptor() {
+    ext.releaseFn(ext.ctx);
+  }
+
+  void error(LoggingContext lctx, Error err) {
+    ErrorPB errpb;
+    if (!err.SerializeToString(&errpb)) {
+      return;
+    }
+
+    ext.errorFn(ext.ctx, convertContext(lctx), errpb);
+  }
+
+  void event(LoggingContext lctx, const std::vector<Stat>& stats) {
+    std::vector<StatPB> sv;
+
+    for (auto& s: stats) {
+      std::string spb;
+      if (!s.SerializeToString(&spb)) {
+        return;
+      }
+      sv.push_back(std::move(spb));
+    }
+
+    ext.eventFn(ext.ctx, convertContext(lctx), &sv);
+  }
+
+private:
+  inline ExtLoggerContext convertContext(const LoggingContext& lctx) const {
+    ExtLoggerContext ectx;
+    if (lctx.clientContext) ectx.ctx = lctx.clientContext->get();
+    if (lctx.engine) {
+      auto idbytes = lctx.engine->as_bytes();
+      ectx.engineID = std::string(reinterpret_cast<const char*>(idbytes.data()), idbytes.size_bytes());
+    }
+    return ectx;
+  }
+};
+
+LoggerRef makeExtLogger(ExtLogger ext) {
+  return std::make_shared<ExtLoggerAdaptor>(ext);
+}
+
 
 class ExtTaskAdaptor : public Task {
 private:
@@ -328,7 +384,7 @@ public:
     extCASDB.releaseFn(extCASDB.ctx);
   }
 
-  void contains(const CASObjectID& casid, std::function<void(result<bool, Error>)> resultHandler) {
+  void contains(const CASID& casid, std::function<void(result<bool, Error>)> resultHandler) {
     extCASDB.containsFn(extCASDB.ctx, casid.bytes(), std::function([resultHandler](bool found, ErrorPB error) {
       if (error.size() > 0) {
         Error err;
@@ -341,7 +397,7 @@ public:
     }));
   }
 
-  void get(const CASObjectID& casid, std::function<void(result<CASObject, Error>)> resultHandler) {
+  void get(const CASID& casid, std::function<void(result<CASObject, Error>)> resultHandler) {
     extCASDB.getFn(extCASDB.ctx, casid.bytes(), std::function([resultHandler](CASObjectPB object, ErrorPB error) {
       if (error.size() > 0) {
         Error err;
@@ -355,7 +411,7 @@ public:
     }));
   }
 
-  void put(const CASObject& object, std::function<void(result<CASObjectID, Error>)> resultHandler) {
+  void put(const CASObject& object, std::function<void(result<CASID, Error>)> resultHandler) {
     CASObjectPB opb;
     if (!object.SerializeToString(&opb)) {
       Error err;
@@ -371,21 +427,21 @@ public:
         err.ParseFromString(error);
         resultHandler(fail(err));
       } else {
-        CASObjectID objid;
+        CASID objid;
         *objid.mutable_bytes() = casid;
         resultHandler(objid);
       }
     }));
   }
 
-  CASObjectID identify(const CASObject& object) {
+  CASID identify(const CASObject& object) {
     CASObjectPB opb;
     if (!object.SerializeToString(&opb)) {
       // FIXME: propagate error?
-      return CASObjectID();
+      return CASID();
     }
 
-    CASObjectID objid;
+    CASID objid;
     *objid.mutable_bytes() = extCASDB.identifyFn(extCASDB.ctx, opb);
     return objid;
   }
@@ -406,7 +462,7 @@ void* getRawCASDatabaseContext(std::shared_ptr<CASDatabase> casDB) {
 }
 
 void adaptedCASDatabaseContains(CASDatabaseRef casDB, CASIDBytes idbytes, void* ctx, void (*handler)(void*, result<bool, ErrorPB>*)) {
-  CASObjectID id;
+  CASID id;
   *id.mutable_bytes() = idbytes;
 
   casDB->contains(id, std::function([ctx, handler](result<bool, Error> res) {
@@ -423,7 +479,7 @@ void adaptedCASDatabaseContains(CASDatabaseRef casDB, CASIDBytes idbytes, void* 
 }
 
 void adaptedCASDatabaseGet(CASDatabaseRef casDB, CASIDBytes idbytes, void* ctx, void (*handler)(void*, result<CASObjectPB, ErrorPB>*)) {
-  CASObjectID id;
+  CASID id;
   *id.mutable_bytes() = idbytes;
 
   casDB->get(id, std::function([ctx, handler](result<CASObject, Error> res) {
@@ -452,7 +508,7 @@ void adaptedCASDatabasePut(CASDatabaseRef casDB, CASObjectPB opb, void* ctx, voi
   CASObject obj;
   obj.ParseFromString(opb);
 
-  casDB->put(obj, std::function([ctx, handler](result<CASObjectID, Error> res) {
+  casDB->put(obj, std::function([ctx, handler](result<CASID, Error> res) {
     if (res.has_error()) {
       ErrorPB err;
       res.error().SerializeToString(&err);
@@ -528,6 +584,102 @@ ActionCacheRef makeInMemoryActionCache() {
 }
 
 
+class ExtActionProviderAdaptor: public ActionProvider {
+private:
+  ExtActionProvider ext;
+
+public:
+  ExtActionProviderAdaptor(ExtActionProvider ext) : ext(ext) { }
+  ~ExtActionProviderAdaptor() {
+    ext.releaseFn(ext.ctx);
+  }
+
+  std::vector<Label> prefixes() override {
+    std::vector<LabelPB> prefixes;
+    ext.prefixesFn(ext.ctx, &prefixes);
+    return prefixesFrom(prefixes);
+  }
+
+  result<Label, Error> resolve(const Label& name) override {
+    LabelPB lbl;
+    if (!name.SerializeToString(&lbl)) {
+      Error err;
+      err.set_type(ErrorType::ENGINE);
+      err.set_code(rawCode(EngineError::InternalProtobufSerialization));
+      return fail(err);
+    }
+
+    ErrorPB error;
+    auto resolvedPB = ext.resolveFn(ext.ctx, lbl, &error);
+    if (error.size() > 0) {
+      Error err;
+      err.ParseFromString(error);
+      return fail(err);
+    }
+
+    Label resolved;
+    if (!resolved.ParseFromString(resolvedPB)) {
+      Error err;
+      err.set_type(ErrorType::ENGINE);
+      err.set_code(rawCode(EngineError::InternalProtobufSerialization));
+      return fail(err);
+    }
+    return resolved;
+  }
+
+  result<ActionDescriptor, Error> actionDescriptor(const Label& function) override {
+    LabelPB lbl;
+    if (!function.SerializeToString(&lbl)) {
+      Error err;
+      err.set_type(ErrorType::ENGINE);
+      err.set_code(rawCode(EngineError::InternalProtobufSerialization));
+      return fail(err);
+    }
+
+    ErrorPB error;
+    auto edesc = ext.descriptorFn(ext.ctx, lbl, &error);
+    if (error.size() > 0) {
+      Error err;
+      err.ParseFromString(error);
+      return fail(err);
+    }
+
+    ActionDescriptor desc;
+    if (!desc.name.ParseFromString(edesc.name)) {
+      Error err;
+      err.set_type(ErrorType::ENGINE);
+      err.set_code(rawCode(EngineError::InternalProtobufSerialization));
+      return fail(err);
+    }
+    if (!desc.platform.ParseFromString(edesc.platform)) {
+      Error err;
+      err.set_type(ErrorType::ENGINE);
+      err.set_code(rawCode(EngineError::InternalProtobufSerialization));
+      return fail(err);
+    }
+    desc.executable = edesc.executable;
+
+    return desc;
+  }
+
+private:
+  std::vector<Label> prefixesFrom(const std::vector<LabelPB>& rawPrefixes) {
+    std::vector<Label> prefixes;
+    Label current;
+    for (auto prefix : rawPrefixes) {
+      if (current.ParseFromString(prefix)) {
+        prefixes.push_back(current);
+      }
+    }
+
+    return prefixes;
+  }
+};
+
+ActionProviderRef makeExtActionProvider(ExtActionProvider ext) {
+  return std::make_shared<ExtActionProviderAdaptor>(ext);
+}
+
 class ExtLocalSandboxAdaptor: public LocalSandbox {
 private:
   ExtLocalSandbox ext;
@@ -544,8 +696,14 @@ public:
     return path;
   }
 
+  std::vector<std::pair<std::string, std::string>> environment() override {
+    std::vector<std::pair<std::string, std::string>> env;
+    ext.envFn(ext.ctx, &env);
+    return env;
+  }
+
   std::optional<Error> prepareInput(std::string path, FileType type,
-                                    CASObjectID objID) override {
+                                    CASID objID) override {
     std::string error;
     std::string idbytes = objID.bytes();
     // FIXME: passing all the strings here as pointers because something in
@@ -617,17 +775,108 @@ ActionExecutorRef makeActionExecutor(
   CASDatabaseRef db,
   ActionCacheRef actionCache,
   LocalExecutorRef local,
-  RemoteExecutorRef remote
+  RemoteExecutorRef remote,
+  LoggerRef logger
 ) {
-  return ActionExecutorRef(new ActionExecutor(db, actionCache, local, remote));
+  return ActionExecutorRef(new ActionExecutor(db, actionCache, local, remote, logger));
+}
+
+ErrorPB registerProviderWithExecutor(ActionExecutorRef e, ActionProviderRef p) {
+  auto res = e->registerProvider(p);
+  if (res.has_value()) {
+    ErrorPB err;
+    if (!res->SerializeToString(&err)) {
+      return "failed error serialization";
+    }
+    return err;
+  }
+  return {};
 }
 
 LocalExecutorRef makeLocalExecutor(LocalSandboxProviderRef sandboxProvider) {
   return std::shared_ptr<LocalExecutor>(new LocalExecutor(sandboxProvider));
 }
 
-RemoteExecutorRef makeRemoteExecutor() {
-  return {nullptr};
+
+class ExtRemoteExecutorAdaptor: public RemoteExecutor {
+private:
+  ExtRemoteExecutor ext;
+
+public:
+  ExtRemoteExecutorAdaptor(ExtRemoteExecutor ext) : ext(ext) { }
+  ~ExtRemoteExecutorAdaptor() {
+    ext.releaseFn(ext.ctx);
+  }
+
+  virtual std::string builtinExecutable() const override {
+    return ext.builtinExecutable;
+  }
+
+  virtual void prepare(
+    std::string execPath, std::function<void(result<CASID, Error>)> res
+  ) override {
+
+    ext.prepareFn(ext.ctx, execPath, std::function([res](CASIDBytes bytes, ErrorPB err) {
+      if (err.size() > 0) {
+        Error error;
+        error.ParseFromString(err);
+        res(fail(error));
+        return;
+      }
+
+      CASID objid;
+      *objid.mutable_bytes() = bytes;
+      res(objid);
+    }));
+  }
+
+  virtual void execute(
+    const CASID& functionID,
+    const Action& action,
+    std::function<void(result<RemoteActionID, Error>)> dispatchedFn,
+    std::function<void(result<ActionResult, Error>)> resultFn
+  ) override {
+    ActionPB apb;
+    if (!action.SerializeToString(&apb)) {
+      Error err;
+      err.set_type(ErrorType::ENGINE);
+      err.set_code(rawCode(EngineError::InternalProtobufSerialization));
+      dispatchedFn(fail(err));
+      return;
+    }
+
+    ext.executeFn(
+      ext.ctx, functionID.bytes(), apb,
+      std::function([dispatchedFn](RemoteActionIDBytes id, ErrorPB err) {
+        if (err.size() > 0) {
+          Error error;
+          error.ParseFromString(err);
+          dispatchedFn(fail(error));
+          return;
+        }
+
+        RemoteActionID rid(id.begin(), id.end());
+        dispatchedFn(rid);
+      }),
+      std::function([resultFn](ActionResultPB res, ErrorPB err) {
+        if (err.size() > 0) {
+          Error error;
+          error.ParseFromString(err);
+          resultFn(fail(error));
+          return;
+        }
+
+        ActionResult actres;
+        actres.ParseFromString(res);
+        resultFn(actres);
+      })
+    );
+  }
+};
+
+
+RemoteExecutorRef makeRemoteExecutor(ExtRemoteExecutor ext) {
+  return std::make_shared<ExtRemoteExecutorAdaptor>(ext);
 }
 
 
@@ -672,7 +921,8 @@ BuildRef EngineRef::build(const LabelPB artifact) {
 
 EngineRef makeEngine(
   ExtEngineConfig config, CASDatabaseRef casDB, ActionCacheRef cache,
-  ActionExecutorRef executor, const ExtRuleProvider provider
+  ActionExecutorRef executor, LoggerRef logger, ClientContextRef clientContext,
+  const ExtRuleProvider provider
 ) {
   std::unique_ptr<RuleProvider> rp(new ExtRuleProviderAdaptor(provider));
 
@@ -684,7 +934,7 @@ EngineRef makeEngine(
   }
 
   return EngineRef(std::shared_ptr<Engine>(
-    new Engine(intcfg, casDB, cache, executor, std::move(rp)))
+    new Engine(intcfg, casDB, cache, executor, logger, clientContext, std::move(rp)))
   );
 }
 

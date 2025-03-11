@@ -130,10 +130,10 @@ public struct Llbuild3_TaskContext: Sendable {
 
   public var taskState: Llbuild3_TaskContext.OneOf_TaskState? = nil
 
-  public var casState: Llbuild3_CASObjectID {
+  public var casState: Llbuild3_CASID {
     get {
       if case .casState(let v)? = taskState {return v}
-      return Llbuild3_CASObjectID()
+      return Llbuild3_CASID()
     }
     set {taskState = .casState(newValue)}
   }
@@ -157,7 +157,7 @@ public struct Llbuild3_TaskContext: Sendable {
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public enum OneOf_TaskState: Equatable, Sendable {
-    case casState(Llbuild3_CASObjectID)
+    case casState(Llbuild3_CASID)
     case protoState(SwiftProtobuf.Google_Protobuf_Any)
     case intState(Int64)
 
@@ -462,9 +462,9 @@ extension Llbuild3_TaskInputs: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
 extension Llbuild3_TaskContext: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".TaskContext"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "casState"),
-    2: .same(proto: "protoState"),
-    3: .same(proto: "intState"),
+    1: .standard(proto: "cas_state"),
+    2: .standard(proto: "proto_state"),
+    3: .standard(proto: "int_state"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -474,7 +474,7 @@ extension Llbuild3_TaskContext: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try {
-        var v: Llbuild3_CASObjectID?
+        var v: Llbuild3_CASID?
         var hadOneofValue = false
         if let current = self.taskState {
           hadOneofValue = true

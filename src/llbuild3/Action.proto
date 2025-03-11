@@ -25,7 +25,7 @@ message FileObject {
     FileType type = 2;
 
     // ID of the CASTree FileInformation encoded object.
-    CASObjectID object = 3;
+    CASID object = 3;
 }
 
 
@@ -45,25 +45,25 @@ message Subprocess {
   // The environment variables to set while executing the arguments.
   repeated EnvironmentVariable environment = 2;
 
-  string workingDirectory = 3;
+  string working_directory = 3;
 
   repeated FileObject inputs = 4;
 
-  repeated string outputPaths = 5;
+  repeated string output_paths = 5;
 }
 
 message SubprocessResult {
   repeated FileObject outputs = 1;
 
-  int32 exitCode = 2;
+  int32 exit_code = 2;
 
-  CASObjectID stdout = 3;
+  CASID stdout = 3;
 }
 
 
 message Action {
   oneof Operation {
-    CASObjectID casObject = 1;
+    CASID cas_object = 1;
     Subprocess subprocess = 2;
   }
 
@@ -71,7 +71,7 @@ message Action {
   Label function = 3;
 
   // If true, this action cannot be cached or de-duped.
-  bool volatile = 4;
+  bool is_volatile = 4;
 
   Platform platform = 5;
 }
@@ -87,7 +87,7 @@ message Platform {
 
 message ActionResult {
   oneof ActionResultValue {
-    CASObjectID casObject = 1;
+    CASID cas_object = 1;
     SubprocessResult subprocess = 2;
   }
 
@@ -104,28 +104,37 @@ message ActionExecutionMetadata {
   google.protobuf.Timestamp dispatched = 3;
 
   // When the worker received the action.
-  google.protobuf.Timestamp workerStart = 4;
+  google.protobuf.Timestamp worker_start = 4;
 
   // When the worker completed the action, including all stages.
-  google.protobuf.Timestamp workerCompleted = 5;
+  google.protobuf.Timestamp worker_completed = 5;
 
   // When the worker started executing the action command.
-  google.protobuf.Timestamp executionStart = 6;
+  google.protobuf.Timestamp execution_start = 6;
 
   // When the worker completed executing the action command.
-  google.protobuf.Timestamp executionCompleted = 7;
+  google.protobuf.Timestamp execution_completed = 7;
 
   // The amount of time the worker spent executing the action.
-  google.protobuf.Duration executionDuration = 8;
+  google.protobuf.Duration execution_duration = 8;
+
+  // The amount of user execution time
+  google.protobuf.Duration execution_user_time = 9;
+
+  // The amount of system execution time
+  google.protobuf.Duration execution_system_time = 10;
+
+  // The max memory use of the action
+  uint64 execution_max_rss = 11;
 
   // When the worker started uploading action outputs.
-  google.protobuf.Timestamp outputUploadStart = 9;
+  google.protobuf.Timestamp output_upload_start = 12;
 
   // When the worker finished uploading action outputs.
-  google.protobuf.Timestamp outputUploadCompleted = 10;
+  google.protobuf.Timestamp output_upload_completed = 13;
 
   // When the worker finished uploading action outputs.
-  google.protobuf.Timestamp completed = 11;
+  google.protobuf.Timestamp completed = 14;
 
-  repeated google.protobuf.Any additionalData = 12;
+  repeated google.protobuf.Any additional_data = 15;
 }

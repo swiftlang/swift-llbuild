@@ -23,7 +23,7 @@ void InMemoryActionCache::get(const CacheKey& key, std::function<void(result<Cac
 
   {
     std::lock_guard<std::mutex> lock(cacheMutex);
-    if (auto entry = cache.find(key.content().bytes()); entry != cache.end()) {
+    if (auto entry = cache.find(key.data().bytes()); entry != cache.end()) {
       value = entry->second;
     }
   }
@@ -33,6 +33,6 @@ void InMemoryActionCache::get(const CacheKey& key, std::function<void(result<Cac
 
 void InMemoryActionCache::update(const CacheKey& key, const CacheValue& value) {
   std::lock_guard<std::mutex> lock(cacheMutex);
-  cache.insert_or_assign(key.content().bytes(), value);
+  cache.insert_or_assign(key.data().bytes(), value);
 }
 

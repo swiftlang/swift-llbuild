@@ -50,7 +50,7 @@ void CASLogWriter::append(std::string_view data, uint8_t channel,
   CASObject obj;
   *obj.mutable_data() = data;
   std::weak_ptr<CASLogWriter> weakSelf(shared_from_this());
-  db->put(obj, [weakSelf, channel, handler, size=data.size()](result<CASObjectID, Error> res) {
+  db->put(obj, [weakSelf, channel, handler, size=data.size()](result<CASID, Error> res) {
     if (auto self = weakSelf.lock(); self) {
       self->postChunk(channel, handler, size, res);
     }
@@ -58,7 +58,7 @@ void CASLogWriter::append(std::string_view data, uint8_t channel,
 }
 
 void CASLogWriter::postChunk(uint8_t channel, Handler handler, uint64_t size,
-                             result<CASObjectID, Error> res) {
+                             result<CASID, Error> res) {
   if (res.has_error()) {
     if (handler) handler(res, true);
     return;
@@ -107,7 +107,7 @@ void CASLogWriter::postChunk(uint8_t channel, Handler handler, uint64_t size,
 
   if (newTree.has_value()) {
     std::weak_ptr<CASLogWriter> weakSelf(shared_from_this());
-    newTree->sync([weakSelf, op, isFlush](result<CASObjectID, Error> res) {
+    newTree->sync([weakSelf, op, isFlush](result<CASID, Error> res) {
       if (auto self = weakSelf.lock(); self) {
         self->postSync(op, isFlush, res);
       }
@@ -115,7 +115,7 @@ void CASLogWriter::postChunk(uint8_t channel, Handler handler, uint64_t size,
   }
 }
 
-void CASLogWriter::postSync(uint64_t op, bool isFlush, result<CASObjectID, Error> res) {
+void CASLogWriter::postSync(uint64_t op, bool isFlush, result<CASID, Error> res) {
   uint64_t chainedOp = 0;
   std::optional<CASTree> chainedTree;
   bool chainedFlush = false;
@@ -237,7 +237,7 @@ void CASLogWriter::postSync(uint64_t op, bool isFlush, result<CASObjectID, Error
 
   if (chainedTree.has_value()) {
     std::weak_ptr<CASLogWriter> weakSelf(shared_from_this());
-    chainedTree->sync([weakSelf, chainedOp, chainedFlush](result<CASObjectID, Error> res) {
+    chainedTree->sync([weakSelf, chainedOp, chainedFlush](result<CASID, Error> res) {
       if (auto self = weakSelf.lock(); self) {
         self->postSync(chainedOp, chainedFlush, res);
       }

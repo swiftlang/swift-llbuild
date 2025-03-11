@@ -14,14 +14,14 @@ import Foundation
 
 public protocol TCASDatabase {
   /// Check if the database contains the given `id`.
-  func contains(_ id: TCASObjectID) async throws -> Bool
+  func contains(_ id: TCASID) async throws -> Bool
 
   /// Get the object corresponding to the given `id`.
   ///
   /// - Parameters:
   ///   - id: The id of the object to look up
   /// - Returns: The object, or nil if not present in the database.
-  func get(_ id: TCASObjectID) async throws -> TCASObject?
+  func get(_ id: TCASID) async throws -> TCASObject?
 
   /// Calculate the DataID for the given CAS object.
   ///
@@ -38,7 +38,7 @@ public protocol TCASDatabase {
   ///    - refs: The list of objects references.
   ///    - data: The object contents.
   /// - Returns: The id representing the combination of contents and refs.
-  func identify(_ obj: TCASObject) throws -> TCASObjectID
+  func identify(_ obj: TCASObject) throws -> TCASID
 
   /// Store an object.
   ///
@@ -46,18 +46,18 @@ public protocol TCASDatabase {
   ///    - refs: The list of objects references.
   ///    - data: The object contents.
   /// - Returns: The id representing the combination of contents and refs.
-  func put(_ obj: TCASObject) async throws -> TCASObjectID
+  func put(_ obj: TCASObject) async throws -> TCASID
 }
 
-class AdaptedCASDatabase: TCASDatabase {
+public class AdaptedCASDatabase: TCASDatabase {
   let db: llbuild3.CASDatabaseRef
 
-  init(db: llbuild3.CASDatabaseRef) {
+  public init(db: llbuild3.CASDatabaseRef) {
     self.db = db
   }
 
   /// Check if the database contains the given `id`.
-  func contains(_ id: TCASObjectID) async throws -> Bool {
+  public func contains(_ id: TCASID) async throws -> Bool {
     let sid = std.string(fromData: id.bytes)
     return try await withCheckedThrowingContinuation { continuation in
       let ctx = Unmanaged.passRetained(continuation as AnyObject).toOpaque()
@@ -83,7 +83,7 @@ class AdaptedCASDatabase: TCASDatabase {
   /// - Parameters:
   ///   - id: The id of the object to look up
   /// - Returns: The object, or nil if not present in the database.
-  func get(_ id: TCASObjectID) async throws -> TCASObject? {
+  public func get(_ id: TCASID) async throws -> TCASObject? {
     let sid = std.string(fromData: id.bytes)
     return try await withCheckedThrowingContinuation { continuation in
       let ctx = Unmanaged.passRetained(continuation as AnyObject).toOpaque()
@@ -129,10 +129,10 @@ class AdaptedCASDatabase: TCASDatabase {
   ///    - refs: The list of objects references.
   ///    - data: The object contents.
   /// - Returns: The id representing the combination of contents and refs.
-  func identify(_ obj: TCASObject) throws -> TCASObjectID {
+  public func identify(_ obj: TCASObject) throws -> TCASID {
     let sobj = try obj.llbuild3Serialized()
     let idbytes = llbuild3.adaptedCASDatabaseIdentify(db, sobj);
-    let casid = TCASObjectID.with { casid in
+    let casid = TCASID.with { casid in
       idbytes.withUnsafeBytes { bp in
         casid.bytes = Data(buffer: bp.bindMemory(to: CChar.self))
       }
@@ -146,12 +146,12 @@ class AdaptedCASDatabase: TCASDatabase {
   ///    - refs: The list of objects references.
   ///    - data: The object contents.
   /// - Returns: The id representing the combination of contents and refs.
-  func put(_ obj: TCASObject) async throws -> TCASObjectID {
+  public func put(_ obj: TCASObject) async throws -> TCASID {
     let sobj = try obj.llbuild3Serialized()
     return try await withCheckedThrowingContinuation { continuation in
       let ctx = Unmanaged.passRetained(continuation as AnyObject).toOpaque()
       llbuild3.adaptedCASDatabasePut(db, sobj, ctx, { ctx, result in
-        let completion = Unmanaged<AnyObject>.fromOpaque(ctx!).takeRetainedValue() as! CheckedContinuation<TCASObjectID, any Error>
+        let completion = Unmanaged<AnyObject>.fromOpaque(ctx!).takeRetainedValue() as! CheckedContinuation<TCASID, any Error>
         if result.pointee.has_error() {
           do {
             let errorData = result.pointee.error()
@@ -162,7 +162,7 @@ class AdaptedCASDatabase: TCASDatabase {
           }
         } else {
           let idbytes = result.pointee.pointee
-          let casid = TCASObjectID.with { casid in
+          let casid = TCASID.with { casid in
             idbytes.withUnsafeBytes { bp in
               casid.bytes = Data(buffer: bp.bindMemory(to: CChar.self))
             }
@@ -180,7 +180,7 @@ public extension TCASDatabase {
     extCASDB.ctx = Unmanaged.passRetained(self as AnyObject).toOpaque()
 
     extCASDB.containsFn = { ctx, id, handler in
-      let casid = TCASObjectID.with { casid in
+      let casid = TCASID.with { casid in
         id.withUnsafeBytes { bp in
           casid.bytes = Data(buffer: bp.bindMemory(to: CChar.self))
         }
@@ -213,7 +213,7 @@ public extension TCASDatabase {
     }
 
     extCASDB.getFn = { ctx, id, handler in
-      let casid = TCASObjectID.with { casid in
+      let casid = TCASID.with { casid in
         id.withUnsafeBytes { bp in
           casid.bytes = Data(buffer: bp.bindMemory(to: CChar.self))
         }
@@ -275,6 +275,7 @@ public extension TCASDatabase {
           $0.description_p = "cas put"
         }
         guard let bytes = try? err.serializedData() else {
+          handler(std.string(), std.string("serialized data failure"))
           return
         }
         handler(std.string(), std.string(fromData: bytes))

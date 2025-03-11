@@ -30,7 +30,7 @@ namespace llbuild3 {
 
 struct NamedDirectoryEntryID {
   NamedDirectoryEntry info;
-  CASObjectID id;
+  CASID id;
 };
 
 class CASTree {
@@ -39,16 +39,16 @@ private:
 
   CASObject object;
   FileInformation fileInfo;
-  CASObjectID id;
+  CASID id;
 
 public:
   CASTree(const std::vector<NamedDirectoryEntryID>& entries,
           std::shared_ptr<CASDatabase> db);
 
   inline const FileInformation& info() const { return fileInfo; }
-  inline const CASObjectID& treeID() const { return id; }
+  inline const CASID& treeID() const { return id; }
 
-  void sync(std::function<void (result<CASObjectID, Error>)>);
+  void sync(std::function<void (result<CASID, Error>)>);
 };
 
 

@@ -35,10 +35,13 @@ public typealias TArtifact = Llbuild3_Artifact
 
 // CAS.proto
 public typealias TCASObject = Llbuild3_CASObject
-public typealias TCASObjectID = Llbuild3_CASObjectID
+public typealias TCASID = Llbuild3_CASID
 
 // CASTree.proto
 public typealias TFileType = Llbuild3_FileType
+
+// Common.proto
+public typealias TStat = Llbuild3_Stat
 
 // Engine.proto
 public typealias TSignature = Llbuild3_Signature

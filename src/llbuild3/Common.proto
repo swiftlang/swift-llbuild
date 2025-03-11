@@ -11,26 +11,17 @@ syntax = "proto3";
 package llbuild3;
 
 import "llbuild3/CAS.proto";
-import "llbuild3/Common.proto";
-import "llbuild3/Label.proto";
+import "llbuild3/Error.proto";
 
-// Enum representing the supported action cache key types
-enum CacheKeyType {
-  CACHE_KEY_TYPE_TASK = 0;
-  CACHE_KEY_TYPE_ACTION = 1;
+message Stat {
+  string name = 1;
+  oneof value {
+    int64 int_value = 2;
+    uint64 uint_value = 3;
+    string string_value = 4;
+    bool bool_value = 5;
+    double double_value = 6;
+    CASID cas_object = 7;
+    Error error_value = 8;
+  }
 }
-
-message CacheKey {
-  Label label = 1;
-  
-  CacheKeyType type = 2;
-  
-  CASID data = 3;
-}
-
-message CacheValue {
-  CASID data = 1;
-  
-  repeated Stat stats = 2;
-}
-

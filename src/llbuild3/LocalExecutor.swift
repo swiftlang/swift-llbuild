@@ -15,7 +15,8 @@ import System
 
 public protocol TLocalSandbox {
   func workingDir() -> String
-  func prepareInput(_ path: String, type: TFileType, objectID: TCASObjectID) throws
+  func environment() -> [String: String]
+  func prepareInput(_ path: String, type: TFileType, id: TCASID) throws
   func collectOutputs(_ paths: [String]) throws -> [TFileObject]
   func release()
 }
@@ -40,10 +41,22 @@ extension TLocalSandbox {
       dirp?.update(from: &path, count: 1)
     }
 
+    ls.envFn = { ctx, envp in
+      let sp = Unmanaged<AnyObject>.fromOpaque(ctx!).takeUnretainedValue() as! TLocalSandbox
+      var oenv = envp.pointee
+
+      let env = sp.environment();
+      for (k, v) in env {
+        oenv.push_back(llbuild3.makeStringPair(std.string(k), std.string(v)))
+      }
+
+      envp?.update(from: &oenv, count: 1)
+    }
+
     ls.prepareInputFn = { ctx, path, type, idbytes, errp in
       let sp = Unmanaged<AnyObject>.fromOpaque(ctx!).takeUnretainedValue() as! TLocalSandbox
 
-      let objID = TCASObjectID.with { casid in
+      let objID = TCASID.with { casid in
         idbytes.pointee.withUnsafeBytes { bp in
           casid.bytes = Data(buffer: bp.bindMemory(to: CChar.self))
         }
@@ -66,7 +79,7 @@ extension TLocalSandbox {
       }
 
       do {
-        try sp.prepareInput(path.pointee.utf8String, type: ftype, objectID: objID)
+        try sp.prepareInput(path.pointee.utf8String, type: ftype, id: objID)
         return
       } catch {
         let err = TError.with {
@@ -226,13 +239,17 @@ class TTempDirSandbox: TLocalSandbox {
     return workDir.string
   }
 
-  public func prepareInput(_ path: String, type: TFileType, objectID: TCASObjectID) throws {
+  public func environment() -> [String: String] {
+    return [:]
+  }
+
+  public func prepareInput(_ path: String, type: TFileType, id: TCASID) throws {
     let inputPath = workDir.appending(path).string
 
     switch type {
     case .plainFile, .executable:
       let fileData: Data = try synchronous {
-        guard let obj = try await self.casDB.get(objectID) else {
+        guard let obj = try await self.casDB.get(id) else {
           throw TTempDirSandboxError.notFound
         }
         if obj.refs.count > 0 {
@@ -252,7 +269,7 @@ class TTempDirSandbox: TLocalSandbox {
 
     case .symlink:
       let fileData: Data = try synchronous {
-        guard let obj = try await self.casDB.get(objectID) else {
+        guard let obj = try await self.casDB.get(id) else {
           throw TTempDirSandboxError.notFound
         }
         if obj.refs.count > 0 {

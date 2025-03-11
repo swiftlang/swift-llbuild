@@ -592,53 +592,53 @@ class TaskContext final : public ::google::protobuf::Message
     kProtoStateFieldNumber = 2,
     kIntStateFieldNumber = 3,
   };
-  // .llbuild3.CASObjectID casState = 1;
-  bool has_casstate() const;
+  // .llbuild3.CASID cas_state = 1;
+  bool has_cas_state() const;
   private:
-  bool _internal_has_casstate() const;
+  bool _internal_has_cas_state() const;
 
   public:
-  void clear_casstate() ;
-  const ::llbuild3::CASObjectID& casstate() const;
-  PROTOBUF_NODISCARD ::llbuild3::CASObjectID* release_casstate();
-  ::llbuild3::CASObjectID* mutable_casstate();
-  void set_allocated_casstate(::llbuild3::CASObjectID* value);
-  void unsafe_arena_set_allocated_casstate(::llbuild3::CASObjectID* value);
-  ::llbuild3::CASObjectID* unsafe_arena_release_casstate();
+  void clear_cas_state() ;
+  const ::llbuild3::CASID& cas_state() const;
+  PROTOBUF_NODISCARD ::llbuild3::CASID* release_cas_state();
+  ::llbuild3::CASID* mutable_cas_state();
+  void set_allocated_cas_state(::llbuild3::CASID* value);
+  void unsafe_arena_set_allocated_cas_state(::llbuild3::CASID* value);
+  ::llbuild3::CASID* unsafe_arena_release_cas_state();
 
   private:
-  const ::llbuild3::CASObjectID& _internal_casstate() const;
-  ::llbuild3::CASObjectID* _internal_mutable_casstate();
+  const ::llbuild3::CASID& _internal_cas_state() const;
+  ::llbuild3::CASID* _internal_mutable_cas_state();
 
   public:
-  // .google.protobuf.Any protoState = 2;
-  bool has_protostate() const;
+  // .google.protobuf.Any proto_state = 2;
+  bool has_proto_state() const;
   private:
-  bool _internal_has_protostate() const;
+  bool _internal_has_proto_state() const;
 
   public:
-  void clear_protostate() ;
-  const ::google::protobuf::Any& protostate() const;
-  PROTOBUF_NODISCARD ::google::protobuf::Any* release_protostate();
-  ::google::protobuf::Any* mutable_protostate();
-  void set_allocated_protostate(::google::protobuf::Any* value);
-  void unsafe_arena_set_allocated_protostate(::google::protobuf::Any* value);
-  ::google::protobuf::Any* unsafe_arena_release_protostate();
+  void clear_proto_state() ;
+  const ::google::protobuf::Any& proto_state() const;
+  PROTOBUF_NODISCARD ::google::protobuf::Any* release_proto_state();
+  ::google::protobuf::Any* mutable_proto_state();
+  void set_allocated_proto_state(::google::protobuf::Any* value);
+  void unsafe_arena_set_allocated_proto_state(::google::protobuf::Any* value);
+  ::google::protobuf::Any* unsafe_arena_release_proto_state();
 
   private:
-  const ::google::protobuf::Any& _internal_protostate() const;
-  ::google::protobuf::Any* _internal_mutable_protostate();
+  const ::google::protobuf::Any& _internal_proto_state() const;
+  ::google::protobuf::Any* _internal_mutable_proto_state();
 
   public:
-  // int64 intState = 3;
-  bool has_intstate() const;
-  void clear_intstate() ;
-  ::int64_t intstate() const;
-  void set_intstate(::int64_t value);
+  // int64 int_state = 3;
+  bool has_int_state() const;
+  void clear_int_state() ;
+  ::int64_t int_state() const;
+  void set_int_state(::int64_t value);
 
   private:
-  ::int64_t _internal_intstate() const;
-  void _internal_set_intstate(::int64_t value);
+  ::int64_t _internal_int_state() const;
+  void _internal_set_int_state(::int64_t value);
 
   public:
   void clear_TaskState();
@@ -646,9 +646,9 @@ class TaskContext final : public ::google::protobuf::Message
   // @@protoc_insertion_point(class_scope:llbuild3.TaskContext)
  private:
   class _Internal;
-  void set_has_casstate();
-  void set_has_protostate();
-  void set_has_intstate();
+  void set_has_cas_state();
+  void set_has_proto_state();
+  void set_has_int_state();
   inline bool has_TaskState() const;
   inline void clear_has_TaskState();
   friend class ::google::protobuf::internal::TcParser;
@@ -677,9 +677,9 @@ class TaskContext final : public ::google::protobuf::Message
     union TaskStateUnion {
       constexpr TaskStateUnion() : _constinit_{} {}
       ::google::protobuf::internal::ConstantInitialized _constinit_;
-      ::llbuild3::CASObjectID* casstate_;
-      ::google::protobuf::Any* protostate_;
-      ::int64_t intstate_;
+      ::llbuild3::CASID* cas_state_;
+      ::google::protobuf::Any* proto_state_;
+      ::int64_t int_state_;
     } TaskState_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     ::uint32_t _oneof_case_[1];
@@ -2248,171 +2248,171 @@ TaskInputs::_internal_mutable_inputs() {
 
 // TaskContext
 
-// .llbuild3.CASObjectID casState = 1;
-inline bool TaskContext::has_casstate() const {
+// .llbuild3.CASID cas_state = 1;
+inline bool TaskContext::has_cas_state() const {
   return TaskState_case() == kCasState;
 }
-inline bool TaskContext::_internal_has_casstate() const {
+inline bool TaskContext::_internal_has_cas_state() const {
   return TaskState_case() == kCasState;
 }
-inline void TaskContext::set_has_casstate() {
+inline void TaskContext::set_has_cas_state() {
   _impl_._oneof_case_[0] = kCasState;
 }
-inline ::llbuild3::CASObjectID* TaskContext::release_casstate() {
-  // @@protoc_insertion_point(field_release:llbuild3.TaskContext.casState)
+inline ::llbuild3::CASID* TaskContext::release_cas_state() {
+  // @@protoc_insertion_point(field_release:llbuild3.TaskContext.cas_state)
   if (TaskState_case() == kCasState) {
     clear_has_TaskState();
-    auto* temp = _impl_.TaskState_.casstate_;
+    auto* temp = _impl_.TaskState_.cas_state_;
     if (GetArena() != nullptr) {
       temp = ::google::protobuf::internal::DuplicateIfNonNull(temp);
     }
-    _impl_.TaskState_.casstate_ = nullptr;
+    _impl_.TaskState_.cas_state_ = nullptr;
     return temp;
   } else {
     return nullptr;
   }
 }
-inline const ::llbuild3::CASObjectID& TaskContext::_internal_casstate() const {
-  return TaskState_case() == kCasState ? *_impl_.TaskState_.casstate_ : reinterpret_cast<::llbuild3::CASObjectID&>(::llbuild3::_CASObjectID_default_instance_);
+inline const ::llbuild3::CASID& TaskContext::_internal_cas_state() const {
+  return TaskState_case() == kCasState ? *_impl_.TaskState_.cas_state_ : reinterpret_cast<::llbuild3::CASID&>(::llbuild3::_CASID_default_instance_);
 }
-inline const ::llbuild3::CASObjectID& TaskContext::casstate() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:llbuild3.TaskContext.casState)
-  return _internal_casstate();
+inline const ::llbuild3::CASID& TaskContext::cas_state() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:llbuild3.TaskContext.cas_state)
+  return _internal_cas_state();
 }
-inline ::llbuild3::CASObjectID* TaskContext::unsafe_arena_release_casstate() {
-  // @@protoc_insertion_point(field_unsafe_arena_release:llbuild3.TaskContext.casState)
+inline ::llbuild3::CASID* TaskContext::unsafe_arena_release_cas_state() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:llbuild3.TaskContext.cas_state)
   if (TaskState_case() == kCasState) {
     clear_has_TaskState();
-    auto* temp = _impl_.TaskState_.casstate_;
-    _impl_.TaskState_.casstate_ = nullptr;
+    auto* temp = _impl_.TaskState_.cas_state_;
+    _impl_.TaskState_.cas_state_ = nullptr;
     return temp;
   } else {
     return nullptr;
   }
 }
-inline void TaskContext::unsafe_arena_set_allocated_casstate(::llbuild3::CASObjectID* value) {
+inline void TaskContext::unsafe_arena_set_allocated_cas_state(::llbuild3::CASID* value) {
   // We rely on the oneof clear method to free the earlier contents
   // of this oneof. We can directly use the pointer we're given to
   // set the new value.
   clear_TaskState();
   if (value) {
-    set_has_casstate();
-    _impl_.TaskState_.casstate_ = value;
+    set_has_cas_state();
+    _impl_.TaskState_.cas_state_ = value;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:llbuild3.TaskContext.casState)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:llbuild3.TaskContext.cas_state)
 }
-inline ::llbuild3::CASObjectID* TaskContext::_internal_mutable_casstate() {
+inline ::llbuild3::CASID* TaskContext::_internal_mutable_cas_state() {
   if (TaskState_case() != kCasState) {
     clear_TaskState();
-    set_has_casstate();
-    _impl_.TaskState_.casstate_ =
-        ::google::protobuf::Message::DefaultConstruct<::llbuild3::CASObjectID>(GetArena());
+    set_has_cas_state();
+    _impl_.TaskState_.cas_state_ =
+        ::google::protobuf::Message::DefaultConstruct<::llbuild3::CASID>(GetArena());
   }
-  return _impl_.TaskState_.casstate_;
+  return _impl_.TaskState_.cas_state_;
 }
-inline ::llbuild3::CASObjectID* TaskContext::mutable_casstate() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  ::llbuild3::CASObjectID* _msg = _internal_mutable_casstate();
-  // @@protoc_insertion_point(field_mutable:llbuild3.TaskContext.casState)
+inline ::llbuild3::CASID* TaskContext::mutable_cas_state() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::llbuild3::CASID* _msg = _internal_mutable_cas_state();
+  // @@protoc_insertion_point(field_mutable:llbuild3.TaskContext.cas_state)
   return _msg;
 }
 
-// .google.protobuf.Any protoState = 2;
-inline bool TaskContext::has_protostate() const {
+// .google.protobuf.Any proto_state = 2;
+inline bool TaskContext::has_proto_state() const {
   return TaskState_case() == kProtoState;
 }
-inline bool TaskContext::_internal_has_protostate() const {
+inline bool TaskContext::_internal_has_proto_state() const {
   return TaskState_case() == kProtoState;
 }
-inline void TaskContext::set_has_protostate() {
+inline void TaskContext::set_has_proto_state() {
   _impl_._oneof_case_[0] = kProtoState;
 }
-inline ::google::protobuf::Any* TaskContext::release_protostate() {
-  // @@protoc_insertion_point(field_release:llbuild3.TaskContext.protoState)
+inline ::google::protobuf::Any* TaskContext::release_proto_state() {
+  // @@protoc_insertion_point(field_release:llbuild3.TaskContext.proto_state)
   if (TaskState_case() == kProtoState) {
     clear_has_TaskState();
-    auto* temp = _impl_.TaskState_.protostate_;
+    auto* temp = _impl_.TaskState_.proto_state_;
     if (GetArena() != nullptr) {
       temp = ::google::protobuf::internal::DuplicateIfNonNull(temp);
     }
-    _impl_.TaskState_.protostate_ = nullptr;
+    _impl_.TaskState_.proto_state_ = nullptr;
     return temp;
   } else {
     return nullptr;
   }
 }
-inline const ::google::protobuf::Any& TaskContext::_internal_protostate() const {
-  return TaskState_case() == kProtoState ? *_impl_.TaskState_.protostate_ : reinterpret_cast<::google::protobuf::Any&>(::google::protobuf::_Any_default_instance_);
+inline const ::google::protobuf::Any& TaskContext::_internal_proto_state() const {
+  return TaskState_case() == kProtoState ? *_impl_.TaskState_.proto_state_ : reinterpret_cast<::google::protobuf::Any&>(::google::protobuf::_Any_default_instance_);
 }
-inline const ::google::protobuf::Any& TaskContext::protostate() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:llbuild3.TaskContext.protoState)
-  return _internal_protostate();
+inline const ::google::protobuf::Any& TaskContext::proto_state() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:llbuild3.TaskContext.proto_state)
+  return _internal_proto_state();
 }
-inline ::google::protobuf::Any* TaskContext::unsafe_arena_release_protostate() {
-  // @@protoc_insertion_point(field_unsafe_arena_release:llbuild3.TaskContext.protoState)
+inline ::google::protobuf::Any* TaskContext::unsafe_arena_release_proto_state() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:llbuild3.TaskContext.proto_state)
   if (TaskState_case() == kProtoState) {
     clear_has_TaskState();
-    auto* temp = _impl_.TaskState_.protostate_;
-    _impl_.TaskState_.protostate_ = nullptr;
+    auto* temp = _impl_.TaskState_.proto_state_;
+    _impl_.TaskState_.proto_state_ = nullptr;
     return temp;
   } else {
     return nullptr;
   }
 }
-inline void TaskContext::unsafe_arena_set_allocated_protostate(::google::protobuf::Any* value) {
+inline void TaskContext::unsafe_arena_set_allocated_proto_state(::google::protobuf::Any* value) {
   // We rely on the oneof clear method to free the earlier contents
   // of this oneof. We can directly use the pointer we're given to
   // set the new value.
   clear_TaskState();
   if (value) {
-    set_has_protostate();
-    _impl_.TaskState_.protostate_ = value;
+    set_has_proto_state();
+    _impl_.TaskState_.proto_state_ = value;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:llbuild3.TaskContext.protoState)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:llbuild3.TaskContext.proto_state)
 }
-inline ::google::protobuf::Any* TaskContext::_internal_mutable_protostate() {
+inline ::google::protobuf::Any* TaskContext::_internal_mutable_proto_state() {
   if (TaskState_case() != kProtoState) {
     clear_TaskState();
-    set_has_protostate();
-    _impl_.TaskState_.protostate_ =
+    set_has_proto_state();
+    _impl_.TaskState_.proto_state_ =
         ::google::protobuf::Message::DefaultConstruct<::google::protobuf::Any>(GetArena());
   }
-  return _impl_.TaskState_.protostate_;
+  return _impl_.TaskState_.proto_state_;
 }
-inline ::google::protobuf::Any* TaskContext::mutable_protostate() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  ::google::protobuf::Any* _msg = _internal_mutable_protostate();
-  // @@protoc_insertion_point(field_mutable:llbuild3.TaskContext.protoState)
+inline ::google::protobuf::Any* TaskContext::mutable_proto_state() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::Any* _msg = _internal_mutable_proto_state();
+  // @@protoc_insertion_point(field_mutable:llbuild3.TaskContext.proto_state)
   return _msg;
 }
 
-// int64 intState = 3;
-inline bool TaskContext::has_intstate() const {
+// int64 int_state = 3;
+inline bool TaskContext::has_int_state() const {
   return TaskState_case() == kIntState;
 }
-inline void TaskContext::set_has_intstate() {
+inline void TaskContext::set_has_int_state() {
   _impl_._oneof_case_[0] = kIntState;
 }
-inline void TaskContext::clear_intstate() {
+inline void TaskContext::clear_int_state() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (TaskState_case() == kIntState) {
-    _impl_.TaskState_.intstate_ = ::int64_t{0};
+    _impl_.TaskState_.int_state_ = ::int64_t{0};
     clear_has_TaskState();
   }
 }
-inline ::int64_t TaskContext::intstate() const {
-  // @@protoc_insertion_point(field_get:llbuild3.TaskContext.intState)
-  return _internal_intstate();
+inline ::int64_t TaskContext::int_state() const {
+  // @@protoc_insertion_point(field_get:llbuild3.TaskContext.int_state)
+  return _internal_int_state();
 }
-inline void TaskContext::set_intstate(::int64_t value) {
+inline void TaskContext::set_int_state(::int64_t value) {
   if (TaskState_case() != kIntState) {
     clear_TaskState();
-    set_has_intstate();
+    set_has_int_state();
   }
-  _impl_.TaskState_.intstate_ = value;
-  // @@protoc_insertion_point(field_set:llbuild3.TaskContext.intState)
+  _impl_.TaskState_.int_state_ = value;
+  // @@protoc_insertion_point(field_set:llbuild3.TaskContext.int_state)
 }
-inline ::int64_t TaskContext::_internal_intstate() const {
+inline ::int64_t TaskContext::_internal_int_state() const {
   if (TaskState_case() == kIntState) {
-    return _impl_.TaskState_.intstate_;
+    return _impl_.TaskState_.int_state_;
   }
   return ::int64_t{0};
 }

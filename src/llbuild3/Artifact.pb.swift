@@ -133,10 +133,10 @@ public struct Llbuild3_Artifact: @unchecked Sendable {
 
   public var value: Llbuild3_Artifact.OneOf_Value? = nil
 
-  public var casObject: Llbuild3_CASObjectID {
+  public var casObject: Llbuild3_CASID {
     get {
       if case .casObject(let v)? = value {return v}
-      return Llbuild3_CASObjectID()
+      return Llbuild3_CASID()
     }
     set {value = .casObject(newValue)}
   }
@@ -168,7 +168,7 @@ public struct Llbuild3_Artifact: @unchecked Sendable {
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public enum OneOf_Value: Equatable, @unchecked Sendable {
-    case casObject(Llbuild3_CASObjectID)
+    case casObject(Llbuild3_CASID)
     case blob(Data)
     case dict(Llbuild3_DictObject)
     case list(Llbuild3_ListObject)
@@ -264,7 +264,7 @@ extension Llbuild3_Artifact: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "label"),
     2: .same(proto: "type"),
-    3: .same(proto: "casObject"),
+    3: .standard(proto: "cas_object"),
     4: .same(proto: "blob"),
     5: .same(proto: "dict"),
     6: .same(proto: "list"),
@@ -279,7 +279,7 @@ extension Llbuild3_Artifact: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
       case 1: try { try decoder.decodeSingularMessageField(value: &self._label) }()
       case 2: try { try decoder.decodeSingularEnumField(value: &self.type) }()
       case 3: try {
-        var v: Llbuild3_CASObjectID?
+        var v: Llbuild3_CASID?
         var hadOneofValue = false
         if let current = self.value {
           hadOneofValue = true

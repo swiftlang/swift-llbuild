@@ -33,15 +33,20 @@ struct EngineConfig;
 
 // Serialized Protobuf Objects
 typedef std::string ActionPB;
+typedef std::string ActionResultPB;
 typedef std::string ArtifactPB;
 typedef std::string CacheKeyPB;
 typedef std::string CacheValuePB;
 typedef std::string CASIDBytes;
 typedef std::string CASObjectPB;
+typedef std::string EngineIDBytes;
 typedef std::string ErrorPB;
 typedef std::string FileObjectPB;
 typedef std::string LabelPB;
+typedef std::string PlatformPB;
+typedef std::string RemoteActionIDBytes;
 typedef std::string SignaturePB;
+typedef std::string StatPB;
 typedef std::string TaskContextPB;
 typedef std::string TaskInputsPB;
 typedef std::string TaskNextStatePB;
@@ -52,6 +57,30 @@ typedef std::vector<LabelPB> LabelVector;
 typedef std::vector<std::pair<uint64_t, result<void*, ErrorPB>>> SubtaskResultMap;
 
 // External Adaptor Objects
+
+class ClientContext;
+class Logger;
+typedef std::shared_ptr<ClientContext> ClientContextRef;
+typedef std::shared_ptr<Logger> LoggerRef;
+
+LLBUILD3_EXPORT ClientContextRef makeExtClientContext(void* ctx,
+                                                      void (*)(void* ctx));
+
+struct ExtLoggerContext {
+  void* ctx = nullptr;
+  EngineIDBytes engineID;
+};
+
+struct ExtLogger {
+  void* ctx;
+
+  void (*releaseFn)(void* ctx);
+  void (*errorFn)(void* ctx, ExtLoggerContext, ErrorPB);
+  void (*eventFn)(void* ctx, ExtLoggerContext, std::vector<StatPB>*);
+};
+
+LLBUILD3_EXPORT LoggerRef makeExtLogger(ExtLogger);
+
 
 class CASDatabase;
 typedef std::shared_ptr<CASDatabase> CASDatabaseRef;
@@ -176,16 +205,37 @@ LLBUILD3_EXPORT ActionCacheRef makeExtActionCache(ExtActionCache extCache);
 LLBUILD3_EXPORT ActionCacheRef makeInMemoryActionCache();
 
 
+struct ExtActionDescriptor {
+  LabelPB name;
+  PlatformPB platform;
+  std::string executable;
+};
+
+struct ExtActionProvider {
+  void* ctx;
+
+  void (*releaseFn)(void* ctx);
+
+  void (*prefixesFn)(void*, std::vector<LabelPB>*);
+  LabelPB (*resolveFn)(void*, LabelPB, ErrorPB*);
+  ExtActionDescriptor (*descriptorFn)(void*, LabelPB, ErrorPB*);
+};
+
 struct ExtLocalSandbox {
   void* ctx;
 
   void (*releaseFn)(void* ctx);
 
   void (*dirFn)(void* ctx, std::string*);
+  void (*envFn)(void* ctx, std::vector<std::pair<std::string, std::string>>*);
   void (*prepareInputFn)(void* ctx, std::string* path, int type, CASIDBytes* id, ErrorPB*);
   void (*collectOutputsFn)(void*, std::vector<std::string>, std::vector<FileObjectPB>*, ErrorPB*);
   void (*releaseSandboxFn)(void* ctx);
 };
+
+inline std::pair<std::string, std::string> makeStringPair(std::string l, std::string r) {
+  return std::make_pair(l, r);
+}
 
 struct ExtLocalSandboxProvider {
   void* ctx;
@@ -195,18 +245,36 @@ struct ExtLocalSandboxProvider {
   ExtLocalSandbox (*createFn)(void* ctx, uint64_t handle, ErrorPB*);
 };
 
+struct ExtRemoteExecutor {
+  void* ctx;
+
+  void (*releaseFn)(void* ctx);
+
+  std::string builtinExecutable;
+
+  void (*prepareFn)(void* ctx, std::string path,
+                    std::function<void(CASIDBytes, ErrorPB)>);
+  void (*executeFn)(void* ctx, CASIDBytes id, ActionPB,
+                    std::function<void(RemoteActionIDBytes, ErrorPB)>,
+                    std::function<void(ActionResultPB, ErrorPB)>);
+};
+
 class ActionExecutor;
+class ActionProvider;
 class LocalExecutor;
 class LocalSandboxProvider;
 class RemoteExecutor;
 typedef std::shared_ptr<ActionExecutor> ActionExecutorRef;
+typedef std::shared_ptr<ActionProvider> ActionProviderRef;
 typedef std::shared_ptr<LocalExecutor> LocalExecutorRef;
 typedef std::shared_ptr<LocalSandboxProvider> LocalSandboxProviderRef;
 typedef std::shared_ptr<RemoteExecutor> RemoteExecutorRef;
-LLBUILD3_EXPORT ActionExecutorRef makeActionExecutor(CASDatabaseRef, ActionCacheRef, LocalExecutorRef, RemoteExecutorRef);
+LLBUILD3_EXPORT ActionExecutorRef makeActionExecutor(CASDatabaseRef, ActionCacheRef, LocalExecutorRef, RemoteExecutorRef, LoggerRef);
+LLBUILD3_EXPORT ActionProviderRef makeExtActionProvider(ExtActionProvider);
+LLBUILD3_EXPORT ErrorPB registerProviderWithExecutor(ActionExecutorRef, ActionProviderRef);
 LLBUILD3_EXPORT LocalSandboxProviderRef makeExtLocalSandboxProvider(ExtLocalSandboxProvider);
 LLBUILD3_EXPORT LocalExecutorRef makeLocalExecutor(LocalSandboxProviderRef);
-LLBUILD3_EXPORT RemoteExecutorRef makeRemoteExecutor();
+LLBUILD3_EXPORT RemoteExecutorRef makeRemoteExecutor(ExtRemoteExecutor);
 
 struct ExtEngineConfig {
   std::optional<LabelPB> initRule;
@@ -228,6 +296,8 @@ LLBUILD3_EXPORT EngineRef makeEngine(ExtEngineConfig config,
                                      CASDatabaseRef casdb,
                                      ActionCacheRef cache,
                                      ActionExecutorRef executor,
+                                     LoggerRef logger,
+                                     ClientContextRef clientContext,
                                      const ExtRuleProvider provider);
 
 }

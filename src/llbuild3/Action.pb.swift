@@ -39,8 +39,8 @@ public struct Llbuild3_FileObject: Sendable {
   public var type: Llbuild3_FileType = .plainFile
 
   /// ID of the CASTree FileInformation encoded object.
-  public var object: Llbuild3_CASObjectID {
-    get {return _object ?? Llbuild3_CASObjectID()}
+  public var object: Llbuild3_CASID {
+    get {return _object ?? Llbuild3_CASID()}
     set {_object = newValue}
   }
   /// Returns true if `object` has been explicitly set.
@@ -52,7 +52,7 @@ public struct Llbuild3_FileObject: Sendable {
 
   public init() {}
 
-  fileprivate var _object: Llbuild3_CASObjectID? = nil
+  fileprivate var _object: Llbuild3_CASID? = nil
 }
 
 public struct Llbuild3_Subprocess: Sendable {
@@ -102,8 +102,8 @@ public struct Llbuild3_SubprocessResult: Sendable {
 
   public var exitCode: Int32 = 0
 
-  public var stdout: Llbuild3_CASObjectID {
-    get {return _stdout ?? Llbuild3_CASObjectID()}
+  public var stdout: Llbuild3_CASID {
+    get {return _stdout ?? Llbuild3_CASID()}
     set {_stdout = newValue}
   }
   /// Returns true if `stdout` has been explicitly set.
@@ -115,7 +115,7 @@ public struct Llbuild3_SubprocessResult: Sendable {
 
   public init() {}
 
-  fileprivate var _stdout: Llbuild3_CASObjectID? = nil
+  fileprivate var _stdout: Llbuild3_CASID? = nil
 }
 
 public struct Llbuild3_Action: Sendable {
@@ -125,10 +125,10 @@ public struct Llbuild3_Action: Sendable {
 
   public var operation: Llbuild3_Action.OneOf_Operation? = nil
 
-  public var casObject: Llbuild3_CASObjectID {
+  public var casObject: Llbuild3_CASID {
     get {
       if case .casObject(let v)? = operation {return v}
-      return Llbuild3_CASObjectID()
+      return Llbuild3_CASID()
     }
     set {operation = .casObject(newValue)}
   }
@@ -152,7 +152,7 @@ public struct Llbuild3_Action: Sendable {
   public mutating func clearFunction() {self._function = nil}
 
   /// If true, this action cannot be cached or de-duped.
-  public var volatile: Bool = false
+  public var isVolatile: Bool = false
 
   public var platform: Llbuild3_Platform {
     get {return _platform ?? Llbuild3_Platform()}
@@ -166,7 +166,7 @@ public struct Llbuild3_Action: Sendable {
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public enum OneOf_Operation: Equatable, Sendable {
-    case casObject(Llbuild3_CASObjectID)
+    case casObject(Llbuild3_CASID)
     case subprocess(Llbuild3_Subprocess)
 
   }
@@ -210,10 +210,10 @@ public struct Llbuild3_ActionResult: Sendable {
 
   public var actionResultValue: Llbuild3_ActionResult.OneOf_ActionResultValue? = nil
 
-  public var casObject: Llbuild3_CASObjectID {
+  public var casObject: Llbuild3_CASID {
     get {
       if case .casObject(let v)? = actionResultValue {return v}
-      return Llbuild3_CASObjectID()
+      return Llbuild3_CASID()
     }
     set {actionResultValue = .casObject(newValue)}
   }
@@ -238,7 +238,7 @@ public struct Llbuild3_ActionResult: Sendable {
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public enum OneOf_ActionResultValue: Equatable, Sendable {
-    case casObject(Llbuild3_CASObjectID)
+    case casObject(Llbuild3_CASID)
     case subprocess(Llbuild3_SubprocessResult)
 
   }
@@ -327,6 +327,32 @@ public struct Llbuild3_ActionExecutionMetadata: @unchecked Sendable {
   public var hasExecutionDuration: Bool {return _storage._executionDuration != nil}
   /// Clears the value of `executionDuration`. Subsequent reads from it will return its default value.
   public mutating func clearExecutionDuration() {_uniqueStorage()._executionDuration = nil}
+
+  /// The amount of user execution time
+  public var executionUserTime: SwiftProtobuf.Google_Protobuf_Duration {
+    get {return _storage._executionUserTime ?? SwiftProtobuf.Google_Protobuf_Duration()}
+    set {_uniqueStorage()._executionUserTime = newValue}
+  }
+  /// Returns true if `executionUserTime` has been explicitly set.
+  public var hasExecutionUserTime: Bool {return _storage._executionUserTime != nil}
+  /// Clears the value of `executionUserTime`. Subsequent reads from it will return its default value.
+  public mutating func clearExecutionUserTime() {_uniqueStorage()._executionUserTime = nil}
+
+  /// The amount of system execution time
+  public var executionSystemTime: SwiftProtobuf.Google_Protobuf_Duration {
+    get {return _storage._executionSystemTime ?? SwiftProtobuf.Google_Protobuf_Duration()}
+    set {_uniqueStorage()._executionSystemTime = newValue}
+  }
+  /// Returns true if `executionSystemTime` has been explicitly set.
+  public var hasExecutionSystemTime: Bool {return _storage._executionSystemTime != nil}
+  /// Clears the value of `executionSystemTime`. Subsequent reads from it will return its default value.
+  public mutating func clearExecutionSystemTime() {_uniqueStorage()._executionSystemTime = nil}
+
+  /// The max memory use of the action
+  public var executionMaxRss: UInt64 {
+    get {return _storage._executionMaxRss}
+    set {_uniqueStorage()._executionMaxRss = newValue}
+  }
 
   /// When the worker started uploading action outputs.
   public var outputUploadStart: SwiftProtobuf.Google_Protobuf_Timestamp {
@@ -427,9 +453,9 @@ extension Llbuild3_Subprocess: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "arguments"),
     2: .same(proto: "environment"),
-    3: .same(proto: "workingDirectory"),
+    3: .standard(proto: "working_directory"),
     4: .same(proto: "inputs"),
-    5: .same(proto: "outputPaths"),
+    5: .standard(proto: "output_paths"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -520,7 +546,7 @@ extension Llbuild3_SubprocessResult: SwiftProtobuf.Message, SwiftProtobuf._Messa
   public static let protoMessageName: String = _protobuf_package + ".SubprocessResult"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "outputs"),
-    2: .same(proto: "exitCode"),
+    2: .standard(proto: "exit_code"),
     3: .same(proto: "stdout"),
   ]
 
@@ -567,10 +593,10 @@ extension Llbuild3_SubprocessResult: SwiftProtobuf.Message, SwiftProtobuf._Messa
 extension Llbuild3_Action: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Action"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "casObject"),
+    1: .standard(proto: "cas_object"),
     2: .same(proto: "subprocess"),
     3: .same(proto: "function"),
-    4: .same(proto: "volatile"),
+    4: .standard(proto: "is_volatile"),
     5: .same(proto: "platform"),
   ]
 
@@ -581,7 +607,7 @@ extension Llbuild3_Action: SwiftProtobuf.Message, SwiftProtobuf._MessageImplemen
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try {
-        var v: Llbuild3_CASObjectID?
+        var v: Llbuild3_CASID?
         var hadOneofValue = false
         if let current = self.operation {
           hadOneofValue = true
@@ -607,7 +633,7 @@ extension Llbuild3_Action: SwiftProtobuf.Message, SwiftProtobuf._MessageImplemen
         }
       }()
       case 3: try { try decoder.decodeSingularMessageField(value: &self._function) }()
-      case 4: try { try decoder.decodeSingularBoolField(value: &self.volatile) }()
+      case 4: try { try decoder.decodeSingularBoolField(value: &self.isVolatile) }()
       case 5: try { try decoder.decodeSingularMessageField(value: &self._platform) }()
       default: break
       }
@@ -633,8 +659,8 @@ extension Llbuild3_Action: SwiftProtobuf.Message, SwiftProtobuf._MessageImplemen
     try { if let v = self._function {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
     } }()
-    if self.volatile != false {
-      try visitor.visitSingularBoolField(value: self.volatile, fieldNumber: 4)
+    if self.isVolatile != false {
+      try visitor.visitSingularBoolField(value: self.isVolatile, fieldNumber: 4)
     }
     try { if let v = self._platform {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
@@ -645,7 +671,7 @@ extension Llbuild3_Action: SwiftProtobuf.Message, SwiftProtobuf._MessageImplemen
   public static func ==(lhs: Llbuild3_Action, rhs: Llbuild3_Action) -> Bool {
     if lhs.operation != rhs.operation {return false}
     if lhs._function != rhs._function {return false}
-    if lhs.volatile != rhs.volatile {return false}
+    if lhs.isVolatile != rhs.isVolatile {return false}
     if lhs._platform != rhs._platform {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
@@ -725,7 +751,7 @@ extension Llbuild3_Platform.Property: SwiftProtobuf.Message, SwiftProtobuf._Mess
 extension Llbuild3_ActionResult: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ActionResult"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "casObject"),
+    1: .standard(proto: "cas_object"),
     2: .same(proto: "subprocess"),
     3: .same(proto: "metadata"),
   ]
@@ -737,7 +763,7 @@ extension Llbuild3_ActionResult: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try {
-        var v: Llbuild3_CASObjectID?
+        var v: Llbuild3_CASID?
         var hadOneofValue = false
         if let current = self.actionResultValue {
           hadOneofValue = true
@@ -804,15 +830,18 @@ extension Llbuild3_ActionExecutionMetadata: SwiftProtobuf.Message, SwiftProtobuf
     1: .same(proto: "worker"),
     2: .same(proto: "queued"),
     3: .same(proto: "dispatched"),
-    4: .same(proto: "workerStart"),
-    5: .same(proto: "workerCompleted"),
-    6: .same(proto: "executionStart"),
-    7: .same(proto: "executionCompleted"),
-    8: .same(proto: "executionDuration"),
-    9: .same(proto: "outputUploadStart"),
-    10: .same(proto: "outputUploadCompleted"),
-    11: .same(proto: "completed"),
-    12: .same(proto: "additionalData"),
+    4: .standard(proto: "worker_start"),
+    5: .standard(proto: "worker_completed"),
+    6: .standard(proto: "execution_start"),
+    7: .standard(proto: "execution_completed"),
+    8: .standard(proto: "execution_duration"),
+    9: .standard(proto: "execution_user_time"),
+    10: .standard(proto: "execution_system_time"),
+    11: .standard(proto: "execution_max_rss"),
+    12: .standard(proto: "output_upload_start"),
+    13: .standard(proto: "output_upload_completed"),
+    14: .same(proto: "completed"),
+    15: .standard(proto: "additional_data"),
   ]
 
   fileprivate class _StorageClass {
@@ -824,6 +853,9 @@ extension Llbuild3_ActionExecutionMetadata: SwiftProtobuf.Message, SwiftProtobuf
     var _executionStart: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
     var _executionCompleted: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
     var _executionDuration: SwiftProtobuf.Google_Protobuf_Duration? = nil
+    var _executionUserTime: SwiftProtobuf.Google_Protobuf_Duration? = nil
+    var _executionSystemTime: SwiftProtobuf.Google_Protobuf_Duration? = nil
+    var _executionMaxRss: UInt64 = 0
     var _outputUploadStart: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
     var _outputUploadCompleted: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
     var _completed: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
@@ -850,6 +882,9 @@ extension Llbuild3_ActionExecutionMetadata: SwiftProtobuf.Message, SwiftProtobuf
       _executionStart = source._executionStart
       _executionCompleted = source._executionCompleted
       _executionDuration = source._executionDuration
+      _executionUserTime = source._executionUserTime
+      _executionSystemTime = source._executionSystemTime
+      _executionMaxRss = source._executionMaxRss
       _outputUploadStart = source._outputUploadStart
       _outputUploadCompleted = source._outputUploadCompleted
       _completed = source._completed
@@ -880,10 +915,13 @@ extension Llbuild3_ActionExecutionMetadata: SwiftProtobuf.Message, SwiftProtobuf
         case 6: try { try decoder.decodeSingularMessageField(value: &_storage._executionStart) }()
         case 7: try { try decoder.decodeSingularMessageField(value: &_storage._executionCompleted) }()
         case 8: try { try decoder.decodeSingularMessageField(value: &_storage._executionDuration) }()
-        case 9: try { try decoder.decodeSingularMessageField(value: &_storage._outputUploadStart) }()
-        case 10: try { try decoder.decodeSingularMessageField(value: &_storage._outputUploadCompleted) }()
-        case 11: try { try decoder.decodeSingularMessageField(value: &_storage._completed) }()
-        case 12: try { try decoder.decodeRepeatedMessageField(value: &_storage._additionalData) }()
+        case 9: try { try decoder.decodeSingularMessageField(value: &_storage._executionUserTime) }()
+        case 10: try { try decoder.decodeSingularMessageField(value: &_storage._executionSystemTime) }()
+        case 11: try { try decoder.decodeSingularUInt64Field(value: &_storage._executionMaxRss) }()
+        case 12: try { try decoder.decodeSingularMessageField(value: &_storage._outputUploadStart) }()
+        case 13: try { try decoder.decodeSingularMessageField(value: &_storage._outputUploadCompleted) }()
+        case 14: try { try decoder.decodeSingularMessageField(value: &_storage._completed) }()
+        case 15: try { try decoder.decodeRepeatedMessageField(value: &_storage._additionalData) }()
         default: break
         }
       }
@@ -920,17 +958,26 @@ extension Llbuild3_ActionExecutionMetadata: SwiftProtobuf.Message, SwiftProtobuf
       try { if let v = _storage._executionDuration {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
       } }()
-      try { if let v = _storage._outputUploadStart {
+      try { if let v = _storage._executionUserTime {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 9)
       } }()
-      try { if let v = _storage._outputUploadCompleted {
+      try { if let v = _storage._executionSystemTime {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 10)
       } }()
+      if _storage._executionMaxRss != 0 {
+        try visitor.visitSingularUInt64Field(value: _storage._executionMaxRss, fieldNumber: 11)
+      }
+      try { if let v = _storage._outputUploadStart {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 12)
+      } }()
+      try { if let v = _storage._outputUploadCompleted {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 13)
+      } }()
       try { if let v = _storage._completed {
-        try visitor.visitSingularMessageField(value: v, fieldNumber: 11)
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 14)
       } }()
       if !_storage._additionalData.isEmpty {
-        try visitor.visitRepeatedMessageField(value: _storage._additionalData, fieldNumber: 12)
+        try visitor.visitRepeatedMessageField(value: _storage._additionalData, fieldNumber: 15)
       }
     }
     try unknownFields.traverse(visitor: &visitor)
@@ -949,6 +996,9 @@ extension Llbuild3_ActionExecutionMetadata: SwiftProtobuf.Message, SwiftProtobuf
         if _storage._executionStart != rhs_storage._executionStart {return false}
         if _storage._executionCompleted != rhs_storage._executionCompleted {return false}
         if _storage._executionDuration != rhs_storage._executionDuration {return false}
+        if _storage._executionUserTime != rhs_storage._executionUserTime {return false}
+        if _storage._executionSystemTime != rhs_storage._executionSystemTime {return false}
+        if _storage._executionMaxRss != rhs_storage._executionMaxRss {return false}
         if _storage._outputUploadStart != rhs_storage._outputUploadStart {return false}
         if _storage._outputUploadCompleted != rhs_storage._outputUploadCompleted {return false}
         if _storage._completed != rhs_storage._completed {return false}

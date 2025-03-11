@@ -47,9 +47,9 @@ message TaskInputs {
 
 message TaskContext {
   oneof TaskState {
-    CASObjectID casState = 1;
-    google.protobuf.Any protoState = 2;
-    int64 intState = 3;
+    CASID cas_state = 1;
+    google.protobuf.Any proto_state = 2;
+    int64 int_state = 3;
   }
 }
 

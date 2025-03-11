@@ -30,6 +30,7 @@
 #include "google/protobuf/generated_enum_reflection.h"
 #include "google/protobuf/unknown_field_set.h"
 #include "llbuild3/CAS.pb.h"
+#include "llbuild3/Common.pb.h"
 #include "llbuild3/Label.pb.h"
 // @@protoc_insertion_point(includes)
 
@@ -53,9 +54,6 @@ struct TableStruct_llbuild3_2fActionCache_2eproto {
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_llbuild3_2fActionCache_2eproto;
 namespace llbuild3 {
-class ActionStat;
-struct ActionStatDefaultTypeInternal;
-extern ActionStatDefaultTypeInternal _ActionStat_default_instance_;
 class CacheKey;
 struct CacheKeyDefaultTypeInternal;
 extern CacheKeyDefaultTypeInternal _CacheKey_default_instance_;
@@ -233,7 +231,7 @@ class CacheKey final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kLabelFieldNumber = 1,
-    kContentFieldNumber = 3,
+    kDataFieldNumber = 3,
     kTypeFieldNumber = 2,
   };
   // .llbuild3.Label label = 1;
@@ -251,19 +249,19 @@ class CacheKey final : public ::google::protobuf::Message
   ::llbuild3::Label* _internal_mutable_label();
 
   public:
-  // .llbuild3.CASObjectID content = 3;
-  bool has_content() const;
-  void clear_content() ;
-  const ::llbuild3::CASObjectID& content() const;
-  PROTOBUF_NODISCARD ::llbuild3::CASObjectID* release_content();
-  ::llbuild3::CASObjectID* mutable_content();
-  void set_allocated_content(::llbuild3::CASObjectID* value);
-  void unsafe_arena_set_allocated_content(::llbuild3::CASObjectID* value);
-  ::llbuild3::CASObjectID* unsafe_arena_release_content();
+  // .llbuild3.CASID data = 3;
+  bool has_data() const;
+  void clear_data() ;
+  const ::llbuild3::CASID& data() const;
+  PROTOBUF_NODISCARD ::llbuild3::CASID* release_data();
+  ::llbuild3::CASID* mutable_data();
+  void set_allocated_data(::llbuild3::CASID* value);
+  void unsafe_arena_set_allocated_data(::llbuild3::CASID* value);
+  ::llbuild3::CASID* unsafe_arena_release_data();
 
   private:
-  const ::llbuild3::CASObjectID& _internal_content() const;
-  ::llbuild3::CASObjectID* _internal_mutable_content();
+  const ::llbuild3::CASID& _internal_data() const;
+  ::llbuild3::CASID* _internal_mutable_data();
 
   public:
   // .llbuild3.CacheKeyType type = 2;
@@ -305,286 +303,8 @@ class CacheKey final : public ::google::protobuf::Message
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     ::llbuild3::Label* label_;
-    ::llbuild3::CASObjectID* content_;
+    ::llbuild3::CASID* data_;
     int type_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_llbuild3_2fActionCache_2eproto;
-};
-// -------------------------------------------------------------------
-
-class ActionStat final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:llbuild3.ActionStat) */ {
- public:
-  inline ActionStat() : ActionStat(nullptr) {}
-  ~ActionStat() override;
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR ActionStat(
-      ::google::protobuf::internal::ConstantInitialized);
-
-  inline ActionStat(const ActionStat& from) : ActionStat(nullptr, from) {}
-  inline ActionStat(ActionStat&& from) noexcept
-      : ActionStat(nullptr, std::move(from)) {}
-  inline ActionStat& operator=(const ActionStat& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline ActionStat& operator=(ActionStat&& from) noexcept {
-    if (this == &from) return *this;
-    if (GetArena() == from.GetArena()
-#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
-        && GetArena() != nullptr
-#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
-    ) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const ActionStat& default_instance() {
-    return *internal_default_instance();
-  }
-  enum ValueCase {
-    kIntValue = 2,
-    kStringValue = 3,
-    kBoolValue = 4,
-    kDoubleValue = 5,
-    kCasObject = 6,
-    VALUE_NOT_SET = 0,
-  };
-  static inline const ActionStat* internal_default_instance() {
-    return reinterpret_cast<const ActionStat*>(
-        &_ActionStat_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 2;
-  friend void swap(ActionStat& a, ActionStat& b) { a.Swap(&b); }
-  inline void Swap(ActionStat* other) {
-    if (other == this) return;
-#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
-#else   // PROTOBUF_FORCE_COPY_IN_SWAP
-    if (GetArena() == other->GetArena()) {
-#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(ActionStat* other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  ActionStat* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<ActionStat>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const ActionStat& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const ActionStat& from) { ActionStat::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(
-      ::google::protobuf::MessageLite& to_msg,
-      const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
-  ::size_t ByteSizeLong() const final;
-  ::uint8_t* _InternalSerialize(
-      ::uint8_t* target,
-      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* arena);
-  void SharedDtor();
-  void InternalSwap(ActionStat* other);
- private:
-  friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "llbuild3.ActionStat"; }
-
- protected:
-  explicit ActionStat(::google::protobuf::Arena* arena);
-  ActionStat(::google::protobuf::Arena* arena, const ActionStat& from);
-  ActionStat(::google::protobuf::Arena* arena, ActionStat&& from) noexcept
-      : ActionStat(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::Message::ClassData* GetClassData() const final;
-
- public:
-  ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kNameFieldNumber = 1,
-    kIntValueFieldNumber = 2,
-    kStringValueFieldNumber = 3,
-    kBoolValueFieldNumber = 4,
-    kDoubleValueFieldNumber = 5,
-    kCasObjectFieldNumber = 6,
-  };
-  // string name = 1;
-  void clear_name() ;
-  const std::string& name() const;
-  template <typename Arg_ = const std::string&, typename... Args_>
-  void set_name(Arg_&& arg, Args_... args);
-  std::string* mutable_name();
-  PROTOBUF_NODISCARD std::string* release_name();
-  void set_allocated_name(std::string* value);
-
-  private:
-  const std::string& _internal_name() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_name(
-      const std::string& value);
-  std::string* _internal_mutable_name();
-
-  public:
-  // int64 intValue = 2;
-  bool has_intvalue() const;
-  void clear_intvalue() ;
-  ::int64_t intvalue() const;
-  void set_intvalue(::int64_t value);
-
-  private:
-  ::int64_t _internal_intvalue() const;
-  void _internal_set_intvalue(::int64_t value);
-
-  public:
-  // string stringValue = 3;
-  bool has_stringvalue() const;
-  void clear_stringvalue() ;
-  const std::string& stringvalue() const;
-  template <typename Arg_ = const std::string&, typename... Args_>
-  void set_stringvalue(Arg_&& arg, Args_... args);
-  std::string* mutable_stringvalue();
-  PROTOBUF_NODISCARD std::string* release_stringvalue();
-  void set_allocated_stringvalue(std::string* value);
-
-  private:
-  const std::string& _internal_stringvalue() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_stringvalue(
-      const std::string& value);
-  std::string* _internal_mutable_stringvalue();
-
-  public:
-  // bool boolValue = 4;
-  bool has_boolvalue() const;
-  void clear_boolvalue() ;
-  bool boolvalue() const;
-  void set_boolvalue(bool value);
-
-  private:
-  bool _internal_boolvalue() const;
-  void _internal_set_boolvalue(bool value);
-
-  public:
-  // double doubleValue = 5;
-  bool has_doublevalue() const;
-  void clear_doublevalue() ;
-  double doublevalue() const;
-  void set_doublevalue(double value);
-
-  private:
-  double _internal_doublevalue() const;
-  void _internal_set_doublevalue(double value);
-
-  public:
-  // .llbuild3.CASObjectID casObject = 6;
-  bool has_casobject() const;
-  private:
-  bool _internal_has_casobject() const;
-
-  public:
-  void clear_casobject() ;
-  const ::llbuild3::CASObjectID& casobject() const;
-  PROTOBUF_NODISCARD ::llbuild3::CASObjectID* release_casobject();
-  ::llbuild3::CASObjectID* mutable_casobject();
-  void set_allocated_casobject(::llbuild3::CASObjectID* value);
-  void unsafe_arena_set_allocated_casobject(::llbuild3::CASObjectID* value);
-  ::llbuild3::CASObjectID* unsafe_arena_release_casobject();
-
-  private:
-  const ::llbuild3::CASObjectID& _internal_casobject() const;
-  ::llbuild3::CASObjectID* _internal_mutable_casobject();
-
-  public:
-  void clear_value();
-  ValueCase value_case() const;
-  // @@protoc_insertion_point(class_scope:llbuild3.ActionStat)
- private:
-  class _Internal;
-  void set_has_intvalue();
-  void set_has_stringvalue();
-  void set_has_boolvalue();
-  void set_has_doublevalue();
-  void set_has_casobject();
-  inline bool has_value() const;
-  inline void clear_has_value();
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<
-      0, 6, 1,
-      43, 2>
-      _table_;
-
-  static constexpr const void* _raw_default_instance_ =
-      &_ActionStat_default_instance_;
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(
-        ::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena);
-    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
-                          ::google::protobuf::Arena* arena, const Impl_& from,
-                          const ActionStat& from_msg);
-    ::google::protobuf::internal::ArenaStringPtr name_;
-    union ValueUnion {
-      constexpr ValueUnion() : _constinit_{} {}
-      ::google::protobuf::internal::ConstantInitialized _constinit_;
-      ::int64_t intvalue_;
-      ::google::protobuf::internal::ArenaStringPtr stringvalue_;
-      bool boolvalue_;
-      double doublevalue_;
-      ::llbuild3::CASObjectID* casobject_;
-    } value_;
-    mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    ::uint32_t _oneof_case_[1];
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -719,36 +439,36 @@ class CacheValue final : public ::google::protobuf::Message
     kStatsFieldNumber = 2,
     kDataFieldNumber = 1,
   };
-  // repeated .llbuild3.ActionStat stats = 2;
+  // repeated .llbuild3.Stat stats = 2;
   int stats_size() const;
   private:
   int _internal_stats_size() const;
 
   public:
   void clear_stats() ;
-  ::llbuild3::ActionStat* mutable_stats(int index);
-  ::google::protobuf::RepeatedPtrField<::llbuild3::ActionStat>* mutable_stats();
+  ::llbuild3::Stat* mutable_stats(int index);
+  ::google::protobuf::RepeatedPtrField<::llbuild3::Stat>* mutable_stats();
 
   private:
-  const ::google::protobuf::RepeatedPtrField<::llbuild3::ActionStat>& _internal_stats() const;
-  ::google::protobuf::RepeatedPtrField<::llbuild3::ActionStat>* _internal_mutable_stats();
+  const ::google::protobuf::RepeatedPtrField<::llbuild3::Stat>& _internal_stats() const;
+  ::google::protobuf::RepeatedPtrField<::llbuild3::Stat>* _internal_mutable_stats();
   public:
-  const ::llbuild3::ActionStat& stats(int index) const;
-  ::llbuild3::ActionStat* add_stats();
-  const ::google::protobuf::RepeatedPtrField<::llbuild3::ActionStat>& stats() const;
-  // .llbuild3.CASObjectID data = 1;
+  const ::llbuild3::Stat& stats(int index) const;
+  ::llbuild3::Stat* add_stats();
+  const ::google::protobuf::RepeatedPtrField<::llbuild3::Stat>& stats() const;
+  // .llbuild3.CASID data = 1;
   bool has_data() const;
   void clear_data() ;
-  const ::llbuild3::CASObjectID& data() const;
-  PROTOBUF_NODISCARD ::llbuild3::CASObjectID* release_data();
-  ::llbuild3::CASObjectID* mutable_data();
-  void set_allocated_data(::llbuild3::CASObjectID* value);
-  void unsafe_arena_set_allocated_data(::llbuild3::CASObjectID* value);
-  ::llbuild3::CASObjectID* unsafe_arena_release_data();
+  const ::llbuild3::CASID& data() const;
+  PROTOBUF_NODISCARD ::llbuild3::CASID* release_data();
+  ::llbuild3::CASID* mutable_data();
+  void set_allocated_data(::llbuild3::CASID* value);
+  void unsafe_arena_set_allocated_data(::llbuild3::CASID* value);
+  ::llbuild3::CASID* unsafe_arena_release_data();
 
   private:
-  const ::llbuild3::CASObjectID& _internal_data() const;
-  ::llbuild3::CASObjectID* _internal_mutable_data();
+  const ::llbuild3::CASID& _internal_data() const;
+  ::llbuild3::CASID* _internal_mutable_data();
 
   public:
   // @@protoc_insertion_point(class_scope:llbuild3.CacheValue)
@@ -779,8 +499,8 @@ class CacheValue final : public ::google::protobuf::Message
                           const CacheValue& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::RepeatedPtrField< ::llbuild3::ActionStat > stats_;
-    ::llbuild3::CASObjectID* data_;
+    ::google::protobuf::RepeatedPtrField< ::llbuild3::Stat > stats_;
+    ::llbuild3::CASID* data_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -916,40 +636,40 @@ inline void CacheKey::_internal_set_type(::llbuild3::CacheKeyType value) {
   _impl_.type_ = value;
 }
 
-// .llbuild3.CASObjectID content = 3;
-inline bool CacheKey::has_content() const {
+// .llbuild3.CASID data = 3;
+inline bool CacheKey::has_data() const {
   bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
-  PROTOBUF_ASSUME(!value || _impl_.content_ != nullptr);
+  PROTOBUF_ASSUME(!value || _impl_.data_ != nullptr);
   return value;
 }
-inline const ::llbuild3::CASObjectID& CacheKey::_internal_content() const {
+inline const ::llbuild3::CASID& CacheKey::_internal_data() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  const ::llbuild3::CASObjectID* p = _impl_.content_;
-  return p != nullptr ? *p : reinterpret_cast<const ::llbuild3::CASObjectID&>(::llbuild3::_CASObjectID_default_instance_);
+  const ::llbuild3::CASID* p = _impl_.data_;
+  return p != nullptr ? *p : reinterpret_cast<const ::llbuild3::CASID&>(::llbuild3::_CASID_default_instance_);
 }
-inline const ::llbuild3::CASObjectID& CacheKey::content() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:llbuild3.CacheKey.content)
-  return _internal_content();
+inline const ::llbuild3::CASID& CacheKey::data() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:llbuild3.CacheKey.data)
+  return _internal_data();
 }
-inline void CacheKey::unsafe_arena_set_allocated_content(::llbuild3::CASObjectID* value) {
+inline void CacheKey::unsafe_arena_set_allocated_data(::llbuild3::CASID* value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.content_);
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.data_);
   }
-  _impl_.content_ = reinterpret_cast<::llbuild3::CASObjectID*>(value);
+  _impl_.data_ = reinterpret_cast<::llbuild3::CASID*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000002u;
   } else {
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:llbuild3.CacheKey.content)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:llbuild3.CacheKey.data)
 }
-inline ::llbuild3::CASObjectID* CacheKey::release_content() {
+inline ::llbuild3::CASID* CacheKey::release_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   _impl_._has_bits_[0] &= ~0x00000002u;
-  ::llbuild3::CASObjectID* released = _impl_.content_;
-  _impl_.content_ = nullptr;
+  ::llbuild3::CASID* released = _impl_.data_;
+  _impl_.data_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
   released = ::google::protobuf::internal::DuplicateIfNonNull(released);
@@ -963,34 +683,34 @@ inline ::llbuild3::CASObjectID* CacheKey::release_content() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::llbuild3::CASObjectID* CacheKey::unsafe_arena_release_content() {
+inline ::llbuild3::CASID* CacheKey::unsafe_arena_release_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:llbuild3.CacheKey.content)
+  // @@protoc_insertion_point(field_release:llbuild3.CacheKey.data)
 
   _impl_._has_bits_[0] &= ~0x00000002u;
-  ::llbuild3::CASObjectID* temp = _impl_.content_;
-  _impl_.content_ = nullptr;
+  ::llbuild3::CASID* temp = _impl_.data_;
+  _impl_.data_ = nullptr;
   return temp;
 }
-inline ::llbuild3::CASObjectID* CacheKey::_internal_mutable_content() {
+inline ::llbuild3::CASID* CacheKey::_internal_mutable_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.content_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::llbuild3::CASObjectID>(GetArena());
-    _impl_.content_ = reinterpret_cast<::llbuild3::CASObjectID*>(p);
+  if (_impl_.data_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::llbuild3::CASID>(GetArena());
+    _impl_.data_ = reinterpret_cast<::llbuild3::CASID*>(p);
   }
-  return _impl_.content_;
+  return _impl_.data_;
 }
-inline ::llbuild3::CASObjectID* CacheKey::mutable_content() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::llbuild3::CASID* CacheKey::mutable_data() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000002u;
-  ::llbuild3::CASObjectID* _msg = _internal_mutable_content();
-  // @@protoc_insertion_point(field_mutable:llbuild3.CacheKey.content)
+  ::llbuild3::CASID* _msg = _internal_mutable_data();
+  // @@protoc_insertion_point(field_mutable:llbuild3.CacheKey.data)
   return _msg;
 }
-inline void CacheKey::set_allocated_content(::llbuild3::CASObjectID* value) {
+inline void CacheKey::set_allocated_data(::llbuild3::CASID* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
-    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.content_);
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.data_);
   }
 
   if (value != nullptr) {
@@ -1003,35 +723,35 @@ inline void CacheKey::set_allocated_content(::llbuild3::CASObjectID* value) {
     _impl_._has_bits_[0] &= ~0x00000002u;
   }
 
-  _impl_.content_ = reinterpret_cast<::llbuild3::CASObjectID*>(value);
-  // @@protoc_insertion_point(field_set_allocated:llbuild3.CacheKey.content)
+  _impl_.data_ = reinterpret_cast<::llbuild3::CASID*>(value);
+  // @@protoc_insertion_point(field_set_allocated:llbuild3.CacheKey.data)
 }
 
 // -------------------------------------------------------------------
 
 // CacheValue
 
-// .llbuild3.CASObjectID data = 1;
+// .llbuild3.CASID data = 1;
 inline bool CacheValue::has_data() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.data_ != nullptr);
   return value;
 }
-inline const ::llbuild3::CASObjectID& CacheValue::_internal_data() const {
+inline const ::llbuild3::CASID& CacheValue::_internal_data() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  const ::llbuild3::CASObjectID* p = _impl_.data_;
-  return p != nullptr ? *p : reinterpret_cast<const ::llbuild3::CASObjectID&>(::llbuild3::_CASObjectID_default_instance_);
+  const ::llbuild3::CASID* p = _impl_.data_;
+  return p != nullptr ? *p : reinterpret_cast<const ::llbuild3::CASID&>(::llbuild3::_CASID_default_instance_);
 }
-inline const ::llbuild3::CASObjectID& CacheValue::data() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::llbuild3::CASID& CacheValue::data() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:llbuild3.CacheValue.data)
   return _internal_data();
 }
-inline void CacheValue::unsafe_arena_set_allocated_data(::llbuild3::CASObjectID* value) {
+inline void CacheValue::unsafe_arena_set_allocated_data(::llbuild3::CASID* value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.data_);
   }
-  _impl_.data_ = reinterpret_cast<::llbuild3::CASObjectID*>(value);
+  _impl_.data_ = reinterpret_cast<::llbuild3::CASID*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000001u;
   } else {
@@ -1039,11 +759,11 @@ inline void CacheValue::unsafe_arena_set_allocated_data(::llbuild3::CASObjectID*
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:llbuild3.CacheValue.data)
 }
-inline ::llbuild3::CASObjectID* CacheValue::release_data() {
+inline ::llbuild3::CASID* CacheValue::release_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::llbuild3::CASObjectID* released = _impl_.data_;
+  ::llbuild3::CASID* released = _impl_.data_;
   _impl_.data_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -1058,30 +778,30 @@ inline ::llbuild3::CASObjectID* CacheValue::release_data() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return released;
 }
-inline ::llbuild3::CASObjectID* CacheValue::unsafe_arena_release_data() {
+inline ::llbuild3::CASID* CacheValue::unsafe_arena_release_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:llbuild3.CacheValue.data)
 
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::llbuild3::CASObjectID* temp = _impl_.data_;
+  ::llbuild3::CASID* temp = _impl_.data_;
   _impl_.data_ = nullptr;
   return temp;
 }
-inline ::llbuild3::CASObjectID* CacheValue::_internal_mutable_data() {
+inline ::llbuild3::CASID* CacheValue::_internal_mutable_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.data_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::llbuild3::CASObjectID>(GetArena());
-    _impl_.data_ = reinterpret_cast<::llbuild3::CASObjectID*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::llbuild3::CASID>(GetArena());
+    _impl_.data_ = reinterpret_cast<::llbuild3::CASID*>(p);
   }
   return _impl_.data_;
 }
-inline ::llbuild3::CASObjectID* CacheValue::mutable_data() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::llbuild3::CASID* CacheValue::mutable_data() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000001u;
-  ::llbuild3::CASObjectID* _msg = _internal_mutable_data();
+  ::llbuild3::CASID* _msg = _internal_mutable_data();
   // @@protoc_insertion_point(field_mutable:llbuild3.CacheValue.data)
   return _msg;
 }
-inline void CacheValue::set_allocated_data(::llbuild3::CASObjectID* value) {
+inline void CacheValue::set_allocated_data(::llbuild3::CASID* value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
@@ -1098,374 +818,55 @@ inline void CacheValue::set_allocated_data(::llbuild3::CASObjectID* value) {
     _impl_._has_bits_[0] &= ~0x00000001u;
   }
 
-  _impl_.data_ = reinterpret_cast<::llbuild3::CASObjectID*>(value);
+  _impl_.data_ = reinterpret_cast<::llbuild3::CASID*>(value);
   // @@protoc_insertion_point(field_set_allocated:llbuild3.CacheValue.data)
 }
 
-// repeated .llbuild3.ActionStat stats = 2;
+// repeated .llbuild3.Stat stats = 2;
 inline int CacheValue::_internal_stats_size() const {
   return _internal_stats().size();
 }
 inline int CacheValue::stats_size() const {
   return _internal_stats_size();
 }
-inline void CacheValue::clear_stats() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.stats_.Clear();
-}
-inline ::llbuild3::ActionStat* CacheValue::mutable_stats(int index)
+inline ::llbuild3::Stat* CacheValue::mutable_stats(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable:llbuild3.CacheValue.stats)
   return _internal_mutable_stats()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::llbuild3::ActionStat>* CacheValue::mutable_stats()
+inline ::google::protobuf::RepeatedPtrField<::llbuild3::Stat>* CacheValue::mutable_stats()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable_list:llbuild3.CacheValue.stats)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_stats();
 }
-inline const ::llbuild3::ActionStat& CacheValue::stats(int index) const
+inline const ::llbuild3::Stat& CacheValue::stats(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:llbuild3.CacheValue.stats)
   return _internal_stats().Get(index);
 }
-inline ::llbuild3::ActionStat* CacheValue::add_stats() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::llbuild3::Stat* CacheValue::add_stats() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::llbuild3::ActionStat* _add = _internal_mutable_stats()->Add();
+  ::llbuild3::Stat* _add = _internal_mutable_stats()->Add();
   // @@protoc_insertion_point(field_add:llbuild3.CacheValue.stats)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::llbuild3::ActionStat>& CacheValue::stats() const
+inline const ::google::protobuf::RepeatedPtrField<::llbuild3::Stat>& CacheValue::stats() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_list:llbuild3.CacheValue.stats)
   return _internal_stats();
 }
-inline const ::google::protobuf::RepeatedPtrField<::llbuild3::ActionStat>&
+inline const ::google::protobuf::RepeatedPtrField<::llbuild3::Stat>&
 CacheValue::_internal_stats() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.stats_;
 }
-inline ::google::protobuf::RepeatedPtrField<::llbuild3::ActionStat>*
+inline ::google::protobuf::RepeatedPtrField<::llbuild3::Stat>*
 CacheValue::_internal_mutable_stats() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.stats_;
 }
 
-// -------------------------------------------------------------------
-
-// ActionStat
-
-// string name = 1;
-inline void ActionStat::clear_name() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.name_.ClearToEmpty();
-}
-inline const std::string& ActionStat::name() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:llbuild3.ActionStat.name)
-  return _internal_name();
-}
-template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void ActionStat::set_name(Arg_&& arg,
-                                                     Args_... args) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.name_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:llbuild3.ActionStat.name)
-}
-inline std::string* ActionStat::mutable_name() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  std::string* _s = _internal_mutable_name();
-  // @@protoc_insertion_point(field_mutable:llbuild3.ActionStat.name)
-  return _s;
-}
-inline const std::string& ActionStat::_internal_name() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  return _impl_.name_.Get();
-}
-inline void ActionStat::_internal_set_name(const std::string& value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.name_.Set(value, GetArena());
-}
-inline std::string* ActionStat::_internal_mutable_name() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  return _impl_.name_.Mutable( GetArena());
-}
-inline std::string* ActionStat::release_name() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:llbuild3.ActionStat.name)
-  return _impl_.name_.Release();
-}
-inline void ActionStat::set_allocated_name(std::string* value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.name_.SetAllocated(value, GetArena());
-  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-        if (_impl_.name_.IsDefault()) {
-          _impl_.name_.Set("", GetArena());
-        }
-  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:llbuild3.ActionStat.name)
-}
-
-// int64 intValue = 2;
-inline bool ActionStat::has_intvalue() const {
-  return value_case() == kIntValue;
-}
-inline void ActionStat::set_has_intvalue() {
-  _impl_._oneof_case_[0] = kIntValue;
-}
-inline void ActionStat::clear_intvalue() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (value_case() == kIntValue) {
-    _impl_.value_.intvalue_ = ::int64_t{0};
-    clear_has_value();
-  }
-}
-inline ::int64_t ActionStat::intvalue() const {
-  // @@protoc_insertion_point(field_get:llbuild3.ActionStat.intValue)
-  return _internal_intvalue();
-}
-inline void ActionStat::set_intvalue(::int64_t value) {
-  if (value_case() != kIntValue) {
-    clear_value();
-    set_has_intvalue();
-  }
-  _impl_.value_.intvalue_ = value;
-  // @@protoc_insertion_point(field_set:llbuild3.ActionStat.intValue)
-}
-inline ::int64_t ActionStat::_internal_intvalue() const {
-  if (value_case() == kIntValue) {
-    return _impl_.value_.intvalue_;
-  }
-  return ::int64_t{0};
-}
-
-// string stringValue = 3;
-inline bool ActionStat::has_stringvalue() const {
-  return value_case() == kStringValue;
-}
-inline void ActionStat::set_has_stringvalue() {
-  _impl_._oneof_case_[0] = kStringValue;
-}
-inline void ActionStat::clear_stringvalue() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (value_case() == kStringValue) {
-    _impl_.value_.stringvalue_.Destroy();
-    clear_has_value();
-  }
-}
-inline const std::string& ActionStat::stringvalue() const
-    ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:llbuild3.ActionStat.stringValue)
-  return _internal_stringvalue();
-}
-template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void ActionStat::set_stringvalue(Arg_&& arg,
-                                                     Args_... args) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (value_case() != kStringValue) {
-    clear_value();
-
-    set_has_stringvalue();
-    _impl_.value_.stringvalue_.InitDefault();
-  }
-  _impl_.value_.stringvalue_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:llbuild3.ActionStat.stringValue)
-}
-inline std::string* ActionStat::mutable_stringvalue() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  std::string* _s = _internal_mutable_stringvalue();
-  // @@protoc_insertion_point(field_mutable:llbuild3.ActionStat.stringValue)
-  return _s;
-}
-inline const std::string& ActionStat::_internal_stringvalue() const {
-  ::google::protobuf::internal::TSanRead(&_impl_);
-  if (value_case() != kStringValue) {
-    return ::google::protobuf::internal::GetEmptyStringAlreadyInited();
-  }
-  return _impl_.value_.stringvalue_.Get();
-}
-inline void ActionStat::_internal_set_stringvalue(const std::string& value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (value_case() != kStringValue) {
-    clear_value();
-
-    set_has_stringvalue();
-    _impl_.value_.stringvalue_.InitDefault();
-  }
-  _impl_.value_.stringvalue_.Set(value, GetArena());
-}
-inline std::string* ActionStat::_internal_mutable_stringvalue() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (value_case() != kStringValue) {
-    clear_value();
-
-    set_has_stringvalue();
-    _impl_.value_.stringvalue_.InitDefault();
-  }
-  return _impl_.value_.stringvalue_.Mutable( GetArena());
-}
-inline std::string* ActionStat::release_stringvalue() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:llbuild3.ActionStat.stringValue)
-  if (value_case() != kStringValue) {
-    return nullptr;
-  }
-  clear_has_value();
-  return _impl_.value_.stringvalue_.Release();
-}
-inline void ActionStat::set_allocated_stringvalue(std::string* value) {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (has_value()) {
-    clear_value();
-  }
-  if (value != nullptr) {
-    set_has_stringvalue();
-    _impl_.value_.stringvalue_.InitAllocated(value, GetArena());
-  }
-  // @@protoc_insertion_point(field_set_allocated:llbuild3.ActionStat.stringValue)
-}
-
-// bool boolValue = 4;
-inline bool ActionStat::has_boolvalue() const {
-  return value_case() == kBoolValue;
-}
-inline void ActionStat::set_has_boolvalue() {
-  _impl_._oneof_case_[0] = kBoolValue;
-}
-inline void ActionStat::clear_boolvalue() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (value_case() == kBoolValue) {
-    _impl_.value_.boolvalue_ = false;
-    clear_has_value();
-  }
-}
-inline bool ActionStat::boolvalue() const {
-  // @@protoc_insertion_point(field_get:llbuild3.ActionStat.boolValue)
-  return _internal_boolvalue();
-}
-inline void ActionStat::set_boolvalue(bool value) {
-  if (value_case() != kBoolValue) {
-    clear_value();
-    set_has_boolvalue();
-  }
-  _impl_.value_.boolvalue_ = value;
-  // @@protoc_insertion_point(field_set:llbuild3.ActionStat.boolValue)
-}
-inline bool ActionStat::_internal_boolvalue() const {
-  if (value_case() == kBoolValue) {
-    return _impl_.value_.boolvalue_;
-  }
-  return false;
-}
-
-// double doubleValue = 5;
-inline bool ActionStat::has_doublevalue() const {
-  return value_case() == kDoubleValue;
-}
-inline void ActionStat::set_has_doublevalue() {
-  _impl_._oneof_case_[0] = kDoubleValue;
-}
-inline void ActionStat::clear_doublevalue() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (value_case() == kDoubleValue) {
-    _impl_.value_.doublevalue_ = 0;
-    clear_has_value();
-  }
-}
-inline double ActionStat::doublevalue() const {
-  // @@protoc_insertion_point(field_get:llbuild3.ActionStat.doubleValue)
-  return _internal_doublevalue();
-}
-inline void ActionStat::set_doublevalue(double value) {
-  if (value_case() != kDoubleValue) {
-    clear_value();
-    set_has_doublevalue();
-  }
-  _impl_.value_.doublevalue_ = value;
-  // @@protoc_insertion_point(field_set:llbuild3.ActionStat.doubleValue)
-}
-inline double ActionStat::_internal_doublevalue() const {
-  if (value_case() == kDoubleValue) {
-    return _impl_.value_.doublevalue_;
-  }
-  return 0;
-}
-
-// .llbuild3.CASObjectID casObject = 6;
-inline bool ActionStat::has_casobject() const {
-  return value_case() == kCasObject;
-}
-inline bool ActionStat::_internal_has_casobject() const {
-  return value_case() == kCasObject;
-}
-inline void ActionStat::set_has_casobject() {
-  _impl_._oneof_case_[0] = kCasObject;
-}
-inline ::llbuild3::CASObjectID* ActionStat::release_casobject() {
-  // @@protoc_insertion_point(field_release:llbuild3.ActionStat.casObject)
-  if (value_case() == kCasObject) {
-    clear_has_value();
-    auto* temp = _impl_.value_.casobject_;
-    if (GetArena() != nullptr) {
-      temp = ::google::protobuf::internal::DuplicateIfNonNull(temp);
-    }
-    _impl_.value_.casobject_ = nullptr;
-    return temp;
-  } else {
-    return nullptr;
-  }
-}
-inline const ::llbuild3::CASObjectID& ActionStat::_internal_casobject() const {
-  return value_case() == kCasObject ? *_impl_.value_.casobject_ : reinterpret_cast<::llbuild3::CASObjectID&>(::llbuild3::_CASObjectID_default_instance_);
-}
-inline const ::llbuild3::CASObjectID& ActionStat::casobject() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:llbuild3.ActionStat.casObject)
-  return _internal_casobject();
-}
-inline ::llbuild3::CASObjectID* ActionStat::unsafe_arena_release_casobject() {
-  // @@protoc_insertion_point(field_unsafe_arena_release:llbuild3.ActionStat.casObject)
-  if (value_case() == kCasObject) {
-    clear_has_value();
-    auto* temp = _impl_.value_.casobject_;
-    _impl_.value_.casobject_ = nullptr;
-    return temp;
-  } else {
-    return nullptr;
-  }
-}
-inline void ActionStat::unsafe_arena_set_allocated_casobject(::llbuild3::CASObjectID* value) {
-  // We rely on the oneof clear method to free the earlier contents
-  // of this oneof. We can directly use the pointer we're given to
-  // set the new value.
-  clear_value();
-  if (value) {
-    set_has_casobject();
-    _impl_.value_.casobject_ = value;
-  }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:llbuild3.ActionStat.casObject)
-}
-inline ::llbuild3::CASObjectID* ActionStat::_internal_mutable_casobject() {
-  if (value_case() != kCasObject) {
-    clear_value();
-    set_has_casobject();
-    _impl_.value_.casobject_ =
-        ::google::protobuf::Message::DefaultConstruct<::llbuild3::CASObjectID>(GetArena());
-  }
-  return _impl_.value_.casobject_;
-}
-inline ::llbuild3::CASObjectID* ActionStat::mutable_casobject() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  ::llbuild3::CASObjectID* _msg = _internal_mutable_casobject();
-  // @@protoc_insertion_point(field_mutable:llbuild3.ActionStat.casObject)
-  return _msg;
-}
-
-inline bool ActionStat::has_value() const {
-  return value_case() != VALUE_NOT_SET;
-}
-inline void ActionStat::clear_has_value() {
-  _impl_._oneof_case_[0] = VALUE_NOT_SET;
-}
-inline ActionStat::ValueCase ActionStat::value_case() const {
-  return ActionStat::ValueCase(_impl_._oneof_case_[0]);
-}
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif  // __GNUC__

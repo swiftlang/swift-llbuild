@@ -573,7 +573,7 @@ final class EngineTests: XCTestCase {
     }
   }
 
-  func testBuild_Action() async throws {
+  func testBuild_Action_BasicSubprocess() async throws {
     let rp = TMappedRuleProvider([
       try .init("//test") {
         TSimpleRule($0, arts: $1) {
@@ -646,7 +646,7 @@ final class EngineTests: XCTestCase {
     }
   }
 
-  func testBuild_ActionWithInput() async throws {
+  func testBuild_Action_SubprocessWithInput() async throws {
     let rp = TMappedRuleProvider([
       try .init("//test") {
         TSimpleRule($0, arts: $1) {
@@ -674,7 +674,7 @@ final class EngineTests: XCTestCase {
       mutating func compute(state: StateType, _ ti: TTaskInterface, task: TTask, inputs: TTaskInputs, subtaskResults: TSubtaskResults) throws -> TSMTransition<State> {
         switch state {
         case .inputUploaded:
-          guard let inputID: TCASObjectID = subtaskResults[id: subtaskID] else {
+          guard let inputID: TCASID = subtaskResults[id: subtaskID] else {
             throw TClientError.badSubtaskResult
           }
           let action = try TAction.with {
@@ -734,6 +734,100 @@ final class EngineTests: XCTestCase {
         }
 
         XCTAssertEqual(chunk.data, Data("a string".utf8))
+      } else {
+        XCTFail("invalid artifact type found \(result.value.debugDescription)")
+      }
+    } catch {
+      XCTFail("build failed: \(error)")
+    }
+  }
+
+  func testBuild_Action_BasicFunction() async throws {
+
+    let rp = TMappedRuleProvider([
+      try .init("//test") {
+        TSimpleRule($0, arts: $1) {
+          TStateMachineTask<EchoAction>($0, arts: $1)
+        }
+      }
+    ])
+
+
+    struct EchoAction: TStateMachine {
+      enum State: Int {
+        case inputUploaded = 1
+        case actionComplete = 2
+      }
+
+      var v1: UInt64 = 0
+
+      mutating func initialize(_ ti: TTaskInterface, task: TTask) throws -> TSMTransition<State> {
+        v1 = try ti.spawnSubtask { si in
+          return try await si.cas.put(TCASObject.with { $0.data = Data("a string".utf8) })
+        }
+
+        return .wait(.inputUploaded, [v1])
+      }
+
+      mutating func compute(state: StateType, _ ti: TTaskInterface, task: TTask, inputs: TTaskInputs, subtaskResults: TSubtaskResults) throws -> TSMTransition<State> {
+        switch state {
+        case .inputUploaded:
+          guard let testStringID: TCASID = subtaskResults[id: v1] else {
+            throw TClientError.badSubtaskResult
+          }
+          let action = try TAction.with {
+            $0.casObject = testStringID
+            $0.function = try TLabel("//bin/echo")
+          }
+
+          let taskID = try ti.requestAction(action)
+          return .wait(.actionComplete, [taskID])
+        case .actionComplete:
+          let r = try inputs.getActionCASResult(0)
+
+          guard let artName = task.produces().first else {
+            throw TClientError.unclassified("no product label")
+          }
+          return .result(TTaskResult.with {
+            $0.artifacts = [TArtifact.with {
+              $0.label = artName
+              $0.type = .blob
+              $0.casObject = r
+            }]
+          })
+        }
+      }
+    }
+
+    class EchoProvider: TActionProvider {
+      func prefixes() -> [TLabel] { return [try! TLabel("//bin/echo")] }
+      func resolve(_ lbl: TLabel) throws -> TLabel? { return lbl }
+      func actionDescriptor(_ lbl: TLabel) throws -> TActionDescriptor? {
+        return TActionDescriptor(
+          name: lbl,
+          platform: TPlatform(),
+          executable: "/bin/echo"
+        )
+      }
+    }
+
+    let db = llbuild3.makeInMemoryCASDatabase()
+    let sp = TTempDirSandboxProvider(basedir: "testBuild_Action_BasicFunction", casDB: db.asTCASDatabase)
+    let exe = TExecutor(casDB: db, sandboxProvider: sp)
+    try exe.registerProvider(EchoProvider())
+    let engine = try TEngine(casDB: db, executor: exe, baseRuleProvider: rp)
+
+    let art = try TLabel("//test")
+    do {
+      let result = try await engine.build(art)
+      if case .casObject(let id) = result.value {
+        let db = engine.cas
+        guard let obj = try await db.get(id) else {
+          XCTFail("object not found")
+          return
+        }
+
+        XCTAssertEqual(obj.data, Data("a string".utf8))
       } else {
         XCTFail("invalid artifact type found \(result.value.debugDescription)")
       }
@@ -805,6 +899,112 @@ final class EngineTests: XCTestCase {
     }
   }
 
+  func testBuild_Logger() async throws {
+    let rp = TMappedRuleProvider([
+      try .init("//test") {
+        NullRule($0, arts: $1)
+      }
+    ])
+
+    class TestLogger: TLogger {
+      private let queue = DispatchQueue(label: "testBuild_Logger")
+      private var events_: [([TStat], TLoggingContext)] = []
+
+      func error(_ err: TError, _ ctx: TLoggingContext) {
+        XCTFail("error logged \(err)")
+      }
+      func event(_ stats: [TStat], _ ctx: TLoggingContext) {
+        queue.sync {
+          events_.append((stats, ctx))
+        }
+      }
+
+      var events: [([TStat], TLoggingContext)] {
+        return queue.sync { self.events_ }
+      }
+    }
+
+    class TestClientContext: TClientContext {
+      let val = "some context"
+    }
+
+    let db = llbuild3.makeInMemoryCASDatabase()
+    let sp = TTempDirSandboxProvider(basedir: "testBuild_Logger", casDB: db.asTCASDatabase)
+    let exe = TExecutor(casDB: db, sandboxProvider: sp)
+    let logger = TestLogger()
+    let engine = try TEngine(casDB: db, executor: exe, logger: logger, clientContext: TestClientContext(), baseRuleProvider: rp)
+
+    let art = try TLabel("//test")
+    do {
+      _ = try await engine.build(art)
+      // check that we got events
+      XCTAssertEqual(logger.events.count, 2)
+      guard let (e1, c1) = logger.events.first else {
+        XCTFail("start event not found")
+        return
+      }
+
+      // Check the client context
+      if let c = c1.clientContext {
+        if let cc = c as? TestClientContext {
+          XCTAssertEqual(cc.val, "some context")
+        } else {
+          XCTFail("not a TestClientContext")
+        }
+      } else {
+        XCTFail("clientContext not found")
+      }
+
+      // Check the contents of the start message
+      var messageFound = false
+      for s in e1 {
+        switch s.name {
+        case "log.message":
+          messageFound = true
+          if case .stringValue(let v) = s.value {
+            XCTAssertEqual(v, "build_started")
+          } else {
+            XCTFail("log.message not a string")
+          }
+        default:
+          continue
+        }
+      }
+      XCTAssertTrue(messageFound)
+
+      // Check the contents of the completed message
+      guard let (e2, _) = logger.events.last else {
+        XCTFail("completed event not found")
+        return
+      }
+      messageFound = false
+      var statusFound = false
+      for s in e2 {
+        switch s.name {
+        case "log.message":
+          messageFound = true
+          if case .stringValue(let v) = s.value {
+            XCTAssertEqual(v, "build_completed")
+          } else {
+            XCTFail("log.message not a string")
+          }
+        case "status":
+          statusFound = true
+          if case .stringValue(let v) = s.value {
+            XCTAssertEqual(v, "success")
+          } else {
+            XCTFail("status not a string")
+          }
+        default:
+          continue
+        }
+      }
+      XCTAssertTrue(messageFound)
+      XCTAssertTrue(statusFound)
+    } catch {
+      XCTFail("build failed: \(error)")
+    }
+  }
 
 }
 

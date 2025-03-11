@@ -26,17 +26,22 @@
 #include <variant>
 #include <vector>
 
+#include "google/protobuf/util/time_util.h"
+
 #include "llbuild3/ActionCache.h"
 #include "llbuild3/CASLog.h"
 #include "llbuild3/Error.pb.h"
 #include "llbuild3/Label.h"
 #include "llbuild3/LocalExecutor.h"
+#include "llbuild3/RemoteExecutor.h"
 #include "llbuild3/support/LabelTrie.h"
 
 using namespace llbuild3;
 using namespace llbuild3::support;
+using google::protobuf::util::TimeUtil;
 
 ActionExecutorListener::~ActionExecutorListener() { }
+ActionProvider::~ActionProvider() { }
 
 #pragma mark - ActionExecutor implementation
 
@@ -119,6 +124,8 @@ private:
 
     IState localState = IState::Idle;
     IState remoteState = IState::Idle;
+    RemoteActionID remoteID;
+    ActionExecutionMetadata metadata;
 
     PendingItem(const AnyRequest& request, std::optional<Action> resolved = {})
       : request(request), resolvedAction(resolved) { }
@@ -145,7 +152,8 @@ private:
   };
 
   struct PendingSubprocess {
-    BufferedStreamCASLogWriter output;
+    std::optional<BufferedStreamCASLogWriter> output;
+    std::string outBuffer;
     std::vector<Error> errors;
     std::shared_ptr<LocalSandbox> sandbox;
 
@@ -153,7 +161,10 @@ private:
       std::shared_ptr<CASDatabase> db,
       ProcessHandle hndl,
       std::shared_ptr<LocalExecutor> localExecutor
-    ) : output(db) {
+    ) {
+      if (db) {
+        output = BufferedStreamCASLogWriter(db);
+      }
       auto sres = localExecutor->createSandbox(hndl);
       if (sres.has_error()) {
         errors.push_back(sres.error());
@@ -172,14 +183,15 @@ private:
   std::shared_ptr<ActionCache> actionCache;
   std::shared_ptr<LocalExecutor> localExecutor;
   std::shared_ptr<RemoteExecutor> remoteExecutor;
+  std::shared_ptr<Logger> logger;
 
   std::unordered_set<std::string> defaultArchitectures;
   std::string defaultPlatform;
 
   // Providers
   std::mutex providerMutex;
-  std::vector<std::unique_ptr<ActionProvider>> providers;
-  typedef std::vector<std::unique_ptr<ActionProvider>>::size_type ProviderID;
+  std::vector<std::shared_ptr<ActionProvider>> providers;
+  typedef std::vector<std::shared_ptr<ActionProvider>>::size_type ProviderID;
   LabelTrie<ProviderID> providerMap{true};
 
   // Storage and mapping for all pending items
@@ -187,6 +199,9 @@ private:
   uint64_t lastID{0};
   std::unordered_map<uint64_t, PendingItem> pending;
 
+  // Remote Actions
+  std::mutex executableMutex;
+  std::unordered_map<std::string, CASID> executableCache;
 
   // Local concurrency control
   unsigned numLanes;
@@ -222,11 +237,18 @@ public:
                      std::shared_ptr<ActionCache> actionCache,
                      std::shared_ptr<LocalExecutor> localExecutor,
                      std::shared_ptr<RemoteExecutor> remoteExecutor,
+                     std::shared_ptr<Logger> logger,
                      unsigned maxLocalConcurrency,
                      unsigned maxAsyncConcurrency)
   : db(db), actionCache(actionCache), localExecutor(localExecutor)
-  , remoteExecutor(remoteExecutor), maxAsyncConcurrency(maxAsyncConcurrency)
+  , remoteExecutor(remoteExecutor), logger(logger)
+  , maxAsyncConcurrency(maxAsyncConcurrency)
   {
+    // Ensure we always have a valid logger
+    if (!this->logger) {
+      this->logger = std::make_shared<NullLogger>();
+    }
+
     // Determine local task concurrency
     numLanes = std::thread::hardware_concurrency();
     if (numLanes == 0) {
@@ -270,7 +292,7 @@ public:
     asyncLane->join();
   }
 
-  std::optional<Error> registerProvider(std::unique_ptr<ActionProvider>&& provider) {
+  std::optional<Error> registerProvider(std::shared_ptr<ActionProvider> provider) {
     std::lock_guard<std::mutex> lock(providerMutex);
 
     auto prefixes = provider->prefixes();
@@ -350,7 +372,7 @@ public:
       return internalSubmit(ActionDescriptor{function, {}}, request);
     }
 
-    if (!request.action.has_casobject()) {
+    if (!request.action.has_cas_object()) {
       return fail(makeExecutorError(ExecutorError::BadRequest, "no cas object"));
     }
 
@@ -462,7 +484,7 @@ private:
   }
 
   void checkCache(bool local, uint64_t actionID, const Action& action) {
-    if (actionCache && !action.volatile_()) {
+    if (actionCache && !action.is_volatile()) {
       CASObject keyObj;
       action.SerializeToString(keyObj.mutable_data());
       auto keyID = db->identify(keyObj);
@@ -470,11 +492,11 @@ private:
       CacheKey cacheKey;
       *cacheKey.mutable_label() = action.function();
       cacheKey.set_type(CACHE_KEY_TYPE_ACTION);
-      *cacheKey.mutable_content() = keyID;
+      *cacheKey.mutable_data() = keyID;
 
       actionCache->get(cacheKey, [this, local, actionID, action](result<CacheValue, Error> res) {
         if (res.has_error()) {
-          // FIXME: log error
+          logger->error({}, res.error());
           prepareForExecution(local, actionID, action);
           return;
         }
@@ -488,30 +510,19 @@ private:
         // load entry
         db->get(res->data(), [this, local, actionID, action](result<CASObject, Error> res) {
           if (res.has_error()) {
-            // FIXME: log error
+            logger->error({}, res.error());
             prepareForExecution(local, actionID, action);
             return;
           }
 
           ActionResult value;
           if (!value.ParseFromString(res->data())) {
-            // FIXME: log error
+            logger->error({}, makeExecutorError(ExecutorError::InternalProtobufSerialization, "failed to parse cached action"));
             prepareForExecution(local, actionID, action);
             return;
           }
 
-          EngineID owner;
-          ClientActionID cid;
-          {
-            std::lock_guard<std::mutex> lock(pendingMutex);
-            auto it = pending.find(actionID);
-            assert(it != pending.end());
-            auto [o, c] = it->second.clientID();
-            owner = o; cid = c;
-            pending.erase(actionID);
-          }
-
-          notifyActionComplete(owner, cid, value);
+          completeAction(actionID, value);
         });
       });
       return;
@@ -538,7 +549,7 @@ private:
   }
 
   void updateCache(const Action& action, const ActionResult& ares) {
-    if (!actionCache || action.volatile_()) {
+    if (!actionCache || action.is_volatile()) {
       return;
     }
 
@@ -548,25 +559,25 @@ private:
     CASObject valueObj;
     ares.SerializeToString(valueObj.mutable_data());
 
-    db->put(keyObj, [this, valueObj, lbl=action.function()](result<CASObjectID, Error> res) {
+    db->put(keyObj, [this, valueObj, lbl=action.function()](result<CASID, Error> res) {
       if (res.has_error()) {
         // caching is best effort, on failure just continue
-        // FIXME: report error
+        logger->error({}, res.error());
         return;
       }
 
       auto keyID = *res;
-      db->put(valueObj, [this, keyID, lbl](result<CASObjectID, Error> res) {
+      db->put(valueObj, [this, keyID, lbl](result<CASID, Error> res) {
         if (res.has_error()) {
           // caching is best effort, on failure just continue
-          // FIXME: report error
+          logger->error({}, res.error());
           return;
         }
 
         CacheKey cacheKey;
         *cacheKey.mutable_label() = lbl;
         cacheKey.set_type(CACHE_KEY_TYPE_ACTION);
-        *cacheKey.mutable_content() = keyID;
+        *cacheKey.mutable_data() = keyID;
 
         CacheValue cacheValue;
         *cacheValue.mutable_data() = *res;
@@ -596,14 +607,7 @@ private:
       it->second.localState = IState::Preparing;
     }
 
-    if (action.has_subprocess()) {
-      // FIXME: make exec sandbox for subprocess
-      // FIXME: download all inputs
-      queueForLocalExecution(actionID);
-    } else {
-      // FIXME: make exec sandbox for general function
-      queueForLocalExecution(actionID);
-    }
+    queueForLocalExecution(actionID);
   }
 
   void queueForLocalExecution(uint64_t actionID) {
@@ -613,6 +617,7 @@ private:
       auto it = pending.find(actionID);
       assert(it != pending.end());
       it->second.localState = IState::Queued;
+      *it->second.metadata.mutable_queued() = TimeUtil::GetCurrentTime();
       item = it->second.asSchedulerItem(actionID);
     }
 
@@ -621,20 +626,144 @@ private:
     localActionsCondition.notify_one();
   }
 
-  void prepareForRemoteExecution(uint64_t actionID, const Action& action) {
+  void completeAction(uint64_t actionID, result<ActionResult, Error> res) {
     EngineID owner;
     ClientActionID cid;
     {
       std::lock_guard<std::mutex> lock(pendingMutex);
       auto it = pending.find(actionID);
-      assert(it != pending.end());
+      if (it == pending.end()) {
+        return;
+      }
       auto [o, c] = it->second.clientID();
       owner = o; cid = c;
       pending.erase(actionID);
     }
-    // FIXME: implement
-    notifyActionComplete(owner, cid,
-                         fail(makeExecutorError(ExecutorError::Unimplemented)));
+    notifyActionComplete(owner, cid, res);
+  }
+
+  void prepareForRemoteExecution(uint64_t actionID, const Action& action) {
+    if (!remoteExecutor) {
+      completeAction(actionID,
+                     fail(makeExecutorError(ExecutorError::NoRemoteExecutor)));
+      return;
+    }
+
+    std::string execPath;
+    if (action.function().components(0) == "builtin") {
+      execPath = remoteExecutor->builtinExecutable();
+    } else {
+      // get action descriptor for the function
+      ActionProvider* provider = nullptr;
+      {
+        std::lock_guard<std::mutex> lock(providerMutex);
+        auto entry = providerMap[action.function()];
+        if (entry.has_value()) {
+          provider = providers[*entry].get();
+        }
+      }
+      if (!provider) {
+        auto res = fail(makeExecutorError(ExecutorError::NoProvider,
+                                          labelAsCanonicalString(action.function())));
+        completeAction(actionID, res);
+        return;
+      }
+
+      auto desc = provider->actionDescriptor(action.function());
+      if (desc.has_error()) {
+        completeAction(actionID, fail(desc.error()));
+        return;
+      }
+      execPath = desc->executable.string();
+    }
+
+    std::optional<CASID> exec;
+    {
+      std::lock_guard<std::mutex> lock(executableMutex);
+      if (auto it = executableCache.find(execPath); it != executableCache.end()) {
+        exec = it->second;
+      }
+    }
+
+    if (exec.has_value()) {
+      {
+        std::lock_guard<std::mutex> lock(pendingMutex);
+        auto it = pending.find(actionID);
+        assert(it != pending.end());
+        it->second.localState = IState::Queued;
+        *it->second.metadata.mutable_queued() = TimeUtil::GetCurrentTime();
+      }
+
+      remoteExecutor->execute(
+        *exec, action,
+        [this, actionID](result<RemoteActionID, Error> res) {
+          remoteActionDispatched(actionID, res);
+        },
+        [this, action, actionID](result<ActionResult, Error> res) {
+          if (res) {
+            updateCache(action, *res);
+          }
+          completeAction(actionID, res);
+        }
+      );
+      return;
+    }
+
+    {
+      std::lock_guard<std::mutex> lock(pendingMutex);
+      auto it = pending.find(actionID);
+      assert(it != pending.end());
+      it->second.localState = IState::Preparing;
+    }
+
+    remoteExecutor->prepare(execPath,
+      [this, actionID, execPath, action](result<CASID, Error> res) {
+        if (res.has_error()) {
+          completeAction(actionID, fail(res.error()));
+          return;
+        }
+
+        {
+          std::lock_guard<std::mutex> lock(executableMutex);
+          executableCache.insert_or_assign(execPath, *res);
+        }
+
+        {
+          std::lock_guard<std::mutex> lock(pendingMutex);
+          auto it = pending.find(actionID);
+          assert(it != pending.end());
+          it->second.localState = IState::Queued;
+          *it->second.metadata.mutable_queued() = TimeUtil::GetCurrentTime();
+        }
+
+        remoteExecutor->execute(
+          *res, action,
+          [this, actionID](result<RemoteActionID, Error> res) {
+            remoteActionDispatched(actionID, res);
+          },
+          [this, action, actionID](result<ActionResult, Error> res) {
+            if (res) {
+              updateCache(action, *res);
+            }
+            completeAction(actionID, res);
+          }
+        );
+      }
+    );
+  }
+
+  void remoteActionDispatched(uint64_t actionID, result<RemoteActionID, Error> res) {
+    if (res.has_error()) {
+      completeAction(actionID, fail(res.error()));
+      return;
+    }
+
+    std::lock_guard<std::mutex> lock(pendingMutex);
+    if (auto it = pending.find(actionID); it != pending.end()) {
+      it->second.remoteState = IState::Running;
+      it->second.remoteID = *res;
+      *it->second.metadata.mutable_dispatched() = TimeUtil::GetCurrentTime();
+    }
   }
 
   void processLocalAction(const SchedulerItem& item, ActionRequest req) {
@@ -643,9 +772,29 @@ private:
       return;
     }
 
-    // FIXME: implement
-    notifyActionComplete(req.owner, req.id,
-                         fail(makeExecutorError(ExecutorError::Unimplemented)));
+    // get action descriptor for the function
+    ActionProvider* provider = nullptr;
+    {
+      std::lock_guard<std::mutex> lock(providerMutex);
+      auto entry = providerMap[req.action.function()];
+      if (entry.has_value()) {
+        provider = providers[*entry].get();
+      }
+    }
+    if (!provider) {
+      auto res = fail(makeExecutorError(ExecutorError::NoProvider,
+                                        labelAsCanonicalString(req.action.function())));
+      completeAction(item.actionID, res);
+      return;
+    }
+
+    auto desc = provider->actionDescriptor(req.action.function());
+    if (desc.has_error()) {
+      completeAction(item.actionID, fail(desc.error()));
+      return;
+    }
+
+    handleFunctionAction(item, desc->executable.string(), req);
   }
 
   void handleSubprocessAction(const SchedulerItem& item, const ActionRequest& req) {
@@ -690,16 +839,97 @@ private:
       auto& envvar = subproc.environment(i);
       environment.push_back(std::make_pair(envvar.name(), envvar.value()));
     }
+    auto senv = p->sandbox->environment();
+    for (auto e : senv) {
+      environment.push_back(std::make_pair(e.first, e.second));
+    }
 
-    localExecutor->executeProcess(commandLine, environment,
-                                  *this, // delegate
-                                  reinterpret_cast<ProcessContext*>(p), // context
-                                  hndl, // handle
-                                  attr, // attributes
-                                  [this, item, req, p](ProcessResult res) {
-      handleSubprocessFinished(item, req, p, res);
-    });
+    {
+      std::lock_guard<std::mutex> lock(pendingMutex);
+      auto it = pending.find(item.actionID);
+      assert(it != pending.end());
+      *it->second.metadata.mutable_execution_start() = TimeUtil::GetCurrentTime();
+    }
 
+    localExecutor->executeProcess(
+      commandLine,
+      environment,
+      *this, // delegate
+      reinterpret_cast<ProcessContext*>(p), // context
+      hndl, // handle
+      attr, // attributes
+      [this, item, req, p](ProcessResult res) {
+        {
+          std::lock_guard<std::mutex> lock(pendingMutex);
+          auto it = pending.find(item.actionID);
+          assert(it != pending.end());
+          it->second.localState = IState::Queued;
+          *it->second.metadata.mutable_execution_completed() = TimeUtil::GetCurrentTime();
+        }
+
+        handleSubprocessFinished(item, req, p, res);
+      }
+    );
+  }
+
+  void handleFunctionAction(
+    const SchedulerItem& item, std::string execPath, const ActionRequest& req
+  ) {
+    ProcessHandle hndl{item.actionID};
+    PendingSubprocess* p = new PendingSubprocess({}, hndl, localExecutor);
+
+    if (p->errors.size() > 0) {
+      handleSubprocessFinished(item, req, p, {});
+      return;
+    }
+
+    ProcessAttributes attr{
+      true, // canSafelyInterrupt
+      false, // connectToConsole
+      p->sandbox->workingDir(), // workingDir
+      false, // inheritEnvironment
+      false // controlEnabled
+    };
+
+    std::vector<std::string_view> commandLine;
+    std::vector<std::pair<std::string_view, std::string_view>> environment;
+
+    // prep command line
+    commandLine.push_back(execPath);
+    auto objstr = CASIDAsCanonicalString(req.action.cas_object());
+    commandLine.push_back(objstr);
+
+    // prep environment
+    auto senv = p->sandbox->environment();
+    for (auto e : senv) {
+      environment.push_back(std::make_pair(e.first, e.second));
+    }
+
+    {
+      std::lock_guard<std::mutex> lock(pendingMutex);
+      auto it = pending.find(item.actionID);
+      assert(it != pending.end());
+      *it->second.metadata.mutable_execution_start() = TimeUtil::GetCurrentTime();
+    }
+
+    localExecutor->executeProcess(
+      commandLine,
+      environment,
+      *this, // delegate
+      reinterpret_cast<ProcessContext*>(p), // context
+      hndl, // handle
+      attr, // attributes
+      [this, item, req, p](ProcessResult res) {
+        {
+          std::lock_guard<std::mutex> lock(pendingMutex);
+          auto it = pending.find(item.actionID);
+          assert(it != pending.end());
+          it->second.localState = IState::Queued;
+          *it->second.metadata.mutable_execution_completed() = TimeUtil::GetCurrentTime();
+        }
+        handleFunctionFinished(item, req, p, res);
+      }
+    );
   }
 
   void handleSubprocessFinished(
@@ -721,9 +951,16 @@ private:
       return;
     }
 
+    {
+      std::lock_guard<std::mutex> lock(pendingMutex);
+      auto it = pending.find(item.actionID);
+      assert(it != pending.end());
+      *it->second.metadata.mutable_output_upload_start() = TimeUtil::GetCurrentTime();
+    }
+
     std::vector<std::string> paths;
-    for (int i = 0; i < req.action.subprocess().outputpaths_size(); i++) {
-      paths.push_back(req.action.subprocess().outputpaths(i));
+    for (int i = 0; i < req.action.subprocess().output_paths_size(); i++) {
+      paths.push_back(req.action.subprocess().output_paths(i));
     }
     auto outres = p->sandbox->collectOutputs(paths);
     if (outres.has_error()) {
@@ -734,10 +971,11 @@ private:
     }
 
     // flush the stdout
-    p->output.flush([this, item, p, res, out=*outres](result<CASObjectID, Error> fres) {
+    p->output->flush([this, item, p, res, out=*outres](result<CASID, Error> fres) {
       Action action;
       EngineID owner;
       ClientActionID cid;
+      ActionExecutionMetadata metadata;
       {
         std::lock_guard<std::mutex> lock(pendingMutex);
         auto it = pending.find(item.actionID);
@@ -746,6 +984,7 @@ private:
         owner = o; cid = c;
         assert(it->second.resolvedAction.has_value());
         action = *it->second.resolvedAction;
+        metadata = it->second.metadata;
         pending.erase(item.actionID);
       }
 
@@ -755,19 +994,26 @@ private:
         return;
       }
 
+      // Record metadata
+      auto now = TimeUtil::GetCurrentTime();
+      *metadata.mutable_output_upload_completed() = now;
+      *metadata.mutable_worker_completed() = now;
+      *metadata.mutable_execution_duration() = metadata.execution_completed() - metadata.execution_start();
+      *metadata.mutable_execution_user_time() = TimeUtil::MicrosecondsToDuration(res.utime);
+      *metadata.mutable_execution_system_time() = TimeUtil::MicrosecondsToDuration(res.stime);
+      metadata.set_execution_max_rss(res.maxrss);
+      *metadata.mutable_completed() = now;
+
       ActionResult ares;
+      *ares.mutable_metadata() = metadata;
       auto& sres = *ares.mutable_subprocess();
-
       *sres.mutable_stdout() = *fres;
-
-      sres.set_exitcode(res.exitCode);
+      sres.set_exit_code(res.exitCode);
 
       // copy in outputs
       for (auto& output: out) {
         *sres.add_outputs() = output;
       }
-
-      // FIXME: handle execution metadata
 
       // update action cache
       updateCache(action, ares);
@@ -775,6 +1021,82 @@ private:
       notifyActionComplete(owner, cid, ares);
       delete p;
     });
+  }
+
+  void handleFunctionFinished(
+    const SchedulerItem& item,
+    const ActionRequest& req,
+    PendingSubprocess* p,
+    ProcessResult res
+  ) {
+    if (p->errors.size() > 0 || res.exitCode != 0) {
+      // handle error
+      {
+        std::lock_guard<std::mutex> lock(pendingMutex);
+        pending.erase(item.actionID);
+      }
+
+      Error err;
+      if (res.exitCode !=0) {
+        err = makeExecutorError(ExecutorError::ProcessFailed,
+                                std::format("exited {}", res.exitCode));
+      } else {
+        err = p->errors.back();
+      }
+
+      notifyActionComplete(req.owner, req.id, fail(err));
+
+      delete p;
+      return;
+    }
+
+    Action action;
+    EngineID owner;
+    ClientActionID cid;
+    ActionExecutionMetadata metadata;
+    {
+      std::lock_guard<std::mutex> lock(pendingMutex);
+      auto it = pending.find(item.actionID);
+      assert(it != pending.end());
+      auto [o, c] = it->second.clientID();
+      owner = o; cid = c;
+      assert(it->second.resolvedAction.has_value());
+      action = *it->second.resolvedAction;
+      metadata = it->second.metadata;
+      pending.erase(item.actionID);
+    }
+
+    CASID fresID;
+    ParseCanonicalCASIDString(fresID, p->outBuffer);
+
+    if (fresID.bytes().size() == 0) {
+      auto err = makeExecutorError(
+        ExecutorError::UnexpectedOutput,
+        "failed to parse result id: '" + p->outBuffer + "'"
+      );
+      notifyActionComplete(owner, cid, fail(err));
+      delete p;
+      return;
+    }
+
+    // Record metadata
+    auto now = TimeUtil::GetCurrentTime();
+    *metadata.mutable_worker_completed() = now;
+    *metadata.mutable_execution_duration() = metadata.execution_completed() - metadata.execution_start();
+    *metadata.mutable_execution_user_time() = TimeUtil::MicrosecondsToDuration(res.utime);
+    *metadata.mutable_execution_system_time() = TimeUtil::MicrosecondsToDuration(res.stime);
+    metadata.set_execution_max_rss(res.maxrss);
+    *metadata.mutable_completed() = now;
+
+    ActionResult ares;
+    *ares.mutable_cas_object() = fresID;
+    *ares.mutable_metadata() = metadata;
+
+    // update action cache
+    updateCache(action, ares);
+
+    notifyActionComplete(owner, cid, ares);
+    delete p;
   }
 
   void processStarted(ProcessContext*, ProcessHandle handle, llbuild_pid_t pid) override {
@@ -788,7 +1110,16 @@ private:
 
   void processHadOutput(ProcessContext* ctx, ProcessHandle handle, std::string_view data) override {
     auto p = reinterpret_cast<PendingSubprocess*>(ctx);
-    p->output.write(data, 0, {});
+    if (p->output.has_value()) {
+      p->output->write(data, 0, {});
+    } else {
+      if (p->outBuffer.size() + data.size() > 1024) {
+        p->errors.push_back(makeExecutorError(ExecutorError::UnexpectedOutput,
+                                              "function output exceeded max"));
+        data.remove_suffix(data.size() - (1024 - p->outBuffer.size()));
+      }
+      p->outBuffer.append(data);
+    }
   }
 
   void processFinished(ProcessContext*, ProcessHandle handle, const ProcessResult& result) override {
@@ -908,6 +1239,8 @@ void ActionExecutorImpl::localLaneHandler(uint32_t laneNumber) {
       }
       req = it->second.request;
       it->second.localState = IState::Running;
+      it->second.metadata.set_worker("localhost");
+      *it->second.metadata.mutable_worker_start() = TimeUtil::GetCurrentTime();
     }
 
     std::visit(overloaded{
@@ -1043,16 +1376,17 @@ ActionExecutor::ActionExecutor(std::shared_ptr<CASDatabase> db,
                                std::shared_ptr<ActionCache> actionCache,
                                std::shared_ptr<LocalExecutor> localExecutor,
                                std::shared_ptr<RemoteExecutor> remoteExecutor,
+                               std::shared_ptr<Logger> logger,
                                unsigned maxLocalConcurrency,
                                unsigned maxAsyncConcurrency)
-  : impl(new ActionExecutorImpl(db, actionCache, localExecutor, remoteExecutor, maxLocalConcurrency, maxAsyncConcurrency)) {
+  : impl(new ActionExecutorImpl(db, actionCache, localExecutor, remoteExecutor, logger, maxLocalConcurrency, maxAsyncConcurrency)) {
 }
 
 ActionExecutor::~ActionExecutor() {
   delete static_cast<ActionExecutorImpl*>(impl);
 }
 
-std::optional<Error> ActionExecutor::registerProvider(std::unique_ptr<ActionProvider>&& provider) {
+std::optional<Error> ActionExecutor::registerProvider(std::shared_ptr<ActionProvider> provider) {
   return static_cast<ActionExecutorImpl*>(impl)->registerProvider(std::move(provider));
 }
 

@@ -29,7 +29,7 @@ inline constexpr CacheKey::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
         label_{nullptr},
-        content_{nullptr},
+        data_{nullptr},
         type_{static_cast< ::llbuild3::CacheKeyType >(0)} {}
 
 template <typename>
@@ -45,29 +45,6 @@ struct CacheKeyDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CacheKeyDefaultTypeInternal _CacheKey_default_instance_;
-
-inline constexpr ActionStat::Impl_::Impl_(
-    ::_pbi::ConstantInitialized) noexcept
-      : name_(
-            &::google::protobuf::internal::fixed_address_empty_string,
-            ::_pbi::ConstantInitialized()),
-        value_{},
-        _cached_size_{0},
-        _oneof_case_{} {}
-
-template <typename>
-PROTOBUF_CONSTEXPR ActionStat::ActionStat(::_pbi::ConstantInitialized)
-    : _impl_(::_pbi::ConstantInitialized()) {}
-struct ActionStatDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR ActionStatDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~ActionStatDefaultTypeInternal() {}
-  union {
-    ActionStat _instance;
-  };
-};
-
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ActionStatDefaultTypeInternal _ActionStat_default_instance_;
 
 inline constexpr CacheValue::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -105,7 +82,7 @@ const ::uint32_t
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::llbuild3::CacheKey, _impl_.label_),
         PROTOBUF_FIELD_OFFSET(::llbuild3::CacheKey, _impl_.type_),
-        PROTOBUF_FIELD_OFFSET(::llbuild3::CacheKey, _impl_.content_),
+        PROTOBUF_FIELD_OFFSET(::llbuild3::CacheKey, _impl_.data_),
         0,
         ~0u,
         1,
@@ -121,67 +98,47 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::llbuild3::CacheValue, _impl_.stats_),
         0,
         ~0u,
-        ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::llbuild3::ActionStat, _internal_metadata_),
-        ~0u,  // no _extensions_
-        PROTOBUF_FIELD_OFFSET(::llbuild3::ActionStat, _impl_._oneof_case_[0]),
-        ~0u,  // no _weak_field_map_
-        ~0u,  // no _inlined_string_donated_
-        ~0u,  // no _split_
-        ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::llbuild3::ActionStat, _impl_.name_),
-        ::_pbi::kInvalidFieldOffsetTag,
-        ::_pbi::kInvalidFieldOffsetTag,
-        ::_pbi::kInvalidFieldOffsetTag,
-        ::_pbi::kInvalidFieldOffsetTag,
-        ::_pbi::kInvalidFieldOffsetTag,
-        PROTOBUF_FIELD_OFFSET(::llbuild3::ActionStat, _impl_.value_),
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, 11, -1, sizeof(::llbuild3::CacheKey)},
         {14, 24, -1, sizeof(::llbuild3::CacheValue)},
-        {26, -1, -1, sizeof(::llbuild3::ActionStat)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::llbuild3::_CacheKey_default_instance_._instance,
     &::llbuild3::_CacheValue_default_instance_._instance,
-    &::llbuild3::_ActionStat_default_instance_._instance,
 };
 const char descriptor_table_protodef_llbuild3_2fActionCache_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\032llbuild3/ActionCache.proto\022\010llbuild3\032\022"
-    "llbuild3/CAS.proto\032\024llbuild3/Label.proto"
-    "\"x\n\010CacheKey\022\036\n\005label\030\001 \001(\0132\017.llbuild3.L"
-    "abel\022$\n\004type\030\002 \001(\0162\026.llbuild3.CacheKeyTy"
-    "pe\022&\n\007content\030\003 \001(\0132\025.llbuild3.CASObject"
-    "ID\"V\n\nCacheValue\022#\n\004data\030\001 \001(\0132\025.llbuild"
-    "3.CASObjectID\022#\n\005stats\030\002 \003(\0132\024.llbuild3."
-    "ActionStat\"\246\001\n\nActionStat\022\014\n\004name\030\001 \001(\t\022"
-    "\022\n\010intValue\030\002 \001(\003H\000\022\025\n\013stringValue\030\003 \001(\t"
-    "H\000\022\023\n\tboolValue\030\004 \001(\010H\000\022\025\n\013doubleValue\030\005"
-    " \001(\001H\000\022*\n\tcasObject\030\006 \001(\0132\025.llbuild3.CAS"
-    "ObjectIDH\000B\007\n\005value*B\n\014CacheKeyType\022\027\n\023C"
-    "ACHE_KEY_TYPE_TASK\020\000\022\031\n\025CACHE_KEY_TYPE_A"
-    "CTION\020\001b\006proto3"
+    "llbuild3/CAS.proto\032\025llbuild3/Common.prot"
+    "o\032\024llbuild3/Label.proto\"o\n\010CacheKey\022\036\n\005l"
+    "abel\030\001 \001(\0132\017.llbuild3.Label\022$\n\004type\030\002 \001("
+    "\0162\026.llbuild3.CacheKeyType\022\035\n\004data\030\003 \001(\0132"
+    "\017.llbuild3.CASID\"J\n\nCacheValue\022\035\n\004data\030\001"
+    " \001(\0132\017.llbuild3.CASID\022\035\n\005stats\030\002 \003(\0132\016.l"
+    "lbuild3.Stat*B\n\014CacheKeyType\022\027\n\023CACHE_KE"
+    "Y_TYPE_TASK\020\000\022\031\n\025CACHE_KEY_TYPE_ACTION\020\001"
+    "b\006proto3"
 };
-static const ::_pbi::DescriptorTable* const descriptor_table_llbuild3_2fActionCache_2eproto_deps[2] =
+static const ::_pbi::DescriptorTable* const descriptor_table_llbuild3_2fActionCache_2eproto_deps[3] =
     {
         &::descriptor_table_llbuild3_2fCAS_2eproto,
+        &::descriptor_table_llbuild3_2fCommon_2eproto,
         &::descriptor_table_llbuild3_2fLabel_2eproto,
 };
 static ::absl::once_flag descriptor_table_llbuild3_2fActionCache_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_llbuild3_2fActionCache_2eproto = {
     false,
     false,
-    535,
+    368,
     descriptor_table_protodef_llbuild3_2fActionCache_2eproto,
     "llbuild3/ActionCache.proto",
     &descriptor_table_llbuild3_2fActionCache_2eproto_once,
     descriptor_table_llbuild3_2fActionCache_2eproto_deps,
-    2,
     3,
+    2,
     schemas,
     file_default_instances,
     TableStruct_llbuild3_2fActionCache_2eproto::offsets,
@@ -213,9 +170,9 @@ void CacheKey::clear_label() {
   if (_impl_.label_ != nullptr) _impl_.label_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-void CacheKey::clear_content() {
+void CacheKey::clear_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.content_ != nullptr) _impl_.content_->Clear();
+  if (_impl_.data_ != nullptr) _impl_.data_->Clear();
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
 CacheKey::CacheKey(::google::protobuf::Arena* arena)
@@ -242,8 +199,8 @@ CacheKey::CacheKey(
   _impl_.label_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::llbuild3::Label>(
                               arena, *from._impl_.label_)
                         : nullptr;
-  _impl_.content_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(
-                              arena, *from._impl_.content_)
+  _impl_.data_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::llbuild3::CASID>(
+                              arena, *from._impl_.data_)
                         : nullptr;
   _impl_.type_ = from._impl_.type_;
 
@@ -271,7 +228,7 @@ CacheKey::~CacheKey() {
 inline void CacheKey::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   delete _impl_.label_;
-  delete _impl_.content_;
+  delete _impl_.data_;
   _impl_.~Impl_();
 }
 
@@ -321,9 +278,9 @@ const ::_pbi::TcParseTable<2, 3, 2, 0, 2> CacheKey::_table_ = {
     // .llbuild3.CacheKeyType type = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(CacheKey, _impl_.type_), 63>(),
      {16, 63, 0, PROTOBUF_FIELD_OFFSET(CacheKey, _impl_.type_)}},
-    // .llbuild3.CASObjectID content = 3;
+    // .llbuild3.CASID data = 3;
     {::_pbi::TcParser::FastMtS1,
-     {26, 1, 1, PROTOBUF_FIELD_OFFSET(CacheKey, _impl_.content_)}},
+     {26, 1, 1, PROTOBUF_FIELD_OFFSET(CacheKey, _impl_.data_)}},
   }}, {{
     65535, 65535
   }}, {{
@@ -333,12 +290,12 @@ const ::_pbi::TcParseTable<2, 3, 2, 0, 2> CacheKey::_table_ = {
     // .llbuild3.CacheKeyType type = 2;
     {PROTOBUF_FIELD_OFFSET(CacheKey, _impl_.type_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kOpenEnum)},
-    // .llbuild3.CASObjectID content = 3;
-    {PROTOBUF_FIELD_OFFSET(CacheKey, _impl_.content_), _Internal::kHasBitsOffset + 1, 1,
+    // .llbuild3.CASID data = 3;
+    {PROTOBUF_FIELD_OFFSET(CacheKey, _impl_.data_), _Internal::kHasBitsOffset + 1, 1,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
     {::_pbi::TcParser::GetTable<::llbuild3::Label>()},
-    {::_pbi::TcParser::GetTable<::llbuild3::CASObjectID>()},
+    {::_pbi::TcParser::GetTable<::llbuild3::CASID>()},
   }}, {{
   }},
 };
@@ -357,8 +314,8 @@ PROTOBUF_NOINLINE void CacheKey::Clear() {
       _impl_.label_->Clear();
     }
     if (cached_has_bits & 0x00000002u) {
-      ABSL_DCHECK(_impl_.content_ != nullptr);
-      _impl_.content_->Clear();
+      ABSL_DCHECK(_impl_.data_ != nullptr);
+      _impl_.data_->Clear();
     }
   }
   _impl_.type_ = 0;
@@ -387,10 +344,10 @@ PROTOBUF_NOINLINE void CacheKey::Clear() {
         2, this->_internal_type(), target);
   }
 
-  // .llbuild3.CASObjectID content = 3;
+  // .llbuild3.CASID data = 3;
   if (cached_has_bits & 0x00000002u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        3, *_impl_.content_, _impl_.content_->GetCachedSize(), target, stream);
+        3, *_impl_.data_, _impl_.data_->GetCachedSize(), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -419,10 +376,10 @@ PROTOBUF_NOINLINE void CacheKey::Clear() {
           1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.label_);
     }
 
-    // .llbuild3.CASObjectID content = 3;
+    // .llbuild3.CASID data = 3;
     if (cached_has_bits & 0x00000002u) {
       total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.content_);
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.data_);
     }
 
   }
@@ -457,12 +414,12 @@ void CacheKey::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google
       }
     }
     if (cached_has_bits & 0x00000002u) {
-      ABSL_DCHECK(from._impl_.content_ != nullptr);
-      if (_this->_impl_.content_ == nullptr) {
-        _this->_impl_.content_ =
-            ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(arena, *from._impl_.content_);
+      ABSL_DCHECK(from._impl_.data_ != nullptr);
+      if (_this->_impl_.data_ == nullptr) {
+        _this->_impl_.data_ =
+            ::google::protobuf::Message::CopyConstruct<::llbuild3::CASID>(arena, *from._impl_.data_);
       } else {
-        _this->_impl_.content_->MergeFrom(*from._impl_.content_);
+        _this->_impl_.data_->MergeFrom(*from._impl_.data_);
       }
     }
   }
@@ -511,6 +468,10 @@ void CacheValue::clear_data() {
   if (_impl_.data_ != nullptr) _impl_.data_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
+void CacheValue::clear_stats() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.stats_.Clear();
+}
 CacheValue::CacheValue(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
@@ -533,7 +494,7 @@ CacheValue::CacheValue(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.data_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(
+  _impl_.data_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::llbuild3::CASID>(
                               arena, *from._impl_.data_)
                         : nullptr;
 
@@ -599,24 +560,24 @@ const ::_pbi::TcParseTable<1, 2, 2, 0, 2> CacheValue::_table_ = {
     ::_pbi::TcParser::GetTable<::llbuild3::CacheValue>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // repeated .llbuild3.ActionStat stats = 2;
+    // repeated .llbuild3.Stat stats = 2;
     {::_pbi::TcParser::FastMtR1,
      {18, 63, 1, PROTOBUF_FIELD_OFFSET(CacheValue, _impl_.stats_)}},
-    // .llbuild3.CASObjectID data = 1;
+    // .llbuild3.CASID data = 1;
     {::_pbi::TcParser::FastMtS1,
      {10, 0, 0, PROTOBUF_FIELD_OFFSET(CacheValue, _impl_.data_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // .llbuild3.CASObjectID data = 1;
+    // .llbuild3.CASID data = 1;
     {PROTOBUF_FIELD_OFFSET(CacheValue, _impl_.data_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // repeated .llbuild3.ActionStat stats = 2;
+    // repeated .llbuild3.Stat stats = 2;
     {PROTOBUF_FIELD_OFFSET(CacheValue, _impl_.stats_), -1, 1,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::llbuild3::CASObjectID>()},
-    {::_pbi::TcParser::GetTable<::llbuild3::ActionStat>()},
+    {::_pbi::TcParser::GetTable<::llbuild3::CASID>()},
+    {::_pbi::TcParser::GetTable<::llbuild3::Stat>()},
   }}, {{
   }},
 };
@@ -646,13 +607,13 @@ PROTOBUF_NOINLINE void CacheValue::Clear() {
   (void)cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .llbuild3.CASObjectID data = 1;
+  // .llbuild3.CASID data = 1;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         1, *_impl_.data_, _impl_.data_->GetCachedSize(), target, stream);
   }
 
-  // repeated .llbuild3.ActionStat stats = 2;
+  // repeated .llbuild3.Stat stats = 2;
   for (unsigned i = 0, n = static_cast<unsigned>(
                            this->_internal_stats_size());
        i < n; i++) {
@@ -681,12 +642,12 @@ PROTOBUF_NOINLINE void CacheValue::Clear() {
   (void) cached_has_bits;
 
   ::_pbi::Prefetch5LinesFrom7Lines(reinterpret_cast<const void*>(this));
-  // repeated .llbuild3.ActionStat stats = 2;
+  // repeated .llbuild3.Stat stats = 2;
   total_size += 1UL * this->_internal_stats_size();
   for (const auto& msg : this->_internal_stats()) {
     total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
   }
-  // .llbuild3.CASObjectID data = 1;
+  // .llbuild3.CASID data = 1;
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
     total_size +=
@@ -713,7 +674,7 @@ void CacheValue::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
     ABSL_DCHECK(from._impl_.data_ != nullptr);
     if (_this->_impl_.data_ == nullptr) {
       _this->_impl_.data_ =
-          ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(arena, *from._impl_.data_);
+          ::google::protobuf::Message::CopyConstruct<::llbuild3::CASID>(arena, *from._impl_.data_);
     } else {
       _this->_impl_.data_->MergeFrom(*from._impl_.data_);
     }
@@ -739,416 +700,6 @@ void CacheValue::InternalSwap(CacheValue* PROTOBUF_RESTRICT other) {
 }
 
 ::google::protobuf::Metadata CacheValue::GetMetadata() const {
-  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
-}
-// ===================================================================
-
-class ActionStat::_Internal {
- public:
-  static constexpr ::int32_t kOneofCaseOffset =
-      PROTOBUF_FIELD_OFFSET(::llbuild3::ActionStat, _impl_._oneof_case_);
-};
-
-void ActionStat::set_allocated_casobject(::llbuild3::CASObjectID* casobject) {
-  ::google::protobuf::Arena* message_arena = GetArena();
-  clear_value();
-  if (casobject) {
-    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(casobject)->GetArena();
-    if (message_arena != submessage_arena) {
-      casobject = ::google::protobuf::internal::GetOwnedMessage(message_arena, casobject, submessage_arena);
-    }
-    set_has_casobject();
-    _impl_.value_.casobject_ = casobject;
-  }
-  // @@protoc_insertion_point(field_set_allocated:llbuild3.ActionStat.casObject)
-}
-void ActionStat::clear_casobject() {
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (value_case() == kCasObject) {
-    if (GetArena() == nullptr) {
-      delete _impl_.value_.casobject_;
-    } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
-      ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.value_.casobject_);
-    }
-    clear_has_value();
-  }
-}
-ActionStat::ActionStat(::google::protobuf::Arena* arena)
-    : ::google::protobuf::Message(arena) {
-  SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:llbuild3.ActionStat)
-}
-inline PROTOBUF_NDEBUG_INLINE ActionStat::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
-    const Impl_& from, const ::llbuild3::ActionStat& from_msg)
-      : name_(arena, from.name_),
-        value_{},
-        _cached_size_{0},
-        _oneof_case_{from._oneof_case_[0]} {}
-
-ActionStat::ActionStat(
-    ::google::protobuf::Arena* arena,
-    const ActionStat& from)
-    : ::google::protobuf::Message(arena) {
-  ActionStat* const _this = this;
-  (void)_this;
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
-  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
-  switch (value_case()) {
-    case VALUE_NOT_SET:
-      break;
-      case kIntValue:
-        _impl_.value_.intvalue_ = from._impl_.value_.intvalue_;
-        break;
-      case kStringValue:
-        new (&_impl_.value_.stringvalue_) decltype(_impl_.value_.stringvalue_){arena, from._impl_.value_.stringvalue_};
-        break;
-      case kBoolValue:
-        _impl_.value_.boolvalue_ = from._impl_.value_.boolvalue_;
-        break;
-      case kDoubleValue:
-        _impl_.value_.doublevalue_ = from._impl_.value_.doublevalue_;
-        break;
-      case kCasObject:
-        _impl_.value_.casobject_ = ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(arena, *from._impl_.value_.casobject_);
-        break;
-  }
-
-  // @@protoc_insertion_point(copy_constructor:llbuild3.ActionStat)
-}
-inline PROTOBUF_NDEBUG_INLINE ActionStat::Impl_::Impl_(
-    ::google::protobuf::internal::InternalVisibility visibility,
-    ::google::protobuf::Arena* arena)
-      : name_(arena),
-        value_{},
-        _cached_size_{0},
-        _oneof_case_{} {}
-
-inline void ActionStat::SharedCtor(::_pb::Arena* arena) {
-  new (&_impl_) Impl_(internal_visibility(), arena);
-}
-ActionStat::~ActionStat() {
-  // @@protoc_insertion_point(destructor:llbuild3.ActionStat)
-  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
-  SharedDtor();
-}
-inline void ActionStat::SharedDtor() {
-  ABSL_DCHECK(GetArena() == nullptr);
-  _impl_.name_.Destroy();
-  if (has_value()) {
-    clear_value();
-  }
-  _impl_.~Impl_();
-}
-
-void ActionStat::clear_value() {
-// @@protoc_insertion_point(one_of_clear_start:llbuild3.ActionStat)
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  switch (value_case()) {
-    case kIntValue: {
-      // No need to clear
-      break;
-    }
-    case kStringValue: {
-      _impl_.value_.stringvalue_.Destroy();
-      break;
-    }
-    case kBoolValue: {
-      // No need to clear
-      break;
-    }
-    case kDoubleValue: {
-      // No need to clear
-      break;
-    }
-    case kCasObject: {
-      if (GetArena() == nullptr) {
-        delete _impl_.value_.casobject_;
-      } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
-        ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.value_.casobject_);
-      }
-      break;
-    }
-    case VALUE_NOT_SET: {
-      break;
-    }
-  }
-  _impl_._oneof_case_[0] = VALUE_NOT_SET;
-}
-
-
-const ::google::protobuf::MessageLite::ClassData*
-ActionStat::GetClassData() const {
-  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
-      ClassDataFull _data_ = {
-          {
-              &_table_.header,
-              nullptr,  // OnDemandRegisterArenaDtor
-              nullptr,  // IsInitialized
-              PROTOBUF_FIELD_OFFSET(ActionStat, _impl_._cached_size_),
-              false,
-          },
-          &ActionStat::MergeImpl,
-          &ActionStat::kDescriptorMethods,
-          &descriptor_table_llbuild3_2fActionCache_2eproto,
-          nullptr,  // tracker
-      };
-  ::google::protobuf::internal::PrefetchToLocalCache(&_data_);
-  ::google::protobuf::internal::PrefetchToLocalCache(_data_.tc_table);
-  return _data_.base();
-}
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 6, 1, 43, 2> ActionStat::_table_ = {
-  {
-    0,  // no _has_bits_
-    0, // no _extensions_
-    6, 0,  // max_field_number, fast_idx_mask
-    offsetof(decltype(_table_), field_lookup_table),
-    4294967232,  // skipmap
-    offsetof(decltype(_table_), field_entries),
-    6,  // num_field_entries
-    1,  // num_aux_entries
-    offsetof(decltype(_table_), aux_entries),
-    &_ActionStat_default_instance_._instance,
-    nullptr,  // post_loop_handler
-    ::_pbi::TcParser::GenericFallback,  // fallback
-    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::llbuild3::ActionStat>(),  // to_prefetch
-    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
-  }, {{
-    // string name = 1;
-    {::_pbi::TcParser::FastUS1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(ActionStat, _impl_.name_)}},
-  }}, {{
-    65535, 65535
-  }}, {{
-    // string name = 1;
-    {PROTOBUF_FIELD_OFFSET(ActionStat, _impl_.name_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
-    // int64 intValue = 2;
-    {PROTOBUF_FIELD_OFFSET(ActionStat, _impl_.value_.intvalue_), _Internal::kOneofCaseOffset + 0, 0,
-    (0 | ::_fl::kFcOneof | ::_fl::kInt64)},
-    // string stringValue = 3;
-    {PROTOBUF_FIELD_OFFSET(ActionStat, _impl_.value_.stringvalue_), _Internal::kOneofCaseOffset + 0, 0,
-    (0 | ::_fl::kFcOneof | ::_fl::kUtf8String | ::_fl::kRepAString)},
-    // bool boolValue = 4;
-    {PROTOBUF_FIELD_OFFSET(ActionStat, _impl_.value_.boolvalue_), _Internal::kOneofCaseOffset + 0, 0,
-    (0 | ::_fl::kFcOneof | ::_fl::kBool)},
-    // double doubleValue = 5;
-    {PROTOBUF_FIELD_OFFSET(ActionStat, _impl_.value_.doublevalue_), _Internal::kOneofCaseOffset + 0, 0,
-    (0 | ::_fl::kFcOneof | ::_fl::kDouble)},
-    // .llbuild3.CASObjectID casObject = 6;
-    {PROTOBUF_FIELD_OFFSET(ActionStat, _impl_.value_.casobject_), _Internal::kOneofCaseOffset + 0, 0,
-    (0 | ::_fl::kFcOneof | ::_fl::kMessage | ::_fl::kTvTable)},
-  }}, {{
-    {::_pbi::TcParser::GetTable<::llbuild3::CASObjectID>()},
-  }}, {{
-    "\23\4\0\13\0\0\0\0"
-    "llbuild3.ActionStat"
-    "name"
-    "stringValue"
-  }},
-};
-
-PROTOBUF_NOINLINE void ActionStat::Clear() {
-// @@protoc_insertion_point(message_clear_start:llbuild3.ActionStat)
-  ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  _impl_.name_.ClearToEmpty();
-  clear_value();
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
-}
-
-::uint8_t* ActionStat::_InternalSerialize(
-    ::uint8_t* target,
-    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:llbuild3.ActionStat)
-  ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
-
-  // string name = 1;
-  if (!this->_internal_name().empty()) {
-    const std::string& _s = this->_internal_name();
-    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "llbuild3.ActionStat.name");
-    target = stream->WriteStringMaybeAliased(1, _s, target);
-  }
-
-  switch (value_case()) {
-    case kIntValue: {
-      target = ::google::protobuf::internal::WireFormatLite::
-          WriteInt64ToArrayWithField<2>(
-              stream, this->_internal_intvalue(), target);
-      break;
-    }
-    case kStringValue: {
-      const std::string& _s = this->_internal_stringvalue();
-      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "llbuild3.ActionStat.stringValue");
-      target = stream->WriteStringMaybeAliased(3, _s, target);
-      break;
-    }
-    case kBoolValue: {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteBoolToArray(
-          4, this->_internal_boolvalue(), target);
-      break;
-    }
-    case kDoubleValue: {
-      target = stream->EnsureSpace(target);
-      target = ::_pbi::WireFormatLite::WriteDoubleToArray(
-          5, this->_internal_doublevalue(), target);
-      break;
-    }
-    case kCasObject: {
-      target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-          6, *_impl_.value_.casobject_, _impl_.value_.casobject_->GetCachedSize(), target, stream);
-      break;
-    }
-    default:
-      break;
-  }
-  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target =
-        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
-  }
-  // @@protoc_insertion_point(serialize_to_array_end:llbuild3.ActionStat)
-  return target;
-}
-
-::size_t ActionStat::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:llbuild3.ActionStat)
-  ::size_t total_size = 0;
-
-  ::uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
-
-  // string name = 1;
-  if (!this->_internal_name().empty()) {
-    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
-                                    this->_internal_name());
-  }
-
-  switch (value_case()) {
-    // int64 intValue = 2;
-    case kIntValue: {
-      total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
-          this->_internal_intvalue());
-      break;
-    }
-    // string stringValue = 3;
-    case kStringValue: {
-      total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
-                                      this->_internal_stringvalue());
-      break;
-    }
-    // bool boolValue = 4;
-    case kBoolValue: {
-      total_size += 2;
-      break;
-    }
-    // double doubleValue = 5;
-    case kDoubleValue: {
-      total_size += 9;
-      break;
-    }
-    // .llbuild3.CASObjectID casObject = 6;
-    case kCasObject: {
-      total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.value_.casobject_);
-      break;
-    }
-    case VALUE_NOT_SET: {
-      break;
-    }
-  }
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
-}
-
-
-void ActionStat::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<ActionStat*>(&to_msg);
-  auto& from = static_cast<const ActionStat&>(from_msg);
-  ::google::protobuf::Arena* arena = _this->GetArena();
-  // @@protoc_insertion_point(class_specific_merge_from_start:llbuild3.ActionStat)
-  ABSL_DCHECK_NE(&from, _this);
-  ::uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
-
-  if (!from._internal_name().empty()) {
-    _this->_internal_set_name(from._internal_name());
-  }
-  if (const uint32_t oneof_from_case = from._impl_._oneof_case_[0]) {
-    const uint32_t oneof_to_case = _this->_impl_._oneof_case_[0];
-    const bool oneof_needs_init = oneof_to_case != oneof_from_case;
-    if (oneof_needs_init) {
-      if (oneof_to_case != 0) {
-        _this->clear_value();
-      }
-      _this->_impl_._oneof_case_[0] = oneof_from_case;
-    }
-
-    switch (oneof_from_case) {
-      case kIntValue: {
-        _this->_impl_.value_.intvalue_ = from._impl_.value_.intvalue_;
-        break;
-      }
-      case kStringValue: {
-        if (oneof_needs_init) {
-          _this->_impl_.value_.stringvalue_.InitDefault();
-        }
-        _this->_impl_.value_.stringvalue_.Set(from._internal_stringvalue(), arena);
-        break;
-      }
-      case kBoolValue: {
-        _this->_impl_.value_.boolvalue_ = from._impl_.value_.boolvalue_;
-        break;
-      }
-      case kDoubleValue: {
-        _this->_impl_.value_.doublevalue_ = from._impl_.value_.doublevalue_;
-        break;
-      }
-      case kCasObject: {
-        if (oneof_needs_init) {
-          _this->_impl_.value_.casobject_ =
-              ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(arena, *from._impl_.value_.casobject_);
-        } else {
-          _this->_impl_.value_.casobject_->MergeFrom(from._internal_casobject());
-        }
-        break;
-      }
-      case VALUE_NOT_SET:
-        break;
-    }
-  }
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
-}
-
-void ActionStat::CopyFrom(const ActionStat& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:llbuild3.ActionStat)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-
-void ActionStat::InternalSwap(ActionStat* PROTOBUF_RESTRICT other) {
-  using std::swap;
-  auto* arena = GetArena();
-  ABSL_DCHECK_EQ(arena, other->GetArena());
-  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.name_, &other->_impl_.name_, arena);
-  swap(_impl_.value_, other->_impl_.value_);
-  swap(_impl_._oneof_case_[0], other->_impl_._oneof_case_[0]);
-}
-
-::google::protobuf::Metadata ActionStat::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

@@ -49,7 +49,7 @@ message Artifact {
   ArtifactType type = 2;
   
   oneof value {
-    CASObjectID casObject = 3;
+    CASID cas_object = 3;
     
     bytes blob = 4;
     

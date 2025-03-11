@@ -1,4 +1,4 @@
-//===-- RemoteExecutor.cpp ------------------------------------------------===//
+//===- Logging.cpp ----------------------------------------------*- C++ -*-===//
 //
 // This source file is part of the Swift.org open source project
 //
@@ -10,8 +10,11 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llbuild3/RemoteExecutor.h"
+#include "llbuild3/Logging.h"
 
 using namespace llbuild3;
 
-RemoteExecutor::~RemoteExecutor() { }
+Logger::~Logger() { }
+
+void NullLogger::error(LoggingContext, Error) { }
+void NullLogger::event(LoggingContext, const std::vector<Stat>&) { }
