@@ -36,7 +36,7 @@ extension TLabel {
 
   /// Characters disallowed in label components.
   public static let invalidCharacters = CharacterSet(
-    charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890-_:/."
+    charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890:/! \\\"#$%&'()*+,-.;<=>?@[]^_`{|}"
   ).inverted
 
   public init(_ string: String) throws {

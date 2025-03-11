@@ -204,6 +204,25 @@ class EngineImpl: public ActionExecutorListener {
   std::condition_variable readyJobsCondition;
   bool shutdown{false};
 
+  /// Perf counters
+  std::atomic<uint64_t> st_buildCount{0};
+  std::atomic<uint64_t> st_buildCompletedCount{0};
+
+  std::atomic<uint64_t> st_artifactRequestCount{0};
+  std::atomic<uint64_t> st_ruleRequestCount{0};
+
+  std::atomic<uint64_t> st_taskCount{0};
+  std::atomic<uint64_t> st_taskTransitions{0};
+  std::atomic<uint64_t> st_taskCacheHits{0};
+  std::atomic<uint64_t> st_taskCacheMisses{0};
+  std::atomic<uint64_t> st_taskCompletedCount{0};
+
+  std::atomic<uint64_t> st_actionCount{0};
+  std::atomic<uint64_t> st_actionCompletedCount{0};
+  std::atomic<uint64_t> st_subtaskCount{0};
+  std::atomic<uint64_t> st_subtaskCompletedCount{0};
+
+
 public:
   EngineImpl(EngineConfig config, std::shared_ptr<CASDatabase> casDB,
              std::shared_ptr<ActionCache> cache,
@@ -301,6 +320,7 @@ public:
   /// @{
 
   Build build(const Label& artifact) {
+    st_buildCount++;
     auto context = std::shared_ptr<BuildContext>(new BuildContext());
 
     uint64_t buildID = 0;
@@ -321,6 +341,7 @@ public:
     }
 
     if (res.has_error()) {
+      st_buildCompletedCount++;
       logger->event(logctx, {
         makeStat("log.message", "build_completed"),
         makeStat("build_id", buildID),
@@ -331,6 +352,24 @@ public:
     }
 
     return Build(context);
+  }
+
+  std::vector<Stat> stats() {
+    return {
+      makeStat("builds", st_buildCount),
+      makeStat("builds_completed", st_buildCompletedCount),
+      makeStat("artifact_requests", st_artifactRequestCount),
+      makeStat("rule_requests", st_ruleRequestCount),
+      makeStat("tasks", st_taskCount),
+      makeStat("task_transitions", st_taskTransitions),
+      makeStat("task_cache_hits", st_taskCacheHits),
+      makeStat("task_cache_misses", st_taskCacheMisses),
+      makeStat("tasks_completed", st_taskCompletedCount),
+      makeStat("actions", st_actionCount),
+      makeStat("actions_completed", st_actionCompletedCount),
+      makeStat("subtasks", st_subtaskCount),
+      makeStat("subtasks_completed", st_subtaskCompletedCount)
+    };
   }
 
   /// @}
@@ -344,6 +383,7 @@ public:
 
   result<uint64_t, Error> taskRequestArtifact(uint64_t taskID,
                                               const Label& label) {
+    st_artifactRequestCount++;
     // FIXME: concretize label with context?
 
     uint64_t buildID = 0;
@@ -444,6 +484,7 @@ public:
   }
 
   result<uint64_t, Error> taskRequestRule(uint64_t taskID, const Label& label) {
+    st_ruleRequestCount++;
     // FIXME: concretize label with context?
 
     uint64_t buildID = 0;
@@ -539,6 +580,8 @@ public:
   }
 
   result<uint64_t, Error> taskRequestAction(uint64_t taskID, const Action& action) {
+    st_actionCount++;
+
     uint64_t buildID = 0;
     uint64_t workID = 0;
 
@@ -561,6 +604,7 @@ public:
     if (res.has_error()) {
       std::lock_guard<std::mutex> lock(taskInfosMutex);
       actionTaskMap.erase(workID);
+      st_actionCompletedCount++;
       return fail(res.error());
     }
 
@@ -575,6 +619,8 @@ public:
   }
 
   result<uint64_t, Error> taskSpawnSubtask(uint64_t taskID, const Subtask& subtask) {
+    st_subtaskCount++;
+
     uint64_t buildID = 0;
     uint64_t workID = 0;
     uint64_t sid = 0;
@@ -599,6 +645,7 @@ public:
     if (res.has_error()) {
       std::lock_guard<std::mutex> lock(taskInfosMutex);
       subtaskTaskMap.erase(workID);
+      st_subtaskCompletedCount++;
       return fail(res.error());
     }
 
@@ -635,6 +682,8 @@ public:
       return;
     }
 
+    st_actionCompletedCount++;
+
     auto taskID = entry->second;
     auto& rtask = taskInfos.at(taskID);
     rtask.pendingActions.at(cid.workID).result = {std::move(result)};
@@ -657,6 +706,8 @@ public:
     if (entry == subtaskTaskMap.end()) {
       return;
     }
+
+    st_subtaskCompletedCount++;
 
     auto taskID = entry->second;
     auto& rtask = taskInfos.at(taskID);
@@ -797,6 +848,7 @@ private:
     }
 
     // Insert the task
+    st_taskCount++;
     auto taskID = nextTaskID++;
     auto insertion = taskInfos.try_emplace(taskID, taskID, std::move(task));
     auto& taskInfo = (insertion.first)->second;
@@ -860,12 +912,14 @@ private:
       actionCache->get(cacheKey, [this, ctx, inputs, sres, &taskInfo](result<CacheValue, Error> res) {
         if (res.has_error()) {
           logger->error(logctx, res.error());
+          st_taskCacheMisses++;
           enqueueReadyTask(taskInfo, ctx, inputs, sres);
           return;
         }
 
         if (!res->has_data()) {
           // not found
+          st_taskCacheMisses++;
           enqueueReadyTask(taskInfo, ctx, inputs, sres);
           return;
         }
@@ -874,6 +928,7 @@ private:
         casDB->get(res->data(), [this, ctx, inputs, sres, &taskInfo](result<CASObject, Error> res) {
           if (res.has_error()) {
             logger->error(logctx, res.error());
+            st_taskCacheMisses++;
             enqueueReadyTask(taskInfo, ctx, inputs, sres);
             return;
           }
@@ -884,6 +939,7 @@ private:
               makeEngineError(EngineError::InternalProtobufSerialization,
                               "failed to parse cached task transition")
             );
+            st_taskCacheMisses++;
             enqueueReadyTask(taskInfo, ctx, inputs, sres);
             return;
           }
@@ -920,11 +976,13 @@ private:
 
             if (res.has_error()) {
               logger->error(logctx, res.error());
+              st_taskCacheMisses++;
               enqueueReadyTask(taskInfo, ctx, inputs, sres);
               return;
             }
           }
 
+          st_taskCacheHits++;
           processTaskNextState(taskInfo, value.state());
         });
       });
@@ -1012,6 +1070,7 @@ private:
   }
 
   void processTaskNextState(TaskInfo& taskInfo, const TaskNextState& next) {
+    st_taskTransitions++;
     std::lock_guard<std::mutex> lock(taskInfosMutex);
 
     switch (next.StateValue_case()) {
@@ -1091,6 +1150,8 @@ private:
   }
 
   void processFinishedTask(TaskInfo& taskInfo) {
+    st_taskCompletedCount++;
+    
     // update all tasks waiting on this task
     auto work = [this, &taskInfo](const JobContext&) {
       std::lock_guard<std::mutex> lock(taskInfosMutex);
@@ -1428,6 +1489,7 @@ private:
 
 
     void sendResult(const result<Artifact, Error>& buildResult) {
+      engine.st_buildCompletedCount++;
       engine.logger->event(engine.logctx, {
         makeStat("log.message", "build_completed"),
         makeStat("build_id", buildID),
@@ -1566,4 +1628,8 @@ std::shared_ptr<CASDatabase> Engine::cas() {
 
 Build Engine::build(const Label& artifact) {
   return static_cast<EngineImpl*>(impl)->build(artifact);
+}
+
+std::vector<Stat> Engine::stats() {
+  return static_cast<EngineImpl*>(impl)->stats();
 }

@@ -290,6 +290,8 @@ public:
   LLBUILD3_EXPORT CASDatabaseRef cas();
 
   LLBUILD3_EXPORT BuildRef build(const LabelPB artifact);
+
+  LLBUILD3_EXPORT std::vector<StatPB> stats();
 };
 
 LLBUILD3_EXPORT EngineRef makeEngine(ExtEngineConfig config,

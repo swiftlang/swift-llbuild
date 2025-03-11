@@ -919,6 +919,21 @@ BuildRef EngineRef::build(const LabelPB artifact) {
   return BuildRef(std::shared_ptr<Build>(new Build(build)));
 }
 
+std::vector<StatPB> EngineRef::stats() {
+  auto stats = engine->stats();
+  std::vector<StatPB> sv;
+
+  for (auto& s: stats) {
+    std::string spb;
+    if (!s.SerializeToString(&spb)) {
+      break;
+    }
+    sv.push_back(std::move(spb));
+  }
+
+  return sv;
+}
+
 EngineRef makeEngine(
   ExtEngineConfig config, CASDatabaseRef casDB, ActionCacheRef cache,
   ActionExecutorRef executor, LoggerRef logger, ClientContextRef clientContext,

@@ -1006,5 +1006,125 @@ final class EngineTests: XCTestCase {
     }
   }
 
+  func testBuild_Ackermann() async throws {
+    class AckRuleProvider: TBasicRuleProvider {
+      init() {
+        super.init(
+          rules: [],
+          artifacts: [
+            TLabel.with {
+              $0.components = ["ackermann"]
+            },
+          ]
+        )
+      }
+
+      override func ruleForArtifact(_ lbl: TLabel) -> TRule? {
+        guard lbl.components.count == 1 && lbl.components[0] == "ackermann" else {
+          return nil
+        }
+        return TSimpleRule(lbl, arts: [lbl]) {
+          TStateMachineTask<Ackermann>($0, arts: $1)
+        }
+      }
+    }
+
+    struct Ackermann: TStateMachine {
+      enum State: Int {
+        case input1Available = 1
+        case input2Available = 2
+      }
+
+      enum AckError: Error {
+        case badInput
+      }
+
+      var m: Int = 0
+      var n: Int = 0
+
+      mutating func initialize(_ ti: TTaskInterface, task: TTask) throws -> TSMTransition<State> {
+        guard let args = task.produces().first?.name.split(separator: ",") else {
+          throw AckError.badInput
+        }
+        guard args.count == 2, let am = Int(args[0]), let an = Int(args[1]) else {
+          throw AckError.badInput
+        }
+        m = am
+        n = an
+
+        if m == 0 {
+          return .result(TTaskResult.with {
+            $0.artifacts = [TArtifact.with {
+              $0.label = task.produces().first!
+              $0.type = .blob
+              $0.blob = Data("\(n + 1)".utf8)
+            }]
+          })
+        }
+
+        let inputID: UInt64
+        if n == 0 {
+          inputID = try ti.requestArtifact(TLabel("//ackermann:\(m - 1),1"))
+        } else {
+          inputID = try ti.requestArtifact(TLabel("//ackermann:\(m),\(n - 1)"))
+        }
+
+        return .wait(.input1Available, [inputID])
+      }
+
+      mutating func compute(state: StateType, _ ti: TTaskInterface, task: TTask, inputs: TTaskInputs, subtaskResults: TSubtaskResults) throws -> TSMTransition<State> {
+        guard inputs.inputs.count == 1, let input = Int(String(decoding: inputs.inputs[0].artifact.blob, as: UTF8.self)) else {
+          throw AckError.badInput
+        }
+
+        switch state {
+        case .input1Available:
+          if (m != 0 && n != 0) {
+            let inputID = try ti.requestArtifact(TLabel("//ackermann:\(m - 1),\(input)"))
+            return .wait(.input2Available, [inputID])
+          }
+
+          assert(input != 0)
+          assert(n == 0)
+          return .result(TTaskResult.with {
+            $0.artifacts = [TArtifact.with {
+              $0.label = task.produces().first!
+              $0.type = .blob
+              $0.blob = Data("\(input)".utf8)
+            }]
+          })
+
+        case .input2Available:
+          return .result(TTaskResult.with {
+            $0.artifacts = [TArtifact.with {
+              $0.label = task.produces().first!
+              $0.type = .blob
+              $0.blob = Data("\(input)".utf8)
+            }]
+          })
+        }
+      }
+    }
+
+    let rp = AckRuleProvider()
+
+    let db = llbuild3.makeInMemoryCASDatabase()
+    let sp = TTempDirSandboxProvider(basedir: "testBuild_Ackermann", casDB: db.asTCASDatabase)
+    let exe = TExecutor(casDB: db, sandboxProvider: sp)
+    let engine = try TEngine(casDB: db, executor: exe, baseRuleProvider: rp)
+
+    let art = try TLabel("//ackermann:3,4")
+    do {
+      let result = try await engine.build(art)
+      if case .blob(let data) = result.value {
+        let value = Int(String(decoding: data, as: UTF8.self))
+        XCTAssertEqual(value, 125)
+      } else {
+        XCTFail("invalid artifact type found \(result.value.debugDescription)")
+      }
+    } catch {
+      XCTFail("build failed: \(error)")
+    }
+  }
 }
 

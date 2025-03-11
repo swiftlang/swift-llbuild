@@ -188,6 +188,9 @@ public:
   /// Build the requested artifact.
   Build build(const Label& artifact);
 
+  /// Get engine perf stats
+  std::vector<Stat> stats();
+
   /// @}
 };
 
