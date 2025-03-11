@@ -47,8 +47,8 @@ CASTree::CASTree(const std::vector<NamedDirectoryEntryID>& entries,
   id = db->identify(object);
 }
 
-void CASTree::sync(std::function<void (result<CASObjectID, Error>)> handler) {
-  db->put(object, [this, handler](result<CASObjectID, Error> res) {
+void CASTree::sync(std::function<void (result<CASID, Error>)> handler) {
+  db->put(object, [this, handler](result<CASID, Error> res) {
     if (res.has_error()) {
       if (handler) handler(fail(res.error()));
     } else {

@@ -28,11 +28,11 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-//// CASObjectID represents the digest of arbitrary data, and its purpose is to
-//// be a handler for interfacing with CAS systems. CASObjectID does not require
+//// CASID represents the digest of arbitrary data, and its purpose is to
+//// be a handler for interfacing with CAS systems. CASID does not require
 //// the encoding of any particular hash function. Instead, it is expected that
 //// the CAS system itself that provides the digest.
-public struct Llbuild3_CASObjectID: @unchecked Sendable {
+public struct Llbuild3_CASID: @unchecked Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
@@ -53,7 +53,7 @@ public struct Llbuild3_CASObject: @unchecked Sendable {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var refs: [Llbuild3_CASObjectID] = []
+  public var refs: [Llbuild3_CASID] = []
 
   public var data: Data = Data()
 
@@ -66,8 +66,8 @@ public struct Llbuild3_CASObject: @unchecked Sendable {
 
 fileprivate let _protobuf_package = "llbuild3"
 
-extension Llbuild3_CASObjectID: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".CASObjectID"
+extension Llbuild3_CASID: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".CASID"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "bytes"),
   ]
@@ -91,7 +91,7 @@ extension Llbuild3_CASObjectID: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
     try unknownFields.traverse(visitor: &visitor)
   }
 
-  public static func ==(lhs: Llbuild3_CASObjectID, rhs: Llbuild3_CASObjectID) -> Bool {
+  public static func ==(lhs: Llbuild3_CASID, rhs: Llbuild3_CASID) -> Bool {
     if lhs.bytes != rhs.bytes {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true

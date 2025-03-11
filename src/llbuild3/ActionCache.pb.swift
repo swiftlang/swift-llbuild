@@ -79,30 +79,8 @@ public struct Llbuild3_CacheKey: Sendable {
 
   public var type: Llbuild3_CacheKeyType = .task
 
-  public var content: Llbuild3_CASObjectID {
-    get {return _content ?? Llbuild3_CASObjectID()}
-    set {_content = newValue}
-  }
-  /// Returns true if `content` has been explicitly set.
-  public var hasContent: Bool {return self._content != nil}
-  /// Clears the value of `content`. Subsequent reads from it will return its default value.
-  public mutating func clearContent() {self._content = nil}
-
-  public var unknownFields = SwiftProtobuf.UnknownStorage()
-
-  public init() {}
-
-  fileprivate var _label: Llbuild3_Label? = nil
-  fileprivate var _content: Llbuild3_CASObjectID? = nil
-}
-
-public struct Llbuild3_CacheValue: Sendable {
-  // SwiftProtobuf.Message conformance is added in an extension below. See the
-  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
-  // methods supported on all messages.
-
-  public var data: Llbuild3_CASObjectID {
-    get {return _data ?? Llbuild3_CASObjectID()}
+  public var data: Llbuild3_CASID {
+    get {return _data ?? Llbuild3_CASID()}
     set {_data = newValue}
   }
   /// Returns true if `data` has been explicitly set.
@@ -110,76 +88,35 @@ public struct Llbuild3_CacheValue: Sendable {
   /// Clears the value of `data`. Subsequent reads from it will return its default value.
   public mutating func clearData() {self._data = nil}
 
-  public var stats: [Llbuild3_ActionStat] = []
-
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
-  fileprivate var _data: Llbuild3_CASObjectID? = nil
+  fileprivate var _label: Llbuild3_Label? = nil
+  fileprivate var _data: Llbuild3_CASID? = nil
 }
 
-public struct Llbuild3_ActionStat: Sendable {
+public struct Llbuild3_CacheValue: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var name: String = String()
-
-  public var value: Llbuild3_ActionStat.OneOf_Value? = nil
-
-  public var intValue: Int64 {
-    get {
-      if case .intValue(let v)? = value {return v}
-      return 0
-    }
-    set {value = .intValue(newValue)}
+  public var data: Llbuild3_CASID {
+    get {return _data ?? Llbuild3_CASID()}
+    set {_data = newValue}
   }
+  /// Returns true if `data` has been explicitly set.
+  public var hasData: Bool {return self._data != nil}
+  /// Clears the value of `data`. Subsequent reads from it will return its default value.
+  public mutating func clearData() {self._data = nil}
 
-  public var stringValue: String {
-    get {
-      if case .stringValue(let v)? = value {return v}
-      return String()
-    }
-    set {value = .stringValue(newValue)}
-  }
-
-  public var boolValue: Bool {
-    get {
-      if case .boolValue(let v)? = value {return v}
-      return false
-    }
-    set {value = .boolValue(newValue)}
-  }
-
-  public var doubleValue: Double {
-    get {
-      if case .doubleValue(let v)? = value {return v}
-      return 0
-    }
-    set {value = .doubleValue(newValue)}
-  }
-
-  public var casObject: Llbuild3_CASObjectID {
-    get {
-      if case .casObject(let v)? = value {return v}
-      return Llbuild3_CASObjectID()
-    }
-    set {value = .casObject(newValue)}
-  }
+  public var stats: [Llbuild3_Stat] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
-  public enum OneOf_Value: Equatable, Sendable {
-    case intValue(Int64)
-    case stringValue(String)
-    case boolValue(Bool)
-    case doubleValue(Double)
-    case casObject(Llbuild3_CASObjectID)
-
-  }
-
   public init() {}
+
+  fileprivate var _data: Llbuild3_CASID? = nil
 }
 
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
@@ -198,7 +135,7 @@ extension Llbuild3_CacheKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "label"),
     2: .same(proto: "type"),
-    3: .same(proto: "content"),
+    3: .same(proto: "data"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -209,7 +146,7 @@ extension Llbuild3_CacheKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularMessageField(value: &self._label) }()
       case 2: try { try decoder.decodeSingularEnumField(value: &self.type) }()
-      case 3: try { try decoder.decodeSingularMessageField(value: &self._content) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._data) }()
       default: break
       }
     }
@@ -226,7 +163,7 @@ extension Llbuild3_CacheKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
     if self.type != .task {
       try visitor.visitSingularEnumField(value: self.type, fieldNumber: 2)
     }
-    try { if let v = self._content {
+    try { if let v = self._data {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
     } }()
     try unknownFields.traverse(visitor: &visitor)
@@ -235,7 +172,7 @@ extension Llbuild3_CacheKey: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
   public static func ==(lhs: Llbuild3_CacheKey, rhs: Llbuild3_CacheKey) -> Bool {
     if lhs._label != rhs._label {return false}
     if lhs.type != rhs.type {return false}
-    if lhs._content != rhs._content {return false}
+    if lhs._data != rhs._data {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -278,116 +215,6 @@ extension Llbuild3_CacheValue: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
   public static func ==(lhs: Llbuild3_CacheValue, rhs: Llbuild3_CacheValue) -> Bool {
     if lhs._data != rhs._data {return false}
     if lhs.stats != rhs.stats {return false}
-    if lhs.unknownFields != rhs.unknownFields {return false}
-    return true
-  }
-}
-
-extension Llbuild3_ActionStat: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
-  public static let protoMessageName: String = _protobuf_package + ".ActionStat"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "name"),
-    2: .same(proto: "intValue"),
-    3: .same(proto: "stringValue"),
-    4: .same(proto: "boolValue"),
-    5: .same(proto: "doubleValue"),
-    6: .same(proto: "casObject"),
-  ]
-
-  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every case branch when no optimizations are
-      // enabled. https://github.com/apple/swift-protobuf/issues/1034
-      switch fieldNumber {
-      case 1: try { try decoder.decodeSingularStringField(value: &self.name) }()
-      case 2: try {
-        var v: Int64?
-        try decoder.decodeSingularInt64Field(value: &v)
-        if let v = v {
-          if self.value != nil {try decoder.handleConflictingOneOf()}
-          self.value = .intValue(v)
-        }
-      }()
-      case 3: try {
-        var v: String?
-        try decoder.decodeSingularStringField(value: &v)
-        if let v = v {
-          if self.value != nil {try decoder.handleConflictingOneOf()}
-          self.value = .stringValue(v)
-        }
-      }()
-      case 4: try {
-        var v: Bool?
-        try decoder.decodeSingularBoolField(value: &v)
-        if let v = v {
-          if self.value != nil {try decoder.handleConflictingOneOf()}
-          self.value = .boolValue(v)
-        }
-      }()
-      case 5: try {
-        var v: Double?
-        try decoder.decodeSingularDoubleField(value: &v)
-        if let v = v {
-          if self.value != nil {try decoder.handleConflictingOneOf()}
-          self.value = .doubleValue(v)
-        }
-      }()
-      case 6: try {
-        var v: Llbuild3_CASObjectID?
-        var hadOneofValue = false
-        if let current = self.value {
-          hadOneofValue = true
-          if case .casObject(let m) = current {v = m}
-        }
-        try decoder.decodeSingularMessageField(value: &v)
-        if let v = v {
-          if hadOneofValue {try decoder.handleConflictingOneOf()}
-          self.value = .casObject(v)
-        }
-      }()
-      default: break
-      }
-    }
-  }
-
-  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    // The use of inline closures is to circumvent an issue where the compiler
-    // allocates stack space for every if/case branch local when no optimizations
-    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
-    // https://github.com/apple/swift-protobuf/issues/1182
-    if !self.name.isEmpty {
-      try visitor.visitSingularStringField(value: self.name, fieldNumber: 1)
-    }
-    switch self.value {
-    case .intValue?: try {
-      guard case .intValue(let v)? = self.value else { preconditionFailure() }
-      try visitor.visitSingularInt64Field(value: v, fieldNumber: 2)
-    }()
-    case .stringValue?: try {
-      guard case .stringValue(let v)? = self.value else { preconditionFailure() }
-      try visitor.visitSingularStringField(value: v, fieldNumber: 3)
-    }()
-    case .boolValue?: try {
-      guard case .boolValue(let v)? = self.value else { preconditionFailure() }
-      try visitor.visitSingularBoolField(value: v, fieldNumber: 4)
-    }()
-    case .doubleValue?: try {
-      guard case .doubleValue(let v)? = self.value else { preconditionFailure() }
-      try visitor.visitSingularDoubleField(value: v, fieldNumber: 5)
-    }()
-    case .casObject?: try {
-      guard case .casObject(let v)? = self.value else { preconditionFailure() }
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
-    }()
-    case nil: break
-    }
-    try unknownFields.traverse(visitor: &visitor)
-  }
-
-  public static func ==(lhs: Llbuild3_ActionStat, rhs: Llbuild3_ActionStat) -> Bool {
-    if lhs.name != rhs.name {return false}
-    if lhs.value != rhs.value {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

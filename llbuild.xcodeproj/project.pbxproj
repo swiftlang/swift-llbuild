@@ -371,6 +371,15 @@
 		40D884B22D5591E800E3518E /* CASTree.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 40D884B12D5591E300E3518E /* CASTree.cpp */; };
 		40D884B42D5DC52E00E3518E /* LocalExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D884B32D5DC52700E3518E /* LocalExecutor.swift */; };
 		40D884B62D5EE62400E3518E /* CASTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D884B52D5EE62100E3518E /* CASTests.swift */; };
+		40D884DC2D78130F00E3518E /* RemoteExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D884DB2D78130B00E3518E /* RemoteExecutor.swift */; };
+		40D884DE2D7B94B700E3518E /* ActionExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D884DD2D7B94B300E3518E /* ActionExecutor.swift */; };
+		40D884F12D7BC51700E3518E /* time_zone_format.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F98A2C79076200757481 /* time_zone_format.cc */; };
+		40D884F32D7BCBBB00E3518E /* Logging.h in Headers */ = {isa = PBXBuildFile; fileRef = 40D884F22D7BCBB200E3518E /* Logging.h */; };
+		40D884F52D7BCBCE00E3518E /* Logging.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 40D884F42D7BCBC700E3518E /* Logging.cpp */; };
+		40D884FB2D7BD4E100E3518E /* Common.pb.h in Headers */ = {isa = PBXBuildFile; fileRef = 40D884F82D7BD4E100E3518E /* Common.pb.h */; };
+		40D884FC2D7BD4E100E3518E /* Common.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D884FA2D7BD4E100E3518E /* Common.pb.swift */; };
+		40D884FD2D7BD4E100E3518E /* Common.pb.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40D884F92D7BD4E100E3518E /* Common.pb.cc */; };
+		40D884FF2D7BDA3B00E3518E /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40D884FE2D7BDA3400E3518E /* Logging.swift */; };
 		40E331942D4DD7240011ABFA /* Common.h in Headers */ = {isa = PBXBuildFile; fileRef = 40E331932D4DD7120011ABFA /* Common.h */; };
 		40E7C53C2C61CD8100FC0383 /* Types.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E7C53B2C61CD7D00FC0383 /* Types.swift */; };
 		40E7C53E2C61CF6800FC0383 /* Engine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E7C53D2C61CF6300FC0383 /* Engine.swift */; };
@@ -3820,6 +3829,15 @@
 		40D884B12D5591E300E3518E /* CASTree.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CASTree.cpp; sourceTree = "<group>"; };
 		40D884B32D5DC52700E3518E /* LocalExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalExecutor.swift; sourceTree = "<group>"; };
 		40D884B52D5EE62100E3518E /* CASTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CASTests.swift; sourceTree = "<group>"; };
+		40D884DB2D78130B00E3518E /* RemoteExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteExecutor.swift; sourceTree = "<group>"; };
+		40D884DD2D7B94B300E3518E /* ActionExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionExecutor.swift; sourceTree = "<group>"; };
+		40D884F22D7BCBB200E3518E /* Logging.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Logging.h; sourceTree = "<group>"; };
+		40D884F42D7BCBC700E3518E /* Logging.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Logging.cpp; sourceTree = "<group>"; };
+		40D884F62D7BD41600E3518E /* Common.proto */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.protobuf; path = Common.proto; sourceTree = "<group>"; };
+		40D884F82D7BD4E100E3518E /* Common.pb.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Common.pb.h; sourceTree = "<group>"; };
+		40D884F92D7BD4E100E3518E /* Common.pb.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Common.pb.cc; sourceTree = "<group>"; };
+		40D884FA2D7BD4E100E3518E /* Common.pb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Common.pb.swift; sourceTree = "<group>"; };
+		40D884FE2D7BDA3400E3518E /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
 		40E331932D4DD7120011ABFA /* Common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Common.h; sourceTree = "<group>"; };
 		40E7B4252C61CA1F00FC0383 /* ProtocolBuffers_iOS.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_iOS.xcodeproj; sourceTree = "<group>"; };
 		40E7B4262C61CA1F00FC0383 /* ProtocolBuffers_OSX.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = ProtocolBuffers_OSX.xcodeproj; sourceTree = "<group>"; };
@@ -5073,6 +5091,7 @@
 				4072B4BB2C51995100B68221 /* ActionCache.pb.swift */,
 				4035F6C62D2D86FC00337926 /* ActionExecutor.h */,
 				4035F6C82D2D870F00337926 /* ActionExecutor.cpp */,
+				40D884DD2D7B94B300E3518E /* ActionExecutor.swift */,
 				4072B4BC2C51995100B68221 /* Artifact.proto */,
 				4072B4BD2C51995100B68221 /* Artifact.pb.h */,
 				4072B4BE2C51995100B68221 /* Artifact.pb.cc */,
@@ -5093,6 +5112,10 @@
 				4035F6B12D28761000337926 /* CASTree.pb.cc */,
 				4035F6B22D28761000337926 /* CASTree.pb.swift */,
 				40E331932D4DD7120011ABFA /* Common.h */,
+				40D884F62D7BD41600E3518E /* Common.proto */,
+				40D884F82D7BD4E100E3518E /* Common.pb.h */,
+				40D884F92D7BD4E100E3518E /* Common.pb.cc */,
+				40D884FA2D7BD4E100E3518E /* Common.pb.swift */,
 				4072B4C42C51995100B68221 /* Engine.h */,
 				4072B4C52C51995100B68221 /* Engine.cpp */,
 				4072B4CC2C51995100B68221 /* Engine.proto */,
@@ -5117,8 +5140,12 @@
 				4035F6B92D28CC4C00337926 /* LocalExecutor.h */,
 				4035F6BB2D28CC5D00337926 /* LocalExecutor.cpp */,
 				40D884B32D5DC52700E3518E /* LocalExecutor.swift */,
+				40D884F22D7BCBB200E3518E /* Logging.h */,
+				40D884F42D7BCBC700E3518E /* Logging.cpp */,
+				40D884FE2D7BDA3400E3518E /* Logging.swift */,
 				4035F6BD2D28CC6E00337926 /* RemoteExecutor.h */,
 				4035F6BF2D28CC7C00337926 /* RemoteExecutor.cpp */,
+				40D884DB2D78130B00E3518E /* RemoteExecutor.swift */,
 				4035F6CC2D46FAD100337926 /* Subtask.h */,
 				4072B4D42C51995100B68221 /* support */,
 				4072B4D02C51995100B68221 /* SwiftAdaptors.cpp */,
@@ -9060,7 +9087,9 @@
 				4035F6C72D2D870600337926 /* ActionExecutor.h in Headers */,
 				4035F6CB2D2E36FF00337926 /* LabelTrie.h in Headers */,
 				4035F6E52D47F54700337926 /* Engine.pb.h in Headers */,
+				40D884FB2D7BD4E100E3518E /* Common.pb.h in Headers */,
 				40E331942D4DD7240011ABFA /* Common.h in Headers */,
+				40D884F32D7BCBBB00E3518E /* Logging.h in Headers */,
 				4035F6B32D28761000337926 /* Action.pb.h in Headers */,
 				4035F6BA2D28CC5400337926 /* LocalExecutor.h in Headers */,
 				4035F6B42D28761000337926 /* CASTree.pb.h in Headers */,
@@ -10782,6 +10811,7 @@
 				40C10C3B2C790CC400757481 /* utf8.cc in Sources */,
 				40C10C3C2C790CC400757481 /* ascii.cc in Sources */,
 				40C10C3D2C790CC400757481 /* charconv.cc in Sources */,
+				40D884F12D7BC51700E3518E /* time_zone_format.cc in Sources */,
 				40C10C3E2C790CC400757481 /* cord.cc in Sources */,
 				40C10C3F2C790CC400757481 /* cord_analysis.cc in Sources */,
 				40C10C402C790CC400757481 /* cord_buffer.cc in Sources */,
@@ -10865,15 +10895,21 @@
 				4072B5F52C51BF1700B68221 /* ActionCache.cpp in Sources */,
 				4035F6C92D2D871500337926 /* ActionExecutor.cpp in Sources */,
 				40E837EA2CCC64430022B026 /* CAS.cpp in Sources */,
+				40D884FC2D7BD4E100E3518E /* Common.pb.swift in Sources */,
+				40D884FD2D7BD4E100E3518E /* Common.pb.cc in Sources */,
 				4035F64B2CF140B000337926 /* CAS.swift in Sources */,
 				4072B5F62C51BF1700B68221 /* Error.pb.swift in Sources */,
 				4072B5F72C51BF1700B68221 /* ActionCache.pb.swift in Sources */,
 				4072B5F82C51BF1700B68221 /* Label.cpp in Sources */,
 				4035F6B52D28761000337926 /* CASTree.pb.swift in Sources */,
 				4035F6B62D28761000337926 /* CASTree.pb.cc in Sources */,
+				40D884DC2D78130F00E3518E /* RemoteExecutor.swift in Sources */,
+				40D884FF2D7BDA3B00E3518E /* Logging.swift in Sources */,
+				40D884F52D7BCBCE00E3518E /* Logging.cpp in Sources */,
 				4035F6B72D28761000337926 /* Action.pb.swift in Sources */,
 				4035F6B82D28761000337926 /* Action.pb.cc in Sources */,
 				4035F6BC2D28CC6600337926 /* LocalExecutor.cpp in Sources */,
+				40D884DE2D7B94B700E3518E /* ActionExecutor.swift in Sources */,
 				40D884B42D5DC52E00E3518E /* LocalExecutor.swift in Sources */,
 				4072B5FC2C51BF1700B68221 /* SwiftAdaptors.cpp in Sources */,
 			);

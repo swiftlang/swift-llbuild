@@ -64,16 +64,20 @@ enum class ExecutorError: uint64_t {
   WaitFailed = 103,
   ControlProtocolError = 104,
   ProcessStatsError = 105,
+  ProcessFailed = 106,
+  UnexpectedOutput = 107,
 
   // 200 - Client Implementation Errors
   BadRequest = 200,
   DuplicateProvider = 201,
   BadProviderPrefix = 202,
   NoProvider = 203,
+  NoRemoteExecutor = 204,
 
   // 1000 - Executor Internal Errors
   Unimplemented = 1000,
   InternalInconsistency = 1001,
+  InternalProtobufSerialization = 1002,
 
   Unknown = 0
 };

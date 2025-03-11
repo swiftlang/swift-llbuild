@@ -50,12 +50,12 @@ struct TableStruct_llbuild3_2fCAS_2eproto {
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_llbuild3_2fCAS_2eproto;
 namespace llbuild3 {
+class CASID;
+struct CASIDDefaultTypeInternal;
+extern CASIDDefaultTypeInternal _CASID_default_instance_;
 class CASObject;
 struct CASObjectDefaultTypeInternal;
 extern CASObjectDefaultTypeInternal _CASObject_default_instance_;
-class CASObjectID;
-struct CASObjectIDDefaultTypeInternal;
-extern CASObjectIDDefaultTypeInternal _CASObjectID_default_instance_;
 }  // namespace llbuild3
 namespace google {
 namespace protobuf {
@@ -69,23 +69,23 @@ namespace llbuild3 {
 
 // -------------------------------------------------------------------
 
-class CASObjectID final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:llbuild3.CASObjectID) */ {
+class CASID final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:llbuild3.CASID) */ {
  public:
-  inline CASObjectID() : CASObjectID(nullptr) {}
-  ~CASObjectID() override;
+  inline CASID() : CASID(nullptr) {}
+  ~CASID() override;
   template <typename = void>
-  explicit PROTOBUF_CONSTEXPR CASObjectID(
+  explicit PROTOBUF_CONSTEXPR CASID(
       ::google::protobuf::internal::ConstantInitialized);
 
-  inline CASObjectID(const CASObjectID& from) : CASObjectID(nullptr, from) {}
-  inline CASObjectID(CASObjectID&& from) noexcept
-      : CASObjectID(nullptr, std::move(from)) {}
-  inline CASObjectID& operator=(const CASObjectID& from) {
+  inline CASID(const CASID& from) : CASID(nullptr, from) {}
+  inline CASID(CASID&& from) noexcept
+      : CASID(nullptr, std::move(from)) {}
+  inline CASID& operator=(const CASID& from) {
     CopyFrom(from);
     return *this;
   }
-  inline CASObjectID& operator=(CASObjectID&& from) noexcept {
+  inline CASID& operator=(CASID&& from) noexcept {
     if (this == &from) return *this;
     if (GetArena() == from.GetArena()
 #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
@@ -117,16 +117,16 @@ class CASObjectID final : public ::google::protobuf::Message
   static const ::google::protobuf::Reflection* GetReflection() {
     return default_instance().GetMetadata().reflection;
   }
-  static const CASObjectID& default_instance() {
+  static const CASID& default_instance() {
     return *internal_default_instance();
   }
-  static inline const CASObjectID* internal_default_instance() {
-    return reinterpret_cast<const CASObjectID*>(
-        &_CASObjectID_default_instance_);
+  static inline const CASID* internal_default_instance() {
+    return reinterpret_cast<const CASID*>(
+        &_CASID_default_instance_);
   }
   static constexpr int kIndexInFileMessages = 0;
-  friend void swap(CASObjectID& a, CASObjectID& b) { a.Swap(&b); }
-  inline void Swap(CASObjectID* other) {
+  friend void swap(CASID& a, CASID& b) { a.Swap(&b); }
+  inline void Swap(CASID* other) {
     if (other == this) return;
 #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
     if (GetArena() != nullptr && GetArena() == other->GetArena()) {
@@ -138,7 +138,7 @@ class CASObjectID final : public ::google::protobuf::Message
       ::google::protobuf::internal::GenericSwap(this, other);
     }
   }
-  void UnsafeArenaSwap(CASObjectID* other) {
+  void UnsafeArenaSwap(CASID* other) {
     if (other == this) return;
     ABSL_DCHECK(GetArena() == other->GetArena());
     InternalSwap(other);
@@ -146,13 +146,13 @@ class CASObjectID final : public ::google::protobuf::Message
 
   // implements Message ----------------------------------------------
 
-  CASObjectID* New(::google::protobuf::Arena* arena = nullptr) const final {
-    return ::google::protobuf::Message::DefaultConstruct<CASObjectID>(arena);
+  CASID* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<CASID>(arena);
   }
   using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const CASObjectID& from);
+  void CopyFrom(const CASID& from);
   using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const CASObjectID& from) { CASObjectID::MergeImpl(*this, from); }
+  void MergeFrom(const CASID& from) { CASID::MergeImpl(*this, from); }
 
   private:
   static void MergeImpl(
@@ -173,16 +173,16 @@ class CASObjectID final : public ::google::protobuf::Message
   private:
   void SharedCtor(::google::protobuf::Arena* arena);
   void SharedDtor();
-  void InternalSwap(CASObjectID* other);
+  void InternalSwap(CASID* other);
  private:
   friend class ::google::protobuf::internal::AnyMetadata;
-  static ::absl::string_view FullMessageName() { return "llbuild3.CASObjectID"; }
+  static ::absl::string_view FullMessageName() { return "llbuild3.CASID"; }
 
  protected:
-  explicit CASObjectID(::google::protobuf::Arena* arena);
-  CASObjectID(::google::protobuf::Arena* arena, const CASObjectID& from);
-  CASObjectID(::google::protobuf::Arena* arena, CASObjectID&& from) noexcept
-      : CASObjectID(arena) {
+  explicit CASID(::google::protobuf::Arena* arena);
+  CASID(::google::protobuf::Arena* arena, const CASID& from);
+  CASID(::google::protobuf::Arena* arena, CASID&& from) noexcept
+      : CASID(arena) {
     *this = ::std::move(from);
   }
   const ::google::protobuf::Message::ClassData* GetClassData() const final;
@@ -211,7 +211,7 @@ class CASObjectID final : public ::google::protobuf::Message
   std::string* _internal_mutable_bytes();
 
   public:
-  // @@protoc_insertion_point(class_scope:llbuild3.CASObjectID)
+  // @@protoc_insertion_point(class_scope:llbuild3.CASID)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -221,7 +221,7 @@ class CASObjectID final : public ::google::protobuf::Message
       _table_;
 
   static constexpr const void* _raw_default_instance_ =
-      &_CASObjectID_default_instance_;
+      &_CASID_default_instance_;
 
   friend class ::google::protobuf::MessageLite;
   friend class ::google::protobuf::Arena;
@@ -236,7 +236,7 @@ class CASObjectID final : public ::google::protobuf::Message
                           ::google::protobuf::Arena* arena);
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from,
-                          const CASObjectID& from_msg);
+                          const CASID& from_msg);
     ::google::protobuf::internal::ArenaStringPtr bytes_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -373,23 +373,23 @@ class CASObject final : public ::google::protobuf::Message
     kRefsFieldNumber = 1,
     kDataFieldNumber = 2,
   };
-  // repeated .llbuild3.CASObjectID refs = 1;
+  // repeated .llbuild3.CASID refs = 1;
   int refs_size() const;
   private:
   int _internal_refs_size() const;
 
   public:
   void clear_refs() ;
-  ::llbuild3::CASObjectID* mutable_refs(int index);
-  ::google::protobuf::RepeatedPtrField<::llbuild3::CASObjectID>* mutable_refs();
+  ::llbuild3::CASID* mutable_refs(int index);
+  ::google::protobuf::RepeatedPtrField<::llbuild3::CASID>* mutable_refs();
 
   private:
-  const ::google::protobuf::RepeatedPtrField<::llbuild3::CASObjectID>& _internal_refs() const;
-  ::google::protobuf::RepeatedPtrField<::llbuild3::CASObjectID>* _internal_mutable_refs();
+  const ::google::protobuf::RepeatedPtrField<::llbuild3::CASID>& _internal_refs() const;
+  ::google::protobuf::RepeatedPtrField<::llbuild3::CASID>* _internal_mutable_refs();
   public:
-  const ::llbuild3::CASObjectID& refs(int index) const;
-  ::llbuild3::CASObjectID* add_refs();
-  const ::google::protobuf::RepeatedPtrField<::llbuild3::CASObjectID>& refs() const;
+  const ::llbuild3::CASID& refs(int index) const;
+  ::llbuild3::CASID* add_refs();
+  const ::google::protobuf::RepeatedPtrField<::llbuild3::CASID>& refs() const;
   // bytes data = 2;
   void clear_data() ;
   const std::string& data() const;
@@ -432,7 +432,7 @@ class CASObject final : public ::google::protobuf::Message
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from,
                           const CASObject& from_msg);
-    ::google::protobuf::RepeatedPtrField< ::llbuild3::CASObjectID > refs_;
+    ::google::protobuf::RepeatedPtrField< ::llbuild3::CASID > refs_;
     ::google::protobuf::internal::ArenaStringPtr data_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -455,48 +455,48 @@ class CASObject final : public ::google::protobuf::Message
 #endif  // __GNUC__
 // -------------------------------------------------------------------
 
-// CASObjectID
+// CASID
 
 // bytes bytes = 1;
-inline void CASObjectID::clear_bytes() {
+inline void CASID::clear_bytes() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.bytes_.ClearToEmpty();
 }
-inline const std::string& CASObjectID::bytes() const
+inline const std::string& CASID::bytes() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:llbuild3.CASObjectID.bytes)
+  // @@protoc_insertion_point(field_get:llbuild3.CASID.bytes)
   return _internal_bytes();
 }
 template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void CASObjectID::set_bytes(Arg_&& arg,
+inline PROTOBUF_ALWAYS_INLINE void CASID::set_bytes(Arg_&& arg,
                                                      Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.bytes_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:llbuild3.CASObjectID.bytes)
+  // @@protoc_insertion_point(field_set:llbuild3.CASID.bytes)
 }
-inline std::string* CASObjectID::mutable_bytes() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline std::string* CASID::mutable_bytes() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   std::string* _s = _internal_mutable_bytes();
-  // @@protoc_insertion_point(field_mutable:llbuild3.CASObjectID.bytes)
+  // @@protoc_insertion_point(field_mutable:llbuild3.CASID.bytes)
   return _s;
 }
-inline const std::string& CASObjectID::_internal_bytes() const {
+inline const std::string& CASID::_internal_bytes() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.bytes_.Get();
 }
-inline void CASObjectID::_internal_set_bytes(const std::string& value) {
+inline void CASID::_internal_set_bytes(const std::string& value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.bytes_.Set(value, GetArena());
 }
-inline std::string* CASObjectID::_internal_mutable_bytes() {
+inline std::string* CASID::_internal_mutable_bytes() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _impl_.bytes_.Mutable( GetArena());
 }
-inline std::string* CASObjectID::release_bytes() {
+inline std::string* CASID::release_bytes() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:llbuild3.CASObjectID.bytes)
+  // @@protoc_insertion_point(field_release:llbuild3.CASID.bytes)
   return _impl_.bytes_.Release();
 }
-inline void CASObjectID::set_allocated_bytes(std::string* value) {
+inline void CASID::set_allocated_bytes(std::string* value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.bytes_.SetAllocated(value, GetArena());
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
@@ -504,14 +504,14 @@ inline void CASObjectID::set_allocated_bytes(std::string* value) {
           _impl_.bytes_.Set("", GetArena());
         }
   #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:llbuild3.CASObjectID.bytes)
+  // @@protoc_insertion_point(field_set_allocated:llbuild3.CASID.bytes)
 }
 
 // -------------------------------------------------------------------
 
 // CASObject
 
-// repeated .llbuild3.CASObjectID refs = 1;
+// repeated .llbuild3.CASID refs = 1;
 inline int CASObject::_internal_refs_size() const {
   return _internal_refs().size();
 }
@@ -522,39 +522,39 @@ inline void CASObject::clear_refs() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.refs_.Clear();
 }
-inline ::llbuild3::CASObjectID* CASObject::mutable_refs(int index)
+inline ::llbuild3::CASID* CASObject::mutable_refs(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable:llbuild3.CASObject.refs)
   return _internal_mutable_refs()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::llbuild3::CASObjectID>* CASObject::mutable_refs()
+inline ::google::protobuf::RepeatedPtrField<::llbuild3::CASID>* CASObject::mutable_refs()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable_list:llbuild3.CASObject.refs)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_refs();
 }
-inline const ::llbuild3::CASObjectID& CASObject::refs(int index) const
+inline const ::llbuild3::CASID& CASObject::refs(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:llbuild3.CASObject.refs)
   return _internal_refs().Get(index);
 }
-inline ::llbuild3::CASObjectID* CASObject::add_refs() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline ::llbuild3::CASID* CASObject::add_refs() ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::llbuild3::CASObjectID* _add = _internal_mutable_refs()->Add();
+  ::llbuild3::CASID* _add = _internal_mutable_refs()->Add();
   // @@protoc_insertion_point(field_add:llbuild3.CASObject.refs)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::llbuild3::CASObjectID>& CASObject::refs() const
+inline const ::google::protobuf::RepeatedPtrField<::llbuild3::CASID>& CASObject::refs() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_list:llbuild3.CASObject.refs)
   return _internal_refs();
 }
-inline const ::google::protobuf::RepeatedPtrField<::llbuild3::CASObjectID>&
+inline const ::google::protobuf::RepeatedPtrField<::llbuild3::CASID>&
 CASObject::_internal_refs() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.refs_;
 }
-inline ::google::protobuf::RepeatedPtrField<::llbuild3::CASObjectID>*
+inline ::google::protobuf::RepeatedPtrField<::llbuild3::CASID>*
 CASObject::_internal_mutable_refs() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.refs_;

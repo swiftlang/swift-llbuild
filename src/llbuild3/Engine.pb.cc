@@ -319,17 +319,17 @@ const char descriptor_table_protodef_llbuild3_2fEngine_2eproto[] ABSL_ATTRIBUTE_
     "askResultH\000\022(\n\006action\030\005 \001(\0132\026.llbuild3.A"
     "ctionResultH\000B\r\n\013InputObject\"1\n\nTaskInpu"
     "ts\022#\n\006inputs\030\001 \003(\0132\023.llbuild3.TaskInput\""
-    "\205\001\n\013TaskContext\022)\n\010casState\030\001 \001(\0132\025.llbu"
-    "ild3.CASObjectIDH\000\022*\n\nprotoState\030\002 \001(\0132\024"
-    ".google.protobuf.AnyH\000\022\022\n\010intState\030\003 \001(\003"
-    "H\000B\013\n\tTaskState\"\?\n\010TaskWait\022\013\n\003ids\030\001 \003(\004"
-    "\022&\n\007context\030\002 \001(\0132\025.llbuild3.TaskContext"
-    "\"\213\001\n\rTaskNextState\022\"\n\004wait\030\001 \001(\0132\022.llbui"
-    "ld3.TaskWaitH\000\022&\n\006result\030\002 \001(\0132\024.llbuild"
-    "3.TaskResultH\000\022 \n\005error\030\003 \001(\0132\017.llbuild3"
-    ".ErrorH\000B\014\n\nStateValue\"5\n\027TaskStateMachi"
-    "neContext\022\014\n\004next\030\001 \001(\003\022\014\n\004data\030\002 \001(\014b\006p"
-    "roto3"
+    "\202\001\n\013TaskContext\022$\n\tcas_state\030\001 \001(\0132\017.llb"
+    "uild3.CASIDH\000\022+\n\013proto_state\030\002 \001(\0132\024.goo"
+    "gle.protobuf.AnyH\000\022\023\n\tint_state\030\003 \001(\003H\000B"
+    "\013\n\tTaskState\"\?\n\010TaskWait\022\013\n\003ids\030\001 \003(\004\022&\n"
+    "\007context\030\002 \001(\0132\025.llbuild3.TaskContext\"\213\001"
+    "\n\rTaskNextState\022\"\n\004wait\030\001 \001(\0132\022.llbuild3"
+    ".TaskWaitH\000\022&\n\006result\030\002 \001(\0132\024.llbuild3.T"
+    "askResultH\000\022 \n\005error\030\003 \001(\0132\017.llbuild3.Er"
+    "rorH\000B\014\n\nStateValue\"5\n\027TaskStateMachineC"
+    "ontext\022\014\n\004next\030\001 \001(\003\022\014\n\004data\030\002 \001(\014b\006prot"
+    "o3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_llbuild3_2fEngine_2eproto_deps[5] =
     {
@@ -343,7 +343,7 @@ static ::absl::once_flag descriptor_table_llbuild3_2fEngine_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_llbuild3_2fEngine_2eproto = {
     false,
     false,
-    885,
+    882,
     descriptor_table_protodef_llbuild3_2fEngine_2eproto,
     "llbuild3/Engine.proto",
     &descriptor_table_llbuild3_2fEngine_2eproto_once,
@@ -1394,50 +1394,50 @@ class TaskContext::_Internal {
       PROTOBUF_FIELD_OFFSET(::llbuild3::TaskContext, _impl_._oneof_case_);
 };
 
-void TaskContext::set_allocated_casstate(::llbuild3::CASObjectID* casstate) {
+void TaskContext::set_allocated_cas_state(::llbuild3::CASID* cas_state) {
   ::google::protobuf::Arena* message_arena = GetArena();
   clear_TaskState();
-  if (casstate) {
-    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(casstate)->GetArena();
+  if (cas_state) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(cas_state)->GetArena();
     if (message_arena != submessage_arena) {
-      casstate = ::google::protobuf::internal::GetOwnedMessage(message_arena, casstate, submessage_arena);
+      cas_state = ::google::protobuf::internal::GetOwnedMessage(message_arena, cas_state, submessage_arena);
     }
-    set_has_casstate();
-    _impl_.TaskState_.casstate_ = casstate;
+    set_has_cas_state();
+    _impl_.TaskState_.cas_state_ = cas_state;
   }
-  // @@protoc_insertion_point(field_set_allocated:llbuild3.TaskContext.casState)
+  // @@protoc_insertion_point(field_set_allocated:llbuild3.TaskContext.cas_state)
 }
-void TaskContext::clear_casstate() {
+void TaskContext::clear_cas_state() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (TaskState_case() == kCasState) {
     if (GetArena() == nullptr) {
-      delete _impl_.TaskState_.casstate_;
+      delete _impl_.TaskState_.cas_state_;
     } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
-      ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.TaskState_.casstate_);
+      ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.TaskState_.cas_state_);
     }
     clear_has_TaskState();
   }
 }
-void TaskContext::set_allocated_protostate(::google::protobuf::Any* protostate) {
+void TaskContext::set_allocated_proto_state(::google::protobuf::Any* proto_state) {
   ::google::protobuf::Arena* message_arena = GetArena();
   clear_TaskState();
-  if (protostate) {
-    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(protostate)->GetArena();
+  if (proto_state) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(proto_state)->GetArena();
     if (message_arena != submessage_arena) {
-      protostate = ::google::protobuf::internal::GetOwnedMessage(message_arena, protostate, submessage_arena);
+      proto_state = ::google::protobuf::internal::GetOwnedMessage(message_arena, proto_state, submessage_arena);
     }
-    set_has_protostate();
-    _impl_.TaskState_.protostate_ = protostate;
+    set_has_proto_state();
+    _impl_.TaskState_.proto_state_ = proto_state;
   }
-  // @@protoc_insertion_point(field_set_allocated:llbuild3.TaskContext.protoState)
+  // @@protoc_insertion_point(field_set_allocated:llbuild3.TaskContext.proto_state)
 }
-void TaskContext::clear_protostate() {
+void TaskContext::clear_proto_state() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (TaskState_case() == kProtoState) {
     if (GetArena() == nullptr) {
-      delete _impl_.TaskState_.protostate_;
+      delete _impl_.TaskState_.proto_state_;
     } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
-      ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.TaskState_.protostate_);
+      ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.TaskState_.proto_state_);
     }
     clear_has_TaskState();
   }
@@ -1467,13 +1467,13 @@ TaskContext::TaskContext(
     case TASKSTATE_NOT_SET:
       break;
       case kCasState:
-        _impl_.TaskState_.casstate_ = ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(arena, *from._impl_.TaskState_.casstate_);
+        _impl_.TaskState_.cas_state_ = ::google::protobuf::Message::CopyConstruct<::llbuild3::CASID>(arena, *from._impl_.TaskState_.cas_state_);
         break;
       case kProtoState:
-        _impl_.TaskState_.protostate_ = ::google::protobuf::Message::CopyConstruct<::google::protobuf::Any>(arena, *from._impl_.TaskState_.protostate_);
+        _impl_.TaskState_.proto_state_ = ::google::protobuf::Message::CopyConstruct<::google::protobuf::Any>(arena, *from._impl_.TaskState_.proto_state_);
         break;
       case kIntState:
-        _impl_.TaskState_.intstate_ = from._impl_.TaskState_.intstate_;
+        _impl_.TaskState_.int_state_ = from._impl_.TaskState_.int_state_;
         break;
   }
 
@@ -1508,17 +1508,17 @@ void TaskContext::clear_TaskState() {
   switch (TaskState_case()) {
     case kCasState: {
       if (GetArena() == nullptr) {
-        delete _impl_.TaskState_.casstate_;
+        delete _impl_.TaskState_.cas_state_;
       } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
-        ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.TaskState_.casstate_);
+        ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.TaskState_.cas_state_);
       }
       break;
     }
     case kProtoState: {
       if (GetArena() == nullptr) {
-        delete _impl_.TaskState_.protostate_;
+        delete _impl_.TaskState_.proto_state_;
       } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
-        ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.TaskState_.protostate_);
+        ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.TaskState_.proto_state_);
       }
       break;
     }
@@ -1577,17 +1577,17 @@ const ::_pbi::TcParseTable<0, 3, 2, 0, 2> TaskContext::_table_ = {
   }}, {{
     65535, 65535
   }}, {{
-    // .llbuild3.CASObjectID casState = 1;
-    {PROTOBUF_FIELD_OFFSET(TaskContext, _impl_.TaskState_.casstate_), _Internal::kOneofCaseOffset + 0, 0,
+    // .llbuild3.CASID cas_state = 1;
+    {PROTOBUF_FIELD_OFFSET(TaskContext, _impl_.TaskState_.cas_state_), _Internal::kOneofCaseOffset + 0, 0,
     (0 | ::_fl::kFcOneof | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .google.protobuf.Any protoState = 2;
-    {PROTOBUF_FIELD_OFFSET(TaskContext, _impl_.TaskState_.protostate_), _Internal::kOneofCaseOffset + 0, 1,
+    // .google.protobuf.Any proto_state = 2;
+    {PROTOBUF_FIELD_OFFSET(TaskContext, _impl_.TaskState_.proto_state_), _Internal::kOneofCaseOffset + 0, 1,
     (0 | ::_fl::kFcOneof | ::_fl::kMessage | ::_fl::kTvTable)},
-    // int64 intState = 3;
-    {PROTOBUF_FIELD_OFFSET(TaskContext, _impl_.TaskState_.intstate_), _Internal::kOneofCaseOffset + 0, 0,
+    // int64 int_state = 3;
+    {PROTOBUF_FIELD_OFFSET(TaskContext, _impl_.TaskState_.int_state_), _Internal::kOneofCaseOffset + 0, 0,
     (0 | ::_fl::kFcOneof | ::_fl::kInt64)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::llbuild3::CASObjectID>()},
+    {::_pbi::TcParser::GetTable<::llbuild3::CASID>()},
     {::_pbi::TcParser::GetTable<::google::protobuf::Any>()},
   }}, {{
   }},
@@ -1614,18 +1614,18 @@ PROTOBUF_NOINLINE void TaskContext::Clear() {
   switch (TaskState_case()) {
     case kCasState: {
       target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-          1, *_impl_.TaskState_.casstate_, _impl_.TaskState_.casstate_->GetCachedSize(), target, stream);
+          1, *_impl_.TaskState_.cas_state_, _impl_.TaskState_.cas_state_->GetCachedSize(), target, stream);
       break;
     }
     case kProtoState: {
       target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-          2, *_impl_.TaskState_.protostate_, _impl_.TaskState_.protostate_->GetCachedSize(), target, stream);
+          2, *_impl_.TaskState_.proto_state_, _impl_.TaskState_.proto_state_->GetCachedSize(), target, stream);
       break;
     }
     case kIntState: {
       target = ::google::protobuf::internal::WireFormatLite::
           WriteInt64ToArrayWithField<3>(
-              stream, this->_internal_intstate(), target);
+              stream, this->_internal_int_state(), target);
       break;
     }
     default:
@@ -1649,22 +1649,22 @@ PROTOBUF_NOINLINE void TaskContext::Clear() {
   (void) cached_has_bits;
 
   switch (TaskState_case()) {
-    // .llbuild3.CASObjectID casState = 1;
+    // .llbuild3.CASID cas_state = 1;
     case kCasState: {
       total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.TaskState_.casstate_);
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.TaskState_.cas_state_);
       break;
     }
-    // .google.protobuf.Any protoState = 2;
+    // .google.protobuf.Any proto_state = 2;
     case kProtoState: {
       total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.TaskState_.protostate_);
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.TaskState_.proto_state_);
       break;
     }
-    // int64 intState = 3;
+    // int64 int_state = 3;
     case kIntState: {
       total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
-          this->_internal_intstate());
+          this->_internal_int_state());
       break;
     }
     case TASKSTATE_NOT_SET: {
@@ -1697,24 +1697,24 @@ void TaskContext::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goo
     switch (oneof_from_case) {
       case kCasState: {
         if (oneof_needs_init) {
-          _this->_impl_.TaskState_.casstate_ =
-              ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(arena, *from._impl_.TaskState_.casstate_);
+          _this->_impl_.TaskState_.cas_state_ =
+              ::google::protobuf::Message::CopyConstruct<::llbuild3::CASID>(arena, *from._impl_.TaskState_.cas_state_);
         } else {
-          _this->_impl_.TaskState_.casstate_->MergeFrom(from._internal_casstate());
+          _this->_impl_.TaskState_.cas_state_->MergeFrom(from._internal_cas_state());
         }
         break;
       }
       case kProtoState: {
         if (oneof_needs_init) {
-          _this->_impl_.TaskState_.protostate_ =
-              ::google::protobuf::Message::CopyConstruct<::google::protobuf::Any>(arena, *from._impl_.TaskState_.protostate_);
+          _this->_impl_.TaskState_.proto_state_ =
+              ::google::protobuf::Message::CopyConstruct<::google::protobuf::Any>(arena, *from._impl_.TaskState_.proto_state_);
         } else {
-          _this->_impl_.TaskState_.protostate_->MergeFrom(from._internal_protostate());
+          _this->_impl_.TaskState_.proto_state_->MergeFrom(from._internal_proto_state());
         }
         break;
       }
       case kIntState: {
-        _this->_impl_.TaskState_.intstate_ = from._impl_.TaskState_.intstate_;
+        _this->_impl_.TaskState_.int_state_ = from._impl_.TaskState_.int_state_;
         break;
       }
       case TASKSTATE_NOT_SET:

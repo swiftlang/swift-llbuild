@@ -176,17 +176,17 @@ const char descriptor_table_protodef_llbuild3_2fArtifact_2eproto[] ABSL_ATTRIBUT
     "\nDictObject\0224\n\010contents\030\003 \003(\0132\".llbuild3"
     ".DictObject.ContentsEntry\032/\n\rContentsEnt"
     "ry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001\"\033\n\nLi"
-    "stObject\022\r\n\005entry\030\003 \003(\t\"\341\001\n\010Artifact\022\036\n\005"
+    "stObject\022\r\n\005entry\030\003 \003(\t\"\334\001\n\010Artifact\022\036\n\005"
     "label\030\001 \001(\0132\017.llbuild3.Label\022$\n\004type\030\002 \001"
-    "(\0162\026.llbuild3.ArtifactType\022*\n\tcasObject\030"
-    "\003 \001(\0132\025.llbuild3.CASObjectIDH\000\022\016\n\004blob\030\004"
-    " \001(\014H\000\022$\n\004dict\030\005 \001(\0132\024.llbuild3.DictObje"
-    "ctH\000\022$\n\004list\030\006 \001(\0132\024.llbuild3.ListObject"
-    "H\000B\007\n\005value*\252\001\n\014ArtifactType\022\026\n\022ARTIFACT"
-    "_TYPE_FILE\020\000\022\033\n\027ARTIFACT_TYPE_DIRECTORY\020"
-    "\001\022\026\n\022ARTIFACT_TYPE_BLOB\020\002\022\026\n\022ARTIFACT_TY"
-    "PE_DICT\020\003\022\026\n\022ARTIFACT_TYPE_LIST\020\004\022\035\n\031ART"
-    "IFACT_TYPE_BUILD_GRAPH\020\005b\006proto3"
+    "(\0162\026.llbuild3.ArtifactType\022%\n\ncas_object"
+    "\030\003 \001(\0132\017.llbuild3.CASIDH\000\022\016\n\004blob\030\004 \001(\014H"
+    "\000\022$\n\004dict\030\005 \001(\0132\024.llbuild3.DictObjectH\000\022"
+    "$\n\004list\030\006 \001(\0132\024.llbuild3.ListObjectH\000B\007\n"
+    "\005value*\252\001\n\014ArtifactType\022\026\n\022ARTIFACT_TYPE"
+    "_FILE\020\000\022\033\n\027ARTIFACT_TYPE_DIRECTORY\020\001\022\026\n\022"
+    "ARTIFACT_TYPE_BLOB\020\002\022\026\n\022ARTIFACT_TYPE_DI"
+    "CT\020\003\022\026\n\022ARTIFACT_TYPE_LIST\020\004\022\035\n\031ARTIFACT"
+    "_TYPE_BUILD_GRAPH\020\005b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_llbuild3_2fArtifact_2eproto_deps[2] =
     {
@@ -197,7 +197,7 @@ static ::absl::once_flag descriptor_table_llbuild3_2fArtifact_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_llbuild3_2fArtifact_2eproto = {
     false,
     false,
-    632,
+    627,
     descriptor_table_protodef_llbuild3_2fArtifact_2eproto,
     "llbuild3/Artifact.proto",
     &descriptor_table_llbuild3_2fArtifact_2eproto_once,
@@ -664,26 +664,26 @@ void Artifact::clear_label() {
   if (_impl_.label_ != nullptr) _impl_.label_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-void Artifact::set_allocated_casobject(::llbuild3::CASObjectID* casobject) {
+void Artifact::set_allocated_cas_object(::llbuild3::CASID* cas_object) {
   ::google::protobuf::Arena* message_arena = GetArena();
   clear_value();
-  if (casobject) {
-    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(casobject)->GetArena();
+  if (cas_object) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(cas_object)->GetArena();
     if (message_arena != submessage_arena) {
-      casobject = ::google::protobuf::internal::GetOwnedMessage(message_arena, casobject, submessage_arena);
+      cas_object = ::google::protobuf::internal::GetOwnedMessage(message_arena, cas_object, submessage_arena);
     }
-    set_has_casobject();
-    _impl_.value_.casobject_ = casobject;
+    set_has_cas_object();
+    _impl_.value_.cas_object_ = cas_object;
   }
-  // @@protoc_insertion_point(field_set_allocated:llbuild3.Artifact.casObject)
+  // @@protoc_insertion_point(field_set_allocated:llbuild3.Artifact.cas_object)
 }
-void Artifact::clear_casobject() {
+void Artifact::clear_cas_object() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value_case() == kCasObject) {
     if (GetArena() == nullptr) {
-      delete _impl_.value_.casobject_;
+      delete _impl_.value_.cas_object_;
     } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
-      ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.value_.casobject_);
+      ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.value_.cas_object_);
     }
     clear_has_value();
   }
@@ -745,7 +745,7 @@ Artifact::Artifact(
     case VALUE_NOT_SET:
       break;
       case kCasObject:
-        _impl_.value_.casobject_ = ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(arena, *from._impl_.value_.casobject_);
+        _impl_.value_.cas_object_ = ::google::protobuf::Message::CopyConstruct<::llbuild3::CASID>(arena, *from._impl_.value_.cas_object_);
         break;
       case kBlob:
         new (&_impl_.value_.blob_) decltype(_impl_.value_.blob_){arena, from._impl_.value_.blob_};
@@ -796,9 +796,9 @@ void Artifact::clear_value() {
   switch (value_case()) {
     case kCasObject: {
       if (GetArena() == nullptr) {
-        delete _impl_.value_.casobject_;
+        delete _impl_.value_.cas_object_;
       } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
-        ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.value_.casobject_);
+        ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.value_.cas_object_);
       }
       break;
     }
@@ -884,8 +884,8 @@ const ::_pbi::TcParseTable<1, 6, 4, 0, 2> Artifact::_table_ = {
     // .llbuild3.ArtifactType type = 2;
     {PROTOBUF_FIELD_OFFSET(Artifact, _impl_.type_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kOpenEnum)},
-    // .llbuild3.CASObjectID casObject = 3;
-    {PROTOBUF_FIELD_OFFSET(Artifact, _impl_.value_.casobject_), _Internal::kOneofCaseOffset + 0, 1,
+    // .llbuild3.CASID cas_object = 3;
+    {PROTOBUF_FIELD_OFFSET(Artifact, _impl_.value_.cas_object_), _Internal::kOneofCaseOffset + 0, 1,
     (0 | ::_fl::kFcOneof | ::_fl::kMessage | ::_fl::kTvTable)},
     // bytes blob = 4;
     {PROTOBUF_FIELD_OFFSET(Artifact, _impl_.value_.blob_), _Internal::kOneofCaseOffset + 0, 0,
@@ -898,7 +898,7 @@ const ::_pbi::TcParseTable<1, 6, 4, 0, 2> Artifact::_table_ = {
     (0 | ::_fl::kFcOneof | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
     {::_pbi::TcParser::GetTable<::llbuild3::Label>()},
-    {::_pbi::TcParser::GetTable<::llbuild3::CASObjectID>()},
+    {::_pbi::TcParser::GetTable<::llbuild3::CASID>()},
     {::_pbi::TcParser::GetTable<::llbuild3::DictObject>()},
     {::_pbi::TcParser::GetTable<::llbuild3::ListObject>()},
   }}, {{
@@ -947,7 +947,7 @@ PROTOBUF_NOINLINE void Artifact::Clear() {
   switch (value_case()) {
     case kCasObject: {
       target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-          3, *_impl_.value_.casobject_, _impl_.value_.casobject_->GetCachedSize(), target, stream);
+          3, *_impl_.value_.cas_object_, _impl_.value_.cas_object_->GetCachedSize(), target, stream);
       break;
     }
     case kBlob: {
@@ -1000,10 +1000,10 @@ PROTOBUF_NOINLINE void Artifact::Clear() {
   }
 
   switch (value_case()) {
-    // .llbuild3.CASObjectID casObject = 3;
+    // .llbuild3.CASID cas_object = 3;
     case kCasObject: {
       total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.value_.casobject_);
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.value_.cas_object_);
       break;
     }
     // bytes blob = 4;
@@ -1068,10 +1068,10 @@ void Artifact::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google
     switch (oneof_from_case) {
       case kCasObject: {
         if (oneof_needs_init) {
-          _this->_impl_.value_.casobject_ =
-              ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(arena, *from._impl_.value_.casobject_);
+          _this->_impl_.value_.cas_object_ =
+              ::google::protobuf::Message::CopyConstruct<::llbuild3::CASID>(arena, *from._impl_.value_.cas_object_);
         } else {
-          _this->_impl_.value_.casobject_->MergeFrom(from._internal_casobject());
+          _this->_impl_.value_.cas_object_->MergeFrom(from._internal_cas_object());
         }
         break;
       }

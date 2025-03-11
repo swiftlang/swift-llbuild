@@ -24,6 +24,7 @@
 #include "llbuild3/Common.h"
 #include "llbuild3/Error.pb.h"
 #include "llbuild3/Label.pb.h"
+#include "llbuild3/Logging.h"
 #include "llbuild3/Subtask.h"
 
 namespace llbuild3 {
@@ -84,6 +85,7 @@ public:
 struct ActionDescriptor {
   Label name;
   Platform platform;
+  std::filesystem::path executable;
 };
 
 class ActionProvider {
@@ -115,11 +117,12 @@ public:
                  std::shared_ptr<ActionCache> actionCache,
                  std::shared_ptr<LocalExecutor> localExecutor,
                  std::shared_ptr<RemoteExecutor> remoteExecutor,
+                 std::shared_ptr<Logger> logger,
                  unsigned maxLocalConcurrency = 0,
                  unsigned maxAsyncConcurrency = 0);
   ~ActionExecutor();
 
-  std::optional<Error> registerProvider(std::unique_ptr<ActionProvider>&& provider);
+  std::optional<Error> registerProvider(std::shared_ptr<ActionProvider> provider);
 
   void attachListener(EngineID engineID, ActionExecutorListener* listener);
   void detachListener(EngineID engineID);

@@ -17,31 +17,31 @@ import XCTest
 
 final actor InMemoryCASDatabase: TCASDatabase {
 
-  var content = [TCASObjectID: TCASObject]()
+  var content = [TCASID: TCASObject]()
 
-  func contains(_ id: TCASObjectID) async throws -> Bool {
+  func contains(_ id: TCASID) async throws -> Bool {
     return content.keys.contains(id)
   }
 
-  public func get(_ id: TCASObjectID) async throws -> TCASObject? {
+  public func get(_ id: TCASID) async throws -> TCASObject? {
     return content[id]
   }
 
-  nonisolated public func identify(_ obj: TCASObject) throws -> TCASObjectID {
+  nonisolated public func identify(_ obj: TCASObject) throws -> TCASID {
     return try calcIDForObject(obj)
   }
 
-  public func put(_ obj: TCASObject) async throws -> TCASObjectID {
+  public func put(_ obj: TCASObject) async throws -> TCASID {
     let id = try calcIDForObject(obj)
     content[id] = obj
     return id
   }
 
 
-  nonisolated func calcIDForObject(_ obj: TCASObject) throws -> TCASObjectID {
+  nonisolated func calcIDForObject(_ obj: TCASObject) throws -> TCASID {
     let bytes = try obj.serializedData()
     let hash = SHA256.hash(data: bytes)
-    return TCASObjectID.with { $0.bytes = Data(hash) }
+    return TCASID.with { $0.bytes = Data(hash) }
   }
 }
 

@@ -673,23 +673,23 @@ class Artifact final : public ::google::protobuf::Message
   void _internal_set_type(::llbuild3::ArtifactType value);
 
   public:
-  // .llbuild3.CASObjectID casObject = 3;
-  bool has_casobject() const;
+  // .llbuild3.CASID cas_object = 3;
+  bool has_cas_object() const;
   private:
-  bool _internal_has_casobject() const;
+  bool _internal_has_cas_object() const;
 
   public:
-  void clear_casobject() ;
-  const ::llbuild3::CASObjectID& casobject() const;
-  PROTOBUF_NODISCARD ::llbuild3::CASObjectID* release_casobject();
-  ::llbuild3::CASObjectID* mutable_casobject();
-  void set_allocated_casobject(::llbuild3::CASObjectID* value);
-  void unsafe_arena_set_allocated_casobject(::llbuild3::CASObjectID* value);
-  ::llbuild3::CASObjectID* unsafe_arena_release_casobject();
+  void clear_cas_object() ;
+  const ::llbuild3::CASID& cas_object() const;
+  PROTOBUF_NODISCARD ::llbuild3::CASID* release_cas_object();
+  ::llbuild3::CASID* mutable_cas_object();
+  void set_allocated_cas_object(::llbuild3::CASID* value);
+  void unsafe_arena_set_allocated_cas_object(::llbuild3::CASID* value);
+  ::llbuild3::CASID* unsafe_arena_release_cas_object();
 
   private:
-  const ::llbuild3::CASObjectID& _internal_casobject() const;
-  ::llbuild3::CASObjectID* _internal_mutable_casobject();
+  const ::llbuild3::CASID& _internal_cas_object() const;
+  ::llbuild3::CASID* _internal_mutable_cas_object();
 
   public:
   // bytes blob = 4;
@@ -752,7 +752,7 @@ class Artifact final : public ::google::protobuf::Message
   // @@protoc_insertion_point(class_scope:llbuild3.Artifact)
  private:
   class _Internal;
-  void set_has_casobject();
+  void set_has_cas_object();
   void set_has_blob();
   void set_has_dict();
   void set_has_list();
@@ -788,7 +788,7 @@ class Artifact final : public ::google::protobuf::Message
     union ValueUnion {
       constexpr ValueUnion() : _constinit_{} {}
       ::google::protobuf::internal::ConstantInitialized _constinit_;
-      ::llbuild3::CASObjectID* casobject_;
+      ::llbuild3::CASID* cas_object_;
       ::google::protobuf::internal::ArenaStringPtr blob_;
       ::llbuild3::DictObject* dict_;
       ::llbuild3::ListObject* list_;
@@ -1069,71 +1069,71 @@ inline void Artifact::_internal_set_type(::llbuild3::ArtifactType value) {
   _impl_.type_ = value;
 }
 
-// .llbuild3.CASObjectID casObject = 3;
-inline bool Artifact::has_casobject() const {
+// .llbuild3.CASID cas_object = 3;
+inline bool Artifact::has_cas_object() const {
   return value_case() == kCasObject;
 }
-inline bool Artifact::_internal_has_casobject() const {
+inline bool Artifact::_internal_has_cas_object() const {
   return value_case() == kCasObject;
 }
-inline void Artifact::set_has_casobject() {
+inline void Artifact::set_has_cas_object() {
   _impl_._oneof_case_[0] = kCasObject;
 }
-inline ::llbuild3::CASObjectID* Artifact::release_casobject() {
-  // @@protoc_insertion_point(field_release:llbuild3.Artifact.casObject)
+inline ::llbuild3::CASID* Artifact::release_cas_object() {
+  // @@protoc_insertion_point(field_release:llbuild3.Artifact.cas_object)
   if (value_case() == kCasObject) {
     clear_has_value();
-    auto* temp = _impl_.value_.casobject_;
+    auto* temp = _impl_.value_.cas_object_;
     if (GetArena() != nullptr) {
       temp = ::google::protobuf::internal::DuplicateIfNonNull(temp);
     }
-    _impl_.value_.casobject_ = nullptr;
+    _impl_.value_.cas_object_ = nullptr;
     return temp;
   } else {
     return nullptr;
   }
 }
-inline const ::llbuild3::CASObjectID& Artifact::_internal_casobject() const {
-  return value_case() == kCasObject ? *_impl_.value_.casobject_ : reinterpret_cast<::llbuild3::CASObjectID&>(::llbuild3::_CASObjectID_default_instance_);
+inline const ::llbuild3::CASID& Artifact::_internal_cas_object() const {
+  return value_case() == kCasObject ? *_impl_.value_.cas_object_ : reinterpret_cast<::llbuild3::CASID&>(::llbuild3::_CASID_default_instance_);
 }
-inline const ::llbuild3::CASObjectID& Artifact::casobject() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:llbuild3.Artifact.casObject)
-  return _internal_casobject();
+inline const ::llbuild3::CASID& Artifact::cas_object() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:llbuild3.Artifact.cas_object)
+  return _internal_cas_object();
 }
-inline ::llbuild3::CASObjectID* Artifact::unsafe_arena_release_casobject() {
-  // @@protoc_insertion_point(field_unsafe_arena_release:llbuild3.Artifact.casObject)
+inline ::llbuild3::CASID* Artifact::unsafe_arena_release_cas_object() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:llbuild3.Artifact.cas_object)
   if (value_case() == kCasObject) {
     clear_has_value();
-    auto* temp = _impl_.value_.casobject_;
-    _impl_.value_.casobject_ = nullptr;
+    auto* temp = _impl_.value_.cas_object_;
+    _impl_.value_.cas_object_ = nullptr;
     return temp;
   } else {
     return nullptr;
   }
 }
-inline void Artifact::unsafe_arena_set_allocated_casobject(::llbuild3::CASObjectID* value) {
+inline void Artifact::unsafe_arena_set_allocated_cas_object(::llbuild3::CASID* value) {
   // We rely on the oneof clear method to free the earlier contents
   // of this oneof. We can directly use the pointer we're given to
   // set the new value.
   clear_value();
   if (value) {
-    set_has_casobject();
-    _impl_.value_.casobject_ = value;
+    set_has_cas_object();
+    _impl_.value_.cas_object_ = value;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:llbuild3.Artifact.casObject)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:llbuild3.Artifact.cas_object)
 }
-inline ::llbuild3::CASObjectID* Artifact::_internal_mutable_casobject() {
+inline ::llbuild3::CASID* Artifact::_internal_mutable_cas_object() {
   if (value_case() != kCasObject) {
     clear_value();
-    set_has_casobject();
-    _impl_.value_.casobject_ =
-        ::google::protobuf::Message::DefaultConstruct<::llbuild3::CASObjectID>(GetArena());
+    set_has_cas_object();
+    _impl_.value_.cas_object_ =
+        ::google::protobuf::Message::DefaultConstruct<::llbuild3::CASID>(GetArena());
   }
-  return _impl_.value_.casobject_;
+  return _impl_.value_.cas_object_;
 }
-inline ::llbuild3::CASObjectID* Artifact::mutable_casobject() ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  ::llbuild3::CASObjectID* _msg = _internal_mutable_casobject();
-  // @@protoc_insertion_point(field_mutable:llbuild3.Artifact.casObject)
+inline ::llbuild3::CASID* Artifact::mutable_cas_object() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::llbuild3::CASID* _msg = _internal_mutable_cas_object();
+  // @@protoc_insertion_point(field_mutable:llbuild3.Artifact.cas_object)
   return _msg;
 }
 

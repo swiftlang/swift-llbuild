@@ -27,6 +27,7 @@
 #include "llbuild3/Engine.pb.h"
 #include "llbuild3/Error.pb.h"
 #include "llbuild3/Label.pb.h"
+#include "llbuild3/Logging.h"
 #include "llbuild3/Subtask.h"
 
 
@@ -171,6 +172,8 @@ public:
          std::shared_ptr<CASDatabase> casDB,
          std::shared_ptr<ActionCache> cache,
          std::shared_ptr<ActionExecutor> executor,
+         std::shared_ptr<Logger> logger,
+         std::shared_ptr<ClientContext> clientContext,
          std::unique_ptr<RuleProvider>&& init);
   ~Engine();
 

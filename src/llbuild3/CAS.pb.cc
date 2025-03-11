@@ -25,7 +25,7 @@ namespace _pbi = ::google::protobuf::internal;
 namespace _fl = ::google::protobuf::internal::field_layout;
 namespace llbuild3 {
 
-inline constexpr CASObjectID::Impl_::Impl_(
+inline constexpr CASID::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : bytes_(
             &::google::protobuf::internal::fixed_address_empty_string,
@@ -33,18 +33,18 @@ inline constexpr CASObjectID::Impl_::Impl_(
         _cached_size_{0} {}
 
 template <typename>
-PROTOBUF_CONSTEXPR CASObjectID::CASObjectID(::_pbi::ConstantInitialized)
+PROTOBUF_CONSTEXPR CASID::CASID(::_pbi::ConstantInitialized)
     : _impl_(::_pbi::ConstantInitialized()) {}
-struct CASObjectIDDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR CASObjectIDDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~CASObjectIDDefaultTypeInternal() {}
+struct CASIDDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR CASIDDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~CASIDDefaultTypeInternal() {}
   union {
-    CASObjectID _instance;
+    CASID _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CASObjectIDDefaultTypeInternal _CASObjectID_default_instance_;
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 CASIDDefaultTypeInternal _CASID_default_instance_;
 
 inline constexpr CASObject::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -76,14 +76,14 @@ const ::uint32_t
     TableStruct_llbuild3_2fCAS_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         ~0u,  // no _has_bits_
-        PROTOBUF_FIELD_OFFSET(::llbuild3::CASObjectID, _internal_metadata_),
+        PROTOBUF_FIELD_OFFSET(::llbuild3::CASID, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
         ~0u,  // no _weak_field_map_
         ~0u,  // no _inlined_string_donated_
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
-        PROTOBUF_FIELD_OFFSET(::llbuild3::CASObjectID, _impl_.bytes_),
+        PROTOBUF_FIELD_OFFSET(::llbuild3::CASID, _impl_.bytes_),
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::llbuild3::CASObject, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -98,25 +98,24 @@ const ::uint32_t
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, -1, -1, sizeof(::llbuild3::CASObjectID)},
+        {0, -1, -1, sizeof(::llbuild3::CASID)},
         {9, -1, -1, sizeof(::llbuild3::CASObject)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
-    &::llbuild3::_CASObjectID_default_instance_._instance,
+    &::llbuild3::_CASID_default_instance_._instance,
     &::llbuild3::_CASObject_default_instance_._instance,
 };
 const char descriptor_table_protodef_llbuild3_2fCAS_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\022llbuild3/CAS.proto\022\010llbuild3\"\034\n\013CASObj"
-    "ectID\022\r\n\005bytes\030\001 \001(\014\">\n\tCASObject\022#\n\004ref"
-    "s\030\001 \003(\0132\025.llbuild3.CASObjectID\022\014\n\004data\030\002"
-    " \001(\014b\006proto3"
+    "\n\022llbuild3/CAS.proto\022\010llbuild3\"\026\n\005CASID\022"
+    "\r\n\005bytes\030\001 \001(\014\"8\n\tCASObject\022\035\n\004refs\030\001 \003("
+    "\0132\017.llbuild3.CASID\022\014\n\004data\030\002 \001(\014b\006proto3"
 };
 static ::absl::once_flag descriptor_table_llbuild3_2fCAS_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_llbuild3_2fCAS_2eproto = {
     false,
     false,
-    132,
+    120,
     descriptor_table_protodef_llbuild3_2fCAS_2eproto,
     "llbuild3/CAS.proto",
     &descriptor_table_llbuild3_2fCAS_2eproto_once,
@@ -132,66 +131,66 @@ PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_llbuild3_2fCAS
 namespace llbuild3 {
 // ===================================================================
 
-class CASObjectID::_Internal {
+class CASID::_Internal {
  public:
 };
 
-CASObjectID::CASObjectID(::google::protobuf::Arena* arena)
+CASID::CASID(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
-  // @@protoc_insertion_point(arena_constructor:llbuild3.CASObjectID)
+  // @@protoc_insertion_point(arena_constructor:llbuild3.CASID)
 }
-inline PROTOBUF_NDEBUG_INLINE CASObjectID::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE CASID::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
-    const Impl_& from, const ::llbuild3::CASObjectID& from_msg)
+    const Impl_& from, const ::llbuild3::CASID& from_msg)
       : bytes_(arena, from.bytes_),
         _cached_size_{0} {}
 
-CASObjectID::CASObjectID(
+CASID::CASID(
     ::google::protobuf::Arena* arena,
-    const CASObjectID& from)
+    const CASID& from)
     : ::google::protobuf::Message(arena) {
-  CASObjectID* const _this = this;
+  CASID* const _this = this;
   (void)_this;
   _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
 
-  // @@protoc_insertion_point(copy_constructor:llbuild3.CASObjectID)
+  // @@protoc_insertion_point(copy_constructor:llbuild3.CASID)
 }
-inline PROTOBUF_NDEBUG_INLINE CASObjectID::Impl_::Impl_(
+inline PROTOBUF_NDEBUG_INLINE CASID::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : bytes_(arena),
         _cached_size_{0} {}
 
-inline void CASObjectID::SharedCtor(::_pb::Arena* arena) {
+inline void CASID::SharedCtor(::_pb::Arena* arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
 }
-CASObjectID::~CASObjectID() {
-  // @@protoc_insertion_point(destructor:llbuild3.CASObjectID)
+CASID::~CASID() {
+  // @@protoc_insertion_point(destructor:llbuild3.CASID)
   _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-inline void CASObjectID::SharedDtor() {
+inline void CASID::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
   _impl_.bytes_.Destroy();
   _impl_.~Impl_();
 }
 
 const ::google::protobuf::MessageLite::ClassData*
-CASObjectID::GetClassData() const {
+CASID::GetClassData() const {
   PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
       ClassDataFull _data_ = {
           {
               &_table_.header,
               nullptr,  // OnDemandRegisterArenaDtor
               nullptr,  // IsInitialized
-              PROTOBUF_FIELD_OFFSET(CASObjectID, _impl_._cached_size_),
+              PROTOBUF_FIELD_OFFSET(CASID, _impl_._cached_size_),
               false,
           },
-          &CASObjectID::MergeImpl,
-          &CASObjectID::kDescriptorMethods,
+          &CASID::MergeImpl,
+          &CASID::kDescriptorMethods,
           &descriptor_table_llbuild3_2fCAS_2eproto,
           nullptr,  // tracker
       };
@@ -200,7 +199,7 @@ CASObjectID::GetClassData() const {
   return _data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<0, 1, 0, 0, 2> CASObjectID::_table_ = {
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2> CASID::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -211,21 +210,21 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> CASObjectID::_table_ = {
     1,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_CASObjectID_default_instance_._instance,
+    &_CASID_default_instance_._instance,
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::llbuild3::CASObjectID>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::llbuild3::CASID>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // bytes bytes = 1;
     {::_pbi::TcParser::FastBS1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(CASObjectID, _impl_.bytes_)}},
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(CASID, _impl_.bytes_)}},
   }}, {{
     65535, 65535
   }}, {{
     // bytes bytes = 1;
-    {PROTOBUF_FIELD_OFFSET(CASObjectID, _impl_.bytes_), 0, 0,
+    {PROTOBUF_FIELD_OFFSET(CASID, _impl_.bytes_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kBytes | ::_fl::kRepAString)},
   }},
   // no aux_entries
@@ -233,8 +232,8 @@ const ::_pbi::TcParseTable<0, 1, 0, 0, 2> CASObjectID::_table_ = {
   }},
 };
 
-PROTOBUF_NOINLINE void CASObjectID::Clear() {
-// @@protoc_insertion_point(message_clear_start:llbuild3.CASObjectID)
+PROTOBUF_NOINLINE void CASID::Clear() {
+// @@protoc_insertion_point(message_clear_start:llbuild3.CASID)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -244,10 +243,10 @@ PROTOBUF_NOINLINE void CASObjectID::Clear() {
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-::uint8_t* CASObjectID::_InternalSerialize(
+::uint8_t* CASID::_InternalSerialize(
     ::uint8_t* target,
     ::google::protobuf::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:llbuild3.CASObjectID)
+  // @@protoc_insertion_point(serialize_to_array_start:llbuild3.CASID)
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
@@ -262,12 +261,12 @@ PROTOBUF_NOINLINE void CASObjectID::Clear() {
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
             _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:llbuild3.CASObjectID)
+  // @@protoc_insertion_point(serialize_to_array_end:llbuild3.CASID)
   return target;
 }
 
-::size_t CASObjectID::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:llbuild3.CASObjectID)
+::size_t CASID::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:llbuild3.CASID)
   ::size_t total_size = 0;
 
   ::uint32_t cached_has_bits = 0;
@@ -284,10 +283,10 @@ PROTOBUF_NOINLINE void CASObjectID::Clear() {
 }
 
 
-void CASObjectID::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
-  auto* const _this = static_cast<CASObjectID*>(&to_msg);
-  auto& from = static_cast<const CASObjectID&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:llbuild3.CASObjectID)
+void CASID::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<CASID*>(&to_msg);
+  auto& from = static_cast<const CASID&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:llbuild3.CASID)
   ABSL_DCHECK_NE(&from, _this);
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -298,15 +297,15 @@ void CASObjectID::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goo
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void CASObjectID::CopyFrom(const CASObjectID& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:llbuild3.CASObjectID)
+void CASID::CopyFrom(const CASID& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:llbuild3.CASID)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 
-void CASObjectID::InternalSwap(CASObjectID* PROTOBUF_RESTRICT other) {
+void CASID::InternalSwap(CASID* PROTOBUF_RESTRICT other) {
   using std::swap;
   auto* arena = GetArena();
   ABSL_DCHECK_EQ(arena, other->GetArena());
@@ -314,7 +313,7 @@ void CASObjectID::InternalSwap(CASObjectID* PROTOBUF_RESTRICT other) {
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.bytes_, &other->_impl_.bytes_, arena);
 }
 
-::google::protobuf::Metadata CASObjectID::GetMetadata() const {
+::google::protobuf::Metadata CASID::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================
@@ -410,20 +409,20 @@ const ::_pbi::TcParseTable<1, 2, 1, 0, 2> CASObject::_table_ = {
     // bytes data = 2;
     {::_pbi::TcParser::FastBS1,
      {18, 63, 0, PROTOBUF_FIELD_OFFSET(CASObject, _impl_.data_)}},
-    // repeated .llbuild3.CASObjectID refs = 1;
+    // repeated .llbuild3.CASID refs = 1;
     {::_pbi::TcParser::FastMtR1,
      {10, 63, 0, PROTOBUF_FIELD_OFFSET(CASObject, _impl_.refs_)}},
   }}, {{
     65535, 65535
   }}, {{
-    // repeated .llbuild3.CASObjectID refs = 1;
+    // repeated .llbuild3.CASID refs = 1;
     {PROTOBUF_FIELD_OFFSET(CASObject, _impl_.refs_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
     // bytes data = 2;
     {PROTOBUF_FIELD_OFFSET(CASObject, _impl_.data_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kBytes | ::_fl::kRepAString)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::llbuild3::CASObjectID>()},
+    {::_pbi::TcParser::GetTable<::llbuild3::CASID>()},
   }}, {{
   }},
 };
@@ -447,7 +446,7 @@ PROTOBUF_NOINLINE void CASObject::Clear() {
   ::uint32_t cached_has_bits = 0;
   (void)cached_has_bits;
 
-  // repeated .llbuild3.CASObjectID refs = 1;
+  // repeated .llbuild3.CASID refs = 1;
   for (unsigned i = 0, n = static_cast<unsigned>(
                            this->_internal_refs_size());
        i < n; i++) {
@@ -482,7 +481,7 @@ PROTOBUF_NOINLINE void CASObject::Clear() {
   (void) cached_has_bits;
 
   ::_pbi::Prefetch5LinesFrom7Lines(reinterpret_cast<const void*>(this));
-  // repeated .llbuild3.CASObjectID refs = 1;
+  // repeated .llbuild3.CASID refs = 1;
   total_size += 1UL * this->_internal_refs_size();
   for (const auto& msg : this->_internal_refs()) {
     total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);

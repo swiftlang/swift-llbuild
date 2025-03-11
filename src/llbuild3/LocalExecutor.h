@@ -212,8 +212,10 @@ public:
 
   virtual std::filesystem::path workingDir() = 0;
 
+  virtual std::vector<std::pair<std::string, std::string>> environment() = 0;
+
   virtual std::optional<Error> prepareInput(std::string path, FileType type,
-                                            CASObjectID objID) = 0;
+                                            CASID objID) = 0;
 
   virtual result<std::vector<FileObject>, Error>
   collectOutputs(std::vector<std::string> paths) = 0;

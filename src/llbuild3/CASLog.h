@@ -32,7 +32,7 @@ namespace llbuild3 {
 
 class CASLogWriter: public std::enable_shared_from_this<CASLogWriter> {
 public:
-  typedef std::function<void(result<CASObjectID, Error>, bool terminal)> Handler;
+  typedef std::function<void(result<CASID, Error>, bool terminal)> Handler;
 private:
   struct Private{ explicit Private() = default; };
 
@@ -45,9 +45,9 @@ private:
 
   uint64_t writeOpCount{0};
   uint64_t lastWriteOp{0};
-  std::optional<CASObjectID> currentID;
-  std::optional<CASObjectID> prevID;
-  std::optional<CASObjectID> rootID;
+  std::optional<CASID> currentID;
+  std::optional<CASID> prevID;
+  std::optional<CASID> rootID;
   uint64_t prevSize{0};
   uint64_t rootSize{0};
 
@@ -73,7 +73,7 @@ public:
     return std::make_shared<CASLogWriter>(Private(), std::move(db), max);
   }
 
-  std::optional<CASObjectID> getLatestID() {
+  std::optional<CASID> getLatestID() {
     std::lock_guard<std::mutex> lock(mutex);
     if (currentID.has_value()) {
       return currentID;
@@ -90,8 +90,8 @@ public:
 
 private:
   void postChunk(uint8_t channel, Handler handler, uint64_t size,
-                 result<CASObjectID, Error> res);
-  void postSync(uint64_t op, bool isFlush, result<CASObjectID, Error> res);
+                 result<CASID, Error> res);
+  void postSync(uint64_t op, bool isFlush, result<CASID, Error> res);
 };
 
 /// Stream writer that buffers data before ingesting it into the CAS Database.
@@ -99,7 +99,7 @@ private:
 /// is not, and should be protected by the client if necessary.
 class BufferedStreamCASLogWriter {
 public:
-  typedef std::function<void(result<CASObjectID, Error>)> Handler;
+  typedef std::function<void(result<CASID, Error>)> Handler;
 private:
   uint64_t bufferSize;
   std::shared_ptr<CASLogWriter> writer;
@@ -113,7 +113,7 @@ public:
     currentBuffer.reserve(bufferSize);
   }
 
-  std::optional<CASObjectID> getLatestID() {
+  std::optional<CASID> getLatestID() {
     return writer->getLatestID();
   }
 
@@ -123,7 +123,7 @@ public:
     }
 
     if (data.size() >= bufferSize) {
-      writer->append(data, channel, [handler](result<CASObjectID, Error> res, bool terminal) {
+      writer->append(data, channel, [handler](result<CASID, Error> res, bool terminal) {
         if (!terminal) {
           return;
         }
@@ -156,7 +156,7 @@ public:
       return;
     }
 
-    writer->append(currentBuffer, currentChannel, [handler](result<CASObjectID, Error> res, bool terminal){
+    writer->append(currentBuffer, currentChannel, [handler](result<CASID, Error> res, bool terminal){
       if (!terminal) {
         return;
       }

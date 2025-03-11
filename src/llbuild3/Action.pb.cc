@@ -118,20 +118,23 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr ActionExecutionMetadata::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
-        additionaldata_{},
+        additional_data_{},
         worker_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
         queued_{nullptr},
         dispatched_{nullptr},
-        workerstart_{nullptr},
-        workercompleted_{nullptr},
-        executionstart_{nullptr},
-        executioncompleted_{nullptr},
-        executionduration_{nullptr},
-        outputuploadstart_{nullptr},
-        outputuploadcompleted_{nullptr},
-        completed_{nullptr} {}
+        worker_start_{nullptr},
+        worker_completed_{nullptr},
+        execution_start_{nullptr},
+        execution_completed_{nullptr},
+        execution_duration_{nullptr},
+        execution_user_time_{nullptr},
+        execution_system_time_{nullptr},
+        output_upload_start_{nullptr},
+        output_upload_completed_{nullptr},
+        completed_{nullptr},
+        execution_max_rss_{::uint64_t{0u}} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR ActionExecutionMetadata::ActionExecutionMetadata(::_pbi::ConstantInitialized)
@@ -152,7 +155,7 @@ inline constexpr SubprocessResult::Impl_::Impl_(
       : _cached_size_{0},
         outputs_{},
         stdout_{nullptr},
-        exitcode_{0} {}
+        exit_code_{0} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR SubprocessResult::SubprocessResult(::_pbi::ConstantInitialized)
@@ -173,8 +176,8 @@ inline constexpr Subprocess::Impl_::Impl_(
       : arguments_{},
         environment_{},
         inputs_{},
-        outputpaths_{},
-        workingdirectory_(
+        output_paths_{},
+        working_directory_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
         _cached_size_{0} {}
@@ -219,7 +222,7 @@ inline constexpr Action::Impl_::Impl_(
       : _cached_size_{0},
         function_{nullptr},
         platform_{nullptr},
-        volatile__{false},
+        is_volatile_{false},
         Operation_{},
         _oneof_case_{} {}
 
@@ -278,9 +281,9 @@ const ::uint32_t
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::llbuild3::Subprocess, _impl_.arguments_),
         PROTOBUF_FIELD_OFFSET(::llbuild3::Subprocess, _impl_.environment_),
-        PROTOBUF_FIELD_OFFSET(::llbuild3::Subprocess, _impl_.workingdirectory_),
+        PROTOBUF_FIELD_OFFSET(::llbuild3::Subprocess, _impl_.working_directory_),
         PROTOBUF_FIELD_OFFSET(::llbuild3::Subprocess, _impl_.inputs_),
-        PROTOBUF_FIELD_OFFSET(::llbuild3::Subprocess, _impl_.outputpaths_),
+        PROTOBUF_FIELD_OFFSET(::llbuild3::Subprocess, _impl_.output_paths_),
         PROTOBUF_FIELD_OFFSET(::llbuild3::SubprocessResult, _impl_._has_bits_),
         PROTOBUF_FIELD_OFFSET(::llbuild3::SubprocessResult, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -290,7 +293,7 @@ const ::uint32_t
         ~0u,  // no _split_
         ~0u,  // no sizeof(Split)
         PROTOBUF_FIELD_OFFSET(::llbuild3::SubprocessResult, _impl_.outputs_),
-        PROTOBUF_FIELD_OFFSET(::llbuild3::SubprocessResult, _impl_.exitcode_),
+        PROTOBUF_FIELD_OFFSET(::llbuild3::SubprocessResult, _impl_.exit_code_),
         PROTOBUF_FIELD_OFFSET(::llbuild3::SubprocessResult, _impl_.stdout_),
         ~0u,
         ~0u,
@@ -306,7 +309,7 @@ const ::uint32_t
         ::_pbi::kInvalidFieldOffsetTag,
         ::_pbi::kInvalidFieldOffsetTag,
         PROTOBUF_FIELD_OFFSET(::llbuild3::Action, _impl_.function_),
-        PROTOBUF_FIELD_OFFSET(::llbuild3::Action, _impl_.volatile__),
+        PROTOBUF_FIELD_OFFSET(::llbuild3::Action, _impl_.is_volatile_),
         PROTOBUF_FIELD_OFFSET(::llbuild3::Action, _impl_.platform_),
         PROTOBUF_FIELD_OFFSET(::llbuild3::Action, _impl_.Operation_),
         ~0u,
@@ -359,15 +362,18 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::llbuild3::ActionExecutionMetadata, _impl_.worker_),
         PROTOBUF_FIELD_OFFSET(::llbuild3::ActionExecutionMetadata, _impl_.queued_),
         PROTOBUF_FIELD_OFFSET(::llbuild3::ActionExecutionMetadata, _impl_.dispatched_),
-        PROTOBUF_FIELD_OFFSET(::llbuild3::ActionExecutionMetadata, _impl_.workerstart_),
-        PROTOBUF_FIELD_OFFSET(::llbuild3::ActionExecutionMetadata, _impl_.workercompleted_),
-        PROTOBUF_FIELD_OFFSET(::llbuild3::ActionExecutionMetadata, _impl_.executionstart_),
-        PROTOBUF_FIELD_OFFSET(::llbuild3::ActionExecutionMetadata, _impl_.executioncompleted_),
-        PROTOBUF_FIELD_OFFSET(::llbuild3::ActionExecutionMetadata, _impl_.executionduration_),
-        PROTOBUF_FIELD_OFFSET(::llbuild3::ActionExecutionMetadata, _impl_.outputuploadstart_),
-        PROTOBUF_FIELD_OFFSET(::llbuild3::ActionExecutionMetadata, _impl_.outputuploadcompleted_),
+        PROTOBUF_FIELD_OFFSET(::llbuild3::ActionExecutionMetadata, _impl_.worker_start_),
+        PROTOBUF_FIELD_OFFSET(::llbuild3::ActionExecutionMetadata, _impl_.worker_completed_),
+        PROTOBUF_FIELD_OFFSET(::llbuild3::ActionExecutionMetadata, _impl_.execution_start_),
+        PROTOBUF_FIELD_OFFSET(::llbuild3::ActionExecutionMetadata, _impl_.execution_completed_),
+        PROTOBUF_FIELD_OFFSET(::llbuild3::ActionExecutionMetadata, _impl_.execution_duration_),
+        PROTOBUF_FIELD_OFFSET(::llbuild3::ActionExecutionMetadata, _impl_.execution_user_time_),
+        PROTOBUF_FIELD_OFFSET(::llbuild3::ActionExecutionMetadata, _impl_.execution_system_time_),
+        PROTOBUF_FIELD_OFFSET(::llbuild3::ActionExecutionMetadata, _impl_.execution_max_rss_),
+        PROTOBUF_FIELD_OFFSET(::llbuild3::ActionExecutionMetadata, _impl_.output_upload_start_),
+        PROTOBUF_FIELD_OFFSET(::llbuild3::ActionExecutionMetadata, _impl_.output_upload_completed_),
         PROTOBUF_FIELD_OFFSET(::llbuild3::ActionExecutionMetadata, _impl_.completed_),
-        PROTOBUF_FIELD_OFFSET(::llbuild3::ActionExecutionMetadata, _impl_.additionaldata_),
+        PROTOBUF_FIELD_OFFSET(::llbuild3::ActionExecutionMetadata, _impl_.additional_data_),
         ~0u,
         0,
         1,
@@ -378,7 +384,10 @@ const ::uint32_t
         6,
         7,
         8,
+        ~0u,
         9,
+        10,
+        11,
         ~0u,
 };
 
@@ -392,7 +401,7 @@ static const ::_pbi::MigrationSchema
         {70, -1, -1, sizeof(::llbuild3::Platform_Property)},
         {80, -1, -1, sizeof(::llbuild3::Platform)},
         {89, 101, -1, sizeof(::llbuild3::ActionResult)},
-        {104, 124, -1, sizeof(::llbuild3::ActionExecutionMetadata)},
+        {104, 127, -1, sizeof(::llbuild3::ActionExecutionMetadata)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::llbuild3::_FileObject_default_instance_._instance,
@@ -411,46 +420,50 @@ const char descriptor_table_protodef_llbuild3_2fAction_2eproto[] ABSL_ATTRIBUTE_
     "ld3/CAS.proto\032\026llbuild3/CASTree.proto\032\024l"
     "lbuild3/Label.proto\032\031google/protobuf/any"
     ".proto\032\036google/protobuf/duration.proto\032\037"
-    "google/protobuf/timestamp.proto\"c\n\nFileO"
+    "google/protobuf/timestamp.proto\"]\n\nFileO"
     "bject\022\014\n\004path\030\001 \001(\t\022 \n\004type\030\002 \001(\0162\022.llbu"
-    "ild3.FileType\022%\n\006object\030\003 \001(\0132\025.llbuild3"
-    ".CASObjectID\"\347\001\n\nSubprocess\022\021\n\targuments"
-    "\030\001 \003(\t\022=\n\013environment\030\002 \003(\0132(.llbuild3.S"
-    "ubprocess.EnvironmentVariable\022\030\n\020working"
-    "Directory\030\003 \001(\t\022$\n\006inputs\030\004 \003(\0132\024.llbuil"
-    "d3.FileObject\022\023\n\013outputPaths\030\005 \003(\t\0322\n\023En"
-    "vironmentVariable\022\014\n\004name\030\001 \001(\t\022\r\n\005value"
-    "\030\002 \001(\t\"r\n\020SubprocessResult\022%\n\007outputs\030\001 "
-    "\003(\0132\024.llbuild3.FileObject\022\020\n\010exitCode\030\002 "
-    "\001(\005\022%\n\006stdout\030\003 \001(\0132\025.llbuild3.CASObject"
-    "ID\"\310\001\n\006Action\022*\n\tcasObject\030\001 \001(\0132\025.llbui"
-    "ld3.CASObjectIDH\000\022*\n\nsubprocess\030\002 \001(\0132\024."
-    "llbuild3.SubprocessH\000\022!\n\010function\030\003 \001(\0132"
-    "\017.llbuild3.Label\022\020\n\010volatile\030\004 \001(\010\022$\n\010pl"
-    "atform\030\005 \001(\0132\022.llbuild3.PlatformB\013\n\tOper"
-    "ation\"d\n\010Platform\022/\n\nproperties\030\001 \003(\0132\033."
-    "llbuild3.Platform.Property\032\'\n\010Property\022\014"
-    "\n\004name\030\001 \001(\t\022\r\n\005value\030\002 \001(\t\"\266\001\n\014ActionRe"
-    "sult\022*\n\tcasObject\030\001 \001(\0132\025.llbuild3.CASOb"
-    "jectIDH\000\0220\n\nsubprocess\030\002 \001(\0132\032.llbuild3."
-    "SubprocessResultH\000\0223\n\010metadata\030\003 \001(\0132!.l"
-    "lbuild3.ActionExecutionMetadataB\023\n\021Actio"
-    "nResultValue\"\334\004\n\027ActionExecutionMetadata"
-    "\022\016\n\006worker\030\001 \001(\t\022*\n\006queued\030\002 \001(\0132\032.googl"
-    "e.protobuf.Timestamp\022.\n\ndispatched\030\003 \001(\013"
-    "2\032.google.protobuf.Timestamp\022/\n\013workerSt"
-    "art\030\004 \001(\0132\032.google.protobuf.Timestamp\0223\n"
-    "\017workerCompleted\030\005 \001(\0132\032.google.protobuf"
-    ".Timestamp\0222\n\016executionStart\030\006 \001(\0132\032.goo"
-    "gle.protobuf.Timestamp\0226\n\022executionCompl"
-    "eted\030\007 \001(\0132\032.google.protobuf.Timestamp\0224"
-    "\n\021executionDuration\030\010 \001(\0132\031.google.proto"
-    "buf.Duration\0225\n\021outputUploadStart\030\t \001(\0132"
-    "\032.google.protobuf.Timestamp\0229\n\025outputUpl"
-    "oadCompleted\030\n \001(\0132\032.google.protobuf.Tim"
-    "estamp\022-\n\tcompleted\030\013 \001(\0132\032.google.proto"
-    "buf.Timestamp\022,\n\016additionalData\030\014 \003(\0132\024."
-    "google.protobuf.Anyb\006proto3"
+    "ild3.FileType\022\037\n\006object\030\003 \001(\0132\017.llbuild3"
+    ".CASID\"\351\001\n\nSubprocess\022\021\n\targuments\030\001 \003(\t"
+    "\022=\n\013environment\030\002 \003(\0132(.llbuild3.Subproc"
+    "ess.EnvironmentVariable\022\031\n\021working_direc"
+    "tory\030\003 \001(\t\022$\n\006inputs\030\004 \003(\0132\024.llbuild3.Fi"
+    "leObject\022\024\n\014output_paths\030\005 \003(\t\0322\n\023Enviro"
+    "nmentVariable\022\014\n\004name\030\001 \001(\t\022\r\n\005value\030\002 \001"
+    "(\t\"m\n\020SubprocessResult\022%\n\007outputs\030\001 \003(\0132"
+    "\024.llbuild3.FileObject\022\021\n\texit_code\030\002 \001(\005"
+    "\022\037\n\006stdout\030\003 \001(\0132\017.llbuild3.CASID\"\306\001\n\006Ac"
+    "tion\022%\n\ncas_object\030\001 \001(\0132\017.llbuild3.CASI"
+    "DH\000\022*\n\nsubprocess\030\002 \001(\0132\024.llbuild3.Subpr"
+    "ocessH\000\022!\n\010function\030\003 \001(\0132\017.llbuild3.Lab"
+    "el\022\023\n\013is_volatile\030\004 \001(\010\022$\n\010platform\030\005 \001("
+    "\0132\022.llbuild3.PlatformB\013\n\tOperation\"d\n\010Pl"
+    "atform\022/\n\nproperties\030\001 \003(\0132\033.llbuild3.Pl"
+    "atform.Property\032\'\n\010Property\022\014\n\004name\030\001 \001("
+    "\t\022\r\n\005value\030\002 \001(\t\"\261\001\n\014ActionResult\022%\n\ncas"
+    "_object\030\001 \001(\0132\017.llbuild3.CASIDH\000\0220\n\nsubp"
+    "rocess\030\002 \001(\0132\032.llbuild3.SubprocessResult"
+    "H\000\0223\n\010metadata\030\003 \001(\0132!.llbuild3.ActionEx"
+    "ecutionMetadataB\023\n\021ActionResultValue\"\363\005\n"
+    "\027ActionExecutionMetadata\022\016\n\006worker\030\001 \001(\t"
+    "\022*\n\006queued\030\002 \001(\0132\032.google.protobuf.Times"
+    "tamp\022.\n\ndispatched\030\003 \001(\0132\032.google.protob"
+    "uf.Timestamp\0220\n\014worker_start\030\004 \001(\0132\032.goo"
+    "gle.protobuf.Timestamp\0224\n\020worker_complet"
+    "ed\030\005 \001(\0132\032.google.protobuf.Timestamp\0223\n\017"
+    "execution_start\030\006 \001(\0132\032.google.protobuf."
+    "Timestamp\0227\n\023execution_completed\030\007 \001(\0132\032"
+    ".google.protobuf.Timestamp\0225\n\022execution_"
+    "duration\030\010 \001(\0132\031.google.protobuf.Duratio"
+    "n\0226\n\023execution_user_time\030\t \001(\0132\031.google."
+    "protobuf.Duration\0228\n\025execution_system_ti"
+    "me\030\n \001(\0132\031.google.protobuf.Duration\022\031\n\021e"
+    "xecution_max_rss\030\013 \001(\004\0227\n\023output_upload_"
+    "start\030\014 \001(\0132\032.google.protobuf.Timestamp\022"
+    ";\n\027output_upload_completed\030\r \001(\0132\032.googl"
+    "e.protobuf.Timestamp\022-\n\tcompleted\030\016 \001(\0132"
+    "\032.google.protobuf.Timestamp\022-\n\017additiona"
+    "l_data\030\017 \003(\0132\024.google.protobuf.Anyb\006prot"
+    "o3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_llbuild3_2fAction_2eproto_deps[6] =
     {
@@ -465,7 +478,7 @@ static ::absl::once_flag descriptor_table_llbuild3_2fAction_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_llbuild3_2fAction_2eproto = {
     false,
     false,
-    1747,
+    1882,
     descriptor_table_protodef_llbuild3_2fAction_2eproto,
     "llbuild3/Action.proto",
     &descriptor_table_llbuild3_2fAction_2eproto_once,
@@ -516,7 +529,7 @@ FileObject::FileObject(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.object_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(
+  _impl_.object_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::llbuild3::CASID>(
                               arena, *from._impl_.object_)
                         : nullptr;
   _impl_.type_ = from._impl_.type_;
@@ -596,7 +609,7 @@ const ::_pbi::TcParseTable<2, 3, 1, 32, 2> FileObject::_table_ = {
     // .llbuild3.FileType type = 2;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(FileObject, _impl_.type_), 63>(),
      {16, 63, 0, PROTOBUF_FIELD_OFFSET(FileObject, _impl_.type_)}},
-    // .llbuild3.CASObjectID object = 3;
+    // .llbuild3.CASID object = 3;
     {::_pbi::TcParser::FastMtS1,
      {26, 0, 0, PROTOBUF_FIELD_OFFSET(FileObject, _impl_.object_)}},
   }}, {{
@@ -608,11 +621,11 @@ const ::_pbi::TcParseTable<2, 3, 1, 32, 2> FileObject::_table_ = {
     // .llbuild3.FileType type = 2;
     {PROTOBUF_FIELD_OFFSET(FileObject, _impl_.type_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kOpenEnum)},
-    // .llbuild3.CASObjectID object = 3;
+    // .llbuild3.CASID object = 3;
     {PROTOBUF_FIELD_OFFSET(FileObject, _impl_.object_), _Internal::kHasBitsOffset + 0, 0,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::llbuild3::CASObjectID>()},
+    {::_pbi::TcParser::GetTable<::llbuild3::CASID>()},
   }}, {{
     "\23\4\0\0\0\0\0\0"
     "llbuild3.FileObject"
@@ -661,7 +674,7 @@ PROTOBUF_NOINLINE void FileObject::Clear() {
   }
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .llbuild3.CASObjectID object = 3;
+  // .llbuild3.CASID object = 3;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         3, *_impl_.object_, _impl_.object_->GetCachedSize(), target, stream);
@@ -691,7 +704,7 @@ PROTOBUF_NOINLINE void FileObject::Clear() {
                                     this->_internal_path());
   }
 
-  // .llbuild3.CASObjectID object = 3;
+  // .llbuild3.CASID object = 3;
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
     total_size +=
@@ -725,7 +738,7 @@ void FileObject::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
     ABSL_DCHECK(from._impl_.object_ != nullptr);
     if (_this->_impl_.object_ == nullptr) {
       _this->_impl_.object_ =
-          ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(arena, *from._impl_.object_);
+          ::google::protobuf::Message::CopyConstruct<::llbuild3::CASID>(arena, *from._impl_.object_);
     } else {
       _this->_impl_.object_->MergeFrom(*from._impl_.object_);
     }
@@ -1002,8 +1015,8 @@ inline PROTOBUF_NDEBUG_INLINE Subprocess::Impl_::Impl_(
       : arguments_{visibility, arena, from.arguments_},
         environment_{visibility, arena, from.environment_},
         inputs_{visibility, arena, from.inputs_},
-        outputpaths_{visibility, arena, from.outputpaths_},
-        workingdirectory_(arena, from.workingdirectory_),
+        output_paths_{visibility, arena, from.output_paths_},
+        working_directory_(arena, from.working_directory_),
         _cached_size_{0} {}
 
 Subprocess::Subprocess(
@@ -1024,8 +1037,8 @@ inline PROTOBUF_NDEBUG_INLINE Subprocess::Impl_::Impl_(
       : arguments_{visibility, arena},
         environment_{visibility, arena},
         inputs_{visibility, arena},
-        outputpaths_{visibility, arena},
-        workingdirectory_(arena),
+        output_paths_{visibility, arena},
+        working_directory_(arena),
         _cached_size_{0} {}
 
 inline void Subprocess::SharedCtor(::_pb::Arena* arena) {
@@ -1038,7 +1051,7 @@ Subprocess::~Subprocess() {
 }
 inline void Subprocess::SharedDtor() {
   ABSL_DCHECK(GetArena() == nullptr);
-  _impl_.workingdirectory_.Destroy();
+  _impl_.working_directory_.Destroy();
   _impl_.~Impl_();
 }
 
@@ -1063,7 +1076,7 @@ Subprocess::GetClassData() const {
   return _data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 5, 2, 64, 2> Subprocess::_table_ = {
+const ::_pbi::TcParseTable<3, 5, 2, 66, 2> Subprocess::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
@@ -1088,15 +1101,15 @@ const ::_pbi::TcParseTable<3, 5, 2, 64, 2> Subprocess::_table_ = {
     // repeated .llbuild3.Subprocess.EnvironmentVariable environment = 2;
     {::_pbi::TcParser::FastMtR1,
      {18, 63, 0, PROTOBUF_FIELD_OFFSET(Subprocess, _impl_.environment_)}},
-    // string workingDirectory = 3;
+    // string working_directory = 3;
     {::_pbi::TcParser::FastUS1,
-     {26, 63, 0, PROTOBUF_FIELD_OFFSET(Subprocess, _impl_.workingdirectory_)}},
+     {26, 63, 0, PROTOBUF_FIELD_OFFSET(Subprocess, _impl_.working_directory_)}},
     // repeated .llbuild3.FileObject inputs = 4;
     {::_pbi::TcParser::FastMtR1,
      {34, 63, 1, PROTOBUF_FIELD_OFFSET(Subprocess, _impl_.inputs_)}},
-    // repeated string outputPaths = 5;
+    // repeated string output_paths = 5;
     {::_pbi::TcParser::FastUR1,
-     {42, 63, 0, PROTOBUF_FIELD_OFFSET(Subprocess, _impl_.outputpaths_)}},
+     {42, 63, 0, PROTOBUF_FIELD_OFFSET(Subprocess, _impl_.output_paths_)}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
   }}, {{
@@ -1108,24 +1121,24 @@ const ::_pbi::TcParseTable<3, 5, 2, 64, 2> Subprocess::_table_ = {
     // repeated .llbuild3.Subprocess.EnvironmentVariable environment = 2;
     {PROTOBUF_FIELD_OFFSET(Subprocess, _impl_.environment_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
-    // string workingDirectory = 3;
-    {PROTOBUF_FIELD_OFFSET(Subprocess, _impl_.workingdirectory_), 0, 0,
+    // string working_directory = 3;
+    {PROTOBUF_FIELD_OFFSET(Subprocess, _impl_.working_directory_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // repeated .llbuild3.FileObject inputs = 4;
     {PROTOBUF_FIELD_OFFSET(Subprocess, _impl_.inputs_), 0, 1,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
-    // repeated string outputPaths = 5;
-    {PROTOBUF_FIELD_OFFSET(Subprocess, _impl_.outputpaths_), 0, 0,
+    // repeated string output_paths = 5;
+    {PROTOBUF_FIELD_OFFSET(Subprocess, _impl_.output_paths_), 0, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kUtf8String | ::_fl::kRepSString)},
   }}, {{
     {::_pbi::TcParser::GetTable<::llbuild3::Subprocess_EnvironmentVariable>()},
     {::_pbi::TcParser::GetTable<::llbuild3::FileObject>()},
   }}, {{
-    "\23\11\0\20\0\13\0\0"
+    "\23\11\0\21\0\14\0\0"
     "llbuild3.Subprocess"
     "arguments"
-    "workingDirectory"
-    "outputPaths"
+    "working_directory"
+    "output_paths"
   }},
 };
 
@@ -1139,8 +1152,8 @@ PROTOBUF_NOINLINE void Subprocess::Clear() {
   _impl_.arguments_.Clear();
   _impl_.environment_.Clear();
   _impl_.inputs_.Clear();
-  _impl_.outputpaths_.Clear();
-  _impl_.workingdirectory_.ClearToEmpty();
+  _impl_.output_paths_.Clear();
+  _impl_.working_directory_.ClearToEmpty();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
@@ -1170,11 +1183,11 @@ PROTOBUF_NOINLINE void Subprocess::Clear() {
             target, stream);
   }
 
-  // string workingDirectory = 3;
-  if (!this->_internal_workingdirectory().empty()) {
-    const std::string& _s = this->_internal_workingdirectory();
+  // string working_directory = 3;
+  if (!this->_internal_working_directory().empty()) {
+    const std::string& _s = this->_internal_working_directory();
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "llbuild3.Subprocess.workingDirectory");
+        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "llbuild3.Subprocess.working_directory");
     target = stream->WriteStringMaybeAliased(3, _s, target);
   }
 
@@ -1189,11 +1202,11 @@ PROTOBUF_NOINLINE void Subprocess::Clear() {
             target, stream);
   }
 
-  // repeated string outputPaths = 5;
-  for (int i = 0, n = this->_internal_outputpaths_size(); i < n; ++i) {
-    const auto& s = this->_internal_outputpaths().Get(i);
+  // repeated string output_paths = 5;
+  for (int i = 0, n = this->_internal_output_paths_size(); i < n; ++i) {
+    const auto& s = this->_internal_output_paths().Get(i);
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        s.data(), static_cast<int>(s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "llbuild3.Subprocess.outputPaths");
+        s.data(), static_cast<int>(s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "llbuild3.Subprocess.output_paths");
     target = stream->WriteString(5, s, target);
   }
 
@@ -1231,16 +1244,16 @@ PROTOBUF_NOINLINE void Subprocess::Clear() {
   for (const auto& msg : this->_internal_inputs()) {
     total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
   }
-  // repeated string outputPaths = 5;
-  total_size += 1 * ::google::protobuf::internal::FromIntSize(_internal_outputpaths().size());
-  for (int i = 0, n = _internal_outputpaths().size(); i < n; ++i) {
+  // repeated string output_paths = 5;
+  total_size += 1 * ::google::protobuf::internal::FromIntSize(_internal_output_paths().size());
+  for (int i = 0, n = _internal_output_paths().size(); i < n; ++i) {
     total_size += ::google::protobuf::internal::WireFormatLite::StringSize(
-        _internal_outputpaths().Get(i));
+        _internal_output_paths().Get(i));
   }
-  // string workingDirectory = 3;
-  if (!this->_internal_workingdirectory().empty()) {
+  // string working_directory = 3;
+  if (!this->_internal_working_directory().empty()) {
     total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
-                                    this->_internal_workingdirectory());
+                                    this->_internal_working_directory());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
@@ -1260,9 +1273,9 @@ void Subprocess::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::goog
       from._internal_environment());
   _this->_internal_mutable_inputs()->MergeFrom(
       from._internal_inputs());
-  _this->_internal_mutable_outputpaths()->MergeFrom(from._internal_outputpaths());
-  if (!from._internal_workingdirectory().empty()) {
-    _this->_internal_set_workingdirectory(from._internal_workingdirectory());
+  _this->_internal_mutable_output_paths()->MergeFrom(from._internal_output_paths());
+  if (!from._internal_working_directory().empty()) {
+    _this->_internal_set_working_directory(from._internal_working_directory());
   }
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
@@ -1283,8 +1296,8 @@ void Subprocess::InternalSwap(Subprocess* PROTOBUF_RESTRICT other) {
   _impl_.arguments_.InternalSwap(&other->_impl_.arguments_);
   _impl_.environment_.InternalSwap(&other->_impl_.environment_);
   _impl_.inputs_.InternalSwap(&other->_impl_.inputs_);
-  _impl_.outputpaths_.InternalSwap(&other->_impl_.outputpaths_);
-  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.workingdirectory_, &other->_impl_.workingdirectory_, arena);
+  _impl_.output_paths_.InternalSwap(&other->_impl_.output_paths_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.working_directory_, &other->_impl_.working_directory_, arena);
 }
 
 ::google::protobuf::Metadata Subprocess::GetMetadata() const {
@@ -1327,10 +1340,10 @@ SubprocessResult::SubprocessResult(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.stdout_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(
+  _impl_.stdout_ = (cached_has_bits & 0x00000001u) ? ::google::protobuf::Message::CopyConstruct<::llbuild3::CASID>(
                               arena, *from._impl_.stdout_)
                         : nullptr;
-  _impl_.exitcode_ = from._impl_.exitcode_;
+  _impl_.exit_code_ = from._impl_.exit_code_;
 
   // @@protoc_insertion_point(copy_constructor:llbuild3.SubprocessResult)
 }
@@ -1345,9 +1358,9 @@ inline void SubprocessResult::SharedCtor(::_pb::Arena* arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, stdout_),
            0,
-           offsetof(Impl_, exitcode_) -
+           offsetof(Impl_, exit_code_) -
                offsetof(Impl_, stdout_) +
-               sizeof(Impl_::exitcode_));
+               sizeof(Impl_::exit_code_));
 }
 SubprocessResult::~SubprocessResult() {
   // @@protoc_insertion_point(destructor:llbuild3.SubprocessResult)
@@ -1403,10 +1416,10 @@ const ::_pbi::TcParseTable<2, 3, 2, 0, 2> SubprocessResult::_table_ = {
     // repeated .llbuild3.FileObject outputs = 1;
     {::_pbi::TcParser::FastMtR1,
      {10, 63, 0, PROTOBUF_FIELD_OFFSET(SubprocessResult, _impl_.outputs_)}},
-    // int32 exitCode = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SubprocessResult, _impl_.exitcode_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(SubprocessResult, _impl_.exitcode_)}},
-    // .llbuild3.CASObjectID stdout = 3;
+    // int32 exit_code = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SubprocessResult, _impl_.exit_code_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(SubprocessResult, _impl_.exit_code_)}},
+    // .llbuild3.CASID stdout = 3;
     {::_pbi::TcParser::FastMtS1,
      {26, 0, 1, PROTOBUF_FIELD_OFFSET(SubprocessResult, _impl_.stdout_)}},
   }}, {{
@@ -1415,15 +1428,15 @@ const ::_pbi::TcParseTable<2, 3, 2, 0, 2> SubprocessResult::_table_ = {
     // repeated .llbuild3.FileObject outputs = 1;
     {PROTOBUF_FIELD_OFFSET(SubprocessResult, _impl_.outputs_), -1, 0,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
-    // int32 exitCode = 2;
-    {PROTOBUF_FIELD_OFFSET(SubprocessResult, _impl_.exitcode_), -1, 0,
+    // int32 exit_code = 2;
+    {PROTOBUF_FIELD_OFFSET(SubprocessResult, _impl_.exit_code_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kInt32)},
-    // .llbuild3.CASObjectID stdout = 3;
+    // .llbuild3.CASID stdout = 3;
     {PROTOBUF_FIELD_OFFSET(SubprocessResult, _impl_.stdout_), _Internal::kHasBitsOffset + 0, 1,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
     {::_pbi::TcParser::GetTable<::llbuild3::FileObject>()},
-    {::_pbi::TcParser::GetTable<::llbuild3::CASObjectID>()},
+    {::_pbi::TcParser::GetTable<::llbuild3::CASID>()},
   }}, {{
   }},
 };
@@ -1441,7 +1454,7 @@ PROTOBUF_NOINLINE void SubprocessResult::Clear() {
     ABSL_DCHECK(_impl_.stdout_ != nullptr);
     _impl_.stdout_->Clear();
   }
-  _impl_.exitcode_ = 0;
+  _impl_.exit_code_ = 0;
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -1464,15 +1477,15 @@ PROTOBUF_NOINLINE void SubprocessResult::Clear() {
             target, stream);
   }
 
-  // int32 exitCode = 2;
-  if (this->_internal_exitcode() != 0) {
+  // int32 exit_code = 2;
+  if (this->_internal_exit_code() != 0) {
     target = ::google::protobuf::internal::WireFormatLite::
         WriteInt32ToArrayWithField<2>(
-            stream, this->_internal_exitcode(), target);
+            stream, this->_internal_exit_code(), target);
   }
 
   cached_has_bits = _impl_._has_bits_[0];
-  // .llbuild3.CASObjectID stdout = 3;
+  // .llbuild3.CASID stdout = 3;
   if (cached_has_bits & 0x00000001u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         3, *_impl_.stdout_, _impl_.stdout_->GetCachedSize(), target, stream);
@@ -1501,17 +1514,17 @@ PROTOBUF_NOINLINE void SubprocessResult::Clear() {
   for (const auto& msg : this->_internal_outputs()) {
     total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
   }
-  // .llbuild3.CASObjectID stdout = 3;
+  // .llbuild3.CASID stdout = 3;
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
     total_size +=
         1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.stdout_);
   }
 
-  // int32 exitCode = 2;
-  if (this->_internal_exitcode() != 0) {
+  // int32 exit_code = 2;
+  if (this->_internal_exit_code() != 0) {
     total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
-        this->_internal_exitcode());
+        this->_internal_exit_code());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
@@ -1534,13 +1547,13 @@ void SubprocessResult::MergeImpl(::google::protobuf::MessageLite& to_msg, const 
     ABSL_DCHECK(from._impl_.stdout_ != nullptr);
     if (_this->_impl_.stdout_ == nullptr) {
       _this->_impl_.stdout_ =
-          ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(arena, *from._impl_.stdout_);
+          ::google::protobuf::Message::CopyConstruct<::llbuild3::CASID>(arena, *from._impl_.stdout_);
     } else {
       _this->_impl_.stdout_->MergeFrom(*from._impl_.stdout_);
     }
   }
-  if (from._internal_exitcode() != 0) {
-    _this->_impl_.exitcode_ = from._impl_.exitcode_;
+  if (from._internal_exit_code() != 0) {
+    _this->_impl_.exit_code_ = from._impl_.exit_code_;
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
@@ -1560,8 +1573,8 @@ void SubprocessResult::InternalSwap(SubprocessResult* PROTOBUF_RESTRICT other) {
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   _impl_.outputs_.InternalSwap(&other->_impl_.outputs_);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(SubprocessResult, _impl_.exitcode_)
-      + sizeof(SubprocessResult::_impl_.exitcode_)
+      PROTOBUF_FIELD_OFFSET(SubprocessResult, _impl_.exit_code_)
+      + sizeof(SubprocessResult::_impl_.exit_code_)
       - PROTOBUF_FIELD_OFFSET(SubprocessResult, _impl_.stdout_)>(
           reinterpret_cast<char*>(&_impl_.stdout_),
           reinterpret_cast<char*>(&other->_impl_.stdout_));
@@ -1582,26 +1595,26 @@ class Action::_Internal {
       PROTOBUF_FIELD_OFFSET(::llbuild3::Action, _impl_._oneof_case_);
 };
 
-void Action::set_allocated_casobject(::llbuild3::CASObjectID* casobject) {
+void Action::set_allocated_cas_object(::llbuild3::CASID* cas_object) {
   ::google::protobuf::Arena* message_arena = GetArena();
   clear_Operation();
-  if (casobject) {
-    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(casobject)->GetArena();
+  if (cas_object) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(cas_object)->GetArena();
     if (message_arena != submessage_arena) {
-      casobject = ::google::protobuf::internal::GetOwnedMessage(message_arena, casobject, submessage_arena);
+      cas_object = ::google::protobuf::internal::GetOwnedMessage(message_arena, cas_object, submessage_arena);
     }
-    set_has_casobject();
-    _impl_.Operation_.casobject_ = casobject;
+    set_has_cas_object();
+    _impl_.Operation_.cas_object_ = cas_object;
   }
-  // @@protoc_insertion_point(field_set_allocated:llbuild3.Action.casObject)
+  // @@protoc_insertion_point(field_set_allocated:llbuild3.Action.cas_object)
 }
-void Action::clear_casobject() {
+void Action::clear_cas_object() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (Operation_case() == kCasObject) {
     if (GetArena() == nullptr) {
-      delete _impl_.Operation_.casobject_;
+      delete _impl_.Operation_.cas_object_;
     } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
-      ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.Operation_.casobject_);
+      ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.Operation_.cas_object_);
     }
     clear_has_Operation();
   }
@@ -1653,12 +1666,12 @@ Action::Action(
   _impl_.platform_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::llbuild3::Platform>(
                               arena, *from._impl_.platform_)
                         : nullptr;
-  _impl_.volatile__ = from._impl_.volatile__;
+  _impl_.is_volatile_ = from._impl_.is_volatile_;
   switch (Operation_case()) {
     case OPERATION_NOT_SET:
       break;
       case kCasObject:
-        _impl_.Operation_.casobject_ = ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(arena, *from._impl_.Operation_.casobject_);
+        _impl_.Operation_.cas_object_ = ::google::protobuf::Message::CopyConstruct<::llbuild3::CASID>(arena, *from._impl_.Operation_.cas_object_);
         break;
       case kSubprocess:
         _impl_.Operation_.subprocess_ = ::google::protobuf::Message::CopyConstruct<::llbuild3::Subprocess>(arena, *from._impl_.Operation_.subprocess_);
@@ -1679,9 +1692,9 @@ inline void Action::SharedCtor(::_pb::Arena* arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, function_),
            0,
-           offsetof(Impl_, volatile__) -
+           offsetof(Impl_, is_volatile_) -
                offsetof(Impl_, function_) +
-               sizeof(Impl_::volatile__));
+               sizeof(Impl_::is_volatile_));
 }
 Action::~Action() {
   // @@protoc_insertion_point(destructor:llbuild3.Action)
@@ -1704,9 +1717,9 @@ void Action::clear_Operation() {
   switch (Operation_case()) {
     case kCasObject: {
       if (GetArena() == nullptr) {
-        delete _impl_.Operation_.casobject_;
+        delete _impl_.Operation_.cas_object_;
       } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
-        ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.Operation_.casobject_);
+        ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.Operation_.cas_object_);
       }
       break;
     }
@@ -1765,9 +1778,9 @@ const ::_pbi::TcParseTable<2, 5, 4, 0, 2> Action::_table_ = {
     ::_pbi::TcParser::GetTable<::llbuild3::Action>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // bool volatile = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(Action, _impl_.volatile__), 63>(),
-     {32, 63, 0, PROTOBUF_FIELD_OFFSET(Action, _impl_.volatile__)}},
+    // bool is_volatile = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(Action, _impl_.is_volatile_), 63>(),
+     {32, 63, 0, PROTOBUF_FIELD_OFFSET(Action, _impl_.is_volatile_)}},
     // .llbuild3.Platform platform = 5;
     {::_pbi::TcParser::FastMtS1,
      {42, 1, 3, PROTOBUF_FIELD_OFFSET(Action, _impl_.platform_)}},
@@ -1778,8 +1791,8 @@ const ::_pbi::TcParseTable<2, 5, 4, 0, 2> Action::_table_ = {
   }}, {{
     65535, 65535
   }}, {{
-    // .llbuild3.CASObjectID casObject = 1;
-    {PROTOBUF_FIELD_OFFSET(Action, _impl_.Operation_.casobject_), _Internal::kOneofCaseOffset + 0, 0,
+    // .llbuild3.CASID cas_object = 1;
+    {PROTOBUF_FIELD_OFFSET(Action, _impl_.Operation_.cas_object_), _Internal::kOneofCaseOffset + 0, 0,
     (0 | ::_fl::kFcOneof | ::_fl::kMessage | ::_fl::kTvTable)},
     // .llbuild3.Subprocess subprocess = 2;
     {PROTOBUF_FIELD_OFFSET(Action, _impl_.Operation_.subprocess_), _Internal::kOneofCaseOffset + 0, 1,
@@ -1787,14 +1800,14 @@ const ::_pbi::TcParseTable<2, 5, 4, 0, 2> Action::_table_ = {
     // .llbuild3.Label function = 3;
     {PROTOBUF_FIELD_OFFSET(Action, _impl_.function_), _Internal::kHasBitsOffset + 0, 2,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // bool volatile = 4;
-    {PROTOBUF_FIELD_OFFSET(Action, _impl_.volatile__), -1, 0,
+    // bool is_volatile = 4;
+    {PROTOBUF_FIELD_OFFSET(Action, _impl_.is_volatile_), -1, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kBool)},
     // .llbuild3.Platform platform = 5;
     {PROTOBUF_FIELD_OFFSET(Action, _impl_.platform_), _Internal::kHasBitsOffset + 1, 3,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::llbuild3::CASObjectID>()},
+    {::_pbi::TcParser::GetTable<::llbuild3::CASID>()},
     {::_pbi::TcParser::GetTable<::llbuild3::Subprocess>()},
     {::_pbi::TcParser::GetTable<::llbuild3::Label>()},
     {::_pbi::TcParser::GetTable<::llbuild3::Platform>()},
@@ -1820,7 +1833,7 @@ PROTOBUF_NOINLINE void Action::Clear() {
       _impl_.platform_->Clear();
     }
   }
-  _impl_.volatile__ = false;
+  _impl_.is_volatile_ = false;
   clear_Operation();
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -1836,7 +1849,7 @@ PROTOBUF_NOINLINE void Action::Clear() {
   switch (Operation_case()) {
     case kCasObject: {
       target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-          1, *_impl_.Operation_.casobject_, _impl_.Operation_.casobject_->GetCachedSize(), target, stream);
+          1, *_impl_.Operation_.cas_object_, _impl_.Operation_.cas_object_->GetCachedSize(), target, stream);
       break;
     }
     case kSubprocess: {
@@ -1854,11 +1867,11 @@ PROTOBUF_NOINLINE void Action::Clear() {
         3, *_impl_.function_, _impl_.function_->GetCachedSize(), target, stream);
   }
 
-  // bool volatile = 4;
-  if (this->_internal_volatile_() != 0) {
+  // bool is_volatile = 4;
+  if (this->_internal_is_volatile() != 0) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteBoolToArray(
-        4, this->_internal_volatile_(), target);
+        4, this->_internal_is_volatile(), target);
   }
 
   // .llbuild3.Platform platform = 5;
@@ -1900,16 +1913,16 @@ PROTOBUF_NOINLINE void Action::Clear() {
     }
 
   }
-  // bool volatile = 4;
-  if (this->_internal_volatile_() != 0) {
+  // bool is_volatile = 4;
+  if (this->_internal_is_volatile() != 0) {
     total_size += 2;
   }
 
   switch (Operation_case()) {
-    // .llbuild3.CASObjectID casObject = 1;
+    // .llbuild3.CASID cas_object = 1;
     case kCasObject: {
       total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.Operation_.casobject_);
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.Operation_.cas_object_);
       break;
     }
     // .llbuild3.Subprocess subprocess = 2;
@@ -1956,8 +1969,8 @@ void Action::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::
       }
     }
   }
-  if (from._internal_volatile_() != 0) {
-    _this->_impl_.volatile__ = from._impl_.volatile__;
+  if (from._internal_is_volatile() != 0) {
+    _this->_impl_.is_volatile_ = from._impl_.is_volatile_;
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
   if (const uint32_t oneof_from_case = from._impl_._oneof_case_[0]) {
@@ -1973,10 +1986,10 @@ void Action::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::
     switch (oneof_from_case) {
       case kCasObject: {
         if (oneof_needs_init) {
-          _this->_impl_.Operation_.casobject_ =
-              ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(arena, *from._impl_.Operation_.casobject_);
+          _this->_impl_.Operation_.cas_object_ =
+              ::google::protobuf::Message::CopyConstruct<::llbuild3::CASID>(arena, *from._impl_.Operation_.cas_object_);
         } else {
-          _this->_impl_.Operation_.casobject_->MergeFrom(from._internal_casobject());
+          _this->_impl_.Operation_.cas_object_->MergeFrom(from._internal_cas_object());
         }
         break;
       }
@@ -2009,8 +2022,8 @@ void Action::InternalSwap(Action* PROTOBUF_RESTRICT other) {
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(Action, _impl_.volatile__)
-      + sizeof(Action::_impl_.volatile__)
+      PROTOBUF_FIELD_OFFSET(Action, _impl_.is_volatile_)
+      + sizeof(Action::_impl_.is_volatile_)
       - PROTOBUF_FIELD_OFFSET(Action, _impl_.function_)>(
           reinterpret_cast<char*>(&_impl_.function_),
           reinterpret_cast<char*>(&other->_impl_.function_));
@@ -2443,26 +2456,26 @@ class ActionResult::_Internal {
       PROTOBUF_FIELD_OFFSET(::llbuild3::ActionResult, _impl_._oneof_case_);
 };
 
-void ActionResult::set_allocated_casobject(::llbuild3::CASObjectID* casobject) {
+void ActionResult::set_allocated_cas_object(::llbuild3::CASID* cas_object) {
   ::google::protobuf::Arena* message_arena = GetArena();
   clear_ActionResultValue();
-  if (casobject) {
-    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(casobject)->GetArena();
+  if (cas_object) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::MessageLite*>(cas_object)->GetArena();
     if (message_arena != submessage_arena) {
-      casobject = ::google::protobuf::internal::GetOwnedMessage(message_arena, casobject, submessage_arena);
+      cas_object = ::google::protobuf::internal::GetOwnedMessage(message_arena, cas_object, submessage_arena);
     }
-    set_has_casobject();
-    _impl_.ActionResultValue_.casobject_ = casobject;
+    set_has_cas_object();
+    _impl_.ActionResultValue_.cas_object_ = cas_object;
   }
-  // @@protoc_insertion_point(field_set_allocated:llbuild3.ActionResult.casObject)
+  // @@protoc_insertion_point(field_set_allocated:llbuild3.ActionResult.cas_object)
 }
-void ActionResult::clear_casobject() {
+void ActionResult::clear_cas_object() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (ActionResultValue_case() == kCasObject) {
     if (GetArena() == nullptr) {
-      delete _impl_.ActionResultValue_.casobject_;
+      delete _impl_.ActionResultValue_.cas_object_;
     } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
-      ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.ActionResultValue_.casobject_);
+      ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.ActionResultValue_.cas_object_);
     }
     clear_has_ActionResultValue();
   }
@@ -2510,7 +2523,7 @@ ActionResult::ActionResult(
     case ACTIONRESULTVALUE_NOT_SET:
       break;
       case kCasObject:
-        _impl_.ActionResultValue_.casobject_ = ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(arena, *from._impl_.ActionResultValue_.casobject_);
+        _impl_.ActionResultValue_.cas_object_ = ::google::protobuf::Message::CopyConstruct<::llbuild3::CASID>(arena, *from._impl_.ActionResultValue_.cas_object_);
         break;
       case kSubprocess:
         _impl_.ActionResultValue_.subprocess_ = ::google::protobuf::Message::CopyConstruct<::llbuild3::SubprocessResult>(arena, *from._impl_.ActionResultValue_.subprocess_);
@@ -2550,9 +2563,9 @@ void ActionResult::clear_ActionResultValue() {
   switch (ActionResultValue_case()) {
     case kCasObject: {
       if (GetArena() == nullptr) {
-        delete _impl_.ActionResultValue_.casobject_;
+        delete _impl_.ActionResultValue_.cas_object_;
       } else if (::google::protobuf::internal::DebugHardenClearOneofMessageOnArena()) {
-        ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.ActionResultValue_.casobject_);
+        ::google::protobuf::internal::MaybePoisonAfterClear(_impl_.ActionResultValue_.cas_object_);
       }
       break;
     }
@@ -2617,8 +2630,8 @@ const ::_pbi::TcParseTable<0, 3, 3, 0, 2> ActionResult::_table_ = {
   }}, {{
     65535, 65535
   }}, {{
-    // .llbuild3.CASObjectID casObject = 1;
-    {PROTOBUF_FIELD_OFFSET(ActionResult, _impl_.ActionResultValue_.casobject_), _Internal::kOneofCaseOffset + 0, 0,
+    // .llbuild3.CASID cas_object = 1;
+    {PROTOBUF_FIELD_OFFSET(ActionResult, _impl_.ActionResultValue_.cas_object_), _Internal::kOneofCaseOffset + 0, 0,
     (0 | ::_fl::kFcOneof | ::_fl::kMessage | ::_fl::kTvTable)},
     // .llbuild3.SubprocessResult subprocess = 2;
     {PROTOBUF_FIELD_OFFSET(ActionResult, _impl_.ActionResultValue_.subprocess_), _Internal::kOneofCaseOffset + 0, 1,
@@ -2627,7 +2640,7 @@ const ::_pbi::TcParseTable<0, 3, 3, 0, 2> ActionResult::_table_ = {
     {PROTOBUF_FIELD_OFFSET(ActionResult, _impl_.metadata_), _Internal::kHasBitsOffset + 0, 2,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
-    {::_pbi::TcParser::GetTable<::llbuild3::CASObjectID>()},
+    {::_pbi::TcParser::GetTable<::llbuild3::CASID>()},
     {::_pbi::TcParser::GetTable<::llbuild3::SubprocessResult>()},
     {::_pbi::TcParser::GetTable<::llbuild3::ActionExecutionMetadata>()},
   }}, {{
@@ -2661,7 +2674,7 @@ PROTOBUF_NOINLINE void ActionResult::Clear() {
   switch (ActionResultValue_case()) {
     case kCasObject: {
       target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-          1, *_impl_.ActionResultValue_.casobject_, _impl_.ActionResultValue_.casobject_->GetCachedSize(), target, stream);
+          1, *_impl_.ActionResultValue_.cas_object_, _impl_.ActionResultValue_.cas_object_->GetCachedSize(), target, stream);
       break;
     }
     case kSubprocess: {
@@ -2704,10 +2717,10 @@ PROTOBUF_NOINLINE void ActionResult::Clear() {
   }
 
   switch (ActionResultValue_case()) {
-    // .llbuild3.CASObjectID casObject = 1;
+    // .llbuild3.CASID cas_object = 1;
     case kCasObject: {
       total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.ActionResultValue_.casobject_);
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.ActionResultValue_.cas_object_);
       break;
     }
     // .llbuild3.SubprocessResult subprocess = 2;
@@ -2757,10 +2770,10 @@ void ActionResult::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::go
     switch (oneof_from_case) {
       case kCasObject: {
         if (oneof_needs_init) {
-          _this->_impl_.ActionResultValue_.casobject_ =
-              ::google::protobuf::Message::CopyConstruct<::llbuild3::CASObjectID>(arena, *from._impl_.ActionResultValue_.casobject_);
+          _this->_impl_.ActionResultValue_.cas_object_ =
+              ::google::protobuf::Message::CopyConstruct<::llbuild3::CASID>(arena, *from._impl_.ActionResultValue_.cas_object_);
         } else {
-          _this->_impl_.ActionResultValue_.casobject_->MergeFrom(from._internal_casobject());
+          _this->_impl_.ActionResultValue_.cas_object_->MergeFrom(from._internal_cas_object());
         }
         break;
       }
@@ -2820,49 +2833,59 @@ void ActionExecutionMetadata::clear_dispatched() {
   if (_impl_.dispatched_ != nullptr) _impl_.dispatched_->Clear();
   _impl_._has_bits_[0] &= ~0x00000002u;
 }
-void ActionExecutionMetadata::clear_workerstart() {
+void ActionExecutionMetadata::clear_worker_start() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.workerstart_ != nullptr) _impl_.workerstart_->Clear();
+  if (_impl_.worker_start_ != nullptr) _impl_.worker_start_->Clear();
   _impl_._has_bits_[0] &= ~0x00000004u;
 }
-void ActionExecutionMetadata::clear_workercompleted() {
+void ActionExecutionMetadata::clear_worker_completed() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.workercompleted_ != nullptr) _impl_.workercompleted_->Clear();
+  if (_impl_.worker_completed_ != nullptr) _impl_.worker_completed_->Clear();
   _impl_._has_bits_[0] &= ~0x00000008u;
 }
-void ActionExecutionMetadata::clear_executionstart() {
+void ActionExecutionMetadata::clear_execution_start() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.executionstart_ != nullptr) _impl_.executionstart_->Clear();
+  if (_impl_.execution_start_ != nullptr) _impl_.execution_start_->Clear();
   _impl_._has_bits_[0] &= ~0x00000010u;
 }
-void ActionExecutionMetadata::clear_executioncompleted() {
+void ActionExecutionMetadata::clear_execution_completed() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.executioncompleted_ != nullptr) _impl_.executioncompleted_->Clear();
+  if (_impl_.execution_completed_ != nullptr) _impl_.execution_completed_->Clear();
   _impl_._has_bits_[0] &= ~0x00000020u;
 }
-void ActionExecutionMetadata::clear_executionduration() {
+void ActionExecutionMetadata::clear_execution_duration() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.executionduration_ != nullptr) _impl_.executionduration_->Clear();
+  if (_impl_.execution_duration_ != nullptr) _impl_.execution_duration_->Clear();
   _impl_._has_bits_[0] &= ~0x00000040u;
 }
-void ActionExecutionMetadata::clear_outputuploadstart() {
+void ActionExecutionMetadata::clear_execution_user_time() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.outputuploadstart_ != nullptr) _impl_.outputuploadstart_->Clear();
+  if (_impl_.execution_user_time_ != nullptr) _impl_.execution_user_time_->Clear();
   _impl_._has_bits_[0] &= ~0x00000080u;
 }
-void ActionExecutionMetadata::clear_outputuploadcompleted() {
+void ActionExecutionMetadata::clear_execution_system_time() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  if (_impl_.outputuploadcompleted_ != nullptr) _impl_.outputuploadcompleted_->Clear();
+  if (_impl_.execution_system_time_ != nullptr) _impl_.execution_system_time_->Clear();
   _impl_._has_bits_[0] &= ~0x00000100u;
+}
+void ActionExecutionMetadata::clear_output_upload_start() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.output_upload_start_ != nullptr) _impl_.output_upload_start_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000200u;
+}
+void ActionExecutionMetadata::clear_output_upload_completed() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.output_upload_completed_ != nullptr) _impl_.output_upload_completed_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000400u;
 }
 void ActionExecutionMetadata::clear_completed() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.completed_ != nullptr) _impl_.completed_->Clear();
-  _impl_._has_bits_[0] &= ~0x00000200u;
+  _impl_._has_bits_[0] &= ~0x00000800u;
 }
-void ActionExecutionMetadata::clear_additionaldata() {
+void ActionExecutionMetadata::clear_additional_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  _impl_.additionaldata_.Clear();
+  _impl_.additional_data_.Clear();
 }
 ActionExecutionMetadata::ActionExecutionMetadata(::google::protobuf::Arena* arena)
     : ::google::protobuf::Message(arena) {
@@ -2874,7 +2897,7 @@ inline PROTOBUF_NDEBUG_INLINE ActionExecutionMetadata::Impl_::Impl_(
     const Impl_& from, const ::llbuild3::ActionExecutionMetadata& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
-        additionaldata_{visibility, arena, from.additionaldata_},
+        additional_data_{visibility, arena, from.additional_data_},
         worker_(arena, from.worker_) {}
 
 ActionExecutionMetadata::ActionExecutionMetadata(
@@ -2893,30 +2916,37 @@ ActionExecutionMetadata::ActionExecutionMetadata(
   _impl_.dispatched_ = (cached_has_bits & 0x00000002u) ? ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(
                               arena, *from._impl_.dispatched_)
                         : nullptr;
-  _impl_.workerstart_ = (cached_has_bits & 0x00000004u) ? ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(
-                              arena, *from._impl_.workerstart_)
+  _impl_.worker_start_ = (cached_has_bits & 0x00000004u) ? ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(
+                              arena, *from._impl_.worker_start_)
                         : nullptr;
-  _impl_.workercompleted_ = (cached_has_bits & 0x00000008u) ? ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(
-                              arena, *from._impl_.workercompleted_)
+  _impl_.worker_completed_ = (cached_has_bits & 0x00000008u) ? ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(
+                              arena, *from._impl_.worker_completed_)
                         : nullptr;
-  _impl_.executionstart_ = (cached_has_bits & 0x00000010u) ? ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(
-                              arena, *from._impl_.executionstart_)
+  _impl_.execution_start_ = (cached_has_bits & 0x00000010u) ? ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(
+                              arena, *from._impl_.execution_start_)
                         : nullptr;
-  _impl_.executioncompleted_ = (cached_has_bits & 0x00000020u) ? ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(
-                              arena, *from._impl_.executioncompleted_)
+  _impl_.execution_completed_ = (cached_has_bits & 0x00000020u) ? ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(
+                              arena, *from._impl_.execution_completed_)
                         : nullptr;
-  _impl_.executionduration_ = (cached_has_bits & 0x00000040u) ? ::google::protobuf::Message::CopyConstruct<::google::protobuf::Duration>(
-                              arena, *from._impl_.executionduration_)
+  _impl_.execution_duration_ = (cached_has_bits & 0x00000040u) ? ::google::protobuf::Message::CopyConstruct<::google::protobuf::Duration>(
+                              arena, *from._impl_.execution_duration_)
                         : nullptr;
-  _impl_.outputuploadstart_ = (cached_has_bits & 0x00000080u) ? ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(
-                              arena, *from._impl_.outputuploadstart_)
+  _impl_.execution_user_time_ = (cached_has_bits & 0x00000080u) ? ::google::protobuf::Message::CopyConstruct<::google::protobuf::Duration>(
+                              arena, *from._impl_.execution_user_time_)
                         : nullptr;
-  _impl_.outputuploadcompleted_ = (cached_has_bits & 0x00000100u) ? ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(
-                              arena, *from._impl_.outputuploadcompleted_)
+  _impl_.execution_system_time_ = (cached_has_bits & 0x00000100u) ? ::google::protobuf::Message::CopyConstruct<::google::protobuf::Duration>(
+                              arena, *from._impl_.execution_system_time_)
                         : nullptr;
-  _impl_.completed_ = (cached_has_bits & 0x00000200u) ? ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(
+  _impl_.output_upload_start_ = (cached_has_bits & 0x00000200u) ? ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(
+                              arena, *from._impl_.output_upload_start_)
+                        : nullptr;
+  _impl_.output_upload_completed_ = (cached_has_bits & 0x00000400u) ? ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(
+                              arena, *from._impl_.output_upload_completed_)
+                        : nullptr;
+  _impl_.completed_ = (cached_has_bits & 0x00000800u) ? ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(
                               arena, *from._impl_.completed_)
                         : nullptr;
+  _impl_.execution_max_rss_ = from._impl_.execution_max_rss_;
 
   // @@protoc_insertion_point(copy_constructor:llbuild3.ActionExecutionMetadata)
 }
@@ -2924,7 +2954,7 @@ inline PROTOBUF_NDEBUG_INLINE ActionExecutionMetadata::Impl_::Impl_(
     ::google::protobuf::internal::InternalVisibility visibility,
     ::google::protobuf::Arena* arena)
       : _cached_size_{0},
-        additionaldata_{visibility, arena},
+        additional_data_{visibility, arena},
         worker_(arena) {}
 
 inline void ActionExecutionMetadata::SharedCtor(::_pb::Arena* arena) {
@@ -2932,9 +2962,9 @@ inline void ActionExecutionMetadata::SharedCtor(::_pb::Arena* arena) {
   ::memset(reinterpret_cast<char *>(&_impl_) +
                offsetof(Impl_, queued_),
            0,
-           offsetof(Impl_, completed_) -
+           offsetof(Impl_, execution_max_rss_) -
                offsetof(Impl_, queued_) +
-               sizeof(Impl_::completed_));
+               sizeof(Impl_::execution_max_rss_));
 }
 ActionExecutionMetadata::~ActionExecutionMetadata() {
   // @@protoc_insertion_point(destructor:llbuild3.ActionExecutionMetadata)
@@ -2946,13 +2976,15 @@ inline void ActionExecutionMetadata::SharedDtor() {
   _impl_.worker_.Destroy();
   delete _impl_.queued_;
   delete _impl_.dispatched_;
-  delete _impl_.workerstart_;
-  delete _impl_.workercompleted_;
-  delete _impl_.executionstart_;
-  delete _impl_.executioncompleted_;
-  delete _impl_.executionduration_;
-  delete _impl_.outputuploadstart_;
-  delete _impl_.outputuploadcompleted_;
+  delete _impl_.worker_start_;
+  delete _impl_.worker_completed_;
+  delete _impl_.execution_start_;
+  delete _impl_.execution_completed_;
+  delete _impl_.execution_duration_;
+  delete _impl_.execution_user_time_;
+  delete _impl_.execution_system_time_;
+  delete _impl_.output_upload_start_;
+  delete _impl_.output_upload_completed_;
   delete _impl_.completed_;
   _impl_.~Impl_();
 }
@@ -2978,16 +3010,16 @@ ActionExecutionMetadata::GetClassData() const {
   return _data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<4, 12, 11, 55, 2> ActionExecutionMetadata::_table_ = {
+const ::_pbi::TcParseTable<4, 15, 13, 55, 2> ActionExecutionMetadata::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_._has_bits_),
     0, // no _extensions_
-    12, 120,  // max_field_number, fast_idx_mask
+    15, 120,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294963200,  // skipmap
+    4294934528,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    12,  // num_field_entries
-    11,  // num_aux_entries
+    15,  // num_field_entries
+    13,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     &_ActionExecutionMetadata_default_instance_._instance,
     nullptr,  // post_loop_handler
@@ -3006,36 +3038,42 @@ const ::_pbi::TcParseTable<4, 12, 11, 55, 2> ActionExecutionMetadata::_table_ = 
     // .google.protobuf.Timestamp dispatched = 3;
     {::_pbi::TcParser::FastMtS1,
      {26, 1, 1, PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.dispatched_)}},
-    // .google.protobuf.Timestamp workerStart = 4;
+    // .google.protobuf.Timestamp worker_start = 4;
     {::_pbi::TcParser::FastMtS1,
-     {34, 2, 2, PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.workerstart_)}},
-    // .google.protobuf.Timestamp workerCompleted = 5;
+     {34, 2, 2, PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.worker_start_)}},
+    // .google.protobuf.Timestamp worker_completed = 5;
     {::_pbi::TcParser::FastMtS1,
-     {42, 3, 3, PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.workercompleted_)}},
-    // .google.protobuf.Timestamp executionStart = 6;
+     {42, 3, 3, PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.worker_completed_)}},
+    // .google.protobuf.Timestamp execution_start = 6;
     {::_pbi::TcParser::FastMtS1,
-     {50, 4, 4, PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.executionstart_)}},
-    // .google.protobuf.Timestamp executionCompleted = 7;
+     {50, 4, 4, PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.execution_start_)}},
+    // .google.protobuf.Timestamp execution_completed = 7;
     {::_pbi::TcParser::FastMtS1,
-     {58, 5, 5, PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.executioncompleted_)}},
-    // .google.protobuf.Duration executionDuration = 8;
+     {58, 5, 5, PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.execution_completed_)}},
+    // .google.protobuf.Duration execution_duration = 8;
     {::_pbi::TcParser::FastMtS1,
-     {66, 6, 6, PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.executionduration_)}},
-    // .google.protobuf.Timestamp outputUploadStart = 9;
+     {66, 6, 6, PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.execution_duration_)}},
+    // .google.protobuf.Duration execution_user_time = 9;
     {::_pbi::TcParser::FastMtS1,
-     {74, 7, 7, PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.outputuploadstart_)}},
-    // .google.protobuf.Timestamp outputUploadCompleted = 10;
+     {74, 7, 7, PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.execution_user_time_)}},
+    // .google.protobuf.Duration execution_system_time = 10;
     {::_pbi::TcParser::FastMtS1,
-     {82, 8, 8, PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.outputuploadcompleted_)}},
-    // .google.protobuf.Timestamp completed = 11;
+     {82, 8, 8, PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.execution_system_time_)}},
+    // uint64 execution_max_rss = 11;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(ActionExecutionMetadata, _impl_.execution_max_rss_), 63>(),
+     {88, 63, 0, PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.execution_max_rss_)}},
+    // .google.protobuf.Timestamp output_upload_start = 12;
     {::_pbi::TcParser::FastMtS1,
-     {90, 9, 9, PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.completed_)}},
-    // repeated .google.protobuf.Any additionalData = 12;
+     {98, 9, 9, PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.output_upload_start_)}},
+    // .google.protobuf.Timestamp output_upload_completed = 13;
+    {::_pbi::TcParser::FastMtS1,
+     {106, 10, 10, PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.output_upload_completed_)}},
+    // .google.protobuf.Timestamp completed = 14;
+    {::_pbi::TcParser::FastMtS1,
+     {114, 11, 11, PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.completed_)}},
+    // repeated .google.protobuf.Any additional_data = 15;
     {::_pbi::TcParser::FastMtR1,
-     {98, 63, 10, PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.additionaldata_)}},
-    {::_pbi::TcParser::MiniParse, {}},
-    {::_pbi::TcParser::MiniParse, {}},
-    {::_pbi::TcParser::MiniParse, {}},
+     {122, 63, 12, PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.additional_data_)}},
   }}, {{
     65535, 65535
   }}, {{
@@ -3048,32 +3086,41 @@ const ::_pbi::TcParseTable<4, 12, 11, 55, 2> ActionExecutionMetadata::_table_ = 
     // .google.protobuf.Timestamp dispatched = 3;
     {PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.dispatched_), _Internal::kHasBitsOffset + 1, 1,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .google.protobuf.Timestamp workerStart = 4;
-    {PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.workerstart_), _Internal::kHasBitsOffset + 2, 2,
+    // .google.protobuf.Timestamp worker_start = 4;
+    {PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.worker_start_), _Internal::kHasBitsOffset + 2, 2,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .google.protobuf.Timestamp workerCompleted = 5;
-    {PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.workercompleted_), _Internal::kHasBitsOffset + 3, 3,
+    // .google.protobuf.Timestamp worker_completed = 5;
+    {PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.worker_completed_), _Internal::kHasBitsOffset + 3, 3,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .google.protobuf.Timestamp executionStart = 6;
-    {PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.executionstart_), _Internal::kHasBitsOffset + 4, 4,
+    // .google.protobuf.Timestamp execution_start = 6;
+    {PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.execution_start_), _Internal::kHasBitsOffset + 4, 4,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .google.protobuf.Timestamp executionCompleted = 7;
-    {PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.executioncompleted_), _Internal::kHasBitsOffset + 5, 5,
+    // .google.protobuf.Timestamp execution_completed = 7;
+    {PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.execution_completed_), _Internal::kHasBitsOffset + 5, 5,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .google.protobuf.Duration executionDuration = 8;
-    {PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.executionduration_), _Internal::kHasBitsOffset + 6, 6,
+    // .google.protobuf.Duration execution_duration = 8;
+    {PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.execution_duration_), _Internal::kHasBitsOffset + 6, 6,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .google.protobuf.Timestamp outputUploadStart = 9;
-    {PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.outputuploadstart_), _Internal::kHasBitsOffset + 7, 7,
+    // .google.protobuf.Duration execution_user_time = 9;
+    {PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.execution_user_time_), _Internal::kHasBitsOffset + 7, 7,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .google.protobuf.Timestamp outputUploadCompleted = 10;
-    {PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.outputuploadcompleted_), _Internal::kHasBitsOffset + 8, 8,
+    // .google.protobuf.Duration execution_system_time = 10;
+    {PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.execution_system_time_), _Internal::kHasBitsOffset + 8, 8,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // .google.protobuf.Timestamp completed = 11;
-    {PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.completed_), _Internal::kHasBitsOffset + 9, 9,
+    // uint64 execution_max_rss = 11;
+    {PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.execution_max_rss_), -1, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUInt64)},
+    // .google.protobuf.Timestamp output_upload_start = 12;
+    {PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.output_upload_start_), _Internal::kHasBitsOffset + 9, 9,
     (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
-    // repeated .google.protobuf.Any additionalData = 12;
-    {PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.additionaldata_), -1, 10,
+    // .google.protobuf.Timestamp output_upload_completed = 13;
+    {PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.output_upload_completed_), _Internal::kHasBitsOffset + 10, 10,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    // .google.protobuf.Timestamp completed = 14;
+    {PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.completed_), _Internal::kHasBitsOffset + 11, 11,
+    (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    // repeated .google.protobuf.Any additional_data = 15;
+    {PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.additional_data_), -1, 12,
     (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }}, {{
     {::_pbi::TcParser::GetTable<::google::protobuf::Timestamp>()},
@@ -3082,6 +3129,8 @@ const ::_pbi::TcParseTable<4, 12, 11, 55, 2> ActionExecutionMetadata::_table_ = 
     {::_pbi::TcParser::GetTable<::google::protobuf::Timestamp>()},
     {::_pbi::TcParser::GetTable<::google::protobuf::Timestamp>()},
     {::_pbi::TcParser::GetTable<::google::protobuf::Timestamp>()},
+    {::_pbi::TcParser::GetTable<::google::protobuf::Duration>()},
+    {::_pbi::TcParser::GetTable<::google::protobuf::Duration>()},
     {::_pbi::TcParser::GetTable<::google::protobuf::Duration>()},
     {::_pbi::TcParser::GetTable<::google::protobuf::Timestamp>()},
     {::_pbi::TcParser::GetTable<::google::protobuf::Timestamp>()},
@@ -3101,7 +3150,7 @@ PROTOBUF_NOINLINE void ActionExecutionMetadata::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.additionaldata_.Clear();
+  _impl_.additional_data_.Clear();
   _impl_.worker_.ClearToEmpty();
   cached_has_bits = _impl_._has_bits_[0];
   if (cached_has_bits & 0x000000ffu) {
@@ -3114,40 +3163,49 @@ PROTOBUF_NOINLINE void ActionExecutionMetadata::Clear() {
       _impl_.dispatched_->Clear();
     }
     if (cached_has_bits & 0x00000004u) {
-      ABSL_DCHECK(_impl_.workerstart_ != nullptr);
-      _impl_.workerstart_->Clear();
+      ABSL_DCHECK(_impl_.worker_start_ != nullptr);
+      _impl_.worker_start_->Clear();
     }
     if (cached_has_bits & 0x00000008u) {
-      ABSL_DCHECK(_impl_.workercompleted_ != nullptr);
-      _impl_.workercompleted_->Clear();
+      ABSL_DCHECK(_impl_.worker_completed_ != nullptr);
+      _impl_.worker_completed_->Clear();
     }
     if (cached_has_bits & 0x00000010u) {
-      ABSL_DCHECK(_impl_.executionstart_ != nullptr);
-      _impl_.executionstart_->Clear();
+      ABSL_DCHECK(_impl_.execution_start_ != nullptr);
+      _impl_.execution_start_->Clear();
     }
     if (cached_has_bits & 0x00000020u) {
-      ABSL_DCHECK(_impl_.executioncompleted_ != nullptr);
-      _impl_.executioncompleted_->Clear();
+      ABSL_DCHECK(_impl_.execution_completed_ != nullptr);
+      _impl_.execution_completed_->Clear();
     }
     if (cached_has_bits & 0x00000040u) {
-      ABSL_DCHECK(_impl_.executionduration_ != nullptr);
-      _impl_.executionduration_->Clear();
+      ABSL_DCHECK(_impl_.execution_duration_ != nullptr);
+      _impl_.execution_duration_->Clear();
     }
     if (cached_has_bits & 0x00000080u) {
-      ABSL_DCHECK(_impl_.outputuploadstart_ != nullptr);
-      _impl_.outputuploadstart_->Clear();
+      ABSL_DCHECK(_impl_.execution_user_time_ != nullptr);
+      _impl_.execution_user_time_->Clear();
     }
   }
-  if (cached_has_bits & 0x00000300u) {
+  if (cached_has_bits & 0x00000f00u) {
     if (cached_has_bits & 0x00000100u) {
-      ABSL_DCHECK(_impl_.outputuploadcompleted_ != nullptr);
-      _impl_.outputuploadcompleted_->Clear();
+      ABSL_DCHECK(_impl_.execution_system_time_ != nullptr);
+      _impl_.execution_system_time_->Clear();
     }
     if (cached_has_bits & 0x00000200u) {
+      ABSL_DCHECK(_impl_.output_upload_start_ != nullptr);
+      _impl_.output_upload_start_->Clear();
+    }
+    if (cached_has_bits & 0x00000400u) {
+      ABSL_DCHECK(_impl_.output_upload_completed_ != nullptr);
+      _impl_.output_upload_completed_->Clear();
+    }
+    if (cached_has_bits & 0x00000800u) {
       ABSL_DCHECK(_impl_.completed_ != nullptr);
       _impl_.completed_->Clear();
     }
   }
+  _impl_.execution_max_rss_ = ::uint64_t{0u};
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
@@ -3180,62 +3238,81 @@ PROTOBUF_NOINLINE void ActionExecutionMetadata::Clear() {
         3, *_impl_.dispatched_, _impl_.dispatched_->GetCachedSize(), target, stream);
   }
 
-  // .google.protobuf.Timestamp workerStart = 4;
+  // .google.protobuf.Timestamp worker_start = 4;
   if (cached_has_bits & 0x00000004u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        4, *_impl_.workerstart_, _impl_.workerstart_->GetCachedSize(), target, stream);
+        4, *_impl_.worker_start_, _impl_.worker_start_->GetCachedSize(), target, stream);
   }
 
-  // .google.protobuf.Timestamp workerCompleted = 5;
+  // .google.protobuf.Timestamp worker_completed = 5;
   if (cached_has_bits & 0x00000008u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        5, *_impl_.workercompleted_, _impl_.workercompleted_->GetCachedSize(), target, stream);
+        5, *_impl_.worker_completed_, _impl_.worker_completed_->GetCachedSize(), target, stream);
   }
 
-  // .google.protobuf.Timestamp executionStart = 6;
+  // .google.protobuf.Timestamp execution_start = 6;
   if (cached_has_bits & 0x00000010u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        6, *_impl_.executionstart_, _impl_.executionstart_->GetCachedSize(), target, stream);
+        6, *_impl_.execution_start_, _impl_.execution_start_->GetCachedSize(), target, stream);
   }
 
-  // .google.protobuf.Timestamp executionCompleted = 7;
+  // .google.protobuf.Timestamp execution_completed = 7;
   if (cached_has_bits & 0x00000020u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        7, *_impl_.executioncompleted_, _impl_.executioncompleted_->GetCachedSize(), target, stream);
+        7, *_impl_.execution_completed_, _impl_.execution_completed_->GetCachedSize(), target, stream);
   }
 
-  // .google.protobuf.Duration executionDuration = 8;
+  // .google.protobuf.Duration execution_duration = 8;
   if (cached_has_bits & 0x00000040u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        8, *_impl_.executionduration_, _impl_.executionduration_->GetCachedSize(), target, stream);
+        8, *_impl_.execution_duration_, _impl_.execution_duration_->GetCachedSize(), target, stream);
   }
 
-  // .google.protobuf.Timestamp outputUploadStart = 9;
+  // .google.protobuf.Duration execution_user_time = 9;
   if (cached_has_bits & 0x00000080u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        9, *_impl_.outputuploadstart_, _impl_.outputuploadstart_->GetCachedSize(), target, stream);
+        9, *_impl_.execution_user_time_, _impl_.execution_user_time_->GetCachedSize(), target, stream);
   }
 
-  // .google.protobuf.Timestamp outputUploadCompleted = 10;
+  // .google.protobuf.Duration execution_system_time = 10;
   if (cached_has_bits & 0x00000100u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        10, *_impl_.outputuploadcompleted_, _impl_.outputuploadcompleted_->GetCachedSize(), target, stream);
+        10, *_impl_.execution_system_time_, _impl_.execution_system_time_->GetCachedSize(), target, stream);
   }
 
-  // .google.protobuf.Timestamp completed = 11;
+  // uint64 execution_max_rss = 11;
+  if (this->_internal_execution_max_rss() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteUInt64ToArray(
+        11, this->_internal_execution_max_rss(), target);
+  }
+
+  // .google.protobuf.Timestamp output_upload_start = 12;
   if (cached_has_bits & 0x00000200u) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-        11, *_impl_.completed_, _impl_.completed_->GetCachedSize(), target, stream);
+        12, *_impl_.output_upload_start_, _impl_.output_upload_start_->GetCachedSize(), target, stream);
   }
 
-  // repeated .google.protobuf.Any additionalData = 12;
+  // .google.protobuf.Timestamp output_upload_completed = 13;
+  if (cached_has_bits & 0x00000400u) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        13, *_impl_.output_upload_completed_, _impl_.output_upload_completed_->GetCachedSize(), target, stream);
+  }
+
+  // .google.protobuf.Timestamp completed = 14;
+  if (cached_has_bits & 0x00000800u) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        14, *_impl_.completed_, _impl_.completed_->GetCachedSize(), target, stream);
+  }
+
+  // repeated .google.protobuf.Any additional_data = 15;
   for (unsigned i = 0, n = static_cast<unsigned>(
-                           this->_internal_additionaldata_size());
+                           this->_internal_additional_data_size());
        i < n; i++) {
-    const auto& repfield = this->_internal_additionaldata().Get(i);
+    const auto& repfield = this->_internal_additional_data().Get(i);
     target =
         ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
-            12, repfield, repfield.GetCachedSize(),
+            15, repfield, repfield.GetCachedSize(),
             target, stream);
   }
 
@@ -3257,9 +3334,9 @@ PROTOBUF_NOINLINE void ActionExecutionMetadata::Clear() {
   (void) cached_has_bits;
 
   ::_pbi::Prefetch5LinesFrom7Lines(reinterpret_cast<const void*>(this));
-  // repeated .google.protobuf.Any additionalData = 12;
-  total_size += 1UL * this->_internal_additionaldata_size();
-  for (const auto& msg : this->_internal_additionaldata()) {
+  // repeated .google.protobuf.Any additional_data = 15;
+  total_size += 1UL * this->_internal_additional_data_size();
+  for (const auto& msg : this->_internal_additional_data()) {
     total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
   }
   // string worker = 1;
@@ -3282,57 +3359,75 @@ PROTOBUF_NOINLINE void ActionExecutionMetadata::Clear() {
           1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.dispatched_);
     }
 
-    // .google.protobuf.Timestamp workerStart = 4;
+    // .google.protobuf.Timestamp worker_start = 4;
     if (cached_has_bits & 0x00000004u) {
       total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.workerstart_);
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.worker_start_);
     }
 
-    // .google.protobuf.Timestamp workerCompleted = 5;
+    // .google.protobuf.Timestamp worker_completed = 5;
     if (cached_has_bits & 0x00000008u) {
       total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.workercompleted_);
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.worker_completed_);
     }
 
-    // .google.protobuf.Timestamp executionStart = 6;
+    // .google.protobuf.Timestamp execution_start = 6;
     if (cached_has_bits & 0x00000010u) {
       total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.executionstart_);
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.execution_start_);
     }
 
-    // .google.protobuf.Timestamp executionCompleted = 7;
+    // .google.protobuf.Timestamp execution_completed = 7;
     if (cached_has_bits & 0x00000020u) {
       total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.executioncompleted_);
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.execution_completed_);
     }
 
-    // .google.protobuf.Duration executionDuration = 8;
+    // .google.protobuf.Duration execution_duration = 8;
     if (cached_has_bits & 0x00000040u) {
       total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.executionduration_);
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.execution_duration_);
     }
 
-    // .google.protobuf.Timestamp outputUploadStart = 9;
+    // .google.protobuf.Duration execution_user_time = 9;
     if (cached_has_bits & 0x00000080u) {
       total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.outputuploadstart_);
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.execution_user_time_);
     }
 
   }
-  if (cached_has_bits & 0x00000300u) {
-    // .google.protobuf.Timestamp outputUploadCompleted = 10;
+  if (cached_has_bits & 0x00000f00u) {
+    // .google.protobuf.Duration execution_system_time = 10;
     if (cached_has_bits & 0x00000100u) {
       total_size +=
-          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.outputuploadcompleted_);
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.execution_system_time_);
     }
 
-    // .google.protobuf.Timestamp completed = 11;
+    // .google.protobuf.Timestamp output_upload_start = 12;
     if (cached_has_bits & 0x00000200u) {
+      total_size +=
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.output_upload_start_);
+    }
+
+    // .google.protobuf.Timestamp output_upload_completed = 13;
+    if (cached_has_bits & 0x00000400u) {
+      total_size +=
+          1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.output_upload_completed_);
+    }
+
+    // .google.protobuf.Timestamp completed = 14;
+    if (cached_has_bits & 0x00000800u) {
       total_size +=
           1 + ::google::protobuf::internal::WireFormatLite::MessageSize(*_impl_.completed_);
     }
 
   }
+  // uint64 execution_max_rss = 11;
+  if (this->_internal_execution_max_rss() != 0) {
+    total_size += ::_pbi::WireFormatLite::UInt64SizePlusOne(
+        this->_internal_execution_max_rss());
+  }
+
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
@@ -3346,8 +3441,8 @@ void ActionExecutionMetadata::MergeImpl(::google::protobuf::MessageLite& to_msg,
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  _this->_internal_mutable_additionaldata()->MergeFrom(
-      from._internal_additionaldata());
+  _this->_internal_mutable_additional_data()->MergeFrom(
+      from._internal_additional_data());
   if (!from._internal_worker().empty()) {
     _this->_internal_set_worker(from._internal_worker());
   }
@@ -3372,71 +3467,89 @@ void ActionExecutionMetadata::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (cached_has_bits & 0x00000004u) {
-      ABSL_DCHECK(from._impl_.workerstart_ != nullptr);
-      if (_this->_impl_.workerstart_ == nullptr) {
-        _this->_impl_.workerstart_ =
-            ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(arena, *from._impl_.workerstart_);
+      ABSL_DCHECK(from._impl_.worker_start_ != nullptr);
+      if (_this->_impl_.worker_start_ == nullptr) {
+        _this->_impl_.worker_start_ =
+            ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(arena, *from._impl_.worker_start_);
       } else {
-        _this->_impl_.workerstart_->MergeFrom(*from._impl_.workerstart_);
+        _this->_impl_.worker_start_->MergeFrom(*from._impl_.worker_start_);
       }
     }
     if (cached_has_bits & 0x00000008u) {
-      ABSL_DCHECK(from._impl_.workercompleted_ != nullptr);
-      if (_this->_impl_.workercompleted_ == nullptr) {
-        _this->_impl_.workercompleted_ =
-            ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(arena, *from._impl_.workercompleted_);
+      ABSL_DCHECK(from._impl_.worker_completed_ != nullptr);
+      if (_this->_impl_.worker_completed_ == nullptr) {
+        _this->_impl_.worker_completed_ =
+            ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(arena, *from._impl_.worker_completed_);
       } else {
-        _this->_impl_.workercompleted_->MergeFrom(*from._impl_.workercompleted_);
+        _this->_impl_.worker_completed_->MergeFrom(*from._impl_.worker_completed_);
       }
     }
     if (cached_has_bits & 0x00000010u) {
-      ABSL_DCHECK(from._impl_.executionstart_ != nullptr);
-      if (_this->_impl_.executionstart_ == nullptr) {
-        _this->_impl_.executionstart_ =
-            ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(arena, *from._impl_.executionstart_);
+      ABSL_DCHECK(from._impl_.execution_start_ != nullptr);
+      if (_this->_impl_.execution_start_ == nullptr) {
+        _this->_impl_.execution_start_ =
+            ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(arena, *from._impl_.execution_start_);
       } else {
-        _this->_impl_.executionstart_->MergeFrom(*from._impl_.executionstart_);
+        _this->_impl_.execution_start_->MergeFrom(*from._impl_.execution_start_);
       }
     }
     if (cached_has_bits & 0x00000020u) {
-      ABSL_DCHECK(from._impl_.executioncompleted_ != nullptr);
-      if (_this->_impl_.executioncompleted_ == nullptr) {
-        _this->_impl_.executioncompleted_ =
-            ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(arena, *from._impl_.executioncompleted_);
+      ABSL_DCHECK(from._impl_.execution_completed_ != nullptr);
+      if (_this->_impl_.execution_completed_ == nullptr) {
+        _this->_impl_.execution_completed_ =
+            ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(arena, *from._impl_.execution_completed_);
       } else {
-        _this->_impl_.executioncompleted_->MergeFrom(*from._impl_.executioncompleted_);
+        _this->_impl_.execution_completed_->MergeFrom(*from._impl_.execution_completed_);
       }
     }
     if (cached_has_bits & 0x00000040u) {
-      ABSL_DCHECK(from._impl_.executionduration_ != nullptr);
-      if (_this->_impl_.executionduration_ == nullptr) {
-        _this->_impl_.executionduration_ =
-            ::google::protobuf::Message::CopyConstruct<::google::protobuf::Duration>(arena, *from._impl_.executionduration_);
+      ABSL_DCHECK(from._impl_.execution_duration_ != nullptr);
+      if (_this->_impl_.execution_duration_ == nullptr) {
+        _this->_impl_.execution_duration_ =
+            ::google::protobuf::Message::CopyConstruct<::google::protobuf::Duration>(arena, *from._impl_.execution_duration_);
       } else {
-        _this->_impl_.executionduration_->MergeFrom(*from._impl_.executionduration_);
+        _this->_impl_.execution_duration_->MergeFrom(*from._impl_.execution_duration_);
       }
     }
     if (cached_has_bits & 0x00000080u) {
-      ABSL_DCHECK(from._impl_.outputuploadstart_ != nullptr);
-      if (_this->_impl_.outputuploadstart_ == nullptr) {
-        _this->_impl_.outputuploadstart_ =
-            ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(arena, *from._impl_.outputuploadstart_);
+      ABSL_DCHECK(from._impl_.execution_user_time_ != nullptr);
+      if (_this->_impl_.execution_user_time_ == nullptr) {
+        _this->_impl_.execution_user_time_ =
+            ::google::protobuf::Message::CopyConstruct<::google::protobuf::Duration>(arena, *from._impl_.execution_user_time_);
       } else {
-        _this->_impl_.outputuploadstart_->MergeFrom(*from._impl_.outputuploadstart_);
+        _this->_impl_.execution_user_time_->MergeFrom(*from._impl_.execution_user_time_);
       }
     }
   }
-  if (cached_has_bits & 0x00000300u) {
+  if (cached_has_bits & 0x00000f00u) {
     if (cached_has_bits & 0x00000100u) {
-      ABSL_DCHECK(from._impl_.outputuploadcompleted_ != nullptr);
-      if (_this->_impl_.outputuploadcompleted_ == nullptr) {
-        _this->_impl_.outputuploadcompleted_ =
-            ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(arena, *from._impl_.outputuploadcompleted_);
+      ABSL_DCHECK(from._impl_.execution_system_time_ != nullptr);
+      if (_this->_impl_.execution_system_time_ == nullptr) {
+        _this->_impl_.execution_system_time_ =
+            ::google::protobuf::Message::CopyConstruct<::google::protobuf::Duration>(arena, *from._impl_.execution_system_time_);
       } else {
-        _this->_impl_.outputuploadcompleted_->MergeFrom(*from._impl_.outputuploadcompleted_);
+        _this->_impl_.execution_system_time_->MergeFrom(*from._impl_.execution_system_time_);
       }
     }
     if (cached_has_bits & 0x00000200u) {
+      ABSL_DCHECK(from._impl_.output_upload_start_ != nullptr);
+      if (_this->_impl_.output_upload_start_ == nullptr) {
+        _this->_impl_.output_upload_start_ =
+            ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(arena, *from._impl_.output_upload_start_);
+      } else {
+        _this->_impl_.output_upload_start_->MergeFrom(*from._impl_.output_upload_start_);
+      }
+    }
+    if (cached_has_bits & 0x00000400u) {
+      ABSL_DCHECK(from._impl_.output_upload_completed_ != nullptr);
+      if (_this->_impl_.output_upload_completed_ == nullptr) {
+        _this->_impl_.output_upload_completed_ =
+            ::google::protobuf::Message::CopyConstruct<::google::protobuf::Timestamp>(arena, *from._impl_.output_upload_completed_);
+      } else {
+        _this->_impl_.output_upload_completed_->MergeFrom(*from._impl_.output_upload_completed_);
+      }
+    }
+    if (cached_has_bits & 0x00000800u) {
       ABSL_DCHECK(from._impl_.completed_ != nullptr);
       if (_this->_impl_.completed_ == nullptr) {
         _this->_impl_.completed_ =
@@ -3445,6 +3558,9 @@ void ActionExecutionMetadata::MergeImpl(::google::protobuf::MessageLite& to_msg,
         _this->_impl_.completed_->MergeFrom(*from._impl_.completed_);
       }
     }
+  }
+  if (from._internal_execution_max_rss() != 0) {
+    _this->_impl_.execution_max_rss_ = from._impl_.execution_max_rss_;
   }
   _this->_impl_._has_bits_[0] |= cached_has_bits;
   _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
@@ -3464,11 +3580,11 @@ void ActionExecutionMetadata::InternalSwap(ActionExecutionMetadata* PROTOBUF_RES
   ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  _impl_.additionaldata_.InternalSwap(&other->_impl_.additionaldata_);
+  _impl_.additional_data_.InternalSwap(&other->_impl_.additional_data_);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.worker_, &other->_impl_.worker_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.completed_)
-      + sizeof(ActionExecutionMetadata::_impl_.completed_)
+      PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.execution_max_rss_)
+      + sizeof(ActionExecutionMetadata::_impl_.execution_max_rss_)
       - PROTOBUF_FIELD_OFFSET(ActionExecutionMetadata, _impl_.queued_)>(
           reinterpret_cast<char*>(&_impl_.queued_),
           reinterpret_cast<char*>(&other->_impl_.queued_));

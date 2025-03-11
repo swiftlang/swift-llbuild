@@ -31,13 +31,13 @@ class CASDatabase {
 public:
   virtual ~CASDatabase();
 
-  virtual void contains(const CASObjectID& casid, std::function<void(result<bool, Error>)> resultHandler) = 0;
+  virtual void contains(const CASID& casid, std::function<void(result<bool, Error>)> resultHandler) = 0;
 
-  virtual void get(const CASObjectID& casid, std::function<void(result<CASObject, Error>)> resultHandler) = 0;
+  virtual void get(const CASID& casid, std::function<void(result<CASObject, Error>)> resultHandler) = 0;
 
-  virtual void put(const CASObject& object, std::function<void(result<CASObjectID, Error>)> resultHandler) = 0;
+  virtual void put(const CASObject& object, std::function<void(result<CASID, Error>)> resultHandler) = 0;
 
-  virtual CASObjectID identify(const CASObject& object) = 0;
+  virtual CASID identify(const CASObject& object) = 0;
 
   virtual void* __raw_context();
 };
@@ -51,14 +51,17 @@ public:
   InMemoryCASDatabase() { }
   ~InMemoryCASDatabase();
 
-  void contains(const CASObjectID& casid, std::function<void(result<bool, Error>)> resultHandler);
+  void contains(const CASID& casid, std::function<void(result<bool, Error>)> resultHandler);
 
-  void get(const CASObjectID& casid, std::function<void(result<CASObject, Error>)> resultHandler);
+  void get(const CASID& casid, std::function<void(result<CASObject, Error>)> resultHandler);
 
-  void put(const CASObject& object, std::function<void(result<CASObjectID, Error>)> resultHandler);
+  void put(const CASObject& object, std::function<void(result<CASID, Error>)> resultHandler);
 
-  CASObjectID identify(const CASObject& object);
+  CASID identify(const CASObject& object);
 };
+
+std::string CASIDAsCanonicalString(const CASID& objID);
+void ParseCanonicalCASIDString(CASID& objID, const std::string& str);
 
 }
 

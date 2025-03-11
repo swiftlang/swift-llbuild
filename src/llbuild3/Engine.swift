@@ -270,7 +270,7 @@ public extension TTask {
 }
 
 public extension TTaskInputs {
-  func getSubprocessResult(_ idx: Int) throws -> TSubprocessResult {
+  func getActionResult(_ idx: Int) throws -> TActionResult {
     guard idx >= 0, inputs.count > idx else {
       throw TClientError.indexOutOfBounds
     }
@@ -283,7 +283,20 @@ public extension TTaskInputs {
       throw TClientError.badInputType
     }
 
-    guard case .subprocess(let sres) = res.actionResultValue else {
+    return res
+  }
+
+  func getActionCASResult(_ idx: Int) throws -> TCASID {
+    let ares = try getActionResult(idx)
+    guard case .casObject(let obj) = ares.actionResultValue else {
+      throw TClientError.badActionResult
+    }
+    return obj
+  }
+
+  func getSubprocessResult(_ idx: Int) throws -> TSubprocessResult {
+    let ares = try getActionResult(idx)
+    guard case .subprocess(let sres) = ares.actionResultValue else {
       throw TClientError.badActionResult
     }
 
@@ -662,42 +675,10 @@ extension TEngineConfig {
   }
 }
 
-public class TExecutor {
-  let executor: llbuild3.ActionExecutorRef
-
-  convenience public init(casDB: TCASDatabase, actionCache: TActionCache? = nil, sandboxProvider: TLocalSandboxProvider) {
-    let tcas = llbuild3.makeExtCASDatabase(casDB.extCASDatabase)
-    let lsp = llbuild3.makeExtLocalSandboxProvider(sandboxProvider.extLocalSandboxProvider)
-
-    let tcache: llbuild3.ActionCacheRef
-    if let cache = actionCache {
-      tcache = llbuild3.makeExtActionCache(cache.extActionCache())
-    } else {
-      tcache = llbuild3.ActionCacheRef()
-    }
-
-    self.init(casDB: tcas, actionCache: tcache, sandboxProvider: lsp)
-  }
-
-  convenience public init(casDB: llbuild3.CASDatabaseRef, actionCache: llbuild3.ActionCacheRef? = nil, sandboxProvider: TLocalSandboxProvider) {
-    let lsp = llbuild3.makeExtLocalSandboxProvider(sandboxProvider.extLocalSandboxProvider)
-
-    let tcache = actionCache ?? llbuild3.ActionCacheRef()
-    self.init(casDB: casDB, actionCache: tcache, sandboxProvider: lsp)
-  }
-
-  public init(casDB: llbuild3.CASDatabaseRef, actionCache: llbuild3.ActionCacheRef, sandboxProvider: llbuild3.LocalSandboxProviderRef) {
-    let execlocal = llbuild3.makeLocalExecutor(sandboxProvider)
-    let execremote = llbuild3.makeRemoteExecutor()
-
-    executor = llbuild3.makeActionExecutor(casDB, actionCache, execlocal, execremote)
-  }
-}
-
 public class TEngine {
   private var eng: llbuild3.EngineRef
 
-  convenience public init (config: TEngineConfig = TEngineConfig(), casDB: TCASDatabase, actionCache: TActionCache? = nil, executor: TExecutor, baseRuleProvider: TRuleProvider) throws {
+  convenience public init (config: TEngineConfig = TEngineConfig(), casDB: TCASDatabase, actionCache: TActionCache? = nil, executor: TExecutor, logger: TLogger? = nil, clientContext: TClientContext? = nil, baseRuleProvider: TRuleProvider) throws {
     let tcas = llbuild3.makeExtCASDatabase(casDB.extCASDatabase)
 
     let tcache: llbuild3.ActionCacheRef
@@ -707,16 +688,50 @@ public class TEngine {
       tcache = llbuild3.ActionCacheRef()
     }
 
-    try self.init(config: config, casDB: tcas, actionCache: tcache, executor: executor.executor, baseRuleProvider: baseRuleProvider)
+    let tlogger: llbuild3.LoggerRef
+    if let logger = logger {
+      tlogger = llbuild3.makeExtLogger(logger.extLogger)
+    } else {
+      tlogger = llbuild3.LoggerRef()
+    }
+
+    let tclientcontext: llbuild3.ClientContextRef
+    if let clientContext = clientContext {
+      let ctx = Unmanaged.passRetained(clientContext as AnyObject).toOpaque()
+      tclientcontext = llbuild3.makeExtClientContext(ctx, { ctx in
+        _ = Unmanaged<AnyObject>.fromOpaque(ctx!).takeRetainedValue()
+      })
+    } else {
+      tclientcontext = llbuild3.ClientContextRef()
+    }
+
+    try self.init(config: config, casDB: tcas, actionCache: tcache, executor: executor.executor, logger: tlogger, clientContext: tclientcontext, baseRuleProvider: baseRuleProvider)
   }
 
-  convenience public init (config: TEngineConfig = TEngineConfig(), casDB: llbuild3.CASDatabaseRef, actionCache: llbuild3.ActionCacheRef = llbuild3.ActionCacheRef(), executor: TExecutor, baseRuleProvider: TRuleProvider) throws {
-    try self.init(config: config, casDB: casDB, actionCache: actionCache, executor: executor.executor, baseRuleProvider: baseRuleProvider)
+  convenience public init (config: TEngineConfig = TEngineConfig(), casDB: llbuild3.CASDatabaseRef, actionCache: llbuild3.ActionCacheRef = llbuild3.ActionCacheRef(), executor: TExecutor, logger: TLogger? = nil, clientContext: TClientContext? = nil, baseRuleProvider: TRuleProvider) throws {
+    let tlogger: llbuild3.LoggerRef
+    if let logger = logger {
+      tlogger = llbuild3.makeExtLogger(logger.extLogger)
+    } else {
+      tlogger = llbuild3.LoggerRef()
+    }
+
+    let tclientcontext: llbuild3.ClientContextRef
+    if let clientContext = clientContext {
+      let ctx = Unmanaged.passRetained(clientContext as AnyObject).toOpaque()
+      tclientcontext = llbuild3.makeExtClientContext(ctx, { ctx in
+        _ = Unmanaged<AnyObject>.fromOpaque(ctx!).takeRetainedValue()
+      })
+    } else {
+      tclientcontext = llbuild3.ClientContextRef()
+    }
+
+    try self.init(config: config, casDB: casDB, actionCache: actionCache, executor: executor.executor, logger: tlogger, clientContext: tclientcontext, baseRuleProvider: baseRuleProvider)
   }
 
-  init (config: TEngineConfig = TEngineConfig(), casDB: llbuild3.CASDatabaseRef, actionCache: llbuild3.ActionCacheRef, executor: llbuild3.ActionExecutorRef, baseRuleProvider: TRuleProvider) throws {
+  init (config: TEngineConfig = TEngineConfig(), casDB: llbuild3.CASDatabaseRef, actionCache: llbuild3.ActionCacheRef, executor: llbuild3.ActionExecutorRef, logger: llbuild3.LoggerRef, clientContext: llbuild3.ClientContextRef, baseRuleProvider: TRuleProvider) throws {
 
-    eng = llbuild3.makeEngine(try config.extEngineConfig(), casDB, actionCache, executor, baseRuleProvider.extRuleProvider)
+    eng = llbuild3.makeEngine(try config.extEngineConfig(), casDB, actionCache, executor, logger, clientContext, baseRuleProvider.extRuleProvider)
   }
 
 
