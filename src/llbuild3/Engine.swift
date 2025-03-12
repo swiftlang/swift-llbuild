@@ -773,4 +773,8 @@ public class TEngine {
       })
     }
   }
+
+  public func stats() throws -> [TStat] {
+    return try eng.stats().map { try TStat(serializedBytes: $0) }
+  }
 }
