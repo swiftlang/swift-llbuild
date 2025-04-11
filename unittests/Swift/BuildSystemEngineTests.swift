@@ -22,7 +22,7 @@ import llbuildTestSupport
 import WinSDK
 #endif
 
-#if os(Windows) || os(FreeBSD)
+#if os(Windows) || os(OpenBSD) || os(FreeBSD)
 fileprivate let NSEC_PER_SEC = 1000000000
 #endif
 

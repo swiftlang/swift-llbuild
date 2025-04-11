@@ -28,7 +28,7 @@ let terminfoLibraries: [LinkerSetting] = {
     if !useTerminfo {
         return []
     }
-#if os(FreeBSD)
+#if os(FreeBSD) || os(OpenBSD)
     return [.linkedLibrary("ncurses")]
 #else
     return [.linkedLibrary("ncurses", .when(platforms: [.linux, .macOS]))]
@@ -335,18 +335,7 @@ package.targets.first { $0.name == "llbuildBasic" }?.linkerSettings = [
 // FIXME: when the SupportedPlatforms availability directive is updated and
 // the platform port is in sync with this directive, these conditions can
 // be folded up with .when(platforms:_) clauses.
-#if os(OpenBSD)
-if let target = package.targets.first(where: { $0.name == "llbuildCore"}) {
-    target.cSettings = [.unsafeFlags(["-I/usr/local/include"])]
-    target.linkerSettings = [
-        .linkedLibrary("sqlite3"),
-        .unsafeFlags(["-L/usr/local/lib"])
-    ]
-}
-#elseif os(FreeBSD)
-if let target = package.targets.first(where: { $0.name == "llvmSupport" }) {
-    target.linkerSettings = ["execinfo", "m", "pthread", "ncurses"].map { .linkedLibrary($0) }
-}
+#if os(FreeBSD) || os(OpenBSD)
 package.targets.filter({ $0.name == "llbuildCore" || $0.name == "llbuildCoreTests" }).forEach {
     $0.cSettings = [.unsafeFlags(["-I/usr/local/include"])]
     $0.linkerSettings = [
@@ -354,6 +343,15 @@ package.targets.filter({ $0.name == "llbuildCore" || $0.name == "llbuildCoreTest
         .unsafeFlags(["-L/usr/local/lib"])
     ]
 
+}
+#endif
+#if os(OpenBSD)
+if let target = package.targets.first(where: { $0.name == "llvmSupport" }) {
+    target.linkerSettings = ["execinfo", "ncurses"].map { .linkedLibrary($0) }
+}
+#elseif os(FreeBSD)
+if let target = package.targets.first(where: { $0.name == "llvmSupport" }) {
+    target.linkerSettings = ["execinfo", "m", "pthread", "ncurses"].map { .linkedLibrary($0) }
 }
 package.targets.filter({ $0.name == "llbuild" || $0.name == "swift-build-tool" }).forEach {
     $0.linkerSettings = [.linkedLibrary("dl"), .linkedLibrary("pthread")]
