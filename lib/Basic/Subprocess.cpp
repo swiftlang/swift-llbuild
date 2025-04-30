@@ -39,6 +39,7 @@
 #include <psapi.h>
 #include <windows.h>
 #else
+#include <grp.h>
 #include <spawn.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
@@ -48,34 +49,309 @@
 #ifdef __APPLE__
 #include <pthread/spawn.h>
 #include "TargetConditionals.h"
-#if !TARGET_OS_IPHONE
-extern "C" {
-  // Provided by System.framework's libsystem_kernel interface
-  extern int __pthread_chdir(const char *path);
-  extern int __pthread_fchdir(int fd);
-}
-
-/// Set the thread specific working directory to the given path.
-int pthread_chdir_np(const char *path)
-{
-  return __pthread_chdir(path);
-}
-
-/// Set the thread specific working directory to that of the given file
-/// descriptor. Passing -1 clears the thread specific working directory,
-/// returning it to the process level working directory.
-int pthread_fchdir_np(int fd)
-{
-  return __pthread_fchdir(fd);
-}
-#endif
 #endif
 
 #ifndef __GLIBC_PREREQ
 #define __GLIBC_PREREQ(maj, min) 0
 #endif
 
+#ifndef _WIN32
+/// MARK: BEGIN: DUPLICATED FROM swiftlang/swift-subprocess
+#define _subprocess_precondition(__cond) do { \
+int eval = (__cond); \
+if (!eval) { \
+__builtin_trap(); \
+} \
+} while(0)
+
+#if __DARWIN_NSIG
+#  define _SUBPROCESS_SIG_MAX __DARWIN_NSIG
+#else
+#  define _SUBPROCESS_SIG_MAX 32
+#endif
+
+static pthread_mutex_t _subprocess_fork_lock = PTHREAD_MUTEX_INITIALIZER;
+
+// Used after fork, before exec
+static int _subprocess_block_everything_but_something_went_seriously_wrong_signals(sigset_t *old_mask) {
+  sigset_t mask;
+  int r = 0;
+  r |= sigfillset(&mask);
+  r |= sigdelset(&mask, SIGABRT);
+  r |= sigdelset(&mask, SIGBUS);
+  r |= sigdelset(&mask, SIGFPE);
+  r |= sigdelset(&mask, SIGILL);
+  r |= sigdelset(&mask, SIGKILL);
+  r |= sigdelset(&mask, SIGSEGV);
+  r |= sigdelset(&mask, SIGSTOP);
+  r |= sigdelset(&mask, SIGSYS);
+  r |= sigdelset(&mask, SIGTRAP);
+
+  r |= pthread_sigmask(SIG_BLOCK, &mask, old_mask);
+  return r;
+}
+
+static int _subprocess_fork_exec(
+  pid_t * _Nonnull pid,
+  const char * _Nonnull exec_path,
+  const char * _Nullable working_directory,
+  const int file_descriptors[_Nonnull],
+  char * _Nullable const args[_Nonnull],
+  char * _Nullable const env[_Nullable],
+  uid_t * _Nullable uid,
+  gid_t * _Nullable gid,
+  gid_t * _Nullable process_group_id,
+  int number_of_sgroups, const gid_t * _Nullable sgroups,
+  int create_session,
+  void (* _Nullable configurator)(void)
+) {
+#define write_error_and_exit int error = errno; \
+write(pipefd[1], &error, sizeof(error));\
+close(pipefd[1]); \
+_exit(EXIT_FAILURE)
+
+  // Setup pipe to catch exec failures from child
+  int pipefd[2];
+  if (pipe(pipefd) != 0) {
+    return errno;
+  }
+  // Set FD_CLOEXEC so the pipe is automatically closed when exec succeeds
+  short flags = fcntl(pipefd[0], F_GETFD);
+  if (flags == -1) {
+    close(pipefd[0]);
+    close(pipefd[1]);
+    return errno;
+  }
+  flags |= FD_CLOEXEC;
+  if (fcntl(pipefd[0], F_SETFD, flags) == -1) {
+    close(pipefd[0]);
+    close(pipefd[1]);
+    return errno;
+  }
+
+  flags = fcntl(pipefd[1], F_GETFD);
+  if (flags == -1) {
+    close(pipefd[0]);
+    close(pipefd[1]);
+    return errno;
+  }
+  flags |= FD_CLOEXEC;
+  if (fcntl(pipefd[1], F_SETFD, flags) == -1) {
+    close(pipefd[0]);
+    close(pipefd[1]);
+    return errno;
+  }
+
+  // Protect the signal masking below
+  // Note that we only unlock in parent since child
+  // will be exec'd anyway
+  int rc = pthread_mutex_lock(&_subprocess_fork_lock);
+  _subprocess_precondition(rc == 0);
+  // Block all signals on this thread
+  sigset_t old_sigmask;
+  rc = _subprocess_block_everything_but_something_went_seriously_wrong_signals(&old_sigmask);
+  if (rc != 0) {
+    close(pipefd[0]);
+    close(pipefd[1]);
+    return errno;
+  }
+
+  // Finally, fork
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated"
+  pid_t childPid = fork();
+#pragma GCC diagnostic pop
+  if (childPid < 0) {
+    // Fork failed
+    close(pipefd[0]);
+    close(pipefd[1]);
+    return errno;
+  }
+
+  if (childPid == 0) {
+    // Child process
+    close(pipefd[0]);  // Close unused read end
+
+    // Reset signal handlers
+    for (int signo = 1; signo < _SUBPROCESS_SIG_MAX; signo++) {
+      if (signo == SIGKILL || signo == SIGSTOP) {
+        continue;
+      }
+      void (*err_ptr)(int) = signal(signo, SIG_DFL);
+      if (err_ptr != SIG_ERR) {
+        continue;
+      }
+
+      if (errno == EINVAL) {
+        break; // probably too high of a signal
+      }
+
+      write_error_and_exit;
+    }
+
+    // Reset signal mask
+    sigset_t sigset = { 0 };
+    sigemptyset(&sigset);
+    int rc = sigprocmask(SIG_SETMASK, &sigset, NULL) != 0;
+    if (rc != 0) {
+      write_error_and_exit;
+    }
+
+    // Perform setups
+    if (working_directory != NULL) {
+      if (chdir(working_directory) != 0) {
+        write_error_and_exit;
+      }
+    }
+
+    if (uid != NULL) {
+      if (setuid(*uid) != 0) {
+        write_error_and_exit;
+      }
+    }
+
+    if (gid != NULL) {
+      if (setgid(*gid) != 0) {
+        write_error_and_exit;
+      }
+    }
+
+    if (number_of_sgroups > 0 && sgroups != NULL) {
+      if (setgroups(number_of_sgroups, sgroups) != 0) {
+        write_error_and_exit;
+      }
+    }
+
+    if (create_session != 0) {
+      (void)setsid();
+    }
+
+    if (process_group_id != NULL) {
+      (void)setpgid(0, *process_group_id);
+    }
+#if 1 // extra llbuild-specific handling not copied from swiftlang/swift-subprocess
+    if (file_descriptors[5] >= 0) {
+      int nullfd = open("/dev/null", O_RDONLY, 0);
+      if (nullfd < 0) {
+        write_error_and_exit;
+      }
+      if (nullfd != STDIN_FILENO) {
+        if (dup2(nullfd, STDIN_FILENO) < 0) {
+          write_error_and_exit;
+        }
+        if (close(nullfd) != 0) {
+          write_error_and_exit;
+        }
+      }
+    }
+#endif
+    // Bind stdin, stdout, and stderr
+    if (file_descriptors[0] >= 0) {
+      rc = dup2(file_descriptors[0], STDIN_FILENO);
+      if (rc < 0) {
+        write_error_and_exit;
+      }
+    }
+    if (file_descriptors[2] >= 0) {
+      rc = dup2(file_descriptors[2], STDOUT_FILENO);
+      if (rc < 0) {
+        write_error_and_exit;
+      }
+    }
+    if (file_descriptors[4] >= 0) {
+      rc = dup2(file_descriptors[4], STDERR_FILENO);
+      if (rc < 0) {
+        int error = errno;
+        write(pipefd[1], &error, sizeof(error));
+        close(pipefd[1]);
+        _exit(EXIT_FAILURE);
+      }
+    }
+    // Close parent side
+    if (file_descriptors[1] >= 0) {
+      rc = close(file_descriptors[1]);
+    }
+    if (file_descriptors[3] >= 0) {
+      rc = close(file_descriptors[3]);
+    }
+    if (file_descriptors[4] >= 0) {
+      rc = close(file_descriptors[4]);
+    }
+#if 1 // extra llbuild-specific handling not copied from swiftlang/swift-subprocess
+    if (file_descriptors[6] >= 0) {
+      if (dup2(file_descriptors[6], file_descriptors[6]) < 0) {
+        write_error_and_exit;
+      }
+    }
+#endif
+    if (rc != 0) {
+      int error = errno;
+      write(pipefd[1], &error, sizeof(error));
+      close(pipefd[1]);
+      _exit(EXIT_FAILURE);
+    }
+    // Run custom configuratior
+    if (configurator != NULL) {
+      configurator();
+    }
+    // Finally, exec
+    execve(exec_path, args, env);
+    // If we reached this point, something went wrong
+    write_error_and_exit;
+  } else {
+    // Parent process
+    close(pipefd[1]);  // Close unused write end
+
+    // Restore old signmask
+    rc = pthread_sigmask(SIG_SETMASK, &old_sigmask, NULL);
+    if (rc != 0) {
+      close(pipefd[0]);
+      return errno;
+    }
+
+    // Unlock
+    rc = pthread_mutex_unlock(&_subprocess_fork_lock);
+    _subprocess_precondition(rc == 0);
+
+    // Communicate child pid back
+    *pid = childPid;
+    // Read from the pipe until pipe is closed
+    // either due to exec succeeds or error is written
+    while (1) {
+      int childError = 0;
+      ssize_t read_rc = read(pipefd[0], &childError, sizeof(childError));
+      if (read_rc == 0) {
+        // exec worked!
+        close(pipefd[0]);
+        return 0;
+      } else if (read_rc > 0) {
+        // Child exec failed and reported back
+        close(pipefd[0]);
+        return childError;
+      } else {
+        // Read failed
+        if (errno == EINTR) {
+          continue;
+        } else {
+          close(pipefd[0]);
+          return errno;
+        }
+      }
+    }
+  }
+}
+/// MARK: END: DUPLICATED FROM swiftlang/swift-subprocess
+#endif
+
 #if !defined(_WIN32) && defined(HAVE_POSIX_SPAWN)
+static bool posix_spawn_file_actions_addchdir_supported() {
+#if (defined(__GLIBC__) && !__GLIBC_PREREQ(2, 29)) || (defined(__OpenBSD__)) || (defined(__ANDROID__) && __ANDROID_API__ < 34) || (defined(__QNX__))
+    return false;
+#else
+    return true;
+#endif
+}
+
 // Implementation mostly copied from _CFPosixSpawnFileActionsChdir in swift-corelibs-foundation
 static int posix_spawn_file_actions_addchdir_polyfill(posix_spawn_file_actions_t * __restrict file_actions,
                                                       const char * __restrict path) {
@@ -775,11 +1051,16 @@ void llbuild::basic::spawnProcess(
   posix_spawn_file_actions_t fileActions;
   posix_spawn_file_actions_init(&fileActions);
 
-  bool usePosixSpawnChdirFallback = true;
   const auto workingDir = attr.workingDir.str();
-  if (!workingDir.empty() &&
-      posix_spawn_file_actions_addchdir_polyfill(&fileActions, workingDir.c_str()) != ENOSYS) {
-    usePosixSpawnChdirFallback = false;
+  if (!workingDir.empty()
+      && posix_spawn_file_actions_addchdir_supported()
+      && posix_spawn_file_actions_addchdir_polyfill(&fileActions, workingDir.c_str()) != 0) {
+    auto result = ProcessResult::makeFailed();
+    delegate.processStarted(ctx, handle, pid);
+    delegate.processHadError(ctx, handle, Twine("failed to set the working directory"));
+    delegate.processFinished(ctx, handle, result);
+    completionFn(result);
+    return;
   }
 
 #endif
@@ -865,36 +1146,6 @@ void llbuild::basic::spawnProcess(
 
       int result = 0;
 
-      bool workingDirectoryUnsupported = false;
-
-#if !defined(_WIN32)
-      if (usePosixSpawnChdirFallback) {
-#if defined(__APPLE__)
-        thread_local std::string threadWorkingDir;
-
-        if (workingDir.empty()) {
-          if (!threadWorkingDir.empty()) {
-            pthread_fchdir_np(-1);
-            threadWorkingDir.clear();
-          }
-        } else {
-          if (threadWorkingDir != workingDir) {
-            if (pthread_chdir_np(workingDir.c_str()) == -1) {
-              result = errno;
-            } else {
-              threadWorkingDir = workingDir;
-            }
-          }
-        }
-#else
-        if (!workingDir.empty()) {
-          workingDirectoryUnsupported = true;
-          result = -1;
-        }
-#endif // if defined(__APPLE__)
-      }
-#endif // else !defined(_WIN32)
-
       if (result == 0) {
 #if defined(_WIN32)
         auto unicodeEnv = environment.getWindowsEnvp();
@@ -909,10 +1160,28 @@ void llbuild::basic::spawnProcess(
                                                   : (LPWSTR)u16Cwd.data(),
             &startupInfo, &processInfo);
 #else
-        result =
+        // For platforms missing posix_spawn_file_actions_addchdir{_np}, we need to fork in order to thread-safely set the wd
+        if (!workingDir.empty()
+            && !posix_spawn_file_actions_addchdir_supported()) {
+          int fileDescriptors[] = {
+            attr.connectToConsole ? STDIN_FILENO : -1,
+            -1,
+            attr.connectToConsole ? STDOUT_FILENO : outputPipeChildEnd.unsafeDescriptor(),
+            -1,
+            attr.connectToConsole ? STDERR_FILENO : outputPipeChildEnd.unsafeDescriptor(),
+
+            // extra fd to dup
+            attr.connectToConsole ? 0 : -1,
+            attr.controlEnabled ? controlPipeChildEnd.unsafeDescriptor() : -1,
+          };
+          gid_t pgid = 0;
+          result = _subprocess_fork_exec(&pid, args[0], workingDir.c_str(), fileDescriptors, const_cast<char**>(args.data()), const_cast<char* const*>(environment.getEnvp()), nullptr, nullptr, !attr.connectToConsole ? &pgid : nullptr, 0, nullptr, 0, nullptr);
+        } else {
+          result =
             posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
                         /*attrp=*/&attributes, const_cast<char**>(args.data()),
                         const_cast<char* const*>(environment.getEnvp()));
+        }
 #endif
       }
     
@@ -925,10 +1194,7 @@ void llbuild::basic::spawnProcess(
 #endif
         delegate.processHadError(
             ctx, handle,
-            workingDirectoryUnsupported
-                ? Twine("working-directory unsupported on this platform")
-                : Twine("unable to spawn process '") + argsStorage[0] + "' (" + sys::strerror(result) +
-                      ")");
+            Twine("unable to spawn process '") + argsStorage[0] + "' (" + sys::strerror(result) + ")");
         delegate.processFinished(ctx, handle, processResult);
         pid = (llbuild_pid_t)-1;
       } else {
