@@ -48,27 +48,6 @@
 #ifdef __APPLE__
 #include <pthread/spawn.h>
 #include "TargetConditionals.h"
-#if !TARGET_OS_IPHONE
-extern "C" {
-  // Provided by System.framework's libsystem_kernel interface
-  extern int __pthread_chdir(const char *path);
-  extern int __pthread_fchdir(int fd);
-}
-
-/// Set the thread specific working directory to the given path.
-int pthread_chdir_np(const char *path)
-{
-  return __pthread_chdir(path);
-}
-
-/// Set the thread specific working directory to that of the given file
-/// descriptor. Passing -1 clears the thread specific working directory,
-/// returning it to the process level working directory.
-int pthread_fchdir_np(int fd)
-{
-  return __pthread_fchdir(fd);
-}
-#endif
 #endif
 
 #ifndef __GLIBC_PREREQ
@@ -76,6 +55,14 @@ int pthread_fchdir_np(int fd)
 #endif
 
 #if !defined(_WIN32) && defined(HAVE_POSIX_SPAWN)
+static bool posix_spawn_file_actions_addchdir_supported() {
+#if (defined(__GLIBC__) && !__GLIBC_PREREQ(2, 29)) || defined(__OpenBSD__) || defined(__QNX__)
+    return false;
+#else
+    return false;
+#endif
+}
+
 // Implementation mostly copied from _CFPosixSpawnFileActionsChdir in swift-corelibs-foundation
 static int posix_spawn_file_actions_addchdir(posix_spawn_file_actions_t * __restrict file_actions,
                                              const char * __restrict path) {
@@ -92,6 +79,7 @@ static int posix_spawn_file_actions_addchdir(posix_spawn_file_actions_t * __rest
 #elif defined(__OpenBSD__)
   // Currently missing as of:
   //  - OpenBSD 7.5 (April 2024)
+  //  - QNX 8 (December 2023)
   return ENOSYS;
 #elif defined(__GLIBC__) || defined(__APPLE__) || defined(__FreeBSD__) || (defined(__ANDROID__) && __ANDROID_API__ >= 34) || defined(__musl__)
   // Pre-standard posix_spawn_file_actions_addchdir_np version available in:
@@ -106,8 +94,7 @@ static int posix_spawn_file_actions_addchdir(posix_spawn_file_actions_t * __rest
   // Standardized posix_spawn_file_actions_addchdir version (POSIX.1-2024, June 2024) available in:
   //  - Solaris 11.4 (August 2018)
   //  - NetBSD 10.0 (March 2024)
-  //  - QNX 8 (December 2023)
-  return posix_spawn_file_actions_addchdir((posix_spawn_file_actions_t *)file_actions, path);
+  return ::posix_spawn_file_actions_addchdir((posix_spawn_file_actions_t *)file_actions, path);
 #endif
 }
 #endif
@@ -776,11 +763,16 @@ void llbuild::basic::spawnProcess(
   posix_spawn_file_actions_t fileActions;
   posix_spawn_file_actions_init(&fileActions);
 
-  bool usePosixSpawnChdirFallback = true;
   const auto workingDir = attr.workingDir.str();
-  if (!workingDir.empty() &&
-      posix_spawn_file_actions_addchdir(&fileActions, workingDir.c_str()) != ENOSYS) {
-    usePosixSpawnChdirFallback = false;
+  if (!workingDir.empty()
+      && posix_spawn_file_actions_addchdir_supported()
+      && posix_spawn_file_actions_addchdir(&fileActions, workingDir.c_str()) != 0) {
+    auto result = ProcessResult::makeFailed();
+    delegate.processStarted(ctx, handle, pid);
+    delegate.processHadError(ctx, handle, Twine("failed to set the working directory"));
+    delegate.processFinished(ctx, handle, result);
+    completionFn(result);
+    return;
   }
 
 #endif
@@ -866,36 +858,6 @@ void llbuild::basic::spawnProcess(
 
       int result = 0;
 
-      bool workingDirectoryUnsupported = false;
-
-#if !defined(_WIN32)
-      if (usePosixSpawnChdirFallback) {
-#if defined(__APPLE__)
-        thread_local std::string threadWorkingDir;
-
-        if (workingDir.empty()) {
-          if (!threadWorkingDir.empty()) {
-            pthread_fchdir_np(-1);
-            threadWorkingDir.clear();
-          }
-        } else {
-          if (threadWorkingDir != workingDir) {
-            if (pthread_chdir_np(workingDir.c_str()) == -1) {
-              result = errno;
-            } else {
-              threadWorkingDir = workingDir;
-            }
-          }
-        }
-#else
-        if (!workingDir.empty()) {
-          workingDirectoryUnsupported = true;
-          result = -1;
-        }
-#endif // if defined(__APPLE__)
-      }
-#endif // else !defined(_WIN32)
-
       if (result == 0) {
 #if defined(_WIN32)
         auto unicodeEnv = environment.getWindowsEnvp();
@@ -910,10 +872,32 @@ void llbuild::basic::spawnProcess(
                                                   : (LPWSTR)u16Cwd.data(),
             &startupInfo, &processInfo);
 #else
-        result =
+        // For platforms missing posix_spawn_file_actions_addchdir{_np}, we need to fork in order to thread-safely set the wd
+        if (!workingDir.empty()
+            && !posix_spawn_file_actions_addchdir_supported()) {
+          pid_t childPid = fork();
+          switch (childPid) {
+            case -1:
+              // Fail
+              result = errno;
+              break;
+            case 0:
+              // Child
+              if (chdir(workingDir.c_str()) != 0) {
+                _exit(EXIT_FAILURE);
+              }
+              _exit(execve(args[0], const_cast<char**>(args.data()), const_cast<char* const*>(environment.getEnvp())));
+            default:
+              // Parent
+              pid = childPid;
+              break;
+          }
+        } else {
+          result =
             posix_spawn(&pid, args[0], /*file_actions=*/&fileActions,
                         /*attrp=*/&attributes, const_cast<char**>(args.data()),
                         const_cast<char* const*>(environment.getEnvp()));
+        }
 #endif
       }
     
@@ -926,10 +910,7 @@ void llbuild::basic::spawnProcess(
 #endif
         delegate.processHadError(
             ctx, handle,
-            workingDirectoryUnsupported
-                ? Twine("working-directory unsupported on this platform")
-                : Twine("unable to spawn process '") + argsStorage[0] + "' (" + sys::strerror(result) +
-                      ")");
+            Twine("unable to spawn process '") + argsStorage[0] + "' (" + sys::strerror(result) + ")");
         delegate.processFinished(ctx, handle, processResult);
         pid = (llbuild_pid_t)-1;
       } else {
