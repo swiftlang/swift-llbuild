@@ -77,8 +77,8 @@ int pthread_fchdir_np(int fd)
 
 #if !defined(_WIN32) && defined(HAVE_POSIX_SPAWN)
 // Implementation mostly copied from _CFPosixSpawnFileActionsChdir in swift-corelibs-foundation
-static int posix_spawn_file_actions_addchdir(posix_spawn_file_actions_t * __restrict file_actions,
-                                             const char * __restrict path) {
+static int posix_spawn_file_actions_addchdir_polyfill(posix_spawn_file_actions_t * __restrict file_actions,
+                                                      const char * __restrict path) {
 #if defined(__GLIBC__) && !__GLIBC_PREREQ(2, 29)
   // Glibc versions prior to 2.29 don't support posix_spawn_file_actions_addchdir_np, impacting:
   //  - Amazon Linux 2 (EoL mid-2025)
@@ -779,7 +779,7 @@ void llbuild::basic::spawnProcess(
   bool usePosixSpawnChdirFallback = true;
   const auto workingDir = attr.workingDir.str();
   if (!workingDir.empty() &&
-      posix_spawn_file_actions_addchdir(&fileActions, workingDir.c_str()) != ENOSYS) {
+      posix_spawn_file_actions_addchdir_polyfill(&fileActions, workingDir.c_str()) != ENOSYS) {
     usePosixSpawnChdirFallback = false;
   }
 
