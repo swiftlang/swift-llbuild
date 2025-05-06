@@ -131,7 +131,11 @@
 /* #undef HAVE_LSEEK64 */
 
 /* Define to 1 if you have the `mallctl' function. */
+#if defined(__FreeBSD__)
+#define HAVE_MALLCTL 1
+#else
 /* #undef HAVE_MALLCTL */
+#endif
 
 /* Define to 1 if you have the `mallinfo' function. */
 /* #undef HAVE_MALLINFO */
@@ -204,7 +208,13 @@
 #define HAVE_REALPATH 1
 
 /* Define to 1 if you have the `sbrk' function. */
+/* This is hard-coded to be not present on FreeBSD arm64, because
+   that platform has dropped support for this function. */
+#if defined(__FreeBSD__) && defined(__aarch64__)
+#undef HAVE_SBRK
+#else
 #define HAVE_SBRK 1
+#endif
 
 /* Define to 1 if you have the `setenv' function. */
 #define HAVE_SETENV 1
