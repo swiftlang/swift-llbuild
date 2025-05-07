@@ -102,6 +102,9 @@ static int posix_spawn_file_actions_addchdir_polyfill(posix_spawn_file_actions_t
   //  - FreeBSD 13.1 (May 2022)
   //  - Android 14 (October 2023)
   return posix_spawn_file_actions_addchdir_np((posix_spawn_file_actions_t *)file_actions, path);
+#elif defined(__ANDROID__)
+  //  - Android < 14
+  return ENOSYS;
 #else
   // Standardized posix_spawn_file_actions_addchdir version (POSIX.1-2024, June 2024) available in:
   //  - Solaris 11.4 (August 2018)
