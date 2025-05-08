@@ -102,7 +102,7 @@ static int posix_spawn_file_actions_addchdir_polyfill(posix_spawn_file_actions_t
   //  - FreeBSD 13.1 (May 2022)
   //  - Android 14 (October 2023)
   return posix_spawn_file_actions_addchdir_np((posix_spawn_file_actions_t *)file_actions, path);
-#elif defined(__ANDROID__)
+#elif defined(__ANDROID__) && __ANDROID_API__ < 34
   //  - Android < 14
   return ENOSYS;
 #else
