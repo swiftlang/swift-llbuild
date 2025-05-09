@@ -79,19 +79,18 @@ int pthread_fchdir_np(int fd)
 // Implementation mostly copied from _CFPosixSpawnFileActionsChdir in swift-corelibs-foundation
 static int posix_spawn_file_actions_addchdir_polyfill(posix_spawn_file_actions_t * __restrict file_actions,
                                                       const char * __restrict path) {
-#if defined(__GLIBC__) && !__GLIBC_PREREQ(2, 29)
+#if (defined(__GLIBC__) && !__GLIBC_PREREQ(2, 29)) || (defined(__OpenBSD__)) || (defined(__ANDROID__) && __ANDROID_API__ < 34)
   // Glibc versions prior to 2.29 don't support posix_spawn_file_actions_addchdir_np, impacting:
   //  - Amazon Linux 2 (EoL mid-2025)
+  // Currently missing as of:
+  //  - OpenBSD 7.5 (April 2024)
+  //  - Android <= 14
   return ENOSYS;
 #elif defined(__APPLE__) && defined(__MAC_OS_X_VERSION_MIN_REQUIRED) && __MAC_OS_X_VERSION_MIN_REQUIRED < 101500
   // Conditionally available on macOS if building with a deployment target older than 10.15
   if (__builtin_available(macOS 10.15, *)) {
     return posix_spawn_file_actions_addchdir_np(file_actions, path);
   }
-  return ENOSYS;
-#elif defined(__OpenBSD__)
-  // Currently missing as of:
-  //  - OpenBSD 7.5 (April 2024)
   return ENOSYS;
 #elif defined(__GLIBC__) || defined(__APPLE__) || defined(__FreeBSD__) || (defined(__ANDROID__) && __ANDROID_API__ >= 34) || defined(__musl__)
   // Pre-standard posix_spawn_file_actions_addchdir_np version available in:
@@ -102,9 +101,6 @@ static int posix_spawn_file_actions_addchdir_polyfill(posix_spawn_file_actions_t
   //  - FreeBSD 13.1 (May 2022)
   //  - Android 14 (October 2023)
   return posix_spawn_file_actions_addchdir_np((posix_spawn_file_actions_t *)file_actions, path);
-#elif defined(__ANDROID__) && __ANDROID_API__ < 34
-  //  - Android < 14
-  return ENOSYS;
 #else
   // Standardized posix_spawn_file_actions_addchdir version (POSIX.1-2024, June 2024) available in:
   //  - Solaris 11.4 (August 2018)
