@@ -50,7 +50,20 @@ endif()
 set(THREADS_PREFER_PTHREAD_FLAG FALSE)
 find_package(Threads REQUIRED)
 
-find_package(SQLite3 REQUIRED)
+find_package(SQLite3 QUIET)
+if(NOT SQLite3_FOUND)
+  include(FetchContent)
+
+  message("-- Vendoring SQLite3")
+  FetchContent_Declare(SQLite
+    GIT_REPOSITORY https://github.com/swiftlang/swift-toolchain-sqlite
+    GIT_TAG main)
+
+  FetchContent_MakeAvailable(SQLite)
+
+  add_library(SQLite::SQLite3 ALIAS SQLite3)
+  set_property(GLOBAL APPEND PROPERTY LLBuild_EXPORTS SQLite3)
+endif()
 
 # Include custom modules.
 include(Utility)
