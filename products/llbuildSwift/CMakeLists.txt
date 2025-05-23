@@ -43,9 +43,14 @@ if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
 else()
   target_link_libraries(llbuildSwift PRIVATE
     SQLite::SQLite3)
-  target_link_libraries(llbuildSwift PRIVATE
-    swiftDispatch
-    Foundation)
+  if(dispatch_FOUND)
+    target_link_libraries(llbuildSwift PRIVATE
+      swiftDispatch)
+  endif()
+  if(Foundation_FOUND)
+    target_link_libraries(llbuildSwift PRIVATE
+      Foundation)
+  endif()
   if(NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
     target_link_options(llbuildSwift PRIVATE "SHELL:-no-toolchain-stdlib-rpath")
     set_target_properties(llbuildSwift PROPERTIES
