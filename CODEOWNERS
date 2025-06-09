@@ -10,11 +10,19 @@
 
 # N: David M. Bryson
 # E: dmbryson@apple.com
-# D: Everything in llbuild not covered by someone else
+# D: Codeowner Emeritus, everything in llbuild through 2025
+
+# N: Jake Petroules
+# E: jake.petroules@apple.com
+# D: Primary Codeowner, everything in llbuild
+
+# N: Owen Voorhees
+# E: ovoorhees@apple.com
+# D: Primary Codeowner, everything in llbuild
 
 ###
 
 # The following lines are used by GitHub to automatically recommend reviewers.
 
-* @dmbryson
+* @dmbryson @jakepetroules @owenv
 
