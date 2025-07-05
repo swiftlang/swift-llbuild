@@ -55,7 +55,7 @@
 #define __GLIBC_PREREQ(maj, min) 0
 #endif
 
-#ifndef _WIN32
+#if !defined(_WIN32) && defined(HAVE_POSIX_SPAWN)
 /// MARK: BEGIN: DUPLICATED FROM swiftlang/swift-subprocess
 #define _subprocess_precondition(__cond) do { \
 int eval = (__cond); \
@@ -341,9 +341,7 @@ _exit(EXIT_FAILURE)
   }
 }
 /// MARK: END: DUPLICATED FROM swiftlang/swift-subprocess
-#endif
 
-#if !defined(_WIN32) && defined(HAVE_POSIX_SPAWN)
 static bool posix_spawn_file_actions_addchdir_supported() {
 #if (defined(__GLIBC__) && !__GLIBC_PREREQ(2, 29)) || (defined(__OpenBSD__)) || (defined(__ANDROID__) && __ANDROID_API__ < 34) || (defined(__QNX__))
     return false;
