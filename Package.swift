@@ -28,11 +28,7 @@ let terminfoLibraries: [LinkerSetting] = {
     if !useTerminfo {
         return []
     }
-#if os(FreeBSD) || os(OpenBSD)
-    return [.linkedLibrary("ncurses")]
-#else
-    return [.linkedLibrary("ncurses", .when(platforms: [.linux, .macOS]))]
-#endif
+    return [.linkedLibrary("ncurses", .when(platforms: [.linux, .macOS, .freeBSD, .openBSD]))]
 }()
 
 let package = Package(
@@ -277,47 +273,6 @@ if !isStaticBuild {
     ]
 }
 
-if ProcessInfo.processInfo.environment["SWIFTCI_USE_LOCAL_DEPS"] == nil {
-    package.dependencies += [
-        .package(url: "https://github.com/swiftlang/swift-toolchain-sqlite", from: "1.0.0"),
-    ]
-} else {
-    package.dependencies += [
-        .package(path: "../swift-toolchain-sqlite"),
-    ]
-}
-
-let llvmTargets: Set<String> = [
-    "libllbuild",
-    "llbuildCore",
-
-    "llvmDemangle",
-    "llvmSupport",
-
-    "llbuild",
-    "llbuildBasic",
-    "llbuildBuildSystem",
-    "llbuildCommands",
-    "llbuildNinja",
-
-    "llbuildBasicTests",
-    "llbuildBuildSystemTests",
-    "llbuildCoreTests",
-    "llbuildNinjaTests",
-
-    "swift-build-tool",
-]
-
-if !useTerminfo {
-    package.targets.filter({ llvmTargets.contains($0.name) }).forEach { target in
-        target.cxxSettings = (target.cxxSettings ?? []) + [
-            .define("LLBUILD_NO_TERMINFO"),
-        ]
-    }
-}
-
-// FIXME: Conditionalize these flags since SwiftPM 5.3 and earlier will crash for platforms they don't know about.
-#if os(Windows)
 package.targets.filter({ llvmTargets.contains($0.name) }).forEach { target in
     target.cxxSettings = (target.cxxSettings ?? []) + [
         .define("LLVM_ON_WIN32", .when(platforms: [.windows])),
@@ -330,30 +285,25 @@ package.targets.first { $0.name == "llbuildBasic" }?.linkerSettings = [
     .linkedLibrary("ShLwApi", .when(platforms: [.windows]))
 ]
 
-#endif
-
-// FIXME: when the SupportedPlatforms availability directive is updated and
-// the platform port is in sync with this directive, these conditions can
-// be folded up with .when(platforms:_) clauses.
-#if os(FreeBSD) || os(OpenBSD)
 package.targets.filter({ $0.name == "llbuildCore" || $0.name == "llbuildCoreTests" }).forEach {
-    $0.cSettings = [.unsafeFlags(["-I/usr/local/include"])]
+    $0.cSettings = [.unsafeFlags(["-I/usr/local/include"], .when(platforms: [.freeBSD, .openBSD]))]
     $0.linkerSettings = [
-        .linkedLibrary("sqlite3"),
-        .unsafeFlags(["-L/usr/local/lib"])
+        .linkedLibrary("sqlite3", .when(platforms: [.freeBSD, .openBSD])),
+        .unsafeFlags(["-L/usr/local/lib"], .when(platforms: [.freeBSD, .openBSD]))
     ]
 
 }
-#endif
-#if os(OpenBSD)
+
 if let target = package.targets.first(where: { $0.name == "llvmSupport" }) {
-    target.linkerSettings = ["execinfo", "ncurses"].map { .linkedLibrary($0) }
+    target.linkerSettings?.append(contentsOf: [.linkedLibrary("execinfo", .when(platforms: [.openBSD, .freeBSD])),
+                                               .linkedLibrary("ncurses", .when(platforms: [.openBSD, .freeBSD]))])
 }
-#elseif os(FreeBSD)
+
 if let target = package.targets.first(where: { $0.name == "llvmSupport" }) {
-    target.linkerSettings = ["execinfo", "m", "pthread", "ncurses"].map { .linkedLibrary($0) }
+    target.linkerSettings?.append(contentsOf: [.linkedLibrary("m", .when(platforms: [.freeBSD])),
+                                               .linkedLibrary("pthread", .when(platforms: [.freeBSD]))])
 }
 package.targets.filter({ $0.name == "llbuild" || $0.name == "swift-build-tool" }).forEach {
-    $0.linkerSettings = [.linkedLibrary("dl"), .linkedLibrary("pthread")]
+    $0.linkerSettings?.append(contentsOf: [.linkedLibrary("dl", .when(platforms: [.freeBSD])),
+                                            .linkedLibrary("pthread", .when(platforms: [.freeBSD]))])
 }
-#endif
