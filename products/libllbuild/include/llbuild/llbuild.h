@@ -30,7 +30,6 @@ LLBUILD_EXPORT int llb_get_api_version(void);
 
 // The BuildSystem component.
 #include "buildsystem.h"
-#endif
 
 // The Database component.
 #include "db.h"
@@ -39,3 +38,5 @@ LLBUILD_EXPORT int llb_get_api_version(void);
 #include "buildvalue.h"
 
 #include "ninja.h"
+
+#endif
