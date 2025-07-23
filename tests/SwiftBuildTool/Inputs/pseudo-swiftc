@@ -4,7 +4,7 @@
 import argparse
 import json
 import os
-import pipes
+import shlex
 import sys
 
 def main():
@@ -47,7 +47,7 @@ def main():
     
     # If run in show commands mode, print some dummy output.
     if args.show_commands:
-        print(' '.join(map(pipes.quote, [
+        print(' '.join(map(shlex.quote, [
             sys.argv[0], "-frontend", "...blablabla..."])))
         return
         
