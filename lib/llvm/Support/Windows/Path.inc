@@ -76,9 +76,19 @@ std::error_code widenPath(const Twine &Path8,
   SmallString<128> Path8Str;
   Path8.toVector(Path8Str);
 
+  // Early return for already prefixed paths
+  if (Path8Str.startswith("\\\\?\\")) {
+    return UTF8ToUTF16(Path8Str, Path16);
+  }
+
+  // Early return for short paths that won't need long path support
+  if (Path8Str.size() < MaxDirLen) {
+    return UTF8ToUTF16(Path8Str, Path16);
+  }
+
   // If we made this path absolute, how much longer would it get?
   size_t CurPathLen;
-  if (llvm::sys::path::is_absolute(Twine(Path8Str)))
+  if (llvm::sys::path::is_absolute(Path8Str))
     CurPathLen = 0; // No contribution from current_path needed.
   else {
     CurPathLen = ::GetCurrentDirectoryW(0, NULL);
@@ -87,8 +97,7 @@ std::error_code widenPath(const Twine &Path8,
   }
 
   // Would the absolute path be longer than our limit?
-  if ((Path8Str.size() + CurPathLen) >= MaxDirLen &&
-      !Path8Str.startswith("\\\\?\\")) {
+  if ((Path8Str.size() + CurPathLen) >= MaxDirLen) {
     SmallString<2*MAX_PATH> FullPath("\\\\?\\");
     if (CurPathLen) {
       SmallString<80> CurPath;
