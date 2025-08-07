@@ -34,7 +34,7 @@ if(Python3_Interpreter_FOUND AND LIT_FOUND AND FILECHECK_FOUND)
     --param build_mode=${build_mode})
 
   set(test_target_dependencies
-    llbuild libllbuild swift-build-tool UnitTests adjust-times)
+    llbuild-tool llbuild swift-build-tool UnitTests adjust-times)
 
   add_custom_target(test-llbuild
     COMMAND ${lit_command} ${CMAKE_CURRENT_BINARY_DIR}
