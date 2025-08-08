@@ -1,7 +1,7 @@
-add_executable(llbuild
+add_executable(llbuild-tool
   main.cpp)
 
-target_link_libraries(llbuild PRIVATE
+target_link_libraries(llbuild-tool PRIVATE
   llbuildCommands
   llbuildNinja
   llbuildBuildSystem
@@ -11,10 +11,13 @@ target_link_libraries(llbuild PRIVATE
   SQLite::SQLite3)
 
 if(CMAKE_SYSTEM_NAME STREQUAL Windows)
-    set_target_properties(llbuild PROPERTIES LINK_FLAGS "/INCREMENTAL:NO")
+    set_target_properties(llbuild-tool PROPERTIES LINK_FLAGS "/INCREMENTAL:NO")
 endif()
 
+set_target_properties(llbuild-tool PROPERTIES
+  OUTPUT_NAME llbuild)
+
 if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-  target_link_libraries(llbuild PRIVATE
+  target_link_libraries(llbuild-tool PRIVATE
     curses)
 endif()

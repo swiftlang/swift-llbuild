@@ -7,14 +7,13 @@ set(SOURCES
   BuildValue-C-API.cpp
   Ninja-C-API.cpp)
 
-add_llbuild_library(libllbuild
+add_llbuild_library(llbuild
   ${SOURCES}
-  STATIC
-  OUTPUT_NAME llbuild)
+  STATIC)
 
-set_property(TARGET libllbuild PROPERTY MACOSX_RPATH ON)
+set_property(TARGET llbuild PROPERTY MACOSX_RPATH ON)
 
-target_link_libraries(libllbuild PRIVATE
+target_link_libraries(llbuild PRIVATE
   llbuildBuildSystem
   llbuildCore
   llbuildBasic
@@ -23,15 +22,15 @@ target_link_libraries(libllbuild PRIVATE
   SQLite::SQLite3)
 
 if(CMAKE_SYSTEM_NAME STREQUAL Windows)
-    set_target_properties(libllbuild PROPERTIES LINK_FLAGS "/INCREMENTAL:NO")
+    set_target_properties(llbuild PROPERTIES LINK_FLAGS "/INCREMENTAL:NO")
 endif()
 
 if(NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
-  target_link_libraries(libllbuild PRIVATE
+  target_link_libraries(llbuild PRIVATE
     curses)
 endif()
 
-target_include_directories(libllbuild
+target_include_directories(llbuild
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
@@ -41,28 +40,28 @@ include_directories(BEFORE
 
 install(DIRECTORY include/
   DESTINATION include
-  COMPONENT libllbuild
+  COMPONENT llbuild
   FILES_MATCHING
   PATTERN "*.h")
 
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/
   DESTINATION include
-  COMPONENT libllbuild
+  COMPONENT llbuild
   FILES_MATCHING
   PATTERN "*.h")
 
-install(TARGETS libllbuild
+install(TARGETS llbuild
   ARCHIVE DESTINATION lib${LLBUILD_LIBDIR_SUFFIX}
   LIBRARY DESTINATION lib${LLBUILD_LIBDIR_SUFFIX}
   RUNTIME DESTINATION bin
-  COMPONENT libllbuild)
-set_property(GLOBAL APPEND PROPERTY LLBuild_EXPORTS libllbuild)
+  COMPONENT llbuild)
+set_property(GLOBAL APPEND PROPERTY LLBuild_EXPORTS llbuild)
 
-add_custom_target(install-libllbuild
-                  DEPENDS libllbuild
-                  COMMENT "Installing libllbuild..."
+add_custom_target(install-llbuild
+                  DEPENDS llbuild
+                  COMMENT "Installing llbuild..."
                   COMMAND "${CMAKE_COMMAND}"
-                          -DCMAKE_INSTALL_COMPONENT=libllbuild
+                          -DCMAKE_INSTALL_COMPONENT=llbuild
                           -P "${CMAKE_BINARY_DIR}/cmake_install.cmake")
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
