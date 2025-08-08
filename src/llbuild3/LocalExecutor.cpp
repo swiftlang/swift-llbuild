@@ -246,27 +246,47 @@ std::string formatWindowsCommandString(std::vector<std::string> args) {
 
 std::error_code checkExecutable(const std::filesystem::path& path) {
 
+#if defined(_WIN32)
+  llvm::SmallVector<wchar_t, MAX_PATH> wpath;
+  if (llvm::sys::path::widenPath(path.c_str(), wpath)) {
+    return std::make_error_code(std::errc::invalid_argument);
+  }
+  
+  DWORD attributes = GetFileAttributesW(wpath.data());
+  if (attributes == INVALID_FILE_ATTRIBUTES) {
+    DWORD err = GetLastError();
+    if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND) {
+      return std::make_error_code(std::errc::no_such_file_or_directory);
+    } else if (err == ERROR_ACCESS_DENIED) {
+      return std::make_error_code(std::errc::permission_denied);
+    } else {
+      return std::error_code(err, std::system_category());
+    }
+  }
+#else
   if (::access(path.c_str(), R_OK | X_OK) == -1) {
     return std::error_code(errno, std::generic_category());
   }
+#endif
 
   // Don't say that directories are executable.
 #if defined(_WIN32)
-  struct ::_stat buf;
+  WIN32_FILE_ATTRIBUTE_DATA fileData;
+  if (!GetFileAttributesExW(wpath.data(), GetFileExInfoStandard, &fileData)) {
+    return std::make_error_code(std::errc::permission_denied);
+  }
+  
+  if (fileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+    return std::make_error_code(std::errc::permission_denied);
 #else
   struct ::stat buf;
-#endif
-
-#if defined(_WIN32)
-  if (0 != ::_stat(path.c_str(), &buf)) {
-#else
   if (0 != ::stat(path.c_str(), &buf)) {
-#endif
     return std::make_error_code(std::errc::permission_denied);
   }
 
   if (!S_ISREG(buf.st_mode))
     return std::make_error_code(std::errc::permission_denied);
+#endif
 
   return std::error_code();
 }
