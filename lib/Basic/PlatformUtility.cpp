@@ -38,9 +38,10 @@ using namespace llbuild::basic;
 
 bool sys::chdir(const char *fileName) {
 #if defined(_WIN32)
-  llvm::SmallVector<llvm::UTF16, 20> wFileName;
-  llvm::convertUTF8ToUTF16String(fileName, wFileName);
-  return SetCurrentDirectoryW((LPCWSTR)wFileName.data());
+  llvm::SmallVector<wchar_t, MAX_PATH> wFileName;
+  if (llvm::sys::path::widenPath(fileName, wFileName))
+    return false;
+  return SetCurrentDirectoryW(wFileName.data());
 #else
   return ::chdir(fileName) == 0;
 #endif
@@ -63,10 +64,13 @@ time_t filetimeToTime_t(FILETIME ft) {
 
 int sys::lstat(const char *fileName, sys::StatStruct *buf) {
 #if defined(_WIN32)
-  llvm::SmallVector<llvm::UTF16, 20> wfilename;
-  llvm::convertUTF8ToUTF16String(fileName, wfilename);
+  llvm::SmallVector<wchar_t, MAX_PATH> wfilename;
+  if (llvm::sys::path::widenPath(fileName, wfilename)) {
+    errno = EINVAL;
+    return -1;
+  }
   HANDLE h = CreateFileW(
-      /*lpFileName=*/(LPCWSTR)wfilename.data(),
+      /*lpFileName=*/wfilename.data(),
       /*dwDesiredAccess=*/0,
       /*dwShareMode=*/FILE_SHARE_READ,
       /*lpSecurityAttributes=*/NULL,
@@ -123,7 +127,10 @@ int sys::lstat(const char *fileName, sys::StatStruct *buf) {
 
 bool sys::mkdir(const char* fileName) {
 #if defined(_WIN32)
-  return _mkdir(fileName) == 0;
+  llvm::SmallVector<wchar_t, MAX_PATH> wfilename;
+  if (llvm::sys::path::widenPath(fileName, wfilename))
+    return false;
+  return CreateDirectoryW(wfilename.data(), NULL) != 0;
 #else
   return ::mkdir(fileName, S_IRWXU | S_IRWXG |  S_IRWXO) == 0;
 #endif
@@ -164,7 +171,25 @@ int sys::read(int fileHandle, void *destinationBuffer,
 
 int sys::rmdir(const char *path) {
 #if defined(_WIN32)
-  return ::_rmdir(path);
+  llvm::SmallVector<wchar_t, MAX_PATH> wpath;
+  if (llvm::sys::path::widenPath(path, wpath)) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (RemoveDirectoryW(wpath.data())) {
+    return 0;
+  }
+  int err = GetLastError();
+  if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND) {
+    errno = ENOENT;
+  } else if (err == ERROR_ACCESS_DENIED) {
+    errno = EACCES;
+  } else if (err == ERROR_DIR_NOT_EMPTY) {
+    errno = ENOTEMPTY;
+  } else {
+    errno = EINVAL;
+  }
+  return -1;
 #else
   return ::rmdir(path);
 #endif
@@ -172,7 +197,46 @@ int sys::rmdir(const char *path) {
 
 int sys::stat(const char *fileName, StatStruct *buf) {
 #if defined(_WIN32)
-  return ::_stat(fileName, buf);
+  llvm::SmallVector<wchar_t, MAX_PATH> wfilename;
+  if (llvm::sys::path::widenPath(fileName, wfilename)) {
+    errno = EINVAL;
+    return -1;
+  }
+  
+  WIN32_FILE_ATTRIBUTE_DATA fileData;
+  if (!GetFileAttributesExW(wfilename.data(), GetFileExInfoStandard, &fileData)) {
+    int err = GetLastError();
+    if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND) {
+      errno = ENOENT;
+    } else if (err == ERROR_ACCESS_DENIED) {
+      errno = EACCES;
+    } else {
+      errno = EINVAL;
+    }
+    return -1;
+  }
+  
+  // Fill the stat structure
+  buf->st_gid = 0;
+  buf->st_atime = filetimeToTime_t(fileData.ftLastAccessTime);
+  buf->st_ctime = filetimeToTime_t(fileData.ftCreationTime);
+  buf->st_dev = 0;
+  buf->st_ino = 0;
+  buf->st_rdev = 0;
+  buf->st_mode = (fileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? _S_IFDIR : _S_IFREG;
+  buf->st_mode |= (fileData.dwFileAttributes & FILE_ATTRIBUTE_READONLY) ? _S_IREAD : _S_IREAD | _S_IWRITE;
+  
+  llvm::StringRef extension = llvm::sys::path::extension(llvm::StringRef(fileName));
+  if (extension == ".exe" || extension == ".cmd" || extension == ".bat" || extension == ".com") {
+    buf->st_mode |= _S_IEXEC;
+  }
+  
+  buf->st_mtime = filetimeToTime_t(fileData.ftLastWriteTime);
+  buf->st_nlink = 1;
+  buf->st_size = ((long long)fileData.nFileSizeHigh << 32) | fileData.nFileSizeLow;
+  buf->st_uid = 0;
+  
+  return 0;
 #else
   return ::stat(fileName, buf);
 #endif
@@ -181,11 +245,13 @@ int sys::stat(const char *fileName, StatStruct *buf) {
 // Create a symlink named linkPath which contains the string pointsTo
 int sys::symlink(const char *pointsTo, const char *linkPath) {
 #if defined(_WIN32)
-  llvm::SmallVector<llvm::UTF16, 20> wPointsTo;
-  llvm::convertUTF8ToUTF16String(pointsTo, wPointsTo);
-  llvm::SmallVector<llvm::UTF16, 20> wLinkPath;
-  llvm::convertUTF8ToUTF16String(linkPath, wLinkPath);
-  DWORD attributes = GetFileAttributesW((LPCWSTR)wPointsTo.data());
+  llvm::SmallVector<wchar_t, MAX_PATH> wPointsTo;
+  if (llvm::sys::path::widenPath(pointsTo, wPointsTo))
+    return -1;
+  llvm::SmallVector<wchar_t, MAX_PATH> wLinkPath;
+  if (llvm::sys::path::widenPath(linkPath, wLinkPath))
+    return -1;
+  DWORD attributes = GetFileAttributesW(wPointsTo.data());
   DWORD directoryFlag = (attributes != INVALID_FILE_ATTRIBUTES &&
                          attributes & FILE_ATTRIBUTE_DIRECTORY)
                             ? SYMBOLIC_LINK_FLAG_DIRECTORY
@@ -193,7 +259,7 @@ int sys::symlink(const char *pointsTo, const char *linkPath) {
   // Note that CreateSymbolicLinkW takes its arguments in reverse order
   // compared to symlink/_symlink
   return !::CreateSymbolicLinkW(
-      (LPCWSTR)wLinkPath.data(), (LPCWSTR)wPointsTo.data(),
+      wLinkPath.data(), wPointsTo.data(),
       SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE | directoryFlag);
 #else
   return ::symlink(pointsTo, linkPath);
@@ -202,7 +268,23 @@ int sys::symlink(const char *pointsTo, const char *linkPath) {
 
 int sys::unlink(const char *fileName) {
 #if defined(_WIN32)
-  return ::_unlink(fileName);
+  llvm::SmallVector<wchar_t, MAX_PATH> wfilename;
+  if (llvm::sys::path::widenPath(fileName, wfilename)) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (DeleteFileW(wfilename.data())) {
+    return 0;
+  }
+  int err = GetLastError();
+  if (err == ERROR_FILE_NOT_FOUND) {
+    errno = ENOENT;
+  } else if (err == ERROR_ACCESS_DENIED) {
+    errno = EACCES;
+  } else {
+    errno = EINVAL;
+  }
+  return -1;
 #else
   return ::unlink(fileName);
 #endif
@@ -263,14 +345,15 @@ int sys::raiseOpenFileLimit(llbuild_rlim_t limit) {
 sys::MATCH_RESULT sys::filenameMatch(const std::string& pattern,
                                      const std::string& filename) {
 #if defined(_WIN32)
-  llvm::SmallVector<llvm::UTF16, 20> wpattern;
-  llvm::SmallVector<llvm::UTF16, 20> wfilename;
+  llvm::SmallVector<wchar_t, MAX_PATH> wpattern;
+  llvm::SmallVector<wchar_t, MAX_PATH> wfilename;
 
-  llvm::convertUTF8ToUTF16String(pattern, wpattern);
-  llvm::convertUTF8ToUTF16String(filename, wfilename);
+  if (llvm::sys::path::widenPath(pattern, wpattern) ||
+      llvm::sys::path::widenPath(filename, wfilename))
+    return sys::MATCH_ERROR;
 
   bool result =
-      PathMatchSpecW((LPCWSTR)wfilename.data(), (LPCWSTR)wpattern.data());
+      PathMatchSpecW(wfilename.data(), wpattern.data());
   return result ? sys::MATCH : sys::NO_MATCH;
 #else
   int result = fnmatch(pattern.c_str(), filename.c_str(), 0);
@@ -342,9 +425,17 @@ std::string sys::makeTmpDir() {
 #if defined(_WIN32)
   char path[MAX_PATH];
   tmpnam_s(path, MAX_PATH);
-  llvm::SmallVector<llvm::UTF16, 20> wPath;
-  llvm::convertUTF8ToUTF16String(path, wPath);
-  CreateDirectoryW((LPCWSTR)wPath.data(), NULL);
+  llvm::SmallVector<wchar_t, MAX_PATH> wPath;
+  if (llvm::sys::path::widenPath(path, wPath))
+    return std::string();
+  if (!CreateDirectoryW(wPath.data(), NULL)) {
+    DWORD error = GetLastError();
+    if (error != ERROR_ALREADY_EXISTS) {
+      fprintf(stderr, "Failed to create temporary directory '%s': error code %lu\n",
+              path, (unsigned long)error);
+      return std::string();
+    }
+  }
   return std::string(path);
 #else
   if (const char *tmpDir = std::getenv("TMPDIR")) {
@@ -371,15 +462,10 @@ std::string sys::getPathSeparators() {
 
 sys::ModuleTraits<>::Handle sys::OpenLibrary(const char *path) {
 #if defined(_WIN32)
-  int cchLength =
-      MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, strlen(path),
-                          nullptr, 0);
-  std::u16string buffer(cchLength + 1, 0);
-  MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, strlen(path),
-                      const_cast<LPWSTR>(reinterpret_cast<LPCWSTR>(buffer.data())),
-                      buffer.size());
-
-  return LoadLibraryW(reinterpret_cast<LPCWSTR>(buffer.data()));
+  llvm::SmallVector<wchar_t, MAX_PATH> wPath;
+  if (llvm::sys::path::widenPath(path, wPath))
+    return nullptr;
+  return LoadLibraryW(wPath.data());
 #else
   return dlopen(path, RTLD_LAZY);
 #endif
@@ -401,4 +487,3 @@ void sys::CloseLibrary(sys::ModuleTraits<>::Handle handle) {
   dlclose(handle);
 #endif
 }
-
