@@ -67,6 +67,14 @@ build a.o: cc :
 # CHECK: actOnBeginBuildDecl(/*Name=*/"cc", /*Outputs=*/["a.o", "b.d"], /*Inputs=*/[], /*NumExplicitInputs=*/0, /*NumImplicitInputs=*/0, /*NumImplicitOutputs=*/1)
 build a.o | b.d: cc
 
+# CHECK: actOnBeginBuildDecl(/*Name=*/"cc", /*Outputs=*/["c.d"], /*Inputs=*/[], /*NumExplicitInputs=*/0, /*NumImplicitInputs=*/0, /*NumImplicitOutputs=*/1)
+build | c.d: cc
+
+# CHECK: basic.ninja:[[@LINE+2]]:6: error: expected output path string
+# CHECK: basic.ninja:[[@LINE+2]]:8: error: expected output path string
+build : cc
+build | : cc
+
 # Check for handling of malformed statements.
 # CHECK: basic.ninja:[[@LINE+3]]:4: error: expected variable name
 # CHECK: basic.ninja:[[@LINE+3]]:11: error: expected '=' token

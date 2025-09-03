@@ -387,19 +387,26 @@ bool Parser::ParserImpl::parseBuildSpecifier(
   consumeExpectedToken(Token::Kind::KWBuild);
 
   // Parse the output list.
-  if (tok.tokenKind != Token::Kind::String) {
+  if (tok.tokenKind != Token::Kind::String && tok.tokenKind != Token::Kind::Pipe) {
     error("expected output path string");
     lexer.setMode(Lexer::LexingMode::None);
     return false;
   }
   SmallVector<Token, 8> outputs;
-  do {
+  while (tok.tokenKind == Token::Kind::String) {
     outputs.push_back(consumeExpectedToken(Token::Kind::String));
-  } while (tok.tokenKind == Token::Kind::String);
+  }
   unsigned numExplicitOutputs = outputs.size();
 
   // Parse implicit outputs, if present.
   if (consumeIfToken(Token::Kind::Pipe)) {
+    // If we have no explicit outputs, we must have at least one implicit output.
+    if (!numExplicitOutputs && tok.tokenKind != Token::Kind::String) {
+      error("expected output path string");
+      lexer.setMode(Lexer::LexingMode::None);
+      return false;
+    }
+
     while (tok.tokenKind == Token::Kind::String) {
       outputs.push_back(consumeExpectedToken(Token::Kind::String));
     }
