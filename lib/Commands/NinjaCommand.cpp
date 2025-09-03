@@ -542,11 +542,17 @@ static void dumpNinjaManifestText(StringRef file, ninja::Manifest* manifest) {
   for (const auto& command: commands) {
     // Write the command entry.
     std::cout << "build";
+    unsigned count = 0;
     for (const auto& node: command->getOutputs()) {
-      std::cout << " \"" << util::escapedString(node->getScreenPath()) << "\"";
+      std::cout << " ";
+      if (count == command->getOutputs().size() - command->getNumImplicitOutputs()) {
+        std::cout << "| ";
+      }
+      std::cout << "\"" << util::escapedString(node->getScreenPath()) << "\"";
+      ++count;
     }
     std::cout << ": " << command->getRule()->getName();
-    unsigned count = 0;
+    count = 0;
     for (const auto& node: command->getInputs()) {
       std::cout << " ";
       if (count == (command->getNumExplicitInputs() +
@@ -710,12 +716,21 @@ static void dumpNinjaManifestJSON(StringRef file, ninja::Manifest* manifest) {
     if (it != commands.begin()) std::cout << ",\n";
     std::cout << "    {\n";
     std::cout << "      \"outputs\": [";
-    for (auto it = command->getOutputs().begin(),
-           ie = command->getOutputs().end(); it != ie; ++it) {
-      if (it != command->getOutputs().begin()) std::cout << ", ";
+    for (auto it = command->explicitOutputs_begin(),
+           ie = command->explicitOutputs_end(); it != ie; ++it) {
+      if (it != command->explicitOutputs_begin()) std::cout << ", ";
       std::cout << "\"" << escapeForJSON((*it)->getScreenPath()) << "\"";
     }
     std::cout << "],\n";
+    if (command->getNumImplicitOutputs()) {
+      std::cout << "      \"implicit_outputs\": [";
+      for (auto it = command->implicitOutputs_begin(),
+             ie = command->implicitOutputs_end(); it != ie; ++it) {
+        if (it != command->implicitOutputs_begin()) std::cout << ", ";
+        std::cout << "\"" << escapeForJSON((*it)->getScreenPath()) << "\"";
+      }
+      std::cout << "],\n";
+    }
     std::cout << "      \"rule\": \""
               << command->getRule()->getName() << "\",\n";
 
