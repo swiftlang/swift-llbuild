@@ -313,8 +313,13 @@ public:
                       ArrayRef<Token> outputTokens,
                       ArrayRef<Token> inputTokens,
                       unsigned numExplicitInputs,
-                      unsigned numImplicitInputs) override {
+                      unsigned numImplicitInputs,
+                      unsigned numImplicitOutputs) override {
     StringRef name(nameTok.start, nameTok.length);
+
+    if (numImplicitOutputs) {
+      error("implicit outputs are currently unsupported", nameTok);
+    }
 
     // Resolve the rule.
     auto it = getCurrentScope().getRules().find(name);

@@ -396,6 +396,15 @@ bool Parser::ParserImpl::parseBuildSpecifier(
   do {
     outputs.push_back(consumeExpectedToken(Token::Kind::String));
   } while (tok.tokenKind == Token::Kind::String);
+  unsigned numExplicitOutputs = outputs.size();
+
+  // Parse implicit outputs, if present.
+  if (consumeIfToken(Token::Kind::Pipe)) {
+    while (tok.tokenKind == Token::Kind::String) {
+      outputs.push_back(consumeExpectedToken(Token::Kind::String));
+    }
+  }
+  unsigned numImplicitOutputs = outputs.size() - numExplicitOutputs;
 
   // Expect the string list to be terminated by a colon.
   if (tok.tokenKind != Token::Kind::Colon) {
@@ -448,7 +457,8 @@ bool Parser::ParserImpl::parseBuildSpecifier(
   }
 
   *decl_out = actions.actOnBeginBuildDecl(name, outputs, inputs,
-                                          numExplicitInputs, numImplicitInputs);
+                                          numExplicitInputs, numImplicitInputs,
+                                          numImplicitOutputs);
 
   return true;
 }

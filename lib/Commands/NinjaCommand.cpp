@@ -163,7 +163,8 @@ private:
                       ArrayRef<ninja::Token> outputs,
                       ArrayRef<ninja::Token> inputs,
                       unsigned numExplicitInputs,
-                      unsigned numImplicitInputs) override {
+                      unsigned numImplicitInputs,
+                      unsigned numImplicitOutputs) override {
     std::cerr << __FUNCTION__ << "(/*Name=*/"
               << "\"" << escapedString(name) << "\""
               << ", /*Outputs=*/[";
@@ -183,7 +184,11 @@ private:
       first = false;
     }
     std::cerr << "], /*NumExplicitInputs=*/" << numExplicitInputs
-              << ", /*NumImplicitInputs=*/"  << numImplicitInputs << ")\n";
+              << ", /*NumImplicitInputs=*/"  << numImplicitInputs;
+    if (numImplicitOutputs) {
+      std::cerr << ", /*NumImplicitOutputs=*/"  << numImplicitOutputs;
+    }
+    std::cerr << ")\n";
     return 0;
   }
 
@@ -278,7 +283,8 @@ private:
                       ArrayRef<ninja::Token> outputs,
                       ArrayRef<ninja::Token> inputs,
                       unsigned numExplicitInputs,
-                      unsigned numImplicitInputs) override {
+                      unsigned numImplicitInputs,
+                      unsigned numImplicitOutputs) override {
     return 0;
   }
 
