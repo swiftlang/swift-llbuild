@@ -246,9 +246,19 @@ std::string formatWindowsCommandString(std::vector<std::string> args) {
 
 std::error_code checkExecutable(const std::filesystem::path& path) {
 
+#if defined(_WIN32)
+  llvm::SmallVector<wchar_t, 128> wpath;
+  if (llvm::sys::path::widenPath(path.c_str(), wpath)) {
+    return std::make_error_code(std::errc::invalid_argument);
+  }
+  if (::_waccess(path.c_str(), R_OK | X_OK) == -1) {
+    return std::error_code(errno, std::generic_category());
+  }
+#else
   if (::access(path.c_str(), R_OK | X_OK) == -1) {
     return std::error_code(errno, std::generic_category());
   }
+#endif
 
   // Don't say that directories are executable.
 #if defined(_WIN32)
@@ -258,7 +268,7 @@ std::error_code checkExecutable(const std::filesystem::path& path) {
 #endif
 
 #if defined(_WIN32)
-  if (0 != ::_stat(path.c_str(), &buf)) {
+  if (0 != ::_wstat(wpath.data(), &buf)) {
 #else
   if (0 != ::stat(path.c_str(), &buf)) {
 #endif
