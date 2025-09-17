@@ -1,6 +1,0 @@
-# Check that the version information is sensible.
-#
-# RUN: %{swift-build-tool} --version > %t.out
-# RUN: %{FileCheck} < %t.out %s
-#
-# CHECK: swift-build-tool version

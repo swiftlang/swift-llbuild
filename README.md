@@ -28,7 +28,7 @@ llbuild currently includes:
 Usage
 -----
 
-The project currently produces three top-level products; `llbuild`, `swift-build-tool`,
+The project currently produces two top-level products; `llbuild`
 and `libllbuild` / `llbuild.framework`.
 
 ### `llbuild` Command Line Tool
@@ -79,15 +79,6 @@ visualizing where time is spent during a build. For example, the following graph
 is for a build of llbuild itself:
 
 ![llbuild build profile](docs/llbuild-profile.png)
-
-### `swift-build-tool` Command Line Tool
-
-The `swift-build-tool` product is the command line interface to the build system
-used by the [Swift Package Manager](https://swift.org/package-manager/). It is
-built as part of the [Swift](https://swift.org) project build and incorporated
-into the Swift language snapshots.
-
-This tool is built on top of the [BuildSystem](docs/buildsystem.rst) library.
 
 ### `libllbuild` Library
 
