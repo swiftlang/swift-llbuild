@@ -102,10 +102,7 @@ let package = Package(
         .target(
             name: "llbuildBasic",
             dependencies: ["llvmSupport"],
-            path: "lib/Basic",
-            linkerSettings: [
-                .linkedLibrary("android-spawn", .when(platforms: [.android]))
-            ]
+            path: "lib/Basic"
         ),
         .target(
             name: "llbuildCore",
