@@ -48,7 +48,7 @@ void Rule::updateStatus(BuildEngine&, StatusKind) {}
 
 BuildEngineDelegate::~BuildEngineDelegate() {}
 
-void BuildEngineDelegate::determinedRuleNeedsToRun(Rule* ruleNeedingToRun, Rule::RunReason, Rule* inputRule) {}
+void BuildEngineDelegate::determinedRuleNeedsToRun(Rule* ruleNeedingToRun, Rule::RunReason, Rule* inputRule, StringRef detail) {}
 
 bool BuildEngineDelegate::shouldResolveCycle(const std::vector<Rule*>& items,
                                              Rule* candidateRule,
@@ -467,7 +467,7 @@ private:
       if (trace)
         trace->ruleNeedsToRunBecauseNeverBuilt(ruleInfo.rule.get());
       ruleInfo.state = RuleInfo::StateKind::NeedsToRun;
-      delegate.determinedRuleNeedsToRun(ruleInfo.rule.get(), Rule::RunReason::NeverBuilt, nullptr);
+      delegate.determinedRuleNeedsToRun(ruleInfo.rule.get(), Rule::RunReason::NeverBuilt, nullptr, StringRef());
       return true;
     }
 
@@ -475,7 +475,7 @@ private:
       if (trace)
         trace->ruleNeedsToRunBecauseSignatureChanged(ruleInfo.rule.get());
       ruleInfo.state = RuleInfo::StateKind::NeedsToRun;
-      delegate.determinedRuleNeedsToRun(ruleInfo.rule.get(), Rule::RunReason::SignatureChanged, nullptr);
+      delegate.determinedRuleNeedsToRun(ruleInfo.rule.get(), Rule::RunReason::SignatureChanged, nullptr, StringRef());
       return true;
     }
 
@@ -484,11 +484,12 @@ private:
     // FIXME: We should probably try and move this so that it can be done by
     // clients in the background, either by us backgrounding it, or by using a
     // completion model as we do for inputs.
-    if (!ruleInfo.rule->isResultValid(buildEngine, ruleInfo.result.value)) {
+    auto validationResult = ruleInfo.rule->isResultValid(buildEngine, ruleInfo.result.value);
+    if (!validationResult.isValid) {
       if (trace)
         trace->ruleNeedsToRunBecauseInvalidValue(ruleInfo.rule.get());
       ruleInfo.state = RuleInfo::StateKind::NeedsToRun;
-      delegate.determinedRuleNeedsToRun(ruleInfo.rule.get(), Rule::RunReason::InvalidValue, nullptr);
+      delegate.determinedRuleNeedsToRun(ruleInfo.rule.get(), Rule::RunReason::InvalidValue, nullptr, validationResult.details);
       return true;
     }
 
@@ -668,7 +669,7 @@ private:
             trace->ruleNeedsToRunBecauseInputRebuilt(
               ruleInfo.rule.get(), inputRuleInfo.rule.get());
           finishScanRequest(ruleInfo, RuleInfo::StateKind::NeedsToRun);
-          delegate.determinedRuleNeedsToRun(ruleInfo.rule.get(), Rule::RunReason::InputRebuilt, inputRuleInfo.rule.get());
+          delegate.determinedRuleNeedsToRun(ruleInfo.rule.get(), Rule::RunReason::InputRebuilt, inputRuleInfo.rule.get(), StringRef());
           return;
         }
       }
@@ -1253,7 +1254,7 @@ private:
 
         // mark this rule as needs to run (forced)
         finishScanRequest(ruleInfo, RuleInfo::StateKind::NeedsToRun);
-        delegate.determinedRuleNeedsToRun(ruleInfo.rule.get(), Rule::RunReason::Forced, nullptr);
+        delegate.determinedRuleNeedsToRun(ruleInfo.rule.get(), Rule::RunReason::Forced, nullptr, StringRef());
         ruleInfo.wasForced = true;
 
         return true;

@@ -133,7 +133,7 @@ public:
 
     Task* createTask(BuildEngine&) override { return new SimpleTask(inputs, compute); }
 
-    bool isResultValid(BuildEngine&, const ValueType& value) override {
+    ValidationResult isResultValid(BuildEngine&, const ValueType& value) override {
         if (!valid) return true;
         return valid(value);
     }
@@ -237,7 +237,7 @@ TEST(DepsBuildEngineTest, BogusConcurrentDepScan) {
       builtKeys.push_back(key);
       return new DynamicTask();
     }
-    bool isResultValid(BuildEngine&, const ValueType&) override { return true; }
+    ValidationResult isResultValid(BuildEngine&, const ValueType&) override { return true; }
   };
   engine.addRule(std::unique_ptr<core::Rule>(new DynamicRule("output", builtKeys)));
 

@@ -496,8 +496,8 @@ public:
     return llb_rule_run_reason_invalid_value;
   }
 
-  virtual void determinedRuleNeedsToRun(core::Rule* ruleNeedingToRun, core::Rule::RunReason reason, core::Rule* inputRule) override {
-    if (cAPIDelegate.determined_rule_needs_to_run) {
+  virtual void determinedRuleNeedsToRun(core::Rule* ruleNeedingToRun, core::Rule::RunReason reason, core::Rule* inputRule, StringRef details) override {
+    if (cAPIDelegate.determined_rule_needs_to_run || cAPIDelegate.determined_rule_needs_to_run_v2) {
       auto key = BuildKey::fromData(ruleNeedingToRun->key);
       auto needsToRun = (llb_build_key_t *)new CAPIBuildKey(key);
       llb_build_key_t * input;
@@ -507,7 +507,24 @@ public:
       } else {
         input = nullptr;
       }
-      cAPIDelegate.determined_rule_needs_to_run(cAPIDelegate.context, needsToRun, convertRunReason(reason), input);
+
+      if (cAPIDelegate.determined_rule_needs_to_run_v2) {
+        cAPIDelegate.determined_rule_needs_to_run_v2(
+          cAPIDelegate.context,
+          needsToRun,
+          convertRunReason(reason),
+          input,
+          details.empty() ? nullptr : details.str().c_str()
+        );
+      } else {
+        cAPIDelegate.determined_rule_needs_to_run(
+          cAPIDelegate.context,
+          needsToRun,
+          convertRunReason(reason),
+          input
+        );
+      }
+
       llb_build_key_destroy(needsToRun);
       if (input) {
         llb_build_key_destroy(input);
@@ -1145,42 +1162,44 @@ class CAPIExternalCommand : public ExternalCommand {
     return ExternalCommand::computeCommandResult(system, ti);
   }
 
-  bool isResultValid(BuildSystem& system, const BuildValue& value) override {
+  core::Rule::ValidationResult isResultValid(BuildSystem& system, const BuildValue& value) override {
     if (cAPIDelegate.is_result_valid_with_fallback) {
       struct FallbackContext {
         BuildSystem *buildSystem;
-        
+
         static bool handle(void* c_ctx,
                            llb_buildsystem_command_t* c_command,
                            llb_build_value* c_value) {
           auto* command = (CAPIExternalCommand*)c_command;
           auto* value = (CAPIBuildValue*)c_value;
-          
+
           auto* ctx = static_cast<FallbackContext*>(c_ctx);
           BuildSystem& system = *ctx->buildSystem;
           delete ctx;
-          
-          return command->ExternalCommand::isResultValid(system, value->getInternalBuildValue());
+
+          return command->ExternalCommand::isResultValid(system, value->getInternalBuildValue()).isValid;
         }
       };
-      
+
       auto value_p = (llb_build_value *)new CAPIBuildValue(BuildValue(value));
-      return cAPIDelegate.is_result_valid_with_fallback(
+      bool valid = cAPIDelegate.is_result_valid_with_fallback(
         cAPIDelegate.context,
         (llb_buildsystem_command_t*)this,
         value_p,
         new FallbackContext{&system},
         FallbackContext::handle
       );
+      return core::Rule::ValidationResult(valid);
     }
-    
+
     if (cAPIDelegate.is_result_valid) {
       auto value_p = (llb_build_value *)new CAPIBuildValue(BuildValue(value));
-      return cAPIDelegate.is_result_valid(
+      bool valid = cAPIDelegate.is_result_valid(
         cAPIDelegate.context,
         (llb_buildsystem_command_t*)this,
         value_p
       );
+      return core::Rule::ValidationResult(valid);
     }
 
     return ExternalCommand::isResultValid(system, value);

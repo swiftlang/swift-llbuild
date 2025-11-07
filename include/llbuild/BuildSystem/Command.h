@@ -20,6 +20,7 @@ namespace llbuild {
 namespace core {
 
 class TaskInterface;
+class Rule;
 
 }
 
@@ -141,8 +142,8 @@ public:
   ///
   /// @{
 
-  virtual bool isResultValid(BuildSystem& system, const BuildValue& value) = 0;
-  
+  virtual core::Rule::ValidationResult isResultValid(BuildSystem& system, const BuildValue& value) = 0;
+
   virtual void start(BuildSystem& system, core::TaskInterface ti) = 0;
 
   virtual void providePriorValue(BuildSystem& system, core::TaskInterface ti,
