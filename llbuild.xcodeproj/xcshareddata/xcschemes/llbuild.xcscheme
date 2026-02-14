@@ -140,20 +140,6 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "40C9B47223CFD69E0098712F"
-               BuildableName = "EvoTests"
-               BlueprintName = "EvoTests"
-               ReferencedContainer = "container:llbuild.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "NO"
-            buildForArchiving = "NO"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
                BlueprintIdentifier = "E1A224F819F99DFD0059043E"
                BuildableName = "NinjaTests"
                BlueprintName = "NinjaTests"
