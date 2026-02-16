@@ -313,7 +313,8 @@ public:
                       ArrayRef<Token> outputTokens,
                       ArrayRef<Token> inputTokens,
                       unsigned numExplicitInputs,
-                      unsigned numImplicitInputs) override {
+                      unsigned numImplicitInputs,
+                      unsigned numImplicitOutputs) override {
     StringRef name(nameTok.start, nameTok.length);
 
     // Resolve the rule.
@@ -351,7 +352,8 @@ public:
     }
 
     Command* decl = new (manifest->getAllocator())
-      Command(rule, outputs, inputs, numExplicitInputs, numImplicitInputs);
+      Command(rule, outputs, inputs, numExplicitInputs, numImplicitInputs,
+              numImplicitOutputs);
     manifest->getCommands().push_back(decl);
 
     return decl;
@@ -404,10 +406,10 @@ public:
       }
       return;
     } else if (name == "out") {
-      for (unsigned i = 0, ie = decl->getOutputs().size(); i != ie; ++i) {
+      for (unsigned i = 0, ie = decl->getNumExplicitOutputs(); i != ie; ++i) {
         if (i != 0)
           result << " ";
-        auto& path = decl->getOutputs()[i]->getScreenPath();
+        auto& path = decl->explicitOutputs_begin()[i]->getScreenPath();
         result << (context->shellEscapeInAndOut ? basic::shellEscaped(path)
                                                 : path);
       }

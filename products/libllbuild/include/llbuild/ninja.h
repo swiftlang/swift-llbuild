@@ -79,6 +79,8 @@ typedef struct llb_ninja_build_statement_t_ {
   const llb_string_ref_t *order_only_inputs;
   uint64_t num_outputs;
   const llb_string_ref_t *outputs;
+  uint64_t num_implicit_outputs;
+  const llb_string_ref_t *implicit_outputs;
   uint64_t num_variables;
   const llb_ninja_variable_t *variables;
   bool generator;
