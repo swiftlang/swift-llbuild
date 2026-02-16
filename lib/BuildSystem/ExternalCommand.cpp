@@ -164,17 +164,16 @@ getResultForOutput(Node* node, const BuildValue& value) {
     
   return BuildValue::makeExistingInput(info);
 }
-  
-bool ExternalCommand::isResultValid(BuildSystem& system,
-                                    const BuildValue& value) {
+
+core::Rule::ValidationResult ExternalCommand::isResultValid(BuildSystem& system, const BuildValue& value) {
   // Treat the command as always out-of-date, if requested.
   if (alwaysOutOfDate)
-    return false;
-      
+    return core::Rule::ValidationResult(false, "command is considered 'always out of date'");
+
   // If the prior value wasn't for a successful command, recompute.
   if (!value.isSuccessfulCommand())
-    return false;
-    
+    return core::Rule::ValidationResult(false, "command previously failed");
+
   // Check the timestamps on each of the outputs.
   for (unsigned i = 0, e = outputs.size(); i != e; ++i) {
     auto* node = outputs[i];
@@ -198,21 +197,38 @@ bool ExternalCommand::isResultValid(BuildSystem& system,
     // could enable behavior to remove such output files if annotated prior to
     // running the command.
     auto info = node->getFileInfo(system.getFileSystem());
+    auto oldInfo = value.getNthOutputInfo(i);
 
     // If this output is mutated by the build, we can't rely on equivalence,
     // only existence.
     if (node->isMutated()) {
-      if (value.getNthOutputInfo(i).isMissing() != info.isMissing())
-        return false;
+      if (oldInfo.isMissing() != info.isMissing()) {
+        std::string msg;
+        if (info.isMissing()) {
+          msg = ("'" + node->getName() + "' was removed").str();
+        } else {
+          msg = ("'" + node->getName() + "' was previously missing, but now exists").str();
+        }
+        return core::Rule::ValidationResult(false, msg);
+      }
       continue;
     }
 
-    if (value.getNthOutputInfo(i) != info)
-      return false;
+    if (oldInfo != info) {
+      std::string msg;
+      if (info.isMissing() == oldInfo.isMissing()) {
+        msg = ("'" + node->getName() + "' changed").str();
+      } else if (info.isMissing()) {
+        msg = ("'" + node->getName() + "' was removed").str();
+      } else if (oldInfo.isMissing()) {
+        msg = ("'" + node->getName() + "' was previously missing, but now exists").str();
+      }
+      return core::Rule::ValidationResult(false, msg);
+    }
   }
 
   // Otherwise, the result is ok.
-  return true;
+  return core::Rule::ValidationResult(true);
 }
 
 void ExternalCommand::start(BuildSystem& system,
