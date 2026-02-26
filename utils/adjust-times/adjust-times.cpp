@@ -50,7 +50,8 @@ static int file_time_set_fixed(const char* filename, struct timespec time_to_set
     struct timeval times[2] = { tv, tv };
     return utimes(filename, times);
   }
-#elif defined __linux__
+#elif !defined(_WIN32)
+  // POSIX.1-2008 platforms (Linux, FreeBSD, OpenBSD, etc.) provide utimensat.
   struct timespec times[2] = { time_to_set, time_to_set };
   return utimensat(AT_FDCWD, filename, times, 0);
 #else
