@@ -68,20 +68,6 @@ let package = Package(
                 .linkedLibrary("pthread", .when(platforms: [.linux]))]
         ),
 
-        /// The custom build tool used by the Swift package manager (SwiftPM).
-        ///
-        /// SwiftPM has now switched to using llbuild's Swift bindings API to
-        /// build, but this tool is still used for SwiftPM's bootstrapping. Once
-        /// that step has been eliminated, this tool can be removed.
-        .target(
-            name: "swift-build-tool",
-            dependencies: ["llbuildBuildSystem"],
-            path: "products/swift-build-tool",
-            linkerSettings: [
-                .linkedLibrary("dl", .when(platforms: [.linux])),
-                .linkedLibrary("pthread", .when(platforms: [.linux]))]
-        ),
-
         /// The public llbuild C API.
         .target(
             name: "libllbuild",
@@ -301,8 +287,6 @@ let llvmTargets: Set<String> = [
     "llbuildBuildSystemTests",
     "llbuildCoreTests",
     "llbuildNinjaTests",
-
-    "swift-build-tool",
 ]
 
 if !useTerminfo {
@@ -350,7 +334,7 @@ if let target = package.targets.first(where: { $0.name == "llvmSupport" }) {
 if let target = package.targets.first(where: { $0.name == "llvmSupport" }) {
     target.linkerSettings = ["execinfo", "m", "pthread", "ncurses"].map { .linkedLibrary($0) }
 }
-package.targets.filter({ $0.name == "llbuild" || $0.name == "swift-build-tool" }).forEach {
+package.targets.filter({ $0.name == "llbuild" }).forEach {
     $0.linkerSettings = [.linkedLibrary("dl"), .linkedLibrary("pthread")]
 }
 #endif
