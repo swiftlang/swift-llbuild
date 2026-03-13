@@ -1,0 +1,28 @@
+# We run the build in a sandbox in the temp directory to ensure we don't
+# interact with the source dirs.
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: touch %t.build/dummy_in1
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t1.out
+# RUN: %{FileCheck} --check-prefix CHECK-INITIAL < %t1.out %s
+#
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t2.out
+# RUN: %{FileCheck} --check-prefix CHECK-NULL < %t2.out %s
+
+# CHECK-INITIAL: RULE A -- dummy_in1 -- dummy_out1
+#
+# CHECK-NULL-NOT: RULE
+# CHECK-NULL: Entering directory
+# CHECK-NULL-NEXT: no work to do
+#
+# CHECK-REBUILD: RULE A -- dummy_in1 -- dummy_out1
+
+# RUN: rm %t.build/dummy_out2
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build &> %t3.out
+# RUN: %{FileCheck} --check-prefix CHECK-REBUILD < %t3.out %s
+rule A
+     command = echo "RULE A -- ${in} -- ${out}" && touch "${out}" dummy_out2
+
+build dummy_out1 | dummy_out2: A dummy_in1
