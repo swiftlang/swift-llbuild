@@ -980,6 +980,9 @@ public protocol BuildSystemDelegate {
     ///  - parameter reason: Describes why the rule needs to run. For example, because it has never run or because an input was rebuilt.
     ///
     ///  - parameter inputRule: If `reason` is `InputRebuilt`, the rule for the rebuilt input, else  `nil`.
+    ///
+    ///  - parameter details: Optional additional unstructured description of why the rule needs to run..
+    func determinedRuleNeedsToRun(_ rule: BuildKey, reason: RuleRunReason, inputRule: BuildKey?, details: String?)
     func determinedRuleNeedsToRun(_ rule: BuildKey, reason: RuleRunReason, inputRule: BuildKey?)
 
     /// Called when a cycle is detected by the build engine and it cannot make
@@ -1015,8 +1018,12 @@ extension BuildSystemDelegate {
         return nil
     }
 
+    public func determinedRuleNeedsToRun(_ rule: BuildKey, reason: RuleRunReason, inputRule: BuildKey?, details: String?) {
+        determinedRuleNeedsToRun(rule, reason: reason, inputRule: inputRule)
+    }
+
     public func determinedRuleNeedsToRun(_ rule: BuildKey, reason: RuleRunReason, inputRule: BuildKey?) {
-        // default implementation for compatibility with older clients
+      // default implementation for ABI compatibility with older clients
     }
 
     public func commandCannotBuildOutputDueToMissingInputs(_ command: Command, output: BuildKey?, inputs: [BuildKey]) {
@@ -1174,8 +1181,9 @@ public final class BuildSystem {
             _delegate.command_process_had_error = { BuildSystem.toSystem($0!).commandProcessHadError(Command(handle: $1), ProcessHandle($2!), $3!) }
             _delegate.command_process_had_output = { BuildSystem.toSystem($0!).commandProcessHadOutput(Command(handle: $1), ProcessHandle($2!), $3!) }
             _delegate.command_process_finished = { BuildSystem.toSystem($0!).commandProcessFinished(Command(handle: $1), ProcessHandle($2!), CommandExtendedResult($3!)) }
-            _delegate.determined_rule_needs_to_run = {
-                BuildSystem.toSystem($0!).determinedRuleNeedsToRun(BuildKey.construct(key: $1!), reason: $2, inputRule: $3.map { BuildKey.construct(key: $0) })
+            _delegate.determined_rule_needs_to_run_v2 = {
+                let details = $4.map { String(cString: $0) }
+                BuildSystem.toSystem($0!).determinedRuleNeedsToRun(BuildKey.construct(key: $1!), reason: $2, inputRule: $3.map { BuildKey.construct(key: $0) }, details: details)
             }
             _delegate.cycle_detected = {
                 var rules = [BuildKey]()
@@ -1404,8 +1412,8 @@ public final class BuildSystem {
         delegate.commandProcessFinished(command, process: process, result: result)
     }
 
-    private func determinedRuleNeedsToRun(_ rule: BuildKey, reason: RuleRunReason, inputRule: BuildKey?) {
-        delegate.determinedRuleNeedsToRun(rule, reason: reason, inputRule: inputRule)
+    private func determinedRuleNeedsToRun(_ rule: BuildKey, reason: RuleRunReason, inputRule: BuildKey?, details: String?) {
+        delegate.determinedRuleNeedsToRun(rule, reason: reason, inputRule: inputRule, details: details)
     }
 
     private func cycleDetected(_ rules: [BuildKey]) {

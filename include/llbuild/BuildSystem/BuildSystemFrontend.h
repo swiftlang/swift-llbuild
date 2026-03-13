@@ -295,7 +295,9 @@ public:
   ///  \param reason - Describes why the rule needs to run. For example, because it has never run or because an input was rebuilt.
   ///
   ///  \param inputRule - If `reason` is `InputRebuilt`, the rule for the rebuilt input, else  `nullptr`.
-  virtual void determinedRuleNeedsToRun(core::Rule* ruleNeedingToRun, core::Rule::RunReason reason, core::Rule* inputRule) override;
+  ///
+  ///  \param details - Unstructured additional detail explaining why the rule needs to run.
+  virtual void determinedRuleNeedsToRun(core::Rule* ruleNeedingToRun, core::Rule::RunReason reason, core::Rule* inputRule, StringRef details) override;
 
   /// Called when a cycle is detected by the build engine and it cannot make
   /// forward progress.

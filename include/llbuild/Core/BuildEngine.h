@@ -332,6 +332,17 @@ public:
     Forced = 4
   };
 
+  struct ValidationResult {
+    /// Whether the rule's value is valid.
+    bool isValid;
+
+    /// Optional unstructured description of why the value is invalid.
+    std::string details;
+
+    ValidationResult(bool valid, const std::string& details = "")
+      : isValid(valid), details(details) {}
+  };
+
 public:
   /// The key computed by the rule.
   const KeyType key;
@@ -358,7 +369,7 @@ public:
   /// state managed externally to the build engine. For example, a rule which
   /// computes something on the file system may use this to verify that the
   /// computed output has not changed since it was built.
-  virtual bool isResultValid(BuildEngine&, const ValueType&) = 0;
+  virtual ValidationResult isResultValid(BuildEngine& engine, const ValueType& value) = 0;
 
   /// Called to indicate a change in the rule status.
   virtual void updateStatus(BuildEngine&, StatusKind);
@@ -388,7 +399,10 @@ public:
   ///  \param reason - Describes why the rule needs to run. For example, because it has never run or because an input was rebuilt.
   ///
   ///  \param inputRule - If `reason` is `InputRebuilt`, the rule for the rebuilt input, else  `nullptr`.
-  virtual void determinedRuleNeedsToRun(Rule* ruleNeedingToRun, Rule::RunReason reason, Rule* inputRule);
+  ///
+  ///  \param details - Optional unstructured additional detail about why the rule needs to run.
+  virtual void determinedRuleNeedsToRun(Rule* ruleNeedingToRun, Rule::RunReason reason, Rule* inputRule,
+                                        StringRef details);
 
   /// Called when a cycle is detected by the build engine to check if it should
   /// attempt to resolve the cycle and continue

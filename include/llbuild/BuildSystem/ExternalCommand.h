@@ -129,8 +129,8 @@ public:
 
   virtual BuildValue getResultForOutput(Node* node,
                                         const BuildValue& value) override;
-  
-  virtual bool isResultValid(BuildSystem&, const BuildValue& value) override;
+
+  virtual core::Rule::ValidationResult isResultValid(BuildSystem&, const BuildValue& value) override;
 
   virtual void start(BuildSystem& system, core::TaskInterface ti) override;
 

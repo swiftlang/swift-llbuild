@@ -1713,7 +1713,7 @@ std::unique_ptr<core::Rule> NinjaBuildEngineDelegate::lookupRule(const core::Key
       return buildInput(*context, node);
     }
 
-    bool isResultValid(core::BuildEngine&, const core::ValueType& value) override {
+    ValidationResult isResultValid(core::BuildEngine&, const core::ValueType& value) override {
       // If simulating, assume cached results are valid.
       if (context->simulate) return true;
 
@@ -2123,7 +2123,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
         return buildCommand(context, command);
       }
 
-      bool isResultValid(core::BuildEngine&, const core::ValueType& value) override {
+      ValidationResult isResultValid(core::BuildEngine&, const core::ValueType& value) override {
         // If simulating, assume cached results are valid.
         if (context.simulate)
           return true;
@@ -2152,7 +2152,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
         return selectCompositeBuildResult(context, command, index, compositeRuleName);
       }
 
-      bool isResultValid(core::BuildEngine&, const core::ValueType& value) override {
+      ValidationResult isResultValid(core::BuildEngine&, const core::ValueType& value) override {
         // If simulating, assume cached results are valid.
         if (context.simulate)
           return true;
@@ -2173,7 +2173,7 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
         return buildTargets(context, targets);
       }
 
-      bool isResultValid(core::BuildEngine&, const core::ValueType& value) override {
+      ValidationResult isResultValid(core::BuildEngine&, const core::ValueType& value) override {
         return false;
       }
     };

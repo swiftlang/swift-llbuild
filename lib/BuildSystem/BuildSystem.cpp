@@ -147,7 +147,7 @@ class BuildSystemEngineDelegate : public BuildEngineDelegate {
   const BuildDescription& getBuildDescription() const;
 
   virtual std::unique_ptr<Rule> lookupRule(const KeyType& keyData) override;
-  virtual void determinedRuleNeedsToRun(Rule* ruleNeedingToRun, Rule::RunReason reason, Rule* inputRule) override;
+  virtual void determinedRuleNeedsToRun(Rule* ruleNeedingToRun, Rule::RunReason reason, Rule* inputRule, StringRef details) override;
   virtual bool shouldResolveCycle(const std::vector<Rule*>& items,
                                   Rule* candidateRule,
                                   Rule::CycleAction action) override;
@@ -467,9 +467,9 @@ class TargetTask : public Task {
 public:
   TargetTask(Target& target) : target(target) {}
 
-  static bool isResultValid(BuildEngine&, Target&, const BuildValue&) {
+  static Rule::ValidationResult isResultValid(BuildEngine&, Target&, const BuildValue&) {
     // Always treat target tasks as invalid.
-    return false;
+    return Rule::ValidationResult(false);
   }
 };
 
@@ -514,8 +514,8 @@ public:
     assert(!node.isVirtual());
   }
 
-  static bool isResultValid(BuildEngine& engine, const BuildNode& node,
-                            const BuildValue& value) {
+  static Rule::ValidationResult isResultValid(BuildEngine& engine, const BuildNode& node,
+                                              const BuildValue& value) {
     // The result is valid if the existence matches the value type and the file
     // information remains the same.
     //
@@ -532,9 +532,17 @@ public:
     auto info = node.getFileInfo(
         getBuildSystem(engine).getFileSystem());
     if (info.isMissing()) {
-      return value.isMissingInput();
+      if (value.isMissingInput()) {
+        return Rule::ValidationResult(true);
+      } else {
+        return Rule::ValidationResult(false, ("'" + node.getName() + "' was removed").str());
+      }
     } else {
-      return value.isExistingInput() && value.getOutputInfo() == info;
+      if (value.isExistingInput() && value.getOutputInfo() == info) {
+        return Rule::ValidationResult(true);
+      } else {
+        return Rule::ValidationResult(false, ("'" + node.getName() + "' was updated").str());
+      }
     }
   }
 };
@@ -575,9 +583,9 @@ class StatTask : public Task {
 public:
   StatTask(StatNode& statnode) : statnode(statnode) {}
 
-  static bool isResultValid(BuildEngine&, const StatNode&, const BuildValue&) {
+  static Rule::ValidationResult isResultValid(BuildEngine&, const StatNode&, const BuildValue&) {
     // Always read the stat information
-    return false;
+    return Rule::ValidationResult(false);
   }
 };
 
@@ -717,10 +725,10 @@ class VirtualInputNodeTask : public Task {
 public:
   VirtualInputNodeTask() {}
 
-  static bool isResultValid(BuildEngine& engine, const BuildNode& node,
+  static Rule::ValidationResult isResultValid(BuildEngine& engine, const BuildNode& node,
                             const BuildValue& value) {
     // Virtual input nodes are always valid unless the value type is wrong.
-    return value.isVirtualInput();
+    return Rule::ValidationResult(value.isVirtualInput());
   }
 };
 
@@ -797,21 +805,23 @@ public:
   ProducedNodeTask(Node& node)
       : node(node), nodeResult(BuildValue::makeInvalid()) {}
   
-  static bool isResultValid(BuildEngine& engine, Node& node,
+  static Rule::ValidationResult isResultValid(BuildEngine& engine, Node& node,
                             const BuildValue& value) {
     // If the result was failure, we always need to rebuild (it may produce an
     // error).
-    if (value.isFailedInput())
-      return false;
+    if (value.isFailedInput()) {
+      return Rule::ValidationResult(false, ("'" + node.getName()).str() + "' previously failed");
+    }
 
     // If the result was previously a missing input, it may have been because
     // we did not previously know how to produce this node. We do now, so
     // attempt to build it now.
-    if (value.isMissingInput())
-      return false;
+    if (value.isMissingInput()) {
+      return Rule::ValidationResult(false, ("'" + node.getName()).str() + "' was previously recorded as a missing input");
+    }
 
     // The produced node result itself doesn't need any synchronization.
-    return true;
+    return Rule::ValidationResult(true);
   }
 };
 
@@ -903,22 +913,24 @@ public:
   ProducedDirectoryNodeTask(Node& node)
       : node(node), nodeResult(BuildValue::makeInvalid()) {}
 
-  static bool isResultValid(BuildEngine& engine, Node& node,
+  static Rule::ValidationResult isResultValid(BuildEngine& engine, Node& node,
                             const BuildValue& value) {
     // If the result was failure, we always need to rebuild (it may produce an
     // error).
-    if (value.isFailedInput())
-      return false;
+    if (value.isFailedInput()) {
+      return Rule::ValidationResult(false, ("'" + node.getName()).str() + "' previously failed");
+    }
 
     // If the result was previously a missing input, it may have been because
     // we did not previously know how to produce this node. We do now, so
     // attempt to build it now.
-    if (value.isMissingInput())
-      return false;
+    if (value.isMissingInput()) {
+      return Rule::ValidationResult(false, ("'" + node.getName()).str() + "' was previously recorded as a missing input");
+    }
 
     // The produced node result itself doesn't need any synchronization.
     // If the directory signature is changed, it will be reflected in value of this node.
-    return true;
+    return Rule::ValidationResult(true);
   }
 };
 
@@ -1050,25 +1062,40 @@ public:
   DirectoryContentsTask(StringRef path)
       : path(path), directoryValue(BuildValue::makeInvalid()) {}
 
-  static bool isResultValid(BuildEngine& engine, StringRef path,
+  static Rule::ValidationResult isResultValid(BuildEngine& engine, StringRef path,
                             const BuildValue& value) {
     // The result is valid if the existence matches the existing value type, and
     // the file information remains the same.
     auto info = getBuildSystem(engine).getFileSystem().getFileInfo(
         path);
     if (info.isMissing()) {
-      return value.isMissingInput();
+      if (value.isMissingInput()) {
+        return Rule::ValidationResult(true);
+      } else {
+        return Rule::ValidationResult(false, ("'" + path + "' was removed").str());
+      }
     } else {
-      if (!value.isDirectoryContents())
-        return false;
+      if (!value.isDirectoryContents()) {
+        return Rule::ValidationResult(false);
+      }
 
       // If the type changes rebuild
-      if (info.isDirectory() != value.getOutputInfo().isDirectory())
-        return false;
+      if (info.isDirectory() != value.getOutputInfo().isDirectory()) {
+        if (info.isDirectory()) {
+          return Rule::ValidationResult(false, ("'" + path + "' changed from a file to a directory").str());
+        } else {
+          return Rule::ValidationResult(false, ("'" + path + "' changed from a directory to a file").str());
+        }
+      }
 
       // For files, it is direct stat info that matters
-      if (!info.isDirectory())
-        return value.getOutputInfo() == info;
+      if (!info.isDirectory()) {
+        if (value.getOutputInfo() == info) {
+          return Rule::ValidationResult(true);
+        } else {
+          return Rule::ValidationResult(false, ("'" + path + "' changed").str());
+        }
+      }
 
       // With filters, we list the current filtered contents and then compare
       // the lists.
@@ -1082,17 +1109,20 @@ public:
       auto prev = value.getDirectoryContents();
 
       if (cur.size() != prev.size())
-        return false;
+        return Rule::ValidationResult(false, ("'" + path + "' has " + std::to_string(prev.size()) +
+                                              "entries, but previously recorded " + std::to_string(cur.size()) +
+                                              " entries").str());
 
       auto cur_it = cur.begin();
       auto prev_it = prev.begin();
       for (; cur_it != cur.end() && prev_it != prev.end(); cur_it++, prev_it++) {
         if (*cur_it != *prev_it) {
-          return false;
+          return Rule::ValidationResult(false, ("'" + path + "' contains entry which was renamed from '" +
+                                                *prev_it + "' to '" + *cur_it + "'").str());
         }
       }
 
-      return true;
+      return Rule::ValidationResult(true);
     }
   }
 };
@@ -1598,8 +1628,8 @@ class CommandTask : public Task {
 public:
   CommandTask(Command& command) : command(command) {}
 
-  static bool isResultValid(BuildEngine& engine, Command& command,
-                            const BuildValue& value) {
+  static Rule::ValidationResult isResultValid(BuildEngine& engine, Command& command,
+                                              const BuildValue& value) {
     // Delegate to the command for further checking.
     auto& buildSystem =
       static_cast<BuildSystemEngineDelegate*>(engine.getDelegate())->getBuildSystem();
@@ -1666,8 +1696,8 @@ private:
   /// state managed externally to the build engine. For example, a rule which
   /// computes something on the file system may use this to verify that the
   /// computed output has not changed since it was built.
-  std::function<bool(BuildEngine&, const Rule&,
-                     const ValueType&)> resultValid;
+  std::function<ValidationResult(BuildEngine&, const Rule&,
+                                 const ValueType&)> resultValid;
 
   /// Called to indicate a change in the rule status.
   std::function<void(BuildEngine&, StatusKind)> update;
@@ -1677,7 +1707,7 @@ public:
     const KeyType& key,
     const basic::CommandSignature& signature,
     std::function<Task*(BuildEngine&)> action,
-    std::function<bool(BuildEngine&, const Rule&, const ValueType&)> valid = nullptr,
+    std::function<ValidationResult(BuildEngine&, const Rule&, const ValueType&)> valid = nullptr,
     std::function<void(BuildEngine&, StatusKind)> update = nullptr)
   : Rule(key, signature), action(action), resultValid(valid), update(update)
   { }
@@ -1687,8 +1717,8 @@ public:
     return action(engine);
   }
 
-  bool isResultValid(BuildEngine& engine, const ValueType& value) override {
-    if (!resultValid) return true;
+  ValidationResult isResultValid(BuildEngine& engine, const ValueType& value) override {
+    if (!resultValid) return ValidationResult(true);
     return resultValid(engine, *this, value);
   }
 
@@ -1739,9 +1769,9 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
         /*Action=*/ [](BuildEngine& engine) -> Task* {
           return new MissingCommandTask();
         },
-        /*IsValid=*/ [](BuildEngine&, const Rule&, const ValueType&) -> bool {
+        /*IsValid=*/ [](BuildEngine&, const Rule&, const ValueType&) -> Rule::ValidationResult {
           // The cached result for a missing command is never valid.
-          return false;
+          return Rule::ValidationResult(false);
         }
       ));
     }
@@ -1755,7 +1785,7 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
         return new CommandTask(*command);
       },
       /*IsValid=*/ [command](BuildEngine& engine, const Rule& rule,
-                             const ValueType& value) -> bool {
+                             const ValueType& value) -> Rule::ValidationResult {
         return CommandTask::isResultValid(
             engine, *command, BuildValue::fromData(value));
       },
@@ -1788,7 +1818,7 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
           return new CommandTask(*command);
         },
         /*IsValid=*/ [command](BuildEngine& engine, const Rule& rule,
-                               const ValueType& value) -> bool {
+                               const ValueType& value) -> Rule::ValidationResult {
           return CommandTask::isResultValid(
               engine, *command, BuildValue::fromData(value));
         },
@@ -1808,9 +1838,9 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
       /*Action=*/ [](BuildEngine& engine) -> Task* {
         return new MissingCommandTask();
       },
-      /*IsValid=*/ [](BuildEngine&, const Rule&, const ValueType&) -> bool {
+      /*IsValid=*/ [](BuildEngine&, const Rule&, const ValueType&) -> Rule::ValidationResult {
         // The cached result for a missing command is never valid.
-        return false;
+        return Rule::ValidationResult(false);
       }
     ));
   }
@@ -1824,7 +1854,7 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
         return new DirectoryContentsTask(path);
       },
       /*IsValid=*/ [path](BuildEngine& engine, const Rule& rule,
-          const ValueType& value) mutable -> bool {
+          const ValueType& value) mutable -> Rule::ValidationResult {
         return DirectoryContentsTask::isResultValid(
             engine, path, BuildValue::fromData(value));
       }
@@ -1900,7 +1930,7 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
             return new VirtualInputNodeTask();
           },
           /*IsValid=*/ [node](BuildEngine& engine, const Rule& rule,
-                                const ValueType& value) -> bool {
+                                const ValueType& value) -> Rule::ValidationResult {
             return VirtualInputNodeTask::isResultValid(
                 engine, *node, BuildValue::fromData(value));
           }
@@ -1942,7 +1972,7 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
           return new FileInputNodeTask(*node);
         },
         /*IsValid=*/ [node](BuildEngine& engine, const Rule& rule,
-                            const ValueType& value) -> bool {
+                            const ValueType& value) -> Rule::ValidationResult {
           return FileInputNodeTask::isResultValid(
               engine, *node, BuildValue::fromData(value));
         }
@@ -1959,7 +1989,7 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
           return new ProducedDirectoryNodeTask(*node);
         },
         /*IsValid=*/ [node](BuildEngine& engine, const Rule& rule,
-                            const ValueType& value) -> bool {
+                            const ValueType& value) -> Rule::ValidationResult {
           return ProducedDirectoryNodeTask::isResultValid(
               engine, *node, BuildValue::fromData(value));
         }
@@ -1974,7 +2004,7 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
         return new ProducedNodeTask(*node);
       },
       /*IsValid=*/ [node](BuildEngine& engine, const Rule& rule,
-                          const ValueType& value) -> bool {
+                          const ValueType& value) -> Rule::ValidationResult {
         return ProducedNodeTask::isResultValid(
             engine, *node, BuildValue::fromData(value));
       }
@@ -2001,7 +2031,7 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
         return new StatTask(*statnode);
       },
       /*IsValid=*/ [statnode](BuildEngine& engine, const Rule& rule,
-                            const ValueType& value) -> bool {
+                            const ValueType& value) -> Rule::ValidationResult {
         return StatTask::isResultValid(
             engine, *statnode, BuildValue::fromData(value));
       }
@@ -2025,7 +2055,7 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
         return new TargetTask(*target);
       },
       /*IsValid=*/ [target](BuildEngine& engine, const Rule& rule,
-                            const ValueType& value) -> bool {
+                            const ValueType& value) -> Rule::ValidationResult {
         return TargetTask::isResultValid(
             engine, *target, BuildValue::fromData(value));
       }
@@ -2037,8 +2067,8 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
   abort();
 }
 
-void BuildSystemEngineDelegate::determinedRuleNeedsToRun(Rule* ruleNeedingToRun, Rule::RunReason reason, Rule* inputRule) {
-  return getBuildSystem().getDelegate().determinedRuleNeedsToRun(ruleNeedingToRun, reason, inputRule);
+void BuildSystemEngineDelegate::determinedRuleNeedsToRun(Rule* ruleNeedingToRun, Rule::RunReason reason, Rule* inputRule, StringRef details) {
+  return getBuildSystem().getDelegate().determinedRuleNeedsToRun(ruleNeedingToRun, reason, inputRule, details);
 }
 
 bool BuildSystemEngineDelegate::shouldResolveCycle(const std::vector<Rule*>& cycle,
@@ -2490,10 +2520,10 @@ public:
     llvm_unreachable("unexpected");
     return BuildValue::makeInvalid();
   }
-  
-  virtual bool isResultValid(BuildSystem&, const BuildValue& value) override {
+
+  virtual core::Rule::ValidationResult isResultValid(BuildSystem&, const BuildValue& value) override {
     // Always rebuild this task.
-    return false;
+    return core::Rule::ValidationResult(false);
   }
 
   virtual void start(BuildSystem&, TaskInterface ti) override { }
@@ -3078,21 +3108,21 @@ class MkdirCommand : public ExternalCommand {
     }
   }
 
-  virtual bool isResultValid(BuildSystem& system,
+  virtual core::Rule::ValidationResult isResultValid(BuildSystem& system,
                              const BuildValue& value) override {
     // If the prior value wasn't for a successful command, recompute.
     if (!value.isSuccessfulCommand())
-      return false;
+      return core::Rule::ValidationResult(false, "directory creation previously failed");
 
     // Otherwise, the result is valid if the directory still exists.
     auto info = getOutputs()[0]->getFileInfo(
         system.getFileSystem());
     if (info.isMissing())
-      return false;
+      return core::Rule::ValidationResult(false, "directory was removed");
 
     // If the item is not a directory, it needs to be recreated.
     if (!info.isDirectory())
-      return false;
+      return core::Rule::ValidationResult(false, "not a directory");
 
     // FIXME: We should strictly enforce the integrity of this validity routine
     // by ensuring that the build result for this command does not fully encode
@@ -3100,8 +3130,7 @@ class MkdirCommand : public ExternalCommand {
     // out the details of the file info (like the timestamp), but not rerunning
     // when they change. This is by design for this command, but it would still
     // be nice to be strict about it.
-    
-    return true;
+    return core::Rule::ValidationResult(true);
   }
   
   virtual void startExternalCommand(BuildSystem&, TaskInterface ti) override {
@@ -3303,28 +3332,27 @@ class SymlinkCommand : public Command {
     return BuildValue::makeExistingInput(info);
   }
 
-  virtual bool isResultValid(BuildSystem& system,
-                             const BuildValue& value) override {
+  virtual core::Rule::ValidationResult isResultValid(BuildSystem& system, const BuildValue& value) override {
     // It is an error if this command isn't configured properly.
     StringRef outputPath = getActualOutputPath();
     if (outputs.empty() || outputPath.empty())
-      return false;
+      return core::Rule::ValidationResult(false);
 
     // If the prior value wasn't for a successful command, recompute.
     if (!value.isSuccessfulCommand())
-      return false;
+      return core::Rule::ValidationResult(false, "symlink creation previously failed");
 
     // If the prior command doesn't look like one for a link, recompute.
     if (value.getNumOutputs() != 1)
-      return false;
+      return core::Rule::ValidationResult(false);
 
     // Otherwise, assume the result is valid if its link status matches the
     // previous one.
     auto info = system.getFileSystem().getLinkInfo(outputPath);
     if (info.isMissing())
-      return false;
+      return core::Rule::ValidationResult(false, "not a symlink");
 
-    return info == value.getOutputInfo();
+    return core::Rule::ValidationResult(info == value.getOutputInfo());
   }
   
   virtual void start(BuildSystem&, TaskInterface ti) override {
@@ -3870,10 +3898,9 @@ class StaleFileRemovalCommand : public Command {
     return BuildValue::fromData(value.toData());;
   }
 
-  virtual bool isResultValid(BuildSystem& system,
-                             const BuildValue& value) override {
+  virtual core::Rule::ValidationResult isResultValid(BuildSystem& system, const BuildValue& value) override {
     // Always re-run stale file removal.
-    return false;
+    return core::Rule::ValidationResult(false);
   }
 
   virtual void start(BuildSystem&, TaskInterface) override {}
