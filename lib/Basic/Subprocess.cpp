@@ -458,7 +458,7 @@ void ProcessGroup::signalAll(int signal) {
     // We are killing the whole process group here, this depends on us
     // spawning each process in its own group earlier.
 #if defined(_WIN32)
-    TerminateProcess(it.first, signal);
+    TerminateProcess(it.first, signal == SIGINT ? STATUS_CONTROL_C_EXIT : signal);
 #else
     ::kill(-it.first, signal);
 #endif
@@ -776,8 +776,9 @@ static void cleanUpExecutedProcess(ProcessDelegate& delegate,
   // subprocess (probably as a new point sample).
 
   // Notify of the process completion.
+  bool cancelled = (exitCode == STATUS_CONTROL_C_EXIT);
   ProcessStatus processStatus =
-      (exitCode == 0) ? ProcessStatus::Succeeded : ProcessStatus::Failed;
+      cancelled ? ProcessStatus::Cancelled : (exitCode == 0) ? ProcessStatus::Succeeded : ProcessStatus::Failed;
   ProcessResult processResult(processStatus, exitCode, pid, utime, stime,
                               counters.PeakWorkingSetSize);
 #else  // !defined(_WIN32)
