@@ -205,8 +205,8 @@ static int runAckermannBuild(int m, int n, int recomputeCount,
         auto k = AckermannKey(key);
         return new AckermannTask(engine, k.m, k.n);
       }
-      bool isResultValid(core::BuildEngine&, const core::ValueType&) override {
-        return true;
+      ValidationResult isResultValid(core::BuildEngine&, const core::ValueType&) override {
+        return ValidationResult(true);
       }
     };
 

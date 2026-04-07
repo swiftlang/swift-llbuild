@@ -106,7 +106,7 @@ public:
 
     Task* createTask(BuildEngine&) override { return new SimpleTask(inputs, compute); }
 
-    bool isResultValid(BuildEngine&, const ValueType& value) override {
+    ValidationResult isResultValid(BuildEngine&, const ValueType& value) override {
         if (!valid) return true;
         return valid(value);
     }

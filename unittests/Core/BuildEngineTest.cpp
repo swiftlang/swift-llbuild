@@ -159,7 +159,7 @@ public:
 
   Task* createTask(BuildEngine&) override { return new SimpleTask([this]{ return inputs; }, compute); }
 
-  bool isResultValid(BuildEngine&, const ValueType& value) override {
+  ValidationResult isResultValid(BuildEngine&, const ValueType& value) override {
     if (!valid) return true;
     return valid(value);
   }
@@ -653,7 +653,7 @@ TEST(BuildEngineTest, discoveredDependencies) {
       builtKeys.push_back(key.str());
       return new TaskWithDiscoveredDependency(dep);
     }
-    bool isResultValid(BuildEngine&, const ValueType&) override { return true; }
+    ValidationResult isResultValid(BuildEngine&, const ValueType&) override { return true; }
   };
   engine.addRule(std::unique_ptr<core::Rule>(new RuleWithDiscoveredDependency("output", builtKeys, valueB)));
 
@@ -794,7 +794,7 @@ TEST(BuildEngineTest, CycleDuringScanningFromTop) {
     Task* createTask(BuildEngine&) override {
       return new SimpleTask(input, compute);
     }
-    bool isResultValid(BuildEngine&, const ValueType&) override {
+    ValidationResult isResultValid(BuildEngine&, const ValueType&) override {
       return valid;
     }
   };

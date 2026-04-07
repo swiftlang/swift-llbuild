@@ -139,7 +139,7 @@ public:
     return new SimpleTask([this]{ return inputs; }, compute);
   }
 
-  bool isResultValid(BuildEngine&, const ValueType&) override { return true; }
+  ValidationResult isResultValid(BuildEngine&, const ValueType&) override { return true; }
 };
 
 

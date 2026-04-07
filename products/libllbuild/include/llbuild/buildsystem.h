@@ -508,7 +508,10 @@ typedef struct llb_buildsystem_delegate_t_ {
   ///  Xparam reason Describes why the rule needs to run. For example, because it has never run or because an input was rebuilt.
   ///
   ///  Xparam input_rule If `reason` is `InputRebuilt`, the rule for the rebuilt input, else  `nullptr`.
+  ///
+  ///  Xparam details Optional additional unstructured description of why the rule needs to run.
   void (*determined_rule_needs_to_run)(void* context, llb_build_key_t* rule_needing_to_run, llb_rule_run_reason_t reason, llb_build_key_t* input_rule);
+  void (*determined_rule_needs_to_run_v2)(void* context, llb_build_key_t* rule_needing_to_run, llb_rule_run_reason_t reason, llb_build_key_t* input_rule, const char* details);
 
   /// Called when a cycle is detected by the build engine and it cannot make
   /// forward progress.

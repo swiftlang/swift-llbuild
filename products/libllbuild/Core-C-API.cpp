@@ -43,12 +43,12 @@ class CAPIBuildEngineDelegate : public BuildEngineDelegate, public basic::Execut
       return (Task*) rule.create_task(rule.context, engineContext);
     }
 
-    bool isResultValid(BuildEngine&, const ValueType& value) override {
-      if (!rule.is_result_valid) return true;
+    ValidationResult isResultValid(BuildEngine&, const ValueType& value) override {
+      if (!rule.is_result_valid) return ValidationResult(true);
 
       llb_data_t value_data{ value.size(), value.data() };
-      return rule.is_result_valid(rule.context, engineContext, &rule,
-                                  &value_data);
+      bool valid = rule.is_result_valid(rule.context, engineContext, &rule, &value_data);
+      return ValidationResult(valid);
     }
 
     void updateStatus(BuildEngine&, Rule::StatusKind status) override {
