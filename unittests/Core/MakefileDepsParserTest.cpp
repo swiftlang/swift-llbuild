@@ -172,6 +172,32 @@ TEST(MakefileDepsParserTest, basic) {
   EXPECT_EQ(0U, actions.errors.size());
   EXPECT_EQ(1U, actions.records.size());
   EXPECT_EQ(RuleRecord("a", { "b:c" }), actions.records[0]);
+
+  // Comprehensive comment parsing
+    actions.errors.clear();
+    actions.records.clear();
+    input = "#\n" // Empty comments (parsable with original implementation)
+            "# Header comment\n" // Standard comment
+            "a: b c\n"  // Rule 1
+            "  # Middle comment with $pecial: c#ar@cters! \\ and spaces\n" // Complicated characters/spaces
+            "d: e f\n"  // Rule 2
+            "# Final comment";  // EOF terminator
+    MakefileDepsParser(StringRef(input), actions, false).parse();
+    EXPECT_EQ(0U, actions.errors.size());
+    EXPECT_EQ(2U, actions.records.size());
+    EXPECT_EQ(RuleRecord("a", { "b", "c" }), actions.records[0]);
+    EXPECT_EQ(RuleRecord("d", { "e", "f" }), actions.records[1]);
+
+    // Inline comments (documents current behavior)
+    actions.errors.clear();
+    actions.records.clear();
+    input = "a: b # inline comment";
+    MakefileDepsParser(StringRef(input), actions, false).parse();
+    // Document current behavior: parser treats # and words after it as separate dependency tokens
+    // This is because skipNonNewlineWhitespace doesn't handle comments, only skipWhitespaceAndComments does
+    EXPECT_EQ(0U, actions.errors.size());
+    EXPECT_EQ(1U, actions.records.size());
+    EXPECT_EQ(RuleRecord("a", { "b", "#", "inline", "comment" }), actions.records[0]);
 }
 
 }

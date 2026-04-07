@@ -44,7 +44,7 @@ static void skipWhitespaceAndComments(const char*& cur, const char* end) {
     // Skip comments.
     if (c == '#') {
       // Skip to the next newline.
-      while (cur + 1 != end && cur[1] == '\n')
+      while (cur + 1 != end && cur[1] != '\n')
         ++cur;
       continue;
     }
