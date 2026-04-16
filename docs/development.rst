@@ -191,10 +191,6 @@ Swift conventions.
 
     A C API for llbuild.
 
-  **swift-build-tool**
-
-    The command line build tool used by the Swift package manager.
-
 * Examples of using `llbuild` are available under `examples/`.
 
 * There are three kinds of correctness tests include in the project:
