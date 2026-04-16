@@ -105,3 +105,12 @@ rule target12_rule
   command = target12_rule $in -o $out
   depfile = $out.d
 build target12$ foo: target12_rule target12$ inputA
+
+# Check handling of implicit build outputs (and $out)
+#
+# CHECK: build "target13" | "target13_outA": target13_rule
+# CHECK-NEXT: command = "target13 target13_inputA -o target13"
+rule target13_rule
+     command = target13 ${in} -o ${out}
+build target13 | target13_outA: target13_rule target13_inputA
+

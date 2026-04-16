@@ -129,7 +129,10 @@ private:
                                      statement->implicitInputs_end());
       auto orderOnlyInputs = copyRefs(statement->orderOnlyInputs_begin(),
                                       statement->orderOnlyInputs_end());
-      auto outputs = copyRefs(statement->getOutputs());
+      auto explicitOutputs = copyRefs(statement->explicitOutputs_begin(),
+                                      statement->explicitOutputs_end());
+      auto implicitOutputs = copyRefs(statement->implicitOutputs_begin(),
+                                      statement->implicitOutputs_end());
       auto variables = copyRefs(statement->getParameters());
 
       return {
@@ -139,7 +142,8 @@ private:
         explicitInputs.size(), explicitInputs.data(),
         implicitInputs.size(), implicitInputs.data(),
         orderOnlyInputs.size(), orderOnlyInputs.data(),
-        outputs.size(), outputs.data(),
+        explicitOutputs.size(), explicitOutputs.data(),
+        implicitOutputs.size(), implicitOutputs.data(),
         variables.size(), variables.data(),
         statement->hasGeneratorFlag(),
         statement->hasRestatFlag()

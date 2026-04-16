@@ -51,7 +51,7 @@ build a.o: cc b.o
    name = value
 # CHECK: actOnEndBuildDecl(/*Decl=*/{{.*}})
 
-# Check "build" implicit and order-only parsing.
+# Check "build" implicit inputs and order-only inputs parsing.
 #
 # CHECK: actOnBeginBuildDecl(/*Name=*/"cc", /*Outputs=*/["a.o"], /*Inputs=*/["b.o"], /*NumExplicitInputs=*/0, /*NumImplicitInputs=*/0)
 build a.o: cc | || b.o
@@ -61,6 +61,19 @@ build a.o: cc b.o | || c.o
 build a.o: cc b.o | c.o || d.o
 # CHECK: basic.ninja:[[@LINE+1]]:14: error: expected newline token
 build a.o: cc :
+
+# Check "build" implict output parsing.
+#
+# CHECK: actOnBeginBuildDecl(/*Name=*/"cc", /*Outputs=*/["a.o", "b.d"], /*Inputs=*/[], /*NumExplicitInputs=*/0, /*NumImplicitInputs=*/0, /*NumImplicitOutputs=*/1)
+build a.o | b.d: cc
+
+# CHECK: actOnBeginBuildDecl(/*Name=*/"cc", /*Outputs=*/["c.d"], /*Inputs=*/[], /*NumExplicitInputs=*/0, /*NumImplicitInputs=*/0, /*NumImplicitOutputs=*/1)
+build | c.d: cc
+
+# CHECK: basic.ninja:[[@LINE+2]]:6: error: expected output path string
+# CHECK: basic.ninja:[[@LINE+2]]:8: error: expected output path string
+build : cc
+build | : cc
 
 # Check for handling of malformed statements.
 # CHECK: basic.ninja:[[@LINE+3]]:4: error: expected variable name
