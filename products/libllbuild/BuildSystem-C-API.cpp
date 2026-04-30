@@ -949,13 +949,20 @@ class CAPIExternalCommand : public ExternalCommand {
           return ExternalCommand::configureAttribute(ctx, name, values);
         }
   }
-  
+
+  /// Resolve output node names to actual BuildNode pointers if not already done.
+  void resolveOutputs(BuildSystem& system) {
+    if (outputs.empty() && !outputNodeNames.empty()) {
+      outputs.reserve(outputNodeNames.size());
+      for (const auto& name : outputNodeNames) {
+        outputs.push_back(system.lookupNode(name));
+      }
+    }
+  }
+
   virtual void startExternalCommand(BuildSystem& system,
                                     core::TaskInterface ti) override {
-    outputs.reserve(outputNodeNames.size());
-    for (auto name: outputNodeNames) {
-      outputs.push_back(system.lookupNode(name));
-    }
+    resolveOutputs(system);
     cAPIDelegate.start(cAPIDelegate.context,
                        (llb_buildsystem_command_t*)this,
                        (llb_buildsystem_interface_t*)&system,
@@ -1146,6 +1153,11 @@ class CAPIExternalCommand : public ExternalCommand {
   }
 
   bool isResultValid(BuildSystem& system, const BuildValue& value) override {
+    // Ensure outputs are resolved before checking validity. For dynamic tasks,
+    // outputs are normally resolved in startExternalCommand (during execution),
+    // but isResultValid is called earlier during the scan phase.
+    resolveOutputs(system);
+
     if (cAPIDelegate.is_result_valid_with_fallback) {
       struct FallbackContext {
         BuildSystem *buildSystem;
