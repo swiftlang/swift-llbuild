@@ -52,6 +52,7 @@
 # endif  // GTEST_OS_LINUX
 
 # include <stdarg.h>
+# include <stdint.h>
 
 # if GTEST_OS_WINDOWS
 #  include <windows.h>
