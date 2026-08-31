@@ -1,4 +1,4 @@
-// swift-tools-version:5.3
+// swift-tools-version:6.0
 
 // This file defines Swift package manager support for llbuild. See:
 //  https://github.com/swiftlang/swift-package-manager/tree/master/Documentation
@@ -59,7 +59,7 @@ let package = Package(
         // MARK: Products
 
         /// The llbuild multitool (primarily for testing).
-        .target(
+        .executableTarget(
             name: "llbuild",
             dependencies: ["llbuildCommands"],
             path: "products/llbuild",
@@ -73,7 +73,7 @@ let package = Package(
         /// SwiftPM has now switched to using llbuild's Swift bindings API to
         /// build, but this tool is still used for SwiftPM's bootstrapping. Once
         /// that step has been eliminated, this tool can be removed.
-        .target(
+        .executableTarget(
             name: "swift-build-tool",
             dependencies: ["llbuildBuildSystem"],
             path: "products/swift-build-tool",
@@ -139,7 +139,7 @@ let package = Package(
 
         // MARK: Test Targets
 
-        .target(
+        .executableTarget(
             name: "llbuildBasicTests",
             dependencies: ["llbuildBasic", "gmocklib"],
             path: "unittests/Basic",
@@ -150,7 +150,7 @@ let package = Package(
             linkerSettings: [
                 .linkedLibrary("dl", .when(platforms: [.linux])),
                 .linkedLibrary("pthread", .when(platforms: [.linux]))]),
-        .target(
+        .executableTarget(
             name: "llbuildCoreTests",
             dependencies: [
                 "llbuildCore",
@@ -166,7 +166,7 @@ let package = Package(
                 .linkedLibrary("dl", .when(platforms: [.linux])),
                 .linkedLibrary("pthread", .when(platforms: [.linux])),
             ] + externalSqliteLibraries),
-        .target(
+        .executableTarget(
             name: "llbuildBuildSystemTests",
             dependencies: ["llbuildBuildSystem", "gmocklib"],
             path: "unittests/BuildSystem",
@@ -177,7 +177,7 @@ let package = Package(
             linkerSettings: [
                 .linkedLibrary("dl", .when(platforms: [.linux])),
                 .linkedLibrary("pthread", .when(platforms: [.linux]))]),
-        .target(
+        .executableTarget(
             name: "llbuildNinjaTests",
             dependencies: ["llbuildNinja", "gmocklib"],
             path: "unittests/Ninja",
@@ -211,37 +211,24 @@ let package = Package(
 
         .target(
             name: "gtestlib",
-            path: "utils/unittest/googletest/src",
-            exclude: [
-                "gtest-death-test.cc",
-                "gtest-filepath.cc",
-                "gtest-matchers.cc",
-                "gtest-port.cc",
-                "gtest-printers.cc",
-                "gtest-test-part.cc",
-                "gtest-typed-test.cc",
-                "gtest.cc",
-            ],
+            path: "utils/unittest/googletest",
+            sources: ["src/gtest-all.cc"],
+            publicHeadersPath: "include",
             cxxSettings: [
-                .headerSearchPath(".."),
-                .headerSearchPath("../include"),
+                .headerSearchPath("."),
+                .headerSearchPath("include"),
+                .headerSearchPath("src"),
             ]),
 
         .target(
             name: "gmocklib",
             dependencies: ["gtestlib"],
-            path: "utils/unittest/googlemock/src",
-            exclude: [
-                "gmock-cardinalities.cc",
-                "gmock-internal-utils.cc",
-                "gmock-matchers.cc",
-                "gmock-spec-builders.cc",
-                "gmock.cc",
-            ],
+            path: "utils/unittest/googlemock",
+            sources: ["src/gmock-all.cc"],
+            publicHeadersPath: "include",
             cxxSettings: [
-                .headerSearchPath(".."),
-                .headerSearchPath("../include"),
-                .headerSearchPath("../../googletest/include"),
+                .headerSearchPath("."),
+                .headerSearchPath("include"),
             ],
             linkerSettings: [
                 .linkedLibrary("swiftCore", .when(platforms: [.windows])), // for swift_addNewDSOImage
@@ -262,6 +249,7 @@ let package = Package(
             ] + terminfoLibraries
         ),
     ],
+    swiftLanguageModes: [.v5],
     cxxLanguageStandard: .cxx14
 )
 
