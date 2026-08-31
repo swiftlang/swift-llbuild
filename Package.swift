@@ -38,7 +38,7 @@ let terminfoLibraries: [LinkerSetting] = {
 let package = Package(
     name: "llbuild",
     platforms: [
-        .macOS(.v10_10), .iOS(.v9),
+        .macOS(.v15), .iOS(.v18),
     ],
     products: [
         .executable(
