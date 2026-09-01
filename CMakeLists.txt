@@ -51,7 +51,9 @@ set(THREADS_PREFER_PTHREAD_FLAG FALSE)
 find_package(Threads REQUIRED)
 
 find_package(SQLite3 QUIET)
-if(NOT SQLite3_FOUND)
+if(SQLite3_FOUND AND NOT TARGET SQLite3::SQLite3)
+  add_library(SQLite3::SQLite3 ALIAS SQLite::SQLite3)
+elseif(NOT SQLite3_FOUND)
   include(FetchContent)
 
   message("-- Vendoring SQLite3")
@@ -61,7 +63,7 @@ if(NOT SQLite3_FOUND)
 
   FetchContent_MakeAvailable(SQLite)
 
-  add_library(SQLite::SQLite3 ALIAS SQLite3)
+  add_library(SQLite3::SQLite3 ALIAS SQLite3)
   set_property(GLOBAL APPEND PROPERTY LLBuild_EXPORTS SQLite3)
 endif()
 
@@ -146,10 +148,10 @@ if (XCODE)
   set(CMAKE_XCODE_ATTRIBUTE_GCC_ENABLE_CPP_RTTI "NO")
 
   # Disable exceptions.
-  set(CMAKE_XCODE_ATTRIBUTE_GCC_ENABLE_CPP_EXCEPTIONS "NO") 
+  set(CMAKE_XCODE_ATTRIBUTE_GCC_ENABLE_CPP_EXCEPTIONS "NO")
 
   # Disable headermaps.
-  set(CMAKE_XCODE_ATTRIBUTE_USE_HEADERMAP "NO") 
+  set(CMAKE_XCODE_ATTRIBUTE_USE_HEADERMAP "NO")
 elseif(MSVC)
   add_compile_options(
     # Disable unknown pragma warnings (e.g. for #pragma mark).
