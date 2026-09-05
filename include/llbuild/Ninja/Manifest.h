@@ -166,6 +166,10 @@ private:
   /// in the \see inputs array. The remaining inputs are the order-only ones.
   unsigned numImplicitInputs;
 
+  /// The number of explicit outputs, at the start of the \see outputs array.
+  /// The remaining outputs are the implicit ones.
+  unsigned numExplicitOutputs;
+
   /// The command parameters, which are used to evaluate the rule template.
   //
   // FIXME: It might be substantially better to evaluate all of these in the
@@ -191,20 +195,31 @@ public:
                    ArrayRef<Node*> outputs,
                    ArrayRef<Node*> inputs,
                    unsigned numExplicitInputs,
-                   unsigned numImplicitInputs)
+                   unsigned numImplicitInputs,
+                   unsigned numExplicitOutputs)
     : rule(rule), outputs(outputs), inputs(inputs),
       numExplicitInputs(numExplicitInputs),
       numImplicitInputs(numImplicitInputs),
+      numExplicitOutputs(numExplicitOutputs),
       executionPool(nullptr), depsStyle(unsigned(DepsStyleKind::None)),
       isGenerator(0), shouldRestat(0)
   {
     assert(outputs.size() > 0);
     assert(numExplicitInputs + numImplicitInputs <= inputs.size());
+    assert(numExplicitOutputs <= outputs.size());
   }
 
   const class Rule* getRule() const { return rule; }
 
   const std::vector<Node*>& getOutputs() const { return outputs; }
+
+  const ArrayRef<Node*> getExplicitOutputs() const {
+    return llvm::makeArrayRef(outputs).take_front(getNumExplicitOutputs());
+  }
+
+  const ArrayRef<Node*> getImplicitOutputs() const {
+    return llvm::makeArrayRef(outputs).take_back(getNumImplicitOutputs());
+  }
 
   const std::vector<Node*>& getInputs() const { return inputs; }
 
@@ -233,6 +248,11 @@ public:
   unsigned getNumImplicitInputs() const { return numImplicitInputs; }
   unsigned getNumOrderOnlyInputs() const {
     return inputs.size() - getNumExplicitInputs() - getNumImplicitInputs();
+  }
+
+  unsigned getNumExplicitOutputs() const { return numExplicitOutputs; }
+  unsigned getNumImplicitOutputs() const {
+    return unsigned(outputs.size()) - getNumExplicitOutputs();
   }
 
   llvm::StringMap<std::string>& getParameters() {

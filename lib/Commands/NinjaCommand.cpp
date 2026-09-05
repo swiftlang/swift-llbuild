@@ -163,7 +163,8 @@ private:
                       ArrayRef<ninja::Token> outputs,
                       ArrayRef<ninja::Token> inputs,
                       unsigned numExplicitInputs,
-                      unsigned numImplicitInputs) override {
+                      unsigned numImplicitInputs,
+                      unsigned numExplicitOutputs) override {
     std::cerr << __FUNCTION__ << "(/*Name=*/"
               << "\"" << escapedString(name) << "\""
               << ", /*Outputs=*/[";
@@ -183,7 +184,8 @@ private:
       first = false;
     }
     std::cerr << "], /*NumExplicitInputs=*/" << numExplicitInputs
-              << ", /*NumImplicitInputs=*/"  << numImplicitInputs << ")\n";
+              << ", /*NumImplicitInputs=*/" << numImplicitInputs
+              << ", /*NumExplicitOutputs=*/" << numExplicitOutputs << ")\n";
     return 0;
   }
 
@@ -278,7 +280,8 @@ private:
                       ArrayRef<ninja::Token> outputs,
                       ArrayRef<ninja::Token> inputs,
                       unsigned numExplicitInputs,
-                      unsigned numImplicitInputs) override {
+                      unsigned numImplicitInputs,
+                      unsigned numExplicitOutputs) override {
     return 0;
   }
 
@@ -536,8 +539,14 @@ static void dumpNinjaManifestText(StringRef file, ninja::Manifest* manifest) {
   for (const auto& command: commands) {
     // Write the command entry.
     std::cout << "build";
-    for (const auto& node: command->getOutputs()) {
+    for (const auto& node: command->getExplicitOutputs()) {
       std::cout << " \"" << util::escapedString(node->getScreenPath()) << "\"";
+    }
+    if (command->getNumImplicitOutputs()) {
+      std::cout << " |";
+      for (const auto& node: command->getImplicitOutputs()) {
+        std::cout << " \"" << util::escapedString(node->getScreenPath()) << "\"";
+      }
     }
     std::cout << ": " << command->getRule()->getName();
     unsigned count = 0;

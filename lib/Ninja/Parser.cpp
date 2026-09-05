@@ -378,7 +378,8 @@ void Parser::ParserImpl::parseParameterizedDecl() {
   }
 }
 
-/// build-spec ::= "build" path-string-list ":" path-string path-string-list
+/// build-spec ::= "build" path-string-list [ "|" path-string-list ] ":"
+///                path-string path-string-list
 ///                [ "|" path-string-list ] [ "||" path-string-list" ] '\n'
 bool Parser::ParserImpl::parseBuildSpecifier(
     ParseActions::BuildResult* decl_out) {
@@ -396,6 +397,13 @@ bool Parser::ParserImpl::parseBuildSpecifier(
   do {
     outputs.push_back(consumeExpectedToken(Token::Kind::String));
   } while (tok.tokenKind == Token::Kind::String);
+  unsigned numExplicitOutputs = unsigned(outputs.size());
+
+  if (consumeIfToken(Token::Kind::Pipe)) {
+    while (tok.tokenKind == Token::Kind::String) {
+      outputs.push_back(consumeExpectedToken(Token::Kind::String));
+    }
+  }
 
   // Expect the string list to be terminated by a colon.
   if (tok.tokenKind != Token::Kind::Colon) {
@@ -447,8 +455,9 @@ bool Parser::ParserImpl::parseBuildSpecifier(
     return false;
   }
 
-  *decl_out = actions.actOnBeginBuildDecl(name, outputs, inputs,
-                                          numExplicitInputs, numImplicitInputs);
+  *decl_out =
+      actions.actOnBeginBuildDecl(name, outputs, inputs, numExplicitInputs,
+                                  numImplicitInputs, numExplicitOutputs);
 
   return true;
 }
