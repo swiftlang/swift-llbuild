@@ -82,13 +82,17 @@ public:
   /// following the explicit inputs in the \see Inputs array. All of the
   /// remaining inputs past the implicit inputs are "order-only" inputs.
   ///
+  /// \param numImplicitOutputs The number of implicit outputs, listed immediately
+  /// following the explicit outputs in the \see Outputs array.
+  ///
   /// \returns A result object to represent this decl, which will be passed
   /// later to \see actOnEndBuildDecl().
   virtual BuildResult actOnBeginBuildDecl(const Token& name,
                                           ArrayRef<Token> outputs,
                                           ArrayRef<Token> inputs,
                                           unsigned numExplicitInputs,
-                                          unsigned numImplicitInputs) = 0;
+                                          unsigned numImplicitInputs,
+                                          unsigned numImplicitOutputs) = 0;
 
   /// Called on a variable binding within a "build" declaration.
   ///

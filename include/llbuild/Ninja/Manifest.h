@@ -166,6 +166,10 @@ private:
   /// in the \see inputs array. The remaining inputs are the order-only ones.
   unsigned numImplicitInputs;
 
+  /// The number of implicit outputs, immediately following the explicit inputs
+  /// in the \see outputs array.
+  unsigned numImplicitOutputs;
+
   /// The command parameters, which are used to evaluate the rule template.
   //
   // FIXME: It might be substantially better to evaluate all of these in the
@@ -191,10 +195,12 @@ public:
                    ArrayRef<Node*> outputs,
                    ArrayRef<Node*> inputs,
                    unsigned numExplicitInputs,
-                   unsigned numImplicitInputs)
+                   unsigned numImplicitInputs,
+                   unsigned numImplicitOutputs)
     : rule(rule), outputs(outputs), inputs(inputs),
       numExplicitInputs(numExplicitInputs),
       numImplicitInputs(numImplicitInputs),
+      numImplicitOutputs(numImplicitOutputs),
       executionPool(nullptr), depsStyle(unsigned(DepsStyleKind::None)),
       isGenerator(0), shouldRestat(0)
   {
@@ -207,6 +213,20 @@ public:
   const std::vector<Node*>& getOutputs() const { return outputs; }
 
   const std::vector<Node*>& getInputs() const { return inputs; }
+
+  const std::vector<Node*>::const_iterator explicitOutputs_begin() const {
+    return outputs.begin();
+  }
+  const std::vector<Node*>::const_iterator explicitOutputs_end() const {
+    return explicitOutputs_begin() + getNumExplicitOutputs();
+  }
+
+  const std::vector<Node*>::const_iterator implicitOutputs_begin() const {
+    return explicitOutputs_end();
+  }
+  const std::vector<Node*>::const_iterator implicitOutputs_end() const {
+    return outputs.end();
+  }
 
   const std::vector<Node*>::const_iterator explicitInputs_begin() const {
     return inputs.begin();
@@ -229,6 +249,10 @@ public:
     return inputs.end();
   }
 
+  unsigned getNumExplicitOutputs() const {
+    return getOutputs().size() - getNumImplicitOutputs();
+  }
+  unsigned getNumImplicitOutputs() const { return numImplicitOutputs; }
   unsigned getNumExplicitInputs() const { return numExplicitInputs; }
   unsigned getNumImplicitInputs() const { return numImplicitInputs; }
   unsigned getNumOrderOnlyInputs() const {
