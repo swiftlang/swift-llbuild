@@ -1313,6 +1313,19 @@ buildCommand(BuildContext& context, ninja::Command* command) {
 #endif
       }
 
+      // Create the directories for the directories containing file outputs.
+      //
+      // FIXME: Implement a shared cache for this, to reduce the number of
+      // syscalls required to make this happen.
+      // ExternalCommand::execute() is doing something similar, use the same
+      // shared cache if possible.
+      for (const auto* output: command->getOutputs()) {
+        auto parent = llvm::sys::path::parent_path(output->getScreenPath());
+        if (!parent.empty()) {
+          (void) llvm::sys::fs::create_directories(parent);
+        }
+      }
+
       // If response file is used by the command, create the file and
       // fill it with content before command execution.
       // The file should be deleted after successful command execution.

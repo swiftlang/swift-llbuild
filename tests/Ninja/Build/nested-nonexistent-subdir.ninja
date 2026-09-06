@@ -1,4 +1,6 @@
-# Check that outputs to not yet existing directories works fine
+# Check that outputs to a nested chain of not yet existing directories works
+# fine, i.e. llbuild creates all of the missing intermediate directories, not
+# just the immediate parent.
 
 # We run the build in a sandbox in the temp directory to ensure we don't
 # interact with the source dirs.
@@ -9,11 +11,11 @@
 # RUN: touch %t.build/input
 # RUN: %{llbuild} ninja build --jobs 1 --no-db --chdir %t.build &> %t.out
 # RUN: %{FileCheck} < %t.out %s
-# RUN: test -f %t.build/subdir/output
+# RUN: test -f %t.build/subdir/nested/deeper/output
 
-# CHECK: [1/1] cat input > subdir/output
+# CHECK: [1/1] cat input > subdir/nested/deeper/output
 
 rule CAT
      command = cat ${in} > ${out}
 
-build subdir/output: CAT input
+build subdir/nested/deeper/output: CAT input
