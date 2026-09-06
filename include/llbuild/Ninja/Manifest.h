@@ -106,6 +106,35 @@ public:
   const std::string& getScreenPath() const { return screenPath; }
 };
 
+/// Captures information about a node appearing in a command.
+///
+/// Nodes are uniqued across commands but how they appear in a command (relative
+/// or absolute path) is important for variable expansion; \c NodeInCommand
+/// preserves such info.
+class NodeInCommand {
+  Node* node;
+  /// This only contains a string if it is different than
+  /// \c node->getScreenPath(), otherwise it is empty.
+  std::string asWritten;
+
+public:
+  NodeInCommand(Node* node, StringRef asWritten) : node(node) {
+    if (node->getScreenPath() != asWritten) {
+      this->asWritten = asWritten;
+    }
+  }
+
+  Node* getNode() const { return node; }
+
+  const std::string& getScreenPath() const {
+    return (asWritten.empty()) ? node->getScreenPath() : asWritten;
+  }
+
+  const std::string& getCanonicalPath() const {
+    return node->getCanonicalPath();
+  }
+};
+
 /// A pool represents a generic bucket for organizing commands.
 class Pool {
   /// The name of the pool.
@@ -157,7 +186,7 @@ private:
   /// implicit and order-only inputs (which are determined by their position in
   /// the array and the \see numExplicitInputs and \see numImplicitInputs
   /// variables).
-  std::vector<Node*> inputs;
+  std::vector<NodeInCommand> inputs;
 
   /// The number of explicit inputs, at the start of the \see inputs array.
   unsigned numExplicitInputs;
@@ -193,7 +222,7 @@ public:
   // copying, but requires SmallVectorImpl to take a move constructor.
   explicit Command(class Rule* rule,
                    ArrayRef<Node*> outputs,
-                   ArrayRef<Node*> inputs,
+                   ArrayRef<NodeInCommand> inputs,
                    unsigned numExplicitInputs,
                    unsigned numImplicitInputs,
                    unsigned numExplicitOutputs)
@@ -221,26 +250,28 @@ public:
     return llvm::makeArrayRef(outputs).take_back(getNumImplicitOutputs());
   }
 
-  const std::vector<Node*>& getInputs() const { return inputs; }
+  const std::vector<NodeInCommand>& getInputs() const {
+    return inputs;
+  }
 
-  const std::vector<Node*>::const_iterator explicitInputs_begin() const {
+  const std::vector<NodeInCommand>::const_iterator explicitInputs_begin() const {
     return inputs.begin();
   }
-  const std::vector<Node*>::const_iterator explicitInputs_end() const {
+  const std::vector<NodeInCommand>::const_iterator explicitInputs_end() const {
     return explicitInputs_begin() + getNumExplicitInputs();
   }
 
-  const std::vector<Node*>::const_iterator implicitInputs_begin() const {
+  const std::vector<NodeInCommand>::const_iterator implicitInputs_begin() const {
     return explicitInputs_end();
   }
-  const std::vector<Node*>::const_iterator implicitInputs_end() const {
+  const std::vector<NodeInCommand>::const_iterator implicitInputs_end() const {
     return implicitInputs_begin() + getNumImplicitInputs();
   }
 
-  const std::vector<Node*>::const_iterator orderOnlyInputs_begin() const {
+  const std::vector<NodeInCommand>::const_iterator orderOnlyInputs_begin() const {
     return implicitInputs_end();
   }
-  const std::vector<Node*>::const_iterator orderOnlyInputs_end() const {
+  const std::vector<NodeInCommand>::const_iterator orderOnlyInputs_end() const {
     return inputs.end();
   }
 

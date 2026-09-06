@@ -60,6 +60,62 @@ class SwiftNinjaTests: XCTestCase {
     ])
   }
 
+  func testSameInputRelativeAndAbsolutePath() throws {
+    // Two build statements reference the same input file, one using a path
+    // relative to the working directory and the other using the absolute
+    // path. Both nodes must be deduplicated to the same underlying Node, but
+    // each command's $in expansion should reflect the path as written in
+    // that command, not the (possibly different) path used by whichever
+    // command first created the node.
+    let ruleFile = makeTemporaryFile("""
+            rule CMD
+                command = ls $in\n
+            """)
+    let workingDirectory = try URL(fileURLWithPath: ruleFile)
+      .deletingLastPathComponent().withUnsafeFileSystemRepresentation { try XCTUnwrap($0.map(String.init(cString:))) }
+    let absoluteInputPath = "\(workingDirectory)/same-input.txt"
+    // Ninja treats ':' as a path-token delimiter (it separates "output:
+    // rule inputs"), so a Windows drive-letter colon must be escaped as
+    // "$:" when embedded in the manifest source. The escape is undone by
+    // the manifest evaluator, so the expected `$in` expansion below uses
+    // the unescaped path.
+    let escapedAbsoluteInputPath = absoluteInputPath.replacingOccurrences(of: ":", with: "$:")
+    let manifestFile = makeTemporaryFile("""
+            include \(URL(fileURLWithPath: ruleFile).lastPathComponent)
+            build out1: CMD same-input.txt
+            build out2: CMD \(escapedAbsoluteInputPath)\n
+            """)
+
+    let manifest = try NinjaManifest(path: manifestFile, workingDirectory: workingDirectory)
+
+    let expectedRule = NinjaRule(name: "CMD", variables: ["command": "ls $in"])
+    XCTAssertEqual(manifest.rules["CMD"], expectedRule)
+    XCTAssertEqual(manifest.statements, [
+      NinjaBuildStatement(
+        rule: expectedRule,
+        command: "ls same-input.txt",
+        description: "",
+        explicitInputs: ["same-input.txt"],
+        implicitInputs: [],
+        orderOnlyInputs: [],
+        outputs: ["out1"],
+        variables: [:],
+        generator: false,
+        restat: false),
+      NinjaBuildStatement(
+        rule: expectedRule,
+        command: "ls \(absoluteInputPath)",
+        description: "",
+        explicitInputs: [absoluteInputPath],
+        implicitInputs: [],
+        orderOnlyInputs: [],
+        outputs: ["out2"],
+        variables: [:],
+        generator: false,
+        restat: false),
+    ])
+  }
+
   func testMissingRule() throws {
     let manifestFile = makeTemporaryFile("""
             build output: CMD input\n

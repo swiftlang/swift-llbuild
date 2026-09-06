@@ -161,6 +161,19 @@ private:
     return copyRefs(llvm::makeArrayRef(&*begin, &*end));
   }
 
+  ArrayRef<llb_string_ref_t> copyRefs(ArrayRef<NodeInCommand> nodes) {
+    return copyTransformed(nodes, [](auto &node) -> llb_string_ref_t {
+      auto &path = node.getScreenPath();
+      return { path.size(), path.data() };
+    });
+  }
+
+  ArrayRef<llb_string_ref_t> copyRefs(
+      const std::vector<NodeInCommand>::const_iterator &begin,
+      const std::vector<NodeInCommand>::const_iterator &end) {
+    return copyRefs(llvm::makeArrayRef(&*begin, &*end));
+  }
+
   ArrayRef<llb_ninja_variable_t> copyRefs(
       const llvm::StringMap<std::string> &variables) {
     return copyTransformed(variables, [&](auto &var) -> llb_ninja_variable_t {

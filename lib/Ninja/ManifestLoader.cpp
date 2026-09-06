@@ -331,7 +331,7 @@ public:
 
     // Resolve all of the inputs and outputs.
     SmallVector<Node*, 8> outputs;
-    SmallVector<Node*, 8> inputs;
+    SmallVector<NodeInCommand, 8> inputs;
     for (const auto& token: outputTokens) {
       // Evaluate the token string.
       SmallString<256> path;
@@ -348,7 +348,8 @@ public:
       if (path.empty()) {
         error("empty input path", token);
       }
-      inputs.push_back(manifest->findOrCreateNode(workingDirectory, path));
+      Node *node = manifest->findOrCreateNode(workingDirectory, path);
+      inputs.push_back(NodeInCommand(node, path));
     }
 
     Command* decl = new (manifest->getAllocator())
@@ -400,7 +401,7 @@ public:
       for (unsigned i = 0, ie = decl->getNumExplicitInputs(); i != ie; ++i) {
         if (i != 0)
           result << separator;
-        auto& path = decl->getInputs()[i]->getScreenPath();
+        auto& path = decl->getInputs()[i].getScreenPath();
         result << (context->shellEscapeInAndOut ? basic::shellEscaped(path)
                                                 : path);
       }
