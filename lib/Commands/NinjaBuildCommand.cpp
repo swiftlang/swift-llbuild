@@ -998,7 +998,7 @@ buildCommand(BuildContext& context, ninja::Command* command) {
         if (value.isMissingInput()) {
           hasMissingInput = true;
 
-          context.reportMissingInput(command->getInputs()[inputID]);
+          context.reportMissingInput(command->getInputs()[inputID].getNode());
         }
       } else {
         // Otherwise, track the information used to determine if we can just
@@ -1040,26 +1040,26 @@ buildCommand(BuildContext& context, ninja::Command* command) {
       unsigned id = 0;
       for (auto it = command->explicitInputs_begin(),
              ie = command->explicitInputs_end(); it != ie; ++it, ++id) {
-        if (!context.strict && isPhony && isImmediatelyCyclicInput(*it))
+        if (!context.strict && isPhony && isImmediatelyCyclicInput(it->getNode()))
           continue;
 
-        ti.request((*it)->getCanonicalPath(), id);
+        ti.request(it->getCanonicalPath(), id);
       }
       for (auto it = command->implicitInputs_begin(),
              ie = command->implicitInputs_end(); it != ie; ++it, ++id) {
-        if (!context.strict && isPhony && isImmediatelyCyclicInput(*it))
+        if (!context.strict && isPhony && isImmediatelyCyclicInput(it->getNode()))
           continue;
 
-        ti.request((*it)->getCanonicalPath(), id);
+        ti.request(it->getCanonicalPath(), id);
       }
 
       // Request all of the order-only inputs.
       for (auto it = command->orderOnlyInputs_begin(),
              ie = command->orderOnlyInputs_end(); it != ie; ++it) {
-        if (!context.strict && isPhony && isImmediatelyCyclicInput(*it))
+        if (!context.strict && isPhony && isImmediatelyCyclicInput(it->getNode()))
           continue;
 
-        ti.mustFollow((*it)->getCanonicalPath());
+        ti.mustFollow(it->getCanonicalPath());
       }
     }
 
@@ -2279,8 +2279,8 @@ int commands::executeNinjaBuildCommand(std::vector<std::string> args) {
 
         // Collect all of the input nodes.
         for (const auto& command: context.manifest->getCommands()) {
-          for (const auto* input: command->getInputs()) {
-            inputNodes.emplace(input);
+          for (const auto& input: command->getInputs()) {
+            inputNodes.emplace(input.getNode());
           }
         }
 

@@ -558,7 +558,7 @@ static void dumpNinjaManifestText(StringRef file, ninja::Manifest* manifest) {
       } else if (count == command->getNumExplicitInputs()) {
         std::cout << "| ";
       }
-      std::cout << "\"" << util::escapedString(node->getScreenPath()) << "\"";
+      std::cout << "\"" << util::escapedString(node.getScreenPath()) << "\"";
       ++count;
     }
     std::cout << "\n";
@@ -726,7 +726,7 @@ static void dumpNinjaManifestJSON(StringRef file, ninja::Manifest* manifest) {
     for (auto it = command->explicitInputs_begin(),
            ie = command->explicitInputs_end(); it != ie; ++it) {
       if (it != command->explicitInputs_begin()) std::cout << ", ";
-      std::cout << "\"" << escapeForJSON((*it)->getScreenPath()) << "\"";
+      std::cout << "\"" << escapeForJSON(it->getScreenPath()) << "\"";
     }
     std::cout << "],\n";
     if (command->getNumImplicitInputs()) {
@@ -734,7 +734,7 @@ static void dumpNinjaManifestJSON(StringRef file, ninja::Manifest* manifest) {
       for (auto it = command->implicitInputs_begin(),
              ie = command->implicitInputs_end(); it != ie; ++it) {
         if (it != command->implicitInputs_begin()) std::cout << ", ";
-        std::cout << "\"" << escapeForJSON((*it)->getScreenPath()) << "\"";
+        std::cout << "\"" << escapeForJSON(it->getScreenPath()) << "\"";
       }
       std::cout << "],\n";
     }
@@ -743,7 +743,7 @@ static void dumpNinjaManifestJSON(StringRef file, ninja::Manifest* manifest) {
       for (auto it = command->orderOnlyInputs_begin(),
              ie = command->orderOnlyInputs_end(); it != ie; ++it) {
         if (it != command->orderOnlyInputs_begin()) std::cout << ", ";
-        std::cout << "\"" << escapeForJSON((*it)->getScreenPath()) << "\"";
+        std::cout << "\"" << escapeForJSON(it->getScreenPath()) << "\"";
       }
       std::cout << "],\n";
     }
