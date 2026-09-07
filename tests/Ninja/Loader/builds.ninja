@@ -10,6 +10,11 @@ build target01: phony
 # CHECK: build "target02": phony "explicit-a" "explicit-b" | "implicit-a" "implicit-b" || "order-a" "order-b"
 build target02: phony explicit-a explicit-b | implicit-a implicit-b || order-a order-b
 
+# Check implicit output loading.
+#
+# CHECK: build "target02b" | "implicit-out-a" "implicit-out-b": phony "explicit-a" | "implicit-a" || "order-a"
+build target02b | implicit-out-a implicit-out-b: phony explicit-a | implicit-a || order-a
+
 # CHECK-ERR: builds.ninja:[[@LINE+1]]:16: error: unknown rule
 build target03: no-rule
 
@@ -105,3 +110,12 @@ rule target12_rule
   command = target12_rule $in -o $out
   depfile = $out.d
 build target12$ foo: target12_rule target12$ inputA
+
+# Check that ${out} only expands to the explicit outputs, not the implicit
+# ones.
+#
+# CHECK: build "target13" | "target13.d": target13_rule "target13_input"
+# CHECK-NEXT: command = "target13_rule target13_input -o target13"
+rule target13_rule
+  command = target13_rule ${in} -o ${out}
+build target13 | target13.d: target13_rule target13_input
