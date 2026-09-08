@@ -19,6 +19,7 @@
 
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/raw_ostream.h"
@@ -314,7 +315,7 @@ public:
                       ArrayRef<Token> inputTokens,
                       unsigned numExplicitInputs,
                       unsigned numImplicitInputs,
-                      unsigned numExplicitOutputs) override {
+                      unsigned numExplicitOutputTokens) override {
     StringRef name(nameTok.start, nameTok.length);
 
     // Resolve the rule.
@@ -332,14 +333,32 @@ public:
     // Resolve all of the inputs and outputs.
     SmallVector<Node*, 8> outputs;
     SmallVector<NodeInCommand, 8> inputs;
-    for (const auto& token: outputTokens) {
+    SmallPtrSet<Node*, 8> seenOutputs;
+    unsigned numExplicitOutputs = numExplicitOutputTokens;
+    for (unsigned i = 0, e = unsigned(outputTokens.size()); i != e; ++i) {
+      const auto& token = outputTokens[i];
+      bool isExplicit = i < numExplicitOutputTokens;
       // Evaluate the token string.
       SmallString<256> path;
       evalString(token, getCurrentScope(), path);
       if (path.empty()) {
         error("empty output path", token);
       }
-      outputs.push_back(manifest->findOrCreateNode(workingDirectory, path));
+      Node *node = manifest->findOrCreateNode(workingDirectory, path);
+
+      // The same output can be named more than once in a build decl, e.g.
+      // when a build tool emits an explicit output using a relative path and
+      // an implicit output referring to the same file via an absolute path.
+      // Only record each unique output once; since explicit outputs are
+      // always listed before implicit ones, dropping a duplicate explicit
+      // token only ever collapses it into an earlier explicit entry.
+      if (!seenOutputs.insert(node).second) {
+        if (isExplicit)
+          --numExplicitOutputs;
+        continue;
+      }
+
+      outputs.push_back(node);
     }
     for (const auto& token: inputTokens) {
       // Evaluate the token string.
