@@ -11,9 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "llbuild/BuildSystem/BuildSystem.h"
-#include "llbuild/BuildSystem/BuildSystemExtensions.h"
 #include "llbuild/BuildSystem/BuildSystemFrontend.h"
-#include "llbuild/BuildSystem/BuildSystemHandlers.h"
 
 #include "llbuild/Basic/CrossPlatformCompatibility.h"
 #include "llbuild/Basic/ExecutionQueue.h"
@@ -67,9 +65,6 @@ using namespace llbuild;
 using namespace llbuild::basic;
 using namespace llbuild::core;
 using namespace llbuild::buildsystem;
-
-/// The extension manager singleton.
-static BuildSystemExtensionManager extensionManager{};
 
 BuildSystemDelegate::~BuildSystemDelegate() {}
 
@@ -206,34 +201,6 @@ private:
   /// Flag indicating if the build has been aborted.
   bool buildWasAborted = false;
 
-  /// Cache of instantiated shell command handlers.
-  llvm::StringMap<std::unique_ptr<ShellCommandHandler>> shellHandlers;
-
-public:
-  ShellCommandHandler*
-  resolveShellCommandHandler(ShellCommand* command) {
-    // Ignore empty commands.
-    if (command->getArgs().empty()) { return nullptr; }
-
-    // Check the cache.
-    auto toolPath = command->getArgs()[0];
-    auto it = shellHandlers.find(toolPath);
-    if (it != shellHandlers.end()) return it->second.get();
-
-    // If missing, check for an extension which can provide it.
-    auto* extension = extensionManager.lookupByCommandPath(toolPath);
-    if (!extension) {
-      shellHandlers[toolPath] = nullptr; // Negative caching
-      return nullptr;
-    }
-
-    auto handler = extension->createShellCommandHandler(toolPath);
-    auto *result = handler.get();
-    shellHandlers[toolPath] = std::move(handler);
-
-    return result;
-  }
-  
   /// @}
 
 public:
@@ -2086,10 +2053,6 @@ llvm::Optional<BuildValue> BuildSystemImpl::build(BuildKey key) {
   // Build the target.
   buildWasAborted = false;
   auto result = buildEngine.build(key.toData());
-    
-  // Clear out the shell handlers, as we do not want to hold on to them across
-  // multiple builds.
-  shellHandlers.clear();
 
   if (buildWasAborted)
     return None;
@@ -4174,11 +4137,6 @@ void BuildSystem::resetForBuild() {
 
 uint32_t BuildSystem::getSchemaVersion() {
   return BuildSystemImpl::internalSchemaVersion;
-}
-
-ShellCommandHandler*
-BuildSystem::resolveShellCommandHandler(ShellCommand* command) {
-  return static_cast<BuildSystemImpl*>(impl)->resolveShellCommandHandler(command);
 }
 
 BuildNode* BuildSystem::lookupNode(StringRef name) {

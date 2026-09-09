@@ -27,18 +27,6 @@ using namespace llbuild::basic;
 using namespace llbuild::core;
 using namespace llbuild::buildsystem;
 
-void ShellCommand::start(BuildSystem& system, TaskInterface ti) {
-  // Resolve the plugin state.
-  handler = system.resolveShellCommandHandler(this);
-
-  // Delegate to handler, if used.
-  if (handler) {
-    handlerState = handler->start(ti, this);
-  }
-
-  this->ExternalCommand::start(system, ti);
-}
-
 CommandSignature ShellCommand::getSignature() const {
   CommandSignature signature = cachedSignature;
   if (!signature.isNull())
@@ -381,21 +369,6 @@ void ShellCommand::executeExternalCommand(
       completionFn.getValue()(result);
   };
       
-  // Delegate to the handler, if present.
-  if (handler) {
-    // FIXME: We should consider making this interface capable of feeding
-    // back the dependencies directly.
-    //
-    // FIXME: This needs to honor certain properties of the execution queue
-    // (like indicating when the work starts and stops, and communicating with
-    // the execution queue delegate controlling how output is handled). It could
-    // be the case that this should actually be delegating this work to run on
-    // the execution queue, and the queue handles the handoff.
-    handler->execute(
-        handlerState.get(), this, ti, context, commandCompletionFn);
-    return;
-  }
-
   bool connectToConsole = false;
 
   // Execute the command.
