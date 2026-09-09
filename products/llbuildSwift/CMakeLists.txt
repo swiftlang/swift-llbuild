@@ -42,7 +42,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
   endif()
 else()
   target_link_libraries(llbuildSwift PRIVATE
-    SQLite::SQLite3)
+    SQLite3::SQLite3)
   if(dispatch_FOUND)
     target_link_libraries(llbuildSwift PRIVATE
       swiftDispatch)

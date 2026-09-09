@@ -1,4 +1,4 @@
-set(SOURCES 
+set(SOURCES
   BuildSystem-C-API.cpp
   C-API.cpp
   Core-C-API.cpp
@@ -19,7 +19,7 @@ target_link_libraries(llbuild PRIVATE
   llbuildBasic
   llbuildNinja
   llvmSupport
-  SQLite::SQLite3)
+  SQLite3::SQLite3)
 
 if(NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
   target_link_libraries(llbuild PRIVATE
@@ -74,7 +74,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     llbuildBasic
     llbuildNinja
     llvmSupport
-    SQLite::SQLite3
+    SQLite3::SQLite3
     curses)
 
   # Manually set up the remaining framework structure.

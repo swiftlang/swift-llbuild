@@ -11,7 +11,7 @@ target_link_libraries(CAPITests PRIVATE
   llvmSupport
   llbuildBasic
   llbuild
-  SQLite::SQLite3)
+  SQLite3::SQLite3)
 
 if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
   target_link_libraries(CAPITests PRIVATE
