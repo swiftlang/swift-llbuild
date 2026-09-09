@@ -1,0 +1,23 @@
+# Check that a build decl which lists the same output twice, once as an
+# explicit output using a relative path and once as an implicit output using
+# the absolute path to that same file (as cmake is known to generate), does
+# not cause llbuild to reject the manifest with a duplicate rule error.
+
+# We run the build in a sandbox in the temp directory to ensure we don't
+# interact with the source dirs.
+
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: touch %t.build/input
+# RUN: echo "build subdir/output | %t.build/subdir/output: CAT input" > %t.build/output-rule.ninja
+# RUN: %{llbuild} ninja build --jobs 1 --no-db --chdir %t.build &> %t.out
+# RUN: %{FileCheck} < %t.out %s
+# RUN: test -f %t.build/subdir/output
+
+# CHECK: [1/1] cat input > subdir/output
+
+rule CAT
+     command = cat ${in} > ${out}
+
+include output-rule.ninja
