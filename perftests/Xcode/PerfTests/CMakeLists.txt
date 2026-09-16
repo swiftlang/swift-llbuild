@@ -34,7 +34,7 @@ target_link_libraries(XcodePerfTests PRIVATE
   llbuildBuildSystem
   llbuildCommands
   curses
-  SQLite::SQLite3
+  SQLite3::SQLite3
   "${MACOSX_SDK_PATH}/System/Library/Frameworks/Foundation.framework"
   "${MACOSX_PLATFORM_PATH}/Developer/Library/Frameworks/XCTest.framework"
   )
@@ -42,7 +42,7 @@ target_link_libraries(XcodePerfTests PRIVATE
 # Run a custom command to fixup CMake's broken bundle CFBundleExecutable.
 #
 # http://www.cmake.org/Bug/view.php?id=15485
-# 
+#
 # It seems this is no longer an issue in Xcode 11.4/CMake 3.16.3, but leaving this
 # workaround in place for good measure
 get_target_property(xcode_perf_tests_output_directory XcodePerfTests LIBRARY_OUTPUT_DIRECTORY)

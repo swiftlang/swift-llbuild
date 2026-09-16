@@ -8,7 +8,7 @@ target_link_libraries(llbuild-tool PRIVATE
   llbuildCore
   llbuildBasic
   llvmSupport
-  SQLite::SQLite3)
+  SQLite3::SQLite3)
 
 set_target_properties(llbuild-tool PROPERTIES
   OUTPUT_NAME llbuild)

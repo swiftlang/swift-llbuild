@@ -3,4 +3,8 @@ find_package(Threads REQUIRED)
 
 find_package(SQLite3 QUIET)
 
+if(SQLite3_FOUND AND NOT TARGET SQLite3::SQLite3)
+  add_library(SQLite3::SQLite3 ALIAS SQLite::SQLite3)
+endif()
+
 include(@LLBuild_EXPORTS_FILE@)
