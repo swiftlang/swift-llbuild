@@ -159,14 +159,6 @@ public:
   /// The shared environment table this command's bindings layer over, if any.
   const EnvironmentBase* getEnvBase() const { return envBase; }
 
-  /// Append the effective environment, the base composed with this command's
-  /// own bindings, to `result`.
-  ///
-  /// Deliberately not cached: it is needed only when the command is about to
-  /// spawn a process, so composing it on demand keeps a loaded build
-  /// description down to what varies between commands. For a project whose
-  /// script commands each carry a few thousand settings that is the difference
-  /// between megabytes and hundreds of megabytes.
   void getEffectiveEnv(
       SmallVectorImpl<std::pair<StringRef, StringRef>>& result) const;
 

@@ -156,11 +156,6 @@ public:
   typedef llvm::StringMap<std::unique_ptr<Tool>> tool_set;
 
 private:
-  /// The shared environment tables commands may reference by name.
-  ///
-  /// Commands hold bare `EnvironmentBase*` pointers into this set, so it has to
-  /// outlive them. Members are destroyed in reverse declaration order, so
-  /// declaring this before `commands` makes it the last of the two to go.
   environment_base_set environmentBases;
 
   node_set nodes;
