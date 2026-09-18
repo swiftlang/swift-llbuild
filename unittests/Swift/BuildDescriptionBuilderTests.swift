@@ -19,16 +19,48 @@ import llbuild
 
 import llbuildTestSupport
 
-/// A delegate which resolves no tools of its own, so that `shell` and the other
-/// builtins fall through to llbuild, and which records enough of the build to
-/// tell whether a command actually ran.
+/// A command that writes a file when it runs, so that a build's effects are
+/// observable without spawning a process.
+///
+/// `contents` is evaluated at execution time, which lets a command downstream of
+/// another read what its input produced.
+final class WriteFileCommand: BasicCommand {
+    private let path: String
+    private let contents: () -> String
+
+    init(path: String, contents: @escaping () -> String) {
+        self.path = path
+        self.contents = contents
+    }
+
+    override func execute(_ command: Command, _ commandInterface: BuildSystemCommandInterface) -> Bool {
+        guard super.execute(command, commandInterface) else { return false }
+        do {
+            try contents().write(toFile: path, atomically: false, encoding: .utf8)
+        } catch {
+            XCTFail("Error while writing to \(path): \(error)")
+            return false
+        }
+        return true
+    }
+}
+
+/// A delegate which vends the tests' own commands as the `testtool` tool and
+/// resolves nothing else, so that `shell` and the other builtins fall through to
+/// llbuild, and which records enough of the build to tell whether a command
+/// actually ran.
 final class BuilderTestDelegate: BuildSystemDelegate {
     var fs: FileSystem? { return nil }
 
+    private let tool: TestTool?
     private let lock = NSLock()
     private var startedCommandNames: [String] = []
     private var diagnostics: [String] = []
     private var commandErrors: [String] = []
+
+    init(commands: [String: ExternalCommand] = [:]) {
+        self.tool = commands.isEmpty ? nil : TestTool(expectedCommands: commands)
+    }
 
     /// The names of the commands which executed, in the order they started.
     var startedCommands: [String] {
@@ -44,7 +76,9 @@ final class BuilderTestDelegate: BuildSystemDelegate {
         return diagnostics + commandErrors
     }
 
-    func lookupTool(_ name: String) -> Tool? { return nil }
+    func lookupTool(_ name: String) -> Tool? {
+        return name == "testtool" ? tool : nil
+    }
 
     func hadCommandFailure() {}
 
@@ -115,67 +149,46 @@ final class BuilderTestDelegate: BuildSystemDelegate {
 @available(macOS 10.15, *)
 class BuildDescriptionBuilderTests: XCTestCase {
 
-    /// Create a temporary directory which is removed at teardown.
-    private func makeTemporaryDirectory() -> String {
-        let path = NSTemporaryDirectory() + "/" + UUID().uuidString
-        do {
-            try FileManager.default.createDirectory(
-                atPath: path, withIntermediateDirectories: true)
-        } catch {
-            XCTFail("Error while creating temporary directory: \(error)")
-        }
-
-        addTeardownBlock {
-            try? FileManager.default.removeItem(atPath: path)
-        }
-
-        return path
-    }
-
     private func contents(of path: String) -> String? {
         return try? String(contentsOfFile: path, encoding: .utf8)
     }
 
-    /// A shell command runs and its dependent runs after it, with the outputs to
-    /// prove it -- the basic end-to-end path, with no manifest written or read.
-    func testBuildsAChainOfShellCommands() {
-        let directory = makeTemporaryDirectory()
-        let first = directory + "/first.txt"
-        let second = directory + "/second.txt"
+    func testBuildsAChainOfCommands() {
+        let first = makeTemporaryFile()
+        let second = makeTemporaryFile()
 
-        let delegate = BuilderTestDelegate()
+        let delegate = BuilderTestDelegate(commands: [
+            "1-write": WriteFileCommand(path: first) { "one\n" },
+            "2-copy": WriteFileCommand(path: second) {
+                // Reads what "1-write" produced, so the contents below can only
+                // come out right if the dependency edge ordered the two.
+                ((try? String(contentsOfFile: first, encoding: .utf8)) ?? "<unwritten>") + "two\n"
+            },
+        ])
         let system = BuildSystem(
             description: .inMemory(originName: "<test>") { builder in
                 builder.addTarget("all", nodes: [second])
 
-                guard let write = builder.beginCommand(name: "1-write", tool: "shell") else {
+                guard let write = builder.beginCommand(name: "1-write", tool: "testtool") else {
                     return false
                 }
                 builder.setCommandOutputs(write, nodes: [first])
                 builder.setCommandDescription(write, "write first.txt")
-                guard builder.setCommandAttribute(
-                    write, name: "args",
-                    values: ["/bin/sh", "-c", "echo one > '\(first)'"]) else { return false }
                 builder.finishCommand(name: "1-write", write)
 
-                guard let copy = builder.beginCommand(name: "2-copy", tool: "shell") else {
+                guard let copy = builder.beginCommand(name: "2-copy", tool: "testtool") else {
                     return false
                 }
                 builder.setCommandInputs(copy, nodes: [first])
                 builder.setCommandOutputs(copy, nodes: [second])
                 builder.setCommandDescription(copy, "write second.txt")
-                guard builder.setCommandAttribute(
-                    copy, name: "args",
-                    values: ["/bin/sh", "-c",
-                             "cat '\(first)' > '\(second)'; echo two >> '\(second)'"]) else { return false }
                 builder.finishCommand(name: "2-copy", copy)
 
                 return true
             },
-            databaseFile: directory + "/build.db",
+            databaseFile: makeTemporaryFile(),
             delegate: delegate)
 
-        // Nothing about this system is file-based.
         XCTAssertEqual(system.buildFile, "")
 
         XCTAssertTrue(system.build(target: "all"))
@@ -190,10 +203,11 @@ class BuildDescriptionBuilderTests: XCTestCase {
     /// The default target reaches the graph, so a build with no target named
     /// still finds something to do.
     func testBuildsTheDefaultTarget() {
-        let directory = makeTemporaryDirectory()
-        let output = directory + "/out.txt"
+        let output = makeTemporaryFile()
 
-        let delegate = BuilderTestDelegate()
+        let delegate = BuilderTestDelegate(commands: [
+            "write": WriteFileCommand(path: output) { "hi\n" },
+        ])
         let system = BuildSystem(
             description: .inMemory(originName: "<test>") { builder in
                 builder.addTarget("all", nodes: [output])
@@ -201,18 +215,15 @@ class BuildDescriptionBuilderTests: XCTestCase {
                 // A target which was never added cannot be the default.
                 XCTAssertFalse(builder.setDefaultTarget("no-such-target"))
 
-                guard let write = builder.beginCommand(name: "write", tool: "shell") else {
+                guard let write = builder.beginCommand(name: "write", tool: "testtool") else {
                     return false
                 }
                 builder.setCommandOutputs(write, nodes: [output])
-                guard builder.setCommandAttribute(
-                    write, name: "args",
-                    values: ["/bin/sh", "-c", "echo hi > '\(output)'"]) else { return false }
                 builder.finishCommand(name: "write", write)
 
                 return true
             },
-            databaseFile: directory + "/build.db",
+            databaseFile: makeTemporaryFile(),
             delegate: delegate)
 
         XCTAssertTrue(system.build())
@@ -220,14 +231,11 @@ class BuildDescriptionBuilderTests: XCTestCase {
         XCTAssertEqual(contents(of: output), "hi\n")
     }
 
-    /// An environment base lets an embedder send a shared environment once
-    /// rather than once per command. The command's own `env` overrides the base
-    /// key by key, and everything else comes from the base -- which is
-    /// observable here because `inherit-env` is off, so the base is the entire
-    /// environment the command runs with.
-    func testSharesAnEnvironmentBase() {
-        let directory = makeTemporaryDirectory()
-        let output = directory + "/env.txt"
+    /// An environment base is declared once by name and referenced by the
+    /// commands that share it, and the builder refuses a duplicate declaration
+    /// or a reference to one that was never declared.
+    func testDeclaresEnvironmentBases() {
+        let output = makeTemporaryFile()
 
         let delegate = BuilderTestDelegate()
         let system = BuildSystem(
@@ -241,6 +249,8 @@ class BuildDescriptionBuilderTests: XCTestCase {
                 // A second base of the same name is refused.
                 XCTAssertFalse(builder.addEnvironmentBase("common", bindings: []))
 
+                // Only a command that has an environment can take a base, so
+                // this is a real `shell` command. It is never run.
                 guard let dump = builder.beginCommand(name: "dump-env", tool: "shell") else {
                     return false
                 }
@@ -248,38 +258,26 @@ class BuildDescriptionBuilderTests: XCTestCase {
                 guard builder.setCommandEnvironmentBase(dump, base: "common") else { return false }
                 // A base which was never declared cannot be referenced.
                 XCTAssertFalse(builder.setCommandEnvironmentBase(dump, base: "no-such-base"))
-
-                guard builder.setCommandAttribute(dump, name: "inherit-env", value: "false"),
-                      builder.setCommandAttribute(
-                        dump, name: "env",
-                        pairs: [("OVERRIDDEN", "from-command")]),
-                      builder.setCommandAttribute(
-                        dump, name: "args",
-                        values: ["/bin/sh", "-c",
-                                 "printf '%s %s\\n' \"$SHARED\" \"$OVERRIDDEN\" > '\(output)'"])
-                else { return false }
                 builder.finishCommand(name: "dump-env", dump)
 
                 return true
             },
-            databaseFile: directory + "/build.db",
+            databaseFile: makeTemporaryFile(),
             delegate: delegate)
 
-        XCTAssertTrue(system.build(target: "all"))
-        XCTAssertEqual(contents(of: output), "from-base from-command\n")
-        // The refused reference was diagnosed, not silently dropped. The
-        // duplicate base is reported by its return value alone, since only the
-        // caller knows whether redeclaring one is an error.
+        XCTAssertTrue(system.initialize())
+        // The refused reference was diagnosed, not silently dropped.
         XCTAssertEqual(delegate.errors, ["unknown environment base 'no-such-base'"])
     }
 
     /// Node attributes reach the node, and a rejected one is reported back to
     /// the caller rather than silently ignored.
     func testConfiguresNodeAttributes() {
-        let directory = makeTemporaryDirectory()
-        let output = directory + "/out.txt"
+        let output = makeTemporaryFile()
 
-        let delegate = BuilderTestDelegate()
+        let delegate = BuilderTestDelegate(commands: [
+            "write": WriteFileCommand(path: output) { "hi\n" },
+        ])
         let system = BuildSystem(
             description: .inMemory(originName: "<test>") { builder in
                 builder.addTarget("all", nodes: [output])
@@ -295,18 +293,15 @@ class BuildDescriptionBuilderTests: XCTestCase {
                 XCTAssertFalse(builder.setNodeAttribute(node: output, name: "bogus", values: ["x"]))
                 XCTAssertFalse(builder.setNodeAttribute(node: output, name: "bogus", pairs: [("x", "y")]))
 
-                guard let write = builder.beginCommand(name: "write", tool: "shell") else {
+                guard let write = builder.beginCommand(name: "write", tool: "testtool") else {
                     return false
                 }
                 builder.setCommandOutputs(write, nodes: [output])
-                guard builder.setCommandAttribute(
-                    write, name: "args",
-                    values: ["/bin/sh", "-c", "echo hi > '\(output)'"]) else { return false }
                 builder.finishCommand(name: "write", write)
 
                 return true
             },
-            databaseFile: directory + "/build.db",
+            databaseFile: makeTemporaryFile(),
             delegate: delegate)
 
         XCTAssertTrue(system.build(target: "all"))
@@ -318,15 +313,13 @@ class BuildDescriptionBuilderTests: XCTestCase {
     /// A tool the delegate does not know and llbuild has no builtin for yields
     /// no command, which the embedder is expected to notice.
     func testUnknownToolYieldsNoCommand() {
-        let directory = makeTemporaryDirectory()
-
         let delegate = BuilderTestDelegate()
         let system = BuildSystem(
             description: .inMemory(originName: "<test>") { builder in
                 XCTAssertNil(builder.beginCommand(name: "cmd", tool: "no-such-tool"))
                 return false
             },
-            databaseFile: directory + "/build.db",
+            databaseFile: makeTemporaryFile(),
             delegate: delegate)
 
         // Returning false from `populate` fails initialization, and therefore
@@ -342,11 +335,111 @@ class BuildDescriptionBuilderTests: XCTestCase {
     /// -- which can only be true if the commands' signatures agree across the
     /// two construction paths.
     func testIsInterchangeableWithAnEquivalentBuildFile() {
-        let directory = makeTemporaryDirectory()
-        let databaseFile = directory + "/build.db"
-        let output = directory + "/out.txt"
-        let args = ["/bin/sh", "-c", "echo hi > '\(output)'"]
-        let environment = [("A", "one"), ("B", "two")]
+        let databaseFile = makeTemporaryFile()
+        let output = makeTemporaryFile()
+
+        // Node names are single-quoted, where YAML takes a backslash literally,
+        // since on Windows this path has them.
+        let manifest = """
+client:
+  name: basic
+  version: 0
+  file-system: default
+
+tools:
+  testtool: {}
+
+targets:
+  all: ['\(output)']
+
+commands:
+  write:
+    tool: testtool
+    inputs: []
+    outputs: ['\(output)']
+    description: "write out.txt"
+    allow-missing-inputs: true
+
+"""
+
+        // Build it from a manifest first.
+        let fileDelegate = BuilderTestDelegate(commands: [
+            "write": WriteFileCommand(path: output) { "hi\n" },
+        ])
+        let fromFile = BuildSystem(
+            buildFile: makeTemporaryFile(manifest),
+            databaseFile: databaseFile,
+            delegate: fileDelegate)
+        XCTAssertTrue(fromFile.build(target: "all"))
+        XCTAssertEqual(fileDelegate.errors, [])
+        XCTAssertEqual(fileDelegate.startedCommands, ["write"])
+        XCTAssertEqual(contents(of: output), "hi\n")
+
+        // Now describe exactly the same graph in memory, over the same database.
+        func populate(allowMissingInputs: Bool) -> (BuildDescriptionBuilder) -> Bool {
+            return { builder in
+                builder.setFileSystemMode(.full)
+                builder.addTarget("all", nodes: [output])
+
+                guard let write = builder.beginCommand(name: "write", tool: "testtool") else {
+                    return false
+                }
+                builder.setCommandInputs(write, nodes: [])
+                builder.setCommandOutputs(write, nodes: [output])
+                builder.setCommandDescription(write, "write out.txt")
+                guard builder.setCommandAttribute(
+                    write, name: "allow-missing-inputs",
+                    value: allowMissingInputs ? "true" : "false")
+                else { return false }
+                builder.finishCommand(name: "write", write)
+
+                return true
+            }
+        }
+
+        let memoryDelegate = BuilderTestDelegate(commands: [
+            "write": WriteFileCommand(path: output) { "hi\n" },
+        ])
+        let fromMemory = BuildSystem(
+            description: .inMemory(
+                originName: "<test>", populate: populate(allowMissingInputs: true)),
+            databaseFile: databaseFile,
+            delegate: memoryDelegate)
+        XCTAssertTrue(fromMemory.build(target: "all"))
+        XCTAssertEqual(memoryDelegate.errors, [])
+        // The signature matched what the manifest-built command recorded, so
+        // there was nothing to do.
+        XCTAssertEqual(memoryDelegate.startedCommands, [])
+
+        // And the check above is not vacuous: a graph that really does differ
+        // still invalidates the command. `allow-missing-inputs` is part of the
+        // signature, so flipping it is enough; the contents are only there to
+        // show the command did run a second time.
+        let changedDelegate = BuilderTestDelegate(commands: [
+            "write": WriteFileCommand(path: output) { "bye\n" },
+        ])
+        let changed = BuildSystem(
+            description: .inMemory(
+                originName: "<test>", populate: populate(allowMissingInputs: false)),
+            databaseFile: databaseFile,
+            delegate: changedDelegate)
+        XCTAssertTrue(changed.build(target: "all"))
+        XCTAssertEqual(changedDelegate.errors, [])
+        XCTAssertEqual(changedDelegate.startedCommands, ["write"])
+        XCTAssertEqual(contents(of: output), "bye\n")
+    }
+
+    func testIsInterchangeableWithAnEquivalentShellCommand() throws {
+        #if os(Windows)
+        throw XCTSkip("No /bin/sh to spawn")
+        #else
+        let databaseFile = makeTemporaryFile()
+        let output = makeTemporaryFile()
+
+        // No double quote or backslash appears in these, so they go into a
+        // double-quoted YAML scalar as they are, and both routes see the same
+        // bytes.
+        let args = ["/bin/sh", "-c", "echo $SHARED $OVERRIDDEN > '\(output)'"]
         let argsYAML = "[" + args.map { "\"\($0)\"" }.joined(separator: ", ") + "]"
 
         let manifest = """
@@ -363,17 +456,16 @@ commands:
     tool: shell
     inputs: []
     outputs: ["\(output)"]
-    description: "write out.txt"
+    description: "write env.txt"
     args: \(argsYAML)
     env:
-      A: one
-      B: two
+      SHARED: from-base
+      OVERRIDDEN: from-command
     inherit-env: false
     allow-missing-inputs: true
 
 """
 
-        // Build it from a manifest first.
         let fileDelegate = BuilderTestDelegate()
         let fromFile = BuildSystem(
             buildFile: makeTemporaryFile(manifest),
@@ -382,22 +474,34 @@ commands:
         XCTAssertTrue(fromFile.build(target: "all"))
         XCTAssertEqual(fileDelegate.errors, [])
         XCTAssertEqual(fileDelegate.startedCommands, ["write"])
-        XCTAssertEqual(contents(of: output), "hi\n")
+        // `inherit-env` is off, so this is the whole environment the process ran
+        // with: the argument list arrived in order, and the environment map
+        // arrived with its keys and values the right way round.
+        XCTAssertEqual(contents(of: output), "from-base from-command\n")
 
-        // Now describe exactly the same graph in memory, over the same database.
         func populate(args: [String]) -> (BuildDescriptionBuilder) -> Bool {
             return { builder in
                 builder.setFileSystemMode(.full)
                 builder.addTarget("all", nodes: [output])
+
+                // The base holds what every command would share; `env` below
+                // overrides its one differing key in place.
+                guard builder.addEnvironmentBase("common", bindings: [
+                    ("SHARED", "from-base"),
+                    ("OVERRIDDEN", "from-base"),
+                ]) else { return false }
 
                 guard let write = builder.beginCommand(name: "write", tool: "shell") else {
                     return false
                 }
                 builder.setCommandInputs(write, nodes: [])
                 builder.setCommandOutputs(write, nodes: [output])
-                builder.setCommandDescription(write, "write out.txt")
-                guard builder.setCommandAttribute(write, name: "args", values: args),
-                      builder.setCommandAttribute(write, name: "env", pairs: environment),
+                builder.setCommandDescription(write, "write env.txt")
+                guard builder.setCommandEnvironmentBase(write, base: "common"),
+                      builder.setCommandAttribute(write, name: "args", values: args),
+                      builder.setCommandAttribute(
+                        write, name: "env",
+                        pairs: [("OVERRIDDEN", "from-command")]),
                       builder.setCommandAttribute(write, name: "inherit-env", value: "false"),
                       builder.setCommandAttribute(write, name: "allow-missing-inputs", value: "true")
                 else { return false }
@@ -414,12 +518,9 @@ commands:
             delegate: memoryDelegate)
         XCTAssertTrue(fromMemory.build(target: "all"))
         XCTAssertEqual(memoryDelegate.errors, [])
-        // The signature matched what the manifest-built command recorded, so
-        // there was nothing to do.
         XCTAssertEqual(memoryDelegate.startedCommands, [])
 
-        // And the check above is not vacuous: a graph that really does differ
-        // still invalidates the command.
+        // Ensure that a command that really does differ still re-runs.
         let changedDelegate = BuilderTestDelegate()
         let changed = BuildSystem(
             description: .inMemory(
@@ -431,5 +532,6 @@ commands:
         XCTAssertEqual(changedDelegate.errors, [])
         XCTAssertEqual(changedDelegate.startedCommands, ["write"])
         XCTAssertEqual(contents(of: output), "bye\n")
+        #endif
     }
 }
