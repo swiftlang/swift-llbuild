@@ -7,12 +7,124 @@
 // See http://swift.org/CONTRIBUTORS.txt for Swift project authors
 
 import XCTest
+import llbuildAnalysis
+import llbuildSwift
 import class Foundation.JSONEncoder
 import class Foundation.JSONSerialization
+import class Foundation.FileManager
+import struct Foundation.UUID
 
 @testable import llbuildAnalyzeSupport
 
+private final class TraceRule: Rule {
+    let inputs: [Key]
+
+    init(inputs: [Key]) {
+        self.inputs = inputs
+    }
+
+    func createTask() -> Task {
+        return TraceTask(inputs: inputs)
+    }
+}
+
+private final class TraceTask: Task {
+    let inputs: [Key]
+
+    init(inputs: [Key]) {
+        self.inputs = inputs
+    }
+
+    func start(_ engine: TaskBuildEngine) {
+        for (inputID, input) in inputs.enumerated() {
+            engine.taskNeedsInput(input, inputID: inputID)
+        }
+    }
+
+    func provideValue(_ engine: TaskBuildEngine, inputID: Int, value: Value) {}
+
+    func inputsAvailable(_ engine: TaskBuildEngine) {
+        let value = BuildValue.SuccessfulCommand(outputInfos: [BuildValue.FileInfo()])
+        engine.taskIsComplete(Value(value.valueData))
+    }
+}
+
+private final class TraceBuildEngineDelegate: BuildEngineDelegate {
+    private let rules: [Key: TraceRule]
+
+    init(rules: [Key: TraceRule]) {
+        self.rules = rules
+    }
+
+    func lookupRule(_ key: Key) -> Rule {
+        guard let rule = rules[key] else {
+            fatalError("Unexpected key requested by test build: \(key)")
+        }
+        return rule
+    }
+}
+
 final class ChromiumTraceSerializationTests: XCTestCase {
+    func testChromiumTraceSerializesBuildDatabaseResults() throws {
+        let dependencyABuildKey = BuildKey.Command(name: "dependency-a")
+        let dependencyBBuildKey = BuildKey.Command(name: "dependency-b")
+        let rootBuildKey = BuildKey.Command(name: "root")
+        let dependencyA = Key(dependencyABuildKey)
+        let dependencyB = Key(dependencyBBuildKey)
+        let root = Key(rootBuildKey)
+        let rules = [
+            dependencyA: TraceRule(inputs: []),
+            dependencyB: TraceRule(inputs: []),
+            root: TraceRule(inputs: [dependencyA, dependencyB]),
+        ]
+        let databasePath = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .path
+        defer {
+            try? FileManager.default.removeItem(atPath: databasePath)
+        }
+
+        do {
+            let engine = BuildEngine(delegate: TraceBuildEngineDelegate(rules: rules))
+            try engine.attachDB(path: databasePath, schemaVersion: 9)
+            _ = engine.build(key: root)
+            engine.close()
+        }
+
+        let database = try BuildDB(path: databasePath, clientSchemaVersion: 9)
+        let allKeyResults = try database.getKeysWithResult()
+        XCTAssertEqual(allKeyResults.count, 3)
+
+        let solver = CriticalBuildPath.Solver(keys: allKeyResults)
+        let path = solver.run()
+        let data = try chromiumTrace(path, allKeyResults: allKeyResults)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let events = try XCTUnwrap(json["traceEvents"] as? [[String: Any]])
+
+        XCTAssertEqual(events.count, 3)
+        XCTAssertEqual(events.filter { $0["cat"] as? String == "critical-path" }.count, 2)
+        XCTAssertEqual(events.filter { $0["cat"] as? String == "build" }.count, 1)
+
+        let rootEvent = try XCTUnwrap(events.first { $0["name"] as? String == rootBuildKey.description })
+        XCTAssertEqual(rootEvent["cat"] as? String, "critical-path")
+        let rootArgs = try XCTUnwrap(rootEvent["args"] as? [String: Any])
+        XCTAssertEqual(rootArgs["buildKeyKind"] as? String, "command")
+        XCTAssertEqual(rootArgs["buildKey"] as? String, "root")
+        XCTAssertEqual(rootArgs["onCriticalPath"] as? Bool, true)
+        XCTAssertEqual(
+            Set(rootArgs["dependencies"] as? [String] ?? []),
+            Set([dependencyABuildKey.description, dependencyBBuildKey.description])
+        )
+
+        for event in events {
+            XCTAssertEqual(event["ph"] as? String, "X")
+            XCTAssertEqual(event["pid"] as? Int, 0)
+            XCTAssertEqual(event["tid"] as? Int, 0)
+            let args = try XCTUnwrap(event["args"] as? [String: Any])
+            XCTAssertEqual(args["onCriticalPath"] as? Bool, event["cat"] as? String == "critical-path")
+        }
+    }
+
     func testChromiumTraceFileWrapsEvents() throws {
         let event = chromiumTraceEvent(
             name: "<BuildKey.Command name=compile-main>",

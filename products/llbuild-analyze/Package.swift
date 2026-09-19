@@ -32,7 +32,7 @@ let package = Package(
             path: "Sources/llbuildAnalyzeSupport"),
         .testTarget(
             name: "ChromiumTraceSerializationTests",
-            dependencies: ["llbuildAnalyzeSupport"],
+            dependencies: ["llbuildAnalyzeSupport", "llbuildAnalysis", "llbuildSwift"],
             path: "Tests/ChromiumTraceSerializationTests"),
     ]
 )
