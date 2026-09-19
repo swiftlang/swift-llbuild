@@ -41,7 +41,6 @@ class BuildValue;
 class Command;
 class Node;
 class ShellCommand;
-class ShellCommandHandler;
 class Tool;
 
 enum class DiscoveredDependencyKind {
@@ -312,8 +311,6 @@ public:
   static uint32_t getSchemaVersion();
   /// @}
 
-  ShellCommandHandler* resolveShellCommandHandler(ShellCommand* command);
-  
   BuildNode *lookupNode(StringRef name);
 };
 
