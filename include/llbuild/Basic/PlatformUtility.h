@@ -101,35 +101,6 @@ template <> struct FileDescriptorTraits<int> {
   }
 };
 
-enum class OSStyle {
-  Windows,
-  POSIX,
-
-#if defined(_WIN32)
-  Default = Windows,
-#elif defined(_POSIX_VERSION)
-  Default = POSIX,
-#endif
-};
-
-template <OSStyle = OSStyle::Default>
-struct ModuleTraits;
-
-#if defined(_WIN32)
-template <>
-struct ModuleTraits<OSStyle::Windows> {
-  using Handle = HMODULE;
-};
-#endif
-
-template <>
-struct ModuleTraits<OSStyle::POSIX> {
-  using Handle = void *;
-};
-
-ModuleTraits<>::Handle OpenLibrary(const char *);
-void *GetSymbolByname(ModuleTraits<>::Handle, const char *);
-void CloseLibrary(ModuleTraits<>::Handle);
 
 }
 }

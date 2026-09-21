@@ -22,9 +22,6 @@
 #else
 #include <fnmatch.h>
 #include <unistd.h>
-#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
-#include <dlfcn.h>
-#endif
 #endif
 #include <stdio.h>
 
@@ -401,32 +398,3 @@ std::string sys::getPathSeparators() {
   return "/";
 #endif
 }
-
-sys::ModuleTraits<>::Handle sys::OpenLibrary(const char *path) {
-#if defined(_WIN32)
-  llvm::SmallVector<wchar_t, MAX_PATH> wPath;
-  if (llvm::sys::path::widenPath(path, wPath))
-    return nullptr;
-  return LoadLibraryW(wPath.data());
-#else
-  return dlopen(path, RTLD_LAZY);
-#endif
-}
-
-void *sys::GetSymbolByname(sys::ModuleTraits<>::Handle handle,
-                           const char *name) {
-#if defined(_WIN32)
-  return GetProcAddress(handle, name);
-#else
-  return dlsym(handle, name);
-#endif
-}
-
-void sys::CloseLibrary(sys::ModuleTraits<>::Handle handle) {
-#if defined(_WIN32)
-  FreeLibrary(handle);
-#else
-  dlclose(handle);
-#endif
-}
-
