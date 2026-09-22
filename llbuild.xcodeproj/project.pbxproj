@@ -73,7 +73,6 @@
 		14A9859724F63AC100FADB67 /* buildkey.h in Headers */ = {isa = PBXBuildFile; fileRef = B5BE9BAB22E885D900777A06 /* buildkey.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		14A9859824F63AC100FADB67 /* buildvalue.h in Headers */ = {isa = PBXBuildFile; fileRef = B5A308B922F30E0700699B4C /* buildvalue.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		2DB7144323A2AF2F00514E98 /* BuildSystemEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DB7144223A2AF2F00514E98 /* BuildSystemEngineTests.swift */; };
-		RC0000000000000000000022 /* BuildDescriptionBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = RC0000000000000000000021 /* BuildDescriptionBuilderTests.swift */; };
 		402614272087B10B005BD956 /* Tracing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 402614262087B10B005BD956 /* Tracing.cpp */; };
 		403332D92CADE54B00440C8C /* zero_copy_stream_impl_lite.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F4DB2C79076200757481 /* zero_copy_stream_impl_lite.cc */; };
 		403332DA2CADE54B00440C8C /* any_lite.cc in Sources */ = {isa = PBXBuildFile; fileRef = 40C1F5392C79076200757481 /* any_lite.cc */; };
@@ -516,7 +515,6 @@
 		E14C2CEF1BDAAD070033CA2A /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
 		E14C2CF01BDAAD1E0033CA2A /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.tbd */; };
 		E14C2CF11BDAAD210033CA2A /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E1E221081A00B82100957481 /* libsqlite3.tbd */; };
-		E15305952236C8EE0097CDE6 /* BuildSystemExtensionManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E15305942236C8EE0097CDE6 /* BuildSystemExtensionManager.cpp */; };
 		E15B6EC51B546A1600643066 /* ConvertUTFWrapper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E15B6EC31B546A0D00643066 /* ConvertUTFWrapper.cpp */; };
 		E15B6EC71B546A2C00643066 /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.tbd */; };
 		E1604CA51BB9E01D001153A1 /* libcurses.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = E15B6EC61B546A2C00643066 /* libcurses.tbd */; };
@@ -531,11 +529,9 @@
 		E171538D1A0BF702004CD598 /* CorePerfTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = E171538C1A0BF702004CD598 /* CorePerfTests.mm */; };
 		E17440C31CE192FF0070A30C /* ShellUtility.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E17440C21CE192FF0070A30C /* ShellUtility.cpp */; };
 		E192E92F1E30014E00122F17 /* BuildValueTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E192E92E1E30014E00122F17 /* BuildValueTest.cpp */; };
-		RC0000000000000000000012 /* BuildDescriptionBuilderTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = RC0000000000000000000011 /* BuildDescriptionBuilderTest.cpp */; };
-		RC0000000000000000000032 /* BuildDescriptionLoadPerfTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = RC0000000000000000000031 /* BuildDescriptionLoadPerfTest.cpp */; };
-		E1A0B00B1E30014E00122F17 /* ShellCommandTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B00A1E30014E00122F17 /* ShellCommandTest.cpp */; };
 		E19D79921A15D9E6002604FB /* MakefileDepsParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */; };
 		E19D79951A15DA06002604FB /* MakefileDepsParserTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E19D79941A15DA06002604FB /* MakefileDepsParserTest.cpp */; };
+		E1A0B00B1E30014E00122F17 /* ShellCommandTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B00A1E30014E00122F17 /* ShellCommandTest.cpp */; };
 		E1A0B0FF1C971582006DA08F /* DependencyInfoParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B0FE1C971581006DA08F /* DependencyInfoParser.cpp */; };
 		E1A0B1011C9717BA006DA08F /* DependencyInfoParserTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A0B1001C9717BA006DA08F /* DependencyInfoParserTest.cpp */; };
 		E1A2244219F9973F0059043E /* BuildEngineCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1A2240A19F991530059043E /* BuildEngineCommand.cpp */; };
@@ -605,7 +601,6 @@
 		E1B8393A1B52E8C100DB876B /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
 		E1B8393B1B52E8CC00DB876B /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
 		E1B839471B52EAAE00DB876B /* libllvmSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B838A21B52E7DE00DB876B /* libllvmSupport.a */; };
-		RC0000000000000000000002 /* BuildDescriptionBuilder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = RC0000000000000000000001 /* BuildDescriptionBuilder.cpp */; };
 		E1B8395E1B541C5900DB876B /* BuildFile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1B839591B541C1F00DB876B /* BuildFile.cpp */; };
 		E1B8395F1B541C6400DB876B /* libllbuildBuildSystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */; };
 		E1B839651B5420F500DB876B /* BuildSystemCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1B839641B5420F500DB876B /* BuildSystemCommand.cpp */; };
@@ -631,6 +626,10 @@
 		E1E4A5B41BFC1394001BFFC4 /* BuildKey.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1E4A5B31BFC1394001BFFC4 /* BuildKey.cpp */; };
 		E1FC67F91BB1F427004EBC54 /* BuildValue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1FC67F81BB1F417004EBC54 /* BuildValue.cpp */; };
 		E1FE53411AB1346700041B8E /* Hashing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E1FE53401AB1343B00041B8E /* Hashing.cpp */; };
+		RC0000000000000000000002 /* BuildDescriptionBuilder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = RC0000000000000000000001 /* BuildDescriptionBuilder.cpp */; };
+		RC0000000000000000000012 /* BuildDescriptionBuilderTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = RC0000000000000000000011 /* BuildDescriptionBuilderTest.cpp */; };
+		RC0000000000000000000022 /* BuildDescriptionBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = RC0000000000000000000021 /* BuildDescriptionBuilderTests.swift */; };
+		RC0000000000000000000032 /* BuildDescriptionLoadPerfTest.cpp in Sources */ = {isa = PBXBuildFile; fileRef = RC0000000000000000000031 /* BuildDescriptionLoadPerfTest.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1640,7 +1639,6 @@
 		2D0FB84B2395D8690088DAB4 /* BuildValue-C-API-Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "BuildValue-C-API-Private.h"; sourceTree = "<group>"; };
 		2D86C6DF238D932B006E61FB /* Tool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Tool.h; sourceTree = "<group>"; };
 		2DB7144223A2AF2F00514E98 /* BuildSystemEngineTests.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = BuildSystemEngineTests.swift; sourceTree = "<group>"; tabWidth = 4; };
-		RC0000000000000000000021 /* BuildDescriptionBuilderTests.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = BuildDescriptionBuilderTests.swift; sourceTree = "<group>"; tabWidth = 4; };
 		402614262087B10B005BD956 /* Tracing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Tracing.cpp; sourceTree = "<group>"; };
 		403332B52CADC83700440C8C /* llbuild3Common.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = llbuild3Common.xcconfig; sourceTree = "<group>"; };
 		403332B62CADC86300440C8C /* llbuild3Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = llbuild3Debug.xcconfig; sourceTree = "<group>"; };
@@ -1724,9 +1722,7 @@
 		4072B41B2C51993F00B68221 /* BuildKey.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildKey.h; sourceTree = "<group>"; };
 		4072B41C2C51993F00B68221 /* BuildNode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildNode.h; sourceTree = "<group>"; };
 		4072B41D2C51993F00B68221 /* BuildSystem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildSystem.h; sourceTree = "<group>"; };
-		4072B41E2C51993F00B68221 /* BuildSystemExtensions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildSystemExtensions.h; sourceTree = "<group>"; };
 		4072B41F2C51993F00B68221 /* BuildSystemFrontend.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildSystemFrontend.h; sourceTree = "<group>"; };
-		4072B4202C51993F00B68221 /* BuildSystemHandlers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildSystemHandlers.h; sourceTree = "<group>"; };
 		4072B4212C51993F00B68221 /* BuildValue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BuildValue.h; sourceTree = "<group>"; };
 		4072B4222C51993F00B68221 /* Command.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Command.h; sourceTree = "<group>"; };
 		4072B4232C51993F00B68221 /* ExternalCommand.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ExternalCommand.h; sourceTree = "<group>"; };
@@ -4027,9 +4023,6 @@
 		E147DF161BA81D330032D08E /* BasicTests */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = BasicTests; sourceTree = BUILT_PRODUCTS_DIR; };
 		E147DF181BA81D4E0032D08E /* CMakeLists.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E147DF191BA81D4E0032D08E /* SerialQueueTest.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = SerialQueueTest.cpp; sourceTree = "<group>"; };
-		E15305922236C8DF0097CDE6 /* BuildSystemHandlers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuildSystemHandlers.h; sourceTree = "<group>"; };
-		E15305932236C8DF0097CDE6 /* BuildSystemExtensions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuildSystemExtensions.h; sourceTree = "<group>"; };
-		E15305942236C8EE0097CDE6 /* BuildSystemExtensionManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildSystemExtensionManager.cpp; sourceTree = "<group>"; };
 		E15B6EC31B546A0D00643066 /* ConvertUTFWrapper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ConvertUTFWrapper.cpp; sourceTree = "<group>"; };
 		E15B6EC61B546A2C00643066 /* libcurses.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libcurses.tbd; path = usr/lib/libcurses.tbd; sourceTree = SDKROOT; };
 		E1604CB11BB9E01D001153A1 /* swift-build-tool */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "swift-build-tool"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -4048,14 +4041,11 @@
 		E181D1451F7D90AC0015286C /* Tracing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Tracing.h; sourceTree = "<group>"; };
 		E182BE111ABA2B8D001840AD /* Compiler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Compiler.h; sourceTree = "<group>"; };
 		E192E92E1E30014E00122F17 /* BuildValueTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildValueTest.cpp; sourceTree = "<group>"; };
-		E1A0B00A1E30014E00122F17 /* ShellCommandTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ShellCommandTest.cpp; sourceTree = "<group>"; };
-		RC0000000000000000000011 /* BuildDescriptionBuilderTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildDescriptionBuilderTest.cpp; sourceTree = "<group>"; };
-		RC0000000000000000000031 /* BuildDescriptionLoadPerfTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildDescriptionLoadPerfTest.cpp; sourceTree = "<group>"; };
-		RC0000000000000000000013 /* StubBuildFileDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StubBuildFileDelegate.h; sourceTree = "<group>"; };
 		E19C3FD51B98C1A70035E1AA /* tests */ = {isa = PBXFileReference; lastKnownFileType = folder; path = tests; sourceTree = "<group>"; };
 		E19D79911A15D9E6002604FB /* MakefileDepsParser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MakefileDepsParser.cpp; sourceTree = "<group>"; };
 		E19D79931A15D9F5002604FB /* MakefileDepsParser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MakefileDepsParser.h; sourceTree = "<group>"; };
 		E19D79941A15DA06002604FB /* MakefileDepsParserTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MakefileDepsParserTest.cpp; sourceTree = "<group>"; };
+		E1A0B00A1E30014E00122F17 /* ShellCommandTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ShellCommandTest.cpp; sourceTree = "<group>"; };
 		E1A0B0FE1C971581006DA08F /* DependencyInfoParser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DependencyInfoParser.cpp; sourceTree = "<group>"; };
 		E1A0B1001C9717BA006DA08F /* DependencyInfoParserTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DependencyInfoParserTest.cpp; sourceTree = "<group>"; };
 		E1A223FB19F990E60059043E /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
@@ -4262,8 +4252,6 @@
 		E1B839381B52E8A500DB876B /* raw_ostream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = raw_ostream.h; sourceTree = "<group>"; };
 		E1B839391B52E8A500DB876B /* type_traits.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = type_traits.h; sourceTree = "<group>"; };
 		E1B839571B541BFD00DB876B /* libllbuildBuildSystem.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libllbuildBuildSystem.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		RC0000000000000000000001 /* BuildDescriptionBuilder.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildDescriptionBuilder.cpp; sourceTree = "<group>"; };
-		RC0000000000000000000003 /* BuildDescriptionBuilder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BuildDescriptionBuilder.h; path = include/llbuild/BuildSystem/BuildDescriptionBuilder.h; sourceTree = SOURCE_ROOT; };
 		E1B839591B541C1F00DB876B /* BuildFile.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildFile.cpp; sourceTree = "<group>"; };
 		E1B8395A1B541C1F00DB876B /* CMakeLists.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = "<group>"; };
 		E1B8395D1B541C4300DB876B /* BuildFile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BuildFile.h; sourceTree = "<group>"; };
@@ -4283,6 +4271,12 @@
 		E1E4A5B31BFC1394001BFFC4 /* BuildKey.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildKey.cpp; sourceTree = "<group>"; };
 		E1FC67F81BB1F417004EBC54 /* BuildValue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildValue.cpp; sourceTree = "<group>"; };
 		E1FE53401AB1343B00041B8E /* Hashing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Hashing.cpp; sourceTree = "<group>"; };
+		RC0000000000000000000001 /* BuildDescriptionBuilder.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildDescriptionBuilder.cpp; sourceTree = "<group>"; };
+		RC0000000000000000000003 /* BuildDescriptionBuilder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BuildDescriptionBuilder.h; path = include/llbuild/BuildSystem/BuildDescriptionBuilder.h; sourceTree = SOURCE_ROOT; };
+		RC0000000000000000000011 /* BuildDescriptionBuilderTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildDescriptionBuilderTest.cpp; sourceTree = "<group>"; };
+		RC0000000000000000000013 /* StubBuildFileDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StubBuildFileDelegate.h; sourceTree = "<group>"; };
+		RC0000000000000000000021 /* BuildDescriptionBuilderTests.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = BuildDescriptionBuilderTests.swift; sourceTree = "<group>"; tabWidth = 4; };
+		RC0000000000000000000031 /* BuildDescriptionLoadPerfTest.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BuildDescriptionLoadPerfTest.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -4845,9 +4839,7 @@
 				4072B41B2C51993F00B68221 /* BuildKey.h */,
 				4072B41C2C51993F00B68221 /* BuildNode.h */,
 				4072B41D2C51993F00B68221 /* BuildSystem.h */,
-				4072B41E2C51993F00B68221 /* BuildSystemExtensions.h */,
 				4072B41F2C51993F00B68221 /* BuildSystemFrontend.h */,
-				4072B4202C51993F00B68221 /* BuildSystemHandlers.h */,
 				4072B4212C51993F00B68221 /* BuildValue.h */,
 				4072B4222C51993F00B68221 /* Command.h */,
 				4072B4232C51993F00B68221 /* ExternalCommand.h */,
@@ -8995,7 +8987,6 @@
 				E1E4A5B31BFC1394001BFFC4 /* BuildKey.cpp */,
 				E1AAD28D1BC65A1900F54680 /* BuildNode.cpp */,
 				E104FAFF1B6568E0005C68A0 /* BuildSystem.cpp */,
-				E15305942236C8EE0097CDE6 /* BuildSystemExtensionManager.cpp */,
 				E1AAD2891BC609F600F54680 /* BuildSystemFrontend.cpp */,
 				E1FC67F81BB1F417004EBC54 /* BuildValue.cpp */,
 				E1AAD28F1BC65AB200F54680 /* ExternalCommand.cpp */,
@@ -9012,9 +9003,7 @@
 				E11470921B752E7000ED84CF /* BuildKey.h */,
 				54E187B61CD296EA00F7EC89 /* BuildNode.h */,
 				E1B49EFA1B6BD45D0031AFC2 /* BuildSystem.h */,
-				E15305932236C8DF0097CDE6 /* BuildSystemExtensions.h */,
 				E1AAD28B1BC60A0F00F54680 /* BuildSystemFrontend.h */,
-				E15305922236C8DF0097CDE6 /* BuildSystemHandlers.h */,
 				E11470911B7517C800ED84CF /* BuildValue.h */,
 				40D5A32823AD9C5A004B56EA /* Command.h */,
 				54E187B71CD296EA00F7EC89 /* ExternalCommand.h */,
@@ -11231,7 +11220,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				E1AAD28A1BC609F600F54680 /* BuildSystemFrontend.cpp in Sources */,
-				E15305952236C8EE0097CDE6 /* BuildSystemExtensionManager.cpp in Sources */,
 				E162C5822233158A0078FD2E /* ShellCommand.cpp in Sources */,
 				E1AAD2901BC65AB200F54680 /* ExternalCommand.cpp in Sources */,
 				E1AAD28E1BC65A1900F54680 /* BuildNode.cpp in Sources */,
