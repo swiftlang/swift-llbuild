@@ -1,0 +1,35 @@
+# Verify that an implicit output satisfies a downstream input dependency
+#
+# RUN: rm -rf %t.build
+# RUN: mkdir -p %t.build
+# RUN: cp %s %t.build/build.ninja
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build final_out &> %t1.out
+# RUN: %{FileCheck} --check-prefix CHECK-ORDER < %t1.out %s
+#
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build final_out &> %t2.out
+# RUN: %{FileCheck} --check-prefix CHECK-NULL < %t2.out %s
+#
+# RUN: rm %t.build/implicit_dep
+# RUN: %{llbuild} ninja build --jobs 1 --chdir %t.build final_out &> %t3.out
+# RUN: %{FileCheck} --check-prefix CHECK-REBUILD < %t3.out %s
+
+# The producer runs before the consumer that depends on its implicit output.
+# CHECK-ORDER: GEN ran
+# CHECK-ORDER: USE ran
+
+# With everything present and unchanged, the rebuild is a no-op.
+# CHECK-NULL-NOT: GEN ran
+# CHECK-NULL-NOT: USE ran
+# CHECK-NULL: no work to do
+
+# Removing the implicit output reruns the producer and propagates to the consumer.
+# CHECK-REBUILD: GEN ran
+# CHECK-REBUILD: USE ran
+
+rule GEN
+     command = echo "GEN ran" && touch explicit_out implicit_dep
+rule USE
+     command = echo "USE ran" && touch final_out
+
+build explicit_out | implicit_dep: GEN
+build final_out: USE implicit_dep
