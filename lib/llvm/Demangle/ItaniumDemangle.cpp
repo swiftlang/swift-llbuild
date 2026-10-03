@@ -21,7 +21,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <exception>
 #include <numeric>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
