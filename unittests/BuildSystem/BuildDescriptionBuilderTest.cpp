@@ -765,4 +765,83 @@ TEST(BuildDescriptionBuilderTest, resolvesTheBuiltinTools) {
       "<in-memory>"));
 }
 
+/// The kind can be read from key data without constructing a BuildKey.
+TEST(BuildKeyTest, kindOfKeyData) {
+  std::vector<BuildKey> keys = {
+    BuildKey::makeCommand("Cmd"),
+    BuildKey::makeCustomTask("Task", "data"),
+    BuildKey::makeDirectoryContents("/dir"),
+    BuildKey::makeFilteredDirectoryContents("/dir", StringList()),
+    BuildKey::makeDirectoryTreeSignature("/dir", StringList()),
+    BuildKey::makeDirectoryTreeStructureSignature("/dir", StringList()),
+    BuildKey::makeNode("/dir/file.h"),
+    BuildKey::makeStat("/dir/file.h"),
+    BuildKey::makeTarget("Target"),
+  };
+  for (const auto& key : keys) {
+    EXPECT_NE(BuildKey::Kind::Unknown, key.getKind());
+    EXPECT_EQ(key.getKind(), BuildKey::kindOfKeyData(key.getKeyData().str()));
+  }
+  EXPECT_EQ(BuildKey::Kind::Unknown, BuildKey::kindOfKeyData(""));
+}
+
+/// `check-directory-dependencies-before-running` asks for the command's
+/// directory tree dependencies, and only those, to be checked before it runs.
+TEST(BuildDescriptionBuilderTest, checkDirectoryDependenciesBeforeRunning) {
+  auto dirKey = BuildKey::makeDirectoryTreeSignature("/dir", StringList());
+  auto nodeKey = BuildKey::makeNode("/dir/file.h");
+
+  StubBuildFileDelegate onDelegate;
+  TmpDir onDir(__func__);
+  auto on = loadBuildFile(onDelegate, onDir, R"(
+client:
+  name: basic
+commands:
+  Cmd:
+    tool: shell
+    args: ["/bin/echo", "hi"]
+    check-directory-dependencies-before-running: true
+)");
+  ASSERT_TRUE(on != nullptr);
+  auto* onCommand = commandNamed(*on, "Cmd");
+  ASSERT_TRUE(onCommand != nullptr);
+  EXPECT_TRUE(onCommand->checksDependenciesBeforeRunning());
+  EXPECT_TRUE(onCommand->mustCheckDependencyBeforeRunning(dirKey.getKeyData().str()));
+  EXPECT_FALSE(onCommand->mustCheckDependencyBeforeRunning(nodeKey.getKeyData().str()));
+
+  StubBuildFileDelegate offDelegate;
+  TmpDir offDir(__func__);
+  auto off = loadBuildFile(offDelegate, offDir, R"(
+client:
+  name: basic
+commands:
+  Cmd:
+    tool: shell
+    args: ["/bin/echo", "hi"]
+)");
+  ASSERT_TRUE(off != nullptr);
+  auto* offCommand = commandNamed(*off, "Cmd");
+  ASSERT_TRUE(offCommand != nullptr);
+  EXPECT_FALSE(offCommand->checksDependenciesBeforeRunning());
+  EXPECT_FALSE(offCommand->mustCheckDependencyBeforeRunning(dirKey.getKeyData().str()));
+
+  // Turning it on only changes when dependencies are checked, so it must not
+  // change the signature and force the command to rerun.
+  EXPECT_EQ(onCommand->getSignature(), offCommand->getSignature());
+}
+
+/// The attribute is a boolean; anything else is reported.
+TEST(BuildDescriptionBuilderTest, rejectsInvalidCheckDirectoryDependenciesValue) {
+  StubBuildFileDelegate delegate;
+  BuildDescriptionBuilder builder(delegate, "<in-memory>");
+  auto command = builder.createCommand("Cmd", "shell");
+  ASSERT_TRUE(command != nullptr);
+
+  EXPECT_FALSE(builder.configureCommandAttribute(
+      *command, "check-directory-dependencies-before-running", "yes",
+      builder.getContext()));
+  ASSERT_EQ(1U, delegate.errors.size());
+  EXPECT_NE(std::string::npos, delegate.errors[0].find("invalid value"));
+}
+
 }

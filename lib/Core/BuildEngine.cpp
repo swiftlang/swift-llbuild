@@ -145,6 +145,10 @@ class BuildEngineImpl : public BuildDBDelegate {
     bool orderOnly;
     /// Whether the rule is cleaned from dependencies after execution.
     bool singleUse = false;
+    /// Whether the engine has already decided the rule needs to run, and the
+    /// scan is only checking the dependencies it asked to have checked before
+    /// it runs.
+    bool needsToRun = false;
   };
   std::vector<RuleScanRequest> ruleInfosToScan;
 
@@ -476,7 +480,7 @@ private:
         trace->ruleNeedsToRunBecauseSignatureChanged(ruleInfo.rule.get());
       ruleInfo.state = RuleInfo::StateKind::NeedsToRun;
       delegate.determinedRuleNeedsToRun(ruleInfo.rule.get(), Rule::RunReason::SignatureChanged, nullptr);
-      return true;
+      return !scheduleChecksBeforeRunning(ruleInfo);
     }
 
     // If the rule indicates its computed value is out of date, it needs to run.
@@ -489,7 +493,7 @@ private:
         trace->ruleNeedsToRunBecauseInvalidValue(ruleInfo.rule.get());
       ruleInfo.state = RuleInfo::StateKind::NeedsToRun;
       delegate.determinedRuleNeedsToRun(ruleInfo.rule.get(), Rule::RunReason::InvalidValue, nullptr);
-      return true;
+      return !scheduleChecksBeforeRunning(ruleInfo);
     }
 
     // If the rule has no dependencies, then it is ready to run.
@@ -513,6 +517,27 @@ private:
     ruleInfosToScan.push_back({ &ruleInfo, /*InputIndex=*/0, nullptr, false });
 
     return false;
+  }
+
+  /// Schedule a scan of the dependencies a rule wants checked before it runs,
+  /// for a rule the engine has already decided needs to run.
+  ///
+  /// \returns True if a scan was scheduled, in which case the rule is left
+  /// scanning; otherwise the rule is left as needing to run.
+  bool scheduleChecksBeforeRunning(RuleInfo& ruleInfo) {
+    assert(ruleInfo.state == RuleInfo::StateKind::NeedsToRun);
+    if (!ruleInfo.rule->checksDependenciesBeforeRunning() ||
+        ruleInfo.result.dependencies.empty())
+      return false;
+
+    if (trace)
+      trace->ruleScheduledForScanning(ruleInfo.rule.get());
+    ruleInfo.state = RuleInfo::StateKind::IsScanning;
+    ruleInfo.setPendingScanRecord(newRuleScanRecord());
+    RuleScanRequest request{ &ruleInfo, /*InputIndex=*/0, nullptr, false };
+    request.needsToRun = true;
+    ruleInfosToScan.push_back(request);
+    return true;
   }
 
   /// Request the construction of the key specified by the given rule.
@@ -615,6 +640,17 @@ private:
       // Look up the input rule info, if not yet cached.
       if (!request.inputRuleInfo) {
         const auto& keyAndFlag = ruleInfo.result.dependencies[request.inputIndex];
+
+        // Once the engine has decided the rule needs to run, only the
+        // dependencies it asked to have checked before running are scanned.
+        // Skip the rest without looking up their rules.
+        if (request.needsToRun &&
+            !ruleInfo.rule->mustCheckDependencyBeforeRunning(
+                getKeyRefForID(keyAndFlag.keyID))) {
+          ++request.inputIndex;
+          continue;
+        }
+
         request.inputRuleInfo = &getRuleInfoForKey(keyAndFlag.keyID);
         request.orderOnly = keyAndFlag.orderOnly;
         request.singleUse = keyAndFlag.singleUse;
@@ -657,9 +693,11 @@ private:
         return;
       }
 
-      if (request.orderOnly) {
+      if (request.orderOnly || request.needsToRun) {
         // If the input is an order-only input it is just enough that it
-        // is available. No need to run anew.
+        // is available. No need to run anew. Likewise, once the rule is known
+        // to need to run, an input checked before running only has to be
+        // available.
       } else {
         // If the input has been computed since the last time this rule was
         // built, it needs to run.
@@ -667,9 +705,16 @@ private:
           if (trace)
             trace->ruleNeedsToRunBecauseInputRebuilt(
               ruleInfo.rule.get(), inputRuleInfo.rule.get());
-          finishScanRequest(ruleInfo, RuleInfo::StateKind::NeedsToRun);
+          if (!ruleInfo.rule->checksDependenciesBeforeRunning()) {
+            finishScanRequest(ruleInfo, RuleInfo::StateKind::NeedsToRun);
+            delegate.determinedRuleNeedsToRun(ruleInfo.rule.get(), Rule::RunReason::InputRebuilt, inputRuleInfo.rule.get());
+            return;
+          }
+
+          // The rule needs to run, but wants some of its remaining
+          // dependencies checked before it does, so keep scanning.
           delegate.determinedRuleNeedsToRun(ruleInfo.rule.get(), Rule::RunReason::InputRebuilt, inputRuleInfo.rule.get());
-          return;
+          request.needsToRun = true;
         }
       }
 
@@ -679,6 +724,13 @@ private:
       request.orderOnly = false;
       request.singleUse = false;
     } while (request.inputIndex != ruleInfo.result.dependencies.size());
+
+    // If the rule was found to need to run, the remaining dependencies it asked
+    // for have now been checked.
+    if (request.needsToRun) {
+      finishScanRequest(ruleInfo, RuleInfo::StateKind::NeedsToRun);
+      return;
+    }
 
     // If we reached the end of the inputs, the rule does not need to run.
     if (trace)
@@ -1433,11 +1485,17 @@ public:
     return KeyID(it->getKey().data());
   }
 
-  virtual KeyType getKeyForID(const KeyID key) override {
+  /// Get the key for an ID without copying it. The reference stays valid for
+  /// the life of the engine.
+  llvm::StringRef getKeyRefForID(const KeyID key) {
     // Note that we don't need to lock `keyTable` here because the key entries
     // themselves don't change once created.
     return llvm::StringMapEntry<KeyID>::GetStringMapEntryFromKeyData(
       (const char*)(uintptr_t)key).getKey();
+  }
+
+  virtual KeyType getKeyForID(const KeyID key) override {
+    return getKeyRefForID(key);
   }
 
   RuleInfo& getRuleInfoForKey(const KeyType& key) {

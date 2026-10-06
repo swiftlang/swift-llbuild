@@ -1692,6 +1692,44 @@ public:
   }
 };
 
+/// The rule for a command.
+///
+/// Besides running the command, this lets the command decide which of its
+/// dependencies must be checked before it runs.
+class CommandRule : public BuildSystemRule {
+  Command& command;
+
+public:
+  CommandRule(const KeyType& key, Command& command)
+      : BuildSystemRule(
+            key, command.getSignature(),
+            /*Action=*/
+            [&command](BuildEngine& engine) -> Task* {
+              return new CommandTask(command);
+            },
+            /*IsValid=*/
+            [&command](BuildEngine& engine, const Rule& rule,
+                       const ValueType& value) -> bool {
+              return CommandTask::isResultValid(
+                  engine, command, BuildValue::fromData(value));
+            },
+            /*UpdateStatus=*/
+            [&command](BuildEngine& engine, core::Rule::StatusKind status) {
+              return ::getBuildSystem(engine)
+                  .getDelegate()
+                  .commandStatusChanged(&command, convertStatusKind(status));
+            }),
+        command(command) {}
+
+  bool checksDependenciesBeforeRunning() const override {
+    return command.checksDependenciesBeforeRunning();
+  }
+
+  bool mustCheckDependencyBeforeRunning(StringRef dependency) override {
+    return command.mustCheckDependencyBeforeRunning(dependency);
+  }
+};
+
 
 
 BuildNode *BuildSystemEngineDelegate::lookupNode(StringRef name) {
@@ -1743,23 +1781,7 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
 
     // Create the rule for the command.
     Command* command = it->second.get();
-    return std::unique_ptr<Rule>(new BuildSystemRule(
-      keyData,
-      command->getSignature(),
-      /*Action=*/ [command](BuildEngine& engine) -> Task* {
-        return new CommandTask(*command);
-      },
-      /*IsValid=*/ [command](BuildEngine& engine, const Rule& rule,
-                             const ValueType& value) -> bool {
-        return CommandTask::isResultValid(
-            engine, *command, BuildValue::fromData(value));
-      },
-      /*UpdateStatus=*/ [command](BuildEngine& engine,
-                                  core::Rule::StatusKind status) {
-        return ::getBuildSystem(engine).getDelegate().commandStatusChanged(
-            command, convertStatusKind(status));
-      }
-    ));
+    return std::unique_ptr<Rule>(new CommandRule(keyData, *command));
   }
 
   case BuildKey::Kind::CustomTask: {
@@ -1775,24 +1797,8 @@ std::unique_ptr<Rule> BuildSystemEngineDelegate::lookupRule(const KeyType& keyDa
       // Save the custom command.
       customTasks.emplace_back(std::move(result));
       Command *command = customTasks.back().get();
-      
-      return std::unique_ptr<Rule>(new BuildSystemRule(
-        keyData,
-        command->getSignature(),
-        /*Action=*/ [command](BuildEngine& engine) -> Task* {
-          return new CommandTask(*command);
-        },
-        /*IsValid=*/ [command](BuildEngine& engine, const Rule& rule,
-                               const ValueType& value) -> bool {
-          return CommandTask::isResultValid(
-              engine, *command, BuildValue::fromData(value));
-        },
-        /*UpdateStatus=*/ [command](BuildEngine& engine,
-                                    core::Rule::StatusKind status) {
-          return ::getBuildSystem(engine).getDelegate().commandStatusChanged(
-              command, convertStatusKind(status));
-        }
-      ));
+
+      return std::unique_ptr<Rule>(new CommandRule(keyData, *command));
     }
     
     // We were unable to create an appropriate custom command, produce an error

@@ -682,6 +682,195 @@ TEST(BuildEngineTest, discoveredDependencies) {
   EXPECT_EQ(std::vector<std::string>(), builtKeys);
 }
 
+namespace checks_before_running {
+
+/// A delegate which records the rules reported as needing to run.
+class RecordingDelegate : public SimpleBuildEngineDelegate {
+public:
+  std::vector<std::pair<std::string, Rule::RunReason>> needsToRun;
+
+  void determinedRuleNeedsToRun(Rule* rule, Rule::RunReason reason,
+                                Rule* inputRule) override {
+    needsToRun.push_back({rule->key.str(), reason});
+  }
+};
+
+/// A task which requests "value-A", and reports "value-B" and "value-C" as
+/// discovered dependencies once it has run.
+class OutputTask : public Task {
+  int computedInputValue = -1;
+
+public:
+  void start(TaskInterface ti) override { ti.request("value-A", 0); }
+
+  void provideValue(TaskInterface, uintptr_t inputID, const KeyType& key,
+                    const ValueType& value) override {
+    computedInputValue = intFromValue(value);
+  }
+
+  void inputsAvailable(TaskInterface ti) override {
+    ti.discoveredDependency("value-B");
+    ti.discoveredDependency("value-C");
+    ti.complete(intToValue(computedInputValue));
+  }
+};
+
+/// The rule for "output", which can ask for "value-B" (but not "value-C") to be
+/// checked before it runs.
+class OutputRule : public Rule {
+  std::vector<std::string>& builtKeys;
+  bool checksBeforeRunning;
+  bool& isValid;
+
+public:
+  OutputRule(std::vector<std::string>& builtKeys, bool checksBeforeRunning,
+             bool& isValid)
+      : Rule("output"), builtKeys(builtKeys),
+        checksBeforeRunning(checksBeforeRunning), isValid(isValid) {}
+
+  Task* createTask(BuildEngine&) override {
+    builtKeys.push_back(key.str());
+    return new OutputTask();
+  }
+
+  bool isResultValid(BuildEngine&, const ValueType&) override {
+    return isValid;
+  }
+
+  bool checksDependenciesBeforeRunning() const override {
+    return checksBeforeRunning;
+  }
+
+  bool mustCheckDependencyBeforeRunning(StringRef dependency) override {
+    return dependency == "value-B";
+  }
+};
+
+/// Sets up "output", depending on "value-A" and discovering "value-B" and
+/// "value-C", and runs the initial build.
+struct Fixture {
+  std::vector<std::string> builtKeys;
+  RecordingDelegate delegate;
+  core::BuildEngine engine{delegate};
+  int valueA = 2;
+  int valueB = 3;
+  int valueC = 4;
+  bool outputIsValid = true;
+
+  explicit Fixture(bool checksBeforeRunning) {
+    addValueRule("value-A", valueA);
+    addValueRule("value-B", valueB);
+    addValueRule("value-C", valueC);
+    engine.addRule(std::unique_ptr<core::Rule>(
+        new OutputRule(builtKeys, checksBeforeRunning, outputIsValid)));
+
+    EXPECT_EQ(valueA, intFromValue(engine.build("output")));
+    EXPECT_EQ(std::vector<std::string>(
+                  {"output", "value-A", "value-B", "value-C"}),
+              builtKeys);
+    builtKeys.clear();
+    delegate.needsToRun.clear();
+  }
+
+  void addValueRule(const KeyType& key, int& value) {
+    engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+        key, {},
+        [this, key, &value](const std::vector<int>&) {
+          builtKeys.push_back(key.str());
+          return value;
+        },
+        [&value](const ValueType& result) {
+          return value == intFromValue(result);
+        })));
+  }
+
+  /// The run reasons reported for "output".
+  std::vector<Rule::RunReason> outputRunReasons() const {
+    std::vector<Rule::RunReason> result;
+    for (const auto& entry : delegate.needsToRun) {
+      if (entry.first == "output")
+        result.push_back(entry.second);
+    }
+    return result;
+  }
+};
+
+} // namespace checks_before_running
+
+TEST(BuildEngineTest, discoveredDependenciesCheckedAfterRunningByDefault) {
+  // Without opting in, once the engine has decided "output" needs to run, its
+  // remaining dependencies aren't checked until after it has run.
+  checks_before_running::Fixture f(/*checksBeforeRunning=*/false);
+
+  f.valueA = 5;
+  f.valueB = 6;
+  f.valueC = 7;
+  EXPECT_EQ(f.valueA, intFromValue(f.engine.build("output")));
+  EXPECT_EQ(std::vector<std::string>(
+                {"value-A", "output", "value-B", "value-C"}),
+            f.builtKeys);
+  EXPECT_EQ(std::vector<Rule::RunReason>({Rule::RunReason::InputRebuilt}),
+            f.outputRunReasons());
+}
+
+TEST(BuildEngineTest, dependencyCheckedBeforeRunningAfterInputRebuilt) {
+  // Opting in, "value-B" is checked (and rebuilt) before "output" runs, even
+  // though "value-A" already showed that "output" needs to run. "value-C" is
+  // not asked for, so it is still only checked afterwards.
+  checks_before_running::Fixture f(/*checksBeforeRunning=*/true);
+
+  f.valueA = 5;
+  f.valueB = 6;
+  f.valueC = 7;
+  EXPECT_EQ(f.valueA, intFromValue(f.engine.build("output")));
+  EXPECT_EQ(std::vector<std::string>(
+                {"value-A", "value-B", "output", "value-C"}),
+            f.builtKeys);
+
+  // The rule is still only reported once, for the first input that changed.
+  EXPECT_EQ(std::vector<Rule::RunReason>({Rule::RunReason::InputRebuilt}),
+            f.outputRunReasons());
+
+  // The next build is a null build.
+  f.builtKeys.clear();
+  f.delegate.needsToRun.clear();
+  EXPECT_EQ(f.valueA, intFromValue(f.engine.build("output")));
+  EXPECT_EQ(std::vector<std::string>(), f.builtKeys);
+  EXPECT_EQ(std::vector<Rule::RunReason>(), f.outputRunReasons());
+}
+
+TEST(BuildEngineTest, dependencyCheckedBeforeRunningAfterInvalidValue) {
+  // The same applies when the rule's own value is invalid, which is decided
+  // before any of its inputs are looked at.
+  checks_before_running::Fixture f(/*checksBeforeRunning=*/true);
+
+  f.outputIsValid = false;
+  f.valueB = 6;
+  f.valueC = 7;
+  EXPECT_EQ(f.valueA, intFromValue(f.engine.build("output")));
+  EXPECT_EQ(std::vector<std::string>({"value-B", "output", "value-C"}),
+            f.builtKeys);
+  EXPECT_EQ(std::vector<Rule::RunReason>({Rule::RunReason::InvalidValue}),
+            f.outputRunReasons());
+}
+
+TEST(BuildEngineTest, dependencyCheckedBeforeRunningWhenUnchanged) {
+  // If nothing changed, opting in makes no difference.
+  checks_before_running::Fixture f(/*checksBeforeRunning=*/true);
+
+  EXPECT_EQ(f.valueA, intFromValue(f.engine.build("output")));
+  EXPECT_EQ(std::vector<std::string>(), f.builtKeys);
+  EXPECT_EQ(std::vector<Rule::RunReason>(), f.outputRunReasons());
+
+  // If only a dependency that is checked before running changed, the rule
+  // runs because of it, as usual.
+  f.valueB = 6;
+  EXPECT_EQ(f.valueA, intFromValue(f.engine.build("output")));
+  EXPECT_EQ(std::vector<std::string>({"value-B", "output"}), f.builtKeys);
+  EXPECT_EQ(std::vector<Rule::RunReason>({Rule::RunReason::InputRebuilt}),
+            f.outputRunReasons());
+}
+
 TEST(BuildEngineTest, unchangedOutputs) {
   // Check building with unchanged outputs.
   std::vector<std::string> builtKeys;

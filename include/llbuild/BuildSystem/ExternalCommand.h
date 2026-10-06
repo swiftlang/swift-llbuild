@@ -61,6 +61,13 @@ class ExternalCommand : public Command {
   /// Whether to treat the command as always being out-of-date.
   bool alwaysOutOfDate = false;
 
+  /// Whether the command's directory tree dependencies are checked before it
+  /// runs, even if it is going to run regardless.
+  ///
+  /// This lets the build system's delegate learn which of those directories
+  /// changed before the command starts.
+  bool checkDirectoryDependenciesBeforeRunning = false;
+
   /// If not None, the command should be skipped with the provided BuildValue.
   llvm::Optional<BuildValue> skipValue;
 
@@ -130,6 +137,11 @@ public:
                                         const BuildValue& value) override;
   
   virtual bool isResultValid(BuildSystem&, const BuildValue& value) override;
+
+  virtual bool checksDependenciesBeforeRunning() const override;
+
+  virtual bool
+  mustCheckDependencyBeforeRunning(StringRef key) const override;
 
   virtual void start(BuildSystem& system, core::TaskInterface ti) override;
 

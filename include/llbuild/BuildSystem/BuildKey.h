@@ -169,7 +169,15 @@ public:
   const KeyType& getKeyData() const { return key; }
 
   Kind getKind() const {
-    return kindForIdentifier(key.data()[0]);
+    return kindOfKeyData(key.str());
+  }
+
+  /// Get the kind of a key from its data, without constructing a BuildKey,
+  /// which copies the key.
+  ///
+  /// This is for callers which look at many keys and only need the kind.
+  static Kind kindOfKeyData(StringRef keyData) {
+    return keyData.empty() ? Kind::Unknown : kindForIdentifier(keyData[0]);
   }
   
   static Kind kindForIdentifier(char identifier) {

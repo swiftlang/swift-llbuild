@@ -84,6 +84,9 @@
 /// compile for multiple versions of the API.
 ///
 /// Version History:
+/// 21: Added the `check-directory-dependencies-before-running` command
+///     attribute.
+///
 /// 20: Added the in-memory build description APIs, including
 ///     `llb_buildsystem_create_with_description`.
 ///
@@ -126,6 +129,6 @@
 /// 1: Added `environment` parameter to llb_buildsystem_invocation_t.
 ///
 /// 0: Pre-history
-#define LLBUILD_C_API_VERSION 20
+#define LLBUILD_C_API_VERSION 21
 
 #endif

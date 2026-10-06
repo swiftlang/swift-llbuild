@@ -362,6 +362,30 @@ public:
 
   /// Called to indicate a change in the rule status.
   virtual void updateStatus(BuildEngine&, StatusKind);
+
+  /// Whether some of this rule's dependencies must still be checked before it
+  /// runs, even after the engine has decided it needs to run.
+  ///
+  /// Normally the engine stops checking a rule's dependencies as soon as it
+  /// finds a reason for the rule to run. A rule which returns true here has the
+  /// remaining dependencies offered to \see mustCheckDependencyBeforeRunning(),
+  /// and the ones it accepts are scanned and built before its task starts.
+  /// This allows clients to observe the state of those dependencies (for
+  /// example via \see BuildEngineDelegate::determinedRuleNeedsToRun()) before
+  /// the task runs.
+  virtual bool checksDependenciesBeforeRunning() const { return false; }
+
+  /// Called for each remaining dependency of a rule that needs to run, when
+  /// \see checksDependenciesBeforeRunning() returns true.
+  ///
+  /// The key is passed as a reference to the engine's own copy, because this
+  /// is called for every dependency of every rule that opts in.
+  ///
+  /// \returns True if \p dependency must be scanned and built before this
+  /// rule's task starts.
+  virtual bool mustCheckDependencyBeforeRunning(llvm::StringRef dependency) {
+    return false;
+  }
 };
 
 /// Delegate interface for use with the build engine.
