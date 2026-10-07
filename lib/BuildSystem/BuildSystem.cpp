@@ -193,10 +193,6 @@ private:
   /// The build description, once loaded.
   std::unique_ptr<BuildDescription> buildDescription;
 
-  /// For each directory, the commands that produce files directly inside it.
-  llvm::StringMap<std::vector<Command*>> directChildProducersByDir;
-  bool directChildProducersBuilt = false;
-
   /// The delegate used for building the file contents.
   BuildSystemEngineDelegate engineDelegate;
 
@@ -238,52 +234,6 @@ public:
   const BuildDescription& getBuildDescription() const {
     assert(buildDescription);
     return *buildDescription;
-  }
-
-  const std::vector<Command*>* getDirectChildProducers(StringRef dir) {
-    if (!directChildProducersBuilt) {
-      directChildProducersBuilt = true;
-      for (const auto& entry : getBuildDescription().getNodes()) {
-        Node* node = entry.second.get();
-        if (node->getProducers().empty())
-          continue;
-        StringRef name = node->getName();
-        while (name.size() > 1 && llvm::sys::path::is_separator(name.back()))
-          name = name.drop_back();
-        StringRef parent = llvm::sys::path::parent_path(name);
-        if (parent.empty())
-          continue;
-        auto& producers = directChildProducersByDir[parent];
-        for (auto* producer : node->getProducers()) {
-          // Skip producers that read this directory or a parent as a tree to avoid cycles.
-          bool consumesAncestor = false;
-          for (auto* input : producer->getInputs()) {
-            if (!input->isDirectory() && !input->isDirectoryStructure())
-              continue;
-            StringRef dir = input->getName();
-            while (dir.size() > 1 && llvm::sys::path::is_separator(dir.back()))
-              dir = dir.drop_back();
-            if (parent == dir ||
-                (parent.size() > dir.size() && parent.startswith(dir) &&
-                 llvm::sys::path::is_separator(parent[dir.size()]))) {
-              consumesAncestor = true;
-              break;
-            }
-          }
-          if (consumesAncestor)
-            continue;
-          producers.push_back(producer);
-        }
-      }
-      for (auto& entry : directChildProducersByDir) {
-        auto& v = entry.second;
-        std::sort(v.begin(), v.end(),
-                  [](Command* a, Command* b) { return a->getName() < b->getName(); });
-        v.erase(std::unique(v.begin(), v.end()), v.end());
-      }
-    }
-    auto it = directChildProducersByDir.find(dir);
-    return it == directChildProducersByDir.end() ? nullptr : &it->second;
   }
 
   void error(StringRef filename, const Twine& message) {
@@ -333,15 +283,11 @@ public:
     }
 
     buildDescription = std::move(description);
-    directChildProducersByDir.clear();
-    directChildProducersBuilt = false;
     return true;
   }
 
   void loadDescription(std::unique_ptr<BuildDescription> description) {
     buildDescription = std::move(description);
-    directChildProducersByDir.clear();
-    directChildProducersBuilt = false;
   }
 
   bool loadDescription(
@@ -368,8 +314,6 @@ public:
     configureFileSystem(builder.getFileSystemMode());
 
     buildDescription = std::move(description);
-    directChildProducersByDir.clear();
-    directChildProducersBuilt = false;
     return true;
   }
 
@@ -1010,13 +954,6 @@ class DirectoryContentsTask : public Task {
     // Related rdar://problem/30638921
     //
     ti.request(BuildKey::makeNode(path).toData(), /*inputID=*/0);
-
-    if (const auto* producers = getBuildSystem(ti).getDirectChildProducers(path)) {
-      uintptr_t inputID = 1;
-      for (auto* producer : *producers) {
-        ti.request(BuildKey::makeCommand(producer->getName()).toData(), inputID++);
-      }
-    }
   }
 
   virtual void providePriorValue(TaskInterface,
@@ -1195,13 +1132,6 @@ class FilteredDirectoryContentsTask : public Task {
     // Related rdar://problem/30638921
     ti.request(BuildKey::makeNode(path).toData(), /*inputID=*/0);
     ti.request(BuildKey::makeStat(path).toData(), /*inputID=*/1);
-
-    if (const auto* producers = getBuildSystem(ti).getDirectChildProducers(path)) {
-      uintptr_t inputID = 2;
-      for (auto* producer : *producers) {
-        ti.request(BuildKey::makeCommand(producer->getName()).toData(), inputID++);
-      }
-    }
   }
 
   virtual void providePriorValue(TaskInterface,
