@@ -99,8 +99,17 @@ static void lexWord(const char*& cur, const char* end,
 
     // Check if this is an escape sequence.
     if (c == '\\') {
-      // If this is a line continuation, it ends the word.
-      if (cur + 1 != end && cur[1] == '\n')
+      // A backslash at the very end of the input has nothing to escape, so it
+      // ends the word. Without this check the escaped character would be read
+      // from one past the end of the buffer, and the cursor would be advanced
+      // past `end`.
+      if (cur + 1 == end)
+        break;
+
+      // If this is a line continuation, it ends the word. Continuations are
+      // recognized with both '\n' and '\r\n' line endings, matching the
+      // endings skipNonNewlineWhitespace() honors.
+      if (cur[1] == '\n' || (cur + 2 < end && cur[1] == '\r' && cur[2] == '\n'))
         break;
 
       // Otherwise, skip the escaped character.
