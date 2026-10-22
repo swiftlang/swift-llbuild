@@ -3,7 +3,7 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.llbuild
-# RUN: cp %S/Inputs/wait-for-file %t.build
+# RUN: cp %S/../../Ninja/Build/Inputs/wait-for-file %t.build
 # RUN: %{llbuild} buildsystem build --serial --scheduler fifo --chdir %t.build >%t.out
 # RUN: %{FileCheck} --input-file=%t.out %s
 

@@ -6,8 +6,11 @@ add_llbuild_unittest(BuildSystemTests
   BuildValueTest.cpp
   ShellCommandTest.cpp
   MockBuildSystemDelegate.cpp
-  TempDir.cpp
+  ../UnitTestSupport/TempDir.cpp
   )
+
+target_include_directories(BuildSystemTests PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/../UnitTestSupport/include)
 
 target_link_libraries(BuildSystemTests PRIVATE
   llbuildBuildSystem
