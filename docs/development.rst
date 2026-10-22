@@ -224,9 +224,10 @@ Swift conventions.
 
   **Xcode Performance Tests**
 
-    These tests are located under `perftests/Xcode`. They use the Xcode XCTest
+    These tests are located under `perftests/Xcode`. They use the XCTest
     based testing infrastructure to run performance tests. These tests are
-    currently only supported when using Xcode.
+    currently only supported on macOS, where CMake builds them into an
+    `.xctest` bundle.
 
 * Header includes are placed in the directory structure according to their
   purpose:
@@ -248,6 +249,3 @@ Swift conventions.
     **All** references to these includes should follow the form::
 
       #include "<HEADER_NAME>.h"
-
-  The Xcode project disables the use of headermaps, to aid in following these
-  conventions.
