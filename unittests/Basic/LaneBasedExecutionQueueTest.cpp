@@ -12,7 +12,7 @@
 
 #include "llbuild/Basic/FileSystem.h"
 #include "llbuild/Basic/ExecutionQueue.h"
-#include "../BuildSystem/TempDir.h"
+#include "TempDir.h"
 
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/SmallString.h"

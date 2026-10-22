@@ -5,8 +5,11 @@ add_llbuild_unittest(BasicTests
   POSIXEnvironmentTest.cpp
   SerialQueueTest.cpp
   ShellUtilityTest.cpp
-  ../BuildSystem/TempDir.cpp
+  ../UnitTestSupport/TempDir.cpp
   )
+
+target_include_directories(BasicTests PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/../UnitTestSupport/include)
 
 target_link_libraries(BasicTests PRIVATE
   llbuildBasic

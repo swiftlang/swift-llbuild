@@ -3,7 +3,7 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.llbuild
-# RUN: cp %S/Inputs/wait-for-file %t.build
+# RUN: cp %S/../../Ninja/Build/Inputs/wait-for-file %t.build
 # RUN: %{llbuild} buildsystem build --chdir %t.build --no-db &> %t.out
 # RUN: %{FileCheck} --check-prefix=CHECK-A --input-file %t.out %s
 # RUN: %{FileCheck} --check-prefix=CHECK-B --input-file %t.out %s
