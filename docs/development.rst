@@ -232,16 +232,17 @@ Swift conventions.
 * Header includes are placed in the directory structure according to their
   purpose:
 
-  `include/llbuild/<LIBRARY_NAME>/`
+  `lib/<LIBRARY_NAME>/include/llbuild/<LIBRARY_NAME>/`
 
     Contains the *internal* (in Swift terminology) APIs available for use by
     any other code in the *llbuild* project (subject to layering constraints).
+    This is the library's public headers directory for both CMake and SwiftPM.
 
     **All** references to these includes should follow the form::
 
       #include "llbuild/<LIBRARY_NAME>/<HEADER_NAME>.h"
 
-  `lib/llbuild/<LIBRARY_NAME>`
+  `lib/<LIBRARY_NAME>/`
 
     Contains the *internal* (in Swift terminology) APIs only available for use
     by code in the same library.
@@ -249,3 +250,6 @@ Swift conventions.
     **All** references to these includes should follow the form::
 
       #include "<HEADER_NAME>.h"
+
+  The imported LLVM headers follow the same layout, under
+  `lib/llvm/Support/include/` and `lib/llvm/Demangle/include/`.

@@ -34,9 +34,12 @@ Pod::Spec.new do |s|
   s.source = { git: "https://github.com/apple/swift-llbuild.git",
                tag: s.version }
 
+  # Each library's public headers live in that library's `include` directory.
+  include_flags = %w[Basic BuildSystem Commands Core Ninja llvm/Demangle llvm/Support].map { |l| "-I${PODS_TARGET_SRCROOT}/lib/#{l}/include" }.join(' ')
+
   s.default_subspecs = ['Swift']
   s.pod_target_xcconfig = { 
-    'OTHER_CFLAGS' => '-I${PODS_TARGET_SRCROOT}/include', 
+    'OTHER_CFLAGS' => include_flags,
     'GCC_C_LANGUAGE_STANDARD' => 'c11',
     'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
     'CLANG_CXX_LIBRARY' => 'libc++',
@@ -53,7 +56,7 @@ Pod::Spec.new do |s|
     # the first is an 'umbrella header', the rest have to be public because 
     # otherwise modular header warnings abound
     sp.public_header_files = 'products/libllbuild/include/llbuild/llbuild.h', 'products/libllbuild/include/llbuild/*.h'
-    sp.preserve_paths = 'products/libllbuild/BuildKey-C-API-Private.h', 'include/llbuild/BuildSystem/{BuildDescription,BuildKey,BuildValue}.h'
+    sp.preserve_paths = 'products/libllbuild/BuildKey-C-API-Private.h', 'lib/BuildSystem/include/llbuild/BuildSystem/{BuildDescription,BuildKey,BuildValue}.h'
     
     sp.dependency 'llbuild/Core'
     sp.osx.dependency 'llbuild/BuildSystem' 
@@ -62,7 +65,7 @@ Pod::Spec.new do |s|
   s.subspec 'Core' do |sp|
     sp.source_files = 'lib/Core/**/*.cpp'
     # internal header files, used this way to prevent header clash between subspecs
-    sp.preserve_paths = 'include/llbuild/Core', 'lib/Core/**/*.h'
+    sp.preserve_paths = 'lib/Core/**/*.h'
 
     sp.libraries = 'sqlite3'
     sp.dependency 'llbuild/Basic'
@@ -73,8 +76,8 @@ Pod::Spec.new do |s|
     sp.ios.source_files = 'lib/Basic/**/{PlatformUtility,Tracing,Version}.cpp'
 
     # internal header files, used this way to prevent header clash between subspecs
-    sp.preserve_paths = 'include/llbuild/Basic', 'lib/Basic/**/*.h'
-    sp.exclude_files = 'include/llbuild/Basic/LeanWindows.h'
+    sp.preserve_paths = 'lib/Basic/**/*.h'
+    sp.exclude_files = 'lib/Basic/include/llbuild/Basic/LeanWindows.h'
 
     sp.dependency 'llbuild/llvmSupport'
   end
@@ -82,8 +85,8 @@ Pod::Spec.new do |s|
   s.subspec 'BuildSystem' do |sp|
     sp.source_files = 'lib/BuildSystem/**/*.cpp'
     # internal header files, used this way to prevent header clash between subspecs
-    sp.preserve_paths = 'include/llbuild/BuildSystem', 'lib/BuildSystem/**/*.h'
-    sp.compiler_flags = '-I${PODS_TARGET_SRCROOT}/include'
+    sp.preserve_paths = 'lib/BuildSystem/**/*.h'
+    sp.compiler_flags = include_flags
 
     sp.dependency 'llbuild/Core'
   end
@@ -97,7 +100,7 @@ Pod::Spec.new do |s|
       'lib/llvm/Support/Atomic.cpp',
     ]
     # internal header files, used this way to prevent header clash between subspecs
-    sp.preserve_paths = 'include/llvm', 'include/llvm-c', 'lib/llvm/Support/Unix', 'lib/llvm/Demangle/**/*.h'
+    sp.preserve_paths = 'lib/llvm/Support/include', 'lib/llvm/Support/Unix', 'lib/llvm/Demangle/**/*.h'
 
     s.osx.libraries = 'ncurses'
   end

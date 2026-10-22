@@ -34,7 +34,7 @@ macro(add_llbuild_library name)
 
     if(NOT lib_path MATCHES "^[.][.]")
       file( GLOB_RECURSE headers
-        ${LLBUILD_SRC_DIR}/include/llbuild/${lib_path}/*.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
       )
       set_source_files_properties(${headers} PROPERTIES HEADER_FILE_ONLY ON)
 

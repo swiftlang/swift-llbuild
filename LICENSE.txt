@@ -224,7 +224,7 @@ Program             Directory
 -------             ---------
 BLAKE3              thirdparty/BLAKE3
 CMake               cmake/modules/FindSQLite3.cmake
-LLVM                llbuild/lib/llvm, llbuild/include/llvm
+LLVM                llbuild/lib/llvm
 Google Protobuf     thirdparty/protobuf
 Google Test         llbuild/utils/unittest/googletest
 Swift Protobuf      thridparty/swift-protobuf

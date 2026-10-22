@@ -99,27 +99,31 @@ def main():
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
     # Remove the old llvm import
-    llbuild_llvm_include = os.path.join(llbuild_srcroot, 'include', 'llvm')
     llbuild_llvm_lib = os.path.join(llbuild_srcroot, 'lib', 'llvm')
-    shutil.rmtree(llbuild_llvm_include)
     shutil.rmtree(llbuild_llvm_lib)
+
+    # Public headers live in each library's own `include` directory, which is
+    # where both SwiftPM and CMake look for them.
+    def include_root(dir):
+        lib = 'Demangle' if dir == 'Demangle' else 'Support'
+        return os.path.join(llbuild_llvm_lib, lib, 'include')
 
     # Add the platform specific config files
     #
     # NOTE: If you're updating to a newer llvm, you may have to manually merge
     # these with the newer version produced by the llvm build
     llbuild_llvm_config = os.path.join(llbuild_srcroot, 'utils', 'import-llvm', 'include', 'llvm', 'Config')
-    shutil.copytree(llbuild_llvm_config, os.path.join(llbuild_llvm_include, 'Config'))
+    shutil.copytree(llbuild_llvm_config, os.path.join(include_root('Config'), 'llvm', 'Config'))
 
     def import_header(dir, name):
         src = os.path.join(llvm_srcroot, 'include', 'llvm', dir, name)
         c_src = os.path.join(llvm_srcroot, 'include', 'llvm-c', name)
         if os.path.exists(src):
-            dst = os.path.join(llbuild_srcroot, 'include', 'llvm', dir, name)
+            dst = os.path.join(include_root(dir), 'llvm', dir, name)
             mkdir_p(os.path.dirname(dst))
             copyfile(src, dst)
         if os.path.exists(c_src):
-            dst = os.path.join(llbuild_srcroot, 'include', 'llvm-c', name)
+            dst = os.path.join(include_root(dir), 'llvm-c', name)
             mkdir_p(os.path.dirname(dst))
             copyfile(c_src, dst)
 
@@ -154,7 +158,7 @@ def main():
     # Copy over all of demangle
     demangle_src = os.path.join(llvm_srcroot, 'lib', 'Demangle')
     demangle_dest = os.path.join(llbuild_srcroot, 'lib', 'llvm', 'Demangle')
-    shutil.copytree(demangle_src, demangle_dest)
+    shutil.copytree(demangle_src, demangle_dest, dirs_exist_ok=True)
 
     # Add in the CMakeLists
     llbuild_cmake_root = os.path.join(llbuild_srcroot, 'utils', 'import-llvm', 'cmake')
@@ -164,23 +168,6 @@ def main():
                 os.path.join(llbuild_llvm_lib, 'Demangle', 'CMakeLists.txt'))
     shutil.copy(os.path.join(llbuild_cmake_root, 'supportCMakeLists.txt'),
                 os.path.join(llbuild_llvm_lib, 'Support', 'CMakeLists.txt'))
-
-    # Create Symlinks for SwiftPM include directory resolution
-    os.makedirs(os.path.join(llbuild_llvm_lib, 'Support', 'include', 'llvm'))
-    os.makedirs(os.path.join(llbuild_llvm_lib, 'Demangle', 'include'))
-    os.makedirs(os.path.join(llbuild_llvm_include, 'Demangle', 'include'))
-    os.symlink(os.path.join('..', '..', '..', '..', '..', 'include', 'llvm', 'ADT'),
-               os.path.join(llbuild_llvm_lib, 'Support', 'include', 'llvm', 'ADT'))
-    os.symlink(os.path.join('..', '..', '..', '..', '..', 'include', 'llvm', 'Config'),
-               os.path.join(llbuild_llvm_lib, 'Support', 'include', 'llvm', 'Config'))
-    os.symlink(os.path.join('..', '..', '..', '..', '..', 'include', 'llvm', 'Support'),
-               os.path.join(llbuild_llvm_lib, 'Support', 'include', 'llvm', 'Support'))
-    os.symlink(os.path.join('..', '..', '..', '..', 'include', 'llvm-c'),
-               os.path.join(llbuild_llvm_lib, 'Support', 'include', 'llvm-c'))
-    os.symlink(os.path.join('..', '..', '..', '..', 'include', 'llvm'),
-               os.path.join(llbuild_llvm_lib, 'Demangle', 'include', 'llvm'))
-    os.symlink(os.path.join('..', '..', '..', 'llvm'),
-               os.path.join(llbuild_llvm_include, 'Demangle', 'include', 'llvm'))
 
 if __name__ == '__main__':
     main()
