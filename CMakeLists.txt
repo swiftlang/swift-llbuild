@@ -109,9 +109,17 @@ endif()
 ###
 # Setup compiler and project build settings
 
-# Find includes in the source directory.
+# Find includes in the source directory. Each library's public headers live in
+# the library's own `include` directory (which is also where SwiftPM expects
+# them).
 include_directories(BEFORE
-  ${PROJECT_SOURCE_DIR}/include)
+  ${PROJECT_SOURCE_DIR}/lib/Basic/include
+  ${PROJECT_SOURCE_DIR}/lib/BuildSystem/include
+  ${PROJECT_SOURCE_DIR}/lib/Commands/include
+  ${PROJECT_SOURCE_DIR}/lib/Core/include
+  ${PROJECT_SOURCE_DIR}/lib/Ninja/include
+  ${PROJECT_SOURCE_DIR}/lib/llvm/Demangle/include
+  ${PROJECT_SOURCE_DIR}/lib/llvm/Support/include)
 
 # Xcode: Use libc++ and c++14 using proper build settings.
 if (XCODE)
