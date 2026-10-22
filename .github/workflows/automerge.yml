@@ -1,0 +1,34 @@
+name: Automerger
+# In the first period after branching the release branch,
+# we typically want to include many changes from `main` in the release branch.
+# This workflow automatically creates a PR to merge the main branch into the release branch.
+# Later in the release cycle we should stop this practice to avoid landing risky changes by disabling this workflow.
+# To do so, disable the workflow as described in https://docs.github.com/en/actions/managing-workflow-runs-and-deployments/managing-workflow-runs/disabling-and-enabling-a-workflow
+permissions:
+  contents: read
+on:
+  schedule:
+    - cron: '0 9 * * MON'
+  workflow_dispatch:
+jobs:
+  create_merge_pr:
+    strategy:
+      matrix:
+        include:
+          - source_branch: release/6.4.0
+            destination_branch: release/6.4.1
+          - source_branch: release/6.4.1
+            destination_branch: release/6.4.2
+          - source_branch: release/6.4.2
+            destination_branch: release/6.4.x
+          - source_branch: release/6.4.x
+            destination_branch: main
+    name: Create PR to merge `${{ matrix.source_branch }}` into `${{ matrix.destination_branch }}`
+    uses: swiftlang/github-workflows/.github/workflows/create_automerge_pr.yml@0.0.14
+    with:
+      head_branch: ${{ matrix.source_branch }}
+      base_branch: ${{ matrix.destination_branch }}
+    permissions:
+      contents: write
+      pull-requests: write
+    if: (github.event_name == 'schedule' && github.repository == 'swiftlang/swift-llbuild') || (github.event_name != 'schedule')  # Ensure that we don't run this on a schedule in a fork
