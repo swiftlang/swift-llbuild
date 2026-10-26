@@ -120,6 +120,26 @@ TEST(MakefileDepsParserTest, basic) {
   EXPECT_EQ(RuleRecord("out", { "in1" }),
             actions.records[0]);
 
+  // Check a line continuation which immediately follows a word, with both
+  // kinds of line ending. Both must produce the same rule.
+  input = "out: in1\\\n  in2\n";
+  actions.errors.clear();
+  actions.records.clear();
+  MakefileDepsParser(StringRef(input), actions, false).parse();
+  EXPECT_EQ(0U, actions.errors.size());
+  EXPECT_EQ(1U, actions.records.size());
+  EXPECT_EQ(RuleRecord("out", { "in1", "in2" }),
+            actions.records[0]);
+
+  input = "out: in1\\\r\n  in2\n";
+  actions.errors.clear();
+  actions.records.clear();
+  MakefileDepsParser(StringRef(input), actions, false).parse();
+  EXPECT_EQ(0U, actions.errors.size());
+  EXPECT_EQ(1U, actions.records.size());
+  EXPECT_EQ(RuleRecord("out", { "in1", "in2" }),
+            actions.records[0]);
+
   // Check error case if leading garbage.
   actions.errors.clear();
   actions.records.clear();
@@ -153,6 +173,33 @@ TEST(MakefileDepsParserTest, basic) {
             ErrorRecord("unexpected character in prerequisites", 4U));
   EXPECT_EQ(1U, actions.records.size());
   EXPECT_EQ(RuleRecord("a", { "b" }),
+            actions.records[0]);
+
+  // Check a truncated input which ends in a backslash. The backslash has
+  // nothing to escape, so it is reported like any other stray character
+  // instead of consuming the byte past the end of the input.
+  actions.errors.clear();
+  actions.records.clear();
+  input = "a: b\\";
+  MakefileDepsParser(StringRef(input), actions, false).parse();
+  EXPECT_EQ(1U, actions.errors.size());
+  EXPECT_EQ(actions.errors[0],
+            ErrorRecord("unexpected character in prerequisites", 4U));
+  EXPECT_EQ(1U, actions.records.size());
+  EXPECT_EQ(RuleRecord("a", { "b" }),
+            actions.records[0]);
+
+  // Check a truncated input which ends in a backslash while lexing the rule
+  // name.
+  actions.errors.clear();
+  actions.records.clear();
+  input = "a\\";
+  MakefileDepsParser(StringRef(input), actions, false).parse();
+  EXPECT_EQ(1U, actions.errors.size());
+  EXPECT_EQ(actions.errors[0],
+            ErrorRecord("missing ':' following rule", 1U));
+  EXPECT_EQ(1U, actions.records.size());
+  EXPECT_EQ(RuleRecord("a", {}),
             actions.records[0]);
 
   // Check that we can parse filenames with special characters.
