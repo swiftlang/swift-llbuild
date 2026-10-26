@@ -404,4 +404,177 @@ TEST(BuildSystemCAPI, CustomToolWithDiscoveredDependencies) {
   llb_buildsystem_destroy(system);
 }
 
+/// State shared by the delegates of the directory-dependency test below.
+struct DirectoryDependencyTest {
+  std::string dirPath;
+  std::string outputPath;
+
+  /// What happened, in order: "execute" when the command runs, and
+  /// "dir-changed:<path>" when llbuild finds a directory's listing changed.
+  std::vector<std::string> events;
+};
+
+static llb_buildsystem_command_result_t
+dir_tester_command_execute_command(void *context,
+                                   llb_buildsystem_command_t* command,
+                                   llb_buildsystem_interface_t* bi,
+                                   llb_task_interface_t ti,
+                                   llb_buildsystem_queue_job_context_t* job) {
+  // Like a dependency scanner, the command finds out while it runs that it
+  // depends on the listing of a directory, and reports that as a discovered
+  // dependency.
+  auto& test = *static_cast<DirectoryDependencyTest*>(context);
+  test.events.push_back("execute");
+  writeFileContents(test.outputPath, "out");
+
+  const char* noFilters[] = {""};
+  llb_build_key_t* key = llb_build_key_make_directory_tree_signature(
+      test.dirPath.c_str(), noFilters, 0);
+  llb_buildsystem_command_interface_task_discovered_dependency(ti, key);
+  llb_build_key_destroy(key);
+  return llb_buildsystem_command_result_succeeded;
+}
+
+static llb_buildsystem_command_t*
+dir_tester_tool_create_command(void *context, const llb_data_t* name) {
+  llb_buildsystem_external_command_delegate_t delegate = {};
+  delegate.context = context;
+  delegate.start = depinfo_tester_command_start;
+  delegate.provide_value = depinfo_tester_command_provide_value;
+  delegate.execute_command = dir_tester_command_execute_command;
+  return llb_buildsystem_external_command_create(name, delegate);
+}
+
+static llb_buildsystem_tool_t* dir_tester_lookup_tool(void *context,
+                                                      const llb_data_t* name) {
+  if (llvm::StringRef((const char*)name->data, name->length) ==
+      "dir-tester-tool") {
+    llb_buildsystem_tool_delegate_t delegate = {};
+    delegate.context = context;
+    delegate.create_command = dir_tester_tool_create_command;
+    return llb_buildsystem_tool_create(name, delegate);
+  }
+  return NULL;
+}
+
+static void dir_tester_determined_rule_needs_to_run(
+    void* context, llb_build_key_t* rule, llb_rule_run_reason_t reason,
+    llb_build_key_t* input) {
+  // A directory's listing changed.
+  if (llb_build_key_get_kind(rule) != llb_build_key_kind_directory_contents ||
+      reason != llb_rule_run_reason_invalid_value)
+    return;
+
+  auto& test = *static_cast<DirectoryDependencyTest*>(context);
+  llb_data_t path;
+  llb_build_key_get_directory_path(rule, &path);
+  test.events.push_back(
+      "dir-changed:" +
+      std::string((const char*)path.data, path.length));
+  llb_free((void*)path.data);
+}
+
+/// Runs two builds of a command which declares an input file and discovers a
+/// dependency on a directory. Between the builds, both the input file and the
+/// directory's listing change. Returns the events from the second build.
+static std::vector<std::string>
+runDirectoryDependencyBuilds(bool checkDirectoriesBeforeRunning) {
+  std::string tmpDirPath = llbuild::basic::sys::makeTmpDir();
+  for (auto& c : tmpDirPath) {
+    if (c == '\\') {
+      c = '/';
+    }
+  }
+
+  DirectoryDependencyTest test;
+  test.dirPath = tmpDirPath + "/dir";
+  test.outputPath = tmpDirPath + "/output-file";
+  std::string inputPath = tmpDirPath + "/input-file";
+  llbuild::basic::sys::mkdir(test.dirPath.c_str());
+  writeFileContents(test.dirPath + "/a.h", "a");
+  writeFileContents(inputPath, "1");
+
+  std::string buildFilePath = tmpDirPath + "/llbuild";
+  std::ostringstream buildFileContents;
+  buildFileContents << "client:" << std::endl;
+  buildFileContents << "  name: basic" << std::endl;
+  buildFileContents << std::endl;
+  buildFileContents << "targets:" << std::endl;
+  buildFileContents << "  \"\": [\"<all>\"]" << std::endl;
+  buildFileContents << std::endl;
+  buildFileContents << "commands:" << std::endl;
+  buildFileContents << "  \"scan\":" << std::endl;
+  buildFileContents << "    tool: dir-tester-tool" << std::endl;
+  buildFileContents << "    inputs: [\"" << inputPath << "\"]" << std::endl;
+  buildFileContents << "    outputs: [\"" << test.outputPath << "\"]" << std::endl;
+  if (checkDirectoriesBeforeRunning) {
+    buildFileContents << "    check-directory-dependencies-before-running: true"
+                      << std::endl;
+  }
+  buildFileContents << "  \"<all>\":" << std::endl;
+  buildFileContents << "    tool: phony" << std::endl;
+  buildFileContents << "    inputs: [\"" << test.outputPath << "\"]" << std::endl;
+  buildFileContents << "    outputs: [\"<all>\"]" << std::endl;
+  writeFileContents(buildFilePath, buildFileContents.str());
+
+  llb_buildsystem_invocation_t invocation = {};
+  invocation.buildFilePath = buildFilePath.c_str();
+  invocation.useSerialBuild = true;
+
+  // The file system callbacks are left unset, so the local file system is used.
+  llb_buildsystem_delegate_t delegate = {};
+  delegate.context = &test;
+  delegate.lookup_tool = dir_tester_lookup_tool;
+  delegate.handle_diagnostic = handle_diagnostic;
+  delegate.had_command_failure = had_command_failure;
+  delegate.command_started = command_started;
+  delegate.command_finished = command_finished;
+  delegate.command_found_discovered_dependency = command_found_discovered_dependency;
+  delegate.command_process_started = command_process_started;
+  delegate.command_process_had_error = command_process_had_error;
+  delegate.command_process_had_output = command_process_had_output;
+  delegate.command_process_finished = command_process_finished;
+  delegate.determined_rule_needs_to_run =
+      dir_tester_determined_rule_needs_to_run;
+
+  llb_buildsystem_t* system = llb_buildsystem_create(delegate, invocation);
+  llb_buildsystem_initialize(system);
+
+  llb_data_t key = { 0, NULL };
+  EXPECT_TRUE(llb_buildsystem_build(system, &key));
+  EXPECT_EQ(std::vector<std::string>({"execute"}), test.events);
+
+  // Change the declared input, which on its own makes the command rerun, and
+  // add a file to the directory. Change the input's size too, so the change is
+  // seen even on file systems with coarse modification times.
+  test.events.clear();
+  writeFileContents(inputPath, "22");
+  writeFileContents(test.dirPath + "/b.h", "b");
+
+  EXPECT_TRUE(llb_buildsystem_build(system, &key));
+  llb_buildsystem_destroy(system);
+  return test.events;
+}
+
+TEST(BuildSystemCAPI, DirectoryDependencyCheckedAfterRunningByDefault) {
+  // The declared input is checked first and already shows the command must
+  // rerun, so the discovered directory isn't checked until the command has run.
+  auto events = runDirectoryDependencyBuilds(
+      /*checkDirectoriesBeforeRunning=*/false);
+  ASSERT_EQ(2U, events.size());
+  EXPECT_EQ("execute", events[0]);
+  EXPECT_EQ(0U, events[1].find("dir-changed:"));
+}
+
+TEST(BuildSystemCAPI, DirectoryDependencyCheckedBeforeRunning) {
+  // With `check-directory-dependencies-before-running`, the directory change is
+  // reported before the command runs, which is when a client needs to know.
+  auto events = runDirectoryDependencyBuilds(
+      /*checkDirectoriesBeforeRunning=*/true);
+  ASSERT_EQ(2U, events.size());
+  EXPECT_EQ(0U, events[0].find("dir-changed:"));
+  EXPECT_NE(std::string::npos, events[0].find("/dir"));
+  EXPECT_EQ("execute", events[1]);
+}
+
 }

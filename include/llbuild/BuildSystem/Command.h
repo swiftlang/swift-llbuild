@@ -155,7 +155,22 @@ public:
   /// @{
 
   virtual bool isResultValid(BuildSystem& system, const BuildValue& value) = 0;
-  
+
+  /// Whether some of this command's dependencies must still be checked before
+  /// it runs, even after the build system has decided it needs to run.
+  ///
+  /// \see core::Rule::checksDependenciesBeforeRunning().
+  virtual bool checksDependenciesBeforeRunning() const { return false; }
+
+  /// Whether the dependency with key data \p key must be checked before this
+  /// command runs, when \see checksDependenciesBeforeRunning() is true.
+  ///
+  /// This takes the key data and not a BuildKey, which would copy it, because
+  /// it is asked about every dependency of the command.
+  virtual bool mustCheckDependencyBeforeRunning(StringRef key) const {
+    return false;
+  }
+
   virtual void start(BuildSystem& system, core::TaskInterface ti) = 0;
 
   virtual void providePriorValue(BuildSystem& system, core::TaskInterface ti,

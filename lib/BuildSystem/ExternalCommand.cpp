@@ -47,6 +47,21 @@ CommandSignature ExternalCommand::getSignature() const {
       .combine(alwaysOutOfDate);
 }
 
+// `checkDirectoryDependenciesBeforeRunning` is deliberately left out of the
+// signature: it only changes when dependencies are checked, not what the
+// command produces, so turning it on shouldn't make every command rerun.
+bool ExternalCommand::checksDependenciesBeforeRunning() const {
+  return checkDirectoryDependenciesBeforeRunning;
+}
+
+bool ExternalCommand::mustCheckDependencyBeforeRunning(StringRef key) const {
+  // This is asked about every dependency, so only get the kind. Constructing a
+  // BuildKey would copy the key.
+  return checkDirectoryDependenciesBeforeRunning &&
+         BuildKey::kindOfKeyData(key) ==
+             BuildKey::Kind::DirectoryTreeSignature;
+}
+
 void ExternalCommand::configureDescription(const ConfigureContext&,
                                            StringRef value) {
   description = value;
@@ -96,7 +111,15 @@ configureAttribute(const ConfigureContext& ctx, StringRef name,
     }
     alwaysOutOfDate = value == "true";
     return true;
-    
+
+  } else if (name == "check-directory-dependencies-before-running") {
+    if (value != "true" && value != "false") {
+      ctx.error("invalid value: '" + value + "' for attribute '" +
+                name + "'");
+      return false;
+    }
+    checkDirectoryDependenciesBeforeRunning = value == "true";
+    return true;
   } else if (name == "repair-via-ownership-analysis") {
     if (value == "true") {
       repairViaOwnershipAnalysis = true;
