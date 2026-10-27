@@ -1056,6 +1056,10 @@ llb_buildsystem_command_interface_get_file_info(llb_buildsystem_interface_t* bi_
 LLBUILD_EXPORT bool
 llb_buildsystem_command_interface_spawn(llb_task_interface_t ti, llb_buildsystem_queue_job_context_t *job_context, const char * const*args, int32_t arg_count, const char * const *env_keys, const char * const *env_values, int32_t env_count, llb_data_t *working_dir, llb_buildsystem_spawn_delegate_t *delegate);
 
+/// Spawns a process using the task interface and a job's context.
+LLBUILD_EXPORT bool
+llb_buildsystem_command_interface_spawn_v2(llb_task_interface_t ti, llb_buildsystem_queue_job_context_t *job_context, const char * const*args, int32_t arg_count, const char * const *env_keys, const char * const *env_values, int32_t env_count, llb_data_t *working_dir, bool can_safely_interrupt, llb_buildsystem_spawn_delegate_t *delegate);
+
 // MARK: Quality of Service
 
 /// Get the global quality of service level to use for processing.

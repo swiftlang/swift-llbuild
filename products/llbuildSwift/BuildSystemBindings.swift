@@ -117,8 +117,9 @@ public struct BuildSystemCommandInterface {
     /// - commandLine: All command line arguments
     /// - environment: The environment the process will be executed in
     /// - workingDirectory: The path to the directory the process will use
+    /// - canSafelyInterrupt: Whether the process may be interrupted when the build is cancelled.
     /// - processDelegate: An instance that handles delegate callbacks about the execution of the process
-    public func spawn(_ jobContext: JobContext, commandLine: [String], environment: [String: String], workingDirectory: String, processDelegate: ProcessDelegate) -> Bool {
+    public func spawn(_ jobContext: JobContext, commandLine: [String], environment: [String: String], workingDirectory: String, canSafelyInterrupt: Bool = true, processDelegate: ProcessDelegate) -> Bool {
         let keys = Array(environment.keys)
         let values = Array(environment.values)        
         let wrappedDelegate = ProcessDelegateWrapper(delegate: processDelegate)
@@ -132,7 +133,7 @@ public struct BuildSystemCommandInterface {
         return commandLine.withCArrayOfOptionalStrings { commandLinePtr in
             keys.withCArrayOfOptionalStrings { keysPtr in
                 values.withCArrayOfOptionalStrings { valuesPtr in
-                    llb_buildsystem_command_interface_spawn(_taskInterface, jobContext._context, commandLinePtr, Int32(commandLine.count), keysPtr, valuesPtr, Int32(environment.count), &workingDirData, &wrappedDelegate.wrappedDelegate)
+                    llb_buildsystem_command_interface_spawn_v2(_taskInterface, jobContext._context, commandLinePtr, Int32(commandLine.count), keysPtr, valuesPtr, Int32(environment.count), &workingDirData, canSafelyInterrupt, &wrappedDelegate.wrappedDelegate)
                 }
             }
         }

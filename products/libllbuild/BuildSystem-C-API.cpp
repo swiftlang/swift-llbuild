@@ -1678,6 +1678,10 @@ llb_build_value_file_info_t llb_buildsystem_command_interface_get_file_info(llb_
 }
 
 bool llb_buildsystem_command_interface_spawn(llb_task_interface_t ti, llb_buildsystem_queue_job_context_t *job_context, const char * const*args, int32_t arg_count, const char * const *env_keys, const char * const *env_values, int32_t env_count, llb_data_t *working_dir, llb_buildsystem_spawn_delegate_t *delegate) {
+  return llb_buildsystem_command_interface_spawn_v2(ti, job_context, args, arg_count, env_keys, env_values, env_count, working_dir, /*can_safely_interrupt=*/true, delegate);
+}
+
+bool llb_buildsystem_command_interface_spawn_v2(llb_task_interface_t ti, llb_buildsystem_queue_job_context_t *job_context, const char * const*args, int32_t arg_count, const char * const *env_keys, const char * const *env_values, int32_t env_count, llb_data_t *working_dir, bool can_safely_interrupt, llb_buildsystem_spawn_delegate_t *delegate) {
   auto coreti = reinterpret_cast<core::TaskInterface*>(&ti);
   auto arguments = std::vector<StringRef>();
   for (int32_t i = 0; i < arg_count; i++) {
@@ -1741,7 +1745,7 @@ bool llb_buildsystem_command_interface_spawn(llb_task_interface_t ti, llb_builds
   };
 
   auto forwardingDelegate = new ForwardingProcessDelegate(delegate);
-  coreti->spawn((QueueJobContext*)job_context, ArrayRef<StringRef>(arguments), ArrayRef<std::pair<StringRef, StringRef>>(environment), {true, false, StringRef((const char*)working_dir->data, working_dir->length)}, {commandCompletionFn}, forwardingDelegate);
+  coreti->spawn((QueueJobContext*)job_context, ArrayRef<StringRef>(arguments), ArrayRef<std::pair<StringRef, StringRef>>(environment), {can_safely_interrupt, false, StringRef((const char*)working_dir->data, working_dir->length)}, {commandCompletionFn}, forwardingDelegate);
 
   delete forwardingDelegate;
 
