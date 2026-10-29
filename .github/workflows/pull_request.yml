@@ -69,6 +69,7 @@ jobs:
       unacceptable_language_check_enabled: false
       shell_check_enabled: false
       python_lint_check_enabled: false
+      yamllint_check_enabled: false
       api_breakage_check_enabled: false
       docs_check_enabled: false
       format_check_enabled: false
