@@ -84,6 +84,8 @@
 /// compile for multiple versions of the API.
 ///
 /// Version History:
+/// 22: Added `llb_buildsystem_command_interface_spawn_v2`.
+///
 /// 21: Added the `check-directory-dependencies-before-running` command
 ///     attribute.
 ///
@@ -129,6 +131,6 @@
 /// 1: Added `environment` parameter to llb_buildsystem_invocation_t.
 ///
 /// 0: Pre-history
-#define LLBUILD_C_API_VERSION 21
+#define LLBUILD_C_API_VERSION 22
 
 #endif
