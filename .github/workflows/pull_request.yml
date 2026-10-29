@@ -30,6 +30,9 @@ jobs:
       enable_linux_static_sdk_build: true
       linux_static_sdk_build_command: LLBUILD_STATIC_LINK=1 swift build
       enable_android_sdk_build: true
+      # Released and 6.4.x toolchains aren't published for ubuntu-latest (26.04) yet.
+      # https://github.com/swiftlang/github-workflows/issues/338
+      android_sdk_versions: '["nightly-main"]'
       android_sdk_build_command: "swift build --build-tests"
       android_ndk_versions: '["r27d", "r29"]'
       enable_ios_checks: true

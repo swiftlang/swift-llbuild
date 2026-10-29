@@ -20,6 +20,8 @@ import llbuildTestSupport
 
 #if os(Windows)
 import WinSDK
+#elseif canImport(Android)
+import Android
 #endif
 
 #if !canImport(Darwin)
