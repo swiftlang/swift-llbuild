@@ -224,23 +224,25 @@ Swift conventions.
 
   **Xcode Performance Tests**
 
-    These tests are located under `perftests/Xcode`. They use the Xcode XCTest
+    These tests are located under `perftests/Xcode`. They use the XCTest
     based testing infrastructure to run performance tests. These tests are
-    currently only supported when using Xcode.
+    currently only supported on macOS, where CMake builds them into an
+    `.xctest` bundle.
 
 * Header includes are placed in the directory structure according to their
   purpose:
 
-  `include/llbuild/<LIBRARY_NAME>/`
+  `lib/<LIBRARY_NAME>/include/llbuild/<LIBRARY_NAME>/`
 
     Contains the *internal* (in Swift terminology) APIs available for use by
     any other code in the *llbuild* project (subject to layering constraints).
+    This is the library's public headers directory for both CMake and SwiftPM.
 
     **All** references to these includes should follow the form::
 
       #include "llbuild/<LIBRARY_NAME>/<HEADER_NAME>.h"
 
-  `lib/llbuild/<LIBRARY_NAME>`
+  `lib/<LIBRARY_NAME>/`
 
     Contains the *internal* (in Swift terminology) APIs only available for use
     by code in the same library.
@@ -249,5 +251,5 @@ Swift conventions.
 
       #include "<HEADER_NAME>.h"
 
-  The Xcode project disables the use of headermaps, to aid in following these
-  conventions.
+  The imported LLVM headers follow the same layout, under
+  `lib/llvm/Support/include/` and `lib/llvm/Demangle/include/`.

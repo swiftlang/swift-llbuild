@@ -3,7 +3,7 @@
 # RUN: rm -rf %t.build
 # RUN: mkdir -p %t.build
 # RUN: cp %s %t.build/build.llbuild
-# RUN: cp %S/Inputs/wait-for-file %t.build
+# RUN: cp %S/../../Ninja/Build/Inputs/wait-for-file %t.build
 # RUN: cp %S/Inputs/ignore-sigint %t.build
 # RUN: /bin/bash -x -c \
 # RUN:   "LLBUILD_TEST=1 %{llbuild} buildsystem build --serial --chdir %t.build --no-db &> %t.out & \

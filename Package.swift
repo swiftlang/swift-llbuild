@@ -1,71 +1,127 @@
-// swift-tools-version:5.3
+// swift-tools-version:6.2
 
 // This file defines Swift package manager support for llbuild. See:
-//  https://github.com/swiftlang/swift-package-manager/tree/master/Documentation
+//  https://github.com/swiftlang/swift-package-manager/tree/main/Documentation
 
 import PackageDescription
-import class Foundation.ProcessInfo
 
-let isStaticBuild = ProcessInfo.processInfo.environment["LLBUILD_STATIC_LINK"] != nil
-let useEmbeddedSqlite = isStaticBuild || ProcessInfo.processInfo.environment["LLBUILD_USE_EMBEDDED_SQLITE"] != nil
-let useTerminfo = !isStaticBuild && ProcessInfo.processInfo.environment["LLBUILD_NO_TERMINFO"] == nil
+let isStaticBuild = Context.environment["LLBUILD_STATIC_LINK"] != nil
+let useEmbeddedSqlite = isStaticBuild || Context.environment["LLBUILD_USE_EMBEDDED_SQLITE"] != nil
+let useTerminfo = !isStaticBuild && Context.environment["LLBUILD_NO_TERMINFO"] == nil
+let useLocalDependencies = Context.environment["SWIFTCI_USE_LOCAL_DEPS"] != nil
 
-let embeddedSqliteCondition: TargetDependencyCondition? = {
+// `Platform.freebsd` is not yet available to manifests at this tools version,
+// so refer to it by its platform name.
+let freebsd: Platform = .custom("freebsd")
+
+/// Platforms where SQLite is provided by the system rather than embedded.
+let systemSqlitePlatforms: [Platform] = [
+    .macOS, .iOS, .tvOS, .watchOS, .visionOS, .macCatalyst, .linux, .openbsd, freebsd,
+]
+
+/// Platforms which need `-ldl -lpthread` to be linked explicitly.
+let dlPthreadPlatforms: [Platform] = [.linux, freebsd]
+
+// MARK: Shared settings
+
+/// Use the embedded SQLite where there is no system SQLite (or always, when requested).
+let embeddedSqliteCondition: TargetDependencyCondition? =
+    useEmbeddedSqlite ? nil : .when(platforms: [.windows, .android])
+
+let sqliteSettings: (cSettings: [CSetting], linkerSettings: [LinkerSetting]) = {
     if useEmbeddedSqlite {
-        return nil
+        return ([], [])
     }
-    return .when(platforms: [.windows, .android])
+    return (
+        [
+            // On the BSDs, SQLite is installed from ports/packages into /usr/local.
+            .unsafeFlags(["-I/usr/local/include"], .when(platforms: [.openbsd, freebsd])),
+        ],
+        [
+            .linkedLibrary("sqlite3", .when(platforms: systemSqlitePlatforms)),
+            .unsafeFlags(["-L/usr/local/lib"], .when(platforms: [.openbsd, freebsd])),
+        ]
+    )
 }()
 
-let externalSqliteLibraries: [LinkerSetting] = {
-    if useEmbeddedSqlite {
-        return []
-    }
-    return [.linkedLibrary("sqlite3", .when(platforms: [.macOS, .iOS, .tvOS, .watchOS, .visionOS, .macCatalyst, .linux]))] 
-}()
+let terminfoLibraries: [LinkerSetting] =
+    useTerminfo ? [.linkedLibrary("ncurses", .when(platforms: [.linux, .macOS, .openbsd, freebsd]))] : []
 
-let terminfoLibraries: [LinkerSetting] = {
-    if !useTerminfo {
-        return []
-    }
-#if os(FreeBSD) || os(OpenBSD)
-    return [.linkedLibrary("ncurses")]
-#else
-    return [.linkedLibrary("ncurses", .when(platforms: [.linux, .macOS]))]
-#endif
-}()
+let dlPthreadLibraries: [LinkerSetting] = [
+    .linkedLibrary("dl", .when(platforms: dlPthreadPlatforms)),
+    .linkedLibrary("pthread", .when(platforms: dlPthreadPlatforms)),
+]
+
+/// C++ settings shared by all of the targets built from llbuild's C++ sources
+/// (and the imported LLVM sources).
+let llbuildCXXSettings: [CXXSetting] = [
+    .define("LLVM_ON_WIN32", .when(platforms: [.windows])),
+    .define("_CRT_SECURE_NO_WARNINGS", .when(platforms: [.windows])),
+    .define("_CRT_NONSTDC_NO_WARNINGS", .when(platforms: [.windows])),
+] + (useTerminfo ? [] : [.define("LLBUILD_NO_TERMINFO")])
+
+// MARK: Package
 
 let package = Package(
     name: "llbuild",
     platforms: [
-        .macOS(.v10_10), .iOS(.v9),
+        .macOS(.v10_13), .iOS(.v12),
     ],
     products: [
+        /// The llbuild multitool (primarily for testing).
+        ///
+        /// The product can't be named `llbuild` because that name belongs to
+        /// the Swift API library product.
         .executable(
-            name: "llbuild",
+            name: "llbuild-tool",
             targets: ["llbuild"]),
 
+        /// The public llbuild C API.
         .library(
-            name: "libllbuild",
+            name: "cllbuild",
             targets: ["libllbuild"]),
+
+        /// The public llbuild Swift API.
         .library(
-            name: "llbuildSwift",
+            name: "llbuild",
             targets: ["llbuildSwift"]),
+
         .library(
             name: "llbuildAnalysis",
             targets: ["llbuildAnalysis"]),
+
+        // MARK: Deprecated products
+        //
+        // These products are kept for compatibility with existing clients.
+        // SwiftPM has no way to mark a product as deprecated, so new clients
+        // should use the products above instead.
+
+        /// Deprecated: use the `cllbuild` product instead.
+        .library(
+            name: "libllbuild",
+            targets: ["libllbuild"]),
+
+        /// Deprecated: use the `llbuild` product instead.
+        .library(
+            name: "llbuildSwift",
+            targets: ["llbuildSwift"]),
+    ],
+    dependencies: [
+        useLocalDependencies
+            ? .package(path: "../swift-toolchain-sqlite")
+            : .package(url: "https://github.com/swiftlang/swift-toolchain-sqlite", from: "1.0.0"),
     ],
     targets: [
         // MARK: Products
 
         /// The llbuild multitool (primarily for testing).
-        .target(
+        .executableTarget(
             name: "llbuild",
             dependencies: ["llbuildCommands"],
             path: "products/llbuild",
-            linkerSettings: [
-                .linkedLibrary("dl", .when(platforms: [.linux])),
-                .linkedLibrary("pthread", .when(platforms: [.linux]))]
+            exclude: ["CMakeLists.txt"],
+            cxxSettings: llbuildCXXSettings,
+            linkerSettings: dlPthreadLibraries
         ),
 
         /// The custom build tool used by the Swift package manager (SwiftPM).
@@ -73,20 +129,22 @@ let package = Package(
         /// SwiftPM has now switched to using llbuild's Swift bindings API to
         /// build, but this tool is still used for SwiftPM's bootstrapping. Once
         /// that step has been eliminated, this tool can be removed.
-        .target(
+        .executableTarget(
             name: "swift-build-tool",
             dependencies: ["llbuildBuildSystem"],
             path: "products/swift-build-tool",
-            linkerSettings: [
-                .linkedLibrary("dl", .when(platforms: [.linux])),
-                .linkedLibrary("pthread", .when(platforms: [.linux]))]
+            exclude: ["CMakeLists.txt"],
+            cxxSettings: llbuildCXXSettings,
+            linkerSettings: dlPthreadLibraries
         ),
 
         /// The public llbuild C API.
         .target(
             name: "libllbuild",
             dependencies: ["llbuildCore", "llbuildBuildSystem", "llbuildNinja"],
-            path: "products/libllbuild"
+            path: "products/libllbuild",
+            exclude: ["CMakeLists.txt"],
+            cxxSettings: llbuildCXXSettings
         ),
 
         /// The public llbuild Swift API.
@@ -102,7 +160,12 @@ let package = Package(
         .target(
             name: "llbuildBasic",
             dependencies: ["llvmSupport"],
-            path: "lib/Basic"
+            path: "lib/Basic",
+            exclude: ["CMakeLists.txt"],
+            cxxSettings: llbuildCXXSettings,
+            linkerSettings: [
+                .linkedLibrary("ShLwApi", .when(platforms: [.windows])),
+            ]
         ),
         .target(
             name: "llbuildCore",
@@ -111,22 +174,31 @@ let package = Package(
                 .product(name: "SwiftToolchainCSQLite", package: "swift-toolchain-sqlite", condition: embeddedSqliteCondition),
             ],
             path: "lib/Core",
-            linkerSettings: externalSqliteLibraries
+            exclude: ["CMakeLists.txt"],
+            cSettings: sqliteSettings.cSettings,
+            cxxSettings: llbuildCXXSettings,
+            linkerSettings: sqliteSettings.linkerSettings
         ),
         .target(
             name: "llbuildBuildSystem",
             dependencies: ["llbuildCore"],
-            path: "lib/BuildSystem"
+            path: "lib/BuildSystem",
+            exclude: ["CMakeLists.txt"],
+            cxxSettings: llbuildCXXSettings
         ),
         .target(
             name: "llbuildNinja",
             dependencies: ["llbuildBasic"],
-            path: "lib/Ninja"
+            path: "lib/Ninja",
+            exclude: ["CMakeLists.txt"],
+            cxxSettings: llbuildCXXSettings
         ),
         .target(
             name: "llbuildCommands",
             dependencies: ["llbuildCore", "llbuildBuildSystem", "llbuildNinja"],
-            path: "lib/Commands"
+            path: "lib/Commands",
+            exclude: ["CMakeLists.txt"],
+            cxxSettings: llbuildCXXSettings
         ),
 
         // MARK: Analysis Components
@@ -139,218 +211,137 @@ let package = Package(
 
         // MARK: Test Targets
 
-        .target(
+        .executableTarget(
             name: "llbuildBasicTests",
-            dependencies: ["llbuildBasic", "gmocklib"],
+            dependencies: ["llbuildBasic", "llbuildUnitTestSupport", "gmocklib", "llbuildUnitTestMain"],
             path: "unittests/Basic",
-            cxxSettings: [
-                .headerSearchPath("../../utils/unittest/googlemock/include"),
-                .headerSearchPath("../../utils/unittest/googletest/include"),
-            ],
-            linkerSettings: [
-                .linkedLibrary("dl", .when(platforms: [.linux])),
-                .linkedLibrary("pthread", .when(platforms: [.linux]))]),
-        .target(
+            exclude: ["CMakeLists.txt"],
+            cxxSettings: llbuildCXXSettings,
+            linkerSettings: dlPthreadLibraries
+        ),
+        .executableTarget(
             name: "llbuildCoreTests",
             dependencies: [
                 "llbuildCore",
                 "gmocklib",
+                "llbuildUnitTestMain",
                 .product(name: "SwiftToolchainCSQLite", package: "swift-toolchain-sqlite", condition: embeddedSqliteCondition),
             ],
             path: "unittests/Core",
-            cxxSettings: [
-                .headerSearchPath("../../utils/unittest/googlemock/include"),
-                .headerSearchPath("../../utils/unittest/googletest/include"),
-            ],
-            linkerSettings: [
-                .linkedLibrary("dl", .when(platforms: [.linux])),
-                .linkedLibrary("pthread", .when(platforms: [.linux])),
-            ] + externalSqliteLibraries),
-        .target(
+            exclude: ["CMakeLists.txt"],
+            cSettings: sqliteSettings.cSettings,
+            cxxSettings: llbuildCXXSettings,
+            linkerSettings: dlPthreadLibraries + sqliteSettings.linkerSettings
+        ),
+        .executableTarget(
             name: "llbuildBuildSystemTests",
-            dependencies: ["llbuildBuildSystem", "gmocklib"],
+            dependencies: ["llbuildBuildSystem", "llbuildUnitTestSupport", "gmocklib", "llbuildUnitTestMain"],
             path: "unittests/BuildSystem",
-            cxxSettings: [
-                .headerSearchPath("../../utils/unittest/googlemock/include"),
-                .headerSearchPath("../../utils/unittest/googletest/include"),
-            ],
-            linkerSettings: [
-                .linkedLibrary("dl", .when(platforms: [.linux])),
-                .linkedLibrary("pthread", .when(platforms: [.linux]))]),
-        .target(
+            exclude: ["CMakeLists.txt"],
+            cxxSettings: llbuildCXXSettings,
+            linkerSettings: dlPthreadLibraries
+        ),
+        .executableTarget(
             name: "llbuildNinjaTests",
-            dependencies: ["llbuildNinja", "gmocklib"],
+            dependencies: ["llbuildNinja", "gmocklib", "llbuildUnitTestMain"],
             path: "unittests/Ninja",
-            cxxSettings: [
-                .headerSearchPath("../../utils/unittest/googlemock/include"),
-                .headerSearchPath("../../utils/unittest/googletest/include"),
-            ],
-            linkerSettings: [
-                .linkedLibrary("dl", .when(platforms: [.linux])),
-                .linkedLibrary("pthread", .when(platforms: [.linux]))]),
+            exclude: ["CMakeLists.txt"],
+            cxxSettings: llbuildCXXSettings,
+            linkerSettings: dlPthreadLibraries
+        ),
         .testTarget(
             name: "llbuildSwiftTests",
             dependencies: ["llbuildSwift", "llbuildTestSupport"],
             path: "unittests/Swift",
-            linkerSettings: [
-                .linkedLibrary("dl", .when(platforms: [.linux])),
-                .linkedLibrary("pthread", .when(platforms: [.linux]))]),
+            linkerSettings: dlPthreadLibraries
+        ),
         .testTarget(
             name: "AnalysisTests",
             dependencies: ["llbuildAnalysis"],
             path: "unittests/Analysis",
-            linkerSettings: [
-                .linkedLibrary("dl", .when(platforms: [.linux])),
-                .linkedLibrary("pthread", .when(platforms: [.linux]))]),
+            linkerSettings: dlPthreadLibraries
+        ),
 
         .target(
             name: "llbuildTestSupport",
-            path: "unittests/TestSupport"),
+            path: "unittests/TestSupport"
+        ),
+
+        /// Shared support code for the C++ unit tests.
+        .target(
+            name: "llbuildUnitTestSupport",
+            dependencies: ["llbuildBasic"],
+            path: "unittests/UnitTestSupport",
+            cxxSettings: llbuildCXXSettings
+        ),
+
+        /// The `main` entry point shared by the C++ unit test executables.
+        .target(
+            name: "llbuildUnitTestMain",
+            dependencies: ["llvmSupport", "gmocklib"],
+            path: "utils/unittest/UnitTestMain",
+            exclude: ["CMakeLists.txt"],
+            // This target has no headers of its own.
+            publicHeadersPath: ".",
+            cxxSettings: llbuildCXXSettings
+        ),
 
         // MARK: GoogleTest
 
         .target(
             name: "gtestlib",
-            path: "utils/unittest/googletest/src",
-            exclude: [
-                "gtest-death-test.cc",
-                "gtest-filepath.cc",
-                "gtest-matchers.cc",
-                "gtest-port.cc",
-                "gtest-printers.cc",
-                "gtest-test-part.cc",
-                "gtest-typed-test.cc",
-                "gtest.cc",
-            ],
+            path: "utils/unittest/googletest",
+            sources: ["src/gtest-all.cc"],
             cxxSettings: [
-                .headerSearchPath(".."),
-                .headerSearchPath("../include"),
-            ]),
+                .headerSearchPath("."),
+            ]
+        ),
 
         .target(
             name: "gmocklib",
             dependencies: ["gtestlib"],
-            path: "utils/unittest/googlemock/src",
-            exclude: [
-                "gmock-cardinalities.cc",
-                "gmock-internal-utils.cc",
-                "gmock-matchers.cc",
-                "gmock-spec-builders.cc",
-                "gmock.cc",
-            ],
+            path: "utils/unittest/googlemock",
+            sources: ["src/gmock-all.cc"],
             cxxSettings: [
-                .headerSearchPath(".."),
-                .headerSearchPath("../include"),
-                .headerSearchPath("../../googletest/include"),
+                .headerSearchPath("."),
             ],
             linkerSettings: [
                 .linkedLibrary("swiftCore", .when(platforms: [.windows])), // for swift_addNewDSOImage
-            ]),
+            ]
+        ),
 
         // MARK: Ingested LLVM code.
+
         .target(
-          name: "llvmDemangle",
-          path: "lib/llvm/Demangle"
+            name: "llvmDemangle",
+            path: "lib/llvm/Demangle",
+            exclude: ["CMakeLists.txt"],
+            cxxSettings: llbuildCXXSettings
         ),
 
         .target(
             name: "llvmSupport",
             dependencies: ["llvmDemangle"],
             path: "lib/llvm/Support",
+            exclude: ["CMakeLists.txt"],
+            cxxSettings: llbuildCXXSettings,
             linkerSettings: [
-                .linkedLibrary("m", .when(platforms: [.linux])),
+                .linkedLibrary("m", .when(platforms: [.linux, freebsd])),
+                .linkedLibrary("pthread", .when(platforms: [freebsd])),
+                .linkedLibrary("execinfo", .when(platforms: [.openbsd, freebsd])),
             ] + terminfoLibraries
         ),
     ],
+    swiftLanguageModes: [.v5],
     cxxLanguageStandard: .cxx14
 )
 
 if !isStaticBuild {
     package.products += [
+        /// Deprecated: kept for compatibility with existing clients.
         .library(
             name: "llbuildSwiftDynamic",
             type: .dynamic,
             targets: ["llbuildSwift"]),
     ]
 }
-
-if ProcessInfo.processInfo.environment["SWIFTCI_USE_LOCAL_DEPS"] == nil {
-    package.dependencies += [
-        .package(url: "https://github.com/swiftlang/swift-toolchain-sqlite", from: "1.0.0"),
-    ]
-} else {
-    package.dependencies += [
-        .package(path: "../swift-toolchain-sqlite"),
-    ]
-}
-
-let llvmTargets: Set<String> = [
-    "libllbuild",
-    "llbuildCore",
-
-    "llvmDemangle",
-    "llvmSupport",
-
-    "llbuild",
-    "llbuildBasic",
-    "llbuildBuildSystem",
-    "llbuildCommands",
-    "llbuildNinja",
-
-    "llbuildBasicTests",
-    "llbuildBuildSystemTests",
-    "llbuildCoreTests",
-    "llbuildNinjaTests",
-
-    "swift-build-tool",
-]
-
-if !useTerminfo {
-    package.targets.filter({ llvmTargets.contains($0.name) }).forEach { target in
-        target.cxxSettings = (target.cxxSettings ?? []) + [
-            .define("LLBUILD_NO_TERMINFO"),
-        ]
-    }
-}
-
-// FIXME: Conditionalize these flags since SwiftPM 5.3 and earlier will crash for platforms they don't know about.
-#if os(Windows)
-package.targets.filter({ llvmTargets.contains($0.name) }).forEach { target in
-    target.cxxSettings = (target.cxxSettings ?? []) + [
-        .define("LLVM_ON_WIN32", .when(platforms: [.windows])),
-        .define("_CRT_SECURE_NO_WARNINGS", .when(platforms: [.windows])),
-        .define("_CRT_NONSTDC_NO_WARNINGS", .when(platforms: [.windows])),
-    ]
-}
-
-package.targets.first { $0.name == "llbuildBasic" }?.linkerSettings = [
-    .linkedLibrary("ShLwApi", .when(platforms: [.windows]))
-]
-
-#endif
-
-// FIXME: when the SupportedPlatforms availability directive is updated and
-// the platform port is in sync with this directive, these conditions can
-// be folded up with .when(platforms:_) clauses.
-#if os(FreeBSD) || os(OpenBSD)
-package.targets.filter({ $0.name == "llbuildCore" || $0.name == "llbuildCoreTests" }).forEach {
-    $0.cSettings = [.unsafeFlags(["-I/usr/local/include"])]
-    $0.linkerSettings = [
-        .linkedLibrary("sqlite3"),
-        .unsafeFlags(["-L/usr/local/lib"])
-    ]
-
-}
-#endif
-#if os(OpenBSD)
-if let target = package.targets.first(where: { $0.name == "llvmSupport" }) {
-    target.linkerSettings = ["execinfo", "ncurses"].map { .linkedLibrary($0) }
-}
-#elseif os(FreeBSD)
-if let target = package.targets.first(where: { $0.name == "llvmSupport" }) {
-    target.linkerSettings = ["execinfo", "m", "pthread", "ncurses"].map { .linkedLibrary($0) }
-}
-package.targets.filter({ $0.name == "llbuild" || $0.name == "swift-build-tool" }).forEach {
-    $0.linkerSettings = [.linkedLibrary("dl"), .linkedLibrary("pthread")]
-}
-#endif
