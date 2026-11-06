@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.29)
 
 # Get the SDK path for OSX.
 # Please the position of this snippet is important, as
