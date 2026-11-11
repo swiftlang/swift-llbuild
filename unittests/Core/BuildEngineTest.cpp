@@ -21,6 +21,13 @@
 
 #include "gtest/gtest.h"
 
+#include <sqlite3.h>
+
+#if !defined(_WIN32)
+#include <sys/resource.h>
+#endif
+
+#include <csignal>
 #include <future>
 #include <condition_variable>
 #include <unordered_map>
@@ -1143,6 +1150,217 @@ TEST(BuildEngineTest, basicIncrementalSignatureChange) {
   setupEngine(*engine);
   EXPECT_EQ(valueA * valueB * 5, intFromValue(engine->build("value-R")));
   EXPECT_EQ(0U, builtKeys.size());
+}
+
+static int64_t countRows(StringRef dbPath, const char* query) {
+  sqlite3* db = nullptr;
+  sqlite3_stmt* stmt = nullptr;
+  int64_t count = -1;
+  if (sqlite3_open(dbPath.str().c_str(), &db) == SQLITE_OK &&
+      sqlite3_prepare_v2(db, query, -1, &stmt, nullptr) == SQLITE_OK &&
+      sqlite3_step(stmt) == SQLITE_ROW)
+    count = sqlite3_column_int64(stmt, 0);
+  sqlite3_finalize(stmt);
+  sqlite3_close(db);
+  return count;
+}
+
+static int64_t countMissingDependencyKeys(StringRef dbPath) {
+  sqlite3* db = nullptr;
+  sqlite3_stmt* results = nullptr;
+  sqlite3_stmt* key = nullptr;
+  int64_t count = -1;
+  if (sqlite3_open(dbPath.str().c_str(), &db) == SQLITE_OK &&
+      sqlite3_prepare_v2(db, "SELECT dependencies FROM rule_results;", -1, &results, nullptr) == SQLITE_OK &&
+      sqlite3_prepare_v2(db, "SELECT 1 FROM key_names WHERE id == ?;", -1, &key, nullptr) == SQLITE_OK) {
+    count = 0;
+    while (sqlite3_step(results) == SQLITE_ROW) {
+      auto bytes = (const uint8_t*)sqlite3_column_blob(results, 0);
+      int size = sqlite3_column_bytes(results, 0);
+      for (int i = 0; i + 8 <= size; i += 8) {
+        uint64_t raw = 0;
+        for (int j = 7; j >= 0; --j)
+          raw = (raw << 8) | bytes[i + j];
+        sqlite3_reset(key);
+        sqlite3_bind_int64(key, 1, raw >> 2);
+        if (sqlite3_step(key) != SQLITE_ROW)
+          ++count;
+      }
+    }
+  }
+  sqlite3_finalize(key);
+  sqlite3_finalize(results);
+  sqlite3_close(db);
+  return count;
+}
+
+#if !defined(_WIN32)
+TEST(BuildEngineTest, failedCommitDoesNotLeaveDanglingKeys) {
+  // After a build's commit fails, the next build must not use its key IDs.
+  llvm::SmallString<256> dbPath;
+  auto ec = llvm::sys::fs::createTemporaryFile("build", "db", dbPath);
+  EXPECT_EQ(bool(ec), false);
+
+  SimpleBuildEngineDelegate delegate;
+  core::BuildEngine engine(delegate);
+  {
+    std::string error;
+    auto db = createSQLiteBuildDB(dbPath, 1, /* recreateUnmatchedVersion = */ true, &error);
+    ASSERT_TRUE(bool(db));
+    engine.attachDB(std::move(db), &error);
+  }
+  std::vector<KeyType> inputs;
+  for (int i = 0; i != 200; ++i) {
+    inputs.push_back("input-" + std::to_string(i) + std::string(1000, 'x'));
+    engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      inputs.back(), {}, [] (const std::vector<int>&) { return 1; })));
+  }
+  bool resultIsValid = true;
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+    "result", inputs, [] (const std::vector<int>& values) {
+      return (int)values.size(); },
+    [&](const ValueType&) { return resultIsValid; })));
+  engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+    "first", {}, [] (const std::vector<int>&) { return 1; })));
+  EXPECT_EQ(1, intFromValue(engine.build("first")));
+
+  // Room for the journal, but not for the database to grow.
+  uint64_t size = 0;
+  ec = llvm::sys::fs::file_size(dbPath, size);
+  EXPECT_EQ(bool(ec), false);
+  {
+    struct FileSizeLimit {
+      struct rlimit previous;
+      void (*previousHandler)(int);
+      FileSizeLimit(rlim_t limit) {
+        getrlimit(RLIMIT_FSIZE, &previous);
+        struct rlimit lowered = previous;
+        lowered.rlim_cur = limit;
+        previousHandler = signal(SIGXFSZ, SIG_IGN);
+        setrlimit(RLIMIT_FSIZE, &lowered);
+      }
+      ~FileSizeLimit() {
+        setrlimit(RLIMIT_FSIZE, &previous);
+        signal(SIGXFSZ, previousHandler);
+      }
+    } limit(2 * size + 65536);
+    EXPECT_EQ(200, intFromValue(engine.build("result")));
+  }
+  EXPECT_EQ(0, countRows(dbPath, "SELECT COUNT(*) FROM key_names WHERE key == 'result';"));
+
+  resultIsValid = false;
+  EXPECT_EQ(200, intFromValue(engine.build("result")));
+  EXPECT_EQ(1, countRows(dbPath, "SELECT COUNT(*) FROM key_names WHERE key == 'result';"));
+  EXPECT_EQ(0, countRows(dbPath, "SELECT COUNT(*) FROM rule_results WHERE key_id NOT IN (SELECT id FROM key_names);"));
+  EXPECT_EQ(0, countMissingDependencyKeys(dbPath));
+
+  ec = llvm::sys::fs::remove(dbPath.str());
+  EXPECT_EQ(bool(ec), false);
+}
+#endif
+
+TEST(BuildEngineTest, missingDependencyKeyRebuildsRule) {
+  // A result with a missing dependency key is built again.
+  llvm::SmallString<256> dbPath;
+  auto ec = llvm::sys::fs::createTemporaryFile("build", "db", dbPath);
+  EXPECT_EQ(bool(ec), false);
+
+  std::vector<std::string> builtKeys;
+  SimpleBuildEngineDelegate delegate;
+  auto setupEngine = [&](core::BuildEngine& engine) {
+    std::string error;
+    auto db = createSQLiteBuildDB(dbPath, 1, /* recreateUnmatchedVersion = */ true, &error);
+    ASSERT_TRUE(bool(db));
+    engine.attachDB(std::move(db), &error);
+    engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-A", {}, [&] (const std::vector<int>&) {
+        builtKeys.push_back("value-A");
+        return 2; })));
+    engine.addRule(std::unique_ptr<core::Rule>(new SimpleRule(
+      "value-R", {"value-A"}, [&] (const std::vector<int>& inputs) {
+        builtKeys.push_back("value-R");
+        return inputs[0] * 5; })));
+  };
+
+  auto engine = llvm::make_unique<core::BuildEngine>(delegate);
+  setupEngine(*engine);
+  EXPECT_EQ(10, intFromValue(engine->build("value-R")));
+  EXPECT_EQ(2U, builtKeys.size());
+  engine = nullptr;
+
+  sqlite3* db = nullptr;
+  ASSERT_EQ(SQLITE_OK, sqlite3_open(dbPath.c_str(), &db));
+  EXPECT_EQ(SQLITE_OK, sqlite3_exec(db, "DELETE FROM key_names WHERE key == 'value-A';", nullptr, nullptr, nullptr));
+  sqlite3_close(db);
+
+  builtKeys.clear();
+  engine = llvm::make_unique<core::BuildEngine>(delegate);
+  setupEngine(*engine);
+  EXPECT_EQ(10, intFromValue(engine->build("value-R")));
+  EXPECT_EQ(2U, builtKeys.size());
+  EXPECT_TRUE(delegate.errors.empty());
+
+  builtKeys.clear();
+  engine = llvm::make_unique<core::BuildEngine>(delegate);
+  setupEngine(*engine);
+  EXPECT_EQ(10, intFromValue(engine->build("value-R")));
+  EXPECT_EQ(0U, builtKeys.size());
+  engine = nullptr;
+
+  ec = llvm::sys::fs::remove(dbPath.str());
+  EXPECT_EQ(bool(ec), false);
+}
+
+TEST(BuildEngineTest, partiallyReadResultIsNotScanned) {
+  // A database lookup that fails partway leaves a result whose remaining
+  // dependencies are invalid. The engine must not scan them.
+  class PartialResultDB : public BuildDB {
+  public:
+    BuildDBDelegate* delegate = nullptr;
+    virtual void attachDelegate(BuildDBDelegate* d) override { delegate = d; }
+    virtual uint64_t getCurrentEpoch(bool*, std::string*) override { return 1; }
+    virtual bool setCurrentIteration(uint64_t, std::string*) override { return true; }
+    virtual bool lookupRuleResult(KeyID, const KeyType& key, Result* result_out,
+                                  std::string* error_out) override {
+      result_out->value = intToValue(1);
+      result_out->builtAt = result_out->computedAt = 1;
+      if (key == "result") {
+        result_out->dependencies.resize(1);
+        result_out->dependencies.set(0, delegate->getKeyID("input"), false, false);
+        return true;
+      }
+      result_out->dependencies.resize(1);
+      *error_out = "error: lookup failed";
+      return false;
+    }
+    virtual bool setRuleResult(KeyID, const Rule&, const Result&, std::string*) override { return true; }
+    virtual bool buildStarted(std::string*) override { return true; }
+    virtual void buildComplete() override {}
+    virtual bool getKeys(std::vector<KeyType>&, std::string*) override { return false; }
+    virtual bool getKeysWithResult(std::vector<KeyType>&, std::vector<Result>&, std::string*) override { return false; }
+  };
+
+  class LookupDelegate : public SimpleBuildEngineDelegate {
+    std::unique_ptr<core::Rule> lookupRule(const core::KeyType& key) override {
+      if (key == "input")
+        return std::unique_ptr<core::Rule>(new SimpleRule(
+          "input", {}, [] (const std::vector<int>&) { return 1; }));
+      if (key == "result")
+        return std::unique_ptr<core::Rule>(new SimpleRule(
+          "result", {"input"}, [] (const std::vector<int>& inputs) { return inputs[0]; }));
+      fprintf(stderr, "error: unexpected rule lookup for \"%s\"\n", key.c_str());
+      abort();
+    }
+  };
+
+  LookupDelegate delegate;
+  delegate.expectedError = true;
+  core::BuildEngine engine(delegate);
+  std::string error;
+  engine.attachDB(std::unique_ptr<BuildDB>(new PartialResultDB()), &error);
+  engine.build("result");
+  ASSERT_EQ(1U, delegate.errors.size());
+  EXPECT_EQ("error: lookup failed", delegate.errors[0]);
 }
 
 TEST(BuildEngineTest, concurrentProtection) {
