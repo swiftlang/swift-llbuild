@@ -123,3 +123,19 @@ TEST(SQLiteBuildDBTest, CloseDBConnectionAfterCloseCall) {
   
   buildDB->buildComplete();
 }
+
+TEST(SQLiteBuildDBTest, BuildCompleteWithoutConnection) {
+  // llb_database_destroy() can call buildComplete() before the first open.
+  llvm::SmallString<256> dbPath;
+  auto ec = llvm::sys::fs::createTemporaryFile("build", "db", dbPath);
+  EXPECT_EQ(bool(ec), false);
+
+  std::string error;
+  std::unique_ptr<BuildDB> buildDB = createSQLiteBuildDB(dbPath, 1, /* recreateUnmatchedVersion = */ true, &error);
+  EXPECT_TRUE(buildDB != nullptr);
+  buildDB->buildComplete();
+  buildDB = nullptr;
+
+  ec = llvm::sys::fs::remove(dbPath.str());
+  EXPECT_EQ(bool(ec), false);
+}

@@ -1560,6 +1560,9 @@ public:
         // allow builds to proceed without the database.
         delegate.error(error);
         buildCancelled = true;
+
+        // Don't scan a partially read result's dependencies.
+        ruleInfo.result = Result();
       }
     }
 
