@@ -202,6 +202,10 @@ private:
   /// Flag indicating if the build has been aborted.
   bool buildWasAborted = false;
 
+  // Share decoded producer results until the build ends or cycle recovery begins.
+  std::unordered_map<Command*, BuildValue> producedCommandValues;
+  bool reuseProducedCommandValues = true;
+
   /// @}
 
 public:
@@ -211,6 +215,22 @@ public:
       : buildSystem(buildSystem), delegate(delegate),
         fileSystem(std::move(fileSystem)),
         fileDelegate(*this), engineDelegate(*this), buildEngine(engineDelegate) {}
+
+  const BuildValue& getProducedCommandValue(Command* command,
+                                           const ValueType& data) {
+    if (!reuseProducedCommandValues)
+      producedCommandValues.erase(command);
+    auto it = producedCommandValues.find(command);
+    if (it == producedCommandValues.end()) {
+      it = producedCommandValues.emplace(command, BuildValue::fromData(data)).first;
+    }
+    return it->second;
+  }
+
+  void disableProducedCommandValueReuse() {
+    reuseProducedCommandValues = false;
+    producedCommandValues.clear();
+  }
 
   BuildSystem& getBuildSystem() {
     return buildSystem;
@@ -766,12 +786,12 @@ class ProducedNodeTask : public Task {
                                  const ValueType& value) override {
   }
 
-  virtual void provideValue(TaskInterface, uintptr_t inputID,
+  virtual void provideValue(TaskInterface ti, uintptr_t inputID,
                             const KeyType& key, const ValueType& valueData) override {
-    auto value = BuildValue::fromData(valueData);
-
     // Extract the node result from the command.
     assert(producingCommand);
+    const auto& value = getBuildSystem(ti).getProducedCommandValue(
+        producingCommand, valueData);
     nodeResult = producingCommand->getResultForOutput(&node, value);
   }
 
@@ -2045,6 +2065,8 @@ void BuildSystemEngineDelegate::determinedRuleNeedsToRun(Rule* ruleNeedingToRun,
 bool BuildSystemEngineDelegate::shouldResolveCycle(const std::vector<Rule*>& cycle,
                                                      Rule* candidateRule,
                                                      Rule::CycleAction action) {
+  // Cycle recovery can deliver a prior value before the final command result.
+  getBuildSystem().disableProducedCommandValueReuse();
   return static_cast<BuildSystemFrontendDelegate*>(&getBuildSystem().getDelegate())->shouldResolveCycle(cycle, candidateRule, action);
 }
 
@@ -2086,7 +2108,10 @@ llvm::Optional<BuildValue> BuildSystemImpl::build(BuildKey key) {
 
   // Build the target.
   buildWasAborted = false;
+  producedCommandValues.clear();
+  reuseProducedCommandValues = true;
   auto result = buildEngine.build(key.toData());
+  producedCommandValues.clear();
 
   if (buildWasAborted)
     return None;
