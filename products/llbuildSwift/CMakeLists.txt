@@ -32,14 +32,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
     BUILD_WITH_INSTALL_RPATH TRUE
     INSTALL_RPATH "@loader_path:@loader_path/../../macosx"
     MACOSX_RPATH TRUE)
-  if(CMAKE_VERSION VERSION_LESS 3.16)
-    target_link_options(llbuildSwift PRIVATE
-      "SHELL:-Xlinker -install_name -Xlinker @rpath/$<TARGET_FILE_NAME:llbuildSwift>")
-  else()
-    set_target_properties(llbuildSwift PROPERTIES
-      BUILD_WITH_INSTALL_NAME_DIR TRUE
-      INSTALL_NAME_DIR "@rpath")
-  endif()
+  set_target_properties(llbuildSwift PROPERTIES
+    BUILD_WITH_INSTALL_NAME_DIR TRUE
+    INSTALL_NAME_DIR "@rpath")
 else()
   target_link_libraries(llbuildSwift PRIVATE
     SQLite3::SQLite3)
