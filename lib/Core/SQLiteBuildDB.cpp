@@ -574,6 +574,11 @@ public:
       if (!error_out->empty()) {
         return false;
       }
+      // A failed commit can leave a missing key.
+      if (keyID == KeyID::novalue()) {
+        *result_out = Result();
+        return false;
+      }
       result_out->dependencies.set(i, keyID, orderOnly, singleUse);
     }
 
@@ -607,6 +612,12 @@ public:
     int result;
 
     if (!open(error_out)) {
+      return false;
+    }
+
+    if (sqlite3_get_autocommit(db)) {
+      *error_out = "error: accessing build database \"" + path +
+        "\": the build's transaction was rolled back";
       return false;
     }
 
@@ -697,11 +708,17 @@ public:
 
   virtual void buildComplete() override {
     std::lock_guard<std::mutex> guard(dbMutex);
+    if (!db)
+      return;
 
-    // Sync changes to disk.
-    int result = sqlite3_exec(db, "END;", nullptr, nullptr, nullptr);
-    assert(result == SQLITE_OK);
-    (void)result;
+    // Sync changes to disk. If the transaction was rolled back or doesn't
+    // commit, the keys it added are gone, so forget their IDs.
+    if (sqlite3_get_autocommit(db) ||
+        sqlite3_exec(db, "END;", nullptr, nullptr, nullptr) != SQLITE_OK) {
+      sqlite3_exec(db, "ROLLBACK;", nullptr, nullptr, nullptr);
+      engineKeyIDs.clear();
+      dbKeyIDs.clear();
+    }
 
     // We close the connection whenever a build completes so that we release
     // any locks that we may have on the file.
@@ -782,6 +799,7 @@ public:
       result.dependencies.resize(numDependencies);
       basic::BinaryDecoder decoder(
                                    StringRef((const char*)dependencyBytes, numDependencyBytes));
+      bool missingDependency = false;
       for (auto i = 0; i != numDependencies; ++i) {
         uint64_t raw;
         decoder.read(raw);
@@ -795,8 +813,14 @@ public:
         if (!error_out->empty()) {
           return false;
         }
+        if (keyID == KeyID::novalue()) {
+          missingDependency = true;
+          break;
+        }
         result.dependencies.set(i, keyID, orderOnly, singleUse);
       }
+      if (missingDependency)
+        continue;
       
       result.signature = basic::CommandSignature(sqlite3_column_int64(stmt, 8));
       
@@ -942,7 +966,7 @@ if (result != SQLITE_OK) { \
 #undef checkSQLiteResultOKReturnDBKeyID
   }
 
-  /// Maps a DBKeyID into an engine KeyID
+  /// Maps a DBKeyID into an engine KeyID, or `KeyID::novalue()` if missing.
   ///
   /// This method is not thread-safe. The caller must protect access via the
   /// dbMutex.
@@ -968,6 +992,8 @@ if (result != SQLITE_OK) { \
     checkSQLiteResultOKReturnKeyID(result);
 
     result = sqlite3_step(findKeyNameForKeyIDStmt);
+    if (result == SQLITE_DONE)
+      return KeyID::novalue();
     if (result != SQLITE_ROW) {
       *error_out = getCurrentErrorMessage();
       return KeyID();
