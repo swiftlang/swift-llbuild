@@ -1098,6 +1098,20 @@ TEST(BuildSystemTaskTests, producedNodeAfterPreviouslyMissing) {
     // Check that the file does exist
     auto afterFileInfo = localFS->getFileInfo(outputFile.str());
     ASSERT_TRUE(!afterFileInfo.isMissing());
+
+    // Reuse the engine after changing the output metadata. A decoded producer
+    // result from the previous build must not survive into this build.
+    {
+      std::error_code ec;
+      llvm::raw_fd_ostream os(outputFile, ec, llvm::sys::fs::F_Append);
+      ASSERT_FALSE(ec);
+      os << "changed output";
+    }
+    result = system.build(BuildKey::makeNode(outputFile));
+    ASSERT_TRUE(result.hasValue());
+    ASSERT_TRUE(result.getValue().isExistingInput());
+    EXPECT_EQ(localFS->getFileInfo(outputFile.str()),
+              result.getValue().getOutputInfo());
   }
 }
 
